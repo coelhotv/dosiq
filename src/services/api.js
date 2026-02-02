@@ -761,8 +761,10 @@ export const logService = {
    * @returns {Promise} { data: [], total }
    */
   getByMonth: async (year, month) => {
-    const startDate = new Date(year, month, 1).toISOString().split('T')[0]
-    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+    // Use UTC-safe date construction to avoid timezone edge cases
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
     
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -772,8 +774,8 @@ export const logService = {
         medicine:medicines(*)
       `, { count: 'exact' })
       .eq('user_id', await getUserId())
-      .gte('taken_at', `${startDate}T00:00:00`)
-      .lte('taken_at', `${endDate}T23:59:59`)
+      .gte('taken_at', `${startDate}T00:00:00.000Z`)
+      .lte('taken_at', `${endDate}T23:59:59.999Z`)
       .order('taken_at', { ascending: false })
     
     if (error) throw error

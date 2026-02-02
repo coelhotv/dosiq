@@ -1,4 +1,5 @@
-import { supabase, MOCK_USER_ID } from '../../services/supabase.js';
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
 import { getSession, setSession, clearSession } from '../state.js';
 import { calculateStreak } from '../../utils/formatters.js';
 
@@ -182,11 +183,14 @@ async function handleCancel(bot, callbackQuery) {
 
 async function processDoseRegistration(bot, chatId, protocolId, medicineId, quantity, editMessageId = null) {
   try {
+    // Get actual user ID from chat ID
+    const userId = await getUserIdByChatId(chatId);
+    
     // 1. Criar Log
     const { error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
-        user_id: MOCK_USER_ID,
+        user_id: userId,
         protocol_id: protocolId,
         medicine_id: medicineId,
         quantity_taken: quantity,
@@ -200,7 +204,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       .from('stock')
       .select('*')
       .eq('medicine_id', medicineId)
-      .eq('user_id', MOCK_USER_ID)
+      .eq('user_id', userId)
       .gt('quantity', 0)
       .order('purchase_date', { ascending: true });
     
@@ -228,7 +232,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     const { data: allLogs } = await supabase
       .from('medicine_logs')
       .select('taken_at')
-      .eq('user_id', MOCK_USER_ID);
+      .eq('user_id', userId);
     
     const streak = calculateStreak(allLogs);
 
@@ -249,6 +253,13 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     }
   } catch (err) {
     console.error('Erro ao registrar dose manual:', err);
+    
+    // Handle unlinked user case
+    if (err.message === 'User not linked') {
+      await bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return;
+    }
+    
     bot.sendMessage(chatId, '❌ Erro ao registrar a dose. Tente novamente.');
   }
 }

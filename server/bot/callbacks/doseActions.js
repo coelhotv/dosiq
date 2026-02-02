@@ -1,4 +1,5 @@
-import { supabase, MOCK_USER_ID } from '../../services/supabase.js';
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
 import { calculateDaysRemaining, calculateStreak } from '../../utils/formatters.js';
 
 export async function handleCallbacks(bot) {
@@ -21,6 +22,9 @@ async function handleTakeDose(bot, callbackQuery) {
   const [_, protocolId, quantity] = data.split(':');
   
   try {
+    // Get actual user ID from chat ID
+    const userId = await getUserIdByChatId(chatId);
+    
     // 1. Fetch medicine_id from protocol
     const { data: protocol, error: protocolError } = await supabase
       .from('protocols')
@@ -37,7 +41,7 @@ async function handleTakeDose(bot, callbackQuery) {
     const { error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
-        user_id: MOCK_USER_ID,
+        user_id: userId,
         protocol_id: protocolId,
         medicine_id: medicineId,
         quantity_taken: parseFloat(quantity),
@@ -51,7 +55,7 @@ async function handleTakeDose(bot, callbackQuery) {
       .from('stock')
       .select('*')
       .eq('medicine_id', medicineId)
-      .eq('user_id', MOCK_USER_ID)
+      .eq('user_id', userId)
       .gt('quantity', 0)
       .order('purchase_date', { ascending: true });
     
@@ -73,7 +77,7 @@ async function handleTakeDose(bot, callbackQuery) {
       .from('stock')
       .select('quantity')
       .eq('medicine_id', medicineId)
-      .eq('user_id', MOCK_USER_ID)
+      .eq('user_id', userId)
       .gt('quantity', 0);
 
     const totalQuantity = updatedStock?.reduce((sum, s) => sum + s.quantity, 0) || 0;
@@ -83,7 +87,7 @@ async function handleTakeDose(bot, callbackQuery) {
       .from('protocols')
       .select('time_schedule, dosage_per_intake')
       .eq('medicine_id', medicineId)
-      .eq('user_id', MOCK_USER_ID)
+      .eq('user_id', userId)
       .eq('active', true);
 
     const dailyUsage = activeProtocols?.reduce((sum, p) => {
@@ -98,7 +102,7 @@ async function handleTakeDose(bot, callbackQuery) {
     const { data: allLogs } = await supabase
       .from('medicine_logs')
       .select('taken_at')
-      .eq('user_id', MOCK_USER_ID);
+      .eq('user_id', userId);
     
     const streak = calculateStreak(allLogs);
 
@@ -126,6 +130,18 @@ async function handleTakeDose(bot, callbackQuery) {
     await bot.answerCallbackQuery(id, { text: 'Dose registrada!' });
   } catch (err) {
     console.error('Erro ao registrar dose:', err);
+    
+    // Handle unlinked user case
+    if (err.message === 'User not linked') {
+      try {
+        await bot.answerCallbackQuery(id, {
+          text: 'Conta não vinculada. Use /start para vincular.',
+          show_alert: true
+        });
+      } catch { /* ignore */ }
+      return;
+    }
+    
     try {
       await bot.answerCallbackQuery(id, { text: 'Erro ao registrar dose.', show_alert: true });
     } catch { /* ignore */ }

@@ -1,35 +1,24 @@
-import { supabase, MOCK_USER_ID } from '../../services/supabase.js';
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
 
 export async function handleRegistrar(bot, msg) {
   const chatId = msg.chat && msg.chat.id;
-  const tgUserId = msg.from && msg.from.id;
 
   if (!chatId) return;
 
   try {
-    // Try to fetch protocols linked to this Telegram user first
-    let res = await supabase
+    // Get actual user ID from chat ID
+    const userId = await getUserIdByChatId(chatId);
+    
+    // Fetch protocols for the linked user
+    const { data: protocols, error } = await supabase
       .from('protocols')
       .select('id, medicine:medicines(id, name, dosage_unit)')
-      .eq('telegram_user_id', tgUserId)
+      .eq('user_id', userId)
       .eq('active', true);
 
-    if (res.error) throw res.error;
-
-    let protocols = res.data || [];
-
-    // Fallback to MOCK_USER_ID (development) if none found
-    if (!protocols || protocols.length === 0) {
-      const fallback = await supabase
-        .from('protocols')
-        .select('id, medicine:medicines(id, name, dosage_unit)')
-        .eq('user_id', MOCK_USER_ID)
-        .eq('active', true);
-
-      if (fallback.error) throw fallback.error;
-      protocols = fallback.data || [];
-    }
+    if (error) throw error;
 
     if (!protocols || protocols.length === 0) {
       return bot.sendMessage(chatId, 'Você não possui protocolos ativos no momento. Use o app web para cadastrar.');
@@ -37,9 +26,9 @@ export async function handleRegistrar(bot, msg) {
 
     // Create keyboard with medicine names
     const keyboard = protocols.map(p => ([
-      { 
-        text: p.medicine.name, 
-        callback_data: `reg_med:${p.medicine.id}:${p.id}` 
+      {
+        text: p.medicine.name,
+        callback_data: `reg_med:${p.medicine.id}:${p.id}`
       }
     ]));
 
@@ -53,6 +42,12 @@ export async function handleRegistrar(bot, msg) {
 
   } catch (err) {
     console.error('Erro ao iniciar registro:', err);
+    
+    // Handle unlinked user case
+    if (err.message === 'User not linked') {
+      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+    }
+    
     bot.sendMessage(chatId, '❌ Ocorreu um erro ao buscar seus medicamentos.');
   }
 }

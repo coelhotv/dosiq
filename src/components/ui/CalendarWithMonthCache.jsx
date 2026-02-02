@@ -84,8 +84,10 @@ export default function CalendarWithMonthCache({
     
     const hasLog = markedDates.some(dateStr => {
       const dLog = new Date(dateStr)
-      dLog.setHours(0, 0, 0, 0)
-      return dLog.getTime() === dayDate.getTime()
+      // Use UTC comparison to avoid timezone mismatches
+      return dLog.getUTCFullYear() === dayDate.getFullYear() &&
+             dLog.getUTCMonth() === dayDate.getMonth() &&
+             dLog.getUTCDate() === dayDate.getDate()
     })
 
     days.push(
