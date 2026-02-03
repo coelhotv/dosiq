@@ -5,9 +5,6 @@ import { z } from 'zod'
  * Baseado na tabela 'medicine_logs' do Supabase
  */
 
-// Status possíveis para um registro de medicação
-const LOG_STATUSES = ['taken', 'skipped', 'late', 'missed']
-
 /**
  * Schema base para log de medicação
  */
@@ -38,14 +35,6 @@ export const logSchema = z.object({
     .number()
     .positive('Quantidade tomada deve ser maior que zero')
     .max(100, 'Quantidade máxima por registro é 100'),
-  
-  status: z
-    .enum(LOG_STATUSES, {
-      errorMap: () => ({ 
-        message: 'Status inválido. Opções: taken (tomado), skipped (pulado), late (atrasado), missed (perdido)' 
-      })
-    })
-    .default('taken'),
   
   notes: z
     .string()

@@ -85,8 +85,6 @@ Histórico de doses tomadas.
 - `medicine_id` (uuid, FK).
 - `taken_at` (timestamptz): Data e hora real da tomada.
 - `quantity_taken` (numeric).
-- `status` (text): 'taken', 'skipped', 'late', 'missed' (default: 'taken').
-- `scheduled_time` (text): Horário agendado no formato HH:MM.
 - `notes` (text).
 
 ### `bot_sessions`
