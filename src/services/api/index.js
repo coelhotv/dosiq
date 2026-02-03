@@ -20,6 +20,7 @@ export { treatmentPlanService } from './treatmentPlanService'
 export { stockService } from './stockService'
 export { logService } from './logService'
 export { migrationService } from './migrationService'
+export { adherenceService } from './adherenceService'
 
 // Services com cache SWR (recomendado para novos usos)
 export {

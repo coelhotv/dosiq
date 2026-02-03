@@ -19,6 +19,7 @@ import './Dashboard.css'
 
 import CalendarWithMonthCache from '../components/ui/CalendarWithMonthCache'
 import ProtocolChecklistItem from '../components/protocol/ProtocolChecklistItem'
+import AdherenceWidget from '../components/adherence/AdherenceWidget'
 
 import { getCurrentUser } from '../lib/supabase'
 
@@ -288,6 +289,9 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Adherence Score Widget */}
+      <AdherenceWidget defaultPeriod="30d" />
 
       {/* Titration Protocol Card - Only if active */}
       {activeTitration && (

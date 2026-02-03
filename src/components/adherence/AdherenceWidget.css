@@ -1,0 +1,307 @@
+/* AdherenceWidget - Widget de Score de Adesão */
+
+.adherence-widget {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 24px;
+}
+
+.adherence-widget.loading,
+.adherence-widget.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 16px;
+}
+
+/* Header */
+.adherence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.adherence-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Period Selector */
+.period-selector {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.period-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.period-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.period-btn.active {
+  background: rgba(0, 114, 255, 0.3);
+  color: #fff;
+}
+
+/* Main Content */
+.adherence-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.score-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.score-label {
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-label.good {
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.score-label.warning {
+  color: #ffd700;
+}
+
+.score-label.poor {
+  color: #ff3366;
+}
+
+.score-detail {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Streak Section */
+.streak-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.streak-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.streak-description {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.streak-item.record {
+  font-size: 12px;
+}
+
+.record-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.record-value {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+/* Protocol Scores */
+.protocol-scores {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+}
+
+.protocols-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 12px 0;
+}
+
+.protocols-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.protocol-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.protocol-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.protocol-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.protocol-medicine {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.protocol-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+}
+
+.mini-progress {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.protocol-score-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Tips */
+.adherence-tips {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tip-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.tip-text.success {
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
+}
+
+/* Error state */
+.error-text {
+  color: #ff3366;
+  font-size: 14px;
+  margin: 0;
+}
+
+.retry-btn {
+  background: rgba(0, 114, 255, 0.3);
+  border: 1px solid rgba(0, 114, 255, 0.5);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: rgba(0, 114, 255, 0.5);
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .adherence-widget {
+    padding: 16px;
+  }
+
+  .adherence-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adherence-main {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .score-section {
+    flex-direction: column;
+  }
+
+  .streak-section {
+    margin-left: 0;
+    width: 100%;
+    align-items: center;
+  }
+
+  .protocol-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .protocol-score {
+    width: 100%;
+  }
+}

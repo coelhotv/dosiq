@@ -1,0 +1,68 @@
+/* StreakBadge - Badge de Streak */
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.2), rgba(255, 51, 102, 0.2));
+  border: 1px solid rgba(255, 149, 0, 0.3);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff9500;
+}
+
+.streak-badge.high-streak {
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.3), rgba(255, 69, 0, 0.3));
+  border-color: rgba(255, 149, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 149, 0, 0.3);
+}
+
+.streak-icon {
+  font-size: 14px;
+}
+
+.streak-count {
+  font-weight: 700;
+}
+
+.streak-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+/* Tamanhos */
+.streak-badge-sm {
+  padding: 2px 6px;
+  font-size: 10px;
+  gap: 2px;
+}
+
+.streak-badge-sm .streak-icon {
+  font-size: 10px;
+}
+
+.streak-badge-lg {
+  padding: 6px 14px;
+  font-size: 14px;
+  gap: 6px;
+}
+
+.streak-badge-lg .streak-icon {
+  font-size: 18px;
+}
+
+/* Animação para streak alto */
+@keyframes streakPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 149, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 149, 0, 0.5);
+  }
+}
+
+.streak-badge.high-streak {
+  animation: streakPulse 2s ease-in-out infinite;
+}
