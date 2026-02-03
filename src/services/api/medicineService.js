@@ -1,7 +1,13 @@
 import { supabase, getUserId } from '../../lib/supabase'
+import { validateMedicineCreate, validateMedicineUpdate } from '../../schemas/medicineSchema'
 
 /**
  * Medicine Service - CRUD operations for medicines
+ * 
+ * VALIDAÇÃO ZOD:
+ * - Todos os dados de entrada são validados antes de enviar ao Supabase
+ * - Erros de validação retornam mensagens em português
+ * - Nenhum payload inválido é enviado ao backend
  */
 export const medicineService = {
   /**
@@ -60,11 +66,21 @@ export const medicineService = {
 
   /**
    * Create a new medicine
+   * 
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async create(medicine) {
+    // Validação Zod
+    const validation = validateMedicineCreate(medicine)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
     const { data, error } = await supabase
       .from('medicines')
-      .insert([{ ...medicine, user_id: await getUserId() }])
+      .insert([{ ...validation.data, user_id: await getUserId() }])
       .select()
       .single()
     
@@ -74,16 +90,26 @@ export const medicineService = {
 
   /**
    * Update an existing medicine
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async update(id, updates) {
+    // Validação Zod
+    const validation = validateMedicineUpdate(updates)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
     const { data, error } = await supabase
       .from('medicines')
-      .update(updates)
+      .update(validation.data)
       .eq('id', id)
       .eq('user_id', await getUserId())
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },

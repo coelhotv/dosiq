@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { protocolService, logService, stockService, medicineService, treatmentPlanService } from '../services/api'
+// CACHE SWR v1.5: Usando cachedServices para reduzir latência
+// - Primeiro load: busca da API e cacheia
+// - Visitas subsequentes (< 30s): retorna do cache imediatamente
+// - Revalidação em background mantém dados atualizados
+import { 
+  cachedProtocolService as protocolService, 
+  cachedLogService as logService, 
+  cachedStockService as stockService, 
+  cachedMedicineService as medicineService, 
+  cachedTreatmentPlanService as treatmentPlanService 
+} from '../services/api'
 import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
