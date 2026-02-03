@@ -53,13 +53,6 @@ export const logSchema = z.object({
     .optional()
     .nullable()
     .transform(val => val || null),
-  
-  scheduled_time: z
-    .string()
-    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário agendado deve estar no formato HH:MM')
-    .optional()
-    .nullable()
-    .transform(val => val || null),
 })
 
 /**
