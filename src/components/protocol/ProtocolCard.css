@@ -33,6 +33,14 @@
   font-weight: 500;
 }
 
+.protocol-header-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .protocol-status {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
