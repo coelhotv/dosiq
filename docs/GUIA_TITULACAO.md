@@ -24,9 +24,9 @@ Cada etapa no `titration_schedule` é um objeto com:
 
 ```json
 {
-  "days": 7,           // Duração da etapa em dias
-  "dosage": 1.5,       // Dose por horário (suporta decimais)
-  "note": "75mg 2x ao dia"  // Descrição/objetivo da etapa
+  "duration_days": 7,     // Duração da etapa em dias (inteiro, 1-365)
+  "dosage": 1.5,          // Dose por horário (suporta decimais)
+  "description": "75mg 2x ao dia"  // Descrição/objetivo da etapa (max 500 chars)
 }
 ```
 
