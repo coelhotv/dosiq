@@ -22,6 +22,7 @@ import { handleConversationalCallbacks } from './bot/callbacks/conversational.js
 import { handleInlineQueries } from './bot/inlineQuery.js';
 import { startScheduler, startDailyDigest } from './bot/scheduler.js';
 import { startStockAlerts, startAdherenceReports, startTitrationAlerts, startMonthlyReport } from './bot/alerts.js';
+import { startAutoCleanup } from './services/sessionManager.js';
 
 // Validate environment
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -66,3 +67,6 @@ startStockAlerts(bot);
 startAdherenceReports(bot);
 startTitrationAlerts(bot);
 startMonthlyReport(bot);
+
+// Start session cleanup for persistent sessions
+startAutoCleanup();
