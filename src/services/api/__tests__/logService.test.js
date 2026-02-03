@@ -1,13 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock do stockService - deve ser hoisted
-vi.mock('../stockService', () => ({
-  stockService: {
-    decrease: vi.fn(),
-    increase: vi.fn()
-  }
-}))
-
 // Hoist functions to be used inside vi.mock
 const mocks = vi.hoisted(() => {
   const eq = vi.fn()
@@ -33,12 +25,24 @@ vi.mock('../../../lib/supabase', () => ({
   getUserId: vi.fn().mockResolvedValue('test-user-id')
 }))
 
+// Mock do stockService
+const mockStockDecrease = vi.fn()
+const mockStockIncrease = vi.fn()
+
+vi.mock('../stockService', () => ({
+  stockService: {
+    decrease: mockStockDecrease,
+    increase: mockStockIncrease
+  }
+}))
+
 import { logService } from '../logService'
-import { stockService } from '../stockService'
 
 describe('logService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockStockDecrease.mockClear()
+    mockStockIncrease.mockClear()
 
     // Configurar o encadeamento padrão
     mocks.from.mockReturnValue({
@@ -159,8 +163,8 @@ describe('logService', () => {
 
   describe('create', () => {
     const mockLog = {
-      protocol_id: '123e4567-e89b-12d3-a456-426614174001',
-      medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+      protocol_id: 'proto-1',
+      medicine_id: 'med-1',
       quantity_taken: 2,
       taken_at: '2024-01-15T10:00:00Z',
       notes: 'Tomado após café'
@@ -170,13 +174,13 @@ describe('logService', () => {
       const createdLog = { id: 'log-1', ...mockLog, user_id: 'test-user-id' }
 
       mocks.single.mockResolvedValueOnce({ data: createdLog, error: null })
-      stockService.decrease.mockResolvedValue(undefined)
+      mockStockDecrease.mockResolvedValue(undefined)
 
       const result = await logService.create(mockLog)
 
       expect(mocks.from).toHaveBeenCalledWith('medicine_logs')
       expect(mocks.insert).toHaveBeenCalledWith([{ ...mockLog, user_id: 'test-user-id' }])
-      expect(stockService.decrease).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', 2)
+      expect(mockStockDecrease).toHaveBeenCalledWith('med-1', 2)
       expect(result).toEqual(createdLog)
     })
 
@@ -184,14 +188,14 @@ describe('logService', () => {
       mocks.single.mockResolvedValueOnce({ data: null, error: { message: 'Validation error' } })
 
       await expect(logService.create(mockLog)).rejects.toThrow('Validation error')
-      expect(stockService.decrease).not.toHaveBeenCalled()
+      expect(mockStockDecrease).not.toHaveBeenCalled()
     })
 
     it('should throw combined error when stock decrease fails', async () => {
       const createdLog = { id: 'log-1', ...mockLog }
 
       mocks.single.mockResolvedValueOnce({ data: createdLog, error: null })
-      stockService.decrease.mockRejectedValue(new Error('Estoque insuficiente'))
+      mockStockDecrease.mockRejectedValue(new Error('Estoque insuficiente'))
 
       await expect(logService.create(mockLog)).rejects.toThrow('Remédio registrado, mas erro ao atualizar estoque')
     })
@@ -200,14 +204,14 @@ describe('logService', () => {
   describe('createBulk', () => {
     const mockLogs = [
       {
-        protocol_id: '123e4567-e89b-12d3-a456-426614174001',
-        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        protocol_id: 'proto-1',
+        medicine_id: 'med-1',
         quantity_taken: 1,
         taken_at: '2024-01-15T10:00:00Z'
       },
       {
-        protocol_id: '123e4567-e89b-12d3-a456-426614174002',
-        medicine_id: '123e4567-e89b-12d3-a456-426614174003',
+        protocol_id: 'proto-2',
+        medicine_id: 'med-2',
         quantity_taken: 2,
         taken_at: '2024-01-15T10:00:00Z'
       }
@@ -217,7 +221,7 @@ describe('logService', () => {
       const createdLogs = mockLogs.map((log, i) => ({ id: `log-${i}`, ...log }))
 
       mocks.single.mockResolvedValueOnce({ data: createdLogs, error: null })
-      stockService.decrease.mockResolvedValue(undefined)
+      mockStockDecrease.mockResolvedValue(undefined)
 
       const result = await logService.createBulk(mockLogs)
 
@@ -225,9 +229,9 @@ describe('logService', () => {
         { ...mockLogs[0], user_id: 'test-user-id' },
         { ...mockLogs[1], user_id: 'test-user-id' }
       ])
-      expect(stockService.decrease).toHaveBeenCalledTimes(2)
-      expect(stockService.decrease).toHaveBeenNthCalledWith(1, '123e4567-e89b-12d3-a456-426614174000', 1)
-      expect(stockService.decrease).toHaveBeenNthCalledWith(2, '123e4567-e89b-12d3-a456-426614174003', 2)
+      expect(mockStockDecrease).toHaveBeenCalledTimes(2)
+      expect(mockStockDecrease).toHaveBeenNthCalledWith(1, 'med-1', 1)
+      expect(mockStockDecrease).toHaveBeenNthCalledWith(2, 'med-2', 2)
       expect(result).toEqual(createdLogs)
     })
 
@@ -235,7 +239,7 @@ describe('logService', () => {
       const createdLogs = mockLogs.map((log, i) => ({ id: `log-${i}`, ...log }))
 
       mocks.single.mockResolvedValueOnce({ data: createdLogs, error: null })
-      stockService.decrease
+      mockStockDecrease
         .mockRejectedValueOnce(new Error('Stock error'))
         .mockResolvedValueOnce(undefined)
 
@@ -243,93 +247,85 @@ describe('logService', () => {
       const result = await logService.createBulk(mockLogs)
 
       expect(result).toEqual(createdLogs)
-      expect(stockService.decrease).toHaveBeenCalledTimes(2)
+      expect(mockStockDecrease).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('update', () => {
     const existingLog = {
       id: 'log-1',
-      protocol_id: '123e4567-e89b-12d3-a456-426614174001',
-      medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+      protocol_id: 'proto-1',
+      medicine_id: 'med-1',
       quantity_taken: 2,
       taken_at: '2024-01-15T10:00:00Z'
     }
+
+    it('should update log when quantity unchanged', async () => {
+      const updates = { notes: 'Updated note' }
+      const updatedLog = { ...existingLog, ...updates }
+
+      // First call: fetch original log
+      mocks.single.mockResolvedValueOnce({ data: existingLog, error: null })
+      // Second call: update log
+      mocks.single.mockResolvedValueOnce({ data: updatedLog, error: null })
+
+      const result = await logService.update('log-1', updates)
+
+      expect(mockStockDecrease).not.toHaveBeenCalled()
+      expect(mockStockIncrease).not.toHaveBeenCalled()
+      expect(result).toEqual(updatedLog)
+    })
 
     it('should decrease stock when quantity increased', async () => {
       const updates = { quantity_taken: 5 } // Increased by 3
       const updatedLog = { ...existingLog, ...updates }
 
-      // Setup complex mock chain for fetching original log
-      const singleMock = vi.fn()
-      const selectMock = vi.fn()
-      const eqMock = vi.fn()
+      mocks.single
+        .mockResolvedValueOnce({ data: existingLog, error: null }) // Fetch original
+      mocks.single.mockResolvedValueOnce({ data: updatedLog, error: null }) // Update
+      mockStockDecrease.mockResolvedValue(undefined)
 
-      // First single call returns original log
-      // Second single call returns updated log
-      singleMock
-        .mockResolvedValueOnce({ data: existingLog, error: null })
-        .mockResolvedValueOnce({ data: updatedLog, error: null })
+      await logService.update('log-1', updates)
 
-      selectMock.mockReturnValue({ single: singleMock })
-      eqMock.mockReturnValue({ select: selectMock })
-      mocks.eq.mockReturnValue({
-        eq: eqMock,
-        order: mocks.order,
-        limit: mocks.limit,
-        single: singleMock,
-        delete: mocks.delete_,
-        select: selectMock
-      })
-      mocks.select.mockReturnValue({ eq: eqMock, single: singleMock })
-
-      stockService.decrease.mockResolvedValue(undefined)
-
-      const result = await logService.update('log-1', updates)
-
-      expect(stockService.decrease).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', 3)
-      expect(stockService.increase).not.toHaveBeenCalled()
+      expect(mockStockDecrease).toHaveBeenCalledWith('med-1', 3)
+      expect(mockStockIncrease).not.toHaveBeenCalled()
     })
 
     it('should increase stock when quantity decreased', async () => {
       const updates = { quantity_taken: 1 } // Decreased by 1
       const updatedLog = { ...existingLog, ...updates }
 
-      const singleMock = vi.fn()
-      const selectMock = vi.fn()
-      const eqMock = vi.fn()
+      mocks.single
+        .mockResolvedValueOnce({ data: existingLog, error: null }) // Fetch original
+      mocks.single.mockResolvedValueOnce({ data: updatedLog, error: null }) // Update
+      mockStockIncrease.mockResolvedValue(undefined)
 
-      singleMock
-        .mockResolvedValueOnce({ data: existingLog, error: null })
-        .mockResolvedValueOnce({ data: updatedLog, error: null })
+      await logService.update('log-1', updates)
 
-      selectMock.mockReturnValue({ single: singleMock })
-      eqMock.mockReturnValue({ select: selectMock })
-      mocks.eq.mockReturnValue({
-        eq: eqMock,
-        order: mocks.order,
-        limit: mocks.limit,
-        single: singleMock,
-        delete: mocks.delete_,
-        select: selectMock
-      })
-      mocks.select.mockReturnValue({ eq: eqMock, single: singleMock })
-
-      stockService.increase.mockResolvedValue(undefined)
-
-      const result = await logService.update('log-1', updates)
-
-      expect(stockService.increase).toHaveBeenCalledWith('med-1', 1, 'Ajuste de dose (ID: log-1)')
-      expect(stockService.decrease).not.toHaveBeenCalled()
+      expect(mockStockIncrease).toHaveBeenCalledWith('med-1', 1, 'Ajuste de dose (ID: log-1)')
+      expect(mockStockDecrease).not.toHaveBeenCalled()
     })
 
     it('should throw error if stock adjustment fails', async () => {
       const updates = { quantity_taken: 5 }
 
       mocks.single.mockResolvedValueOnce({ data: existingLog, error: null })
-      stockService.decrease.mockRejectedValue(new Error('Stock error'))
+      mockStockDecrease.mockRejectedValue(new Error('Stock error'))
 
       await expect(logService.update('log-1', updates)).rejects.toThrow('Não foi possível atualizar o estoque')
+    })
+
+    it('should throw error when original log not found', async () => {
+      mocks.single.mockResolvedValueOnce({ data: null, error: { message: 'Not found' } })
+
+      await expect(logService.update('log-1', { quantity_taken: 5 })).rejects.toThrow('Not found')
+    })
+
+    it('should throw error when update fails', async () => {
+      mocks.single.mockResolvedValueOnce({ data: existingLog, error: null }) // Fetch success
+      mocks.single.mockResolvedValueOnce({ data: null, error: { message: 'Update failed' } }) // Update fail
+
+      await expect(logService.update('log-1', { notes: 'Test' })).rejects.toThrow('Update failed')
     })
   })
 
@@ -343,12 +339,12 @@ describe('logService', () => {
 
     it('should restore stock before deleting log', async () => {
       mocks.single.mockResolvedValueOnce({ data: existingLog, error: null })
-      stockService.increase.mockResolvedValue(undefined)
+      mockStockIncrease.mockResolvedValue(undefined)
       mocks.eq.mockResolvedValueOnce({ error: null })
 
       await logService.delete('log-1')
 
-      expect(stockService.increase).toHaveBeenCalledWith('med-1', 2, 'Dose excluída (ID: log-1)')
+      expect(mockStockIncrease).toHaveBeenCalledWith('med-1', 2, 'Dose excluída (ID: log-1)')
       expect(mocks.from).toHaveBeenCalledWith('medicine_logs')
     })
 
@@ -360,14 +356,14 @@ describe('logService', () => {
 
     it('should throw error if stock restoration fails', async () => {
       mocks.single.mockResolvedValueOnce({ data: existingLog, error: null })
-      stockService.increase.mockRejectedValue(new Error('Stock error'))
+      mockStockIncrease.mockRejectedValue(new Error('Stock error'))
 
       await expect(logService.delete('log-1')).rejects.toThrow('Não foi possível devolver o remédio ao estoque')
     })
 
     it('should throw error if delete fails', async () => {
       mocks.single.mockResolvedValueOnce({ data: existingLog, error: null })
-      stockService.increase.mockResolvedValue(undefined)
+      mockStockIncrease.mockResolvedValue(undefined)
       mocks.eq.mockResolvedValueOnce({ error: { message: 'Delete failed' } })
 
       await expect(logService.delete('log-1')).rejects.toThrow('Delete failed')

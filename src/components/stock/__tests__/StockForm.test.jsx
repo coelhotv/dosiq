@@ -147,8 +147,8 @@ describe('StockForm', () => {
         />
       )
 
-      expect(screen.getByRole('button', { name: /Cancelar/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Adicionar Estoque/i })).toBeInTheDocument()
+      expect(screen.getByText('Cancelar')).toBeInTheDocument()
+      expect(screen.getByText('Adicionar Estoque')).toBeInTheDocument()
     })
   })
 
@@ -211,7 +211,7 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Selecione um medicamento')).toBeInTheDocument()
@@ -234,7 +234,7 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '0' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Quantidade deve ser maior que zero')).toBeInTheDocument()
@@ -256,7 +256,7 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '-5' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Quantidade deve ser maior que zero')).toBeInTheDocument()
@@ -275,7 +275,7 @@ describe('StockForm', () => {
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Quantidade deve ser maior que zero')).toBeInTheDocument()
@@ -300,7 +300,7 @@ describe('StockForm', () => {
       const priceInput = screen.getByLabelText(/Preço Unitário/i)
       fireEvent.change(priceInput, { target: { value: 'invalid' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Deve ser um número')).toBeInTheDocument()
@@ -328,7 +328,7 @@ describe('StockForm', () => {
       const expirationDateInput = screen.getByLabelText(/Data de Validade/i)
       fireEvent.change(expirationDateInput, { target: { value: '2024-01-01' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Data de validade não pode ser anterior à compra')).toBeInTheDocument()
@@ -345,7 +345,7 @@ describe('StockForm', () => {
       )
 
       // Trigger error
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Selecione um medicamento')).toBeInTheDocument()
@@ -389,7 +389,7 @@ describe('StockForm', () => {
       const expirationDateInput = screen.getByLabelText(/Data de Validade/i)
       fireEvent.change(expirationDateInput, { target: { value: '2025-01-15' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalledWith({
@@ -422,7 +422,7 @@ describe('StockForm', () => {
       const priceInput = screen.getByLabelText(/Preço Unitário/i)
       fireEvent.change(priceInput, { target: { value: '1.234' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
@@ -449,7 +449,7 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
@@ -482,7 +482,7 @@ describe('StockForm', () => {
       const expirationDateInput = screen.getByLabelText(/Data de Validade/i)
       fireEvent.change(expirationDateInput, { target: { value: '' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
@@ -513,11 +513,11 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Cancelar/i })).toBeDisabled()
-        expect(screen.getByRole('button', { name: /Salvando/i })).toBeInTheDocument()
+        expect(screen.getByText('Cancelar')).toBeDisabled()
+        expect(screen.getByText('Salvando...')).toBeInTheDocument()
       })
 
       // Resolve the promise
@@ -541,7 +541,7 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
 
       await waitFor(() => {
         expect(screen.getByText('Database error')).toBeInTheDocument()
@@ -559,9 +559,39 @@ describe('StockForm', () => {
         />
       )
 
-      fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }))
+      fireEvent.click(screen.getByText('Cancelar'))
 
       expect(mockOnCancel).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not call onCancel while submitting', async () => {
+      let resolveSave
+      mockOnSave.mockImplementation(() => new Promise(resolve => {
+        resolveSave = resolve
+      }))
+
+      render(
+        <StockForm 
+          medicines={mockMedicines}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      )
+
+      // Fill in required fields
+      const medicineSelect = screen.getByLabelText(/Medicamento/i)
+      fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
+
+      const quantityInput = screen.getByLabelText(/Quantidade/i)
+      fireEvent.change(quantityInput, { target: { value: '10' } })
+
+      fireEvent.click(screen.getByText('Adicionar Estoque'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Cancelar')).toBeDisabled()
+      })
+
+      resolveSave()
     })
   })
 
