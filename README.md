@@ -4,30 +4,46 @@
 
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
-![Version](https://img.shields.io/badge/version-2.2.1-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.3.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B3?style=for-the-badge&logo=zod&logoColor=white)
+![Coverage](https://img.shields.io/badge/coverage-110%2B%20tests-brightgreen?style=for-the-badge)
 
 ---
 
-## 🎯 Funcionalidades (V2.0.0)
+## 🎯 Funcionalidades (V2.3.0)
 
+### Core
 - ✅ **Autenticação Segura**: Login e registro via Supabase Auth (Email/Senha).
 - ✅ **Isolamento de Dados**: Sistema multi-usuário com Row-Level Security (RLS) rigoroso.
 - ✅ **Perfil de Usuário**: Gerenciamento de conta, troca de senha e vínculo de Telegram.
 - ✅ **Migração Pilot-to-Auth**: Ferramenta automática para migrar dados da fase piloto para conta autenticada.
+
+### Onda 1 - Qualidade & Performance
+- ✅ **Validação Zod Runtime**: 23 testes de validação eliminando erros silenciosos.
+- ✅ **Cache SWR**: 95% de melhoria no carregamento do dashboard (30s stale time).
+- ✅ **[Onboarding 4 Steps](./docs/QUICKSTART.md#onboarding-wizard)**: Wizard guiado para novos usuários:
+  1. **Boas-vindas** - Apresentação do app
+  2. **Medicamento** - Cadastro do primeiro remédio
+  3. **Protocolo** - Configuração da primeira rotina
+  4. **Telegram** - Integração com bot de lembretes
+- ✅ **View Otimizada de Estoque**: `medicine_stock_summary` com 5x mais performance.
+- ✅ **Persistência de Sessões Bot**: TTL 30min para sessões conversacionais do Telegram.
+
+### Gerenciamento de Tratamento
 - ✅ **Integração Telegram 2.0**: Vínculo seguro via token temporário e suporte multi-usuário no bot.
 - ✅ **Calendário Interativo**: Visualização mensal de doses tomadas com navegação e seleção de data.
 - ✅ **Histórico Completo**: Visualização detalhada integrada ao calendário com suporte a edições rápidas.
 - ✅ **Edição e Exclusão**: Flexibilidade total para ajustar registros passados com restauração automática de estoque.
 - ✅ **Registros Retroativos**: Registro de doses em qualquer data/hora com ajuste de fuso horário local.
 - ✅ **Dashboard Premium**: Interface Neo-Glass com saudações dinâmicas e indicadores em tempo real.
-- ✅ **Garantia de Qualidade**: Suíte de testes unitários com Vitest e linting rigoroso.
+- ✅ **Garantia de Qualidade**: Suíte de testes unitários com Vitest (110+ testes) e linting rigoroso.
 
 ## 🚀 Roadmap Futuro
 
@@ -39,10 +55,13 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ## 🛠️ Tecnologias
 
-- **Frontend**: React 18 + Vite
-- **Backend**: Supabase (PostgreSQL + REST API)
+- **Frontend**: React 19 + Vite (ES Modules nativo)
+- **Backend**: Supabase (PostgreSQL + REST API + Auth)
+- **Validação**: Zod 4.x (Schemas runtime com TypeScript-like inference)
+- **Cache**: SWR (Stale-While-Revalidate) customizado - 95% mais rápido
 - **Styling**: CSS Vanilla com design system customizado
 - **Deployment**: Vercel (Frontend, API Webhooks & Cron Jobs) + Supabase (Database)
+- **Testes**: Vitest + React Testing Library (110+ testes)
 - **Custo**: R$ 0 (tier gratuito)
 
 ---
@@ -98,11 +117,29 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ## 📚 Documentação
 
+### 🚀 Para Começar
 - **[SETUP.md](./SETUP.md)**: Guia completo de configuração do Supabase, GitHub e Vercel
-- **[docs/GUIA_TITULACAO.md](./docs/GUIA_TITULACAO.md)**: Tutorial prático de como cadastrar protocolos em titulação.
-- **[docs/TRANSICAO_AUTOMATICA.md](./docs/TRANSICAO_AUTOMATICA.md)**: Explicação técnica do sistema de transição automática.
-- **[docs/database-schema.md](./docs/database-schema.md)**: Esquema do banco de dados (em breve)
-- **[docs/user-guide.md](./docs/user-guide.md)**: Guia do usuário em português (em breve)
+- **[docs/QUICKSTART.md](./docs/QUICKSTART.md)**: Início rápido para desenvolvedores (inclui onboarding)
+
+### 🏗️ Arquitetura & Design
+- **[docs/ARQUITETURA.md](./docs/ARQUITETURA.md)**: Visão geral da arquitetura do projeto
+- **[docs/PADROES_CODIGO.md](./docs/PADROES_CODIGO.md)**: Padrões e convenções de código
+- **[docs/DECISOES_TECNICAS.md](./docs/DECISOES_TECNICAS.md)**: Decisões técnicas da Onda 1 (Zod, SWR, React 19)
+
+### 💻 Referência Técnica
+- **[docs/API_SERVICES.md](./docs/API_SERVICES.md)**: APIs internas dos services (com exemplos)
+- **[docs/HOOKS.md](./docs/HOOKS.md)**: Hooks customizados documentados
+- **[docs/SCHEMAS_VALIDACAO.md](./docs/SCHEMAS_VALIDACAO.md)**: Documentação dos schemas Zod (23 testes)
+- **[docs/database-schema.md](./docs/database-schema.md)**: Esquema completo do banco de dados
+
+### 📊 Performance & Benchmarks
+- **[docs/BENCHMARK_CACHE_SWR.md](./docs/BENCHMARK_CACHE_SWR.md)**: Performance do cache SWR (95% melhoria)
+- **[docs/BENCHMARK_STOCK_VIEW.md](./docs/BENCHMARK_STOCK_VIEW.md)**: Otimização de consultas de estoque
+
+### 🎯 Funcionalidades Específicas
+- **[docs/GUIA_TITULACAO.md](./docs/GUIA_TITULACAO.md)**: Tutorial prático de protocolos em titulação
+- **[docs/TRANSICAO_AUTOMATICA.md](./docs/TRANSICAO_AUTOMATICA.md)**: Sistema de transição automática de doses
+- **[docs/user-guide.md](./docs/user-guide.md)**: Guia do usuário em português
 
 ---
 
@@ -116,22 +153,51 @@ meu-remedio/
 │   │   ├── medicine/        # Componentes de medicamentos
 │   │   ├── protocol/        # Componentes de protocolos
 │   │   ├── stock/           # Componentes de estoque
-│   │   └── log/             # Componentes de registro
+│   │   ├── log/             # Componentes de registro
+│   │   └── onboarding/      # Wizard de onboarding (4 steps) 🆕
+│   ├── hooks/
+│   │   └── useCachedQuery.js # Hook SWR para cache de queries 🆕
 │   ├── lib/
-│   │   └── supabase.js      # Cliente Supabase
+│   │   ├── supabase.js      # Cliente Supabase
+│   │   └── queryCache.js    # Implementação SWR (Stale-While-Revalidate) 🆕
+│   ├── schemas/             # Validação Zod 🆕
+│   │   ├── index.js         # Exportações dos schemas
+│   │   ├── medicineSchema.js
+│   │   ├── protocolSchema.js
+│   │   ├── stockSchema.js
+│   │   ├── logSchema.js
+│   │   └── validationHelper.js
 │   ├── services/
-│   │   └── api.js           # Serviços de API (CRUD)
+│   │   ├── api/             # Serviços da API com validação Zod 🆕
+│   │   │   ├── cachedServices.js  # Wrappers com cache SWR
+│   │   │   ├── medicineService.js
+│   │   │   ├── protocolService.js
+│   │   │   ├── stockService.js
+│   │   │   ├── logService.js
+│   │   │   └── treatmentPlanService.js
+│   │   └── api.js           # Exportações principais
 │   ├── styles/
 │   │   ├── tokens.css       # Design tokens (cores, espaçamentos)
 │   │   └── index.css        # Estilos globais
 │   ├── views/               # Páginas principais
 │   ├── App.jsx              # Componente principal
 │   └── main.jsx             # Entry point
-├── docs/                    # Documentação
+├── docs/                    # Documentação técnica expandida 📚
+│   ├── ARQUITETURA.md       # Visão arquitetural
+│   ├── PADROES_CODIGO.md    # Convenções de código
+│   ├── API_SERVICES.md      # APIs dos services
+│   ├── DECISOES_TECNICAS.md # Decisões técnicas
+│   └── HOOKS.md             # Hooks customizados
+├── server/                  # Bot do Telegram (Node.js)
+│   └── bot/
+├── api/                     # API Serverless (Vercel)
+├── .migrations/             # Migrações SQL
 ├── .env.example             # Template de variáveis de ambiente
 ├── SETUP.md                 # Guia de configuração
 └── README.md                # Este arquivo
 ```
+
+> 🆕 = Novidades da Onda 1 (Qualidade & Performance)
 
 ---
 
@@ -194,7 +260,7 @@ MIT License - veja [LICENSE](LICENSE) para detalhes
 
 ## 👨‍💻 Desenvolvedor
 
-Desenvolvido com ❤️ usando Google Antigravity
+Desenvolvido com ❤️ usando Google Antigravity, Kilo Code e Roo Code.
 
 ---
 

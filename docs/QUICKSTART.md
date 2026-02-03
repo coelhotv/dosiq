@@ -13,13 +13,32 @@
 - ✅ Glass-morphism effects e animações suaves
 - ✅ Responsivo mobile-first
 
-### 3. Features Ativas (V1.1.0)
-- ✅ **Testes Unitários**: Suíte Vitest garantindo integridade dos cálculos.
-- ✅ **Planos de Tratamento**: Agrupamento de medicamentos complexos.
-- ✅ **Titulação de Dose**: Controle de Dose Alvo e Status.
-- ✅ **Ações em Lote**: Botão "Tomar Todas" para planos.
-- ✅ **Estoque Inteligente**: Cálculo de custo médio ponderado.
-- ✅ **Notificações Telegram**: Lembretes 24/7 via Vercel Cron + Webhooks (Beta).
+### 3. Features Ativas (V2.2.1)
+
+#### Core
+- ✅ **Autenticação Multi-usuário**: Login via Supabase Auth com isolamento por RLS
+- ✅ **Migração Pilot-to-Auth**: Ferramenta automática para migrar dados piloto
+
+#### Onda 1 - Qualidade & Performance 🆕
+- ✅ **Validação Zod Runtime**: 23 testes de validação eliminando erros silenciosos
+- ✅ **Cache SWR**: 95% de melhoria no carregamento do dashboard
+- ✅ **Onboarding Wizard**: 4 steps guiados para novos usuários
+- ✅ **React 19**: Última versão com compiler otimizado
+- ✅ **View Materializada**: `medicine_stock_summary` com 5x performance
+
+#### Gerenciamento de Tratamento
+- ✅ **Planos de Tratamento**: Agrupamento de medicamentos complexos
+- ✅ **Titulação de Dose**: Controle de Dose Alvo e Status
+- ✅ **Ações em Lote**: Botão "Tomar Todas" para planos
+- ✅ **Calendário Interativo**: Visualização mensal de doses
+
+#### Integrações
+- ✅ **Notificações Telegram 2.0**: Vínculo seguro via token + suporte multi-usuário
+- ✅ **Bot Inteligente**: Persistência de sessões (TTL 30min)
+
+#### Garantia de Qualidade
+- ✅ **110+ Testes Unitários**: Vitest + React Testing Library
+- ✅ **Linting Rigoroso**: ESLint com regras React Hooks
 
 ---
 
@@ -103,17 +122,34 @@ CREATE TABLE medicine_logs (
   user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001'
 );
 
--- 6. Configurações de Usuário (Telegram)
+-- 6. Configurações de Usuário (Telegram + Onboarding)
 CREATE TABLE user_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001' UNIQUE,
+  user_id UUID NOT NULL DEFAULT '00000000-00000000-0000-000000000001' UNIQUE,
   telegram_chat_id TEXT,
+  onboarding_completed BOOLEAN DEFAULT FALSE,  -- 🆕 Controle do wizard
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Insere configuração padrão
 INSERT INTO user_settings (user_id) VALUES ('00000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
+
+-- 7. View Materializada de Estoque (Otimização 🆕)
+CREATE MATERIALIZED VIEW medicine_stock_summary AS
+SELECT 
+  medicine_id,
+  COALESCE(SUM(quantity), 0) as total_quantity,
+  COALESCE(AVG(unit_price), 0) as avg_unit_price,
+  COALESCE(SUM(quantity * unit_price), 0) as total_value,
+  MIN(expiration_date) as next_expiration,
+  COUNT(*) as stock_entries
+FROM stock
+WHERE quantity > 0
+GROUP BY medicine_id;
+
+-- Índice para a view
+CREATE INDEX idx_medicine_stock_summary_id ON medicine_stock_summary(medicine_id);
 
 -- Índices
 CREATE INDEX idx_protocols_medicine ON protocols(medicine_id);
@@ -207,6 +243,77 @@ CREATE INDEX idx_logs_taken_at ON medicine_logs(taken_at DESC);
 
 ---
 
+## 🧙‍♂️ Onboarding Wizard
+
+O app inclui um **wizard de onboarding** em 4 passos para novos usuários. Ele é exibido automaticamente após o primeiro login.
+
+### Fluxo do Onboarding
+
+```
+Novo Usuário
+    ↓
+Cadastro/Login
+    ↓
+Verifica user_settings.onboarding_completed
+    ↓
+FALSE → Abre OnboardingWizard
+    ↓
+Step 1: Boas-vindas
+    - Apresentação do app
+    - Benefícios principais
+    ↓
+Step 2: Primeiro Medicamento
+    - Formulário simplificado
+    - Cadastro rápido do primeiro remédio
+    ↓
+Step 3: Primeiro Protocolo
+    - Configuração da rotina
+    - Frequência e horários
+    ↓
+Step 4: Integração Telegram (Opcional)
+    - Vínculo com o bot
+    - Lembretes automáticos
+    ↓
+Salva onboarding_completed = true
+    ↓
+Dashboard principal
+```
+
+### Componentes do Onboarding
+
+```
+src/components/onboarding/
+├── index.js                    # Exportações
+├── OnboardingProvider.jsx      # Context e lógica
+├── OnboardingWizard.jsx        # UI container
+├── WelcomeStep.jsx             # Step 1
+├── FirstMedicineStep.jsx       # Step 2
+├── FirstProtocolStep.jsx       # Step 3
+└── TelegramIntegrationStep.jsx # Step 4
+```
+
+### Pular o Onboarding
+
+O usuário pode pular o onboarding a qualquer momento. Os dados já cadastrados são preservados.
+
+Para **reiniciar o onboarding** (debug):
+```javascript
+// No console do navegador
+await supabase
+  .from('user_settings')
+  .update({ onboarding_completed: false })
+  .eq('user_id', 'seu-user-id')
+```
+
+### Customização
+
+O onboarding pode ser customizado editando:
+- [`OnboardingWizard.css`](../src/components/onboarding/OnboardingWizard.css) - Estilos
+- Steps individuais - Conteúdo de cada etapa
+- [`OnboardingProvider.jsx`](../src/components/onboarding/OnboardingProvider.jsx) - Lógica
+
+---
+
 ## 🎯 Comandos Úteis
 
 ```bash
@@ -228,6 +335,12 @@ npm run build
 
 # Executar testes unitários
 npm test
+
+# Executar lint
+npm run lint
+
+# Iniciar bot do Telegram (em outro terminal)
+npm run bot
 ```
 
 ---
