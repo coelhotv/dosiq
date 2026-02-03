@@ -1,8 +1,14 @@
 import { supabase, getUserId } from '../../lib/supabase'
 import { stockService } from './stockService'
+import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '../../schemas/logSchema'
 
 /**
  * Log Service - Medicine intake logging
+ *
+ * VALIDAÇÃO ZOD:
+ * - Todos os dados de entrada são validados antes de enviar ao Supabase
+ * - Erros de validação retornam mensagens em português
+ * - Nenhum payload inválido é enviado ao backend
  */
 export const logService = {
   /**
@@ -47,12 +53,24 @@ export const logService = {
   /**
    * Log medicine taken
    * This also decrements the stock automatically
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async create(log) {
+    // Validação Zod
+    const validation = validateLogCreate(log)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
+    const validatedLog = validation.data
+
     // First, create the log entry
     const { data, error } = await supabase
       .from('medicine_logs')
-      .insert([{ ...log, user_id: await getUserId() }])
+      .insert([{ ...validatedLog, user_id: await getUserId() }])
       .select(`
         *,
         protocol:protocols(*),
@@ -64,7 +82,7 @@ export const logService = {
     
     // Then, decrease stock
     try {
-      await stockService.decrease(log.medicine_id, log.quantity_taken)
+      await stockService.decrease(validatedLog.medicine_id, validatedLog.quantity_taken)
     } catch (stockError) {
       // If stock decrease fails, we should ideally rollback the log
       // For now, we'll just throw the error
@@ -77,11 +95,25 @@ export const logService = {
 
   /**
    * Create multiple log entries at once
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async createBulk(logs) {
+    // Validação Zod em lote
+    const validation = validateLogBulkArray(logs)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e =>
+        e.index >= 0 ? `[${e.index + 1}] ${e.field}: ${e.message}` : `${e.field}: ${e.message}`
+      ).join('; ')
+      throw new Error(`Erro de validação em lote: ${errorMessages}`)
+    }
+
+    const validatedLogs = validation.data
+
     // 1. Create all logs
     const userId = await getUserId()
-    const logsWithUser = logs.map(log => ({ ...log, user_id: userId }))
+    const logsWithUser = validatedLogs.map(log => ({ ...log, user_id: userId }))
     const { data, error } = await supabase
       .from('medicine_logs')
       .insert(logsWithUser)
@@ -95,7 +127,7 @@ export const logService = {
     
     // 2. Decrease stock for each
     const errors = []
-    for (const log of logs) {
+    for (const log of validatedLogs) {
       try {
         await stockService.decrease(log.medicine_id, log.quantity_taken)
       } catch (stockError) {
@@ -114,8 +146,20 @@ export const logService = {
 
   /**
    * Update a log entry and adjust stock
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async update(id, updates) {
+    // Validação Zod (parcial, pois é update)
+    const validation = validateLogUpdate(updates)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
+    const validatedUpdates = validation.data
+
     // 1. Get original log to calculate stock delta
     const { data: oldLog, error: fetchError } = await supabase
       .from('medicine_logs')
