@@ -1,7 +1,24 @@
 import { supabase, getUserId } from '../../lib/supabase'
+import { 
+  validateStockCreate, 
+  validateStockUpdate, 
+  validateStockDecrease, 
+  validateStockIncrease 
+} from '../../schemas/stockSchema'
 
 /**
  * Stock Service - Manage medicine stock
+ *
+ * PERFORMANCE OPTIMIZATION (v1.6):
+ * - Uses medicine_stock_summary view for aggregated queries
+ * - Optimized getTotalQuantity with single row lookup
+ * - Added getStockSummary for complete stock metrics
+ * - Added getLowStockMedicines for proactive alerts
+ *
+ * VALIDAÇÃO ZOD:
+ * - Todos os dados de entrada são validados antes de enviar ao Supabase
+ * - Erros de validação retornam mensagens em português
+ * - Nenhum payload inválido é enviado ao backend
  */
 export const stockService = {
   /**
@@ -21,8 +38,23 @@ export const stockService = {
 
   /**
    * Get total quantity for a medicine
+   * OPTIMIZED: Uses medicine_stock_summary view for better performance
+   * Falls back to manual calculation if view returns no data
    */
   async getTotalQuantity(medicineId) {
+    // Try optimized view first
+    const { data: summaryData, error: summaryError } = await supabase
+      .from('medicine_stock_summary')
+      .select('total_quantity')
+      .eq('medicine_id', medicineId)
+      .eq('user_id', await getUserId())
+      .maybeSingle()
+    
+    if (!summaryError && summaryData) {
+      return summaryData.total_quantity
+    }
+    
+    // Fallback to manual calculation (backward compatibility)
     const { data, error } = await supabase
       .from('stock')
       .select('quantity')
@@ -35,24 +67,91 @@ export const stockService = {
   },
 
   /**
+   * Get complete stock summary for a medicine
+   * Uses medicine_stock_summary view for optimal performance
+   *
+   * @param {string} medicineId - The medicine ID
+   * @returns {Promise<Object>} Stock summary with total_quantity, stock_entries_count, dates
+   */
+  async getStockSummary(medicineId) {
+    const { data, error } = await supabase
+      .from('medicine_stock_summary')
+      .select('*')
+      .eq('medicine_id', medicineId)
+      .eq('user_id', await getUserId())
+      .maybeSingle()
+    
+    if (error) throw error
+    
+    // Return default summary if no data found
+    if (!data) {
+      return {
+        medicine_id: medicineId,
+        user_id: await getUserId(),
+        total_quantity: 0,
+        stock_entries_count: 0,
+        oldest_entry_date: null,
+        newest_entry_date: null
+      }
+    }
+    
+    return data
+  },
+
+  /**
+   * Get all medicines with low stock for alerts
+   * Uses optimized view with threshold filter
+   *
+   * @param {number} threshold - Quantity threshold (default: 10)
+   * @returns {Promise<Array>} List of medicines below threshold
+   */
+  async getLowStockMedicines(threshold = 10) {
+    const userId = await getUserId()
+    
+    // Use the database function for efficient filtering
+    const { data, error } = await supabase
+      .rpc('get_low_stock_medicines', {
+        p_user_id: userId,
+        p_threshold: threshold
+      })
+    
+    if (error) {
+      // Fallback: query the view directly if RPC fails
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('medicine_stock_summary')
+        .select('*')
+        .eq('user_id', userId)
+        .lte('total_quantity', threshold)
+        .order('total_quantity', { ascending: true })
+      
+      if (fallbackError) throw fallbackError
+      return fallbackData || []
+    }
+    
+    return data || []
+  },
+
+  /**
    * Add stock
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async add(stock) {
-    // Validate required fields
-    if (!stock.medicine_id) {
-      throw new Error('ID do medicamento é obrigatório')
-    }
-    if (stock.quantity === undefined || stock.quantity === null || stock.quantity <= 0) {
-      throw new Error('Quantidade deve ser maior que zero')
+    // Validação Zod (substitui validações manuais anteriores)
+    const validation = validateStockCreate(stock)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
     try {
       const { data, error } = await supabase
         .from('stock')
-        .insert([{ ...stock, user_id: await getUserId() }])
+        .insert([{ ...validation.data, user_id: await getUserId() }])
         .select()
         .single()
-      
+
       if (error) {
         // Parse Supabase error for better messaging
         const errorMsg = error.message || error.details || 'Erro desconhecido ao adicionar estoque'
@@ -68,8 +167,18 @@ export const stockService = {
   /**
    * Decrease stock (when medicine is taken)
    * This finds the oldest stock entry and decrements it
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de processar
+   * @throws {Error} Se os dados forem inválidos
    */
   async decrease(medicineId, quantity) {
+    // Validação Zod
+    const validation = validateStockDecrease({ medicine_id: medicineId, quantity })
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
     // Get oldest stock entries first
     const { data: stockEntries, error: fetchError } = await supabase
       .from('stock')
@@ -107,8 +216,18 @@ export const stockService = {
   /**
    * Increase stock (when a log is deleted or quantity decreased)
    * It creates a special "adjustment" entry to maintain history integrity
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de processar
+   * @throws {Error} Se os dados forem inválidos
    */
   async increase(medicineId, quantity, reason = 'Estorno de dose') {
+    // Validação Zod
+    const validation = validateStockIncrease({ medicine_id: medicineId, quantity, reason })
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
     const { data, error } = await supabase
       .from('stock')
       .insert([{ 
