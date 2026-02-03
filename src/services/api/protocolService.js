@@ -1,7 +1,13 @@
 import { supabase, getUserId } from '../../lib/supabase'
+import { validateProtocolCreate, validateProtocolUpdate } from '../../schemas/protocolSchema'
 
 /**
  * Protocol Service - CRUD operations for protocols
+ *
+ * VALIDAÇÃO ZOD:
+ * - Todos os dados de entrada são validados antes de enviar ao Supabase
+ * - Erros de validação retornam mensagens em português
+ * - Nenhum payload inválido é enviado ao backend
  */
 export const protocolService = {
   /**
@@ -59,17 +65,29 @@ export const protocolService = {
 
   /**
    * Create a new protocol
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async create(protocol) {
+    // Validação Zod
+    const validation = validateProtocolCreate(protocol)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
+    const validatedProtocol = validation.data
+
     const { data, error } = await supabase
       .from('protocols')
-      .insert([{ 
-        ...protocol, 
+      .insert([{
+        ...validatedProtocol,
         user_id: await getUserId(),
         // Ensure defaults for titration
-        titration_schedule: protocol.titration_schedule || [],
-        current_stage_index: protocol.current_stage_index || 0,
-        stage_started_at: protocol.titration_schedule?.length > 0 ? new Date().toISOString() : null
+        titration_schedule: validatedProtocol.titration_schedule || [],
+        current_stage_index: validatedProtocol.current_stage_index || 0,
+        stage_started_at: validatedProtocol.titration_schedule?.length > 0 ? new Date().toISOString() : null
       }])
       .select(`
         *,
@@ -77,18 +95,28 @@ export const protocolService = {
         treatment_plan:treatment_plans(*)
       `)
       .single()
-    
+
     if (error) throw error
     return data
   },
 
   /**
    * Update an existing protocol
+   *
+   * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
+   * @throws {Error} Se os dados forem inválidos
    */
   async update(id, updates) {
+    // Validação Zod
+    const validation = validateProtocolUpdate(updates)
+    if (!validation.success) {
+      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      throw new Error(`Erro de validação: ${errorMessages}`)
+    }
+
     const { data, error } = await supabase
       .from('protocols')
-      .update(updates)
+      .update(validation.data)
       .eq('id', id)
       .eq('user_id', await getUserId())
       .select(`
@@ -97,7 +125,7 @@ export const protocolService = {
         treatment_plan:treatment_plans(*)
       `)
       .single()
-    
+
     if (error) throw error
     return data
   },

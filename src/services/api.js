@@ -17,3 +17,13 @@ export { treatmentPlanService } from './api/treatmentPlanService'
 export { stockService } from './api/stockService'
 export { logService } from './api/logService'
 export { migrationService } from './api/migrationService'
+
+// Re-export cached services para compatibilidade
+export {
+  cachedMedicineService,
+  cachedProtocolService,
+  cachedStockService,
+  cachedLogService,
+  cachedTreatmentPlanService,
+  CACHE_KEYS
+} from './api/cachedServices'
