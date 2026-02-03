@@ -47,9 +47,9 @@ flowchart TB
 
 ---
 
-## Part 1: Critical Bug Fixes
+## Part 1: Critical Bug Fixes [COMPLETED]
 
-### Bug 1: Telegram Bot Fast Dose Action Not Saving
+### Bug 1: Telegram Bot Fast Dose Action Not Saving [DONE]
 
 **Location**: [`server/bot/callbacks/doseActions.js`](server/bot/callbacks/doseActions.js:1)
 
@@ -114,7 +114,7 @@ async function handleTakeDose(bot, callbackQuery) {
 
 ---
 
-### Bug 2: History Month Navigation Not Working
+### Bug 2: History Month Navigation Not Working [DONE]
 
 **Location**: [`src/services/api.js`](src/services/api.js:763) and [`src/components/ui/CalendarWithMonthCache.jsx`](src/components/ui/CalendarWithMonthCache.jsx:1)
 
@@ -187,9 +187,9 @@ const hasLog = markedDates.some(dateStr => {
 
 ---
 
-## Part 2: Architecture Improvements
+## Part 2: Architecture Improvements [PARTIAL]
 
-### 2.1 Bot Multi-User Architecture Refactor
+### 2.1 Bot Multi-User Architecture Refactor [DONE]
 
 **Current State**: Inconsistent user lookup across bot commands. Some use `MOCK_USER_ID`, some use `telegram_user_id` field that does not exist.
 
@@ -245,7 +245,7 @@ export function withUser(handler) {
 
 ---
 
-### 2.2 Frontend State Management Enhancement
+### 2.2 Frontend State Management Enhancement [PENDING]
 
 **Current State**: State managed via `useState` in `App.jsx`, navigation via switch statement.
 
@@ -279,7 +279,7 @@ function useHashRouter() {
 
 ---
 
-### 2.3 Caching Strategy for Protocol Data
+### 2.3 Caching Strategy for Protocol Data [PENDING]
 
 **Current State**: Dashboard makes 5+ parallel API calls on every load.
 
@@ -314,7 +314,7 @@ export async function cachedQuery(key, fetcher) {
 
 ---
 
-### 2.4 Database Schema Optimization
+### 2.4 Database Schema Optimization [PENDING]
 
 **Current State**: Stock quantity requires aggregation query every time.
 
@@ -342,9 +342,9 @@ USING (auth.uid() = user_id);
 
 ---
 
-## Part 3: UX and Feature Enhancements
+## Part 3: UX and Feature Enhancements [PARTIAL]
 
-### 3.1 Improved History View Experience
+### 3.1 Improved History View Experience [DONE]
 
 **Current Pain Points**:
 
@@ -396,7 +396,7 @@ const handleTouchEnd = (e) => {
 
 ---
 
-### 3.2 Dashboard Engagement Improvements
+### 3.2 Dashboard Engagement Improvements [PENDING]
 
 **Current State**: Dashboard shows good data but lacks actionable insights.
 
@@ -442,7 +442,7 @@ const handleTouchEnd = (e) => {
 
 ---
 
-### 3.3 Telegram Bot Experience Enhancement
+### 3.3 Telegram Bot Experience Enhancement [PARTIAL]
 
 **Current Gaps**:
 
@@ -452,7 +452,7 @@ const handleTouchEnd = (e) => {
 
 **Enhancements**:
 
-1. **Post-registration quick actions**
+1. **Post-registration quick actions** [done]
 
 ```javascript
 // After dose registration success
@@ -469,7 +469,7 @@ await bot.sendMessage(chatId, confirmMsg, {
 });
 ```
 
-2. **Skip dose confirmation**
+2. **Skip dose confirmation** [pending]
 
 ```javascript
 async function handleSkipDose(bot, callbackQuery) {
@@ -490,7 +490,7 @@ async function handleSkipDose(bot, callbackQuery) {
 }
 ```
 
-3. **Rich notification messages**
+3. **Rich notification messages** [pending]
 
 ```javascript
 // Include medicine info and instructions
@@ -507,7 +507,7 @@ Lembrete: Tome com agua em jejum.`;
 
 ---
 
-### 3.4 Offline Support and PWA Enhancement
+### 3.4 Offline Support and PWA Enhancement [PENDING]
 
 **Current State**: App requires internet, no offline functionality.
 
@@ -542,9 +542,9 @@ export default defineConfig({
 
 ---
 
-## Part 4: Code Refactoring Plan
+## Part 4: Code Refactoring Plan [PARTIAL]
 
-### 4.1 API Service Modularization
+### 4.1 API Service Modularization [DONE]
 
 **Current State**: Single 798-line [`api.js`](src/services/api.js) file.
 
@@ -567,7 +567,7 @@ src/services/
 
 ---
 
-### 4.2 Bot Command Handler Standardization
+### 4.2 Bot Command Handler Standardization [PENDING]
 
 **Current State**: Inconsistent patterns across command handlers.
 
@@ -608,7 +608,7 @@ export const handleStatus = createCommand('status', async (bot, msg, { userId })
 
 ---
 
-### 4.3 Component Organization
+### 4.3 Component Organization [PENDING]
 
 **Current State**: All components in flat structure by type.
 
@@ -638,7 +638,7 @@ src/components/
 
 ---
 
-### 4.4 Test Coverage Expansion
+### 4.4 Test Coverage Expansion [PENDING]
 
 **Current State**: Limited tests for `Button`, `LogForm`, `ProtocolForm`, and `api.js`.
 
@@ -678,7 +678,7 @@ describe('stockService.decrease', () => {
 
 ---
 
-## Part 5: Implementation Roadmap
+## Implementation Roadmap
 
 ### Phase 1: Critical Bug Fixes
 
