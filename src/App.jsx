@@ -12,6 +12,7 @@ import TestConnection from './components/TestConnection'
 import BottomNav from './components/BottomNav'
 import Loading from './components/ui/Loading'
 import Landing from './views/Landing'
+import { OnboardingProvider, OnboardingWizard } from './components/onboarding'  
 
 function App() {
   const [session, setSession] = useState(null)
@@ -117,34 +118,39 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
-        {renderCurrentView()}
+    <OnboardingProvider>
+      <div className="app-container">
+        <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
+          {renderCurrentView()}
 
-        <footer style={{
-          textAlign: 'center',
-          marginTop: 'var(--space-8)',
-          paddingBottom: 'var(--space-8)',
-          color: 'var(--text-tertiary)',
-          fontSize: 'var(--font-size-sm)'
-        }}>
-{/*           <span 
-            onClick={() => setShowDebug(!showDebug)} 
-            style={{ 
-              cursor: 'pointer', 
-              opacity: 0.1, 
-              fontSize: '10px',
-              display: 'block',
-              margin: '4px 0'
-            }}
-          >
-            {showDebug ? '[-] hide debug' : '[+] check system'}
-          </span>
- */}        </footer>
-      </main>
+          <footer style={{
+            textAlign: 'center',
+            marginTop: 'var(--space-8)',
+            paddingBottom: 'var(--space-8)',
+            color: 'var(--text-tertiary)',
+            fontSize: 'var(--font-size-sm)'
+          }}>
+  {/*           <span 
+              onClick={() => setShowDebug(!showDebug)} 
+              style={{ 
+                cursor: 'pointer', 
+                opacity: 0.1, 
+                fontSize: '10px',
+                display: 'block',
+                margin: '4px 0'
+              }}
+            >
+              {showDebug ? '[-] hide debug' : '[+] check system'}
+            </span>
+    */}        </footer>
+        </main>
 
-      {isAuthenticated && <BottomNav currentView={currentView} setCurrentView={setCurrentView} />}
-    </div>
+        {isAuthenticated && <BottomNav currentView={currentView} setCurrentView={setCurrentView} />}
+        
+        {/* Onboarding Wizard - apenas para usuários autenticados */}
+        {isAuthenticated && <OnboardingWizard />}
+      </div>
+    </OnboardingProvider>
   )
 }
 
