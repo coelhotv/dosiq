@@ -1,5 +1,6 @@
 import Card from '../ui/Card'
 import Button from '../ui/Button'
+import StreakBadge from '../adherence/StreakBadge'
 import './ProtocolCard.css'
 
 export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelete }) {
@@ -13,12 +14,17 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
         <div>
           <h4 className="protocol-name">{protocol.name}</h4>
           <span className="protocol-medicine">
-            {protocol.medicine?.name} 
+            {protocol.medicine?.name}
             {protocol.medicine?.dosage_per_pill ? ` (${protocol.medicine.dosage_per_pill}${protocol.medicine.dosage_unit || 'mg'})` : ''}
           </span>
         </div>
-        <div className={`protocol-status ${protocol.active ? 'active' : 'inactive'}`}>
-          {protocol.active ? '✅ Ativo' : '⏸️ Pausado'}
+        <div className="protocol-header-badges">
+          {protocol.streak > 0 && (
+            <StreakBadge streak={protocol.streak} size="sm" showLabel={false} />
+          )}
+          <div className={`protocol-status ${protocol.active ? 'active' : 'inactive'}`}>
+            {protocol.active ? '✅ Ativo' : '⏸️ Pausado'}
+          </div>
         </div>
       </div>
 
