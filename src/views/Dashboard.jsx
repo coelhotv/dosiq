@@ -19,7 +19,12 @@ import './Dashboard.css'
 
 import CalendarWithMonthCache from '../components/ui/CalendarWithMonthCache'
 import ProtocolChecklistItem from '../components/protocol/ProtocolChecklistItem'
-import AdherenceWidget from '../components/adherence/AdherenceWidget'
+
+
+
+
+import DashboardWidgets from '../components/dashboard/DashboardWidgets'
+
 
 import { getCurrentUser } from '../lib/supabase'
 
@@ -290,8 +295,20 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
+
       {/* Adherence Score Widget */}
       <AdherenceWidget defaultPeriod="30d" />
+
+
+      {/* Dashboard Widgets - Quick Actions, Adherence, Stock Alerts */}
+      <DashboardWidgets
+        protocols={activeProtocols}
+        stockSummary={stockSummary}
+        logs={currentMonthLogs}
+        onNavigate={onNavigate}
+        onOpenLogModal={() => setIsModalOpen(true)}
+      />
+
 
       {/* Titration Protocol Card - Only if active */}
       {activeTitration && (
