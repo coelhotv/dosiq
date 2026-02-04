@@ -432,6 +432,6 @@ Em discussão para próximas ondas:
 
 ## 📚 Referências
 
-- [ARQUITETURA.md](./ARQUITETURA.md) - Visão geral
+- [ARQUITETURA.md](../ARQUITETURA.md) - Visão geral
 - [BENCHMARK_CACHE_SWR.md](./BENCHMARK_CACHE_SWR.md) - Detalhes do cache
 - [SCHEMAS_VALIDACAO.md](./SCHEMAS_VALIDACAO.md) - Validação Zod

@@ -6,7 +6,7 @@
 
 ## 📋 Visão Geral
 
-Este documento descreve a estrutura Git criada para a Onda 1 do projeto Meus Remédios, seguindo as diretrizes do [COMMIT_STRATEGY.md](COMMIT_STRATEGY.md) e [pull_request_template.md](.github/pull_request_template.md).
+Este documento descreve a estrutura Git criada para a Onda 1 do projeto Meus Remédios, seguindo as diretrizes do [COMMIT_STRATEGY.md](../COMMIT_STRATEGY.md).
 
 ---
 

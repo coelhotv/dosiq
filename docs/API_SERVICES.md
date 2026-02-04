@@ -781,5 +781,5 @@ try {
 ## 📚 Veja Também
 
 - [ARQUITETURA.md](./ARQUITETURA.md) - Visão geral da arquitetura
-- [SCHEMAS_VALIDACAO.md](./SCHEMAS_VALIDACAO.md) - Documentação completa dos schemas Zod
+- [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Documentação completa dos schemas Zod
 - [HOOKS.md](./HOOKS.md) - Hooks customizados

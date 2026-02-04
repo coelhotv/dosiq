@@ -271,6 +271,6 @@ Cobertura: 110+ testes
 Veja também:
 - [PADROES_CODIGO.md](./PADROES_CODIGO.md) - Convenções detalhadas
 - [API_SERVICES.md](./API_SERVICES.md) - Documentação das APIs
-- [DECISOES_TECNICAS.md](./DECISOES_TECNICAS.md) - Por que escolhemos cada tech
+- [DECISOES_TECNICAS.md](./past_deliveries/DECISOES_TECNICAS.md) - Por que escolhemos cada tech
 - [HOOKS.md](./HOOKS.md) - Hooks customizados
-- [SCHEMAS_VALIDACAO.md](./SCHEMAS_VALIDACAO.md) - Validação Zod
+- [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Validação Zod

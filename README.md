@@ -89,7 +89,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
     ```
 
 3.  **Configure o Supabase**:
-    - Siga o guia completo em [SETUP.md](./SETUP.md)
+    - Siga o guia completo em [SETUP.md](./docs/SETUP.md)
     - Crie um projeto no Supabase
     - Execute o SQL para criar as tabelas
     - Copie as credenciais
@@ -118,23 +118,23 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 ## 📚 Documentação
 
 ### 🚀 Para Começar
-- **[SETUP.md](./SETUP.md)**: Guia completo de configuração do Supabase, GitHub e Vercel
+- **[SETUP.md](./docs/SETUP.md)**: Guia completo de configuração do Supabase, GitHub e Vercel
 - **[docs/QUICKSTART.md](./docs/QUICKSTART.md)**: Início rápido para desenvolvedores (inclui onboarding)
 
 ### 🏗️ Arquitetura & Design
 - **[docs/ARQUITETURA.md](./docs/ARQUITETURA.md)**: Visão geral da arquitetura do projeto
 - **[docs/PADROES_CODIGO.md](./docs/PADROES_CODIGO.md)**: Padrões e convenções de código
-- **[docs/DECISOES_TECNICAS.md](./docs/DECISOES_TECNICAS.md)**: Decisões técnicas da Onda 1 (Zod, SWR, React 19)
+- **[docs/past_deliveries/DECISOES_TECNICAS.md](./docs/past_deliveries/DECISOES_TECNICAS.md)**: Decisões técnicas da Onda 1 (Zod, SWR, React 19)
 
 ### 💻 Referência Técnica
 - **[docs/API_SERVICES.md](./docs/API_SERVICES.md)**: APIs internas dos services (com exemplos)
 - **[docs/HOOKS.md](./docs/HOOKS.md)**: Hooks customizados documentados
-- **[docs/SCHEMAS_VALIDACAO.md](./docs/SCHEMAS_VALIDACAO.md)**: Documentação dos schemas Zod (23 testes)
+- **[docs/past_deliveries/SCHEMAS_VALIDACAO.md](./docs/past_deliveries/SCHEMAS_VALIDACAO.md)**: Documentação dos schemas Zod (23 testes)
 - **[docs/database-schema.md](./docs/database-schema.md)**: Esquema completo do banco de dados
 
 ### 📊 Performance & Benchmarks
-- **[docs/BENCHMARK_CACHE_SWR.md](./docs/BENCHMARK_CACHE_SWR.md)**: Performance do cache SWR (95% melhoria)
-- **[docs/BENCHMARK_STOCK_VIEW.md](./docs/BENCHMARK_STOCK_VIEW.md)**: Otimização de consultas de estoque
+- **[docs/past_deliveries/BENCHMARK_CACHE_SWR.md](./docs/past_deliveries/BENCHMARK_CACHE_SWR.md)**: Performance do cache SWR (95% melhoria)
+- **[docs/past_deliveries/BENCHMARK_STOCK_VIEW.md](./docs/past_deliveries/BENCHMARK_STOCK_VIEW.md)**: Otimização de consultas de estoque
 
 ### 🎯 Funcionalidades Específicas
 - **[docs/GUIA_TITULACAO.md](./docs/GUIA_TITULACAO.md)**: Tutorial prático de protocolos em titulação
@@ -242,7 +242,7 @@ npm run bot          # Inicia o bot do Telegram localmente (para desenvolvimento
 2. Configure as variáveis de ambiente no dashboard do Vercel
 3. Deploy automático a cada push na branch `main`
 
-Veja instruções detalhadas em [SETUP.md](./SETUP.md#passo-4-deploy-no-vercel)
+Veja instruções detalhadas em [SETUP.md](./docs/SETUP.md#passo-4-deploy-no-vercel)
 
 ---
 
@@ -267,7 +267,7 @@ Desenvolvido com ❤️ usando Google Antigravity, Kilo Code e Roo Code.
 ## 📞 Suporte
 
 Para dúvidas ou problemas:
-1. Verifique a documentação em [SETUP.md](./SETUP.md)
+1. Verifique a documentação em [SETUP.md](./docs/SETUP.md)
 2. Abra uma issue no GitHub
 3. Entre em contato com o desenvolvedor
 
