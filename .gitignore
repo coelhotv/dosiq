@@ -33,3 +33,4 @@ plans/
 .env
 .env.local
 .env.production
+.vitest-cache/
