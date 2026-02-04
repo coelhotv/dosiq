@@ -189,6 +189,52 @@ flowchart TB
 
 ---
 
+## 🧪 Responsabilidades de Validação
+
+### Pipeline de Testes por Agente
+
+#### Backend Agent
+| Momento | Comando | Propósito |
+|---------|---------|-----------|
+| Pré-commit | `npm run test:related` | Testar services modificados |
+| Pre-push | `npm run test:critical` | Validar services, schemas, hooks |
+| CI/CD | `npm run test` | Suite completa |
+
+#### Frontend Agent
+| Momento | Comando | Propósito |
+|---------|---------|-----------|
+| Pré-commit | `npm run test:related` | Testar componentes modificados |
+| Pre-push | Testes de componentes + `npm run lint` | Validação visual e código |
+| Pós-deploy | Smoke test na Vercel | Verificação de build |
+
+#### Qualidade Agent
+- **Manter:** Configurações otimizadas de testes atualizadas
+- **Monitorar:** Cobertura não cair abaixo de 75%
+- **Revisar:** Métricas de performance dos testes
+- **Garantir:** `test:critical` cobre todos os paths críticos
+- **Atualizar:** Scripts de teste conforme necessidade
+
+#### Debug Agent
+- `test:full` apenas quando solicitado explicitamente
+- Ou quando investigação requer validação completa
+- Usar `test:smoke` para validações rápidas durante debug
+
+### Matriz de Comandos por Tipo de Mudança
+
+| Tipo de Arquivo Alterado | Comando Recomendado | Agente Responsável |
+|--------------------------|---------------------|-------------------|
+| `src/services/api/*` | `test:critical` | Backend Agent |
+| `src/schemas/*` | `test:critical` | Backend Agent |
+| `src/hooks/*` | `test:critical` | Frontend Agent |
+| `src/components/*` | `test:related` | Frontend Agent |
+| `src/utils/*` | `test:critical` | Backend/Frontend* |
+| Configurações (vite, eslint) | `test:smoke` | Qualidade Agent |
+| CSS/Assets | `test:smoke` ou nenhum | Frontend Agent |
+
+*Depende do domínio do utilitário
+
+---
+
 ### 5. Documentação Agent
 **Responsabilidade:** Documentação técnica, READMEs, guias de API
 

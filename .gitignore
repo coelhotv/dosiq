@@ -27,6 +27,7 @@ package-lock.json
 *.sw?
 *.code-workspace
 screenshots/
+plans/
 
 # Environment variables
 .env
