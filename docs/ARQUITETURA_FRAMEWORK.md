@@ -300,7 +300,7 @@ git push origin feature/wave-X/nome-descritivo
 | `fix` | Correção de bug | `fix(bot): corrigir escape de markdown` |
 | `docs` | Documentação | `docs(readme): atualizar instruções` |
 | `test` | Testes | `test(service): adicionar testes de adesão` |
-| `refactor` | Refatoração | `refactor(hook): otimizar useCachedQuery` |
+| `refactor` | Refatoração | `refac(hook): otimizar useCachedQuery` |
 | `style` | Formatação | `style(lint): corrigir erros de lint` |
 | `chore` | Manutenção | `chore(deps): atualizar dependências` |
 
