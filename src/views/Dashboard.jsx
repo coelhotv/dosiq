@@ -24,6 +24,7 @@ import ProtocolChecklistItem from '../components/protocol/ProtocolChecklistItem'
 
 
 import DashboardWidgets from '../components/dashboard/DashboardWidgets'
+import AdherenceWidget from '../components/adherence/AdherenceWidget'
 
 
 import { getCurrentUser } from '../lib/supabase'
