@@ -122,6 +122,7 @@ export function calculateTitrationSteps(protocol) {
  * @param {Date} stageStartedAt - Data de início da etapa atual
  * @returns {number} Dias restantes (0 se for última etapa)
  */
+/* eslint-disable-next-line no-unused-vars */
 export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
   // Se for a última etapa, retorna 0
   if (currentStageIndex >= steps.length - 1) {
@@ -152,6 +153,7 @@ export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
  * @param {Date} stageStartedAt - Data de início da etapa atual
  * @returns {number} Percentual de progresso (0-100)
  */
+/* eslint-disable-next-line no-unused-vars */
 export function getStepProgress(currentStageIndex, steps, stageStartedAt) {
   const currentStep = steps[currentStageIndex]
   if (!currentStep) return 0

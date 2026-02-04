@@ -6,6 +6,77 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
+## [2.4.0] - 2026-02-04
+
+### Onda 2 - Fases A e B: Engajamento e Adesão
+
+Esta release foca em aumentar o engajamento do usuário e melhorar a adesão ao tratamento através de notificações ricas, widgets de dashboard e visualização de titulação.
+
+### Adicionado
+
+#### Bot - Confirmação ao Pular Dose (Task 2.5)
+- Diálogo de confirmação antes de pular dose no Telegram
+- Timeout de 30 segundos para confirmação expirar automaticamente
+- Handlers para confirmar, cancelar e timeout
+- Integração com state.js para gerenciamento de estado
+- Mensagens claras sobre a ação irreversível
+
+#### Bot - Notificações Ricas (Task 2.6)
+- Formatação MarkdownV2 para todas as mensagens do bot
+- Emojis e layout visual aprimorado em todas as notificações
+- Função `escapeMarkdown()` para escapar caracteres especiais do Telegram
+- Botões inline melhorados com emojis (✅ Tomar, ⏰ Adiar, ⏭️ Pular)
+- Formatadores dedicados:
+  - `formatDoseReminderMessage()` - lembretes de dose
+  - `formatSoftReminderMessage()` - lembretes suaves (30min depois)
+  - `formatStockAlertMessage()` - alertas de estoque
+  - `formatTitrationAlertMessage()` - alertas de titulação
+
+#### Dashboard - Score de Adesão e Widget (Task 2.1)
+- Componente `AdherenceWidget` com score de adesão calculado
+- `AdherenceProgress` para visualização de progresso visual
+- `StreakBadge` para exibição de sequências de adesão
+- Serviço `adherenceService.js` com algoritmos de cálculo:
+  - Taxa de adesão por período (7d, 30d, 90d)
+  - Cálculo de streaks (sequências de dias com doses tomadas)
+  - Identificação de padrões de adesão
+- Integração no Dashboard com período padrão de 30 dias
+- Estilos CSS responsivos para o widget
+
+#### Dashboard - Widgets de Engajamento (Task 2.4)
+- Componente `DashboardWidgets` container para organização
+- `QuickActionsWidget` com ações rápidas frequentes
+- `StockAlertsWidget` para alertas de estoque visual
+- Layout responsivo em grid para diferentes tamanhos de tela
+- Props drill-down para comunicação entre componentes
+
+#### Protocolo - Timeline de Titulação (Task 2.3)
+- Componente `TitrationTimeline` com visualização completa de etapas
+- `TitrationStep` para renderização individual de cada etapa
+- Serviço `titrationService.js` com cálculos:
+  - `calculateTitrationSteps()` - calcula todas as etapas com datas
+  - `getDaysUntilNextStep()` - dias restantes até próxima etapa
+  - `getStepProgress()` - progresso percentual da etapa atual
+  - `calculateOverallProgress()` - progresso geral do protocolo
+  - `formatDose()` - formatação de doses para exibição
+  - `isTitrationActive()` / `hasReachedTarget()` - verificações de estado
+- Modo compacto para preview em cards
+- Modo expandido para visualização detalhada em modal
+- Integração no `ProtocolCard` com botão "📈 Ver Timeline"
+- Estilos CSS com indicadores visuais de status (completed, current, future)
+
+### Modificado
+
+- `Dashboard.jsx` - integração de múltiplos widgets de adesão
+- `ProtocolCard.jsx` - adicionado suporte a StreakBadge e botão de timeline
+- `ProtocolCard.css` - estilos para timeline e badges
+- `server/bot/tasks.js` - refatorado para usar notificações ricas
+- `server/bot/callbacks/doseActions.js` - adicionada confirmação de skip
+
+### Documentação
+
+- Adicionado `docs/TASK_2.6_BOT_RICH_NOTIFICATIONS.md` - documentação técnica das notificações
+
 
 ## [2.3.0] - 2026-02-03
 

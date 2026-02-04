@@ -1,298 +1,169 @@
-# 🎉 Release v2.3.0 - Onda 1: Fundação
+# 🎉 Release v2.4.0 - Onda 2: Engajamento e Adesão
 
-**Data:** 03 de Fevereiro de 2026  
-**Versão:** 2.3.0  
+**Data:** 04 de Fevereiro de 2026  
+**Versão:** 2.4.0  
 **Tipo:** Minor Release  
-**Codinome:** Onda 1 - Fundação
+**Codinome:** Onda 2 - Fases A e B
 
 ---
 
 ## 🎯 Resumo Executivo
 
-A **Onda 1** estabelece as bases técnicas sólidas para o crescimento do Meus Remédios. Esta release foca em **qualidade de código**, **performance** e **experiência do usuário** com mais de 110 testes automatizados, validação robusta de dados, cache inteligente e um onboarding guiado de 4 passos.
+A **Onda 2** foca em **aumentar o engajamento** do usuário e **melhorar a adesão** ao tratamento através de notificações mais ricas no Telegram, widgets interativos no Dashboard e visualização clara do progresso de titulação.
 
 ---
 
 ## 🌟 Highlights
 
-### 1. Validação Robusta com Zod 🔒
-Eliminamos erros silenciosos com validação completa em todos os formulários.
+### 1. Confirmação ao Pular Dose ⚠️
+Evita pulos acidentais com diálogo de confirmação no bot.
 
 ```
-✅ 23 testes de validação cobrindo edge cases
-✅ Mensagens de erro em português brasileiro
-✅ Validação dupla: cliente + servidor
-✅ Schemas para medicamentos, protocolos, estoque e logs
+⚠️ Confirmar ação
+
+Você está prestes a pular a dose de Ritalina.
+Esta ação não poderá ser desfeita.
+
+[✅ Confirmar pular] [❌ Cancelar]
+_Confirme em 30 segundos..._
 ```
 
-### 2. Cache SWR - 95% Mais Rápido ⚡
-Dashboard carrega quase instantaneamente em visitas subsequentes.
+### 2. Notificações Ricas no Telegram ✨
+Mensagens mais informativas e visualmente agradáveis.
 
-| Métrica | Antes | Depois | Melhoria |
-|---------|-------|--------|----------|
-| 1ª visita | ~800-1200ms | ~800-1200ms | - |
-| 2ª visita | ~800-1200ms | ~50-100ms | **-90%** |
-| Cache hit | N/A | ~0-50ms | **-95%** |
+| Antes | Depois |
+|-------|--------|
+| Texto simples | MarkdownV2 com emojis |
+| Botões sem ícones | Botões com emojis (✅ ⏰ ⏭️) |
+| Sem escape de caracteres | Escape automático de caracteres especiais |
+| 2 botões | 3 botões (Adiar adicionado) |
 
-### 3. Onboarding Wizard - 4 Passos 🎪
-Guia interativo para novos usuários reduzir o abandono inicial.
-
-```
-┌─────────────────────────────────────────────────────┐
-│  🎉 Bem-vindo ao Meus Remédios!                     │
-│     Apresentação do app e benefícios               │
-│                          [Próximo →]               │
-├─────────────────────────────────────────────────────┤
-│  💊 Primeiro Medicamento                            │
-│     Cadastro rápido do primeiro remédio            │
-│                          [Próximo →]               │
-├─────────────────────────────────────────────────────┤
-│  📋 Configurar Protocolo                            │
-│     Definir horários e doses                       │
-│                          [Próximo →]               │
-├─────────────────────────────────────────────────────┤
-│  🤖 Integrar Telegram                               │
-│     Conectar bot de lembretes                      │
-│                          [Concluir ✓]              │
-└─────────────────────────────────────────────────────┘
-```
-
-### 4. View de Estoque Otimizada 📊
-Consultas 5x mais rápidas com agregação no banco de dados.
-
-```sql
--- Agora: Uma query otimizada (~100ms)
-SELECT * FROM medicine_stock_summary WHERE user_id = 'xyz';
-
--- Antes: Múltiplas queries + cálculo manual (~500ms)
-```
-
-### 5. Persistência de Sessões Bot 💾
-Sessões conversacionais sobrevivem a restarts do servidor.
-
-- TTL de 30 minutos configurável
-- Persistência no Supabase
-- Cache local para performance
-- Múltiplos usuários simultâneos
-
----
-
-## 📈 Métricas de Performance
+### 3. Score de Adesão no Dashboard 📊
+Acompanhe sua consistência no tratamento.
 
 ```
-┌────────────────────────────────────────────────────────┐
-│  COBERTURA DE TESTES                                   │
-│  ████████████████████████████████████████░░░░░░░  ~75% │
-│  (+65% em relação à v2.2.1)                            │
-├────────────────────────────────────────────────────────┤
-│  TEMPO DO DASHBOARD (com cache)                        │
-│  ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 100ms │
-│  (era ~2000ms - 95% melhor)                            │
-├────────────────────────────────────────────────────────┤
-│  QUERY DE ESTOQUE                                      │
-│  █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 100ms │
-│  (era ~500ms - 5x mais rápido)                         │
-└────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  📈 Score de Adesão (30 dias)      [▼]     │
+│                                             │
+│     ████████░░░░░░░░  78%                   │
+│                                             │
+│   ✅ 23 doses tomadas                       │
+│   ❌ 5 doses perdidas                       │
+│   ⏭️ 2 doses puladas                        │
+│                                             │
+│   🔥 Streak: 7 dias seguidos!               │
+└─────────────────────────────────────────────┘
+```
+
+### 4. Timeline de Titulação 📈
+Visualize todo o cronograma de titulação do seu medicamento.
+
+```
+┌─────────────────────────────────────────────┐
+│  Cronograma de Titulação - Ritalina         │
+│                                             │
+│  ✅ Etapa 1 (completa)                      │
+│     10mg • 7 dias                           │
+│  🎯 Etapa 2 (atual)                         │
+│     20mg • 7 dias • 3 dias restantes        │
+│  ○ Etapa 3 (futura)                         │
+│     30mg • 7 dias                           │
+│  ○ Etapa 4 (futura)                         │
+│     40mg • manutenção                       │
+│                                             │
+│  Progresso: ██████░░░░  25%                 │
+└─────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📦 Novos Arquivos e Componentes
+## 📦 Novas Funcionalidades
 
-```
-src/
-├── components/onboarding/
-│   ├── OnboardingWizard.jsx      # Container principal
-│   ├── WelcomeStep.jsx           # Passo 1: Boas-vindas
-│   ├── FirstMedicineStep.jsx     # Passo 2: Medicamento
-│   ├── FirstProtocolStep.jsx     # Passo 3: Protocolo
-│   ├── TelegramIntegrationStep.jsx # Passo 4: Telegram
-│   └── OnboardingProvider.jsx    # Context/Provider
-├── hooks/
-│   └── useCachedQuery.js         # Hook SWR
-├── lib/
-│   ├── queryCache.js             # Core do cache
-│   └── __tests__/queryCache.test.js
-├── schemas/
-│   ├── index.js                  # Export schemas
-│   ├── medicineSchema.js         # Validação medicamentos
-│   ├── protocolSchema.js         # Validação protocolos
-│   ├── stockSchema.js            # Validação estoque
-│   ├── logSchema.js              # Validação logs
-│   └── __tests__/validation.test.js
-└── services/api/
-    ├── cachedServices.js         # Serviços com cache
-    ├── __tests__/logService.test.js
-    └── __tests__/stockService.test.js
+### Task 2.5: Confirmação ao Pular Dose
+- Diálogo de confirmação com timeout de 30 segundos
+- Restore automático da UI original após timeout
+- Handlers dedicados para confirmar/cancelar
+- Mensagens de erro claras
 
-server/
-└── services/
-    └── sessionManager.js         # Persistência sessões
+### Task 2.6: Notificações Ricas no Bot
+- Escape de caracteres MarkdownV2
+- Emojis em todas as mensagens
+- Novo botão "Adiar" (snooze)
+- Formatação visual aprimorada
 
-.migrations/
-└── create_medicine_stock_summary_view.sql
-```
+### Task 2.1: Score de Adesão e Widget
+- Cálculo de adesão por período (7d, 30d, 90d)
+- Streaks de dias consecutivos
+- Visualização em progress bar
+- Badge de streak no ProtocolCard
+
+### Task 2.4: Widgets de Engajamento no Dashboard
+- QuickActionsWidget para ações frequentes
+- StockAlertsWidget para alertas visuais
+- Layout em grid responsivo
+- Integração com navegação existente
+
+### Task 2.3: Timeline de Titulação
+- Visualização completa das etapas
+- Cálculo automático de datas
+- Modo compacto e expandido
+- Indicadores visuais de status
 
 ---
 
-## 🧪 Cobertura de Testes
+## 🔧 Breaking Changes
 
-### 110+ Testes Unitários
-
-| Categoria | Arquivo | Testes |
-|-----------|---------|--------|
-| Schemas | `validation.test.js` | 23 |
-| Components | `Button.test.jsx`, `Card.test.jsx`, `Modal.test.jsx` | 15+ |
-| Hooks | `queryCache.test.js` | 10+ |
-| Services | `logService.test.js`, `stockService.test.js` | 20+ |
-| Integração | Vários | 40+ |
-| **Total** | | **110+** |
-
-### Execução dos Testes
-
-```bash
-# Todos os testes
-npm test
-
-# Com cobertura
-npm test -- --coverage
-
-# Modo watch
-npm test -- --watch
-```
+Nenhuma breaking change. Todas as modificações são adições de funcionalidades ou melhorias compatíveis com versões anteriores.
 
 ---
 
-## 📸 Screenshots Descritivos
+## 📝 Instruções de Upgrade
 
-### Onboarding Mobile-First
-```
-┌─────────────────┐
-│   ╭───────╮     │
-│   │  💊   │     │  ← Ícone animado
-│   ╰───────╯     │
-│                 │
-│  Bem-vindo!     │
-│                 │
-│  Gerencie seus  │
-│  medicamentos   │
-│  de forma       │
-│  inteligente    │
-│                 │
-│  [Começar →]    │
-│                 │
-│  ○ ◉ ○ ○        │  ← Indicador de passos
-└─────────────────┘
-```
+1. **Deploy do backend:**
+   ```bash
+   cd server && npm install && npm run deploy
+   ```
 
-### Dashboard com Cache
-```
-┌──────────────────────────────────────┐
-│  ☀️ Bom dia, Maria!                  │
-│                                      │
-│  ┌──────────┐ ┌──────────┐          │
-│  │💊 Ritalina│ │💊 Concerta│          │
-│  │  ✓ 08:00 │ │  ⏰ 14:00 │          │
-│  └──────────┘ └──────────┘          │
-│                                      │
-│  📦 Estoque                          │
-│  ████████████████░░░ 80%            │
-│                                      │
-│  [Carregado em 50ms ⚡]             │
-└──────────────────────────────────────┘
-```
+2. **Deploy do frontend:**
+   ```bash
+   npm run build && npm run deploy
+   ```
+
+3. **Verificar variáveis de ambiente:**
+   - Nenhuma variável nova necessária
+
+4. **Testar integração Telegram:**
+   - Enviar comando `/hoje` no bot
+   - Verificar formatação das mensagens
+   - Testar confirmação de skip
 
 ---
 
-## 🔧 Como Atualizar
+## 📊 Métricas de Qualidade
 
-### Passo 1: Backup
-```bash
-# Faça backup do banco de dados antes
-createdb meus_remedios_backup_$(date +%Y%m%d)
-```
-
-### Passo 2: Aplicar Migrações
-```bash
-# Execute no Supabase SQL Editor o arquivo:
-.migrations/create_medicine_stock_summary_view.sql
-```
-
-### Passo 3: Atualizar Código
-```bash
-# Pull da release
-git fetch origin
-git checkout v2.3.0
-
-# Instalar dependências
-npm install
-```
-
-### Passo 4: Verificar Instalação
-```bash
-# Executar testes
-npm test
-
-# Verificar lint
-npm run lint
-
-# Build de produção
-npm run build
-```
-
-### Passo 5: Deploy
-```bash
-# Deploy na Vercel
-vercel --prod
-
-# Ou push para branch principal
-git push origin main
-```
+- ✅ Todos os testes unitários passando
+- ✅ Build de produção sem erros
+- ✅ Lint sem erros
+- ✅ 5 PRs revisados e mergeados
+- ✅ 2 conflitos de merge resolvidos
 
 ---
 
-## 📝 Notas de Migração
+## 🐛 Issues Conhecidas
 
-### Breaking Changes
-**Nenhuma.** Esta é uma release minor (`2.2.1` → `2.3.0`) com compatibilidade total.
-
-### Migrações Necessárias
-1. **SQL**: Aplicar migration da view `medicine_stock_summary`
-2. **Dependências**: `zod` foi adicionado para validação
-3. **Variáveis de Ambiente**: Nenhuma alteração necessária
-
-### Rollback
-Se necessário, o rollback pode ser feito simplesmente:
-```bash
-git checkout v2.2.1
-npm install
-```
-A view SQL pode ser mantida sem problemas ou removida via:
-```sql
-DROP VIEW IF EXISTS medicine_stock_summary;
-```
-
----
-
-## 🔗 Links e Documentação
-
-- [Changelog Completo](./CHANGELOG.md)
-- [Guia de Instalação](./docs/SETUP.md)
-- [Quick Start](./docs/QUICKSTART.md)
-- [Arquitetura](./docs/ARQUITETURA.md)
-- [Benchmark SWR](./docs/BENCHMARK_CACHE_SWR.md)
-- [Benchmark Estoque](./docs/BENCHMARK_STOCK_VIEW.md)
+Nenhuma issue conhecida.
 
 ---
 
 ## 🙏 Agradecimentos
 
-Esta release representa o trabalho dedicado da equipe na consolidação de uma base técnica sólida. Agradecemos a todos que contribuíram com código, testes, documentação e feedback.
-
-**Próximos Passos:** A Onda 2 trará recursos avançados como IA médico-assistente, análise preditiva de estoque e integração com wearables.
+- Task 2.5: Bot skip confirmation
+- Task 2.6: Bot rich notifications  
+- Task 2.1: Adherence score and widget
+- Task 2.4: Dashboard engagement widgets
+- Task 2.3: Titration timeline
 
 ---
 
-**Happy Coding! 💊⚡**
+**Full Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
-*Equipe Meus Remédios*
