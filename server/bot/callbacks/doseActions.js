@@ -1,6 +1,9 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { calculateDaysRemaining, calculateStreak } from '../../utils/formatters.js';
+import { setState, getState, clearState } from '../state.js';
+
+const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 
 export async function handleCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
@@ -10,6 +13,10 @@ export async function handleCallbacks(bot) {
       await handleTakeDose(bot, callbackQuery);
     } else if (data.startsWith('skip_')) {
       await handleSkipDose(bot, callbackQuery);
+    } else if (data.startsWith('confirm_skip_')) {
+      await handleConfirmSkipDose(bot, callbackQuery);
+    } else if (data.startsWith('cancel_skip_')) {
+      await handleCancelSkipDose(bot, callbackQuery);
     }
   });
 }
@@ -161,18 +168,215 @@ async function handleTakeDose(bot, callbackQuery) {
 }
 
 async function handleSkipDose(bot, callbackQuery) {
-  const { message, id } = callbackQuery;
+  const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
   
-  await bot.answerCallbackQuery(id, { text: 'Dose pulada.' });
+  // Parse skip data: skip_:{protocolId}
+  const [_, protocolId] = data.split(':');
   
   try {
-    await bot.editMessageText(`❌ Dose de *${message.text.split('\n')[2]?.replace('💊 ', '') || 'Medicamento'}* pulada.`, {
+    // Get medicine name for the confirmation message
+    const { data: protocol, error: protocolError } = await supabase
+      .from('protocols')
+      .select('medicine:medicines(name)')
+      .eq('id', protocolId)
+      .single();
+
+    if (protocolError || !protocol) {
+      await bot.answerCallbackQuery(id, { 
+        text: 'Erro: Protocolo não encontrado.', 
+        show_alert: true 
+      });
+      return;
+    }
+
+    const medicineName = protocol.medicine?.name || 'Medicamento';
+    
+    // Store original message state for potential restoration
+    const originalState = {
+      action: 'skip_confirmation',
+      protocolId,
+      medicineName,
+      originalText: message.text,
+      originalReplyMarkup: message.reply_markup,
+      timestamp: Date.now()
+    };
+    
+    await setState(chatId, originalState);
+    
+    // Set up timeout to restore original UI after 30 seconds
+    setTimeout(async () => {
+      await handleSkipTimeout(bot, chatId, message.message_id);
+    }, SKIP_CONFIRMATION_TIMEOUT_MS);
+    
+    // Show confirmation keyboard
+    const confirmKeyboard = {
+      inline_keyboard: [
+        [
+          { text: '✅ Confirmar pular', callback_data: `confirm_skip_:${protocolId}` },
+          { text: '❌ Cancelar', callback_data: `cancel_skip_:${protocolId}` }
+        ]
+      ]
+    };
+    
+    const confirmText = `⚠️ *Confirmar ação*\n\n` +
+      `Você está prestes a *pular* a dose de *${medicineName}*.\n\n` +
+      `Esta ação não poderá ser desfeita.\n\n` +
+      `_Confirme em 30 segundos..._`;
+    
+    await bot.editMessageText(confirmText, {
       chat_id: chatId,
       message_id: message.message_id,
-      parse_mode: 'Markdown'
+      parse_mode: 'Markdown',
+      reply_markup: confirmKeyboard
     });
+    
+    await bot.answerCallbackQuery(id, { text: 'Confirme para pular a dose' });
+    
   } catch (err) {
-    console.error('Erro ao editar mensagem de pular:', err);
+    console.error('Erro ao iniciar confirmação de skip:', err);
+    await bot.answerCallbackQuery(id, { 
+      text: 'Erro ao processar. Tente novamente.', 
+      show_alert: true 
+    });
+  }
+}
+
+async function handleConfirmSkipDose(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  
+  // Parse: confirm_skip_:{protocolId}
+  const [_, protocolId] = data.split(':');
+  
+  try {
+    // Verify we have a pending confirmation state
+    const state = await getState(chatId);
+    
+    if (!state || state.action !== 'skip_confirmation' || state.protocolId !== protocolId) {
+      await bot.answerCallbackQuery(id, { 
+        text: 'Confirmação expirada ou inválida.', 
+        show_alert: true 
+      });
+      return;
+    }
+    
+    // Check if timeout expired
+    const elapsed = Date.now() - state.timestamp;
+    if (elapsed > SKIP_CONFIRMATION_TIMEOUT_MS) {
+      await clearState(chatId);
+      await bot.answerCallbackQuery(id, { 
+        text: 'Tempo de confirmação expirado.', 
+        show_alert: true 
+      });
+      return;
+    }
+    
+    // Clear the state
+    await clearState(chatId);
+    
+    const medicineName = state.medicineName || 'Medicamento';
+    
+    // Confirm the skip
+    await bot.editMessageText(
+      `❌ Dose de *${medicineName}* pulada.`,
+      {
+        chat_id: chatId,
+        message_id: message.message_id,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+    await bot.answerCallbackQuery(id, { text: 'Dose pulada.' });
+    
+  } catch (err) {
+    console.error('Erro ao confirmar skip:', err);
+    await bot.answerCallbackQuery(id, { 
+      text: 'Erro ao pular dose.', 
+      show_alert: true 
+    });
+  }
+}
+
+async function handleCancelSkipDose(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  
+  // Parse: cancel_skip_:{protocolId}
+  const [_, protocolId] = data.split(':');
+  
+  try {
+    // Get state to restore original UI if possible
+    const state = await getState(chatId);
+    
+    // Clear the state
+    await clearState(chatId);
+    
+    // Restore original message or show cancellation message
+    if (state && state.originalText && state.originalReplyMarkup) {
+      // Restore original UI
+      await bot.editMessageText(state.originalText, {
+        chat_id: chatId,
+        message_id: message.message_id,
+        parse_mode: 'Markdown',
+        reply_markup: state.originalReplyMarkup
+      });
+    } else {
+      // Show cancellation message
+      await bot.editMessageText(
+        `✅ Ação cancelada. Nenhuma dose foi pulada.`,
+        {
+          chat_id: chatId,
+          message_id: message.message_id,
+          parse_mode: 'Markdown'
+        }
+      );
+    }
+    
+    await bot.answerCallbackQuery(id, { text: 'Ação cancelada.' });
+    
+  } catch (err) {
+    console.error('Erro ao cancelar skip:', err);
+    await bot.answerCallbackQuery(id, { 
+      text: 'Ação cancelada.', 
+      show_alert: true 
+    });
+  }
+}
+
+async function handleSkipTimeout(bot, chatId, messageId) {
+  try {
+    // Check if state still exists (confirmation still pending)
+    const state = await getState(chatId);
+    
+    if (!state || state.action !== 'skip_confirmation') {
+      // Already confirmed, cancelled, or handled
+      return;
+    }
+    
+    // Clear the state
+    await clearState(chatId);
+    
+    // Restore original UI or show timeout message
+    if (state.originalText) {
+      try {
+        await bot.editMessageText(
+          state.originalText + '\n\n_⏱️ Confirmação expirada._',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: state.originalReplyMarkup
+          }
+        );
+      } catch {
+        // Message may have been deleted, ignore
+      }
+    }
+    
+    console.log(`[SkipConfirmation] Timeout expired for chat ${chatId}`);
+    
+  } catch (err) {
+    console.error('Erro no timeout de skip:', err);
   }
 }
