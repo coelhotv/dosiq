@@ -3,7 +3,6 @@
 
 **Date**: February 2, 2026  
 **Repository**: coelhotv/meus-remedios  
-**Task ID**: 019c2076-aabd-7473-ac83-f7209fb4676c  
 
 ---
 
