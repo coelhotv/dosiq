@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { adherenceService } from '../../services/api/adherenceService'
 import AdherenceProgress from './AdherenceProgress'
 import StreakBadge from './StreakBadge'
@@ -19,11 +19,7 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    loadAdherenceData()
-  }, [period])
-
-  const loadAdherenceData = async () => {
+  const loadAdherenceData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -35,7 +31,11 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [period])
+
+  useEffect(() => {
+    loadAdherenceData()
+  }, [loadAdherenceData])
 
   const getScoreLabel = (score) => {
     if (score >= 90) return 'Excelente'

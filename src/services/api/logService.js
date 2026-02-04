@@ -158,8 +158,6 @@ export const logService = {
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
-    const validatedUpdates = validation.data
-
     // 1. Get original log to calculate stock delta
     const { data: oldLog, error: fetchError } = await supabase
       .from('medicine_logs')

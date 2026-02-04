@@ -95,9 +95,8 @@ function isStale(timestamp) {
  * @returns {Promise<*>} Dados do cache ou do fetcher
  */
 export async function cachedQuery(key, fetcher, options = {}) {
-  const { staleTime = CACHE_CONFIG.STALE_TIME, dedupe = true } = options
+  const { dedupe = true } = options
   const cached = cache.get(key)
-  const now = Date.now()
 
   // Deduplicação: se já tem um request em andamento para esta chave, reutiliza
   if (dedupe && pendingRequests.has(key)) {
@@ -233,7 +232,7 @@ export function prefetchCache(key, data) {
  */
 export function getCacheStats() {
   const entries = Array.from(cache.entries())
-  const staleCount = entries.filter(([_, v]) => isStale(v.timestamp)).length
+  const staleCount = entries.filter(([, v]) => isStale(v.timestamp)).length
   
   return {
     size: cache.size,
