@@ -2,6 +2,87 @@
 
 Convenções e melhores práticas para manter consistência no projeto.
 
+> **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com [`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1), que contém as regras obrigatórias de governança técnica.
+
+---
+
+## 🚨 REGRAS OBRIGATÓRIAS
+
+### 1. Validação Obrigatória (Pré-Commit)
+
+Todo código DEVE passar pelas seguintes validações ANTES de commit:
+
+```bash
+# 1. Validação de sintaxe
+node -c arquivo.js
+
+# 2. Lint - deve passar sem erros
+npm run lint
+
+# 3. Build - deve gerar sem erros
+npm run build
+```
+
+### 2. Git Workflow Obrigatório
+
+**⚠️ NUNCA commitar diretamente na `main`**
+
+```bash
+# 1. Criar branch ANTES de alterações
+git checkout main
+git pull origin main
+git checkout -b feature/wave-X/nome-descritivo
+
+# 2. Desenvolver com commits semânticos
+
+# 3. Validar localmente
+npm run lint
+npm run test:critical
+npm run build
+
+# 4. Criar PR para main
+
+# 5. Aguardar review
+
+# 6. Merge via --no-ff apenas
+```
+
+### 3. Nomenclatura Obrigatória
+
+| Elemento | Convenção | Exemplo |
+|----------|-----------|---------|
+| Componentes | PascalCase | `AdherenceWidget.jsx` |
+| Funções | camelCase | `calculateAdherence` |
+| Constantes | SCREAMING_SNAKE | `MAX_RETRY` |
+| Arquivos | kebab-case | `adherence-service.js` |
+| Branches | kebab-case | `feature/wave-2/fix-login` |
+| Hooks | use + PascalCase | `useCachedQuery` |
+
+### 4. Estrutura de Arquivos Obrigatória
+
+```
+src/
+├── components/          # Componentes React por domínio
+│   ├── ui/             # Componentes genéricos
+│   ├── medicine/       # Domínio: Medicamentos
+│   ├── protocol/       # Domínio: Protocolos
+│   ├── adherence/      # Domínio: Adesão
+│   └── dashboard/      # Domínio: Dashboard
+├── services/api/       # Lógica de negócio
+├── hooks/              # Hooks customizados
+├── utils/              # Funções puras
+└── schemas/            # Validação Zod
+```
+
+### 5. Scripts Obrigatórios
+
+| Quando | Comando | Propósito |
+|--------|---------|-----------|
+| Pre-commit | `npm run lint` | Qualidade de código |
+| Pre-push | `npm run test:critical` | Testes essenciais |
+| Pre-merge | `npm run test:full` | Suite completa |
+| Diagnóstico | `npm run test:smoke` | Verificação rápida |
+
 ---
 
 ## 🗂️ Estrutura de Arquivos
@@ -505,3 +586,53 @@ export default [
 ```
 
 Execute `npm run lint` antes de commitar.
+
+---
+
+## ❌ ANTI-PATTERNS PROIBIDOS
+
+### Git Workflow
+
+| Anti-Pattern | Consequência | Prevenção |
+|--------------|--------------|-----------|
+| **Commit direto em main** | Código não revisado em produção | Sempre criar branch primeiro |
+| **Criar código sem branch** | Commits misturados, estado inconsistente | Verificar `git branch` antes de iniciar |
+| **Merge sem review** | Bugs podem entrar em produção | PR obrigatório para main |
+
+### Qualidade de Código
+
+| Anti-Pattern | Consequência | Prevenção |
+|--------------|--------------|-----------|
+| **Ignorar erros de lint** | Build quebrado, código inconsistente | `npm run lint` obrigatório pre-commit |
+| **Deixar `console.log` de debug** | Poluição do console, possível vazamento de dados | ESLint `no-console`, revisar antes de merge |
+| **Ignorar dependências de hooks** | Bugs difíceis de debugar | ESLint `react-hooks/exhaustive-deps` como error |
+| **Exportar componentes e hooks do mesmo arquivo** | Fast Refresh do Vite quebrado | ESLint `react-refresh/only-export-components` como error |
+| **Duplicar lógica (violação DRY)** | Manutenção difícil, bugs em múltiplos lugares | Extrair para services ou utils |
+| **Quebrar build** | Deploy bloqueado, main instável | `npm run build` obrigatório pre-push |
+
+### Estrutura e Organização
+
+| Anti-Pattern | Consequência | Prevenção |
+|--------------|--------------|-----------|
+| **Lógica de negócio em componentes** | Dificuldade de testar, reuso impedido | Extrair para services |
+| **Schemas de validação duplicados** | Inconsistência de dados | Centralizar em `src/schemas/` |
+| **Importar hooks/componentes de arquivos com múltiplas exportações** | Fast Refresh quebrado | Separar em arquivos dedicados |
+
+---
+
+## 📚 Referências
+
+### Documentação de Governança
+
+- **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural e governança técnica completa
+- **[`LINT_COVERAGE.md`](LINT_COVERAGE.md:1)** - Configurações ESLint e boas práticas
+- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](OTIMIZACAO_TESTES_ESTRATEGIA.md:1)** - Estratégia completa de testes
+- **[`ARQUITETURA.md`](ARQUITETURA.md:1)** - Visão arquitetural técnica
+
+### Templates
+
+- **[`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md:1)** - Template para PRs
+
+---
+
+*Última atualização: 04/02/2026 - Consolidado com aprendizados da Onda 2*
