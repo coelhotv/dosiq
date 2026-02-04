@@ -15,34 +15,166 @@ import { calculateDaysRemaining } from '../utils/formatters.js';
 
 const logger = createLogger('Tasks');
 
-// --- Helper Functions ---
+// --- Markdown Escaping Utility ---
 
-async function sendDoseNotification(bot, chatId, p) {
-  let message = `🔔 *HORA DO REMÉDIO*\n\n` +
-                `💊 *${p.medicine.name}*\n` +
-                `📏 Dose: ${p.dosage_per_intake}x\n`;
+/**
+ * Escape special Markdown characters for Telegram
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/_/g, '\\_')
+    .replace(/\*/g, '\\*')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/~/g, '\\~')
+    .replace(/`/g, '\\`')
+    .replace(/>/g, '\\>')
+    .replace(/#/g, '\\#')
+    .replace(/\+/g, '\\+')
+    .replace(/-/g, '\\-')
+    .replace(/=/g, '\\=')
+    .replace(/\|/g, '\\|')
+    .replace(/{/g, '\\{')
+    .replace(/}/g, '\\}')
+    .replace(/\./g, '\\.')
+    .replace(/!/g, '\\!');
+}
+
+// --- Rich Message Formatting Functions ---
+
+/**
+ * Format a rich dose reminder message
+ * @param {object} protocol - Protocol data
+ * @param {string} scheduledTime - Scheduled time (HH:MM)
+ * @returns {string} Formatted message
+ */
+function formatDoseReminderMessage(protocol, scheduledTime) {
+  const medicine = protocol.medicine || {};
+  const name = escapeMarkdown(medicine.name || 'Medicamento');
+  const dosage = protocol.dosage_per_intake || 1;
+  const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
+  const notes = protocol.notes ? escapeMarkdown(protocol.notes) : null;
+
+  let message = `💊 *Hora do seu remédio!*\n\n`;
+  message += `🩹 **${name}**\n`;
+  message += `📋 ${dosage} ${unit}\n`;
+  message += `⏰ Horário: ${scheduledTime}\n`;
 
   // Add titration info if applicable
-  if (p.titration_schedule && p.titration_schedule.length > 0) {
-    const currentStage = p.current_stage_index || 0;
-    message += `🎯 Etapa ${currentStage + 1}/${p.titration_schedule.length}\n`;
+  if (protocol.titration_schedule && protocol.titration_schedule.length > 0) {
+    const currentStage = protocol.current_stage_index || 0;
+    const totalStages = protocol.titration_schedule.length;
+    message += `🎯 Titulação: Etapa ${currentStage + 1}/${totalStages}\n`;
   }
 
-  if (p.notes) {
-    message += `📝 _${p.notes}_`;
+  // Add notes only if they exist
+  if (notes) {
+    message += `\n📝 _${notes}_`;
   }
+
+  return message;
+}
+
+/**
+ * Format a rich soft reminder message
+ * @param {object} protocol - Protocol data
+ * @returns {string} Formatted message
+ */
+function formatSoftReminderMessage(protocol) {
+  const medicine = protocol.medicine || {};
+  const name = escapeMarkdown(medicine.name || 'Medicamento');
+  const dosage = protocol.dosage_per_intake || 1;
+  const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
+
+  let message = `⏳ *Lembrete*\n\n`;
+  message += `Você ainda não registrou sua dose de **${name}** (${dosage} ${unit}).\n\n`;
+  message += `Caso já tenha tomado, registre agora:`;
+
+  return message;
+}
+
+/**
+ * Format stock alert message
+ * @param {Array} zeroStock - Medicines with zero stock
+ * @param {Array} lowStock - Medicines with low stock
+ * @returns {string} Formatted message
+ */
+function formatStockAlertMessage(zeroStock, lowStock) {
+  let message = '';
+
+  if (zeroStock.length > 0) {
+    message += '🚨 *ALERTA DE ESTOQUE ZERADO*\n\n';
+    message += 'Os seguintes medicamentos estão sem estoque:\n\n';
+    zeroStock.forEach(m => {
+      message += `❌ **${escapeMarkdown(m.name)}**\n`;
+    });
+    message += '\n⚠️ Reponha o estoque o quanto antes!\n\n';
+  }
+
+  if (lowStock.length > 0) {
+    message += '⚠️ *Alerta de Estoque Baixo*\n\n';
+    message += 'Atenção aos seguintes medicamentos:\n\n';
+    lowStock.forEach(m => {
+      const days = m.days <= 0 ? 'estoque zerado' : `~${m.days} dia(s) restante(s)`;
+      message += `📦 **${escapeMarkdown(m.name)}**\n   └ ${days}\n`;
+    });
+    message += '\n💡 Considere repor o estoque em breve.';
+  }
+
+  return message;
+}
+
+/**
+ * Format titration alert message
+ * @param {object} protocol - Protocol data
+ * @returns {string} Formatted message
+ */
+function formatTitrationAlertMessage(protocol) {
+  const medicine = protocol.medicine || {};
+  const name = escapeMarkdown(medicine.name || 'Medicamento');
+  const currentStage = protocol.current_stage_index || 0;
+  const totalStages = protocol.titration_schedule?.length || 0;
+
+  let message = `🎯 *Atualização de Titulação*\n\n`;
+  message += `Medicamento: **${name}**\n`;
+  message += `Etapa atual: ${currentStage + 1}/${totalStages}\n\n`;
+
+  if (protocol.titration_status === 'alvo_atingido') {
+    message += `✅ *Parabéns!* Você atingiu a dose alvo!\n`;
+    message += `Continue com o acompanhamento médico.`;
+  } else if (protocol.titration_status === 'titulando') {
+    const nextStage = protocol.titration_schedule?.[currentStage + 1];
+    if (nextStage) {
+      message += `📈 Próxima etapa: ${nextStage.dosage} ${escapeMarkdown(medicine.dosage_unit || 'mg')}\n`;
+      message += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
+    }
+  }
+
+  return message;
+}
+
+// --- Helper Functions ---
+
+async function sendDoseNotification(bot, chatId, p, scheduledTime) {
+  const message = formatDoseReminderMessage(p, scheduledTime);
 
   const keyboard = {
     inline_keyboard: [
       [
-        { text: 'Tomei ✅', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-        { text: 'Pular ❌', callback_data: `skip_:${p.id}` }
+        { text: '✅ Tomar', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+        { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+        { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
       ]
     ]
   };
 
-  await bot.sendMessage(chatId, message, { 
-    parse_mode: 'Markdown',
+  await bot.sendMessage(chatId, message, {
+    parse_mode: 'MarkdownV2',
     reply_markup: keyboard
   });
 }
@@ -126,7 +258,7 @@ async function checkUserReminders(bot, userId, chatId) {
         const shouldSend = await shouldSendNotification(p.id, 'dose_reminder');
         if (!shouldSend) continue;
 
-        await sendDoseNotification(bot, chatId, p);
+        await sendDoseNotification(bot, chatId, p, currentHHMM);
         logger.info(`Dose reminder sent`, { userId, medicine: p.medicine.name, time: currentHHMM });
         
         await supabase
@@ -157,15 +289,16 @@ async function checkUserReminders(bot, userId, chatId) {
         if (!logs || logs.length === 0) {
           logger.info(`Soft reminder sent`, { userId, medicine: p.medicine.name });
           
-          await bot.sendMessage(chatId, 
-            `⏳ *Lembrete:* Esqueceu de registrar sua dose de *${p.medicine.name}* (${p.dosage_per_intake}x)?\n\n` +
-            `Caso já tenha tomado, registre agora:`,
+          const message = formatSoftReminderMessage(p);
+          
+          await bot.sendMessage(chatId, message,
             {
-              parse_mode: 'Markdown',
+              parse_mode: 'MarkdownV2',
               reply_markup: {
                 inline_keyboard: [[
-                  { text: 'Tomei ✅', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-                  { text: 'Pular ❌', callback_data: `skip_:${p.id}` }
+                  { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+                  { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+                  { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
                 ]]
               }
             }
@@ -237,8 +370,10 @@ async function runUserDailyDigest(bot, userId, chatId) {
     const takenDoses = todayLogs.length;
     const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
 
+    const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
+
     let message = `📊 *Resumo do Dia*\n\n`;
-    message += `📅 ${new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date())}\n\n`;
+    message += `📅 ${escapeMarkdown(dateStr)}\n\n`;
     message += `✅ Doses tomadas: ${takenDoses}/${expectedDoses}\n`;
     message += `📈 Taxa de adesão: ${percentage}%\n\n`;
 
@@ -252,7 +387,7 @@ async function runUserDailyDigest(bot, userId, chatId) {
       message += '🚨 *Cuidado! Você está atrasado nas doses.*';
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
     logger.info(`Daily digest sent`, { userId, percentage });
 
   } catch (err) {
@@ -323,27 +458,9 @@ async function checkUserStockAlerts(bot, userId, chatId) {
     const shouldSend = await shouldSendNotification(userId, 'stock_alert');
     if (!shouldSend) return;
 
-    let message = '';
+    const message = formatStockAlertMessage(zeroStockMedicines, lowStockMedicines);
 
-    if (zeroStockMedicines.length > 0) {
-      message += '🚨 *ALERTA DE ESTOQUE ZERADO*\n\n';
-      message += 'Os seguintes medicamentos estão sem estoque:\n\n';
-      zeroStockMedicines.forEach(m => {
-        message += `❌ ${m.name}\n`;
-      });
-      message += '\n⚠️ Reponha o estoque o quanto antes!\n\n';
-    }
-
-    if (lowStockMedicines.length > 0) {
-      message += '⚠️ *Alerta de Estoque Baixo*\n\n';
-      message += 'Atenção aos seguintes medicamentos:\n\n';
-      lowStockMedicines.forEach(m => {
-        message += `📦 ${m.name} - ~${m.days} dia(s) restante(s)\n`;
-      });
-      message += '\n💡 Considere repor o estoque em breve.';
-    }
-
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
     logger.info(`Stock alert sent`, { userId, low: lowStockMedicines.length, zero: zeroStockMedicines.length });
 
   } catch (err) {
@@ -383,16 +500,51 @@ export async function checkAdherenceReports() {
 }
 
 /**
+ * Check titration alerts for a specific user
+ */
+async function checkUserTitrationAlerts(bot, userId, chatId) {
+  try {
+    const settings = await getUserSettings(userId, true);
+    if (!settings) return;
+
+    // Get protocols that are in titration
+    const { data: protocols } = await supabase
+      .from('protocols')
+      .select(`
+        *,
+        medicine:medicines(name, dosage_unit)
+      `)
+      .eq('user_id', userId)
+      .in('titration_status', ['titulando', 'alvo_atingido']);
+
+    if (!protocols || protocols.length === 0) return;
+
+    for (const protocol of protocols) {
+      // Check if we should send notification for this protocol
+      const shouldSend = await shouldSendNotification(protocol.id, 'titration_alert');
+      if (!shouldSend) continue;
+
+      const message = formatTitrationAlertMessage(protocol);
+
+      await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+      logger.info(`Titration alert sent`, { userId, medicine: protocol.medicine?.name });
+    }
+
+  } catch (err) {
+    logger.error(`Error checking titration alerts`, err, { userId });
+  }
+}
+
+/**
  * Check titration alerts for ALL users
  */
-export async function checkTitrationAlerts() {
+export async function checkTitrationAlerts(bot) {
   logger.info('Starting titration alerts for all users');
 
   const users = await getAllUsersWithTelegram();
 
-  for (const _user of users) {
-    // Check for protocols in titration that need transition
-    // ... (implementation similar to stock alerts)
+  for (const user of users) {
+    await checkUserTitrationAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Titration alerts completed');
