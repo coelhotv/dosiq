@@ -1,11 +1,31 @@
+import { useState } from 'react'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
+
 import StreakBadge from '../adherence/StreakBadge'
+
+import Modal from '../ui/Modal'
+import TitrationTimeline from './TitrationTimeline'
+
 import './ProtocolCard.css'
 
 export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelete }) {
+  const [showTimeline, setShowTimeline] = useState(false)
+
   const formatTime = (time) => {
     return time // Already in HH:MM format
+  }
+
+  const hasTitration = protocol?.titration_status && protocol.titration_status !== 'estável'
+  const hasSchedule = protocol?.titration_schedule?.length > 0
+  const canShowTimeline = hasTitration && hasSchedule
+
+  const handleShowTimeline = () => {
+    setShowTimeline(true)
+  }
+
+  const handleCloseTimeline = () => {
+    setShowTimeline(false)
   }
 
   return (
@@ -106,6 +126,15 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
       </div>
 
       <div className="protocol-actions">
+        {canShowTimeline && (
+          <Button 
+            variant="primary" 
+            size="sm"
+            onClick={handleShowTimeline}
+          >
+            📈 Ver Timeline
+          </Button>
+        )}
         <Button 
           variant="outline" 
           size="sm"
@@ -128,6 +157,16 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           🗑️ Excluir
         </Button>
       </div>
+
+      {canShowTimeline && (
+        <Modal 
+          isOpen={showTimeline} 
+          onClose={handleCloseTimeline}
+          title={`Timeline: ${protocol.name}`}
+        >
+          <TitrationTimeline protocol={protocol} />
+        </Modal>
+      )}
     </Card>
   )
 }
