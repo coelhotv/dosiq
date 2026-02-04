@@ -48,7 +48,7 @@ export const logSchema = z.object({
  * Schema para criação de log
  */
 export const logCreateSchema = logSchema.refine(
-  (data) => {
+  () => {
     // Se tem protocol_id, deve ter medicine_id (já é obrigatório)
     // Mas verificamos se os dois são consistentes quando necessário
     return true

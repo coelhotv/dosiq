@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { cachedQuery, invalidateCache, generateCacheKey } from '../lib/queryCache'
+import { cachedQuery, invalidateCache } from '../lib/queryCache'
 
 /**
  * Hook para executar queries com cache SWR
@@ -91,6 +91,7 @@ export function useCachedQuery(key, fetcher, options = {}) {
     isMounted.current = true
     
     if (enabled && key) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       executeQuery()
     }
 
@@ -193,7 +194,7 @@ export function useCachedQueries(queries) {
 
   // Refetch todas as queries
   const refetchAll = useCallback(async () => {
-    queries.forEach((query, index) => {
+    queries.forEach((query) => {
       const { key } = query
       if (key) invalidateCache(key)
     })

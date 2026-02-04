@@ -285,7 +285,7 @@ describe('logService', () => {
 
       stockService.decrease.mockResolvedValue(undefined)
 
-      const result = await logService.update('log-1', updates)
+      await logService.update('log-1', updates)
 
       expect(stockService.decrease).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', 3)
       expect(stockService.increase).not.toHaveBeenCalled()
@@ -317,7 +317,7 @@ describe('logService', () => {
 
       stockService.increase.mockResolvedValue(undefined)
 
-      const result = await logService.update('log-1', updates)
+      await logService.update('log-1', updates)
 
       expect(stockService.increase).toHaveBeenCalledWith('med-1', 1, 'Ajuste de dose (ID: log-1)')
       expect(stockService.decrease).not.toHaveBeenCalled()

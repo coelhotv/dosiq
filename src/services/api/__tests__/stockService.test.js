@@ -40,9 +40,9 @@ describe('stockService', () => {
       // Return different chain based on table
       if (table === 'medicine_stock_summary') {
         return {
-          select: (fields) => ({
-            eq: (field, value) => ({
-              eq: (field2, value2) => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
                 maybeSingle: mocks.maybeSingle,
                 order: mocks.order,
                 lte: mocks.lte
@@ -416,7 +416,7 @@ describe('stockService', () => {
 
       mocks.single.mockResolvedValue({ data: mockResult, error: null })
 
-      const result = await stockService.increase('123e4567-e89b-12d3-a456-426614174000', 5)
+      await stockService.increase('123e4567-e89b-12d3-a456-426614174000', 5)
 
       expect(mocks.from).toHaveBeenCalledWith('stock')
       expect(mocks.insert).toHaveBeenCalledWith([expect.objectContaining({

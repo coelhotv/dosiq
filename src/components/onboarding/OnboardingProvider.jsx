@@ -1,15 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { supabase, getUserId } from '../../lib/supabase'
-
-const OnboardingContext = createContext(null)
-
-export function useOnboarding() {
-  const context = useContext(OnboardingContext)
-  if (!context) {
-    throw new Error('useOnboarding deve ser usado dentro de OnboardingProvider')
-  }
-  return context
-}
+import { OnboardingContext } from './OnboardingContext'
 
 export function OnboardingProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false)

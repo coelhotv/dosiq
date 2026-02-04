@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOnboarding } from './OnboardingProvider'
+import { useOnboarding } from './useOnboarding'
 import Button from '../ui/Button'
 import './TelegramIntegrationStep.css'
 

@@ -55,7 +55,7 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
     return (
       <div className="titration-timeline compact">
         <div className="timeline-preview">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <div
               key={step.stepNumber}
               className={`preview-step ${step.status}`}

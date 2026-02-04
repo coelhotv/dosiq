@@ -303,6 +303,7 @@ async function handleCancelSkipDose(bot, callbackQuery) {
   const chatId = message.chat.id;
   
   // Parse: cancel_skip_:{protocolId}
+  // eslint-disable-next-line no-unused-vars
   const [_, protocolId] = data.split(':');
   
   try {

@@ -1,9 +1,8 @@
 import { supabase, getUserId } from '../../lib/supabase'
-import { 
-  validateStockCreate, 
-  validateStockUpdate, 
-  validateStockDecrease, 
-  validateStockIncrease 
+import {
+  validateStockCreate,
+  validateStockDecrease,
+  validateStockIncrease
 } from '../../schemas/stockSchema'
 
 /**

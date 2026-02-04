@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOnboarding } from './OnboardingProvider'
+import { useOnboarding } from './useOnboarding'
 import { protocolCreateSchema } from '../../schemas/protocolSchema'
 import { cachedProtocolService } from '../../services/api/cachedServices'
 import Button from '../ui/Button'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOnboarding } from './OnboardingProvider'
+import { useOnboarding } from './useOnboarding'
 import { medicineCreateSchema } from '../../schemas/medicineSchema'
 import { cachedMedicineService } from '../../services/api/cachedServices'
 import Button from '../ui/Button'

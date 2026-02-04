@@ -1,4 +1,5 @@
-export { OnboardingProvider, useOnboarding } from './OnboardingProvider'
+export { OnboardingProvider } from './OnboardingProvider'
+export { useOnboarding } from './useOnboarding'
 export { default as OnboardingWizard } from './OnboardingWizard'
 export { default as WelcomeStep } from './WelcomeStep'
 export { default as FirstMedicineStep } from './FirstMedicineStep'

@@ -1,4 +1,4 @@
-import { useOnboarding } from './OnboardingProvider'
+import { useOnboarding } from './useOnboarding'
 import WelcomeStep from './WelcomeStep'
 import FirstMedicineStep from './FirstMedicineStep'
 import FirstProtocolStep from './FirstProtocolStep'
