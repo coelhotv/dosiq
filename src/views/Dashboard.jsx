@@ -301,11 +301,9 @@ export default function Dashboard({ onNavigate }) {
       <AdherenceWidget defaultPeriod="30d" />
 
 
-      {/* Dashboard Widgets - Quick Actions, Adherence, Stock Alerts */}
+      {/* Dashboard Widgets - Quick Actions, Stock Alerts */}
       <DashboardWidgets
-        protocols={activeProtocols}
         stockSummary={stockSummary}
-        logs={currentMonthLogs}
         onNavigate={onNavigate}
         onOpenLogModal={() => setIsModalOpen(true)}
       />
