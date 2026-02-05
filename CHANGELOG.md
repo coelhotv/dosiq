@@ -9,7 +9,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [2.5.0] - 2026-02-05
 
-### Health Command Center (Onda 3)
+### Health Command Center (Onda 2.5)
 
 Esta release introduz o **Health Command Center**, transformando o dashboard em um assistente proativo inteligente com foco em UX mobile-first e engajamento.
 

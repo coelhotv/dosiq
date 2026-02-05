@@ -3,7 +3,7 @@
 **Data:** 05 de Fevereiro de 2026  
 **Versão:** 2.5.0  
 **Tipo:** Minor Release  
-**Codinome:** Health Command Center (Onda 3)
+**Codinome:** Health Command Center (Onda 2.5)
 
 ---
 
