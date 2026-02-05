@@ -12,7 +12,8 @@ import TestConnection from './components/TestConnection'
 import BottomNav from './components/BottomNav'
 import Loading from './components/ui/Loading'
 import Landing from './views/Landing'
-import { OnboardingProvider, OnboardingWizard } from './components/onboarding'  
+import { OnboardingProvider, OnboardingWizard } from './components/onboarding'
+import { DashboardProvider } from './hooks/useDashboardContext.jsx'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -119,11 +120,12 @@ function App() {
 
   return (
     <OnboardingProvider>
-      <div className="app-container">
-        <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
-          {renderCurrentView()}
+      <DashboardProvider>
+        <div className="app-container">
+          <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
+            {renderCurrentView()}
 
-          <footer style={{
+            <footer style={{
             textAlign: 'center',
             marginTop: 'var(--space-8)',
             paddingBottom: 'var(--space-8)',
@@ -148,8 +150,9 @@ function App() {
         {isAuthenticated && <BottomNav currentView={currentView} setCurrentView={setCurrentView} />}
         
         {/* Onboarding Wizard - apenas para usuários autenticados */}
-        {isAuthenticated && <OnboardingWizard />}
-      </div>
+          {isAuthenticated && <OnboardingWizard />}
+        </div>
+      </DashboardProvider>
     </OnboardingProvider>
   )
 }

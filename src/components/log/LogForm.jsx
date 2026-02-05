@@ -12,7 +12,7 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
   }
 
   const [formData, setFormData] = useState({
-    type: initialValues?.protocol_id ? 'protocol' : (initialValues?.treatment_plan_id ? 'plan' : 'protocol'),
+    type: initialValues?.type || (initialValues?.protocol_id ? 'protocol' : (initialValues?.treatment_plan_id ? 'plan' : 'protocol')),
     id: initialValues?.id || null, // For editing
     protocol_id: initialValues?.protocol_id || '',
     treatment_plan_id: initialValues?.treatment_plan_id || '',
@@ -27,6 +27,21 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
 
   const selectedProtocol = protocols.find(p => p.id === formData.protocol_id)
   const selectedPlan = treatmentPlans.find(p => p.id === formData.treatment_plan_id)
+
+  // Atualizar formData quando initialValues mudar (Deep Linking Interno)
+  useEffect(() => {
+    if (initialValues) {
+      setFormData(prev => ({
+        ...prev,
+        type: initialValues.type || (initialValues.protocol_id ? 'protocol' : (initialValues.treatment_plan_id ? 'plan' : 'protocol')),
+        protocol_id: initialValues.protocol_id || '',
+        treatment_plan_id: initialValues.treatment_plan_id || '',
+        taken_at: toLocalISO(initialValues.taken_at),
+        quantity_taken: initialValues.quantity_taken || '',
+        notes: initialValues.notes || ''
+      }));
+    }
+  }, [initialValues]);
 
   // Auto-select all protocols when a plan is selected
   useEffect(() => {
@@ -118,7 +133,7 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         }
         
         // Filter only selected protocols
-        const protocolsToLog = plan.protocols?.filter(p => 
+        const protocolsToLog = plan.protocols?.filter(p =>
           p.active && selectedPlanProtocols.includes(p.id)
         ) || []
         
@@ -131,7 +146,7 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
           medicine_id: p.medicine_id,
           quantity_taken: p.dosage_per_intake,
           taken_at: new Date(formData.taken_at).toISOString(),
-          notes: `[Plan: ${plan.name}] ${formData.notes.trim()}`.trim()
+          notes: formData.notes.trim() ? `[Plano: ${plan.name}] ${formData.notes.trim()}` : `[Plano: ${plan.name}]`
         }))
         
         await onSave(logsToSave)

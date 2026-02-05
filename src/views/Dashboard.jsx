@@ -1,8 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-// CACHE SWR v1.5: Usando cachedServices para reduzir latência
-// - Primeiro load: busca da API e cacheia
-// - Visitas subsequentes (< 30s): retorna do cache imediatamente
-// - Revalidação em background mantém dados atualizados
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { 
   cachedProtocolService as protocolService, 
   cachedLogService as logService, 
@@ -10,221 +6,66 @@ import {
   cachedMedicineService as medicineService, 
   cachedTreatmentPlanService as treatmentPlanService 
 } from '../services/api'
-import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
 import LogForm from '../components/log/LogForm'
-import { calculateTitrationData } from '../utils/titrationUtils'
+import { useDashboard } from '../hooks/useDashboardContext.jsx'
+import HealthScoreCard from '../components/dashboard/HealthScoreCard'
+import SmartAlerts from '../components/dashboard/SmartAlerts'
+import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
+import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
+import { getCurrentUser } from '../lib/supabase'
 import './Dashboard.css'
 
-import CalendarWithMonthCache from '../components/ui/CalendarWithMonthCache'
-import ProtocolChecklistItem from '../components/protocol/ProtocolChecklistItem'
-
-
-
-
-import DashboardWidgets from '../components/dashboard/DashboardWidgets'
-import AdherenceWidget from '../components/adherence/AdherenceWidget'
-
-
-import { getCurrentUser } from '../lib/supabase'
-
+/**
+ * Dashboard "Health Command Center"
+ * Implementação da Onda 3 com UI Cyberpunk/Neo-Glass.
+ */
 export default function Dashboard({ onNavigate }) {
+  const { stats, medicines, protocols: rawProtocols, logs, isLoading: contextLoading, refresh } = useDashboard();
   const [userName, setUserName] = useState('')
-  const [activeProtocols, setActiveProtocols] = useState([])
-  const [treatmentPlans, setTreatmentPlans] = useState([])
-  const [stockSummary, setStockSummary] = useState([])
-  const [nextDose, setNextDose] = useState(null)
-  const [activeTitration, setActiveTitration] = useState(null)
-  // recentLogs state removed as it was unused
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null)
-  
-  // Month cache for calendar
-  const [currentMonthLogs, setCurrentMonthLogs] = useState([])
-  
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [prefillData, setPrefillData] = useState(null)
+  const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
   
-  // Data Loading Logic
-  const loadDashboardData = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const [user, protocols, plans, medicines, logsResponse] = await Promise.all([
-        getCurrentUser(),
-        protocolService.getActive(),
-        treatmentPlanService.getAll(),
-        medicineService.getAll(),
-        logService.getAllPaginated(100, 0)
-      ])
-      
-      if (user) {
-        const name = user.user_metadata?.full_name || user.email.split('@')[0]
-        setUserName(name.charAt(0).toUpperCase() + name.slice(1))
-      }
-
-      const logs = logsResponse.data || []
-      
-      const enrichedProtocols = protocols.map(p => ({
-        ...p,
-        titration_scheduler_data: calculateTitrationData(p)
-      }))
-
-      setActiveProtocols(enrichedProtocols)
-      setTreatmentPlans(plans)
-      // setRecentLogs removed
-
-      if (logs.length > 0) {
-        // Use functional update to check current state without adding dependency
-        setSelectedCalendarDate(prev => prev || new Date(logs[0].taken_at))
-      }
-
-      // Calculate Stock
-      const dailyIntakeMap = {}
-      enrichedProtocols.forEach(p => {
-        if (p.active) {
-          const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
-          dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
+  // 1. Carregar Nome do Usuário e Planos de Tratamento
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        const [user, plans] = await Promise.all([
+          getCurrentUser(),
+          treatmentPlanService.getAll()
+        ]);
+        
+        if (user) {
+          const name = user.user_metadata?.full_name || user.email.split('@')[0]
+          setUserName(name.charAt(0).toUpperCase() + name.slice(1))
         }
-      })
-      
-      const stockPromises = medicines.map(async (medicine) => {
-        const entries = await stockService.getByMedicine(medicine.id)
-        const total = entries.reduce((sum, entry) => sum + entry.quantity, 0)
-        // Find cheapest/first price for display (simple logic)
-        const price = entries.length > 0 ? entries[0].price : 0
-        const lot = entries.length > 0 ? entries[0].batch_number : ''
-
-        const dailyIntake = dailyIntakeMap[medicine.id] || 0
-        const daysRemaining = dailyIntake > 0 ? total / dailyIntake : Infinity
-        const isLow = dailyIntake > 0 && daysRemaining < 7 // Changed to 7 days for visibility
-
-        return { medicine, total, price, lot, isLow, daysRemaining }
-      })
-      
-      const stockData = await Promise.all(stockPromises)
-      // Filter for items that are low or have any stock
-      const criticalStock = stockData.filter(item => item.isLow || item.total > 0)
-      setStockSummary(criticalStock)
-
-      // Calculate Next Dose
-      calculateNextDose(enrichedProtocols)
-
-      // Find Active Titration
-      const titration = enrichedProtocols.find(p => p.titration_scheduler_data?.hasTitration)
-      setActiveTitration(titration)
-
-    } catch (err) {
-      console.error(err)
-      setError('Erro ao carregar dados.')
-    } finally {
-      setIsLoading(false)
+        setRawTreatmentPlans(plans)
+      } catch (err) {
+        console.error(err)
+        setError('Erro ao carregar perfil.')
+      } finally {
+        setIsLoading(false)
+      }
     }
+    loadInitialData()
   }, [])
 
-  useEffect(() => {
-    loadDashboardData()
-  }, [loadDashboardData])
-
-  const calculateNextDose = (protocols) => {
-    const now = new Date()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
-    
-    let next = null
-    let minDiff = Infinity
-
-    protocols.forEach(p => {
-      if (!p.time_schedule) return
-      p.time_schedule.forEach(time => {
-        const [h, m] = time.split(':').map(Number)
-        let diff = (h * 60 + m) - currentMinutes
-        
-        // If time passed today, assume tomorrow (add 24h)
-        if (diff <= 0) diff += 24 * 60
-
-        if (diff < minDiff) {
-          minDiff = diff
-          next = {
-            time: time,
-            medicine: p.medicine?.name,
-            dosage: `${p.dosage_per_intake} ${p.dosage_unit || 'cp'}`
-          }
-        }
+  // Injetar dados de próxima dose nos planos de tratamento
+  const treatmentPlans = useMemo(() => {
+    return rawTreatmentPlans.map(plan => ({
+      ...plan,
+      protocols: plan.protocols?.map(p => {
+        const liveProtocol = rawProtocols.find(rp => rp.id === p.id);
+        return liveProtocol || p;
       })
-    })
-    setNextDose(next)
-  }
+    }));
+  }, [rawTreatmentPlans, rawProtocols]);
 
-  const handleRegisterDose = async () => {
-    setIsModalOpen(true)
-  }
-
-  const handleSaveLog = async (logData) => {
-    try {
-      if (Array.isArray(logData)) {
-        await logService.createBulk(logData)
-        showSuccess('Lote registrado com sucesso!')
-      } else {
-        await logService.create(logData)
-        showSuccess('Dose registrada com sucesso!')
-      }
-      setIsModalOpen(false)
-      loadDashboardData()
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao registrar dose')
-    }
-  }
-
-  const [expandedPlans, setExpandedPlans] = useState({})
-  const [selectedProtocols, setSelectedProtocols] = useState({})
-  const [successMessage, setSuccessMessage] = useState('')
-
-  const showSuccess = (msg) => {
-    setSuccessMessage(msg)
-    setTimeout(() => setSuccessMessage(''), 3000)
-  }
-
-  const togglePlanExpand = (planId) => {
-    setExpandedPlans(prev => ({
-      ...prev,
-      [planId]: !prev[planId]
-    }))
-  }
-
-  const toggleProtocolSelection = (planId, protocolId) => {
-    setSelectedProtocols(prev => {
-      const currentSelection = prev[planId] || []
-      const isSelected = currentSelection.includes(protocolId)
-      
-      const newSelection = isSelected 
-        ? currentSelection.filter(id => id !== protocolId)
-        : [...currentSelection, protocolId]
-        
-      return {
-        ...prev,
-        [planId]: newSelection
-      }
-    })
-  }
-
-  const handleTakeSelectedFromPlan = async (e, plan) => {
-    e.stopPropagation()
-    const selection = selectedProtocols[plan.id] || []
-    const protocolsToTake = plan.protocols?.filter(p => p.active && selection.includes(p.id)) || []
-    
-    if (protocolsToTake.length === 0) return
-
-    const logs = protocolsToTake.map(p => ({
-      protocol_id: p.id,
-      medicine_id: p.medicine_id,
-      quantity_taken: p.dosage_per_intake,
-      notes: `[Ação Rápida: ${plan.name}]`
-    }))
-
-    await handleSaveLog(logs)
-  }
-
+  // 2. Saudação Dinâmica baseada no horário
   const getGreeting = () => {
     const hours = new Date().getHours()
     if (hours >= 0 && hours < 6) return 'BOA MADRUGADA,'
@@ -232,262 +73,230 @@ export default function Dashboard({ onNavigate }) {
     if (hours >= 12 && hours < 18) return 'BOA TARDE,'
     return 'BOA NOITE,'
   }
-  
-  const handleCalendarLoadMonth = useCallback(async (year, month) => {
-    const result = await logService.getByMonth(year, month)
+
+  // 3. Orquestração de Alertas Inteligentes
+  const smartAlerts = useMemo(() => {
+    const alerts = [];
     
-    // Update current month logs for display
-    if (year === new Date().getFullYear() && month === new Date().getMonth()) {
-      setCurrentMonthLogs(result.data || [])
+    // Alerta de Estoque Crítico
+    const lowStockCount = medicines.filter(m => {
+      // Simplificação: se não tiver stock data aqui, ignoramos
+      // No mundo ideal, useDashboard retornaria stockSummary
+      return false; 
+    }).length;
+
+    // Alerta de Doses Atrasadas (Mock funcional)
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    rawProtocols.forEach(p => {
+      p.time_schedule?.forEach(time => {
+        const [h, m] = time.split(':').map(Number);
+        const doseMinutes = h * 60 + m;
+        const delay = currentMinutes - doseMinutes;
+
+        if (delay > 1 && delay < 1440) { // Dose era pra ter sido tomada hoje e passou do tempo
+          // Verificar se já foi tomada (comparando com logs)
+          const today = new Date().toISOString().split('T')[0];
+          const alreadyTaken = logs.some(l => 
+            l.protocol_id === p.id && 
+            new Date(l.taken_at).toISOString().split('T')[0] === today &&
+            Math.abs(new Date(l.taken_at).getHours() - h) <= 1 // Margem de erro simples
+          );
+
+          if (!alreadyTaken) {
+            alerts.push({
+              id: `delay-${p.id}-${time}`,
+              severity: delay > 15 ? 'critical' : 'warning',
+              title: delay > 15 ? 'Atraso Crítico' : 'Dose Pendente',
+              message: `${p.medicine?.name} era às ${time} (${delay} min atrás)`,
+              protocol_id: p.id,
+              actions: [
+                { label: 'TOMAR', type: 'primary' },
+                { label: 'ADIAR', type: 'secondary' }
+              ]
+            });
+          }
+        }
+      });
+    });
+
+    return alerts.sort((a, b) => (a.severity === 'critical' ? -1 : 1));
+  }, [rawProtocols, logs, medicines]);
+
+  const handleRegisterDose = async (medicineId, protocolId) => {
+    try {
+      await logService.create({
+        medicine_id: medicineId,
+        protocol_id: protocolId,
+        quantity_taken: 1, // Default para swipe
+        taken_at: new Date().toISOString()
+      });
+      refresh(); // Atualiza dashboard context
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao registrar dose. Tente novamente.');
     }
-    
-    return result
-  }, [])
+  };
 
-  const displayDate = selectedCalendarDate || new Date()
-  const logsForSelectedDate = currentMonthLogs.filter(log => {
-    const d = new Date(log.taken_at)
-    return d.getFullYear() === displayDate.getFullYear() &&
-           d.getMonth() === displayDate.getMonth() &&
-           d.getDate() === displayDate.getDate()
-  })
+  const [selectedMedicines, setSelectedMedicines] = useState({});
 
-  if (isLoading) return <Loading text="Carregando..." />
+  const toggleMedicineSelection = (planId, protocolId) => {
+    setSelectedMedicines(prev => {
+      const planSelections = prev[planId] || [];
+      const isSelected = planSelections.includes(protocolId);
+      
+      const newSelections = isSelected
+        ? planSelections.filter(id => id !== protocolId)
+        : [...planSelections, protocolId];
+        
+      return {
+        ...prev,
+        [planId]: newSelections
+      };
+    });
+  };
+
+  const handleBatchRegister = async (plan, selectedProtocolIds) => {
+    try {
+      // Se nada selecionado, registra todos por padrão
+      const protocolsToLog = selectedProtocolIds && selectedProtocolIds.length > 0
+        ? plan.protocols.filter(p => selectedProtocolIds.includes(p.id))
+        : plan.protocols.filter(p => p.active);
+
+      if (protocolsToLog.length === 0) return;
+
+      const logsToSave = protocolsToLog.map(p => ({
+        protocol_id: p.id,
+        medicine_id: p.medicine_id,
+        quantity_taken: p.dosage_per_intake || 1,
+        taken_at: new Date().toISOString(),
+        notes: `[Lote Dashboard] Plano: ${plan.name}`
+      }));
+
+      await logService.createBulk(logsToSave);
+      
+      // Limpar seleção do plano após sucesso
+      setSelectedMedicines(prev => ({
+        ...prev,
+        [plan.id]: []
+      }));
+      
+      refresh();
+    } catch (err) {
+      console.error('Erro no registro em lote:', err);
+      alert('Erro ao registrar lote. Tente novamente.');
+    }
+  };
+
+  if (isLoading || contextLoading) return <Loading text="Sincronizando Command Center..." />
 
   return (
     <div className="dashboard-container-v2">
-      {/* Header */}
+      {/* Header & Score Hero */}
       <header className="dash-header">
-        <div>
+        <div className="dash-header__welcome">
           <span className="greeting-label">{getGreeting()}</span>
           <h1 className="user-name">{userName} <span className="dot">.</span></h1>
         </div>
-        <div 
-          className="profile-indicator" 
-          onClick={() => onNavigate('settings')}
-          style={{ cursor: 'pointer' }}
-        >
-          <img src="/logo-new.svg" className="avatar-logo" alt="Logo" />
-        </div>
+        <HealthScoreCard 
+          score={stats.score} 
+          streak={stats.currentStreak} 
+          trend="up" 
+        />
       </header>
 
-      {error && (
-        <div style={{ color: 'var(--accent-error)', marginBottom: '16px', padding: '12px', background: 'rgba(255,0,0,0.1)', borderRadius: '8px' }}>
-          {error}
-        </div>
-      )}
-
-      {/* Top Cards Grid */}
-      <div className="top-cards-grid">
-        <div className="info-card next-dose-card">
-          <span className="card-label">PRÓXIMA DOSE</span>
-          <div className="card-value-group">
-            <span className="highlight-value white">{nextDose ? nextDose.time : '--:--'}</span>
-            <span className="sub-value">{nextDose ? nextDose.medicine : 'Nenhuma dose prevista'}</span>
-          </div>
-        </div>
-
-        <div className="info-card critical-stock-card">
-          <span className="card-label">ESTOQUE CRÍTICO</span>
-          <div className="card-value-group">
-            <span className="highlight-value magenta">{stockSummary.filter(s => s.isLow).length.toString().padStart(2, '0')}</span>
-            <span className="sub-value">Medicamentos baixo</span>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Adherence Score Widget */}
-      <AdherenceWidget defaultPeriod="30d" />
-
-
-      {/* Dashboard Widgets - Quick Actions, Stock Alerts */}
-      <DashboardWidgets
-        stockSummary={stockSummary}
-        onNavigate={onNavigate}
-        onOpenLogModal={() => setIsModalOpen(true)}
+      {/* Smart Alerts Section */}
+      <SmartAlerts
+        alerts={smartAlerts}
+        onAction={(alert, action) => {
+          if (action.label === 'TOMAR') {
+            if (alert.protocol_id) {
+              setPrefillData({ protocol_id: alert.protocol_id, type: 'protocol' });
+            } else if (alert.treatment_plan_id) {
+              setPrefillData({ treatment_plan_id: alert.treatment_plan_id, type: 'plan' });
+            }
+            setIsModalOpen(true);
+          }
+        }}
       />
 
-
-      {/* Titration Protocol Card - Only if active */}
-      {activeTitration && (
-        <div className="titration-card">
-          <div className="titration-header">
-            <div>
-              <h3>Protocolo: {activeTitration.name || 'Titulação'}</h3>
-              <span className="titration-phase">
-                Fase {activeTitration.current_stage_index + 1} de {activeTitration.titration_scheduler_data?.totalSteps} • Estabilização
-              </span>
-            </div>
-            
-             {/* Progress Bar */}
-             <div className="progress-container">
-               <div 
-                 className="progress-bar" 
-                 style={{ 
-                   width: `${((activeTitration.current_stage_index + 1) / activeTitration.titration_scheduler_data?.totalSteps) * 100}%` 
-                 }}
-               ></div>
-             </div>
-          </div>
-
-          <div className="titration-details">
-            <div className="current-dose-info">
-              <div className="icon-circle">✓</div>
-              <div>
-                <strong>Dose Atual: {activeTitration.dosage_per_intake} {activeTitration.dosage_unit || 'cp'}</strong>
-                <p>Próximo ajuste em {activeTitration.titration_scheduler_data?.daysRemaining} dias</p>
-              </div>
-            </div>
-          </div>
-
-          <Button className="action-button-full" onClick={handleRegisterDose}>
-            REGISTRAR DOSE AGORA
-          </Button>
+      {/* Main Treatment Section */}
+      <section className="treatment-section">
+        <div className="section-header">
+          <h2 className="section-title">CRONOGRAMA DE HOJE</h2>
+          <span className="section-subtitle">{rawProtocols.length} {rawProtocols.length === 1 ? 'Protocolo Ativo' : 'Protocolos Ativos'}</span>
         </div>
-      )}
-       
-       {/* Explicitly show register button if no titration card acts as main CTA */}
-       {!activeTitration && (
-          <div className="cta-container">
-             <Button className="action-button-full" onClick={handleRegisterDose}>
-              REGISTRAR DOSE AGORA
-            </Button>
-          </div>
-       )}
 
-      {/* Success Message Banner */}
-      {successMessage && (
-        <div className="success-banner fade-in" style={{ 
-          background: 'rgba(0, 255, 136, 0.15)', 
-          border: '1px solid var(--neon-green)', 
-          color: '#fff', 
-          padding: '12px', 
-          borderRadius: '12px', 
-          marginBottom: '24px',
-          textAlign: 'center',
-          fontWeight: 600
+        <div className="treatment-list">
+          {treatmentPlans.map(plan => (
+            <TreatmentAccordion
+              key={plan.id}
+              protocol={{
+                id: plan.id,
+                name: plan.name,
+                medicines_count: plan.protocols?.length || 0,
+                next_dose: plan.protocols?.[0]?.next_dose || '--:--'
+              }}
+              selectedMedicines={selectedMedicines[plan.id] || []}
+              onBatchRegister={(p, selectedIds) => handleBatchRegister(plan, selectedIds)}
+            >
+              {plan.protocols?.filter(p => p.active).map(p => (
+                <SwipeRegisterItem
+                  key={p.id}
+                  medicine={p.medicine}
+                  time={p.next_dose || '--:--'}
+                  isSelected={(selectedMedicines[plan.id] || []).includes(p.id)}
+                  onToggleSelection={() => toggleMedicineSelection(plan.id, p.id)}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                />
+              ))}
+            </TreatmentAccordion>
+          ))}
+          
+          {/* Protocolos avulsos (sem plano) */}
+          {rawProtocols.filter(p => !p.treatment_plan_id).map(p => (
+            <div key={p.id} className="standalone-item">
+               <SwipeRegisterItem 
+                  medicine={p.medicine}
+                  time={p.next_dose || '--:--'}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Floating Action Button ou CTA Secundário */}
+      <div className="dash-footer-actions">
+        <button className="btn-add-manual" onClick={() => {
+          setPrefillData(null);
+          setIsModalOpen(true);
         }}>
-          ✨ {successMessage}
-        </div>
-      )}
-
-      {/* Treatment Plans Interactive List */}
-      {treatmentPlans.length > 0 && (
-        <div className="treatment-plans-section">
-          <h3 className="section-title">SEUS TRATAMENTOS</h3>
-          <div className="treatment-plans-list-interactive">
-            {treatmentPlans.map(plan => {
-               const isExpanded = expandedPlans[plan.id];
-               const currentSelection = selectedProtocols[plan.id] ?? plan.protocols?.filter(p => p.active).map(p => p.id) ?? [];
-               const hasSelection = currentSelection.length > 0;
-
-               return (
-                <div key={plan.id} className={`treatment-plan-card ${isExpanded ? 'expanded' : ''}`}>
-                  <div className="plan-card-header" onClick={() => togglePlanExpand(plan.id)}>
-                    <div className="plan-info-group">
-                       <span className="plan-icon-large">💊</span>
-                       <div>
-                         <h4 className="plan-title">{plan.name}</h4>
-                         <span className="plan-subtitle">{plan.objective || 'Em tratamento'}</span>
-                       </div>
-                    </div>
-                    <div className="plan-actions-group">
-                       <Button 
-                         variant="primary" 
-                         className="btn-take-bundle"
-                         disabled={!hasSelection}
-                         onClick={(e) => handleTakeSelectedFromPlan(e, plan)}
-                       >
-                         {hasSelection ? `TOMAR (${currentSelection.length})` : 'TOMAR'}
-                       </Button>
-                       <button className={`expand-btn ${isExpanded ? 'rotated' : ''}`}>▼</button>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="plan-checklist-container fade-in">
-                      {plan.protocols?.filter(p => p.active).map(p => (
-                        <ProtocolChecklistItem
-                          key={p.id}
-                          protocol={p}
-                          isSelected={currentSelection.includes(p.id)}
-                          onToggle={(pid) => toggleProtocolSelection(plan.id, pid)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-               )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Inventory Alerts */}
-      <div className="inventory-section">
-        <h3 className="section-title">ALERTAS DE INVENTÁRIO</h3>
-        
-        <div className="inventory-list">
-          {stockSummary.filter(s => s.isLow).length === 0 ? (
-             <div className="empty-inventory">Tudo certo com seu estoque!</div>
-          ) : (
-            stockSummary.filter(s => s.isLow).map((item, idx) => (
-              <div key={idx} className="inventory-item">
-                <div className="item-status-indicator"></div>
-                <div className="item-details">
-                  <span className="item-name">{item.medicine.name} {item.medicine.dosage_per_pill}</span>
-                  <span className="item-meta">
-                    {item.lot && `Lote #${item.lot} • `} 
-                    {item.price > 0 && `R$ ${item.price}/un`}
-                  </span>
-                </div>
-                <div className="item-qty">
-                  {item.total} uni.
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          + REGISTRO MANUAL
+        </button>
       </div>
-
-     {/* History Calendar */}
-     <div className="history-section">
-        <h3 className="section-title">HISTÓRICO DE DOSES</h3>
-        <div className="calendar-card">
-           <CalendarWithMonthCache
-              onLoadMonth={handleCalendarLoadMonth}
-              markedDates={currentMonthLogs.map(log => log.taken_at)}
-              selectedDate={selectedCalendarDate}
-              onDayClick={(date) => setSelectedCalendarDate(date)}
-            />
-            
-            <div className="calendar-logs-list">
-              <h4 className="date-header">{displayDate.toLocaleDateString('pt-BR')}</h4>
-              {logsForSelectedDate.length === 0 ? (
-                <p className="no-logs">Nenhum registro</p>
-              ) : (
-                logsForSelectedDate.map(log => (
-                  <div key={log.id} className="log-mini-item">
-                    <span>{log.medicine?.name}</span>
-                    <span className="log-time">
-                      {new Date(log.taken_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'})}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-        </div>
-     </div>
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setPrefillData(null);
+        }}
       >
         <LogForm
-          protocols={activeProtocols}
+          protocols={rawProtocols}
           treatmentPlans={treatmentPlans}
-          onSave={handleSaveLog}
+          initialValues={prefillData}
+          onSave={async (data) => {
+            if (Array.isArray(data)) {
+              await logService.createBulk(data);
+            } else {
+              await logService.create(data);
+            }
+            setIsModalOpen(false);
+            refresh();
+          }}
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>

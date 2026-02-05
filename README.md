@@ -4,7 +4,7 @@
 
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.5.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
@@ -17,7 +17,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ---
 
-## 🎯 Funcionalidades (V2.3.0)
+## 🎯 Funcionalidades (v2.5.0)
 
 ### Core
 - ✅ **Autenticação Segura**: Login e registro via Supabase Auth (Email/Senha).
@@ -295,5 +295,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Versão**: 2.2.1 (Hotfix - Bot Telegram)  
-**Última atualização**: 31 Janeiro 2026
+**Versão**: 2.5.0 (Health Command Center)
+**Última atualização**: 05 Fevereiro 2026

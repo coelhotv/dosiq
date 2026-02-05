@@ -13,12 +13,51 @@
 
 const CACHE_CONFIG = {
   STALE_TIME: 30 * 1000, // 30 segundos
-  MAX_ENTRIES: 50,       // Limite máximo de entradas
-  GC_INTERVAL: 60 * 1000 // Garbage collection a cada 60s
+  MAX_ENTRIES: 200,      // Limite elevado para suportar volumetria do Dashboard
+  GC_INTERVAL: 60 * 1000, // Garbage collection a cada 60s
+  PERSIST_KEY: 'meus_remedios_query_cache'
 }
 
 // Estrutura do cache: Map<key, { data, timestamp, isRevalidating }>
 const cache = new Map()
+
+/**
+ * Persiste o cache no LocalStorage
+ */
+function persistCache() {
+  try {
+    const entries = Array.from(cache.entries())
+      .filter(([, value]) => !value.isRevalidating) // Não persiste estados transitórios
+      .slice(0, CACHE_CONFIG.MAX_ENTRIES)
+    
+    localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
+  } catch (error) {
+    console.warn('[QueryCache] Erro ao persistir cache:', error)
+  }
+}
+
+/**
+ * Hidrata o cache a partir do LocalStorage
+ */
+function hydrateCache() {
+  try {
+    const persisted = localStorage.getItem(CACHE_CONFIG.PERSIST_KEY)
+    if (persisted) {
+      const entries = JSON.parse(persisted)
+      entries.forEach(([key, value]) => {
+        cache.set(key, { ...value, isRevalidating: false })
+      })
+      console.log(`[QueryCache] Hidratadas ${cache.size} entradas do LocalStorage`)
+    }
+  } catch (error) {
+    console.warn('[QueryCache] Erro ao hidratar cache:', error)
+  }
+}
+
+// Inicializa hidratação
+if (typeof window !== 'undefined' && window.localStorage) {
+  hydrateCache()
+}
 
 // Deduplicação de requests em andamento: Map<key, Promise>
 const pendingRequests = new Map()
@@ -59,6 +98,7 @@ function garbageCollect() {
   })
 
   console.log(`[QueryCache] GC: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`)
+  persistCache()
 }
 
 /**
@@ -122,6 +162,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
         cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
         updateAccess(key)
         garbageCollect()
+        persistCache()
         console.log(`[QueryCache] Revalidação OK: ${key}`)
         return data
       } catch (error) {
@@ -151,6 +192,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
       cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
       updateAccess(key)
       garbageCollect()
+      persistCache()
       return data
     } catch (error) {
       console.error(`[QueryCache] Fetch falhou: ${key}`, error)
@@ -209,6 +251,10 @@ export function invalidateCache(pattern) {
     }
   }
 
+  if (invalidatedCount > 0) {
+    persistCache()
+  }
+
   console.log(`[QueryCache] Invalidadas ${invalidatedCount} entradas para pattern: ${pattern}`)
   return invalidatedCount
 }
@@ -223,6 +269,7 @@ export function prefetchCache(key, data) {
   cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
   updateAccess(key)
   garbageCollect()
+  persistCache()
   console.log(`[QueryCache] Prefetch: ${key}`)
 }
 
@@ -257,6 +304,9 @@ export function clearCache() {
   cache.clear()
   accessCount.clear()
   pendingRequests.clear()
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem(CACHE_CONFIG.PERSIST_KEY)
+  }
   console.log(`[QueryCache] Cache limpo. ${size} entradas removidas.`)
 }
 

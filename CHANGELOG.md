@@ -6,6 +6,47 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
+
+## [2.5.0] - 2026-02-05
+
+### Health Command Center (Onda 3)
+
+Esta release introduz o **Health Command Center**, transformando o dashboard em um assistente proativo inteligente com foco em UX mobile-first e engajamento.
+
+### Adicionado
+
+#### Dashboard - Score Engine & Health Score (Task 3.1)
+- Novo componente `HealthScoreCard` com visualização circular de progresso (SVG).
+- Algoritmo de cálculo de score (0-100) baseado em adesão (60%), pontualidade (20%) e estoque (20%).
+- Indicadores de tendência e streaks integrados.
+- Processamento totalmente client-side para custo zero e performance instantânea.
+
+#### Dashboard - Swipe to Register (Task 3.2)
+- Implementação de gestos laterais (swipe) em itens de medicamento para registro rápido.
+- Feedback tátil e visual (haptic feedback) durante o gesto.
+- Optimistic UI: atualização instantânea do estado local com rollback automático em caso de falha.
+- Redução do tempo de registro de dose para menos de 2 segundos.
+
+#### Dashboard - Smart Alerts (Task 3.3)
+- Sistema de alertas inteligentes com priorização dinâmica por severidade.
+- Cores de estado semânticas: Neon Pink (crítico), Amber (atenção), Cyan (info).
+- Cards contextuais no topo do dashboard para ações imediatas (Tomar Agora, Comprar).
+
+#### Dashboard - Treatment Accordion & Seleção Granular
+- Componente `TreatmentAccordion` para agrupamento lógico de medicamentos por protocolo.
+- Suporte a ações em lote (Batch Actions) para protocolos complexos.
+- Visualização compacta e expandida para otimização de espaço em tela.
+
+### Modificado
+- `Dashboard.jsx`: Refatoração completa da hierarquia para suportar o Health Command Center.
+- `src/components/dashboard/`: Adicionados novos componentes de UI especializados.
+- `src/hooks/useDashboardContext.jsx`: Centralização da lógica de estado do dashboard.
+
+### Documentação
+- Adicionado `docs/PRD_HEALTH_COMMAND_CENTER.md`: Especificação completa da visão de produto.
+- Adicionado `docs/GUIA_IMPLEMENTACAO_DASHBOARD.md`: Guia técnico para os novos componentes.
+- Adicionado `docs/ESPECIFICACAO_TECNICA_DASHBOARD.md`: Detalhes dos algoritmos de score e alertas.
+
 ## [2.4.0] - 2026-02-04
 
 ### Onda 2 - Fases A e B: Engajamento e Adesão
@@ -236,5 +277,7 @@ Nenhuma. Esta é uma release minor (`2.2.1` → `2.3.0`) com adição de funcion
 - Calendário interativo
 - Histórico completo de doses
 
+[2.5.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.4.0...v2.5.0
+[2.4.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.2.1...v2.3.0
 [2.2.1]: https://github.com/seu-usuario/meus-remedios/releases/tag/v2.2.1

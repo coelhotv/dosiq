@@ -1,169 +1,85 @@
-# 🎉 Release v2.4.0 - Onda 2: Engajamento e Adesão
+# 🎉 Release v2.5.0 - Health Command Center
 
-**Data:** 04 de Fevereiro de 2026  
-**Versão:** 2.4.0  
+**Data:** 05 de Fevereiro de 2026  
+**Versão:** 2.5.0  
 **Tipo:** Minor Release  
-**Codinome:** Onda 2 - Fases A e B
+**Codinome:** Health Command Center (Onda 3)
 
 ---
 
 ## 🎯 Resumo Executivo
 
-A **Onda 2** foca em **aumentar o engajamento** do usuário e **melhorar a adesão** ao tratamento através de notificações mais ricas no Telegram, widgets interativos no Dashboard e visualização clara do progresso de titulação.
+A versão **2.5.0** marca a maior evolução na interface do "Meus Remédios" desde seu lançamento. O dashboard deixa de ser uma lista passiva e torna-se o **Health Command Center**: um assistente proativo que utiliza algoritmos inteligentes para motivar a adesão e facilitar o registro de doses através de interações modernas (Swipe).
 
 ---
 
 ## 🌟 Highlights
 
-### 1. Confirmação ao Pular Dose ⚠️
-Evita pulos acidentais com diálogo de confirmação no bot.
+### 1. Health Score Engine 📈
+Um novo algoritmo que calcula sua saúde terapêutica em tempo real, considerando adesão, pontualidade e estoque.
+- **Peso de Adesão (60%):** Doses tomadas vs. previstas.
+- **Pontualidade (20%):** Respeito aos horários (janela de 15min).
+- **Estoque (20%):** Garantia de que você não ficará sem medicamento.
 
-```
-⚠️ Confirmar ação
+### 2. Swipe to Register 👆
+Inspirado nos melhores apps de produtividade, agora você pode registrar uma dose simplesmente deslizando o item para a direita. Rápido, intuitivo e com resposta tátil.
 
-Você está prestes a pular a dose de Ritalina.
-Esta ação não poderá ser desfeita.
+### 3. Smart Alerts 🔔
+Alertas inteligentes que aparecem apenas quando você precisa. O sistema prioriza doses atrasadas com cores neon vibrantes, garantindo que o importante nunca passe despercebido.
 
-[✅ Confirmar pular] [❌ Cancelar]
-_Confirme em 30 segundos..._
-```
-
-### 2. Notificações Ricas no Telegram ✨
-Mensagens mais informativas e visualmente agradáveis.
-
-| Antes | Depois |
-|-------|--------|
-| Texto simples | MarkdownV2 com emojis |
-| Botões sem ícones | Botões com emojis (✅ ⏰ ⏭️) |
-| Sem escape de caracteres | Escape automático de caracteres especiais |
-| 2 botões | 3 botões (Adiar adicionado) |
-
-### 3. Score de Adesão no Dashboard 📊
-Acompanhe sua consistência no tratamento.
-
-```
-┌─────────────────────────────────────────────┐
-│  📈 Score de Adesão (30 dias)      [▼]     │
-│                                             │
-│     ████████░░░░░░░░  78%                   │
-│                                             │
-│   ✅ 23 doses tomadas                       │
-│   ❌ 5 doses perdidas                       │
-│   ⏭️ 2 doses puladas                        │
-│                                             │
-│   🔥 Streak: 7 dias seguidos!               │
-└─────────────────────────────────────────────┘
-```
-
-### 4. Timeline de Titulação 📈
-Visualize todo o cronograma de titulação do seu medicamento.
-
-```
-┌─────────────────────────────────────────────┐
-│  Cronograma de Titulação - Ritalina         │
-│                                             │
-│  ✅ Etapa 1 (completa)                      │
-│     10mg • 7 dias                           │
-│  🎯 Etapa 2 (atual)                         │
-│     20mg • 7 dias • 3 dias restantes        │
-│  ○ Etapa 3 (futura)                         │
-│     30mg • 7 dias                           │
-│  ○ Etapa 4 (futura)                         │
-│     40mg • manutenção                       │
-│                                             │
-│  Progresso: ██████░░░░  25%                 │
-└─────────────────────────────────────────────┘
-```
+### 4. Treatment Accordion 🎼
+Organização impecável para quem toma muitos medicamentos. Agrupe remédios por protocolo e visualize apenas o que é relevante para o momento atual.
 
 ---
 
-## 📦 Novas Funcionalidades
+## 📦 Novas Funcionalidades (Onda 3)
 
-### Task 2.5: Confirmação ao Pular Dose
-- Diálogo de confirmação com timeout de 30 segundos
-- Restore automático da UI original após timeout
-- Handlers dedicados para confirmar/cancelar
-- Mensagens de erro claras
+### Score & Gamificação
+- **HealthScoreCard:** Widget circular com progresso visual.
+- **Trend Indicators:** Saiba se sua adesão está melhorando ou piorando.
+- **Streak Tracker:** Celebre sequências de dias perfeitos.
 
-### Task 2.6: Notificações Ricas no Bot
-- Escape de caracteres MarkdownV2
-- Emojis em todas as mensagens
-- Novo botão "Adiar" (snooze)
-- Formatação visual aprimorada
-
-### Task 2.1: Score de Adesão e Widget
-- Cálculo de adesão por período (7d, 30d, 90d)
-- Streaks de dias consecutivos
-- Visualização em progress bar
-- Badge de streak no ProtocolCard
-
-### Task 2.4: Widgets de Engajamento no Dashboard
-- QuickActionsWidget para ações frequentes
-- StockAlertsWidget para alertas visuais
-- Layout em grid responsivo
-- Integração com navegação existente
-
-### Task 2.3: Timeline de Titulação
-- Visualização completa das etapas
-- Cálculo automático de datas
-- Modo compacto e expandido
-- Indicadores visuais de status
+### Experiência de Uso (UX)
+- **Optimistic Updates:** A interface responde instantaneamente, mesmo em conexões lentas.
+- **Haptic Feedback:** Vibrações sutis ao completar ações via gestos.
+- **Batch Registration:** Registre todos os medicamentos de um protocolo com um único toque.
 
 ---
 
-## 🔧 Breaking Changes
+## 📚 Documentação Técnica Consolidada
 
-Nenhuma breaking change. Todas as modificações são adições de funcionalidades ou melhorias compatíveis com versões anteriores.
+Para desenvolvedores e auditores, os seguintes documentos foram adicionados/atualizados:
+
+- [**PRD: Health Command Center**](./docs/PRD_HEALTH_COMMAND_CENTER.md) - Visão de produto.
+- [**Guia de Implementação Dashboard**](./docs/GUIA_IMPLEMENTACAO_DASHBOARD.md) - Detalhes dos componentes.
+- [**Especificação Técnica Dashboard**](./docs/ESPECIFICACAO_TECNICA_DASHBOARD.md) - Lógica dos algoritmos.
 
 ---
 
-## 📝 Instruções de Upgrade
+## 🔧 Instruções de Upgrade
 
-1. **Deploy do backend:**
+1. **Instalação:**
    ```bash
-   cd server && npm install && npm run deploy
+   npm install
    ```
 
-2. **Deploy do frontend:**
+2. **Database:**
+   - Nenhuma migração de banco de dados é necessária para esta versão (cálculos client-side).
+
+3. **Verificação:**
    ```bash
-   npm run build && npm run deploy
+   npm run validate
    ```
-
-3. **Verificar variáveis de ambiente:**
-   - Nenhuma variável nova necessária
-
-4. **Testar integração Telegram:**
-   - Enviar comando `/hoje` no bot
-   - Verificar formatação das mensagens
-   - Testar confirmação de skip
 
 ---
 
 ## 📊 Métricas de Qualidade
 
-- ✅ Todos os testes unitários passando
-- ✅ Build de produção sem erros
-- ✅ Lint sem erros
-- ✅ 5 PRs revisados e mergeados
-- ✅ 2 conflitos de merge resolvidos
-
----
-
-## 🐛 Issues Conhecidas
-
-Nenhuma issue conhecida.
-
----
-
-## 🙏 Agradecimentos
-
-- Task 2.5: Bot skip confirmation
-- Task 2.6: Bot rich notifications  
-- Task 2.1: Adherence score and widget
-- Task 2.4: Dashboard engagement widgets
-- Task 2.3: Titration timeline
+- ✅ 100% dos testes unitários passando.
+- ✅ Linting seguindo rigorosamente os padrões em `docs/PADROES_CODIGO.md`.
+- ✅ Performance: Carregamento inicial do dashboard < 150ms (com cache).
+- ✅ Acessibilidade: Touch targets otimizados para mobile.
 
 ---
 
 **Full Changelog:** [CHANGELOG.md](CHANGELOG.md)
-

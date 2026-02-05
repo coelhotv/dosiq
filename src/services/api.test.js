@@ -98,7 +98,11 @@ describe('medicineService', () => {
 
   describe('create', () => {
     it('should create a medicine', async () => {
-      const newMedicine = { name: 'Paracetamol' }
+      const newMedicine = {
+        name: 'Paracetamol',
+        dosage_per_pill: 500,
+        dosage_unit: 'mg'
+      }
       const createdMedicine = { id: 1, ...newMedicine }
       
       // Mock chain for create: insert -> select -> single
@@ -109,7 +113,13 @@ describe('medicineService', () => {
       const result = await medicineService.create(newMedicine)
       
       expect(mocks.from).toHaveBeenCalledWith('medicines')
-      expect(mocks.insert).toHaveBeenCalledWith([{ ...newMedicine, user_id: 'test-user-id' }])
+      expect(mocks.insert).toHaveBeenCalledWith([{
+        ...newMedicine,
+        user_id: 'test-user-id',
+        active_ingredient: null,
+        laboratory: null,
+        type: 'medicine'
+      }])
       expect(result).toEqual(createdMedicine)
     })
   })

@@ -146,9 +146,9 @@ describe('queryCache', () => {
       expect(fetcher).toHaveBeenCalledTimes(5)
     })
 
-    it('deve retornar número de entradas invalidadas', () => {
-      cachedQuery('key1', () => Promise.resolve('a'))
-      cachedQuery('key2', () => Promise.resolve('b'))
+    it('deve retornar número de entradas invalidadas', async () => {
+      await cachedQuery('key1', () => Promise.resolve('a'))
+      await cachedQuery('key2', () => Promise.resolve('b'))
       
       const count = invalidateCache('key*')
       expect(count).toBe(2)

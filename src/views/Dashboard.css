@@ -13,6 +13,11 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: var(--space-4);
+}
+
+.dash-header__welcome {
+  flex: 1;
 }
 
 .greeting-label {
@@ -222,11 +227,12 @@
 }
 
 .section-title {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 
 .inventory-list {
@@ -491,4 +497,73 @@
   padding: 0 16px 16px 16px;
   background: rgba(0, 0, 0, 0.2);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Onda 3 Additions */
+.treatment-section {
+  margin-top: var(--space-6);
+}
+
+.section-header {
+  margin-bottom: var(--space-4);
+}
+
+.section-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.treatment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.standalone-item {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.dash-footer-actions {
+  position: fixed;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  padding: 0 var(--space-4);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-add-manual {
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-add-manual:hover {
+  background: var(--neon-cyan);
+  color: var(--bg-primary);
+}
+
+@media (max-width: 375px) {
+  .dashboard-container-v2 {
+    padding: var(--space-4);
+  }
+  
+  .user-name {
+    font-size: var(--font-size-2xl);
+  }
 }
