@@ -19,7 +19,7 @@ import './Dashboard.css'
  * Implementação da Onda 2.5 com UI Cyberpunk/Neo-Glass.
  */
 export default function Dashboard({ onNavigate }) {
-  const { stats, medicines, protocols: rawProtocols, logs, stockSummary, isLoading: contextLoading, refresh } = useDashboard();
+  const { stats, medicines, protocols: rawProtocols, logs, stockSummary, isLoading: contextLoading, refresh, isDoseInToleranceWindow } = useDashboard();
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [_error, setError] = useState(null)
@@ -128,21 +128,24 @@ export default function Dashboard({ onNavigate }) {
         const doseMinutes = h * 60 + m;
         const delay = currentMinutes - doseMinutes;
 
-        if (delay > 1 && delay < 1440) { // Dose era pra ter sido tomada hoje e passou do tempo
-          // Verificar se já foi tomada (comparando com logs)
-          const today = new Date().toISOString().split('T')[0];
-          const alreadyTaken = logs.some(l => 
-            l.protocol_id === p.id && 
-            new Date(l.taken_at).toISOString().split('T')[0] === today &&
-            Math.abs(new Date(l.taken_at).getHours() - h) <= 1 // Margem de erro simples
+        // Uma dose é considerada atrasada apenas se passaram mais de 120 minutos (2 horas) do horário previsto
+        // E ela deve ser de hoje (delay < 1440)
+        const isPastTolerance = delay > 120;
+        const isWithinUpcomingWindow = delay <= 120 && delay > -120; // Janela de +/- 2h do horário atual
+
+        if (delay > 0 && delay < 1440) {
+          // Verificar se já foi tomada dentro da janela de tolerância
+          const alreadyTaken = logs.some(l =>
+            l.protocol_id === p.id &&
+            isDoseInToleranceWindow(time, l.taken_at)
           );
 
-          if (!alreadyTaken) {
+          if (!alreadyTaken && isPastTolerance) {
             alerts.push({
               id: `delay-${p.id}-${time}`,
-              severity: delay > 15 ? 'critical' : 'warning',
-              title: delay > 15 ? 'Atraso Crítico' : 'Dose Pendente',
-              message: `${p.medicine?.name} era às ${time} (${delay} min atrás)`,
+              severity: delay > 240 ? 'critical' : 'warning', // Mais de 4h de atraso vira crítico
+              title: delay > 240 ? 'Atraso Crítico' : 'Dose Atrasada',
+              message: `${p.medicine?.name} era às ${time} (${Math.floor(delay/60)}h ${delay%60}min atrás)`,
               protocol_id: p.id,
               actions: [
                 { label: 'TOMAR', type: 'primary' },

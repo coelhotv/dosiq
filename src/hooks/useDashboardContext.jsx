@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useCachedQueries } from './useCachedQuery';
-import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic';
+import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining, isDoseInToleranceWindow } from '../utils/adherenceLogic';
 import { medicineService } from '../services/api/medicineService';
 import { protocolService } from '../services/api/protocolService';
 import { logService } from '../services/api/logService';
@@ -113,7 +113,8 @@ export function DashboardProvider({ children }) {
     isFetching,
     hasError,
     refresh: refetchAll,
-    lastSync: new Date().toISOString()
+    lastSync: new Date().toISOString(),
+    isDoseInToleranceWindow // Expondo para o Dashboard usar na lógica de alertas
   }), [medicinesResult.data, protocolsWithNextDose, logsResult.data, stockSummary, stats, isLoading, isFetching, hasError, refetchAll]);
 
   return (
