@@ -130,10 +130,39 @@ export function getNextDoseTime(protocol) {
     const m = String(nextToday % 60).padStart(2, '0');
     return `${h}:${m}`;
   }
-
+  
   // Se não houver mais doses hoje, retorna a primeira dose de amanhã
   const firstTomorrow = scheduleMinutes[0];
   const h = String(Math.floor(firstTomorrow / 60)).padStart(2, '0');
   const m = String(firstTomorrow % 60).padStart(2, '0');
   return `${h}:${m}`;
+}
+
+/**
+ * Calcula a ingestão diária total de um medicamento baseado em seus protocolos ativos
+ * @param {string} medicineId
+ * @param {Array} protocols
+ * @returns {number}
+ */
+export function calculateDailyIntake(medicineId, protocols) {
+  if (!protocols) return 0;
+  
+  return protocols
+    .filter(p => p.medicine_id === medicineId && p.active)
+    .reduce((total, p) => {
+      const dosesPerDay = p.time_schedule?.length || 1;
+      const dosage = p.dosage_per_intake || 1;
+      return total + (dosesPerDay * dosage);
+    }, 0);
+}
+
+/**
+ * Calcula dias restantes de estoque
+ * @param {number} totalQuantity
+ * @param {number} dailyIntake
+ * @returns {number}
+ */
+export function calculateDaysRemaining(totalQuantity, dailyIntake) {
+  if (dailyIntake <= 0) return Infinity;
+  return Math.floor(totalQuantity / dailyIntake);
 }

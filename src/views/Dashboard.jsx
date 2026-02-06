@@ -1,10 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { 
-  cachedProtocolService as protocolService, 
-  cachedLogService as logService, 
-  cachedStockService as stockService, 
-  cachedMedicineService as medicineService, 
-  cachedTreatmentPlanService as treatmentPlanService 
+import { useState, useEffect, useMemo } from 'react'
+import {
+  cachedLogService as logService,
+  cachedTreatmentPlanService as treatmentPlanService
 } from '../services/api'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
@@ -19,13 +16,13 @@ import './Dashboard.css'
 
 /**
  * Dashboard "Health Command Center"
- * Implementação da Onda 3 com UI Cyberpunk/Neo-Glass.
+ * Implementação da Onda 2.5 com UI Cyberpunk/Neo-Glass.
  */
 export default function Dashboard({ onNavigate }) {
-  const { stats, medicines, protocols: rawProtocols, logs, isLoading: contextLoading, refresh } = useDashboard();
+  const { stats, medicines, protocols: rawProtocols, logs, stockSummary, isLoading: contextLoading, refresh } = useDashboard();
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [_error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
   const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
@@ -78,12 +75,48 @@ export default function Dashboard({ onNavigate }) {
   const smartAlerts = useMemo(() => {
     const alerts = [];
     
-    // Alerta de Estoque Crítico
-    const lowStockCount = medicines.filter(m => {
-      // Simplificação: se não tiver stock data aqui, ignoramos
-      // No mundo ideal, useDashboard retornaria stockSummary
-      return false; 
-    }).length;
+    // Alerta de Estoque Crítico e Baixo
+    // Agregação consolidada: stockSummary já contém um item por medicamento.
+    // Garantimos que cada medicine_id tenha apenas UM alerta, priorizando o crítico.
+    const processedMedicineIds = new Set();
+
+    stockSummary.forEach(item => {
+      const medId = item.medicine.id;
+      if (processedMedicineIds.has(medId)) return;
+
+      // Priorização rígida utilizando flags do stockSummary consolidado
+      if (item.isZero || item.isLow) {
+        const severity = item.isZero ? 'critical' : 'warning';
+        const title = item.isZero ? 'Estoque Zerado' : 'Estoque Baixo';
+        
+        let daysLabel = '';
+        if (item.isZero || item.daysRemaining === 0) {
+          daysLabel = 'hoje';
+        } else if (item.daysRemaining === Infinity) {
+          daysLabel = 'em breve';
+        } else {
+          daysLabel = `em ${item.daysRemaining} dias`;
+        }
+
+        const message = item.isZero
+          ? `O estoque total de ${item.medicine.name} acabou.`
+          : `${item.medicine.name} acabará ${daysLabel} (Total: ${item.total} restantes).`;
+
+        alerts.push({
+          id: `stock-${item.medicine.id}`,
+          severity,
+          title,
+          message,
+          type: 'stock',
+          medicine_id: item.medicine.id,
+          actions: [
+            { label: 'COMPRAR', type: 'primary' },
+            { label: 'ESTOQUE', type: 'secondary' }
+          ]
+        });
+        processedMedicineIds.add(medId);
+      }
+    });
 
     // Alerta de Doses Atrasadas (Mock funcional)
     const now = new Date();
@@ -121,8 +154,8 @@ export default function Dashboard({ onNavigate }) {
       });
     });
 
-    return alerts.sort((a, b) => (a.severity === 'critical' ? -1 : 1));
-  }, [rawProtocols, logs, medicines]);
+    return alerts.sort((a) => (a.severity === 'critical' ? -1 : 1));
+  }, [rawProtocols, logs, medicines, stockSummary]);
 
   const handleRegisterDose = async (medicineId, protocolId) => {
     try {
@@ -217,6 +250,11 @@ export default function Dashboard({ onNavigate }) {
               setPrefillData({ treatment_plan_id: alert.treatment_plan_id, type: 'plan' });
             }
             setIsModalOpen(true);
+          } else if (action.label === 'COMPRAR') {
+            // No futuro, isso poderia abrir um link externo ou lista de compras
+            alert(`Link para compra de ${alert.message.split(' ')[2]} (Simulado)`);
+          } else if (action.label === 'ESTOQUE') {
+            onNavigate('stock', { medicineId: alert.medicine_id });
           }
         }}
       />

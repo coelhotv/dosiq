@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import './TreatmentAccordion.css';
 
 /**
@@ -10,7 +10,7 @@ import './TreatmentAccordion.css';
  * @param {React.ReactNode} props.children - Itens de medicamento (SwipeRegisterItem)
  * @param {Function} props.onBatchRegister - Callback para registro em lote
  */
-export default function TreatmentAccordion({ protocol, children, onBatchRegister, selectedMedicines = [], onToggleMedicine }) {
+export default function TreatmentAccordion({ protocol, children, onBatchRegister, selectedMedicines = [] }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const selectedCount = selectedMedicines.length;

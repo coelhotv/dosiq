@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import './SwipeRegisterItem.css';
 
 /**
@@ -38,7 +38,7 @@ export default function SwipeRegisterItem({
       setIsSuccess(true);
       try {
         await onRegister?.(medicine.id);
-      } catch (error) {
+      } catch (_error) {
         setIsSuccess(false);
         // O Framer Motion vai resetar a posição automaticamente se não mudarmos o estado
       }

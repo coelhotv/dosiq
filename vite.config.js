@@ -14,7 +14,7 @@ export default defineConfig({
     
     // Limitar threads para não travar máquina (Vitest 4+ formato)
     pool: 'threads',
-    maxThreads: 1,
+    maxThreads: 2,
     minThreads: 1,
     useAtomics: true,
     
@@ -47,6 +47,7 @@ export default defineConfig({
         'server/',
         'api/',
         'docs/',
+        'plans/',      
         'public/',
       ],
     },

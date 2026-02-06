@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useCachedQueries } from './useCachedQuery';
-import { calculateAdherenceStats, getNextDoseTime } from '../utils/adherenceLogic';
+import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic';
 import { medicineService } from '../services/api/medicineService';
 import { protocolService } from '../services/api/protocolService';
 import { logService } from '../services/api/logService';
@@ -52,6 +52,49 @@ export function DashboardProvider({ children }) {
     return calculateAdherenceStats(logsResult.data, protocolsResult.data, 30);
   }, [protocolsResult.data, logsResult.data]);
 
+  // Cálculo de sumário de estoque em memória para "Custo Zero"
+  const stockSummary = useMemo(() => {
+    const meds = medicinesResult.data || [];
+    const protocols = protocolsResult.data || [];
+    
+    // 1. Identificar quais medicamentos possuem protocolos ativos
+    const activeMedicineIds = new Set(
+      protocols.filter(p => p.active).map(p => p.medicine_id)
+    );
+
+    // 2. Filtrar e agregar estoque apenas para medicamentos com protocolos ativos
+    return meds
+      .filter(m => activeMedicineIds.has(m.id))
+      .map(medicine => {
+        // medicine.stock já vem do medicineService.getAll() via query: '*, stock(*)'
+        // Filtramos apenas entradas com quantidade positiva e consolidamos
+        const activeStockEntries = (medicine.stock || []).filter(s => s.quantity > 0);
+        const totalQuantity = activeStockEntries.reduce((sum, s) => sum + s.quantity, 0);
+        
+        const dailyIntake = calculateDailyIntake(medicine.id, protocols);
+        const daysRemaining = calculateDaysRemaining(totalQuantity, dailyIntake);
+        
+        // Um medicamento é considerado com estoque baixo se tiver consumo e durar menos de 7 dias
+        // ou se o estoque total consolidado for menor ou igual ao limite definido no medicamento (se houver)
+        const threshold = medicine.min_stock_threshold || 0;
+        
+        // Priorização Rígida de Status
+        const isZero = totalQuantity === 0;
+        const isLow = !isZero && (dailyIntake > 0
+          ? (daysRemaining <= 7 || totalQuantity <= threshold)
+          : (totalQuantity <= threshold && totalQuantity > 0));
+
+        return {
+          medicine,
+          total: totalQuantity,
+          daysRemaining,
+          isZero,
+          isLow,
+          dailyIntake
+        };
+      });
+  }, [medicinesResult.data, protocolsResult.data]);
+
   const protocolsWithNextDose = useMemo(() => {
     const protocols = protocolsResult.data || [];
     return protocols.map(p => ({
@@ -64,13 +107,14 @@ export function DashboardProvider({ children }) {
     medicines: medicinesResult.data || [],
     protocols: protocolsWithNextDose,
     logs: logsResult.data || [],
+    stockSummary,
     stats,
     isLoading,
     isFetching,
     hasError,
     refresh: refetchAll,
     lastSync: new Date().toISOString()
-  }), [medicinesResult.data, protocolsWithNextDose, logsResult.data, stats, isLoading, isFetching, hasError, refetchAll]);
+  }), [medicinesResult.data, protocolsWithNextDose, logsResult.data, stockSummary, stats, isLoading, isFetching, hasError, refetchAll]);
 
   return (
     <DashboardContext.Provider value={value}>
@@ -79,6 +123,7 @@ export function DashboardProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDashboard() {
   const context = useContext(DashboardContext);
   if (!context) {
