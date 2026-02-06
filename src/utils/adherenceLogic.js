@@ -52,14 +52,6 @@ export function calculateExpectedDoses(protocols, days) {
  * @returns {Object}
  */
 export function calculateAdherenceStats(logs, protocols, days = 30) {
-  const expected = calculateExpectedDoses(protocols, days);
-  const taken = logs.length;
-  const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0;
-
-  // Cálculo de Streak (simplificado para in-memory com suporte a fuso horário local)
-  const dailyExpected = protocols.reduce((acc, p) => acc + (p.time_schedule?.length || 1), 0);
-  const logsByDay = new Map();
-  
   const toLocalDateString = (date) => {
     const d = new Date(date);
     const year = d.getFullYear();
@@ -68,37 +60,118 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
     return `${year}-${month}-${day}`;
   };
 
+  const logsByDay = new Map();
   logs.forEach(log => {
     const dayKey = toLocalDateString(log.taken_at);
-    logsByDay.set(dayKey, (logsByDay.get(dayKey) || 0) + 1);
+    if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, []);
+    logsByDay.get(dayKey).push(log);
   });
 
+  let totalExpected = 0;
+  let totalFollowed = 0;
   let currentStreak = 0;
-  const today = toLocalDateString(new Date());
-  const minAdherence = 0.8;
+  const todayStr = toLocalDateString(new Date());
 
   for (let i = 0; i < days; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const key = toLocalDateString(date);
-    const dayTaken = logsByDay.get(key) || 0;
+    const dateStr = toLocalDateString(date);
+    const dayLogs = logsByDay.get(dateStr) || [];
     
-    if (dailyExpected > 0 && dayTaken / dailyExpected >= minAdherence) {
+    let dayExpected = 0;
+    let dayFollowed = 0;
+
+    protocols.forEach(protocol => {
+      // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
+      // Em uma versão futura, considerar a frequência (daily, weekly, etc) aqui também
+      const schedule = protocol.time_schedule || [];
+      dayExpected += schedule.length;
+      
+      schedule.forEach(time => {
+        if (isProtocolFollowed(time, dayLogs, dateStr)) {
+          dayFollowed++;
+        }
+      });
+    });
+
+    totalExpected += dayExpected;
+    totalFollowed += dayFollowed;
+
+    // Lógica de Streak
+    const minAdherence = 0.8;
+    const isDaySuccessful = dayExpected > 0 && (dayFollowed / dayExpected >= minAdherence);
+    
+    if (isDaySuccessful) {
       currentStreak++;
-    } else if (key === today) {
-      // Se for hoje e ainda não bateu a meta, não quebra o streak
+    } else if (dateStr === todayStr) {
+      // Se hoje ainda não terminou, não quebra o streak
       continue;
-    } else {
-      break;
+    } else if (i > 0 || (i === 0 && dayExpected > 0)) {
+      // Se não for hoje e falhou, ou se for hoje e já temos falha clara, interrompe
+      // Mas só se houver doses esperadas
+      if (dayExpected > 0) break;
     }
   }
 
+  const score = totalExpected > 0 ? Math.min(Math.round((totalFollowed / totalExpected) * 100), 100) : 0;
+
   return {
     score,
-    taken,
-    expected,
+    taken: totalFollowed, // Representa doses seguidas corretamente na janela
+    expected: totalExpected,
     currentStreak
   };
+}
+
+/**
+ * Verifica se um protocolo foi seguido para um determinado horário,
+ * implementando a janela de +/- 2h de tolerância.
+ *
+ * @param {string} scheduledTime - Horário previsto "HH:mm" (local)
+ * @param {Array} logs - Lista de logs (em UTC)
+ * @param {string} dateStr - Data local de referência "YYYY-MM-DD"
+ * @returns {boolean}
+ */
+export function isProtocolFollowed(scheduledTime, logs, dateStr) {
+  if (!scheduledTime || !logs || logs.length === 0) return false;
+
+  return logs.some(log => {
+    // 1. Verificar se o log é do mesmo dia local
+    const logDate = new Date(log.taken_at);
+    const lYear = logDate.getFullYear();
+    const lMonth = String(logDate.getMonth() + 1).padStart(2, '0');
+    const lDay = String(logDate.getDate()).padStart(2, '0');
+    const logDateStr = `${lYear}-${lMonth}-${lDay}`;
+
+    if (logDateStr !== dateStr) return false;
+
+    // 2. Verificar janela de 2h
+    return isDoseInToleranceWindow(scheduledTime, log.taken_at);
+  });
+}
+
+/**
+ * Verifica se uma dose foi tomada dentro da janela de tolerância de +/- 2 horas.
+ *
+ * @param {string} scheduledTime - Horário previsto "HH:mm" (local)
+ * @param {string} logTakenAt - ISO timestamp do log (UTC)
+ * @returns {boolean}
+ */
+export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
+  if (!scheduledTime || !logTakenAt) return false;
+
+  const [sH, sM] = scheduledTime.split(':').map(Number);
+  const takenDate = new Date(logTakenAt);
+  
+  // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada,
+  // usando o fuso horário local do dispositivo do usuário.
+  const scheduledDate = new Date(takenDate);
+  scheduledDate.setHours(sH, sM, 0, 0);
+
+  const diffMs = Math.abs(takenDate.getTime() - scheduledDate.getTime());
+  const twoHoursInMs = 2 * 60 * 60 * 1000;
+
+  return diffMs <= twoHoursInMs;
 }
 
 /**
