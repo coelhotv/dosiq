@@ -6,29 +6,10 @@ import './HealthScoreDetails.css';
  * HealthScoreDetails - Modal de detalhamento do Health Score (Breakdown)
  */
 export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummary }) {
-  if (!stats) return null;
+  if (!stats || !stats.rates) return null;
 
-  // 1. Cálculo de Adesão (60%) - Doses tomadas (mesmo fora da janela) / Esperadas
-  // Nota: Por enquanto o logService não distingue se foi fora da janela para a "Adesão" pura,
-  // mas vamos assumir que se há um log no dia para aquele remédio, conta como adesão.
-  const adherenceWeight = 0.6;
-  const punctualityWeight = 0.2;
-  const stockWeight = 0.2;
-
-  // Mock ou cálculo simplificado baseado nos dados atuais
-  // Em uma refatoração futura, essas métricas virão prontas do useDashboard
-  const adherenceRate = stats.expected > 0 ? (stats.takenAnytime / stats.expected) : 1;
-  const punctualityRate = stats.expected > 0 ? (stats.taken / stats.expected) : 1;
-  
-  const totalMeds = stockSummary.length;
-  const healthyStockMeds = stockSummary.filter(s => !s.isLow && !s.isZero).length;
-  const stockRate = totalMeds > 0 ? (healthyStockMeds / totalMeds) : 1;
-
-  const adherenceScore = Math.round(adherenceRate * 100 * adherenceWeight);
-  const punctualityScore = Math.round(punctualityRate * 100 * punctualityWeight);
-  const stockScore = Math.round(stockRate * 100 * stockWeight);
-  
-  const totalScore = Math.min(adherenceScore + punctualityScore + stockScore, 100);
+  const { adherence: adherenceRate, punctuality: punctualityRate, stock: stockRate } = stats.rates;
+  const totalScore = stats.score;
 
   // Insights Acionáveis
   const insights = [];
@@ -58,11 +39,14 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Análise de Performance">
+    <Modal isOpen={isOpen} onClose={onClose} title="Análise do Health Score">
       <div className="health-details">
         <div className="health-details__overview">
           <div className="health-details__score-main">
-            <span className="health-details__score-value">{totalScore}</span>
+            <div className="health-details__score-container">
+              <span className="health-details__score-value">{totalScore}</span>
+              <div className="health-details__score-glow"></div>
+            </div>
             <span className="health-details__score-label">Score Atual</span>
           </div>
           <p className="health-details__description">

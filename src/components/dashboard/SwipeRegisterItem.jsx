@@ -38,7 +38,8 @@ export default function SwipeRegisterItem({
       setIsSuccess(true);
       try {
         await onRegister?.(medicine.id);
-      } catch (_error) {
+      } catch (err) {
+        console.error('Erro ao registrar via swipe:', err);
         setIsSuccess(false);
         // O Framer Motion vai resetar a posição automaticamente se não mudarmos o estado
       }

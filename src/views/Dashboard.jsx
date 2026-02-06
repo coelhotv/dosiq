@@ -20,7 +20,15 @@ import './Dashboard.css'
  * Implementação da Onda 2.5 com UI Cyberpunk/Neo-Glass.
  */
 export default function Dashboard({ onNavigate }) {
-  const { stats, medicines, protocols: rawProtocols, logs, stockSummary, isLoading: contextLoading, refresh, isDoseInToleranceWindow } = useDashboard();
+  const {
+    stats,
+    protocols: rawProtocols,
+    logs,
+    stockSummary,
+    refresh,
+    isDoseInToleranceWindow,
+    isLoading: contextLoading
+  } = useDashboard();
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [_error, setError] = useState(null)
@@ -134,7 +142,6 @@ export default function Dashboard({ onNavigate }) {
         // Uma dose é considerada atrasada apenas se passaram mais de 120 minutos (2 horas) do horário previsto
         // E ela deve ser de hoje (delay < 1440)
         const isPastTolerance = delay > 120;
-        const isWithinUpcomingWindow = delay <= 120 && delay > -120; // Janela de +/- 2h do horário atual
 
         if (delay > 0 && delay < 1440) {
           // Verificar se já foi tomada dentro da janela de tolerância
@@ -161,7 +168,7 @@ export default function Dashboard({ onNavigate }) {
     });
 
     return alerts.sort((a) => (a.severity === 'critical' ? -1 : 1));
-  }, [rawProtocols, logs, medicines, stockSummary]);
+  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow]);
 
   const handleRegisterDose = async (medicineId, protocolId) => {
     try {

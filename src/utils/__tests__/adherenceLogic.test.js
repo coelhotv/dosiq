@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isDoseInToleranceWindow, isProtocolFollowed, calculateAdherenceStats } from '../adherenceLogic';
+import { isDoseInToleranceWindow, isProtocolFollowed } from '../adherenceLogic';
 
 describe('adherenceLogic - Janela de Tolerância', () => {
   it('deve validar dose dentro da janela de +/- 2 horas', () => {

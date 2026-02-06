@@ -47,8 +47,10 @@ export function DashboardProvider({ children }) {
 
   const [medicinesResult, protocolsResult, logsResult] = results;
 
-  const stats = useMemo(() => {
-    if (!protocolsResult.data || !logsResult.data) return { score: 0, currentStreak: 0 };
+  const rawStats = useMemo(() => {
+    if (!protocolsResult.data || !logsResult.data) {
+      return { score: 0, taken: 0, takenAnytime: 0, expected: 0, currentStreak: 0 };
+    }
     return calculateAdherenceStats(logsResult.data, protocolsResult.data, 30);
   }, [protocolsResult.data, logsResult.data]);
 
@@ -94,6 +96,36 @@ export function DashboardProvider({ children }) {
         };
       });
   }, [medicinesResult.data, protocolsResult.data]);
+
+  // Health Score Unificado (Onda 2.5)
+  const stats = useMemo(() => {
+    const adherenceWeight = 0.6;
+    const punctualityWeight = 0.2;
+    const stockWeight = 0.2;
+
+    const adherenceRate = rawStats.expected > 0 ? (rawStats.takenAnytime / rawStats.expected) : 1;
+    const punctualityRate = rawStats.expected > 0 ? (rawStats.taken / rawStats.expected) : 1;
+
+    const totalMeds = stockSummary.length;
+    const healthyStockMeds = stockSummary.filter(s => !s.isLow && !s.isZero).length;
+    const stockRate = totalMeds > 0 ? (healthyStockMeds / totalMeds) : 1;
+
+    const adherenceScore = Math.round(adherenceRate * 100 * adherenceWeight);
+    const punctualityScore = Math.round(punctualityRate * 100 * punctualityWeight);
+    const stockScore = Math.round(stockRate * 100 * stockWeight);
+
+    const totalScore = Math.min(adherenceScore + punctualityScore + stockScore, 100);
+
+    return {
+      ...rawStats,
+      score: totalScore, // Sobrescreve o score simples pelo ponderado
+      rates: {
+        adherence: adherenceRate,
+        punctuality: punctualityRate,
+        stock: stockRate
+      }
+    };
+  }, [rawStats, stockSummary]);
 
   const protocolsWithNextDose = useMemo(() => {
     const protocols = protocolsResult.data || [];
