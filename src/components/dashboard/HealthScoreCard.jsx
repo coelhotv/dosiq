@@ -9,14 +9,14 @@ import './HealthScoreCard.css';
  * @param {number} props.streak - Dias seguidos de adesão
  * @param {string} [props.trend] - 'up' | 'down'
  */
-export default function HealthScoreCard({ score = 0, streak = 0, trend = 'up' }) {
+export default function HealthScoreCard({ score = 0, streak = 0, trend = 'up', onClick }) {
   // Cálculo do perímetro do círculo para o progresso
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="health-score-card">
+    <div className={`health-score-card ${onClick ? 'health-score-card--clickable' : ''}`} onClick={onClick}>
       <div className="health-score-card__chart">
         <svg viewBox="0 0 60 60" className="health-score-card__svg">
           <circle

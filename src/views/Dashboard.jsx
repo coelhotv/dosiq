@@ -8,6 +8,7 @@ import Modal from '../components/ui/Modal'
 import LogForm from '../components/log/LogForm'
 import { useDashboard } from '../hooks/useDashboardContext.jsx'
 import HealthScoreCard from '../components/dashboard/HealthScoreCard'
+import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
@@ -26,6 +27,8 @@ export default function Dashboard({ onNavigate }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
   const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
+  
+  const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
   
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   useEffect(() => {
@@ -235,12 +238,20 @@ export default function Dashboard({ onNavigate }) {
           <span className="greeting-label">{getGreeting()}</span>
           <h1 className="user-name">{userName} <span className="dot">.</span></h1>
         </div>
-        <HealthScoreCard 
-          score={stats.score} 
-          streak={stats.currentStreak} 
-          trend="up" 
+        <HealthScoreCard
+          score={stats.score}
+          streak={stats.currentStreak}
+          trend="up"
+          onClick={() => setIsHealthDetailsOpen(true)}
         />
       </header>
+
+      <HealthScoreDetails
+        isOpen={isHealthDetailsOpen}
+        onClose={() => setIsHealthDetailsOpen(false)}
+        stats={stats}
+        stockSummary={stockSummary}
+      />
 
       {/* Smart Alerts Section */}
       <SmartAlerts

@@ -69,6 +69,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
 
   let totalExpected = 0;
   let totalFollowed = 0;
+  let totalTakenAnytime = 0;
   let currentStreak = 0;
   const todayStr = toLocalDateString(new Date());
 
@@ -80,6 +81,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
     
     let dayExpected = 0;
     let dayFollowed = 0;
+    let dayTakenAnytime = 0;
 
     protocols.forEach(protocol => {
       // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
@@ -91,11 +93,17 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
         if (isProtocolFollowed(time, dayLogs, dateStr)) {
           dayFollowed++;
         }
+        
+        // Verifica se tomou em qualquer horário do dia
+        if (dayLogs.some(l => l.protocol_id === protocol.id)) {
+          dayTakenAnytime++;
+        }
       });
     });
 
     totalExpected += dayExpected;
     totalFollowed += dayFollowed;
+    totalTakenAnytime += dayTakenAnytime;
 
     // Lógica de Streak
     const minAdherence = 0.8;
@@ -118,6 +126,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
   return {
     score,
     taken: totalFollowed, // Representa doses seguidas corretamente na janela
+    takenAnytime: totalTakenAnytime,
     expected: totalExpected,
     currentStreak
   };
