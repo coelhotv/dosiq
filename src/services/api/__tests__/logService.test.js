@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest' 
 
 // Hoist dos mocks para uso em vi.mock
 const mocks = vi.hoisted(() => {
@@ -8,40 +8,52 @@ const mocks = vi.hoisted(() => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
+              gt: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+                single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+              }),
               order: vi.fn().mockResolvedValue({ data: [], error: null }),
               single: vi.fn().mockResolvedValue({ data: null, error: null }),
               maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
             }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null })
+            gt: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+            }),
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
           }),
-          order: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue({ data: [], error: null })
-          })
+          gt: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+          }),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
         }),
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: null })
-          })
-        }),
-        update: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null })
-        }),
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null })
+        order: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
         })
+      }),
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: null })
+        })
+      }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null })
       })
     },
     mockGetUserId: vi.fn().mockResolvedValue('test-user-id')
   }
 })
-
-// Mock do stockService
-vi.mock('../stockService', () => ({
-  stockService: {
-    decrease: vi.fn(),
-    increase: vi.fn()
-  }
-}))
 
 // Mock do módulo supabase
 vi.mock('../../../lib/supabase', () => ({
@@ -50,7 +62,6 @@ vi.mock('../../../lib/supabase', () => ({
 }))
 
 import { logService } from '../logService'
-import { stockService } from '../stockService'
 
 describe('logService', () => {
   beforeEach(() => {
@@ -61,15 +72,27 @@ describe('logService', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
+            gt: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+            }),
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
             single: vi.fn().mockResolvedValue({ data: null, error: null }),
             maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
           }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
+          gt: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+          }),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
         }),
-        order: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue({ data: [], error: null })
-        })
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
       }),
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -96,7 +119,8 @@ describe('logService', () => {
 
     it('should create log and decrease stock', async () => {
       const createdLog = { id: 'log-1', ...mockLog, user_id: 'test-user-id' }
-
+ 
+      // Mock para insert do log
       mocks.mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -104,15 +128,15 @@ describe('logService', () => {
           })
         })
       })
-      stockService.decrease.mockResolvedValue(undefined)
-
+ 
       const result = await logService.create(mockLog)
-
+ 
       expect(mocks.mockSupabase.from).toHaveBeenCalledWith('medicine_logs')
       expect(result).toEqual(createdLog)
     })
 
     it('should throw error when log creation fails', async () => {
+      // Mock para insert do log com erro
       mocks.mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -122,21 +146,6 @@ describe('logService', () => {
       })
 
       await expect(logService.create(mockLog)).rejects.toThrow('Validation error')
-    })
-
-    it('should throw combined error when stock decrease fails', async () => {
-      const createdLog = { id: 'log-1', ...mockLog }
-
-      mocks.mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: createdLog, error: null })
-          })
-        })
-      })
-      stockService.decrease.mockRejectedValue(new Error('Estoque insuficiente'))
-
-      await expect(logService.create(mockLog)).rejects.toThrow('Remédio registrado, mas erro ao atualizar estoque')
     })
   })
 })

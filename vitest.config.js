@@ -8,28 +8,24 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     css: false,
-    
+
     // ==========================================
-    // OTIMIZAÇÕES PARA MACBOOK AIR 2013
+    // OTIMIZAÇÕES PARA MACBOOK AIR 2013 (Vitest 4+)
     // ==========================================
-    
+
     // Executar apenas 1 thread para evitar sobrecarga
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,  // MUITO importante para machines antigas
-        maxThreads: 1,
-        minThreads: 1,
-      },
-    },
-    
+    singleThread: true,  // MUITO importante para machines antigas
+    maxThreads: 1,
+    minThreads: 1,
+
     // Não isolar testes (mais rápido, mas cuidado com estado compartilhado)
     isolate: false,
-    
+
     // Limites de tempo mais generosos
     testTimeout: 30000,
     hookTimeout: 10000,
-    
+
     // Excluir testes de componentes UI que são lentos
     exclude: [
       '**/node_modules/**',
@@ -38,7 +34,7 @@ export default defineConfig({
       '**/.{idea,git,cache,out,temp}/**',
       '**/src/components/**/*.test.jsx',
     ],
-    
+
     // Coverage mais leve
     coverage: {
       provider: 'v8',
