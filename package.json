@@ -22,6 +22,7 @@
     "test:git": "vitest run --changed=main --reporter=dot",
     "test:affected": "vitest run --related --passWithNoTests --reporter=dot",
     "test:smoke": "vitest run --config vitest.smoke.config.js",
+    "test:light": "vitest run --config vitest.light.config.js --reporter=dot",
     "// --- Validação Rápida ---": "",
     "validate": "npm run lint && npm run test:critical",
     "validate:quick": "npm run lint && npm run test:related",
