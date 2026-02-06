@@ -55,6 +55,14 @@ const mocks = vi.hoisted(() => {
   }
 })
 
+// Mock do stockService
+vi.mock('../stockService', () => ({
+  stockService: {
+    decrease: vi.fn().mockResolvedValue(undefined),
+    increase: vi.fn().mockResolvedValue(undefined)
+  }
+}))
+
 // Mock do módulo supabase
 vi.mock('../../../lib/supabase', () => ({
   supabase: mocks.mockSupabase,
