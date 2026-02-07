@@ -2,6 +2,7 @@ docs/
 .migrations/
 .env
 .env.example
+.env.local
 *.md
 package-lock.json
 node_modules/
