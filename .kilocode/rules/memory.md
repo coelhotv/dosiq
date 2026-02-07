@@ -165,3 +165,54 @@ Adicione ao final do arquivo exatamente neste formato:
 
 **Pendências / próximos passos**
 - Verificar se há outras constantes em inglês em outros arquivos do projeto
+
+---
+
+## Memory Entry — 2026-02-07 02:40
+**Contexto / Objetivo**
+- Corrigir comportamento do botão ADIAR no smart alert de atraso de doses
+- O botão não respondia ao clique, não suprimindo o alerta nem pulando a dose
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Adicionou estado `snoozedAlertIds` e handler para ADIAR
+  - `src/hooks/__tests__/useCachedQuery.test 2.jsx` — Corrigiu lint errors (catch vazio)
+- Comportamento impactado:
+  - Botão ADIAR agora suprime o alerta de dose atrasada da lista
+  - Alerta é filtrado da UI ao clicar em ADIAR
+
+**Verificação**
+- Testes/checagens executadas:
+  - npm run lint — Passed
+  - npm run build — Passed
+- Evidência do resultado:
+  - Build concluído com sucesso
+  - Lint sem erros
+
+**O que deu certo**
+- Uso de Set para rastrear IDs de alertas silenciados (performático)
+- Filtro no useMemo de smartAlerts para excluir alertas silenciados
+- Handler simples que apenas suprime o alerta (sem criar registro no banco)
+
+**O que não deu certo / riscos**
+- Solução é local/session-based - alerta pode reaparecer em novo refresh da página
+- Não há persistência do "adiar" no banco de dados
+
+**Causa raiz (se foi debug)**
+- Sintoma: Botão ADIAR não fazia nada ao clicar
+- Causa: Handler `onAction` em Dashboard.jsx não tratava `action.label === 'ADIAR'`
+- Correção: Adicionado handler que adiciona alert.id ao Set de silenciados
+
+**Decisões & trade-offs**
+- Decisão: Usar solução local com estado React (Set) ao invés de criar registro no banco
+- Alternativas consideradas: Criar campo status/skipped na tabela medicine_logs
+- Por quê: Solução mais simples e imediata; impacto mínimo no schema do banco
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre verificar todos os action labels no handler de SmartAlerts
+- Usar Set para tracking de IDs é mais performático que Array.includes
+- Catch vazio (`catch {}`) é aceito pelo lint, variável não é necessária
+
+**Pendências / próximos passos**
+- Considerar persistência de alertas silenciados no banco (opcional)
+- Adicionar teste unitário para o handler de ADIAR
