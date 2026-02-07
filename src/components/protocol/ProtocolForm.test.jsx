@@ -53,7 +53,7 @@ describe('ProtocolForm', () => {
       id: 'p1',
       name: 'Existing Protocol',
       medicine_id: '1',
-      frequency: 'Once a day',
+      frequency: 'diário',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
       active: true
@@ -129,7 +129,7 @@ describe('ProtocolForm', () => {
     // Fill form
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
-    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: '2x ao dia' } })
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
     // Add time
@@ -145,7 +145,7 @@ describe('ProtocolForm', () => {
         medicine_id: '1',
         treatment_plan_id: null,
         name: 'Test Protocol',
-        frequency: '2x ao dia',
+        frequency: 'diário',
         time_schedule: ['08:00'],
         dosage_per_intake: 1,
         target_dosage: null,
@@ -258,7 +258,7 @@ describe('ProtocolForm', () => {
       id: 'p1',
       name: 'Existing Protocol',
       medicine_id: '1',
-      frequency: 'Once a day',
+      frequency: 'diário',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
       active: true
@@ -292,7 +292,7 @@ describe('ProtocolForm', () => {
     // Fill form with valid data
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
-    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: '2x ao dia' } })
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
     const timeInput = screen.getByLabelText(/Horários/i)
@@ -320,7 +320,7 @@ describe('ProtocolForm', () => {
 
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
-    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: '2x ao dia' } })
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     // Set dosage to 0 which should fail validation
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '0' } })
 
@@ -351,7 +351,7 @@ describe('ProtocolForm', () => {
     // Fill all required fields first
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
-    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: '2x ao dia' } })
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
     // Add time schedule

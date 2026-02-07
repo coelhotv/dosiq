@@ -5,8 +5,17 @@ import { z } from 'zod'
  * Baseado na tabela 'protocols' do Supabase
  */
 
-// Frequências válidas
-const FREQUENCIES = ['daily', 'alternate', 'weekly', 'custom', 'as_needed']
+// Frequências válidas (valores reais para o banco)
+export const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário']
+
+// Labels de frequência para exibição
+export const FREQUENCY_LABELS = {
+  'diário': 'Diário',
+  'dias_alternados': 'Dias Alternados',
+  'semanal': 'Semanal',
+  'personalizado': 'Personalizado',
+  'quando_necessário': 'Quando Necessário'
+}
 
 // Status de titulação
 const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido']
@@ -60,7 +69,7 @@ export const protocolSchema = z.object({
   frequency: z
     .enum(FREQUENCIES, {
       errorMap: () => ({ 
-        message: 'Frequência inválida. Opções: daily (diário), alternate (dias alternados), weekly (semanal), custom (personalizado), as_needed (quando necessário)' 
+        message: 'Frequência inválida. Opções: diário, dias_alternados, semanal, personalizado, quando_necessário' 
       })
     }),
   

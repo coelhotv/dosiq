@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Button from '../ui/Button'
 import TitrationWizard from './TitrationWizard'
+import { FREQUENCIES, FREQUENCY_LABELS } from '../../schemas/protocolSchema'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({ medicines, treatmentPlans = [], protocol, initialValues, onSave, onCancel }) {
@@ -201,15 +202,20 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
           <label htmlFor="frequency">
             Frequência <span className="required">*</span>
           </label>
-          <input
-            type="text"
+          <select
             id="frequency"
             name="frequency"
             value={formData.frequency}
             onChange={handleChange}
             className={errors.frequency ? 'error' : ''}
-            placeholder="Ex: 2x ao dia, a cada 8 horas"
-          />
+          >
+            <option value="">Selecione a frequência</option>
+            {FREQUENCIES.map(freq => (
+              <option key={freq} value={freq}>
+                {FREQUENCY_LABELS[freq]}
+              </option>
+            ))}
+          </select>
           {errors.frequency && <span className="error-message">{errors.frequency}</span>}
         </div>
 
