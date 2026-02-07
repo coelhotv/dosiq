@@ -581,3 +581,55 @@ onAction((alert, action) => {
 - Testar comando /registrar em ambiente de desenvolvimento
 - Validar funcionamento após deploy para produção
 - Monitorar logs da Vercel para verificar se erros estão sendo registrados corretamente
+
+---
+
+## Memory Entry — 2026-02-07 16:33
+**Contexto / Objetivo**
+- Corrigir erro BUTTON_DATA_INVALID da API do Telegram
+- O erro ocorria ao usar UUIDs (36 caracteres) em callback_data
+- Limite da API do Telegram é 64 bytes para callback_data
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/commands/registrar.js` — Substituir UUIDs por índices em reg_med
+  - `server/bot/commands/adicionar_estoque.js` — Substituir UUIDs por índices em add_stock_med e add_stock_med_val
+  - `server/bot/commands/protocols.js` — Substituir UUIDs por índices em pause_prot e resume_prot
+  - `server/bot/callbacks/conversational.js` — Recuperar IDs completos a partir de índices
+- Comportamento impactado:
+  - Todos os comandos com inline keyboard agora usam índices numéricos
+  - Mapeamento de índices para IDs armazenado na sessão do usuário
+  - Callbacks recuperam IDs completos a partir do índice
+
+**O que deu certo**
+- Uso de índices numéricos reduz callback_data de ~81 caracteres para ~15 caracteres
+- Mapeamento na sessão permite recuperar IDs completos quando necessário
+- Validação de sessão expirada em todos os callbacks
+- Solução aplicada a todos os comandos afetados
+
+**O que não deu certo / riscos**
+- Sessão expirada pode causar erro se usuário clicar em botão antigo
+- Correção: Adicionada validação de sessão com feedback ao usuário
+
+**Causa raiz (se foi debug)**
+- Sintoma: Erro 400 Bad Request: BUTTON_DATA_INVALID da API do Telegram
+- Causa: callback_data usava UUIDs (36 caracteres) resultando em ~81 caracteres, excedendo limite de 64 bytes
+- Correção: Substituir UUIDs por índices numéricos e armazenar mapeamento na sessão
+- Prevenção: Sempre verificar tamanho de callback_data ao criar inline keyboards
+
+**Decisões & trade-offs**
+- Decisão: Usar índices numéricos em vez de codificar UUIDs (base64, etc.)
+- Alternativas consideradas: Codificar UUIDs em base64, usar IDs curtos do banco
+- Por que: Índices são mais simples, mais legíveis e garantem tamanho pequeno
+
+**Regras locais para o futuro (lições acionáveis)**
+- Limite da API do Telegram para callback_data é 64 bytes
+- Sempre usar índices numéricos em vez de UUIDs em callback_data
+- Armazenar mapeamento de índices para IDs na sessão do usuário
+- Validar sessão expirada em todos os callbacks que usam índices
+- Testar inline keyboards com muitos itens para verificar limite
+
+**Pendências / próximos passos**
+- Testar comando /registrar após deploy automático
+- Testar comandos /adicionar_estoque, /pausar, /retomar
+- Monitorar logs da Vercel para verificar se erro BUTTON_DATA_INVALID foi resolvido
