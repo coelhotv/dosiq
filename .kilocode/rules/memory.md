@@ -727,6 +727,53 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-07 17:10
+**Contexto / Objetivo**
+- Corrigir unidade de quantity_taken no comando /registrar do bot do Telegram
+- O bot gravava 2000 (mg) no banco, mas deveria gravar 4 (comprimidos)
+- Schema Zod tem limite de 100 para quantity_taken, confirmando que deve ser em comprimidos
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Gravar pillsToDecrease em vez de quantity no banco
+- Comportamento impactado:
+  - quantity_taken agora é gravado em comprimidos (4) em vez de mg (2000)
+  - Compatível com schema Zod que tem limite de 100
+  - Mensagem de confirmação continua mostrando dosagem em mg
+
+**O que deu certo**
+- Separação clara entre dosagem (mg/ml) e quantidade de comprimidos no banco
+- quantity_taken agora está em comprimidos, compatível com schema Zod
+- Mensagem de confirmação mostra dosagem correta em mg
+
+**O que não deu certo / riscos**
+- Sistema anteriormente gravava dosagem (mg) em vez de comprimidos
+- Schema Zod tem limite de 100, mas bot gravava 2000 (mg)
+
+**Causa raiz (se foi debug)**
+- Sintoma: Bot gravava 2000 no banco, mas schema Zod só permite até 100
+- Causa: quantity_taken estava sendo gravado com valor em mg (quantity) em vez de comprimidos (pillsToDecrease)
+- Correção: Gravar pillsToDecrease (comprimidos) em vez de quantity (mg)
+- Prevenção: Sempre verificar schema Zod para entender unidade esperada
+
+**Decisões & trade-offs**
+- Decisão: Gravar quantidade de comprimidos no banco para compatibilidade com schema Zod
+- Alternativas consideradas: Aumentar limite do schema Zod, manter valor em mg
+- Por que: Schema Zod já existe e é usado pelo frontend, manter compatibilidade
+
+**Regras locais para o futuro (lições acionáveis)**
+- quantity_taken na tabela medicine_logs deve ser em comprimidos, não em mg
+- Schema Zod define a unidade esperada (limite de 100 confirma comprimidos)
+- Sempre verificar schema Zod antes de gravar dados no banco
+- Mensagem de confirmação pode mostrar unidade diferente do banco (mg vs comprimidos)
+
+**Pendências / próximos passos**
+- Testar comando /registrar após deploy automático
+- Verificar se quantity_taken está correto no banco (comprimidos)
+- Monitorar logs da Vercel para validar funcionamento
+
+---
+
 ## Memory Entry — 2026-02-07 16:08
 **Contexto / Objetivo**
 - Corrigir comando /registrar do bot que não estava funcionando
