@@ -126,7 +126,7 @@ export default function Dashboard({ onNavigate }) {
           type: 'stock',
           medicine_id: item.medicine.id,
           actions: [
-            { label: 'COMPRAR', type: 'placeholder' },
+            { label: 'COMPRAR', type: 'placeholder', title: 'Em breve: integração com farmácias para compra direta' },
             { label: 'ESTOQUE', type: 'secondary' }
           ]
         });
@@ -280,8 +280,8 @@ export default function Dashboard({ onNavigate }) {
             }
             setIsModalOpen(true);
           } else if (action.label === 'COMPRAR') {
-            // No futuro, isso poderia abrir um link externo ou lista de compras
-            alert(`Link para compra de ${alert.message.split(' ')[2]} (Simulado)`);
+            // Placeholder - tooltip informa integração futura
+            // funcionalità futura
           } else if (action.label === 'ESTOQUE') {
             onNavigate('stock', { medicineId: alert.medicine_id });
           } else if (action.label === 'ADIAR') {
