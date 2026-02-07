@@ -23,19 +23,40 @@ import { handleInlineQueries } from './bot/inlineQuery.js';
 import { startScheduler, startDailyDigest } from './bot/scheduler.js';
 import { startStockAlerts, startAdherenceReports, startTitrationAlerts, startMonthlyReport } from './bot/alerts.js';
 import { startAutoCleanup } from './services/sessionManager.js';
+import { BotFactory } from './bot/bot-factory.js';
+import { createLogger } from './bot/logger.js';
+import { healthCheck, registerDefaultChecks } from './bot/health-check.js';
+
+const logger = createLogger('BotApp');
 
 // Validate environment
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
-  console.error('ERRO: TELEGRAM_BOT_TOKEN não definido no .env');
+  logger.error('TELEGRAM_BOT_TOKEN não definido no .env');
   process.exit(1);
 }
 
-// Initialize bot
-const bot = new TelegramBot(token, { polling: true });
+// Validate token before creating bot
+logger.info('Validating Telegram token...');
+const validation = await BotFactory.validateToken(token);
+if (!validation.valid) {
+  logger.error('Token validation failed', null, { error: validation.error });
+  process.exit(1);
+}
+logger.info('Token validated', { username: validation.botInfo.username });
 
-console.log('🚀 Bot de Remédios iniciado com sucesso!');
-console.log('📋 Comandos disponíveis: /start, /status, /estoque, /hoje, /proxima, /historico, /ajuda, /registrar, /adicionar_estoque, /repor, /pausar, /retomar');
+// Initialize bot with factory
+const bot = BotFactory.createPollingBot(token);
+
+// Register health checks
+registerDefaultChecks(bot, supabase);
+
+// Run initial health check
+const initialHealth = await healthCheck.runAll();
+logger.info('Initial health check', { results: initialHealth });
+
+logger.info('Bot de Remédios iniciado com sucesso!');
+logger.info('Comandos disponíveis: /start, /status, /estoque, /hoje, /proxima, /historico, /ajuda, /registrar, /adicionar_estoque, /repor, /pausar, /retomar');
 
 // Register command handlers
 bot.onText(/\/start/, (msg) => handleStart(bot, msg));
@@ -70,3 +91,16 @@ startMonthlyReport(bot);
 
 // Start session cleanup for persistent sessions
 startAutoCleanup();
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  bot.stopPolling();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  bot.stopPolling();
+  process.exit(0);
+});
