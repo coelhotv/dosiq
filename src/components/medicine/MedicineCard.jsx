@@ -36,7 +36,7 @@ function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
           </div>
         )}
 
-        {medicine.type === 'supplement' && (
+        {medicine.type === 'suplemento' && (
           <div className="detail-item">
             <span className="detail-label">ℹ️ Tipo:</span>
             <span className="detail-value">Suplemento</span>

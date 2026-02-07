@@ -7,6 +7,8 @@ import StreakBadge from '../adherence/StreakBadge'
 import Modal from '../ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
 
+import { FREQUENCY_LABELS } from '../../schemas/protocolSchema'
+
 import './ProtocolCard.css'
 
 export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelete }) {
@@ -51,7 +53,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
       <div className="protocol-details">
         <div className="detail-item">
           <span className="detail-label">📅 Frequência:</span>
-          <span className="detail-value">{protocol.frequency}</span>
+          <span className="detail-value">{FREQUENCY_LABELS[protocol.frequency] || protocol.frequency}</span>
         </div>
         
         <div className="detail-item">

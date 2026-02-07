@@ -9,7 +9,13 @@ import { z } from 'zod'
 const DOSAGE_UNITS = ['mg', 'mcg', 'ml', 'g', 'UI', 'gotas', 'comprimido', 'cápsula']
 
 // Tipos de medicamento
-const MEDICINE_TYPES = ['medicine', 'supplement']
+export const MEDICINE_TYPES = ['medicamento', 'suplemento']
+
+// Labels de tipo para exibição
+export const MEDICINE_TYPE_LABELS = {
+  'medicamento': 'Medicamento',
+  'suplemento': 'Suplemento'
+}
 
 /**
  * Schema base para medicamento
@@ -47,9 +53,9 @@ export const medicineSchema = z.object({
   
   type: z
     .enum(MEDICINE_TYPES, {
-      errorMap: () => ({ message: 'Tipo deve ser "medicine" (medicamento) ou "supplement" (suplemento)' })
+      errorMap: () => ({ message: 'Tipo inválido. Opções: medicamento, suplemento' })
     })
-    .default('medicine'),
+    .default('medicamento'),
 })
 
 /**
