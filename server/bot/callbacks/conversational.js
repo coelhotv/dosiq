@@ -287,13 +287,14 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     }
     
     // 2. Criar Log (só se houver estoque suficiente)
+    // quantity_taken deve ser em comprimidos, não em mg
     const { error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
         user_id: userId,
         protocol_id: protocolId,
         medicine_id: medicineId,
-        quantity_taken: quantity,
+        quantity_taken: pillsToDecrease,
         taken_at: new Date().toISOString()
       }]);
 
