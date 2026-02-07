@@ -138,7 +138,7 @@ export async function handleProtocolCallback(bot, callbackQuery) {
   const active = action === 'resume_prot';
   
   // Get session to retrieve protocol map
-  const session = getSession(chatId);
+  const session = await getSession(chatId);
   
   if (!session || !session.protocolMap || !session.protocolMap[index]) {
     return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
