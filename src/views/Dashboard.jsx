@@ -331,7 +331,7 @@ export default function Dashboard({ onNavigate }) {
       {/* 3. Tratamento - Parte Inferior: Protocolos Avulsos */}
       <section className="treatment-standalone-section">
         <div className="section-header">
-          <h2 className="section-title">PRÓXIMAS</h2>
+          <h2 className="section-title">PROTOCOLOS</h2>
         </div>
 
         <div className="treatment-standalone-list">
