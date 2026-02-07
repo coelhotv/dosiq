@@ -236,6 +236,20 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     // Get actual user ID from chat ID
     const userId = await getUserIdByChatId(chatId);
     
+    // Fetch medicine to get dosage_per_pill for stock calculation
+    const { data: medicine } = await supabase
+      .from('medicines')
+      .select('dosage_per_pill')
+      .eq('id', medicineId)
+      .single();
+    
+    const dosagePerPill = medicine?.dosage_per_pill || 1;
+    
+    // Calculate number of pills to decrease from stock
+    const pillsToDecrease = quantity / dosagePerPill;
+    
+    console.log(`[processDoseRegistration] Dosage: ${quantity}mg, DosagePerPill: ${dosagePerPill}mg, PillsToDecrease: ${pillsToDecrease}`);
+    
     // 1. Criar Log
     const { error: logError } = await supabase
       .from('medicine_logs')
@@ -287,9 +301,9 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       .gt('quantity', 0)
       .order('purchase_date', { ascending: true });
     
-    // Validar se há estoque suficiente
+    // Validar se há estoque suficiente (usando quantidade de comprimidos)
     const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
-    if (totalStock < quantity) {
+    if (totalStock < pillsToDecrease) {
       const { data: med } = await supabase
         .from('medicines')
         .select('name')
@@ -298,8 +312,9 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       
       const message = `⚠️ Estoque insuficiente!\n\n` +
         `Medicamento: ${med?.name || 'Desconhecido'}\n` +
-        `Quantidade solicitada: ${quantity}\n` +
-        `Estoque disponível: ${totalStock}\n\n` +
+        `Dosagem solicitada: ${quantity}mg\n` +
+        `Comprimidos necessários: ${pillsToDecrease}\n` +
+        `Estoque disponível: ${totalStock} comprimidos\n\n` +
         `Por favor, adicione estoque antes de registrar a dose.`;
       
       if (editMessageId) {
@@ -314,7 +329,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     }
     
     if (!fetchError && stockEntries.length > 0) {
-      let remaining = quantity;
+      let remaining = pillsToDecrease;
       for (const entry of stockEntries) {
         if (remaining <= 0) break;
         const toDecrease = Math.min(entry.quantity, remaining);
