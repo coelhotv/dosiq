@@ -155,7 +155,7 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
           <option value="">Selecione um medicamento</option>
           {medicines.map(medicine => (
             <option key={medicine.id} value={medicine.id}>
-              {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : `(${medicine.type === 'supplement' ? 'Sup.' : 'N/A'})`}
+              {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : `(${medicine.type === 'suplemento' ? 'Sup.' : 'N/A'})`}
             </option>
           ))}
         </select>

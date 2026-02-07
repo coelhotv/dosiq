@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Button from '../ui/Button'
+import { MEDICINE_TYPES } from '../../schemas/medicineSchema'
 import './MedicineForm.css'
 
 export default function MedicineForm({ medicine, onSave, onCancel }) {
@@ -8,7 +9,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
     laboratory: medicine?.laboratory || '',
     active_ingredient: medicine?.active_ingredient || '',
     dosage_per_pill: medicine?.dosage_per_pill || '',
-    type: medicine?.type || 'medicine',
+    type: medicine?.type || 'medicamento',
     dosage_unit: medicine?.dosage_unit || 'mg'
   })
   
@@ -34,7 +35,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
     // Dosage is optional for supplements, but must be active number if provided
     if (formData.dosage_per_pill && isNaN(formData.dosage_per_pill)) {
       newErrors.dosage_per_pill = 'Deve ser um número'
-    } else if (formData.type === 'medicine' && !formData.dosage_per_pill) {
+    } else if (formData.type === 'medicamento' && !formData.dosage_per_pill) {
       // For medicines, we generally want a dosage, but maybe not strict? 
       // strict 'medicine' usually implies a mg value. 
       // Let's keep it optional but recommended, or strict if existing logic was strict.
@@ -87,14 +88,17 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
           value={formData.type}
           onChange={handleChange}
         >
-          <option value="medicine">Medicamento</option>
-          <option value="supplement">Suplemento</option>
+          {MEDICINE_TYPES.map(type => (
+            <option key={type} value={type}>
+              {type === 'medicamento' ? 'Medicamento' : 'Suplemento'}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className="form-group">
         <label htmlFor="name">
-          Nome {formData.type === 'supplement' ? '(Comercial)' : 'do Remédio'} <span className="required">*</span>
+          Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'} <span className="required">*</span>
         </label>
         <input
           type="text"
@@ -143,7 +147,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
             value={formData.dosage_per_pill}
             onChange={handleChange}
             className={errors.dosage_per_pill ? 'error' : ''}
-            placeholder={formData.type === 'supplement' ? 'Opcional' : '500'}
+            placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
             step="0.01"
           />
           <select

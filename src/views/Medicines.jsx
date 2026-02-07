@@ -14,7 +14,7 @@ export default function Medicines({ onNavigateToProtocol }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMedicine, setEditingMedicine] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
-  const [filterType, setFilterType] = useState('all') // 'all', 'medicine', 'supplement'
+  const [filterType, setFilterType] = useState('all') // 'all', 'medicamento', 'suplemento'
   const [medicineDependencies, setMedicineDependencies] = useState({}) // { medicineId: { hasProtocols: boolean, hasStock: boolean } }
 
 
@@ -152,15 +152,15 @@ export default function Medicines({ onNavigateToProtocol }) {
           Todos
         </Button>
         <Button
-          variant={filterType === 'medicine' ? 'primary' : 'outline'}
-          onClick={() => setFilterType('medicine')}
+          variant={filterType === 'medicamento' ? 'primary' : 'outline'}
+          onClick={() => setFilterType('medicamento')}
           size="sm"
         >
           Medicamentos
         </Button>
         <Button
-          variant={filterType === 'supplement' ? 'primary' : 'outline'}
-          onClick={() => setFilterType('supplement')}
+          variant={filterType === 'suplemento' ? 'primary' : 'outline'}
+          onClick={() => setFilterType('suplemento')}
           size="sm"
         >
           Suplementos

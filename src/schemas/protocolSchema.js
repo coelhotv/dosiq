@@ -21,7 +21,18 @@ export const FREQUENCY_LABELS = {
 const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido']
 
 // Dias da semana
-const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+export const WEEKDAYS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
+
+// Labels dos dias da semana para exibição
+export const WEEKDAY_LABELS = {
+  'segunda': 'Segunda-feira',
+  'terça': 'Terça-feira',
+  'quarta': 'Quarta-feira',
+  'quinta': 'Quinta-feira',
+  'sexta': 'Sexta-feira',
+  'sábado': 'Sábado',
+  'domingo': 'Domingo'
+}
 
 /**
  * Schema para um estágio de titulação

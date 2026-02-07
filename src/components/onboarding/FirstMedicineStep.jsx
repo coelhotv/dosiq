@@ -1,15 +1,11 @@
 import { useState } from 'react'
 import { useOnboarding } from './useOnboarding'
-import { medicineCreateSchema } from '../../schemas/medicineSchema'
+import { medicineCreateSchema, MEDICINE_TYPES } from '../../schemas/medicineSchema'
 import { cachedMedicineService } from '../../services/api/cachedServices'
 import Button from '../ui/Button'
 import './FirstMedicineStep.css'
 
 const DOSAGE_UNITS = ['mg', 'mcg', 'ml', 'g', 'UI', 'gotas', 'comprimido', 'cápsula']
-const MEDICINE_TYPES = [
-  { value: 'medicine', label: 'Medicamento' },
-  { value: 'supplement', label: 'Suplemento' }
-]
 
 export default function FirstMedicineStep() {
   const { onboardingData, updateOnboardingData, nextStep } = useOnboarding()
@@ -20,7 +16,7 @@ export default function FirstMedicineStep() {
     active_ingredient: onboardingData.medicine?.active_ingredient || '',
     dosage_per_pill: onboardingData.medicine?.dosage_per_pill || '',
     dosage_unit: onboardingData.medicine?.dosage_unit || 'mg',
-    type: onboardingData.medicine?.type || 'medicine'
+    type: onboardingData.medicine?.type || 'medicamento'
   })
   
   const [errors, setErrors] = useState({})
@@ -135,7 +131,7 @@ export default function FirstMedicineStep() {
               disabled={isSubmitting}
             >
               {MEDICINE_TYPES.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
+                <option key={type} value={type}>{type === 'medicamento' ? 'Medicamento' : 'Suplemento'}</option>
               ))}
             </select>
             {errors.type && <span className="error-message">{errors.type}</span>}
@@ -144,7 +140,7 @@ export default function FirstMedicineStep() {
 
         <div className={`form-group ${errors.name ? 'has-error' : ''}`}>
           <label htmlFor="name">
-            Nome {formData.type === 'supplement' ? '(Comercial)' : 'do Remédio'} *
+            Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'} *
           </label>
           <input
             type="text"
@@ -152,7 +148,7 @@ export default function FirstMedicineStep() {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder={formData.type === 'supplement' ? 'Ex: Vitamina D3' : 'Ex: Paracetamol'}
+            placeholder={formData.type === 'suplemento' ? 'Ex: Vitamina D3' : 'Ex: Paracetamol'}
             disabled={isSubmitting}
           />
           {errors.name && <span className="error-message">{errors.name}</span>}
