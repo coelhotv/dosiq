@@ -89,6 +89,18 @@
   color: white;
 }
 
+/* Botão placeholder (ex: COMPRAR - funcionalidade futura) */
+.smart-alert__btn--placeholder {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.smart-alert__btn--placeholder:hover {
+  filter: none;
+  transform: none;
+}
+
 .smart-alert__btn:hover {
   filter: brightness(1.2);
   transform: translateY(-1px);

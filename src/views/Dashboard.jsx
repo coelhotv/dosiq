@@ -126,7 +126,7 @@ export default function Dashboard({ onNavigate }) {
           type: 'stock',
           medicine_id: item.medicine.id,
           actions: [
-            { label: 'COMPRAR', type: 'primary' },
+            { label: 'COMPRAR', type: 'placeholder' },
             { label: 'ESTOQUE', type: 'secondary' }
           ]
         });
