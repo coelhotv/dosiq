@@ -38,6 +38,11 @@ export default function Dashboard({ onNavigate }) {
   
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
   
+  // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
+  const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set())
+  
+  // 1. Carregar Nome do Usuário e Planos de Tratamento
+  
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   useEffect(() => {
     async function loadInitialData() {
@@ -189,8 +194,6 @@ export default function Dashboard({ onNavigate }) {
 
   const [selectedMedicines, setSelectedMedicines] = useState({});
   
-  // Rastreamentos de alertas silenciados (snoozed) pelo usuário
-  const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set());
 
   const toggleMedicineSelection = (planId, protocolId) => {
     setSelectedMedicines(prev => {
