@@ -250,7 +250,43 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     
     console.log(`[processDoseRegistration] Dosage: ${quantity}mg, DosagePerPill: ${dosagePerPill}mg, PillsToDecrease: ${pillsToDecrease}`);
     
-    // 1. Criar Log
+    // 1. Validar Estoque ANTES de gravar a dose
+    const { data: stockEntries, error: fetchError } = await supabase
+      .from('stock')
+      .select('*')
+      .eq('medicine_id', medicineId)
+      .eq('user_id', userId)
+      .gt('quantity', 0)
+      .order('purchase_date', { ascending: true });
+    
+    // Validar se há estoque suficiente (usando quantidade de comprimidos)
+    const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
+    if (totalStock < pillsToDecrease) {
+      const { data: med } = await supabase
+        .from('medicines')
+        .select('name')
+        .eq('id', medicineId)
+        .single();
+      
+      const message = `⚠️ Estoque insuficiente!\n\n` +
+        `Medicamento: ${med?.name || 'Desconhecido'}\n` +
+        `Dosagem solicitada: ${quantity}mg\n` +
+        `Comprimidos necessários: ${pillsToDecrease}\n` +
+        `Estoque disponível: ${totalStock} comprimidos\n\n` +
+        `Por favor, adicione estoque antes de registrar a dose.`;
+      
+      if (editMessageId) {
+        await bot.editMessageText(message, {
+          chat_id: chatId,
+          message_id: editMessageId
+        });
+      } else {
+        await bot.sendMessage(chatId, message);
+      }
+      return;
+    }
+    
+    // 2. Criar Log (só se houver estoque suficiente)
     const { error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
@@ -292,42 +328,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       return;
     }
 
-    // 2. Decrementar Estoque
-    const { data: stockEntries, error: fetchError } = await supabase
-      .from('stock')
-      .select('*')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', userId)
-      .gt('quantity', 0)
-      .order('purchase_date', { ascending: true });
-    
-    // Validar se há estoque suficiente (usando quantidade de comprimidos)
-    const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
-    if (totalStock < pillsToDecrease) {
-      const { data: med } = await supabase
-        .from('medicines')
-        .select('name')
-        .eq('id', medicineId)
-        .single();
-      
-      const message = `⚠️ Estoque insuficiente!\n\n` +
-        `Medicamento: ${med?.name || 'Desconhecido'}\n` +
-        `Dosagem solicitada: ${quantity}mg\n` +
-        `Comprimidos necessários: ${pillsToDecrease}\n` +
-        `Estoque disponível: ${totalStock} comprimidos\n\n` +
-        `Por favor, adicione estoque antes de registrar a dose.`;
-      
-      if (editMessageId) {
-        await bot.editMessageText(message, {
-          chat_id: chatId,
-          message_id: editMessageId
-        });
-      } else {
-        await bot.sendMessage(chatId, message);
-      }
-      return;
-    }
-    
+    // 3. Decrementar Estoque (só se houver estoque suficiente)
     if (!fetchError && stockEntries.length > 0) {
       let remaining = pillsToDecrease;
       for (const entry of stockEntries) {
