@@ -2,6 +2,9 @@ import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { getSession, setSession, clearSession } from '../state.js';
 import { calculateStreak } from '../../utils/formatters.js';
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('ConversationalCallbacks');
 
 export async function handleConversationalCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
@@ -211,7 +214,36 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
         taken_at: new Date().toISOString()
       }]);
 
-    if (logError) throw logError;
+    if (logError) {
+      logger.error('Erro ao criar log de dose:', logError, { 
+        chatId, 
+        userId, 
+        protocolId, 
+        medicineId, 
+        quantity 
+      });
+      
+      const { data: med } = await supabase
+        .from('medicines')
+        .select('name')
+        .eq('id', medicineId)
+        .single();
+      
+      const message = `❌ Erro ao registrar dose de *${med?.name || 'Desconhecido'}*.\n\n` +
+        `Detalhes do erro: ${logError.message || 'Erro desconhecido'}\n\n` +
+        `Por favor, tente novamente ou contate o suporte.`;
+      
+      if (editMessageId) {
+        await bot.editMessageText(message, {
+          chat_id: chatId,
+          message_id: editMessageId,
+          parse_mode: 'Markdown'
+        });
+      } else {
+        await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      }
+      return;
+    }
 
     // 2. Decrementar Estoque
     const { data: stockEntries, error: fetchError } = await supabase
@@ -221,6 +253,32 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       .eq('user_id', userId)
       .gt('quantity', 0)
       .order('purchase_date', { ascending: true });
+    
+    // Validar se há estoque suficiente
+    const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
+    if (totalStock < quantity) {
+      const { data: med } = await supabase
+        .from('medicines')
+        .select('name')
+        .eq('id', medicineId)
+        .single();
+      
+      const message = `⚠️ Estoque insuficiente!\n\n` +
+        `Medicamento: ${med?.name || 'Desconhecido'}\n` +
+        `Quantidade solicitada: ${quantity}\n` +
+        `Estoque disponível: ${totalStock}\n\n` +
+        `Por favor, adicione estoque antes de registrar a dose.`;
+      
+      if (editMessageId) {
+        await bot.editMessageText(message, {
+          chat_id: chatId,
+          message_id: editMessageId
+        });
+      } else {
+        await bot.sendMessage(chatId, message);
+      }
+      return;
+    }
     
     if (!fetchError && stockEntries.length > 0) {
       let remaining = quantity;
@@ -266,7 +324,12 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
     }
   } catch (err) {
-    console.error('Erro ao registrar dose manual:', err);
+    logger.error('Erro ao registrar dose manual:', err, { 
+      chatId, 
+      protocolId, 
+      medicineId, 
+      quantity 
+    });
     
     // Handle unlinked user case
     if (err.message === 'User not linked') {
