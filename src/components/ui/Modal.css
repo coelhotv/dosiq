@@ -91,19 +91,26 @@
   background: var(--accent-primary);
 }
 
+/* Mobile: garantir scroll completo sem corte pelo BottomNav */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 0;
+    align-items: flex-end; /* Alinha modal ao fundo para evitar sobreposição do BottomNav */
   }
   
   .modal-content {
     max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    max-height: 85vh; /* Reduzido para evitar corte pelo BottomNav */
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    margin-bottom: 0;
   }
   
   .modal-header,
   .modal-body {
     padding: var(--space-4);
+  }
+  
+  .modal-body {
+    padding-bottom: calc(var(--space-4) + 60px); /* Espaço extra para scroll até o final */
   }
 }

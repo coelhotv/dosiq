@@ -11,6 +11,7 @@
   .health-details {
     padding-left: var(--space-3);
     padding-right: var(--space-3);
+    padding-bottom: 80px; /* Espaço extra para permitir scroll até o final */
   }
 }
 
