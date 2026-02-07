@@ -10,7 +10,7 @@ import { useDashboard } from '../hooks/useDashboardContext.jsx'
 import HealthScoreCard from '../components/dashboard/HealthScoreCard'
 import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
-import DashboardWidgets from '../components/dashboard/DashboardWidgets'
+import QuickActionsWidget from '../components/dashboard/QuickActionsWidget'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import { getCurrentUser } from '../lib/supabase'
@@ -41,10 +41,6 @@ export default function Dashboard({ onNavigate }) {
   
   // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
   const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set())
-  
-  // Current time in minutes for dose scheduling
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
   
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   
@@ -248,55 +244,6 @@ export default function Dashboard({ onNavigate }) {
     }
   };
 
-  // 4. Calcular próximas 5 doses (ordenadas por data crescente)
-  const nextDoses = useMemo(() => {
-    const doses = [];
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    rawProtocols.forEach(p => {
-      p.time_schedule?.forEach(time => {
-        const [h, m] = time.split(':').map(Number);
-        const doseMinutes = h * 60 + m;
-        const delay = currentMinutes - doseMinutes;
-        
-        // Se já passou ou está na janela de tolerância, adiciona como próxima
-        if (delay <= 120) { // Dentro da janela de 2h ou atrasado
-          doses.push({
-            id: `${p.id}-${time}`,
-            protocol_id: p.id,
-            medicine: p.medicine,
-            time: time,
-            date: new Date(today),
-            isPast: delay > 0
-          });
-        } else {
-          // Dose para o próximo dia
-          const nextDay = new Date(today);
-          nextDay.setDate(nextDay.getDate() + 1);
-          doses.push({
-            id: `${p.id}-${time}`,
-            protocol_id: p.id,
-            medicine: p.medicine,
-            time: time,
-            date: nextDay,
-            isPast: false
-          });
-        }
-      });
-    });
-    
-    // Ordenar por data e hora
-    doses.sort((a, b) => {
-      if (a.date.getTime() !== b.date.getTime()) {
-        return a.date.getTime() - b.date.getTime();
-      }
-      return a.time.localeCompare(b.time);
-    });
-    
-    return doses.slice(0, 5);
-  }, [rawProtocols, currentMinutes]);
-
   if (isLoading || contextLoading) return <Loading text="Sincronizando Command Center..." />
 
   return (
@@ -347,24 +294,24 @@ export default function Dashboard({ onNavigate }) {
         }}
       />
 
-      {/* 3. Smart Widgets */}
-      <DashboardWidgets
-        stockSummary={stockSummary}
-        onNavigate={onNavigate}
-        onOpenLogModal={() => {
+      {/* 3. Quick Actions */}
+      <QuickActionsWidget
+        onRegisterDose={() => {
           setPrefillData(null);
           setIsModalOpen(true);
         }}
+        onAddStock={() => onNavigate('stock')}
+        onViewHistory={() => onNavigate('history')}
       />
 
-      {/* 4. Tratamento (Accordion) */}
-      <section className="treatment-section">
+      {/* 4. Tratamento - Parte Superior: Planos Completos */}
+      <section className="treatment-plans-section">
         <div className="section-header">
           <h2 className="section-title">TRATAMENTO</h2>
-          <span className="section-subtitle">{rawProtocols.length} {rawProtocols.length === 1 ? 'Protocolo Ativo' : 'Protocolos Ativos'}</span>
+          <span className="section-subtitle">{treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}</span>
         </div>
 
-        <div className="treatment-list">
+        <div className="treatment-plans-list">
           {treatmentPlans.map(plan => (
             <TreatmentAccordion
               key={plan.id}
@@ -389,48 +336,40 @@ export default function Dashboard({ onNavigate }) {
               ))}
             </TreatmentAccordion>
           ))}
-          
-          {/* Protocolos avulsos (sem plano) */}
-          {rawProtocols.filter(p => !p.treatment_plan_id).map(p => (
-            <div key={p.id} className="standalone-item">
-               <SwipeRegisterItem 
-                  medicine={p.medicine}
-                  time={p.next_dose || '--:--'}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
-                />
-            </div>
-          ))}
         </div>
       </section>
 
-      {/* 5. Próximas Doses */}
-      <section className="next-doses-section">
+      {/* 4. Tratamento - Parte Inferior: Protocolos Avulsos */}
+      <section className="treatment-standalone-section">
         <div className="section-header">
-          <h2 className="section-title">PRÓXIMAS DOSES</h2>
+          <h2 className="section-title">PRÓXIMAS</h2>
         </div>
-        <div className="next-doses-list">
-          {nextDoses.map(dose => (
-            <div key={dose.id} className={`next-dose-item ${dose.isPast ? 'past' : ''}`}>
-              <div className="next-dose-time">{dose.time}</div>
-              <div className="next-dose-medicine">{dose.medicine?.name}</div>
-              <button 
-                className="next-dose-btn"
-                onClick={() => {
-                  setPrefillData({ protocol_id: dose.protocol_id, type: 'protocol' });
-                  setIsModalOpen(true);
-                }}
-              >
-                TOMAR
-              </button>
-            </div>
+
+        <div className="treatment-standalone-list">
+          {rawProtocols.filter(p => !p.treatment_plan_id).map(p => (
+            <SwipeRegisterItem 
+              key={p.id}
+              medicine={p.medicine}
+              time={p.next_dose || '--:--'}
+              onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+            />
           ))}
-          {nextDoses.length === 0 && (
-            <p className="no-doses-message">Nenhuma dose programada para as próximas horas.</p>
+          
+          {/* Se não houver protocolos avulsos, mostrar protocolo do primeiro plano */}
+          {rawProtocols.filter(p => !p.treatment_plan_id).length === 0 && treatmentPlans.length > 0 && (
+            treatmentPlans[0].protocols?.filter(p => p.active).slice(0, 3).map(p => (
+              <SwipeRegisterItem 
+                key={p.id}
+                medicine={p.medicine}
+                time={p.next_dose || '--:--'}
+                onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+              />
+            ))
           )}
         </div>
       </section>
 
-      {/* 6. Floating Action Button */}
+      {/* 5. Floating Action Button */}
       <div className="dash-footer-actions">
         <button className="btn-add-manual" onClick={() => {
           setPrefillData(null);

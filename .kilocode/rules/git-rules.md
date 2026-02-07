@@ -7,7 +7,8 @@ Regras padrão para modificação de código fonte
 - NUNCA comitar diretamente na `main`. SEMPRE criar branch primeiro.
 - Antes de iniciar as suas tarefas de coding, você deve criar um novo branch no Git (utilizando o naming proposto)
 - Você aloca todo o seu trabalho atual de coding e alteração de arquivos em um PR específico
-- Após fazer o push do PR, você commita seu código, faz o merge com o `main` e apaga seu branch
+- Após fazer o push do PR, você commita seu código, e pede a validação do humano se a experiencia está correta. 
+- Se o humano validar, você faz o merge com o `main` e apaga seu branch
 
 ## Branch Naming
 
@@ -61,9 +62,11 @@ npm run build
 # 5. Push e criar PR
 git push origin feat/wave-X/nome-descritivo
 
-# 6. Merge via PR apenas (com review) // usar sempre `--no-ff
+# 6. Validate with human and get approaval
+
+# 7. Merge via PR apenas (com review) // usar sempre `--no-ff
 git merge --no-ff feat/wave-X/nome-descritivo
 
-# 7. Apagar branch após merge
+# 8. Apagar branch após merge
 git branch -d feat/wave-X/nome-descritivo
 ```
