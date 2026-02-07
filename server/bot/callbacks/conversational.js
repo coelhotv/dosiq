@@ -20,7 +20,7 @@ export async function handleConversationalCallbacks(bot) {
     } else if (data.startsWith('add_stock_med_val:')) {
       const [_, index, qty] = data.split(':');
       try {
-        const session = getSession(chatId);
+        const session = await getSession(chatId);
         
         if (!session || !session.medicineMap || !session.medicineMap[index]) {
           return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
@@ -56,7 +56,7 @@ export async function handleConversationalCallbacks(bot) {
     // Skip if message is a command
     if (msg.text?.startsWith('/')) return;
     
-    const session = getSession(chatId);
+    const session = await getSession(chatId);
     
     if (session && session.waitingForInput) {
       if (session.action === 'registrar_dose' && session.step === 'waiting_qty') {
@@ -77,7 +77,7 @@ async function handleAddStockMedSelected(bot, callbackQuery) {
   const index = parseInt(data.split(':')[1]);
   
   // Get session to retrieve medicine map
-  const session = getSession(chatId);
+  const session = await getSession(chatId);
   
   if (!session || !session.medicineMap || !session.medicineMap[index]) {
     return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
@@ -143,16 +143,20 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   // Fetch protocol info to get default dosage
   const { data: protocol } = await supabase
     .from('protocols')
-    .select('dosage_per_intake, medicine:medicines(name, dosage_unit)')
+    .select('dosage_per_intake, medicine:medicines(name, dosage_unit, dosage_per_pill)')
     .eq('id', protocolId)
     .single();
 
   console.log(`[Conversational] Protocol from DB:`, protocol);
 
   const unit = protocol?.medicine?.dosage_unit || 'x';
-  const defaultQty = protocol?.dosage_per_intake || 1;
+  const pillsPerIntake = protocol?.dosage_per_intake || 1;
+  const dosagePerPill = protocol?.medicine?.dosage_per_pill || 1;
   
-  console.log(`[Conversational] Unit: ${unit}, DefaultQty: ${defaultQty}`);
+  // Calculate actual dosage: pills per intake * dosage per pill
+  const defaultDosage = pillsPerIntake * dosagePerPill;
+  
+  console.log(`[Conversational] Unit: ${unit}, PillsPerIntake: ${pillsPerIntake}, DosagePerPill: ${dosagePerPill}, DefaultDosage: ${defaultDosage}`);
 
   setSession(chatId, { 
     action: 'registrar_dose', 
@@ -166,12 +170,12 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   const keyboard = {
     inline_keyboard: [
       [
-        { text: `${defaultQty}${unit} (Padrão)`, callback_data: `reg_qty:${defaultQty}` },
-        { text: `${defaultQty * 2}${unit}`, callback_data: `reg_qty:${defaultQty * 2}` }
+        { text: `${defaultDosage}${unit} (Padrão)`, callback_data: `reg_qty:${defaultDosage}` },
+        { text: `${defaultDosage * 2}${unit}`, callback_data: `reg_qty:${defaultDosage * 2}` }
       ],
       [
-        { text: '0.5x (Metade)', callback_data: `reg_qty:0.5` },
-        { text: '1.5x', callback_data: `reg_qty:1.5` }
+        { text: '0.5x (Metade)', callback_data: `reg_qty:${defaultDosage * 0.5}` },
+        { text: '1.5x', callback_data: `reg_qty:${defaultDosage * 1.5}` }
       ],
       [{ text: '❌ Cancelar', callback_data: 'conv_cancel' }]
     ]
@@ -191,7 +195,7 @@ async function handleRegistrarQtySelected(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
   const quantity = parseFloat(data.split(':')[1]);
-  const session = getSession(chatId);
+  const session = await getSession(chatId);
 
   if (!session || session.action !== 'registrar_dose') {
     return bot.answerCallbackQuery(id, { text: 'Sessão expirada.', show_alert: true });
