@@ -138,6 +138,8 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   
   const { medicineId, protocolId, medicineName } = session.protocolMap[index];
 
+  console.log(`[Conversational] Retrieved from protocolMap:`, { medicineId, protocolId, medicineName });
+
   // Fetch protocol info to get default dosage
   const { data: protocol } = await supabase
     .from('protocols')
@@ -145,8 +147,12 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
     .eq('id', protocolId)
     .single();
 
+  console.log(`[Conversational] Protocol from DB:`, protocol);
+
   const unit = protocol?.medicine?.dosage_unit || 'x';
   const defaultQty = protocol?.dosage_per_intake || 1;
+  
+  console.log(`[Conversational] Unit: ${unit}, DefaultQty: ${defaultQty}`);
 
   setSession(chatId, { 
     action: 'registrar_dose', 
