@@ -362,3 +362,50 @@ onAction((alert, action) => {
 **Pendências / próximos passos**
 - Testar em ambiente de desenvolvimento para validar comportamento
 - Ajustar estilos CSS se necessário para mobile
+
+---
+
+## Memory Entry — 2026-02-07 06:57
+**Contexto / Objetivo**
+- Refinar estrutura do Dashboard conforme feedback do usuário
+- Substituir DashboardWidgets por QuickActionsWidget (apenas 3 ações)
+- Dividir seção de tratamento em duas partes
+- Ajustar títulos: PLANOS DE TRATAMENTO → TRATAMENTO, ÚLTIMAS → PRÓXIMAS
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Substituído DashboardWidgets por QuickActionsWidget
+  - `src/views/Dashboard.jsx` — Dividido treatment-section em treatment-plans-section e treatment-standalone-section
+  - `src/views/Dashboard.css` — Atualizados estilos para novas seções
+  - `src/views/Dashboard.jsx` — Removido useMemo nextDoses não utilizado
+  - `src/views/Dashboard.jsx` — Removida variável currentMinutes não utilizada
+- Comportamento impactado:
+  - QuickActionsWidget agora mostra apenas 3 ações (Registrar Dose, Adicionar Estoque, Ver Histórico)
+  - Tratamento dividido em: TRATAMENTO (acordeons) + PRÓXIMAS (swipe items)
+
+**O que deu certo**
+- QuickActionsWidget já tinha estrutura com 3 ações + footer link
+- Reutilização de componente existente sem criar novo
+- Divisão clara entre planos e protocolos avulsos
+
+**O que não deu certo / riscos**
+- Erro de lint: variável nextDoses não utilizada após remoção da seção separada
+- Correção: Removido useMemo completo
+
+**Causa raiz (se foi debug)**
+- Sintoma: Lint falhava com "'nextDoses' is assigned a value but never used"
+- Causa: useMemo calculava doses mas UI agora usa protocolos avulsos diretamente
+- Correção: Removido useMemo e variáveis não utilizadas (currentMinutes)
+
+**Decisões & trade-offs**
+- Decisão: Manter QuickActionsWidget existente ao invés de criar novo componente
+- Alternativas: Criar componente ActionsBar menor
+- Por quê: QuickActionsWidget já tem 3 ações,只需 ocultar footer link
+
+**Regras locais para o futuro (lições acionáveis)**
+- Verificar uso de variáveis antes de remover código
+- Usar lint antes de commit para evitar erros
+- Reutilizar componentes existentes quando possível
+
+**Pendências / próximos passos**
+- Validar em ambiente de desenvolvimento
