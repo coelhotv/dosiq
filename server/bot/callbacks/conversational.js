@@ -124,10 +124,15 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   const chatId = message.chat.id;
   const index = parseInt(data.split(':')[1]);
   
+  console.log(`[Conversational] handleRegistrarMedSelected called for chat ${chatId}, index: ${index}`);
+  
   // Get session to retrieve protocol map
   const session = getSession(chatId);
   
+  console.log(`[Conversational] Session retrieved:`, session);
+  
   if (!session || !session.protocolMap || !session.protocolMap[index]) {
+    console.log(`[Conversational] Session invalid or protocolMap missing. Session:`, session, `Index: ${index}`);
     return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
   }
   

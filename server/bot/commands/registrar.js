@@ -39,6 +39,7 @@ export async function handleRegistrar(bot, msg) {
       }
     ]));
 
+    console.log(`[Registrar] Setting session for chat ${chatId} with protocolMap:`, protocolMap);
     setSession(chatId, { 
       action: 'registrar_dose',
       protocolMap
