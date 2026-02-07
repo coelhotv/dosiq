@@ -486,4 +486,47 @@ onAction((alert, action) => {
 - Monitorar logs da Vercel por 24-48 horas após deploy
 - Testar comandos básicos (/start, /status, /hoje) após deploy
 - Considerar implementar BotFactory em server/index.js (melhoria opcional)
-- Atualizar documentação para refletir realidade do código
+- Atualizar documentação para refletir realidade
+
+---
+
+## Memory Entry — 2026-02-07 15:40
+**Contexto / Objetivo**
+- Atualizar documentações do projeto para incluir informações sobre Vercel CLI
+- Documentar comandos úteis para debugs e acesso aos logs
+- Adicionar informações sobre CLI da Vercel na memória e PADROES_CODIGO.md
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `.kilocode/rules/memory.md` — Adicionada entrada sobre Vercel CLI
+  - `docs/PADROES_CODIGO.md` — Adicionada seção de comandos úteis da Vercel CLI
+- Comportamento impactado:
+  - Documentação agora inclui comandos para acessar logs da Vercel
+  - Equipe tem referência rápida para debugs em produção
+
+**O que deu certo**
+- Documentação atualizada com comandos práticos da Vercel CLI
+- Incluídos exemplos de uso para diferentes cenários
+- Organização clara dos comandos por categoria
+
+**O que não deu certo / riscos**
+- Nenhum risco identificado nesta atualização
+
+**Decisões & trade-offs**
+- Decisão: Adicionar seção específica de Vercel CLI em PADROES_CODIGO.md
+- Alternativas consideradas: Criar documento separado, adicionar em README.md
+- Por que: PADROES_CODIGO.md é o documento central de padrões do projeto
+
+**Regras locais para o futuro (lições acionáveis)**
+- Usar `vercel logs --follow` para monitorar logs em tempo real
+- Usar `vercel logs --filter="api/notify"` para filtrar logs de função específica
+- Usar `vercel logs -n 100` para ver as últimas N linhas
+- Usar `vercel --prod` para fazer deploy para produção
+- Usar `vercel login` para autenticar na CLI da Vercel
+- Usar `vercel link` para vincular projeto local ao projeto da Vercel
+
+**Pendências / próximos passos**
+- Monitorar logs da Vercel após o deploy automático
+- Validar funcionamento do bot após deploy
+- Testar comandos básicos (/start, /status, /hoje)
+- Verificar se notificações estão sendo enviadas corretamente do código

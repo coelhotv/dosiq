@@ -637,4 +637,109 @@ Execute `npm run lint` antes de commitar.
 
 ---
 
-*Última atualização: 04/02/2026 - Consolidado com aprendizados da Onda 2*
+## 🚀 Vercel CLI - Comandos Úteis
+
+### Instalação e Autenticação
+
+```bash
+# Instalar CLI da Vercel
+npm i -g vercel
+
+# Login na Vercel
+vercel login
+
+# Vincular projeto local ao projeto da Vercel
+vercel link
+```
+
+### Monitoramento de Logs
+
+```bash
+# Ver logs em tempo real (útil para debugs)
+vercel logs --follow
+
+# Ver logs das últimas N linhas
+vercel logs -n 100
+
+# Filtrar logs de uma função específica
+vercel logs --filter="api/notify"
+
+# Ver logs de um deployment específico
+vercel logs <deployment-url>
+```
+
+### Deploy
+
+```bash
+# Deploy para produção
+vercel --prod
+
+# Deploy para preview
+vercel
+
+# Listar deployments recentes
+vercel ls
+```
+
+### Diagnóstico
+
+```bash
+# Ver status do projeto
+vercel status
+
+# Ver informações do projeto
+vercel inspect
+
+# Ver variáveis de ambiente
+vercel env ls
+
+# Adicionar variável de ambiente
+vercel env add NOME_DA_VARIAVEL valor
+
+# Remover variável de ambiente
+vercel env rm NOME_DA_VARIAVEL
+```
+
+### Exemplos de Uso
+
+#### Cenário 1: Debugar erro no bot
+```bash
+# 1. Ver logs em tempo real
+vercel logs --follow
+
+# 2. Filtrar apenas logs do bot
+vercel logs --filter="api/notify"
+
+# 3. Ver logs das últimas 100 linhas
+vercel logs -n 100
+```
+
+#### Cenário 2: Verificar deploy recente
+```bash
+# 1. Listar deployments
+vercel ls
+
+# 2. Ver logs de um deployment específico
+vercel logs <deployment-url>
+```
+
+#### Cenário 3: Verificar variáveis de ambiente
+```bash
+# 1. Listar todas as variáveis
+vercel env ls
+
+# 2. Ver valor de uma variável específica
+vercel env pull TELEGRAM_BOT_TOKEN
+```
+
+### Boas Práticas
+
+- ✅ **Sempre usar `--follow`** para monitorar logs em tempo real durante debugs
+- ✅ **Filtrar por função** para reduzir ruído nos logs (`--filter="api/notify"`)
+- ✅ **Usar `-n`** para limitar quantidade de linhas e evitar sobrecarga
+- ✅ **Verificar variáveis de ambiente** antes de fazer deploy
+- ✅ **Usar `--prod`** apenas para deploy em produção (evita deploys acidentais)
+
+---
+
+*Última atualização: 07/02/2026 - Adicionada seção de Vercel CLI*
