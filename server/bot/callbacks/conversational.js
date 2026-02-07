@@ -345,7 +345,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     // 3. Fetch name for summary
     const { data: med } = await supabase
       .from('medicines')
-      .select('name')
+      .select('name, dosage_unit')
       .eq('id', medicineId)
       .single();
 
@@ -357,7 +357,8 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     
     const streak = calculateStreak(allLogs);
 
-    let message = `✅ Dose de *${quantity}x ${med?.name || ''}* registrada com sucesso!`;
+    const unit = med?.dosage_unit || 'mg';
+    let message = `✅ Dose de *${quantity}${unit} ${med?.name || ''}* registrada com sucesso!`;
     
     if (streak > 1) {
       message += `\n🔥 *${streak} dias seguidos!*`;
