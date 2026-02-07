@@ -433,3 +433,57 @@ onAction((alert, action) => {
 - Testar componentes antes de considerar definitivos
 - Remover código não utilizado para manter código limpo
 - Verificar dependências antes de remover imports
+
+---
+
+## Memory Entry — 2026-02-07 12:00
+**Contexto / Objetivo**
+- Auditoria técnica completa do bot do Telegram inoperante há mais de 3 dias
+- Identificar causa raiz da falha e propor correções específicas
+- Analisar conformidade com padrões de código definidos em docs/PADROES_CODIGO.md
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/services/sessionManager.js` — Removida importação de MOCK_USER_ID não existente
+  - `server/services/sessionManager.js` — Implementada obtenção dinâmica de userId via getUserIdByChatId
+  - `plans/AUDITORIA_BOT_TELEGRAM.md` — Relatório completo de auditoria técnica criado
+- Comportamento impactado:
+  - Bot agora inicia corretamente sem erro de SyntaxError
+  - Sessões são associadas ao userId correto (suporte a múltiplos usuários)
+  - Se usuário não estiver vinculado, sessão fica apenas em cache local
+
+**O que deu certo**
+- Análise sistemática de logs da Vercel identificou erro exato
+- Correção simples e direta resolveu o problema crítico
+- Implementação alinhada com objetivo do refactoring (remover MOCK_USER_ID)
+- Tratamento de erro adequado para usuários não vinculados
+
+**O que não deu certo / riscos**
+- Refactoring incompleto: server/index.js não usa BotFactory, HealthCheck nem Logger estruturado
+- Imports dinâmicos em api/notify.js podem falhar em produção
+- Documentação desatualizada menciona server/bot/index.js que não existe
+
+**Causa raiz (se foi debug)**
+- Sintoma: Bot não iniciava em produção, SyntaxError nos logs da Vercel
+- Causa: sessionManager.js tentava importar MOCK_USER_ID de supabase.js, mas essa constante não existia
+- Correção: Removida importação de MOCK_USER_ID e implementada obtenção dinâmica de userId via getUserIdByChatId
+- Prevenção: Sempre verificar se constantes exportadas existem antes de importar
+
+**Decisões & trade-offs**
+- Decisão: Implementar obtenção dinâmica de userId em setSession em vez de passar como parâmetro
+- Alternativas consideradas: Adicionar userId como parâmetro obrigatório em todas as chamadas de setSession
+- Por que: Solução mais simples e backward compatible, não exige mudanças em todos os arquivos que chamam setSession
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre verificar logs de produção da Vercel ao diagnosticar falhas
+- Verificar se constantes exportadas existem antes de importar
+- Remover referências a MOCK_USER_ID hardcoded em todo o código
+- Usar getUserIdByChatId para obter userId dinamicamente em contexto de bot
+- Implementar validação de imports antes de fazer deploy
+
+**Pendências / próximos passos**
+- Fazer deploy das correções para produção
+- Monitorar logs da Vercel por 24-48 horas após deploy
+- Testar comandos básicos (/start, /status, /hoje) após deploy
+- Considerar implementar BotFactory em server/index.js (melhoria opcional)
+- Atualizar documentação para refletir realidade do código

@@ -11,7 +11,8 @@
  * @module sessionManager
  */
 
-import { supabase, MOCK_USER_ID } from './supabase.js';
+import { supabase } from './supabase.js';
+import { getUserIdByChatId } from './userService.js';
 
 const SESSION_TTL_MINUTES = 30; // 30 minute expiry as per requirements
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Run cleanup every 5 minutes
@@ -76,10 +77,20 @@ export async function setSession(chatId, context) {
   updateCache(chatIdStr, context);
 
   try {
+    // Get userId from chatId (supports multiple users)
+    let userId;
+    try {
+      userId = await getUserIdByChatId(chatIdStr);
+    } catch (error) {
+      // User not linked yet, skip database write
+      console.warn(`[SessionManager] User not linked for chat ${chatId}, skipping DB write`);
+      return;
+    }
+
     const { error } = await supabase
       .from('bot_sessions')
       .upsert({
-        user_id: MOCK_USER_ID,
+        user_id: userId,
         chat_id: chatIdStr,
         context,
         expires_at: expiresAt,
