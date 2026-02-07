@@ -33,15 +33,25 @@ export async function handleAdicionarEstoque(bot, msg) {
       return bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados. Use o app web para cadastrar.');
     }
 
-    // Create keyboard
-    const keyboard = medicines.map(m => ([
+    // Create keyboard using indices to avoid 64-byte limit
+    const medicineMap = medicines.map((m, index) => ({
+      index,
+      medicineId: m.id,
+      medicineName: m.name,
+      dosageUnit: m.dosage_unit
+    }));
+    
+    const keyboard = medicines.map((m, index) => ([
       {
         text: m.name,
-        callback_data: `add_stock_med:${m.id}`
+        callback_data: `add_stock_med:${index}`
       }
     ]));
 
-    setSession(chatId, { action: 'adicionar_estoque' });
+    setSession(chatId, { 
+      action: 'adicionar_estoque',
+      medicineMap
+    });
 
     await bot.sendMessage(chatId, '📦 *Adicionar ao Estoque*\nSelecione o medicamento:', {
       parse_mode: 'Markdown',
@@ -77,10 +87,22 @@ export async function handleReporShortcut(bot, msg, match) {
     }
 
     if (medicines.length > 1) {
-      // Multiple matches, ask to select
-      const keyboard = medicines.map(m => ([
-        { text: m.name, callback_data: `add_stock_med_val:${m.id}:${quantity}` }
+      // Multiple matches, ask to select using indices to avoid 64-byte limit
+      const medicineMap = medicines.map((m, index) => ({
+        index,
+        medicineId: m.id,
+        medicineName: m.name
+      }));
+      
+      const keyboard = medicines.map((m, index) => ([
+        { text: m.name, callback_data: `add_stock_med_val:${index}:${quantity}` }
       ]));
+      
+      setSession(chatId, { 
+        action: 'adicionar_estoque',
+        medicineMap
+      });
+      
       return bot.sendMessage(chatId, 'Foram encontrados vários medicamentos. Selecione um:', {
         reply_markup: { inline_keyboard: keyboard }
       });

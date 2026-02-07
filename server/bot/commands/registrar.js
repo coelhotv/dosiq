@@ -24,15 +24,25 @@ export async function handleRegistrar(bot, msg) {
       return bot.sendMessage(chatId, 'Você não possui protocolos ativos no momento. Use o app web para cadastrar.');
     }
 
-    // Create keyboard with medicine names
-    const keyboard = protocols.map(p => ([
+    // Create keyboard with medicine names using indices to avoid 64-byte limit
+    const protocolMap = protocols.map((p, index) => ({
+      index,
+      medicineId: p.medicine.id,
+      protocolId: p.id,
+      medicineName: p.medicine.name
+    }));
+    
+    const keyboard = protocols.map((p, index) => ([
       {
         text: p.medicine.name,
-        callback_data: `reg_med:${p.medicine.id}:${p.id}`
+        callback_data: `reg_med:${index}`
       }
     ]));
 
-    setSession(chatId, { action: 'registrar_dose' });
+    setSession(chatId, { 
+      action: 'registrar_dose',
+      protocolMap
+    });
 
     await bot.sendMessage(chatId, '💊 Registrar dose manual\nQual medicamento você tomou?', {
       reply_markup: {

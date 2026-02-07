@@ -1,5 +1,6 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
+import { setSession, getSession } from '../state.js';
 
 export async function handlePausar(bot, msg, match) {
   const chatId = msg.chat.id;
@@ -20,9 +21,17 @@ export async function handlePausar(bot, msg, match) {
         return bot.sendMessage(chatId, 'Você não possui protocolos ativos.');
       }
 
-      const keyboard = protocols.map(p => ([
-        { text: `Pausar ${p.medicine.name}`, callback_data: `pause_prot:${p.id}` }
+      const protocolMap = protocols.map((p, index) => ({
+        index,
+        protocolId: p.id,
+        medicineName: p.medicine.name
+      }));
+      
+      const keyboard = protocols.map((p, index) => ([
+        { text: `Pausar ${p.medicine.name}`, callback_data: `pause_prot:${index}` }
       ]));
+      
+      setSession(chatId, { protocolMap });
 
       return bot.sendMessage(chatId, 'Selecione o protocolo para pausar:', {
         reply_markup: { inline_keyboard: keyboard }
@@ -59,9 +68,17 @@ export async function handleRetomar(bot, msg, match) {
         return bot.sendMessage(chatId, 'Você não possui protocolos pausados.');
       }
 
-      const keyboard = protocols.map(p => ([
-        { text: `Retomar ${p.medicine.name}`, callback_data: `resume_prot:${p.id}` }
+      const protocolMap = protocols.map((p, index) => ({
+        index,
+        protocolId: p.id,
+        medicineName: p.medicine.name
+      }));
+      
+      const keyboard = protocols.map((p, index) => ([
+        { text: `Retomar ${p.medicine.name}`, callback_data: `resume_prot:${index}` }
       ]));
+      
+      setSession(chatId, { protocolMap });
 
       return bot.sendMessage(chatId, 'Selecione o protocolo para retomar:', {
         reply_markup: { inline_keyboard: keyboard }
@@ -117,8 +134,17 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
 export async function handleProtocolCallback(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
-  const [action, protocolId] = data.split(':');
+  const [action, index] = data.split(':');
   const active = action === 'resume_prot';
+  
+  // Get session to retrieve protocol map
+  const session = getSession(chatId);
+  
+  if (!session || !session.protocolMap || !session.protocolMap[index]) {
+    return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
+  }
+  
+  const { protocolId } = session.protocolMap[index];
 
   try {
     const { data: protocol, error } = await supabase
