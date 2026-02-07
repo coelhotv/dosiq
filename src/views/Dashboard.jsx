@@ -67,7 +67,37 @@ export default function Dashboard({ onNavigate }) {
     loadInitialData()
   }, [])
 
-  // Injetar dados de próxima dose nos planos de tratamento
+  // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
+  const standaloneProtocols = useMemo(() => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    return rawProtocols
+      .filter(p => !p.treatment_plan_id && p.active)
+      .sort((a, b) => {
+        // Converter next_dose para minutos
+        const getMinutes = (time) => {
+          if (!time) return Infinity;
+          const [h, m] = time.split(':').map(Number);
+          return h * 60 + m;
+        };
+        
+        const aMinutes = getMinutes(a.next_dose);
+        const bMinutes = getMinutes(b.next_dose);
+        
+        // Se for para hoje e o horário já passou, considerar como "menor" para priorizar
+        const aIsPast = aMinutes < currentMinutes;
+        const bIsPast = bMinutes < currentMinutes;
+        
+        if (aIsPast && !bIsPast) return 1;
+        if (!aIsPast && bIsPast) return -1;
+        
+        return aMinutes - bMinutes;
+      })
+      .slice(0, 5);
+  }, [rawProtocols]);
+
+  // 2. Injetar dados de próxima dose nos planos de tratamento
   const treatmentPlans = useMemo(() => {
     return rawTreatmentPlans.map(plan => ({
       ...plan,
@@ -77,6 +107,14 @@ export default function Dashboard({ onNavigate }) {
       })
     }));
   }, [rawTreatmentPlans, rawProtocols]);
+
+  // Fallback: protocolos do primeiro plano se não houver avulsos
+  const fallbackProtocols = useMemo(() => {
+    if (standaloneProtocols.length > 0) return [];
+    if (treatmentPlans.length === 0) return [];
+    
+    return treatmentPlans[0].protocols?.filter(p => p.active).slice(0, 5) || [];
+  }, [standaloneProtocols, treatmentPlans]);
 
   // 2. Saudação Dinâmica baseada no horário
   const getGreeting = () => {
@@ -331,29 +369,54 @@ export default function Dashboard({ onNavigate }) {
       {/* 3. Tratamento - Parte Inferior: Protocolos Avulsos */}
       <section className="treatment-standalone-section">
         <div className="section-header">
-          <h2 className="section-title">PROTOCOLOS</h2>
+          <h2 className="section-title">PRÓXIMAS DOSES</h2>
         </div>
 
         <div className="treatment-standalone-list">
-          {rawProtocols.filter(p => !p.treatment_plan_id).map(p => (
-            <SwipeRegisterItem 
-              key={p.id}
-              medicine={p.medicine}
-              time={p.next_dose || '--:--'}
-              onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
-            />
-          ))}
-          
-          {/* Se não houver protocolos avulsos, mostrar protocolo do primeiro plano */}
-          {rawProtocols.filter(p => !p.treatment_plan_id).length === 0 && treatmentPlans.length > 0 && (
-            treatmentPlans[0].protocols?.filter(p => p.active).slice(0, 3).map(p => (
-              <SwipeRegisterItem 
-                key={p.id}
-                medicine={p.medicine}
-                time={p.next_dose || '--:--'}
-                onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
-              />
-            ))
+          {standaloneProtocols.length > 0 ? (
+            <>
+              {standaloneProtocols.map(p => (
+                <SwipeRegisterItem 
+                  key={p.id}
+                  medicine={p.medicine}
+                  time={p.next_dose || '--:--'}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                />
+              ))}
+              
+              {/* Link Ver todos para standaloneProtocols */}
+              {standaloneProtocols.length > 0 && (
+                <button 
+                  className="view-all-link"
+                  onClick={() => onNavigate?.('protocols')}
+                >
+                  Ver todos →
+                </button>
+              )}
+            </>
+          ) : fallbackProtocols.length > 0 ? (
+            <>
+              {fallbackProtocols.map(p => (
+                <SwipeRegisterItem 
+                  key={p.id}
+                  medicine={p.medicine}
+                  time={p.next_dose || '--:--'}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                />
+              ))}
+              
+              {/* Link Ver todos para fallback */}
+              {fallbackProtocols.length > 0 && (
+                <button 
+                  className="view-all-link"
+                  onClick={() => onNavigate?.('protocols')}
+                >
+                  Ver todos →
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="empty-message">Nenhum protocolo ativo encontrado.</p>
           )}
         </div>
       </section>
