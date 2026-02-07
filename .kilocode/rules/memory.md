@@ -118,3 +118,50 @@ Adicione ao final do arquivo exatamente neste formato:
 **Pendências / próximos passos**
 - Criar migração SQL para atualizar frequências existentes no banco de inglês para português
 - Verificar se há outros campos no app com o mesmo padrão (texto livre vs validação Zod)
+
+---
+
+## Memory Entry — 2026-02-07 01:45
+**Contexto / Objetivo**
+- Identificar e traduzir outros termos em inglês nos schemas Zod além do frequency
+- Corrigir MEDICINE_TYPES e WEEKDAY que também estavam em inglês
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/schemas/medicineSchema.js` — Traduziu MEDICINE_TYPES para português
+  - `src/components/medicine/MedicineForm.jsx` — Atualizou para usar constantes exportadas
+  - `src/components/medicine/MedicineCard.jsx` — Corrigiu verificação de tipo
+  - `src/components/onboarding/FirstMedicineStep.jsx` — Atualizou opções do dropdown
+  - `src/views/Medicines.jsx` — Corrigiu filtro de tipo
+  - `src/components/protocol/ProtocolForm.jsx` — Corrigiu verificação de medicine.type
+  - `src/schemas/protocolSchema.js` — Traduziu WEEKDAYS para português
+  - `.migrations/20260207_migrate_medicine_type_to_portuguese.sql` — Migration SQL criada
+
+**Verificação**
+- Testes/checagens executadas:
+  - npm run build — Passed
+- Evidência do resultado:
+  - Build concluído com sucesso
+
+**O que deu certo**
+- Varredura completa de todos os schemas identificou termos em inglês não óbvios
+- WEEKDAYS estava definido mas não em uso, agora traduzido para uso futuro
+- Criação de migration SQL resolve dados existentes no banco
+
+**O que não deu certo / riscos**
+- Constante MEDICINE_TYPES não estava exportada inicialmente (erro de build)
+- Correção rápida: adicionou export na declaração
+
+**Decisões & trade-offs**
+- Decisão: Traduzir todos os enums do Zod para português
+- Alternativas consideradas: Manter código original em inglês para internacionalização
+- Por que: Consistência com idioma do app e experiência do usuário em PT-BR
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre fazer grep por termos em inglês (monday, tuesday, medicine, supplement) ao traduzir schemas
+- Verificar se constantes estão exportadas antes de usar em componentes
+- Criar migrations SQL para cada enum traduzido antes de alterar código frontend
+- Manter Labels mapeados para exibição amigável
+
+**Pendências / próximos passos**
+- Verificar se há outras constantes em inglês em outros arquivos do projeto
