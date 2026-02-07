@@ -18,11 +18,17 @@ export async function handleConversationalCallbacks(bot) {
     } else if (data.startsWith('add_stock_med:')) {
       await handleAddStockMedSelected(bot, callbackQuery);
     } else if (data.startsWith('add_stock_med_val:')) {
-      const [_, medId, qty] = data.split(':');
+      const [_, index, qty] = data.split(':');
       try {
+        const session = getSession(chatId);
+        
+        if (!session || !session.medicineMap || !session.medicineMap[index]) {
+          return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
+        }
+        
+        const { medicineId, medicineName } = session.medicineMap[index];
         const userId = await getUserIdByChatId(chatId);
-        const { data: med } = await supabase.from('medicines').select('name').eq('id', medId).single();
-        await processAddStock(bot, chatId, userId, medId, parseFloat(qty), med?.name || 'Medicamento');
+        await processAddStock(bot, chatId, userId, medicineId, parseFloat(qty), medicineName);
         await bot.deleteMessage(chatId, message.message_id);
         await bot.answerCallbackQuery(id);
       } catch (err) {
@@ -68,19 +74,23 @@ import { handleProtocolCallback } from '../commands/protocols.js';
 async function handleAddStockMedSelected(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
-  const medicineId = data.split(':')[1];
-
-  const { data: medicine } = await supabase
-    .from('medicines')
-    .select('name, dosage_unit')
-    .eq('id', medicineId)
-    .single();
+  const index = parseInt(data.split(':')[1]);
+  
+  // Get session to retrieve medicine map
+  const session = getSession(chatId);
+  
+  if (!session || !session.medicineMap || !session.medicineMap[index]) {
+    return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
+  }
+  
+  const { medicineId, medicineName, dosageUnit } = session.medicineMap[index];
 
   setSession(chatId, { 
     action: 'adicionar_estoque', 
     step: 'waiting_stock_qty', 
     medicineId, 
-    medicineName: medicine?.name,
+    medicineName,
+    dosageUnit,
     waitingForInput: true 
   });
 
@@ -112,7 +122,16 @@ async function handleManualStockInput(bot, msg, session) {
 async function handleRegistrarMedSelected(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
-  const [_, medicineId, protocolId] = data.split(':');
+  const index = parseInt(data.split(':')[1]);
+  
+  // Get session to retrieve protocol map
+  const session = getSession(chatId);
+  
+  if (!session || !session.protocolMap || !session.protocolMap[index]) {
+    return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
+  }
+  
+  const { medicineId, protocolId, medicineName } = session.protocolMap[index];
 
   // Fetch protocol info to get default dosage
   const { data: protocol } = await supabase
@@ -121,7 +140,6 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
     .eq('id', protocolId)
     .single();
 
-  const medicineName = protocol?.medicine?.name || 'Medicamento';
   const unit = protocol?.medicine?.dosage_unit || 'x';
   const defaultQty = protocol?.dosage_per_intake || 1;
 
