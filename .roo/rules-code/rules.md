@@ -1,4 +1,6 @@
-# git-rules.md
+# rules.md
+
+## GIT RULES
 
 Regras padrão para modificação de código fonte
 
@@ -69,7 +71,11 @@ git branch -d feat/wave-X/nome-descritivo
 ```
 
 # Roo Agent Rules
+
 ## MAIN LONG-TERM LEARNING LOOP (obrigatório)
+
+## RULES BEGIN
+
 ### 1) No início de um conjunto de tarefas
 - Leia o arquivo de memória: `@/.roo/rules/memory.md`
 - Extraia 3–7 “regras locais”/aprendizados aplicáveis ao trabalho atual (ex.: “nesse repo, X costuma quebrar Y”).
@@ -129,3 +135,7 @@ Adicione ao final do arquivo exatamente neste formato:
 - Opiniões vagas sem ação (“foi difícil”).
 
 > If anything is uncertain, explicitly state assumptions and propose the safest next step.
+
+## RULES END
+
+### START MEMORIES BELOW
