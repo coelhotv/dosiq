@@ -682,6 +682,51 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-07 16:40
+**Contexto / Objetivo**
+- Corrigir mensagem de confirmação de dose no comando /registrar do bot do Telegram
+- Mensagem mostrava "Dose de 2000x Omega 3 registrada com sucesso!" (comprimidos)
+- Deveria mostrar "Dose de 2000mg Omega 3 registrada com sucesso!" (dosagem)
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Buscar dosage_unit e mostrar unidade correta na mensagem
+- Comportamento impactado:
+  - Mensagem de confirmação agora mostra unidade correta (mg/ml) em vez de 'x'
+  - Evita confusão entre dosagem (mg) e quantidade de comprimidos
+
+**O que deu certo**
+- Busca de dosage_unit da tabela de medicamentos
+- Mensagem de confirmação agora mostra unidade correta
+- Clareza para o usuário sobre o que foi registrado
+
+**O que não deu certo / riscos**
+- Mensagem anterior mostrava 'x' (comprimidos) em vez da unidade correta
+- Isso causava confusão para o usuário
+
+**Causa raiz (se foi debug)**
+- Sintoma: Mensagem de confirmação mostrava "Dose de 2000x Omega 3 registrada com sucesso!"
+- Causa: Mensagem usava `${quantity}x` em vez de `${quantity}${unit}`
+- Correção: Buscar dosage_unit da tabela de medicamentos e usar na mensagem
+- Prevenção: Sempre mostrar unidade correta em mensagens de confirmação
+
+**Decisões & trade-offs**
+- Decisão: Buscar dosage_unit da tabela de medicamentos para mostrar unidade correta
+- Alternativas consideradas: Usar unidade fixa (mg), não mostrar unidade
+- Por que: Clareza para o usuário sobre o que foi registrado
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre mostrar unidade correta em mensagens de confirmação
+- Buscar dosage_unit da tabela de medicamentos quando necessário
+- Evitar confusão entre dosagem (mg/ml) e quantidade de comprimidos
+
+**Pendências / próximos passos**
+- Testar comando /registrar após deploy automático
+- Verificar se mensagem de confirmação está correta para diferentes medicamentos
+- Monitorar logs da Vercel para validar funcionamento
+
+---
+
 ## Memory Entry — 2026-02-07 16:08
 **Contexto / Objetivo**
 - Corrigir comando /registrar do bot que não estava funcionando
