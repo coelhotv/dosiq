@@ -409,3 +409,27 @@ onAction((alert, action) => {
 
 **Pendências / próximos passos**
 - Validar em ambiente de desenvolvimento
+
+---
+
+## Memory Entry — 2026-02-07 07:06
+**Contexto / Objetivo**
+- QuickActionsWidget não estava trazendo valor conforme testes
+- Remover o componente QuickActionsWidget do dashboard
+- Nova estrutura: Header → SmartAlerts → Tratamento → PRÓXIMAS → Footer
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Removido import e uso de QuickActionsWidget
+  - Mantido useMemo para treatmentPlans e smartAlerts (ainda em uso)
+- Comportamento impactado:
+  - Dashboard agora tem ordem: Header → SmartAlerts → TRATAMENTO → PRÓXIMAS → Footer
+
+**O que deu certo**
+- Remoção simples e direta do componente
+- Mantidos os hooks necessários (useMemo) que ainda são usados
+
+**Regras locais para o futuro (lições acionáveis)**
+- Testar componentes antes de considerar definitivos
+- Remover código não utilizado para manter código limpo
+- Verificar dependências antes de remover imports
