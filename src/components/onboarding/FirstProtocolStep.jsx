@@ -1,16 +1,9 @@
 import { useState } from 'react'
 import { useOnboarding } from './useOnboarding'
-import { protocolCreateSchema } from '../../schemas/protocolSchema'
+import { protocolCreateSchema, FREQUENCIES, FREQUENCY_LABELS } from '../../schemas/protocolSchema'
 import { cachedProtocolService } from '../../services/api/cachedServices'
 import Button from '../ui/Button'
 import './FirstProtocolStep.css'
-
-const FREQUENCIES = [
-  { value: 'daily', label: 'Todos os dias' },
-  { value: 'alternate', label: 'Dias alternados' },
-  { value: 'weekly', label: 'Semanal' },
-  { value: 'as_needed', label: 'Quando necessário' }
-]
 
 export default function FirstProtocolStep() {
   const { onboardingData, updateOnboardingData, nextStep } = useOnboarding()
@@ -19,7 +12,7 @@ export default function FirstProtocolStep() {
   const [formData, setFormData] = useState({
     medicine_id: medicine?.id || '',
     name: onboardingData.protocol?.name || (medicine ? `${medicine.name} - Protocolo` : ''),
-    frequency: onboardingData.protocol?.frequency || 'daily',
+    frequency: onboardingData.protocol?.frequency || 'diário',
     time_schedule: onboardingData.protocol?.time_schedule || [],
     dosage_per_intake: onboardingData.protocol?.dosage_per_intake || '',
     notes: onboardingData.protocol?.notes || ''
@@ -207,8 +200,9 @@ export default function FirstProtocolStep() {
               onChange={handleChange}
               disabled={isSubmitting}
             >
+              <option value="">Selecione a frequência</option>
               {FREQUENCIES.map(freq => (
-                <option key={freq.value} value={freq.value}>{freq.label}</option>
+                <option key={freq} value={freq}>{FREQUENCY_LABELS[freq]}</option>
               ))}
             </select>
             {errors.frequency && <span className="error-message">{errors.frequency}</span>}
