@@ -216,3 +216,58 @@ Adicione ao final do arquivo exatamente neste formato:
 **Pendências / próximos passos**
 - Considerar persistência de alertas silenciados no banco (opcional)
 - Adicionar teste unitário para o handler de ADIAR
+
+---
+
+## Memory Entry — 2026-02-07 05:00
+**Contexto / Objetivo**
+- Documentar mapeamento completo dos botões de CTA (Call to Action) no Dashboard
+- Smart Alerts, QuickActionsWidget e Footer Actions
+
+**O que foi feito (mudanças)**
+- Arquivos consultados:
+  - `src/views/Dashboard.jsx` — SmartAlerts e handler onAction
+  - `src/components/dashboard/QuickActionsWidget.jsx` — Ações rápidas
+  - `src/components/dashboard/SmartAlerts.jsx` — Componente de alertas
+
+**Smart Alerts CTAs**
+| Alerta | Botão | Função |
+|--------|-------|--------|
+| Dose Atrasada | TOMAR (primary) | Abre modal de registro pré-preenchido com protocol_id |
+| Dose Atrasada | ADIAR (secondary) | Silencia o alerta (snoozedAlertIds Set) |
+| Estoque Zerado/Baixo | COMPRAR (primary) | Alert simulado (将来: link externo/lista compras) |
+| Estoque Zerado/Baixo | ESTOQUE (secondary) | Navega para página de estoque com medicineId |
+
+**QuickActionsWidget CTAs**
+| Botão | Função |
+|-------|--------|
+| 💊 Registrar Dose | Abre formulário de registro de dose |
+| 📦 Adicionar Estoque | Navega para tela de adicionar estoque |
+| 📊 Ver Histórico | Navega para histórico completo |
+| → Ver todos os protocolos | Link para lista de protocolos |
+
+**Footer Actions**
+| Botão | Função |
+|-------|--------|
+| + REGISTRO MANUAL | Abre modal sem dados pré-preenchidos |
+
+**Estrutura do Handler onAction**
+```javascript
+onAction((alert, action) => {
+  if (action.label === 'TOMAR') { /* abre modal com prefillData */ }
+  if (action.label === 'COMPRAR') { /* alert simulado */ }
+  if (action.label === 'ESTOQUE') { /* onNavigate('stock') */ }
+  if (action.label === 'ADIAR') { /* setSnoozedAlertIds */ }
+})
+```
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre verificar handler onAction quando adicionar novos action labels
+- Usar Set para tracking de IDs é mais performático que Array.includes
+- QuickActionsWidget é usado em Dashboard.jsx e passed via props
+- SmartAlerts recebe alerts array e onAction callback
+
+**Pendências / próximos passos**
+- Integrar COMPRAR com lista de compras real ou link externo
+- Adicionar persistência de snoozedAlertIds no banco (opcional)
+- Padronizar nomenclatura de botões (primary/secondary types)
