@@ -127,7 +127,7 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   console.log(`[Conversational] handleRegistrarMedSelected called for chat ${chatId}, index: ${index}`);
   
   // Get session to retrieve protocol map
-  const session = getSession(chatId);
+  const session = await getSession(chatId);
   
   console.log(`[Conversational] Session retrieved:`, session);
   
