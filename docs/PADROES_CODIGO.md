@@ -35,16 +35,18 @@ git checkout -b feature/wave-X/nome-descritivo
 
 # 2. Desenvolver com commits semânticos
 
-# 3. Validar localmente
+# 3. Em mudanças de experiência, aguardar a aprovação textual do humano
+
+# 4. Validar localmente
 npm run lint
 npm run test:critical
 npm run build
 
-# 4. Criar PR para main
+# 5. Criar PR para main
 
-# 5. Aguardar review
+# 6. Aguardar review
 
-# 6. Merge via --no-ff apenas
+# 7. Merge via --no-ff apenas
 ```
 
 ### 3. Nomenclatura Obrigatória
