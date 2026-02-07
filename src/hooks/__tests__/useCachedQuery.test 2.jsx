@@ -361,7 +361,7 @@ describe('useCachedMutation', () => {
     await act(async () => {
       try {
         await result.current.mutate({ input: 'test' })
-      } catch (e) {
+      } catch {
         // Expected error
       }
     })
@@ -425,7 +425,7 @@ describe('useCachedMutation', () => {
     await act(async () => {
       try {
         await result.current.mutate({ input: 'test' })
-      } catch (e) {
+      } catch {
         // Expected error
       }
     })
