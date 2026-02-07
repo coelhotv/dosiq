@@ -251,7 +251,7 @@ export default function Dashboard({ onNavigate }) {
       <header className="dash-header">
         <div className="dash-header__welcome">
           <span className="greeting-label">{getGreeting()}</span>
-          <h1 className="user-name">{userName} <span className="dot">.</span></h1>
+          <a href="#settings" className="user-name-link" title="Configurações">{userName} <span className="dot">.</span></a>
         </div>
         <HealthScoreCard
           score={stats.score}

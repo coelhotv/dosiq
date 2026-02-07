@@ -20,6 +20,25 @@
   flex: 1;
 }
 
+.user-name-link {
+  display: inline-block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  margin: 0;
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+.user-name-link:hover {
+  color: var(--neon-cyan);
+}
+
+.user-name-link .dot {
+  color: var(--neon-cyan);
+}
+
 .greeting-label {
   display: block;
   font-size: 12px;
