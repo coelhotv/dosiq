@@ -271,3 +271,56 @@ onAction((alert, action) => {
 - Integrar COMPRAR com lista de compras real ou link externo
 - Adicionar persistência de snoozedAlertIds no banco (opcional)
 - Padronizar nomenclatura de botões (primary/secondary types)
+
+---
+
+## Memory Entry — 2026-02-07 05:08
+**Contexto / Objetivo**
+- Corrigir problema de scroll na tela de detalhes do Health Score em dispositivos mobile
+- Conteúdo era cortado pelo BottomNav fixo e menu de rodapé
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/ui/Modal.css` — Ajustes de max-height e padding para mobile
+  - `src/components/dashboard/HealthScoreDetails.css` — Adicionado padding-bottom para scroll completo
+- Comportamento impactado:
+  - Modal agora tem max-height de 85vh em mobile
+  - Padding-bottom adicional permite scroll até o final do conteúdo
+- Estrutura do Handler onAction
+
+**Verificação**
+- Testes/checagens executadas:
+  - npm run lint — Passed
+  - npm run build — Passed
+- Evidência do resultado:
+  - Build concluído com sucesso
+  - Lint sem erros
+
+**O que deu certo**
+- Ajuste de max-height para 85vh evita sobreposição do BottomNav
+- Padding-bottom no modal-body permite scroll completo
+- Alinhamento do modal ao bottom em mobile via CSS
+
+**O que não deu certo / riscos**
+- Solução depende de valor fixo (85vh, 60px) que pode variar conforme dispositivo
+
+**Causa raiz (se foi debug)**
+- Sintoma: Conteúdo cortado no final do modal em mobile
+- Causa: max-height: 100vh não considerava espaço do BottomNav fixo
+- Correção: Redução para 85vh + padding-bottom adicional
+- Prevenção: Sempre considerar elementos fixos (BottomNav) ao definir max-height em modais mobile
+
+**Decisões & trade-offs**
+- Decisão: Usar valores fixos (85vh, padding-bottom) ao invés de CSS calc() dinâmico
+- Alternativas consideradas: Usar env(safe-area-inset-bottom) para dispositivos modernos
+- Por quê: Maior compatibilidade com dispositivos mais antigos
+
+**Regras locais para o futuro (lições acionáveis)**
+- Em modais mobile, sempre considerar espaço de BottomNav fixo
+- Usar max-height < 100vh quando houver elementos fixos na tela
+- Adicionar padding-bottom adequado para permitir scroll completo
+- Testar scroll até o final do conteúdo em dispositivos reais
+
+**Pendências / próximos passos**
+- Testar em dispositivos reais para validar ajustes
+- Considerar usar env() para dynamic viewport units em browsers modernos
