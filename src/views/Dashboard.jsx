@@ -167,8 +167,10 @@ export default function Dashboard({ onNavigate }) {
       });
     });
 
-    return alerts.sort((a) => (a.severity === 'critical' ? -1 : 1));
-  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow]);
+    return alerts
+      .filter(alert => !snoozedAlertIds.has(alert.id))
+      .sort((a) => (a.severity === 'critical' ? -1 : 1));
+  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlertIds]);
 
   const handleRegisterDose = async (medicineId, protocolId) => {
     try {
@@ -186,6 +188,9 @@ export default function Dashboard({ onNavigate }) {
   };
 
   const [selectedMedicines, setSelectedMedicines] = useState({});
+  
+  // Rastreamentos de alertas silenciados (snoozed) pelo usuário
+  const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set());
 
   const toggleMedicineSelection = (planId, protocolId) => {
     setSelectedMedicines(prev => {
@@ -276,6 +281,13 @@ export default function Dashboard({ onNavigate }) {
             alert(`Link para compra de ${alert.message.split(' ')[2]} (Simulado)`);
           } else if (action.label === 'ESTOQUE') {
             onNavigate('stock', { medicineId: alert.medicine_id });
+          } else if (action.label === 'ADIAR') {
+            // Silencia o alerta de dose atrasada - não registra log, apenas suprime o alerta
+            setSnoozedAlertIds(prev => {
+              const newSet = new Set(prev);
+              newSet.add(alert.id);
+              return newSet;
+            });
           }
         }}
       />
