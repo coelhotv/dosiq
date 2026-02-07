@@ -76,14 +76,6 @@ Adicione ao final do arquivo exatamente neste formato:
   - `src/components/protocol/ProtocolCard.jsx` — Adiciona label traduzida na exibição
   - `src/components/protocol/ProtocolForm.test.jsx` — Atualizou testes com novos valores em português
 
-**Verificação**
-- Testes/checagens executadas:
-  - npm run lint — Passed
-  - npm run build — Passed
-- Evidência do resultado:
-  - Build concluído com sucesso
-  - Lint sem erros
-
 **O que deu certo**
 - Uso de constantes exportadas do schema para manter consistência entre validação e UI
 - Mapeamento label/valor permite exibir texto amigável mantendo valores válidos para o banco
