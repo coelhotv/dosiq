@@ -874,3 +874,47 @@ onAction((alert, action) => {
 - Testar comando /registrar após deploy automático
 - Testar comandos /adicionar_estoque, /pausar, /retomar
 - Monitorar logs da Vercel para verificar se erro BUTTON_DATA_INVALID foi resolvido
+
+---
+
+## Memory Entry — 2026-02-07 21:07
+**Contexto / Objetivo**
+- Refatorar componente "Protocolos" no dashboard para listar próximos 5 protocolos ordenados cronologicamente
+- Adicionar funcionalidade de swipe para registro de dose
+- Adicionar link "Ver todos" que redireciona para view completa de protocolos
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Adicionado useMemo standaloneProtocols com ordenação cronológica
+  - `src/views/Dashboard.jsx` — Adicionado fallbackProtocols para protocolos do primeiro plano
+  - `src/views/Dashboard.jsx` — Atualizado título para "PRÓXIMAS DOSES" e adicionado link "Ver todos"
+  - `src/views/Dashboard.css` — Adicionados estilos para .view-all-link e .empty-message
+- Comportamento impactado:
+  - Lista os próximos 5 protocolos isolados ordenados por horário crescente
+  - Fallback para protocolos do primeiro plano se não houver protocolos avulsos
+  - Link "Ver todos" sempre visível quando há protocolos na lista
+
+**O que deu certo**
+- Uso de useMemo para ordenação cronológica eficiente
+- Lógica de fallback para protocolos do primeiro plano
+- Link "Ver todos" redireciona corretamente para view de protocolos
+
+**O que não deu certo / riscos**
+- Verificar se há protocolos suficientes para testar a ordenação
+- Testar comportamento quando há exatamente 5 protocolos vs mais de 5
+
+**Decisões & trade-offs**
+- Decisão: Mostrar link "Ver todos" sempre quando há protocolos, independente da quantidade
+- Alternativas consideradas: Mostrar apenas quando há mais de 5 protocolos
+- Por que: Usuário pode querer ver a view completa mesmo com poucos protocolos
+
+**Regras locais para o futuro (lições acionáveis)**
+- Usar useMemo para cálculos complexos de ordenação/filtragem
+- Sempre considerar fallback para dados não disponíveis
+- Testar diferentes quantidades de dados para validar UI
+- Verificar lint antes de fazer commit
+
+**Pendências / próximos passos**
+- Testar em ambiente de desenvolvimento após deploy
+- Validar ordenação cronológica com protocolos em diferentes horários
+- Verificar comportamento do link "Ver todos"
