@@ -10,7 +10,6 @@ import { useDashboard } from '../hooks/useDashboardContext.jsx'
 import HealthScoreCard from '../components/dashboard/HealthScoreCard'
 import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
-import QuickActionsWidget from '../components/dashboard/QuickActionsWidget'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import { getCurrentUser } from '../lib/supabase'
@@ -294,17 +293,7 @@ export default function Dashboard({ onNavigate }) {
         }}
       />
 
-      {/* 3. Quick Actions */}
-      <QuickActionsWidget
-        onRegisterDose={() => {
-          setPrefillData(null);
-          setIsModalOpen(true);
-        }}
-        onAddStock={() => onNavigate('stock')}
-        onViewHistory={() => onNavigate('history')}
-      />
-
-      {/* 4. Tratamento - Parte Superior: Planos Completos */}
+      {/* 3. Tratamento - Parte Superior: Planos Completos */}
       <section className="treatment-plans-section">
         <div className="section-header">
           <h2 className="section-title">TRATAMENTO</h2>
@@ -339,7 +328,7 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </section>
 
-      {/* 4. Tratamento - Parte Inferior: Protocolos Avulsos */}
+      {/* 3. Tratamento - Parte Inferior: Protocolos Avulsos */}
       <section className="treatment-standalone-section">
         <div className="section-header">
           <h2 className="section-title">PRÓXIMAS</h2>
@@ -369,7 +358,7 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </section>
 
-      {/* 5. Floating Action Button */}
+      {/* 4. Floating Action Button */}
       <div className="dash-footer-actions">
         <button className="btn-add-manual" onClick={() => {
           setPrefillData(null);
