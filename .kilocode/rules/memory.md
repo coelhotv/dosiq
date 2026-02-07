@@ -27,12 +27,6 @@ Adicione ao final do arquivo exatamente neste formato:
 - Comportamento impactado:
   - (bullet)
 
-**Verificação**
-- Testes/checagens executadas:
-  - (ex.: unit, integration, build, lint, repro steps)
-- Evidência do resultado:
-  - (saídas, critérios atendidos, observações)
-
 **O que deu certo**
 - (2–5 bullets: técnicas, abordagens, decisões que funcionaram)
 
@@ -137,12 +131,6 @@ Adicione ao final do arquivo exatamente neste formato:
   - `src/schemas/protocolSchema.js` — Traduziu WEEKDAYS para português
   - `.migrations/20260207_migrate_medicine_type_to_portuguese.sql` — Migration SQL criada
 
-**Verificação**
-- Testes/checagens executadas:
-  - npm run build — Passed
-- Evidência do resultado:
-  - Build concluído com sucesso
-
 **O que deu certo**
 - Varredura completa de todos os schemas identificou termos em inglês não óbvios
 - WEEKDAYS estava definido mas não em uso, agora traduzido para uso futuro
@@ -180,14 +168,6 @@ Adicione ao final do arquivo exatamente neste formato:
 - Comportamento impactado:
   - Botão ADIAR agora suprime o alerta de dose atrasada da lista
   - Alerta é filtrado da UI ao clicar em ADIAR
-
-**Verificação**
-- Testes/checagens executadas:
-  - npm run lint — Passed
-  - npm run build — Passed
-- Evidência do resultado:
-  - Build concluído com sucesso
-  - Lint sem erros
 
 **O que deu certo**
 - Uso de Set para rastrear IDs de alertas silenciados (performático)
@@ -288,14 +268,6 @@ onAction((alert, action) => {
   - Padding-bottom adicional permite scroll até o final do conteúdo
 - Estrutura do Handler onAction
 
-**Verificação**
-- Testes/checagens executadas:
-  - npm run lint — Passed
-  - npm run build — Passed
-- Evidência do resultado:
-  - Build concluído com sucesso
-  - Lint sem erros
-
 **O que deu certo**
 - Ajuste de max-height para 85vh evita sobreposição do BottomNav
 - Padding-bottom no modal-body permite scroll completo
@@ -324,3 +296,32 @@ onAction((alert, action) => {
 **Pendências / próximos passos**
 - Testar em dispositivos reais para validar ajustes
 - Considerar usar env() para dynamic viewport units em browsers modernos
+
+---
+
+## Memory Entry — 2026-02-07 05:20
+**Contexto / Objetivo**
+- Corrigir ReferenceError no Dashboard: Cannot access 'snoozedAlertIds' before initialization
+- O dashboard não carregava, tela ficava vazia
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Moveu estado `snoozedAlertIds` para antes do useMemo que o utiliza
+- Comportamento impactado:
+  - Dashboard agora carrega normalmente
+  - Error de TDZ (Temporal Dead Zone) resolvido
+
+**O que deu certo**
+- Reorganização da ordem de declarações no componente
+- Declaração de estados sempre antes de useMemo/useEffect que os utilizam
+
+**Causa raiz (se foi debug)**
+- Sintoma: Dashboard não carregava, ReferenceError no console
+- Causa: `snoozedAlertIds` era declarado após o useMemo que o utiliza (TDZ)
+- Correção: Moveu declaração do estado para antes do useMemo
+- Prevenção: Sempre declarar estados antes de hooks que os utilizam
+
+**Regras locais para o futuro (lições acionáveis)**
+- Estados devem ser declarados antes de useMemo/useEffect que os utilizam
+- Em React, ordem de declarações importa para evitar TDZ
+- Criar ordem lógica: states -> useMemo -> useEffects -> handlers
