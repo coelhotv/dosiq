@@ -635,6 +635,53 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-07 16:32
+**Contexto / Objetivo**
+- Corrigir ordem de validação de estoque no comando /registrar do bot do Telegram
+- O sistema estava gravando a dose no banco mesmo quando a validação de estoque falhava
+- Usuário tentou registrar dose de 2000mg, validação de estoque falhou, mas dose foi gravada como 2000 comprimidos
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Reorganizada ordem de validação e gravação
+- Comportamento impactado:
+  - Validação de estoque agora acontece ANTES de gravar a dose
+  - Dose só é gravada se houver estoque suficiente
+  - Evita gravar doses incorretas quando estoque é insuficiente
+
+**O que deu certo**
+- Reorganização da função `processDoseRegistration` para validar estoque primeiro
+- Separação clara entre validação e gravação
+- Prevenção de dados inconsistentes no banco
+
+**O que não deu certo / riscos**
+- Doses incorretas podem ter sido gravadas anteriormente (antes da correção)
+- Usuário pode ter doses com valores impossíveis (ex: 2000 comprimidos)
+
+**Causa raiz (se foi debug)**
+- Sintoma: Dose gravada no banco mesmo quando validação de estoque falhava
+- Causa: Função `processDoseRegistration` gravava a dose (linha 254-262) ANTES de validar estoque (linha 306)
+- Correção: Mover validação de estoque para antes de gravar a dose
+- Prevenção: Sempre validar recursos antes de consumir/gravar
+
+**Decisões & trade-offs**
+- Decisão: Validar estoque antes de gravar dose
+- Alternativas consideradas: Gravar dose mesmo sem estoque, usar transação do banco
+- Por que: Validação prévia evita inconsistências no banco e fornece feedback claro ao usuário
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre validar recursos (estoque) antes de consumir/decrementar
+- Validar antes de gravar no banco para evitar dados inconsistentes
+- Ordem correta: validação → gravação → decremento
+- Usar transações do banco quando possível para garantir atomicidade
+
+**Pendências / próximos passos**
+- Verificar se há doses incorretas no banco que precisam ser corrigidas manualmente
+- Testar comando /registrar após deploy automático
+- Monitorar logs da Vercel para validar funcionamento
+
+---
+
 ## Memory Entry — 2026-02-07 16:08
 **Contexto / Objetivo**
 - Corrigir comando /registrar do bot que não estava funcionando
