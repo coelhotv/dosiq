@@ -533,6 +533,60 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-07 16:15
+**Contexto / Objetivo**
+- Corrigir cálculo de dosagem no comando /registrar do bot do Telegram
+- Corrigir erro de "Sessão expirada" ao selecionar opção de dosagem
+- O teclado de opções mostrava valores incorretos (ex: 1m em vez de 10mg para Ansitec)
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Adicionado dosage_per_pill na query, calculado dosagem real, adicionado await em todas as chamadas de getSession
+  - `server/bot/commands/protocols.js` — Adicionado await em chamada de getSession
+- Comportamento impactado:
+  - Teclado de opções agora mostra dosagem correta (pillsPerIntake * dosagePerPill)
+  - Erro de "Sessão expirada" resolvido ao adicionar await em todas as chamadas de getSession
+
+**O que deu certo**
+- Uso de dosage_per_pill da tabela de medicamentos para calcular dosagem correta
+- Adição de await em todas as chamadas de getSession resolveu erro de sessão expirada
+- Debug logs ajudaram a identificar o problema de cálculo de dosagem
+
+**O que não deu certo / riscos**
+- Inicialmente não foi identificado que getSession é uma função async
+- Múltiplas chamadas de getSession sem await em diferentes arquivos
+
+**Causa raiz (se foi debug)**
+- Sintoma: Teclado de opções mostrava valores incorretos (1m em vez de 10mg)
+- Causa: Query não buscava dosage_per_pill da tabela de medicamentos, usava apenas dosage_per_intake (pills per intake)
+- Correção: Adicionar dosage_per_pill na query e calcular: pillsPerIntake * dosagePerPill
+- Prevenção: Sempre verificar se todos os campos necessários estão sendo buscados na query
+
+- Sintoma: Erro de "Sessão expirada" ao selecionar opção de dosagem
+- Causa: getSession é uma função async, mas estava sendo chamada sem await, retornando Promise em vez do valor da sessão
+- Correção: Adicionar await em todas as chamadas de getSession
+- Prevenção: Sempre usar await ao chamar funções async
+
+**Decisões & trade-offs**
+- Decisão: Calcular dosagem real (pillsPerIntake * dosagePerPill) em vez de mostrar apenas pills per intake
+- Alternativas consideradas: Mostrar apenas pills per intake, mostrar ambos
+- Por que: Usuário precisa ver a dosagem real em mg/ml, não apenas quantidade de comprimidos
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre usar await ao chamar getSession (é uma função async)
+- Verificar se todos os campos necessários estão sendo buscados na query do Supabase
+- Para cálculo de dosagem: buscar dosage_per_intake (protocolos) e dosage_per_pill (medicamentos)
+- Dosagem real = pillsPerIntake * dosagePerPill
+- Usar debug logs para rastrear valores calculados e identificar problemas
+- Fazer grep por "getSession(" para verificar se todas as chamadas têm await
+
+**Pendências / próximos passos**
+- Testar comando /registrar após deploy automático
+- Verificar se dosagem está correta para diferentes medicamentos
+- Monitorar logs da Vercel para verificar se não há mais erros de sessão expirada
+
+---
+
 ## Memory Entry — 2026-02-07 16:08
 **Contexto / Objetivo**
 - Corrigir comando /registrar do bot que não estava funcionando
