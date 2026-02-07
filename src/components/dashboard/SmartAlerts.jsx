@@ -30,6 +30,7 @@ export default function SmartAlerts({ alerts = [], onAction }) {
               <button
                 key={action.label}
                 className={`smart-alert__btn smart-alert__btn--${action.type}`}
+                title={action.title || ''}
                 onClick={() => onAction?.(alert, action)}
               >
                 {action.label}
