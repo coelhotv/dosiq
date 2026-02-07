@@ -317,3 +317,48 @@ onAction((alert, action) => {
 - Estados devem ser declarados antes de useMemo/useEffect que os utilizam
 - Em React, ordem de declarações importa para evitar TDZ
 - Criar ordem lógica: states -> useMemo -> useEffects -> handlers
+
+---
+
+## Memory Entry — 2026-02-07 06:32
+**Contexto / Objetivo**
+- Reordenar elementos do Dashboard conforme solicitação do usuário
+- Nova ordem: Header → SmartAlerts → Widgets → Tratamento → Próximas Doses
+- Adicionar seção "Próximas doses" com as próximas 5 doses ordenadas por hora
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Reorganizada ordem do JSX e adicionado useMemo nextDoses
+  - `src/views/Dashboard.css` — Adicionados estilos para .next-doses-section
+- Comportamento impactado:
+  - Dashboard agora exibe: Header → SmartAlerts → DashboardWidgets → Tratamento → Próximas Doses
+  - Seção "Próximas doses" mostra as próximas 5 doses ordenadas por horário
+  - Título alterado de "CRONOGRAMA DE HOJE" para "TRATAMENTO"
+
+**O que deu certo**
+- Reorganização do JSX mantendo mesma estrutura de TreatmentAccordion
+- nextDoses useMemo calcula doses futuras considerando janela de 2h
+- CSS adiciona estilos consistentes com o design existente
+
+**O que não deu certo / riscos**
+- Erro inicial de lint: `currentMinutes` não estava definido
+- Correção: Adicionada declaração `const currentMinutes = now.getHours() * 60 + now.getMinutes()`
+
+**Causa raiz (se foi debug)**
+- Sintoma: Lint falhava com "'currentMinutes' is not defined"
+- Causa: Variável era usada mas não declarada no componente
+- Correção: Adicionada declaração junto com snoozedAlertIds
+
+**Decisões & trade-offs**
+- Decisão: Manter lógica de nextDoses similar à smartAlerts existente
+- Alternativas: Criar hook separado, usar contexto compartilhado
+- Por quê: Manter consistência com código existente
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre declarar variáveis antes de usá-las em useMemo/useEffect
+- Verificar lint antes de fazer commit
+- Manter consistência com padrões existentes do código
+
+**Pendências / próximos passos**
+- Testar em ambiente de desenvolvimento para validar comportamento
+- Ajustar estilos CSS se necessário para mobile
