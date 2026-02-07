@@ -587,6 +587,54 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-07 16:24
+**Contexto / Objetivo**
+- Corrigir cálculo de redução de estoque no comando /registrar do bot do Telegram
+- O sistema estava reduzindo a dosagem (2000mg) do estoque em vez de reduzir a quantidade de comprimidos (4)
+- Usuário tentou registrar dose de Omega 3 (2000mg = 4 comprimidos de 500mg), mas sistema tentou reduzir 2000 comprimidos
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Adicionado cálculo de comprimidos a serem reduzidos do estoque
+- Comportamento impactado:
+  - Sistema agora busca `dosage_per_pill` da tabela de medicamentos
+  - Calcula quantidade de comprimidos: `quantity / dosagePerPill`
+  - Usa `pillsToDecrease` em vez de `quantity` para decrementar estoque
+  - Mensagem de erro de estoque insuficiente agora mostra dosagem e comprimidos
+
+**O que deu certo**
+- Separação clara entre dosagem (mg/ml) e quantidade de comprimidos no estoque
+- Cálculo correto: `pillsToDecrease = quantity / dosagePerPill`
+- Mensagem de erro mais informativa mostrando dosagem solicitada e comprimidos necessários
+
+**O que não deu certo / riscos**
+- Sistema anteriormente confundia dosagem com quantidade de comprimidos
+- Validação de estoque estava comparando unidades diferentes (mg vs comprimidos)
+
+**Causa raiz (se foi debug)**
+- Sintoma: Sistema tentou reduzir 2000 comprimidos do estoque ao registrar dose de 2000mg
+- Causa: Função `processDoseRegistration` usava `quantity` (dosagem em mg) diretamente para decrementar estoque
+- Correção: Buscar `dosage_per_pill` da tabela de medicamentos e calcular `pillsToDecrease = quantity / dosagePerPill`
+- Prevenção: Sempre separar dosagem (mg/ml) de quantidade de comprimidos no estoque
+
+**Decisões & trade-offs**
+- Decisão: Calcular quantidade de comprimidos dinamicamente em vez de armazenar no protocolo
+- Alternativas consideradas: Armazenar quantidade de comprimidos no protocolo, pedir usuário para informar quantidade de comprimidos
+- Por que: Manter consistência com dados existentes (dosagem em mg/ml é mais comum para usuários)
+
+**Regras locais para o futuro (lições acionáveis)**
+- Estoque é sempre em quantidade de comprimidos, não em dosagem (mg/ml)
+- Para decrementar estoque: calcular `pillsToDecrease = dosage / dosagePerPill`
+- Buscar `dosage_per_pill` da tabela de medicamentos sempre que precisar converter dosagem para comprimidos
+- Mensagens de erro de estoque devem mostrar dosagem e comprimidos para clareza
+
+**Pendências / próximos passos**
+- Testar comando /registrar após deploy automático
+- Verificar se estoque está sendo decrementado corretamente para diferentes medicamentos
+- Monitorar logs da Vercel para validar funcionamento
+
+---
+
 ## Memory Entry — 2026-02-07 16:08
 **Contexto / Objetivo**
 - Corrigir comando /registrar do bot que não estava funcionando
