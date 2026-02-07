@@ -530,3 +530,54 @@ onAction((alert, action) => {
 - Validar funcionamento do bot após deploy
 - Testar comandos básicos (/start, /status, /hoje)
 - Verificar se notificações estão sendo enviadas corretamente do código
+
+---
+
+## Memory Entry — 2026-02-07 16:08
+**Contexto / Objetivo**
+- Corrigir comando /registrar do bot que não estava funcionando
+- O comando não fornecia feedback após selecionar medicamento e quantidade
+- Nenhuma dose era registrada no banco de dados
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/callbacks/conversational.js` — Adicionado import do logger, substituído console.error por logger.error, adicionado validação de estoque, adicionado tratamento de erro robusto
+  - `plans/INVESTIGACAO_REGISTRAR.md` — Documento de investigação criado com análise detalhada
+- Comportamento impactado:
+  - Comando /registrar agora valida estoque antes de decrementar
+  - Feedback ao usuário quando estoque é insuficiente
+  - Tratamento de erro robusto com mensagens detalhadas
+  - Logs estruturados com contexto para debug
+
+**O que deu certo**
+- Uso de logger.error com contexto detalhado (chatId, protocolId, medicineId, quantity)
+- Validação de estoque antes de decrementar evita estoque negativo
+- Feedback ao usuário em todos os cenários de erro
+- Documento de investigação detalhado facilita entendimento do problema
+
+**O que não deu certo / riscos**
+- Erro inicial de edição: old_string não correspondia ao conteúdo do arquivo
+- Correção: Reler arquivo e usar contexto exato para edição
+
+**Causa raiz (se foi debug)**
+- Sintoma: Comando /registrar não funcionava, sem feedback ao usuário
+- Causa: processDoseRegistration usava console.error (não visível em produção) e não validava estoque
+- Correção: Substituído console.error por logger.error, adicionado validação de estoque, tratamento de erro robusto
+- Prevenção: Sempre usar logger.error em vez de console.error, validar recursos antes de consumir
+
+**Decisões & trade-offs**
+- Decisão: Adicionar validação de estoque antes de decrementar
+- Alternativas consideradas: Permitir estoque negativo, validar apenas após decremento
+- Por que: Validação prévia evita inconsistências no banco e fornece feedback claro ao usuário
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre usar logger.error em vez de console.error em código de produção
+- Validar recursos (estoque) antes de consumir/decrementar
+- Fornecer feedback ao usuário em todos os cenários de erro
+- Incluir contexto detalhado em logs (chatId, userId, ids de entidades)
+- Criar documento de investigação para problemas complexos
+
+**Pendências / próximos passos**
+- Testar comando /registrar em ambiente de desenvolvimento
+- Validar funcionamento após deploy para produção
+- Monitorar logs da Vercel para verificar se erros estão sendo registrados corretamente
