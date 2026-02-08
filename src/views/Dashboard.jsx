@@ -14,6 +14,7 @@ import SmartAlerts from '../components/dashboard/SmartAlerts'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import SparklineAdesao from '../components/dashboard/SparklineAdesao'
+import EmptyState from '../components/ui/EmptyState'
 import { getCurrentUser } from '../lib/supabase'
 import './Dashboard.css'
 
@@ -444,7 +445,13 @@ export default function Dashboard({ onNavigate }) {
               )}
             </>
           ) : (
-            <p className="empty-message">Nenhum protocolo ativo encontrado.</p>
+            <EmptyState
+              illustration="protocols"
+              title="Nenhum protocolo ativo"
+              description="Cadastre seu primeiro protocolo para começar a acompanhar seu tratamento"
+              ctaLabel="Cadastrar Protocolo"
+              onCtaClick={() => onNavigate?.('protocols/new')}
+            />
           )}
         </div>
       </section>
