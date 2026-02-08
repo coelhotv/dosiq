@@ -16,6 +16,10 @@ import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import SparklineAdesao from '../components/dashboard/SparklineAdesao'
 import EmptyState from '../components/ui/EmptyState'
 import ThemeToggle from '../components/ui/ThemeToggle'
+import ConfettiAnimation from '../components/animations/ConfettiAnimation'
+import MilestoneCelebration from '../components/gamification/MilestoneCelebration'
+import { checkNewMilestones } from '../services/milestoneService'
+import { analyticsService } from '../services/analyticsService'
 import { getCurrentUser } from '../lib/supabase'
 import './Dashboard.css'
 
@@ -48,6 +52,13 @@ export default function Dashboard({ onNavigate }) {
   
   // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
   const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set())
+  
+  // Estado para controle de animação de confete
+  const [showConfetti, setShowConfetti] = useState(false)
+
+  // Estados para controle de celebração de milestones
+  const [currentMilestone, setCurrentMilestone] = useState(null)
+  const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false)
   
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   
@@ -89,6 +100,31 @@ export default function Dashboard({ onNavigate }) {
     }
     loadAdherence()
   }, [])
+
+  // Tracking de page_view
+  useEffect(() => {
+    analyticsService.track('page_view', { page: 'dashboard' })
+  }, [])
+
+  // Dispara confete quando atinge 100% de adesão
+  useEffect(() => {
+    if (stats.adherence === 100 && !showConfetti) {
+      setShowConfetti(true)
+      analyticsService.track('confetti_triggered', { adherence: 100 })
+    }
+  }, [stats.adherence, showConfetti])
+
+  // Verificar novos milestones conquistados
+  useEffect(() => {
+    if (stats) {
+      const newMilestones = checkNewMilestones(stats)
+      if (newMilestones.length > 0) {
+        // Mostrar o primeiro milestone conquistado
+        setCurrentMilestone(newMilestones[0])
+        setShowMilestoneCelebration(true)
+      }
+    }
+  }, [stats])
 
   // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
   const standaloneProtocols = useMemo(() => {
@@ -246,6 +282,7 @@ export default function Dashboard({ onNavigate }) {
         quantity_taken: 1, // Default para swipe
         taken_at: new Date().toISOString()
       });
+      analyticsService.track('dose_registered', { timestamp: Date.now() });
       refresh(); // Atualiza dashboard context
     } catch (err) {
       console.error(err);
@@ -493,6 +530,22 @@ export default function Dashboard({ onNavigate }) {
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
+
+      {showConfetti && (
+        <ConfettiAnimation
+          trigger={showConfetti}
+          type="burst"
+          onComplete={() => setShowConfetti(false)}
+        />
+      )}
+
+      {showMilestoneCelebration && currentMilestone && (
+        <MilestoneCelebration
+          milestone={currentMilestone}
+          visible={showMilestoneCelebration}
+          onClose={() => setShowMilestoneCelebration(false)}
+        />
+      )}
     </div>
   )
 }
