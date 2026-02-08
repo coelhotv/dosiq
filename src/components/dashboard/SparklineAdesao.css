@@ -25,19 +25,19 @@
   align-items: center;
   justify-content: center;
   min-height: 40px;
-  background: var(--color-bg-secondary, #f9fafb);
+  background: var(--bg-secondary);
   border-radius: var(--radius-md, 8px);
   padding: var(--spacing-sm, 8px);
 }
 
 .sparkline-empty-text {
-  color: var(--color-text-tertiary, #6b7280);
+  color: var(--text-tertiary);
   font-size: 0.75rem;
 }
 
 /* Linha de referência 80% */
 .sparkline-reference-line {
-  stroke: var(--color-text-tertiary, #9ca3af);
+  stroke: var(--text-tertiary);
   stroke-opacity: 0.5;
 }
 
@@ -70,7 +70,7 @@
 
 .sparkline-day-name {
   font-size: 0.625rem;
-  color: var(--color-text-tertiary, #6b7280);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -91,11 +91,11 @@
 .sparkline-average {
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--color-text-primary, #111827);
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .sparkline-average {
-  color: var(--color-text-primary, #f9fafb);
+  color: var(--text-primary);
 }
 
 .sparkline-trend {
@@ -104,15 +104,15 @@
 }
 
 .sparkline-trend-up {
-  color: var(--color-success, #10b981);
+  color: var(--accent-success);
 }
 
 .sparkline-trend-down {
-  color: var(--color-error, #ef4444);
+  color: var(--accent-danger);
 }
 
 .sparkline-trend-stable {
-  color: var(--color-text-tertiary, #6b7280);
+  color: var(--text-tertiary);
 }
 
 /* Sizes */
