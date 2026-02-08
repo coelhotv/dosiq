@@ -10,10 +10,16 @@
 /* Header */
 .dash-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 24px;
-  gap: var(--space-4);
+  gap: 12px;
+}
+
+.sparkline-container {
+  width: 100%;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dash-header__welcome {

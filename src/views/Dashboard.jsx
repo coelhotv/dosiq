@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   cachedLogService as logService,
-  cachedTreatmentPlanService as treatmentPlanService
+  cachedTreatmentPlanService as treatmentPlanService,
+  adherenceService
 } from '../services/api'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
@@ -12,6 +13,7 @@ import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
+import SparklineAdesao from '../components/dashboard/SparklineAdesao'
 import { getCurrentUser } from '../lib/supabase'
 import './Dashboard.css'
 
@@ -35,6 +37,10 @@ export default function Dashboard({ onNavigate }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
   const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
+  
+  // Dados de adesão para Sparkline
+  const [dailyAdherence, setDailyAdherence] = useState([])
+  const [isAdherenceLoading, setIsAdherenceLoading] = useState(true)
   
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
   
@@ -65,6 +71,21 @@ export default function Dashboard({ onNavigate }) {
       }
     }
     loadInitialData()
+  }, [])
+
+  // Carregar dados de adesão para Sparkline
+  useEffect(() => {
+    async function loadAdherence() {
+      try {
+        const data = await adherenceService.getDailyAdherence(7)
+        setDailyAdherence(data)
+      } catch (err) {
+        console.error('Erro ao carregar dados de adesão:', err)
+      } finally {
+        setIsAdherenceLoading(false)
+      }
+    }
+    loadAdherence()
   }, [])
 
   // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
@@ -297,6 +318,13 @@ export default function Dashboard({ onNavigate }) {
           trend="up"
           onClick={() => setIsHealthDetailsOpen(true)}
         />
+        
+        {/* Sparkline de Adesão Semanal */}
+        {!isAdherenceLoading && dailyAdherence.length > 0 && (
+          <div className="sparkline-container">
+            <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
+          </div>
+        )}
       </header>
 
       <HealthScoreDetails
