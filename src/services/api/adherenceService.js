@@ -232,6 +232,66 @@ export const adherenceService = {
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak
     }
+  },
+
+  /**
+   * Retorna dados de adesão por dia para sparkline
+   * @param {number} days - Número de dias (padrão: 7)
+   * @returns {Promise<Array<{date: string, adherence: number, taken: number, expected: number}>>}
+   */
+  async getDailyAdherence(days = 7) {
+    const userId = await getUserId()
+    
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    // Buscar protocolos ativos
+    const { data: protocols, error: protocolError } = await supabase
+      .from('protocols')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('active', true)
+
+    if (protocolError) throw protocolError
+
+    // Buscar logs no período
+    const { data: logs, error: logError } = await supabase
+      .from('medicine_logs')
+      .select('taken_at')
+      .eq('user_id', userId)
+      .gte('taken_at', startDate.toISOString())
+      .lte('taken_at', endDate.toISOString())
+
+    if (logError) throw logError
+
+    // Calcular doses esperadas por dia
+    const dailyExpected = calculateDailyExpectedDoses(protocols)
+
+    // Agrupar logs por dia
+    const logsByDay = groupLogsByDay(logs)
+
+    // Gerar array com dados para cada dia
+    const dailyData = []
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(endDate)
+      date.setDate(date.getDate() - i)
+      const dateKey = date.toISOString().split('T')[0]
+      
+      const taken = logsByDay.get(dateKey) || 0
+      const adherence = dailyExpected > 0 
+        ? Math.round((taken / dailyExpected) * 100)
+        : 0
+      
+      dailyData.push({
+        date: dateKey,
+        taken,
+        expected: Math.round(dailyExpected),
+        adherence: Math.min(adherence, 100)
+      })
+    }
+
+    return dailyData
   }
 }
 
