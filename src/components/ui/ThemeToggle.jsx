@@ -1,115 +1,121 @@
 /**
- * ThemeToggle - Componente para alternância entre temas claro/escuro
+ * ThemeToggle.jsx - Componente de alternância de tema claro/escuro
  * 
- * Botão toggle que permite ao usuário alternar entre tema claro e escuro
- * com animação suave e feedback visual.
- * 
- * @component
- * @example
- * <ThemeToggle />
+ * Funcionalidades:
+ * - Toggle switch visual para alternar entre tema claro e escuro
+ * - Usa ícones SVG de sol e lua
+ * - Integração com hook useTheme
+ * - Acessível com ARIA labels
  */
 
-import { useTheme } from '../hooks/useTheme'
-import './ThemeToggle.css'
+import { memo } from 'react'
+import { useTheme } from '../../hooks/useTheme'
 
 /**
- * Icon components for light/dark modes
+ * Componente ThemeToggle - Alternância de tema
+ * @param {Object} props
+ * @param {string} props.size - Tamanho do toggle ('sm', 'md', 'lg')
+ * @param {string} props.position - Posição do container ('left', 'right', 'center')
+ * @param {Function} props.onChange - Callback opcional quando o tema muda
  */
-const SunIcon = ({ className }) => (
-  <svg 
-    className={`theme-icon sun ${className || ''}`} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-)
-
-const MoonIcon = ({ className }) => (
-  <svg 
-    className={`theme-icon moon ${className || ''}`} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-)
-
-export function ThemeToggle({ 
-  size = 'medium', 
-  showLabel = false,
-  className = '',
-  'aria-label': ariaLabel = 'Alternar tema'
+function ThemeToggle({ 
+  size = 'md',
+  position = 'left',
+  onChange 
 }) {
-  const { toggleTheme, resolvedTheme } = useTheme()
+  const { toggleTheme, isDark, prefersReducedMotion } = useTheme()
 
+  // Tamanhos disponíveis
   const sizes = {
-    small: { width: 36, height: 20, icon: 14 },
-    medium: { width: 48, height: 26, icon: 18 },
-    large: { width: 60, height: 32, icon: 22 }
+    sm: { track: 'w-8 h-4', thumb: 'w-3 h-3', icon: 'w-3 h-3', translate: 'translate-x-4' },
+    md: { track: 'w-11 h-6', thumb: 'w-5 h-5', icon: 'w-4 h-4', translate: 'translate-x-5' },
+    lg: { track: 'w-14 h-7', thumb: 'w-6 h-6', icon: 'w-5 h-5', translate: 'translate-x-7' }
   }
 
-  const currentSize = sizes[size] || sizes.medium
+  const currentSize = sizes[size] || sizes.md
 
-  const handleClick = () => {
+  // Posicionamento
+  const positions = {
+    left: 'justify-start',
+    center: 'justify-center',
+    right: 'justify-end'
+  }
+
+  const currentPosition = positions[position] || positions.left
+
+  const handleToggle = () => {
     toggleTheme()
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      toggleTheme()
-    }
+    onChange?.(isDark ? 'light' : 'dark')
   }
 
   return (
-    <button
-      className={`theme-toggle ${className}`}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      aria-label={ariaLabel}
-      role="switch"
-      aria-checked={resolvedTheme === 'dark'}
-      style={{
-        '--toggle-width': `${currentSize.width}px`,
-        '--toggle-height': `${currentSize.height}px`,
-        '--icon-size': `${currentSize.icon}px`
-      }}
-    >
-      <span className="toggle-track" aria-hidden="true">
-        <span className="toggle-thumb">
-          {resolvedTheme === 'dark' ? (
-            <MoonIcon className="thumb-icon" />
+    <div className={`flex ${currentPosition}`}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDark}
+        aria-label={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+        onClick={handleToggle}
+        className={`
+          relative inline-flex items-center rounded-full
+          ${currentSize.track}
+          bg-[var(--color-toggle-track)]
+          focus:outline-none focus-visible:ring-2
+          focus-visible:ring-[var(--color-primary)]
+          focus-visible:ring-offset-2
+          focus-visible:ring-offset-[var(--color-bg-primary)]
+          transition-colors duration-200
+          cursor-pointer
+        `}
+        disabled={prefersReducedMotion}
+      >
+        <span
+          className={`
+            inline-flex items-center justify-center
+            rounded-full
+            bg-[var(--color-white)]
+            shadow-sm
+            transform transition-transform duration-200
+            ${isDark ? currentSize.translate : 'translate-x-0'}
+            ${currentSize.thumb}
+          `}
+        >
+          {isDark ? (
+            // Lua
+            <svg
+              className="text-[var(--color-moon)]"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M7.455 2.004a.75.75 0 01.26.77 7 7 0 009.958 6.962.75.75 0 01-1.067 1.214A9 9 0 1117.25 5.75a.75.75 0 11-1.06 1.06 10.5 10.5 0 01-9.24-4.806.75.75 0 01-.52-.004z"
+                clipRule="evenodd"
+              />
+            </svg>
           ) : (
-            <SunIcon className="thumb-icon" />
+            // Sol
+            <svg
+              className="text-[var(--color-sun)]"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"
+                clipRule="evenodd"
+              />
+            </svg>
           )}
         </span>
-      </span>
-      {showLabel && (
-        <span className="toggle-label">
-          {resolvedTheme === 'dark' ? 'Escuro' : 'Claro'}
-        </span>
-      )}
-    </button>
+      </button>
+    </div>
   )
 }
 
-export default ThemeToggle
+// Memoize para evitar re-render desnecessários
+const MemoizedThemeToggle = memo(ThemeToggle)
+
+export default MemoizedThemeToggle
