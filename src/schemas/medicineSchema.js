@@ -5,8 +5,19 @@ import { z } from 'zod'
  * Baseado na tabela 'medicines' do Supabase
  */
 
-// Unidades de dosagem válidas
-const DOSAGE_UNITS = ['mg', 'mcg', 'ml', 'g', 'UI', 'gotas', 'comprimido', 'cápsula']
+// Unidades de dosagem válidas (alinhadas com MedicineForm.jsx dropdown)
+export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
+
+// Labels de unidade para exibição
+export const DOSAGE_UNIT_LABELS = {
+  'mg': 'mg',
+  'mcg': 'mcg',
+  'g': 'g',
+  'ml': 'ml',
+  'ui': 'UI',
+  'cp': 'cp/cap',
+  'gotas': 'gotas'
+}
 
 // Tipos de medicamento
 export const MEDICINE_TYPES = ['medicamento', 'suplemento']
@@ -48,7 +59,7 @@ export const medicineSchema = z.object({
   
   dosage_unit: z
     .enum(DOSAGE_UNITS, {
-      errorMap: () => ({ message: 'Unidade de dosagem inválida. Use: mg, mcg, ml, g, UI, gotas, comprimido ou cápsula' })
+      errorMap: () => ({ message: 'Unidade de dosagem inválida. Use: mg, mcg, g, ml, UI, cp ou gotas' })
     }),
   
   type: z
