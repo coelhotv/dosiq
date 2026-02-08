@@ -85,8 +85,8 @@
 }
 
 .smart-alert__btn--danger {
-  background: var(--neon-pink);
-  color: white;
+  background: var(--accent-danger);
+  color: var(--text-primary);
 }
 
 /* Botão placeholder (ex: COMPRAR - funcionalidade futura) */

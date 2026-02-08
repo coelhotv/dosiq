@@ -55,7 +55,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background-color: var(--color-primary, #ec4899);
+  background-color: var(--accent-primary);
   animation: confetti-fall 3s linear forwards;
 }
 
@@ -70,11 +70,11 @@
 }
 
 /* Cores do confete */
-.confetti-particle:nth-child(5n) { background-color: var(--color-success, #10b981); }
-.confetti-particle:nth-child(5n+1) { background-color: var(--color-warning, #f59e0b); }
-.confetti-particle:nth-child(5n+2) { background-color: var(--color-primary, #ec4899); }
-.confetti-particle:nth-child(5n+3) { background-color: var(--color-secondary, #06b6d4); }
-.confetti-particle:nth-child(5n+4) { background-color: var(--color-info, #3b82f6); }
+.confetti-particle:nth-child(5n) { background-color: var(--accent-success); }
+.confetti-particle:nth-child(5n+1) { background-color: var(--accent-warning); }
+.confetti-particle:nth-child(5n+2) { background-color: var(--accent-primary); }
+.confetti-particle:nth-child(5n+3) { background-color: var(--accent-secondary); }
+.confetti-particle:nth-child(5n+4) { background-color: var(--accent-info); }
 
 /* ============================================
    PULSE ANIMATION
@@ -96,10 +96,10 @@
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 var(--color-primary, #ec4899);
+    box-shadow: 0 0 0 0 var(--accent-primary);
   }
   50% {
-    box-shadow: 0 0 20px 10px var(--color-primary, #ec4899);
+    box-shadow: 0 0 20px 10px var(--accent-primary);
   }
 }
 
@@ -116,7 +116,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-color: var(--color-primary, #ec4899);
+  background-color: var(--accent-primary);
   animation: pulse-ring 1s ease-out infinite;
 }
 

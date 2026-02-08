@@ -4,19 +4,19 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, rgba(255, 149, 0, 0.2), rgba(255, 51, 102, 0.2));
-  border: 1px solid rgba(255, 149, 0, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(236, 72, 153, 0.2));
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 20px;
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--neon-orange);
+  color: var(--accent-warning);
 }
 
 .streak-badge.high-streak {
-  background: linear-gradient(135deg, rgba(255, 149, 0, 0.3), rgba(255, 69, 0, 0.3));
-  border-color: rgba(255, 149, 0, 0.5);
-  box-shadow: 0 0 10px rgba(255, 149, 0, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(249, 115, 22, 0.3));
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
 }
 
 .streak-icon {
@@ -28,7 +28,7 @@
 }
 
 .streak-label {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -56,10 +56,10 @@
 /* Animação para streak alto */
 @keyframes streakPulse {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(255, 149, 0, 0.3);
+    box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
   }
   50% {
-    box-shadow: 0 0 15px rgba(255, 149, 0, 0.5);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
   }
 }
 
