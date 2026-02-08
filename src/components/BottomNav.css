@@ -6,7 +6,7 @@
   width: 100%;
   padding: 0;
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(10, 10, 15, 0.95);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-color);
   z-index: 1000;

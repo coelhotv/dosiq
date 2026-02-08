@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCurrentUser, onAuthStateChange } from './lib/supabase'
-import './styles/index.css'
+import './index.css'
 import Auth from './views/Auth'
 import Medicines from './views/Medicines'
 import Stock from './views/Stock'

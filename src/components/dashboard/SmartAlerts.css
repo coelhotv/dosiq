@@ -25,7 +25,7 @@
 
 .smart-alert--critical {
   border-left: 4px solid var(--neon-pink);
-  box-shadow: 0 0 15px rgba(255, 0, 110, 0.2);
+  box-shadow: var(--glow-pink);
 }
 
 .smart-alert--warning {
