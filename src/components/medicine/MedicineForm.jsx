@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Button from '../ui/Button'
+import ShakeEffect from '../animations/ShakeEffect'
 import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '../../schemas/medicineSchema'
 import './MedicineForm.css'
 
@@ -15,6 +16,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
   
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [shakeFields, setShakeFields] = useState({})
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -27,24 +29,34 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
 
   const validate = () => {
     const newErrors = {}
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório'
     }
-    
+
     // Dosage is optional for supplements, but must be active number if provided
     if (formData.dosage_per_pill && isNaN(formData.dosage_per_pill)) {
       newErrors.dosage_per_pill = 'Deve ser um número'
     } else if (formData.type === 'medicamento' && !formData.dosage_per_pill) {
-      // For medicines, we generally want a dosage, but maybe not strict? 
-      // strict 'medicine' usually implies a mg value. 
+      // For medicines, we generally want a dosage, but maybe not strict?
+      // strict 'medicine' usually implies a mg value.
       // Let's keep it optional but recommended, or strict if existing logic was strict.
       // Eexisting logic: if (formData.dosage_per_pill && isNaN...) -> it was optional before?
       // Logic from lines 32-34: "if (formData.dosage_per_pill && isNaN...)" implies it was already optional but if present must be number.
       // So no change needed for optionality, just keeping the number check.
     }
-    
+
     setErrors(newErrors)
+
+    // Extrair campos com erro para shake effect
+    if (Object.keys(newErrors).length > 0) {
+      const fieldsWithError = Object.keys(newErrors)
+      setShakeFields(fieldsWithError.reduce((acc, field) => ({ ...acc, [field]: true }), {}))
+
+      // Limpar shake após animação
+      setTimeout(() => setShakeFields({}), 500)
+    }
+
     return Object.keys(newErrors).length === 0
   }
 
@@ -100,16 +112,18 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
         <label htmlFor="name">
           Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'} <span className="required">*</span>
         </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          className={errors.name ? 'error' : ''}
-          placeholder="Ex: Paracetamol"
-          autoFocus
-        />
+        <ShakeEffect trigger={shakeFields.name}>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className={errors.name ? 'error' : ''}
+            placeholder="Ex: Paracetamol"
+            autoFocus
+          />
+        </ShakeEffect>
         {errors.name && <span className="error-message">{errors.name}</span>}
       </div>
 
@@ -140,16 +154,18 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
       <div className="form-group">
         <label htmlFor="dosage_per_pill">Dosagem</label>
         <div className="dosage-input-group" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
-          <input
-            type="number"
-            id="dosage_per_pill"
-            name="dosage_per_pill"
-            value={formData.dosage_per_pill}
-            onChange={handleChange}
-            className={errors.dosage_per_pill ? 'error' : ''}
-            placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
-            step="0.01"
-          />
+          <ShakeEffect trigger={shakeFields.dosage_per_pill}>
+            <input
+              type="number"
+              id="dosage_per_pill"
+              name="dosage_per_pill"
+              value={formData.dosage_per_pill}
+              onChange={handleChange}
+              className={errors.dosage_per_pill ? 'error' : ''}
+              placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
+              step="0.01"
+            />
+          </ShakeEffect>
           <select
             name="dosage_unit"
             value={formData.dosage_unit}
