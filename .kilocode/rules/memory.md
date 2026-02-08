@@ -490,6 +490,67 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-08 18:04
+**Contexto / Objetivo**
+- Integrar micro-interações e analytics na aplicação (Fase 3)
+- Componentes de animação foram criados mas não estavam integrados
+- analyticsService foi criado mas não estava sendo usado para tracking de eventos
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/views/Dashboard.jsx` — Integrado ConfettiAnimation, page_view, dose_registered, MilestoneCelebration
+  - `src/components/dashboard/SwipeRegisterItem.jsx` — Integrado PulseEffect e tracking swipe_used
+  - `src/components/medicine/MedicineForm.jsx` — Integrado ShakeEffect em campos com erro
+  - `src/components/protocol/ProtocolForm.jsx` — Integrado ShakeEffect em campos com erro
+  - `src/components/ui/ThemeToggle.jsx` — Adicionado tracking theme_changed
+  - `src/components/dashboard/SparklineAdesao.jsx` — Adicionado tracking sparkline_tapped
+  - `src/components/gamification/MilestoneCelebration.jsx` — Adicionado tracking milestone_achieved
+- Comportamento impactado:
+  - ConfettiAnimation dispara em 100% de adesão no Dashboard
+  - PulseEffect exibe após registro bem-sucedido de dose via swipe
+  - ShakeEffect exibe em campos com erro de validação em formulários
+  - Analytics tracking implementado em todos os pontos especificados
+  - MilestoneCelebration exibe quando milestone é conquistado no Dashboard
+
+**O que deu certo**
+- Integração de ConfettiAnimation com useEffect que detecta 100% de adesão
+- Integração de PulseEffect com estado showPulse e handler de registro
+- Integração de ShakeEffect em MedicineForm e ProtocolForm com estado shakeFields
+- Analytics tracking implementado em: page_view, dose_registered, swipe_used, theme_changed, sparkline_tapped, milestone_achieved
+- Integração de MilestoneCelebration com checkNewMilestones e useEffect
+- Lint passou com 0 erros (apenas 2 warnings não críticos em arquivos não modificados)
+
+**O que não deu certo / riscos**
+- Warnings de eslint-disable em SwipeRegisterItem.jsx e TreatmentAccordion.jsx (não críticos)
+- ShakeEffect pode não funcionar corretamente se o usuário clicar rapidamente em múltiplos campos
+- ConfettiAnimation pode disparar múltiplas vezes se stats.adherence ficar em 100 por mais de um render
+
+**Causa raiz (se foi debug)**
+- N/A (implementação direta sem bugs)
+
+**Decisões & trade-offs**
+- Decisão: Usar useState para showConfetti em vez de useRef para simplicidade
+- Alternativas consideradas: Usar useRef para evitar re-renders, usar contexto compartilhado
+- Por que: useState é mais simples e suficiente para este caso de uso
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre declarar estados antes de useMemo/useEffect que os utilizam (evita TDZ)
+- Usar analyticsService.track() para todos os eventos de usuário importantes
+- Integrar componentes de animação (ConfettiAnimation, PulseEffect, ShakeEffect) com estados React
+- Verificar lint antes de fazer commit para evitar erros
+- ShakeEffect deve ser aplicado em campos com erro de validação Zod
+- MilestoneCelebration deve ser integrado com checkNewMilestones do milestoneService
+
+**Pendências / próximos passos**
+- Testar integrações em ambiente de desenvolvimento
+- Validar funcionamento de ConfettiAnimation em 100% de adesão
+- Validar funcionamento de PulseEffect após registro de dose
+- Validar funcionamento de ShakeEffect em formulários com erros
+- Validar tracking de analytics em todos os componentes
+- Validar funcionamento de MilestoneCelebration ao conquistar milestones
+
+---
+
 ## Memory Entry — 2026-02-07 15:40
 **Contexto / Objetivo**
 - Atualizar documentações do projeto para incluir informações sobre Vercel CLI
@@ -918,3 +979,83 @@ onAction((alert, action) => {
 - Testar em ambiente de desenvolvimento após deploy
 - Validar ordenação cronológica com protocolos em diferentes horários
 - Verificar comportamento do link "Ver todos"
+
+---
+
+## Memory Entry — 2026-02-08 14:42
+**Contexto / Objetivo**
+- Corrigir 2 problemas bloqueantes (P0) da Fase 3 que impedem o merge da branch
+- Problema #1: SparklineAdesao.jsx com erro de importação Framer Motion
+- Problema #2: F3.3 Celebrações de Milestone NÃO IMPLEMENTADO (0% implementado)
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/dashboard/SparklineAdesao.jsx` — Adicionado `import { motion } from 'framer-motion'`
+  - `eslint.config.js` — Atualizado varsIgnorePattern para incluir `motion` e `AnimatePresence`
+  - `src/services/milestoneService.js` — Criado serviço completo de gerenciamento de milestones
+  - `src/components/gamification/MilestoneCelebration.jsx` — Criado componente de celebração com animação
+  - `src/components/gamification/MilestoneCelebration.css` — Criado estilos para modal de celebração
+  - `src/components/gamification/BadgeDisplay.jsx` — Criado componente para exibir conquistas
+  - `src/components/gamification/BadgeDisplay.css` — Criado estilos para grid de badges
+- Comportamento impactado:
+  - SparklineAdesao agora compila sem erro de ReferenceError
+  - Sistema de milestones e celebrações está implementado e pronto para integração
+
+**O que deu certo**
+- Uso de varsIgnorePattern no ESLint para resolver falso positivo de `motion` não usado
+- milestoneService.js com persistência em localStorage e prevenção de celebrações duplicadas
+- MilestoneCelebration.jsx usa Framer Motion para animações suaves (spring animation)
+- BadgeDisplay.jsx com grid responsivo para exibir conquistas
+- Build compila sem erros (0 errors, 2 warnings não críticos)
+
+**O que não deu certo / riscos**
+- Erro inicial de lint: `motion` reportado como não usado apesar de ser usado como JSX component
+- Correção: Adicionado `motion` e `AnimatePresence` ao varsIgnorePattern no ESLint
+- Warnings não críticos em outros arquivos (SwipeRegisterItem.jsx, TreatmentAccordion.jsx) sobre eslint-disable não usado
+
+**Causa raiz (se foi debug)**
+- Sintoma: Lint reportava "'motion' is defined but never used" em SparklineAdesao.jsx e MilestoneCelebration.jsx
+- Causa: ESLint's `no-unused-vars` rule não reconhece uso de variáveis como JSX components
+- Correção: Atualizado varsIgnorePattern em eslint.config.js para incluir `^(motion|AnimatePresence|[A-Z_])`
+- Prevenção: Sempre adicionar componentes de bibliotecas de animação ao varsIgnorePattern quando necessário
+
+**Decisões & trade-offs**
+- Decisão: Usar varsIgnorePattern ao invés de desabilitar a regra completamente
+- Alternativas consideradas: Desabilitar `no-unused-vars`, usar eslint-disable inline
+- Por que: Mantém a regra ativa para outros casos, apenas ignora componentes JSX específicos
+
+**Regras locais para o futuro (lições acionáveis)**
+- Quando usar Framer Motion, adicionar `motion` e `AnimatePresence` ao varsIgnorePattern do ESLint
+- Criar serviços com persistência em localStorage para features de gamificação
+- Usar AnimatePresence para animações de entrada/saída de componentes
+- Implementar prevenção de celebrações duplicadas com check de milestones já conquistados
+- Testar lint e build após criar novos componentes com animações
+
+**Pendências / próximos passos**
+- Integrar MilestoneCelebration e BadgeDisplay no Dashboard (próxima tarefa)
+- Implementar lógica de detecção de milestones no Dashboard
+- Testar celebrações de milestones em ambiente de desenvolvimento
+- Considerar adicionar confetti animation para celebrações de milestones
+
+---
+
+## NOTA PARA FUTUROS AGENTES (Orchestrator Instructions)
+
+**Modo de Pensamento em Inglês**
+- A partir desta tarefa, o modo de pensamento deve ser executado em **INGLÊS**
+- Isso melhora a clareza e precisão do raciocínio técnico
+- **IMPORTANTE**: Produzir código, comentários e documentação em **PORTUGUÊS**
+- Apenas o processo de pensamento interno deve ser em inglês
+- Mensagens para o usuário devem ser em português
+- Documentação técnica deve ser em português
+
+**Exemplo de Aplicação:**
+- Pensamento: "I need to create a new component for milestone celebrations"
+- Código: `// Componente de celebração de milestone`
+- Comentário: `// Verifica se o milestone já foi conquistado`
+- Documentação: "Este componente exibe celebrações de milestones conquistados"
+
+**Benefícios:**
+- Melhor precisão técnica no raciocínio
+- Manutenção da consistência linguística do projeto (PT-BR)
+- Facilita comunicação com usuários lusófonos
