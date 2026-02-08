@@ -10,6 +10,8 @@
  */
 
 import { useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { analyticsService } from '../../services/analyticsService'
 import './SparklineAdesao.css'
 
 /**
@@ -99,6 +101,12 @@ export function SparklineAdesao({
   showTooltip = true,
   className = ''
 }) {
+  const handleSparklineTap = (dayData) => {
+    analyticsService.track('sparkline_tapped', {
+      date: dayData.date,
+      adherence: dayData.adherence
+    })
+  }
   const sizes = {
     small: { width: 120, height: 32, padding: 4 },
     medium: { width: 200, height: 40, padding: 6 },
@@ -206,10 +214,11 @@ export function SparklineAdesao({
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
-    <div 
+    <div
       className={`sparkline-adhesion ${className}`}
       role="img"
       aria-label={`Gráfico de adesão: ${stats.average}% média em 7 dias. Tendência: ${stats.trend}`}
+      onClick={() => handleSparklineTap(chartData[chartData.length - 1])}
     >
       <svg
         viewBox={`0 0 ${width} ${height}`}
