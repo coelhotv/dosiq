@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { useHapticFeedback } from '../useHapticFeedback'
+import { useHapticFeedback } from './useHapticFeedback'
 
 /**
  * Hook useShake
