@@ -43,7 +43,7 @@ function ConfettiAnimation({
       const size = 6 + Math.random() * 8
       const colorIndex = Math.floor(Math.random() * 5)
       const duration = 2 + Math.random()
-      
+
       newParticles.push({
         id: i,
         x: type === 'burst' ? 50 : Math.random() * 100,
@@ -58,15 +58,21 @@ function ConfettiAnimation({
       })
     }
 
-    setParticles(newParticles)
+    // Usar setTimeout para evitar setState síncrono no useEffect
+    const timer = setTimeout(() => {
+      setParticles(newParticles)
+    }, 0)
 
     // Cleanup após 3 segundos
-    const timer = setTimeout(() => {
+    const cleanupTimer = setTimeout(() => {
       setParticles([])
       onComplete?.()
     }, 3000)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(cleanupTimer)
+    }
   }, [trigger, type, haptic, onComplete])
 
   if (!trigger && particles.length === 0) return null
