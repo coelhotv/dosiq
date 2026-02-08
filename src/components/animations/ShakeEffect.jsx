@@ -7,8 +7,8 @@
  * - Ideal para erros de validação de formulários
  */
 
-import { useEffect, useState, useCallback, memo } from 'react'
-import { useHapticFeedback } from '../../hooks/useHapticFeedback'
+import { useEffect, memo } from 'react'
+import { useShake } from '../../hooks/useShake'
 import './Animations.css'
 
 /**
@@ -26,32 +26,7 @@ function ShakeEffect({
   direction = 'horizontal',
   children 
 }) {
-  const [isShaking, setIsShaking] = useState(false)
-  const { trigger: haptic } = useHapticFeedback()
-
-  const shakeClass = direction === 'horizontal' ? 'shake-horizontal' : 'shake-vertical'
-
-  const handleShake = useCallback(() => {
-    setIsShaking(true)
-    haptic('error')
-
-    const timer = setTimeout(() => {
-      setIsShaking(false)
-      onComplete?.()
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [haptic, onComplete])
-
-  useEffect(() => {
-    if (trigger) {
-      // Usar setTimeout para evitar setState síncrono no useEffect
-      const timer = setTimeout(() => {
-        handleShake()
-      }, 0)
-      return () => clearTimeout(timer)
-    }
-  }, [trigger, handleShake])
+  const { isShaking, shake, shakeClass } = useShake({ trigger, onComplete, direction })
 
   return (
     <div className={isShaking ? shakeClass : ''}>
@@ -64,30 +39,3 @@ function ShakeEffect({
 const MemoizedShakeEffect = memo(ShakeEffect)
 
 export default MemoizedShakeEffect
-
-/**
- * Hook standalone para shake effect
- */
-export function useShake(options = {}) {
-  const [isShaking, setIsShaking] = useState(false)
-  const { trigger: haptic } = useHapticFeedback()
-  const { direction = 'horizontal', onComplete } = options
-
-  const shake = useCallback(() => {
-    setIsShaking(true)
-    haptic('error')
-
-    setTimeout(() => {
-      setIsShaking(false)
-      onComplete?.()
-    }, 500)
-  }, [haptic, onComplete])
-
-  return {
-    isShaking,
-    shake,
-    shakeClass: isShaking 
-      ? (direction === 'horizontal' ? 'shake-horizontal' : 'shake-vertical') 
-      : ''
-  }
-}
