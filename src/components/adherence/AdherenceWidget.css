@@ -31,7 +31,7 @@
 .adherence-title {
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text-primary);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -65,7 +65,7 @@
 
 .period-btn.active {
   background: rgba(0, 114, 255, 0.3);
-  color: #fff;
+  color: var(--color-text-primary);
 }
 
 /* Main Content */
@@ -97,16 +97,16 @@
 }
 
 .score-label.good {
-  color: #00ff88;
+  color: var(--neon-green);
   text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .score-label.warning {
-  color: #ffd700;
+  color: var(--neon-yellow);
 }
 
 .score-label.poor {
-  color: #ff3366;
+  color: var(--neon-pink);
 }
 
 .score-detail {
@@ -185,7 +185,7 @@
 .protocol-name {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -243,12 +243,12 @@
 
 .tip-text.success {
   background: rgba(0, 255, 136, 0.1);
-  color: #00ff88;
+  color: var(--neon-green);
 }
 
 /* Error state */
 .error-text {
-  color: #ff3366;
+  color: var(--neon-pink);
   font-size: 14px;
   margin: 0;
 }
@@ -256,7 +256,7 @@
 .retry-btn {
   background: rgba(0, 114, 255, 0.3);
   border: 1px solid rgba(0, 114, 255, 0.5);
-  color: #fff;
+  color: var(--color-text-primary);
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;

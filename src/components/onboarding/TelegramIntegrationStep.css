@@ -44,7 +44,7 @@
   min-width: 36px;
   border-radius: var(--radius-md, 8px);
   background: linear-gradient(135deg, rgba(0, 136, 204, 0.15) 0%, rgba(0, 170, 255, 0.1) 100%);
-  color: #0088cc;
+  color: var(--neon-cyan);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,13 +140,13 @@
 .notification-title {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: #0088cc;
+  color: var(--neon-cyan);
   margin-bottom: 2px;
 }
 
 .notification-text {
   font-size: 0.75rem;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.3;
 }
 

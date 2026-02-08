@@ -10,7 +10,7 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #ff9500;
+  color: var(--neon-orange);
 }
 
 .streak-badge.high-streak {
