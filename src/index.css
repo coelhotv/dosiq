@@ -81,6 +81,43 @@
   --color-sun: #f59e0b;
   --color-moon: #93c5fd;
 
+  /* Neon Colors (para compatibilidade com componentes existentes) */
+  --neon-cyan: #06b6d4;
+  --neon-pink: #ec4899;
+  --neon-magenta: #d946ef;
+  --neon-green: #10b981;
+  --neon-orange: #f97316;
+  --neon-yellow: #eab308;
+
+  /* Glow Effects */
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
+  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
+  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
+
+  /* Background Variants */
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.8);
+
+  /* Border Color (para compatibilidade) */
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+
+  /* Spacing (para compatibilidade) */
+  --space-1: var(--spacing-xs);
+  --space-2: var(--spacing-sm);
+  --space-3: var(--spacing-md);
+  --space-4: var(--spacing-lg);
+  --space-6: var(--spacing-xl);
+  --space-8: var(--spacing-2xl);
+
   /* Health Score Colors */
   --color-score-critical: #ef4444;
   --color-score-low: #f97316;
@@ -123,8 +160,8 @@
 }
 
 /* ============================================
-   DARK THEME OVERRIDES
-   ============================================ */
+    DARK THEME OVERRIDES
+    ============================================ */
 [data-theme="dark"] {
   /* Cores de Texto */
   --color-text-primary: #f9fafb;
@@ -143,6 +180,27 @@
   --color-border-light: #1f2937;
   --color-border-default: #374151;
   --color-border-dark: #4b5563;
+
+  /* Neon Colors (dark mode - mais vibrantes) */
+  --neon-cyan: #22d3ee;
+  --neon-pink: #f472b6;
+  --neon-magenta: #e879f9;
+  --neon-green: #34d399;
+  --neon-orange: #fb923c;
+  --neon-yellow: #facc15;
+
+  /* Glow Effects (dark mode - mais intensos) */
+  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
+  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
+  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
+  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
+
+  /* Background Variants */
+  --bg-glass: rgba(31, 41, 55, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.9);
+
+  /* Border Color (dark mode) */
+  --border-color: rgba(255, 255, 255, 0.08);
 
   /* Shadows - darker for dark mode */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);

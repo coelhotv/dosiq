@@ -75,6 +75,39 @@
   color: var(--color-moon, #93c5fd);
 }
 
+/* Labels - ícones de fundo em cada lado do track */
+.theme-toggle__label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.theme-toggle__label--light {
+  left: 4px;
+  color: var(--color-sun, #f59e0b);
+}
+
+.theme-toggle__label--dark {
+  right: 4px;
+  color: var(--color-moon, #93c5fd);
+}
+
+.theme-toggle__label svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Highlight label when theme is active */
+[data-theme="dark"] .theme-toggle__label--dark,
+:not([data-theme="dark"]) .theme-toggle__label--light {
+  opacity: 0.6;
+}
+
 /* Sizes */
 .theme-toggle--small .theme-toggle__track {
   width: 36px;
