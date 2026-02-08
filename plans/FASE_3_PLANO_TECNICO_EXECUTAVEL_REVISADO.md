@@ -1,173 +1,246 @@
-  --accent-warning: #f59e0b;
-  --accent-danger: #ef4444;
-  --border: #e5e7eb;
-}
+# 📋 Plano Técnico Executável - Fase 3 (Polish UX e Gamificação Avançada)
 
-[data-theme="dark"] {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #1a1a2e;
-  --bg-card: #16213e;
-  --text-primary: #e8e8e8;
-  --text-secondary: #9ca3af;
-  --accent-primary: #818cf8;
-  --accent-success: #34d399;
-  --accent-warning: #fbbf24;
-  --accent-danger: #f87171;
-  --border: #374151;
-}
+**Status:** PLANEJAMENTO  
+**Data de Elaboração:** 08/02/2026  
+**Data de Revisão:** 08/02/2026  
+**Versão do Framework:** 2.0  
+**Baseline:** v2.5.0 (Health Command Center entregue)  
+**Autoridade Arquitetural:** [`docs/ARQUITETURA_FRAMEWORK.md`](../docs/ARQUITETURA_FRAMEWORK.md)  
 
-/* Transição suave entre temas */
-*,
-*::before,
-*::after {
-  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
-}
+> **⚠️ NOTA DE REVISÃO:** Este documento substitui completamente o plano anterior "Onda 3 - Expansão" para alinhar com a Fase 3 do Roadmap 2026. O escopo foi alterado de "Expansão (PDF, Cuidador, PWA)" para "Polish UX e Gamificação Avançada (Sparkline, Micro-interações, Celebrações, Tema Escuro, Analytics Local)".
+
+---
+
+## 1. Sumário Executivo
+
+### 1.1 Contexto e Escopo da Fase 3
+
+A **Fase 3 - Polish UX e Gamificação Avançada** representa a evolução do **Health Command Center (v2.5.0)** com foco em elevar o engajamento e retenção através de micro-interações, visualizações de tendência e reforço emocional positivo. Esta fase transforma a experiência mobile do Meus Remédios com interações nativas, gamificação e feedback visual que diferenciam o produto no mercado.
+
+| Aspecto | Especificação |
+|---------|---------------|
+| **Features Planejadas** | 6 (F3.1 a F3.6) |
+| **Duração Estimada** | 9-10 dias úteis (19 story points) |
+| **Custo Operacional** | R$ 0 (mantém princípio de free tier) |
+| **Agentes Envolvidos** | Frontend Agent (primário), Qualidade Agent, Documentação Agent |
+| **Novas Dependências** | Nenhuma (Framer Motion 12 já instalado) |
+
+### 1.2 Features da Fase 3
+
+| ID | Feature | Prioridade | Story Points | Descrição |
+|----|---------|------------|-------------|-----------|
+| **F3.1** | Sparkline de Adesão Semanal | P0 | 3 | Gráfico SVG inline mostrando tendência de adesão dos últimos 7 dias |
+| **F3.2** | Micro-interações e Feedback Tátil | P1 | 5 | Animações de confete, pulse, shake e Vibration API |
+| **F3.3** | Celebrações de Milestone | P1 | 3 | Modais de celebração com badges para streaks e metas |
+| **F3.4** | Empty States Ilustrados | P2 | 2 | Ilustrações SVG com CTAs motivacionais |
+| **F3.5** | Tema Claro/Escuro | P1 | 3 | CSS custom properties com detecção de preferência do sistema |
+| **F3.6** | Analytics Local (Privacy-First) | P1 | 3 | Tracking em localStorage sem dados externos |
+
+### 1.3 Estado Atual do Projeto (Baseline v2.5.0)
+
+```mermaid
+flowchart TB
+    subgraph BASELINE["Baseline: v2.5.0 - Health Command Center"]
+        direction TB
+        B1["✅ HealthScoreCard"] --> B1a["Score 0-100 SVG circular"]
+        B1a --> B1b["Streaks integrados"]
+        B2["✅ SwipeRegisterItem"] --> B2a["Gesture lateral swipe-to-take"]
+        B2a --> B2b["Haptic feedback + Optimistic UI"]
+        B3["✅ SmartAlerts"] --> B3a["Priorização por severidade"]
+        B3a --> B3b["Cores semânticas (Pink/Amber/Cyan)"]
+        B4["✅ TreatmentAccordion"] --> B4a["Agrupamento por protocolo"]
+        B4a --> B4b["Batch actions"]
+        B5["✅ useDashboardContext"] --> B5a["Centralização de estado"]
+    end
+    
+    subgraph REQUIREMENTS["Pré-requisitos da Fase 3"]
+        direction LR
+        R1["Framer Motion 12 ✓"] --- R2["adherenceService ✓"] --- R3["Cache SWR ✓"] --- R4["HealthScoreCard ✓"]
+    end
 ```
 
-#### 3.5.3 Hook useTheme
+### 1.4 Objetivos Estratégicos Atendidos pela Fase 3
 
-```javascript
-// src/hooks/useTheme.js
-import { useState, useEffect, useCallback } from 'react';
+| OE | Descrição | Features Relacionadas |
+|----|-----------|---------------------|
+| **OE3.1** | Engajamento diário com feedback visual imediato | F3.2, F3.3 |
+| **OE3.2** | Retenção via gamificação (streaks, celebrações) | F3.3, F3.1 |
+| **OE3.3** | Acessibilidade e conforto visual (WCAG AA >95%) | F3.5, F3.4 |
+| **OE3.4** | Visualização rápida de tendência de adesão | F3.1, F3.6 |
 
-const THEME_KEY = 'mr_theme_preference';
-const SYSTEM_PREFERENCE = 'system';
+---
 
-export function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    // 1. Verificar preferência salva pelo usuário
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved) return saved;
+## 2. Hierarquia de Agentes - Configuração Fase 3
+
+### 2.1 Estrutura Hierárquica
+
+```mermaid
+flowchart TB
+    subgraph ORQUESTRADOR["Orquestrador Central"]
+        OA["Arquiteto-Orchestrator<br/>Autorização e Coordenação"]
+    end
     
-    // 2. Fallback para preferência do sistema
-    return SYSTEM_PREFERENCE;
-  });
-  
-  const [systemPreference, setSystemPreference] = useState('light');
-  
-  // Detectar preferência do sistema
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setSystemPreference(mediaQuery.matches ? 'dark' : 'light');
+    subgraph AGENTES_PAI["3 Agentes-Pai Envolvidos"]
+        direction TB
+        A1["Frontend Agent<br/>Components | Hooks | UI | Animations<br/>⭐ PRIMÁRIO"]
+        A2["Qualidade Agent<br/>Testes | Coverage | Accessibility"]
+        A3["Documentação Agent<br/>Docs | UX Guides | Changelog"]
+    end
     
-    const handler = (e) => {
-      setSystemPreference(e.matches ? 'dark' : 'light');
-    };
+    subgraph SUBAGENTES_FASE3["Subagentes Especializados - Fase 3"]
+        direction TB
+        
+        subgraph FA["Frontend Subagentes"]
+            FA1["SVG Specialist<br/>Sparkline | Empty States | Badges"]
+            FA2["Animation Engineer<br/>Confetti | Pulse | Shake | useHaptic"]
+            FA3["Theme Developer<br/>CSS Custom Properties | useTheme"]
+            FA4["Component Engineer<br/>Milestone | Celebration | Toggle"]
+            FA5["Analytics Developer<br/>analyticsService | localStorage"]
+        end
+        
+        subgraph QA["Qualidade Subagentes"]
+            QA1["Accessibility Tester<br/>WCAG AA | reduced-motion"]
+            QA2["Performance Analyst<br/>60fps | Bundle size | Lighthouse"]
+            QA3["Test Engineer<br/>Unit | Integration | Visual"]
+        end
+        
+        subgraph DA["Documentação Subagentes"]
+            DA1["UX Writer<br/>Animações | Tema | Analytics"]
+            DA2["Technical Writer<br/>Guia de implementação"]
+        end
+    end
     
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
-  
-  // Aplicar tema ao documento
-  useEffect(() => {
-    const actualTheme = theme === SYSTEM_PREFERENCE ? systemPreference : theme;
-    document.documentElement.setAttribute('data-theme', actualTheme);
-  }, [theme, systemPreference]);
-  
-  const toggleTheme = useCallback(() => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem(THEME_KEY, newTheme);
-  }, [theme]);
-  
-  const setLightTheme = useCallback(() => {
-    setTheme('light');
-    localStorage.setItem(THEME_KEY, 'light');
-  }, []);
-  
-  const setDarkTheme = useCallback(() => {
-    setTheme('dark');
-    localStorage.setItem(THEME_KEY, 'dark');
-  }, []);
-  
-  const resetToSystem = useCallback(() => {
-    setTheme(SYSTEM_PREFERENCE);
-    localStorage.removeItem(THEME_KEY);
-  }, []);
-  
-  return {
-    theme,                    // 'light', 'dark' ou 'system'
-    actualTheme: theme === SYSTEM_PREFERENCE ? systemPreference : theme,
-    isDark: (theme === SYSTEM_PREFERENCE ? systemPreference : theme) === 'dark',
-    toggleTheme,
-    setLightTheme,
-    setDarkTheme,
-    resetToSystem
-  };
-}
+    OA --> AGENTES_PAI
+    A1 --> FA
+    A2 --> QA
+    A3 --> DA
 ```
 
-#### 3.5.4 Componente ThemeToggle
+### 2.2 Matriz de Responsabilidades por Feature
 
-```jsx
-// src/components/ui/ThemeToggle.jsx
-import { useTheme } from '../../hooks/useTheme';
-import './ThemeToggle.css';
+| Feature | Agente-Pai Primário | Subagentes | Estado Inicial |
+|---------|---------------------|------------|----------------|
+| **F3.1** Sparkline | Frontend Agent | FA1, FA5, QA2 | DORMANT |
+| **F3.2** Micro-interações | Frontend Agent | FA2, QA1, QA2 | DORMANT |
+| **F3.3** Celebrações | Frontend Agent | FA4, FA2, FA5, QA2 | DORMANT |
+| **F3.4** Empty States | Frontend Agent | FA1, QA1, QA3 | DORMANT |
+| **F3.5** Tema Escuro | Frontend Agent | FA3, QA1, QA2 | DORMANT |
+| **F3.6** Analytics Local | Frontend Agent | FA5, QA3 | DORMANT |
 
-export function ThemeToggle({ className }) {
-  const { theme, actualTheme, toggleTheme, setLightTheme, setDarkTheme } = useTheme();
-  
-  return (
-    <div className={`theme-toggle ${className || ''}`}>
-      <button
-        className={`theme-btn ${actualTheme === 'light' ? 'active' : ''}`}
-        onClick={setLightTheme}
-        aria-label="Modo claro"
-        title="Modo claro"
-      >
-        <SunIcon />
-      </button>
-      
-      <button
-        className={`theme-btn ${theme === 'system' ? 'system' : ''}`}
-        onClick={toggleTheme}
-        aria-label={`Alternar tema (atual: ${actualTheme})`}
-        title={`Tema: ${actualTheme === 'dark' ? 'Escuro' : 'Claro'}`}
-      >
-        <SystemIcon />
-      </button>
-      
-      <button
-        className={`theme-btn ${actualTheme === 'dark' ? 'active' : ''}`}
-        onClick={setDarkTheme}
-        aria-label="Modo escuro"
-        title="Modo escuro"
-      >
-        <MoonIcon />
-      </button>
-    </div>
-  );
-}
+### 2.3 Gatilhos de Ativação por Agente
 
-function SunIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-    </svg>
-  );
-}
+| Agente | Condição de Ativação | Dependências |
+|--------|---------------------|--------------|
+| **Frontend Agent** | Aprovação do plano pelo Arquiteto | Nenhuma (features são UI-only) |
+| **Qualidade Agent** | F3.1 ou F3.5 implementados | Frontend Agent |
+| **Documentação Agent** | Feature atinge critérios de aceitação | Frontend + Qualidade |
 
-function MoonIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
+---
 
-function SystemIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
-    </svg>
-  );
-}
-```
+## 3. Análise Técnica das Features da Fase 3
 
-#### 3.5.5 Critérios de Aceitação
+### 3.1 Feature F3.1: Sparkline de Adesão Semanal
+
+#### 3.1.1 Especificação Técnica
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Componente Principal** | `src/components/dashboard/SparklineAdesao.jsx` |
+| **Tecnologia** | SVG inline (sem biblioteca externa) |
+| **Dados** | adherenceService via cache SWR existente |
+| **Responsividade** | 100% largura do container, altura fixa 40px |
+| **Performance Target** | Renderização <16ms (60fps) |
+
+#### 3.1.2 Critérios de Aceitação
+
+- [ ] Renderiza corretamente em viewports >= 320px
+- [ ] Dados dos últimos 7 dias exibidos com precisão
+- [ ] Não dispara chamadas adicionais ao Supabase (usa cache existente)
+- [ ] Respeita `prefers-reduced-motion` (sem animação de entrada se ativado)
+- [ ] Performance: renderização < 16ms (60fps)
+- [ ] Cores semânticas: verde >= 80%, âmbar 50-79%, vermelho < 50%
+
+---
+
+### 3.2 Feature F3.2: Micro-interações e Feedback Tátil
+
+#### 3.2.1 Especificação Técnica
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Componentes** | ConfettiAnimation, PulseEffect, ShakeEffect |
+| **Hook** | useHapticFeedback.js |
+| **Tecnologia** | CSS Keyframes + Framer Motion |
+| **Performance** | GPU acceleration (transform/opacity only) |
+
+#### 3.2.2 Critérios de Aceitação
+
+- [ ] Confete dispara ao atingir 100% de adesão no dia
+- [ ] Pulse anima o HealthScoreCard ao registrar dose via swipe
+- [ ] Shake anima campos com erro de validação Zod
+- [ ] Vibration API funciona em Android Chrome (fallback silencioso em iOS/desktop)
+- [ ] Todas as animações rodam a 60fps (sem jank)
+- [ ] `prefers-reduced-motion: reduce` desabilita animações visuais
+- [ ] Nenhuma animação bloqueia interação do usuário
+
+---
+
+### 3.3 Feature F3.3: Celebrações de Milestone
+
+#### 3.3.1 Especificação Técnica
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Componentes** | MilestoneCelebration.jsx, BadgeDisplay.jsx |
+| **Service** | milestoneService.js |
+| **Persistência** | localStorage (evitar repetição) |
+| **Modal** | Framer Motion AnimatePresence |
+
+#### 3.3.2 Critérios de Aceitação
+
+- [ ] Milestone detectado corretamente após registro de dose
+- [ ] Modal de celebração exibido com animação suave (300ms entrada, 200ms saída)
+- [ ] Cada milestone exibido apenas uma vez (persistido em localStorage)
+- [ ] Badge exibido no perfil/dashboard após conquista
+- [ ] Botão "Fechar" ou tap fora do modal para dispensar
+- [ ] Respeita `prefers-reduced-motion`
+
+---
+
+### 3.4 Feature F3.4: Empty States Ilustrados
+
+#### 3.4.1 Especificação Técnica
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Componente Principal** | EmptyState.jsx (reutilizável) |
+| **Ilustrações** | 4 SVGs inline (<20KB total) |
+| **Props** | illustration, title, description, ctaLabel, ctaAction |
+| **Estilo** | Design system existente |
+
+#### 3.4.2 Critérios de Aceitação
+
+- [ ] 4 empty states implementados (dashboard, histórico, estoque, protocolos)
+- [ ] Cada empty state tem ilustração SVG, título, descrição e CTA
+- [ ] CTA navega para ação relevante (ex: "Cadastrar medicamento")
+- [ ] SVGs responsivos e acessíveis (role="img", aria-label)
+- [ ] Tamanho total dos SVGs < 20KB
+
+---
+
+### 3.5 Feature F3.5: Tema Claro/Escuro
+
+#### 3.5.1 Especificação Técnica
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Implementação** | CSS custom properties |
+| **Hook** | useTheme.js |
+| **Componente** | ThemeToggle.jsx |
+| **Persistência** | localStorage |
+| **Transição** | 200ms suave |
+
+#### 3.5.2 Critérios de Aceitação
 
 - [ ] Tema segue preferência do sistema por padrão
 - [ ] Usuário pode alternar manualmente via toggle
@@ -191,247 +264,7 @@ function SystemIcon() {
 | **Limite** | 500KB máximo |
 | **Privacy** | Zero dados externos |
 
-#### 3.6.2 Estrutura de Arquivos
-
-```
-src/services/
-├── analyticsService.js          # Service principal
-└── analyticsConstants.js        # Constantes de eventos
-src/hooks/
-└── useAnalytics.js              # Hook wrapper
-```
-
-#### 3.6.3 Constantes de Eventos
-
-```javascript
-// src/services/analyticsConstants.js
-export const ANALYTICS_EVENTS = {
-  // Page views
-  PAGE_VIEW: 'page_view',
-  
-  // Ações do usuário
-  DOSE_REGISTERED: 'dose_registered',
-  DOSE_SKIPPED: 'dose_skipped',
-  MEDICINE_ADDED: 'medicine_added',
-  MEDICINE_REMOVED: 'medicine_removed',
-  PROTOCOL_CREATED: 'protocol_created',
-  
-  // Features
-  SWIPE_USED: 'swipe_used',
-  SPARKLINE_TAPPED: 'sparkline_tapped',
-  MILESTONE_ACHIEVED: 'milestone_achieved',
-  THEME_CHANGED: 'theme_changed',
-  
-  // Onboarding
-  ONBOARDING_STARTED: 'onboarding_started',
-  ONBOARDING_COMPLETED: 'onboarding_completed',
-  
-  // Erros
-  ERROR_OCCURRED: 'error_occurred'
-};
-
-export const ANALYTICS_CONFIG = {
-  MAX_DAYS: 30,           // Manter últimos 30 dias
-  MAX_SIZE_BYTES: 500 * 1024,  // 500KB máximo
-  BATCH_SIZE: 10          // Processar em batches
-};
-```
-
-#### 3.6.4 Service de Analytics
-
-```javascript
-// src/services/analyticsService.js
-import { ANALYTICS_EVENTS, ANALYTICS_CONFIG } from './analyticsConstants';
-
-const STORAGE_KEY = 'mr_analytics';
-
-export const analyticsService = {
-  /**
-   * Registra um evento de analytics
-   * @param {string} event - Nome do evento
-   * @param {Object} properties - Propriedades do evento
-   */
-  track(event, properties = {}) {
-    if (!ANALYTICS_EVENTS[event] && !event.startsWith('custom_')) {
-      console.warn(`Evento desconhecido: ${event}`);
-      return;
-    }
-    
-    const eventData = {
-      event,
-      properties,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      page: window.location.pathname
-    };
-    
-    const events = this.getEvents();
-    events.push(eventData);
-    
-    // Limpar se exceder limite de tamanho
-    this.enforceLimits(events);
-    
-    // Persistir
-    this.saveEvents(events);
-  },
-  
-  /**
-   * Retorna todos os eventos
-   * @param {Object} filter - Filtros opcionais
-   */
-  getEvents(filter = {}) {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      let events = data ? JSON.parse(data) : [];
-      
-      // Aplicar filtros
-      if (filter.event) {
-        events = events.filter(e => e.event === filter.event);
-      }
-      
-      if (filter.startDate) {
-        events = events.filter(e => new Date(e.timestamp) >= filter.startDate);
-      }
-      
-      if (filter.endDate) {
-        events = events.filter(e => new Date(e.timestamp) <= filter.endDate);
-      }
-      
-      return events;
-    } catch {
-      return [];
-    }
-  },
-  
-  /**
-   * Retorna resumo agregado de eventos
-   */
-  getSummary() {
-    const events = this.getEvents();
-    const summary = {
-      totalEvents: events.length,
-      uniqueEvents: new Set(events.map(e => e.event)).size,
-      byEvent: {},
-      byDay: {},
-      firstEvent: null,
-      lastEvent: null
-    };
-    
-    events.forEach(e => {
-      // Por tipo de evento
-      summary.byEvent[e.event] = (summary.byEvent[e.event] || 0) + 1;
-      
-      // Por dia
-      const day = e.timestamp.split('T')[0];
-      summary.byDay[day] = (summary.byDay[day] || 0) + 1;
-      
-      // Timestamps
-      if (!summary.firstEvent || e.timestamp < summary.firstEvent) {
-        summary.firstEvent = e.timestamp;
-      }
-      if (!summary.lastEvent || e.timestamp > summary.lastEvent) {
-        summary.lastEvent = e.timestamp;
-      }
-    });
-    
-    return summary;
-  },
-  
-  /**
-   * Limpa todos os eventos
-   */
-  clear() {
-    localStorage.removeItem(STORAGE_KEY);
-  },
-  
-  /**
-   * Enforce limits (30 dias e 500KB)
-   */
-  enforceLimits(events) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - ANALYTICS_CONFIG.MAX_DAYS);
-    
-    // Filtrar por data
-    events = events.filter(e => new Date(e.timestamp) >= thirtyDaysAgo);
-    
-    // Se ainda exceder tamanho, remover mais antigos
-    while (JSON.stringify(events).length > ANALYTICS_CONFIG.MAX_SIZE_BYTES && events.length > 0) {
-      events.shift();  // Remove o mais antigo
-    }
-    
-    return events;
-  },
-  
-  /**
-   * Persistir eventos
-   */
-  saveEvents(events) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    } catch {
-      console.warn('Analytics: Falha ao salvar eventos (storage cheio)');
-    }
-  },
-  
-  /**
-   * Exportar dados para JSON
-   */
-  exportJSON() {
-    const events = this.getEvents();
-    return JSON.stringify(events, null, 2);
-  }
-};
-```
-
-#### 3.6.5 Hook useAnalytics
-
-```javascript
-// src/hooks/useAnalytics.js
-import { useCallback } from 'react';
-import { analyticsService } from '../services/analyticsService';
-import { ANALYTICS_EVENTS } from '../services/analyticsConstants';
-
-export function useAnalytics() {
-  const track = useCallback((event, properties) => {
-    analyticsService.track(event, properties);
-  }, []);
-  
-  const trackPageView = useCallback((page) => {
-    analyticsService.track(ANALYTICS_EVENTS.PAGE_VIEW, { page });
-  }, []);
-  
-  const trackDoseRegistered = useCallback((medicineId, method) => {
-    analyticsService.track(ANALYTICS_EVENTS.DOSE_REGISTERED, {
-      medicineId,
-      method,  // 'swipe', 'button', 'bot'
-      timestamp: new Date().toISOString()
-    });
-  }, []);
-  
-  const trackMilestone = useCallback((milestoneId) => {
-    analyticsService.track(ANALYTICS_EVENTS.MILESTONE_ACHIEVED, {
-      milestoneId
-    });
-  }, []);
-  
-  const trackThemeChanged = useCallback((from, to) => {
-    analyticsService.track(ANALYTICS_EVENTS.THEME_CHANGED, {
-      from,
-      to
-    });
-  }, []);
-  
-  return {
-    track,
-    trackPageView,
-    trackDoseRegistered,
-    trackMilestone,
-    trackThemeChanged
-  };
-}
-```
-
-#### 3.6.6 Critérios de Aceitação
+#### 3.6.2 Critérios de Aceitação
 
 - [ ] Eventos registrados com timestamp, nome e propriedades
 - [ ] Rotação automática de eventos > 30 dias
@@ -539,7 +372,16 @@ sequenceDiagram
     
     useTheme->>document: document.documentElement.setAttribute('data-theme', 'dark')
     
-    useTheme->>analyticsService: track('theme_changed', { from
+    useTheme->>analyticsService: track('theme_changed', { from: 'light', to: 'dark' })
+    
+    useTheme-->>ThemeToggle: Tema atualizado
+    deactivate useTheme
+    
+    ThemeToggle-->>User: UI atualizada com novo tema
+```
+
+---
+
 ## 5. Estratégia de Implementação por Fases
 
 ### 5.1 Priorização de Features
@@ -736,7 +578,7 @@ Este plano técnico revisado está em estado **PLANEJAMENTO** e requer aprovaç�
 
 | Papel | Aprovação | Data |
 |-------|-----------|------|
-| Arquiteto-Orchestrador | ⏳ Pendente | - |
+| Arquiteto-Orchestrator | ⏳ Pendente | - |
 | Frontend Agent | ⏳ Pendente | - |
 | Qualidade Agent | ⏳ Pendente | - |
 | Documentação Agent | ⏳ Pendente | - |
@@ -745,13 +587,13 @@ Este plano técnico revisado está em estado **PLANEJAMENTO** e requer aprovaç�
 
 ## Referências
 
-- [`docs/ARQUITETURA_FRAMEWORK.md`](docs/ARQUITETURA_FRAMEWORK.md:1) - Framework arquitetural multiagente
-- [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md:1) - Padrões de código
-- [`plans/roadmap_2026_meus_remedios.md`](plans/roadmap_2026_meus_remedios.md:1) - Roadmap estratégico 2026
-- [`plans/PRD_FASE_3_ROADMAP_2026.md`](plans/PRD_FASE_3_ROADMAP_2026.md:1) - PRD específico da Fase 3
+- [`docs/ARQUITETURA_FRAMEWORK.md`](../docs/ARQUITETURA_FRAMEWORK.md) - Framework arquitetural multiagente
+- [`docs/PADROES_CODIGO.md`](../docs/PADROES_CODIGO.md) - Padrões de código
+- [`plans/roadmap_2026_meus_remedios.md`](roadmap_2026_meus_remedios.md) - Roadmap estratégico 2026
+- [`plans/PRD_FASE_3_ROADMAP_2026.md`](PRD_FASE_3_ROADMAP_2026.md) - PRD específico da Fase 3
 
 ---
 
-*Documento elaborado em conformidade com [`docs/ARQUITETURA_FRAMEWORK.md`](docs/ARQUITETURA_FRAMEWORK.md:1) e [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md:1)*
-*Baseline: v2.5.0 (Health Command Center)*
+*Documento elaborado em conformidade com [`docs/ARQUITETURA_FRAMEWORK.md`](../docs/ARQUITETURA_FRAMEWORK.md) e [`docs/PADROES_CODIGO.md`](../docs/PADROES_CODIGO.md)*  
+*Baseline: v2.5.0 (Health Command Center)*  
 *Próxima revisão: Após conclusão da Fase 3*
