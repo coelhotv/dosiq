@@ -37,6 +37,12 @@
   flex-direction: column;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .user-name-link {
   display: inline-block;
   font-size: 32px;
