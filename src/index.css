@@ -182,6 +182,12 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Theme transitioning class - applied during theme change */
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition: none !important;
+}
+
 /* ============================================
    A11Y - Reduced Motion
    ============================================ */
