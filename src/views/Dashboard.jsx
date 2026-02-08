@@ -310,12 +310,12 @@ export default function Dashboard({ onNavigate }) {
     <div className="dashboard-container-v2">
       {/* 1. Header & Score Hero */}
       <header className="dash-header">
-        <div className="dash-header__top">
-          <div className="dash-header__welcome">
-            <span className="greeting-label">{getGreeting()}</span>
+        <div className="dash-header__welcome">
+          <span className="greeting-label">{getGreeting()}</span>
+          <div className="user-info">
             <button className="user-name-link" onClick={() => onNavigate?.('settings')} title="Configurações">{userName} <span className="dot">.</span></button>
+            <ThemeToggle size="sm" position="right" />
           </div>
-          <ThemeToggle size="sm" position="right" />
         </div>
         <HealthScoreCard
           score={stats.score}
