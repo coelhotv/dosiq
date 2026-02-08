@@ -45,7 +45,11 @@ function ShakeEffect({
 
   useEffect(() => {
     if (trigger) {
-      handleShake()
+      // Usar setTimeout para evitar setState síncrono no useEffect
+      const timer = setTimeout(() => {
+        handleShake()
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [trigger, handleShake])
 

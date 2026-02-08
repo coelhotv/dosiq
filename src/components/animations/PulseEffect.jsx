@@ -31,8 +31,11 @@ function PulseEffect({
 
   useEffect(() => {
     if (!trigger) {
-      setIsPulsing(false)
-      return
+      // Usar setTimeout para evitar setState síncrono no useEffect
+      const timer = setTimeout(() => {
+        setIsPulsing(false)
+      }, 0)
+      return () => clearTimeout(timer)
     }
 
     // Feedback háptico
@@ -41,12 +44,12 @@ function PulseEffect({
     setIsPulsing(true)
 
     // Para após 2 pulsos
-    const timer = setTimeout(() => {
+    const timer2 = setTimeout(() => {
       setIsPulsing(false)
       onComplete?.()
     }, 2000)
 
-    return () => clearTimeout(timer)
+    return () => clearTimeout(timer2)
   }, [trigger, haptic, onComplete])
 
   if (!children) {
