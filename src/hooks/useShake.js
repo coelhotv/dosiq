@@ -18,7 +18,7 @@ import { useHapticFeedback } from '../useHapticFeedback'
 export function useShake(options = {}) {
   const [isShaking, setIsShaking] = useState(false)
   const { trigger: haptic } = useHapticFeedback()
-  const { direction = 'horizontal', onComplete } = options
+  const { onComplete } = options
 
   const shake = useCallback(() => {
     setIsShaking(true)

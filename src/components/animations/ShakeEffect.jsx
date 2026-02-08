@@ -26,7 +26,7 @@ function ShakeEffect({
   direction = 'horizontal',
   children 
 }) {
-  const { isShaking, shake, shakeClass } = useShake({ trigger, onComplete, direction })
+  const { isShaking, shakeClass } = useShake({ trigger, onComplete, direction })
 
   return (
     <div className={isShaking ? shakeClass : ''}>
