@@ -10,6 +10,7 @@
 
 import { memo } from 'react'
 import { useTheme } from '../../hooks/useTheme'
+import { analyticsService } from '../../services/analyticsService'
 import './ThemeToggle.css'
 
 /**
@@ -27,6 +28,10 @@ function ThemeToggle({
   const handleToggle = (e) => {
     e.stopPropagation()
     toggleTheme()
+    analyticsService.track('theme_changed', {
+      from: !isDark ? 'light' : 'dark',
+      to: isDark ? 'light' : 'dark'
+    })
   }
 
   const sizeClass = `theme-toggle--${size}`
