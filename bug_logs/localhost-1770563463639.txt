@@ -1,5 +1,5 @@
-Dashboard.jsx:294 Uncaught ReferenceError: currentMinutes is not defined
-    at Dashboard (Dashboard.jsx:294:21)
+SparklineAdesao.jsx:250 Uncaught ReferenceError: motion is not defined
+    at SparklineAdesao (SparklineAdesao.jsx:250:12)
     at Object.react_stack_bottom_frame (react-dom_client.js?v=7e0ded97:18509:20)
     at renderWithHooks (react-dom_client.js?v=7e0ded97:5654:24)
     at updateFunctionComponent (react-dom_client.js?v=7e0ded97:7475:21)

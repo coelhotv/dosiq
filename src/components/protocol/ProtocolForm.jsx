@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Button from '../ui/Button'
+import ShakeEffect from '../animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
 import { FREQUENCIES, FREQUENCY_LABELS } from '../../schemas/protocolSchema'
 import './ProtocolForm.css'
@@ -26,6 +27,7 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
   const [timeInput, setTimeInput] = useState('')
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [shakeFields, setShakeFields] = useState({})
 
   // Sync initial dosage with first stage if titration is enabled for new protocols
   useEffect(() => {
@@ -73,32 +75,42 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
 
   const validate = () => {
     const newErrors = {}
-    
+
     if (!formData.medicine_id) {
       newErrors.medicine_id = 'Selecione um medicamento'
     }
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Nome do protocolo é obrigatório'
     }
-    
+
     if (!formData.frequency.trim()) {
       newErrors.frequency = 'Frequência é obrigatória'
     }
-    
+
     if (formData.time_schedule.length === 0) {
       newErrors.time_schedule = 'Adicione pelo menos um horário'
     }
-    
+
     if (!formData.dosage_per_intake || formData.dosage_per_intake <= 0) {
       newErrors.dosage_per_intake = 'Dosagem deve ser maior que zero'
     }
-    
+
     if (formData.target_dosage && isNaN(formData.target_dosage)) {
       newErrors.target_dosage = 'Deve ser um número'
     }
-    
+
     setErrors(newErrors)
+
+    // Extrair campos com erro para shake effect
+    if (Object.keys(newErrors).length > 0) {
+      const fieldsWithError = Object.keys(newErrors)
+      setShakeFields(fieldsWithError.reduce((acc, field) => ({ ...acc, [field]: true }), {}))
+
+      // Limpar shake após animação
+      setTimeout(() => setShakeFields({}), 500)
+    }
+
     return Object.keys(newErrors).length === 0
   }
 
@@ -144,21 +156,23 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
         <label htmlFor="medicine_id">
           Medicamento <span className="required">*</span>
         </label>
-        <select
-          id="medicine_id"
-          name="medicine_id"
-          value={formData.medicine_id}
-          onChange={handleChange}
-          className={errors.medicine_id ? 'error' : ''}
-          disabled={!!protocol} // Não permite mudar medicamento ao editar
-        >
-          <option value="">Selecione um medicamento</option>
-          {medicines.map(medicine => (
-            <option key={medicine.id} value={medicine.id}>
-              {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : `(${medicine.type === 'suplemento' ? 'Sup.' : 'N/A'})`}
-            </option>
-          ))}
-        </select>
+        <ShakeEffect trigger={shakeFields.medicine_id}>
+          <select
+            id="medicine_id"
+            name="medicine_id"
+            value={formData.medicine_id}
+            onChange={handleChange}
+            className={errors.medicine_id ? 'error' : ''}
+            disabled={!!protocol} // Não permite mudar medicamento ao editar
+          >
+            <option value="">Selecione um medicamento</option>
+            {medicines.map(medicine => (
+              <option key={medicine.id} value={medicine.id}>
+                {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : `(${medicine.type === 'suplemento' ? 'Sup.' : 'N/A'})`}
+              </option>
+            ))}
+          </select>
+        </ShakeEffect>
         {errors.medicine_id && <span className="error-message">{errors.medicine_id}</span>}
       </div>
 
@@ -184,16 +198,18 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
         <label htmlFor="name">
           Nome do Protocolo <span className="required">*</span>
         </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          className={errors.name ? 'error' : ''}
-          placeholder="Ex: Paracetamol para dor"
-          autoFocus={!protocol}
-        />
+        <ShakeEffect trigger={shakeFields.name}>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className={errors.name ? 'error' : ''}
+            placeholder="Ex: Paracetamol para dor"
+            autoFocus={!protocol}
+          />
+        </ShakeEffect>
         {errors.name && <span className="error-message">{errors.name}</span>}
       </div>
 
@@ -202,20 +218,22 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
           <label htmlFor="frequency">
             Frequência <span className="required">*</span>
           </label>
-          <select
-            id="frequency"
-            name="frequency"
-            value={formData.frequency}
-            onChange={handleChange}
-            className={errors.frequency ? 'error' : ''}
-          >
-            <option value="">Selecione a frequência</option>
-            {FREQUENCIES.map(freq => (
-              <option key={freq} value={freq}>
-                {FREQUENCY_LABELS[freq]}
-              </option>
-            ))}
-          </select>
+          <ShakeEffect trigger={shakeFields.frequency}>
+            <select
+              id="frequency"
+              name="frequency"
+              value={formData.frequency}
+              onChange={handleChange}
+              className={errors.frequency ? 'error' : ''}
+            >
+              <option value="">Selecione a frequência</option>
+              {FREQUENCIES.map(freq => (
+                <option key={freq} value={freq}>
+                  {FREQUENCY_LABELS[freq]}
+                </option>
+              ))}
+            </select>
+          </ShakeEffect>
           {errors.frequency && <span className="error-message">{errors.frequency}</span>}
         </div>
 
@@ -223,17 +241,19 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
           <label htmlFor="dosage_per_intake">
             Dose por Horário (qtd) <span className="required">*</span>
           </label>
-          <input
-            type="number"
-            id="dosage_per_intake"
-            name="dosage_per_intake"
-            value={formData.dosage_per_intake}
-            onChange={handleChange}
-            className={errors.dosage_per_intake ? 'error' : ''}
-            placeholder="1"
-            min="0.1"
-            step="0.1"
-          />
+          <ShakeEffect trigger={shakeFields.dosage_per_intake}>
+            <input
+              type="number"
+              id="dosage_per_intake"
+              name="dosage_per_intake"
+              value={formData.dosage_per_intake}
+              onChange={handleChange}
+              className={errors.dosage_per_intake ? 'error' : ''}
+              placeholder="1"
+              min="0.1"
+              step="0.1"
+            />
+          </ShakeEffect>
           {errors.dosage_per_intake && <span className="error-message">{errors.dosage_per_intake}</span>}
         </div>
       </div>
@@ -295,32 +315,34 @@ export default function ProtocolForm({ medicines, treatmentPlans = [], protocol,
         <label htmlFor="time_input">
           Horários <span className="required">*</span>
         </label>
-        <div className="time-input-group">
-          <input
-            type="time"
-            id="time_input"
-            value={timeInput}
-            onChange={(e) => setTimeInput(e.target.value)}
-            className={errors.time_schedule ? 'error' : ''}
-          />
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm"
-            onClick={addTime}
-          >
-            ➕ Adicionar
-          </Button>
-        </div>
+        <ShakeEffect trigger={shakeFields.time_schedule}>
+          <div className="time-input-group">
+            <input
+              type="time"
+              id="time_input"
+              value={timeInput}
+              onChange={(e) => setTimeInput(e.target.value)}
+              className={errors.time_schedule ? 'error' : ''}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addTime}
+            >
+              ➕ Adicionar
+            </Button>
+          </div>
+        </ShakeEffect>
         {errors.time_schedule && <span className="error-message">{errors.time_schedule}</span>}
-        
+
         {formData.time_schedule.length > 0 && (
           <div className="time-schedule-list">
             {formData.time_schedule.map(time => (
               <div key={time} className="time-chip">
                 <span>{time}</span>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => removeTime(time)}
                   className="remove-time"
                 >

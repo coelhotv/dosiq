@@ -28,7 +28,7 @@
 
 .calendar-controls button:hover {
   background: var(--accent-primary);
-  color: #000;
+  color: var(--color-text-primary);
   border-color: var(--accent-primary);
 }
 

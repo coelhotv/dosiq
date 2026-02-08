@@ -1,68 +1,304 @@
+/**
+ * Meus Remédios - CSS Custom Properties para Tema Claro/Escuro
+ * 
+ * Define todas as variáveis CSS para cores, espaçamentos e transições
+ * com suporte a temas claro e escuro via data-theme attribute.
+ */
+
+/* ============================================
+   BASE - Variáveis Fundamentais (Light Theme)
+   ============================================ */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Fontes */
+  --font-primary: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+
+  /* Cores Primárias - Pink/Rosa (Brand) */
+  --color-primary: #ec4899;
+  --color-primary-light: #f472b6;
+  --color-primary-dark: #db2777;
+  --color-primary-bg: #fdf2f8;
+  --color-primary-hover: #be185d;
+
+  /* Cores Secundárias - Cyan */
+  --color-secondary: #06b6d4;
+  --color-secondary-light: #22d3ee;
+  --color-secondary-dark: #0891b2;
+  --color-secondary-bg: #ecfeff;
+
+  /* Cores Semânticas */
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+  --color-success-bg: #ecfdf5;
+
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-warning-bg: #fffbeb;
+
+  --color-error: #ef4444;
+  --color-error-light: #f87171;
+  --color-error-bg: #fef2f2;
+
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+  --color-info-bg: #eff6ff;
+
+  /* Cores Neutrais */
+  --color-white: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Cores de Texto */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #ec4899;
+
+  /* Cores de Fundo */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-bg-card: #ffffff;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Cores de Borda */
+  --color-border-light: #f3f4f6;
+  --color-border-default: #e5e7eb;
+  --color-border-dark: #d1d5db;
+
+  /* Toggle Theme */
+  --color-toggle-track: #e5e7eb;
+  --color-toggle-track-dark: #374151;
+  --color-sun: #f59e0b;
+  --color-moon: #93c5fd;
+
+  /* Neon Colors (para compatibilidade com componentes existentes) */
+  --neon-cyan: #06b6d4;
+  --neon-pink: #ec4899;
+  --neon-magenta: #d946ef;
+  --neon-green: #10b981;
+  --neon-orange: #f97316;
+  --neon-yellow: #eab308;
+  --neon-red: #ef4444;
+
+  /* Primary Colors (para compatibilidade) */
+  --cyan-primary: #06b6d4;
+  --purple-primary: #d946ef;
+
+  /* Glow Effects */
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
+  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
+  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
+
+  /* Background Variants */
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.8);
+
+  /* Border Color (para compatibilidade) */
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+
+  /* Spacing (para compatibilidade) */
+  --space-1: var(--spacing-xs);
+  --space-2: var(--spacing-sm);
+  --space-3: var(--spacing-md);
+  --space-4: var(--spacing-lg);
+  --space-6: var(--spacing-xl);
+  --space-8: var(--spacing-2xl);
+
+  /* Health Score Colors */
+  --color-score-critical: #ef4444;
+  --color-score-low: #f97316;
+  --color-score-medium: #eab308;
+  --color-score-good: #22c55e;
+  --color-score-excellent: #06b6d4;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  /* Transições */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+
+  /* Z-Index Scale */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+}
+
+/* ============================================
+    DARK THEME OVERRIDES
+    ============================================ */
+[data-theme="dark"] {
+  /* Cores de Texto */
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-tertiary: #9ca3af;
+  --color-text-link: #f472b6;
+
+  /* Cores de Fundo */
+  --color-bg-primary: #111827;
+  --color-bg-secondary: #1f2937;
+  --color-bg-tertiary: #374151;
+  --color-bg-card: #1f2937;
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Cores de Borda */
+  --color-border-light: #1f2937;
+  --color-border-default: #374151;
+  --color-border-dark: #4b5563;
+
+  /* Neon Colors (dark mode - mais vibrantes) */
+  --neon-cyan: #22d3ee;
+  --neon-pink: #f472b6;
+  --neon-magenta: #e879f9;
+  --neon-green: #34d399;
+  --neon-orange: #fb923c;
+  --neon-yellow: #facc15;
+  --neon-red: #f87171;
+
+  /* Primary Colors (dark mode) */
+  --cyan-primary: #22d3ee;
+  --purple-primary: #e879f9;
+
+  /* Glow Effects (dark mode - mais intensos) */
+  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
+  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
+  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
+  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
+
+  /* Background Variants */
+  --bg-glass: rgba(31, 41, 55, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.9);
+
+  /* Border Color (dark mode) */
+  --border-color: rgba(255, 255, 255, 0.08);
+
+  /* Shadows - darker for dark mode */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-primary);
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
   min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Smooth theme transition */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Theme transitioning class - applied during theme change */
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition: none !important;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* ============================================
+   A11Y - Reduced Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-  a:hover {
-    color: #747bff;
+
+  html {
+    scroll-behavior: auto !important;
   }
-  button {
-    background-color: #f9f9f9;
-  }
+}
+
+/* ============================================
+   FOCUS STATES
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Container for app content */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }

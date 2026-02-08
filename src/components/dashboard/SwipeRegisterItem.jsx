@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import PulseEffect from '../animations/PulseEffect';
+import { analyticsService } from '../../services/analyticsService';
 import './SwipeRegisterItem.css';
 
 /**
@@ -20,6 +22,7 @@ export default function SwipeRegisterItem({
   onRegister
 }) {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
   const x = useMotionValue(0);
   
   // Mapear o arraste para opacidade e cor do fundo de confirmação
@@ -38,6 +41,8 @@ export default function SwipeRegisterItem({
       setIsSuccess(true);
       try {
         await onRegister?.(medicine.id);
+        setShowPulse(true);
+        analyticsService.track('swipe_used', { medicine: medicine.name });
       } catch (err) {
         console.error('Erro ao registrar via swipe:', err);
         setIsSuccess(false);
@@ -90,6 +95,8 @@ export default function SwipeRegisterItem({
           <span>→</span>
         </div>
       </motion.div>
+
+      <PulseEffect trigger={showPulse} onComplete={() => setShowPulse(false)} />
     </div>
   );
 }
