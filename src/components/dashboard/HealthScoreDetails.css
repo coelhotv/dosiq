@@ -18,9 +18,9 @@
 .health-details__overview {
   text-align: center;
   padding: 2rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--border-light);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-light);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
@@ -47,11 +47,11 @@
   font-weight: 800;
   font-family: 'Orbitron', 'Rajdhani', sans-serif;
   line-height: 1;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   text-shadow:
-    0 0 15px rgba(6, 182, 212, 1),
-    0 0 30px rgba(6, 182, 212, 0.8),
-    0 0 60px rgba(6, 182, 212, 0.5);
+    0 0 15px var(--neon-cyan),
+    0 0 30px rgba(0, 243, 255, 0.8),
+    0 0 60px rgba(0, 243, 255, 0.5);
   z-index: 1;
   letter-spacing: -2px;
 }
@@ -60,7 +60,7 @@
   position: absolute;
   width: 180px;
   height: 180px;
-  background: radial-gradient(circle, rgba(0, 243, 255, 0.25) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--glow-cyan) 0%, transparent 70%);
   filter: blur(25px);
   pointer-events: none;
 }
@@ -98,18 +98,18 @@
 
 .health-details__progress-bar {
   height: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--border-light);
   border-radius: 6px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-light);
 }
 
 .health-details__progress-fill {
   height: 100%;
   border-radius: 4px;
   transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 15px currentColor, 0 0 5px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 15px currentColor, 0 0 5px var(--border-light);
   position: relative;
   min-width: 4px; /* Garante visibilidade mesmo em valores baixos */
 }
@@ -148,8 +148,8 @@
 .health-details__insight-card {
   padding: 1rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--border-light);
+  border: 1px solid var(--border-light);
   border-left: 4px solid transparent;
   backdrop-filter: blur(4px);
 }
@@ -163,22 +163,22 @@
 .health-details__insight-card small {
   display: block;
   margin-top: 0.4rem;
-  color: var(--cyan-primary);
+  color: var(--neon-cyan);
   font-weight: 500;
 }
 
 .health-details__insight-card--warning {
-  border-left-color: var(--neon-yellow);
+  border-left-color: var(--accent-warning);
 }
 
 .health-details__insight-card--danger {
-  border-left-color: var(--neon-red);
+  border-left-color: var(--accent-danger);
 }
 
 .health-details__insight-card--info {
-  border-left-color: var(--purple-primary);
+  border-left-color: var(--accent-primary);
 }
 
 .health-details__insight-card--success {
-  border-left-color: var(--neon-green);
+  border-left-color: var(--accent-success);
 }
