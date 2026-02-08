@@ -16,7 +16,7 @@
 .quick-actions__title {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -60,7 +60,7 @@
 .quick-action-btn__title {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text-primary);
 }
 
 .quick-action-btn__description {
