@@ -20,8 +20,6 @@ export function useShake(options = {}) {
   const { trigger: haptic } = useHapticFeedback()
   const { direction = 'horizontal', onComplete } = options
 
-  const shakeClass = direction === 'horizontal' ? 'shake-horizontal' : 'shake-vertical'
-
   const shake = useCallback(() => {
     setIsShaking(true)
     haptic('error')
@@ -34,9 +32,6 @@ export function useShake(options = {}) {
 
   return {
     isShaking,
-    shake,
-    shakeClass: isShaking
-      ? (direction === 'horizontal' ? 'shake-horizontal' : 'shake-vertical')
-      : ''
+    shake
   }
 }

@@ -7,7 +7,7 @@
  * - Ideal para erros de validação de formulários
  */
 
-import { useEffect, memo } from 'react'
+import { memo } from 'react'
 import { useShake } from '../../hooks/useShake'
 import './Animations.css'
 
