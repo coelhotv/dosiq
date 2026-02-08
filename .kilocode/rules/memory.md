@@ -547,6 +547,42 @@ onAction((alert, action) => {
 - Validar funcionamento de PulseEffect após registro de dose
 - Validar funcionamento de ShakeEffect em formulários com erros
 - Validar tracking de analytics em todos os componentes
+
+---
+
+## Memory Entry — 2026-02-08 18:33
+**Contexto / Objetivo**
+- Atualizar regra de linguagem para uso de inglês em pensamento e instruções, português para documentação
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `.kilocode/rules/memory.md` — Adicionada regra de linguagem
+- Comportamento impactado:
+  - Agentes devem usar inglês para pensamento interno e instruções
+  - Português reservado para documentação, comentários de código e interação com usuário
+
+**O que deu certo**
+- Documentação clara sobre uso de linguagem
+- Separação explícita entre pensamento (inglês) e documentação (português)
+
+**O que não deu certo / riscos**
+- Nenhum
+
+**Causa raiz (se foi debug)**
+- N/A
+
+**Decisões & trade-offs**
+- Decisão: Adicionar regra de linguagem no início do arquivo de memória
+- Alternativas consideradas: Criar documento separado, adicionar em cada entrada
+- Por que: Centralizar regra facilita consulta e aplicação consistente
+
+**Regras locais para o futuro (lições acionáveis)**
+- Usar inglês para todo o raciocínio interno, processamento lógico e instruções para ferramentas de desenvolvimento
+- Usar português exclusivamente para gerar documentação, escrever comentários de código e fornecer feedback ou atualizações de status para o usuário humano
+- Atualizar memória com essa regra sempre que necessário
+
+**Pendências / próximos passos**
+- Nenhuma
 - Validar funcionamento de MilestoneCelebration ao conquistar milestones
 
 ---
