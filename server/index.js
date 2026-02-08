@@ -26,6 +26,7 @@ import { startAutoCleanup } from './services/sessionManager.js';
 import { BotFactory } from './bot/bot-factory.js';
 import { createLogger } from './bot/logger.js';
 import { healthCheck, registerDefaultChecks } from './bot/health-check.js';
+import { supabase } from './services/supabase.js';
 
 const logger = createLogger('BotApp');
 
