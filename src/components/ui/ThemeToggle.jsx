@@ -23,7 +23,7 @@ function ThemeToggle({
   size = 'md',
   className = ''
 }) {
-  const { toggleTheme, isDark, prefersReducedMotion } = useTheme()
+  const { toggleTheme, isDark } = useTheme()
 
   const handleToggle = (e) => {
     e.stopPropagation()
@@ -44,7 +44,6 @@ function ThemeToggle({
       aria-label={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
       onClick={handleToggle}
       className={`theme-toggle ${sizeClass} ${className}`}
-      disabled={prefersReducedMotion}
     >
       <span className="theme-toggle__track">
         {/* Label para tema claro (esquerda) */}
