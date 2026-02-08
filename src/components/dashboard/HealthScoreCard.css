@@ -17,10 +17,10 @@
 }
 
 .health-score-card--clickable:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
   transform: translateY(-2px);
   border-color: var(--cyan-primary);
-  box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+  box-shadow: 0 0 15px var(--glow-cyan);
 }
 
 .health-score-card__chart {
