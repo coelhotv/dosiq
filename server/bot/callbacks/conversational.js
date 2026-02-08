@@ -94,7 +94,7 @@ async function handleAddStockMedSelected(bot, callbackQuery) {
     waitingForInput: true 
   });
 
-  await bot.editMessageText(`📦 *${medicine?.name}*\nDigite a quantidade a ser adicionada ao estoque:`, {
+  await bot.editMessageText(`📦 *${medicineName}*\nDigite a quantidade a ser adicionada ao estoque:`, {
     chat_id: chatId,
     message_id: message.message_id,
     parse_mode: 'Markdown',

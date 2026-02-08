@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { useOnboarding } from './useOnboarding'
-import { medicineCreateSchema, MEDICINE_TYPES } from '../../schemas/medicineSchema'
+import { medicineCreateSchema, MEDICINE_TYPES, DOSAGE_UNITS } from '../../schemas/medicineSchema'
 import { cachedMedicineService } from '../../services/api/cachedServices'
 import Button from '../ui/Button'
 import './FirstMedicineStep.css'
-
-const DOSAGE_UNITS = ['mg', 'mcg', 'ml', 'g', 'UI', 'gotas', 'comprimido', 'cápsula']
 
 export default function FirstMedicineStep() {
   const { onboardingData, updateOnboardingData, nextStep } = useOnboarding()
