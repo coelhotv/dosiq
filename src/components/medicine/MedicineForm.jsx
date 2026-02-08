@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Button from '../ui/Button'
-import { MEDICINE_TYPES } from '../../schemas/medicineSchema'
+import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '../../schemas/medicineSchema'
 import './MedicineForm.css'
 
 export default function MedicineForm({ medicine, onSave, onCancel }) {
@@ -155,13 +155,11 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
             value={formData.dosage_unit}
             onChange={handleChange}
           >
-            <option value="mg">mg</option>
-            <option value="mcg">mcg</option>
-            <option value="g">g</option>
-            <option value="ml">ml</option>
-            <option value="ui">UI</option>
-            <option value="cp">cp/cap</option>
-            <option value="gotas">gotas</option>
+            {DOSAGE_UNITS.map(unit => (
+              <option key={unit} value={unit}>
+                {DOSAGE_UNIT_LABELS[unit] || unit}
+              </option>
+            ))}
           </select>
         </div>
         {errors.dosage_per_pill && <span className="error-message">{errors.dosage_per_pill}</span>}

@@ -81,7 +81,7 @@ export async function setSession(chatId, context) {
     let userId;
     try {
       userId = await getUserIdByChatId(chatIdStr);
-    } catch (error) {
+    } catch {
       // User not linked yet, skip database write
       console.warn(`[SessionManager] User not linked for chat ${chatId}, skipping DB write`);
       return;
