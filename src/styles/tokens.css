@@ -74,21 +74,19 @@
   --breakpoint-xl: 1280px;
 }
 
-/* Light mode override (if user prefers light theme) */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f7;
-    --bg-tertiary: #e8e8ed;
-    --bg-glass: rgba(255, 255, 255, 0.7);
-    
-    --text-primary: #1a1a1f;
-    --text-secondary: #4a4a5c;
-    --text-tertiary: #7a7a8c;
-    
-    --border-color: rgba(26, 26, 31, 0.1);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
+/* Dark mode override (responds to data-theme attribute) */
+[data-theme="dark"] {
+  --bg-primary: #050505; /* Blacker background */
+  --bg-secondary: #121212; /* Dark card background */
+  --bg-tertiary: #1E1E1E; /* Slightly lighter elements */
+  --bg-glass: rgba(18, 18, 18, 0.8);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #b4b4c8;
+  --text-tertiary: #7a7a8c;
+  
+  --border-color: rgba(180, 180, 200, 0.1);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
