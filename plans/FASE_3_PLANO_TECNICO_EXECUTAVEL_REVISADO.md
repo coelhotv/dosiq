@@ -7,8 +7,6 @@
 **Baseline:** v2.5.0 (Health Command Center entregue)  
 **Autoridade Arquitetural:** [`docs/ARQUITETURA_FRAMEWORK.md`](../docs/ARQUITETURA_FRAMEWORK.md)  
 
-> **⚠️ NOTA DE REVISÃO:** Este documento substitui completamente o plano anterior "Onda 3 - Expansão" para alinhar com a Fase 3 do Roadmap 2026. O escopo foi alterado de "Expansão (PDF, Cuidador, PWA)" para "Polish UX e Gamificação Avançada (Sparkline, Micro-interações, Celebrações, Tema Escuro, Analytics Local)".
-
 ---
 
 ## 1. Sumário Executivo
@@ -518,15 +516,17 @@ git checkout -b feat/fase-3/polish-ux/nome-da-feature
 # 2. Desenvolver com commits semânticos
 git commit -m "feat(dashboard): add sparkline de adesão"
 
-# 3. Validar local
+# 4. Validar local
 npm run lint
 npm run test:critical
 npm run build
 
-# 4. Push e PR
+# 5. Pedir para o humano validar a experiência com o humano; perguntar sobre aprovação
+
+# 5. Após aprovado pelo humano, Push e PR
 git push origin feat/fase-3/polish-ux/nome-da-feature
 
-# 5. Merge (após review)
+# 6. Merge e deleção do branch
 git checkout main
 git pull origin main
 git merge feat/fase-3/polish-ux/nome-da-feature --no-ff
