@@ -42,6 +42,7 @@ function ConfettiAnimation({
       const velocity = 5 + Math.random() * 10
       const size = 6 + Math.random() * 8
       const colorIndex = Math.floor(Math.random() * 5)
+      const duration = 2 + Math.random()
       
       newParticles.push({
         id: i,
@@ -52,7 +53,8 @@ function ConfettiAnimation({
         size,
         color: ['#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#3b82f6'][colorIndex],
         rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10
+        rotationSpeed: (Math.random() - 0.5) * 10,
+        duration
       })
     }
 
@@ -83,7 +85,7 @@ function ConfettiAnimation({
             backgroundColor: p.color,
             '--vx': `${p.vx}`,
             '--vy': `${p.vy}`,
-            animation: `confetti-fall ${2 + Math.random()}s linear forwards`,
+            animation: `confetti-fall ${p.duration}s linear forwards`,
             transform: `rotate(${p.rotation}deg)`
           }}
         />

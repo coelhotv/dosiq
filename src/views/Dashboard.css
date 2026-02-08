@@ -16,6 +16,14 @@
   gap: 12px;
 }
 
+.dash-header__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  gap: 12px;
+}
+
 .sparkline-container {
   width: 100%;
   padding: 12px 0;
