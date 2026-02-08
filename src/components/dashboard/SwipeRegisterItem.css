@@ -82,7 +82,7 @@
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--neon-cyan);
-  background: rgba(0, 229, 255, 0.1);
+  background: var(--bg-glass);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   min-width: 50px;

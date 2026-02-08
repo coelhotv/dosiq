@@ -14,6 +14,13 @@
   --font-mono: 'SF Mono', Monaco, Consolas, monospace;
 
   /* Cores Primárias - Pink/Rosa (Brand) */
+  --primary: #ec4899;
+  --primary-light: #f472b6;
+  --primary-dark: #db2777;
+  --primary-bg: #fdf2f8;
+  --primary-hover: #be185d;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-primary: #ec4899;
   --color-primary-light: #f472b6;
   --color-primary-dark: #db2777;
@@ -21,12 +28,35 @@
   --color-primary-hover: #be185d;
 
   /* Cores Secundárias - Cyan */
+  --secondary: #06b6d4;
+  --secondary-light: #22d3ee;
+  --secondary-dark: #0891b2;
+  --secondary-bg: #ecfeff;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-secondary: #06b6d4;
   --color-secondary-light: #22d3ee;
   --color-secondary-dark: #0891b2;
   --color-secondary-bg: #ecfeff;
 
   /* Cores Semânticas */
+  --success: #10b981;
+  --success-light: #34d399;
+  --success-bg: #ecfdf5;
+  
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --warning-bg: #fffbeb;
+  
+  --error: #ef4444;
+  --error-light: #f87171;
+  --error-bg: #fef2f2;
+  
+  --info: #3b82f6;
+  --info-light: #60a5fa;
+  --info-bg: #eff6ff;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-success: #10b981;
   --color-success-light: #34d399;
   --color-success-bg: #ecfdf5;
@@ -56,21 +86,40 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
-  /* Cores de Texto */
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-tertiary: #6b7280;
-  --color-text-inverse: #ffffff;
-  --color-text-link: #ec4899;
-
   /* Cores de Fundo */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f9fafb;
   --color-bg-tertiary: #f3f4f6;
   --color-bg-card: #ffffff;
   --color-bg-overlay: rgba(0, 0, 0, 0.5);
 
+  /* Cores de Texto */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-inverse: #ffffff;
+  --text-link: #ec4899;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #ec4899;
+
   /* Cores de Borda */
+  --border-light: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-dark: #d1d5db;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-border-light: #f3f4f6;
   --color-border-default: #e5e7eb;
   --color-border-dark: #d1d5db;
@@ -153,7 +202,7 @@
 
   /* Transições */
   --transition-fast: 150ms ease;
-  --transition-normal: 300ms ease;
+  --transition-normal: 200ms ease;
   --transition-slow: 500ms ease;
 
   /* Z-Index Scale */
@@ -168,20 +217,38 @@
     DARK THEME OVERRIDES
     ============================================ */
 [data-theme="dark"] {
-  /* Cores de Texto */
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #d1d5db;
-  --color-text-tertiary: #9ca3af;
-  --color-text-link: #f472b6;
-
   /* Cores de Fundo */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --bg-card: #1f2937;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-bg-primary: #111827;
   --color-bg-secondary: #1f2937;
   --color-bg-tertiary: #374151;
   --color-bg-card: #1f2937;
   --color-bg-overlay: rgba(0, 0, 0, 0.7);
 
+  /* Cores de Texto */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-link: #f472b6;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-tertiary: #9ca3af;
+  --color-text-link: #f472b6;
+
   /* Cores de Borda */
+  --border-light: #1f2937;
+  --border-default: #374151;
+  --border-dark: #4b5563;
+  
+  /* Aliases para compatibilidade (migrar gradualmente) */
   --color-border-light: #1f2937;
   --color-border-default: #374151;
   --color-border-dark: #4b5563;
@@ -240,14 +307,14 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Smooth theme transition */
 html {
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Theme transitioning class - applied during theme change */
@@ -277,7 +344,7 @@ html.theme-transitioning * {
    FOCUS STATES
    ============================================ */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
