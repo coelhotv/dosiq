@@ -47,11 +47,11 @@
   font-weight: 800;
   font-family: 'Orbitron', 'Rajdhani', sans-serif;
   line-height: 1;
-  color: #fff;
+  color: var(--color-text-primary);
   text-shadow:
-    0 0 15px rgba(0, 243, 255, 1),
-    0 0 30px rgba(0, 243, 255, 0.8),
-    0 0 60px rgba(0, 243, 255, 0.5);
+    0 0 15px rgba(6, 182, 212, 1),
+    0 0 30px rgba(6, 182, 212, 0.8),
+    0 0 60px rgba(6, 182, 212, 0.5);
   z-index: 1;
   letter-spacing: -2px;
 }
@@ -168,7 +168,7 @@
 }
 
 .health-details__insight-card--warning {
-  border-left-color: #ffcc00;
+  border-left-color: var(--neon-yellow);
 }
 
 .health-details__insight-card--danger {

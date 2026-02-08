@@ -88,6 +88,11 @@
   --neon-green: #10b981;
   --neon-orange: #f97316;
   --neon-yellow: #eab308;
+  --neon-red: #ef4444;
+
+  /* Primary Colors (para compatibilidade) */
+  --cyan-primary: #06b6d4;
+  --purple-primary: #d946ef;
 
   /* Glow Effects */
   --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
@@ -188,6 +193,11 @@
   --neon-green: #34d399;
   --neon-orange: #fb923c;
   --neon-yellow: #facc15;
+  --neon-red: #f87171;
+
+  /* Primary Colors (dark mode) */
+  --cyan-primary: #22d3ee;
+  --purple-primary: #e879f9;
 
   /* Glow Effects (dark mode - mais intensos) */
   --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
