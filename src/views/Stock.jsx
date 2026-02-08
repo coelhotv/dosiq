@@ -3,6 +3,7 @@ import { medicineService, stockService, protocolService } from '../services/api'
 import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
+import EmptyState from '../components/ui/EmptyState'
 import StockForm from '../components/stock/StockForm'
 import StockCard from '../components/stock/StockCard'
 import './Stock.css'
@@ -177,11 +178,13 @@ export default function Stock({ initialParams, onClearParams }) {
       )}
 
       {medicines.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📦</div>
-          <h3>Nenhum medicamento cadastrado</h3>
-          <p>Cadastre medicamentos primeiro para gerenciar o estoque</p>
-        </div>
+        <EmptyState
+          illustration="stock"
+          title="Nenhum medicamento cadastrado"
+          description="Cadastre seus medicamentos para começar a controlar seu estoque"
+          ctaLabel="Cadastrar Medicamento"
+          onCtaClick={() => window.location.href = '/medicines/new'}
+        />
       ) : (
         <div className="stock-content">
           {/* Alertas críticos: Sem estoque */}

@@ -3,6 +3,7 @@ import { medicineService, protocolService, stockService } from '../services/api'
 import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
+import EmptyState from '../components/ui/EmptyState'
 import MedicineForm from '../components/medicine/MedicineForm'
 import MedicineCard from '../components/medicine/MedicineCard'
 import './Medicines.css'
@@ -180,14 +181,13 @@ export default function Medicines({ onNavigateToProtocol }) {
       )}
 
       {medicines.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">💊</div>
-          <h3>Nenhum medicamento cadastrado</h3>
-          <p>Comece adicionando seu primeiro medicamento</p>
-          <Button variant="primary" onClick={handleAdd}>
-            ➕ Adicionar Primeiro Medicamento
-          </Button>
-        </div>
+        <EmptyState
+          illustration="protocols"
+          title="Nenhum medicamento cadastrado"
+          description="Cadastre seus medicamentos para começar a controlar sua saúde"
+          ctaLabel="Cadastrar Medicamento"
+          onCtaClick={handleAdd}
+        />
       ) : (
         <div className="medicines-grid">
           {medicines

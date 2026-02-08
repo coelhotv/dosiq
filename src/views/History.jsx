@@ -3,6 +3,7 @@ import { logService, protocolService } from '../services/api'
 import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
+import EmptyState from '../components/ui/EmptyState'
 import LogForm from '../components/log/LogForm'
 import CalendarWithMonthCache from '../components/ui/CalendarWithMonthCache'
 import LogEntry from '../components/log/LogEntry'
@@ -174,14 +175,13 @@ export default function History() {
       )}
 
       {currentMonthLogs.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📝</div>
-          <h3>Nenhum registro ainda</h3>
-          <p>Comece registrando sua primeira dose</p>
-          <Button variant="primary" onClick={handleOpenNewLog}>
-            ✅ Registrar Primeira Dose
-          </Button>
-        </div>
+        <EmptyState
+          illustration="history"
+          title="Nenhum registro ainda"
+          description="Comece registrando suas doses para acompanhar seu progresso"
+          ctaLabel="Registrar Primeira Dose"
+          onCtaClick={handleOpenNewLog}
+        />
       ) : (
         <div className="history-content">
           <div className="history-stats">
