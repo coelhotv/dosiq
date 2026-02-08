@@ -4,7 +4,7 @@
   background: var(--bg-secondary);
   border-radius: 20px;
   padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
   margin-bottom: 24px;
 }
 
@@ -31,7 +31,7 @@
 .adherence-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -49,7 +49,7 @@
 .period-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
@@ -59,13 +59,13 @@
 }
 
 .period-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: var(--border-light);
 }
 
 .period-btn.active {
-  background: rgba(0, 114, 255, 0.3);
-  color: var(--color-text-primary);
+  background: rgba(99, 102, 241, 0.3);
+  color: var(--text-primary);
 }
 
 /* Main Content */
@@ -111,7 +111,7 @@
 
 .score-detail {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
 }
 
 /* Streak Section */
@@ -130,7 +130,7 @@
 
 .streak-description {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
 }
 
 .streak-item.record {
@@ -138,24 +138,24 @@
 }
 
 .record-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
 }
 
 .record-value {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
 /* Protocol Scores */
 .protocol-scores {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-light);
   padding-top: 20px;
 }
 
 .protocols-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0 0 12px 0;
@@ -185,7 +185,7 @@
 .protocol-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -193,7 +193,7 @@
 
 .protocol-medicine {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
 }
 
 .protocol-score {
@@ -206,7 +206,7 @@
 .mini-progress {
   flex: 1;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-tertiary);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -220,7 +220,7 @@
 .protocol-score-value {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   min-width: 36px;
   text-align: right;
 }
@@ -229,15 +229,15 @@
 .adherence-tips {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-light);
 }
 
 .tip-text {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
   margin: 0;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--border-light);
   border-radius: 8px;
 }
 
@@ -254,9 +254,9 @@
 }
 
 .retry-btn {
-  background: rgba(0, 114, 255, 0.3);
-  border: 1px solid rgba(0, 114, 255, 0.5);
-  color: var(--color-text-primary);
+  background: rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: var(--text-primary);
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -265,7 +265,7 @@
 }
 
 .retry-btn:hover {
-  background: rgba(0, 114, 255, 0.5);
+  background: rgba(99, 102, 241, 0.5);
 }
 
 /* Responsivo */
