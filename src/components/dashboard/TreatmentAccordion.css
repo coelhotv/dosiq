@@ -10,7 +10,7 @@
 
 .treatment-accordion--expanded {
   border-color: var(--neon-cyan);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+  box-shadow: var(--glow-cyan);
 }
 
 .treatment-accordion__header {
