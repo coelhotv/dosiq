@@ -264,15 +264,17 @@ git checkout -b feature/wave-X/nome-descritivo
 
 # 3. Desenvolver com commits atômicos e semânticos
 
-# 4. Validar antes de push
+# 4. Pedir para o humano validar a experiência; perguntar sobre aprovação
+
+# 5. Após aprovado, validar localmente antes de push
 npm run lint
 npm run test:critical
 npm run build
 
-# 5. Push e criar PR
+# 6. Push e criar PR
 git push origin feature/wave-X/nome-descritivo
 
-# 6. Merge via PR apenas (com review)
+# 7. Merge via PR apenas (com review)
 ```
 
 #### Nomenclatura de Branches
