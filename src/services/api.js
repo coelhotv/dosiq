@@ -17,6 +17,7 @@ export { treatmentPlanService } from './api/treatmentPlanService'
 export { stockService } from './api/stockService'
 export { logService } from './api/logService'
 export { migrationService } from './api/migrationService'
+export { adherenceService } from './api/adherenceService'
 
 // Re-export cached services para compatibilidade
 export {
