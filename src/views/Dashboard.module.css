@@ -1,0 +1,269 @@
+/**
+ * Dashboard CSS Module - Pilot for CSS Modules Strategy
+ * 
+ * This file demonstrates CSS Modules usage for complex components.
+ * Styles are scoped to the Dashboard component and won't conflict
+ * with other components or global styles.
+ * 
+ * Strategy: Use CSS Modules for complex components (Dashboard, SmartAlerts, 
+ * TreatmentAccordion, HealthScoreCard) and keep global CSS for simple 
+ * reusable components (Button, Modal, EmptyState).
+ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+  min-height: 100vh;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-20) + var(--space-8));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ============================================
+   HEADER SECTION
+   ============================================ */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.greeting {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-1);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.userName {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.userName:hover {
+  color: var(--color-primary);
+}
+
+.dot {
+  color: var(--color-primary);
+}
+
+/* ============================================
+   SPARKLINE SECTION
+   ============================================ */
+
+.sparklineContainer {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-glass);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) var(--border-style-solid) var(--border-color);
+}
+
+/* ============================================
+   SECTIONS
+   ============================================ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   TREATMENT PLANS
+   ============================================ */
+
+.plansList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.standaloneList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.emptyState {
+  padding: var(--space-8);
+  text-align: center;
+}
+
+/* ============================================
+   VIEW ALL LINK
+   ============================================ */
+
+.viewAllLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  margin-top: var(--space-2);
+}
+
+.viewAllLink:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* ============================================
+   FLOATING ACTION BUTTON
+   ============================================ */
+
+.fab {
+  position: fixed;
+  bottom: calc(var(--space-20) + var(--space-4));
+  right: var(--space-4);
+  z-index: var(--z-fab);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 640px) {
+  .container {
+    padding: var(--space-3);
+    padding-bottom: calc(var(--space-20) + var(--space-4));
+  }
+  
+  .welcome {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .userInfo {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    max-width: 768px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1025px) {
+  .container {
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.userName:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+.viewAllLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+@media (prefers-contrast: more) {
+  .viewAllLink {
+    text-decoration: underline;
+  }
+  
+  .sparklineContainer {
+    border-width: 2px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .userName,
+  .viewAllLink {
+    transition: none;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .container {
+    padding-bottom: 0;
+  }
+  
+  .fab,
+  .viewAllLink {
+    display: none;
+  }
+}
