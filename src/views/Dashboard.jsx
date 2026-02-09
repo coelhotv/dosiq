@@ -11,6 +11,7 @@ import { useDashboard } from '../hooks/useDashboardContext.jsx'
 import HealthScoreCard from '../components/dashboard/HealthScoreCard'
 import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
+import InsightCard from '../components/dashboard/InsightCard'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import SparklineAdesao from '../components/dashboard/SparklineAdesao'
@@ -368,6 +369,15 @@ export default function Dashboard({ onNavigate }) {
             <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
           </div>
         )}
+
+        {/* Insight Card - Visual Example 3 */}
+        <InsightCard
+          icon="💡"
+          text="Você tem 40% melhor adesão nos dias que toma café antes do protocolo matinal."
+          highlight="40% melhor adesão"
+          actionLabel="Configurar Lembrete Extra"
+          onAction={() => onNavigate?.('settings')}
+        />
       </header>
 
       <HealthScoreDetails
