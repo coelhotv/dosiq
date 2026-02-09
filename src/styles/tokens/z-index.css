@@ -1,0 +1,185 @@
+/**
+ * Z-Index Token - Layer Management
+ * 
+ * This file contains all z-index tokens for the Meus Remédios design system.
+ * Provides a consistent layering strategy to prevent z-index conflicts.
+ */
+
+/* ============================================
+   BASE Z-INDEX SCALE
+   ============================================ */
+:root {
+  /* Negative values */
+  --z-negative: -1;
+  --z-auto: auto;
+  
+  /* Base level */
+  --z-0: 0;
+  
+  /* Stacking contexts */
+  --z-base: 1;
+  
+  /* Elevated elements */
+  --z-elevated: 10;
+  
+  /* Dropdowns and floating elements */
+  --z-dropdown: 100;
+  --z-dropdown-menu: 100;
+  --z-select: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  
+  /* Overlay elements */
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+  --z-notification: 900;
+  
+  /* Highest priority */
+  --z-skip-link: 9999;
+  
+  /* Aliases for compatibility */
+  --z-dropdown: var(--z-dropdown);
+  --z-sticky: var(--z-sticky);
+  --z-modal: var(--z-modal);
+  --z-toast: var(--z-toast);
+  --z-tooltip: var(--z-tooltip);
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC Z-INDEX
+   ============================================ */
+:root {
+  /* Navigation */
+  --z-nav: var(--z-fixed);
+  --z-nav-sidebar: var(--z-fixed);
+  --z-nav-overlay: calc(var(--z-modal) - 1);
+  
+  /* Bottom Navigation */
+  --z-bottom-nav: var(--z-fixed);
+  
+  /* Modal components */
+  --z-modal-header: var(--z-modal);
+  --z-modal-body: var(--z-modal);
+  --z-modal-footer: var(--z-modal);
+  --z-modal-close: calc(var(--z-modal) + 1);
+  --z-modal-overlay: calc(var(--z-modal-backdrop) + 1);
+  
+  /* Toast/Notification components */
+  --z-toast-container: var(--z-toast);
+  --z-toast-item: var(--z-toast);
+  
+  /* Loading/Spinner */
+  --z-loading-overlay: var(--z-modal);
+  --z-loading-spinner: var(--z-modal);
+  
+  /* Tooltip */
+  --z-tooltip-container: var(--z-tooltip);
+  
+  /* Popover */
+  --z-popover-container: var(--z-popover);
+  
+  /* Dropdown */
+  --z-dropdown-container: var(--z-dropdown);
+  --z-dropdown-backdrop: calc(var(--z-dropdown) - 1);
+  
+  /* Form elements */
+  --z-input-focus: var(--z-base);
+  --z-select-dropdown: var(--z-dropdown);
+  --z-checkbox: var(--z-base);
+  --z-radio: var(--z-base);
+  
+  /* Cards */
+  --z-card: var(--z-elevated);
+  --z-card-hover: calc(var(--z-card) + 1);
+  --z-card-selected: calc(var(--z-card) + 2);
+  
+  /* List items */
+  --z-list-item: var(--z-base);
+  --z-list-item-hover: var(--z-elevated);
+  --z-list-item-selected: calc(var(--z-list-item) + 1);
+  
+  /* Floating Action Button */
+  --z-fab: var(--z-fixed);
+  --z-fab-menu: var(--z-fab);
+  --z-fab-menu-backdrop: calc(var(--z-fab) - 1);
+  
+  /* Accordion */
+  --z-accordion-header: var(--z-base);
+  --z-accordion-content: var(--z-base);
+  
+  /* Smart Alerts */
+  --z-smart-alert: var(--z-elevated);
+  --z-smart-alert-critical: calc(var(--z-smart-alert) + 1);
+  
+  /* Health Score Card */
+  --z-health-score: var(--z-elevated);
+  --z-health-score-details: var(--z-modal);
+  
+  /* Milestone Celebration */
+  --z-milestone-overlay: var(--z-modal);
+  --z-milestone-badge: var(--z-modal);
+  
+  /* Confetti Animation */
+  --z-confetti: var(--z-toast);
+  
+  /* Empty State */
+  --z-empty-state: var(--z-elevated);
+  
+  /* Theme Toggle */
+  --z-theme-toggle: var(--z-base);
+  --z-theme-toggle-menu: var(--z-dropdown);
+}
+
+/* ============================================
+   LAYER CATEGORIES
+   ============================================ */
+:root {
+  /* Background layers */
+  --layer-background: var(--z-negative);
+  --layer-content: var(--z-0);
+  
+  /* Interactive layers */
+  --layer-interactive: var(--z-base);
+  --layer-interactive-hover: var(--z-elevated);
+  
+  /* Overlay layers */
+  --layer-overlay: var(--z-modal-backdrop);
+  --layer-overlay-content: var(--z-modal);
+  
+  /* Priority layers */
+  --layer-priority: var(--z-toast);
+  --layer-critical: var(--z-skip-link);
+}
+
+/* ============================================
+   BACKDROP Z-INDEX
+   ============================================ */
+:root {
+  --backdrop-none: -1;
+  --backdrop-base: var(--z-modal-backdrop);
+  --backdrop-modal: var(--z-modal-backdrop);
+  --backdrop-navigation: calc(var(--z-nav-overlay) - 1);
+  --backdrop-sidebar: calc(var(--z-nav-sidebar) - 1);
+}
+
+/* ============================================
+   SAFE Z-INDEX RANGES
+   ============================================ */
+/*
+  Recommended z-index ranges for different contexts:
+  
+  - Background: -1 to 0
+  - Content: 0 to 10
+  - Dropdowns: 100 to 199
+  - Fixed elements: 200 to 299
+  - Modals: 400 to 499
+  - Tooltips/Popovers: 600 to 699
+  - Notifications: 800 to 899
+  - Critical: 900+
+  
+  Always prefer using these predefined tokens
+  instead of hardcoded z-index values.
+*/
