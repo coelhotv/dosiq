@@ -101,6 +101,17 @@
   color: var(--neon-pink);
 }
 
+.health-score-card__status {
+  display: flex;
+  align-items: center;
+}
+
+.health-score-card__status-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .health-score-card__streak {
   display: flex;
   align-items: baseline;
