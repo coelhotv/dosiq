@@ -5,7 +5,7 @@
   padding: var(--spacing-component-normal);
   background: var(--gradient-hero);
   backdrop-filter: var(--glass-blur-hero);
-  border: 1px solid var(--glass-border-hero);
+  border: var(--border-width-hero) solid var(--glass-border-hero);
   border-radius: var(--radius-card-xl);
   box-shadow: var(--shadow-hero);
   min-width: 200px;
@@ -19,7 +19,7 @@
 .health-score-card--clickable:hover {
   transform: translateY(-2px) scale(var(--scale-hover));
   border-color: var(--neon-cyan);
-  box-shadow: var(--glow-cyan), var(--shadow-hero-hover);
+  box-shadow: var(--glow-hover-primary), var(--shadow-hero-hover);
   transition: var(--transition-hover), var(--transition-glow);
 }
 

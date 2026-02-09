@@ -40,7 +40,7 @@
   gap: var(--space-4);
   cursor: grab;
   touch-action: pan-y;
-  border-left: 3px solid var(--neon-blue);
+  border-left: var(--border-width-subtle) solid var(--neon-blue);
 }
 
 .swipe-item-card:active {
@@ -63,7 +63,7 @@
 .swipe-item-card__checkbox {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--border-color);
+  border: var(--border-width-default) solid var(--border-color);
   border-radius: 4px;
   display: flex;
   align-items: center;

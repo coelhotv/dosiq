@@ -13,7 +13,7 @@
   padding: var(--spacing-component-compact);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  border: var(--border-width-default) solid var(--glass-border);
   border-radius: var(--radius-card-md);
   box-shadow: var(--shadow-alert);
   animation: slide-in 0.3s ease-out;
@@ -38,7 +38,7 @@
 
 .smart-alert--critical {
   background: var(--gradient-alert-critical);
-  border-left: 4px solid var(--neon-pink);
+  border-left: var(--border-width-prominent) solid var(--neon-pink);
   box-shadow: var(--shadow-alert-critical);
 }
 
@@ -49,6 +49,11 @@
 
 .smart-alert--warning {
   border-left: 4px solid var(--accent-warning);
+}
+
+.smart-alert--warning:hover {
+  box-shadow: var(--glow-warning), var(--shadow-alert-hover);
+  transition: var(--transition-hover), var(--transition-glow);
 }
 
 .smart-alert--info {
