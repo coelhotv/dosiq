@@ -1,7 +1,7 @@
 .treatment-accordion {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur-light);
-  border: 1px solid var(--glass-border);
+  border: var(--border-width-default) solid var(--glass-border);
   border-radius: var(--radius-card-lg);
   overflow: hidden;
   transition: var(--transition-hover);
@@ -10,8 +10,8 @@
 
 .treatment-accordion:hover {
   transform: translateY(-2px) scale(var(--scale-hover));
-  box-shadow: var(--shadow-card-hover);
-  transition: var(--transition-hover);
+  box-shadow: var(--glow-hover-secondary), var(--shadow-card-hover);
+  transition: var(--transition-hover), var(--transition-glow);
 }
 
 .treatment-accordion:active {
@@ -21,7 +21,7 @@
 
 .treatment-accordion--expanded {
   border-color: var(--neon-cyan);
-  box-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-hover-secondary);
 }
 
 .treatment-accordion__header {
@@ -64,7 +64,7 @@
 
 .treatment-accordion__batch-btn {
   background: var(--glass-bg);
-  border: 1px solid var(--neon-cyan);
+  border: var(--border-width-default) solid var(--neon-cyan);
   color: var(--neon-cyan);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);

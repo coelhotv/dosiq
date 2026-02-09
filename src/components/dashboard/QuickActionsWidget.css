@@ -1,7 +1,7 @@
 .quick-actions-widget {
   background: var(--bg-secondary);
   border-radius: 16px;
-  border: 1px solid var(--border-light);
+  border: var(--border-width-subtle) solid var(--border-light);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -9,7 +9,7 @@
 
 .quick-actions__header {
   padding: 16px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: var(--border-width-subtle) solid var(--border-light);
   background: var(--border-light);
 }
 
@@ -35,7 +35,7 @@
   gap: 8px;
   padding: 16px 12px;
   border-radius: 12px;
-  border: 1px solid transparent;
+  border: var(--border-width-subtle) solid transparent;
   background: var(--border-light);
   cursor: pointer;
   transition: all 0.2s ease;

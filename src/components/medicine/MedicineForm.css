@@ -30,7 +30,7 @@
 .form-group textarea {
   padding: var(--space-3) var(--space-4);
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  border: var(--border-width-default) solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-family);
@@ -43,7 +43,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+  box-shadow: var(--glow-focus-secondary);
 }
 
 .form-group input.error {
@@ -63,7 +63,7 @@
 .error-banner {
   padding: var(--space-4);
   background: rgba(255, 0, 110, 0.1);
-  border: 1px solid var(--accent-error);
+  border: var(--border-width-default) solid var(--accent-error);
   border-radius: var(--radius-md);
   color: var(--accent-error);
   font-size: var(--font-size-sm);
