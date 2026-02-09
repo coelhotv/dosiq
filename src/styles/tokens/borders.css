@@ -1,0 +1,136 @@
+/**
+ * Borders Token - Border and Radius Variables
+ * 
+ * This file contains all border and border-radius tokens
+ * for the Meus Remédios design system.
+ */
+
+/* ============================================
+   BORDER WIDTHS
+   ============================================ */
+:root {
+  --border-width-none: 0;
+  --border-width-thin: 1px;
+  --border-width-default: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
+  --border-width-heavy: 6px;
+  
+  /* Aliases for compatibility */
+  --border-width: var(--border-width-default);
+}
+
+/* ============================================
+   BORDER STYLES
+   ============================================ */
+:root {
+  --border-style-none: none;
+  --border-style-solid: solid;
+  --border-style-dashed: dashed;
+  --border-style-dotted: dotted;
+}
+
+/* ============================================
+   BORDER RADIUS - Based on Tailwind CSS
+   ============================================ */
+:root {
+  /* None */
+  --radius-none: 0;
+  --radius-0: 0;
+  
+  /* Small */
+  --radius-sm: 0.125rem;
+  --radius-1: 0.25rem;
+  --radius-1-5: 0.375rem;
+  
+  /* Default/Medium */
+  --radius-md: 0.375rem;
+  --radius-2: 0.5rem;
+  
+  /* Large */
+  --radius-lg: 0.5rem;
+  --radius-2-5: 0.625rem;
+  --radius-3: 0.75rem;
+  
+  /* Extra Large */
+  --radius-xl: 0.75rem;
+  --radius-3-5: 0.875rem;
+  --radius-4: 1rem;
+  
+  /* 2XL */
+  --radius-2xl: 1rem;
+  
+  /* 3XL */
+  --radius-3xl: 1.5rem;
+  
+  /* Full circle / pill */
+  --radius-full: 9999px;
+  --radius-pill: var(--radius-full);
+  --radius-circle: 50%;
+  
+  /* Aliases for compatibility */
+  --radius-sm: var(--radius-1);
+  --radius-md: var(--radius-2);
+  --radius-lg: var(--radius-3);
+  --radius-xl: var(--radius-4);
+  --radius-full: var(--radius-full);
+}
+
+/* ============================================
+   BORDER COLORS
+   ============================================ */
+:root {
+  /* Light theme */
+  --border-color-light: var(--border-light);
+  --border-color-default: var(--border-default);
+  --border-color-dark: var(--border-dark);
+  --border-color-primary: var(--color-primary);
+  --border-color-secondary: var(--color-secondary);
+  --border-color-success: var(--color-success);
+  --border-color-warning: var(--color-warning);
+  --border-color-error: var(--color-error);
+  --border-color-focus: var(--color-primary-focus, rgba(236, 72, 153, 0.5));
+}
+
+/* ============================================
+   FOCUS RINGS
+   ============================================ */
+:root {
+  --focus-ring-color: var(--color-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-opacity: 1;
+  --focus-ring-blur: 0;
+  --focus-ring-spread: 0;
+  
+  /* Focus ring with blur */
+  --focus-ring-blurred-color: rgba(236, 72, 153, 0.4);
+  --focus-ring-blurred-width: 4px;
+  --focus-ring-blurred-blur: 4px;
+  
+  /* Inset focus ring (for inputs) */
+  --focus-ring-inset-color: rgba(0, 0, 0, 0.1);
+  --focus-ring-inset-width: 2px;
+  --focus-ring-inset-blur: 0;
+}
+
+/* ============================================
+   DIVIDER / SEPARATOR
+   ============================================ */
+:root {
+  --divider-color: var(--border-light);
+  --divider-width: 1px;
+  --divider-style: solid;
+  --divider-margin-y: var(--space-4);
+  --divider-margin-x: var(--space-0);
+}
+
+/* ============================================
+   STROKE WIDTHS (for SVGs and icons)
+   ============================================ */
+:root {
+  --stroke-width-thin: 1px;
+  --stroke-width-default: 1.5px;
+  --stroke-width-medium: 2px;
+  --stroke-width-thick: 3px;
+}

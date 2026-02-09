@@ -21,7 +21,7 @@ import MilestoneCelebration from '../components/gamification/MilestoneCelebratio
 import { checkNewMilestones } from '../services/milestoneService'
 import { analyticsService } from '../services/analyticsService'
 import { getCurrentUser } from '../lib/supabase'
-import './Dashboard.css'
+import styles from './Dashboard.module.css'
 
 /**
  * Dashboard "Health Command Center"
@@ -344,13 +344,13 @@ export default function Dashboard({ onNavigate }) {
   if (isLoading || contextLoading) return <Loading text="Sincronizando Command Center..." />
 
   return (
-    <div className="dashboard-container-v2">
+    <div className={styles.container}>
       {/* 1. Header & Score Hero */}
-      <header className="dash-header">
-        <div className="dash-header__welcome">
-          <span className="greeting-label">{getGreeting()}</span>
-          <div className="user-info">
-            <button className="user-name-link" onClick={() => onNavigate?.('settings')} title="Configurações">{userName} <span className="dot">.</span></button>
+      <header className={styles.header}>
+        <div className={styles.welcome}>
+          <span className={styles.greeting}>{getGreeting()}</span>
+          <div className={styles.userInfo}>
+            <button className={styles.userName} onClick={() => onNavigate?.('settings')} title="Configurações">{userName} <span className={styles.dot}>.</span></button>
             <ThemeToggle size="sm" position="right" />
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function Dashboard({ onNavigate }) {
         
         {/* Sparkline de Adesão Semanal */}
         {!isAdherenceLoading && dailyAdherence.length > 0 && (
-          <div className="sparkline-container">
+          <div className={styles.sparklineContainer}>
             <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
           </div>
         )}
@@ -377,7 +377,8 @@ export default function Dashboard({ onNavigate }) {
       />
 
       {/* 2. Smart Alerts Section */}
-      <SmartAlerts
+      <section aria-live="polite" aria-label="Alertas de tratamento">
+        <SmartAlerts
         alerts={smartAlerts}
         onAction={(alert, action) => {
           if (action.label === 'TOMAR') {
@@ -401,14 +402,14 @@ export default function Dashboard({ onNavigate }) {
         }}
       />
 
-      {/* 3. Tratamento - Parte Superior: Planos Completos */}
-      <section className="treatment-plans-section">
-        <div className="section-header">
-          <h2 className="section-title">TRATAMENTO</h2>
-          <span className="section-subtitle">{treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}</span>
+        </section>\n\n      {/* 3. Tratamento - Parte Superior: Planos Completos */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>TRATAMENTO</h2>
+          <span className={styles.sectionSubtitle}>{treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}</span>
         </div>
 
-        <div className="treatment-plans-list">
+        <div className={styles.plansList}>
           {treatmentPlans.map(plan => (
             <TreatmentAccordion
               key={plan.id}
@@ -437,12 +438,12 @@ export default function Dashboard({ onNavigate }) {
       </section>
 
       {/* 3. Tratamento - Parte Inferior: Protocolos Avulsos */}
-      <section className="treatment-standalone-section">
-        <div className="section-header">
-          <h2 className="section-title">PRÓXIMAS DOSES</h2>
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>PRÓXIMAS DOSES</h2>
         </div>
 
-        <div className="treatment-standalone-list">
+        <div className={styles.standaloneList}>
           {standaloneProtocols.length > 0 ? (
             <>
               {standaloneProtocols.map(p => (
@@ -457,7 +458,7 @@ export default function Dashboard({ onNavigate }) {
               {/* Link Ver todos para standaloneProtocols */}
               {standaloneProtocols.length > 0 && (
                 <button 
-                  className="view-all-link"
+                  className={styles.viewAllLink}
                   onClick={() => onNavigate?.('protocols')}
                 >
                   Ver todos →
@@ -478,7 +479,7 @@ export default function Dashboard({ onNavigate }) {
               {/* Link Ver todos para fallback */}
               {fallbackProtocols.length > 0 && (
                 <button 
-                  className="view-all-link"
+                  className={styles.viewAllLink}
                   onClick={() => onNavigate?.('protocols')}
                 >
                   Ver todos →
@@ -486,19 +487,21 @@ export default function Dashboard({ onNavigate }) {
               )}
             </>
           ) : (
-            <EmptyState
-              illustration="protocols"
-              title="Nenhum protocolo ativo"
-              description="Cadastre seu primeiro protocolo para começar a acompanhar seu tratamento"
-              ctaLabel="Cadastrar Protocolo"
-              onCtaClick={() => onNavigate?.('protocols/new')}
-            />
+            <div className={styles.emptyState}>
+              <EmptyState
+                illustration="protocols"
+                title="Nenhum protocolo ativo"
+                description="Cadastre seu primeiro protocolo para começar a acompanhar seu tratamento"
+                ctaLabel="Cadastrar Protocolo"
+                onCtaClick={() => onNavigate?.('protocols/new')}
+              />
+            </div>
           )}
         </div>
       </section>
 
       {/* 4. Floating Action Button */}
-      <div className="dash-footer-actions">
+      <div className={styles.fab}>
         <button className="btn-add-manual" onClick={() => {
           setPrefillData(null);
           setIsModalOpen(true);

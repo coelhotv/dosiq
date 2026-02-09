@@ -1,0 +1,341 @@
+/**
+ * Transitions Token - Animation and Transition Variables
+ * 
+ * This file contains all transition and animation tokens
+ * for the Meus Remédios design system.
+ * 
+ * Note: See index.css for prefers-reduced-motion overrides.
+ */
+
+/* ============================================
+   TRANSITION DURATIONS
+   ============================================ */
+:root {
+  /* Ultra fast */
+  --duration-75: 75ms;
+  --duration-100: 100ms;
+  --duration-150: 150ms;
+  
+  /* Fast */
+  --duration-200: 200ms;
+  --duration-250: 250ms;
+  --duration-300: 300ms;
+  
+  /* Medium */
+  --duration-350: 350ms;
+  --duration-400: 400ms;
+  --duration-500: 500ms;
+  
+  /* Slow */
+  --duration-700: 700ms;
+  --duration-1000: 1000ms;
+  
+  /* Ultra slow */
+  --duration-2000: 2000ms;
+  
+  /* Aliases for compatibility */
+  --transition-fast: var(--duration-150);
+  --transition-normal: var(--duration-200);
+  --transition-base: var(--duration-250);
+  --transition-slow: var(--duration-350);
+  --transition-slower: var(--duration-500);
+  --transition-slowest: var(--duration-1000);
+}
+
+/* ============================================
+   TRANSITION EASINGS
+   ============================================ */
+:root {
+  /* Linear */
+  --ease-linear: linear;
+  
+  /* Standard */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Smooth */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Bounce */
+  --ease-in-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-out-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* Elastic */
+  --ease-elastic-1: cubic-bezier(0.5, 0.75, 0.75, 1);
+  --ease-elastic-2: cubic-bezier(0.5, 1, 0.75, 1);
+  --ease-elastic-3: cubic-bezier(0.5, 1.25, 0.75, 1);
+  
+  /* Aliases */
+  --ease-default: var(--ease-in-out);
+  --ease-spring: var(--ease-out-bounce);
+}
+
+/* ============================================
+   ANIMATION DELAYS
+   ============================================ */
+:root {
+  --delay-75: 75ms;
+  --delay-100: 100ms;
+  --delay-150: 150ms;
+  --delay-200: 200ms;
+  --delay-300: 300ms;
+  --delay-500: 500ms;
+  --delay-700: 700ms;
+  --delay-1000: 1000ms;
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ============================================
+   ANIMATION CLASSES
+   ============================================ */
+.animate-fadeIn {
+  animation: fadeIn var(--transition-normal) ease;
+}
+
+.animate-fadeOut {
+  animation: fadeOut var(--transition-normal) ease;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp var(--transition-normal) ease;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown var(--transition-normal) ease;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft var(--transition-normal) ease;
+}
+
+.animate-slideInRight {
+  animation: slideInRight var(--transition-normal) ease;
+}
+
+.animate-scaleIn {
+  animation: scaleIn var(--transition-base) ease;
+}
+
+.animate-scaleOut {
+  animation: scaleOut var(--transition-base) ease;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ============================================
+   THEME TRANSITION
+   ============================================ */
+:root {
+  --theme-transition: background-color var(--duration-200) ease,
+                      color var(--duration-200) ease,
+                      border-color var(--duration-200) ease;
+}
+
+/* Transition class applied during theme change */
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition: none !important;
+}

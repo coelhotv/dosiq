@@ -1,0 +1,156 @@
+/**
+ * Typography Token - Font and Text Variables
+ * 
+ * This file contains all typography tokens for the Meus Remédios design system.
+ * Includes font families, sizes, weights, and line heights.
+ */
+
+/* ============================================
+   FONT FAMILIES
+   ============================================ */
+:root {
+  --font-primary: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  
+  /* Aliases for compatibility */
+  --font-family: var(--font-primary);
+  --font-family-mono: var(--font-mono);
+}
+
+/* ============================================
+   FONT SIZES - Based on Tailwind CSS scale
+   ============================================ */
+:root {
+  /* Extra small */
+  --text-xs: 0.75rem;
+  --text-2xs: 0.625rem;
+  
+  /* Small */
+  --text-sm: 0.875rem;
+  
+  /* Base */
+  --text-base: 1rem;
+  
+  /* Large */
+  --text-lg: 1.125rem;
+  
+  /* Extra large */
+  --text-xl: 1.25rem;
+  
+  /* 2XL */
+  --text-2xl: 1.5rem;
+  
+  /* 3XL */
+  --text-3xl: 1.875rem;
+  
+  /* 4XL */
+  --text-4xl: 2.25rem;
+  
+  /* 5XL */
+  --text-5xl: 3rem;
+  
+  /* Aliases for compatibility */
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+}
+
+/* ============================================
+   FONT WEIGHTS
+   ============================================ */
+:root {
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+  
+  /* Aliases for compatibility */
+  --font-weight-regular: var(--font-weight-normal);
+}
+
+/* ============================================
+   LINE HEIGHTS
+   ============================================ */
+:root {
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+}
+
+/* ============================================
+   LETTER SPACING
+   ============================================ */
+:root {
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+}
+
+/* ============================================
+   TEXT DEFAULTS
+   ============================================ */
+:root {
+  --text-color-primary: var(--text-primary);
+  --text-color-secondary: var(--text-secondary);
+  --text-color-tertiary: var(--text-tertiary);
+  --text-color-inverse: var(--text-inverse);
+  --text-color-link: var(--text-link);
+  
+  --text-decoration-none: none;
+  --text-decoration-underline: underline;
+}
+
+/* ============================================
+   HEADING DEFAULTS
+   ============================================ */
+:root {
+  --heading-font-family: var(--font-primary);
+  --heading-font-weight: var(--font-weight-semibold);
+  --heading-line-height: var(--line-height-tight);
+  --heading-letter-spacing: var(--tracking-tight);
+  
+  /* H1 */
+  --text-h1: var(--text-4xl);
+  --heading-1-size: var(--text-4xl);
+  --heading-1-weight: var(--font-weight-bold);
+  
+  /* H2 */
+  --text-h2: var(--text-3xl);
+  --heading-2-size: var(--text-3xl);
+  --heading-2-weight: var(--font-weight-semibold);
+  
+  /* H3 */
+  --text-h3: var(--text-2xl);
+  --heading-3-size: var(--text-2xl);
+  --heading-3-weight: var(--font-weight-semibold);
+  
+  /* H4 */
+  --text-h4: var(--text-xl);
+  --heading-4-size: var(--text-xl);
+  --heading-4-weight: var(--font-weight-medium);
+  
+  /* H5 */
+  --text-h5: var(--text-lg);
+  --heading-5-size: var(--text-lg);
+  --heading-5-weight: var(--font-weight-medium);
+  
+  /* H6 */
+  --text-h6: var(--text-base);
+  --heading-6-size: var(--text-base);
+  --heading-6-weight: var(--font-weight-medium);
+}

@@ -1,0 +1,146 @@
+/**
+ * Dark Theme - Theme overrides for dark mode
+ * 
+ * This file contains theme-specific overrides for dark mode.
+ * These variables override the base tokens defined in tokens/*.css
+ * 
+ * Usage: Import this file after tokens to apply dark theme.
+ * Applied automatically when [data-theme="dark"] is set on documentElement.
+ */
+
+/* ============================================
+   DARK THEME OVERRIDES
+   Applied when [data-theme="dark"] is set
+   ============================================ */
+
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --bg-card: #1f2937;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  --bg-glass: rgba(31, 41, 55, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.9);
+  
+  /* Aliases */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+}
+
+/* Text Colors */
+[data-theme="dark"] {
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+  --text-link: #f472b6;
+  
+  /* Aliases */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-primary);
+  --color-text-link: var(--text-link);
+}
+
+/* Border Colors */
+[data-theme="dark"] {
+  --border-light: #1f2937;
+  --border-default: #374151;
+  --border-dark: #4b5563;
+  
+  /* Aliases */
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+  --border: var(--border-default);
+  --border-color: var(--border);
+}
+
+/* Neon Colors - More vibrant in dark mode */
+[data-theme="dark"] {
+  --neon-cyan: #22d3ee;
+  --neon-pink: #f472b6;
+  --neon-magenta: #e879f9;
+  --neon-green: #34d399;
+  --neon-orange: #fb923c;
+  --neon-yellow: #facc15;
+  --neon-red: #f87171;
+  --neon-blue: #60a5fa;
+  --neon-purple: #c084fc;
+}
+
+/* Glow Effects - More intense in dark mode */
+[data-theme="dark"] {
+  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
+  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
+  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
+  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
+  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
+  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
+}
+
+/* Shadows - Darker for dark mode */
+[data-theme="dark"] {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* State Colors - Brighter in dark mode */
+[data-theme="dark"] {
+  --state-hover: rgba(244, 114, 182, 0.15);
+  --state-active: rgba(244, 114, 182, 0.25);
+  --state-focus: rgba(244, 114, 182, 0.35);
+  --state-disabled: rgba(255, 255, 255, 0.1);
+  --state-loading: rgba(244, 114, 182, 0.7);
+}
+
+/* Toggle Colors */
+[data-theme="dark"] {
+  --color-toggle-track: #374151;
+  --color-sun: #93c5fd;
+  --color-moon: #60a5fa;
+}
+
+/* ============================================
+   DARK THEME BODY ADJUSTMENTS
+   ============================================ */
+
+[data-theme="dark"] body {
+  /* Smooth theme transition is handled in transitions.css */
+}
+
+/* ============================================
+   DARK THEME GRADIENT ADJUSTMENTS
+   Adjust gradient backgrounds for dark mode visibility
+   ============================================ */
+
+[data-theme="dark"] body::before {
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(34, 211, 238, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(232, 121, 249, 0.15) 0%, transparent 50%);
+}
+
+/* ============================================
+   DARK THEME SCROLLBAR
+   ============================================ */
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
