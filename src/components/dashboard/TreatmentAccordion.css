@@ -2,10 +2,10 @@
   background: var(--bg-glass);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-card-lg);
   overflow: hidden;
   transition: all var(--transition-base);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--spacing-list-loose);
 }
 
 .treatment-accordion--expanded {

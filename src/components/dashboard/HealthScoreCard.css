@@ -1,15 +1,19 @@
 .health-score-card {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: var(--spacing-component-normal);
+  padding: var(--spacing-component-normal);
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-card-xl);
+  box-shadow: var(--shadow-hero);
   min-width: 200px;
   transition: all 0.3s ease;
+}
+
+.health-score-card--clickable:hover {
+  box-shadow: var(--shadow-hero-hover);
 }
 
 .health-score-card--clickable {
