@@ -170,6 +170,34 @@
 }
 
 /* ============================================
+   CONTEXTUAL GLOW EFFECTS - P2
+   ============================================ */
+:root {
+  /* Hover glow - Para elementos interativos */
+  --glow-hover-primary: 0 0 20px rgba(236, 72, 153, 0.3);
+  --glow-hover-secondary: 0 0 20px rgba(6, 182, 212, 0.3);
+  --glow-hover-success: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-hover-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --glow-hover-critical: 0 0 25px rgba(239, 68, 68, 0.4);
+  
+  /* Focus glow - Para acessibilidade */
+  --glow-focus-primary: 0 0 15px rgba(236, 72, 153, 0.4);
+  --glow-focus-secondary: 0 0 15px rgba(6, 182, 212, 0.4);
+  --glow-focus-success: 0 0 15px rgba(16, 185, 129, 0.4);
+  
+  /* Active glow - Para elementos pressionados */
+  --glow-active-primary: 0 0 10px rgba(236, 72, 153, 0.3);
+  --glow-active-secondary: 0 0 10px rgba(6, 182, 212, 0.3);
+  --glow-active-success: 0 0 10px rgba(16, 185, 129, 0.3);
+  
+  /* State-specific glow - Para estados especiais */
+  --glow-critical: 0 0 25px rgba(239, 68, 68, 0.4);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.4);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --glow-info: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+/* ============================================
    STATE COLORS
    ============================================ */
 :root {
@@ -314,6 +342,26 @@
   --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
   --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
   --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
+  
+  /* Contextual Glow Effects - Dark Mode - P2 */
+  --glow-hover-primary: 0 0 25px rgba(244, 114, 182, 0.4);
+  --glow-hover-secondary: 0 0 25px rgba(34, 211, 238, 0.4);
+  --glow-hover-success: 0 0 25px rgba(52, 211, 153, 0.4);
+  --glow-hover-warning: 0 0 25px rgba(251, 191, 36, 0.4);
+  --glow-hover-critical: 0 0 30px rgba(248, 113, 113, 0.5);
+  
+  --glow-focus-primary: 0 0 20px rgba(244, 114, 182, 0.5);
+  --glow-focus-secondary: 0 0 20px rgba(34, 211, 238, 0.5);
+  --glow-focus-success: 0 0 20px rgba(52, 211, 153, 0.5);
+  
+  --glow-active-primary: 0 0 15px rgba(244, 114, 182, 0.4);
+  --glow-active-secondary: 0 0 15px rgba(34, 211, 238, 0.4);
+  --glow-active-success: 0 0 15px rgba(52, 211, 153, 0.4);
+  
+  --glow-critical: 0 0 30px rgba(248, 113, 113, 0.5);
+  --glow-success: 0 0 25px rgba(52, 211, 153, 0.5);
+  --glow-warning: 0 0 25px rgba(251, 191, 36, 0.4);
+  --glow-info: 0 0 25px rgba(34, 211, 238, 0.4);
   
   /* State Colors - Brighter in dark mode */
   --state-hover: rgba(244, 114, 182, 0.15);
