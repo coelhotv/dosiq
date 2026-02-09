@@ -21,6 +21,23 @@
 }
 
 /* ============================================
+   BORDER WIDTH VARIATIONS - P2
+   ============================================ */
+:root {
+  /* Bordas sutis - Para elementos secundários */
+  --border-width-subtle: 1px;
+  
+  /* Bordas padrão - Para cards comuns */
+  --border-width-default: 1.5px;
+  
+  /* Bordas destacadas - Para elementos importantes */
+  --border-width-prominent: 2px;
+  
+  /* Bordas hero - Para seções principais */
+  --border-width-hero: 2.5px;
+}
+
+/* ============================================
    BORDER STYLES
    ============================================ */
 :root {
