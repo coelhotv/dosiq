@@ -3,17 +3,13 @@
   align-items: center;
   gap: var(--spacing-component-normal);
   padding: var(--spacing-component-normal);
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
+  background: var(--gradient-hero);
+  backdrop-filter: var(--glass-blur-hero);
+  border: 1px solid var(--glass-border-hero);
   border-radius: var(--radius-card-xl);
   box-shadow: var(--shadow-hero);
   min-width: 200px;
-  transition: all 0.3s ease;
-}
-
-.health-score-card--clickable:hover {
-  box-shadow: var(--shadow-hero-hover);
+  transition: var(--transition-hover);
 }
 
 .health-score-card--clickable {
@@ -21,10 +17,16 @@
 }
 
 .health-score-card--clickable:hover {
-  background: var(--bg-secondary);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(var(--scale-hover));
   border-color: var(--neon-cyan);
-  box-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-cyan), var(--shadow-hero-hover);
+  transition: var(--transition-hover), var(--transition-glow);
+}
+
+.health-score-card--clickable:active {
+  transform: translateY(-1px) scale(var(--scale-active));
+  box-shadow: var(--glow-active);
+  transition: var(--transition-active);
 }
 
 .health-score-card__chart {

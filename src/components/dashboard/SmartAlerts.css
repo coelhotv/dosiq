@@ -11,12 +11,13 @@
   align-items: flex-start;
   gap: var(--spacing-component-normal);
   padding: var(--spacing-component-compact);
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-card-md);
   box-shadow: var(--shadow-alert);
   animation: slide-in 0.3s ease-out;
+  transition: var(--transition-hover);
 }
 
 @keyframes slide-in {
@@ -24,9 +25,26 @@
   to { opacity:1; transform: translateY(0); }
 }
 
+.smart-alert:hover {
+  transform: translateY(-2px) scale(var(--scale-hover));
+  box-shadow: var(--shadow-alert-hover);
+  transition: var(--transition-hover);
+}
+
+.smart-alert:active {
+  transform: translateY(-1px) scale(var(--scale-active));
+  transition: var(--transition-active);
+}
+
 .smart-alert--critical {
+  background: var(--gradient-alert-critical);
   border-left: 4px solid var(--neon-pink);
   box-shadow: var(--shadow-alert-critical);
+}
+
+.smart-alert--critical:hover {
+  box-shadow: var(--glow-critical), var(--shadow-alert-critical);
+  transition: var(--transition-hover), var(--transition-glow);
 }
 
 .smart-alert--warning {
@@ -69,14 +87,36 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: var(--transition-hover);
   border: none;
   text-transform: uppercase;
+}
+
+.smart-alert__btn:hover {
+  transform: translateY(-1px) scale(var(--scale-hover));
+  filter: brightness(1.2);
+  transition: var(--transition-hover);
+}
+
+.smart-alert__btn:active {
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
+}
+
+.smart-alert__btn:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+  transition: var(--transition-focus);
 }
 
 .smart-alert__btn--primary {
   background: var(--neon-cyan);
   color: var(--bg-primary);
+}
+
+.smart-alert__btn--primary:hover {
+  box-shadow: var(--glow-focus);
+  transition: var(--transition-hover), var(--transition-glow);
 }
 
 .smart-alert__btn--secondary {
@@ -100,11 +140,6 @@
 .smart-alert__btn--placeholder:hover {
   filter: none;
   transform: none;
-}
-
-.smart-alert__btn:hover {
-  filter: brightness(1.2);
-  transform: translateY(-1px);
 }
 
 @media (max-width: 480px) {
