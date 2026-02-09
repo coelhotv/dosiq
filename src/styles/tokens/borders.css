@@ -77,6 +77,31 @@
 }
 
 /* ============================================
+   COMPONENT-SPECIFIC BORDER RADIUS
+   ============================================ */
+:root {
+  /* Hero / Featured Cards - Mais arredondados */
+  --radius-hero: 1.5rem;        /* 24px */
+  --radius-card-xl: 1.25rem;     /* 20px */
+  
+  /* Standard Cards - Moderadamente arredondados */
+  --radius-card-lg: 1rem;        /* 16px */
+  --radius-card-md: 0.75rem;     /* 12px */
+  
+  /* Small Elements - Levemente arredondados */
+  --radius-card-sm: 0.5rem;     /* 8px */
+  --radius-pill: 9999px;         /* Pill shape */
+  
+  /* Inputs / Form Elements - Consistentes */
+  --radius-input: 0.5rem;       /* 8px */
+  --radius-button: 0.5rem;      /* 8px */
+  
+  /* Circular Elements */
+  --radius-circle: 50%;
+  --radius-avatar: 50%;
+}
+
+/* ============================================
    BORDER COLORS
    ============================================ */
 :root {
