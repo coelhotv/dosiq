@@ -358,6 +358,7 @@ export default function Dashboard({ onNavigate }) {
           score={stats.score}
           streak={stats.currentStreak}
           trend="up"
+          trendPercentage={12}
           onClick={() => setIsHealthDetailsOpen(true)}
         />
         
