@@ -230,6 +230,38 @@
   z-index: var(--z-fab);
 }
 
+/* Botão '+ REGISTRO MANUAL' - estilo outline cyan */
+.fab :global(.btn-add-manual) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);      /* 12px 20px */
+  min-height: 48px;
+  min-width: 180px;
+  background: transparent;
+  border: 2px solid var(--neon-cyan);
+  border-radius: var(--radius-button);
+  color: var(--neon-cyan);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: var(--transition-hover);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+}
+
+.fab :global(.btn-add-manual):hover {
+  background: rgba(6, 182, 212, 0.15);
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.25);
+  transform: translateY(-2px);
+}
+
+.fab :global(.btn-add-manual):active {
+  transform: translateY(0) scale(0.98);
+}
+
 /* ============================================
    RESPONSIVE ADJUSTMENTS
    ============================================ */
