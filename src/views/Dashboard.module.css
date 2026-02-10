@@ -57,7 +57,7 @@
 }
 
 .userName {
-  font-size: var(--text-lg);
+  font-size: var(--text-2xl);                   /* 24px - maior para conexão emocional */
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   cursor: pointer;
@@ -66,6 +66,7 @@
   padding: 0;
   font-family: inherit;
   line-height: 1.2;
+  letter-spacing: -0.02em;                      /* Ligeiro ajuste para legibilidade */
 }
 
 .userName:hover {
@@ -74,6 +75,44 @@
 
 .dot {
   color: var(--color-primary);
+}
+
+/* Manual Register FAB - Floating Action Button */
+.manualRegisterFab {
+  position: fixed;
+  bottom: calc(60px + var(--space-3)); /* Above bottom nav */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-sticky);
+  
+  /* Gradient styling like original */
+  background: linear-gradient(90deg, #00E5FF, #AA00FF);
+  color: #000;
+  font-weight: 600;
+  font-size: 13px;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
+  transition: all var(--transition-fast);
+  
+  /* Touch target */
+  min-height: 44px;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.manualRegisterFab:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.5);
+}
+
+.manualRegisterFab:active {
+  transform: translateX(-50%) translateY(0) scale(0.98);
 }
 
 /* Health Score Card in header - compact */

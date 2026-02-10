@@ -232,9 +232,9 @@ export function SparklineAdesao({
             <stop offset="100%" stopColor="var(--color-primary, #ec4899)" stopOpacity="0.05" />
           </linearGradient>
 
-          {/* Filtro para brilho suave */}
+          {/* Filtro para brilho suave - Mais sutil */}
           <filter id="sparklineGlow">
-            <feGaussianBlur stdDeviation="1" result="blur" />
+            <feGaussianBlur stdDeviation="0.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -265,12 +265,12 @@ export function SparklineAdesao({
           />
         )}
 
-        {/* Linha do sparkline */}
+        {/* Linha do sparkline - Mais fina */}
         <motion.path
           d={sparklinePath}
           fill="none"
           stroke="var(--color-primary, #ec4899)"
-          strokeWidth="2"
+          strokeWidth="1"
           strokeLinecap="round"
           strokeLinejoin="round"
           filter="url(#sparklineGlow)"
@@ -285,13 +285,13 @@ export function SparklineAdesao({
           }}
         />
 
-        {/* Pontos de dados */}
+        {/* Pontos de dados - Menores */}
         {dataPoints.map((d, i) => (
           <motion.circle
             key={d.date}
             cx={d.x}
             cy={d.y}
-            r={size === 'small' ? 2 : 3}
+            r={size === 'small' ? 1.5 : 2}
             fill={getAdherenceColor(d.adherence)}
             className="sparkline-dot"
             initial={{ scale: 0 }}
