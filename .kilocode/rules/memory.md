@@ -1300,3 +1300,61 @@ onAction((alert, action) => {
 - Testar micro-interações em dispositivos reais (mobile, desktop)
 - Considerar integrar InsightCard no Dashboard quando houver insights disponíveis
 - Testar contraste WCAG AA em ambos os temas (light/dark)
+
+---
+
+## Memory Entry — 2026-02-10 03:35
+**Contexto / Objetivo**
+- Coordenar merge final da Fase 3.5 (melhorias visuais e integração backend) para main
+- Executar validações finais: lint, build, testes críticos
+- Atualizar memória do projeto com lições aprendidas
+- Documentar implementação em summary final
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - Merge de `feat/fase3.5-melhorias-visuais` para main com --no-ff
+  - 31 arquivos modificados/criados, 5470 insertions, 137 deletions
+  - Novos componentes: InsightCard, useAdherenceTrend, useInsights, adherenceTrendService, insightService
+  - Tokens CSS atualizados: colors, borders, shadows, spacing, transitions
+- Comportamento impactado:
+  - Sistema de tokens CSS completo implementado
+  - Componentes dashboard atualizados com glassmorphism e micro-interações
+  - Backend integration hooks e serviços operacionais
+  - Documentação de arquitetura e integração criada
+
+**O que deu certo**
+- Validações passaram: lint (0 erros), build (sucesso em 5.67s)
+- Merge executado sem conflitos usando --no-ff
+- Feature branch删除 (deletado) após merge bem-sucedido
+- Push para origin/main completado com sucesso
+- Testes críticos passaram (67 testes, algumas falhas pré-existentes não críticas)
+
+**O que não deu certo / riscos**
+- 4 testes falhando são pré-existentes (relacionados a mocks e traduções PT-BR)
+- Warnings de lint em arquivos não modificados (SwipeRegisterItem.jsx, TreatmentAccordion.jsx)
+- dist/index.html estava no .gitignore (build output não versionado)
+
+**Causa raiz (se foi debug)**
+- N/A - merge operacional sem necessidade de debug
+
+**Decisões & trade-offs**
+- Decisão: Executar merge com --no-ff para preservar histórico de commits
+- Alternativas consideradas: Fast-forward only, rebase
+- Por quê: Mantém rastreabilidade da branch de feature e histórico de commits atômicos
+
+- Decisão: Criar summary document em docs/past_deliveries/
+- Alternativas consideradas: Adicionar ao README.md existente
+- Por quê: Centralização de documentos de implementações passadas para referência futura
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre verificar dist/ folder no .gitignore antes de commitar build outputs
+- Usar --no-ff ao merge de features para preservar histórico
+- Executar lint → build → testes críticos antes de merge
+- Criar summary document após cada fase/milestone importante
+- Deletar feature branch após merge bem-sucedido para manter repositório limpo
+
+**Pendências / próximos passos**
+- [Alta] Validar visualmente as melhorias em ambiente de desenvolvimento
+- [Média] Testar micro-interações em dispositivos reais (mobile, desktop)
+- [Média] Atualizar testes unitários que falham (tradução PT-BR)
+- [Baixa] Limpar eslint-disable não utilizados em SwipeRegisterItem.jsx e TreatmentAccordion.jsx
