@@ -1,14 +1,15 @@
 .health-score-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-component-normal);
-  padding: var(--spacing-component-normal);
+  gap: var(--spacing-component-compact);        /* 8px - era 16px */
+  padding: var(--spacing-component-normal);     /* 12px */
   background: var(--gradient-hero);
-  backdrop-filter: var(--glass-blur-hero);
-  border: var(--border-width-hero) solid var(--glass-border-hero);
-  border-radius: var(--radius-card-xl);
-  box-shadow: var(--shadow-hero);
-  min-width: 200px;
+  backdrop-filter: blur(8px);                   /* Reduzido de hero */
+  border: 1.5px solid var(--glass-border);      /* Mais sutil */
+  border-radius: var(--radius-card-lg);         /* 16px - era 20px */
+  box-shadow: var(--shadow-card);               /* Menos intenso */
+  min-width: unset;                             /* Remover constraint */
+  max-height: 100px;                            /* Limitar altura */
   transition: var(--transition-hover);
 }
 
@@ -17,22 +18,22 @@
 }
 
 .health-score-card--clickable:hover {
-  transform: translateY(-2px) scale(var(--scale-hover));
+  transform: translateY(-1px);                   /* Mais sutil */
   border-color: var(--neon-cyan);
-  box-shadow: var(--glow-hover-primary), var(--shadow-hero-hover);
+  box-shadow: var(--glow-hover-primary), var(--shadow-card-hover);
   transition: var(--transition-hover), var(--transition-glow);
 }
 
 .health-score-card--clickable:active {
-  transform: translateY(-1px) scale(var(--scale-active));
+  transform: translateY(0) scale(0.98);          /* Mais sutil */
   box-shadow: var(--glow-active);
   transition: var(--transition-active);
 }
 
 .health-score-card__chart {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 56px;                                  /* Era 80px */
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,16 +50,16 @@
 .health-score-card__bg {
   fill: none;
   stroke: var(--bg-tertiary);
-  stroke-width: 6;
+  stroke-width: 5;                              /* Era 6 */
 }
 
 .health-score-card__progress {
   fill: none;
   stroke: var(--neon-cyan);
-  stroke-width: 6;
+  stroke-width: 5;                              /* Era 6 */
   stroke-linecap: round;
   transition: stroke-dashoffset var(--transition-slow);
-  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.5));  /* Menos intenso */
 }
 
 .health-score-card__value {
@@ -72,7 +73,7 @@
 .health-score-card__info {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-related);
+  gap: var(--spacing-related-tight);            /* 2px - mais compacto */
   flex: 1;
 }
 

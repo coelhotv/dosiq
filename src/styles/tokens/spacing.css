@@ -46,49 +46,49 @@
   --space-80: 20rem;
   --space-96: 24rem;
   
-  /* Named spacing tokens */
-  --spacing-xs: var(--space-1);
-  --spacing-sm: var(--space-2);
-  --spacing-md: var(--space-4);
-  --spacing-lg: var(--space-6);
-  --spacing-xl: var(--space-8);
-  --spacing-2xl: var(--space-12);
+  /* Named spacing tokens - Valores absolutos para evitar circularidade */
+  --spacing-xs: 0.25rem;     /* 4px */
+  --spacing-sm: 0.5rem;      /* 8px */
+  --spacing-md: 0.75rem;     /* 12px - Mobile first, mais compacto */
+  --spacing-lg: 1rem;        /* 16px */
+  --spacing-xl: 1.25rem;     /* 20px */
+  --spacing-2xl: 1.5rem;     /* 24px */
   
-  /* Aliases for compatibility */
-  --space-1: var(--spacing-xs);
-  --space-2: var(--spacing-sm);
-  --space-3: var(--spacing-md);
-  --space-4: var(--spacing-lg);
-  --space-6: var(--spacing-xl);
-  --space-8: var(--space-16);
-  --space-10: var(--space-20);
-  --space-12: var(--space-24);
+  /* Aliases for compatibility - Usar valores absolutos */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
 }
 
 /* ============================================
-   HIERARCHICAL SPACING
+   HIERARCHICAL SPACING - Mobile First (Reduzido)
    ============================================ */
 :root {
-  /* Espaçamento entre seções principais */
-  --spacing-section-hero: var(--space-8);      /* 32px */
-  --spacing-section-major: var(--space-6);     /* 24px */
-  --spacing-section-minor: var(--space-4);     /* 16px */
-  --spacing-section-tight: var(--space-3);      /* 12px */
+  /* Espaçamento entre seções principais - Reduzido para densidade */
+  --spacing-section-hero: var(--space-6);       /* 24px - era 32px */
+  --spacing-section-major: var(--space-4);      /* 16px - era 24px */
+  --spacing-section-minor: var(--space-3);      /* 12px - era 16px */
+  --spacing-section-tight: var(--space-2);      /* 8px - era 12px */
   
-  /* Espaçamento interno de componentes */
-  --spacing-component-loose: var(--space-6);    /* 24px */
-  --spacing-component-normal: var(--space-4);   /* 16px */
-  --spacing-component-compact: var(--space-3);  /* 12px */
-  --spacing-component-tight: var(--space-2);    /* 8px */
+  /* Espaçamento interno de componentes - Mais compacto */
+  --spacing-component-loose: var(--space-4);    /* 16px - era 24px */
+  --spacing-component-normal: var(--space-3);   /* 12px - era 16px */
+  --spacing-component-compact: var(--space-2);  /* 8px - era 12px */
+  --spacing-component-tight: var(--space-1);    /* 4px */
   
-  /* Espaçamento entre itens de lista */
-  --spacing-list-loose: var(--space-4);         /* 16px */
-  --spacing-list-normal: var(--space-3);        /* 12px */
-  --spacing-list-compact: var(--space-2);       /* 8px */
+  /* Espaçamento entre itens de lista - Compactação máxima */
+  --spacing-list-loose: var(--space-3);         /* 12px - era 16px */
+  --spacing-list-normal: var(--space-2);        /* 8px - era 12px */
+  --spacing-list-compact: var(--space-1);       /* 4px - era 8px */
   
   /* Espaçamento de elementos relacionados */
-  --spacing-related: var(--space-2);            /* 8px */
-  --spacing-related-tight: var(--space-1);      /* 4px */
+  --spacing-related: var(--space-1);            /* 4px - era 8px */
+  --spacing-related-tight: 2px;                 /* 2px */
 }
 
 /* ============================================
@@ -125,27 +125,27 @@
 }
 
 /* ============================================
-   SECTION SPACING
+   SECTION SPACING - Mobile First
    ============================================ */
 :root {
-  --section-padding-y: var(--space-8);
-  --section-padding-x: var(--space-4);
-  --section-margin-y: var(--space-8);
+  --section-padding-y: var(--space-4);          /* 16px - era 32px */
+  --section-padding-x: var(--space-3);          /* 12px - era 16px */
+  --section-margin-y: var(--space-4);           /* 16px - era 32px */
   
-  /* Compact version for mobile */
-  --section-padding-y-compact: var(--space-4);
-  --section-padding-x-compact: var(--space-3);
+  /* Mobile compact (default) */
+  --section-padding-y-compact: var(--space-3);  /* 12px */
+  --section-padding-x-compact: var(--space-2);  /* 8px */
 }
 
 /* ============================================
-   COMPONENT SPACING
+   COMPONENT SPACING - Cards Mobile First
    ============================================ */
 :root {
-  /* Card spacing */
-  --card-padding: var(--space-6);
-  --card-padding-sm: var(--space-4);
-  --card-padding-lg: var(--space-8);
-  --card-gap: var(--space-4);
+  /* Card spacing - Reduzido para mobile.jpg density */
+  --card-padding: var(--space-3);        /* 12px - era 24px */
+  --card-padding-sm: var(--space-2);     /* 8px - era 16px */
+  --card-padding-lg: var(--space-4);     /* 16px - era 32px */
+  --card-gap: var(--space-2);            /* 8px - era 16px */
   --card-border-radius: var(--radius-lg);
   
   /* Button spacing */

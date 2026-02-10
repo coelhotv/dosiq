@@ -1,19 +1,26 @@
 
 .dashboard-container-v2 {
-  padding: 24px;
+  padding: var(--space-3);                      /* 12px - era 24px */
   color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-  max-width: 600px;
+  font-family: var(--font-family);
+  max-width: 100%;                              /* Full width mobile */
   margin: 0 auto;
 }
 
-/* Header */
+@media (min-width: 768px) {
+  .dashboard-container-v2 {
+    max-width: 720px;
+    padding: var(--space-4);                    /* 16px em tablet+ */
+  }
+}
+
+/* Header - Mais compacto */
 .dash-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: 24px;
-  gap: 12px;
+  margin-bottom: var(--space-3);                /* 12px - era 24px */
+  gap: var(--space-2);                          /* 8px - era 12px */
 }
 
 .dash-header__top {
@@ -103,23 +110,24 @@
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
 }
 
-/* Top Cards Grid */
+/* Top Cards Grid - Mais compacto */
 .top-cards-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--space-2);                          /* 8px - era 16px */
+  margin-bottom: var(--space-3);                /* 12px - era 24px */
 }
 
 .info-card {
   background: var(--bg-secondary);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: var(--radius-lg);              /* 12px */
+  padding: var(--space-3);                      /* 12px - era 20px */
   border: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 120px;
+  height: auto;                                 /* Remover altura fixa */
+  min-height: 70px;                             /* Mínimo reduzido */
   position: relative;
   overflow: hidden;
 }
@@ -144,9 +152,9 @@
 
 .highlight-value {
   display: block;
-  font-size: 28px;
+  font-size: var(--font-size-xl);               /* 20px - era 28px */
   font-weight: 700;
-  margin-top: 8px;
+  margin-top: var(--space-1);                   /* 4px - era 8px */
   line-height: 1;
 }
 
@@ -167,14 +175,14 @@
   display: block;
 }
 
-/* Titration Card */
+/* Titration Card - Mais compacto */
 .titration-card {
   background: var(--bg-secondary);
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: var(--radius-xl);              /* 16px - era 20px */
+  padding: var(--space-3);                      /* 12px - era 24px */
   border: 1px solid var(--border-light);
-  margin-bottom: 32px;
-  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-4);                /* 16px - era 32px */
+  box-shadow: var(--shadow-sm);                 /* Sutil */
 }
 
 .titration-header h3 {
@@ -267,30 +275,30 @@
   margin-bottom: 32px;
 }
 
-/* Inventory Alerts */
+/* Inventory Alerts - Mais compacto */
 .inventory-section {
-  margin-bottom: 80px; /* Space for fab/nav */
+  margin-bottom: var(--space-16);               /* Space for fab/nav */
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: var(--font-size-xs);               /* 12px */
   color: var(--text-secondary);
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;                          /* Era 1.5px */
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);                /* 8px */
   font-weight: 600;
 }
 
 .inventory-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);                          /* 8px */
 }
 
 .inventory-item {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: var(--radius-lg);              /* 12px */
+  padding: var(--space-3);                      /* 12px - era 16px */
   display: flex;
   align-items: center;
   transition: transform 0.2s;
@@ -342,16 +350,16 @@
   border-radius: 12px;
 }
 
-/* Treatment Plans Shortcuts */
+/* Treatment Plans Shortcuts - Mais compacto */
 .treatment-plans-section {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-4);                /* 16px - era 32px */
 }
 
 .treatment-plans-scroll {
   display: flex;
-  gap: 12px;
+  gap: var(--space-2);                          /* 8px - era 12px */
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);               /* 8px */
   /* Hide scrollbar */
   scrollbar-width: none;  /* Firefox */
   -ms-overflow-style: none;  /* IE and Edge */
@@ -362,11 +370,11 @@
 }
 
 .plan-shortcut-card {
-  min-width: 140px;
+  min-width: 120px;                             /* Era 140px */
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: var(--radius-lg);              /* 12px */
+  padding: var(--space-3);                      /* 12px - era 16px */
   display: flex;
   flex-direction: column;
   transition: all 0.2s;
@@ -398,16 +406,16 @@
   color: var(--neon-cyan);
 }
 
-/* History Calendar Section */
+/* History Calendar Section - Mais compacto */
 .history-section {
-  margin-bottom: 40px;
+  margin-bottom: var(--space-6);                /* 24px - era 40px */
 }
 
 .calendar-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: var(--radius-xl);              /* 16px - era 20px */
+  padding: var(--space-3);                      /* 12px - era 24px */
 }
 
 .calendar-logs-list {
@@ -446,17 +454,17 @@
   font-weight: 600;
 }
 
-/* Treatment Plans Interactive List */
+/* Treatment Plans Interactive List - Mais compacto */
 .treatment-plans-list-interactive {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-2);                          /* 8px - era 16px */
 }
 
 .treatment-plan-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);              /* 12px - era 16px */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -468,7 +476,7 @@
 }
 
 .plan-card-header {
-  padding: 16px;
+  padding: var(--space-3);                      /* 12px - era 16px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -494,7 +502,7 @@
 
 .plan-title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--font-size-base);             /* 16px - era 15px */
   font-weight: 600;
   color: var(--text-primary);
 }
