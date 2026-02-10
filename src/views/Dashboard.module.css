@@ -231,19 +231,19 @@
   z-index: var(--z-fab);
 }
 
-/* Botão '+ REGISTRO MANUAL' - estilo sólido semi-transparente */
+/* Botão '+ REGISTRO MANUAL' - estilo magenta translúcido */
 .fab :global(.btn-add-manual) {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);      /* 12px 24px */
-  min-height: 44px;
+  min-height: 48px;
   min-width: 200px;
-  background: rgba(6, 182, 212, 0.15);         /* Fundo semi-transparente */
-  border: 1px solid rgba(6, 182, 212, 0.5);    /* Borda sutil */
+  background: rgba(236, 72, 153, 0.2);         /* Magenta semi-transparente */
+  border: 1px solid rgba(236, 72, 153, 0.5);   /* Borda translúcida */
   border-radius: var(--radius-button);
-  color: #fff;                                  /* Texto branco para contraste */
+  color: #fff;                                  /* Texto branco */
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-transform: uppercase;
@@ -251,17 +251,18 @@
   cursor: pointer;
   transition: var(--transition-hover);
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.2),
-    0 0 16px rgba(6, 182, 212, 0.15);
-  backdrop-filter: blur(4px);
+    0 4px 16px rgba(236, 72, 153, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);                   /* Efeito glass */
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .fab :global(.btn-add-manual):hover {
-  background: rgba(6, 182, 212, 0.25);         /* Mais opaco no hover */
-  border-color: rgba(6, 182, 212, 0.8);
+  background: rgba(236, 72, 153, 0.35);        /* Mais opaco no hover */
+  border-color: rgba(236, 72, 153, 0.7);
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.25),
-    0 0 24px rgba(6, 182, 212, 0.25);
+    0 6px 20px rgba(236, 72, 153, 0.35),
+    0 10px 30px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }
 
