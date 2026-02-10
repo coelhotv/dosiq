@@ -1,7 +1,7 @@
 # Arquitetura CSS - Meus Remédios
 
-**Versão:** 1.0  
-**Data:** 2026-02-08  
+**Versão:** 1.1
+**Data:** 2026-02-10
 **Status:** Ativo
 
 ---
@@ -287,6 +287,26 @@ function Dashboard() {
 }
 ```
 
+## Atualizações Recentes
+
+### v1.1 - Correção de Regressões Visuais (2026-02-10)
+
+Após a refatoração da arquitetura CSS, foram identificadas e corrigidas regressões visuais:
+
+#### Problemas Corrigidos
+1. **Circular References em Tokens**: Resolvida referência circular em `spacing.css`
+2. **Botões Sobredimensionados**: Corrigido padding excessivo em `.btn-lg` (128px → 20px)
+3. **Header Redesign**: Layout grid lado a lado, username 30px
+4. **HealthScoreCard**: Reduzido para 80px, gráfico 48px
+5. **Sparkline**: Linha fina (1px), marcadores menores (2px)
+6. **Botão FAB**: Magenta translúcido, centralizado, glassmorphism
+
+#### Padrões Estabelecidos
+- Glassmorphism hierárquico: hero (primary) → standard (secondary) → light (tertiary)
+- Tokens de espaçamento: 8px base grid (--space-1 a --space-20)
+- CSS Modules para componentes complexos (Dashboard, SmartAlerts)
+- CSS global para componentes simples (Button, Modal)
+
 ## Migration Guide
 
 ### Migração de Cores Hardcoded
@@ -363,4 +383,4 @@ npm run build
 
 ---
 
-*Documento atualizado em 2026-02-08*
+*Documento atualizado em 2026-02-10*
