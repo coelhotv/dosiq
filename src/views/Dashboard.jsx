@@ -11,6 +11,7 @@ import { useDashboard } from '../hooks/useDashboardContext.jsx'
 import HealthScoreCard from '../components/dashboard/HealthScoreCard'
 import HealthScoreDetails from '../components/dashboard/HealthScoreDetails'
 import SmartAlerts from '../components/dashboard/SmartAlerts'
+import InsightCard from '../components/dashboard/InsightCard'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import SparklineAdesao from '../components/dashboard/SparklineAdesao'
@@ -21,7 +22,13 @@ import MilestoneCelebration from '../components/gamification/MilestoneCelebratio
 import { checkNewMilestones } from '../services/milestoneService'
 import { analyticsService } from '../services/analyticsService'
 import { getCurrentUser } from '../lib/supabase'
+import { useAdherenceTrend } from '../hooks/useAdherenceTrend'
+import { useInsights } from '../hooks/useInsights'
 import styles from './Dashboard.module.css'
+
+// Constante para chave de armazenamento de alertas snoozed
+const SNOOZE_STORAGE_KEY = 'mr_snoozed_alerts'
+const SNOOZE_DURATION_MS = 4 * 60 * 60 * 1000 // 4 horas
 
 /**
  * Dashboard "Health Command Center"
@@ -51,7 +58,47 @@ export default function Dashboard({ onNavigate }) {
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
   
   // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
-  const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set())
+  // Estrutura: Map<alertId, { snoozedAt: timestamp, expiresAt: timestamp, scheduledTime: string }>
+  const [snoozedAlerts, setSnoozedAlerts] = useState(() => {
+    try {
+      const data = localStorage.getItem(SNOOZE_STORAGE_KEY)
+      if (!data) return new Map()
+      
+      const parsed = JSON.parse(data)
+      const map = new Map()
+      const now = Date.now()
+      
+      // Limpar expirados ao carregar
+      parsed.forEach(([id, value]) => {
+        if (value.expiresAt > now) {
+          map.set(id, value)
+        }
+      })
+      
+      return map
+    } catch {
+      return new Map()
+    }
+  })
+  
+  // Dados de tendência de adesão
+  const { 
+    trend, 
+    percentage, 
+    magnitude 
+  } = useAdherenceTrend()
+  
+  // Dados de insight
+  const { 
+    insight, 
+    loading: insightLoading 
+  } = useInsights({
+    stats,
+    dailyAdherence,
+    stockSummary,
+    logs,
+    onNavigate
+  })
   
   // Estado para controle de animação de confete
   const [showConfetti, setShowConfetti] = useState(false)
@@ -101,7 +148,30 @@ export default function Dashboard({ onNavigate }) {
     loadAdherence()
   }, [])
 
-  // Tracking de page_view
+  // Persistir snoozedAlerts no localStorage
+  useEffect(() => {
+    const array = Array.from(snoozedAlerts.entries())
+    localStorage.setItem(SNOOZE_STORAGE_KEY, JSON.stringify(array))
+  }, [snoozedAlerts])
+  
+  // Limpeza periódica de alertas expirados
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now()
+      
+      setSnoozedAlerts(prev => {
+        const cleaned = new Map()
+        prev.forEach((value, key) => {
+          if (value.expiresAt > now) {
+            cleaned.set(key, value)
+          }
+        })
+        return cleaned
+      })
+    }, 60 * 1000) // Verificar a cada minuto
+    
+    return () => clearInterval(interval)
+  }, [])
   useEffect(() => {
     analyticsService.track('page_view', { page: 'dashboard' })
   }, [])
@@ -187,6 +257,21 @@ export default function Dashboard({ onNavigate }) {
   // 3. Orquestração de Alertas Inteligentes
   const smartAlerts = useMemo(() => {
     const alerts = [];
+    const now = new Date();
+    const nowTimestamp = now.getTime();
+    
+    // Limpar alertas expirados do Map
+    const validSnoozedAlerts = new Map();
+    snoozedAlerts.forEach((value, key) => {
+      if (value.expiresAt > nowTimestamp) {
+        validSnoozedAlerts.set(key, value);
+      }
+    });
+    
+    // Atualizar estado se houve limpeza
+    if (validSnoozedAlerts.size !== snoozedAlerts.size) {
+      setSnoozedAlerts(validSnoozedAlerts);
+    }
     
     // Alerta de Estoque Crítico e Baixo
     // Agregação consolidada: stockSummary já contém um item por medicamento.
@@ -222,6 +307,7 @@ export default function Dashboard({ onNavigate }) {
           message,
           type: 'stock',
           medicine_id: item.medicine.id,
+          scheduled_time: null,
           actions: [
             { label: 'COMPRAR', type: 'placeholder', title: 'Em breve: integração com farmácias para compra direta' },
             { label: 'ESTOQUE', type: 'secondary' }
@@ -231,8 +317,7 @@ export default function Dashboard({ onNavigate }) {
       }
     });
 
-    // Alerta de Doses Atrasadas (Mock funcional)
-    const now = new Date();
+    // Alerta de Doses Atrasadas
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     rawProtocols.forEach(p => {
@@ -259,6 +344,8 @@ export default function Dashboard({ onNavigate }) {
               title: delay > 240 ? 'Atraso Crítico' : 'Dose Atrasada',
               message: `${p.medicine?.name} era às ${time} (${Math.floor(delay/60)}h ${delay%60}min atrás)`,
               protocol_id: p.id,
+              scheduled_time: time, // CRÍTICO: Necessário para cálculo de expiração do snooze
+              delay_minutes: delay,
               actions: [
                 { label: 'TOMAR', type: 'primary' },
                 { label: 'ADIAR', type: 'secondary' }
@@ -269,10 +356,15 @@ export default function Dashboard({ onNavigate }) {
       });
     });
 
+    // Filtrar alertas snoozed (que ainda não expiraram)
     return alerts
-      .filter(alert => !snoozedAlertIds.has(alert.id))
+      .filter(alert => {
+        const snoozed = validSnoozedAlerts.get(alert.id);
+        if (!snoozed) return true; // Não está snoozed
+        return snoozed.expiresAt <= nowTimestamp; // Expirou? Mostrar novamente
+      })
       .sort((a) => (a.severity === 'critical' ? -1 : 1));
-  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlertIds]);
+  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlerts]);
 
   const handleRegisterDose = async (medicineId, protocolId) => {
     try {
@@ -357,7 +449,9 @@ export default function Dashboard({ onNavigate }) {
         <HealthScoreCard
           score={stats.score}
           streak={stats.currentStreak}
-          trend="up"
+          trend={trend}
+          trendPercentage={percentage}
+          magnitude={magnitude}
           onClick={() => setIsHealthDetailsOpen(true)}
         />
         
@@ -366,6 +460,17 @@ export default function Dashboard({ onNavigate }) {
           <div className={styles.sparklineContainer}>
             <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
           </div>
+        )}
+
+        {/* Insight Card - Dinâmico baseado em dados do usuário */}
+        {!insightLoading && insight && (
+          <InsightCard
+            icon={insight.icon}
+            text={insight.text}
+            highlight={insight.highlight}
+            actionLabel={insight.actionLabel}
+            onAction={insight.onAction}
+          />
         )}
       </header>
 
@@ -393,11 +498,44 @@ export default function Dashboard({ onNavigate }) {
           } else if (action.label === 'ESTOQUE') {
             onNavigate('stock', { medicineId: alert.medicine_id });
           } else if (action.label === 'ADIAR') {
-            setSnoozedAlertIds(prev => {
-              const newSet = new Set(prev);
-              newSet.add(alert.id);
-              return newSet;
-            });
+            // Calcular tempo de expiração: horário previsto + 4 horas
+            const scheduledTime = alert.scheduled_time;
+            
+            if (scheduledTime) {
+              const [h, m] = scheduledTime.split(':').map(Number);
+              const scheduledDate = new Date();
+              scheduledDate.setHours(h, m, 0, 0);
+              
+              // Se horário já passou hoje, usar amanhã
+              const now = new Date();
+              if (scheduledDate < now) {
+                scheduledDate.setDate(scheduledDate.getDate() + 1);
+              }
+              
+              const expiresAt = scheduledDate.getTime() + SNOOZE_DURATION_MS;
+              
+              setSnoozedAlerts(prev => {
+                const newMap = new Map(prev);
+                newMap.set(alert.id, {
+                  snoozedAt: Date.now(),
+                  expiresAt: expiresAt,
+                  scheduledTime: scheduledTime
+                });
+                return newMap;
+              });
+            } else {
+              // Para alertas sem scheduled_time (ex: estoque), usar expiração padrão de 4 horas
+              const expiresAt = Date.now() + SNOOZE_DURATION_MS;
+              setSnoozedAlerts(prev => {
+                const newMap = new Map(prev);
+                newMap.set(alert.id, {
+                  snoozedAt: Date.now(),
+                  expiresAt: expiresAt,
+                  scheduledTime: null
+                });
+                return newMap;
+              });
+            }
           }
         }}
       />

@@ -66,6 +66,32 @@
 }
 
 /* ============================================
+   HIERARCHICAL SPACING
+   ============================================ */
+:root {
+  /* Espaçamento entre seções principais */
+  --spacing-section-hero: var(--space-8);      /* 32px */
+  --spacing-section-major: var(--space-6);     /* 24px */
+  --spacing-section-minor: var(--space-4);     /* 16px */
+  --spacing-section-tight: var(--space-3);      /* 12px */
+  
+  /* Espaçamento interno de componentes */
+  --spacing-component-loose: var(--space-6);    /* 24px */
+  --spacing-component-normal: var(--space-4);   /* 16px */
+  --spacing-component-compact: var(--space-3);  /* 12px */
+  --spacing-component-tight: var(--space-2);    /* 8px */
+  
+  /* Espaçamento entre itens de lista */
+  --spacing-list-loose: var(--space-4);         /* 16px */
+  --spacing-list-normal: var(--space-3);        /* 12px */
+  --spacing-list-compact: var(--space-2);       /* 8px */
+  
+  /* Espaçamento de elementos relacionados */
+  --spacing-related: var(--space-2);            /* 8px */
+  --spacing-related-tight: var(--space-1);      /* 4px */
+}
+
+/* ============================================
    RESPONSIVE BREAKPOINTS
    Based on common device sizes
    ============================================ */

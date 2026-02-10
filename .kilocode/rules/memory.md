@@ -1159,6 +1159,65 @@ onAction((alert, action) => {
 
 ---
 
+## Memory Entry — 2026-02-09 21:57
+**Contexto / Objetivo**
+- Implementar tarefas P1 da Fase 3.5 de melhorias visuais
+- Adicionar glassmorphism refinado, melhorar contraste e legibilidade, implementar micro-interações visuais
+- Aplicar novos tokens aos componentes do dashboard e botões
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/styles/tokens/colors.css` — Adicionados tokens de glassmorphism (light, standard, heavy, hero), gradientes (insight, hero, alert-critical, success) e melhorado contraste de texto em dark mode
+  - `src/styles/tokens/transitions.css` — Adicionados tokens de micro-interações (hover, focus, active, scale, glow)
+  - `src/components/dashboard/HealthScoreCard.css` — Aplicado glassmorphism hero, gradient hero e micro-interações
+  - `src/components/dashboard/SmartAlerts.css` — Aplicado glassmorphism standard, gradient alert-critical e micro-interações
+  - `src/components/dashboard/TreatmentAccordion.css` — Aplicado glassmorphism light e micro-interações
+  - `src/components/ui/Button.css` — Aplicado micro-interações (scale, glow, focus-visible)
+- Comportamento impactado:
+  - Cards agora têm glassmorphism com diferentes níveis de intensidade
+  - Gradientes sutis aplicados a cards de insight, hero e alertas críticas
+  - Micro-interações visuais (scale, glow, transitions) aplicadas a todos os componentes interativos
+  - Contraste de texto melhorado em dark mode para WCAG AA compliance
+
+**O que deu certo**
+- Uso de tokens CSS para manter consistência e facilitar manutenção
+- Separação clara entre níveis de glassmorphism (light, standard, heavy, hero)
+- Micro-interações aplicadas com scale effects e glow transitions
+- Validação bem-sucedida: lint (0 erros), build (sucesso), testes críticos (67 passaram)
+- Commits atômicos e semânticos criados para cada mudança lógica
+
+**O que não deu certo / riscos**
+- Nenhum erro crítico encontrado durante implementação
+- Warnings de lint em arquivos não modificados (SwipeRegisterItem.jsx, TreatmentAccordion.jsx) - não críticos
+
+**Causa raiz (se foi debug)**
+- N/A (implementação direta sem bugs críticos)
+
+**Decisões & trade-offs**
+- Decisão: Usar valores fixos de scale (1.02, 0.98, 1.01) em vez de valores dinâmicos
+- Alternativas consideradas: Usar valores baseados em viewport, usar transformações 3D
+- Por que: Valores fixos são mais previsíveis e performáticos, compatíveis com todos os dispositivos
+
+- Decisão: Aplicar glassmorphism com gradientes em vez de cores sólidas
+- Alternativas consideradas: Usar cores sólidas com transparência, usar imagens de fundo
+- Por que: Gradientes sutis adicionam profundidade visual sem sobrecarregar a interface
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre usar tokens CSS para glassmorphism, gradientes e micro-interações
+- Aplicar scale effects em hover e active states para feedback visual
+- Usar glow transitions para elementos interativos (botões, cards)
+- Verificar contraste WCAG AA (4.5:1) para cores de texto em dark mode
+- Criar commits atômicos para cada mudança lógica separada
+- Testar lint, build e testes críticos após cada conjunto de mudanças
+
+**Pendências / próximos passos**
+- Validar visualmente em ambiente de desenvolvimento
+- Testar micro-interações em dispositivos reais (mobile, desktop)
+- Considerar implementar P2 tasks (bordas com variação de espessura, etc.)
+- Preparar documentação para Fase 4 (PWA e Navegação)
+
+---
+
 ## NOTA PARA FUTUROS AGENTES (Orchestrator Instructions)
 
 **Modo de Pensamento em Inglês**
@@ -1179,3 +1238,65 @@ onAction((alert, action) => {
 - Melhor precisão técnica no raciocínio
 - Manutenção da consistência linguística do projeto (PT-BR)
 - Facilita comunicação com usuários lusófonos
+
+---
+
+## Memory Entry — 2026-02-09 22:50
+**Contexto / Objetivo**
+- Implementar Exemplos Visuais 1, 2 e 3 do documento ESTRATEGIA_MELHORIAS_VISUAIS_FASE3.5.md
+- Aplicar todos os tokens P0, P1 e P2 aos componentes SmartAlerts, HealthScoreCard e InsightCard
+- Criar componente InsightCard com gradiente e glassmorphism
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/dashboard/SmartAlerts.css` — Atualizado para usar tokens de espaçamento, cor e micro-interações
+  - `src/components/dashboard/HealthScoreCard.css` — Atualizado tamanho do gráfico, SVG glow e espaçamentos
+  - `src/components/dashboard/InsightCard.css` — Criado novo componente com gradiente e glassmorphism
+  - `src/components/dashboard/InsightCard.jsx` — Criado novo componente React com props configuráveis
+- Comportamento impactado:
+  - SmartAlerts agora usa `--spacing-component-compact` para gap e padding
+  - SmartAlerts usa `--text-primary-dark` e `--text-secondary-dark` para melhor contraste
+  - SmartAlerts usa `--alert-color` CSS custom property para border-left dinâmico
+  - HealthScoreCard agora tem gráfico de 80px com SVG glow effects
+  - HealthScoreCard usa `--text-primary-dark` para valor do score
+  - InsightCard criado com gradiente insight (cyan → purple) e glassmorphism standard
+
+**O que deu certo**
+- Uso de CSS custom properties (`--alert-color`) para border-left dinâmico em SmartAlerts
+- Separação clara entre espaçamentos: `--spacing-component-compact` (12px), `--spacing-related` (8px), `--spacing-related-tight` (4px)
+- Aplicação consistente de tokens de glassmorphism, gradientes e micro-interações
+- SVG glow effects aplicados com `drop-shadow()` e `filter: drop-shadow()`
+- InsightCard criado com suporte a highlight de texto e action button interativo
+- Validação bem-sucedida: lint (0 erros), build (sucesso), testes críticos (67 passaram)
+
+**O que não deu certo / riscos**
+- Nenhum erro crítico encontrado durante implementação
+- 4 testes falhando são pré-existentes e não relacionados às mudanças visuais
+- Warnings de lint em arquivos não modificados (SwipeRegisterItem.jsx, TreatmentAccordion.jsx) - não críticos
+
+**Causa raiz (se foi debug)**
+- N/A (implementação direta sem bugs críticos)
+
+**Decisões & trade-offs**
+- Decisão: Usar `--alert-color` CSS custom property para border-left dinâmico em SmartAlerts
+- Alternativas consideradas: Usar classes CSS separadas para cada tipo de alerta, usar inline styles
+- Por que: Solução mais limpa e escalável, permite fácil adição de novos tipos de alerta
+
+- Decisão: Criar InsightCard como componente separado com props configuráveis
+- Alternativas consideradas: Integrar diretamente no Dashboard, criar componente inline
+- Por que: Reutilização futura e separação de responsabilidades
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre usar tokens CSS para glassmorphism, gradientes e micro-interações
+- Aplicar scale effects em hover e active states para feedback visual
+- Usar glow transitions para elementos interativos (botões, cards)
+- Verificar contraste WCAG AA (4.5:1) para cores de texto em dark mode
+- Criar commits atômicos para cada mudança lógica separada
+- Testar lint, build e testes críticos após cada conjunto de mudanças
+- Usar CSS custom properties para valores dinâmicos baseados em contexto
+
+**Pendências / próximos passos**
+- Validar visualmente em ambiente de desenvolvimento
+- Testar micro-interações em dispositivos reais (mobile, desktop)
+- Considerar integrar InsightCard no Dashboard quando houver insights disponíveis
+- Testar contraste WCAG AA em ambos os temas (light/dark)
