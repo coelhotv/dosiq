@@ -226,35 +226,42 @@
 .fab {
   position: fixed;
   bottom: calc(var(--space-20) + var(--space-4));
-  right: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: var(--z-fab);
 }
 
-/* Botão '+ REGISTRO MANUAL' - estilo outline cyan */
+/* Botão '+ REGISTRO MANUAL' - estilo sólido semi-transparente */
 .fab :global(.btn-add-manual) {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);      /* 12px 20px */
-  min-height: 48px;
-  min-width: 180px;
-  background: transparent;
-  border: 2px solid var(--neon-cyan);
+  padding: var(--space-3) var(--space-6);      /* 12px 24px */
+  min-height: 44px;
+  min-width: 200px;
+  background: rgba(6, 182, 212, 0.15);         /* Fundo semi-transparente */
+  border: 1px solid rgba(6, 182, 212, 0.5);    /* Borda sutil */
   border-radius: var(--radius-button);
-  color: var(--neon-cyan);
+  color: #fff;                                  /* Texto branco para contraste */
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: var(--transition-hover);
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(6, 182, 212, 0.15);
+  backdrop-filter: blur(4px);
 }
 
 .fab :global(.btn-add-manual):hover {
-  background: rgba(6, 182, 212, 0.15);
-  box-shadow: 0 0 24px rgba(6, 182, 212, 0.25);
+  background: rgba(6, 182, 212, 0.25);         /* Mais opaco no hover */
+  border-color: rgba(6, 182, 212, 0.8);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.25),
+    0 0 24px rgba(6, 182, 212, 0.25);
   transform: translateY(-2px);
 }
 
