@@ -4,7 +4,7 @@
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: var(--transition-hover);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -16,6 +16,13 @@
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+  box-shadow: var(--glow-focus-primary);
+  transition: var(--transition-focus);
 }
 
 /* Sizes */
@@ -42,12 +49,14 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
-  transform: translateY(-2px);
+  box-shadow: var(--glow-hover-primary);
+  transform: translateY(-2px) scale(var(--scale-hover));
+  transition: var(--transition-hover), var(--transition-glow);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
 }
 
 /* Secondary variant - Neon magenta glow */
@@ -58,21 +67,34 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  box-shadow: 0 0 30px rgba(255, 0, 255, 0.6);
-  transform: translateY(-2px);
+  box-shadow: var(--glow-hover-secondary);
+  transform: translateY(-2px) scale(var(--scale-hover));
+  transition: var(--transition-hover), var(--transition-glow);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
 }
 
 /* Outline variant */
 .btn-outline {
   background: transparent;
   color: var(--accent-primary);
-  border: 2px solid var(--accent-primary);
+  border: var(--border-width-default) solid var(--accent-primary);
 }
 
 .btn-outline:hover:not(:disabled) {
   background: var(--accent-primary);
   color: var(--text-primary);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  box-shadow: var(--glow-hover-primary);
+  transform: translateY(-2px) scale(var(--scale-hover));
+  transition: var(--transition-hover), var(--transition-glow);
+}
+
+.btn-outline:active:not(:disabled) {
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
 }
 
 /* Ghost variant */
@@ -84,6 +106,13 @@
 .btn-ghost:hover:not(:disabled) {
   background: var(--bg-tertiary);
   color: var(--text-primary);
+  transform: translateY(-1px) scale(var(--scale-hover));
+  transition: var(--transition-hover);
+}
+
+.btn-ghost:active:not(:disabled) {
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
 }
 
 /* Danger variant */
@@ -95,5 +124,11 @@
 
 .btn-danger:hover:not(:disabled) {
   box-shadow: 0 0 30px rgba(255, 0, 110, 0.6);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(var(--scale-hover));
+  transition: var(--transition-hover), var(--transition-glow);
+}
+
+.btn-danger:active:not(:disabled) {
+  transform: translateY(0) scale(var(--scale-active));
+  transition: var(--transition-active);
 }

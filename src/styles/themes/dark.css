@@ -113,10 +113,6 @@
    DARK THEME BODY ADJUSTMENTS
    ============================================ */
 
-[data-theme="dark"] body {
-  /* Smooth theme transition is handled in transitions.css */
-}
-
 /* ============================================
    DARK THEME GRADIENT ADJUSTMENTS
    Adjust gradient backgrounds for dark mode visibility
