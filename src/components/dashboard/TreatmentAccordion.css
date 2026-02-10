@@ -1,21 +1,21 @@
 .treatment-accordion {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur-light);
-  border: var(--border-width-default) solid var(--glass-border);
-  border-radius: var(--radius-card-lg);
+  backdrop-filter: blur(4px);                   /* Mais sutil */
+  border: 1px solid var(--glass-border);        /* Simplificado */
+  border-radius: var(--radius-card-md);         /* 12px */
   overflow: hidden;
   transition: var(--transition-hover);
-  margin-bottom: var(--spacing-list-loose);
+  margin-bottom: var(--spacing-list-normal);    /* 8px - mais compacto */
 }
 
 .treatment-accordion:hover {
-  transform: translateY(-2px) scale(var(--scale-hover));
-  box-shadow: var(--glow-hover-secondary), var(--shadow-card-hover);
+  transform: translateY(-1px);                  /* Mais sutil */
+  box-shadow: var(--shadow-card-hover);         /* Sem glow excessivo */
   transition: var(--transition-hover), var(--transition-glow);
 }
 
 .treatment-accordion:active {
-  transform: translateY(-1px) scale(var(--scale-active));
+  transform: translateY(0) scale(0.99);         /* Mais sutil */
   transition: var(--transition-active);
 }
 
@@ -28,7 +28,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-4);
+  padding: var(--space-3);                      /* 12px - era 16px */
   cursor: pointer;
   transition: var(--transition-hover);
 }
@@ -64,27 +64,28 @@
 
 .treatment-accordion__batch-btn {
   background: var(--glass-bg);
-  border: var(--border-width-default) solid var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
   color: var(--neon-cyan);
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-3);       /* 4px 12px */
   border-radius: var(--radius-full);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-weight: 700;                             /* Era 800 */
+  letter-spacing: 0.05em;                       /* Era 0.1em */
   cursor: pointer;
   transition: var(--transition-hover);
+  min-height: 28px;                             /* Touch target */
 }
 
 .treatment-accordion__batch-btn:hover {
   background: var(--neon-cyan);
   color: var(--bg-primary);
-  transform: scale(var(--scale-hover));
+  transform: scale(1.02);                       /* Mais sutil */
   box-shadow: var(--glow-focus);
   transition: var(--transition-hover), var(--transition-glow);
 }
 
 .treatment-accordion__batch-btn:active {
-  transform: scale(var(--scale-active));
+  transform: scale(0.98);                       /* Mais sutil */
   transition: var(--transition-active);
 }
 

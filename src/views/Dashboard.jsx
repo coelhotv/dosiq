@@ -447,13 +447,15 @@ export default function Dashboard({ onNavigate }) {
 
   return (
     <div className={styles.container}>
-      {/* 1. Header & Score Hero */}
+      {/* 1. Header Compact - Greeting + HealthScore Side-by-Side */}
       <header className={styles.header}>
         <div className={styles.welcome}>
           <span className={styles.greeting}>{getGreeting()}</span>
           <div className={styles.userInfo}>
-            <button className={styles.userName} onClick={() => onNavigate?.('settings')} title="Configurações">{userName} <span className={styles.dot}>.</span></button>
-            <ThemeToggle size="sm" position="right" />
+            <button className={styles.userName} onClick={() => onNavigate?.('settings')} title="Configurações">
+              {userName}<span className={styles.dot}>.</span>
+            </button>
+            <ThemeToggle size="sm" position="inline" />
           </div>
         </div>
         <HealthScoreCard
@@ -464,25 +466,25 @@ export default function Dashboard({ onNavigate }) {
           magnitude={magnitude}
           onClick={() => setIsHealthDetailsOpen(true)}
         />
-        
-        {/* Sparkline de Adesão Semanal */}
-        {!isAdherenceLoading && dailyAdherence.length > 0 && (
-          <div className={styles.sparklineContainer}>
-            <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
-          </div>
-        )}
-
-        {/* Insight Card - Dinâmico baseado em dados do usuário */}
-        {!insightLoading && insight && (
-          <InsightCard
-            icon={insight.icon}
-            text={insight.text}
-            highlight={insight.highlight}
-            actionLabel={insight.actionLabel}
-            onAction={insight.onAction}
-          />
-        )}
       </header>
+      
+      {/* Sparkline de Adesão Semanal */}
+      {!isAdherenceLoading && dailyAdherence.length > 0 && (
+        <div className={styles.sparklineContainer}>
+          <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
+        </div>
+      )}
+
+      {/* Insight Card - Dinâmico baseado em dados do usuário */}
+      {!insightLoading && insight && (
+        <InsightCard
+          icon={insight.icon}
+          text={insight.text}
+          highlight={insight.highlight}
+          actionLabel={insight.actionLabel}
+          onAction={insight.onAction}
+        />
+      )}
 
       <HealthScoreDetails
         isOpen={isHealthDetailsOpen}
