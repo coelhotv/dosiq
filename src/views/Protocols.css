@@ -44,12 +44,18 @@
   font-size: var(--font-size-xl);
   font-weight: 600;
   padding-bottom: var(--space-3);
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--glass-border);
+  transition: var(--transition-hover);
+}
+
+.section-title:hover {
+  transform: scale(var(--scale-hover));
 }
 
 .section-title.active {
-  color: var(--accent-success);
-  border-color: var(--accent-success);
+  color: var(--color-success);
+  border-color: var(--color-success);
+  text-shadow: var(--glow-success);
 }
 
 .section-title.inactive {
@@ -58,8 +64,9 @@
 }
 
 .section-title.plans {
-  color: var(--accent-secondary);
-  border-color: var(--accent-secondary);
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  text-shadow: var(--glow-hover-secondary);
 }
 
 .plans-grid {
@@ -70,7 +77,19 @@
 }
 
 .treatment-plan-card {
-  border-left: 4px solid var(--accent-secondary);
+  border-left: 4px solid var(--color-secondary);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: var(--transition-hover);
+}
+
+.treatment-plan-card:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-secondary);
+  border-color: var(--glass-border-heavy);
 }
 
 .plan-header {
@@ -88,8 +107,9 @@
 
 .plan-objective {
   font-size: var(--font-size-xs);
-  color: var(--accent-warning);
+  color: var(--color-warning);
   margin-top: 2px;
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.3));
 }
 
 .plan-desc {
@@ -100,7 +120,9 @@
 }
 
 .plan-protocols-list {
-  background: var(--bg-tertiary);
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border-light);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   display: flex;
@@ -122,14 +144,16 @@
 }
 
 .titration-status-mini.titulando {
-  background: rgba(255, 170, 0, 0.1);
-  color: var(--accent-warning);
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
 }
 
 .titration-status-mini.alvo_atingido,
 .titration-status-mini.estável {
-  background: rgba(0, 255, 136, 0.1);
-  color: var(--accent-success);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 
 .empty-plan {
@@ -153,17 +177,24 @@
 .empty-state {
   text-align: center;
   padding: var(--space-12) var(--space-6);
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
+  transition: var(--transition-hover);
+}
+
+.empty-state:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-secondary);
 }
 
 .empty-icon {
   font-size: 4rem;
   margin-bottom: var(--space-4);
   opacity: 0.5;
+  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.3));
 }
 
 .empty-state h3 {

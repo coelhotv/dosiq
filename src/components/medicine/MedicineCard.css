@@ -4,6 +4,18 @@
   flex-direction: column;
   gap: var(--space-4);
   cursor: default;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: var(--transition-hover);
+}
+
+.medicine-card:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-primary);
+  border-color: var(--glass-border-heavy);
 }
 
 .medicine-header {
@@ -13,7 +25,7 @@
   align-items: center; /* Added */
   gap: var(--space-2);
   padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .medicine-name {
@@ -25,15 +37,16 @@
 
 .medicine-ingredient {
   font-size: var(--font-size-sm);
-  color: var(--accent-primary);
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 /* Dependency indicator styling */
 .dependency-indicator {
-  color: orange;
+  color: var(--color-warning);
   font-size: 1.2em;
   margin-left: var(--space-2); /* Add some spacing */
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
 }
 
 .medicine-details {
@@ -67,6 +80,16 @@
 
 .medicine-actions button {
   flex: 1;
+  transition: var(--transition-hover);
+}
+
+.medicine-actions button:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-primary);
+}
+
+.medicine-actions button:active {
+  transform: scale(var(--scale-active));
 }
 
 @media (max-width: 768px) {

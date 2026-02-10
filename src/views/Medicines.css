@@ -29,22 +29,36 @@
 
 .success-banner {
   padding: var(--space-4);
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid var(--accent-success);
+  background: var(--gradient-success);
+  border: 1px solid var(--color-success);
   border-radius: var(--radius-md);
-  color: var(--accent-success);
+  color: var(--color-success);
   margin-bottom: var(--space-6);
   font-size: var(--font-size-sm);
+  backdrop-filter: var(--glass-blur-light);
+  transition: var(--transition-hover);
+}
+
+.success-banner:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-success);
 }
 
 .error-banner {
   padding: var(--space-4);
-  background: rgba(255, 0, 110, 0.1);
-  border: 1px solid var(--accent-error);
+  background: var(--gradient-alert-critical);
+  border: 1px solid var(--color-error);
   border-radius: var(--radius-md);
-  color: var(--accent-error);
+  color: var(--color-error);
   margin-bottom: var(--space-6);
   font-size: var(--font-size-sm);
+  backdrop-filter: var(--glass-blur-light);
+  transition: var(--transition-hover);
+}
+
+.error-banner:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-critical);
 }
 
 .medicines-grid {
@@ -56,17 +70,24 @@
 .empty-state {
   text-align: center;
   padding: var(--space-12) var(--space-6);
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
+  transition: var(--transition-hover);
+}
+
+.empty-state:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-secondary);
 }
 
 .empty-icon {
   font-size: 4rem;
   margin-bottom: var(--space-4);
   opacity: 0.5;
+  filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.3));
 }
 
 .empty-state h3 {
