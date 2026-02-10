@@ -31,6 +31,7 @@
 | **Wave 1 - Fundacao** | v2.3.0 | Validacao Zod (23 schemas), Testes unitarios (~75% cobertura, 110+ testes), Sessoes bot persistentes (TTL 30min), View stock summary (15ms -> 3ms), Cache SWR (800ms -> 50-100ms), Onboarding wizard (4 passos) | 95% melhoria performance dashboard |
 | **Wave 2 - Inteligencia** | v2.4.0 | Confirmacao skip dose (timeout 30s), Notificacoes ricas bot (MarkdownV2, emojis), Score adesao + widget (7d/30d/90d), Timeline titulacao (compacto/expandido), Widgets engajamento dashboard (QuickActions, StockAlerts) | ~2.800 linhas, ~40 arquivos, 83% concluido |
 | **HCC - Health Command Center** | v2.5.0 | HealthScoreCard (SVG circular, score 0-100, streaks integrados), SwipeRegisterItem (Swipe-to-Take com haptic feedback, Optimistic UI), SmartAlerts (priorizacao dinamica, cores semanticas, CTAs diretos), TreatmentAccordion (agrupamento por protocolo, batch actions), HealthScoreDetails, useDashboardContext (centralizacao estado) | Dashboard proativo mobile-first |
+| **Fase 3.5 - Design Uplift** | v2.6.0 | Glassmorphism hierárquico (light/standard/heavy/hero), Gradientes temáticos (insight, hero, alert-critical, success), Micro-interações (scale, glow, transitions), Tokens CSS completos (colors, borders, shadows, spacing, transitions), InsightCard (11 variantes), useAdherenceTrend, useInsights, adherenceTrendService, insightService | Sistema de design visual moderno e consistente |
 
 ### 1.2 Stack Tecnologico Atual
 
@@ -343,6 +344,7 @@ gantt
     Wave 1 - Fundacao (v2.3.0)           :done, w1, 2026-02-03, 1d
     Wave 2 - Inteligencia (v2.4.0)       :done, w2, 2026-02-04, 1d
     Health Command Center (v2.5.0)        :done, hcc, 2026-02-05, 3d
+    Fase 3.5 - Design Uplift (v2.6.0)    :done, f35, 2026-02-10, 5d
     
     section Fase 3 - Polish UX
     Sparkline Adesao Semanal             :f3_1, 2026-02-09, 2d
