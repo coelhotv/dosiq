@@ -4,7 +4,7 @@
 
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
-![Version](https://img.shields.io/badge/version-2.5.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.6.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
@@ -17,13 +17,24 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ---
 
-## 🎯 Funcionalidades (v2.5.0)
+## 🎯 Funcionalidades (v2.6.0)
 
 ### Core
 - ✅ **Autenticação Segura**: Login e registro via Supabase Auth (Email/Senha).
 - ✅ **Isolamento de Dados**: Sistema multi-usuário com Row-Level Security (RLS) rigoroso.
 - ✅ **Perfil de Usuário**: Gerenciamento de conta, troca de senha e vínculo de Telegram.
 - ✅ **Migração Pilot-to-Auth**: Ferramenta automática para migrar dados da fase piloto para conta autenticada.
+
+### Fase 3.5 - Design Uplift
+- ✅ **Glassmorphism Hierárquico**: 4 níveis de intensidade (light, standard, heavy, hero) com diferentes opacidades e blur
+- ✅ **Gradientes Temáticos**: Gradientes para insight (cyan→purple), hero, alert-critical e success
+- ✅ **Micro-interações**: Scale effects, glow transitions, hover/active states em todos os componentes interativos
+- ✅ **Tokens CSS Completos**: Sistema de tokens para colors, borders, shadows, spacing e transitions
+- ✅ **InsightCard**: Componente com 11 variantes de insight dinâmico (streak_motivation, stock_alert, adherence_drop, etc.)
+- ✅ **useAdherenceTrend**: Hook para cálculo de tendência de adesão
+- ✅ **useInsights**: Hook para geração dinâmica de insights do usuário
+- ✅ **adherenceTrendService**: Serviço para processamento de dados de tendência
+- ✅ **insightService**: Serviço com 11 variantes de insight
 
 ### Onda 1 - Qualidade & Performance
 - ✅ **Validação Zod Runtime**: 23 testes de validação eliminando erros silenciosos.
@@ -295,5 +306,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Versão**: 2.5.0 (Health Command Center)
-**Última atualização**: 05 Fevereiro 2026
+**Versão**: 2.6.0 (Design Uplift - Glassmorphism)
+**Última atualização**: 10 Fevereiro 2026
