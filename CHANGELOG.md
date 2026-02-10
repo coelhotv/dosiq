@@ -7,6 +7,84 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não publicado]
 
+## [2.6.0] - 2026-02-10
+
+### Fase 3.5 - Design Uplift: Glassmorphism e Micro-interações
+
+Esta release introduz um sistema de design visual moderno com glassmorphism hierárquico, gradientes temáticos e micro-interações refinadas, aplicando os conceitos de design em todas as views da aplicação.
+
+### Adicionado
+
+#### Sistema de Design Visual
+- **Glassmorphism Hierárquico**: 4 níveis de intensidade (light, standard, heavy, hero) com diferentes opacidades e blur
+- **Gradientes Temáticos**: Gradientes para insight (cyan→purple), hero, alert-critical e success
+- **Micro-interações**: Scale effects, glow transitions, hover/active states em todos os componentes interativos
+- **Tokens CSS Completos**: Sistema de tokens para colors, borders, shadows, spacing e transitions
+
+#### Novos Componentes
+- **InsightCard**: Componente com 11 variantes de insight dinâmico
+  - streak_motivation - Motivação de sequência
+  - stock_alert - Alerta de estoque baixo
+  - adherence_drop - Queda de adesão
+  - improvement_celebration - Celebração de melhoria
+  - weekly_reflection - Reflexão semanal
+  - medicine_reminder - Lembrete de medicamento
+  - perfect_week - Semana perfeita
+  - recovery_encouragement - Incentivo de recuperação
+  - consistency_reward - Recompensa de consistência
+  - health_tip - Dica de saúde
+  - upcoming_milestone - Milestone próximo
+
+#### Novos Hooks
+- **useAdherenceTrend**: Hook para cálculo de tendência de adesão
+- **useInsights**: Hook para geração dinâmica de insights do usuário
+
+#### Novos Serviços
+- **adherenceTrendService**: Serviço para processamento de dados de tendência
+- **insightService**: Serviço com 11 variantes de insight
+
+### Modificado
+
+#### Views da Aplicação
+- **Medicines View**: Aplicado glassmorphism standard e micro-interações em banners e empty state
+- **Protocols View**: Aplicado glassmorphism standard e gradient hero em treatment plans
+- **Stock View**: Aplicado glassmorphism standard e text-shadow em títulos de seção
+- **History View**: Aplicado glassmorphism standard e glow em stat cards e timeline
+- **Settings View**: Aplicado glassmorphism standard e micro-interações em inputs e botões
+
+#### Componentes
+- **SmartAlerts**: Aplicado glassmorphism standard, micro-interações e border-left dinâmico
+- **HealthScoreCard**: Reduzido para 80px, aplicado SVG glow effects e glassmorphism hero
+- **HealthScoreDetails**: Aplicado glassmorphism hero e gradient hero em overview
+- **Button**: Aplicado scale effects, glow transitions e focus-visible
+- **MedicineCard**: Aplicado glassmorphism standard e hover effects
+- **ProtocolCard**: Aplicado glassmorphism standard e glow em badges e time badges
+- **StockCard**: Aplicado glassmorphism standard e glow em expiration badges
+- **LogEntry**: Aplicado glassmorphism standard e glow em badges
+
+### Corrigido
+- **Smart Alerts Snoozing**: Implementado expiração de 4 horas com estrutura Map-based
+- **Contraste WCAG AA**: Cores de texto otimizadas para dark mode (4.5:1)
+
+### Documentação
+- Atualizado `docs/CSS_ARCHITECTURE.md` para v1.1 com correção de regressões visuais
+- Adicionado `docs/past_deliveries/DESIGN_UPLIFT_FASE_3_5.md` com resumo de implementação
+- Atualizado `plans/roadmap_2026_meus_remedios.md` com Fase 3.5 marcada como entregue
+
+### Métricas da Release
+
+| Métrica | Valor |
+|---------|-------|
+| Versão Anterior | 2.5.0 |
+| Versão Atual | 2.6.0 |
+| Tipo | Minor |
+| Arquivos Modificados | 11 |
+| Linhas Adicionadas | 454 |
+| Linhas Removidas | 161 |
+| Build Time | ~5s |
+| Lint | 0 erros, 2 warnings não críticos |
+| Testes Críticos | 67 passando |
+
 ## [2.5.0] - 2026-02-05
 
 ### Health Command Center (Onda 2.5)
@@ -277,6 +355,7 @@ Nenhuma. Esta é uma release minor (`2.2.1` → `2.3.0`) com adição de funcion
 - Calendário interativo
 - Histórico completo de doses
 
+[2.6.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/seu-usuario/meus-remedios/compare/v2.2.1...v2.3.0
