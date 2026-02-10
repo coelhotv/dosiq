@@ -24,40 +24,40 @@
 }
 
 /* ============================================
-   HEADER SECTION
+   HEADER SECTION - Compact Side-by-Side Layout
    ============================================ */
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-component-normal);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
 }
 
 .welcome {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .greeting {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
   font-weight: var(--font-weight-medium);
-  margin-bottom: var(--space-1);
+  line-height: 1;
 }
 
 .userInfo {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 .userName {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   cursor: pointer;
@@ -65,6 +65,7 @@
   border: none;
   padding: 0;
   font-family: inherit;
+  line-height: 1.2;
 }
 
 .userName:hover {
@@ -73,6 +74,11 @@
 
 .dot {
   color: var(--color-primary);
+}
+
+/* Health Score Card in header - compact */
+.header > div:last-of-type {
+  max-width: 280px;
 }
 
 /* ============================================
