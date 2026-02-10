@@ -57,7 +57,7 @@
 }
 
 .userName {
-  font-size: var(--text-2xl);                   /* 24px - maior para conexão emocional */
+  font-size: var(--text-3xl);                   /* 30px - destaque máximo para conexão emocional */
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   cursor: pointer;
@@ -66,7 +66,7 @@
   padding: 0;
   font-family: inherit;
   line-height: 1.2;
-  letter-spacing: -0.02em;                      /* Ligeiro ajuste para legibilidade */
+  letter-spacing: -0.02em;
 }
 
 .userName:hover {
@@ -77,7 +77,7 @@
   color: var(--color-primary);
 }
 
-/* Manual Register FAB - Floating Action Button */
+/* Manual Register Button - Outline Pill Style */
 .manualRegisterFab {
   position: fixed;
   bottom: calc(60px + var(--space-3)); /* Above bottom nav */
@@ -85,30 +85,31 @@
   transform: translateX(-50%);
   z-index: var(--z-sticky);
   
-  /* Gradient styling like original */
-  background: linear-gradient(90deg, #00E5FF, #AA00FF);
-  color: #000;
+  /* Outline style like original UI */
+  background: transparent;
+  color: var(--neon-cyan);
   font-weight: 600;
-  font-size: 13px;
-  padding: var(--space-2) var(--space-5);
+  font-size: 14px;
+  padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-full);
-  border: none;
+  border: 2px solid var(--neon-cyan);
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
   transition: all var(--transition-fast);
   
   /* Touch target */
-  min-height: 44px;
-  min-width: 160px;
+  min-height: 48px;
+  min-width: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .manualRegisterFab:hover {
+  background: rgba(0, 229, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
   transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.5);
 }
 
 .manualRegisterFab:active {
