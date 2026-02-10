@@ -89,15 +89,25 @@ export default function Dashboard({ onNavigate }) {
   } = useAdherenceTrend()
   
   // Dados de insight
-  const { 
-    insight, 
-    loading: insightLoading 
+  const {
+    insight,
+    loading: insightLoading
   } = useInsights({
     stats,
     dailyAdherence,
     stockSummary,
     logs,
     onNavigate
+  })
+
+  // DEBUG: Log insight data received from hook
+  console.log('[Dashboard] Insight data received:', {
+    insight,
+    insightLoading,
+    stats,
+    dailyAdherence: dailyAdherence?.length || 0,
+    stockSummary: stockSummary?.length || 0,
+    logs: logs?.length || 0
   })
   
   // Estado para controle de animação de confete

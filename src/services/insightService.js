@@ -16,7 +16,7 @@ import { analyticsService } from './analyticsService'
 // Constantes para configuração do serviço
 const STORAGE_KEY = 'mr_insight_history'
 const MAX_HISTORY = 10
-const MIN_DISPLAY_INTERVAL = 24 * 60 * 60 * 1000 // 24 horas
+const MIN_DISPLAY_INTERVAL = 0 // 0 = sem frequency capping, rotate entre insights
 
 // Prioridades de insight (menor número = maior prioridade)
 export const INSIGHT_PRIORITY = {
@@ -250,8 +250,8 @@ function createWeakDayInsight(onNavigate) {
 export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs, onNavigate }) {
   const insights = []
 
-  // Insight: Celebração de Streak
-  if (stats.currentStreak >= 7) {
+  // Insight: Celebração de Streak (threshold reduzido para ser mais inclusivo)
+  if (stats.currentStreak >= 5) {
     insights.push({
       id: 'streak_achievement',
       type: INSIGHT_TYPES.STREAK_CELEBRATION,
@@ -280,6 +280,23 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'perfect_week' })
         shareAchievement()
+      }
+    })
+  }
+
+  // Insight: Boa Semana (adesão >= 80%)
+  if (stats.adherence >= 80 && stats.adherence < 100) {
+    insights.push({
+      id: 'good_week',
+      type: INSIGHT_TYPES.ADHERENCE_POSITIVE,
+      priority: 'low',
+      icon: '👍',
+      text: `Sua adesão esta semana está em ${Math.round(stats.adherence)}%. Muito bem! Continue assim!`,
+      highlight: `${Math.round(stats.adherence)}%`,
+      actionLabel: 'Ver Histórico',
+      onAction: () => {
+        analyticsService.track('insight_action', { insight_id: 'good_week' })
+        onNavigate?.('history')
       }
     })
   }
@@ -338,15 +355,15 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
     })
   }
 
-  // Insight: Adesão Baixa
-  if (stats.adherence < 70 && stats.adherence > 0) {
+  // Insight: Adesão Baixa (threshold ajustado para motivar users entre 50-80%)
+  if (stats.adherence < 80 && stats.adherence > 0) {
     insights.push({
       id: 'low_adherence_week',
       type: INSIGHT_TYPES.ADHERENCE_MOTIVATIONAL,
       priority: 'medium',
       icon: '💪',
-      text: `Sua adesão esta semana está em ${stats.adherence}%. Vamos melhorar juntos!`,
-      highlight: `${stats.adherence}%`,
+      text: `Sua adesão esta semana está em ${Math.round(stats.adherence)}%. Vamos melhorar juntos!`,
+      highlight: `${Math.round(stats.adherence)}%`,
       actionLabel: 'Ver Protocolos',
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'low_adherence_week' })
@@ -391,9 +408,14 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
   }
 
   // Insights Baseados em Analytics (Capítulo 10)
-  insights.push(createBestTimeInsight(onNavigate))
-  insights.push(createFeatureDiscoveryInsight(onNavigate))
-  insights.push(createWeakDayInsight(onNavigate))
+  const bestTimeInsight = createBestTimeInsight(onNavigate)
+  if (bestTimeInsight) insights.push(bestTimeInsight)
+
+  const featureDiscoveryInsight = createFeatureDiscoveryInsight(onNavigate)
+  if (featureDiscoveryInsight) insights.push(featureDiscoveryInsight)
+
+  const weakDayInsight = createWeakDayInsight(onNavigate)
+  if (weakDayInsight) insights.push(weakDayInsight)
 
   return insights.filter(insight => insight !== null)
 }
@@ -451,19 +473,19 @@ function countTodayMissedDoses(logs, dailyAdherence) {
 }
 
 //=============================================================================
-// FUNÇÕES DE SELEÇÃO E FREQUENCY CAPPING
+// FUNÇÕES DE SELEÇÃO DE INSIGHTS
 //=============================================================================
 
 /**
- * Seleciona o melhor insight para exibir com tracking
+ * Seleciona o melhor insight para exibir com rotação entre insights
  * @param {Object} params - Parâmetros de dados do usuário
  * @returns {Object} - Insight selecionado
  */
 export function selectBestInsight(params) {
   const insights = generateAllInsights(params)
 
-  // Filtrar insights aplicáveis e que podem ser mostrados
-  const applicableInsights = insights.filter(insight => 
+  // Filtrar insights aplicáveis (sem frequency capping)
+  const applicableInsights = insights.filter(insight =>
     insight.condition === undefined || insight.condition
   )
 
@@ -471,18 +493,30 @@ export function selectBestInsight(params) {
     return getDefaultInsight(params.onNavigate)
   }
 
+  // Rotacionar entre insights: tentar mostrar um diferente do último
+  const history = getInsightHistory()
+  const lastShownId = history[0]?.id
+
+  // Filtrar para mostrar insight diferente do último
+  const differentInsights = applicableInsights.filter(i => i.id !== lastShownId)
+  const candidates = differentInsights.length > 0 ? differentInsights : applicableInsights
+
   // Ordenar por prioridade
-  const sortedInsights = applicableInsights.sort((a, b) => 
+  const sortedInsights = candidates.sort((a, b) =>
     INSIGHT_PRIORITY[a.priority] - INSIGHT_PRIORITY[b.priority]
   )
 
   const selectedInsight = sortedInsights[0]
 
   // Rastrear insight mostrado
-  analyticsService.track('insight_shown', {
-    insight_id: selectedInsight.id,
-    priority: selectedInsight.priority
-  })
+  try {
+    analyticsService.track('insight_shown', {
+      insight_id: selectedInsight.id,
+      priority: selectedInsight.priority
+    })
+  } catch (err) {
+    console.error('[InsightService] Erro ao rastrear insight:', err)
+  }
 
   // Salvar no histórico
   saveInsightToHistory(selectedInsight.id)
@@ -553,8 +587,9 @@ export function saveInsightToHistory(insightId) {
 
     const trimmedHistory = history.slice(0, MAX_HISTORY)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedHistory))
+    console.log('[InsightService] Insight salvo no histórico:', insightId)
   } catch {
-    // Silenciar erro
+    console.warn('[InsightService] Erro ao salvar histórico de insights')
   }
 }
 
@@ -573,8 +608,7 @@ export function clearInsightHistory() {
  * Compartilha conquista (placeholder para Web Share API)
  */
 function shareAchievement() {
-  // Implementação futura: Web Share API
-  console.log('Compartilhar conquista')
+  console.log('[InsightService] Compartilhar conquista - funcionalidade não implementada')
 }
 
 export default {

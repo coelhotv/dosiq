@@ -24,6 +24,15 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
       try {
         setLoading(true)
 
+        // DEBUG: Log context data being passed
+        console.log('[useInsights] Context data:', {
+          stats,
+          dailyAdherence: dailyAdherence?.length || 0,
+          stockSummary: stockSummary?.length || 0,
+          logs: logs?.length || 0,
+          hasOnNavigate: !!onNavigate
+        })
+
         const selectedInsight = selectBestInsight({
           stats,
           dailyAdherence,
@@ -32,12 +41,15 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
           onNavigate
         })
 
+        // DEBUG: Log selected insight
+        console.log('[useInsights] Selected insight:', selectedInsight)
+
         if (isMounted) {
           setInsight(selectedInsight)
           setError(null)
         }
       } catch (err) {
-        console.error('Erro ao gerar insight:', err)
+        console.error('[useInsights] Erro ao gerar insight:', err)
         if (isMounted) {
           setError(err.message)
           // Fallback para insight padrão

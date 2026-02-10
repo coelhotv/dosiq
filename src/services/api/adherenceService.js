@@ -255,13 +255,21 @@ export const adherenceService = {
 
     if (protocolError) throw protocolError
 
-    // Buscar logs no período
+    // Expandir range de busca para compensar fuso horário
+    // Doses tomadas em GMT-3 podem aparecer no dia seguinte em UTC
+    const adjustedStartDate = new Date(startDate)
+    adjustedStartDate.setHours(adjustedStartDate.getHours() - 24)
+    
+    const adjustedEndDate = new Date(endDate)
+    adjustedEndDate.setHours(adjustedEndDate.getHours() + 24)
+
+    // Buscar logs no período (com range expandido para timezone)
     const { data: logs, error: logError } = await supabase
       .from('medicine_logs')
       .select('taken_at')
       .eq('user_id', userId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
+      .gte('taken_at', adjustedStartDate.toISOString())
+      .lte('taken_at', adjustedEndDate.toISOString())
 
     if (logError) throw logError
 
@@ -271,12 +279,15 @@ export const adherenceService = {
     // Agrupar logs por dia
     const logsByDay = groupLogsByDay(logs)
 
-    // Gerar array com dados para cada dia
+    // Gerar array com dados para cada dia (usando data local)
     const dailyData = []
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(endDate)
       date.setDate(date.getDate() - i)
-      const dateKey = date.toISOString().split('T')[0]
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const dateKey = `${year}-${month}-${day}`
       
       const taken = logsByDay.get(dateKey) || 0
       const adherence = dailyExpected > 0 
@@ -351,7 +362,7 @@ function calculateDailyExpectedDoses(protocols) {
 }
 
 /**
- * Agrupa logs por dia (YYYY-MM-DD)
+ * Agrupa logs por dia usando fuso horário local do usuário
  * @param {Array} logs - Array de logs
  * @returns {Map<string, number>}
  */
@@ -360,7 +371,11 @@ function groupLogsByDay(logs) {
 
   logs.forEach(log => {
     const date = new Date(log.taken_at)
-    const dayKey = date.toISOString().split('T')[0]
+    // Usar data local para evitar problemas de fuso horário
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const dayKey = `${year}-${month}-${day}`
     days.set(dayKey, (days.get(dayKey) || 0) + 1)
   })
 
@@ -387,14 +402,24 @@ function calculateStreaks(logsByDay, dailyExpected) {
   let isCurrent = true
   const minAdherenceRate = 0.8 // 80% de adesão para contar o dia
 
-  // Verificar cada dia
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  // Usar data local para today/yesterday (evita problemas de fuso horário)
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const today = `${year}-${month}-${day}`
+
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayYear = yesterday.getFullYear()
+  const yesterdayMonth = String(yesterday.getMonth() + 1).padStart(2, '0')
+  const yesterdayDay = String(yesterday.getDate()).padStart(2, '0')
+  const yesterdayKey = `${yesterdayYear}-${yesterdayMonth}-${yesterdayDay}`
 
   // Verificar se o streak ainda está ativo
   const lastLogDate = dates[0]
   const hasTakenToday = lastLogDate === today && (logsByDay.get(today) || 0) >= dailyExpected * minAdherenceRate
-  const hasTakenYesterday = lastLogDate === yesterday || (dates.includes(yesterday) && (logsByDay.get(yesterday) || 0) >= dailyExpected * minAdherenceRate)
+  const hasTakenYesterday = lastLogDate === yesterdayKey || (dates.includes(yesterdayKey) && (logsByDay.get(yesterdayKey) || 0) >= dailyExpected * minAdherenceRate)
 
   if (!hasTakenToday && !hasTakenYesterday) {
     isCurrent = false
@@ -403,7 +428,11 @@ function calculateStreaks(logsByDay, dailyExpected) {
   // Calcular streak atual
   let checkDate = new Date()
   while (true) {
-    const dateKey = checkDate.toISOString().split('T')[0]
+    const checkYear = checkDate.getFullYear()
+    const checkMonth = String(checkDate.getMonth() + 1).padStart(2, '0')
+    const checkDay = String(checkDate.getDate()).padStart(2, '0')
+    const dateKey = `${checkYear}-${checkMonth}-${checkDay}`
+    
     const taken = logsByDay.get(dateKey) || 0
     const adherenceRate = dailyExpected > 0 ? taken / dailyExpected : 0
 
