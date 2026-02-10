@@ -540,7 +540,7 @@ export default function Dashboard({ onNavigate }) {
         }}
       />
 
-        </section>\n\n      {/* 3. Tratamento - Parte Superior: Planos Completos */}
+        </section>      {/* 3. Tratamento - Parte Superior: Planos Completos */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>TRATAMENTO</h2>

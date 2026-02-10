@@ -225,7 +225,7 @@ git push origin main
 3. **WCAG**: Sempre verificar contraste em ambos os temas
 4. **Build Output**: Verificar .gitignore antes de commitar (dist/ não versionado)
 5. **Merge Strategy**: --no-ff preserva histórico de commits de feature
-6. **Testes**: Falhas pré-existentes devem ser documentadas отдельно
+6. **Testes**: Falhas pré-existentes devem ser documentadas
 
 ---
 
