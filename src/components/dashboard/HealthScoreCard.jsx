@@ -1,5 +1,6 @@
 import React from 'react';
 import './HealthScoreCard.css';
+import { getTrendEmoji } from '../../services/adherenceTrendService';
 
 /**
  * HealthScoreCard - Visualização compacta e horizontal do score.
@@ -7,10 +8,19 @@ import './HealthScoreCard.css';
  * @param {Object} props
  * @param {number} props.score - Score de 0 a 100
  * @param {number} props.streak - Dias seguidos de adesão
- * @param {string} [props.trend] - 'up' | 'down'
+ * @param {string} [props.trend] - 'up' | 'down' | 'neutral'
  * @param {number} [props.trendPercentage] - Porcentagem de variação (ex: 12)
+ * @param {number} [props.magnitude] - Magnitude para emoji diferenciado (ex: 15)
+ * @param {Function} props.onClick - Callback de clique
  */
-export default function HealthScoreCard({ score = 0, streak = 0, trend = 'up', trendPercentage = 0, onClick }) {
+export default function HealthScoreCard({ 
+  score = 0, 
+  streak = 0, 
+  trend = 'up', 
+  trendPercentage = 0,
+  magnitude = 0,
+  onClick 
+}) {
   // Cálculo do perímetro do círculo para o progresso
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
@@ -35,6 +45,12 @@ export default function HealthScoreCard({ score = 0, streak = 0, trend = 'up', t
 
   const status = getStatus(score);
   const streakEmoji = getStreakEmoji(streak);
+
+  // Obter emoji de tendência baseado na magnitude
+  const trendEmoji = getTrendEmoji(trend, magnitude);
+
+  // Se não tem dados suficientes para tendência, ocultar
+  const showTrend = magnitude > 0 || trend !== 'up';
 
   return (
     <div className={`health-score-card ${onClick ? 'health-score-card--clickable' : ''}`} onClick={onClick}>
@@ -63,9 +79,11 @@ export default function HealthScoreCard({ score = 0, streak = 0, trend = 'up', t
       <div className="health-score-card__info">
         <div className="health-score-card__header">
           <span className="health-score-card__label">Health Score</span>
-          <span className={`health-score-card__trend health-score-card__trend--${trend}`}>
-            {trend === 'up' ? '↑' : '↓'} {trendPercentage}%
-          </span>
+          {showTrend && (
+            <span className={`health-score-card__trend health-score-card__trend--${trend}`}>
+              {trendEmoji} {trendPercentage}%
+            </span>
+          )}
         </div>
         <div className="health-score-card__status">
           <span className="health-score-card__status-label">Status: {status}</span>
