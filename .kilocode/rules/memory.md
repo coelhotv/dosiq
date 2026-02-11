@@ -1358,3 +1358,56 @@ onAction((alert, action) => {
 - [Média] Testar micro-interações em dispositivos reais (mobile, desktop)
 - [Média] Atualizar testes unitários que falham (tradução PT-BR)
 - [Baixa] Limpar eslint-disable não utilizados em SwipeRegisterItem.jsx e TreatmentAccordion.jsx
+
+---
+
+## Memory Entry — 2026-02-10 22:19
+**Contexto / Objetivo**
+- Analisar componentes do app com funcionalidades similares que poderiam ser consolidados
+- Identificar código duplicado para reduzir manutenção e garantir consistência
+- Documentar oportunidades de refatoração com priorização
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `plans/ANALISE_COMPONENTES_DUPLICADOS.md` — Criado documento completo de análise
+- Comportamento impactado:
+  - Identificados 7 grupos de componentes com duplicação/similaridade
+  - Priorização P0 (Alta), P1 (Média), P2 (Baixa) definida
+  - Estimativa de esforço: 22-32 horas para todas as refatorações
+
+**O que deu certo**
+- Análise sistemática de todos os componentes do app
+- Identificação clara de duplicações críticas (MedicineForm, ProtocolForm)
+- Documentação detalhada com exemplos de código e benefícios esperados
+- Priorização baseada em impacto e risco
+- Descoberta de inconsistência crítica de UX no LogForm (Dashboard vs History)
+
+**O que não deu certo / riscos**
+- LogForm tem UX diferente entre Dashboard e History devido às props passadas
+- Dashboard passa treatmentPlans e suporta bulk, History não
+- Isso causa confusão para usuários que esperam funcionalidades consistentes
+
+**Causa raiz (se foi debug)**
+- N/A (análise exploratória, não debug)
+
+**Decisões & trade-offs**
+- Decisão: Priorizar LogForm UX como P0 devido a impacto crítico na experiência do usuário
+- Alternativas consideradas: Manter UX diferente, criar modo explícito no LogForm
+- Por que: Inconsistência de UX é mais grave que duplicação de código
+
+**Regras locais para o futuro (lições acionáveis)**
+- Sempre verificar se componentes de onboarding reutilizam formulários existentes
+- Criar componentes base reutilizáveis para widgets com estrutura similar (AlertList)
+- Usar props opcionais para habilitar features avançadas em vez de criar componentes separados
+- Documentar claramente quando usar componentes similares (AdherenceProgress vs AdherenceWidget)
+- Priorizar refatorações por impacto e risco, não apenas por quantidade de código
+- **CRÍTICO**: Verificar UX consistente quando o mesmo componente é usado em múltiplos lugares
+- Mesmo código compartilhado pode ter UX diferente devido às props passadas
+
+**Pendências / próximos passos**
+- Validar análise com equipe antes de iniciar refatorações
+- Criar specs técnicas detalhadas para cada refatoração P0
+- Implementar padronização de LogForm UX (2-3h estimados)
+- Implementar consolidação de MedicineForm (4-6h estimados)
+- Implementar consolidação de ProtocolForm (6-8h estimados)
+- Criar testes abrangentes antes de cada refatoração
