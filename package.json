@@ -29,7 +29,8 @@
     "validate": "npm run lint && npm run test:critical",
     "validate:quick": "npm run lint && npm run test:changed",
     "test:quick": "vitest run --reporter=dot 2>&1 | head -30",
-    "bot": "cd server && npm run dev"
+    "bot": "cd server && npm run dev",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
@@ -52,7 +53,9 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
+    "lint-staged": "^16.2.7",
     "vite": "^7.2.4",
     "vitest": "^4.0.16"
   },

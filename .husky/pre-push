@@ -1,0 +1,10 @@
+echo "🧪 Executando testes críticos antes do push..."
+
+npm run test:critical
+
+if [ $? -ne 0 ]; then
+  echo "❌ Testes críticos falharam. Push abortado."
+  exit 1
+fi
+
+echo "✅ Testes críticos passaram. Continuando push..."
