@@ -313,12 +313,15 @@ describe('MedicineCard', () => {
 
 | Cenário | Comando | Tempo Estimado | Quando Usar |
 |---------|---------|----------------|-------------|
-| Desenvolvimento rápido | `npm run test:related` | 30s-2min | Alterações locais |
+| Desenvolvimento rápido | `npm run test:critical` | 1-3min | Alterações locais |
 | Pre-commit | `npm run test:changed` | 1-3min | Antes de commit |
 | Pre-push | `npm run test:critical` | 2-3min | Antes de push |
 | CI/CD Completo | `npm run test` | 5-10min | Pull requests |
 | Smoke test | `npm run test:smoke` | 10-30s | Verificação rápida |
 | Validação completa | `npm run validate` | 3-5min | Antes de release |
+
+> **⚠️ NOTA:** O comando `test:related` pode não estar disponível em todas as versões do Vitest.
+> Use `test:critical` ou `test:changed` como alternativas garantidas.
 
 ### Matriz de Decisão
 
@@ -540,19 +543,24 @@ const CACHE_KEYS = {
 
 ---
 
-## 🌐 Português vs Inglês
+## 🌐 Convenções de Idioma
 
-### Regras
+### Para Agentes de IA
 
 | Contexto | Idioma | Exemplo |
 |----------|--------|---------|
+| Raciocínio interno / Pensamento | Inglês | "I need to create a new component" |
 | Código (variáveis, funções) | Inglês | `const medicineName = ''` |
+| Comentários de código | Português | `// Verifica se o medicamento existe` |
+| Documentação | Português | Este arquivo |
 | Mensagens de erro | Português | `'Nome é obrigatório'` |
 | UI (labels, botões) | Português | `Salvar Medicamento` |
-| Documentação | Português | Este arquivo |
 | Commits | Português | `feat: adiciona validação Zod` |
 | Nomes de arquivos | Inglês | `medicineService.js` |
 | Tabelas/Colunas DB | Português | `medicamentos.nome` |
+
+> **Nota para agentes:** Use inglês para todo o processamento lógico e raciocínio técnico interno.
+> Use português exclusivamente para gerar documentação, comentários de código e feedback ao usuário humano.
 
 ---
 
@@ -579,12 +587,35 @@ export default [
   {
     rules: {
       'react-hooks/exhaustive-deps': 'error',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        // Ignora componentes Framer Motion usados como JSX
+        varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])'
+      }],
       'prefer-const': 'error',
       'no-var': 'error'
     }
   }
 ]
+```
+
+### Configuração para Framer Motion
+
+Ao usar Framer Motion, adicione `motion` e `AnimatePresence` ao `varsIgnorePattern`:
+
+```javascript
+// ✅ Correto: ESLint não reportará "motion is defined but never used"
+import { motion, AnimatePresence } from 'framer-motion'
+
+function MyComponent() {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <AnimatePresence>
+        {/* ... */}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
 ```
 
 Execute `npm run lint` antes de commitar.
@@ -1033,6 +1064,66 @@ function MedicineForm({
 />
 ```
 
+### LogForm
+
+**Local:** [`src/components/log/LogForm.jsx`](src/components/log/LogForm.jsx)
+
+```jsx
+<LogForm
+  medicines={array}              // Lista de medicamentos
+  protocols={array}              // Lista de protocolos
+  treatmentPlans={array}         // Planos para bulk registration (opcional)
+  initialData={object}           // Dados pré-preenchidos (opcional)
+  onSubmit={function}            // Callback ao salvar
+  onCancel={function}            // Callback ao cancelar
+/>
+```
+
+**⚠️ Padrão Crítico - Dual Return Types:**
+
+O `LogForm` pode retornar **dois tipos diferentes** dependendo do modo selecionado:
+
+```javascript
+// Quando type === 'protocol' → Retorna objeto único
+const logData = {
+  protocol_id: 'uuid',
+  medicine_id: 'uuid',
+  quantity_taken: 1,
+  taken_at: '2026-02-11T10:00:00'
+}
+
+// Quando type === 'plan' → Retorna array (bulk registration)
+const logData = [
+  { protocol_id: 'uuid1', quantity_taken: 1, ... },
+  { protocol_id: 'uuid2', quantity_taken: 2, ... }
+]
+```
+
+**SEMPRE verificar ambos os casos no handler:**
+
+```jsx
+async function handleLogMedicine(logData) {
+  try {
+    if (Array.isArray(logData)) {
+      // Modo "Plano Completo" - bulk registration
+      await logService.createBulk(logData)
+      showSuccess('Plano completo registrado com sucesso!')
+    } else {
+      // Modo "Único Remédio" - registro individual
+      await logService.create(logData)
+      showSuccess('Dose registrada com sucesso!')
+    }
+  } catch (error) {
+    showError('Erro ao registrar dose')
+  }
+}
+```
+
+**Regra de Ouro:**
+- **Dashboard.jsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
+- **History.jsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
+- Sem `treatmentPlans` → apenas modo "Único Remédio" disponível
+
 ---
 
-*Última atualização: 11/02/2026 - Adicionada seção de Padrões de Componentes Consolidados*
+*Última atualização: 11/02/2026 - Adicionada seção de Padrões de Componentes Consolidados e documentação do LogForm*
