@@ -398,4 +398,73 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
+## Memory Entry — 2026-02-11 21:51
+**Contexto / Objetivo**
+- Implementar Fase 3 da estratégia de otimização de testes: Git Hooks com Husky + lint-staged
+- Automatizar execução de testes nos hooks de git para garantir qualidade antes de commits/pushes
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `.husky/pre-commit` — Hook executado antes de cada commit
+  - `.husky/pre-push` — Hook executado antes de cada push
+  - `.lintstagedrc.js` — Configuração do lint-staged para testes seletivos
+  - `.prettierrc` — Configuração do Prettier
+  - `.prettierignore` — Arquivos ignorados pelo Prettier
+- Arquivos modificados:
+  - `package.json` — Adicionado script `prepare: "husky"` e dependências `husky` e `lint-staged`
+
+**Configuração dos Hooks**
+
+| Hook | Comando | Quando Executa |
+|------|---------|----------------|
+| `pre-commit` | `npx lint-staged` | Antes de cada commit |
+| `pre-push` | `npm run test:critical` | Antes de cada push |
+
+**Comportamento dos Hooks**
+
+**Pre-commit (lint-staged):**
+```bash
+# Executa em arquivos staged:
+- vitest run --changed --passWithNoTests  (testes relacionados)
+- eslint --fix                             (lint em JS/JSX)
+- prettier --write --ignore-unknown        (formatação em CSS/MD)
+```
+
+**Pre-push:**
+```bash
+- Executa: npm run test:critical
+- Se falhar: push é abortado
+- Se passar: push continua normalmente
+```
+
+**O que deu certo**
+- Husky v9+ é mais simples: não requer `.husky/_/husky.sh` no script do hook
+- Script `prepare: "husky"` ativa hooks automaticamente após `npm install`
+- Comando `npx husky run pre-commit` permite testar hooks manualmente
+- Commits semânticos organizados em 4 commits atômicos
+
+**Lições sobre Husky v9+ (Diferenças da v8)**
+
+| Aspecto | Husky v8 | Husky v9+ |
+|---------|----------|-----------|
+| Shell script | `#!/bin/sh` + `.husky/_/husky.sh` | Shell direto, sem sourcing |
+| Inicialização | `npx husky-init` + editar | `npx husky init` (auto-setup) |
+| Script prepare | `husky install` | `husky` (simplificado) |
+| Hooks locais | `chmod +x` necessário | Execução automática |
+
+**Regras locais para o futuro (lições acionáveis)**
+- Se Husky v9+: usar scripts diretos nos hooks, sem `.husky/_/husky.sh`
+- SEMPRE incluir `--passWithNoTests` no lint-staged para evitar falhas em arquivos sem testes
+- Para testar hooks manualmente: `npx husky run pre-commit` ou `npx husky run pre-push`
+- O script `prepare` roda automaticamente após `npm install` — garante que novos devs tenham hooks ativos
+- Pre-push executa `test:critical` — não usar `test:full` para não bloquear pushes longos
+- Se precisar bypassar hooks: `git commit --no-verify` (use com cautela)
+
+**Pendências / próximos passos**
+- Monitorar tempo de execução dos hooks em máquinas de desenvolvedores
+- Considerar adicionar `commit-msg` hook para validação de commits semânticos
+- Documentar em `docs/OTIMIZACAO_TESTES_ESTRATEGIA.md` que Fase 3 está completa
+
+---
+
 *Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*
