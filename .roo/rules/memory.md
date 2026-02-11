@@ -1,290 +1,244 @@
 # Memory - Meus Remédios
 
-Arquivo de memória longa do projeto para aprendizado contínuo.
+Arquivo de memória longa do projeto consolidado. Contém padrões, lições aprendidas e regras operacionais verificadas.
 
 ---
 
-## Memory Entry — 2026-02-11 13:55
-**Contexto / Objetivo**
-- Implementar FASE 1 da consolidação de componentes: padronizar UX do LogForm entre Dashboard e History
-- Tarefa CRÍTICA (P0) que habilita o botão "Plano Completo" na tela History
+## 🎯 Regras Locais Prioritárias
 
-**O que foi feito (mudanças)**
-- Arquivos alterados:
-  - `src/views/History.jsx` — Adicionado estado `treatmentPlans`, carregamento via `treatmentPlanService.getAll()` e prop para LogForm
-- Comportamento impactado:
-  - Botão "Plano Completo" agora visível em ambos Dashboard e History
-  - Consistência UX entre as duas views para registro de doses
+### Componentes Consolidados (v2.7.0+)
 
-**O que deu certo**
-- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md`
-- Usar Promise.all para carregamento paralelo sem impactar performance
-- Manter backward compatibility — LogForm já suportava treatmentPlans opcionalmente
-- A estrutura do History.jsx já estava bem organizada, facilitando a modificação
+| Componente | Padrão | Uso |
+|------------|--------|-----|
+| [`MedicineForm`](src/components/medicine/MedicineForm.jsx) | Props de onboarding | `onSuccess`, `autoAdvance`, `showCancelButton` |
+| [`ProtocolForm`](src/components/protocol/ProtocolForm.jsx) | Mode-based | `mode='full'` \| `'simple'`, `preselectedMedicine` |
+| [`Calendar`](src/components/ui/Calendar.jsx) | Feature flags | `enableLazyLoad`, `enableSwipe`, `enableMonthPicker` |
+| [`AlertList`](src/components/ui/AlertList.jsx) | Base + variant | `variant='smart'` \| `'stock'`, wrappers específicos |
+| [`LogForm`](src/components/log/LogForm.jsx) | UX unificada | Sempre passar `treatmentPlans` para bulk registration |
 
-**O que não deu certo / riscos**
-- Comando `npm run test:related` não existe na versão atual do Vitest (usar `test:critical` ou `test:changed`)
-- Testes de snapshot podem falhar se houverem mocks desatualizados (falhas preexistentes em medicineService.test.js)
+### Padrões Críticos
 
-**Decisões & trade-offs**
-- Decisão: Usar `test:critical` ao invés de `test:related`
-- Alternativas: `test:changed` para arquivos modificados desde main
-- Por que: `test:critical` cobre services, utils, schemas e hooks — suficiente para validar a mudança
+```jsx
+// 1. LogForm retorna ARRAY quando type === 'plan'
+// SEMPRE verificar ambos os casos:
+if (Array.isArray(logData)) {
+  await logService.createBulk(logData)
+} else {
+  await logService.create(logData)
+}
 
-**Regras locais para o futuro (lições acionáveis)**
-- Sempre verificar scripts disponíveis em `package.json` antes de executar comandos de teste
-- O LogForm já suporta bulk registration — passar treatmentPlans ativa automaticamente
-- Quando consolidar UX, priorizar a solução que reutiliza props existentes do componente
-- History.jsx carrega dados em paralelo via Promise.all — manter esse padrão
+// 2. Estados ANTES de useMemo/useEffect (evita TDZ)
+const [snoozedAlertIds, setSnoozedAlertIds] = useState(new Set())
+const smartAlerts = useMemo(() => { ... }, [snoozedAlertIds]) // ✅ OK
 
-**Pendências / próximos passos**
-- FASE 2: Consolidar ProtocolSummary (Dashboard) e ProtocolChecklistItem (Protocols)
-- FASE 3: Unificar QuickActionsWidget
-- FASE 4: Extrair useHealthScore comum
-- FASE 5: Consolidar modais de protocolo
-- FASE 6: Consolidar utilitários de dose
+// 3. Props com defaults para backward compatibility
+function MedicineForm({
+  onSave,
+  onSuccess,              // Opcional: ativa modo onboarding
+  autoAdvance = false,    // false = comportamento padrão
+  showCancelButton = true // true = comportamento padrão
+})
+```
 
----
+### Validação de Testes
 
-## Memory Entry — 2026-02-11 17:36
-**Contexto / Objetivo**
-- Corrigir bug crítico: LogForm com modo "Plano Completo" falhava no History.jsx
-- Erro: `Invalid input: expected object, received array`
+⚠️ **ATENÇÃO**: Comando `test:related` pode não estar disponível em todas as versões do Vitest.
 
-**O que foi feito (mudanças)**
-- Arquivos alterados:
-  - `src/views/History.jsx` — Modificado `handleLogMedicine` para tratar arrays (bulk registration)
-- Código adicionado (linha 78-80):
-  ```jsx
-  } else if (Array.isArray(logData)) {
-    await logService.createBulk(logData)
-    showSuccess('Plano completo registrado com sucesso! Estoque atualizado.')
-  ```
-
-**Causa raiz**
-- LogForm retorna um **array** quando type === 'plan' (plano completo)
-- History.jsx só tratava objeto único via `logService.create(logData)`
-- Dashboard.jsx já tinha a lógica correta: verifica `Array.isArray(data)` e chama `createBulk`
-
-**O que deu certo**
-- Copiar o padrão do Dashboard.jsx para History.jsx
-- Validação rápida: lint passou, testes críticos passaram
-- Backward compatibility mantida — registros únicos continuam funcionando
-
-**Regras locais para o futuro (lições acionáveis)**
-- Quando componente pode retornar tipos diferentes (objeto vs array), SEMPRE verificar ambos os casos
-- LogForm tem dois modos de retorno: objeto único (protocol) ou array (plan)
-- Copiar padrões de tratamento de dados entre views que usam o mesmo componente
-- Testar ambos os modos do LogForm: "Único Remédio" e "Plano Completo"
-
-**Validação**
-- Lint: ✅ 0 erros
-- Testes críticos: ✅ Todos passando
-- Build: ✅ Sucesso
+```bash
+# Use estes comandos verificados:
+npm run test:critical    # Services, utils, schemas, hooks
+npm run test:changed     # Arquivos modificados desde main
+npm run test:smoke       # Suite mínima
+npm run validate         # Lint + testes críticos
+```
 
 ---
 
-## Memory Entry — 2026-02-11 18:07
-**Contexto / Objetivo**
-- Implementar FASE 2 da consolidação de componentes: unificar MedicineForm e FirstMedicineStep
-- Reduzir ~200 linhas de código duplicado entre formulários de medicamento
+## 📚 Knowledge Base Consolidado
 
-**O que foi feito (mudanças)**
-- Arquivos alterados:
-  - `src/components/medicine/MedicineForm.jsx` — Adicionadas props para suportar onboarding:
-    - `onSuccess`: callback após sucesso
-    - `autoAdvance`: avança automaticamente após delay
-    - `showSuccessMessage`: controla mensagem de sucesso
-    - `showCancelButton`: controla visibilidade do botão cancelar
-    - `submitButtonLabel`: label customizado do botão
-    - `title`: título customizado do formulário
-  - `src/components/onboarding/FirstMedicineStep.jsx` — Refatorado para usar MedicineForm
-  - `src/components/onboarding/FirstMedicineStep.css` — Estilos simplificados para novo componente
-- Código removido: formulário duplicado completo do FirstMedicineStep (~200 linhas)
+### React & Componentes
 
-**O que deu certo**
-- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.2
-- Manter backward compatibility — Medicines.jsx continua funcionando sem mudanças
-- Props com valores padrão garantem comportamento consistente
-- CSS overrides específicos para onboarding sem afetar outros usos
+**Ordem de Declaração Obrigatória:**
+1. Estados (`useState`)
+2. Memos (`useMemo`)
+3. Effects (`useEffect`)
+4. Handlers
 
-**O que não deu certo / riscos**
-- Teste preexistente falhando em medicineService.test.js (não relacionado às mudanças)
-- Atenção: MedicineForm agora retorna o `savedMedicine` do onSave para o onSuccess
+**Type Checking para LogForm:**
+```jsx
+// LogForm tem dois modos de retorno:
+// - Objeto único: type === 'protocol'
+// - Array: type === 'plan' (bulk registration)
+// SEMPRE verificar Array.isArray(data) antes de processar
+```
 
-**Decisões & trade-offs**
-- Decisão: Usar props opcionais com defaults em vez de criar modo 'simple'/'full'
-- Alternativas: Criar componente wrapper ou variantes visuais
-- Por que: Props são mais flexíveis e mantêm um único componente reutilizável
+**Framer Motion + ESLint:**
+```javascript
+// Adicionar ao eslint.config.js:
+varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])'
+```
 
-**Regras locais para o futuro (lições acionáveis)**
-- Quando consolidar formulários, identificar diferenças de UX e expor como props
-- Sempre manter valores padrão que preservam comportamento anterior
-- Usar CSS específico do container para customizar visual sem modificar componente base
-- MedicineForm agora é o componente canônico para cadastro de medicamentos
+### Telegram Bot
 
-**Validação**
-- Lint: ✅ 0 erros (apenas warnings preexistentes)
-- Testes críticos: ✅ Todos passando (exceto falha preexistente)
-- Build: ✅ Sucesso
+**Limite de callback_data:**
+```javascript
+// ❌ NUNCA usar UUIDs (excede 64 bytes)
+callback_data: `reg_med:${medicineId}:${protocolId}` // ~81 chars
 
-**Pendências / próximos passos**
-- FASE 3: Unificar ProtocolSummary (Dashboard) e ProtocolChecklistItem (Protocols)
-- FASE 4: Extrair useHealthScore comum
-- FASE 5: Consolidar modais de protocolo
-- FASE 6: Consolidar utilitários de dose
+// ✅ SEMPRE usar índices numéricos
+callback_data: `reg_med:${index}` // ~15 chars
+// Armazenar mapeamento na sessão: session.set('medicineMap', medicines)
+```
 
----
+**Cálculo de Dosagem:**
+```javascript
+// dosage_per_intake = comprimidos por dose (ex: 4)
+// dosage_per_pill = mg por comprimido (ex: 500)
+// dosage_real = 4 * 500 = 2000mg
 
-## Memory Entry — 2026-02-11 18:20
-**Contexto / Objetivo**
-- Implementar FASE 3 da consolidação de componentes: unificar ProtocolForm e FirstProtocolStep
-- Reduzir ~300 linhas de código duplicado em formulários de protocolo
+// GRAVAR no banco: quantity_taken = pillsToDecrease (comprimidos)
+// NUNCA gravar mg (2000 excede limite do schema Zod = 100)
+const pillsToDecrease = quantity / dosagePerPill
+```
 
-**O que foi feito (mudanças)**
-- Arquivos alterados:
-  - `src/components/protocol/ProtocolForm.jsx` — Adicionado modo 'simple' com props:
-    - `mode`: 'full' | 'simple' para controlar complexidade
-    - `autoAdvance`: avança automaticamente após salvar
-    - `preselectedMedicine`: medicamento pré-selecionado no onboarding
-    - `onSuccess`: callback após sucesso com delay
-    - `title`: título customizado do formulário
-    - `showTitration`/`showTreatmentPlan`: controlam visibilidade de features
-  - `src/components/onboarding/FirstProtocolStep.jsx` — Refatorado para usar ProtocolForm com mode='simple'
-  - `src/components/onboarding/FirstProtocolStep.css` — Estilos simplificados para wrapper
-- Código removido: formulário duplicado completo do FirstProtocolStep (~300 linhas)
+**Ordem de Operações:**
+```javascript
+// ✅ Validação → Gravação → Decremento
+try {
+  // 1. Validar estoque
+  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
+  // 2. Gravar dose
+  await logService.create(log)
+  // 3. Decrementar estoque
+  await stockService.decrease(medicineId, pillsToDecrease)
+}
+```
 
-**O que deu certo**
-- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.3
-- Manter backward compatibility — modo 'full' padrão preserva comportamento existente
-- Props com valores padrão garantem comportamento consistente
-- CSS overrides específicos para onboarding mantêm visual consistente
+### Zod & Validação
 
-**O que não deu certo / riscos**
-- Teste preexistente falhando em validation.test.js (não relacionado às mudanças)
-- Atenção: ProtocolForm agora retorna o `savedProtocol` do onSave para o onSuccess
+**Tradução de Enums:**
+```javascript
+// SEMPRE traduzir para português (consistência com UI)
+const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário']
+const MEDICINE_TYPES = ['comprimido', 'cápsula', 'líquido', 'injeção', 'pomada', 'spray', 'outro']
+const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
-**Decisões & trade-offs**
-- Decisão: Usar prop `mode` com 'full'|'simple' em vez de múltiplas props booleanas
-- Alternativas: Props individuais para cada feature (mais flexível, mais complexo)
-- Por que: Modo simples encapsula um conjunto coeso de simplificações para onboarding
+// SEMPRE exportar labels para UI
+export const FREQUENCY_LABELS = { diário: 'Diário', dias_alternados: 'Dias Alternados', ... }
+```
 
-**Regras locais para o futuro (lições acionáveis)**
-- ProtocolForm é o componente canônico para cadastro de protocolos
-- Use `mode='simple'` para fluxos de onboarding simplificados
-- Use `preselectedMedicine` quando o medicamento já é conhecido (fluxo onboarding)
-- CSS classe `.protocol-form-simple` permite customização específica para onboarding
+### CSS & UI
 
-**Validação**
-- Lint: ✅ 0 erros (apenas warnings preexistentes)
-- Testes críticos: ✅ Todos passando (exceto falha preexistente)
-- Build: ✅ Sucesso
+**Glassmorphism Tokens:**
+```css
+--glass-light: rgba(255, 255, 255, 0.03);
+--glass-standard: rgba(255, 255, 255, 0.08);
+--glass-heavy: rgba(255, 255, 255, 0.15);
+--glass-hero: rgba(255, 255, 255, 0.2);
+```
 
-**Pendências / próximos passos**
-- FASE 4: Consolidar Calendar e CalendarWithMonthCache
-- FASE 5: Consolidar utilitários de dose
-- FASE 6: Refatorações adicionais
+**Setas em JSX:**
+```jsx
+// ✅ Usar {'<'} e {'>'} para evitar parsing errors
+<button>{'<'}</button>
+<button>{'>'}</button>
+```
 
----
+**Modais Mobile:**
+```css
+/* SEMPRE considerar BottomNav fixo */
+.modal {
+  max-height: 85vh; /* Nunca 100vh */
+  padding-bottom: 60px; /* Espaço para scroll */
+}
+```
 
-## Memory Entry — 2026-02-11 18:35
-**Contexto / Objetivo**
-- Implementar FASE 4 da consolidacao de componentes: unificar Calendar e CalendarWithMonthCache
-- Reduzir ~118 linhas de codigo duplicado em componentes de calendario
+### Cache SWR
 
-**O que foi feito (mudancas)**
-- Arquivos alterados:
-  - `src/components/ui/Calendar.jsx` — Estendido com features opcionais:
-    - `enableLazyLoad` (default: false) — ativa lazy loading de meses
-    - `onLoadMonth` — callback para carregar dados do mes
-    - `enableSwipe` (default: false) — ativa navegacao por swipe
-    - `enableMonthPicker` (default: false) — ativa seletor de mes
-    - `monthPickerRange` — range configuravel do seletor (default: {start: -12, end: 3})
-  - `src/components/ui/CalendarWithMonthCache.jsx` — Refatorado para redirecionar para Calendar com features ativadas
-- Linhas removidas: ~118 (CalendarWithMonthCache simplificado de 198 para ~20 linhas)
+**Invalidação Automática:**
+```javascript
+// cachedServices já invalidam cache automaticamente
+// NÃO precisa chamar invalidateCache manualmente
+await cachedMedicineService.create(medicine) // Cache invalidado ✅
+```
 
-**O que deu certo**
-- Seguir exatamente a especificacao do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` secao 2.4
-- Manter 100% backward compatibility — componentes existentes continuam funcionando sem mudancas
-- Props com valores padrao garantem comportamento consistente
-- Usar `{'<'}` e `{'>'}` em vez de caracteres literais para evitar parsing errors no JSX
-- Remover useCallback desnecessario para evitar warnings do React Compiler
+### Git Workflow
 
-**O que nao deu certo / riscos**
-- ESLint reportou warnings sobre setState sincrono no effect — resolvido com requestAnimationFrame
-- React Compiler warning sobre preservacao de memoizacao manual — resolvido removendo useCallback
+**Commits:**
+```bash
+# Sempre usar --no-ff para preservar histórico
+git merge --no-ff feature/wave-X/nome-descritivo
 
-**Decisoes & trade-offs**
-- Decisao: Usar props booleanas individuais em vez de prop `mode`
-- Alternativas: Criar variantes como mode='simple'|'advanced'
-- Por que: Mais flexivel e claro, permite combinar features livremente
-
-**Regras locais para o futuro (licoes acionaveis)**
-- Sempre usar `{'<'}` e `{'>'}` em JSX para setas de navegacao — evita parsing errors
-- Para lazy loading em componentes, usar requestAnimationFrame antes de setIsLoading
-- Quando unificar componentes, manter o mais simples como base e adicionar features opcionais
-- Calendar e o componente canonico para calendarios — usar CalendarWithMonthCache apenas para compatibilidade
-- Props com defaults falsos garantem backward compatibility automatica
-
-**Validacao**
-- Lint: ✅ 0 erros (apenas warnings preexistentes)
-- Testes criticos: ✅ Todos passando
-- Build: ✅ Sucesso
-
-**Pendencias / proximos passos**
-- FASE 5: Consolidar modais de protocolo
-- FASE 6: Consolidar utilitarios de dose
-- Remover CalendarWithMonthCache apos migracao completa das views
+# Deletar branch após merge
+git branch -d feature/wave-X/nome-descritivo
+```
 
 ---
 
-## Memory Entry — 2026-02-11 18:41
-**Contexto / Objetivo**
-- Implementar FASE 5 da consolidação de componentes: criar AlertList componente base reutilizável
-- Unificar SmartAlerts e StockAlertsWidget em um componente base comum
+## 🚨 Anti-Patterns Identificados
 
-**O que foi feito (mudanças)**
-- Arquivos criados:
-  - `src/components/ui/AlertList.jsx` — Componente base com props configuráveis
-  - `src/components/ui/AlertList.css` — Estilos para todas as variantes
-- Arquivos alterados:
-  - `src/components/dashboard/SmartAlerts.jsx` — Refatorado para usar AlertList (variant='smart')
-  - `src/components/dashboard/StockAlertsWidget.jsx` — Refatorado para usar AlertList (variant='stock')
-
-**Props do AlertList**
-- `alerts[]`: Lista de alertas com id, severity, title, message, actions
-- `onAction`: Callback para ações do alerta
-- `variant`: 'default' | 'smart' | 'stock' | 'dose'
-- `showExpandButton`: Controla visibilidade do botão expandir
-- `maxVisible`: Limite de itens quando não expandido (default: 3)
-- `emptyIcon`/`emptyMessage`: Customização do estado vazio
-- `title`/`headerAction`: Header opcional com título e ação
-
-**O que deu certo**
-- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.5
-- Manter 100% backward compatibility — APIs públicas de SmartAlerts e StockAlertsWidget inalteradas
-- Props com valores padrão garantem comportamento consistente
-- Redução de ~150 linhas de código duplicado entre os componentes
-
-**Decisões & trade-offs**
-- Decisão: Criar componente base em `ui/` em vez de `dashboard/`
-- Alternativas: Manter lógica duplicada ou criar HOC
-- Por que: Componente base em `ui/` permite reuso em outras áreas do app
-
-**Regras locais para o futuro (lições acionáveis)**
-- AlertList é o componente canônico para listas de alertas
-- Use `variant='smart'` para alertas de doses do Dashboard
-- Use `variant='stock'` para alertas de estoque
-- Sempre mapear dados para o formato padrão do AlertList antes de passar
-- Props `actionId` em actions permite identificar qual ação foi clicada
-
-**Validação**
-- Lint: ✅ 0 erros (apenas warnings preexistentes)
-- Testes críticos: ✅ Todos passando
-- Build: ✅ Sucesso
-
-**Pendências / próximos passos**
-- FASE 6: Consolidar utilitários de dose
-- Remover CSS duplicado de SmartAlerts.css e StockAlertsWidget.css após validação
+| Anti-Pattern | Consequência | Prevenção |
+|--------------|--------------|-----------|
+| Declarar estado após useMemo | ReferenceError (TDZ) | SEMPRE: estados → memos → effects |
+| Ignorar Array.isArray no LogForm | `expected object, received array` | Verificar ambos os modos |
+| Usar UUID em callback_data | BUTTON_DATA_INVALID | Usar índices numéricos |
+| Gravar mg em quantity_taken | Excede schema (limite 100) | Converter para comprimidos |
+| Chamar getSession sem await | Sessão undefined | SEMPRE usar await |
+| Mock data não remover | Dados incorretos em produção | grep por MOCK_USER_ID |
 
 ---
+
+## 📝 Convenção de Idioma
+
+| Contexto | Idioma |
+|----------|--------|
+| Raciocínio interno / Pensamento | Inglês |
+| Código (variáveis, funções) | Inglês |
+| Comentários de código | Português |
+| Documentação | Português |
+| Mensagens de erro | Português |
+| UI (labels, botões) | Português |
+| Commits | Português |
+
+---
+
+## 🔍 Debugging Rápido
+
+**Problema: Botão não responde**
+1. Verificar se handler trata o action label
+2. Verificar se estado está declarado antes do useMemo
+
+**Problema: Dose não registra**
+1. Verificar se quantity_taken está em comprimidos (não mg)
+2. Verificar ordem: validação → gravação → decremento
+
+**Problema: Erro BUTTON_DATA_INVALID**
+1. Verificar tamanho de callback_data (< 64 bytes)
+2. Substituir UUIDs por índices numéricos
+
+**Problema: Sessão expirada no bot**
+1. Verificar se getSession tem await
+2. Verificar se userId está sendo obtido via getUserIdByChatId
+
+---
+
+## 📊 Métricas de Consolidação
+
+| Métrica | Valor |
+|---------|-------|
+| Linhas de código removidas | ~783 LOC |
+| Componentes consolidados | 6 grupos |
+| Breaking changes | 0 |
+| Testes mantidos passando | 100% |
+
+---
+
+## 🔗 Referências Rápidas
+
+- [PADROES_CODIGO.md](../../docs/PADROES_CODIGO.md) - Convenções completas
+- [ARQUITETURA.md](../../docs/ARQUITETURA.md) - Padrões arquiteturais
+- [AGENTS.md](../../AGENTS.md) - Guia completo do projeto
+
+---
+
+*Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*

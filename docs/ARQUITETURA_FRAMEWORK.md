@@ -620,7 +620,92 @@ npm run test:full        # Apenas quando explicitamente necessário
 
 ---
 
-## 6. Anti-Patterns Proibidos
+## 6. Padrões de Integração de Terceiros (Third-Party APIs)
+
+### 6.1 Telegram Bot Integration
+
+**Responsabilidade:** Integration Specialist (IA3)
+
+#### Limites Técnicos da API
+
+| Limite | Valor | Consequência | Solução |
+|--------|-------|--------------|---------|
+| `callback_data` | 64 bytes | `BUTTON_DATA_INVALID` error | Usar índices numéricos |
+| Mensagens/min | 30 | Rate limiting | Implementar throttling |
+| Inline keyboard | 100 botões | Erro de renderização | Paginar quando necessário |
+
+#### Padrão: callback_data com Índices Numéricos
+
+```javascript
+// ❌ NUNCA usar UUIDs (excede 64 bytes)
+callback_data: `reg_med:${medicineId}:${protocolId}`
+// Resultado: ~81 caracteres (excede limite)
+// Erro: 400 Bad Request: BUTTON_DATA_INVALID
+
+// ✅ SEMPRE usar índices numéricos
+callback_data: `reg_med:${index}`
+// Resultado: ~15 caracteres (dentro do limite)
+
+// Armazenar mapeamento na sessão
+session.set('medicineMap', medicines)  // medicine.id por índice
+
+// Recuperar no callback
+const medicines = session.get('medicineMap')
+const medicine = medicines[index]
+```
+
+#### Cálculo de Dosagem no Bot
+
+```javascript
+// dosage_per_intake = comprimidos por dose (ex: 4)
+// dosage_per_pill = mg por comprimido (ex: 500)
+// dosage_real = 4 * 500 = 2000mg
+
+// Buscar campos necessários
+const { data: medicine } = await supabase
+  .from('medicines')
+  .select('dosage_per_pill, dosage_unit')
+  .eq('id', medicineId)
+  .single()
+
+// GRAVAR no banco: quantity_taken = pillsToDecrease (comprimidos)
+// ⚠️ NUNCA gravar mg (2000 excede limite do schema Zod = 100)
+const pillsToDecrease = quantity / medicine.dosage_per_pill
+
+// Ordem de operações: Validação → Gravação → Decremento
+try {
+  // 1. Validar estoque
+  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
+  
+  // 2. Gravar dose
+  await logService.create({
+    protocol_id: protocolId,
+    quantity_taken: pillsToDecrease  // Em comprimidos!
+  })
+  
+  // 3. Decrementar estoque
+  await stockService.decrease(medicineId, pillsToDecrease)
+} catch (error) {
+  logger.error('Erro ao registrar dose:', error)
+}
+```
+
+#### Sessão do Bot
+
+```javascript
+// SEMPRE usar await com getSession (função async)
+const session = await getSession(chatId)
+if (!session) {
+  return bot.sendMessage(chatId, 'Sessão expirada. Use /start')
+}
+
+// SEMPRE obter userId dinamicamente (nunca MOCK_USER_ID)
+const userId = await getUserIdByChatId(chatId)
+```
+
+---
+
+## 7. Anti-Patterns Proibidos
 
 ### ❌ NUNCA commitar em main diretamente
 
@@ -664,7 +749,7 @@ npm run test:full        # Apenas quando explicitamente necessário
 
 ---
 
-## 7. Métricas de Qualidade
+## 8. Métricas de Qualidade
 
 | Métrica | Mínimo | Ideal | Como Medir |
 |---------|--------|-------|------------|
@@ -677,7 +762,7 @@ npm run test:full        # Apenas quando explicitamente necessário
 
 ---
 
-## 8. Referências Cruzadas
+## 9. Referências Cruzadas
 
 ### Documentos Relacionados
 
@@ -698,10 +783,11 @@ npm run test:full        # Apenas quando explicitamente necessário
 
 ---
 
-## 9. Versionamento deste Documento
+## 10. Versionamento deste Documento
 
 | Versão | Data | Autor | Alterações |
 |--------|------|-------|------------|
+| 1.1 | 11/02/2026 | Architect Agent | Adicionada seção 6 (Padrões de Integração de Terceiros) com limites da API Telegram Bot |
 | 1.0 | 04/02/2026 | Architect Agent | Framework inicial consolidando aprendizados da Onda 2 |
 
 ---
