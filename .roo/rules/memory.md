@@ -467,4 +467,82 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
+## Memory Entry — 2026-02-11 21:58
+**Contexto / Objetivo**
+- Implementar Fase 4 da estratégia de otimização de testes: Pipeline CI/CD Estratificado no GitHub Actions
+- Criar workflow com jobs em camadas (smoke → critical → full)
+- Automatizar execução de testes em PRs e pushes para main/develop
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `.github/workflows/test.yml` — Pipeline principal com 5 jobs estratificados
+  - `.github/workflows/cache-cleanup.yml` — Workflow de limpeza semanal de cache
+- Dependência `yaml-lint` adicionada ao projeto (devDependency)
+
+**Estrutura do Pipeline CI/CD**
+
+| Job | Descrição | Timeout | Dependências | Comando Executado |
+|-----|-----------|---------|--------------|-------------------|
+| **lint** | Validação ESLint | 3min | — | `npm run lint` |
+| **smoke** | Smoke tests rápidos | 5min | lint | `npm run test:smoke` |
+| **critical** | Testes unitários críticos | 8min | smoke | `npm run test:critical` |
+| **full** | Suite completa + coverage | 15min | critical | `npm run test:coverage` |
+| **build** | Verificação de build | 5min | smoke | `npm run build` |
+
+**Diagrama de Dependências**
+```
+          lint (3min)
+             ↓
+          smoke (5min)
+         /            \
+   critical (8min)   build (5min)
+        ↓
+   full (15min) + coverage
+```
+
+**Gatilhos (Triggers)**
+- Push para branches: `main`, `develop`
+- Pull Requests para: `main`, `develop`
+
+**Artifacts Gerados**
+- `coverage-report` — Relatório de cobertura de código (retention: 7 dias)
+- `build-dist` — Build de produção para verificação (retention: 1 dia)
+
+**Cache Cleanup**
+- Schedule: Domingos às 00:00 (`0 0 * * 0`)
+- Também pode ser executado manualmente via `workflow_dispatch`
+
+**O que deu certo**
+- Sintaxe YAML validada com `yaml-lint`
+- Estratégia de dependências otimizada: jobs independentes rodam em paralelo
+- Timeouts configurados por job garantem que pipeline não fique preso
+- Node 20 + cache de npm acelera execução
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE validar YAML antes de commit: `npx yaml-lint .github/workflows/*.yml`
+- Jobs são executados em paralelo quando possível para otimizar tempo total
+- O job `full` só executa se `critical` passar — economiza tempo em falhas rápidas
+- `build` pode rodar em paralelo com `critical` pois ambos dependem apenas de `smoke`
+- Artifact retention configurado para não acumular storage desnecessário
+- Para adicionar novos jobs: definir `needs` corretamente para manter estratificação
+
+**Interpretando Resultados no GitHub Actions**
+
+| Badge | Significado | Ação |
+|-------|-------------|------|
+| ✅ All checks passed | Pipeline completo passou | PR pode ser mergeado |
+| ❌ lint failed | Erros de ESLint | Corrigir código localmente |
+| ❌ smoke failed | Smoke tests quebraram | Verificar testes de integridade |
+| ❌ critical failed | Testes críticos falharam | Investigar services/utils/schemas |
+| ❌ full failed | Suite completa falhou | Verificar cobertura/todos os testes |
+| ❌ build failed | Build de produção falhou | Verificar dependências/bundle |
+
+**Pendências / próximos passos**
+- Fase 4 concluída ✅
+- Monitorar tempo médio de execução do pipeline
+- Considerar adicionar job de deploy automático para staging após build
+- Documentar em `docs/OTIMIZACAO_TESTES_ESTRATEGIA.md` que Fase 4 está completa
+
+---
+
 *Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*
