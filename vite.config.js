@@ -12,14 +12,16 @@ export default defineConfig({
     
     // === Otimizações Fase 1: Quick Wins ===
     
-    // Limitar threads para não travar máquina (Vitest 4+ formato)
+    // Pool de threads configurado corretamente (Vitest 4+)
     pool: 'threads',
-    maxThreads: 2,
-    minThreads: 1,
-    useAtomics: true,
-    
-    // Desativar isolamento para mais velocidade (cuidado com estado)
-    isolate: false,
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        maxThreads: 2,         // Limitar para não travar máquina local
+        minThreads: 1,
+        isolate: false,        // Mais rápido, mas cuidado com estado compartilhado
+      },
+    },
     
     // Cache de transformação
     cache: {
@@ -29,6 +31,7 @@ export default defineConfig({
     // Timeouts mais agressivos
     testTimeout: 10000,
     hookTimeout: 10000,
+    teardownTimeout: 5000,
     
     // Reporters otimizados
     reporters: ['verbose'],

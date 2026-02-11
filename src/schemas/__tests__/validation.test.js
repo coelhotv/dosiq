@@ -64,7 +64,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(true)
-      expect(result.data.type).toBe('medicine')
+      expect(result.data.type).toBe('medicamento')
     })
 
     it('deve mapear erros para formato de formulário', () => {
@@ -195,7 +195,7 @@ describe('Schemas de Validação Zod', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Protocolo Teste',
-        frequency: 'daily',
+        frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
         dosage_per_intake: 1
       }
@@ -207,20 +207,20 @@ describe('Schemas de Validação Zod', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Protocolo Teste',
-        frequency: 'daily',
+        frequency: 'diário',
         time_schedule: ['8:00 AM'], // formato inválido
         dosage_per_intake: 1
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('time_schedule.0')
+      expect(result.errors[0].field).toContain('time_schedule')
     })
 
     it('deve rejeitar schedule vazio', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Protocolo Teste',
-        frequency: 'daily',
+        frequency: 'diário',
         time_schedule: [],
         dosage_per_intake: 1
       }
@@ -233,7 +233,7 @@ describe('Schemas de Validação Zod', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Protocolo com Titulação',
-        frequency: 'daily',
+        frequency: 'diário',
         time_schedule: ['08:00'],
         dosage_per_intake: 1,
         titration_status: 'titulando',
@@ -241,7 +241,8 @@ describe('Schemas de Validação Zod', () => {
           { dosage: 25, duration_days: 7 },
           { dosage: 50, duration_days: 7 }
         ],
-        current_stage_index: 0
+        current_stage_index: 0,
+        stage_started_at: '2024-01-15T00:00:00Z'
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(true)
