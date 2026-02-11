@@ -545,4 +545,63 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
+## Memory Entry — 2026-02-11 22:35
+**Contexto / Objetivo**
+- Executar fluxo Git completo para commitar e mergear atualizações da documentação de testes
+- Criar branch, commitar arquivos de docs, validar e mergear na main
+- Documentar status das Fases 1-4 da estratégia de otimização de testes
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `docs/OTIMIZACAO_TESTES_ESTRATEGIA.md` — atualizado com status concluído Fases 1-4
+  - `docs/LINT_COVERAGE.md` — atualizado com 143 testes e pipeline CI/CD completo
+  - `docs/TESTING_GUIDE.md` — **novo arquivo criado** com guia prático de testing
+
+**Fluxo Git Executado**
+```bash
+# Branch e commit
+git checkout -b docs/update-testing-documentation
+git add docs/OTIMIZACAO_TESTES_ESTRATEGIA.md docs/LINT_COVERAGE.md docs/TESTING_GUIDE.md
+git commit -m "docs(testing): atualiza documentação Fases 1-4 da estratégia de otimização"
+
+# Validação
+npm run lint              # ✅ 0 erros
+npm run test:critical     # ✅ 87 testes passando
+npm run build             # ✅ dist gerado
+
+# Merge e cleanup
+git push origin docs/update-testing-documentation
+git checkout main
+git merge --no-ff docs/update-testing-documentation
+git branch -d docs/update-testing-documentation
+git push origin main      # ✅ main atualizada (034565c)
+```
+
+**O que deu certo**
+- Commit semântico seguindo padrão `docs(<scope>): <subject>`
+- Todas as validações passaram sem erros (lint, test:critical, build)
+- Merge realizado com `--no-ff` preservando histórico da branch
+- Branch deletada após merge conforme workflow
+- 3 arquivos documentando 1220 linhas adicionadas
+
+**Documentação Criada/Atualizada**
+| Arquivo | Conteúdo |
+|---------|----------|
+| `TESTING_GUIDE.md` | Guia prático de testing — comandos, workflows, troubleshooting |
+| `OTIMIZACAO_TESTES_ESTRATEGIA.md` | Status Fases 1-4 completas, métricas, decisões |
+| `LINT_COVERAGE.md` | 143 testes, coverage reports, pipeline CI/CD |
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE usar `--no-ff` em merges para preservar histórico de features/docs
+- Executar `npm run validate` (lint + test:critical) antes de todo push
+- Branch naming para docs: `docs/<descrição-clara>`
+- Commits de documentação: usar escopo `docs(testing)` ou `docs(api)` etc.
+- Após merge na main, sempre deletar branch local e remota
+
+**Pendências / próximos passos**
+- Nenhuma — documentação de testing sincronizada com a main ✅
+- Próximos devs podem consultar `docs/TESTING_GUIDE.md` para workflows de teste
+
+---
+
 *Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*
