@@ -545,4 +545,51 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
+## Memory Entry — 2026-02-11 22:08
+**Contexto / Objetivo**
+- Expandir cobertura de testes para os services: protocolService, titrationService e treatmentPlanService
+- Seguir o padrão dos testes existentes (stockService.test.js)
+- Validar pipeline completo antes do merge
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `src/services/api/__tests__/protocolService.test.js` — 16 testes
+  - `src/services/api/__tests__/titrationService.test.js` — 28 testes
+  - `src/services/api/__tests__/treatmentPlanService.test.js` — 12 testes
+- Branch: `test/expand-services-coverage`
+- Commit: `test(services): adicionar testes para protocolService, titrationService e treatmentPlanService`
+
+**Estrutura dos Testes Criados**
+
+| Service | Testes | Cobertura |
+|---------|--------|-----------|
+| protocolService | 16 | getAll, getActive, getById, create, update, delete, getByMedicineId, advanceTitrationStage |
+| titrationService | 28 | calculateTitrationSteps, getDaysUntilNextStep, getStepProgress, formatDose, formatDaysRemaining, isTitrationActive, hasReachedTarget, getTitrationSummary |
+| treatmentPlanService | 12 | getAll, create, update, delete |
+
+**O que deu certo**
+- Padrão de mock do Supabase com factory function funcionou corretamente em todos os testes
+- Testes de titrationService (funções puras) são os mais simples — não requerem mock
+- Schema Zod exige `titration_status` quando há `titration_schedule` — capturado em teste
+- getByMedicineId não usa `.order()` no service — mock precisou ser ajustado
+
+**O que não deu certo / riscos**
+- 2 testes iniciais falharam devido a:
+  1. Protocolo com titulação sem `titration_status` — schema Zod rejeita
+  2. getByMedicineId mockado com `.order()` quando service não usa
+- Correções rápidas aplicadas antes do commit final
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE verificar schema Zod quando criar dados de teste — alguns campos são obrigatórios condicionalmente
+- Protocolos com `titration_schedule` exigem `titration_status: 'titulando' | 'alvo_atingido'`
+- Antes de mockar, verificar a cadeia de métodos real no service (ex: getByMedicineId não tem .order())
+- titrationService contém funções puras — ideal para testes unitários sem mocks
+
+**Pendências / próximos passos**
+- Total de 56 novos testes adicionados ao projeto
+- Suite de testes críticos agora com 143 testes passando
+- PR criado e pronto para merge
+
+---
+
 *Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*
