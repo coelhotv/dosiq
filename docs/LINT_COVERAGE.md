@@ -309,6 +309,23 @@ Configurar VS Code para lint on save:
 
 ---
 
+## Nota sobre Consolidação de Componentes (v2.7.0)
+
+Durante a [Consolidação de Componentes](../past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md), o lint permaneceu limpo em todas as fases:
+
+- ✅ **FASE 1-6**: 0 erros de lint em todas as modificações
+- ✅ **Padrões aplicados**: Componentes consolidados seguem todas as regras ESLint
+- ✅ **Fast Refresh**: Separação de hooks e componentes mantida (OnboardingProvider refatoração)
+- ✅ **Nomenclatura**: PascalCase mantido em todos os componentes consolidados
+
+**Arquivos de componentes consolidados validados:**
+- [`MedicineForm.jsx`](../src/components/medicine/MedicineForm.jsx) - Props de onboarding adicionadas
+- [`ProtocolForm.jsx`](../src/components/protocol/ProtocolForm.jsx) - Modo 'simple'|'full' implementado
+- [`Calendar.jsx`](../src/components/ui/Calendar.jsx) - Features opcionais adicionadas
+- [`AlertList.jsx`](../src/components/ui/AlertList.jsx) - Novo componente base
+
+---
+
 ## Arquivos Modificados
 
 ### Correções de Lint

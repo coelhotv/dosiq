@@ -71,15 +71,24 @@ Responsabilidade: Renderização visual e interação do usuário.
 src/
 ├── views/           # Páginas completas (Dashboard, Auth, etc)
 ├── components/
-│   ├── ui/          # Componentes atômicos (Button, Card, Modal)
-│   ├── medicine/    # Domínio: Medicamentos
-│   ├── protocol/    # Domínio: Protocolos
+│   ├── ui/          # Componentes atômicos (Button, Card, Modal, Calendar, AlertList)
+│   ├── medicine/    # Domínio: Medicamentos (MedicineForm consolidado)
+│   ├── protocol/    # Domínio: Protocolos (ProtocolForm com modo simple/full)
 │   ├── stock/       # Domínio: Estoque
-│   ├── log/         # Domínio: Registros
-│   └── onboarding/  # Wizard de primeiros passos
+│   ├── log/         # Domínio: Registros (LogForm UX unificada)
+│   ├── dashboard/   # Domínio: Dashboard (SmartAlerts, StockAlertsWidget → AlertList)
+│   ├── adherence/   # Domínio: Adesão (AdherenceWidget, AdherenceProgress, StreakBadge)
+│   └── onboarding/  # Wizard de primeiros passos (usa MedicineForm/ProtocolForm consolidados)
 ```
 
 **Padrão:** Componentes funcionais React 19 com hooks.
+
+**Componentes Consolidados (v2.7.0):**
+- [`MedicineForm`](src/components/medicine/MedicineForm.jsx) - Unificado com FirstMedicineStep via props de onboarding
+- [`ProtocolForm`](src/components/protocol/ProtocolForm.jsx) - Modo 'full'|'simple' para formulários completos e onboarding
+- [`Calendar`](src/components/ui/Calendar.jsx) - Features opcionais: lazyLoad, swipe, monthPicker
+- [`AlertList`](src/components/ui/AlertList.jsx) - Componente base para SmartAlerts e StockAlertsWidget
+- [`LogForm`](src/components/log/LogForm.jsx) - UX padronizada entre Dashboard e History
 
 ### 2. **Business Logic Layer** (Services)
 
@@ -202,6 +211,84 @@ CREATE POLICY "Users can only see their own medicines"
 
 ---
 
+## 🏗️ Padrões de Componentes Consolidados
+
+### Pattern: Mode-Based Components
+
+Componentes que suportam múltiplos modos de operação via prop `mode`:
+
+```jsx
+// ProtocolForm suporta 'full' (padrão) e 'simple' (onboarding)
+<ProtocolForm mode="full" medicines={medicines} ... />     // Formulário completo
+<ProtocolForm mode="simple" preselectedMedicine={med} ... /> // Onboarding simplificado
+```
+
+**Benefícios:**
+- Um único componente mantido
+- Comportamento consistente entre modos
+- Backward compatibility via valores padrão
+
+### Pattern: Optional Feature Props
+
+Features avançadas ativadas via props booleanas:
+
+```jsx
+// Calendar com features opcionais
+<Calendar
+  markedDates={dates}
+  enableLazyLoad={true}      // Ativa lazy loading
+  enableSwipe={true}         // Ativa navegação por swipe
+  enableMonthPicker={true}   // Ativa seletor de mês
+  onLoadMonth={fetchData}    // Callback para carregar dados
+/>
+```
+
+**Benefícios:**
+- Componente base leve por padrão
+- Features adicionadas conforme necessidade
+- 100% backward compatible
+
+### Pattern: Base Component with Variants
+
+Componente base genérico com wrappers específicos:
+
+```jsx
+// AlertList - componente base em src/components/ui/
+<AlertList
+  alerts={alerts}
+  variant="smart"      // 'default' | 'smart' | 'stock' | 'dose'
+  onAction={handleAction}
+/>
+
+// SmartAlerts - wrapper específico
+<SmartAlerts alerts={doseAlerts} onAction={...} />
+
+// StockAlertsWidget - wrapper específico
+<StockAlertsWidget lowStockItems={...} onAddStock={...} />
+```
+
+**Benefícios:**
+- Consistência visual garantida
+- Manutenção centralizada no AlertList
+- Fácil adicionar novos tipos de alertas
+
+### Pattern: Onboarding Integration
+
+Formulários que suportam fluxo de onboarding via props:
+
+```jsx
+// MedicineForm com props de onboarding
+<MedicineForm
+  onSave={handleSave}
+  onSuccess={nextStep}           // Callback após sucesso
+  autoAdvance={true}             // Avança automaticamente
+  showCancelButton={false}       // Sem botão cancelar
+  submitButtonLabel="Salvar e Continuar"
+/>
+```
+
+---
+
 ## 🚀 Performance
 
 ### Estratégias
@@ -213,6 +300,17 @@ CREATE POLICY "Users can only see their own medicines"
 | Deduplicação | `pendingRequests` Map | Evita requests duplicados |
 | LRU Eviction | 50 entradas máximo | Previne memory leaks |
 | React 19 | Compiler otimizado | Menos re-renders |
+| Component Consolidation | ~783 LOC removidas | Bundle menor, menos re-renders |
+
+### Métricas de Consolidação de Componentes
+
+| Métrica | Valor |
+|---------|-------|
+| Linhas de código removidas | ~783 LOC |
+| Componentes consolidados | 6 grupos |
+| Redução de bundle | ~5KB |
+| Testes mantidos passando | 100% |
+| Breaking changes | 0 |
 
 ---
 
@@ -229,9 +327,9 @@ Se FALSE → Abre OnboardingWizard
      ↓
 Step 0: WelcomeStep (Boas-vindas)
      ↓
-Step 1: FirstMedicineStep (Cadastro primeiro remédio)
+Step 1: FirstMedicineStep → MedicineForm com props de onboarding
      ↓
-Step 2: FirstProtocolStep (Configura primeira rotina)
+Step 2: FirstProtocolStep → ProtocolForm mode='simple'
      ↓
 Step 3: TelegramIntegrationStep (Bot opcional)
      ↓
@@ -239,6 +337,8 @@ Salva onboarding_completed = true
      ↓
 Dashboard
 ```
+
+**Nota:** FirstMedicineStep e FirstProtocolStep agora reutilizam os componentes consolidados MedicineForm e ProtocolForm com props específicas de onboarding (`autoAdvance`, `onSuccess`, `mode='simple'`).
 
 ---
 
@@ -269,8 +369,10 @@ Cobertura: 110+ testes
 ## 🔗 Relacionamentos
 
 Veja também:
-- [PADROES_CODIGO.md](./PADROES_CODIGO.md) - Convenções detalhadas
+- [PADROES_CODIGO.md](./PADROES_CODIGO.md) - Convenções detalhadas incluindo padrões de componentes consolidados
 - [API_SERVICES.md](./API_SERVICES.md) - Documentação das APIs
 - [DECISOES_TECNICAS.md](./past_deliveries/DECISOES_TECNICAS.md) - Por que escolhemos cada tech
 - [HOOKS.md](./HOOKS.md) - Hooks customizados
 - [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Validação Zod
+- [CONSOLIDACAO_COMPONENTES_FINAL.md](./past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md) - Documentação técnica da consolidação de componentes
+- [CONSOLIDACAO_COMPONENTES_PLANO.md](../plans/CONSOLIDACAO_COMPONENTES_PLANO.md) - Blueprint da consolidação

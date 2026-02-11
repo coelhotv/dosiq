@@ -11,8 +11,6 @@
 Este documento descreve a arquitetura CSS do projeto Meus Remédios, incluindo tokens de design, estrutura de arquivos, convenções de nomenclatura e estratégias de implementação.
 
 ## Estrutura de Arquivos
-
-```
 src/
 ├── styles/
 │   ├── tokens/
@@ -289,6 +287,124 @@ function Dashboard() {
 
 ## Atualizações Recentes
 
+### v1.2 - Component Consolidation Patterns (2026-02-11)
+
+Adicionados padrões CSS para componentes consolidados na Fase 3.6.
+
+#### AlertList Componente Base
+
+Novo componente base em [`src/components/ui/AlertList.jsx`](src/components/ui/AlertList.jsx) com variantes visuais:
+
+```css
+/* Estrutura BEM-like do AlertList */
+.alert-list {
+  /* Container principal */
+}
+
+.alert-list--default { /* Variante padrão */ }
+.alert-list--smart { /* Variante para smart alerts */ }
+.alert-list--stock { /* Variante para stock alerts */ }
+.alert-list--dose { /* Variante para dose alerts */ }
+
+.alert-list__header {
+  /* Header com título e badge de contagem */
+}
+
+.alert-list__title-group {
+  /* Grupo de título + badge */
+}
+
+.alert-list__badge {
+  /* Badge circular com contagem */
+}
+
+.alert-list__content {
+  /* Container dos itens */
+}
+
+.alert-list__item {
+  /* Item individual de alerta */
+}
+
+.alert-list__item--critical { /* Severidade crítica */ }
+.alert-list__item--warning { /* Severidade atenção */ }
+.alert-list__item--info { /* Severidade informativa */ }
+
+.alert-list__item-icon {
+  /* Ícone de severidade (⚠️ ⚡ ℹ️) */
+}
+
+.alert-list__item-content {
+  /* Conteúdo: título + mensagem */
+}
+
+.alert-list__item-actions {
+  /* Container de botões de ação */
+}
+
+.alert-list__btn {
+  /* Botões de ação */
+}
+
+.alert-list__btn--primary { }
+.alert-list__btn--secondary { }
+.alert-list__btn--danger { }
+
+.alert-list__expand-btn {
+  /* Botão expandir/colapsar */
+}
+
+.alert-list--empty {
+  /* Estado vazio customizável */
+}
+
+.alert-list__empty-icon { }
+.alert-list__empty-message { }
+```
+
+**Padrão de Variantes:**
+- Usar modificadores BEM (`--variante`) para estilos específicos
+- Variantes herdam estilos base e adicionam customizações
+- Tokens CSS para consistência entre variantes
+
+#### Componentes Consolidados - CSS Strategy
+
+**MedicineForm & ProtocolForm (Onboarding):**
+```css
+/* Wrapper específico para onboarding */
+.medicine-form-wrapper--onboarding {
+  /* Customizações visuais para fluxo de onboarding */
+}
+
+.protocol-form-simple {
+  /* Modo simple do ProtocolForm */
+}
+```
+
+**Calendar com Features Opcionais:**
+```css
+.calendar-widget {
+  /* Base styles */
+}
+
+.calendar-widget--loading {
+  /* Estado de loading */
+}
+
+.calendar-skeleton {
+  /* Skeleton para lazy loading */
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.calendar-controls {
+  /* Controles de navegação */
+}
+
+.calendar-controls__month-picker {
+  /* Seletor de mês quando enableMonthPicker=true */
+}
+```
+
 ### v1.1 - Correção de Regressões Visuais (2026-02-10)
 
 Após a refatoração da arquitetura CSS, foram identificadas e corrigidas regressões visuais:
@@ -304,7 +420,7 @@ Após a refatoração da arquitetura CSS, foram identificadas e corrigidas regre
 #### Padrões Estabelecidos
 - Glassmorphism hierárquico: hero (primary) → standard (secondary) → light (tertiary)
 - Tokens de espaçamento: 8px base grid (--space-1 a --space-20)
-- CSS Modules para componentes complexos (Dashboard, SmartAlerts)
+- CSS Modules para componentes complexos (Dashboard, SmartAlerts, AlertList)
 - CSS global para componentes simples (Button, Modal)
 
 ## Migration Guide
@@ -383,4 +499,4 @@ npm run build
 
 ---
 
-*Documento atualizado em 2026-02-10*
+*Documento atualizado em 2026-02-11 - Adicionada seção de Component Consolidation Patterns*

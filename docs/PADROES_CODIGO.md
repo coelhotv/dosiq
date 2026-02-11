@@ -742,4 +742,297 @@ vercel env pull TELEGRAM_BOT_TOKEN
 
 ---
 
-*Última atualização: 07/02/2026 - Adicionada seção de Vercel CLI*
+## 🧩 Padrões de Componentes Consolidados
+
+### 1. Pattern: Mode-Based Components
+
+Use a prop `mode` para componentes que precisam de comportamentos diferentes:
+
+```jsx
+// ✅ BOM: ProtocolForm com mode
+<ProtocolForm
+  mode="full"                    // Modo padrão - todas as features
+  medicines={medicines}
+  treatmentPlans={treatmentPlans}
+  onSave={handleSave}
+/>
+
+<ProtocolForm
+  mode="simple"                  // Modo onboarding - simplificado
+  preselectedMedicine={medicine} // Medicamento já selecionado
+  onSave={handleSave}
+  onSuccess={nextStep}           // Callback após sucesso
+  autoAdvance={true}             // Avança automaticamente
+/>
+```
+
+**Benefícios:**
+- Um único componente mantido
+- Comportamento consistente entre modos
+- Backward compatibility via valores padrão (`mode='full'`)
+
+### 2. Pattern: Optional Feature Props
+
+Features avançadas ativadas via props booleanas com defaults `false`:
+
+```jsx
+// ✅ BOM: Calendar com features opcionais
+<Calendar
+  markedDates={dates}
+  selectedDate={selected}
+  onDayClick={handleDayClick}
+  // Features opcionais (default: false)
+  enableLazyLoad={true}        // Ativa lazy loading de meses
+  onLoadMonth={fetchData}      // Callback para carregar dados
+  enableSwipe={true}           // Ativa navegação por swipe
+  enableMonthPicker={true}     // Ativa seletor de mês
+  monthPickerRange={{ start: -12, end: 3 }}
+/>
+```
+
+**Regras:**
+- Props de feature devem ter default `false` para backward compatibility
+- Nomear com prefixo `enable` para clareza
+- Combinar features livremente
+
+### 3. Pattern: Base Component with Variants
+
+Crie um componente base genérico em `ui/` com wrappers específicos por domínio:
+
+```jsx
+// ✅ BOM: AlertList como componente base
+// src/components/ui/AlertList.jsx
+export default function AlertList({
+  alerts = [],
+  onAction,
+  variant = 'default',    // 'default' | 'smart' | 'stock' | 'dose'
+  showExpandButton = true,
+  maxVisible = 3,
+  emptyIcon = '✅',
+  emptyMessage = 'Nenhum alerta',
+  title,
+  headerAction
+})
+
+// Wrapper específico para SmartAlerts
+// src/components/dashboard/SmartAlerts.jsx
+export default function SmartAlerts({ alerts, onAction }) {
+  return (
+    <AlertList
+      alerts={normalizeSmartAlerts(alerts)}
+      onAction={onAction}
+      variant="smart"
+      showExpandButton={false}
+    />
+  )
+}
+
+// Wrapper específico para StockAlertsWidget
+// src/components/dashboard/StockAlertsWidget.jsx
+export default function StockAlertsWidget({ lowStockItems, ... }) {
+  return (
+    <AlertList
+      alerts={convertStockToAlerts(lowStockItems)}
+      variant="stock"
+      title="Alertas de Estoque"
+      emptyIcon="📦"
+    />
+  )
+}
+```
+
+**Benefícios:**
+- Consistência visual garantida
+- Manutenção centralizada
+- Fácil adicionar novos tipos de alertas
+
+### 4. Pattern: Onboarding Integration
+
+Formulários que suportam fluxo de onboarding via props:
+
+```jsx
+// ✅ BOM: MedicineForm com props de onboarding
+<MedicineForm
+  // Props padrão
+  medicine={existingMedicine}      // Dados para edição (opcional)
+  onSave={handleSave}              // Callback ao salvar
+  onCancel={handleCancel}          // Callback ao cancelar
+  
+  // Props de onboarding (opcionais)
+  onSuccess={nextStep}             // Callback após sucesso
+  autoAdvance={true}               // Chama onSuccess após delay
+  showSuccessMessage={true}        // Mostra mensagem de sucesso
+  showCancelButton={false}         // Oculta botão cancelar
+  submitButtonLabel="Salvar e Continuar"
+  title="Cadastre seu primeiro medicamento"
+/>
+```
+
+**Props de Onboarding:**
+
+| Prop | Tipo | Default | Descrição |
+|------|------|---------|-----------|
+| `onSuccess` | function | undefined | Callback após salvar com sucesso |
+| `autoAdvance` | boolean | false | Chama onSuccess automaticamente |
+| `showSuccessMessage` | boolean | true | Mostra mensagem de sucesso |
+| `showCancelButton` | boolean | true | Mostra botão cancelar |
+| `submitButtonLabel` | string | 'Salvar'/'Atualizar' | Label do botão submit |
+| `title` | string | undefined | Título customizado do formulário |
+
+### 5. Pattern: Component Consolidation Strategy
+
+Estratégia para consolidar componentes duplicados:
+
+```
+1. Identificar diferenças entre componentes
+2. Extrair diferenças como props opcionais
+3. Manter valores padrão para backward compatibility
+4. Refatorar consumidores para usar novo componente
+5. Validar todos os casos de uso
+6. Remover componentes antigos (após validação)
+```
+
+**Exemplo - Consolidando MedicineForm:**
+
+```jsx
+// ANTES: Dois componentes separados
+// MedicineForm.jsx - uso geral
+// FirstMedicineStep.jsx - onboarding específico (~200 linhas duplicadas)
+
+// DEPOIS: Um componente com props de onboarding
+// MedicineForm.jsx - suporta ambos os casos
+<MedicineForm
+  onSave={handleSave}
+  onSuccess={nextStep}      // Opcional: ativa modo onboarding
+  autoAdvance={true}        // Opcional: comportamento onboarding
+/>
+
+// FirstMedicineStep.jsx - wrapper simplificado
+export default function FirstMedicineStep() {
+  const { nextStep, updateOnboardingData } = useOnboarding()
+  return (
+    <MedicineForm
+      onSave={async (data) => {
+        const saved = await cachedMedicineService.create(data)
+        updateOnboardingData('medicine', saved)
+        return saved
+      }}
+      onSuccess={nextStep}
+      autoAdvance={true}
+      showCancelButton={false}
+    />
+  )
+}
+```
+
+### 6. Pattern: 100% Backward Compatibility
+
+Todas as mudanças devem manter compatibilidade:
+
+```jsx
+// ✅ BOM: Valores padrão mantêm comportamento anterior
+function MedicineForm({
+  medicine,
+  onSave,
+  onCancel,
+  // Novas props com valores padrão que preservam comportamento
+  onSuccess,
+  autoAdvance = false,           // false = comportamento anterior
+  showSuccessMessage = true,     // true = comportamento anterior
+  showCancelButton = true,       // true = comportamento anterior
+  submitButtonLabel = medicine ? 'Atualizar' : 'Salvar',
+  title
+}) {
+  // ...
+}
+```
+
+**Checklist de Backward Compatibility:**
+- [ ] Props novas têm valores padrão apropriados
+- [ ] APIs públicas não mudam (ou mudam de forma compatível)
+- [ ] Componentes existentes funcionam sem modificação
+- [ ] Testes existentes passam sem modificação
+- [ ] Lint passa sem erros
+
+---
+
+## 📚 Documentação dos Componentes Consolidados
+
+### MedicineForm
+
+**Local:** [`src/components/medicine/MedicineForm.jsx`](src/components/medicine/MedicineForm.jsx)
+
+```jsx
+<MedicineForm
+  medicine={object}              // Dados para edição (opcional)
+  onSave={function}              // Callback ao salvar
+  onCancel={function}            // Callback ao cancelar
+  onSuccess={function}           // Callback após sucesso (onboarding)
+  autoAdvance={boolean}          // Avança automaticamente
+  showSuccessMessage={boolean}   // Mostra mensagem de sucesso
+  showCancelButton={boolean}     // Mostra botão cancelar
+  submitButtonLabel={string}     // Label do botão submit
+  title={string}                 // Título do formulário
+/>
+```
+
+### ProtocolForm
+
+**Local:** [`src/components/protocol/ProtocolForm.jsx`](src/components/protocol/ProtocolForm.jsx)
+
+```jsx
+<ProtocolForm
+  medicines={array}              // Lista de medicamentos
+  treatmentPlans={array}         // Lista de planos (opcional)
+  protocol={object}              // Dados para edição (opcional)
+  initialValues={object}         // Valores iniciais (opcional)
+  onSave={function}              // Callback ao salvar
+  onCancel={function}            // Callback ao cancelar
+  onSuccess={function}           // Callback após sucesso
+  mode={'full'|'simple'}         // Modo de exibição
+  autoAdvance={boolean}          // Avança automaticamente
+  preselectedMedicine={object}   // Medicamento pré-selecionado
+  showTitration={boolean}        // Mostra wizard de titulação
+  showTreatmentPlan={boolean}    // Mostra seleção de plano
+  title={string}                 // Título customizado
+/>
+```
+
+### Calendar
+
+**Local:** [`src/components/ui/Calendar.jsx`](src/components/ui/Calendar.jsx)
+
+```jsx
+<Calendar
+  markedDates={array}            // Datas marcadas
+  selectedDate={Date}            // Data selecionada
+  onDayClick={function}          // Callback ao clicar em dia
+  enableLazyLoad={boolean}       // Ativa lazy loading
+  onLoadMonth={function}         // Callback para carregar mês
+  enableSwipe={boolean}          // Ativa navegação por swipe
+  enableMonthPicker={boolean}    // Ativa seletor de mês
+  monthPickerRange={object}      // Range do seletor {start, end}
+/>
+```
+
+### AlertList
+
+**Local:** [`src/components/ui/AlertList.jsx`](src/components/ui/AlertList.jsx)
+
+```jsx
+<AlertList
+  alerts={array}                 // Lista de alertas
+  onAction={function}            // Callback para ações
+  variant={string}               // 'default'|'smart'|'stock'|'dose'
+  showExpandButton={boolean}     // Mostra botão expandir
+  maxVisible={number}            // Máximo de itens visíveis
+  emptyIcon={string}             // Ícone do estado vazio
+  emptyMessage={string}          // Mensagem do estado vazio
+  title={string}                 // Título do widget
+  headerAction={node}            // Ação adicional no header
+/>
+```
+
+---
+
+*Última atualização: 11/02/2026 - Adicionada seção de Padrões de Componentes Consolidados*
