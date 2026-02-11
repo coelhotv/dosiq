@@ -239,6 +239,163 @@ git branch -d feature/wave-X/nome-descritivo
 - [ARQUITETURA.md](../../docs/ARQUITETURA.md) - Padrões arquiteturais
 - [AGENTS.md](../../AGENTS.md) - Guia completo do projeto
 
+## Memory Entry — 2026-02-11 17:51
+**Contexto / Objetivo**
+- Corrigir warnings de lint e erros nos testes de schemas de validação
+- Remover diretivas `eslint-disable` não utilizadas
+- Alinhar testes com schemas em português
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/dashboard/SwipeRegisterItem.jsx` — removido `eslint-disable-line no-unused-vars`
+  - `src/components/dashboard/TreatmentAccordion.jsx` — removido `eslint-disable-line no-unused-vars`
+  - `src/schemas/__tests__/validation.test.js` — corrigidos 5 testes
+
+**O que deu certo**
+- Remoção direta das diretivas ESLint não utilizadas (motion é usado via JSX, não precisa de eslint-disable)
+- Valor padrão de tipo: `'medicine'` → `'medicamento'` (em português)
+- Frequências: `'daily'` → `'diário'` (valores do schema em português)
+- Adição do campo obrigatório `stage_started_at` para testes de titulação
+- Flexibilização da verificação de erro de horário (field contém 'time_schedule')
+
+**O que não deu certo / riscos**
+- Nenhum - todas as correções passaram lint e testes
+
+**Regras locais para o futuro (lições acionáveis)**
+- Se o ESLint reportar "Unused eslint-disable directive", remover a diretiva - o código já está em conformidade
+- Os schemas Zod usam valores em português: 'medicamento', 'diário', 'estável', 'titulando'
+- Protocolos com titulação exigem `stage_started_at` (campo obrigatório quando há titration_schedule)
+- Sempre executar `npm run lint` e `npm run test` após modificar testes
+
+**Pendências / próximos passos**
+- Nenhuma - tarefa concluída
+
+---
+
+## Memory Entry — 2026-02-11 18:09
+**Contexto / Objetivo**
+- Corrigir suite de testes: corrigir vitest.smoke.config.js, remover arquivo duplicado e criar 5 smoke tests
+- Garantir que todos os smoke tests passem e lint esteja limpo
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `vitest.smoke.config.js` — corrigido import: `from 'vite'` → `from 'vitest/config'`
+  - `src/components/log/LogForm.test.jsx` — removido (duplicado)
+  - `src/schemas/__tests__/medicine.smoke.test.js` — criado
+  - `src/lib/__tests__/queryCache.smoke.test.js` — criado
+  - `src/services/api/__tests__/stock.smoke.test.js` — criado
+  - `src/hooks/__tests__/useCachedQuery.smoke.test.jsx` — criado
+  - `src/utils/__tests__/adherence.smoke.test.js` — criado
+
+**O que deu certo**
+- Import do Vitest corrigido permite execução da configuração smoke
+- Mock factory pattern (`vi.mock` com função factory) funciona corretamente quando definido antes do import do módulo a ser mockado
+- Smoke tests simples são rápidos de implementar e cobrem caminhos críticos (schema, cache, service, hook, logic)
+- Remoção via `git rm` foi a forma correta de eliminar arquivo duplicado
+
+**O que não deu certo / riscos**
+- `calculateAdherenceRate` não existe em `adherenceLogic.js` — substituído por `calculateAdherenceStats` (função real existente)
+- Mock de Supabase precisa de cuidado com hoisting — vi.mock factory não pode referenciar variáveis externas
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE verificar funções exportadas antes de escrever testes — não assumir nomes
+- Mock Vitest: usar factory function dentro de `vi.mock()` para evitar problemas de hoisting
+- Padrão de mock de Supabase: criar objeto mock completo com chain methods dentro da factory
+- Smoke tests devem ser mínimos e focados em verificar se o módulo carrega e responde corretamente
+
+**Pendências / próximos passos**
+- Nenhuma — tarefa concluída
+- Opção `--include` não existe no Vitest CLI; usar config file para definir patterns de inclusão
+
+---
+
+## Memory Entry — 2026-02-11 21:18
+**Contexto / Objetivo**
+- Executar validação final completa do pipeline (lint + testes críticos + smoke tests)
+- Confirmar que todas as correções e otimizações estão funcionando
+- Garantir 100% de sucesso em todos os comandos de validação
+
+**O que foi feito (mudanças)**
+- Arquivos modificados:
+  - `src/services/api/__tests__/stock.smoke.test.js` — corrigido mock do Supabase para teste de estoque
+  - `package.json` — adicionada exclusão de smoke tests ao comando `test:critical`
+
+**O que deu certo**
+- Validação completa executada com sucesso em todas as etapas
+- Lint: 0 erros, 0 warnings
+- Testes críticos: 87 testes passando (100%)
+- Smoke tests: 5 arquivos, 7 testes passando (100%)
+- Build de produção: sucesso (dist/ gerado)
+- Ajuste no `test:critical` para excluir smoke tests resolveu conflito de mocks
+
+**O que não deu certo / riscos**
+- Nenhum — todas as validações passaram
+- Observação: Smoke tests não devem ser executados junto com testes regulares devido a conflitos de mock
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE excluir `**/*.smoke.test.{js,jsx}` de comandos de teste que incluem services (conflito de mocks)
+- Smoke tests devem ser executados isoladamente via config dedicada (`vitest.smoke.config.js`)
+- Mock factory de Supabase precisa ser declarado antes de qualquer import do módulo mockado
+- Executar `npm run validate` antes de qualquer push para garantir pipeline limpo
+
+**Pendências / próximos passos**
+- Pipeline pronto para merge ✅
+- Branch pode ser deletada após merge com `--no-ff`
+
+---
+
+## Memory Entry — 2026-02-11 21:44
+**Contexto / Objetivo**
+- Implementar Fase 2 da estratégia de otimização de testes: Test Selection Inteligente
+- Adicionar scripts de teste otimizados e configurações adicionais
+- Criar script inteligente para seleção de testes baseado em git diff
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `vitest.light.config.js` — Configuração leve para testes rápidos (exclui componentes, usa forks)
+  - `scripts/test-smart.js` — Script Node.js para seleção inteligente de testes baseado em git diff
+- Arquivos modificados:
+  - `package.json` — Adicionados 5 novos scripts de teste otimizados
+
+**Comandos novos disponíveis**
+| Comando | Descrição | Uso |
+|---------|-----------|-----|
+| `npm run test:git` | Testes em arquivos modificados desde main | CI/CD rápido |
+| `npm run test:affected` | Alias para test:changed | Compatibilidade |
+| `npm run test:light` | Configuração leve (exclui componentes) | Desenvolvimento rápido |
+| `npm run test:smart` | Script inteligente baseado em diff | Pre-push inteligente |
+| `npm run test:quick` | Saída resumida (30 primeiras linhas) | Verificação rápida |
+| `npm run validate:quick` | Lint + testes relacionados | Pre-commit |
+
+**O que deu certo**
+- Ajuste rápido da API de pool do Vitest (v4 usa `pool: 'forks'` e `maxWorkers`, não `poolOptions`)
+- Descoberta que `--related` não existe nesta versão do Vitest — substituído por `--changed=main`
+- Script test-smart.js detecta automaticamente tipo de mudança (config, service, util) e executa suite apropriada
+- Todos os comandos passaram em lint, testes críticos e build
+
+**O que não deu certo / riscos**
+- `test:related` original usava `--related` que não existe no Vitest 4.0.18
+- Solução: unificar todos os comandos relacionados para usar `--changed=main`
+- `test:light` inicialmente usava API depreciada `poolOptions.threads` — corrigido para `pool: 'forks'`
+
+**Decisões & trade-offs**
+- Decisão: Não usar `--related` (inexistente), usar `--changed=main` como fallback
+- Trade-off: `test:light` exclui todos os testes de componentes para velocidade, mas cobre menos casos
+- Decisão: Script `test-smart.js` usa patterns de regex simples para detectar tipo de arquivo
+
+**Regras locais para o futuro (lições acionáveis)**
+- Se o Vitest reportar "Unknown option `--related`", usar `--changed=main` como alternativa
+- Vitest 4: usar `pool: 'forks'` e `maxWorkers` ao invés de `poolOptions.threads`
+- SEMPRE executar `npm run lint` após criar scripts Node.js (verificar imports não utilizados)
+- Script `test-smart.js` detecta: config → full suite, services/schemas/hooks → critical, utils/lib → unit, outros → changed
+- Para testes rápidos em desenvolvimento: `npm run test:light` (exclui componentes)
+- Para validação antes de commit: `npm run validate:quick` (lint + changed)
+
+**Pendências / próximos passos**
+- Fase 2 concluída ✅
+- Possível Fase 3: Parallel Execution e Shard Distribution para CI
+- Documentar comandos no README do projeto
+
 ---
 
 *Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*

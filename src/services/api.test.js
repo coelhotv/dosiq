@@ -118,7 +118,7 @@ describe('medicineService', () => {
         user_id: 'test-user-id',
         active_ingredient: null,
         laboratory: null,
-        type: 'medicine'
+        type: 'medicamento'
       }])
       expect(result).toEqual(createdMedicine)
     })

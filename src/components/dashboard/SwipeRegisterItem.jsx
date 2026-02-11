@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import PulseEffect from '../animations/PulseEffect';
 import { analyticsService } from '../../services/analyticsService';
 import './SwipeRegisterItem.css';
