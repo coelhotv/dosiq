@@ -135,3 +135,54 @@ Arquivo de memória longa do projeto para aprendizado contínuo.
 - FASE 6: Consolidar utilitários de dose
 
 ---
+
+## Memory Entry — 2026-02-11 18:20
+**Contexto / Objetivo**
+- Implementar FASE 3 da consolidação de componentes: unificar ProtocolForm e FirstProtocolStep
+- Reduzir ~300 linhas de código duplicado em formulários de protocolo
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/protocol/ProtocolForm.jsx` — Adicionado modo 'simple' com props:
+    - `mode`: 'full' | 'simple' para controlar complexidade
+    - `autoAdvance`: avança automaticamente após salvar
+    - `preselectedMedicine`: medicamento pré-selecionado no onboarding
+    - `onSuccess`: callback após sucesso com delay
+    - `title`: título customizado do formulário
+    - `showTitration`/`showTreatmentPlan`: controlam visibilidade de features
+  - `src/components/onboarding/FirstProtocolStep.jsx` — Refatorado para usar ProtocolForm com mode='simple'
+  - `src/components/onboarding/FirstProtocolStep.css` — Estilos simplificados para wrapper
+- Código removido: formulário duplicado completo do FirstProtocolStep (~300 linhas)
+
+**O que deu certo**
+- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.3
+- Manter backward compatibility — modo 'full' padrão preserva comportamento existente
+- Props com valores padrão garantem comportamento consistente
+- CSS overrides específicos para onboarding mantêm visual consistente
+
+**O que não deu certo / riscos**
+- Teste preexistente falhando em validation.test.js (não relacionado às mudanças)
+- Atenção: ProtocolForm agora retorna o `savedProtocol` do onSave para o onSuccess
+
+**Decisões & trade-offs**
+- Decisão: Usar prop `mode` com 'full'|'simple' em vez de múltiplas props booleanas
+- Alternativas: Props individuais para cada feature (mais flexível, mais complexo)
+- Por que: Modo simples encapsula um conjunto coeso de simplificações para onboarding
+
+**Regras locais para o futuro (lições acionáveis)**
+- ProtocolForm é o componente canônico para cadastro de protocolos
+- Use `mode='simple'` para fluxos de onboarding simplificados
+- Use `preselectedMedicine` quando o medicamento já é conhecido (fluxo onboarding)
+- CSS classe `.protocol-form-simple` permite customização específica para onboarding
+
+**Validação**
+- Lint: ✅ 0 erros (apenas warnings preexistentes)
+- Testes críticos: ✅ Todos passando (exceto falha preexistente)
+- Build: ✅ Sucesso
+
+**Pendências / próximos passos**
+- FASE 4: Consolidar Calendar e CalendarWithMonthCache
+- FASE 5: Consolidar utilitários de dose
+- FASE 6: Refatorações adicionais
+
+---
