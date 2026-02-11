@@ -186,3 +186,54 @@ Arquivo de memória longa do projeto para aprendizado contínuo.
 - FASE 6: Refatorações adicionais
 
 ---
+
+## Memory Entry — 2026-02-11 18:35
+**Contexto / Objetivo**
+- Implementar FASE 4 da consolidacao de componentes: unificar Calendar e CalendarWithMonthCache
+- Reduzir ~118 linhas de codigo duplicado em componentes de calendario
+
+**O que foi feito (mudancas)**
+- Arquivos alterados:
+  - `src/components/ui/Calendar.jsx` — Estendido com features opcionais:
+    - `enableLazyLoad` (default: false) — ativa lazy loading de meses
+    - `onLoadMonth` — callback para carregar dados do mes
+    - `enableSwipe` (default: false) — ativa navegacao por swipe
+    - `enableMonthPicker` (default: false) — ativa seletor de mes
+    - `monthPickerRange` — range configuravel do seletor (default: {start: -12, end: 3})
+  - `src/components/ui/CalendarWithMonthCache.jsx` — Refatorado para redirecionar para Calendar com features ativadas
+- Linhas removidas: ~118 (CalendarWithMonthCache simplificado de 198 para ~20 linhas)
+
+**O que deu certo**
+- Seguir exatamente a especificacao do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` secao 2.4
+- Manter 100% backward compatibility — componentes existentes continuam funcionando sem mudancas
+- Props com valores padrao garantem comportamento consistente
+- Usar `{'<'}` e `{'>'}` em vez de caracteres literais para evitar parsing errors no JSX
+- Remover useCallback desnecessario para evitar warnings do React Compiler
+
+**O que nao deu certo / riscos**
+- ESLint reportou warnings sobre setState sincrono no effect — resolvido com requestAnimationFrame
+- React Compiler warning sobre preservacao de memoizacao manual — resolvido removendo useCallback
+
+**Decisoes & trade-offs**
+- Decisao: Usar props booleanas individuais em vez de prop `mode`
+- Alternativas: Criar variantes como mode='simple'|'advanced'
+- Por que: Mais flexivel e claro, permite combinar features livremente
+
+**Regras locais para o futuro (licoes acionaveis)**
+- Sempre usar `{'<'}` e `{'>'}` em JSX para setas de navegacao — evita parsing errors
+- Para lazy loading em componentes, usar requestAnimationFrame antes de setIsLoading
+- Quando unificar componentes, manter o mais simples como base e adicionar features opcionais
+- Calendar e o componente canonico para calendarios — usar CalendarWithMonthCache apenas para compatibilidade
+- Props com defaults falsos garantem backward compatibility automatica
+
+**Validacao**
+- Lint: ✅ 0 erros (apenas warnings preexistentes)
+- Testes criticos: ✅ Todos passando
+- Build: ✅ Sucesso
+
+**Pendencias / proximos passos**
+- FASE 5: Consolidar modais de protocolo
+- FASE 6: Consolidar utilitarios de dose
+- Remover CalendarWithMonthCache apos migracao completa das views
+
+---
