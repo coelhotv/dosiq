@@ -6,44 +6,17 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js'],
-    css: false,
-
-    // ==========================================
-    // CONFIGURAÇÃO LEVE PARA MACBOOK AIR 2013 (Vitest 4+)
-    // ==========================================
-
-    // Executar em thread única
-    pool: 'threads',
-    singleThread: true,
-    maxThreads: 1,
-    minThreads: 1,
-
-    // Não isolar testes para maior velocidade
-    isolate: false,
-
-    // Limites generosos
-    testTimeout: 30000,
-    hookTimeout: 10000,
-
-    // APENAS testes unitários (services, utils, schemas, hooks)
-    include: [
-      'src/services/**/*.test.js',
-      'src/utils/**/*.test.js',
-      'src/schemas/**/*.test.js',
-      'src/hooks/**/*.test.js',
-    ],
-
-    // Excluir TODOS os testes de componentes UI
+    setupFiles: './src/test/setup.js',
+    include: ['src/**/*.test.{js,jsx}'],
     exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/cypress/**',
-      '**/.{idea,git,cache,out,temp}/**',
-      '**/src/components/**/*.test.jsx',
-      '**/src/components/**/*.test.js',
-      '**/src/views/**/*.test.jsx',
-      '**/src/views/**/*.test.js',
+      '**/*.smoke.test.{js,jsx}',
+      '**/*.integration.test.{js,jsx}',
+      'src/components/**/*.test.{js,jsx}'
     ],
+    pool: 'forks',
+    maxWorkers: 2,
+    testTimeout: 5000,
+    reporters: ['dot'],
+    coverage: { enabled: false },
   },
 })
