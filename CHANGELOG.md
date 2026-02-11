@@ -7,6 +7,132 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não publicado]
 
+## [2.7.0] - 2026-02-11
+
+### Fase 3.6 - Component Consolidation Wave
+
+Esta release foca na consolidação de componentes duplicados, eliminando ~783 linhas de código e estabelecendo padrões reutilizáveis para futuro desenvolvimento. Todas as mudanças mantêm 100% de backward compatibility.
+
+### Componentes Consolidados
+
+#### LogForm UX Padronizada (FASE 1)
+- **Unificação de experiência** entre Dashboard e History views
+- **Botão "Plano Completo"** agora visível em ambas as views
+- **Suporte a bulk registration** em History via `treatmentPlans` prop
+- **Correção de bug crítico**: Tratamento de arrays em `handleLogMedicine`
+- **Arquivos modificados:** [`src/views/History.jsx`](src/views/History.jsx)
+
+#### MedicineForm Consolidado (FASE 2)
+- **Unificação com FirstMedicineStep**: ~200 linhas de código duplicado removidas
+- **Novas props de onboarding:**
+  - [`onSuccess`](src/components/medicine/MedicineForm.jsx): Callback após sucesso
+  - [`autoAdvance`](src/components/medicine/MedicineForm.jsx): Avança automaticamente após delay
+  - [`showSuccessMessage`](src/components/medicine/MedicineForm.jsx): Controla mensagem de sucesso
+  - [`showCancelButton`](src/components/medicine/MedicineForm.jsx): Controla visibilidade do cancelar
+  - [`submitButtonLabel`](src/components/medicine/MedicineForm.jsx): Label customizado
+  - [`title`](src/components/medicine/MedicineForm.jsx): Título customizado
+- **FirstMedicineStep refatorado** para usar MedicineForm com props de onboarding
+- **Arquivos modificados:** [`MedicineForm.jsx`](src/components/medicine/MedicineForm.jsx), [`FirstMedicineStep.jsx`](src/components/onboarding/FirstMedicineStep.jsx)
+
+#### ProtocolForm com Modos (FASE 3)
+- **Unificação com FirstProtocolStep**: ~300 linhas de código duplicado removidas
+- **Prop `mode`**: `'full'` (padrão) | `'simple'` (onboarding)
+- **Novas props:**
+  - [`autoAdvance`](src/components/protocol/ProtocolForm.jsx): Avança automaticamente após salvar
+  - [`preselectedMedicine`](src/components/protocol/ProtocolForm.jsx): Medicamento pré-selecionado
+  - [`onSuccess`](src/components/protocol/ProtocolForm.jsx): Callback após sucesso
+  - [`showTitration`](src/components/protocol/ProtocolForm.jsx): Controla visibilidade do wizard
+  - [`showTreatmentPlan`](src/components/protocol/ProtocolForm.jsx): Controla seleção de plano
+- **FirstProtocolStep refatorado** para usar ProtocolForm com `mode='simple'`
+- **Arquivos modificados:** [`ProtocolForm.jsx`](src/components/protocol/ProtocolForm.jsx), [`FirstProtocolStep.jsx`](src/components/onboarding/FirstProtocolStep.jsx)
+
+#### Calendar Consolidado (FASE 4)
+- **Unificação de Calendar e CalendarWithMonthCache**: ~118 linhas removidas
+- **Features opcionais via props:**
+  - [`enableLazyLoad`](src/components/ui/Calendar.jsx) (default: false): Lazy loading de meses
+  - [`onLoadMonth`](src/components/ui/Calendar.jsx): Callback para carregar dados
+  - [`enableSwipe`](src/components/ui/Calendar.jsx) (default: false): Navegação por swipe
+  - [`enableMonthPicker`](src/components/ui/Calendar.jsx) (default: false): Seletor de mês
+  - [`monthPickerRange`](src/components/ui/Calendar.jsx): Range configurável
+- **CalendarWithMonthCache refatorado** para redirecionar para Calendar com features ativadas
+- **Arquivos modificados:** [`Calendar.jsx`](src/components/ui/Calendar.jsx), [`CalendarWithMonthCache.jsx`](src/components/ui/CalendarWithMonthCache.jsx)
+
+#### AlertList Componente Base (FASE 5)
+- **Novo componente base** em [`src/components/ui/AlertList.jsx`](src/components/ui/AlertList.jsx)
+- **Unificação de SmartAlerts e StockAlertsWidget**: ~150 linhas de código duplicado removidas
+- **Props do AlertList:**
+  - [`alerts[]`](src/components/ui/AlertList.jsx): Lista de alertas (id, severity, title, message, actions)
+  - [`onAction`](src/components/ui/AlertList.jsx): Callback para ações
+  - [`variant`](src/components/ui/AlertList.jsx): `'default'` | `'smart'` | `'stock'` | `'dose'`
+  - [`showExpandButton`](src/components/ui/AlertList.jsx), [`maxVisible`](src/components/ui/AlertList.jsx)
+  - [`emptyIcon`](src/components/ui/AlertList.jsx)/[`emptyMessage`](src/components/ui/AlertList.jsx): Customização estado vazio
+  - [`title`](src/components/ui/AlertList.jsx)/[`headerAction`](src/components/ui/AlertList.jsx): Header customizado
+- **SmartAlerts e StockAlertsWidget** agora usam AlertList internamente
+- **Arquivos criados:** [`AlertList.jsx`](src/components/ui/AlertList.jsx), [`AlertList.css`](src/components/ui/AlertList.css)
+- **Arquivos modificados:** [`SmartAlerts.jsx`](src/components/dashboard/SmartAlerts.jsx), [`StockAlertsWidget.jsx`](src/components/dashboard/StockAlertsWidget.jsx)
+
+#### Adherence Componentes Documentados (FASE 6)
+- **JSDoc completo** adicionado aos componentes de adesão
+- **Props documentadas:** [`AdherenceProgress.jsx`](src/components/adherence/AdherenceProgress.jsx), [`AdherenceWidget.jsx`](src/components/adherence/AdherenceWidget.jsx), [`StreakBadge.jsx`](src/components/adherence/StreakBadge.jsx)
+- **Padrões de uso** e exemplos incluídos
+
+### Padrões Estabelecidos
+
+#### Mode-Based Components
+```jsx
+<ProtocolForm mode="full" ... />     // Formulário completo
+<ProtocolForm mode="simple" ... />   // Onboarding simplificado
+```
+
+#### Optional Feature Props
+```jsx
+<Calendar
+  enableLazyLoad={true}
+  enableSwipe={true}
+  enableMonthPicker={true}
+/>
+```
+
+#### Base Component with Variants
+```jsx
+// AlertList em ui/ - base genérica
+<AlertList variant="smart" ... />
+<AlertList variant="stock" ... />
+```
+
+#### Onboarding Integration
+```jsx
+<MedicineForm
+  onSuccess={nextStep}
+  autoAdvance={true}
+  showCancelButton={false}
+/>
+```
+
+### Métricas da Release
+
+| Métrica | Valor |
+|---------|-------|
+| Versão Anterior | 2.6.0 |
+| Versão Atual | 2.7.0 |
+| Tipo | Minor |
+| Linhas de código removidas | ~783 |
+| Componentes consolidados | 6 grupos |
+| Novos arquivos criados | 2 (AlertList.jsx, AlertList.css) |
+| Breaking changes | 0 |
+| Testes críticos | Todos passando |
+| Lint | 0 erros |
+| Backward compatibility | 100% |
+
+### Documentação
+
+- Atualizado [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) com padrões de componentes consolidados
+- Atualizado [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md) com 6 novos padrões documentados
+- Atualizado [`docs/CSS_ARCHITECTURE.md`](docs/CSS_ARCHITECTURE.md) com AlertList patterns
+- Adicionado [`docs/past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md`](docs/past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md)
+
+---
+
 ## [2.6.0] - 2026-02-10
 
 ### Fase 3.5 - Design Uplift: Glassmorphism e Micro-interações

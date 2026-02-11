@@ -404,6 +404,101 @@ Configuração atual em [`eslint.config.js`](eslint.config.js:1):
 
 ---
 
+## 4.4 Padrões de Componentes Consolidados
+
+### Mode-Based Components
+
+Componentes que suportam múltiplos modos via prop `mode`:
+
+```jsx
+// ProtocolForm - modo 'full' (padrão) vs 'simple' (onboarding)
+<ProtocolForm mode="full" medicines={medicines} ... />     // Completo
+<ProtocolForm mode="simple" preselectedMedicine={med} ... /> // Simplificado
+```
+
+**Regras:**
+- Valor padrão deve ser o modo mais completo (`mode='full'`)
+- Modos devem ser mutuamente exclusivos e bem definidos
+- Documentar diferenças entre modos
+
+### Optional Feature Props
+
+Features ativadas via props booleanas com default `false`:
+
+```jsx
+<Calendar
+  markedDates={dates}
+  enableLazyLoad={true}      // Default: false
+  enableSwipe={true}         // Default: false
+  enableMonthPicker={true}   // Default: false
+/>
+```
+
+**Regras:**
+- Prefixar com `enable` para clareza
+- Sempre usar default `false` para backward compatibility
+- Combinar features livremente
+
+### Base Component Pattern
+
+Componente base em `ui/` com wrappers específicos:
+
+```jsx
+// Base genérico em ui/
+export default function AlertList({ variant = 'default', ... })
+
+// Wrappers específicos por domínio
+function SmartAlerts({ alerts }) {
+  return <AlertList variant="smart" alerts={normalizeAlerts(alerts)} />
+}
+
+function StockAlertsWidget({ items }) {
+  return <AlertList variant="stock" alerts={convertToAlerts(items)} />
+}
+```
+
+**Regras:**
+- Base em `ui/` deve ser genérico e reutilizável
+- Wrappers devem fazer apenas transformação de dados
+- Manter APIs públicas dos wrappers estáveis
+
+### Onboarding Integration Pattern
+
+Formulários que suportam onboarding via props opcionais:
+
+```jsx
+<MedicineForm
+  onSave={handleSave}
+  // Props de onboarding (todas opcionais)
+  onSuccess={nextStep}
+  autoAdvance={true}
+  showCancelButton={false}
+  submitButtonLabel="Salvar e Continuar"
+/>
+```
+
+**Regras:**
+- Props de onboarding devem ser totalmente opcionais
+- Valores padrão devem preservar comportamento anterior
+- Documentar claramente props de onboarding vs padrão
+
+---
+
+## 4.5 Checklist de Component Consolidation
+
+Antes de consolidar componentes duplicados:
+
+- [ ] Identificar todas as diferenças entre componentes
+- [ ] Mapear APIs públicas de cada componente
+- [ ] Definir estratégia: modo-based ou optional props
+- [ ] Garantir 100% backward compatibility
+- [ ] Documentar novas props no PADROES_CODIGO.md
+- [ ] Atualizar consumidores gradualmente
+- [ ] Testar todos os casos de uso
+- [ ] Validar lint e testes críticos
+
+---
+
 ## 5. Responsabilidades por Agente
 
 ### 5.1 Backend Agent

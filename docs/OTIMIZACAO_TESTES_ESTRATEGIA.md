@@ -647,6 +647,14 @@ npm run test:coverage
 | **Entry points (main, App)** | ✅ | ✅ | ✅ | ✅ |
 | **Utils/Helpers** | ✅ | ✅ | ❌ | ❌ |
 | **Constants/Config** | ✅ | Se usado em services | ❌ | ❌ |
+| **Componentes consolidados** | ✅ | ✅ | ✅ | ❌ |
+
+**Nota sobre Componentes Consolidados:**
+Durante a [Consolidação de Componentes](./past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md), a estratégia de testes foi:
+- `test:critical` para validar lógica de formulários (MedicineForm, ProtocolForm)
+- `test:related` para validar componentes UI modificados
+- Suite completa apenas no final de cada fase
+- Todos os 110+ testes mantidos passando
 
 ```mermaid
 flowchart TD

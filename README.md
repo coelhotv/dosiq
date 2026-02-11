@@ -17,13 +17,23 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ---
 
-## 🎯 Funcionalidades (v2.6.0)
+## 🎯 Funcionalidades (v2.7.0)
 
 ### Core
 - ✅ **Autenticação Segura**: Login e registro via Supabase Auth (Email/Senha).
 - ✅ **Isolamento de Dados**: Sistema multi-usuário com Row-Level Security (RLS) rigoroso.
 - ✅ **Perfil de Usuário**: Gerenciamento de conta, troca de senha e vínculo de Telegram.
 - ✅ **Migração Pilot-to-Auth**: Ferramenta automática para migrar dados da fase piloto para conta autenticada.
+
+### Fase 3.6 - Consolidação de Componentes
+- ✅ **~783 linhas de código removidas** através da consolidação de 6 grupos de componentes
+- ✅ **MedicineForm Unificado**: Consolidado com FirstMedicineStep via props de onboarding (`autoAdvance`, `onSuccess`)
+- ✅ **ProtocolForm com Modos**: Suporte a `mode='full'|'simple'` para formulários completos e onboarding simplificado
+- ✅ **Calendar Consolidado**: Features opcionais via props (`enableLazyLoad`, `enableSwipe`, `enableMonthPicker`)
+- ✅ **AlertList Componente Base**: Componente genérico em `ui/` para SmartAlerts e StockAlertsWidget
+- ✅ **LogForm UX Padronizada**: Experiência unificada entre Dashboard e History (botão "Plano Completo")
+- ✅ **100% Backward Compatibility**: Todas as mudanças mantêm compatibilidade total com código existente
+- ✅ **Zero Breaking Changes**: APIs públicas preservadas, apenas adições de props opcionais
 
 ### Fase 3.5 - Design Uplift
 - ✅ **Glassmorphism Hierárquico**: 4 níveis de intensidade (light, standard, heavy, hero) com diferentes opacidades e blur
@@ -160,18 +170,30 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 meu-remedio/
 ├── src/
 │   ├── components/
-│   │   ├── ui/              # Componentes reutilizáveis (Button, Card, Loading)
+│   │   ├── ui/              # Componentes reutilizáveis consolidados 🆕
+│   │   │   ├── Button, Card, Modal, Loading
+│   │   │   ├── Calendar.jsx        # Features opcionais: lazyLoad, swipe
+│   │   │   └── AlertList.jsx       # Componente base para alertas 🆕
 │   │   ├── medicine/        # Componentes de medicamentos
+│   │   │   └── MedicineForm.jsx    # Consolidado com FirstMedicineStep
 │   │   ├── protocol/        # Componentes de protocolos
+│   │   │   └── ProtocolForm.jsx    # Modo 'full'|'simple'
 │   │   ├── stock/           # Componentes de estoque
 │   │   ├── log/             # Componentes de registro
-│   │   └── onboarding/      # Wizard de onboarding (4 steps) 🆕
+│   │   │   └── LogForm.jsx         # UX padronizada
+│   │   ├── dashboard/       # Widgets do dashboard
+│   │   │   ├── SmartAlerts.jsx     # Usa AlertList
+│   │   │   └── StockAlertsWidget.jsx # Usa AlertList
+│   │   ├── adherence/       # Componentes de adesão
+│   │   └── onboarding/      # Wizard de onboarding (4 steps)
+│   │       ├── FirstMedicineStep.jsx   # Wrapper de MedicineForm
+│   │       └── FirstProtocolStep.jsx   # Wrapper de ProtocolForm
 │   ├── hooks/
-│   │   └── useCachedQuery.js # Hook SWR para cache de queries 🆕
+│   │   └── useCachedQuery.js # Hook SWR para cache de queries
 │   ├── lib/
 │   │   ├── supabase.js      # Cliente Supabase
-│   │   └── queryCache.js    # Implementação SWR (Stale-While-Revalidate) 🆕
-│   ├── schemas/             # Validação Zod 🆕
+│   │   └── queryCache.js    # Implementação SWR (Stale-While-Revalidate)
+│   ├── schemas/             # Validação Zod
 │   │   ├── index.js         # Exportações dos schemas
 │   │   ├── medicineSchema.js
 │   │   ├── protocolSchema.js
@@ -179,7 +201,7 @@ meu-remedio/
 │   │   ├── logSchema.js
 │   │   └── validationHelper.js
 │   ├── services/
-│   │   ├── api/             # Serviços da API com validação Zod 🆕
+│   │   ├── api/             # Serviços da API com validação Zod
 │   │   │   ├── cachedServices.js  # Wrappers com cache SWR
 │   │   │   ├── medicineService.js
 │   │   │   ├── protocolService.js
@@ -194,10 +216,10 @@ meu-remedio/
 │   ├── App.jsx              # Componente principal
 │   └── main.jsx             # Entry point
 ├── docs/                    # Documentação técnica expandida 📚
-│   ├── ARQUITETURA.md       # Visão arquitetural
-│   ├── PADROES_CODIGO.md    # Convenções de código
+│   ├── ARQUITETURA.md       # Visão arquitetural incluindo padrões consolidados
+│   ├── PADROES_CODIGO.md    # Convenções e padrões de componentes
 │   ├── API_SERVICES.md      # APIs dos services
-│   ├── DECISOES_TECNICAS.md # Decisões técnicas
+│   ├── CSS_ARCHITECTURE.md  # Arquitetura CSS com AlertList patterns
 │   └── HOOKS.md             # Hooks customizados
 ├── server/                  # Bot do Telegram (Node.js)
 │   └── bot/
@@ -208,7 +230,7 @@ meu-remedio/
 └── README.md                # Este arquivo
 ```
 
-> 🆕 = Novidades da Onda 1 (Qualidade & Performance)
+> 🆕 = Componentes consolidados na Fase 3.6 (Component Consolidation Wave)
 
 ---
 
@@ -306,5 +328,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Versão**: 2.6.0 (Design Uplift - Glassmorphism)
-**Última atualização**: 10 Fevereiro 2026
+**Versão**: 2.7.0 (Component Consolidation Wave)
+**Última atualização**: 11 Fevereiro 2026
