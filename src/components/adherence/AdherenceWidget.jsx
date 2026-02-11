@@ -6,12 +6,71 @@ import Loading from '../ui/Loading'
 import './AdherenceWidget.css'
 
 /**
- * AdherenceWidget - Widget de Score de Adesão
- * 
- * Exibe o score geral de adesão, streak atual e adesão por protocolo.
- * Permite alternar entre períodos (7d, 30d, 90d).
- * 
- * @param {string} defaultPeriod - Período inicial: '7d' | '30d' | '90d'
+ * @typedef {Object} ProtocolScore
+ * @property {string} protocolId - ID do protocolo
+ * @property {string} name - Nome do protocolo
+ * @property {string} [medicineName] - Nome do medicamento associado
+ * @property {number} score - Porcentagem de adesão (0-100)
+ */
+
+/**
+ * @typedef {Object} AdherenceData
+ * @property {number} overallScore - Score geral de adesão (0-100)
+ * @property {number} overallTaken - Total de doses tomadas
+ * @property {number} overallExpected - Total de doses esperadas
+ * @property {number} [currentStreak] - Dias consecutivos atual
+ * @property {number} [longestStreak] - Recorde de dias consecutivos
+ * @property {ProtocolScore[]} [protocolScores] - Scores por protocolo
+ */
+
+/**
+ * @typedef {Object} AdherenceWidgetProps
+ * @property {string} [defaultPeriod='30d'] - Período inicial: '7d' | '30d' | '90d'
+ */
+
+/**
+ * AdherenceWidget - Widget completo de adesão ao tratamento
+ *
+ * **Propósito:**
+ * Widget completo que carrega e exibe dados de adesão ao tratamento,
+ * incluindo score geral, streak, adesão por protocolo e dicas personalizadas.
+ * Este componente gerencia seu próprio estado de dados e chamadas à API.
+ *
+ * **Funcionalidades incluídas:**
+ * - Score geral de adesão com indicador visual circular
+ * - Seletor de período (7 dias, 30 dias, 90 dias)
+ * - Streak atual e recorde de dias consecutivos
+ * - Breakdown de adesão por protocolo
+ * - Dicas contextualizadas baseadas no score
+ * - Estados de loading e erro
+ *
+ * **Quando usar:**
+ * - No dashboard para visão geral de adesão
+ * - Quando você precisa que os dados sejam carregados automaticamente
+ * - Para widgets completos com interatividade (mudança de período)
+ *
+ * **Quando NÃO usar (use AdherenceProgress em vez disso):**
+ * - Quando você já tem o valor calculado e só precisa exibir
+ * - Para indicadores visuais simples em cards ou listas
+ * - Quando precisa de controle total sobre o layout e dados
+ *
+ * **Dependências de dados:**
+ * Este componente usa {@link adherenceService} para carregar:
+ * - Resumo de adesão via `adherenceService.getAdherenceSummary(period)`
+ *
+ * @param {AdherenceWidgetProps} props
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Uso padrão com período inicial de 30 dias
+ * <AdherenceWidget />
+ *
+ * @example
+ * // Período inicial customizado
+ * <AdherenceWidget defaultPeriod="7d" />
+ *
+ * @see {@link AdherenceProgress} - Para componente visual puro sem dados
+ * @see {@link StreakBadge} - Para exibir streak em outros contextos
  */
 export default function AdherenceWidget({ defaultPeriod = '30d' }) {
   const [period, setPeriod] = useState(defaultPeriod)
