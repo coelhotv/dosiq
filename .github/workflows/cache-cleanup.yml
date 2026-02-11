@@ -1,0 +1,13 @@
+name: Cache Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Semanalmente aos domingos
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup
+        run: echo "Cache cleanup job - implementar se necessário"
