@@ -237,3 +237,54 @@ Arquivo de memória longa do projeto para aprendizado contínuo.
 - Remover CalendarWithMonthCache apos migracao completa das views
 
 ---
+
+## Memory Entry — 2026-02-11 18:41
+**Contexto / Objetivo**
+- Implementar FASE 5 da consolidação de componentes: criar AlertList componente base reutilizável
+- Unificar SmartAlerts e StockAlertsWidget em um componente base comum
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `src/components/ui/AlertList.jsx` — Componente base com props configuráveis
+  - `src/components/ui/AlertList.css` — Estilos para todas as variantes
+- Arquivos alterados:
+  - `src/components/dashboard/SmartAlerts.jsx` — Refatorado para usar AlertList (variant='smart')
+  - `src/components/dashboard/StockAlertsWidget.jsx` — Refatorado para usar AlertList (variant='stock')
+
+**Props do AlertList**
+- `alerts[]`: Lista de alertas com id, severity, title, message, actions
+- `onAction`: Callback para ações do alerta
+- `variant`: 'default' | 'smart' | 'stock' | 'dose'
+- `showExpandButton`: Controla visibilidade do botão expandir
+- `maxVisible`: Limite de itens quando não expandido (default: 3)
+- `emptyIcon`/`emptyMessage`: Customização do estado vazio
+- `title`/`headerAction`: Header opcional com título e ação
+
+**O que deu certo**
+- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.5
+- Manter 100% backward compatibility — APIs públicas de SmartAlerts e StockAlertsWidget inalteradas
+- Props com valores padrão garantem comportamento consistente
+- Redução de ~150 linhas de código duplicado entre os componentes
+
+**Decisões & trade-offs**
+- Decisão: Criar componente base em `ui/` em vez de `dashboard/`
+- Alternativas: Manter lógica duplicada ou criar HOC
+- Por que: Componente base em `ui/` permite reuso em outras áreas do app
+
+**Regras locais para o futuro (lições acionáveis)**
+- AlertList é o componente canônico para listas de alertas
+- Use `variant='smart'` para alertas de doses do Dashboard
+- Use `variant='stock'` para alertas de estoque
+- Sempre mapear dados para o formato padrão do AlertList antes de passar
+- Props `actionId` em actions permite identificar qual ação foi clicada
+
+**Validação**
+- Lint: ✅ 0 erros (apenas warnings preexistentes)
+- Testes críticos: ✅ Todos passando
+- Build: ✅ Sucesso
+
+**Pendências / próximos passos**
+- FASE 6: Consolidar utilitários de dose
+- Remover CSS duplicado de SmartAlerts.css e StockAlertsWidget.css após validação
+
+---
