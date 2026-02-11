@@ -1,44 +1,39 @@
-import React from 'react';
-import './SmartAlerts.css';
+import AlertList from '../ui/AlertList'
+import './SmartAlerts.css'
 
 /**
  * SmartAlerts - Lista de alertas inteligentes com CTAs contextuais.
+ * 
+ * Componente wrapper que usa AlertList base com variantes específicas.
  * 
  * @param {Object} props
  * @param {Array} props.alerts - Lista de alertas
  * @param {Function} props.onAction - Callback para ações (TOMAR, ADIAR, COMPRAR)
  */
 export default function SmartAlerts({ alerts = [], onAction }) {
-  if (!alerts || alerts.length === 0) return null;
+  if (!alerts || alerts.length === 0) return null
+
+  // Mapear alerts para formato padrao do AlertList
+  const normalizedAlerts = alerts.map(alert => ({
+    id: alert.id,
+    severity: alert.severity,
+    title: alert.title,
+    message: alert.message,
+    actions: alert.actions?.map(a => ({
+      label: a.label,
+      type: a.type,
+      title: a.title,
+      actionId: a.label
+    }))
+  }))
 
   return (
-    <div className="smart-alerts">
-      {alerts.map((alert) => (
-        <div 
-          key={alert.id} 
-          className={`smart-alert smart-alert--${alert.severity}`}
-        >
-          <div className="smart-alert__icon">
-            {alert.severity === 'critical' ? '⚠️' : 'ℹ️'}
-          </div>
-          <div className="smart-alert__content">
-            <h4 className="smart-alert__title">{alert.title}</h4>
-            <p className="smart-alert__message">{alert.message}</p>
-          </div>
-          <div className="smart-alert__actions">
-            {alert.actions?.map((action) => (
-              <button
-                key={action.label}
-                className={`smart-alert__btn smart-alert__btn--${action.type}`}
-                title={action.title || ''}
-                onClick={() => onAction?.(alert, action)}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+    <AlertList
+      alerts={normalizedAlerts}
+      onAction={onAction}
+      variant="smart"
+      showExpandButton={false}
+      maxVisible={alerts.length}
+    />
+  )
 }
