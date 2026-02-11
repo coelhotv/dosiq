@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { logService, protocolService } from '../services/api'
+import { treatmentPlanService } from '../services/api/treatmentPlanService'
 import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import Modal from '../components/ui/Modal'
@@ -11,6 +12,7 @@ import './History.css'
 
 export default function History() {
   const [protocols, setProtocols] = useState([])
+  const [treatmentPlans, setTreatmentPlans] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -25,12 +27,14 @@ export default function History() {
       setIsLoading(true)
       setError(null)
 
-      const [protocolsData, logsForMonth] = await Promise.all([
+      const [protocolsData, plansData, logsForMonth] = await Promise.all([
         protocolService.getActive(),
+        treatmentPlanService.getAll(),
         logService.getByMonth(new Date().getFullYear(), new Date().getMonth())
       ])
 
       setProtocols(protocolsData)
+      setTreatmentPlans(plansData)
       setCurrentMonthLogs(logsForMonth.data || [])
       setTotalLogs(logsForMonth.total || 0)
 
@@ -71,6 +75,9 @@ export default function History() {
       if (logData.id) {
         await logService.update(logData.id, logData)
         showSuccess('Registro atualizado com sucesso!')
+      } else if (Array.isArray(logData)) {
+        await logService.createBulk(logData)
+        showSuccess('Plano completo registrado com sucesso! Estoque atualizado.')
       } else {
         await logService.create(logData)
         showSuccess('Medicamento registrado com sucesso! Estoque atualizado.')
@@ -289,6 +296,7 @@ export default function History() {
       >
         <LogForm
           protocols={protocols}
+          treatmentPlans={treatmentPlans}
           initialValues={editingLog}
           onSave={handleLogMedicine}
           onCancel={() => {

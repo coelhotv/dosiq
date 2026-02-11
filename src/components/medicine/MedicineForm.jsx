@@ -4,7 +4,30 @@ import ShakeEffect from '../animations/ShakeEffect'
 import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '../../schemas/medicineSchema'
 import './MedicineForm.css'
 
-export default function MedicineForm({ medicine, onSave, onCancel }) {
+/**
+ * @typedef {Object} MedicineFormProps
+ * @property {Object} [medicine] - Dados para edição (modo edição)
+ * @property {Function} onSave - Callback ao salvar (recebe dados validados)
+ * @property {Function} [onCancel] - Callback ao cancelar
+ * @property {Function} [onSuccess] - Callback após sucesso (para onboarding)
+ * @property {boolean} [autoAdvance=false] - Se true, chama onSuccess após delay
+ * @property {boolean} [showSuccessMessage=true] - Mostrar mensagem de sucesso
+ * @property {boolean} [showCancelButton=true] - Mostrar botão cancelar
+ * @property {string} [submitButtonLabel] - Label customizado do botão submit
+ * @property {string} [title] - Título customizado do formulário
+ */
+
+export default function MedicineForm({
+  medicine,
+  onSave,
+  onCancel,
+  onSuccess,
+  autoAdvance = false,
+  showSuccessMessage = true,
+  showCancelButton = true,
+  submitButtonLabel,
+  title
+}) {
   const [formData, setFormData] = useState({
     name: medicine?.name || '',
     laboratory: medicine?.laboratory || '',
@@ -17,6 +40,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shakeFields, setShakeFields] = useState({})
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -24,6 +48,10 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
     // Limpa erro do campo quando usuário começa a digitar
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
+    }
+    // Limpa mensagem de sucesso ao editar
+    if (saveSuccess) {
+      setSaveSuccess(false)
     }
   }
 
@@ -37,13 +65,6 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
     // Dosage is optional for supplements, but must be active number if provided
     if (formData.dosage_per_pill && isNaN(formData.dosage_per_pill)) {
       newErrors.dosage_per_pill = 'Deve ser um número'
-    } else if (formData.type === 'medicamento' && !formData.dosage_per_pill) {
-      // For medicines, we generally want a dosage, but maybe not strict?
-      // strict 'medicine' usually implies a mg value.
-      // Let's keep it optional but recommended, or strict if existing logic was strict.
-      // Eexisting logic: if (formData.dosage_per_pill && isNaN...) -> it was optional before?
-      // Logic from lines 32-34: "if (formData.dosage_per_pill && isNaN...)" implies it was already optional but if present must be number.
-      // So no change needed for optionality, just keeping the number check.
     }
 
     setErrors(newErrors)
@@ -78,7 +99,17 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
         dosage_unit: formData.dosage_unit
       }
       
-      await onSave(dataToSave)
+      const savedMedicine = await onSave(dataToSave)
+      
+      if (showSuccessMessage) {
+        setSaveSuccess(true)
+      }
+      
+      if (autoAdvance && onSuccess) {
+        setTimeout(() => {
+          onSuccess(savedMedicine)
+        }, 800)
+      }
     } catch (error) {
       console.error('Erro ao salvar medicamento:', error)
       const errorMessage = error?.message || 'Erro desconhecido ao salvar medicamento'
@@ -88,9 +119,21 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
     }
   }
 
+  // Determina o título do formulário
+  const formTitle = title || (medicine ? 'Editar Medicamento' : 'Novo Medicamento')
+
   return (
     <form className="medicine-form" onSubmit={handleSubmit}>
-      <h3>{medicine ? 'Editar Medicamento' : 'Novo Medicamento'}</h3>
+      <h3>{formTitle}</h3>
+      
+      {saveSuccess && showSuccessMessage && (
+        <div className="success-message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Medicamento salvo com sucesso!</span>
+        </div>
+      )}
       
       <div className="form-group">
         <label htmlFor="type">Tipo</label>
@@ -99,6 +142,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
           name="type"
           value={formData.type}
           onChange={handleChange}
+          disabled={isSubmitting}
         >
           {MEDICINE_TYPES.map(type => (
             <option key={type} value={type}>
@@ -122,6 +166,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
             className={errors.name ? 'error' : ''}
             placeholder="Ex: Paracetamol"
             autoFocus
+            disabled={isSubmitting}
           />
         </ShakeEffect>
         {errors.name && <span className="error-message">{errors.name}</span>}
@@ -136,6 +181,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
           value={formData.active_ingredient}
           onChange={handleChange}
           placeholder="Ex: Paracetamol"
+          disabled={isSubmitting}
         />
       </div>
 
@@ -148,6 +194,7 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
           value={formData.laboratory}
           onChange={handleChange}
           placeholder="Ex: EMS, Medley, etc."
+          disabled={isSubmitting}
         />
       </div>
 
@@ -164,12 +211,14 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
               className={errors.dosage_per_pill ? 'error' : ''}
               placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
               step="0.01"
+              disabled={isSubmitting}
             />
           </ShakeEffect>
           <select
             name="dosage_unit"
             value={formData.dosage_unit}
             onChange={handleChange}
+            disabled={isSubmitting}
           >
             {DOSAGE_UNITS.map(unit => (
               <option key={unit} value={unit}>
@@ -188,20 +237,25 @@ export default function MedicineForm({ medicine, onSave, onCancel }) {
       )}
 
       <div className="form-actions">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          Cancelar
-        </Button>
+        {showCancelButton && (
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+        )}
         <Button 
           type="submit" 
           variant="primary"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Salvando...' : medicine ? 'Atualizar' : 'Cadastrar'}
+          {isSubmitting 
+            ? 'Salvando...' 
+            : submitButtonLabel || (medicine ? 'Atualizar' : 'Cadastrar')
+          }
         </Button>
       </div>
     </form>
