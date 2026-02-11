@@ -83,3 +83,55 @@ Arquivo de memória longa do projeto para aprendizado contínuo.
 - Build: ✅ Sucesso
 
 ---
+
+## Memory Entry — 2026-02-11 18:07
+**Contexto / Objetivo**
+- Implementar FASE 2 da consolidação de componentes: unificar MedicineForm e FirstMedicineStep
+- Reduzir ~200 linhas de código duplicado entre formulários de medicamento
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/components/medicine/MedicineForm.jsx` — Adicionadas props para suportar onboarding:
+    - `onSuccess`: callback após sucesso
+    - `autoAdvance`: avança automaticamente após delay
+    - `showSuccessMessage`: controla mensagem de sucesso
+    - `showCancelButton`: controla visibilidade do botão cancelar
+    - `submitButtonLabel`: label customizado do botão
+    - `title`: título customizado do formulário
+  - `src/components/onboarding/FirstMedicineStep.jsx` — Refatorado para usar MedicineForm
+  - `src/components/onboarding/FirstMedicineStep.css` — Estilos simplificados para novo componente
+- Código removido: formulário duplicado completo do FirstMedicineStep (~200 linhas)
+
+**O que deu certo**
+- Seguir exatamente a especificação do `plans/CONSOLIDACAO_COMPONENTES_PLANO.md` seção 2.2
+- Manter backward compatibility — Medicines.jsx continua funcionando sem mudanças
+- Props com valores padrão garantem comportamento consistente
+- CSS overrides específicos para onboarding sem afetar outros usos
+
+**O que não deu certo / riscos**
+- Teste preexistente falhando em medicineService.test.js (não relacionado às mudanças)
+- Atenção: MedicineForm agora retorna o `savedMedicine` do onSave para o onSuccess
+
+**Decisões & trade-offs**
+- Decisão: Usar props opcionais com defaults em vez de criar modo 'simple'/'full'
+- Alternativas: Criar componente wrapper ou variantes visuais
+- Por que: Props são mais flexíveis e mantêm um único componente reutilizável
+
+**Regras locais para o futuro (lições acionáveis)**
+- Quando consolidar formulários, identificar diferenças de UX e expor como props
+- Sempre manter valores padrão que preservam comportamento anterior
+- Usar CSS específico do container para customizar visual sem modificar componente base
+- MedicineForm agora é o componente canônico para cadastro de medicamentos
+
+**Validação**
+- Lint: ✅ 0 erros (apenas warnings preexistentes)
+- Testes críticos: ✅ Todos passando (exceto falha preexistente)
+- Build: ✅ Sucesso
+
+**Pendências / próximos passos**
+- FASE 3: Unificar ProtocolSummary (Dashboard) e ProtocolChecklistItem (Protocols)
+- FASE 4: Extrair useHealthScore comum
+- FASE 5: Consolidar modais de protocolo
+- FASE 6: Consolidar utilitários de dose
+
+---
