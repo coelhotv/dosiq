@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { supabase, getUserId } from '../../lib/supabase'
+import { supabase, getUserId } from '@shared/utils/supabase'
 import { OnboardingContext } from './OnboardingContext'
 
 export function OnboardingProvider({ children }) {

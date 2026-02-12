@@ -1,6 +1,6 @@
 import { useOnboarding } from './useOnboarding'
-import MedicineForm from '../medicine/MedicineForm'
-import { cachedMedicineService } from '../../services/api/cachedServices'
+import MedicineForm from '@medications/components/MedicineForm'
+import { cachedMedicineService } from '@shared/services/cachedServices'
 import './FirstMedicineStep.css'
 
 export default function FirstMedicineStep() {

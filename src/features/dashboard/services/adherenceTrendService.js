@@ -9,7 +9,7 @@
  * @module adherenceTrendService
  */
 
-import { adherenceService } from './api/adherenceService'
+import { adherenceService } from '@adherence/services/adherenceService'
 
 /**
  * Configurações de threshold para tendência

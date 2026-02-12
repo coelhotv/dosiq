@@ -17,11 +17,11 @@
  */
 
 import { useMemo, useEffect, useRef } from 'react'
-import Modal from '../ui/Modal'
-import Loading from '../ui/Loading'
-import EmptyState from '../ui/EmptyState'
+import Modal from '@shared/components/ui/Modal'
+import Loading from '@shared/components/ui/Loading'
+import EmptyState from '@shared/components/ui/EmptyState'
 import DoseListItem from './DoseListItem'
-import { calculateDosesByDate } from '../../utils/adherenceLogic'
+import { calculateDosesByDate } from '@dashboard/utils/adherenceLogic'
 import './DailyDoseModal.css'
 
 /**

@@ -1,0 +1,398 @@
+/**
+ * Colors Token - Design System Color Variables
+ * 
+ * This file contains all color tokens for the Meus Remédios design system.
+ * Colors are organized by category and support both light and dark themes.
+ * 
+ * Theme Override: [data-theme="dark"]
+ */
+
+/* ============================================
+   BRAND COLORS - Primary (Pink/Rosa)
+   ============================================ */
+:root {
+  --color-primary: #ec4899;
+  --color-primary-light: #f472b6;
+  --color-primary-dark: #db2777;
+  --color-primary-bg: #fdf2f8;
+  --color-primary-hover: #be185d;
+  
+  /* Aliases for compatibility */
+  --brand-primary: var(--color-primary);
+  --brand-primary-light: var(--color-primary-light);
+  --brand-primary-dark: var(--color-primary-dark);
+}
+
+/* ============================================
+   BRAND COLORS - Secondary (Cyan)
+   ============================================ */
+:root {
+  --color-secondary: #06b6d4;
+  --color-secondary-light: #22d3ee;
+  --color-secondary-dark: #0891b2;
+  --color-secondary-bg: #ecfeff;
+  
+  /* Aliases for compatibility */
+  --brand-secondary: var(--color-secondary);
+  --brand-secondary-light: var(--color-secondary-light);
+  --brand-secondary-dark: var(--color-secondary-dark);
+}
+
+/* ============================================
+   SEMANTIC COLORS - Status
+   ============================================ */
+:root {
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+  --color-success-bg: #ecfdf5;
+  
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-warning-bg: #fffbeb;
+  
+  --color-error: #ef4444;
+  --color-error-light: #f87171;
+  --color-error-bg: #fef2f2;
+  
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+  --color-info-bg: #eff6ff;
+}
+
+/* ============================================
+   NEON COLORS - Special Effects
+   ============================================ */
+:root {
+  --neon-cyan: #06b6d4;
+  --neon-pink: #ec4899;
+  --neon-magenta: #d946ef;
+  --neon-green: #10b981;
+  --neon-orange: #f97316;
+  --neon-yellow: #eab308;
+  --neon-red: #ef4444;
+  --neon-blue: #0072ff;
+  --neon-purple: #aa00ff;
+}
+
+/* ============================================
+   BACKGROUND COLORS
+   ============================================ */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.8);
+  
+  /* Aliases for compatibility */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+}
+
+/* ============================================
+   TEXT COLORS
+   ============================================ */
+:root {
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-inverse: #ffffff;
+  --text-link: #ec4899;
+  
+  /* Aliases for compatibility */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-link: var(--text-link);
+}
+
+/* ============================================
+   BORDER COLORS
+   ============================================ */
+:root {
+  --border-light: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-dark: #d1d5db;
+  
+  /* Aliases for compatibility */
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+  --border: var(--border-default);
+  --border-color: var(--border);
+}
+
+/* ============================================
+   TOGGLE & THEME COLORS
+   ============================================ */
+:root {
+  --color-toggle-track: #e5e7eb;
+  --color-toggle-track-dark: #374151;
+  --color-sun: #f59e0b;
+  --color-moon: #93c5fd;
+}
+
+/* ============================================
+   HEALTH SCORE COLORS
+   ============================================ */
+:root {
+  --score-critical: #ef4444;
+  --score-low: #f97316;
+  --score-medium: #eab308;
+  --score-good: #22c55e;
+  --score-excellent: #06b6d4;
+  
+  /* Aliases for compatibility */
+  --color-score-critical: var(--score-critical);
+  --color-score-low: var(--score-low);
+  --color-score-medium: var(--score-medium);
+  --color-score-good: var(--score-good);
+  --color-score-excellent: var(--score-excellent);
+}
+
+/* ============================================
+   GLOW EFFECTS
+   ============================================ */
+:root {
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
+  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
+  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 10px rgba(245, 158, 11, 0.5);
+  --glow-error: 0 0 10px rgba(239, 68, 68, 0.5);
+  --glow-info: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* ============================================
+   CONTEXTUAL GLOW EFFECTS - P2
+   ============================================ */
+:root {
+  /* Hover glow - Para elementos interativos */
+  --glow-hover-primary: 0 0 20px rgba(236, 72, 153, 0.3);
+  --glow-hover-secondary: 0 0 20px rgba(6, 182, 212, 0.3);
+  --glow-hover-success: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-hover-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --glow-hover-critical: 0 0 25px rgba(239, 68, 68, 0.4);
+  
+  /* Focus glow - Para acessibilidade */
+  --glow-focus-primary: 0 0 15px rgba(236, 72, 153, 0.4);
+  --glow-focus-secondary: 0 0 15px rgba(6, 182, 212, 0.4);
+  --glow-focus-success: 0 0 15px rgba(16, 185, 129, 0.4);
+  
+  /* Active glow - Para elementos pressionados */
+  --glow-active-primary: 0 0 10px rgba(236, 72, 153, 0.3);
+  --glow-active-secondary: 0 0 10px rgba(6, 182, 212, 0.3);
+  --glow-active-success: 0 0 10px rgba(16, 185, 129, 0.3);
+  
+  /* State-specific glow - Para estados especiais */
+  --glow-critical: 0 0 25px rgba(239, 68, 68, 0.4);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.4);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --glow-info: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+/* ============================================
+   STATE COLORS
+   ============================================ */
+:root {
+  --state-hover: rgba(236, 72, 153, 0.1);
+  --state-active: rgba(236, 72, 153, 0.2);
+  --state-focus: rgba(236, 72, 153, 0.3);
+  --state-disabled: rgba(0, 0, 0, 0.1);
+  --state-loading: rgba(236, 72, 153, 0.5);
+}
+
+/* ============================================
+   OPACITY VALUES
+   ============================================ */
+:root {
+  --opacity-disabled: 0.5;
+  --opacity-hover: 0.8;
+  --opacity-focus: 1;
+  --opacity-overlay: 0.9;
+  --opacity-backdrop: 0.75;
+}
+
+/* ============================================
+   GLASSMORPHISM LEVELS
+   ============================================ */
+:root {
+  /* Glass leve - Para elementos secundários */
+  --glass-bg-light: rgba(255, 255, 255, 0.03);
+  --glass-border-light: rgba(255, 255, 255, 0.05);
+  --glass-blur-light: blur(8px);
+  
+  /* Glass padrão - Para cards comuns */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(12px);
+  
+  /* Glass intenso - Para elementos destacados */
+  --glass-bg-heavy: rgba(255, 255, 255, 0.08);
+  --glass-border-heavy: rgba(255, 255, 255, 0.15);
+  --glass-blur-heavy: blur(16px);
+  
+  /* Glass hero - Para seções principais */
+  --glass-bg-hero: rgba(255, 255, 255, 0.1);
+  --glass-border-hero: rgba(255, 255, 255, 0.2);
+  --glass-blur-hero: blur(20px);
+}
+
+/* ============================================
+   GRADIENT BACKGROUNDS
+   ============================================ */
+:root {
+  /* Gradiente sutil - Para cards de insight */
+  --gradient-insight: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1) 0%,
+    rgba(176, 0, 255, 0.1) 100%
+  );
+  
+  /* Gradiente hero - Para seções principais */
+  --gradient-hero: linear-gradient(
+    135deg,
+    rgba(236, 72, 153, 0.15) 0%,
+    rgba(6, 182, 212, 0.15) 100%
+  );
+  
+  /* Gradiente alert - Para alertas críticos */
+  --gradient-alert-critical: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(239, 68, 68, 0.05) 100%
+  );
+  
+  /* Gradiente success - Para elementos positivos */
+  --gradient-success: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.1) 0%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
+}
+
+/* ============================================
+   DARK THEME OVERRIDES
+   ============================================ */
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --bg-card: #1f2937;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  --bg-glass: rgba(31, 41, 55, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.9);
+  
+  /* Aliases */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+  
+  /* Text Colors - Enhanced Contrast for Dark Mode */
+  --text-primary: #f9fafb;      /* Enhanced from #f3f4f6 */
+  --text-secondary: #d1d5db;    /* Enhanced from #e5e7eb */
+  --text-tertiary: #9ca3af;     /* Enhanced from #9ca3af */
+  --text-muted: #6b7280;        /* Enhanced from #6b7280 */
+  --text-link: #f472b6;
+  
+  /* Aliases */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-primary);
+  --color-text-link: var(--text-link);
+  
+  /* Border Colors */
+  --border-light: #1f2937;
+  --border-default: #374151;
+  --border-dark: #4b5563;
+  
+  /* Aliases */
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+  --border: var(--border-default);
+  --border-color: var(--border);
+  
+  /* Neon Colors - More vibrant in dark mode */
+  --neon-cyan: #22d3ee;
+  --neon-pink: #f472b6;
+  --neon-magenta: #e879f9;
+  --neon-green: #34d399;
+  --neon-orange: #fb923c;
+  --neon-yellow: #facc15;
+  --neon-red: #f87171;
+  --neon-blue: #60a5fa;
+  --neon-purple: #c084fc;
+  
+  /* Glow Effects - More intense in dark mode */
+  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
+  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
+  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
+  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
+  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
+  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
+  
+  /* Contextual Glow Effects - Dark Mode - P2 */
+  --glow-hover-primary: 0 0 25px rgba(244, 114, 182, 0.4);
+  --glow-hover-secondary: 0 0 25px rgba(34, 211, 238, 0.4);
+  --glow-hover-success: 0 0 25px rgba(52, 211, 153, 0.4);
+  --glow-hover-warning: 0 0 25px rgba(251, 191, 36, 0.4);
+  --glow-hover-critical: 0 0 30px rgba(248, 113, 113, 0.5);
+  
+  --glow-focus-primary: 0 0 20px rgba(244, 114, 182, 0.5);
+  --glow-focus-secondary: 0 0 20px rgba(34, 211, 238, 0.5);
+  --glow-focus-success: 0 0 20px rgba(52, 211, 153, 0.5);
+  
+  --glow-active-primary: 0 0 15px rgba(244, 114, 182, 0.4);
+  --glow-active-secondary: 0 0 15px rgba(34, 211, 238, 0.4);
+  --glow-active-success: 0 0 15px rgba(52, 211, 153, 0.4);
+  
+  --glow-critical: 0 0 30px rgba(248, 113, 113, 0.5);
+  --glow-success: 0 0 25px rgba(52, 211, 153, 0.5);
+  --glow-warning: 0 0 25px rgba(251, 191, 36, 0.4);
+  --glow-info: 0 0 25px rgba(34, 211, 238, 0.4);
+  
+  /* State Colors - Brighter in dark mode */
+  --state-hover: rgba(244, 114, 182, 0.15);
+  --state-active: rgba(244, 114, 182, 0.25);
+  --state-focus: rgba(244, 114, 182, 0.35);
+  --state-disabled: rgba(255, 255, 255, 0.1);
+  --state-loading: rgba(244, 114, 182, 0.7);
+  
+  /* Glassmorphism Levels - Dark Mode */
+  --glass-bg-light: rgba(255, 255, 255, 0.02);
+  --glass-border-light: rgba(255, 255, 255, 0.03);
+  
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  
+  --glass-bg-heavy: rgba(255, 255, 255, 0.08);
+  --glass-border-heavy: rgba(255, 255, 255, 0.15);
+  
+  --glass-bg-hero: rgba(255, 255, 255, 0.1);
+  --glass-border-hero: rgba(255, 255, 255, 0.2);
+  
+  /* Gradient Backgrounds - Dark Mode */
+  --gradient-insight: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.15) 0%,
+    rgba(232, 121, 249, 0.15) 100%
+  );
+  
+  --gradient-hero: linear-gradient(
+    135deg,
+    rgba(244, 114, 182, 0.2) 0%,
+    rgba(34, 211, 238, 0.2) 100%
+  );
+}

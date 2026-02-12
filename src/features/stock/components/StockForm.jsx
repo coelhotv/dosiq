@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Button from '../ui/Button'
+import Button from '@shared/components/ui/Button'
 import './StockForm.css'
 
 export default function StockForm({ medicines, initialValues, onSave, onCancel }) {

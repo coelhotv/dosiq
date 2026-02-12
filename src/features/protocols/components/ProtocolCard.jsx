@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import Card from '../ui/Card'
-import Button from '../ui/Button'
+import Card from '@shared/components/ui/Card'
+import Button from '@shared/components/ui/Button'
 
-import StreakBadge from '../adherence/StreakBadge'
+import StreakBadge from '@adherence/components/StreakBadge'
 
-import Modal from '../ui/Modal'
+import Modal from '@shared/components/ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
 
-import { FREQUENCY_LABELS } from '../../schemas/protocolSchema'
+import { FREQUENCY_LABELS } from '@protocols/constants/protocolSchema'
 
 import './ProtocolCard.css'
 

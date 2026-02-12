@@ -1,4 +1,4 @@
-import Button from '../ui/Button'
+import Button from '@shared/components/ui/Button'
 import './TitrationTransitionAlert.css'
 
 export default function TitrationTransitionAlert({ protocol, onAdvance, onDismiss }) {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useOnboarding } from './useOnboarding'
-import Button from '../ui/Button'
+import Button from '@shared/components/ui/Button'
 import './TelegramIntegrationStep.css'
 
 export default function TelegramIntegrationStep() {

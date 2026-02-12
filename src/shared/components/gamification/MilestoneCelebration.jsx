@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect } from 'react'
-import { analyticsService } from '../../services/analyticsService'
+import { analyticsService } from '@dashboard/services/analyticsService'
 import './MilestoneCelebration.css'
 
 export default function MilestoneCelebration({ milestone, visible, onClose }) {

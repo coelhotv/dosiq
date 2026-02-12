@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { selectBestInsight } from '../services/insightService'
+import { selectBestInsight } from '@dashboard/services/insightService'
 
 /**
  * Hook para obter insights contextuais para o usuário

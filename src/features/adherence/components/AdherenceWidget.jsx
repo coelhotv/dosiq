@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adherenceService } from '../services/adherenceService'
+import { adherenceService } from '@adherence/services/adherenceService'
 import AdherenceProgress from './AdherenceProgress'
 import StreakBadge from './StreakBadge'
 import Loading from '@shared/components/ui/Loading'

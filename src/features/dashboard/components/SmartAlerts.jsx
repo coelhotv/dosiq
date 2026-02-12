@@ -1,4 +1,4 @@
-import AlertList from '../ui/AlertList'
+import AlertList from '@shared/components/ui/AlertList'
 import './SmartAlerts.css'
 
 /**

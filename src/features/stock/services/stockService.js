@@ -1,9 +1,9 @@
-import { supabase, getUserId } from '../../lib/supabase'
+import { supabase, getUserId } from '@shared/utils/supabase'
 import {
   validateStockCreate,
   validateStockDecrease,
   validateStockIncrease
-} from '../../schemas/stockSchema'
+} from '@shared/constants/stockSchema'
 
 /**
  * Stock Service - Manage medicine stock

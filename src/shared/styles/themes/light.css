@@ -1,0 +1,110 @@
+/**
+ * Light Theme - Theme overrides for light mode
+ * 
+ * This file contains theme-specific overrides for light mode.
+ * These variables override the base tokens defined in tokens/*.css
+ * 
+ * Usage: Import this file after tokens to apply light theme.
+ */
+
+/* ============================================
+   LIGHT THEME DEFAULTS
+   These are the default values defined in :root
+   This file is kept for explicit light theme application
+   ============================================ */
+
+/* Background Colors */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass-dark: rgba(17, 24, 39, 0.8);
+  
+  /* Aliases */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+}
+
+/* Text Colors */
+:root {
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-inverse: #ffffff;
+  --text-link: #ec4899;
+  
+  /* Aliases */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-link: var(--text-link);
+}
+
+/* Border Colors */
+:root {
+  --border-light: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-dark: #d1d5db;
+  
+  /* Aliases */
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+  --border: var(--border-default);
+  --border-color: var(--border);
+}
+
+/* Neon Colors */
+:root {
+  --neon-cyan: #06b6d4;
+  --neon-pink: #ec4899;
+  --neon-magenta: #d946ef;
+  --neon-green: #10b981;
+  --neon-orange: #f97316;
+  --neon-yellow: #eab308;
+  --neon-red: #ef4444;
+  --neon-blue: #0072FF;
+  --neon-purple: #AA00FF;
+}
+
+/* Glow Effects */
+:root {
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
+  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
+  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 10px rgba(245, 158, 11, 0.5);
+  --glow-error: 0 0 10px rgba(239, 68, 68, 0.5);
+  --glow-info: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Shadows */
+:root {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* State Colors */
+:root {
+  --state-hover: rgba(236, 72, 153, 0.1);
+  --state-active: rgba(236, 72, 153, 0.2);
+  --state-focus: rgba(236, 72, 153, 0.3);
+  --state-disabled: rgba(0, 0, 0, 0.1);
+  --state-loading: rgba(236, 72, 153, 0.5);
+}
+
+/* Toggle Colors */
+:root {
+  --color-toggle-track: #e5e7eb;
+  --color-sun: #f59e0b;
+  --color-moon: #93c5fd;
+}

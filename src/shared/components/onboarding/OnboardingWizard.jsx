@@ -3,7 +3,7 @@ import WelcomeStep from './WelcomeStep'
 import FirstMedicineStep from './FirstMedicineStep'
 import FirstProtocolStep from './FirstProtocolStep'
 import TelegramIntegrationStep from './TelegramIntegrationStep'
-import Button from '../ui/Button'
+import Button from '@shared/components/ui/Button'
 import './OnboardingWizard.css'
 
 export default function OnboardingWizard() {

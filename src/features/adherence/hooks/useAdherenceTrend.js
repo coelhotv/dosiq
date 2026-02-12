@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { getAdherenceTrend, getTrendEmoji, getTrendLabel } from '@shared/services/adherenceTrendService'
+import { getAdherenceTrend, getTrendEmoji, getTrendLabel } from '@dashboard/services/adherenceTrendService'
 
 /**
  * Hook para obter dados de tendência de adesão

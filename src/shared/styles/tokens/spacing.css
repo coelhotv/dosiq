@@ -1,0 +1,216 @@
+/**
+ * Spacing Token - Spacing Scale and Breakpoints
+ * 
+ * This file contains all spacing tokens and responsive breakpoints
+ * for the Meus Remédios design system.
+ */
+
+/* ============================================
+   SPACING SCALE - Based on Tailwind CSS
+   ============================================ */
+:root {
+  /* Pixels (raw values) */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-3-5: 0.875rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-9: 2.25rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-28: 7rem;
+  --space-32: 8rem;
+  --space-36: 9rem;
+  --space-40: 10rem;
+  --space-44: 11rem;
+  --space-48: 12rem;
+  --space-52: 13rem;
+  --space-56: 14rem;
+  --space-60: 15rem;
+  --space-64: 16rem;
+  --space-72: 18rem;
+  --space-80: 20rem;
+  --space-96: 24rem;
+  
+  /* Named spacing tokens - Valores absolutos para evitar circularidade */
+  --spacing-xs: 0.25rem;     /* 4px */
+  --spacing-sm: 0.5rem;      /* 8px */
+  --spacing-md: 0.75rem;     /* 12px - Mobile first, mais compacto */
+  --spacing-lg: 1rem;        /* 16px */
+  --spacing-xl: 1.25rem;     /* 20px */
+  --spacing-2xl: 1.5rem;     /* 24px */
+  
+  /* Aliases for compatibility - Usar valores absolutos */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+}
+
+/* ============================================
+   HIERARCHICAL SPACING - Mobile First (Reduzido)
+   ============================================ */
+:root {
+  /* Espaçamento entre seções principais - Reduzido para densidade */
+  --spacing-section-hero: var(--space-6);       /* 24px - era 32px */
+  --spacing-section-major: var(--space-4);      /* 16px - era 24px */
+  --spacing-section-minor: var(--space-3);      /* 12px - era 16px */
+  --spacing-section-tight: var(--space-2);      /* 8px - era 12px */
+  
+  /* Espaçamento interno de componentes - Mais compacto */
+  --spacing-component-loose: var(--space-4);    /* 16px - era 24px */
+  --spacing-component-normal: var(--space-3);   /* 12px - era 16px */
+  --spacing-component-compact: var(--space-2);  /* 8px - era 12px */
+  --spacing-component-tight: var(--space-1);    /* 4px */
+  
+  /* Espaçamento entre itens de lista - Compactação máxima */
+  --spacing-list-loose: var(--space-3);         /* 12px - era 16px */
+  --spacing-list-normal: var(--space-2);        /* 8px - era 12px */
+  --spacing-list-compact: var(--space-1);       /* 4px - era 8px */
+  
+  /* Espaçamento de elementos relacionados */
+  --spacing-related: var(--space-1);            /* 4px - era 8px */
+  --spacing-related-tight: 2px;                 /* 2px */
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   Based on common device sizes
+   ============================================ */
+:root {
+  /* Extra small - iPhone SE and similar */
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* Aliases for compatibility */
+  --breakpoint-mobile: var(--breakpoint-xs);
+  --breakpoint-tablet: var(--breakpoint-md);
+  --breakpoint-desktop: var(--breakpoint-lg);
+  --breakpoint-wide: var(--breakpoint-xl);
+}
+
+/* ============================================
+   CONTAINER WIDTHS
+   ============================================ */
+:root {
+  --container-xs: 320px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  --container-full: 100%;
+}
+
+/* ============================================
+   SECTION SPACING - Mobile First
+   ============================================ */
+:root {
+  --section-padding-y: var(--space-4);          /* 16px - era 32px */
+  --section-padding-x: var(--space-3);          /* 12px - era 16px */
+  --section-margin-y: var(--space-4);           /* 16px - era 32px */
+  
+  /* Mobile compact (default) */
+  --section-padding-y-compact: var(--space-3);  /* 12px */
+  --section-padding-x-compact: var(--space-2);  /* 8px */
+}
+
+/* ============================================
+   COMPONENT SPACING - Cards Mobile First
+   ============================================ */
+:root {
+  /* Card spacing - Reduzido para mobile.jpg density */
+  --card-padding: var(--space-3);        /* 12px - era 24px */
+  --card-padding-sm: var(--space-2);     /* 8px - era 16px */
+  --card-padding-lg: var(--space-4);     /* 16px - era 32px */
+  --card-gap: var(--space-2);            /* 8px - era 16px */
+  --card-border-radius: var(--radius-lg);
+  
+  /* Button spacing */
+  --button-padding-y: var(--space-2);
+  --button-padding-x: var(--space-4);
+  --button-padding-y-sm: var(--space-1);
+  --button-padding-x-sm: var(--space-3);
+  --button-padding-y-lg: var(--space-3);
+  --button-padding-x-lg: var(--space-6);
+  --button-gap: var(--space-2);
+  
+  /* Input spacing */
+  --input-padding-y: var(--space-2);
+  --input-padding-x: var(--space-3);
+  --input-gap: var(--space-2);
+  
+  /* List spacing */
+  --list-item-padding-y: var(--space-3);
+  --list-item-padding-x: var(--space-4);
+  --list-gap: var(--space-2);
+  
+  /* Modal spacing */
+  --modal-padding: var(--space-6);
+  --modal-gap: var(--space-4);
+  --modal-header-height: var(--space-16);
+  --modal-footer-height: var(--space-16);
+}
+
+/* ============================================
+   LAYOUT SPACING
+   ============================================ */
+:root {
+  /* Grid */
+  --grid-gap: var(--space-6);
+  --grid-gap-sm: var(--space-4);
+  --grid-gap-lg: var(--space-8);
+  
+  /* Flex */
+  --flex-gap: var(--space-4);
+  --flex-gap-sm: var(--space-2);
+  --flex-gap-lg: var(--space-6);
+  
+  /* Page layout */
+  --page-margin: var(--space-4);
+  --page-padding: var(--space-6);
+  --page-max-width: var(--container-xl);
+}
+
+/* ============================================
+   NAVIGATION SPACING
+   ============================================ */
+:root {
+  --nav-height: var(--space-16);
+  --nav-height-compact: var(--space-14);
+  --nav-padding: var(--space-4);
+  --nav-item-padding: var(--space-3);
+  --nav-icon-size: var(--space-6);
+}
+
+/* ============================================
+   SAFE AREA INSETS (for notched devices)
+   ============================================ */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}

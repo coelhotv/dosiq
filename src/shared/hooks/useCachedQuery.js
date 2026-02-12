@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { cachedQuery, invalidateCache } from '../lib/queryCache'
+import { cachedQuery, invalidateCache } from '@shared/utils/queryCache'
 
 /**
  * Hook para executar queries com cache SWR
@@ -307,4 +307,4 @@ export function useCachedMutation(mutationFn, options = {}) {
 }
 
 // Re-exporta funções úteis do queryCache
-export { invalidateCache, generateCacheKey, prefetchCache, getCacheStats, clearCache } from '../lib/queryCache'
+export { invalidateCache, generateCacheKey, prefetchCache, getCacheStats, clearCache } from '@shared/utils/queryCache'

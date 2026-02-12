@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import Button from '../ui/Button'
-import ShakeEffect from '../animations/ShakeEffect'
+import Button from '@shared/components/ui/Button'
+import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
-import { FREQUENCIES, FREQUENCY_LABELS } from '../../schemas/protocolSchema'
+import { FREQUENCIES, FREQUENCY_LABELS } from '@protocols/constants/protocolSchema'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({
