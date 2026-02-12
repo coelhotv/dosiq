@@ -47,15 +47,43 @@ export function supportsBeforeInstallPrompt() {
 }
 
 /**
- * Check if the browser is desktop Chrome/Edge (supports beforeinstallprompt)
- * @returns {boolean} True if desktop Chrome or Edge
+ * Check if the browser is desktop Chrome/Edge/Opera (Chromium-based)
+ * @returns {boolean} True if desktop Chromium browser
  */
 export function isDesktopChrome() {
   const userAgent = window.navigator.userAgent.toLowerCase()
-  const isChrome = /chrome/.test(userAgent) && !/mobile/.test(userAgent)
-  const isEdge = /edg/.test(userAgent) && !/mobile/.test(userAgent)
   
-  return (isChrome || isEdge) && supportsBeforeInstallPrompt()
+  // More flexible detection for Chrome on any platform (including macOS)
+  const isChrome = /chrome|chromium/.test(userAgent) && !/mobile|android/.test(userAgent)
+  const isEdge = /edg|edge/.test(userAgent) && !/mobile|android/.test(userAgent)
+  const isOpera = /opr|opera/.test(userAgent) && !/mobile|android/.test(userAgent)
+  const isBrave = /brave/.test(userAgent) && !/mobile|android/.test(userAgent)
+  
+  // Show banner for ANY Chromium desktop browser, not just those with beforeinstallprompt
+  return isChrome || isEdge || isOpera || isBrave
+}
+
+/**
+ * Check if the browser supports native beforeinstallprompt event
+ * @returns {boolean} True if BeforeInstallPromptEvent is supported
+ */
+export function canShowNativePrompt() {
+  return supportsBeforeInstallPrompt()
+}
+
+/**
+ * Check if browser is any Chromium-based browser that might support PWA
+ * @returns {boolean} True if Chromium-based desktop browser
+ */
+export function isChromiumDesktop() {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  const isDesktop = !/mobile|android|iphone|ipad|ipod/.test(userAgent)
+  const isChrome = /chrome|chromium/.test(userAgent)
+  const isEdge = /edg|edge/.test(userAgent)
+  const isOpera = /opr|opera/.test(userAgent)
+  const isBrave = /brave/.test(userAgent)
+  
+  return isDesktop && (isChrome || isEdge || isOpera || isBrave)
 }
 
 /**

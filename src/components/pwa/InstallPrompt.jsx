@@ -6,6 +6,7 @@ import {
   isIOSSafari,
   isChromeAndroid,
   isDesktopChrome,
+  canShowNativePrompt,
   wasPromptDismissed,
   dismissPrompt,
   isDismissalExpired,
@@ -28,7 +29,8 @@ export default function InstallPrompt() {
   const [platformInfo, setPlatformInfo] = useState({
     isIOSSafari: false,
     isChromeAndroid: false,
-    isDesktopChrome: false
+    isDesktopChrome: false,
+    canShowNativePrompt: false
   })
 
   // Detect platform and check if prompt should be shown
@@ -54,14 +56,18 @@ export default function InstallPrompt() {
       const isIOS = isIOSSafari()
       const isAndroid = isChromeAndroid()
       const isDesktop = isDesktopChrome()
+      const supportsInstall = 'BeforeInstallPromptEvent' in window
       
       console.log('[PWA Install] Platform detection:', { isIOS, isAndroid, isDesktop })
       console.log('[PWA Install] User agent:', navigator.userAgent)
+      console.log('[PWA Install] BeforeInstallPromptEvent supported:', supportsInstall)
+      console.log('[PWA Install] User agent (lowercase):', navigator.userAgent.toLowerCase())
 
       setPlatformInfo({
         isIOSSafari: isIOS,
         isChromeAndroid: isAndroid,
-        isDesktopChrome: isDesktop
+        isDesktopChrome: isDesktop,
+        canShowNativePrompt: canShowNativePrompt()
       })
 
       // Show prompt for supported platforms
@@ -106,6 +112,7 @@ export default function InstallPrompt() {
     console.log('[PWA Install] Button clicked')
     console.log('[PWA Install] Platform info:', platformInfo)
     console.log('[PWA Install] Deferred prompt available:', !!deferredPrompt)
+    console.log('[PWA Install] Native prompt supported:', canShowNativePrompt())
     
     // iOS Safari - show instructions
     if (platformInfo.isIOSSafari) {
@@ -141,6 +148,15 @@ export default function InstallPrompt() {
     if (platformInfo.isChromeAndroid) {
       console.log('[PWA Install] Chrome Android without deferred prompt - showing instructions')
       setShowIOSInstructions(true) // Reuse the instructions modal
+      return
+    }
+    
+    // Desktop Chrome/Edge without deferred prompt (common in dev/localhost)
+    // Show instructions instead of doing nothing
+    if (platformInfo.isDesktopChrome) {
+      console.log('[PWA Install] Desktop Chrome without deferred prompt - showing instructions')
+      console.log('[PWA Install] Note: beforeinstallprompt may not fire on localhost or in development')
+      setShowIOSInstructions(true)
       return
     }
     
