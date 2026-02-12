@@ -476,6 +476,29 @@ Per Roadmap 2026, Phase 5 will focus on **Valor Clínico e Exportação**:
 
 ---
 
+## Post-Fase 4 Improvements
+
+Following the completion of Phase 4, six critical improvements and bug fixes were implemented and deployed to production. These enhancements address user experience gaps and improve application reliability.
+
+**See full report:** [POST_FASE_4_IMPROVEMENTS_DELIVERY.md](./POST_FASE_4_IMPROVEMENTS_DELIVERY.md)
+
+### Summary of Improvements
+
+| # | Improvement | Commit | Impact |
+|---|-------------|--------|--------|
+| 1 | **Telegram Bot Scheduler Fix** | `23ce463` | Fixed silent failures, added weekly/monthly reports |
+| 2 | **Sparkline Drilldown 3-Way Classification** | `d65295d`, `6f571c0` | Taken/Missed/Scheduled doses with Brazil TZ support |
+| 3 | **PWA Install CTA UI** | `feature/wave-4/pwa-install-cta` | Cross-platform install banner with 30-day persistence |
+| 4 | **2-Hour Window for Next Doses** | `56cc114`, `b90cb19` | Tolerance window with visual urgency indicators |
+| 5 | **Last Doses Widget** | `51dd638`, `86e472d` | Quick access to 3 most recent doses |
+| 6 | **Swipe Registration Bug Fix** | `dca730b` | Fixed mg vs pills logging issue |
+
+**Version:** 2.8.1
+**Main Commit:** `dca730b`
+**Status:** ✅ Deployed to Production
+
+---
+
 *Phase 4 orchestration completed with full multi-agent coordination, bidirectional traceability between roadmap milestones and PRD specifications, automated dependency resolution pipelines, continuous integration checkpoints, cross-functional validation protocols, and iterative quality assurance cycles.*
 
 **Orchestrator:** Architect-Orchestrator Agent  
