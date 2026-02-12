@@ -15,6 +15,7 @@ import InsightCard from '../components/dashboard/InsightCard'
 import TreatmentAccordion from '../components/dashboard/TreatmentAccordion'
 import SwipeRegisterItem from '../components/dashboard/SwipeRegisterItem'
 import SparklineAdesao from '../components/dashboard/SparklineAdesao'
+import DailyDoseModal from '../components/dashboard/DailyDoseModal'
 import EmptyState from '../components/ui/EmptyState'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import ConfettiAnimation from '../components/animations/ConfettiAnimation'
@@ -24,6 +25,7 @@ import { analyticsService } from '../services/analyticsService'
 import { getCurrentUser } from '../lib/supabase'
 import { useAdherenceTrend } from '../hooks/useAdherenceTrend'
 import { useInsights } from '../hooks/useInsights'
+import { useCachedQuery } from '../hooks/useCachedQuery'
 import styles from './Dashboard.module.css'
 
 // Constante para chave de armazenamento de alertas snoozed
@@ -116,6 +118,90 @@ export default function Dashboard({ onNavigate }) {
   // Estados para controle de celebração de milestones
   const [currentMilestone, setCurrentMilestone] = useState(null)
   const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false)
+  
+  // === NOVOS ESTADOS PARA DRILL-DOWN DO SPARKLINE ===
+  /**
+   * Data selecionada no sparkline
+   * @type {string | null} - Formato 'YYYY-MM-DD'
+   */
+  const [selectedDate, setSelectedDate] = useState(null)
+  
+  /**
+   * Controle de abertura do modal de drill-down
+   * @type {boolean}
+   */
+  const [isDrillDownModalOpen, setIsDrillDownModalOpen] = useState(false)
+  
+  // Fetch dos logs do dia selecionado usando cache
+  // Usar uma key fixa que muda apenas quando selectedDate muda
+  const drillDownCacheKey = useMemo(() => {
+    return selectedDate ? `logs-drilldown-${selectedDate}` : null
+  }, [selectedDate])
+  
+  const {
+    data: dayLogsData,
+    isLoading: isDayLogsLoading,
+    error: dayLogsError,
+    executeQuery: refetchDayLogs
+  } = useCachedQuery(
+    drillDownCacheKey,
+    async () => {
+      if (!selectedDate) return { data: [], total: 0, hasMore: false }
+      
+      // Garantir que a data está no formato correto (YYYY-MM-DD)
+      const formattedDate = selectedDate.split('T')[0]
+      
+      // logService.getByDateRange retorna { data, total, hasMore }
+      const result = await logService.getByDateRange(formattedDate, formattedDate, 50)
+      return result
+    },
+    {
+      enabled: !!selectedDate && selectedDate.length === 10,
+      staleTime: 60000, // 1 minuto
+      onError: (err) => {
+        console.error('Erro ao carregar logs do dia:', err)
+        analyticsService.track('drilldown_error', {
+          error: err.message,
+          date: selectedDate
+        })
+      }
+    }
+  )
+  
+  // Handler para click em um dia do sparkline
+  const handleDayClick = useMemo(() => (dayData) => {
+    setSelectedDate(dayData.date)
+    setIsDrillDownModalOpen(true)
+    analyticsService.track('sparkline_drilldown_opened', {
+      date: dayData.date,
+      adherence: dayData.adherence,
+      taken: dayData.taken,
+      expected: dayData.expected
+    })
+  }, [])
+  
+  // Handler para fechar o modal de drill-down
+  const handleCloseDrillDown = () => {
+    setIsDrillDownModalOpen(false)
+    // Aguardar animação de fechamento antes de limpar data
+    setTimeout(() => {
+      setSelectedDate(null)
+    }, 300)
+  }
+  
+  // Handler para retry em caso de erro
+  const handleRetryDayLogs = () => {
+    refetchDayLogs({ force: true })
+  }
+  
+  // Extrair array de logs do resultado paginado
+  const dayLogs = dayLogsData?.data || []
+  
+  // Obter resumo do dia selecionado
+  const selectedDaySummary = useMemo(() => {
+    if (!selectedDate || !dailyAdherence.length) return null
+    return dailyAdherence.find(d => d.date === selectedDate)
+  }, [selectedDate, dailyAdherence])
   
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   
@@ -471,7 +557,12 @@ export default function Dashboard({ onNavigate }) {
       {/* Sparkline de Adesão Semanal */}
       {!isAdherenceLoading && dailyAdherence.length > 0 && (
         <div className={styles.sparklineContainer}>
-          <SparklineAdesao adherenceByDay={dailyAdherence} size="medium" showAxis={false} />
+          <SparklineAdesao
+            adherenceByDay={dailyAdherence}
+            size="medium"
+            showAxis={false}
+            onDayClick={handleDayClick}
+          />
         </div>
       )}
 
@@ -699,6 +790,19 @@ export default function Dashboard({ onNavigate }) {
           onClose={() => setShowMilestoneCelebration(false)}
         />
       )}
+
+      {/* Modal de Drill-Down do Sparkline */}
+      <DailyDoseModal
+        date={selectedDate}
+        isOpen={isDrillDownModalOpen}
+        onClose={handleCloseDrillDown}
+        logs={dayLogs}
+        protocols={rawProtocols}
+        isLoading={isDayLogsLoading}
+        error={dayLogsError}
+        dailySummary={selectedDaySummary}
+        onRetry={handleRetryDayLogs}
+      />
     </div>
   )
 }

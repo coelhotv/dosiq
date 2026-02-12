@@ -1,18 +1,41 @@
 /**
  * SparklineAdesao - Componente de gráfico de linha para visualização de adesão
- * 
+ *
  * Gráfico SVG inline mostrando tendência de adesão dos últimos 7 dias
  * com cores semânticas e animações suaves.
- * 
+ *
+ * Suporta drill-down: clique em qualquer ponto para ver detalhes do dia.
+ *
  * @component
  * @example
- * <SparklineAdesao adherenceByDay={data} />
+ * <SparklineAdesao adherenceByDay={data} onDayClick={(dayData) => console.log(dayData)} />
  */
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { analyticsService } from '../../services/analyticsService'
 import './SparklineAdesao.css'
+
+/**
+ * Helper to check if a date is "today or before" in Brazil time (GMT-3)
+ * Until 3AM UTC (which is midnight in Brazil), we don't show the "next day"
+ * @param {string} dateStr - Date in format YYYY-MM-DD
+ * @returns {boolean} true if date is visible (today or past)
+ */
+function isDateVisibleInBrazil(dateStr) {
+  const now = new Date()
+  const brazilOffset = -3 * 60 * 60 * 1000 // GMT-3 in milliseconds
+  
+  // Current time in Brazil
+  const nowInBrazil = new Date(now.getTime() + brazilOffset)
+  
+  // Compare dates (ignoring time)
+  const nowDateStr = nowInBrazil.toISOString().split('T')[0]
+  const nowDate = new Date(nowDateStr + 'T00:00:00')
+  const inputDate = new Date(dateStr + 'T00:00:00')
+  
+  return inputDate <= nowDate
+}
 
 /**
  * Gera path SVG para o sparkline
@@ -86,21 +109,37 @@ const getAdherenceColor = (adherence) => {
 
 /**
  * Componente SparklineAdesao
- * 
+ *
  * @param {Object} props
  * @param {Array} props.adherenceByDay - Array de objetos { date: 'YYYY-MM-DD', adherence: number, taken: number, expected: number }
  * @param {string} props.size - Tamanho: 'small', 'medium', 'large'
  * @param {boolean} props.showAxis - Mostrar eixo X
  * @param {boolean} props.showTooltip - Mostrar tooltips
  * @param {string} props.className - Classes CSS adicionais
+ * @param {Function} props.onDayClick - Callback quando um dia é clicado (dayData) => void
  */
 export function SparklineAdesao({
   adherenceByDay = [],
   size = 'medium',
   showAxis = false,
   showTooltip = true,
-  className = ''
+  className = '',
+  onDayClick
 }) {
+  // Handler memoizado para evitar recriações
+  const handleDayClick = useCallback((dayData) => {
+    // Track analytics
+    analyticsService.track('sparkline_day_clicked', {
+      date: dayData.date,
+      adherence: dayData.adherence,
+      taken: dayData.taken,
+      expected: dayData.expected
+    })
+    
+    // Chamar callback se fornecido
+    onDayClick?.(dayData)
+  }, [onDayClick])
+
   const handleSparklineTap = (dayData) => {
     analyticsService.track('sparkline_tapped', {
       date: dayData.date,
@@ -115,18 +154,24 @@ export function SparklineAdesao({
 
   const { width, height, padding } = sizes[size] || sizes.medium
 
-  // Processar dados - últimos 7 dias
+  // Processar dados - últimos 7 dias (filtrando dias futuros no horário do Brasil)
   const chartData = useMemo(() => {
     if (!adherenceByDay || adherenceByDay.length === 0) return []
 
     const today = new Date()
     const data = []
 
-    // Gerar últimos 7 dias
+    // Gerar últimos 7 dias, mas filtrar dias futuros no horário do Brasil
+    // Regra: até 3AM UTC (meia-noite Brasil), não mostrar o "próximo dia"
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
       const dateKey = date.toISOString().split('T')[0]
+      
+      // Pular dias que são "futuros" no horário do Brasil
+      if (!isDateVisibleInBrazil(dateKey)) {
+        continue
+      }
       
       const dayData = adherenceByDay.find(d => d.date === dateKey)
       data.push({
@@ -285,23 +330,50 @@ export function SparklineAdesao({
           }}
         />
 
-        {/* Pontos de dados - Menores */}
+        {/* Pontos de dados clicáveis para drill-down */}
         {dataPoints.map((d, i) => (
           <motion.circle
             key={d.date}
             cx={d.x}
             cy={d.y}
-            r={size === 'small' ? 1.5 : 2}
+            r={onDayClick ? (size === 'small' ? 2.5 : 3) : (size === 'small' ? 1 : 1.5)}
             fill={getAdherenceColor(d.adherence)}
-            className="sparkline-dot"
+            className={`sparkline-dot ${onDayClick ? 'sparkline-dot--clickable' : ''}`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ 
+            transition={{
               delay: prefersReducedMotion ? 0 : i * 0.1,
               duration: 0.2
             }}
-            role="graphics-symbol"
-            aria-label={`${d.dayName}: ${d.adherence}%`}
+            // Acessibilidade
+            role={onDayClick ? 'button' : 'graphics-symbol'}
+            tabIndex={onDayClick ? 0 : -1}
+            aria-label={onDayClick
+              ? `Ver detalhes de ${d.dayName}: ${d.adherence}% de adesão, ${d.taken} de ${d.expected} doses`
+              : `${d.dayName}: ${d.adherence}%`
+            }
+            // Interatividade
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onDayClick) {
+                handleDayClick(d)
+              }
+            }}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && onDayClick) {
+                e.preventDefault()
+                handleDayClick(d)
+              }
+            }}
+            // Cursor e eventos
+            style={{
+              cursor: onDayClick ? 'pointer' : 'default',
+              pointerEvents: onDayClick ? 'all' : 'none'
+            }}
+            // Dados para testes
+            data-date={d.date}
+            data-adherence={d.adherence}
+            data-testid={`sparkline-dot-${d.date}`}
           />
         ))}
       </svg>
