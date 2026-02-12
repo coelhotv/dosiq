@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useCachedQueries } from '@shared/hooks/useCachedQuery';
-import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining, isDoseInToleranceWindow } from '@dashboard/utils/adherenceLogic';
+import { calculateAdherenceStats, getNextDoseTime, getNextDoseWindowEnd, isInToleranceWindow, calculateDailyIntake, calculateDaysRemaining, isDoseInToleranceWindow } from '@dashboard/utils/adherenceLogic';
 import { medicineService } from '@medications/services/medicineService';
 import { protocolService } from '@protocols/services/protocolService';
 import { logService } from '@shared/services/api/logService';
@@ -129,10 +129,15 @@ export function DashboardProvider({ children }) {
 
   const protocolsWithNextDose = useMemo(() => {
     const protocols = protocolsResult.data || [];
-    return protocols.map(p => ({
-      ...p,
-      next_dose: getNextDoseTime(p)
-    }));
+    return protocols.map(p => {
+      const nextDose = getNextDoseTime(p);
+      return {
+        ...p,
+        next_dose: nextDose,
+        next_dose_window_end: getNextDoseWindowEnd(nextDose),
+        is_in_tolerance_window: isInToleranceWindow(nextDose)
+      };
+    });
   }, [protocolsResult.data]);
 
   const value = useMemo(() => ({

@@ -24,6 +24,27 @@
   box-shadow: var(--glow-hover-secondary);
 }
 
+/* Estilo quando a dose está dentro da janela de tolerância (últimas 2h) */
+.treatment-accordion--urgent {
+  border-color: var(--status-warning, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  animation: pulse-urgent 2s ease-in-out infinite;
+}
+
+.treatment-accordion--urgent .treatment-accordion__meta {
+  color: var(--status-warning, #f59e0b);
+  font-weight: 600;
+}
+
+@keyframes pulse-urgent {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  }
+}
+
 .treatment-accordion__header {
   display: flex;
   justify-content: space-between;

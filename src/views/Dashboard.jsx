@@ -296,13 +296,14 @@ export default function Dashboard({ onNavigate }) {
   const standaloneProtocols = useMemo(() => {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const toleranceWindowMinutes = 2 * 60; // 2 horas de tolerância
     
     return rawProtocols
       .filter(p => !p.treatment_plan_id && p.active)
       .sort((a, b) => {
         // Converter next_dose para minutos
         const getMinutes = (time) => {
-          if (!time) return Infinity;
+          if (!time || time === '--:--') return Infinity;
           const [h, m] = time.split(':').map(Number);
           return h * 60 + m;
         };
@@ -310,14 +311,33 @@ export default function Dashboard({ onNavigate }) {
         const aMinutes = getMinutes(a.next_dose);
         const bMinutes = getMinutes(b.next_dose);
         
-        // Se for para hoje e o horário já passou, considerar como "menor" para priorizar
-        const aIsPast = aMinutes < currentMinutes;
-        const bIsPast = bMinutes < currentMinutes;
+        // Verificar se está dentro da janela de tolerância (2h após o horário)
+        const aIsInToleranceWindow = a.is_in_tolerance_window ||
+          (aMinutes >= currentMinutes - toleranceWindowMinutes && aMinutes < currentMinutes);
+        const bIsInToleranceWindow = b.is_in_tolerance_window ||
+          (bMinutes >= currentMinutes - toleranceWindowMinutes && bMinutes < currentMinutes);
         
-        if (aIsPast && !bIsPast) return 1;
-        if (!aIsPast && bIsPast) return -1;
+        // Verificar se é dose futura (ainda não passou)
+        const aIsFuture = aMinutes >= currentMinutes;
+        const bIsFuture = bMinutes >= currentMinutes;
         
-        return aMinutes - bMinutes;
+        // Prioridade: 1. Dentro da janela de tolerância (urgente), 2. Futuro, 3. Passado
+        if (aIsInToleranceWindow && !bIsInToleranceWindow) return -1;
+        if (!aIsInToleranceWindow && bIsInToleranceWindow) return 1;
+        
+        // Ambos dentro ou ambos fora da janela - ordenar por futuro vs passado
+        if (aIsFuture && !bIsFuture) return -1;
+        if (!aIsFuture && bIsFuture) return 1;
+        
+        // Mesmo grupo
+        if (aIsFuture && bIsFuture) {
+          // Ambos futuros - ordenar cronologicamente (mais cedo primeiro)
+          return aMinutes - bMinutes;
+        }
+        
+        // Ambos passados (doses de amanhã) - ordenar por proximidade com o horário atual
+        // (mais próximo de "agora" primeiro, ou seja, decrescente)
+        return bMinutes - aMinutes;
       })
       .slice(0, 5);
   }, [rawProtocols]);

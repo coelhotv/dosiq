@@ -180,6 +180,7 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
 
 /**
  * Calcula o horário da próxima dose baseado no cronograma do protocolo
+ * Inclui janela de tolerância de 2 horas após o horário agendado.
  * @param {Object} protocol
  * @returns {string} HH:mm ou '--:--'
  */
@@ -199,8 +200,12 @@ export function getNextDoseTime(protocol) {
     })
     .sort((a, b) => a - b);
 
-  // Encontra o próximo horário hoje
-  const nextToday = scheduleMinutes.find(m => m > currentMinutes);
+  // Janela de tolerância: 2 horas (120 minutos)
+  const toleranceWindowMinutes = 2 * 60;
+
+  // Encontra o próximo horário hoje (incluindo janela de 2h de tolerância)
+  // Uma dose é considerada "ativa" até 2 horas após o horário agendado
+  const nextToday = scheduleMinutes.find(m => m + toleranceWindowMinutes > currentMinutes);
 
   if (nextToday !== undefined) {
     const h = String(Math.floor(nextToday / 60)).padStart(2, '0');
@@ -213,6 +218,48 @@ export function getNextDoseTime(protocol) {
   const h = String(Math.floor(firstTomorrow / 60)).padStart(2, '0');
   const m = String(firstTomorrow % 60).padStart(2, '0');
   return `${h}:${m}`;
+}
+
+/**
+ * Calcula o horário final da janela de tolerância (2h após a próxima dose).
+ * Retorna null se não houver próxima dose ou se a dose é do dia seguinte.
+ * @param {string} nextDoseTime - Horário da próxima dose no formato HH:mm
+ * @returns {string|null} Horário final da janela (HH:mm) ou null
+ */
+export function getNextDoseWindowEnd(nextDoseTime) {
+  if (!nextDoseTime || nextDoseTime === '--:--') {
+    return null;
+  }
+
+  const [hours, minutes] = nextDoseTime.split(':').map(Number);
+  const windowEndMinutes = (hours * 60 + minutes) + (2 * 60); // +2 horas
+
+  const endHours = String(Math.floor(windowEndMinutes / 60) % 24).padStart(2, '0');
+  const endMinutes = String(windowEndMinutes % 60).padStart(2, '0');
+
+  return `${endHours}:${endMinutes}`;
+}
+
+/**
+ * Verifica se a próxima dose está dentro da janela de tolerância (dentro das 2h).
+ * @param {string} nextDoseTime - Horário da próxima dose no formato HH:mm
+ * @returns {boolean} true se estiver dentro da janela de tolerância
+ */
+export function isInToleranceWindow(nextDoseTime) {
+  if (!nextDoseTime || nextDoseTime === '--:--') {
+    return false;
+  }
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const [hours, minutes] = nextDoseTime.split(':').map(Number);
+  const doseMinutes = hours * 60 + minutes;
+  const toleranceWindowMinutes = 2 * 60;
+
+  // Está dentro da janela se o horário atual for maior que o agendado
+  // mas menor que o agendado + 2 horas
+  return currentMinutes > doseMinutes && currentMinutes <= doseMinutes + toleranceWindowMinutes;
 }
 
 /**
