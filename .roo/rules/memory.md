@@ -777,4 +777,46 @@ git push origin main      # ✅ main atualizada (034565c)
 
 ---
 
+## Memory Entry — 2026-02-12 11:45
+**Contexto / Objetivo**
+- Corrigir falhas de CI/CD no GitHub Actions
+- Tests de `adherenceLogic.drilldown.test.js` falhando em CI (timezone mismatch)
+- Resolver erro: "expected [ { …(10) } ] to have a length of +0 but got 1"
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/utils/__tests__/adherenceLogic.drilldown.test.js` — timezone fix
+- Branch criada: `fix/ci-timezone-tests`
+
+**Causa raiz (se foi debug)**
+- Sintoma: Tests passavam localmente mas falhavam em CI
+- Causa: CI roda em UTC, local em UTC-3 (Brasil)
+- Timestamps hardcoded (`2026-02-11T11:15:00Z`) resultavam em horários diferentes conforme timezone do runner
+- A função `isDoseInToleranceWindow` calculava tolerância incorretamente em CI
+
+**Correção**
+- Substituir timestamps hardcoded por geração via `new Date(baseDate + 'T08:30:00').toISOString()`
+- Usar horários locais relativos em vez de UTC absolutos
+- Agora testes geram timestamps dinamicamente baseados no timezone do runner
+
+**O que deu certo**
+- 18 testes de drilldown passando em ambos os ambientes
+- Commit seguindo padrão convencional: `fix(test): ...`
+- Branch criada corretamente do main
+
+**O que não deu certo / riscos**
+- Nenhum — fix simples e efetivo
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** usar timestamps gerados via `Date` local para testes de timezone
+- **NUNCA** usar timestamps UTC hardcoded em testes que verificam tolerância de horário
+- Para testes CI-agnostic: `new Date(date + 'THH:mm:ss').toISOString()` em vez de `'YYYY-MM-DDTHH:mm:ssZ'`
+
+**Pendências / próximos passos**
+- Merge da branch `fix/ci-timezone-tests` para main
+- Validar CI passando após merge
+- Continuar com Fase 4.6
+
+---
+
 
