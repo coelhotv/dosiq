@@ -1,0 +1,330 @@
+.titration-timeline {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  border: 1px solid var(--border-color);
+}
+
+.titration-timeline.empty {
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.empty-message {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Header */
+.timeline-header {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.timeline-title h4 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.timeline-status {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.timeline-status.active {
+  background: rgba(255, 170, 0, 0.1);
+  color: var(--accent-warning);
+  border: 1px solid var(--accent-warning);
+}
+
+.timeline-status.complete {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--accent-success);
+  border: 1px solid var(--accent-success);
+}
+
+.timeline-status.paused {
+  background: rgba(122, 122, 140, 0.1);
+  color: var(--text-tertiary);
+  border: 1px solid var(--text-tertiary);
+}
+
+/* Progress Section */
+.timeline-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.progress-value {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.days-remaining {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+/* Steps Container */
+.timeline-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-step-wrapper {
+  cursor: pointer;
+  transition: opacity var(--transition-base);
+}
+
+.timeline-step-wrapper:hover {
+  opacity: 0.9;
+}
+
+.timeline-step-wrapper:last-child .titration-step .step-content {
+  padding-bottom: 0;
+}
+
+/* Footer */
+.timeline-footer {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-color);
+}
+
+.next-step-info,
+.completion-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.next-step-info {
+  border-left: 3px solid var(--accent-primary);
+}
+
+.completion-message {
+  border-left: 3px solid var(--accent-success);
+  background: rgba(0, 255, 136, 0.05);
+}
+
+.info-icon {
+  font-size: var(--font-size-lg);
+  flex-shrink: 0;
+}
+
+.info-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.info-text strong {
+  color: var(--text-primary);
+}
+
+/* Compact Mode */
+.titration-timeline.compact {
+  padding: var(--space-3);
+  background: transparent;
+  border: none;
+}
+
+.timeline-preview {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  -webkit-overflow-scrolling: touch;
+}
+
+.preview-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid transparent;
+}
+
+.preview-step.completed {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--accent-success);
+}
+
+.preview-step.current {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+.preview-step.future {
+  background: rgba(122, 122, 140, 0.1);
+  border-color: var(--border-color);
+  opacity: 0.7;
+}
+
+.preview-dose {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.preview-step.completed .preview-dose {
+  color: var(--accent-success);
+}
+
+.preview-step.current .preview-dose {
+  color: var(--accent-primary);
+}
+
+.preview-unit {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.timeline-progress-mini {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.progress-bar-mini {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill-mini {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.progress-text-mini {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .titration-timeline {
+    padding: var(--space-4);
+  }
+
+  .timeline-title {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .timeline-title h4 {
+    font-size: var(--font-size-base);
+  }
+
+  .preview-step {
+    min-width: 50px;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .preview-dose {
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .titration-timeline {
+    padding: var(--space-3);
+  }
+
+  .timeline-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .timeline-preview {
+    gap: var(--space-1);
+  }
+
+  .preview-step {
+    min-width: 45px;
+    padding: var(--space-1);
+  }
+
+  .next-step-info,
+  .completion-message {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .info-text {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Scrollbar Styling for Compact Mode */
+.timeline-preview::-webkit-scrollbar {
+  height: 4px;
+}
+
+.timeline-preview::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-preview::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+}
