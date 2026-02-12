@@ -4,7 +4,7 @@ import './TreatmentAccordion.css';
 
 /**
  * TreatmentAccordion - Card expansível para protocolos.
- * 
+ *
  * @param {Object} props
  * @param {Object} props.protocol - Dados do protocolo
  * @param {React.ReactNode} props.children - Itens de medicamento (SwipeRegisterItem)
@@ -16,16 +16,33 @@ export default function TreatmentAccordion({ protocol, children, onBatchRegister
   const selectedCount = selectedMedicines.length;
   const totalCount = protocol.medicines_count || 0;
 
+  // Formata a exibição da próxima dose com janela de tolerância
+  const formatNextDose = () => {
+    const nextDose = protocol.next_dose;
+    if (!nextDose || nextDose === '--:--') {
+      return 'Próxima: --:--';
+    }
+
+    const windowEnd = protocol.next_dose_window_end;
+    const isInWindow = protocol.is_in_tolerance_window;
+
+    if (windowEnd && isInWindow) {
+      return `Próxima: ${nextDose} (até ${windowEnd})`;
+    }
+
+    return `Próxima: ${nextDose}`;
+  };
+
   return (
-    <div className={`treatment-accordion ${isExpanded ? 'treatment-accordion--expanded' : ''}`}>
-      <div 
+    <div className={`treatment-accordion ${isExpanded ? 'treatment-accordion--expanded' : ''} ${protocol.is_in_tolerance_window ? 'treatment-accordion--urgent' : ''}`}>
+      <div
         className="treatment-accordion__header"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="treatment-accordion__info">
           <h3 className="treatment-accordion__title">{protocol.name}</h3>
           <span className="treatment-accordion__meta">
-            {protocol.medicines_count || 0} medicamentos • Próxima: {protocol.next_dose || '--:--'}
+            {protocol.medicines_count || 0} medicamentos • {formatNextDose()}
           </span>
         </div>
         <div className="treatment-accordion__controls">
