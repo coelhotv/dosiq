@@ -14,6 +14,7 @@ import Loading from '@shared/components/ui/Loading'
 import Landing from './views/Landing'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
+import InstallPrompt from './components/pwa/InstallPrompt'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -150,7 +151,10 @@ function App() {
         {isAuthenticated && <BottomNav currentView={currentView} setCurrentView={setCurrentView} />}
         
         {/* Onboarding Wizard - apenas para usuários autenticados */}
-          {isAuthenticated && <OnboardingWizard />}
+        {isAuthenticated && <OnboardingWizard />}
+        
+        {/* PWA Install Prompt - para todos os usuários */}
+        <InstallPrompt />
         </div>
       </DashboardProvider>
     </OnboardingProvider>
