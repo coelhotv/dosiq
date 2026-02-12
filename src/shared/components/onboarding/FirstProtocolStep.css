@@ -1,0 +1,106 @@
+/* First Protocol Step Styles */
+
+.first-protocol-step {
+  max-width: 100%;
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-error, #ef4444);
+}
+
+.error-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
+.error-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #111827);
+}
+
+.error-state p {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Protocol Icon */
+.protocol-icon {
+  background: var(--color-secondary-light, #e0e7ff) !important;
+  color: var(--color-secondary, #6366f1) !important;
+}
+
+/* Override ProtocolForm styles for onboarding context */
+.first-protocol-step .protocol-form-simple {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.first-protocol-step .protocol-form-simple h3 {
+  display: none; /* Hide title, we have step-header */
+}
+
+.first-protocol-step .form-actions-simple {
+  margin-top: 1.5rem;
+}
+
+.first-protocol-step .form-actions-simple .btn-save {
+  width: 100%;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+}
+
+.first-protocol-step .success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-success-light, #d1fae5);
+  color: var(--color-success, #059669);
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.first-protocol-step .success-message svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* Error Alert styling */
+.first-protocol-step .error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-error-light, #fee2e2);
+  color: var(--color-error, #ef4444);
+  border-radius: var(--radius-lg, 12px);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.first-protocol-step .error-alert svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Form hint */
+.first-protocol-step .form-hint {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin-top: 1rem;
+  margin-bottom: 0;
+}

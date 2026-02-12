@@ -1,0 +1,245 @@
+/**
+ * Shadows Token - Shadow Variables
+ * 
+ * This file contains all shadow and elevation tokens
+ * for the Meus Remédios design system.
+ */
+
+/* ============================================
+   SHADOWS - Based on Tailwind CSS scale
+   ============================================ */
+:root {
+  /* Subtle shadows */
+  --shadow-xs: 0 0 0 1px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  /* Medium shadows */
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Large shadows */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-4: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Extra large shadows */
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-5: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* 2XL */
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* Inner shadow */
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-inner-sm: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  
+  /* None */
+  --shadow-none: none;
+  
+  /* Aliases for compatibility */
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+  --shadow-xl: var(--shadow-4);
+}
+
+/* ============================================
+   LAYERED SHADOWS - Para profundidade visual
+   ============================================ */
+:root {
+  /* Camada 1: Base - Sutil */
+  --shadow-layer-1: 
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.03);
+  
+  /* Camada 2: Elevação - Moderada */
+  --shadow-layer-2: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+  
+  /* Camada 3: Destaque - Pronunciada */
+  --shadow-layer-3: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  
+  /* Camada 4: Flutuante - Intensa */
+  --shadow-layer-4: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  
+  /* Camada 5: Hero - Máxima profundidade */
+  --shadow-layer-5: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC SHADOWS
+   ============================================ */
+:root {
+  /* Cards padrão */
+  --shadow-card: var(--shadow-layer-2);
+  --shadow-card-hover: var(--shadow-layer-3);
+  
+  /* Hero / Featured */
+  --shadow-hero: var(--shadow-layer-4);
+  --shadow-hero-hover: var(--shadow-layer-5);
+  
+  /* Alerts */
+  --shadow-alert: var(--shadow-layer-2);
+  --shadow-alert-critical: 
+    0 0 15px rgba(255, 62, 62, 0.15),
+    var(--shadow-layer-2);
+  
+  /* Buttons */
+  --shadow-button: var(--shadow-layer-1);
+  --shadow-button-hover: var(--shadow-layer-2);
+  --shadow-button-active: var(--shadow-inner);
+  
+  /* Floating elements */
+  --shadow-float: var(--shadow-layer-3);
+  --shadow-float-hover: var(--shadow-layer-4);
+}
+
+/* ============================================
+   DARK MODE SHADOWS (darker and more intense)
+   ============================================ */
+[data-theme="dark"] {
+  --shadow-xs: 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: var(--shadow-2);
+  --shadow-3: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: var(--shadow-3);
+  --shadow-4: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --shadow-xl: var(--shadow-4);
+  --shadow-5: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: var(--shadow-5);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-inner-sm: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  
+  /* Layered shadows - Dark mode overrides */
+  --shadow-layer-1: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+  
+  --shadow-layer-2: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 2px 4px -1px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+  
+  --shadow-layer-3: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+  
+  --shadow-layer-4: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 10px 10px -5px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  
+  --shadow-layer-5: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  
+  --shadow-alert-critical: 
+    0 0 20px rgba(255, 62, 62, 0.25),
+    var(--shadow-layer-2);
+}
+
+/* ============================================
+   ELEVATION LEVELS
+   ============================================ */
+:root {
+  --elevation-0: var(--shadow-none);
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+  --elevation-4: var(--shadow-xl);
+  --elevation-5: var(--shadow-2xl);
+}
+
+/* ============================================
+   COMPONENT SHADOWS
+   ============================================ */
+:root {
+  /* Card shadow */
+  --shadow-card: var(--shadow-md);
+  --shadow-card-hover: var(--shadow-lg);
+  
+  /* Button shadow */
+  --shadow-button: var(--shadow-sm);
+  --shadow-button-hover: var(--shadow-md);
+  --shadow-button-active: var(--shadow-inner);
+  
+  /* Input shadow */
+  --shadow-input: var(--shadow-inner-sm);
+  --shadow-input-focus: 0 0 0 2px var(--color-primary);
+  
+  /* Modal shadow */
+  --shadow-modal: var(--shadow-2xl);
+  
+  /* Dropdown shadow */
+  --shadow-dropdown: var(--shadow-lg);
+  
+  /* Toast/Notification shadow */
+  --shadow-toast: var(--shadow-lg);
+  
+  /* Floating action button */
+  --shadow-fab: var(--shadow-lg);
+  
+  /* Navigation bar */
+  --shadow-nav: var(--shadow-md);
+}
+
+/* ============================================
+   GLOW EFFECTS (using box-shadow for neon effects)
+   ============================================ */
+:root {
+  /* Colored glows */
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
+  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
+  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 10px rgba(245, 158, 11, 0.5);
+  --glow-error: 0 0 10px rgba(239, 68, 68, 0.5);
+  --glow-info: 0 0 10px rgba(59, 130, 246, 0.5);
+  --glow-primary: var(--glow-pink);
+  --glow-secondary: var(--glow-cyan);
+  
+  /* Intense glows */
+  --glow-cyan-intense: 0 0 20px rgba(6, 182, 212, 0.7);
+  --glow-pink-intense: 0 0 20px rgba(236, 72, 153, 0.7);
+  --glow-magenta-intense: 0 0 20px rgba(217, 70, 239, 0.7);
+  --glow-green-intense: 0 0 20px rgba(16, 185, 129, 0.7);
+  
+  /* Subtle glows */
+  --glow-cyan-subtle: 0 0 5px rgba(6, 182, 212, 0.3);
+  --glow-pink-subtle: 0 0 5px rgba(236, 72, 153, 0.3);
+  --glow-magenta-subtle: 0 0 5px rgba(217, 70, 239, 0.3);
+}
+
+/* ============================================
+   DARK MODE GLOW EFFECTS
+   ============================================ */
+[data-theme="dark"] {
+  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
+  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
+  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
+  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
+  --glow-success: var(--glow-green);
+  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
+  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
+  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
+  --glow-primary: var(--glow-pink);
+  --glow-secondary: var(--glow-cyan);
+  
+  --glow-cyan-intense: 0 0 30px rgba(34, 211, 238, 0.8);
+  --glow-pink-intense: 0 0 30px rgba(244, 114, 182, 0.8);
+}

@@ -1,0 +1,70 @@
+/* AdherenceProgress - Progresso Circular */
+
+.adherence-progress {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring {
+  transform: rotate(0deg);
+}
+
+.progress-ring-circle-bg {
+  stroke: var(--bg-tertiary);
+}
+
+.progress-ring-circle {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.progress-percentage {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.progress-suffix {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* Tamanhos responsivos */
+@media (max-width: 480px) {
+  .progress-percentage {
+    font-size: 24px;
+  }
+  
+  .progress-suffix {
+    font-size: 12px;
+  }
+}
+
+/* Animação de entrada */
+@keyframes progressFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.adherence-progress {
+  animation: progressFadeIn 0.3s ease-out;
+}

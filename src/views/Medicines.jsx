@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { medicineService, protocolService, stockService } from '../services/api' // Import protocolService and stockService
-import Button from '../components/ui/Button'
-import Loading from '../components/ui/Loading'
-import Modal from '../components/ui/Modal'
-import EmptyState from '../components/ui/EmptyState'
-import MedicineForm from '../components/medicine/MedicineForm'
-import MedicineCard from '../components/medicine/MedicineCard'
+import { medicineService, protocolService, stockService } from '@shared/services' // Import protocolService and stockService
+import Button from '@shared/components/ui/Button'
+import Loading from '@shared/components/ui/Loading'
+import Modal from '@shared/components/ui/Modal'
+import EmptyState from '@shared/components/ui/EmptyState'
+import MedicineForm from '@medications/components/MedicineForm'
+import MedicineCard from '@medications/components/MedicineCard'
 import './Medicines.css'
 
 export default function Medicines({ onNavigateToProtocol }) {
