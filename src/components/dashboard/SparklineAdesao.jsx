@@ -17,6 +17,27 @@ import { analyticsService } from '../../services/analyticsService'
 import './SparklineAdesao.css'
 
 /**
+ * Helper to check if a date is "today or before" in Brazil time (GMT-3)
+ * Until 3AM UTC (which is midnight in Brazil), we don't show the "next day"
+ * @param {string} dateStr - Date in format YYYY-MM-DD
+ * @returns {boolean} true if date is visible (today or past)
+ */
+function isDateVisibleInBrazil(dateStr) {
+  const now = new Date()
+  const brazilOffset = -3 * 60 * 60 * 1000 // GMT-3 in milliseconds
+  
+  // Current time in Brazil
+  const nowInBrazil = new Date(now.getTime() + brazilOffset)
+  
+  // Compare dates (ignoring time)
+  const nowDateStr = nowInBrazil.toISOString().split('T')[0]
+  const nowDate = new Date(nowDateStr + 'T00:00:00')
+  const inputDate = new Date(dateStr + 'T00:00:00')
+  
+  return inputDate <= nowDate
+}
+
+/**
  * Gera path SVG para o sparkline
  * @param {Array} data - Array de objetos { date, adherence }
  * @param {number} width - Largura do SVG
@@ -133,18 +154,24 @@ export function SparklineAdesao({
 
   const { width, height, padding } = sizes[size] || sizes.medium
 
-  // Processar dados - últimos 7 dias
+  // Processar dados - últimos 7 dias (filtrando dias futuros no horário do Brasil)
   const chartData = useMemo(() => {
     if (!adherenceByDay || adherenceByDay.length === 0) return []
 
     const today = new Date()
     const data = []
 
-    // Gerar últimos 7 dias
+    // Gerar últimos 7 dias, mas filtrar dias futuros no horário do Brasil
+    // Regra: até 3AM UTC (meia-noite Brasil), não mostrar o "próximo dia"
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
       const dateKey = date.toISOString().split('T')[0]
+      
+      // Pular dias que são "futuros" no horário do Brasil
+      if (!isDateVisibleInBrazil(dateKey)) {
+        continue
+      }
       
       const dayData = adherenceByDay.find(d => d.date === dateKey)
       data.push({
@@ -309,7 +336,7 @@ export function SparklineAdesao({
             key={d.date}
             cx={d.x}
             cy={d.y}
-            r={onDayClick ? (size === 'small' ? 4 : 6) : (size === 'small' ? 1.5 : 2)}
+            r={onDayClick ? (size === 'small' ? 2.5 : 3) : (size === 'small' ? 1 : 1.5)}
             fill={getAdherenceColor(d.adherence)}
             className={`sparkline-dot ${onDayClick ? 'sparkline-dot--clickable' : ''}`}
             initial={{ scale: 0 }}
