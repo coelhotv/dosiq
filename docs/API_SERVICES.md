@@ -1,5 +1,8 @@
 # 💻 API dos Services - Meus Remédios
 
+**Versão:** 2.8.0
+**Data:** 2026-02-12
+
 Documentação completa das APIs internas dos services com exemplos de uso.
 
 ---
@@ -12,6 +15,8 @@ Documentação completa das APIs internas dos services com exemplos de uso.
 - [Log Service](#log-service)
 - [Treatment Plan Service](#treatment-plan-service)
 - [Cached Services](#cached-services)
+- [Push API](#push-api) 🆕 (F4.3)
+- [Analytics Service](#analytics-service) 🆕 (F4.4)
 
 ---
 
@@ -778,8 +783,221 @@ try {
 
 ---
 
+## Push API (F4.3)
+
+Endpoints para gerenciamento de notificações push.
+
+### `POST /api/push-subscribe`
+
+Gerencia inscrições de push notification.
+
+**Request:**
+```json
+{
+  "subscription": {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+    "keys": {
+      "p256dh": "...",
+      "auth": "..."
+    }
+  },
+  "action": "subscribe"  // ou "unsubscribe"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Inscrição realizada com sucesso"
+}
+```
+
+**Response (400):**
+```json
+{
+  "success": false,
+  "error": "Assinatura push inválida"
+}
+```
+
+**Response (401):**
+```json
+{
+  "success": false,
+  "error": "Não autenticado"
+}
+```
+
+---
+
+### `POST /api/push-send`
+
+Envia notificações push (usado por cron jobs).
+
+**Headers:**
+```
+Authorization: Bearer <CRON_SECRET>
+```
+
+**Request:**
+```json
+{
+  "userId": "uuid-do-usuario",
+  "type": "dose_reminder",  // ou "dose_missed", "stock_low"
+  "title": "Hora do remédio!",
+  "body": "Dipirona - 1 comprimido",
+  "data": {
+    "medicineId": "uuid",
+    "protocolId": "uuid",
+    "doseTime": "2026-02-12T08:00:00Z"
+  }
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "sent": 1,
+  "failed": 0
+}
+```
+
+**Rate Limiting:**
+- Máximo 10 pushes/dia/usuário
+- Exceder retorna 429 Too Many Requests
+
+---
+
+### `usePushSubscription` Hook
+
+```javascript
+import { usePushSubscription } from '@shared/hooks/usePushSubscription'
+
+function PushSettings() {
+  const {
+    isSupported,
+    permission,
+    subscription,
+    subscribe,
+    unsubscribe,
+    isLoading
+  } = usePushSubscription()
+
+  const handleSubscribe = async () => {
+    try {
+      await subscribe()
+      alert('Notificações ativadas!')
+    } catch (err) {
+      alert('Erro: ' + err.message)
+    }
+  }
+
+  if (!isSupported) {
+    return <p>Seu navegador não suporta notificações push</p>
+  }
+
+  return (
+    <div>
+      <p>Status: {permission}</p>
+      {permission === 'default' && (
+        <button onClick={handleSubscribe} disabled={isLoading}>
+          Ativar Notificações
+        </button>
+      )}
+      {subscription && (
+        <button onClick={unsubscribe} disabled={isLoading}>
+          Desativar Notificações
+        </button>
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## Analytics Service (F4.4)
+
+Serviço de analytics privacy-first para tracking de eventos PWA.
+
+### `analyticsService.track(eventName, data?)`
+
+Registra um evento de analytics.
+
+```javascript
+import { analyticsService } from '@shared/services/analyticsService'
+
+// Evento simples
+analyticsService.track('pwa_installed')
+
+// Evento com dados
+analyticsService.track('push_opted_in', {
+  source: 'settings_page'
+})
+```
+
+**Eventos PWA Trackeds:**
+
+| Evento | Descrição | Dados |
+|--------|-----------|-------|
+| `pwa_installed` | App instalado | - |
+| `pwa_install_prompt_shown` | Prompt de instalação exibido | - |
+| `pwa_install_prompt_response` | Usuário respondeu ao prompt | `{ accepted: boolean }` |
+| `pwa_install_prompt_dismissed` | Prompt fechado sem instalar | - |
+| `push_opted_in` | Usuário ativou push | `{ source: string }` |
+| `push_opted_out` | Usuário desativou push | `{ source: string }` |
+| `push_permission_prompt_shown` | UI de permissão exibida | - |
+| `push_permission_dismissed` | UI de permissão fechada | - |
+| `offline_session` | Sessão offline detectada | `{ duration: number }` |
+| `deep_link_accessed` | Navegação via deep link | `{ route: string }` |
+| `view_changed` | Mudança de view interna | `{ from: string, to: string }` |
+
+---
+
+### `analyticsService.getSummary()`
+
+Retorna resumo de métricas de uso.
+
+```javascript
+const summary = analyticsService.getSummary()
+
+// Retorno:
+{
+  sessionCount: 42,
+  eventsToday: 15,
+  pwaInstalled: true,
+  pushEnabled: true,
+  lastActive: "2026-02-12T10:30:00.000Z"
+}
+```
+
+---
+
+### Privacy-First Design
+
+O analytics service foi projetado para conformidade com LGPD/GDPR:
+
+✅ **Sem PII:**
+- Não coleta email, nome, userId, telefone ou CPF
+- User agent truncado (apenas primeira palavra)
+- IDs de evento são randomUUID (não correlacionáveis)
+
+✅ **Armazenamento Local:**
+- Todos os dados em localStorage apenas
+- Nenhuma chamada de rede para analytics
+- Dados nunca saem do dispositivo
+
+✅ **Controle do Usuário:**
+- `analyticsService.clear()` - Limpa todos os dados
+- `analyticsService.optOut()` - Desativa tracking
+
+---
+
 ## 📚 Veja Também
 
 - [ARQUITETURA.md](./ARQUITETURA.md) - Visão geral da arquitetura
 - [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Documentação completa dos schemas Zod
 - [HOOKS.md](./HOOKS.md) - Hooks customizados
+- [CHANGELOG.md](../CHANGELOG.md) - Histórico de versões

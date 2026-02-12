@@ -1,94 +1,177 @@
 # 🏗️ Arquitetura do Meus Remédios
 
+**Versão:** 2.8.0
+**Data:** 2026-02-12
+**Status:** Ativo (Phase 4: PWA + Feature Organization)
+
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
 ---
 
-## 📊 Visão Arquitetural
+## 📊 Visão Arquitetural (v2.8.0)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           CLIENTE (BROWSER)                              │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                    React 19 + Vite (SPA)                         │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │  │
-│  │  │   Views     │  │ Components  │  │      Hooks/Lib          │  │  │
-│  │  │  (Pages)    │  │  (UI/Forms) │  │  (SWR, Validation)      │  │  │
-│  │  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │  │
-│  │         │                │                     │                │  │
-│  │         └────────────────┴─────────────────────┘                │  │
-│  │                           │                                     │  │
-│  │                    ┌──────▼──────┐                              │  │
-│  │                    │  Services   │  ← Validação Zod             │  │
-│  │                    │    Layer    │  ← Cache SWR                 │  │
-│  │                    └──────┬──────┘                              │  │
-│  │                           │                                     │  │
-│  │                    ┌──────▼──────┐                              │  │
-│  │                    │  Supabase   │  ← Cliente + Auth            │  │
-│  │                    │   Client    │                              │  │
-│  │                    └──────┬──────┘                              │  │
-│  └───────────────────────────┼─────────────────────────────────────┘  │
-└──────────────────────────────┼────────────────────────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │     SUPABASE        │
-                    │  ┌───────────────┐  │
-                    │  │   PostgreSQL  │  │
-                    │  │    (Dados)    │  │
-                    │  └───────────────┘  │
-                    │  ┌───────────────┐  │
-                    │  │  Auth (RLS)   │  │
-                    │  └───────────────┘  │
-                    └──────────┬──────────┘
-                               │
-         ┌─────────────────────┼─────────────────────┐
-         │                     │                     │
-    ┌────▼────┐          ┌────▼────┐          ┌────▼────┐
-    │ VERCEL  │          │VERCEL   │          │VERCEL   │
-    │  CRON   │          │  API    │          │ STATIC  │
-    │(Agend.) │          │(Webhooks│          │(Assets) │
-    └─────────┘          └─────────┘          └─────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   TELEGRAM BOT      │
-                    │   (Node.js)         │
-                    │   ┌─────────────┐   │
-                    │   │ Sessions    │   │
-                    │   │ (TTL 30min) │   │
-                    │   └─────────────┘   │
-                    └─────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENTE (BROWSER)                              │
+│                    React 19 + Vite (PWA/SPA)                                │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                      FEATURES + SHARED LAYERS                        │  │
+│  │  ┌─────────────────────┐  ┌──────────────────────────────────────┐  │  │
+│  │  │   src/features/     │  │         src/shared/                  │  │  │
+│  │  │  ┌───────────────┐  │  │  ┌──────────┐ ┌──────────┐          │  │  │
+│  │  │  │  Dashboard    │  │  │  │Components│ │  Hooks   │          │  │  │
+│  │  │  │  Medications  │  │  │  │  (UI)    │ │(use*)    │          │  │  │
+│  │  │  │  Protocols    │  │  │  └────┬─────┘ └────┬─────┘          │  │  │
+│  │  │  │  Stock        │  │  │       │            │                │  │  │
+│  │  │  │  Adherence    │  │  │  ┌────┴────────────┴────┐           │  │  │
+│  │  │  └───────┬───────┘  │  │  │      Services        │           │  │  │
+│  │  └──────────┼───────────┘  │  │  (SWR + Zod + API)   │           │  │  │
+│  │             │              │  └──────────┬───────────┘           │  │  │
+│  │             └──────────────┴─────────────┘                       │  │  │
+│  │                            │                                     │  │  │
+│  │                     ┌──────▼──────┐                              │  │  │
+│  │                     │  Supabase   │  ← Cliente + Auth            │  │  │
+│  │                     │   Client    │                              │  │  │
+│  │                     └──────┬──────┘                              │  │  │
+│  └────────────────────────────┼──────────────────────────────────────┘  │
+│                               │                                          │
+│  ┌────────────────────────────┼──────────────────────────────────────┐   │
+│  │         PWA LAYER          │                                      │   │
+│  │  ┌───────────┐  ┌──────────▼────────┐  ┌─────────────────────┐  │   │
+│  │  │  SW       │  │  Push Manager     │  │  Analytics (Local)  │  │   │
+│  │  │(Workbox)  │  │  (VAPID + Web)    │  │  (Privacy-First)    │  │   │
+│  │  └───────────┘  └───────────────────┘  └─────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+└───────────────────────────────────────────────────────────────────────────┘
+                                      │
+                     ┌────────────────┼────────────────┐
+                     │                │                │
+              ┌──────▼──────┐   ┌─────▼─────┐   ┌─────▼─────┐
+              │  SUPABASE   │   │  VERCEL   │   │  VERCEL   │
+              │ ┌─────────┐ │   │    API    │   │   CRON    │
+              │ │PostgreSQL│ │   │(Webhooks)│   │(Agend.)   │
+              │ │+ RLS     │ │   └───────────┘   └───────────┘
+              │ └─────────┘ │         │
+              │ ┌─────────┐ │         │
+              │ │  Auth   │ │         │
+              │ └─────────┘ │         │
+              └──────┬──────┘         │
+                     │                │
+              ┌──────▼────────────────▼──────┐
+              │      TELEGRAM BOT            │
+              │   (Node.js + Standardized)   │
+              │   ┌─────────────────────┐    │
+              │   │ messageFormatter    │    │
+              │   │ errorHandler        │    │
+              │   │ 49 tests            │    │
+              │   └─────────────────────┘    │
+              └──────────────────────────────┘
 ```
+
+### Novidades da v2.8.0 (Phase 4)
+
+| Feature | Componente | Descrição |
+|---------|------------|-----------|
+| **F4.1** | Hash Router | Navegação SPA com 9 rotas e deep linking |
+| **F4.2** | PWA Layer | Service Worker, manifest, install prompt |
+| **F4.3** | Push Manager | Notificações push com VAPID |
+| **F4.4** | Analytics | Tracking privacy-first em localStorage |
+| **F4.5** | Bot Standardized | Utilities com 49 testes |
+| **F4.6** | Feature Org | `src/features/` + `src/shared/` + path aliases |
 
 ---
 
 ## 🧩 Camadas da Aplicação
 
-### 1. **Presentation Layer** (UI)
+### 1. **Presentation Layer** (UI) - v2.8.0 Feature-Based
 
 Responsabilidade: Renderização visual e interação do usuário.
 
+#### Nova Estrutura (F4.6)
+
 ```
 src/
-├── views/           # Páginas completas (Dashboard, Auth, etc)
-├── components/
-│   ├── ui/          # Componentes atômicos (Button, Card, Modal, Calendar, AlertList)
-│   ├── medicine/    # Domínio: Medicamentos (MedicineForm consolidado)
-│   ├── protocol/    # Domínio: Protocolos (ProtocolForm com modo simple/full)
-│   ├── stock/       # Domínio: Estoque
-│   ├── log/         # Domínio: Registros (LogForm UX unificada)
-│   ├── dashboard/   # Domínio: Dashboard (SmartAlerts, StockAlertsWidget → AlertList)
-│   ├── adherence/   # Domínio: Adesão (AdherenceWidget, AdherenceProgress, StreakBadge)
-│   └── onboarding/  # Wizard de primeiros passos (usa MedicineForm/ProtocolForm consolidados)
+├── features/              # 🆕 NOVO: Organização por domínio (F4.6)
+│   ├── adherence/
+│   │   ├── components/    # AdherenceWidget, AdherenceProgress, StreakBadge
+│   │   ├── hooks/         # useAdherenceTrend
+│   │   ├── services/      # adherenceService
+│   │   └── utils/         # adherenceLogic, adherenceStats
+│   ├── dashboard/
+│   │   ├── components/    # DashboardWidgets, InsightCard, SparklineAdesao
+│   │   └── utils/         # dashboardHelpers
+│   ├── medications/
+│   │   ├── components/    # MedicineCard, MedicineForm
+│   │   └── services/      # medicineService
+│   ├── protocols/
+│   │   ├── components/    # ProtocolCard, ProtocolForm, TitrationWizard
+│   │   ├── services/      # protocolService, titrationService
+│   │   └── utils/         # titrationUtils
+│   └── stock/
+│       ├── components/    # StockCard, StockForm, StockIndicator
+│       └── services/      # stockService
+│
+├── shared/                # 🆕 NOVO: Recursos compartilhados (F4.6)
+│   ├── components/
+│   │   ├── ui/            # Button, Card, Modal, Loading, AlertList
+│   │   ├── log/           # LogEntry, LogForm
+│   │   ├── gamification/  # BadgeDisplay, MilestoneCelebration
+│   │   ├── onboarding/    # OnboardingWizard, FirstMedicineStep, etc
+│   │   └── pwa/           # 🆕 PushPermission, InstallPrompt (F4.2/F4.3)
+│   ├── hooks/             # useCachedQuery, useTheme, usePushSubscription
+│   ├── services/          # cachedServices, analyticsService
+│   ├── constants/         # Schemas Zod (medicine, protocol, stock, log)
+│   ├── utils/             # queryCache, supabase client
+│   └── styles/            # CSS tokens, temas
+│
+└── views/                 # Páginas completas (Dashboard, Auth, etc)
+```
+
+#### Path Aliases (Vite Config)
+
+```javascript
+// vite.config.js
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    '@features': path.resolve(__dirname, './src/features'),
+    '@shared': path.resolve(__dirname, './src/shared'),
+    '@dashboard': path.resolve(__dirname, './src/features/dashboard'),
+    '@medications': path.resolve(__dirname, './src/features/medications'),
+    '@protocols': path.resolve(__dirname, './src/features/protocols'),
+    '@stock': path.resolve(__dirname, './src/features/stock'),
+    '@adherence': path.resolve(__dirname, './src/features/adherence'),
+  }
+}
+```
+
+**Uso recomendado:**
+```javascript
+// ✅ BOM - Path alias
+import { Button } from '@shared/components/ui/Button'
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
+
+// ❌ EVITAR - Imports relativos longos
+import { Button } from '../../../shared/components/ui/Button'
 ```
 
 **Padrão:** Componentes funcionais React 19 com hooks.
 
 **Componentes Consolidados (v2.7.0):**
-- [`MedicineForm`](src/components/medicine/MedicineForm.jsx) - Unificado com FirstMedicineStep via props de onboarding
-- [`ProtocolForm`](src/components/protocol/ProtocolForm.jsx) - Modo 'full'|'simple' para formulários completos e onboarding
-- [`Calendar`](src/components/ui/Calendar.jsx) - Features opcionais: lazyLoad, swipe, monthPicker
-- [`AlertList`](src/components/ui/AlertList.jsx) - Componente base para SmartAlerts e StockAlertsWidget
-- [`LogForm`](src/components/log/LogForm.jsx) - UX padronizada entre Dashboard e History
+- `MedicineForm` - Unificado com FirstMedicineStep via props de onboarding
+- `ProtocolForm` - Modo 'full'|'simple' para formulários completos e onboarding
+- `Calendar` - Features opcionais: lazyLoad, swipe, monthPicker
+- `AlertList` - Componente base para SmartAlerts e StockAlertsWidget
+- `LogForm` - UX padronizada entre Dashboard e History
+
+#### PWA Components (F4.2/F4.3)
+
+```
+src/shared/components/pwa/
+├── InstallPrompt.jsx      # Prompt de instalação PWA (iOS/Android)
+├── PushPermission.jsx     # Gerenciamento de permissões push
+└── pwaUtils.js           # Detecção de plataforma e utilitários
+```
 
 ### 2. **Business Logic Layer** (Services)
 
@@ -115,19 +198,39 @@ Component → Service → Zod Validation → Supabase → PostgreSQL
          Invalidação (escrita)
 ```
 
+### 2. **Business Logic Layer** (Services) - v2.8.0
+
+```
+src/shared/services/
+├── cachedServices.js        # Wrappers SWR com invalidação automática
+├── api/
+│   ├── medicineService.js
+│   ├── protocolService.js
+│   ├── stockService.js
+│   ├── logService.js
+│   ├── treatmentPlanService.js
+│   └── index.js
+└── analyticsService.js      # 🆕 Analytics privacy-first (F4.4)
+
+// Feature-specific services
+src/features/{domain}/services/
+├── adherenceService.js
+└── ...
+```
+
 ### 3. **Data Access Layer** (Lib/Cache)
 
 Responsabilidade: Abstração de acesso a dados e cache.
 
 ```
-src/lib/
+src/shared/utils/
 ├── supabase.js       # Cliente Supabase configurado
 └── queryCache.js     # Implementação SWR
 
-src/hooks/
+src/shared/hooks/
 └── useCachedQuery.js # Hook React para cache
 
-src/schemas/
+src/shared/constants/
 ├── medicineSchema.js    # Validação Zod
 ├── protocolSchema.js
 ├── stockSchema.js
@@ -289,7 +392,61 @@ Formulários que suportam fluxo de onboarding via props:
 
 ---
 
-## 🚀 Performance
+## 📱 PWA Architecture (F4.2 - F4.4)
+
+### Service Worker (Workbox)
+
+```
+public/
+├── manifest.json          # PWA manifest
+└── icons/                 # Ícones em 8 tamanhos (72x72 a 512x512)
+
+src/shared/components/pwa/
+├── InstallPrompt.jsx      # Custom install prompt
+├── PushPermission.jsx     # Permission UI
+└── pwaUtils.js           # Platform detection
+```
+
+**Cache Strategies:**
+
+| Asset Type | Strategy | TTL |
+|------------|----------|-----|
+| JS/CSS/Images | CacheFirst | 30 dias |
+| Supabase API | StaleWhileRevalidate | 5 min |
+| Write Operations | NetworkOnly | - |
+
+### Push Notifications (F4.3)
+
+```
+api/
+├── push-subscribe.js      # POST - Subscribe/unsubscribe
+└── push-send.js          # POST - Send push (cron/vercel)
+
+server/services/
+└── pushService.js        # VAPID + rate limiting
+```
+
+**Notification Types:**
+1. **Lembrete de dose** - Scheduled reminder
+2. **Dose atrasada** - Late dose alert (t+15min)
+3. **Estoque baixo** - Low stock (<= 3 dias)
+
+### Analytics (F4.4)
+
+**Privacy-First Design:**
+- Sem PII (no email, name, userId, phone, CPF)
+- localStorage apenas
+- User agent truncado (primeira palavra)
+- Event IDs anônimos (randomUUID)
+
+**Tracked Events:**
+- `pwa_installed`, `pwa_install_prompt_*`
+- `push_opted_in/out`, `push_permission_*`
+- `offline_session`, `deep_link_accessed`
+
+---
+
+## � Performance
 
 ### Estratégias
 
@@ -342,17 +499,32 @@ Dashboard
 
 ---
 
-## 🧪 Testes
+## 🧪 Testes (v2.8.0)
 
 ```
 Testes Unitários (Vitest)
-├── src/lib/__tests__/        # Cache SWR
-├── src/schemas/__tests__/    # Validação Zod (23 testes)
-├── src/services/api/__tests__/ # Services
-└── src/components/**/__tests__/ # Componentes críticos
+├── src/shared/lib/__tests__/        # Cache SWR
+├── src/shared/constants/__tests__/  # Validação Zod (23 testes)
+├── src/shared/services/__tests__/   # Services
+├── src/features/**/__tests__/       # Feature tests
+└── src/shared/components/**/__tests__/ # Componentes
 
-Cobertura: 110+ testes
+Cobertura: 140+ testes
+├── 93 testes críticos
+├── 11 smoke tests
+└── 36+ component tests
 ```
+
+### Test Command Matrix
+
+| Comando | Descrição | Uso |
+|---------|-----------|-----|
+| `npm run test:critical` | Testes essenciais (services, utils, schemas) | Pre-push |
+| `npm run test:smoke` | Suite mínima | Health check |
+| `npm run test:changed` | Arquivos modificados desde main | CI/CD rápido |
+| `npm run test:git` | Alias para test:changed | Compatibilidade |
+| `npm run test:light` | Configuração leve (exclui componentes) | Dev rápido |
+| `npm run validate` | Lint + testes críticos | Pre-commit |
 
 ---
 
@@ -363,6 +535,8 @@ Cobertura: 110+ testes
 3. **Cache em leituras:** Sempre usar `cachedServices` para GETs
 4. **Invalidação após escrita:** Sempre invalidar cache após POST/PUT/DELETE
 5. **RLS obrigatório:** Todas as tabelas devem ter políticas de segurança
+6. **Path Aliases:** Usar `@shared/`, `@features/` em vez de imports relativos longos
+7. **Git Workflow:** Nunca commitar diretamente na `main`
 
 ---
 
