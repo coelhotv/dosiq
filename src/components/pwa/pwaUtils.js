@@ -1,0 +1,170 @@
+/**
+ * PWA Detection Utilities
+ * 
+ * Helper functions to detect PWA installation state, browser capabilities,
+ * and platform-specific behaviors.
+ */
+
+/**
+ * Check if the app is running in standalone mode (installed as PWA)
+ * @returns {boolean} True if running as installed PWA
+ */
+export function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true
+}
+
+/**
+ * Check if the browser is iOS Safari
+ * @returns {boolean} True if running on iOS Safari
+ */
+export function isIOSSafari() {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  const isIOS = /iphone|ipad|ipod/.test(userAgent)
+  const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent)
+  
+  return isIOS && isSafari
+}
+
+/**
+ * Check if the browser is Chrome on Android
+ * @returns {boolean} True if running on Chrome Android
+ */
+export function isChromeAndroid() {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  const isAndroid = /android/.test(userAgent)
+  const isChrome = /chrome/.test(userAgent) && /mobile/.test(userAgent)
+  
+  return isAndroid && isChrome
+}
+
+/**
+ * Check if the browser supports beforeinstallprompt event (Chrome/Edge)
+ * @returns {boolean} True if beforeinstallprompt is supported
+ */
+export function supportsBeforeInstallPrompt() {
+  return 'BeforeInstallPromptEvent' in window
+}
+
+/**
+ * Check if the browser is desktop Chrome/Edge (supports beforeinstallprompt)
+ * @returns {boolean} True if desktop Chrome or Edge
+ */
+export function isDesktopChrome() {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  const isChrome = /chrome/.test(userAgent) && !/mobile/.test(userAgent)
+  const isEdge = /edg/.test(userAgent) && !/mobile/.test(userAgent)
+  
+  return (isChrome || isEdge) && supportsBeforeInstallPrompt()
+}
+
+/**
+ * Check if the prompt was previously dismissed by the user
+ * @returns {boolean} True if user dismissed the prompt
+ */
+export function wasPromptDismissed() {
+  try {
+    const dismissed = localStorage.getItem('pwa-install-dismissed')
+    return dismissed === 'true'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Mark the prompt as dismissed by the user
+ * @param {number} days - Number of days to remember dismissal (default: 30)
+ */
+export function dismissPrompt(days = 30) {
+  try {
+    localStorage.setItem('pwa-install-dismissed', 'true')
+    const expiryDate = new Date()
+    expiryDate.setDate(expiryDate.getDate() + days)
+    localStorage.setItem('pwa-install-dismissed-expiry', expiryDate.toISOString())
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+/**
+ * Reset the dismissed state (useful for testing or after expiry)
+ */
+export function resetDismissedState() {
+  try {
+    localStorage.removeItem('pwa-install-dismissed')
+    localStorage.removeItem('pwa-install-dismissed-expiry')
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+/**
+ * Check if the dismissal has expired
+ * @returns {boolean} True if dismissal has expired or doesn't exist
+ */
+export function isDismissalExpired() {
+  try {
+    const expiry = localStorage.getItem('pwa-install-dismissed-expiry')
+    if (!expiry) return true
+    
+    return new Date() > new Date(expiry)
+  } catch {
+    return true
+  }
+}
+
+/**
+ * Get the appropriate install instructions based on platform
+ * @returns {Object} Install instructions for the current platform
+ */
+export function getInstallInstructions() {
+  if (isIOSSafari()) {
+    return {
+      title: 'Adicionar à Tela de Início',
+      steps: [
+        'Toque no botão Compartilhar no Safari',
+        'Role para baixo e toque em "Adicionar à Tela de Início"',
+        'Toque em "Adicionar" para confirmar'
+      ],
+      icon: '📱'
+    }
+  }
+  
+  if (isChromeAndroid()) {
+    return {
+      title: 'Instalar o App',
+      steps: [
+        'Toque no menu (⋮) no Chrome',
+        'Selecione "Adicionar à tela inicial"',
+        'Confirme para instalar'
+      ],
+      icon: '📲'
+    }
+  }
+  
+  // Desktop Chrome/Edge
+  return {
+    title: 'Instalar o App',
+    steps: [
+      'Clique em "Instalar" no prompt',
+      'Ou use o menu (⋮) > Instalar Meus Remédios'
+    ],
+    icon: '💻'
+  }
+}
+
+/**
+ * Comprehensive PWA state detection
+ * @returns {Object} Complete PWA state information
+ */
+export function getPWAState() {
+  return {
+    isStandalone: isStandalone(),
+    isIOSSafari: isIOSSafari(),
+    isChromeAndroid: isChromeAndroid(),
+    isDesktopChrome: isDesktopChrome(),
+    supportsBeforeInstallPrompt: supportsBeforeInstallPrompt(),
+    wasDismissed: wasPromptDismissed() && !isDismissalExpired(),
+    canShowPrompt: !isStandalone() && (!wasPromptDismissed() || isDismissalExpired())
+  }
+}
