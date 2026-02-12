@@ -10,12 +10,12 @@
  * @module cachedServices
  */
 
-import { cachedQuery, invalidateCache, generateCacheKey } from '../../lib/queryCache'
-import { medicineService } from './medicineService'
-import { protocolService } from './protocolService'
-import { stockService } from './stockService'
-import { logService } from './logService'
-import { treatmentPlanService } from './treatmentPlanService'
+import { cachedQuery, invalidateCache, generateCacheKey } from '@shared/utils/queryCache'
+import { medicineService } from '@medications/services/medicineService'
+import { protocolService } from '@protocols/services/protocolService'
+import { stockService } from '@stock/services/stockService'
+import { logService } from '@shared/services/api/logService'
+import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 
 // Cache keys namespace
 export const CACHE_KEYS = {

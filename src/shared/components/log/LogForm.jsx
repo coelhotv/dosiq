@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import Button from '../ui/Button'
-import ProtocolChecklistItem from '../protocol/ProtocolChecklistItem'
+import Button from '@shared/components/ui/Button'
+import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
 import './LogForm.css'
 
 export default function LogForm({ protocols, treatmentPlans = [], initialValues, onSave, onCancel }) {

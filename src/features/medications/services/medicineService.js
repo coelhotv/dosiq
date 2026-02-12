@@ -1,5 +1,5 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { validateMedicineCreate, validateMedicineUpdate } from '../constants/medicineSchema'
+import { validateMedicineCreate, validateMedicineUpdate } from '@medications/constants/medicineSchema'
 
 /**
  * Medicine Service - CRUD operations for medicines

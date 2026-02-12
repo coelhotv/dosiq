@@ -1,7 +1,7 @@
 // MedicineCard.jsx
 import React from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import Card from '@shared/components/ui/Card';
+import Button from '@shared/components/ui/Button';
 import './MedicineCard.css'; // Make sure this path is correct
 
 function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {

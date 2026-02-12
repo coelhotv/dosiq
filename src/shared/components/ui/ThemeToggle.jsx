@@ -9,8 +9,8 @@
  */
 
 import { memo } from 'react'
-import { useTheme } from '../../hooks/useTheme'
-import { analyticsService } from '../../services/analyticsService'
+import { useTheme } from '@shared/hooks/useTheme'
+import { analyticsService } from '@dashboard/services/analyticsService'
 import './ThemeToggle.css'
 
 /**

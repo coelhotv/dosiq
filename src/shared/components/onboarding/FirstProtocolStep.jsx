@@ -1,6 +1,6 @@
 import { useOnboarding } from './useOnboarding'
-import ProtocolForm from '../protocol/ProtocolForm'
-import { cachedProtocolService } from '../../services/api/cachedServices'
+import ProtocolForm from '@protocols/components/ProtocolForm'
+import { cachedProtocolService } from '@shared/services/cachedServices'
 import './FirstProtocolStep.css'
 
 export default function FirstProtocolStep() {

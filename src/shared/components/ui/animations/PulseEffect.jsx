@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState, memo } from 'react'
-import { useHapticFeedback } from '../../hooks/useHapticFeedback'
+import { useHapticFeedback } from '@shared/hooks/useHapticFeedback'
 import './Animations.css'
 
 /**

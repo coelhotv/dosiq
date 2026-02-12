@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { medicineService, stockService, protocolService } from '../services/api'
-import Button from '../components/ui/Button'
-import Loading from '../components/ui/Loading'
-import Modal from '../components/ui/Modal'
-import EmptyState from '../components/ui/EmptyState'
-import StockForm from '../components/stock/StockForm'
-import StockCard from '../components/stock/StockCard'
+import { medicineService, stockService, protocolService } from '@shared/services'
+import Button from '@shared/components/ui/Button'
+import Loading from '@shared/components/ui/Loading'
+import Modal from '@shared/components/ui/Modal'
+import EmptyState from '@shared/components/ui/EmptyState'
+import StockForm from '@stock/components/StockForm'
+import StockCard from '@stock/components/StockCard'
 import './Stock.css'
 
 export default function Stock({ initialParams, onClearParams }) {

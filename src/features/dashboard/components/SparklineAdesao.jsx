@@ -13,7 +13,7 @@
 
 import { useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { analyticsService } from '../../services/analyticsService'
+import { analyticsService } from '@dashboard/services/analyticsService'
 import './SparklineAdesao.css'
 
 /**

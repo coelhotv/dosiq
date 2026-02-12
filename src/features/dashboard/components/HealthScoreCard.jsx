@@ -1,6 +1,6 @@
 import React from 'react';
 import './HealthScoreCard.css';
-import { getTrendEmoji } from '../../services/adherenceTrendService';
+import { getTrendEmoji } from '@dashboard/services/adherenceTrendService';
 
 /**
  * HealthScoreCard - Visualização compacta e horizontal do score.

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import TitrationStep from './TitrationStep'
-import { calculateTitrationSteps, formatDaysRemaining, isTitrationActive, hasReachedTarget } from '../../services/api/titrationService'
+import { calculateTitrationSteps, formatDaysRemaining, isTitrationActive, hasReachedTarget } from '@protocols/services/titrationService'
 import './TitrationTimeline.css'
 
 /**

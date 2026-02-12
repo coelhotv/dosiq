@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@shared/utils/supabase'
 import Button from './ui/Button'
 import Card from './ui/Card'
 

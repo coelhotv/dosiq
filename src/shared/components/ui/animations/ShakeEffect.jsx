@@ -8,7 +8,7 @@
  */
 
 import { memo } from 'react'
-import { useShake } from '../../hooks/useShake'
+import { useShake } from '@shared/hooks/useShake'
 import './Animations.css'
 
 /**

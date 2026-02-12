@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { useCachedQueries } from './useCachedQuery';
-import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining, isDoseInToleranceWindow } from '../utils/adherenceLogic';
-import { medicineService } from '../services/api/medicineService';
-import { protocolService } from '../services/api/protocolService';
-import { logService } from '../services/api/logService';
+import { useCachedQueries } from '@shared/hooks/useCachedQuery';
+import { calculateAdherenceStats, getNextDoseTime, calculateDailyIntake, calculateDaysRemaining, isDoseInToleranceWindow } from '@dashboard/utils/adherenceLogic';
+import { medicineService } from '@medications/services/medicineService';
+import { protocolService } from '@protocols/services/protocolService';
+import { logService } from '@shared/services/api/logService';
 
 const DashboardContext = createContext(null);
 

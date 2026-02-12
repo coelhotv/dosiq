@@ -1,4 +1,4 @@
-import { supabase, getUserId } from '../../lib/supabase'
+import { supabase, getUserId } from '@shared/utils/supabase'
 
 /**
  * Treatment Plan Service - Manage groups of protocols (e.g. "Fantastic Four")

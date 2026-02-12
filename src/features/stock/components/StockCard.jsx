@@ -1,4 +1,4 @@
-import Card from '../ui/Card'
+import Card from '@shared/components/ui/Card'
 import StockIndicator from './StockIndicator'
 import './StockCard.css'
 
