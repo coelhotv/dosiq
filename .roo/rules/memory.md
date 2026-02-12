@@ -4,6 +4,61 @@ Arquivo de memória longa do projeto consolidado. Contém padrões, lições apr
 
 ---
 
+## Memory Entry — 2026-02-12 19:40
+**Contexto / Objetivo**
+- Implementar janela de tolerância de 2 horas para exibição de próximas doses no dashboard
+- Uma dose agendada para 10:00 deve permanecer visível até 12:00, dando ao usuário uma janela de 2h para tomar o medicamento
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/utils/adherenceLogic.js` — atualizada função `getNextDoseTime()` com janela de 2h, adicionadas funções `getNextDoseWindowEnd()` e `isInToleranceWindow()`
+  - `src/features/dashboard/utils/adherenceLogic.js` — sincronizado com as mesmas alterações
+  - `src/features/adherence/utils/adherenceLogic.js` — sincronizado com as mesmas alterações
+  - `src/hooks/useDashboardContext.jsx` — import das novas funções e adição de `next_dose_window_end` e `is_in_tolerance_window` aos protocolos
+  - `src/features/dashboard/hooks/useDashboardContext.jsx` — mesmas alterações com path aliases
+  - `src/components/dashboard/TreatmentAccordion.jsx` — função `formatNextDose()` para exibir janela, classe CSS condicional `treatment-accordion--urgent`
+  - `src/features/dashboard/components/TreatmentAccordion.jsx` — mesmas alterações
+  - `src/components/dashboard/TreatmentAccordion.css` — estilos para `.treatment-accordion--urgent` com animação pulse
+  - `src/features/dashboard/components/TreatmentAccordion.css` — mesmos estilos
+  - `src/views/Dashboard.jsx` — ordenação cronológica aprimorada: doses dentro da janela de tolerância são priorizadas, doses futuras ordenadas crescente, doses passadas (amanhã) ordenadas por proximidade com o horário atual
+
+**Lógica Implementada**
+```javascript
+// Uma dose é considerada "ativa" se:
+// now < (scheduled_time + 2 hours)
+const toleranceWindowMinutes = 2 * 60; // 120 minutos
+const nextToday = scheduleMinutes.find(m => m + toleranceWindowMinutes > currentMinutes);
+
+// Na UI:
+// "Próxima: 10:00" (normal) ou "Próxima: 10:00 (até 12:00)" (dentro da janela)
+// Card recebe classe 'treatment-accordion--urgent' com borda amarela e pulse
+
+// Ordenação: 1. Janela de tolerância (urgente), 2. Futuro crescente, 3. Passado decrescente
+```
+
+**O que deu certo**
+- Lint: 0 erros, 0 warnings
+- Testes críticos: 93/93 passando (100%)
+- Build de produção: sucesso (772.69 kB)
+- 10 arquivos modificados, 329 linhas adicionadas
+- Commits seguindo padrão convencional
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE sincronizar alterações em `src/utils/` e `src/features/*/utils/` quando houver duplicação
+- Path aliases (`@dashboard/utils/...`) devem ser usados em `src/features/` e paths relativos em `src/`
+- Janela de tolerância padrão do sistema: 2 horas (120 minutos)
+- Para testar comportamento de janela: verificar horário atual vs horário agendado + 2h
+- A classe `.treatment-accordion--urgent` pode ser reutilizada para outros estados de urgência
+- Ordenação de doses: priorizar janela de tolerância, depois futuro (crescente), depois passado (decrescente por proximidade)
+
+**Pendências / próximos passos**
+- Feature implementada e testada ✅
+- Aguardando review do Orchestrator para merge
+- Branch: `feature/wave-4/next-doses-window`
+- Commit: `4b61ef6`
+
+---
+
 ## Memory Entry — 2026-02-12 01:45
 **Contexto / Objetivo**
 - Finalizar QA e preparação para deploy da feature Sparkline Drill-Down
