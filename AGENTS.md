@@ -1,7 +1,7 @@
 # Meus Remédios - AI Agent Guide
 
-> **Aplicativo de gerenciamento de medicamentos em português brasileiro**  
-> Versão: 2.6.0 | React 19 + Vite + Supabase
+> **Aplicativo de gerenciamento de medicamentos em português brasileiro**
+> Versão: 2.7.0 | React 19 + Vite + Supabase
 
 ---
 
@@ -299,6 +299,123 @@ npm run validate:quick
 
 ---
 
+## 🎯 Design Principles & Heuristics
+
+### Universal Constraints (Obrigatórios)
+
+These rules prevent recurring errors and must be followed unconditionally:
+
+#### 1. React Hook Declaration Order
+**Rule:** States → Memos → Effects → Handlers
+```jsx
+// ✅ CORRECT - Prevents TDZ (Temporal Dead Zone)
+function Component() {
+  // 1. States first
+  const [data, setData] = useState()
+  const [loading, setLoading] = useState(false)
+  
+  // 2. Memos (depend on states)
+  const processedData = useMemo(() => process(data), [data])
+  
+  // 3. Effects (depend on memos/states)
+  useEffect(() => { /* ... */ }, [processedData])
+  
+  // 4. Handlers last
+  const handleClick = () => { /* ... */ }
+}
+
+// ❌ WRONG - ReferenceError: Cannot access before initialization
+function Component() {
+  const processed = useMemo(() => data + 1, [data]) // data is undefined!
+  const [data, setData] = useState(0) // Declared too late
+}
+```
+
+#### 2. Zod Schema Values in Portuguese
+**Rule:** All enum values must be in Portuguese for UI consistency
+```javascript
+// ✅ CORRECT
+const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário']
+const MEDICINE_TYPES = ['comprimido', 'cápsula', 'líquido', 'injeção', 'pomada', 'spray', 'outro']
+const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+
+// ❌ WRONG - Mixing languages causes UI inconsistencies
+const FREQUENCIES = ['daily', 'weekly'] // Never use English in schemas
+```
+
+#### 3. Telegram Bot Callback Data Limits
+**Rule:** `callback_data` must be < 64 bytes; use numeric indices instead of UUIDs
+```javascript
+// ❌ WRONG - Exceeds 64 bytes (BUTTON_DATA_INVALID)
+callback_data: `reg_med:${medicineId}:${protocolId}` // ~81 chars
+
+// ✅ CORRECT - Compact and within limits
+callback_data: `reg_med:${index}` // ~15 chars
+// Store mapping in session: session.set('medicineMap', medicines)
+```
+
+#### 4. Dosage Recording Units
+**Rule:** Always record `quantity_taken` in pills, never in milligrams
+```javascript
+// dosage_per_intake = pills per dose (e.g., 4)
+// dosage_per_pill = mg per pill (e.g., 500)
+// dosage_real = 4 * 500 = 2000mg
+
+// ✅ CORRECT - Store pills (within Zod limit of 100)
+const pillsToDecrease = quantity / dosagePerPill
+await logService.create({ quantity_taken: pillsToDecrease })
+
+// ❌ WRONG - Exceeds Zod schema limit (100)
+await logService.create({ quantity_taken: 2000 }) // mg exceeds limit!
+```
+
+#### 5. Operation Order for Dose Registration
+**Rule:** Validate → Record → Decrement
+```javascript
+try {
+  // 1. Validate stock
+  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
+  
+  // 2. Record dose
+  await logService.create(log)
+  
+  // 3. Decrement stock
+  await stockService.decrease(medicineId, pillsToDecrease)
+}
+```
+
+### Context-Dependent Recommendations
+
+#### When to Use Client-Side vs API Calculation
+| Scenario | Recommendation | Rationale |
+|----------|---------------|-----------|
+| Data already in SWR cache | Client-side | Zero network requests |
+| Complex aggregation | Client-side | Avoid server load |
+| Data across multiple users | API | RLS constraints |
+| Timezone-sensitive | Client-side | Use Brazil local time (GMT-3) |
+| Large datasets (>1000 rows) | API | Memory optimization |
+
+#### Test Command Selection Matrix
+| File Type | Recommended Command | Rationale |
+|-----------|---------------------|-----------|
+| `*.service.js` | `npm run test:critical` | Services require integration context |
+| `*.schema.js` | `npm run test:critical` | Schemas have critical validation logic |
+| `*.util.js` | `npm run test:light` | Pure functions, no component deps |
+| `*.jsx` (component) | `npx vitest --config vitest.component.config.js` | Isolated component testing |
+| Config files | `npm run test:full` | May affect entire suite |
+
+#### LogForm Return Type Handling
+```jsx
+// LogForm has TWO return modes - ALWAYS check both:
+if (Array.isArray(logData)) {
+  // type === 'plan' (bulk registration)
+  await logService.createBulk(logData)
+} else {
+  // type === 'protocol' (single registration)
+  await logService.create(logData)
+}
+```
+
 ## 🎨 Code Style Guidelines
 
 ### Nomenclatura Obrigatória
@@ -323,6 +440,8 @@ npm run validate:quick
 | Commits | Português | `feat: adiciona validação Zod` |
 | Nomes de arquivos | Inglês | `medicineService.js` |
 | Tabelas/Colunas DB | Português | `medicamentos.nome` |
+| Raciocínio interno | Inglês | Internal planning/thinking |
+| Comentários de código | Português | `// Calcula a adesão` |
 
 ### Estrutura de Imports
 
@@ -477,6 +596,7 @@ CRON_SECRET=chave-secreta-aleatoria
 | `SETUP.md` | Guia completo de configuração do ambiente |
 | `QUICKSTART.md` | Início rápido para desenvolvedores |
 | `database-schema.md` | Esquema completo do banco de dados |
+| `CSS_ARCHITECTURE.md` | Documentação dos padrões de CSS a serem utilizados |
 
 ### Documentação de Funcionalidades
 
@@ -542,12 +662,83 @@ Dashboard
 
 ---
 
+## 🧪 Testing Strategies
+
+### Component Testing Best Practices
+
+#### Mocking Framer Motion
+```jsx
+// ✅ CORRECT - Destructure all animation props
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: vi.fn(({ initial, animate, transition, ...props }) => <div {...props} />),
+  },
+  AnimatePresence: vi.fn(({ children }) => <>{children}</>),
+}))
+```
+
+#### Mock Path Resolution
+```javascript
+// Verify actual folder structure before mocking
+// ❌ WRONG - incorrect relative path
+vi.mock('../../../hooks/useCachedQuery')
+
+// ✅ CORRECT - matches actual structure
+vi.mock('../../hooks/useCachedQuery')
+```
+
+#### Date Handling in Tests
+```javascript
+// ✅ CORRECT - Use relative dates to avoid timezone issues
+const getRelativeDate = (daysOffset = 0) => {
+  const date = new Date()
+  date.setDate(date.getDate() + daysOffset)
+  return date.toISOString().split('T')[0]
+}
+
+// ❌ WRONG - Fixed dates may be filtered as future dates
+const date = '2026-02-11' // May fail if component filters future dates
+```
+
+#### Component Testing Configuration
+```bash
+# Use dedicated config for component tests (excludes from default config)
+npx vitest run --config vitest.component.config.js
+```
+
+### Smoke Test Requirements
+
+Smoke tests must be isolated from other tests due to mock conflicts:
+
+```bash
+# ✅ CORRECT - Run smoke tests separately
+npm run test:smoke
+
+# ❌ WRONG - Don't include smoke tests with other test suites
+```
+
+**Configuration:** Smoke tests use `vitest.smoke.config.js` with isolated settings.
+
 ## 🚨 Common Issues
 
 ### ESLint e React Refresh
 - **Problema:** Fast Refresh quebrado
 - **Causa:** Exportar componentes e hooks do mesmo arquivo
 - **Solução:** Separar em arquivos dedicados
+
+### ESLint Unused Disable Directives
+- **Problema:** ESLint reports "Unused eslint-disable directive"
+- **Causa:** Código já está em conformidade, diretiva desnecessária
+- **Solução:** Remover a diretiva — o código já está correto
+
+### Vitest Pool Configuration (v4+)
+- **Problema:** Erro com `poolOptions.threads`
+- **Causa:** API mudou no Vitest 4
+- **Solução:** Usar `pool: 'forks'` e `maxWorkers` em vez de `poolOptions.threads`
+
+### Test Commands Not Available
+- **Problema:** `--related` não existe no Vitest CLI
+- **Solução:** Usar `--changed=main` como alternativa
 
 ### Cache SWR
 - **Problema:** Dados desatualizados após mutation
@@ -564,6 +755,11 @@ Dashboard
 - **Causa:** Token inválido ou webhook não configurado
 - **Solução:** Verificar `TELEGRAM_BOT_TOKEN` e configurar webhook apontando para `/api/telegram`
 
+### BUTTON_DATA_INVALID Error
+- **Problema:** Telegram rejeita callback
+- **Causa:** `callback_data` excede 64 bytes
+- **Solução:** Usar índices numéricos em vez de UUIDs
+
 ---
 
 ## 📞 Resources
@@ -576,5 +772,5 @@ Dashboard
 
 ---
 
-*Última atualização: 11/02/2026*  
-*Versão do projeto: 2.6.0*
+*Última atualização: 12/02/2026*
+*Versão do projeto: 2.7.0*
