@@ -45,10 +45,11 @@
 .sparkline-dot {
   cursor: pointer;
   transition: r 0.2s ease, transform 0.2s ease;
+  r: 1.5;
 }
 
 .sparkline-dot:hover {
-  transform: scale(1.5);
+  transform: scale(1.2);
 }
 
 /* Container de tooltips */
@@ -149,25 +150,26 @@
 /* Clickable dots for drill-down */
 .sparkline-dot--clickable {
   stroke: var(--bg-primary, #050505);
-  stroke-width: 2px;
+  stroke-width: 1px;
   transition: r 0.2s ease, stroke-width 0.2s ease;
+  r: 3;
 }
 
 .sparkline-dot--clickable:hover {
-  r: 8;
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 4px currentColor);
+  r: 5;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 3px currentColor);
 }
 
 .sparkline-dot--clickable:focus {
   outline: none;
-  r: 8;
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 6px currentColor);
+  r: 5;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 4px currentColor);
 }
 
 .sparkline-dot--clickable:active {
-  r: 6;
+  r: 4;
 }
 
 /* Focus visible for accessibility */
@@ -179,12 +181,12 @@
 /* High contrast mode */
 @media (prefers-contrast: high) {
   .sparkline-dot--clickable {
-    stroke-width: 3px;
+    stroke-width: 2px;
   }
   
   .sparkline-dot--clickable:hover,
   .sparkline-dot--clickable:focus {
-    stroke-width: 4px;
-    filter: drop-shadow(0 0 8px currentColor);
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 6px currentColor);
   }
 }

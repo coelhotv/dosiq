@@ -242,6 +242,23 @@ Testes ultrarrápidos para validação básica do sistema:
 | useCachedQuery | [`useCachedQuery.test.jsx`](../src/hooks/__tests__/useCachedQuery.test.jsx) | 16 |
 | useDashboardContext | [`useDashboardContext.test.jsx`](../src/hooks/__tests__/useDashboardContext.test.jsx) | 10 |
 
+### Componentes do Dashboard (Sparkline Drill-Down)
+
+Testes abrangentes para a funcionalidade de drill-down do gráfico de adesão:
+
+| Componente | Arquivo | Testes | Cobertura |
+|------------|---------|--------|-----------|
+| SparklineAdesao | [`SparklineAdesao.test.jsx`](../src/components/dashboard/__tests__/SparklineAdesao.test.jsx) | 25+ | Renderização, interações, acessibilidade |
+| DailyDoseModal | [`DailyDoseModal.test.jsx`](../src/components/dashboard/__tests__/DailyDoseModal.test.jsx) | 25 | Estados loading/empty/error, navegação, resumo |
+| DoseListItem | [`DoseListItem.test.jsx`](../src/components/dashboard/__tests__/DoseListItem.test.jsx) | 23 | Status, horários, quantidades, acessibilidade |
+| Dashboard (integração) | [`Dashboard.drilldown.test.jsx`](../src/components/dashboard/__tests__/Dashboard.drilldown.test.jsx) | 15+ | Fluxo drill-down completo |
+| **Total Feature** | **4 arquivos** | **88+** | **Feature completa** |
+
+**Para executar testes de componentes:**
+```bash
+npx vitest run --config vitest.component.config.js
+```
+
 ### Componentes (Testes Existentes)
 
 Localizados em `src/components/**/__tests__/*.test.jsx`:

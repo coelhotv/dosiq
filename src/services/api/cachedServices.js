@@ -249,6 +249,11 @@ export const cachedLogService = {
     return cachedQuery(key, () => logService.getAllPaginated(limit, offset))
   },
 
+  async getByDateRange(startDate, endDate, limit = 50, offset = 0) {
+    const key = generateCacheKey('logs:dateRange', { startDate, endDate, limit, offset })
+    return cachedQuery(key, () => logService.getByDateRange(startDate, endDate, limit, offset))
+  },
+
   // Métodos de escrita (com invalidação de cache)
   async create(log) {
     const result = await logService.create(log)
@@ -257,6 +262,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache('logs:dateRange*')
     // Invalida estoque (foi decrementado)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
@@ -272,6 +278,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache('logs:dateRange*')
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -286,6 +293,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache('logs:dateRange*')
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -299,6 +307,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache('logs:dateRange*')
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)

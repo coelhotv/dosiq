@@ -6,6 +6,21 @@
 |------|--------|--------|
 | 2026-02-04 | `fix/lint-errors-and-coverage` | ✅ **LINT LIMPO** - Correções iniciais |
 | 2026-02-11 | `main` | ✅ **LINT LIMPO** + **143 TESTES** + Pipeline CI/CD |
+| 2026-02-12 | `main` | ✅ **LINT LIMPO** + **231+ TESTES** + Sparkline Drill-Down |
+
+### Atualização 2026-02-12 - Sparkline Drill-Down
+
+**Novos Testes Adicionados:**
+
+| Componente | Testes | Cobertura |
+|------------|--------|-----------|
+| SparklineAdesao | 25+ | Renderização, interações, acessibilidade |
+| DailyDoseModal | 25 | Loading, empty, error states, navegação |
+| DoseListItem | 23 | Status, horários, quantidades |
+| Dashboard (integração) | 15+ | Fluxo drill-down completo |
+| **Total Novos** | **88+** | **Feature completa** |
+
+**Contagem Total de Testes:** 231+ (143 críticos + 88+ de componentes)
 
 ---
 

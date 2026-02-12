@@ -133,20 +133,30 @@ export default function Dashboard({ onNavigate }) {
   const [isDrillDownModalOpen, setIsDrillDownModalOpen] = useState(false)
   
   // Fetch dos logs do dia selecionado usando cache
+  // Usar uma key fixa que muda apenas quando selectedDate muda
+  const drillDownCacheKey = useMemo(() => {
+    return selectedDate ? `logs-drilldown-${selectedDate}` : null
+  }, [selectedDate])
+  
   const {
     data: dayLogsData,
     isLoading: isDayLogsLoading,
     error: dayLogsError,
     executeQuery: refetchDayLogs
   } = useCachedQuery(
-    selectedDate ? `logs-drilldown-${selectedDate}` : null,
+    drillDownCacheKey,
     async () => {
+      if (!selectedDate) return { data: [], total: 0, hasMore: false }
+      
+      // Garantir que a data está no formato correto (YYYY-MM-DD)
+      const formattedDate = selectedDate.split('T')[0]
+      
       // logService.getByDateRange retorna { data, total, hasMore }
-      const result = await logService.getByDateRange(selectedDate, selectedDate, 50)
+      const result = await logService.getByDateRange(formattedDate, formattedDate, 50)
       return result
     },
     {
-      enabled: !!selectedDate,
+      enabled: !!selectedDate && selectedDate.length === 10,
       staleTime: 60000, // 1 minuto
       onError: (err) => {
         console.error('Erro ao carregar logs do dia:', err)
