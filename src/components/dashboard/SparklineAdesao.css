@@ -145,3 +145,46 @@
     align-self: center;
   }
 }
+
+/* Clickable dots for drill-down */
+.sparkline-dot--clickable {
+  stroke: var(--bg-primary, #050505);
+  stroke-width: 2px;
+  transition: r 0.2s ease, stroke-width 0.2s ease;
+}
+
+.sparkline-dot--clickable:hover {
+  r: 8;
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.sparkline-dot--clickable:focus {
+  outline: none;
+  r: 8;
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.sparkline-dot--clickable:active {
+  r: 6;
+}
+
+/* Focus visible for accessibility */
+.sparkline-dot--clickable:focus-visible {
+  outline: 2px solid var(--accent-primary, var(--neon-cyan));
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .sparkline-dot--clickable {
+    stroke-width: 3px;
+  }
+  
+  .sparkline-dot--clickable:hover,
+  .sparkline-dot--clickable:focus {
+    stroke-width: 4px;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+}
