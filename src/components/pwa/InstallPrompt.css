@@ -275,6 +275,9 @@
   font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10001;
 }
 
 .install-prompt__modal-btn:hover {
