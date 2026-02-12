@@ -53,15 +53,18 @@ export default function InstallPrompt() {
       }
 
       // Detect platform
+      console.log('[PWA Install] Starting platform detection...')
       const isIOS = isIOSSafari()
+      console.log('[PWA Install] isIOSSafari:', isIOS)
       const isAndroid = isChromeAndroid()
+      console.log('[PWA Install] isChromeAndroid:', isAndroid)
       const isDesktop = isDesktopChrome()
+      console.log('[PWA Install] isDesktopChrome result:', isDesktop)
       const supportsInstall = 'BeforeInstallPromptEvent' in window
       
       console.log('[PWA Install] Platform detection:', { isIOS, isAndroid, isDesktop })
       console.log('[PWA Install] User agent:', navigator.userAgent)
       console.log('[PWA Install] BeforeInstallPromptEvent supported:', supportsInstall)
-      console.log('[PWA Install] User agent (lowercase):', navigator.userAgent.toLowerCase())
 
       setPlatformInfo({
         isIOSSafari: isIOS,

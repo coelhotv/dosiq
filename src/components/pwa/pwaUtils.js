@@ -53,14 +53,30 @@ export function supportsBeforeInstallPrompt() {
 export function isDesktopChrome() {
   const userAgent = window.navigator.userAgent.toLowerCase()
   
+  console.log('[PWA Utils] isDesktopChrome - User agent:', userAgent)
+  
   // More flexible detection for Chrome on any platform (including macOS)
-  const isChrome = /chrome|chromium/.test(userAgent) && !/mobile|android/.test(userAgent)
-  const isEdge = /edg|edge/.test(userAgent) && !/mobile|android/.test(userAgent)
-  const isOpera = /opr|opera/.test(userAgent) && !/mobile|android/.test(userAgent)
-  const isBrave = /brave/.test(userAgent) && !/mobile|android/.test(userAgent)
+  const hasChrome = /chrome|chromium/.test(userAgent)
+  const hasEdge = /edg|edge/.test(userAgent)
+  const hasOpera = /opr|opera/.test(userAgent)
+  const hasBrave = /brave/.test(userAgent)
+  const hasMobile = /mobile|android/.test(userAgent)
+  
+  const isChrome = hasChrome && !hasMobile
+  const isEdge = hasEdge && !hasMobile
+  const isOpera = hasOpera && !hasMobile
+  const isBraveBrowser = hasBrave && !hasMobile
+  
+  const result = isChrome || isEdge || isOpera || isBraveBrowser
+  
+  console.log('[PWA Utils] Detection:', {
+    hasChrome, hasEdge, hasOpera, hasBrave, hasMobile,
+    isChrome, isEdge, isOpera, isBraveBrowser,
+    result
+  })
   
   // Show banner for ANY Chromium desktop browser, not just those with beforeinstallprompt
-  return isChrome || isEdge || isOpera || isBrave
+  return result
 }
 
 /**
