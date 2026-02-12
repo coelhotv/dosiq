@@ -93,6 +93,10 @@
   opacity: 0.9;
 }
 
+.dose-list-section--scheduled {
+  opacity: 0.95;
+}
+
 .dose-list-section__title {
   display: flex;
   align-items: center;
@@ -117,6 +121,10 @@
 
 .dose-list-section__title--missed::before {
   background: var(--color-error);
+}
+
+.dose-list-section__title--scheduled::before {
+  background: var(--color-info, #3b82f6);
 }
 
 /* Dose List */

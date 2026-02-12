@@ -133,11 +133,11 @@ export function DailyDoseModal({
 }) {
   const { modalRef, handleKeyDown } = useFocusTrap(isOpen)
 
-  // Calcular doses tomadas e perdidas usando a nova função
-  const { takenDoses, missedDoses } = useMemo(() => {
+  // Calcular doses tomadas, perdidas e agendadas usando a nova função
+  const { takenDoses, missedDoses, scheduledDoses } = useMemo(() => {
     // Se protocols não foi passado, fallback para comportamento anterior
     if (!protocols) {
-      return { takenDoses: logs || [], missedDoses: [] }
+      return { takenDoses: logs || [], missedDoses: [], scheduledDoses: [] }
     }
     
     try {
@@ -145,12 +145,12 @@ export function DailyDoseModal({
     } catch (err) {
       console.error('Erro ao calcular doses:', err)
       // Fallback seguro em caso de erro
-      return { takenDoses: logs || [], missedDoses: [] }
+      return { takenDoses: logs || [], missedDoses: [], scheduledDoses: [] }
     }
   }, [date, logs, protocols])
 
-  const hasDoses = takenDoses.length > 0 || missedDoses.length > 0
-  const hasScheduledDoses = takenDoses.length > 0 || missedDoses.length > 0
+  const hasDoses = takenDoses.length > 0 || missedDoses.length > 0 || scheduledDoses.length > 0
+  const hasScheduledDoses = hasDoses
   const formattedDate = formatDate(date)
   const shortDate = formatShortDate(date)
 
@@ -262,6 +262,30 @@ export function DailyDoseModal({
                   key={log.id}
                   log={log}
                   isTaken={false}
+                  scheduledTime={log.scheduledTime}
+                  index={index}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Lista de doses agendadas (futuras) */}
+        {!isLoading && !error && scheduledDoses.length > 0 && (
+          <div className="dose-list-section dose-list-section--scheduled">
+            <h3
+              className="dose-list-section__title dose-list-section__title--scheduled"
+              aria-live="polite"
+            >
+              Doses Agendadas ({scheduledDoses.length})
+            </h3>
+            <div className="dose-list" role="list" aria-label={`Doses agendadas em ${shortDate}`}>
+              {scheduledDoses.map((log, index) => (
+                <DoseListItem
+                  key={log.id}
+                  log={log}
+                  isTaken={false}
+                  status="scheduled"
                   scheduledTime={log.scheduledTime}
                   index={index}
                 />

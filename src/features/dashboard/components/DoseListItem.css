@@ -28,6 +28,11 @@
   opacity: 0.85;
 }
 
+.dose-list-item--scheduled {
+  border-left: 3px solid var(--color-info, #3b82f6);
+  opacity: 0.9;
+}
+
 /* Status Icon */
 .dose-list-item__status {
   flex-shrink: 0;
@@ -58,6 +63,11 @@
 .dose-status-icon--missed {
   background: color-mix(in srgb, var(--color-error) 20%, transparent);
   color: var(--color-error);
+}
+
+.dose-status-icon--scheduled {
+  background: color-mix(in srgb, var(--color-info, #3b82f6) 20%, transparent);
+  color: var(--color-info, #3b82f6);
 }
 
 /* Content Area */
@@ -138,6 +148,10 @@
   color: var(--color-error);
 }
 
+.dose-status-label--scheduled {
+  color: var(--color-info, #3b82f6);
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .dose-list-item {
@@ -194,8 +208,14 @@
     opacity: 1;
   }
 
+  .dose-list-item--scheduled {
+    border-left-width: 4px;
+    opacity: 1;
+  }
+
   .dose-status-icon--taken,
-  .dose-status-icon--missed {
+  .dose-status-icon--missed,
+  .dose-status-icon--scheduled {
     border: 1px solid currentColor;
   }
 }

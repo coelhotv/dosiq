@@ -50,7 +50,7 @@ const getQuantityLabel = (quantity, unit = 'comprimido') => {
 
 /**
  * Componente DoseListItem
- * 
+ *
  * @param {Object} props
  * @param {Object} props.log - Log da dose
  * @param {string} props.log.id - ID do log
@@ -61,6 +61,7 @@ const getQuantityLabel = (quantity, unit = 'comprimido') => {
  * @param {Object} props.log.protocol - Dados do protocolo
  * @param {string} props.log.protocol.name - Nome do protocolo
  * @param {boolean} props.isTaken - Se a dose foi tomada
+ * @param {string} props.status - Status: 'taken', 'missed', ou 'scheduled'
  * @param {string} props.scheduledTime - Horário previsto (opcional)
  * @param {Function} props.onClick - Handler de click opcional
  * @param {number} props.index - Índice para animação staggered
@@ -68,36 +69,53 @@ const getQuantityLabel = (quantity, unit = 'comprimido') => {
 export function DoseListItem({
   log,
   isTaken,
+  status,
   scheduledTime,
   onClick,
   index = 0
 }) {
+  // Determinar o status efetivo
+  const effectiveStatus = status || (isTaken ? 'taken' : 'missed')
   const medicineName = formatMedicineName(log.medicine?.name)
   const protocolName = log.protocol?.name || 'Protocolo'
   const unit = log.medicine?.type === 'cápsula' ? 'cápsula' : 'comprimido'
   const quantityLabel = getQuantityLabel(log.quantity_taken || 1, unit)
   
-  // Horário real se tomada, ou previsto se perdida
-  const displayTime = isTaken 
+  // Horário real se tomada, ou previsto se perdida/agendada
+  const displayTime = effectiveStatus === 'taken'
     ? formatTime(log.taken_at)
     : (scheduledTime || '--:--')
 
+  // Label de status em português
+  const statusLabels = {
+    taken: 'Tomada',
+    missed: 'Perdida',
+    scheduled: 'Agendada'
+  }
+
+  // Ícone baseado no status
+  const statusIcons = {
+    taken: '✓',
+    missed: '✕',
+    scheduled: '○'
+  }
+
   return (
     <motion.div
-      className={`dose-list-item dose-list-item--${isTaken ? 'taken' : 'missed'}`}
+      className={`dose-list-item dose-list-item--${effectiveStatus}`}
       role="listitem"
       onClick={onClick}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
+      transition={{
         duration: 0.2,
         delay: index * 0.05 // Staggered animation
       }}
       data-testid={`dose-list-item-${log.id}`}
     >
       <div className="dose-list-item__status" aria-hidden="true">
-        <span className={`dose-status-icon dose-status-icon--${isTaken ? 'taken' : 'missed'}`}>
-          {isTaken ? '✓' : '✕'}
+        <span className={`dose-status-icon dose-status-icon--${effectiveStatus}`}>
+          {statusIcons[effectiveStatus]}
         </span>
       </div>
       
@@ -119,15 +137,19 @@ export function DoseListItem({
       </div>
       
       <div className="dose-list-item__time">
-        <time 
+        <time
           className="dose-time"
           dateTime={log.taken_at || scheduledTime}
-          aria-label={isTaken ? `Tomada às ${displayTime}` : `Prevista para ${displayTime}`}
+          aria-label={
+            effectiveStatus === 'taken'
+              ? `Tomada às ${displayTime}`
+              : `Prevista para ${displayTime}`
+          }
         >
           {displayTime}
         </time>
-        <span className={`dose-status-label dose-status-label--${isTaken ? 'taken' : 'missed'}`}>
-          {isTaken ? 'Tomada' : 'Perdida'}
+        <span className={`dose-status-label dose-status-label--${effectiveStatus}`}>
+          {statusLabels[effectiveStatus]}
         </span>
       </div>
     </motion.div>

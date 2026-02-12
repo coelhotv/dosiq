@@ -1081,4 +1081,76 @@ env:
 
 ---
 
+## Memory Entry — 2026-02-12 18:20
+**Contexto / Objetivo**
+- Implementar classificação de doses em 3 categorias (taken, missed, scheduled) no Sparkline Drill-Down
+- Corrigir bug: doses futuras aparecendo como "perdidas"
+
+**Causa Raiz do Bug**
+- Existem DUAS cópias de múltiplos arquivos após o refactor F4.6:
+  1. `src/utils/adherenceLogic.js` + `src/components/dashboard/DailyDoseModal.jsx`
+  2. `src/features/dashboard/utils/adherenceLogic.js` + `src/features/dashboard/components/DailyDoseModal.jsx` (USADO PELO APP)
+- Arquivos estavam dessincronizados
+- O `DailyDoseModal.jsx` em `features/` NÃO tinha a seção "Doses Agendadas"!
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/utils/adherenceLogic.js` — atualizado com 3-way classification
+  - `src/features/dashboard/utils/adherenceLogic.js` — sincronizado
+  - `src/components/dashboard/DailyDoseModal.jsx` — 3 seções
+  - `src/features/dashboard/components/DailyDoseModal.jsx` — ADICIONADA seção "Doses Agendadas" (estava faltando!)
+  - `src/components/dashboard/DoseListItem.jsx` — novo prop `status`
+  - CSS files — estilos para status 'scheduled'
+
+**Lógica de Classificação (FINAL)**
+- Dose tem log na janela de tolerância → `taken`
+- Dose sem log + horário passado (Brazil TZ) → `missed`
+- Dose sem log + horário futuro (Brazil TZ) → `scheduled`
+
+**Timezone Fix (Brazil Time Comparison):**
+```javascript
+// Obter horário atual em Brazil (UTC-3)
+const brazilTimeString = now.toLocaleString('en-US', {
+  timeZone: 'America/Sao_Paulo',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hour12: false
+});
+
+// Parse Brazil time (format: MM/DD/YYYY, HH:mm)
+const [datePart, timePart] = brazilTimeString.split(', ');
+const [month, day, year] = datePart.split('/');
+const [currentHour, currentMinute] = timePart.split(':').map(Number);
+
+// Comparar data primeiro, depois horário em minutos
+if (doseDate < currentDate) isPast = true;
+else if (doseDate > currentDate) isPast = false;
+else isPast = (scheduledHour * 60 + scheduledMinute) < (currentHour * 60 + currentMinute);
+```
+
+**O que deu certo**
+- Lint: 0 erros
+- Testes: 93/93 passando
+- Build: sucesso
+- Ambos os arquivos sincronizados
+- Seção "Doses Agendadas" agora presente em ambos os DailyDoseModal
+
+**Causa raiz (debug)**
+- Sintoma: Apenas doses tomadas apareciam, sem missed/scheduled
+- Causa: `features/dashboard/components/DailyDoseModal.jsx` não tinha código para renderizar scheduledDoses
+- Correção: Adicionar seção de "Doses Agendadas" no features/ version
+
+**Regras locais para o futuro**
+- **CRÍTICO**: Após refactor F4.6, sempre verificar duplicatas em `src/` e `src/features/`
+- **SEMPRE** sincronizar AMBOS os arquivos quando modificar componentes compartilhados
+- **VERIFICAR** qual versão é usada pelo app (features/ geralmente tem prioridade)
+- **Para timezone Brazil**: Usar `toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })` para obter horário local
+- Comparar datas (YYYY-MM-DD) primeiro, depois horários em minutos totais
+
+**Pendências**
+- Consolidar em um único arquivo (remover duplicação técnica)
+- Branch: `feature/wave-4/sparkline-dose-classification`
+- Commit: `ef716fd`
+
+---
+
 
