@@ -10,7 +10,7 @@
    ============================================ */
 .install-prompt {
   position: fixed;
-  bottom: 80px; /* Space for BottomNav on mobile */
+  top: 16px; /* Position at top of viewport */
   left: 16px;
   right: 16px;
   z-index: var(--z-index-modal, 1000);
@@ -286,7 +286,7 @@
 /* Desktop adjustments */
 @media (min-width: 768px) {
   .install-prompt {
-    bottom: 24px; /* No BottomNav on desktop */
+    top: 24px; /* No BottomNav on desktop */
     left: 24px;
     right: 24px;
     padding: var(--spacing-lg, 24px);
@@ -350,9 +350,9 @@
 }
 
 /* Safe area for notched devices */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
+@supports (padding-top: env(safe-area-inset-top)) {
   .install-prompt {
-    padding-bottom: calc(var(--spacing-md, 16px) + env(safe-area-inset-bottom));
+    padding-top: calc(var(--spacing-md, 16px) + env(safe-area-inset-top));
   }
 }
 
