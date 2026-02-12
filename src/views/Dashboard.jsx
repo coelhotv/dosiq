@@ -483,12 +483,12 @@ export default function Dashboard({ onNavigate }) {
       .sort((a) => (a.severity === 'critical' ? -1 : 1));
   }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlerts]);
 
-  const handleRegisterDose = async (medicineId, protocolId) => {
+  const handleRegisterDose = async (medicineId, protocolId, quantityTaken = 1) => {
     try {
       await logService.create({
         medicine_id: medicineId,
         protocol_id: protocolId,
-        quantity_taken: 1, // Default para swipe
+        quantity_taken: quantityTaken,
         taken_at: new Date().toISOString()
       });
       analyticsService.track('dose_registered', { timestamp: Date.now() });
@@ -690,10 +690,11 @@ export default function Dashboard({ onNavigate }) {
                 <SwipeRegisterItem
                   key={p.id}
                   medicine={p.medicine}
+                  dosagePerIntake={p.dosage_per_intake}
                   time={p.next_dose || '--:--'}
                   isSelected={(selectedMedicines[plan.id] || []).includes(p.id)}
                   onToggleSelection={() => toggleMedicineSelection(plan.id, p.id)}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
                 />
               ))}
             </TreatmentAccordion>
@@ -711,11 +712,12 @@ export default function Dashboard({ onNavigate }) {
           {standaloneProtocols.length > 0 ? (
             <>
               {standaloneProtocols.map(p => (
-                <SwipeRegisterItem 
+                <SwipeRegisterItem
                   key={p.id}
                   medicine={p.medicine}
+                  dosagePerIntake={p.dosage_per_intake}
                   time={p.next_dose || '--:--'}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
                 />
               ))}
               
@@ -732,11 +734,12 @@ export default function Dashboard({ onNavigate }) {
           ) : fallbackProtocols.length > 0 ? (
             <>
               {fallbackProtocols.map(p => (
-                <SwipeRegisterItem 
+                <SwipeRegisterItem
                   key={p.id}
                   medicine={p.medicine}
+                  dosagePerIntake={p.dosage_per_intake}
                   time={p.next_dose || '--:--'}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id)}
+                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
                 />
               ))}
               

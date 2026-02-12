@@ -6,9 +6,10 @@ import './SwipeRegisterItem.css';
 
 /**
  * SwipeRegisterItem - Item de medicamento com gesto de deslizar para confirmar.
- * 
+ *
  * @param {Object} props
  * @param {Object} props.medicine - Dados do medicamento
+ * @param {number} props.dosagePerIntake - Quantidade de comprimidos por dose (do protocolo)
  * @param {string} props.time - Horário previsto
  * @param {boolean} props.isSelected - Estado de seleção para lote
  * @param {Function} props.onToggleSelection - Callback para alternar seleção
@@ -16,6 +17,7 @@ import './SwipeRegisterItem.css';
  */
 export default function SwipeRegisterItem({
   medicine,
+  dosagePerIntake,
   time,
   isSelected = false,
   onToggleSelection,
@@ -40,7 +42,7 @@ export default function SwipeRegisterItem({
     if (info.offset.x > 150) {
       setIsSuccess(true);
       try {
-        await onRegister?.(medicine.id);
+        await onRegister?.(medicine.id, dosagePerIntake);
         setShowPulse(true);
         analyticsService.track('swipe_used', { medicine: medicine.name });
       } catch (err) {
@@ -88,7 +90,7 @@ export default function SwipeRegisterItem({
         <div className="swipe-item-card__info">
           <h4 className="swipe-item-card__name">{medicine.name}</h4>
           <span className="swipe-item-card__dosage">
-            {medicine.dosage_per_pill} {medicine.dosage_unit}
+            {dosagePerIntake || 1} comprimido{dosagePerIntake > 1 ? 's' : ''}
           </span>
         </div>
         <div className="swipe-item-card__gesture-hint">
