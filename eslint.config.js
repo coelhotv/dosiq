@@ -25,6 +25,23 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [
+            ['@', './src'],
+            ['@features', './src/features'],
+            ['@shared', './src/shared'],
+            ['@dashboard', './src/features/dashboard'],
+            ['@medications', './src/features/medications'],
+            ['@protocols', './src/features/protocols'],
+            ['@stock', './src/features/stock'],
+            ['@adherence', './src/features/adherence'],
+          ],
+          extensions: ['.js', '.jsx', '.json'],
+        },
+      },
+    },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])' }],
     },
