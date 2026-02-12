@@ -165,9 +165,9 @@ export default function InstallPrompt() {
         {isVisible && !showIOSInstructions && (
           <motion.div
             className="install-prompt"
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
+            exit={{ y: -100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             role="dialog"
             aria-label="Prompt de instalação do app"
