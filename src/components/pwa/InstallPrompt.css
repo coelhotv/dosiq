@@ -13,7 +13,8 @@
   top: 16px; /* Position at top of viewport */
   left: 16px;
   right: 16px;
-  z-index: var(--z-index-modal, 1000);
+  z-index: 9999; /* Highest z-index to ensure clickability */
+  pointer-events: auto;
   
   background: var(--glass-standard, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(20px);
@@ -87,6 +88,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10000;
 }
 
 .install-prompt__install-btn:hover {
@@ -113,6 +117,9 @@
   transition: all 0.2s ease;
   font-size: 16px;
   padding: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10000;
 }
 
 .install-prompt__dismiss-btn:hover {
