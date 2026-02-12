@@ -85,7 +85,6 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
 
     protocols.forEach(protocol => {
       // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
-      // Em uma versão futura, considerar a frequência (daily, weekly, etc) aqui também
       const schedule = protocol.time_schedule || [];
       dayExpected += schedule.length;
       
@@ -112,11 +111,8 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
     if (isDaySuccessful) {
       currentStreak++;
     } else if (dateStr === todayStr) {
-      // Se hoje ainda não terminou, não quebra o streak
       continue;
     } else if (i > 0 || (i === 0 && dayExpected > 0)) {
-      // Se não for hoje e falhou, ou se for hoje e já temos falha clara, interrompe
-      // Mas só se houver doses esperadas
       if (dayExpected > 0) break;
     }
   }
@@ -125,7 +121,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
 
   return {
     score,
-    taken: totalFollowed, // Representa doses seguidas corretamente na janela
+    taken: totalFollowed,
     takenAnytime: totalTakenAnytime,
     expected: totalExpected,
     currentStreak
@@ -172,8 +168,7 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
   const [sH, sM] = scheduledTime.split(':').map(Number);
   const takenDate = new Date(logTakenAt);
   
-  // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada,
-  // usando o fuso horário local do dispositivo do usuário.
+  // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada
   const scheduledDate = new Date(takenDate);
   scheduledDate.setHours(sH, sM, 0, 0);
 
@@ -250,20 +245,21 @@ export function calculateDaysRemaining(totalQuantity, dailyIntake) {
 }
 
 /**
- * Calcula doses tomadas e perdidas para uma data específica
+ * Calcula doses para uma data específica, classificando em tomadas, perdidas e agendadas
  *
  * @param {string} date - Data em formato YYYY-MM-DD (horário local Brasil)
  * @param {Array} logs - Logs de medicamentos do dia
  * @param {Array} protocols - Protocolos ativos
- * @returns {Object} { takenDoses: [], missedDoses: [] }
+ * @returns {Object} { takenDoses: [], missedDoses: [], scheduledDoses: [] }
  */
 export function calculateDosesByDate(date, logs, protocols) {
   if (!date || !protocols || protocols.length === 0) {
-    return { takenDoses: [], missedDoses: [] };
+    return { takenDoses: [], missedDoses: [], scheduledDoses: [] };
   }
 
   const takenDoses = [];
   const missedDoses = [];
+  const scheduledDoses = [];
 
   // Converter data string para objeto Date (meia-noite local)
   const targetDate = new Date(date + 'T00:00:00');
@@ -392,9 +388,45 @@ export function calculateDosesByDate(date, logs, protocols) {
         expectedQuantity: expectedDose.expectedQuantity
       });
     } else {
-      // Dose perdida - criar entrada sintética
-      missedDoses.push({
-        id: `missed-${expectedDose.protocolId}-${expectedDose.scheduledTime}`,
+      // Dose não tomada - verificar se é perdida (passado) ou agendada (futuro)
+      const [scheduledHour, scheduledMinute] = expectedDose.scheduledTime.split(':').map(Number);
+      
+      // Obter data/hora atual em Brazil (UTC-3)
+      const now = new Date();
+      const brazilTimeString = now.toLocaleString('en-US', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      // Parse Brazil time string (format: MM/DD/YYYY, HH:mm)
+      const [datePart, timePart] = brazilTimeString.split(', ');
+      const [month, day, year] = datePart.split('/');
+      const [currentHour, currentMinute] = timePart.split(':').map(Number);
+      
+      // Comparar datas primeiro (YYYY-MM-DD format)
+      const currentDateStr = `${year}-${month}-${day}`;
+      let isPast;
+      
+      if (date < currentDateStr) {
+        // Data da dose é anterior ao dia atual no Brazil = perdida
+        isPast = true;
+      } else if (date > currentDateStr) {
+        // Data da dose é futura no Brazil = agendada
+        isPast = false;
+      } else {
+        // Mesma data no Brazil - comparar horários
+        const scheduledTimeMinutes = scheduledHour * 60 + scheduledMinute;
+        const currentTimeMinutes = currentHour * 60 + currentMinute;
+        isPast = scheduledTimeMinutes < currentTimeMinutes;
+      }
+      
+      const baseDose = {
+        id: `${isPast ? 'missed' : 'scheduled'}-${expectedDose.protocolId}-${expectedDose.scheduledTime}`,
         protocol_id: expectedDose.protocolId,
         medicine_id: expectedDose.medicineId,
         scheduledTime: expectedDose.scheduledTime,
@@ -402,9 +434,22 @@ export function calculateDosesByDate(date, logs, protocols) {
         quantity_taken: 0,
         protocol: expectedDose.protocol,
         medicine: expectedDose.medicine,
-        status: 'missed',
         isSynthetic: true
-      });
+      };
+      
+      if (isPast) {
+        // Dose perdida - horário já passou
+        missedDoses.push({
+          ...baseDose,
+          status: 'missed'
+        });
+      } else {
+        // Dose agendada - horário ainda não chegou
+        scheduledDoses.push({
+          ...baseDose,
+          status: 'scheduled'
+        });
+      }
     }
   });
 
@@ -419,5 +464,5 @@ export function calculateDosesByDate(date, logs, protocols) {
     });
   });
 
-  return { takenDoses, missedDoses };
+  return { takenDoses, missedDoses, scheduledDoses };
 }
