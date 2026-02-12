@@ -16,6 +16,7 @@ import TreatmentAccordion from '@dashboard/components/TreatmentAccordion'
 import SwipeRegisterItem from '@dashboard/components/SwipeRegisterItem'
 import SparklineAdesao from '@dashboard/components/SparklineAdesao'
 import DailyDoseModal from '@dashboard/components/DailyDoseModal'
+import LastDosesWidget from '@dashboard/components/LastDosesWidget'
 import EmptyState from '@shared/components/ui/EmptyState'
 import ThemeToggle from '@shared/components/ui/ThemeToggle'
 import ConfettiAnimation from '@shared/components/ui/animations/ConfettiAnimation'
@@ -663,7 +664,9 @@ export default function Dashboard({ onNavigate }) {
         }}
       />
 
-        </section>      {/* 3. Tratamento - Parte Superior: Planos Completos */}
+      </section>
+
+      {/* 3. Tratamento - Parte Superior: Planos Completos */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>TRATAMENTO</h2>
@@ -761,7 +764,18 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </section>
 
-      {/* 4. Floating Action Button */}
+      {/* 4. Last Doses Widget */}
+      <section className={styles.section} aria-label="Últimas doses tomadas">
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>ÚLTIMAS DOSES</h2>
+        </div>
+        <LastDosesWidget
+          onViewHistory={() => onNavigate?.('history')}
+          viewAllClassName={styles.viewAllLink}
+        />
+      </section>
+
+      {/* 5. Floating Action Button */}
       <div className={styles.fab}>
         <button className="btn-add-manual" onClick={() => {
           setPrefillData(null);
