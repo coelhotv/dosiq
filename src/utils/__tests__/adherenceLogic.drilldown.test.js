@@ -39,12 +39,17 @@ describe('calculateDosesByDate', () => {
         }
       ];
 
+      // Use local time string to avoid timezone issues in CI
+      // 08:30 local time is within +/- 2h tolerance of 08:00 scheduled
+      const baseDateObj = new Date(baseDate + 'T08:30:00');
+      const localTimeString = baseDateObj.toISOString();
+
       const logs = [
         {
           id: 'log-1',
           protocol_id: 'proto-1',
           medicine_id: 'med-1',
-          taken_at: '2026-02-11T11:15:00Z', // 08:15 local (UTC-3)
+          taken_at: localTimeString, // 08:30 local - dentro da janela de 08:00
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
           protocol: { name: 'Protocolo Manhã' }
@@ -103,19 +108,24 @@ describe('calculateDosesByDate', () => {
         }
       ];
 
+      // Use local time strings to avoid timezone issues in CI
+      // 08:30 and 20:30 local times are within tolerance of scheduled times
+      const morningTime = new Date(baseDate + 'T08:30:00').toISOString();
+      const eveningTime = new Date(baseDate + 'T20:30:00').toISOString();
+
       const logs = [
         {
           id: 'log-1',
           protocol_id: 'proto-1',
           medicine_id: 'med-1',
-          taken_at: '2026-02-11T11:00:00Z',
+          taken_at: morningTime,
           quantity_taken: 1
         },
         {
           id: 'log-2',
           protocol_id: 'proto-1',
           medicine_id: 'med-1',
-          taken_at: '2026-02-11T23:00:00Z',
+          taken_at: eveningTime,
           quantity_taken: 1
         }
       ];
