@@ -168,9 +168,11 @@ export default function InstallPrompt() {
 
   // Close instructions modal
   const handleCloseInstructions = useCallback(() => {
+    console.log('[PWA Install] Closing instructions modal')
     setShowIOSInstructions(false)
     setIsVisible(false)
     dismissPrompt(30)
+    console.log('[PWA Install] Instructions modal closed, banner dismissed for 30 days')
   }, [])
 
   // Get appropriate text based on platform
