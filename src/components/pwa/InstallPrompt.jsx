@@ -34,14 +34,18 @@ export default function InstallPrompt() {
   // Detect platform and check if prompt should be shown
   useEffect(() => {
     const checkVisibility = () => {
+      console.log('[PWA Install] Checking visibility...')
+      
       // Don't show if already in standalone mode
       if (isStandalone()) {
+        console.log('[PWA Install] Hidden: Running in standalone mode')
         setIsVisible(false)
         return
       }
 
       // Don't show if user recently dismissed
       if (wasPromptDismissed() && !isDismissalExpired()) {
+        console.log('[PWA Install] Hidden: Recently dismissed')
         setIsVisible(false)
         return
       }
@@ -50,6 +54,9 @@ export default function InstallPrompt() {
       const isIOS = isIOSSafari()
       const isAndroid = isChromeAndroid()
       const isDesktop = isDesktopChrome()
+      
+      console.log('[PWA Install] Platform detection:', { isIOS, isAndroid, isDesktop })
+      console.log('[PWA Install] User agent:', navigator.userAgent)
 
       setPlatformInfo({
         isIOSSafari: isIOS,
@@ -59,6 +66,7 @@ export default function InstallPrompt() {
 
       // Show prompt for supported platforms
       const shouldShow = isIOS || isAndroid || isDesktop
+      console.log('[PWA Install] Should show banner:', shouldShow)
       setIsVisible(shouldShow)
     }
 
@@ -67,7 +75,10 @@ export default function InstallPrompt() {
 
   // Listen for beforeinstallprompt event (Chrome/Edge)
   useEffect(() => {
+    console.log('[PWA Install] Setting up beforeinstallprompt listener')
+    
     const handleBeforeInstallPrompt = (event) => {
+      console.log('[PWA Install] beforeinstallprompt event fired!')
       // Prevent the default browser prompt
       event.preventDefault()
       // Store the event for later use
@@ -75,6 +86,9 @@ export default function InstallPrompt() {
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    
+    // Check if event was already fired (before this component mounted)
+    console.log('[PWA Install] Component mounted, checking for deferred prompt...')
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -89,20 +103,27 @@ export default function InstallPrompt() {
 
   // Handle install click
   const handleInstall = useCallback(async () => {
+    console.log('[PWA Install] Button clicked')
+    console.log('[PWA Install] Platform info:', platformInfo)
+    console.log('[PWA Install] Deferred prompt available:', !!deferredPrompt)
+    
     // iOS Safari - show instructions
     if (platformInfo.isIOSSafari) {
+      console.log('[PWA Install] iOS Safari detected - showing instructions')
       setShowIOSInstructions(true)
       return
     }
 
     // Chrome/Edge with deferred prompt
     if (deferredPrompt) {
+      console.log('[PWA Install] Triggering deferred prompt...')
       try {
         // Show the native install prompt
         deferredPrompt.prompt()
         
         // Wait for user choice
         const { outcome } = await deferredPrompt.userChoice
+        console.log('[PWA Install] User choice outcome:', outcome)
         
         if (outcome === 'accepted') {
           setIsVisible(false)
@@ -110,18 +131,21 @@ export default function InstallPrompt() {
         
         // Clear the deferred prompt
         setDeferredPrompt(null)
-      } catch {
-        // Silent fail - install prompt error
+      } catch (error) {
+        console.error('[PWA Install] Error showing prompt:', error)
       }
       return
     }
 
     // Chrome Android without deferred prompt - show manual instructions
     if (platformInfo.isChromeAndroid) {
+      console.log('[PWA Install] Chrome Android without deferred prompt - showing instructions')
       setShowIOSInstructions(true) // Reuse the instructions modal
       return
     }
-  }, [deferredPrompt, platformInfo.isIOSSafari, platformInfo.isChromeAndroid])
+    
+    console.log('[PWA Install] No matching platform handler - browser may not support PWA install')
+  }, [deferredPrompt, platformInfo])
 
   // Close instructions modal
   const handleCloseInstructions = useCallback(() => {
