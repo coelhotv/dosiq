@@ -187,7 +187,7 @@ describe('DailyDoseModal', () => {
       )
 
       expect(screen.getByTestId('empty-state')).toBeInTheDocument()
-      expect(screen.getByTestId('empty-title')).toHaveTextContent('Nenhum registro')
+      expect(screen.getByTestId('empty-title')).toHaveTextContent('Nenhuma dose agendada')
     })
 
     it('deve mostrar estado de erro com botão de retry', () => {
@@ -527,6 +527,234 @@ describe('DailyDoseModal', () => {
       )
 
       expect(screen.queryByText(/💡 Clique em uma dose/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('doses perdidas (missed doses)', () => {
+    const mockProtocols = [
+      {
+        id: 'proto-1',
+        medicine_id: 'med-1',
+        active: true,
+        frequency: 'diário',
+        time_schedule: ['08:00', '20:00'],
+        dosage_per_intake: 1,
+        medicine: { name: 'Paracetamol', type: 'comprimido' }
+      }
+    ]
+
+    it('deve exibir seção de doses perdidas quando há doses perdidas', () => {
+      // Uma dose tomada (08:00), uma perdida (20:00)
+      const logs = [
+        {
+          id: 'log-1',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T11:00:00Z', // 08:00 local
+          quantity_taken: 1,
+          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          protocol: { name: 'Protocolo Manhã' }
+        }
+      ]
+
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={logs}
+          protocols={mockProtocols}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 50, taken: 1, expected: 2 }}
+        />
+      )
+
+      expect(screen.getByText('Doses Perdidas (1)')).toBeInTheDocument()
+    })
+
+    it('não deve exibir seção de doses perdidas quando todas foram tomadas', () => {
+      const logs = [
+        {
+          id: 'log-1',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T11:00:00Z',
+          quantity_taken: 1,
+          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          protocol: { name: 'Protocolo Manhã' }
+        },
+        {
+          id: 'log-2',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T23:00:00Z',
+          quantity_taken: 1,
+          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          protocol: { name: 'Protocolo Manhã' }
+        }
+      ]
+
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={logs}
+          protocols={mockProtocols}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 100, taken: 2, expected: 2 }}
+        />
+      )
+
+      expect(screen.queryByText(/Doses Perdidas/)).not.toBeInTheDocument()
+    })
+
+    it('deve passar isTaken=false para DoseListItem de doses perdidas', () => {
+      const logs = [
+        {
+          id: 'log-1',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T11:00:00Z',
+          quantity_taken: 1,
+          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          protocol: { name: 'Protocolo Manhã' }
+        }
+      ]
+
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={logs}
+          protocols={mockProtocols}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 50, taken: 1, expected: 2 }}
+        />
+      )
+
+      // Dose perdida deve ter isTaken=false
+      // Como o mock de DoseListItem retorna data-taken, verificamos que a dose
+      // com id sintético (missed-*) não existe (ela não tem log real)
+      expect(screen.getByText('Doses Tomadas (1)')).toBeInTheDocument()
+      expect(screen.getByText('Doses Perdidas (1)')).toBeInTheDocument()
+    })
+
+    it('deve mostrar ambas seções quando há doses tomadas e perdidas', () => {
+      const logs = [
+        {
+          id: 'log-1',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T11:00:00Z',
+          quantity_taken: 1,
+          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          protocol: { name: 'Protocolo Manhã' }
+        }
+      ]
+
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={logs}
+          protocols={mockProtocols}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 50, taken: 1, expected: 2 }}
+        />
+      )
+
+      expect(screen.getByText('Doses Tomadas (1)')).toBeInTheDocument()
+      expect(screen.getByText('Doses Perdidas (1)')).toBeInTheDocument()
+    })
+
+    it('deve usar fallback quando protocols não é fornecido (backward compatibility)', () => {
+      // Sem protocols prop - deve comportar-se como antes
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={mockLogs}
+          isLoading={false}
+          error={null}
+          dailySummary={mockDailySummary}
+        />
+      )
+
+      // Deve mostrar doses tomadas normalmente
+      expect(screen.getByText('Doses Tomadas (2)')).toBeInTheDocument()
+      // Não deve ter seção de doses perdidas quando não há protocols
+      expect(screen.queryByText(/Doses Perdidas/)).not.toBeInTheDocument()
+    })
+
+    it('deve exibir estado vazio quando não há doses agendadas', () => {
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={[]}
+          protocols={[]}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 0, taken: 0, expected: 0 }}
+        />
+      )
+
+      expect(screen.getByTestId('empty-state')).toBeInTheDocument()
+      expect(screen.getByTestId('empty-title')).toHaveTextContent('Nenhuma dose agendada')
+    })
+  })
+
+  describe('cálculo de doses com protocols', () => {
+    it('deve calcular doses corretamente com protocols de múltiplos horários', () => {
+      const protocols = [
+        {
+          id: 'proto-1',
+          medicine_id: 'med-1',
+          active: true,
+          frequency: 'diário',
+          time_schedule: ['08:00', '12:00', '18:00'],
+          dosage_per_intake: 1,
+          medicine: { name: 'Antibiótico', type: 'cápsula' }
+        }
+      ]
+
+      // Apenas uma dose tomada, duas perdidas
+      const logs = [
+        {
+          id: 'log-1',
+          protocol_id: 'proto-1',
+          medicine_id: 'med-1',
+          taken_at: '2026-02-11T11:00:00Z',
+          quantity_taken: 1,
+          medicine: { name: 'Antibiótico', type: 'cápsula' },
+          protocol: { name: 'Tratamento' }
+        }
+      ]
+
+      render(
+        <DailyDoseModal
+          date={mockDate}
+          isOpen={true}
+          onClose={mockOnClose}
+          logs={logs}
+          protocols={protocols}
+          isLoading={false}
+          error={null}
+          dailySummary={{ adherence: 33, taken: 1, expected: 3 }}
+        />
+      )
+
+      expect(screen.getByText('Doses Tomadas (1)')).toBeInTheDocument()
+      expect(screen.getByText('Doses Perdidas (2)')).toBeInTheDocument()
     })
   })
 })

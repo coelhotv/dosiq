@@ -1,7 +1,7 @@
 /**
  * SparklineAdesao - Estilos CSS
- * 
- * Gráfico de linha para visualização de adesão semanal
+ *
+ * Grafico de linha para visualizacao de adesao semanal
  */
 
 .sparkline-adhesion {
@@ -32,10 +32,10 @@
 
 .sparkline-empty-text {
   color: var(--text-tertiary);
-  font-size: 0.75rem;
+  font-size: var(--text-xs, 0.75rem);
 }
 
-/* Linha de referência 80% */
+/* Linha de referencia 80% */
 .sparkline-reference-line {
   stroke: var(--text-tertiary);
   stroke-opacity: 0.5;
@@ -70,18 +70,18 @@
 }
 
 .sparkline-day-name {
-  font-size: 0.625rem;
+  font-size: var(--text-2xs, 0.625rem);
   color: var(--text-tertiary);
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium, 500);
 }
 
 .sparkline-day-value {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
 }
 
-/* Badge de estatística */
+/* Badge de estatistica */
 .sparkline-stats {
   display: flex;
   align-items: center;
@@ -90,8 +90,8 @@
 }
 
 .sparkline-average {
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: var(--font-weight-bold, 700);
   color: var(--text-primary);
 }
 
@@ -100,16 +100,16 @@
 }
 
 .sparkline-trend {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
 }
 
 .sparkline-trend-up {
-  color: var(--accent-success);
+  color: var(--color-success);
 }
 
 .sparkline-trend-down {
-  color: var(--accent-danger);
+  color: var(--color-error);
 }
 
 .sparkline-trend-stable {
@@ -118,11 +118,11 @@
 
 /* Sizes */
 .sparkline-stats-small .sparkline-average {
-  font-size: 0.75rem;
+  font-size: var(--text-xs, 0.75rem);
 }
 
 .sparkline-stats-large .sparkline-average {
-  font-size: 1rem;
+  font-size: var(--text-base, 1rem);
 }
 
 /* Reduced motion */
@@ -174,7 +174,7 @@
 
 /* Focus visible for accessibility */
 .sparkline-dot--clickable:focus-visible {
-  outline: 2px solid var(--accent-primary, var(--neon-cyan));
+  outline: 2px solid var(--color-secondary);
   outline-offset: 2px;
 }
 
@@ -183,7 +183,7 @@
   .sparkline-dot--clickable {
     stroke-width: 2px;
   }
-  
+
   .sparkline-dot--clickable:hover,
   .sparkline-dot--clickable:focus {
     stroke-width: 3px;

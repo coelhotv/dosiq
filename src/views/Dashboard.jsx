@@ -797,6 +797,7 @@ export default function Dashboard({ onNavigate }) {
         isOpen={isDrillDownModalOpen}
         onClose={handleCloseDrillDown}
         logs={dayLogs}
+        protocols={rawProtocols}
         isLoading={isDayLogsLoading}
         error={dayLogsError}
         dailySummary={selectedDaySummary}

@@ -696,11 +696,85 @@ git push origin main      # ✅ main atualizada (034565c)
 - SEMPRE usar datas relativas (`new Date()`, `getRelativeDate()`) em testes de componentes com datas
 - Mock de motion components: desestruturar TODAS as props de animação para evitar warnings
 - Paths de mock: verificar estrutura real de pastas (../../../hooks vs ../../hooks)
-
 **Pendências / próximos passos**
 - Test:critical passando (87 testes) ✅
 - Testes de componentes criados e validados ✅
 - Próximo: documentar padrões de teste em `docs/TESTING_GUIDE.md`
 
 ---
+
+## Memory Entry — 2026-02-12 02:45
+**Contexto / Objetivo**
+- Implementar a feature Sparkline Drill-Down Enhancement: exibir doses tomadas E perdidas no modal
+- Permitir que usuários vejam exatamente quais doses foram perdidas em um dia específico
+- Melhorar transparência e adesão ao tratamento
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/utils/adherenceLogic.js` — adicionada função `calculateDosesByDate()` para calcular doses tomadas e perdidas
+  - `src/components/dashboard/DailyDoseModal.jsx` — refatorado para exibir duas seções: "Doses Tomadas" e "Doses Perdidas"
+  - `src/components/dashboard/DailyDoseModal.css` — estilos para nova seção de doses perdidas
+  - `src/views/Dashboard.jsx` — atualizado para passar `protocols` para o modal
+  - `src/components/dashboard/SparklineAdesao.css` — ajustes visuais
+  - `src/components/dashboard/DoseListItem.css` — refinamento de estilos
+  - `src/utils/__tests__/adherenceLogic.drilldown.test.js` — **NOVO** — 18 testes unitários para `calculateDosesByDate`
+  - `src/components/dashboard/__tests__/DailyDoseModal.test.jsx` — atualizado com 6 testes de integração para as duas seções
+  - `plans/sparkline-drilldown-enhancement-spec.md` — **NOVO** — especificação técnica completa
+
+**Algoritmo implementado (`calculateDosesByDate`)**
+```javascript
+// 1. Filtrar protocolos aplicáveis para a data (frequência, datas ativas)
+// 2. Gerar slots esperados para cada protocolo (time_schedule)
+// 3. Match logs com slots esperados (janela de tolerância ±2h)
+// 4. Coletar doses não correspondentes como "perdidas"
+// 5. Retornar { takenDoses: [], missedDoses: [] }
+```
+
+**Frequências suportadas:**
+- `diário` / `daily` — todos os dias
+- `semanal` / `weekly` — dias específicos da semana
+- `dia_sim_dia_nao` / `every_other_day` — alternando dias
+- `personalizado` / `custom` — não incluído (sem doses esperadas)
+- `quando_necessário` / `prn` — não incluído (doses não agendadas)
+
+**O que deu certo**
+- Reuso do componente `DoseListItem` com prop `isTaken={false}` para doses perdidas
+- Cálculo 100% client-side usando dados já disponíveis (zero queries extras)
+- Fallback seguro: se `protocols` não for passado, comportamento anterior é mantido
+- Timezone handling correto usando Brazil local time (GMT-3)
+- Janela de tolerância de ±2h reutilizada da lógica existente `isDoseInToleranceWindow`
+
+**O que não deu certo / riscos**
+- Nenhum — implementação seguiu especificação sem desvios
+- Edge cases cobertos: datas futuras, protocolos inativos, frequências não suportadas
+
+**Métricas de Testes**
+| Tipo | Quantidade | Cobertura |
+|------|------------|-----------|
+| Unit Tests (`calculateDosesByDate`) | 18 | 100% do algoritmo |
+| Integration Tests (DailyDoseModal) | 6+ | Duas seções, estados, a11y |
+| Total de testes do projeto | 105+ | 87 críticos + 18 novos |
+| Lint | 0 erros | ✅ |
+| Build | Sucesso | ✅ |
+
+**Regras locais para o futuro (lições acionáveis)**
+- **Algoritmo de doses perdidas:** SEMPRE usar `calculateDosesByDate()` — não reinventar lógica de frequências
+- **Reuso de componentes:** `DoseListItem` suporta ambos os modos via prop `isTaken` — usar sempre
+- **Timezone:** Usar `new Date(date + 'T00:00:00')` para evitar problemas de timezone em comparações de datas
+- **Fallback:** Manter compatibilidade backward — se nova prop não for passada, usar comportamento anterior
+- **Testes de algoritmo:** Testar todas as frequências (diário, semanal, dia sim/não) e edge cases (sem doses, todas tomadas, todas perdidas)
+
+**Decisões & trade-offs**
+- Decisão: Cálculo client-side vs. API dedicada
+- Alternativa: Criar endpoint `/api/drilldown/:date`
+- Escolhido: Client-side porque dados (logs + protocols) já estão em memória via SWR cache
+- Trade-off: Menos network requests, mas lógica mais complexa no frontend — mitigado com testes extensivos
+
+**Pendências / próximos passos**
+- Feature completa e pronta para deploy ✅
+- Documentação de entrega criada em `docs/past_deliveries/SPARKLINE_DRILLDOWN_DELIVERY.md`
+- Próximo: Merge na main e deploy
+
+---
+
 

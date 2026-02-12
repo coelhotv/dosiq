@@ -21,6 +21,7 @@ import Modal from '../ui/Modal'
 import Loading from '../ui/Loading'
 import EmptyState from '../ui/EmptyState'
 import DoseListItem from './DoseListItem'
+import { calculateDosesByDate } from '../../utils/adherenceLogic'
 import './DailyDoseModal.css'
 
 /**
@@ -107,12 +108,13 @@ function useFocusTrap(isOpen) {
 
 /**
  * Componente DailyDoseModal
- * 
+ *
  * @param {Object} props
  * @param {string} props.date - Data selecionada (YYYY-MM-DD)
  * @param {boolean} props.isOpen - Controle de visibilidade
  * @param {Function} props.onClose - Handler de fechamento
  * @param {Array} props.logs - Logs do dia
+ * @param {Array} props.protocols - Protocolos ativos para cálculo de doses perdidas
  * @param {boolean} props.isLoading - Estado de loading
  * @param {Error} props.error - Erro se houver
  * @param {Object} props.dailySummary - Resumo do dia { adherence, taken, expected }
@@ -123,6 +125,7 @@ export function DailyDoseModal({
   isOpen,
   onClose,
   logs = [],
+  protocols = null,
   isLoading = false,
   error = null,
   dailySummary = null,
@@ -130,23 +133,24 @@ export function DailyDoseModal({
 }) {
   const { modalRef, handleKeyDown } = useFocusTrap(isOpen)
 
-  // Separar doses tomadas e perdidas (simuladas para o drill-down)
+  // Calcular doses tomadas e perdidas usando a nova função
   const { takenDoses, missedDoses } = useMemo(() => {
-    const taken = []
-    const missed = []
-
-    // Para o drill-down, assumimos que todos os logs retornados são doses tomadas
-    // Doses perdidas seriam calculadas comparando com o protocolo esperado
-    // Esta é uma simplificação - em uma implementação completa,
-    // compararíamos com os horários esperados do protocolo
-    logs.forEach(log => {
-      taken.push(log)
-    })
-
-    return { takenDoses: taken, missedDoses: missed }
-  }, [logs])
+    // Se protocols não foi passado, fallback para comportamento anterior
+    if (!protocols) {
+      return { takenDoses: logs || [], missedDoses: [] }
+    }
+    
+    try {
+      return calculateDosesByDate(date, logs, protocols)
+    } catch (err) {
+      console.error('Erro ao calcular doses:', err)
+      // Fallback seguro em caso de erro
+      return { takenDoses: logs || [], missedDoses: [] }
+    }
+  }, [date, logs, protocols])
 
   const hasDoses = takenDoses.length > 0 || missedDoses.length > 0
+  const hasScheduledDoses = takenDoses.length > 0 || missedDoses.length > 0
   const formattedDate = formatDate(date)
   const shortDate = formatShortDate(date)
 
@@ -215,12 +219,12 @@ export function DailyDoseModal({
           />
         )}
 
-        {/* Estado vazio */}
-        {!isLoading && !error && logs.length === 0 && (
+        {/* Estado vazio - sem doses agendadas */}
+        {!isLoading && !error && !hasScheduledDoses && (
           <EmptyState
             icon="📋"
-            title="Nenhum registro"
-            message={`Nenhuma dose registrada neste dia.`}
+            title="Nenhuma dose agendada"
+            message={`Não há doses programadas para este dia.`}
           />
         )}
 
@@ -243,10 +247,13 @@ export function DailyDoseModal({
           </div>
         )}
 
-        {/* Lista de doses perdidas (placeholder para futura implementação) */}
+        {/* Lista de doses perdidas */}
         {!isLoading && !error && missedDoses.length > 0 && (
           <div className="dose-list-section dose-list-section--missed">
-            <h3 className="dose-list-section__title dose-list-section__title--missed">
+            <h3
+              className="dose-list-section__title dose-list-section__title--missed"
+              aria-live="polite"
+            >
               Doses Perdidas ({missedDoses.length})
             </h3>
             <div className="dose-list" role="list" aria-label={`Doses perdidas em ${shortDate}`}>
@@ -255,6 +262,7 @@ export function DailyDoseModal({
                   key={log.id}
                   log={log}
                   isTaken={false}
+                  scheduledTime={log.scheduledTime}
                   index={index}
                 />
               ))}
