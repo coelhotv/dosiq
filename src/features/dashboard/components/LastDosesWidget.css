@@ -1,0 +1,283 @@
+.last-doses-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-list-compact);
+  width: 100%;
+  padding: var(--spacing-card-padding);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Header */
+.last-doses-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.last-doses-widget__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.last-doses-widget__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border-radius: var(--radius-full);
+}
+
+/* Loading State */
+.last-doses-widget--loading {
+  min-height: 200px;
+}
+
+.last-doses-widget__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--spacing-section-major);
+  color: var(--text-secondary);
+}
+
+.last-doses-widget__spinner {
+  font-size: var(--font-size-2xl);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.last-doses-widget__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--spacing-section-major);
+  text-align: center;
+}
+
+.last-doses-widget__empty-icon {
+  font-size: var(--font-size-3xl);
+  opacity: 0.6;
+}
+
+.last-doses-widget__empty-text {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.last-doses-widget__empty-action {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-hover);
+}
+
+.last-doses-widget__empty-action:hover {
+  background: var(--color-primary-bg);
+  transform: translateY(-1px);
+}
+
+/* List */
+.last-doses-widget__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-list-compact);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* List Item */
+.last-doses-widget__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--glass-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card-md);
+  transition: var(--transition-hover);
+  animation: slide-in 0.3s ease-out;
+  animation-fill-mode: both;
+}
+
+.last-doses-widget__item:nth-child(1) { animation-delay: 0ms; }
+.last-doses-widget__item:nth-child(2) { animation-delay: 50ms; }
+.last-doses-widget__item:nth-child(3) { animation-delay: 100ms; }
+.last-doses-widget__item:nth-child(4) { animation-delay: 150ms; }
+.last-doses-widget__item:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.last-doses-widget__item:hover {
+  background: var(--glass-standard);
+  border-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.last-doses-widget__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: var(--font-size-xl);
+  background: var(--glass-heavy);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.last-doses-widget__item-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.last-doses-widget__item-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.last-doses-widget__item-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.last-doses-widget__item-time {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.last-doses-widget__item-details {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+.last-doses-widget__item-quantity {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+}
+
+.last-doses-widget__item-protocol {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* View All Button */
+.last-doses-widget__view-all {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-hover);
+  text-align: center;
+}
+
+.last-doses-widget__view-all:hover {
+  background: var(--glass-standard);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .last-doses-widget {
+    padding: var(--space-3);
+  }
+
+  .last-doses-widget__title {
+    font-size: var(--font-size-base);
+  }
+
+  .last-doses-widget__item {
+    padding: var(--space-2);
+  }
+
+  .last-doses-widget__item-icon {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-lg);
+  }
+
+  .last-doses-widget__item-name {
+    font-size: var(--font-size-sm);
+  }
+
+  .last-doses-widget__item-time {
+    font-size: var(--font-size-xs);
+  }
+
+  .last-doses-widget__item-details {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .last-doses-widget {
+  background: var(--glass-bg-dark, rgba(0, 0, 0, 0.2));
+}
+
+[data-theme="dark"] .last-doses-widget__item {
+  background: var(--glass-light-dark, rgba(255, 255, 255, 0.03));
+}
+
+[data-theme="dark"] .last-doses-widget__item:hover {
+  background: var(--glass-standard-dark, rgba(255, 255, 255, 0.08));
+}
