@@ -934,4 +934,71 @@ env:
 
 ---
 
+## Memory Entry — 2026-02-12 14:12
+**Contexto / Objetivo**
+- Implementar Phase 4.6: Feature Organization Refactor
+- Reorganizar codebase de estrutura por tipo para estrutura por feature
+- Adicionar path aliases para imports mais limpos e manuteníveis
+
+**O que foi feito (mudanças)**
+- Arquivos alterados: 64 arquivos, 3 commit no branch `feature/wave-4/feature-organization`
+- Criada estrutura `src/features/` com 5 features:
+  - `adherence/`: components, hooks, services, utils + tests
+  - `dashboard/`: components, hooks, services, utils
+  - `medications/`: components, services, constants
+  - `protocols/`: components, services, constants, utils
+  - `stock/`: components, services, constants
+- Criada estrutura `src/shared/`:
+  - `components/ui/`: Button, Card, Modal, AlertList, Calendar, etc.
+  - `components/log/`: LogEntry, LogForm
+  - `components/gamification/`: BadgeDisplay, MilestoneCelebration
+  - `components/onboarding/`: All onboarding components
+  - `hooks/`: useCachedQuery, useTheme, useShake, useHapticFeedback
+  - `services/`: cachedServices, index.js, migrationService, paginationService
+  - `constants/`: All schemas (medicine, protocol, stock, log, validation)
+  - `utils/`: queryCache, supabase
+  - `styles/`: All CSS files
+- Atualizado `vite.config.js` com 8 path aliases (@, @features, @shared, @dashboard, @medications, @protocols, @stock, @adherence)
+- Atualizado `eslint.config.js` com import resolver settings
+- Atualizados todos os view files (App.jsx, Dashboard.jsx, Medicines.jsx, Protocols.jsx, Stock.jsx, History.jsx)
+- Criado script `scripts/fix-imports.cjs` para correção sistemática de imports
+
+**Validações realizadas**
+- ✅ Lint: 0 erros, 0 warnings
+- ✅ Testes críticos: 93/93 passando (100%)
+- ✅ Build de produção: sucesso (dist/ gerado)
+- ✅ Nenhuma regressão funcional detectada
+
+**O que deu certo**
+- Abordagem incremental: migrar uma feature por vez, commitar, validar
+- Criação de rollback tag (`pre-feature-org`) para segurança
+- Script Node.js para correção sistemática de imports evitou erros manuais
+- Path aliases funcionaram corretamente com Vite e ESLint
+- A estrutura por feature melhora significativamente a organização do código
+
+**O que não deu certo / riscos**
+- Complexidade maior que o esperado - import updates foram mais trabalhosos
+- Alguns imports circulares entre features (ex: onboarding -> medicine -> shared)
+- Tamanho do bundle aumentou ligeiramente (762KB vs 759KB) - aceitável
+
+**Decisões & trade-offs**
+- Decisão: Manter arquivos originais em `src/components/` e `src/services/` durante transição
+- Decisão: Não remover old structure nesta fase para permitir rollback fácil
+- Trade-off: Duplicação temporária de código vs segurança de rollback
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** usar path aliases para novos imports: `@shared/components/ui/Button` em vez de `../../components/ui/Button`
+- **NEVER** criar imports relativos entre features - usar path aliases cross-feature
+- **Para refactors grandes**: usar script de automação para evitar erros manuais
+- **Validar após cada feature**: lint → test → build antes de próximo commit
+- **Rollback**: tag `pre-feature-org` disponível para emergências
+
+**Pendências / próximos passos**
+- Remover old directory structure (`src/components/`, `src/services/`, etc.) após validação em staging
+- Atualizar documentação com novos patterns de import
+- Treinar time sobre nova estrutura e path aliases
+- Branch pronta para merge na main ✅
+
+---
+
 
