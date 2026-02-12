@@ -79,7 +79,11 @@ export function DoseListItem({
   const medicineName = formatMedicineName(log.medicine?.name)
   const protocolName = log.protocol?.name || 'Protocolo'
   const unit = log.medicine?.type === 'cápsula' ? 'cápsula' : 'comprimido'
-  const quantityLabel = getQuantityLabel(log.quantity_taken || 1, unit)
+  // Usar expectedQuantity para doses futuras (scheduled/missed), quantity_taken para doses tomadas
+  const quantity = effectiveStatus === 'taken'
+    ? (log.quantity_taken || 1)
+    : (log.expectedQuantity || log.quantity_taken || 1)
+  const quantityLabel = getQuantityLabel(quantity, unit)
   
   // Horário real se tomada, ou previsto se perdida/agendada
   const displayTime = effectiveStatus === 'taken'
