@@ -60,21 +60,57 @@ npm run build
 | Branches | kebab-case | `feature/wave-2/fix-login` |
 | Hooks | use + PascalCase | `useCachedQuery` |
 
-### 4. Estrutura de Arquivos Obrigatória
+### 4. Estrutura de Arquivos Obrigatória (v2.8.0)
+
+#### Estrutura Feature-Based (F4.6)
 
 ```
 src/
-├── components/          # Componentes React por domínio
-│   ├── ui/             # Componentes genéricos
-│   ├── medicine/       # Domínio: Medicamentos
-│   ├── protocol/       # Domínio: Protocolos
-│   ├── adherence/      # Domínio: Adesão
-│   └── dashboard/      # Domínio: Dashboard
-├── services/api/       # Lógica de negócio
-├── hooks/              # Hooks customizados
-├── utils/              # Funções puras
-└── schemas/            # Validação Zod
+├── features/              # Domínios de negócio (novo em v2.8.0)
+│   ├── adherence/         # Adesão ao tratamento
+│   │   ├── components/    # Componentes específicos
+│   │   ├── hooks/         # Hooks do domínio
+│   │   ├── services/      # Services específicos
+│   │   └── utils/         # Utilitários do domínio
+│   ├── dashboard/         # Dashboard e widgets
+│   ├── medications/       # Medicamentos
+│   ├── protocols/         # Protocolos e titulação
+│   └── stock/             # Estoque
+│
+├── shared/                # Recursos compartilhados (novo em v2.8.0)
+│   ├── components/        # Componentes reutilizáveis
+│   │   ├── ui/           # UI atômicos (Button, Card, Modal)
+│   │   ├── log/          # LogEntry, LogForm
+│   │   ├── gamification/ # BadgeDisplay, MilestoneCelebration
+│   │   ├── onboarding/   # OnboardingWizard, Steps
+│   │   └── pwa/          # PushPermission, InstallPrompt
+│   ├── hooks/            # Hooks customizados
+│   ├── services/         # Services com cache SWR
+│   ├── constants/        # Schemas Zod
+│   ├── utils/            # Utilitários puros
+│   └── styles/           # CSS tokens e temas
+│
+├── views/                 # Páginas/Views
+└── [legacy folders]       # Em migração para features/shared
 ```
+
+#### Path Aliases (Vite + ESLint)
+
+```javascript
+// ✅ CORRETO - Use path aliases
+import { Button } from '@shared/components/ui/Button'
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
+import { medicineService } from '@features/medications/services/medicineService'
+
+// ❌ INCORRETO - Evite imports relativos longos
+import { Button } from '../../../shared/components/ui/Button'
+```
+
+**Aliases configurados:**
+- `@` → `src/`
+- `@features` → `src/features/`
+- `@shared` → `src/shared/`
+- `@dashboard`, `@medications`, `@protocols`, `@stock`, `@adherence`
 
 ### 5. Scripts Obrigatórios
 

@@ -499,4 +499,4 @@ npm run build
 
 ---
 
-*Documento atualizado em 2026-02-11 - Adicionada seção de Component Consolidation Patterns*
+*Documento atualizado em 2026-02-12 - v2.8.0: Estrutura CSS mantida com features/shared*
