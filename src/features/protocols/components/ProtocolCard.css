@@ -1,0 +1,348 @@
+.protocol-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  cursor: default;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: var(--transition-hover);
+}
+
+.protocol-card:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-primary);
+  border-color: var(--glass-border-heavy);
+}
+
+.protocol-card.inactive {
+  opacity: 0.6;
+  border-color: var(--text-tertiary);
+}
+
+.protocol-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--glass-border);
+  gap: var(--space-4);
+}
+
+.protocol-name {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.protocol-medicine {
+  font-size: var(--font-size-sm);
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.protocol-header-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.protocol-status {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  backdrop-filter: var(--glass-blur-light);
+}
+
+.protocol-status.active {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  box-shadow: var(--glow-success);
+}
+
+.protocol-status.inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-tertiary);
+  border: 1px solid var(--text-tertiary);
+}
+
+.protocol-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detail-item {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.detail-item.schedule,
+.detail-item.notes {
+  flex-direction: column;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  flex: 1;
+}
+
+.detail-item.notes .detail-value {
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+  line-height: 1.5;
+}
+
+.schedule-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.time-badge {
+  padding: var(--space-2) var(--space-3);
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  transition: var(--transition-hover);
+}
+
+.time-badge:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glow-hover-primary);
+}
+
+.titration-progress {
+  color: var(--color-warning);
+  font-weight: 400;
+  font-size: var(--font-size-xs);
+  margin-left: var(--space-1);
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.3));
+}
+
+.titration-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  backdrop-filter: var(--glass-blur-light);
+}
+
+.titration-badge.titulando {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  box-shadow: var(--glow-warning);
+}
+
+.titration-badge.alvo_atingido {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  box-shadow: var(--glow-success);
+}
+
+/* Titration Card Detail Styles */
+.detail-item.titration {
+  flex-direction: column;
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border-light);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+.titration-card-progress {
+  margin-top: var(--space-3);
+}
+
+.titration-progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.titration-progress-bar {
+  height: 6px;
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.titration-progress-bar .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-warning), var(--color-primary));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  box-shadow: var(--glow-hover-primary);
+}
+
+.stage-objective {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin-top: var(--space-2);
+}
+
+.titration-schedule-preview {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border-light);
+}
+
+.titration-schedule-preview h5 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stages-timeline {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.timeline-stage {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--radius-sm);
+  min-width: 70px;
+  text-align: center;
+  font-size: 10px;
+  transition: var(--transition-hover);
+}
+
+.timeline-stage:hover {
+  transform: scale(var(--scale-hover));
+}
+
+.timeline-stage.current {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--color-warning);
+  box-shadow: var(--glow-warning);
+}
+
+.timeline-stage.past {
+  opacity: 0.5;
+  background: transparent;
+  border-color: var(--glass-border-light);
+}
+
+.timeline-stage.future {
+  border-color: transparent;
+}
+
+.stage-dose-mini {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stage-days-mini {
+  color: var(--text-tertiary);
+}
+
+
+.protocol-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.protocol-actions button {
+  flex: 1;
+  min-width: 100px;
+  transition: var(--transition-hover);
+}
+
+.protocol-actions button:hover {
+  transform: scale(var(--scale-hover));
+}
+
+.protocol-actions button:active {
+  transform: scale(var(--scale-active));
+}
+
+/* Timeline Button - Primary Action */
+.protocol-actions button[variant="primary"] {
+  background: linear-gradient(135deg, var(--color-primary), #0051d5);
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.protocol-actions button[variant="primary"]:hover {
+  background: linear-gradient(135deg, #0051d5, var(--color-primary));
+  transform: translateY(-1px);
+  box-shadow: var(--glow-hover-primary);
+}
+
+/* Timeline Modal Customization */
+.modal-body .titration-timeline {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .protocol-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .protocol-actions {
+    flex-direction: column;
+  }
+
+  .protocol-actions button {
+    width: 100%;
+  }
+
+  /* Mobile: Timeline button full width on first position */
+  .protocol-actions button[variant="primary"] {
+    order: -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-body .titration-timeline {
+    padding: var(--space-3);
+    max-height: 60vh;
+  }
+}

@@ -1,0 +1,43 @@
+.badge-display {
+  margin-top: 24px;
+}
+
+.badge-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.badge-item:hover {
+  transform: translateY(-2px);
+}
+
+.badge-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.badge-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
