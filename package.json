@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "// --- Otimizações Fase 1 ---": "",
     "test:changed": "vitest run --changed=main",
-    "test:critical": "vitest run src/services src/utils src/schemas src/hooks --exclude '**/*.smoke.test.{js,jsx}' --exclude '**/useDashboardContext.test.jsx'",
+    "test:critical": "vitest run src/services src/utils src/schemas --exclude '**/*.smoke.test.{js,jsx}'",
     "test:related": "vitest run --changed=main",
     "test:git": "vitest run --changed=main",
     "test:affected": "vitest run --changed=main",

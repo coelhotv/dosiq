@@ -1,0 +1,408 @@
+﻿2026-02-12T12:16:36.4650816Z Current runner version: '2.331.0'
+2026-02-12T12:16:36.4674211Z ##[group]Runner Image Provisioner
+2026-02-12T12:16:36.4675016Z Hosted Compute Agent
+2026-02-12T12:16:36.4675623Z Version: 20260123.484
+2026-02-12T12:16:36.4676196Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+2026-02-12T12:16:36.4676869Z Build Date: 2026-01-23T19:41:17Z
+2026-02-12T12:16:36.4677441Z Worker ID: {65592986-3bb0-4839-b2a1-42f04bde7d27}
+2026-02-12T12:16:36.4678211Z Azure Region: westus
+2026-02-12T12:16:36.4678697Z ##[endgroup]
+2026-02-12T12:16:36.4680197Z ##[group]Operating System
+2026-02-12T12:16:36.4680865Z Ubuntu
+2026-02-12T12:16:36.4681322Z 24.04.3
+2026-02-12T12:16:36.4681727Z LTS
+2026-02-12T12:16:36.4682276Z ##[endgroup]
+2026-02-12T12:16:36.4682759Z ##[group]Runner Image
+2026-02-12T12:16:36.4683257Z Image: ubuntu-24.04
+2026-02-12T12:16:36.4683814Z Version: 20260201.15.1
+2026-02-12T12:16:36.4684969Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+2026-02-12T12:16:36.4686441Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+2026-02-12T12:16:36.4687304Z ##[endgroup]
+2026-02-12T12:16:36.4688357Z ##[group]GITHUB_TOKEN Permissions
+2026-02-12T12:16:36.4690464Z Contents: read
+2026-02-12T12:16:36.4690983Z Metadata: read
+2026-02-12T12:16:36.4691592Z Packages: read
+2026-02-12T12:16:36.4692065Z ##[endgroup]
+2026-02-12T12:16:36.4694206Z Secret source: Actions
+2026-02-12T12:16:36.4694960Z Prepare workflow directory
+2026-02-12T12:16:36.5090014Z Prepare all required actions
+2026-02-12T12:16:36.5128738Z Getting action download info
+2026-02-12T12:16:36.9656224Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-02-12T12:16:37.1218757Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-02-12T12:16:37.3552416Z Complete job name: Unitários Críticos
+2026-02-12T12:16:37.4222423Z ##[group]Run actions/checkout@v4
+2026-02-12T12:16:37.4223304Z with:
+2026-02-12T12:16:37.4223727Z   repository: coelhotv/meus-remedios
+2026-02-12T12:16:37.4224409Z   token: ***
+2026-02-12T12:16:37.4224787Z   ssh-strict: true
+2026-02-12T12:16:37.4225162Z   ssh-user: git
+2026-02-12T12:16:37.4225558Z   persist-credentials: true
+2026-02-12T12:16:37.4225989Z   clean: true
+2026-02-12T12:16:37.4226377Z   sparse-checkout-cone-mode: true
+2026-02-12T12:16:37.4226836Z   fetch-depth: 1
+2026-02-12T12:16:37.4227215Z   fetch-tags: false
+2026-02-12T12:16:37.4227595Z   show-progress: true
+2026-02-12T12:16:37.4227992Z   lfs: false
+2026-02-12T12:16:37.4228347Z   submodules: false
+2026-02-12T12:16:37.4228732Z   set-safe-directory: true
+2026-02-12T12:16:37.4229383Z env:
+2026-02-12T12:16:37.4229737Z   NODE_VERSION: 20
+2026-02-12T12:16:37.4230521Z ##[endgroup]
+2026-02-12T12:16:37.5363901Z Syncing repository: coelhotv/meus-remedios
+2026-02-12T12:16:37.5365860Z ##[group]Getting Git version info
+2026-02-12T12:16:37.5367043Z Working directory is '/home/runner/work/meus-remedios/meus-remedios'
+2026-02-12T12:16:37.5368846Z [command]/usr/bin/git version
+2026-02-12T12:16:37.5443512Z git version 2.52.0
+2026-02-12T12:16:37.5470779Z ##[endgroup]
+2026-02-12T12:16:37.5487762Z Temporarily overriding HOME='/home/runner/work/_temp/636661e4-c05d-4923-a9d7-59ad426cdba2' before making global git config changes
+2026-02-12T12:16:37.5490482Z Adding repository directory to the temporary git global config as a safe directory
+2026-02-12T12:16:37.5503884Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/meus-remedios/meus-remedios
+2026-02-12T12:16:37.5544945Z Deleting the contents of '/home/runner/work/meus-remedios/meus-remedios'
+2026-02-12T12:16:37.5548511Z ##[group]Initializing the repository
+2026-02-12T12:16:37.5553720Z [command]/usr/bin/git init /home/runner/work/meus-remedios/meus-remedios
+2026-02-12T12:16:37.5650791Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-02-12T12:16:37.5652585Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-02-12T12:16:37.5654578Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-02-12T12:16:37.5655753Z hint: call:
+2026-02-12T12:16:37.5657004Z hint:
+2026-02-12T12:16:37.5657538Z hint: 	git config --global init.defaultBranch <name>
+2026-02-12T12:16:37.5658094Z hint:
+2026-02-12T12:16:37.5658616Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-02-12T12:16:37.5659487Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-02-12T12:16:37.5660389Z hint:
+2026-02-12T12:16:37.5660744Z hint: 	git branch -m <name>
+2026-02-12T12:16:37.5661161Z hint:
+2026-02-12T12:16:37.5661713Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-02-12T12:16:37.5664276Z Initialized empty Git repository in /home/runner/work/meus-remedios/meus-remedios/.git/
+2026-02-12T12:16:37.5672378Z [command]/usr/bin/git remote add origin https://github.com/coelhotv/meus-remedios
+2026-02-12T12:16:37.5708859Z ##[endgroup]
+2026-02-12T12:16:37.5710375Z ##[group]Disabling automatic garbage collection
+2026-02-12T12:16:37.5713796Z [command]/usr/bin/git config --local gc.auto 0
+2026-02-12T12:16:37.5744649Z ##[endgroup]
+2026-02-12T12:16:37.5745875Z ##[group]Setting up auth
+2026-02-12T12:16:37.5752293Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-02-12T12:16:37.5784336Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-02-12T12:16:37.6116713Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-02-12T12:16:37.6147858Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-02-12T12:16:37.6364636Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-02-12T12:16:37.6394751Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-02-12T12:16:37.6626260Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-02-12T12:16:37.6661722Z ##[endgroup]
+2026-02-12T12:16:37.6662427Z ##[group]Fetching the repository
+2026-02-12T12:16:37.6670796Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +50c63219a24416f7e22ba11ded487a66497d2726:refs/remotes/origin/main
+2026-02-12T12:16:38.7229476Z From https://github.com/coelhotv/meus-remedios
+2026-02-12T12:16:38.7233403Z  * [new ref]         50c63219a24416f7e22ba11ded487a66497d2726 -> origin/main
+2026-02-12T12:16:38.7261455Z ##[endgroup]
+2026-02-12T12:16:38.7263429Z ##[group]Determining the checkout info
+2026-02-12T12:16:38.7265549Z ##[endgroup]
+2026-02-12T12:16:38.7269317Z [command]/usr/bin/git sparse-checkout disable
+2026-02-12T12:16:38.7309496Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-02-12T12:16:38.7336462Z ##[group]Checking out the ref
+2026-02-12T12:16:38.7340615Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-02-12T12:16:38.7774425Z Switched to a new branch 'main'
+2026-02-12T12:16:38.7776143Z branch 'main' set up to track 'origin/main'.
+2026-02-12T12:16:38.7786297Z ##[endgroup]
+2026-02-12T12:16:38.7823856Z [command]/usr/bin/git log -1 --format=%H
+2026-02-12T12:16:38.7845510Z 50c63219a24416f7e22ba11ded487a66497d2726
+2026-02-12T12:16:38.8170997Z ##[group]Run actions/setup-node@v4
+2026-02-12T12:16:38.8172182Z with:
+2026-02-12T12:16:38.8173020Z   node-version: 20
+2026-02-12T12:16:38.8173912Z   cache: npm
+2026-02-12T12:16:38.8174756Z   always-auth: false
+2026-02-12T12:16:38.8175686Z   check-latest: false
+2026-02-12T12:16:38.8176897Z   token: ***
+2026-02-12T12:16:38.8177694Z env:
+2026-02-12T12:16:38.8178468Z   NODE_VERSION: 20
+2026-02-12T12:16:38.8179537Z ##[endgroup]
+2026-02-12T12:16:39.0265709Z Found in cache @ /opt/hostedtoolcache/node/20.20.0/x64
+2026-02-12T12:16:39.0272164Z ##[group]Environment details
+2026-02-12T12:16:41.6173060Z node: v20.20.0
+2026-02-12T12:16:41.6174406Z npm: 10.8.2
+2026-02-12T12:16:41.6174814Z yarn: 1.22.22
+2026-02-12T12:16:41.6176298Z ##[endgroup]
+2026-02-12T12:16:41.6197635Z [command]/opt/hostedtoolcache/node/20.20.0/x64/bin/npm config get cache
+2026-02-12T12:16:41.9305545Z /home/runner/.npm
+2026-02-12T12:16:42.2610724Z Cache hit for: node-cache-Linux-x64-npm-9d8efecf185919c7ece6bc8cf6119c2c78c67dcb524e5f31cccb23294f3fc695
+2026-02-12T12:16:43.5439776Z Received 4194304 of 25094672 (16.7%), 4.0 MBs/sec
+2026-02-12T12:16:43.8080045Z Received 25094672 of 25094672 (100.0%), 18.9 MBs/sec
+2026-02-12T12:16:43.8081288Z Cache Size: ~24 MB (25094672 B)
+2026-02-12T12:16:43.8110019Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f0fb7001-4094-4c7c-99e8-085d6de036f1/cache.tzst -P -C /home/runner/work/meus-remedios/meus-remedios --use-compress-program unzstd
+2026-02-12T12:16:43.9164253Z Cache restored successfully
+2026-02-12T12:16:43.9218232Z Cache restored from key: node-cache-Linux-x64-npm-9d8efecf185919c7ece6bc8cf6119c2c78c67dcb524e5f31cccb23294f3fc695
+2026-02-12T12:16:43.9356763Z ##[group]Run npm ci
+2026-02-12T12:16:43.9357070Z [36;1mnpm ci[0m
+2026-02-12T12:16:43.9441636Z shell: /usr/bin/bash -e {0}
+2026-02-12T12:16:43.9441896Z env:
+2026-02-12T12:16:43.9442082Z   NODE_VERSION: 20
+2026-02-12T12:16:43.9442287Z ##[endgroup]
+2026-02-12T12:16:47.9378245Z 
+2026-02-12T12:16:47.9387666Z > meus-remedios@2.7.0 prepare
+2026-02-12T12:16:47.9388226Z > husky
+2026-02-12T12:16:47.9388398Z 
+2026-02-12T12:16:47.9882952Z 
+2026-02-12T12:16:47.9883793Z added 346 packages, and audited 347 packages in 4s
+2026-02-12T12:16:47.9884344Z 
+2026-02-12T12:16:47.9884642Z 81 packages are looking for funding
+2026-02-12T12:16:47.9885165Z   run `npm fund` for details
+2026-02-12T12:16:47.9894987Z 
+2026-02-12T12:16:47.9895389Z found 0 vulnerabilities
+2026-02-12T12:16:48.0149102Z ##[group]Run npm run test:critical
+2026-02-12T12:16:48.0149414Z [36;1mnpm run test:critical[0m
+2026-02-12T12:16:48.0185388Z shell: /usr/bin/bash -e {0}
+2026-02-12T12:16:48.0185632Z env:
+2026-02-12T12:16:48.0185821Z   NODE_VERSION: 20
+2026-02-12T12:16:48.0186017Z ##[endgroup]
+2026-02-12T12:16:48.1374905Z 
+2026-02-12T12:16:48.1375634Z > meus-remedios@2.7.0 test:critical
+2026-02-12T12:16:48.1376678Z > vitest run src/services src/utils src/schemas src/hooks --exclude '**/*.smoke.test.{js,jsx}' --exclude '**/useDashboardContext.test.jsx'
+2026-02-12T12:16:48.1377324Z 
+2026-02-12T12:16:48.5060249Z 
+2026-02-12T12:16:48.5062793Z [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/home/runner/work/meus-remedios/meus-remedios[39m
+2026-02-12T12:16:48.5063551Z 
+2026-02-12T12:16:49.5994093Z  [32m✓[39m src/utils/__tests__/titrationUtils.test.js [2m([22m[2m19 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+2026-02-12T12:16:49.6254414Z  [32m✓[39m src/utils/__tests__/adherenceLogic.drilldown.test.js [2m([22m[2m18 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+2026-02-12T12:16:49.6988982Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould fetch data successfully
+2026-02-12T12:16:49.6994857Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.6995323Z 
+2026-02-12T12:16:49.7217574Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould fetch data successfully
+2026-02-12T12:16:49.7225806Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.7240659Z 
+2026-02-12T12:16:49.7587780Z  [32m✓[39m src/services/api/__tests__/stockService.test.js [2m([22m[2m10 tests[22m[2m)[22m[32m 111[2mms[22m[39m
+2026-02-12T12:16:49.7654916Z  [32m✓[39m src/schemas/__tests__/validation.test.js [2m([22m[2m23 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+2026-02-12T12:16:49.7765030Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould fetch data successfully
+2026-02-12T12:16:49.7766739Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:49.7767156Z 
+2026-02-12T12:16:49.7768604Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould handle fetch errors
+2026-02-12T12:16:49.7770321Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.7770735Z 
+2026-02-12T12:16:49.7852298Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould handle fetch errors
+2026-02-12T12:16:49.7854839Z [22m[39m[QueryCache] Cache MISS: error-key
+2026-02-12T12:16:49.7855585Z 
+2026-02-12T12:16:49.7861752Z [90mstderr[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould handle fetch errors
+2026-02-12T12:16:49.7863813Z [22m[39m[QueryCache] Fetch falhou: error-key Error: Fetch failed
+2026-02-12T12:16:49.7865342Z     at [90m/home/runner/work/meus-remedios/meus-remedios/[39msrc/hooks/__tests__/useCachedQuery.test.jsx:37:21
+2026-02-12T12:16:49.7867360Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:145:11
+2026-02-12T12:16:49.7870381Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:915:26
+2026-02-12T12:16:49.7872242Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+2026-02-12T12:16:49.7873330Z     at new Promise (<anonymous>)
+2026-02-12T12:16:49.7875317Z     at runWithTimeout [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39m
+2026-02-12T12:16:49.7877400Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+2026-02-12T12:16:49.7879512Z     at Traces.$ [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+2026-02-12T12:16:49.7881886Z     at trace [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+2026-02-12T12:16:49.7884004Z     at runTest [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+2026-02-12T12:16:49.7884955Z 
+2026-02-12T12:16:49.7997590Z  [32m✓[39m src/services/__tests__/analyticsService.test.js [2m([22m[2m16 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+2026-02-12T12:16:49.8216749Z  [32m✓[39m src/services/api/__tests__/logService.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+2026-02-12T12:16:49.8281924Z  [32m✓[39m src/utils/__tests__/adherenceLogic.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+2026-02-12T12:16:49.8295551Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould handle fetch errors
+2026-02-12T12:16:49.8298183Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8298808Z 
+2026-02-12T12:16:49.8303863Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould not fetch when key is null
+2026-02-12T12:16:49.8314955Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8315419Z 
+2026-02-12T12:16:49.8341446Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould not fetch when key is null
+2026-02-12T12:16:49.8343620Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8344068Z 
+2026-02-12T12:16:49.8353025Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould not fetch when enabled is false
+2026-02-12T12:16:49.8355832Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8356260Z 
+2026-02-12T12:16:49.8385688Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mbasic functionality[2m > [22m[2mshould not fetch when enabled is false
+2026-02-12T12:16:49.8387033Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8387288Z 
+2026-02-12T12:16:49.8405474Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refetch data with force option
+2026-02-12T12:16:49.8413598Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8420583Z 
+2026-02-12T12:16:49.8452525Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refetch data with force option
+2026-02-12T12:16:49.8454038Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.8454384Z 
+2026-02-12T12:16:49.8642355Z  [32m✓[39m src/services/api.test.js [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+2026-02-12T12:16:49.8957203Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refetch data with force option
+2026-02-12T12:16:49.8959289Z [22m[39m[QueryCache] Invalidadas 1 entradas para pattern: test-key
+2026-02-12T12:16:49.8960410Z [QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.8960771Z 
+2026-02-12T12:16:49.8982821Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refetch data with force option
+2026-02-12T12:16:49.8983774Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:49.8984018Z 
+2026-02-12T12:16:49.8989083Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refresh data in background
+2026-02-12T12:16:49.8990100Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.8990337Z 
+2026-02-12T12:16:49.9005484Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refresh data in background
+2026-02-12T12:16:49.9006309Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.9006502Z 
+2026-02-12T12:16:49.9529717Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refresh data in background
+2026-02-12T12:16:49.9531393Z [22m[39m[QueryCache] Invalidadas 1 entradas para pattern: test-key
+2026-02-12T12:16:49.9532006Z [QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.9532259Z 
+2026-02-12T12:16:49.9548670Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mrefetch functionality[2m > [22m[2mshould refresh data in background
+2026-02-12T12:16:49.9549982Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:49.9550291Z 
+2026-02-12T12:16:49.9554312Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2minitial data[2m > [22m[2mshould use initial data
+2026-02-12T12:16:49.9555325Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:49.9555598Z 
+2026-02-12T12:16:49.9571413Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2minitial data[2m > [22m[2mshould use initial data
+2026-02-12T12:16:49.9572583Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:49.9572810Z 
+2026-02-12T12:16:50.0086150Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2minitial data[2m > [22m[2mshould use initial data
+2026-02-12T12:16:50.0087347Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:50.0087682Z 
+2026-02-12T12:16:50.0093594Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onSuccess callback
+2026-02-12T12:16:50.0094643Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.0094938Z 
+2026-02-12T12:16:50.0112549Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onSuccess callback
+2026-02-12T12:16:50.0113471Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:50.0113734Z 
+2026-02-12T12:16:50.0628444Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onSuccess callback
+2026-02-12T12:16:50.0631073Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:50.0631490Z 
+2026-02-12T12:16:50.0634824Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onError callback
+2026-02-12T12:16:50.0636479Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.0637006Z 
+2026-02-12T12:16:50.0654561Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onError callback
+2026-02-12T12:16:50.0657322Z [22m[39m[QueryCache] Cache MISS: error-key
+2026-02-12T12:16:50.0657669Z 
+2026-02-12T12:16:50.0665613Z [90mstderr[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onError callback
+2026-02-12T12:16:50.0667266Z [22m[39m[QueryCache] Fetch falhou: error-key Error: Fetch failed
+2026-02-12T12:16:50.0668034Z     at [90m/home/runner/work/meus-remedios/meus-remedios/[39msrc/hooks/__tests__/useCachedQuery.test.jsx:158:21
+2026-02-12T12:16:50.0668974Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:145:11
+2026-02-12T12:16:50.0670161Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:915:26
+2026-02-12T12:16:50.0671149Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+2026-02-12T12:16:50.0671713Z     at new Promise (<anonymous>)
+2026-02-12T12:16:50.0672508Z     at runWithTimeout [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39m
+2026-02-12T12:16:50.0673535Z     at [90mfile:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+2026-02-12T12:16:50.0674584Z     at Traces.$ [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+2026-02-12T12:16:50.0675701Z     at trace [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+2026-02-12T12:16:50.0676781Z     at runTest [90m(file:///home/runner/work/meus-remedios/meus-remedios/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+2026-02-12T12:16:50.0677305Z 
+2026-02-12T12:16:50.1162389Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcallbacks[2m > [22m[2mshould call onError callback
+2026-02-12T12:16:50.1163813Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.1164667Z 
+2026-02-12T12:16:50.1171614Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mstale time[2m > [22m[2mshould respect stale time option
+2026-02-12T12:16:50.1172609Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.1172939Z 
+2026-02-12T12:16:50.1198292Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mstale time[2m > [22m[2mshould respect stale time option
+2026-02-12T12:16:50.1200149Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:50.1200593Z 
+2026-02-12T12:16:50.1731721Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mstale time[2m > [22m[2mshould respect stale time option
+2026-02-12T12:16:50.1733221Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:50.1733593Z 
+2026-02-12T12:16:50.1738565Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcleanup[2m > [22m[2mshould not update state after unmount
+2026-02-12T12:16:50.1739693Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.1740233Z 
+2026-02-12T12:16:50.1756871Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcleanup[2m > [22m[2mshould not update state after unmount
+2026-02-12T12:16:50.1758291Z [22m[39m[QueryCache] Cache MISS: test-key
+2026-02-12T12:16:50.1758642Z 
+2026-02-12T12:16:50.3266138Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQuery[2m > [22m[2mcleanup[2m > [22m[2mshould not update state after unmount
+2026-02-12T12:16:50.3267559Z [22m[39m[QueryCache] Cache limpo. 1 entradas removidas.
+2026-02-12T12:16:50.3267948Z 
+2026-02-12T12:16:50.3270683Z [90mstdout[2m | src/hooks/__tests__/useCachedQuery.test.jsx[2m > [22m[2museCachedQueries[2m > [22m[2mshould fetch multiple queries in parallel
+2026-02-12T12:16:50.3271772Z [22m[39m[QueryCache] Cache limpo. 0 entradas removidas.
+2026-02-12T12:16:50.3272077Z 
+2026-02-12T12:17:39.4135348Z [31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+2026-02-12T12:17:39.4136026Z [31m[1m
+2026-02-12T12:17:39.4136575Z Vitest caught 3 unhandled errors during the test run.
+2026-02-12T12:17:39.4138042Z This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+2026-02-12T12:17:39.4150038Z 
+2026-02-12T12:17:39.4150974Z [31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+2026-02-12T12:17:39.4153212Z [31m[1mError[22m: Fetch failed[39m
+2026-02-12T12:17:39.4154610Z [36m [2m❯[22m src/hooks/__tests__/useCachedQuery.test.jsx:[2m37:21[22m[39m
+2026-02-12T12:17:39.4254372Z     [90m 35| [39m
+2026-02-12T12:17:39.4255406Z     [90m 36| [39m    [34mit[39m([32m'should handle fetch errors'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+2026-02-12T12:17:39.4256851Z     [90m 37| [39m      [35mconst[39m error [33m=[39m [35mnew[39m [33mError[39m([32m'Fetch failed'[39m)
+2026-02-12T12:17:39.4257777Z     [90m   | [39m                    [31m^[39m
+2026-02-12T12:17:39.4258943Z     [90m 38| [39m      [35mconst[39m fetcher [33m=[39m vi[33m.[39m[34mfn[39m()[33m.[39m[34mmockRejectedValue[39m(error)
+2026-02-12T12:17:39.4260319Z     [90m 39| [39m      const { result } = renderHook(() => useCachedQuery('error-key', …
+2026-02-12T12:17:39.4261542Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m145:11[22m[39m
+2026-02-12T12:17:39.4262672Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m915:26[22m[39m
+2026-02-12T12:17:39.4263859Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m1243:20[22m[39m
+2026-02-12T12:17:39.4265123Z [90m [2m❯[22m runWithTimeout node_modules/@vitest/runner/dist/index.js:[2m1209:10[22m[39m
+2026-02-12T12:17:39.4266364Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m1653:37[22m[39m
+2026-02-12T12:17:39.4267974Z [90m [2m❯[22m Traces.$ node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:[2m142:27[22m[39m
+2026-02-12T12:17:39.4269469Z [90m [2m❯[22m trace node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:[2m239:21[22m[39m
+2026-02-12T12:17:39.4271155Z [90m [2m❯[22m runTest node_modules/@vitest/runner/dist/index.js:[2m1653:12[22m[39m
+2026-02-12T12:17:39.4271788Z 
+2026-02-12T12:17:39.4273518Z [31mThis error originated in "[1msrc/hooks/__tests__/useCachedQuery.test.jsx[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+2026-02-12T12:17:39.4275975Z [31mThe latest test that might've caused the error is "[1mshould handle fetch errors[22m". It might mean one of the following:
+2026-02-12T12:17:39.4277231Z - The error was thrown, while Vitest was running this test.
+2026-02-12T12:17:39.4278716Z - If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+2026-02-12T12:17:39.4279546Z 
+2026-02-12T12:17:39.4280286Z [31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+2026-02-12T12:17:39.4281052Z [31m[1mError[22m: Fetch failed[39m
+2026-02-12T12:17:39.4281972Z [36m [2m❯[22m src/hooks/__tests__/useCachedQuery.test.jsx:[2m158:21[22m[39m
+2026-02-12T12:17:39.4283293Z     [90m156| [39m    [34mit[39m([32m'should call onError callback'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+2026-02-12T12:17:39.4284508Z     [90m157| [39m      [35mconst[39m onError [33m=[39m vi[33m.[39m[34mfn[39m()
+2026-02-12T12:17:39.4285721Z     [90m158| [39m      [35mconst[39m error [33m=[39m [35mnew[39m [33mError[39m([32m'Fetch failed'[39m)
+2026-02-12T12:17:39.4286649Z     [90m   | [39m                    [31m^[39m
+2026-02-12T12:17:39.4287319Z     [90m159| [39m      [35mconst[39m fetcher [33m=[39m vi[33m.[39m[34mfn[39m()[33m.[39m[34mmockRejectedValue[39m(error)
+2026-02-12T12:17:39.4287821Z     [90m160| [39m      
+2026-02-12T12:17:39.4288531Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m145:11[22m[39m
+2026-02-12T12:17:39.4289150Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m915:26[22m[39m
+2026-02-12T12:17:39.4289761Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m1243:20[22m[39m
+2026-02-12T12:17:39.4291449Z [90m [2m❯[22m runWithTimeout node_modules/@vitest/runner/dist/index.js:[2m1209:10[22m[39m
+2026-02-12T12:17:39.4292862Z [90m [2m❯[22m node_modules/@vitest/runner/dist/index.js:[2m1653:37[22m[39m
+2026-02-12T12:17:39.4294266Z [90m [2m❯[22m Traces.$ node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:[2m142:27[22m[39m
+2026-02-12T12:17:39.4295730Z [90m [2m❯[22m trace node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:[2m239:21[22m[39m
+2026-02-12T12:17:39.4297081Z [90m [2m❯[22m runTest node_modules/@vitest/runner/dist/index.js:[2m1653:12[22m[39m
+2026-02-12T12:17:39.4297682Z 
+2026-02-12T12:17:39.4299112Z [31mThis error originated in "[1msrc/hooks/__tests__/useCachedQuery.test.jsx[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+2026-02-12T12:17:39.4300642Z [31mThe latest test that might've caused the error is "[1mshould call onError callback[22m". It might mean one of the following:
+2026-02-12T12:17:39.4301327Z - The error was thrown, while Vitest was running this test.
+2026-02-12T12:17:39.4302080Z - If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+2026-02-12T12:17:39.4305808Z 
+2026-02-12T12:17:39.4306603Z [31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+2026-02-12T12:17:39.4307605Z [31m[1mError[22m: [vitest-pool]: Worker threads emitted error.[39m
+2026-02-12T12:17:39.4309049Z [90m [2m❯[22m EventEmitter.<anonymous> node_modules/vitest/dist/chunks/cli-api.B7PN_QUv.js:[2m8043:22[22m[39m
+2026-02-12T12:17:39.4310499Z [90m [2m❯[22m EventEmitter.emit node:events:[2m524:28[22m[39m
+2026-02-12T12:17:39.4312149Z [90m [2m❯[22m Worker.emitWorkerError node_modules/vitest/dist/chunks/cli-api.B7PN_QUv.js:[2m7597:22[22m[39m
+2026-02-12T12:17:39.4313368Z [90m [2m❯[22m Worker.emit node:events:[2m524:28[22m[39m
+2026-02-12T12:17:39.4314310Z [90m [2m❯[22m Worker.[kOnExit] node:internal/worker:[2m320:12[22m[39m
+2026-02-12T12:17:39.4315276Z [90m [2m❯[22m Worker.<computed>.onexit node:internal/worker:[2m230:20[22m[39m
+2026-02-12T12:17:39.4315603Z 
+2026-02-12T12:17:39.4316079Z [31m[1mCaused by: Error[22m: Worker terminated due to reaching memory limit: JS heap out of memory[39m
+2026-02-12T12:17:39.4316773Z [90m [2m❯[22m Worker.[kOnExit] node:internal/worker:[2m320:26[22m[39m
+2026-02-12T12:17:39.4317374Z [90m [2m❯[22m Worker.<computed>.onexit node:internal/worker:[2m230:20[22m[39m
+2026-02-12T12:17:39.4317662Z 
+2026-02-12T12:17:39.4317885Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+2026-02-12T12:17:39.4320197Z [31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_WORKER_OUT_OF_MEMORY' }[39m
+2026-02-12T12:17:39.4321098Z [31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+2026-02-12T12:17:39.4321401Z 
+2026-02-12T12:17:39.4322927Z 
+2026-02-12T12:17:39.4329224Z [2m Test Files [22m [1m[32m8 passed[39m[22m[90m (9)[39m
+2026-02-12T12:17:39.4330328Z [2m      Tests [22m [1m[32m104 passed[39m[22m[90m (118)[39m
+2026-02-12T12:17:39.4331219Z [2m     Errors [22m [1m[31m3 errors[39m[22m
+2026-02-12T12:17:39.4331830Z [2m   Start at [22m 12:16:48
+2026-02-12T12:17:39.4333053Z [2m   Duration [22m 50.89s[2m (transform 333ms, setup 299ms, import 596ms, tests 200ms, environment 6.33s)[22m
+2026-02-12T12:17:39.4333692Z 
+2026-02-12T12:17:39.4354681Z 
+2026-02-12T12:17:39.4377534Z ##[error]Error: Fetch failed
+ ❯ src/hooks/__tests__/useCachedQuery.test.jsx:37:21
+
+This error originated in "src/hooks/__tests__/useCachedQuery.test.jsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle fetch errors". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+2026-02-12T12:17:39.4386271Z 
+2026-02-12T12:17:39.4390752Z ##[error]Error: Fetch failed
+ ❯ src/hooks/__tests__/useCachedQuery.test.jsx:158:21
+
+This error originated in "src/hooks/__tests__/useCachedQuery.test.jsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should call onError callback". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+2026-02-12T12:17:39.4703592Z ##[error]Process completed with exit code 1.
+2026-02-12T12:17:39.4808328Z Post job cleanup.
+2026-02-12T12:17:39.5748624Z [command]/usr/bin/git version
+2026-02-12T12:17:39.5783365Z git version 2.52.0
+2026-02-12T12:17:39.5825133Z Temporarily overriding HOME='/home/runner/work/_temp/c3791590-bed6-433c-92a8-b472563f4a01' before making global git config changes
+2026-02-12T12:17:39.5826108Z Adding repository directory to the temporary git global config as a safe directory
+2026-02-12T12:17:39.5837689Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/meus-remedios/meus-remedios
+2026-02-12T12:17:39.5872197Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-02-12T12:17:39.5904301Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-02-12T12:17:39.6132205Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-02-12T12:17:39.6152446Z http.https://github.com/.extraheader
+2026-02-12T12:17:39.6164310Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-02-12T12:17:39.6193947Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-02-12T12:17:39.6422523Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-02-12T12:17:39.6458255Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-02-12T12:17:39.6815983Z Cleaning up orphan processes
