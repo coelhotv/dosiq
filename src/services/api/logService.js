@@ -266,11 +266,23 @@ export const logService = {
 
   /**
    * Get logs by date range
-   * @param {string} startDate - ISO format YYYY-MM-DD
-   * @param {string} endDate - ISO format YYYY-MM-DD
+   * @param {string} startDate - ISO format YYYY-MM-DD (Brazil local date)
+   * @param {string} endDate - ISO format YYYY-MM-DD (Brazil local date)
    * @returns {Promise}
+   *
+   * NOTE: Converts Brazil dates to UTC range for proper timezone handling.
+   * Brazil is GMT-3, so midnight Brazil = 03:00 UTC same day,
+   * and 23:59:59 Brazil = 02:59:59 UTC next day.
    */
   getByDateRange: async (startDate, endDate, limit = 50, offset = 0) => {
+    // Convert Brazil dates to UTC timestamps
+    // startDate 00:00:00 Brazil = startDate 03:00:00 UTC
+    const startUtc = `${startDate}T03:00:00`
+    // endDate 23:59:59 Brazil = (endDate + 1 day) 02:59:59 UTC
+    const endDateObj = new Date(endDate + 'T00:00:00')
+    endDateObj.setDate(endDateObj.getDate() + 1)
+    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59'
+    
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(`
@@ -279,8 +291,8 @@ export const logService = {
         medicine:medicines(*)
       `, { count: 'exact' })
       .eq('user_id', await getUserId())
-      .gte('taken_at', `${startDate}T00:00:00`)
-      .lte('taken_at', `${endDate}T23:59:59`)
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
       .order('taken_at', { ascending: false })
       .range(offset, offset + limit - 1)
     

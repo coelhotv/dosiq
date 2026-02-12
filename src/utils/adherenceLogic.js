@@ -248,3 +248,176 @@ export function calculateDaysRemaining(totalQuantity, dailyIntake) {
   if (dailyIntake <= 0) return Infinity;
   return Math.floor(totalQuantity / dailyIntake);
 }
+
+/**
+ * Calcula doses tomadas e perdidas para uma data específica
+ *
+ * @param {string} date - Data em formato YYYY-MM-DD (horário local Brasil)
+ * @param {Array} logs - Logs de medicamentos do dia
+ * @param {Array} protocols - Protocolos ativos
+ * @returns {Object} { takenDoses: [], missedDoses: [] }
+ */
+export function calculateDosesByDate(date, logs, protocols) {
+  if (!date || !protocols || protocols.length === 0) {
+    return { takenDoses: [], missedDoses: [] };
+  }
+
+  const takenDoses = [];
+  const missedDoses = [];
+
+  // Converter data string para objeto Date (meia-noite local)
+  const targetDate = new Date(date + 'T00:00:00');
+  const dayOfWeek = targetDate.getDay(); // 0=Domingo, 1=Segunda, etc.
+
+  // Filtrar protocolos aplicáveis para esta data
+  const applicableProtocols = protocols.filter(protocol => {
+    // Protocolo deve estar ativo
+    if (!protocol.active) return false;
+
+    // Verificar se o protocolo já começou
+    if (protocol.start_date) {
+      const startDate = new Date(protocol.start_date);
+      if (targetDate < startDate) return false;
+    }
+
+    // Verificar se o protocolo já terminou
+    if (protocol.end_date) {
+      const endDate = new Date(protocol.end_date);
+      if (targetDate > endDate) return false;
+    }
+
+    // Verificar frequência
+    const frequency = (protocol.frequency || 'diário').toLowerCase();
+
+    switch (frequency) {
+      case 'diário':
+      case 'diariamente':
+      case 'daily':
+        return true;
+
+      case 'semanal':
+      case 'semanalmente':
+      case 'weekly':
+        // Verificar se o dia da semana está nos dias configurados
+        if (protocol.days && Array.isArray(protocol.days)) {
+          // Mapear nomes de dias para números (0-6)
+          const dayMap = {
+            'domingo': 0, 'sunday': 0,
+            'segunda': 1, 'segunda-feira': 1, 'monday': 1,
+            'terça': 2, 'terça-feira': 2, 'tuesday': 2,
+            'quarta': 3, 'quarta-feira': 3, 'wednesday': 3,
+            'quinta': 4, 'quinta-feira': 4, 'thursday': 4,
+            'sexta': 5, 'sexta-feira': 5, 'friday': 5,
+            'sábado': 6, 'sabado': 6, 'saturday': 6
+          };
+          return protocol.days.some(day => dayMap[day.toLowerCase()] === dayOfWeek);
+        }
+        return false;
+
+      case 'dia_sim_dia_nao':
+      case 'dia sim, dia não':
+      case 'every_other_day':
+      case 'alternating':
+        // Calcular dias desde a data de início
+        if (protocol.start_date) {
+          const startDate = new Date(protocol.start_date);
+          const diffTime = targetDate.getTime() - startDate.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          // Dia sim, dia não: dias pares = dose, ímpares = sem dose
+          return diffDays % 2 === 0;
+        }
+        // Se não tiver data de início, assumir que começa hoje (dia 0 = dose)
+        return true;
+
+      case 'personalizado':
+      case 'custom':
+        // Para frequência personalizada, verificar se há lógica específica
+        // Por padrão, assume-se que não há dose
+        return false;
+
+      case 'quando_necessário':
+      case 'when_needed':
+      case 'prn':
+        // Doses "quando necessário" não são esperadas
+        return false;
+
+      default:
+        return true;
+    }
+  });
+
+  // Gerar slots de doses esperados para cada protocolo aplicável
+  const expectedDoses = [];
+  applicableProtocols.forEach(protocol => {
+    const schedule = protocol.time_schedule || [];
+    schedule.forEach(time => {
+      expectedDoses.push({
+        protocolId: protocol.id,
+        medicineId: protocol.medicine_id,
+        scheduledTime: time,
+        expectedQuantity: protocol.dosage_per_intake || 1,
+        protocol: protocol,
+        medicine: protocol.medicine || null
+      });
+    });
+  });
+
+  // Criar cópia dos logs para rastrear quais já foram associados
+  const unmatchedLogs = [...(logs || [])];
+
+  // Para cada dose esperada, tentar encontrar um log correspondente
+  expectedDoses.forEach(expectedDose => {
+    let matchedLogIndex = -1;
+
+    // Procurar log que corresponda a este horário esperado
+    for (let i = 0; i < unmatchedLogs.length; i++) {
+      const log = unmatchedLogs[i];
+      
+      // Verificar se o log é do mesmo protocolo
+      if (log.protocol_id !== expectedDose.protocolId) continue;
+
+      // Verificar se está na janela de tolerância (+/- 2h)
+      if (isDoseInToleranceWindow(expectedDose.scheduledTime, log.taken_at)) {
+        matchedLogIndex = i;
+        break;
+      }
+    }
+
+    if (matchedLogIndex >= 0) {
+      // Dose tomada - mover log para takenDoses
+      const matchedLog = unmatchedLogs.splice(matchedLogIndex, 1)[0];
+      takenDoses.push({
+        ...matchedLog,
+        scheduledTime: expectedDose.scheduledTime,
+        expectedQuantity: expectedDose.expectedQuantity
+      });
+    } else {
+      // Dose perdida - criar entrada sintética
+      missedDoses.push({
+        id: `missed-${expectedDose.protocolId}-${expectedDose.scheduledTime}`,
+        protocol_id: expectedDose.protocolId,
+        medicine_id: expectedDose.medicineId,
+        scheduledTime: expectedDose.scheduledTime,
+        expectedQuantity: expectedDose.expectedQuantity,
+        quantity_taken: 0,
+        protocol: expectedDose.protocol,
+        medicine: expectedDose.medicine,
+        status: 'missed',
+        isSynthetic: true
+      });
+    }
+  });
+
+  // Logs restantes que não correspondem a nenhuma dose esperada
+  // (doses extras, fora do horário, etc.) - adicionar como takenDoses
+  unmatchedLogs.forEach(log => {
+    takenDoses.push({
+      ...log,
+      scheduledTime: null,
+      expectedQuantity: log.quantity_taken || 1,
+      isExtra: true
+    });
+  });
+
+  return { takenDoses, missedDoses };
+}
