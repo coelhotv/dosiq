@@ -5,7 +5,7 @@ import {
   getUserSettings,
   getAllUsersWithTelegram 
 } from '../services/protocolCache.js';
-import { shouldSendNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification, logNotification } from '../services/notificationDeduplicator.js';
 import { 
   getCurrentTimeInTimezone, 
   getCurrentDateInTimezone, 
@@ -255,11 +255,26 @@ async function checkUserReminders(bot, userId, chatId) {
         }
 
         // Check deduplication
-        const shouldSend = await shouldSendNotification(p.id, 'dose_reminder');
-        if (!shouldSend) continue;
+        const shouldSend = await shouldSendNotification(userId, p.id, 'dose_reminder');
+        if (!shouldSend) {
+          logger.debug(`Dose reminder suppressed by deduplication`, {
+            userId,
+            medicine: p.medicine?.name,
+            time: currentHHMM,
+            protocolId: p.id
+          });
+          continue;
+        }
 
         await sendDoseNotification(bot, chatId, p, currentHHMM);
-        logger.info(`Dose reminder sent`, { userId, medicine: p.medicine.name, time: currentHHMM });
+        await logNotification(userId, p.id, 'dose_reminder');
+        logger.info(`Dose reminder sent`, {
+          userId,
+          medicine: p.medicine?.name,
+          time: currentHHMM,
+          protocolId: p.id,
+          chatId
+        });
         
         await supabase
           .from('protocols')
@@ -277,8 +292,15 @@ async function checkUserReminders(bot, userId, chatId) {
           continue;
         }
 
-        const shouldSend = await shouldSendNotification(p.id, 'soft_reminder');
-        if (!shouldSend) continue;
+        const shouldSend = await shouldSendNotification(userId, p.id, 'soft_reminder');
+        if (!shouldSend) {
+          logger.debug(`Soft reminder suppressed by deduplication`, {
+            userId,
+            medicine: p.medicine?.name,
+            protocolId: p.id
+          });
+          continue;
+        }
 
         const { data: logs } = await supabase
           .from('medicine_logs')
@@ -287,7 +309,13 @@ async function checkUserReminders(bot, userId, chatId) {
           .gte('taken_at', p.last_notified_at);
 
         if (!logs || logs.length === 0) {
-          logger.info(`Soft reminder sent`, { userId, medicine: p.medicine.name });
+          await logNotification(userId, p.id, 'soft_reminder');
+          logger.info(`Soft reminder sent`, {
+            userId,
+            medicine: p.medicine?.name,
+            protocolId: p.id,
+            chatId
+          });
           
           const message = formatSoftReminderMessage(p);
           
@@ -321,22 +349,25 @@ async function checkUserReminders(bot, userId, chatId) {
  * @param {object} bot - Bot adapter
  */
 export async function checkReminders(bot) {
-  logger.info('Starting reminder check for all users');
+  logger.info('Iniciando verificação de lembretes para todos os usuários');
   
   const users = await getAllUsersWithTelegram();
   
   if (users.length === 0) {
-    logger.warn('No users with Telegram found');
+    logger.warn('Nenhum usuário com Telegram encontrado');
     return;
   }
 
-  logger.info(`Found ${users.length} users with Telegram`);
+  logger.info(`Encontrados ${users.length} usuários com Telegram configurado`);
+  console.log(`[Tasks] Enviando lembretes para ${users.length} usuário(s)`);
 
   for (const user of users) {
+    console.log(`[Tasks] Processando usuário: ${user.user_id}`);
     await checkUserReminders(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Reminder check completed');
+  logger.info('Verificação de lembretes concluída');
+  console.log('[Tasks] Verificação de lembretes concluída');
 }
 
 /**
@@ -351,8 +382,11 @@ async function runUserDailyDigest(bot, userId, chatId) {
     const today = getCurrentDateInTimezone(timezone);
     
     // Check deduplication
-    const shouldSend = await shouldSendNotification(userId, 'daily_digest');
-    if (!shouldSend) return;
+    const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
+    if (!shouldSend) {
+      logger.debug(`Daily digest suppressed by deduplication`, { userId });
+      return;
+    }
 
     const { data: logs } = await supabase
       .from('medicine_logs')
@@ -388,7 +422,8 @@ async function runUserDailyDigest(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Daily digest sent`, { userId, percentage });
+    await logNotification(userId, null, 'daily_digest');
+    logger.info(`Daily digest sent`, { userId, percentage, chatId });
 
   } catch (err) {
     logger.error(`Error sending daily digest`, err, { userId });
@@ -399,15 +434,19 @@ async function runUserDailyDigest(bot, userId, chatId) {
  * Run daily digest for ALL users
  */
 export async function runDailyDigest(bot) {
-  logger.info('Starting daily digest for all users');
+  logger.info('Iniciando resumo diário para todos os usuários');
   
   const users = await getAllUsersWithTelegram();
   
+  console.log(`[Tasks] Enviando resumo diário para ${users.length} usuário(s)`);
+  
   for (const user of users) {
+    console.log(`[Tasks] Enviando resumo diário para usuário: ${user.user_id}`);
     await runUserDailyDigest(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Daily digest completed');
+  logger.info('Resumo diário concluído');
+  console.log('[Tasks] Resumo diário concluído');
 }
 
 /**
@@ -455,13 +494,22 @@ async function checkUserStockAlerts(bot, userId, chatId) {
     if (lowStockMedicines.length === 0 && zeroStockMedicines.length === 0) return;
 
     // Check deduplication (only send once per day)
-    const shouldSend = await shouldSendNotification(userId, 'stock_alert');
-    if (!shouldSend) return;
+    const shouldSend = await shouldSendNotification(userId, null, 'stock_alert');
+    if (!shouldSend) {
+      logger.debug(`Stock alert suppressed by deduplication`, { userId });
+      return;
+    }
 
     const message = formatStockAlertMessage(zeroStockMedicines, lowStockMedicines);
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Stock alert sent`, { userId, low: lowStockMedicines.length, zero: zeroStockMedicines.length });
+    await logNotification(userId, null, 'stock_alert');
+    logger.info(`Stock alert sent`, {
+      userId,
+      low: lowStockMedicines.length,
+      zero: zeroStockMedicines.length,
+      chatId
+    });
 
   } catch (err) {
     logger.error(`Error checking stock alerts`, err, { userId });
@@ -472,15 +520,19 @@ async function checkUserStockAlerts(bot, userId, chatId) {
  * Check stock alerts for ALL users
  */
 export async function checkStockAlerts(bot) {
-  logger.info('Starting stock alerts for all users');
+  logger.info('Iniciando alertas de estoque para todos os usuários');
   
   const users = await getAllUsersWithTelegram();
   
+  console.log(`[Tasks] Verificando alertas de estoque para ${users.length} usuário(s)`);
+  
   for (const user of users) {
+    console.log(`[Tasks] Verificando estoque para usuário: ${user.user_id}`);
     await checkUserStockAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Stock alerts completed');
+  logger.info('Alertas de estoque concluídos');
+  console.log('[Tasks] Alertas de estoque concluídos');
 }
 
 /**
@@ -488,22 +540,27 @@ export async function checkStockAlerts(bot) {
  * @param {object} bot - Bot adapter
  */
 export async function checkAdherenceReports(bot) {
-  logger.info('Starting adherence reports for all users');
+  logger.info('Iniciando relatórios de adesão para todos os usuários');
 
   try {
     const users = await getAllUsersWithTelegram();
+    console.log(`[Tasks] Enviando relatórios semanais para ${users.length} usuário(s)`);
 
     for (const user of users) {
       try {
+        console.log(`[Tasks] Enviando relatório semanal para usuário: ${user.user_id}`);
         await runUserWeeklyAdherenceReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
-        logger.error(`Error sending adherence report to user`, err, { userId: user.user_id });
+        logger.error(`Erro ao enviar relatório de adesão`, err, { userId: user.user_id });
+        console.error(`[Tasks] Erro ao enviar relatório para usuário ${user.user_id}:`, err.message);
       }
     }
 
-    logger.info('Adherence reports completed');
+    logger.info('Relatórios de adesão concluídos');
+    console.log('[Tasks] Relatórios de adesão concluídos');
   } catch (err) {
-    logger.error('Failed to run adherence reports', err);
+    logger.error('Falha ao executar relatórios de adesão', err);
+    console.error('[Tasks] Falha geral nos relatórios de adesão:', err.message);
     throw err;
   }
 }
@@ -523,8 +580,11 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     // const timezone = settings.timezone || 'America/Sao_Paulo';
     
     // Check deduplication
-    const shouldSend = await shouldSendNotification(userId, 'weekly_adherence');
-    if (!shouldSend) return;
+    const shouldSend = await shouldSendNotification(userId, null, 'weekly_adherence');
+    if (!shouldSend) {
+      logger.debug(`Weekly adherence report suppressed by deduplication`, { userId });
+      return;
+    }
 
     // Calculate adherence for the past week
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -557,7 +617,8 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Weekly adherence report sent`, { userId, percentage });
+    await logNotification(userId, null, 'weekly_adherence');
+    logger.info(`Weekly adherence report sent`, { userId, percentage, chatId });
 
   } catch (err) {
     logger.error(`Error sending weekly adherence report`, err, { userId });
@@ -586,13 +647,26 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
 
     for (const protocol of protocols) {
       // Check if we should send notification for this protocol
-      const shouldSend = await shouldSendNotification(protocol.id, 'titration_alert');
-      if (!shouldSend) continue;
+      const shouldSend = await shouldSendNotification(userId, protocol.id, 'titration_alert');
+      if (!shouldSend) {
+        logger.debug(`Titration alert suppressed by deduplication`, {
+          userId,
+          protocolId: protocol.id,
+          medicine: protocol.medicine?.name
+        });
+        continue;
+      }
 
       const message = formatTitrationAlertMessage(protocol);
 
       await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-      logger.info(`Titration alert sent`, { userId, medicine: protocol.medicine?.name });
+      await logNotification(userId, protocol.id, 'titration_alert');
+      logger.info(`Titration alert sent`, {
+        userId,
+        medicine: protocol.medicine?.name,
+        protocolId: protocol.id,
+        chatId
+      });
     }
 
   } catch (err) {
@@ -604,15 +678,19 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
  * Check titration alerts for ALL users
  */
 export async function checkTitrationAlerts(bot) {
-  logger.info('Starting titration alerts for all users');
+  logger.info('Iniciando alertas de titulação para todos os usuários');
 
   const users = await getAllUsersWithTelegram();
 
+  console.log(`[Tasks] Verificando alertas de titulação para ${users.length} usuário(s)`);
+
   for (const user of users) {
+    console.log(`[Tasks] Verificando titulações para usuário: ${user.user_id}`);
     await checkUserTitrationAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Titration alerts completed');
+  logger.info('Alertas de titulação concluídos');
+  console.log('[Tasks] Alertas de titulação concluídos');
 }
 
 /**
@@ -620,22 +698,27 @@ export async function checkTitrationAlerts(bot) {
  * @param {object} bot - Bot adapter
  */
 export async function checkMonthlyReport(bot) {
-  logger.info('Starting monthly reports for all users');
+  logger.info('Iniciando relatórios mensais para todos os usuários');
 
   try {
     const users = await getAllUsersWithTelegram();
+    console.log(`[Tasks] Enviando relatórios mensais para ${users.length} usuário(s)`);
 
     for (const user of users) {
       try {
+        console.log(`[Tasks] Enviando relatório mensal para usuário: ${user.user_id}`);
         await runUserMonthlyReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
-        logger.error(`Error sending monthly report to user`, err, { userId: user.user_id });
+        logger.error(`Erro ao enviar relatório mensal`, err, { userId: user.user_id });
+        console.error(`[Tasks] Erro ao enviar relatório mensal para usuário ${user.user_id}:`, err.message);
       }
     }
 
-    logger.info('Monthly reports completed');
+    logger.info('Relatórios mensais concluídos');
+    console.log('[Tasks] Relatórios mensais concluídos');
   } catch (err) {
-    logger.error('Failed to run monthly reports', err);
+    logger.error('Falha ao executar relatórios mensais', err);
+    console.error('[Tasks] Falha geral nos relatórios mensais:', err.message);
     throw err;
   }
 }
@@ -652,8 +735,11 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     if (!settings) return;
 
     // Check deduplication
-    const shouldSend = await shouldSendNotification(userId, 'monthly_report');
-    if (!shouldSend) return;
+    const shouldSend = await shouldSendNotification(userId, null, 'monthly_report');
+    if (!shouldSend) {
+      logger.debug(`Monthly report suppressed by deduplication`, { userId });
+      return;
+    }
 
     // Calculate adherence for the past month
     const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -686,7 +772,8 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Monthly report sent`, { userId, percentage });
+    await logNotification(userId, null, 'monthly_report');
+    logger.info(`Monthly report sent`, { userId, percentage, chatId });
 
   } catch (err) {
     logger.error(`Error sending monthly report`, err, { userId });

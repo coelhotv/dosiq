@@ -5,37 +5,51 @@ const DEDUP_WINDOW_MINUTES = 5; // Don't send same notification twice within 5 m
 
 /**
  * Check if notification was recently sent and log if not
- * @param {string} protocolId - Protocol UUID
- * @param {string} notificationType - Type: 'dose_reminder', 'soft_reminder', 'stock_alert', etc.
- * @returns {boolean} true if should send, false if duplicate
+ * @param {string} userId - User UUID (required)
+ * @param {string|null} protocolId - Protocol UUID (optional, null for user-level alerts)
+ * @param {string} notificationType - Type: 'dose_reminder', 'daily_digest', etc.
+ * @returns {Promise<boolean>} true if should send, false if duplicate
  */
-export async function shouldSendNotification(protocolId, notificationType) {
+export async function shouldSendNotification(userId, protocolId, notificationType) {
+  if (!userId) {
+    console.error('[Deduplicator] shouldSendNotification called without userId');
+    return true; // Fail open
+  }
+
   const cutoffTime = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000).toISOString();
 
   try {
-    // Check if we recently sent this notification
-    const { data, error } = await supabase
+    // Build query based on notification type
+    let query = supabase
       .from('notification_log')
       .select('id')
-      .eq('protocol_id', protocolId)
+      .eq('user_id', userId)
       .eq('notification_type', notificationType)
       .gte('sent_at', cutoffTime)
-      .limit(1)
-      .single();
+      .limit(1);
+    
+    // Add protocol filter only for protocol-level notifications
+    if (protocolId) {
+      query = query.eq('protocol_id', protocolId);
+    } else {
+      query = query.is('protocol_id', null);
+    }
+
+    const { data, error } = await query.single();
 
     if (error && error.code !== 'PGRST116') {
       console.error('[Deduplicator] Error checking notification log:', error);
-      return true; // Fail open - send the notification on error
+      return true; // Fail open on error
     }
 
     // If we found a recent notification, this is a duplicate
     if (data) {
-      console.log(`[Deduplicator] Skipping duplicate ${notificationType} for protocol ${protocolId}`);
+      console.log(`[Deduplicator] Skipping duplicate ${notificationType} for user ${userId}`);
       return false;
     }
 
     // Not a duplicate - log it and return true
-    await logNotification(protocolId, notificationType);
+    await logNotification(userId, protocolId, notificationType);
     return true;
   } catch (err) {
     console.error('[Deduplicator] Unexpected error:', err);
@@ -45,19 +59,35 @@ export async function shouldSendNotification(protocolId, notificationType) {
 
 /**
  * Log a notification as sent
- * @param {string} protocolId - Protocol UUID
+ * @param {string} userId - User UUID (required)
+ * @param {string|null} protocolId - Protocol UUID (optional, null for user-level alerts)
  * @param {string} notificationType - Notification type
+ * @returns {Promise<boolean>} true if logged successfully
  */
-export async function logNotification(protocolId, notificationType) {
-  const { error } = await supabase
-    .from('notification_log')
-    .insert({
-      protocol_id: protocolId,
-      notification_type: notificationType
-    });
+export async function logNotification(userId, protocolId, notificationType) {
+  if (!userId) {
+    console.error('[Deduplicator] logNotification called without userId');
+    return false;
+  }
 
-  if (error) {
-    console.error('[Deduplicator] Error logging notification:', error);
+  try {
+    const { error } = await supabase
+      .from('notification_log')
+      .insert({
+        user_id: userId,
+        protocol_id: protocolId,  // Can be null for user-level alerts
+        notification_type: notificationType
+      });
+
+    if (error) {
+      console.error('[Deduplicator] Error logging notification:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Unexpected error in logNotification:', err);
+    return false;
   }
 }
 
