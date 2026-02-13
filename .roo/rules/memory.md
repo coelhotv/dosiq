@@ -592,4 +592,136 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
-*Última atualização: 2026-02-11 | Consolidação de memórias .kilocode e .roo*
+## Memory Entry — 2026-02-13 16:58
+**Contexto / Objetivo**
+- Implementar Fase 1: Correções críticas no sistema de notificações do bot Telegram
+- Corrigir falhas que bloqueavam todas as notificações (INSERT sem user_id)
+- Atualizar lógica de deduplicação para distinguir notificações por usuário vs por protocolo
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/services/notificationDeduplicator.js` — correção completa das funções `shouldSendNotification()` e `logNotification()`
+  - `server/bot/tasks.js` — atualização de 7 call sites para nova assinatura + logging em português
+  - `api/notify.js` — adicionado try/catch em `sendMessage` com logs de sucesso/erro
+
+**Mudanças específicas:**
+1. `shouldSendNotification(userId, protocolId, notificationType)` — agora requer userId obrigatório
+2. `logNotification(userId, protocolId, notificationType)` — agora inclui user_id no INSERT
+3. Deduplicação por protocolo: `protocolId !== null` → filtra por `protocol_id`
+4. Deduplicação por usuário: `protocolId === null` → filtra `protocol_id IS NULL`
+5. Call sites atualizados:
+   - Line 258: `shouldSendNotification(userId, p.id, 'dose_reminder')`
+   - Line 280: `shouldSendNotification(userId, p.id, 'soft_reminder')`
+   - Line 385: `shouldSendNotification(userId, null, 'daily_digest')`
+   - Line 496: `shouldSendNotification(userId, null, 'stock_alert')`
+   - Line 573: `shouldSendNotification(userId, null, 'weekly_adherence')`
+   - Line 640: `shouldSendNotification(userId, protocol.id, 'titration_alert')`
+   - Line 719: `shouldSendNotification(userId, null, 'monthly_report')`
+6. Logging em português adicionado em todas as funções de cron
+7. `logNotification()` chamado após cada envio bem-sucedido
+
+**O que deu certo**
+- Schema mismatch corrigido — user_id agora é sempre incluído na tabela notification_log
+- Lógica de deduplicação funciona corretamente para ambos os tipos de notificação
+- Lint passa 100% (0 erros, 0 warnings)
+- Testes críticos passam: 149 testes em 11 arquivos (4.83s)
+- Mensagens de log em português facilitam debugging no console
+
+**Regras locais para o futuro (lições acionáveis)**
+- Tabela `notification_log` requer `user_id` NOT NULL — sempre passar userId em notificações
+- Notificações de protocolo (dose_reminder, soft_reminder, titration_alert): usar `protocolId !== null`
+- Notificações de usuário (daily_digest, stock_alert, weekly/monthly reports): usar `protocolId === null`
+- SEMPRE chamar `logNotification()` após envio bem-sucedido para rastreamento
+- Funções de cron devem usar `console.log()` em português para facilitar debugging
+- Verificar ordem de declaração: variável `users` deve ser declarada antes de ser usada em console.log
+
+**Pendências / próximos passos**
+- Fase 2 (opcional): Adicionar health check endpoint em `/api/notify/health`
+- Fase 3 (opcional): Implementar batch processing para reduzir chamadas à API do Telegram
+- Monitorar logs em produção para confirmar que notificações estão sendo enviadas
+
+---
+
+## Memory Entry — 2026-02-13 17:08
+**Contexto / Objetivo**
+- Finalizar correção crítica do sistema de notificações do bot Telegram
+- Criar PR no GitHub para review e merge
+- Documentar lições aprendidas sobre o processo multi-agente
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/services/notificationDeduplicator.js` — correção de schema (user_id obrigatório)
+  - `server/bot/tasks.js` — atualização de 7 call sites + logging em português
+  - `api/notify.js` — adicionado try/catch em sendMessage
+- Branch criada: `fix/telegram-notifications-phase-1`
+- PR criado: #16 (https://github.com/coelhotv/meus-remedios/pull/16)
+- Documentos criados:
+  - `plans/TELEGRAM_BOT_ALERTS_ARCHITECTURE_ANALYSIS.md` — análise arquitetural
+  - `plans/TELEGRAM_BOT_FIX_SPEC.md` — especificação técnica detalhada
+  - `PULL_REQUEST_TELEGRAM_FIX_PHASE_1.md` — template do PR
+
+**O que deu certo**
+- Processo multi-agente funcionou bem: Orchestrator → Ask (análise) → Architect (especificação) → Code (implementação)
+- Cada agente especializado produziu deliveráveis de alta qualidade
+- Validação humana aprovou a criação do PR sem necessidade de deploy prévio
+- Todos os testes passando (149) e lint limpo (0 erros)
+
+**O que não deu certo / riscos**
+- Nenhum — processo foi executado conforme planejado
+- Observação: O PR ainda precisa ser mergeado pelo humano
+
+**Decisões & trade-offs**
+- Decisão: Criar PR para review ao invés de deploy direto
+- Motivo: Permite validação humana antes do merge em main
+- Alternativa: Deploy de branch para teste em produção (descartado para agilizar)
+
+**Regras locais para o futuro (lições acionáveis)**
+- Quando correções são críticas mas bem compreendidas, criar PR direto economiza tempo
+- Documentação em `plans/` é essencial para manter contexto entre sessões
+- Processo multi-agente é eficaz: análise → especificação → implementação → PR
+- SEMPRE atualizar `memory.md` ao final de correções significativas
+
+**Pendências / próximos passos**
+- Aguardar review e merge do PR #16 pelo humano
+- Monitorar logs após deploy para confirmar notificações funcionando
+- Fase 2 (opcional): Implementar health check endpoint
+
+---
+
+## Memory Entry — 2026-02-13 17:25
+**Contexto / Objetivo**
+- Corrigir chamadas redundantes de `logNotification()` identificadas no code review do PR #16
+- Evitar duplicação de logs na tabela `notification_log`
+
+**O que foi feito (mudanças)**
+- Arquivo alterado:
+  - `server/bot/tasks.js` — removidas 7 chamadas redundantes de `logNotification()` e removido import não utilizado
+
+**Chamadas removidas:**
+- Linha 270: `logNotification(userId, p.id, 'dose_reminder')`
+- Linha 312: `logNotification(userId, p.id, 'soft_reminder')`
+- Linha 425: `logNotification(userId, null, 'daily_digest')`
+- Linha 506: `logNotification(userId, null, 'stock_alert')`
+- Linha 620: `logNotification(userId, null, 'weekly_adherence')`
+- Linha 663: `logNotification(userId, protocol.id, 'titration_alert')`
+- Linha 775: `logNotification(userId, null, 'monthly_report')`
+
+**O que deu certo**
+- A função `shouldSendNotification()` já chama `logNotification()` internamente quando a notificação deve ser enviada (linha 52 do `notificationDeduplicator.js`)
+- Remover chamadas explícitas elimina duplicatas sem perder funcionalidade
+- Todas as `console.log` de debug em português foram mantidas
+- Lint passou (0 erros, 0 warnings)
+- Testes críticos passaram (149 testes)
+
+**Regras locais para o futuro (lições acionáveis)**
+- `shouldSendNotification()` já inclui `logNotification()` — nunca chamar explicitamente após `shouldSendNotification()` retornar `true`
+- Se precisar de logging customizado, usar `logger.info()` em vez de `logNotification()` diretamente
+- Manter `console.log` em português para funções de cron (convenção do projeto)
+
+**Pendências / próximos passos**
+- PR #16 pronto para merge após esta correção
+- Monitorar logs em produção para confirmar que não há duplicatas
+
+---
+
+*Última atualização: 2026-02-13 | Correções críticas do sistema de notificações Telegram + PR criado*

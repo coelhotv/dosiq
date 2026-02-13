@@ -32,7 +32,18 @@ function createNotifyBotAdapter(token) {
 
   return {
     sendMessage: async (chatId, text, options = {}) => {
-      return telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
+      try {
+        const result = await telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
+        if (result) {
+          logger.debug(`Telegram message sent successfully`, { chatId, messageId: result.message_id });
+        } else {
+          logger.error(`Telegram sendMessage failed`, { chatId });
+        }
+        return result;
+      } catch (err) {
+        logger.error(`Telegram sendMessage error`, err, { chatId });
+        throw err;
+      }
     }
   };
 }
