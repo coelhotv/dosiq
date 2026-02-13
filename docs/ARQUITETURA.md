@@ -1,10 +1,27 @@
 # 🏗️ Arquitetura do Meus Remédios
 
 **Versão:** 2.8.0
-**Data:** 2026-02-12
+**Data:** 2026-02-13
 **Status:** Ativo (Phase 4: PWA + Feature Organization)
 
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
+
+> **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
+> - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
+> - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
+> - **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções de código detalhadas
+> - **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
+
+---
+
+## 📚 Referências Rápidas
+
+| Documento | Conteúdo | Público |
+|-----------|----------|---------|
+| [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) | Padrões de código, nomenclatura, React, Zod | Agentes de código |
+| [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) | Arquitetura, organização, fluxo de dados | Agentes de arquitetura |
+| [`AGENTS.md`](../AGENTS.md) | Guia completo do projeto | Todos os agentes |
+| [`PADROES_CODIGO.md`](./PADROES_CODIGO.md) | Convenções detalhadas de código | Desenvolvedores |
 
 ---
 
@@ -540,13 +557,91 @@ Cobertura: 140+ testes
 
 ---
 
+## 🔄 Git Workflow (RIGID PROCESS - MANDATORY)
+
+> **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
+> **Authoridade:** Veja também [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) e [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MANDATORY GITHUB WORKFLOW                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1️⃣  CREATE BRANCH      (Never work on main!)                              │
+│  2️⃣  MAKE CHANGES       (Follow all coding standards)                      │
+│  3️⃣  VALIDATE LOCALLY   (Lint + Tests + Build)                             │
+│  4️⃣  COMMIT             (Atomic commits, semantic messages)                │
+│  5️⃣  PUSH BRANCH        (To origin)                                        │
+│  6️⃣  CREATE PULL REQUEST (Use PR template)                                 │
+│  7️⃣  WAIT FOR REVIEW    (Address all comments)                             │
+│  8️⃣  MERGE & CLEANUP    (--no-ff, delete branch)                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Reference
+
+```bash
+# BEFORE ANY CODE CHANGE:
+git checkout main && git pull origin main
+git checkout -b feature/wave-X/nome-descritivo
+
+# BEFORE COMMIT:
+npm run validate  # Lint + testes críticos
+
+# AFTER PUSH:
+# 1. Create PR using template: docs/PULL_REQUEST_TEMPLATE.md
+# 2. Wait for review
+# 3. Merge with --no-ff
+# 4. Delete branch
+```
+
+### Detailed Instructions
+
+See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md).
+
+### Anti-Patterns (STRICTLY PROHIBITED)
+
+| Anti-Pattern | Consequence | What To Do Instead |
+|--------------|-------------|-------------------|
+| Commit directly to `main` | Unreviewed code in production | Always create feature branch |
+| Skip local validation | Broken builds in CI/CD | Run `npm run validate` before every push |
+| Push without PR | No code review | Create PR using template |
+| Use `--no-verify` | Bypass quality gates | Fix errors, don't bypass |
+| Merge own PR | No quality assurance | Wait for reviewer approval |
+| Large PRs (>500 lines) | Difficult review | Split into smaller PRs |
+| Keep merged branches | Repository clutter | Delete immediately after merge |
+
+---
+
 ## 🔗 Relacionamentos
 
-Veja também:
-- [PADROES_CODIGO.md](./PADROES_CODIGO.md) - Convenções detalhadas incluindo padrões de componentes consolidados
+### Documentação de Governança
+
+- **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código (agentes)
+- **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural (agentes)
+- **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
+- **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções detalhadas incluindo padrões de componentes consolidados
+
+### Documentação Técnica
+
+- [ARQUITETURA_FRAMEWORK.md](./ARQUITETURA_FRAMEWORK.md) - Framework arquitetural completo
 - [API_SERVICES.md](./API_SERVICES.md) - Documentação das APIs
-- [DECISOES_TECNICAS.md](./past_deliveries/DECISOES_TECNICAS.md) - Por que escolhemos cada tech
+- [LINT_COVERAGE.md](./LINT_COVERAGE.md) - Configurações ESLint e boas práticas
+- [OTIMIZACAO_TESTES_ESTRATEGIA.md](./OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia completa de testes
 - [HOOKS.md](./HOOKS.md) - Hooks customizados
+
+### Templates
+
+- [PULL_REQUEST_TEMPLATE.md](./PULL_REQUEST_TEMPLATE.md) - Template obrigatório para PRs
+
+### Documentação Histórica
+
+- [DECISOES_TECNICAS.md](./past_deliveries/DECISOES_TECNICAS.md) - Por que escolhemos cada tech
 - [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Validação Zod
 - [CONSOLIDACAO_COMPONENTES_FINAL.md](./past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md) - Documentação técnica da consolidação de componentes
 - [CONSOLIDACAO_COMPONENTES_PLANO.md](../plans/CONSOLIDACAO_COMPONENTES_PLANO.md) - Blueprint da consolidação
+
+---
+
+*Última atualização: 13/02/2026 - Atualizado com rigid GitHub workflow e referências aos arquivos de regras consolidadas*

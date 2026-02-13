@@ -2,7 +2,19 @@
 
 Convenções e melhores práticas para manter consistência no projeto.
 
-> **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com [`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1), que contém as regras obrigatórias de governança técnica.
+> **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
+> - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
+> - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
+> - **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural completo
+
+## 📚 Referências Rápidas
+
+| Documento | Conteúdo | Público |
+|-----------|----------|---------|
+| [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) | Padrões de código, nomenclatura, React, Zod | Agentes de código |
+| [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) | Arquitetura, organização, fluxo de dados | Agentes de arquitetura |
+| [`AGENTS.md`](../AGENTS.md) | Guia completo do projeto | Todos os agentes |
+
 
 ---
 
@@ -23,30 +35,219 @@ npm run lint
 npm run build
 ```
 
-### 2. Git Workflow Obrigatório
+### 2. Git Workflow Obrigatório (RIGID PROCESS)
+
+> **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
+> **Authoridade:** Veja também [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) e [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)
 
 **⚠️ NUNCA commitar diretamente na `main`**
 
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MANDATORY GITHUB WORKFLOW                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1️⃣  CREATE BRANCH      (Never work on main!)                              │
+│  2️⃣  MAKE CHANGES       (Follow all coding standards)                      │
+│  3️⃣  VALIDATE LOCALLY   (Lint + Tests + Build)                             │
+│  4️⃣  COMMIT             (Atomic commits, semantic messages)                │
+│  5️⃣  PUSH BRANCH        (To origin)                                        │
+│  6️⃣  CREATE PULL REQUEST (Use PR template)                                 │
+│  7️⃣  WAIT FOR REVIEW    (Address all comments)                             │
+│  8️⃣  MERGE & CLEANUP    (--no-ff, delete branch)                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Step 1: CREATE BRANCH (MANDATORY)
+
 ```bash
-# 1. Criar branch ANTES de alterações
+# Step 1: Always start from updated main
 git checkout main
 git pull origin main
+
+# Step 2: Create branch with proper naming
 git checkout -b feature/wave-X/nome-descritivo
 
-# 2. Desenvolver com commits semânticos
+# Naming conventions:
+#   feature/wave-2/add-login          - New features
+#   fix/wave-2/fix-login-error        - Bug fixes
+#   docs/wave-2/update-api-docs       - Documentation
+#   hotfix/security-patch             - Critical fixes
+```
 
-# 3. Em mudanças de experiência, aguardar a aprovação textual do humano
+**⚠️ NEVER:**
+- Work directly on `main`
+- Commit to `main`
+- Push to `main` without PR
 
-# 4. Validar localmente
-npm run lint
-npm run test:critical
-npm run build
+#### Step 2: MAKE CHANGES
 
-# 5. Criar PR para main
+- Edit files following:
+  - [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) (coding standards)
+  - [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) (architecture)
+- Keep changes focused and atomic
+- One logical change per commit
 
-# 6. Aguardar review
+#### Step 3: VALIDATE LOCALLY (MANDATORY - ALL MUST PASS)
 
-# 7. Merge via --no-ff apenas
+```bash
+# Run ALL three validations:
+npm run lint          # Must have 0 errors
+npm run test:critical # Testes essenciais
+npm run build         # Production build must succeed
+
+# Or use the combined command:
+npm run validate      # Runs lint + test:critical
+```
+
+**If any validation fails:**
+```bash
+# 1. Fix all errors
+# 2. Re-run validation
+# 3. Only proceed when all pass
+```
+
+**⚠️ NEVER:**
+- Skip validation
+- Use `--no-verify` to bypass
+- Commit with failing tests
+
+#### Step 4: COMMIT (Atomic / Semantic)
+
+```bash
+# Stage related files
+git add src/components/MedicineForm.jsx
+git add src/components/MedicineForm.css
+
+# Commit with semantic message (in Portuguese)
+git commit -m "feat(medicine): adicionar validação de dosagem"
+
+# Format: type(scope): description
+type = feat|fix|docs|test|refactor|style|chore
+scope = component|service|api|test|docs|config
+description = em português, minúsculas
+```
+
+**Commit Types:**
+| Type | When to Use | Example |
+|------|-------------|---------|
+| `feat` | New feature | `feat(dashboard): adicionar widget de adesão` |
+| `fix` | Bug fix | `fix(service): corrigir cálculo de estoque` |
+| `docs` | Documentation | `docs(api): atualizar documentação de endpoints` |
+| `test` | Tests only | `test(service): adicionar testes de protocolo` |
+| `refactor` | Refactoring | `refactor(hook): simplificar useCachedQuery` |
+| `style` | Formatting | `style(lint): corrigir formatação` |
+| `chore` | Maintenance | `chore(deps): atualizar dependências` |
+
+#### Step 5: PUSH BRANCH
+
+```bash
+git push origin feature/wave-X/nome-descritivo
+```
+
+#### Step 6: CREATE PULL REQUEST (MANDATORY)
+
+**Using GitHub CLI:**
+```bash
+gh pr create --title "feat: descrição resumida" \
+             --body-file docs/PULL_REQUEST_TEMPLATE.md
+```
+
+**Using GitHub Web:**
+1. Go to: https://github.com/coelhotv/meus-remedios/pulls
+2. Click "New Pull Request"
+3. Select: `main` ← `feature/wave-X/nome-descritivo`
+4. **USE TEMPLATE:** Copy from [`docs/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md:1)
+5. Fill ALL sections:
+   - **Summary:** What this PR does
+   - **Tasks:** Checklist of completed items
+   - **Metrics:** Performance/quality improvements
+   - **Files:** List of changed files
+   - **Checklist:** Code quality verifications
+   - **Testing:** How to test
+6. Assign reviewers
+7. Link related issues (Closes #123)
+8. Add appropriate labels
+
+**PR Title Format:**
+```
+feat(scope): brief description
+fix(scope): brief description
+docs(scope): brief description
+```
+
+#### Step 7: WAIT FOR REVIEW
+
+**During Review:**
+- Respond to comments within 24 hours
+- Make requested changes promptly
+- Explain reasoning if you disagree (respectfully)
+- Re-request review after making changes
+- Address ALL comments before merging
+
+**Review Checklist for Reviewers:**
+- [ ] Code follows naming conventions
+- [ ] Zod validation applied
+- [ ] Tests added/updated
+- [ ] No console.log debug statements
+- [ ] Lint passes
+- [ ] Build succeeds
+- [ ] Documentation updated (if needed)
+
+#### Step 8: MERGE & CLEANUP
+
+**After PR Approval:**
+
+```bash
+# On GitHub:
+# 1. Click "Merge pull request"
+# 2. Select "Create a merge commit" (--no-ff)
+# 3. Confirm merge
+
+# Locally:
+git checkout main
+git pull origin main
+
+# Delete branch
+git branch -d feature/wave-X/nome-descritivo
+git push origin --delete feature/wave-X/nome-descritivo
+```
+
+**⚠️ Merge Requirements:**
+- All status checks pass (CI/CD)
+- At least 1 approval from reviewer
+- No unresolved comments
+- Branch is up to date with main
+
+### Anti-Patterns (STRICTLY PROHIBITED)
+
+| Anti-Pattern | Consequence | What To Do Instead |
+|--------------|-------------|-------------------|
+| Commit directly to `main` | Unreviewed code in production | Always create feature branch |
+| Skip local validation | Broken builds in CI/CD | Run `npm run validate` before every push |
+| Push without PR | No code review | Create PR using template |
+| Use `--no-verify` | Bypass quality gates | Fix errors, don't bypass |
+| Merge own PR | No quality assurance | Wait for reviewer approval |
+| Large PRs (>500 lines) | Difficult review | Split into smaller PRs |
+| Keep merged branches | Repository clutter | Delete immediately after merge |
+
+### Workflow Summary Card
+
+```
+┌─────────────────────────────────────────────┐
+│  BEFORE ANY CODE CHANGE:                    │
+│  1. git checkout -b feature/wave-X/name     │
+│                                             │
+│  BEFORE COMMIT:                             │
+│  2. npm run validate                        │
+│                                             │
+│  AFTER PUSH:                                │
+│  3. Create PR with template                 │
+│  4. Wait for review                         │
+│  5. Merge with --no-ff                      │
+│  6. Delete branch                           │
+└─────────────────────────────────────────────┘
 ```
 
 ### 3. Nomenclatura Obrigatória
@@ -1162,4 +1363,22 @@ async function handleLogMedicine(logData) {
 
 ---
 
-*Última atualização: 11/02/2026 - Adicionada seção de Padrões de Componentes Consolidados e documentação do LogForm*
+## 📚 Referências
+
+### Documentação de Governança
+
+- **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código (agentes)
+- **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural (agentes)
+- **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural completo
+- **[`LINT_COVERAGE.md`](LINT_COVERAGE.md:1)** - Configurações ESLint e boas práticas
+- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](OTIMIZACAO_TESTES_ESTRATEGIA.md:1)** - Estratégia completa de testes
+- **[`ARQUITETURA.md`](ARQUITETURA.md:1)** - Visão arquitetural técnica
+- **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
+
+### Templates
+
+- **[`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md:1)** - Template obrigatório para PRs
+
+---
+
+*Última atualização: 13/02/2026 - Atualizado com rigid GitHub workflow e referências aos arquivos de regras consolidadas*
