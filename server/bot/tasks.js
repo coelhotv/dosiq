@@ -1,11 +1,11 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
-import { 
-  getActiveProtocols, 
+import {
+  getActiveProtocols,
   getUserSettings,
-  getAllUsersWithTelegram 
+  getAllUsersWithTelegram
 } from '../services/protocolCache.js';
-import { shouldSendNotification, logNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification } from '../services/notificationDeduplicator.js';
 import { 
   getCurrentTimeInTimezone, 
   getCurrentDateInTimezone, 
@@ -267,7 +267,6 @@ async function checkUserReminders(bot, userId, chatId) {
         }
 
         await sendDoseNotification(bot, chatId, p, currentHHMM);
-        await logNotification(userId, p.id, 'dose_reminder');
         logger.info(`Dose reminder sent`, {
           userId,
           medicine: p.medicine?.name,
@@ -309,7 +308,6 @@ async function checkUserReminders(bot, userId, chatId) {
           .gte('taken_at', p.last_notified_at);
 
         if (!logs || logs.length === 0) {
-          await logNotification(userId, p.id, 'soft_reminder');
           logger.info(`Soft reminder sent`, {
             userId,
             medicine: p.medicine?.name,
@@ -422,7 +420,6 @@ async function runUserDailyDigest(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    await logNotification(userId, null, 'daily_digest');
     logger.info(`Daily digest sent`, { userId, percentage, chatId });
 
   } catch (err) {
@@ -503,7 +500,6 @@ async function checkUserStockAlerts(bot, userId, chatId) {
     const message = formatStockAlertMessage(zeroStockMedicines, lowStockMedicines);
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    await logNotification(userId, null, 'stock_alert');
     logger.info(`Stock alert sent`, {
       userId,
       low: lowStockMedicines.length,
@@ -617,7 +613,6 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    await logNotification(userId, null, 'weekly_adherence');
     logger.info(`Weekly adherence report sent`, { userId, percentage, chatId });
 
   } catch (err) {
@@ -660,7 +655,6 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
       const message = formatTitrationAlertMessage(protocol);
 
       await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-      await logNotification(userId, protocol.id, 'titration_alert');
       logger.info(`Titration alert sent`, {
         userId,
         medicine: protocol.medicine?.name,
@@ -772,7 +766,6 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     }
 
     await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    await logNotification(userId, null, 'monthly_report');
     logger.info(`Monthly report sent`, { userId, percentage, chatId });
 
   } catch (err) {

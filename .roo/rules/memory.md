@@ -642,4 +642,50 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
-*Última atualização: 2026-02-13 | Correções críticas do sistema de notificações Telegram*
+## Memory Entry — 2026-02-13 17:08
+**Contexto / Objetivo**
+- Finalizar correção crítica do sistema de notificações do bot Telegram
+- Criar PR no GitHub para review e merge
+- Documentar lições aprendidas sobre o processo multi-agente
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/services/notificationDeduplicator.js` — correção de schema (user_id obrigatório)
+  - `server/bot/tasks.js` — atualização de 7 call sites + logging em português
+  - `api/notify.js` — adicionado try/catch em sendMessage
+- Branch criada: `fix/telegram-notifications-phase-1`
+- PR criado: #16 (https://github.com/coelhotv/meus-remedios/pull/16)
+- Documentos criados:
+  - `plans/TELEGRAM_BOT_ALERTS_ARCHITECTURE_ANALYSIS.md` — análise arquitetural
+  - `plans/TELEGRAM_BOT_FIX_SPEC.md` — especificação técnica detalhada
+  - `PULL_REQUEST_TELEGRAM_FIX_PHASE_1.md` — template do PR
+
+**O que deu certo**
+- Processo multi-agente funcionou bem: Orchestrator → Ask (análise) → Architect (especificação) → Code (implementação)
+- Cada agente especializado produziu deliveráveis de alta qualidade
+- Validação humana aprovou a criação do PR sem necessidade de deploy prévio
+- Todos os testes passando (149) e lint limpo (0 erros)
+
+**O que não deu certo / riscos**
+- Nenhum — processo foi executado conforme planejado
+- Observação: O PR ainda precisa ser mergeado pelo humano
+
+**Decisões & trade-offs**
+- Decisão: Criar PR para review ao invés de deploy direto
+- Motivo: Permite validação humana antes do merge em main
+- Alternativa: Deploy de branch para teste em produção (descartado para agilizar)
+
+**Regras locais para o futuro (lições acionáveis)**
+- Quando correções são críticas mas bem compreendidas, criar PR direto economiza tempo
+- Documentação em `plans/` é essencial para manter contexto entre sessões
+- Processo multi-agente é eficaz: análise → especificação → implementação → PR
+- SEMPRE atualizar `memory.md` ao final de correções significativas
+
+**Pendências / próximos passos**
+- Aguardar review e merge do PR #16 pelo humano
+- Monitorar logs após deploy para confirmar notificações funcionando
+- Fase 2 (opcional): Implementar health check endpoint
+
+---
+
+*Última atualização: 2026-02-13 | Correções críticas do sistema de notificações Telegram + PR criado*
