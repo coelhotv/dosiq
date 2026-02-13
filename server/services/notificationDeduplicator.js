@@ -12,7 +12,7 @@ const DEDUP_WINDOW_MINUTES = 5; // Don't send same notification twice within 5 m
  */
 export async function shouldSendNotification(userId, protocolId, notificationType) {
   if (!userId) {
-    console.error('[Deduplicator] shouldSendNotification called without userId');
+    logger.error('[Deduplicator] shouldSendNotification called without userId');
     return true; // Fail open
   }
 
