@@ -49,8 +49,8 @@ export async function shouldSendNotification(userId, protocolId, notificationTyp
     }
 
     // Not a duplicate - log it and return true
-    await logNotification(userId, protocolId, notificationType);
-    return true;
+    const loggedSuccessfully = await logNotification(userId, protocolId, notificationType);
+    return loggedSuccessfully;
   } catch (err) {
     console.error('[Deduplicator] Unexpected error:', err);
     return true; // Fail open
