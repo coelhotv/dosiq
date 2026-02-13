@@ -688,4 +688,40 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
+## Memory Entry — 2026-02-13 17:25
+**Contexto / Objetivo**
+- Corrigir chamadas redundantes de `logNotification()` identificadas no code review do PR #16
+- Evitar duplicação de logs na tabela `notification_log`
+
+**O que foi feito (mudanças)**
+- Arquivo alterado:
+  - `server/bot/tasks.js` — removidas 7 chamadas redundantes de `logNotification()` e removido import não utilizado
+
+**Chamadas removidas:**
+- Linha 270: `logNotification(userId, p.id, 'dose_reminder')`
+- Linha 312: `logNotification(userId, p.id, 'soft_reminder')`
+- Linha 425: `logNotification(userId, null, 'daily_digest')`
+- Linha 506: `logNotification(userId, null, 'stock_alert')`
+- Linha 620: `logNotification(userId, null, 'weekly_adherence')`
+- Linha 663: `logNotification(userId, protocol.id, 'titration_alert')`
+- Linha 775: `logNotification(userId, null, 'monthly_report')`
+
+**O que deu certo**
+- A função `shouldSendNotification()` já chama `logNotification()` internamente quando a notificação deve ser enviada (linha 52 do `notificationDeduplicator.js`)
+- Remover chamadas explícitas elimina duplicatas sem perder funcionalidade
+- Todas as `console.log` de debug em português foram mantidas
+- Lint passou (0 erros, 0 warnings)
+- Testes críticos passaram (149 testes)
+
+**Regras locais para o futuro (lições acionáveis)**
+- `shouldSendNotification()` já inclui `logNotification()` — nunca chamar explicitamente após `shouldSendNotification()` retornar `true`
+- Se precisar de logging customizado, usar `logger.info()` em vez de `logNotification()` diretamente
+- Manter `console.log` em português para funções de cron (convenção do projeto)
+
+**Pendências / próximos passos**
+- PR #16 pronto para merge após esta correção
+- Monitorar logs em produção para confirmar que não há duplicatas
+
+---
+
 *Última atualização: 2026-02-13 | Correções críticas do sistema de notificações Telegram + PR criado*
