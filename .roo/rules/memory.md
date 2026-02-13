@@ -2,6 +2,10 @@
 
 Arquivo de memória longa do projeto consolidado. Contém padrões, lições aprendidas e regras operacionais verificadas.
 
+> **📚 Regras Consolidadas (v2.8.0+):**
+> - **Coding Rules**: [`.roo/rules-code/rules.md`](rules-code/rules.md) - Padrões de código, nomenclatura, React, Zod
+> - **Architecture Rules**: [`.roo/rules-architecture/rules.md`](rules-architecture/rules.md) - Governança técnica, organização, fluxo de dados
+
 ---
 
 ## 🎯 Regras Locais Prioritárias
@@ -724,4 +728,67 @@ git branch -d feature/wave-X/nome-descritivo
 
 ---
 
-*Última atualização: 2026-02-13 | Correções críticas do sistema de notificações Telegram + PR criado*
+## Memory Entry — 2026-02-13 17:52
+**Contexto / Objetivo**
+- Consolidar todas as regras e padrões dos documentos do projeto em arquivos de regras centralizados
+- Atualizar os arquivos em `.roo/rules/` para refletir a documentação mais recente (v2.8.0)
+- Garantir que agentes de código e arquitetura tenham acesso rápido aos padrões
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `.roo/rules-code/rules.md` - Regras de código consolidadas (nomenclatura, React, Zod, testes)
+  - `.roo/rules-architecture/rules.md` - Regras arquiteturais (organização, fluxo de dados, segurança)
+- Documentação consolidada de:
+  - `docs/PADROES_CODIGO.md` - Padrões de código
+  - `docs/ARQUITETURA_FRAMEWORK.md` - Governança técnica
+  - `docs/ARQUITETURA.md` - Visão arquitetural
+  - `docs/CSS_ARCHITECTURE.md` - Padrões CSS
+  - `docs/TESTING_GUIDE.md` - Estratégia de testes
+  - `docs/OTIMIZACAO_TESTES_ESTRATEGIA.md` - Pipeline de qualidade
+
+**Padrões Consolidados Essenciais**
+
+| Categoria | Padrão | Local no Código |
+|-----------|--------|-----------------|
+| **Organização** | Feature-based (F4.6) | `src/features/*`, `src/shared/*` |
+| **Imports** | Path aliases obrigatórios | `@shared/*`, `@features/*` |
+| **React** | Ordem: States→Memos→Effects→Handlers | Todos os componentes |
+| **Validação** | Zod em português | `src/schemas/*.js` |
+| **Cache** | SWR em todas as leituras | `cachedServices`, `useCachedQuery` |
+| **Testes** | 143 testes críticos | `npm run test:critical` |
+
+**Novos Padrões da v2.8.0**
+1. **Feature Organization**: `src/features/{domain}/` com components/hooks/services/utils
+2. **Shared Layer**: Recursos comuns em `src/shared/`
+3. **Path Aliases**: Nunca usar imports relativos longos
+4. **PWA Layer**: Service Worker, Push, Analytics privacy-first
+
+**Regras de Validação Atualizadas**
+- Ordem de declaração React: Estados → Memos → Effects → Handlers
+- Zod: Todos os valores de enum em português
+- Telegram: callback_data < 64 bytes (usar índices numéricos)
+- Dosagem: Gravar em comprimidos, nunca em mg
+- LogForm: Verificar `Array.isArray(data)` para bulk registration
+
+**Checklist Pre-Commit (v2.8.0)**
+- [ ] `npm run lint` - 0 erros
+- [ ] `npm run test:critical` - 143 testes passando
+- [ ] `npm run build` - Build de produção OK
+- [ ] Path aliases usados (não imports relativos longos)
+- [ ] Estados declarados antes de useMemo/useEffect
+- [ ] Zod validation em services
+- [ ] Cache invalidado após mutations
+
+**Referências Rápidas**
+- Coding Rules: `.roo/rules-code/rules.md`
+- Architecture Rules: `.roo/rules-architecture/rules.md`
+- Documentação completa: `docs/` folder
+
+**Pendências / próximos passos**
+- Monitorar uso dos novos arquivos de regras por agentes
+- Coletar feedback sobre organização dos padrões
+- Atualizar quando houver mudanças na v2.9.0
+
+---
+
+*Última atualização: 2026-02-13 | Regras consolidadas em .roo/rules-code/rules.md e .roo/rules-architecture/rules.md*
