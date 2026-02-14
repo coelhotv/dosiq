@@ -1,5 +1,9 @@
 {
   "version": 2,
+  "functions": {
+    "api/notify.js": { "maxDuration": 60 },
+    "api/telegram.js": { "maxDuration": 10 }
+  },
   "rewrites": [
     {
       "source": "/api/telegram",

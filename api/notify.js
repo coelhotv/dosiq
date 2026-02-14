@@ -49,6 +49,17 @@ function createNotifyBotAdapter(token) {
 }
 
 export default async function handler(req, res) {
+  // Log de diagnóstico das variáveis de ambiente (apenas existência, não valores)
+  logger.info('Ambiente de execução', {
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL ? 'present' : 'absent',
+    hasSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
+    hasSupabaseAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+    hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    hasCronSecret: !!process.env.CRON_SECRET,
+    hasBotToken: !!process.env.TELEGRAM_BOT_TOKEN
+  });
+
   logger.info('Cron job triggered', { method: req.method, url: req.url });
 
   // Accept both GET (from cron-job.org) and POST (for compatibility)
