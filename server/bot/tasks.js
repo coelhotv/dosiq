@@ -1,15 +1,18 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
+import { sendWithRetry } from './retryManager.js';
+import { enqueue, ErrorCategories } from '../services/deadLetterQueue.js';
+import { getCurrentCorrelationId, getOrGenerateCorrelationId } from './correlationLogger.js';
 import {
   getActiveProtocols,
   getUserSettings,
   getAllUsersWithTelegram
 } from '../services/protocolCache.js';
 import { shouldSendNotification, logSuccessfulNotification } from '../services/notificationDeduplicator.js';
-import { 
-  getCurrentTimeInTimezone, 
-  getCurrentDateInTimezone, 
-  formatTimeInTimezone 
+import {
+  getCurrentTimeInTimezone,
+  getCurrentDateInTimezone,
+  formatTimeInTimezone
 } from '../utils/timezone.js';
 import { calculateDaysRemaining } from '../utils/formatters.js';
 
@@ -170,6 +173,7 @@ function formatTitrationAlertMessage(protocol) {
  */
 async function sendDoseNotification(bot, chatId, p, scheduledTime) {
   const message = formatDoseReminderMessage(p, scheduledTime);
+  const correlationId = getOrGenerateCorrelationId();
 
   const keyboard = {
     inline_keyboard: [
@@ -181,10 +185,27 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
     ]
   };
 
-  const result = await bot.sendMessage(chatId, message, {
-    parse_mode: 'MarkdownV2',
-    reply_markup: keyboard
-  });
+  // P1: Enviar com retry automático
+  const result = await sendWithRetry(
+    async () => {
+      return await bot.sendMessage(chatId, message, {
+        parse_mode: 'MarkdownV2',
+        reply_markup: keyboard
+      });
+    },
+    {
+      correlationId,
+      userId: p.user_id,
+      protocolId: p.id,
+      notificationType: 'dose_reminder',
+      chatId
+    },
+    {
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 30000
+    }
+  );
   
   return result;
 }
@@ -285,24 +306,45 @@ async function checkUserReminders(bot, userId, chatId) {
             time: currentHHMM,
             protocolId: p.id,
             chatId,
-            error: notificationResult.error
+            error: notificationResult.error,
+            attempts: notificationResult.attempts
           });
+          
+          // P1: Enviar para DLQ após todas as tentativas falharem
+          const correlationId = notificationResult.correlationId || getCurrentCorrelationId();
+          await enqueue(
+            {
+              userId,
+              protocolId: p.id,
+              type: 'dose_reminder',
+              chatId,
+              payload: { scheduledTime: currentHHMM, medicineName: p.medicine?.name }
+            },
+            notificationResult.error,
+            notificationResult.attempts,
+            correlationId
+          );
           
           // Não atualiza last_notified_at em caso de falha
           continue;
         }
 
+        // P1: O resultado real está em notificationResult.result
+        const messageId = notificationResult.result?.messageId;
+        
         logger.info(`Lembrete de dose enviado com sucesso`, {
           userId,
           medicine: p.medicine?.name,
           time: currentHHMM,
           protocolId: p.id,
           chatId,
-          messageId: notificationResult.messageId
+          messageId,
+          attempts: notificationResult.attempts,
+          retried: notificationResult.retried
         });
 
         const logged = await logSuccessfulNotification(userId, p.id, 'dose_reminder', {
-          messageId: notificationResult.messageId
+          messageId
         });
 
         if (logged) {
@@ -317,7 +359,7 @@ async function checkUserReminders(bot, userId, chatId) {
           logger.error('Falha ao registrar log de notificação. O protocolo não será atualizado para evitar inconsistência.', {
             userId,
             protocolId: p.id,
-            messageId: notificationResult.messageId
+            messageId
           });
         }
       }
@@ -350,17 +392,34 @@ async function checkUserReminders(bot, userId, chatId) {
 
         if (!logs || logs.length === 0) {
           const message = formatSoftReminderMessage(p);
+          const correlationId = getOrGenerateCorrelationId();
           
-          const result = await bot.sendMessage(chatId, message, {
-            parse_mode: 'MarkdownV2',
-            reply_markup: {
-              inline_keyboard: [[
-                { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-                { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
-                { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
-              ]]
+          const result = await sendWithRetry(
+            async () => {
+              return await bot.sendMessage(chatId, message, {
+                parse_mode: 'MarkdownV2',
+                reply_markup: {
+                  inline_keyboard: [[
+                    { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+                    { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+                    { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
+                  ]]
+                }
+              });
+            },
+            {
+              correlationId,
+              userId,
+              protocolId: p.id,
+              notificationType: 'soft_reminder',
+              chatId
+            },
+            {
+              maxRetries: 3,
+              baseDelay: 1000,
+              maxDelay: 30000
             }
-          });
+          );
           
           if (!result.success) {
             logger.error(`Falha ao enviar soft reminder`, {
@@ -368,21 +427,40 @@ async function checkUserReminders(bot, userId, chatId) {
               medicine: p.medicine?.name,
               protocolId: p.id,
               chatId,
-              error: result.error
+              error: result.error,
+              attempts: result.attempts
             });
+            
+            // P1: Enviar para DLQ
+            await enqueue(
+              {
+                userId,
+                protocolId: p.id,
+                type: 'soft_reminder',
+                chatId,
+                payload: { medicineName: p.medicine?.name }
+              },
+              result.error,
+              result.attempts,
+              correlationId
+            );
             continue;
           }
+          
+          const messageId = result.result?.messageId;
           
           logger.info(`Soft reminder enviado com sucesso`, {
             userId,
             medicine: p.medicine?.name,
             protocolId: p.id,
             chatId,
-            messageId: result.messageId
+            messageId,
+            attempts: result.attempts,
+            retried: result.retried
           });
 
           const logged = await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
-            messageId: result.messageId
+            messageId
           });
 
           if (logged) {
@@ -394,7 +472,7 @@ async function checkUserReminders(bot, userId, chatId) {
             logger.warn('Falha ao registrar log de soft reminder.', {
               userId,
               protocolId: p.id,
-              messageId: result.messageId
+              messageId
             });
           }
         }
@@ -408,9 +486,14 @@ async function checkUserReminders(bot, userId, chatId) {
 /**
  * Check reminders for ALL users (cron job)
  * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function checkReminders(bot) {
-  logger.info('Iniciando verificação de lembretes para todos os usuários');
+export async function checkReminders(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando verificação de lembretes para todos os usuários', {
+    correlationId
+  });
   
   const users = await getAllUsersWithTelegram();
   
@@ -419,7 +502,9 @@ export async function checkReminders(bot) {
     return;
   }
 
-  logger.info(`Encontrados ${users.length} usuários com Telegram configurado`);
+  logger.info(`Encontrados ${users.length} usuários com Telegram configurado`, {
+    correlationId
+  });
   console.log(`[Tasks] Enviando lembretes para ${users.length} usuário(s)`);
 
   for (const user of users) {
@@ -427,7 +512,7 @@ export async function checkReminders(bot) {
     await checkUserReminders(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Verificação de lembretes concluída');
+  logger.info('Verificação de lembretes concluída', { correlationId });
   console.log('[Tasks] Verificação de lembretes concluída');
 }
 
@@ -506,9 +591,13 @@ async function runUserDailyDigest(bot, userId, chatId) {
 
 /**
  * Run daily digest for ALL users
+ * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function runDailyDigest(bot) {
-  logger.info('Iniciando resumo diário para todos os usuários');
+export async function runDailyDigest(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando resumo diário para todos os usuários', { correlationId });
   
   const users = await getAllUsersWithTelegram();
   
@@ -519,7 +608,7 @@ export async function runDailyDigest(bot) {
     await runUserDailyDigest(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Resumo diário concluído');
+  logger.info('Resumo diário concluído', { correlationId });
   console.log('[Tasks] Resumo diário concluído');
 }
 
@@ -606,9 +695,13 @@ async function checkUserStockAlerts(bot, userId, chatId) {
 
 /**
  * Check stock alerts for ALL users
+ * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function checkStockAlerts(bot) {
-  logger.info('Iniciando alertas de estoque para todos os usuários');
+export async function checkStockAlerts(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando alertas de estoque para todos os usuários', { correlationId });
   
   const users = await getAllUsersWithTelegram();
   
@@ -619,16 +712,19 @@ export async function checkStockAlerts(bot) {
     await checkUserStockAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Alertas de estoque concluídos');
+  logger.info('Alertas de estoque concluídos', { correlationId });
   console.log('[Tasks] Alertas de estoque concluídos');
 }
 
 /**
  * Check adherence reports for ALL users (weekly)
  * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function checkAdherenceReports(bot) {
-  logger.info('Iniciando relatórios de adesão para todos os usuários');
+export async function checkAdherenceReports(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando relatórios de adesão para todos os usuários', { correlationId });
 
   try {
     const users = await getAllUsersWithTelegram();
@@ -639,15 +735,15 @@ export async function checkAdherenceReports(bot) {
         console.log(`[Tasks] Enviando relatório semanal para usuário: ${user.user_id}`);
         await runUserWeeklyAdherenceReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
-        logger.error(`Erro ao enviar relatório de adesão`, err, { userId: user.user_id });
+        logger.error(`Erro ao enviar relatório de adesão`, err, { userId: user.user_id, correlationId });
         console.error(`[Tasks] Erro ao enviar relatório para usuário ${user.user_id}:`, err.message);
       }
     }
 
-    logger.info('Relatórios de adesão concluídos');
+    logger.info('Relatórios de adesão concluídos', { correlationId });
     console.log('[Tasks] Relatórios de adesão concluídos');
   } catch (err) {
-    logger.error('Falha ao executar relatórios de adesão', err);
+    logger.error('Falha ao executar relatórios de adesão', err, { correlationId });
     console.error('[Tasks] Falha geral nos relatórios de adesão:', err.message);
     throw err;
   }
@@ -793,9 +889,13 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
 
 /**
  * Check titration alerts for ALL users
+ * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function checkTitrationAlerts(bot) {
-  logger.info('Iniciando alertas de titulação para todos os usuários');
+export async function checkTitrationAlerts(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando alertas de titulação para todos os usuários', { correlationId });
 
   const users = await getAllUsersWithTelegram();
 
@@ -806,16 +906,19 @@ export async function checkTitrationAlerts(bot) {
     await checkUserTitrationAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
-  logger.info('Alertas de titulação concluídos');
+  logger.info('Alertas de titulação concluídos', { correlationId });
   console.log('[Tasks] Alertas de titulação concluídos');
 }
 
 /**
  * Check monthly reports for ALL users
  * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
  */
-export async function checkMonthlyReport(bot) {
-  logger.info('Iniciando relatórios mensais para todos os usuários');
+export async function checkMonthlyReport(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando relatórios mensais para todos os usuários', { correlationId });
 
   try {
     const users = await getAllUsersWithTelegram();
@@ -826,15 +929,15 @@ export async function checkMonthlyReport(bot) {
         console.log(`[Tasks] Enviando relatório mensal para usuário: ${user.user_id}`);
         await runUserMonthlyReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
-        logger.error(`Erro ao enviar relatório mensal`, err, { userId: user.user_id });
+        logger.error(`Erro ao enviar relatório mensal`, err, { userId: user.user_id, correlationId });
         console.error(`[Tasks] Erro ao enviar relatório mensal para usuário ${user.user_id}:`, err.message);
       }
     }
 
-    logger.info('Relatórios mensais concluídos');
+    logger.info('Relatórios mensais concluídos', { correlationId });
     console.log('[Tasks] Relatórios mensais concluídos');
   } catch (err) {
-    logger.error('Falha ao executar relatórios mensais', err);
+    logger.error('Falha ao executar relatórios mensais', err, { correlationId });
     console.error('[Tasks] Falha geral nos relatórios mensais:', err.message);
     throw err;
   }
