@@ -5,7 +5,7 @@ import {
   getUserSettings,
   getAllUsersWithTelegram
 } from '../services/protocolCache.js';
-import { shouldSendNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification, logSuccessfulNotification } from '../services/notificationDeduplicator.js';
 import { 
   getCurrentTimeInTimezone, 
   getCurrentDateInTimezone, 
@@ -181,30 +181,12 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
     ]
   };
 
-  try {
-    const result = await bot.sendMessage(chatId, message, {
-      parse_mode: 'MarkdownV2',
-      reply_markup: keyboard
-    });
-    
-    return result;
-  } catch (err) {
-    logger.error(`Erro ao enviar notificação de dose`, err, {
-      userId: p.user_id,
-      protocolId: p.id,
-      chatId
-    });
-    
-    return {
-      success: false,
-      error: {
-        code: err.name || 'NOTIFICATION_FAILED',
-        message: err.message,
-        retryable: false
-      },
-      timestamp: new Date().toISOString()
-    };
-  }
+  const result = await bot.sendMessage(chatId, message, {
+    parse_mode: 'MarkdownV2',
+    reply_markup: keyboard
+  });
+  
+  return result;
 }
 
 /**
@@ -319,6 +301,10 @@ async function checkUserReminders(bot, userId, chatId) {
           messageId: notificationResult.messageId
         });
 
+        await logSuccessfulNotification(userId, p.id, 'dose_reminder', {
+          messageId: notificationResult.messageId
+        });
+
         await supabase
           .from('protocols')
           .update({
@@ -384,6 +370,10 @@ async function checkUserReminders(bot, userId, chatId) {
             medicine: p.medicine?.name,
             protocolId: p.id,
             chatId,
+            messageId: result.messageId
+          });
+
+          await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
             messageId: result.messageId
           });
 
@@ -487,7 +477,8 @@ async function runUserDailyDigest(bot, userId, chatId) {
       return;
     }
     
-    logger.info(`Resumo diário enviado com sucesso`, { userId, percentage, chatId });
+    logger.info(`Resumo diário enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    await logSuccessfulNotification(userId, null, 'daily_digest', { messageId: result.messageId });
 
   } catch (err) {
     logger.error(`Error sending daily digest`, err, { userId });
@@ -581,8 +572,10 @@ async function checkUserStockAlerts(bot, userId, chatId) {
       userId,
       low: lowStockMedicines.length,
       zero: zeroStockMedicines.length,
-      chatId
+      chatId,
+      messageId: result.messageId
     });
+    await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
 
   } catch (err) {
     logger.error(`Error checking stock alerts`, err, { userId });
@@ -700,7 +693,8 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
       return;
     }
     
-    logger.info(`Relatório semanal de adesão enviado com sucesso`, { userId, percentage, chatId });
+    logger.info(`Relatório semanal de adesão enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    await logSuccessfulNotification(userId, null, 'weekly_adherence', { messageId: result.messageId });
 
   } catch (err) {
     logger.error(`Error sending weekly adherence report`, err, { userId });
@@ -758,8 +752,10 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
         userId,
         medicine: protocol.medicine?.name,
         protocolId: protocol.id,
-        chatId
+        chatId,
+        messageId: result.messageId
       });
+      await logSuccessfulNotification(userId, protocol.id, 'titration_alert', { messageId: result.messageId });
     }
 
   } catch (err) {
@@ -875,7 +871,8 @@ async function runUserMonthlyReport(bot, userId, chatId) {
       return;
     }
     
-    logger.info(`Relatório mensal enviado com sucesso`, { userId, percentage, chatId });
+    logger.info(`Relatório mensal enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    await logSuccessfulNotification(userId, null, 'monthly_report', { messageId: result.messageId });
 
   } catch (err) {
     logger.error(`Error sending monthly report`, err, { userId });
