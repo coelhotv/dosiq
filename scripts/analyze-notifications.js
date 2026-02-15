@@ -101,7 +101,7 @@ async function analyzeNotificationLogs() {
   console.log('\n📋 LOGS DE NOTIFICAÇÕES (notification_logs)\n');
   
   // Check if table exists
-  const { data: check, error: checkError } = await supabase
+  const { data: _check, error: checkError } = await supabase
     .from('notification_logs')
     .select('id')
     .limit(1);

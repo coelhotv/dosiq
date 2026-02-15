@@ -397,7 +397,6 @@ async function checkUserReminders(bot, userId, chatId) {
             messageId
           });
         }
-      }
 
       // --- 2. Soft Reminders (30 min later) ---
       const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
