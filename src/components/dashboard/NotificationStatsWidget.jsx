@@ -41,19 +41,12 @@ function getStatusColor(status) {
 
 /**
  * Determina cor do status baseado na taxa de erro
- * @param {number} rate - Taxa de erro
  * @param {object} healthChecks - Checks individuais da API
  * @returns {string} Cor CSS
  */
-function getErrorRateColor(rate, healthChecks) {
-  // Usa status da API se disponível, senão fallback para thresholds
-  if (healthChecks?.errorRate?.status) {
-    return getStatusColor(healthChecks.errorRate.status)
-  }
-  // Fallback para lógica antiga se API não retornar status
-  if (rate < 1) return 'var(--color-success)'
-  if (rate < 5) return 'var(--color-warning)'
-  return 'var(--color-error)'
+function getErrorRateColor(healthChecks) {
+  // Usa status da API diretamente
+  return getStatusColor(healthChecks?.errorRate?.status)
 }
 
 /**
@@ -191,7 +184,7 @@ export default function NotificationStatsWidget() {
         <div className="notification-stats__item">
           <div
             className="notification-stats__value"
-            style={{ color: getErrorRateColor(errorRate, healthChecks) }}
+            style={{ color: getErrorRateColor(healthChecks) }}
           >
             {errorRate.toFixed(1)}%
           </div>
@@ -202,13 +195,7 @@ export default function NotificationStatsWidget() {
         <div className="notification-stats__item notification-stats__item--warning">
           <div
             className="notification-stats__value"
-            style={{
-              color: healthChecks?.dlqSize?.status
-                ? getStatusColor(healthChecks.dlqSize.status)
-                : (inDlq > 50 ? 'var(--color-error)'
-                   : inDlq > 10 ? 'var(--color-warning)'
-                   : 'var(--color-success)')
-            }}
+            style={{ color: getStatusColor(healthChecks?.dlqSize?.status) }}
           >
             {formatNumber(inDlq)}
           </div>
