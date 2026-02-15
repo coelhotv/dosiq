@@ -1,12 +1,13 @@
 // Import modules directly (no dynamic imports)
 import { createLogger } from '../server/bot/logger.js';
-import { 
-  checkReminders, 
+import { withCorrelation, generateCorrelationId } from '../server/bot/correlationLogger.js';
+import {
+  checkReminders,
   runDailyDigest,
-  checkStockAlerts, 
-  checkAdherenceReports, 
-  checkTitrationAlerts, 
-  checkMonthlyReport 
+  checkStockAlerts,
+  checkAdherenceReports,
+  checkTitrationAlerts,
+  checkMonthlyReport
 } from '../server/bot/tasks.js';
 
 const logger = createLogger('CronNotify');
@@ -89,8 +90,12 @@ function createNotifyBotAdapter(token) {
 }
 
 export default async function handler(req, res) {
+  // Gerar correlation ID para esta execução do cron
+  const correlationId = generateCorrelationId();
+  
   // Log de diagnóstico das variáveis de ambiente (apenas existência, não valores)
   logger.info('Ambiente de execução', {
+    correlationId,
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL ? 'present' : 'absent',
     hasSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
@@ -100,7 +105,11 @@ export default async function handler(req, res) {
     hasBotToken: !!process.env.TELEGRAM_BOT_TOKEN
   });
 
-  logger.info('Cron job triggered', { method: req.method, url: req.url });
+  logger.info('Cron job triggered', {
+    correlationId,
+    method: req.method,
+    url: req.url
+  });
 
   // Accept both GET (from cron-job.org) and POST (for compatibility)
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -110,13 +119,13 @@ export default async function handler(req, res) {
   // Protection against unauthorized calls
   const authHeader = req.headers['authorization'];
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    logger.warn('Unauthorized cron attempt', { authHeader });
+    logger.warn('Unauthorized cron attempt', { correlationId, authHeader });
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
-    logger.error('TELEGRAM_BOT_TOKEN not configured');
+    logger.error('TELEGRAM_BOT_TOKEN not configured', null, { correlationId });
     return res.status(500).json({ error: 'Token missing' });
   }
 
@@ -135,69 +144,95 @@ export default async function handler(req, res) {
     hour: '2-digit', minute: '2-digit', hour12: false
   });
 
-  logger.info(`Executing cron jobs`, { 
-    time: currentHHMM, 
-    hour: currentHour, 
+  logger.info(`Executing cron jobs`, {
+    correlationId,
+    time: currentHHMM,
+    hour: currentHour,
     minute: currentMinute,
     day: currentDay,
-    weekday: currentWeekDay 
+    weekday: currentWeekDay
   });
 
   const results = [];
 
   try {
     // 1. Always check dose reminders (Every minute)
-    await checkReminders(bot);
+    await withCorrelation(
+      (context) => checkReminders(bot, context),
+      { correlationId, jobType: 'reminders' }
+    );
     results.push('reminders');
 
     // 2. Daily Digest: Daily at 23:00
     if (currentHour === 23 && currentMinute === 0) {
-      await runDailyDigest(bot);
+      await withCorrelation(
+        (context) => runDailyDigest(bot, context),
+        { correlationId, jobType: 'daily_digest' }
+      );
       results.push('daily_digest');
     }
 
     // 3. Stock Alerts: Daily at 09:00
     if (currentHour === 9 && currentMinute === 0) {
-      await checkStockAlerts(bot);
+      await withCorrelation(
+        (context) => checkStockAlerts(bot, context),
+        { correlationId, jobType: 'stock_alerts' }
+      );
       results.push('stock_alerts');
     }
 
     // 4. Titration Alerts: Daily at 08:00
     if (currentHour === 8 && currentMinute === 0) {
-      await checkTitrationAlerts(bot);
+      await withCorrelation(
+        (context) => checkTitrationAlerts(bot, context),
+        { correlationId, jobType: 'titration_alerts' }
+      );
       results.push('titration_alerts');
     }
 
     // 5. Adherence Reports: Sunday at 23:00
     if (currentWeekDay === 0 && currentHour === 23 && currentMinute === 0) {
-      await checkAdherenceReports(bot);
+      await withCorrelation(
+        (context) => checkAdherenceReports(bot, context),
+        { correlationId, jobType: 'adherence_reports' }
+      );
       results.push('adherence_reports');
     }
 
     // 6. Monthly Report: 1st of month at 10:00
     if (currentDay === 1 && currentHour === 10 && currentMinute === 0) {
-      await checkMonthlyReport(bot);
+      await withCorrelation(
+        (context) => checkMonthlyReport(bot, context),
+        { correlationId, jobType: 'monthly_report' }
+      );
       results.push('monthly_report');
     }
 
-    logger.info('Cron jobs completed', { executed: results });
-
-    res.status(200).json({ 
-      status: 'ok', 
+    logger.info('Cron jobs completed', {
+      correlationId,
       executed: results,
-      time: currentHHMM 
+      duration: Date.now() - now.getTime()
+    });
+
+    res.status(200).json({
+      status: 'ok',
+      executed: results,
+      time: currentHHMM,
+      correlationId
     });
     
   } catch (error) {
     console.error('[CronNotify] Cron job failed with error:', {
+      correlationId,
       message: error.message,
       stack: error.stack,
       name: error.name,
       code: error.code
     });
-    logger.error('Cron job failed', error);
-    res.status(500).json({ 
+    logger.error('Cron job failed', error, { correlationId });
+    res.status(500).json({
       error: error.message,
+      correlationId,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
