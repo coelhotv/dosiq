@@ -21,28 +21,68 @@ function createNotifyBotAdapter(token) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      
       if (!data.ok) {
-        logger.error(`Telegram API Error (${method})`, null, { error: data });
+        logger.error(`Erro na API do Telegram (${method})`, null, { error: data });
+        throw new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
       }
+      
       return data.result;
     } catch (err) {
-      logger.error(`Fetch Error (${method})`, err);
+      logger.error(`Erro de fetch (${method})`, err);
+      throw err;  // SEMPRE re-lançar o erro
     }
   };
+
+  /**
+   * Verifica se um erro é passível de retry
+   * @param {Error} error - Objeto de erro
+   * @returns {boolean} true se o erro é transiente
+   */
+  function isRetryableError(error) {
+    const retryableCodes = [
+      'ETIMEDOUT',
+      'ECONNRESET',
+      'ENOTFOUND',
+      'ECONNREFUSED',
+      'Socket hang up',
+      'ECONNABORTED',
+      'Network Error'
+    ];
+    
+    return retryableCodes.some(code =>
+      error.message?.includes(code) ||
+      error.code === code
+    );
+  }
 
   return {
     sendMessage: async (chatId, text, options = {}) => {
       try {
         const result = await telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
-        if (result) {
-          logger.debug(`Telegram message sent successfully`, { chatId, messageId: result.message_id });
-        } else {
-          logger.error(`Telegram sendMessage failed`, { chatId });
-        }
-        return result;
+        
+        logger.debug(`Mensagem Telegram enviada com sucesso`, {
+          chatId,
+          messageId: result.message_id
+        });
+        
+        return {
+          success: true,
+          messageId: result.message_id,
+          timestamp: new Date().toISOString()
+        };
       } catch (err) {
-        logger.error(`Telegram sendMessage error`, err, { chatId });
-        throw err;
+        logger.error(`Falha ao enviar mensagem Telegram`, err, { chatId });
+        
+        return {
+          success: false,
+          error: {
+            code: err.name || 'SEND_FAILED',
+            message: err.message,
+            retryable: isRetryableError(err)
+          },
+          timestamp: new Date().toISOString()
+        };
       }
     }
   };
