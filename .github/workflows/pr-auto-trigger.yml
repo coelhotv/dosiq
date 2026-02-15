@@ -1,0 +1,59 @@
+name: PR Auto-Trigger Gemini Review
+
+# Automatically triggers Gemini Code Review on new PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  trigger-gemini-review:
+    name: Trigger Gemini Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.type != 'Bot'
+    
+    steps:
+      - name: Post Gemini Review Command
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const prAuthor = context.payload.pull_request.user.login;
+            const prTitle = context.payload.pull_request.title;
+            const prUrl = context.payload.pull_request.html_url;
+            
+            // Check if PR is from a bot (skip)
+            if (prAuthor.endsWith('[bot]')) {
+              console.log('Skipping bot PR');
+              return;
+            }
+            
+            // Post initial comment
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: `## 🤖 Gemini Code Review\n\nOlá @${prAuthor}! Vou analisar seu PR: **"${prTitle}"**\n\n🔍 **Análise em andamento...**\n\n⏳ Por favor, aguarde **5 minutos** para que eu termine a análise completa.\n\n📋 **O que será revisado:**\n- ✅ Lint errors\n- ✅ Formatting\n- ✅ Lógica simples\n- ✅ Arquitetura\n- ⚠️ Issues complexas (requer sua atenção)\n\n💡 **Comandos disponíveis:**\n- \`/gemini review\` - Re-rodar a análise\n- \`/gemini skip\` - Pular review para este PR\n\n🔗 [Ver PR](${prUrl})`
+            });
+            
+            // Trigger the Gemini Code Review workflow
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: 'gemini-review.yml',
+              ref: context.ref,
+              inputs: {
+                pr_number: prNumber.toString(),
+                skip_wait: 'false'
+              }
+            });
+            
+            console.log(`Gemini review triggered for PR #${prNumber}`);
