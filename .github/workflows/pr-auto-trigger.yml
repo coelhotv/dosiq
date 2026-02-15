@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  actions: write
 
 jobs:
   trigger-gemini-review:
