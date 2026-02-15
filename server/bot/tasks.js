@@ -56,7 +56,7 @@ function escapeMarkdown(text) {
 function formatDoseReminderMessage(protocol, scheduledTime) {
   const medicine = protocol.medicine || {};
   const name = escapeMarkdown(medicine.name || 'Medicamento');
-  const dosage = protocol.dosage_per_intake || 1;
+  const dosage = escapeMarkdown(String(protocol.dosage_per_intake || 1));
   const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
   const notes = protocol.notes ? escapeMarkdown(protocol.notes) : null;
 
@@ -88,7 +88,7 @@ function formatDoseReminderMessage(protocol, scheduledTime) {
 function formatSoftReminderMessage(protocol) {
   const medicine = protocol.medicine || {};
   const name = escapeMarkdown(medicine.name || 'Medicamento');
-  const dosage = protocol.dosage_per_intake || 1;
+  const dosage = escapeMarkdown(String(protocol.dosage_per_intake || 1));
   const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
 
   let message = `⏳ *Lembrete*\n\n`;
