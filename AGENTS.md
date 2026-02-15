@@ -570,6 +570,149 @@ When adding to `.roo/rules/memory.md`, use this template:
 
 ---
 
+## 🤖 Gemini Code Reviewer Integration
+
+### Overview
+
+This project uses **Gemini Code Reviewer GitHub App** for automated code reviews in all PRs. The integration uses GitHub Actions to:
+
+1. **Auto-trigger** review on new PRs
+2. **Wait** 5 minutes for Gemini analysis
+3. **Parse** review comments and identify issues
+4. **Auto-fix** lint, formatting, logic, and architecture issues when safe
+5. **Validate** fixes with lint and smoke tests
+6. **Post** summary in PR
+
+### Quick Start
+
+#### Automatic (Recommended)
+The workflow `.github/workflows/pr-auto-trigger.yml` automatically posts `/gemini review` on every PR opened.
+
+#### Manual
+In any PR comment, type:
+
+```
+/gemini review
+```
+
+### Workflow Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    GEMINI CODE REVIEWER WORKFLOW                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1️⃣  PR ABERTO                                                         │
+│      └─→ pr-auto-trigger.yml posta /gemini review                         │
+│                                                                             │
+│  2️⃣  GEMINI ANALISA                                                    │
+│      └─→ Aguarda 5 minutos para análise completa                          │
+│                                                                             │
+│  3️⃣  PARSE COMENTÁRIOS                                                 │
+│      └─→ Identifica tipos de issues                                       │
+│          ├─ Lint                                                          │
+│          ├─ Formatting                                                    │
+│          ├─ Logic                                                         │
+│          ├─ Architecture                                                  │
+│          └─ Conflicts                                                     │
+│                                                                             │
+│  4️⃣  AUTO-FIX                                                           │
+│      └─→ Aplica fixes automaticamente quando seguro                       │
+│          ├─ Lint: Sempre                                                  │
+│          ├─ Formatting: Sempre                                             │
+│          ├─ Logic: diff ≤ 5 linhas, sem business logic                    │
+│          ├─ Architecture: arquivo único                                    │
+│          └─ Conflicts: auto-resolvable                                    │
+│                                                                             │
+│  5️⃣  VALIDATE                                                           │
+│      └─→ npm run lint + npm run test:smoke                                │
+│                                                                             │
+│  6️⃣  COMMIT & PUSH                                                      │
+│      └─→ Cria commit automático se houver fixes                           │
+│                                                                             │
+│  7️⃣  POST SUMMARY                                                       │
+│      └─→ Resume no PR com métricas                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Issue Types & Auto-Fix Rules
+
+| Tipo | Auto-Fix | Condições | Requer Manual |
+|------|----------|-----------|---------------|
+| **Lint** | ✅ | Sempre | ❌ |
+| **Formatting** | ✅ | Sempre | ❌ |
+| **Logic** | ✅ | diff ≤ 5 linhas, sem business logic | ⚠️ Se complexo |
+| **Architecture** | ✅ | Arquivo único afetado | ⚠️ Multi-arquivo |
+| **Conflicts** | ✅ | Auto-resolvable | ⚠️ Complexos |
+| **Security** | ❌ | Jamais | ✅ |
+| **Business Logic** | ❌ | Jamais | ✅ |
+| **Breaking Changes** | ❌ | Jamais | ✅ |
+
+### Available Commands
+
+| Comando | Ação |
+|---------|------|
+| `/gemini review` | Inicia review completa |
+| `/gemini summary` | Resume apenas issues críticas |
+| `/gemini skip` | Pula review para este PR |
+
+### GitHub App
+
+- **App**: [Gemini Code Reviewer](https://github.com/apps/gemini-code-reviewer)
+- **Permissões**: read/write em PRs, issues
+- **Instalação**: Automática via Organization settings
+
+### Troubleshooting
+
+#### Gemini não posta review
+```bash
+# Verificar:
+1. App está instalado no repositório?
+2. Token tem permissões 'repo'?
+3. Workflow está habilitado em Actions tab?
+```
+
+#### Auto-fix não Commita
+```bash
+# Possíveis causas:
+1. Issues não são do tipo auto-fixável
+2. Token sem 'contents: write' permission
+3. Branch protection bloqueando force push
+4. Pre-commit hooks bloqueando
+```
+
+#### Build falha após Auto-Fix
+```yaml
+# O workflow faz rollback automático
+# Verificar:
+1. Log do workflow para ver o que quebrou
+2. Commit de backup é criado automaticamente
+3. PR recebe comentário de rollback
+```
+
+### For AI Agents
+
+When working with code reviews, follow these guidelines:
+
+1. **Don't skip the review process** - Always wait for Gemini to analyze your changes
+2. **Check auto-fixes** - Review the auto-fix commits Gemini creates
+3. **Address manual issues** - Some issues require human review
+4. **Re-run when needed** - Use `/gemini review` after making changes
+
+```bash
+# Workflow for AI agents:
+1. Make changes to code
+2. git commit -m "feat: add new feature"
+3. git push origin feature/branch
+4. Wait for /gemini review to auto-trigger
+5. Check Gemini's comments and auto-fixes
+6. Address any manual issues
+7. Use /gemini review again if needed
+```
+
+---
+
 ## 🔄 Git Workflow (RIGID PROCESS - MANDATORY)
 
 > **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.

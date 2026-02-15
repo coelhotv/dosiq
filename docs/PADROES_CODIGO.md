@@ -816,6 +816,137 @@ Antes de commitar:
 
 ---
 
+## 🔍 Code Review Standards
+
+### Overview
+
+Este projeto utiliza **automated code review** via Gemini Code Reviewer GitHub App + GitHub Actions para auto-fixes.
+
+### Workflow de Code Review
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    GEMINI CODE REVIEW WORKFLOW                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1️⃣  PR ABERTO                                                         │
+│      └─→ Workflow posta /gemini review automaticamente                     │
+│                                                                             │
+│  2️⃣  GEMINI ANALISA                                                    │
+│      └─→ Aguarda 5 minutos                                              │
+│                                                                             │
+│  3️⃣  PARSE COMENTÁRIOS                                                 │
+│      └─→ Identifica tipos de issues                                      │
+│          ├─ Lint                                                         │
+│          ├─ Formatting                                                    │
+│          ├─ Logic                                                        │
+│          ├─ Architecture                                                 │
+│          └─ Conflicts                                                    │
+│                                                                             │
+│  4️⃣  AUTO-FIX                                                           │
+│      └─→ Aplica fixes quando seguro                                      │
+│          ├─ Lint/Formatting: Sempre                                       │
+│          ├─ Logic: ≤5 linhas, sem business logic                        │
+│          ├─ Architecture: arquivo único                                   │
+│          └─ Conflicts: auto-resolvable                                    │
+│                                                                             │
+│  5️⃣  VALIDATE                                                           │
+│      └─→ lint + smoke tests                                              │
+│                                                                             │
+│  6️⃣  COMMIT & PUSH                                                      │
+│      └─→ Commit automático se houver fixes                                │
+│                                                                             │
+│  7️⃣  POST SUMMARY                                                       │
+│      └─→ Resumo no PR                                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Responsabilidades por Tipo
+
+| Tipo | Responsável | Tempo SLA |
+|------|------------|-----------|
+| Lint/Formatting | 🤖 Auto-fix | Imediato |
+| Logic simples | 🤖 Auto-fix | Imediato |
+| Logic complexo | 👤 Human Reviewer | 24h |
+| Security | 👤 Human Reviewer | 4h |
+| Architecture | 👤 Senior Reviewer | 48h |
+
+### Critérios de Auto-Fix
+
+```javascript
+// ✅ AUTO-FIXÁVEL (sempre)
+const x = 1  // Missing semicolon
+function test() { }  // Extra whitespace
+
+// ⚠️ AUTO-FIXÁVEL (com condições)
+if (!data) return  // Null check simples
+const result = a || b  // Lógica simples
+
+// ❌ REQUER REVISÃO MANUAL
+const x = calculate()  // Lógica complexa
+if (condition) { return await db.save() }  // Database
+```
+
+### Salvaguardas Obrigatórias
+
+```yaml
+# NUNCA auto-fixar:
+- Security vulnerabilities
+- Business logic changes
+- Database queries modifications
+- API contract changes
+- Breaking changes
+```
+
+### Labels Automáticos
+
+| Label | Significado |
+|-------|-------------|
+| `🤖 auto-fixed` | Issues resolvidos automaticamente |
+| `👀 needs-review` | Requer revisão humana |
+| `✅ approved` | Aprovado pelo Gemini |
+| `⚠️ blocked` | Issues bloqueantes encontrados |
+
+### Best Practices
+
+#### Para Desenvolvedores
+1. **Validar localmente**: Sempre rode `npm run lint` antes de push
+2. **Commits pequenos**: PRs < 400 linhas são mais rápidos de review
+3. **Descrição clara**: Use PR template para contexto
+4. **Auto-review**: Resolva issues óbvios antes de abrir PR
+
+#### Para Reviewers Humanos
+1. **Prioridade**: Security > Lógica > Style
+2. **Feedback**: Sugira melhorias, não apenas critique
+3. **Verificar Auto-Fix**: Confirme que auto-commits não quebram build
+4. **Documentação**: Mantenha docs atualizados
+
+### Troubleshooting
+
+#### Gemini não comenta
+```bash
+# Verificar
+1. App instalado? → Settings > GitHub Apps > Gemini Code Reviewer
+2. Token tem permissões? → repo scope
+3. Workflow rodando? → Actions tab > pr-auto-trigger
+```
+
+#### Auto-fix não funciona
+```bash
+# Possíveis causas
+1. Issues não são lint/formatting
+2. npm run lint --fix não funciona localmente
+3. Conflito com pre-commit hooks
+```
+
+#### Build falha após Auto-Fix
+- Workflow faz rollback automático
+- Verificar logs do workflow
+- Commit de backup é criado
+
+---
+
 ## 🔧 ESLint Config
 
 ```javascript
