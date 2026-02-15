@@ -76,11 +76,13 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
                      │                │
               ┌──────▼────────────────▼──────┐
               │      TELEGRAM BOT            │
-              │   (Node.js + Standardized)   │
+              │   (Node.js + Resilient)      │
               │   ┌─────────────────────┐    │
               │   │ messageFormatter    │    │
               │   │ errorHandler        │    │
-              │   │ 49 tests            │    │
+              │   │ retryManager        │    │
+              │   │ deadLetterQueue     │    │
+              │   │ notificationMetrics │    │
               │   └─────────────────────┘    │
               └──────────────────────────────┘
 ```
@@ -95,6 +97,44 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 | **F4.4** | Analytics | Tracking privacy-first em localStorage |
 | **F4.5** | Bot Standardized | Utilities com 49 testes |
 | **F4.6** | Feature Org | `src/features/` + `src/shared/` + path aliases |
+| **F4.7** | **Bot Resilient v3.0** | Sistema de notificações com retry/DLQ/métricas |
+
+### Sistema de Notificações v3.0.0
+
+Arquitetura resiliente implementada em 3 fases:
+
+**Fase P0 - Fundamentos:**
+- Result object pattern (nunca silencia falhas)
+- Database status tracking (`status_ultima_notificacao`)
+- Structured logging (`logger.js`)
+
+**Fase P1 - Confiabilidade:**
+- `retryManager.js` - Exponential backoff (1s→2s→4s) com jitter
+- `correlationLogger.js` - UUID tracing end-to-end
+- `deadLetterQueue.js` - PostgreSQL DLQ com RLS
+- Categorização automática de erros
+
+**Fase P2 - Observabilidade:**
+- `notificationMetrics.js` - Métricas em memória (p50/p95/p99)
+- `api/health/notifications.js` - Health check endpoint
+- `NotificationStatsWidget.jsx` - Widget no Dashboard
+
+```
+Cron Job
+    ↓
+Deduplication Check
+    ↓
+sendWithRetry
+    ↓
+├─ Tentativa 1 → Sucesso → Métricas
+├─ Tentativa 1 → Falha → Retry 1s
+├─ Tentativa 2 → Sucesso → Métricas
+├─ Tentativa 2 → Falha → Retry 2s
+├─ Tentativa 3 → Sucesso → Métricas
+└─ Tentativa 3 → Falha → DLQ
+```
+
+**Documentação completa:** [`TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](./TELEGRAM_BOT_NOTIFICATION_SYSTEM.md)
 
 ---
 

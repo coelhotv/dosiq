@@ -69,15 +69,105 @@ ADD COLUMN IF NOT EXISTS verification_token text;
 - `/registrar` - Register a dose interactively
 - `/pausar [medicamento]` - Pause a protocol
 - `/retomar [medicamento]` - Resume a protocol
+- `/health` - Verificar status do bot
 
 ### Notifications
 - Automatic reminders at scheduled times
 - Interactive buttons: "Tomei ✅" / "Pular ❌"
 - Stock warnings when levels are low
+- **Resilient Delivery (v3.0.0)**: Retry automático com exponential backoff
+- **Dead Letter Queue**: Falhas armazenadas para retry manual
+
+## Notification System (v3.0.0)
+
+O sistema de notificações implementa uma arquitetura resiliente de 3 fases:
+
+### Fase P0 - Fundamentos de Erro
+- **Result Object Pattern**: Nunca silencia falhas
+- **Database Status Tracking**: `status_ultima_notificacao` na tabela user_settings
+- **Structured Logging**: Logger com níveis (ERROR, WARN, INFO, DEBUG, TRACE)
+
+### Fase P1 - Camada de Confiabilidade
+- **Retry Manager**: Exponential backoff (1s → 2s → 4s) com jitter (±25%)
+- **Correlation Logger**: UUID tracing para rastreamento end-to-end
+- **Dead Letter Queue**: PostgreSQL-based DLQ com RLS
+- **Error Categorization**: Detecção automática de erros não-recuperáveis
+
+### Fase P2 - Observabilidade
+- **Notification Metrics**: Métricas em memória (p50/p95/p99 latência)
+- **Health Check API**: `GET /api/health/notifications`
+- **Dashboard Widget**: `NotificationStatsWidget` no Dashboard
+- **Alert Thresholds**: Configuráveis para diferentes severidades
+
+### Fluxo de Notificação
+```
+1. CRON Trigger → 2. Deduplication Check → 3. Retry Manager
+                                     ↓
+              ┌─────────────────────────────────────┐
+              │  Tentativa 1 → Falha → Retry 1s     │
+              │  Tentativa 2 → Falha → Retry 2s     │
+              │  Tentativa 3 → Falha → DLQ          │
+              └─────────────────────────────────────┘
+                                     ↓
+                        Sucesso → Métricas + Log
+```
+
+### Arquivos Principais
+```
+server/bot/retryManager.js              # Retry com exponential backoff
+server/bot/correlationLogger.js         # UUID tracing
+server/services/deadLetterQueue.js      # DLQ PostgreSQL
+server/services/notificationMetrics.js  # Métricas em memória
+api/health/notifications.js             # Health check endpoint
+```
+
+### Monitoramento
+```bash
+# Health check
+curl https://seu-app.vercel.app/api/health/notifications
+
+# Logs detalhados
+LOG_LEVEL=DEBUG npm run bot
+```
+
+Veja a documentação completa em [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](../docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md).
 
 ## Development
 
 ```bash
 # Run the bot locally
 npm run bot
+
+# With debug logging
+LOG_LEVEL=DEBUG npm run bot
+```
+
+### Estrutura do Projeto
+
+```
+server/
+├── bot/
+│   ├── commands/           # Handlers de comandos (/start, /status, etc)
+│   ├── callbacks/          # Handlers de botões inline
+│   ├── middleware/         # Middlewares (auth, logging)
+│   ├── retryManager.js     # Retry com exponential backoff
+│   ├── correlationLogger.js # UUID tracing
+│   ├── scheduler.js        # Agendador de tarefas
+│   ├── tasks.js            # Tarefas executadas pelo cron
+│   └── logger.js           # Logger estruturado
+├── services/
+│   ├── supabase.js         # Cliente Supabase
+│   ├── deadLetterQueue.js  # DLQ PostgreSQL
+│   ├── notificationMetrics.js # Métricas em memória
+│   ├── notificationDeduplicator.js # Controle de duplicados
+│   └── protocolCache.js    # Cache de protocolos
+└── utils/
+    ├── formatters.js       # Formatação de mensagens
+    └── timezone.js         # Timezone utilities (GMT-3)
+
+api/
+├── telegram.js             # Webhook handler
+├── notify.js               # Cron job endpoint
+└── health/
+    └── notifications.js    # Health check API
 ```

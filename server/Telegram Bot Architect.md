@@ -216,15 +216,159 @@ User Message
 
 ---
 
+## Notification System Architecture (v3.0.0)
+
+Sistema resiliente de notificações implementado em 3 fases (PRs #19-#22).
+
+### 3-Phase Resilient Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SISTEMA DE NOTIFICAÇÕES v3.0.0                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐               │
+│  │   FASE P0     │  │   FASE P1     │  │   FASE P2     │               │
+│  │ Fundamentos   │  │ Confiabilidade│  │Observabilidade│               │
+│  ├───────────────┤  ├───────────────┤  ├───────────────┤               │
+│  │ • Result obj  │  │ • Retry Mgr   │  │ • Metrics     │               │
+│  │ • DB tracking │  │ • Correlation │  │ • Health API  │               │
+│  │ • Log pattern │  │ • DLQ         │  │ • Dashboard   │               │
+│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘               │
+│          │                  │                  │                       │
+│          └──────────────────┼──────────────────┘                       │
+│                             ↓                                          │
+│                    ┌─────────────────┐                                 │
+│                    │  sendWithRetry  │                                 │
+│                    └────────┬────────┘                                 │
+│                             ↓                                          │
+│                    ┌─────────────────┐                                 │
+│                    │   /api/notify   │ ← Cron Job                     │
+│                    └─────────────────┘                                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Componentes do Sistema
+
+#### Retry Manager (`server/bot/retryManager.js`)
+- Exponential backoff: 1s → 2s → 4s
+- Jitter: ±25% para evitar thundering herd
+- Max 3 tentativas por padrão
+- Detecção automática de erros recuperáveis
+
+#### Correlation Logger (`server/bot/correlationLogger.js`)
+- UUID único por notificação
+- AsyncLocalStorage para contexto implícito
+- Rastreamento end-to-end
+
+#### Dead Letter Queue (`server/services/deadLetterQueue.js`)
+- PostgreSQL-based com RLS
+- Categorização automática de erros
+- Retry manual via API
+- Status: failed → retrying → resolved/discarded
+
+#### Notification Metrics (`server/services/notificationMetrics.js`)
+- In-memory com 60min retention
+- p50/p95/p99 latência
+- Error rate tracking
+- Rate limit detection
+
+#### Health Check API (`api/health/notifications.js`)
+- Endpoint: GET /api/health/notifications
+- Thresholds configuráveis
+- Status: healthy | warning | critical
+- Headers: X-Health-Status
+
+#### Dashboard Widget (`src/components/dashboard/NotificationStatsWidget.jsx`)
+- Atualização a cada 30s
+- Status visual (cores)
+- Métricas em tempo real
+
+### Fluxo de Dados
+
+```
+Cron Trigger
+     ↓
+notificationDeduplicator (evita duplicados)
+     ↓
+sendWithRetry
+     ↓
+├─ Tentativa 1 → Sucesso → recordSuccess
+├─ Tentativa 1 → Falha → recordRetry
+│     ↓
+│  Delay 1s + jitter
+│     ↓
+├─ Tentativa 2 → Sucesso → recordSuccess
+├─ Tentativa 2 → Falha → recordRetry
+│     ↓
+│  Delay 2s + jitter
+│     ↓
+├─ Tentativa 3 → Sucesso → recordSuccess
+└─ Tentativa 3 → Falha → enqueue(DLQ) → recordFailure
+     ↓
+logSuccessfulNotification
+     ↓
+Próxima notificação
+```
+
+### Database Schema
+
+```sql
+-- DLQ Table
+CREATE TABLE failed_notification_queue (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id),
+  notification_type text NOT NULL,
+  payload jsonb NOT NULL,
+  error_category text NOT NULL,
+  error_message text,
+  retry_count integer DEFAULT 0,
+  status text DEFAULT 'failed',
+  correlation_id text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  resolved_at timestamptz
+);
+
+-- Índice único para evitar duplicados
+CREATE UNIQUE INDEX idx_failed_queue_pending
+ON failed_notification_queue (user_id, notification_type, status)
+WHERE status IN ('failed', 'pending', 'retrying');
+
+-- Tracking em user_settings
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS status_ultima_notificacao text;
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS hora_ultima_notificacao timestamptz;
+```
+
+### Thresholds de Saúde
+
+```javascript
+const HEALTH_THRESHOLDS = {
+  maxErrorRate: 5,           // 5% erro máximo
+  maxDlqSize: 100,           // 100 notificações na DLQ
+  maxMinutesSinceSuccess: 10, // 10 minutos sem sucesso
+  maxRateLimitHitsPerHour: 10 // 10 rate limits por hora
+};
+```
+
+### Documentação Relacionada
+
+- [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](../docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) - Documentação completa
+- [`docs/past_deliveries/BOT_REFACTORING_GUIDE.md`](../docs/past_deliveries/BOT_REFACTORING_GUIDE.md) - Guia de migração
+
+---
+
 ## Recommended Tech Debt Items
 
-| Item | Impact | Effort |
-|------|--------|--------|
-| Multi-user auth | Blocker | High |
-| Redis session store | High | Medium |
-| Structured logging | Medium | Low |
-| Input validation | Medium | Medium |
-| Timezone fixes | High | Low |
-| Query caching | Medium | Medium |
-| Module splitting | Low | High |
-| Test suite | Medium | High |
+| Item | Impact | Effort | Status |
+|------|--------|--------|--------|
+| Multi-user auth | Blocker | High | ✅ Done |
+| Structured logging | Medium | Low | ✅ Done |
+| Redis session store | High | Medium | ❌ Not needed |
+| Input validation | Medium | Medium | ⚠️ Partial |
+| Timezone fixes | High | Low | ✅ Done |
+| Query caching | Medium | Medium | ✅ Done |
+| Module splitting | Low | High | ✅ Done |
+| Test suite | Medium | High | ⚠️ In progress |
+| **Notification resilience** | Critical | High | ✅ **Done** |
