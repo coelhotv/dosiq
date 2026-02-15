@@ -231,11 +231,46 @@ async function checkUserReminders(bot, userId, chatId) {
 
     const protocols = await getActiveProtocols(userId, true);
 
+    logger.debug(`Protocolos encontrados para usuário`, {
+      userId,
+      timezone,
+      currentTime: currentHHMM,
+      protocolCount: protocols?.length || 0,
+      protocols: protocols?.map(p => ({
+        id: p.id,
+        name: p.medicine?.name,
+        active: p.active,
+        timeSchedule: p.time_schedule,
+        lastNotified: p.last_notified_at
+      }))
+    });
+
     for (const p of protocols) {
       // --- 1. Main Notifications ---
-      if (p.time_schedule.includes(currentHHMM)) {
-        // Check if already taken
-        const { data: recentLogs } = await supabase
+      const isScheduledNow = p.time_schedule?.includes(currentHHMM);
+      
+      logger.debug(`Verificando protocolo`, {
+        userId,
+        protocolId: p.id,
+        medicineName: p.medicine?.name,
+        currentHHMM,
+        timeSchedule: p.time_schedule,
+        isScheduledNow,
+        lastNotified: p.last_notified_at
+      });
+
+      if (!isScheduledNow) {
+        logger.debug(`Protocolo não está agendado para este horário`, {
+          userId,
+          protocolId: p.id,
+          currentHHMM,
+          timeSchedule: p.time_schedule
+        });
+        continue;
+      }
+
+      // Check if already taken
+      const { data: recentLogs } = await supabase
           .from('medicine_logs')
           .select('taken_at')
           .eq('protocol_id', p.id)
@@ -368,9 +403,26 @@ async function checkUserReminders(bot, userId, chatId) {
       const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const thirtyFiveMinsAgo = new Date(Date.now() - 35 * 60 * 1000).toISOString();
 
+      logger.debug(`Verificando soft reminder`, {
+        userId,
+        protocolId: p.id,
+        medicineName: p.medicine?.name,
+        currentHHMM,
+        lastNotifiedAt: p.last_notified_at,
+        lastSoftReminderAt: p.last_soft_reminder_at,
+        thirtyMinsAgo,
+        thirtyFiveMinsAgo,
+        shouldCheckSoft: !!(p.last_notified_at && p.last_notified_at <= thirtyMinsAgo && p.last_notified_at > thirtyFiveMinsAgo)
+      });
+
       if (p.last_notified_at && p.last_notified_at <= thirtyMinsAgo && p.last_notified_at > thirtyFiveMinsAgo) {
         
         if (p.last_soft_reminder_at && p.last_soft_reminder_at > thirtyFiveMinsAgo) {
+          logger.debug(`Soft reminder já enviadorecentemente`, {
+            userId,
+            protocolId: p.id,
+            lastSoftReminderAt: p.last_soft_reminder_at
+          });
           continue;
         }
 
