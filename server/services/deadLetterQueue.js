@@ -1,6 +1,7 @@
 // server/services/deadLetterQueue.js
 import { supabase } from './supabase.js';
 import { createLogger } from '../bot/logger.js';
+import { updateDlqSize } from './notificationMetrics.js';
 
 const logger = createLogger('DeadLetterQueue');
 
@@ -122,6 +123,10 @@ export async function enqueue(notificationData, error, retryCount, correlationId
       errorCategory
     });
     
+    // Atualizar métrica de tamanho da DLQ
+    const stats = await getDLQStats();
+    updateDlqSize(stats.pending + stats.retrying);
+    
     return { success: true, id: data.id };
     
   } catch (err) {
@@ -152,6 +157,11 @@ export async function markForRetry(id) {
     if (error) throw error;
     
     logger.info('Notification marked for retry', { id });
+    
+    // Atualizar métrica de tamanho da DLQ
+    const stats = await getDLQStats();
+    updateDlqSize(stats.pending + stats.retrying);
+    
     return { success: true };
     
   } catch (err) {
@@ -189,6 +199,11 @@ export async function markAsResolved(id, resolution, notes = '') {
     if (error) throw error;
     
     logger.info('Notification resolved', { id, resolution, notes });
+    
+    // Atualizar métrica de tamanho da DLQ
+    const stats = await getDLQStats();
+    updateDlqSize(stats.pending + stats.retrying);
+    
     return { success: true };
     
   } catch (err) {

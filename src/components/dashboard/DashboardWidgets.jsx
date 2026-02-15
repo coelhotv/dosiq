@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import StockAlertsWidget from './StockAlertsWidget'
 import QuickActionsWidget from './QuickActionsWidget'
+import NotificationStatsWidget from './NotificationStatsWidget'
 import './DashboardWidgets.css'
 
 /**
@@ -116,6 +117,13 @@ export default function DashboardWidgets({
             onAddStock={handleAddStock}
             onViewAll={handleViewStock}
           />
+        </div>
+      </div>
+
+      {/* Notification Stats Widget */}
+      <div className="dashboard-widgets__row dashboard-widgets__row--grid">
+        <div className="dashboard-widgets__col dashboard-widgets__col--full">
+          <NotificationStatsWidget />
         </div>
       </div>
     </div>
