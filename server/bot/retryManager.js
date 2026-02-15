@@ -1,6 +1,7 @@
 // server/bot/retryManager.js
 import { createLogger } from './logger.js';
 import { generateCorrelationId } from './correlationLogger.js';
+import { recordSuccess, recordFailure, recordRetry, recordRateLimitHit } from '../services/notificationMetrics.js';
 
 const logger = createLogger('RetryManager');
 
@@ -144,6 +145,22 @@ export async function sendWithRetry(sendFn, context, config = {}) {
         result.success = true;
         result.result = operationResult;
         
+        // Registrar métrica de sucesso
+        recordSuccess(null, {
+          correlationId,
+          userId: context.userId,
+          notificationType: context.notificationType,
+          attempts: attempt
+        });
+        
+        // Registrar retry se houve tentativas anteriores
+        if (result.retried) {
+          recordRetry(attempt, {
+            correlationId,
+            userId: context.userId
+          });
+        }
+        
         logger.info(`Operação bem-sucedida após ${attempt} tentativa(s)`, {
           correlationId,
           attempts: attempt,
@@ -158,10 +175,23 @@ export async function sendWithRetry(sendFn, context, config = {}) {
       // Verificar se é retryable
       if (operationResult && operationResult.error) {
         const error = operationResult.error;
+        const isRetryable = isRetryableError(error, mergedConfig);
         
-        if (!isRetryableError(error, mergedConfig) || attempt === mergedConfig.maxRetries) {
+        if (!isRetryable || attempt === mergedConfig.maxRetries) {
           result.error = error;
           result.result = operationResult;
+          
+          // Registrar métrica de falha
+          recordFailure(error.code || error.name || 'unknown', isRetryable, {
+            correlationId,
+            userId: context.userId,
+            attempt
+          });
+          
+          // Registrar rate limit se aplicável
+          if (error.code === 429 || error.error_code === 429) {
+            recordRateLimitHit({ correlationId, userId: context.userId });
+          }
           
           logger.warn(`Falha não recuperável após ${attempt} tentativa(s)`, {
             correlationId,
@@ -192,11 +222,19 @@ export async function sendWithRetry(sendFn, context, config = {}) {
       }
       
     } catch (error) {
+      const isRetryable = isRetryableError(error, mergedConfig);
       result.error = {
         code: error.name || 'UNEXPECTED_ERROR',
         message: error.message,
-        retryable: isRetryableError(error, mergedConfig)
+        retryable: isRetryable
       };
+      
+      // Registrar métrica de falha em exceção
+      recordFailure(error.name || 'UNEXPECTED_ERROR', isRetryable, {
+        correlationId,
+        userId: context.userId,
+        attempt: result.attempts
+      });
       
       if (!isRetryableError(error, mergedConfig) || attempt === mergedConfig.maxRetries) {
         logger.error(`Erro não recuperável na tentativa ${attempt}`, error, {
