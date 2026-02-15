@@ -301,17 +301,25 @@ async function checkUserReminders(bot, userId, chatId) {
           messageId: notificationResult.messageId
         });
 
-        await logSuccessfulNotification(userId, p.id, 'dose_reminder', {
+        const logged = await logSuccessfulNotification(userId, p.id, 'dose_reminder', {
           messageId: notificationResult.messageId
         });
 
-        await supabase
-          .from('protocols')
-          .update({
-            last_notified_at: new Date().toISOString(),
-            status_ultima_notificacao: 'enviada'
-          })
-          .eq('id', p.id);
+        if (logged) {
+          await supabase
+            .from('protocols')
+            .update({
+              last_notified_at: new Date().toISOString(),
+              status_ultima_notificacao: 'enviada'
+            })
+            .eq('id', p.id);
+        } else {
+          logger.error('Falha ao registrar log de notificação. O protocolo não será atualizado para evitar inconsistência.', {
+            userId,
+            protocolId: p.id,
+            messageId: notificationResult.messageId
+          });
+        }
       }
 
       // --- 2. Soft Reminders (30 min later) ---
@@ -373,14 +381,22 @@ async function checkUserReminders(bot, userId, chatId) {
             messageId: result.messageId
           });
 
-          await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
+          const logged = await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
             messageId: result.messageId
           });
 
-          await supabase
-            .from('protocols')
-            .update({ last_soft_reminder_at: new Date().toISOString() })
-            .eq('id', p.id);
+          if (logged) {
+            await supabase
+              .from('protocols')
+              .update({ last_soft_reminder_at: new Date().toISOString() })
+              .eq('id', p.id);
+          } else {
+            logger.warn('Falha ao registrar log de soft reminder.', {
+              userId,
+              protocolId: p.id,
+              messageId: result.messageId
+            });
+          }
         }
       }
     }
@@ -478,7 +494,10 @@ async function runUserDailyDigest(bot, userId, chatId) {
     }
     
     logger.info(`Resumo diário enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
-    await logSuccessfulNotification(userId, null, 'daily_digest', { messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'daily_digest', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de notificação para resumo diário.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending daily digest`, err, { userId });
@@ -575,7 +594,10 @@ async function checkUserStockAlerts(bot, userId, chatId) {
       chatId,
       messageId: result.messageId
     });
-    await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de alerta de estoque.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error checking stock alerts`, err, { userId });
@@ -694,7 +716,10 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     }
     
     logger.info(`Relatório semanal de adesão enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
-    await logSuccessfulNotification(userId, null, 'weekly_adherence', { messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'weekly_adherence', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de relatório semanal.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending weekly adherence report`, err, { userId });
@@ -755,7 +780,10 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
         chatId,
         messageId: result.messageId
       });
-      await logSuccessfulNotification(userId, protocol.id, 'titration_alert', { messageId: result.messageId });
+      const logged = await logSuccessfulNotification(userId, protocol.id, 'titration_alert', { messageId: result.messageId });
+      if (!logged) {
+        logger.warn('Falha ao registrar log de alerta de titulação.', { userId, protocolId: protocol.id, messageId: result.messageId });
+      }
     }
 
   } catch (err) {
@@ -872,7 +900,10 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     }
     
     logger.info(`Relatório mensal enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
-    await logSuccessfulNotification(userId, null, 'monthly_report', { messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'monthly_report', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de relatório mensal.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending monthly report`, err, { userId });
