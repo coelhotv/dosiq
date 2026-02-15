@@ -26,11 +26,31 @@ function formatDuration(ms) {
 }
 
 /**
+ * Mapeia status da API para cor CSS
+ * @param {string} status - Status ('healthy' | 'warning' | 'critical')
+ * @returns {string} Cor CSS
+ */
+function getStatusColor(status) {
+  const colors = {
+    healthy: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    critical: 'var(--color-error)'
+  }
+  return colors[status] || 'var(--color-text-secondary)'
+}
+
+/**
  * Determina cor do status baseado na taxa de erro
  * @param {number} rate - Taxa de erro
- * @returns {string} Classe CSS
+ * @param {object} healthChecks - Checks individuais da API
+ * @returns {string} Cor CSS
  */
-function getErrorRateColor(rate) {
+function getErrorRateColor(rate, healthChecks) {
+  // Usa status da API se disponível, senão fallback para thresholds
+  if (healthChecks?.errorRate?.status) {
+    return getStatusColor(healthChecks.errorRate.status)
+  }
+  // Fallback para lógica antiga se API não retornar status
   if (rate < 1) return 'var(--color-success)'
   if (rate < 5) return 'var(--color-warning)'
   return 'var(--color-error)'
@@ -169,9 +189,9 @@ export default function NotificationStatsWidget() {
 
         {/* Taxa de erro */}
         <div className="notification-stats__item">
-          <div 
-            className="notification-stats__value" 
-            style={{ color: getErrorRateColor(errorRate) }}
+          <div
+            className="notification-stats__value"
+            style={{ color: getErrorRateColor(errorRate, healthChecks) }}
           >
             {errorRate.toFixed(1)}%
           </div>
@@ -180,12 +200,14 @@ export default function NotificationStatsWidget() {
 
         {/* DLQ */}
         <div className="notification-stats__item notification-stats__item--warning">
-          <div 
+          <div
             className="notification-stats__value"
-            style={{ 
-              color: inDlq > 50 ? 'var(--color-error)' 
-                   : inDlq > 10 ? 'var(--color-warning)' 
-                   : 'var(--color-success)' 
+            style={{
+              color: healthChecks?.dlqSize?.status
+                ? getStatusColor(healthChecks.dlqSize.status)
+                : (inDlq > 50 ? 'var(--color-error)'
+                   : inDlq > 10 ? 'var(--color-warning)'
+                   : 'var(--color-success)')
             }}
           >
             {formatNumber(inDlq)}
