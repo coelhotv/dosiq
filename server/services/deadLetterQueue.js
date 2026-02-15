@@ -158,10 +158,6 @@ export async function markForRetry(id) {
     
     logger.info('Notification marked for retry', { id });
     
-    // Atualizar métrica de tamanho da DLQ
-    const stats = await getDLQStats();
-    updateDlqSize(stats.pending + stats.retrying);
-    
     return { success: true };
     
   } catch (err) {

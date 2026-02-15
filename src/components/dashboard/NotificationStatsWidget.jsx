@@ -37,34 +37,20 @@ function getErrorRateColor(rate) {
 }
 
 /**
- * Determina status geral do sistema
- * @param {number} errorRate - Taxa de erro
- * @param {number} dlqSize - Tamanho da DLQ
- * @param {number|null} timeSinceLastSend - Minutos desde último envio
- * @returns {string} Status geral
- */
-function getOverallStatus(errorRate, dlqSize, timeSinceLastSend) {
-  if (errorRate > 5 || dlqSize > 50 || (timeSinceLastSend && timeSinceLastSend > 10)) {
-    return 'critical'
-  }
-  if (errorRate > 1 || dlqSize > 10 || (timeSinceLastSend && timeSinceLastSend > 5)) {
-    return 'warning'
-  }
-  return 'healthy'
-}
-
-/**
- * Mensagem de status
- * @param {number} errorRate - Taxa de erro
- * @param {number} dlqSize - Tamanho da DLQ
- * @param {number|null} timeSinceLastSend - Minutos desde último envio
+ * Mensagem de status baseada no status da API
+ * @param {string} status - Status geral da API ('healthy' | 'warning' | 'critical')
+ * @param {object} checks - Checks individuais da API
  * @returns {string} Mensagem de status
  */
-function getStatusMessage(errorRate, dlqSize, timeSinceLastSend) {
-  if (errorRate > 5) return '⚠️ Taxa de erro alta - investigar'
-  if (dlqSize > 50) return '⚠️ Muitas notificações na fila'
-  if (timeSinceLastSend && timeSinceLastSend > 10) return '⚠️ Sem envios recentes'
-  if (errorRate > 1 || dlqSize > 10) return '⚡ Sistema operando com ressalvas'
+function getStatusMessage(status, checks) {
+  if (status === 'critical') {
+    const criticalCheck = Object.values(checks).find(c => c.status === 'critical')
+    return criticalCheck?.message || '⚠️ Problema crítico detectado'
+  }
+  if (status === 'warning') {
+    const warningCheck = Object.values(checks).find(c => c.status === 'warning')
+    return warningCheck?.message || '⚡ Sistema operando com ressalvas'
+  }
   return '✅ Sistema operando normalmente'
 }
 
@@ -73,6 +59,8 @@ function getStatusMessage(errorRate, dlqSize, timeSinceLastSend) {
  */
 export default function NotificationStatsWidget() {
   const [metrics, setMetrics] = useState(null)
+  const [healthStatus, setHealthStatus] = useState('healthy')
+  const [healthChecks, setHealthChecks] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -107,6 +95,8 @@ export default function NotificationStatsWidget() {
       }
       
       setMetrics(data)
+      setHealthStatus(healthData.status || 'healthy')
+      setHealthChecks(healthData.checks || {})
       setError(null)
     } catch (err) {
       console.error('Erro ao carregar métricas', err)
@@ -223,8 +213,8 @@ export default function NotificationStatsWidget() {
       </div>
 
       {/* Status geral */}
-      <div className={`notification-stats__overall notification-stats__overall--${getOverallStatus(errorRate, inDlq, timeSinceLastSend)}`}>
-        {getStatusMessage(errorRate, inDlq, timeSinceLastSend)}
+      <div className={`notification-stats__overall notification-stats__overall--${healthStatus}`}>
+        {getStatusMessage(healthStatus, healthChecks)}
       </div>
     </Card>
   )

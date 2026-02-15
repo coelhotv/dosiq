@@ -65,6 +65,7 @@ class MetricsStore {
     cleanMap(this.retryCount);
     cleanMap(this.deliveryTimes);
     cleanMap(this.rateLimitHits);
+    this.errorBreakdown.clear();
 
     logger.debug('Métricas limpas', { cutoffKey });
   }
@@ -309,14 +310,3 @@ export function startPeriodicCleanup(intervalMinutes = 10) {
   }, intervalMs);
 }
 
-export default {
-  recordSuccess,
-  recordFailure,
-  recordRetry,
-  recordRateLimitHit,
-  updateDlqSize,
-  getMetrics,
-  getDashboardMetrics,
-  resetMetrics,
-  startPeriodicCleanup
-};

@@ -58,13 +58,12 @@ async function checkHealth() {
   }
   
   // Verificar DLQ
-  const dlqPending = dlqStats.pending + dlqStats.retrying;
-  if (dlqPending > HEALTH_THRESHOLDS.maxDlqSize) {
+  if (checks.dlqSize.value > HEALTH_THRESHOLDS.maxDlqSize) {
     checks.dlqSize.status = 'critical';
-    checks.dlqSize.message = `DLQ com ${dlqPending} notificações pendentes`;
-  } else if (dlqPending > HEALTH_THRESHOLDS.maxDlqSize / 2) {
+    checks.dlqSize.message = `DLQ com ${checks.dlqSize.value} notificações pendentes`;
+  } else if (checks.dlqSize.value > HEALTH_THRESHOLDS.maxDlqSize / 2) {
     checks.dlqSize.status = 'warning';
-    checks.dlqSize.message = `DLQ com ${dlqPending} notificações`;
+    checks.dlqSize.message = `DLQ com ${checks.dlqSize.value} notificações`;
   }
   
   // Verificar último envio bem-sucedido
