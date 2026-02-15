@@ -5,7 +5,7 @@ import {
   getUserSettings,
   getAllUsersWithTelegram
 } from '../services/protocolCache.js';
-import { shouldSendNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification, logSuccessfulNotification } from '../services/notificationDeduplicator.js';
 import { 
   getCurrentTimeInTimezone, 
   getCurrentDateInTimezone, 
@@ -160,6 +160,14 @@ function formatTitrationAlertMessage(protocol) {
 
 // --- Helper Functions ---
 
+/**
+ * Envia notificação de dose e retorna resultado
+ * @param {object} bot - Bot adapter
+ * @param {string} chatId - ID do chat Telegram
+ * @param {object} p - Protocolo
+ * @param {string} scheduledTime - Horário agendado (HH:MM)
+ * @returns {Promise<NotificationResult>} Resultado da operação
+ */
 async function sendDoseNotification(bot, chatId, p, scheduledTime) {
   const message = formatDoseReminderMessage(p, scheduledTime);
 
@@ -173,10 +181,12 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
     ]
   };
 
-  await bot.sendMessage(chatId, message, {
+  const result = await bot.sendMessage(chatId, message, {
     parse_mode: 'MarkdownV2',
     reply_markup: keyboard
   });
+  
+  return result;
 }
 
 /**
@@ -266,19 +276,50 @@ async function checkUserReminders(bot, userId, chatId) {
           continue;
         }
 
-        await sendDoseNotification(bot, chatId, p, currentHHMM);
-        logger.info(`Dose reminder sent`, {
+        const notificationResult = await sendDoseNotification(bot, chatId, p, currentHHMM);
+
+        if (!notificationResult.success) {
+          logger.error(`Falha ao enviar lembrete de dose`, {
+            userId,
+            medicine: p.medicine?.name,
+            time: currentHHMM,
+            protocolId: p.id,
+            chatId,
+            error: notificationResult.error
+          });
+          
+          // Não atualiza last_notified_at em caso de falha
+          continue;
+        }
+
+        logger.info(`Lembrete de dose enviado com sucesso`, {
           userId,
           medicine: p.medicine?.name,
           time: currentHHMM,
           protocolId: p.id,
-          chatId
+          chatId,
+          messageId: notificationResult.messageId
         });
-        
-        await supabase
-          .from('protocols')
-          .update({ last_notified_at: new Date().toISOString() })
-          .eq('id', p.id);
+
+        const logged = await logSuccessfulNotification(userId, p.id, 'dose_reminder', {
+          messageId: notificationResult.messageId
+        });
+
+        if (logged) {
+          await supabase
+            .from('protocols')
+            .update({
+              last_notified_at: new Date().toISOString(),
+              status_ultima_notificacao: 'enviada'
+            })
+            .eq('id', p.id);
+        } else {
+          logger.error('Falha ao registrar log de notificação. O protocolo não será atualizado para evitar inconsistência.', {
+            userId,
+            protocolId: p.id,
+            messageId: notificationResult.messageId
+          });
+        }
       }
 
       // --- 2. Soft Reminders (30 min later) ---
@@ -308,32 +349,54 @@ async function checkUserReminders(bot, userId, chatId) {
           .gte('taken_at', p.last_notified_at);
 
         if (!logs || logs.length === 0) {
-          logger.info(`Soft reminder sent`, {
+          const message = formatSoftReminderMessage(p);
+          
+          const result = await bot.sendMessage(chatId, message, {
+            parse_mode: 'MarkdownV2',
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+                { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+                { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
+              ]]
+            }
+          });
+          
+          if (!result.success) {
+            logger.error(`Falha ao enviar soft reminder`, {
+              userId,
+              medicine: p.medicine?.name,
+              protocolId: p.id,
+              chatId,
+              error: result.error
+            });
+            continue;
+          }
+          
+          logger.info(`Soft reminder enviado com sucesso`, {
             userId,
             medicine: p.medicine?.name,
             protocolId: p.id,
-            chatId
+            chatId,
+            messageId: result.messageId
           });
-          
-          const message = formatSoftReminderMessage(p);
-          
-          await bot.sendMessage(chatId, message,
-            {
-              parse_mode: 'MarkdownV2',
-              reply_markup: {
-                inline_keyboard: [[
-                  { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-                  { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
-                  { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
-                ]]
-              }
-            }
-          );
 
-          await supabase
-            .from('protocols')
-            .update({ last_soft_reminder_at: new Date().toISOString() })
-            .eq('id', p.id);
+          const logged = await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
+            messageId: result.messageId
+          });
+
+          if (logged) {
+            await supabase
+              .from('protocols')
+              .update({ last_soft_reminder_at: new Date().toISOString() })
+              .eq('id', p.id);
+          } else {
+            logger.warn('Falha ao registrar log de soft reminder.', {
+              userId,
+              protocolId: p.id,
+              messageId: result.messageId
+            });
+          }
         }
       }
     }
@@ -419,8 +482,22 @@ async function runUserDailyDigest(bot, userId, chatId) {
       message += '🚨 *Cuidado! Você está atrasado nas doses.*';
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Daily digest sent`, { userId, percentage, chatId });
+    const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+    
+    if (!result.success) {
+      logger.error(`Falha ao enviar resumo diário`, {
+        userId,
+        chatId,
+        error: result.error
+      });
+      return;
+    }
+    
+    logger.info(`Resumo diário enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'daily_digest', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de notificação para resumo diário.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending daily digest`, err, { userId });
@@ -499,13 +576,28 @@ async function checkUserStockAlerts(bot, userId, chatId) {
 
     const message = formatStockAlertMessage(zeroStockMedicines, lowStockMedicines);
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Stock alert sent`, {
+    const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+    
+    if (!result.success) {
+      logger.error(`Falha ao enviar alerta de estoque`, {
+        userId,
+        chatId,
+        error: result.error
+      });
+      return;
+    }
+    
+    logger.info(`Alerta de estoque enviado com sucesso`, {
       userId,
       low: lowStockMedicines.length,
       zero: zeroStockMedicines.length,
-      chatId
+      chatId,
+      messageId: result.messageId
     });
+    const logged = await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de alerta de estoque.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error checking stock alerts`, err, { userId });
@@ -612,8 +704,22 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
       message += '⚠️ *Atenção!* Tente melhorar sua regularidade nas doses.';
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Weekly adherence report sent`, { userId, percentage, chatId });
+    const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+    
+    if (!result.success) {
+      logger.error(`Falha ao enviar relatório semanal de adesão`, {
+        userId,
+        chatId,
+        error: result.error
+      });
+      return;
+    }
+    
+    logger.info(`Relatório semanal de adesão enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'weekly_adherence', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de relatório semanal.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending weekly adherence report`, err, { userId });
@@ -654,13 +760,30 @@ async function checkUserTitrationAlerts(bot, userId, chatId) {
 
       const message = formatTitrationAlertMessage(protocol);
 
-      await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-      logger.info(`Titration alert sent`, {
+      const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+      
+      if (!result.success) {
+        logger.error(`Falha ao enviar alerta de titulação`, {
+          userId,
+          medicine: protocol.medicine?.name,
+          protocolId: protocol.id,
+          chatId,
+          error: result.error
+        });
+        continue;
+      }
+      
+      logger.info(`Alerta de titulação enviado com sucesso`, {
         userId,
         medicine: protocol.medicine?.name,
         protocolId: protocol.id,
-        chatId
+        chatId,
+        messageId: result.messageId
       });
+      const logged = await logSuccessfulNotification(userId, protocol.id, 'titration_alert', { messageId: result.messageId });
+      if (!logged) {
+        logger.warn('Falha ao registrar log de alerta de titulação.', { userId, protocolId: protocol.id, messageId: result.messageId });
+      }
     }
 
   } catch (err) {
@@ -765,8 +888,22 @@ async function runUserMonthlyReport(bot, userId, chatId) {
       message += '💪 *Vamos melhorar!* O próximo mês será melhor.';
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-    logger.info(`Monthly report sent`, { userId, percentage, chatId });
+    const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+    
+    if (!result.success) {
+      logger.error(`Falha ao enviar relatório mensal`, {
+        userId,
+        chatId,
+        error: result.error
+      });
+      return;
+    }
+    
+    logger.info(`Relatório mensal enviado com sucesso`, { userId, percentage, chatId, messageId: result.messageId });
+    const logged = await logSuccessfulNotification(userId, null, 'monthly_report', { messageId: result.messageId });
+    if (!logged) {
+      logger.warn('Falha ao registrar log de relatório mensal.', { userId, messageId: result.messageId });
+    }
 
   } catch (err) {
     logger.error(`Error sending monthly report`, err, { userId });
