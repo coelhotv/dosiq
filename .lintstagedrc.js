@@ -4,8 +4,8 @@ module.exports = {
     "vitest run --changed --passWithNoTests"
   ],
 
-  // Lint em todos os arquivos staged JS/JSX
-  "*.{js,jsx}": [
+  // Lint em todos os arquivos staged JS/JSX (incluindo subdiretórios)
+  "**/*.{js,jsx}": [
     "eslint --fix"
   ],
 

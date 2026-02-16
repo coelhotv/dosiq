@@ -405,3 +405,25 @@
 [data-theme="dark"] .dlq-admin__detail-value--code {
   background: var(--surface-tertiary);
 }
+
+/* Confirmation Modal */
+.dlq-admin__confirm {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.dlq-admin__confirm h2 {
+  margin-bottom: var(--space-3);
+  color: var(--text-primary);
+}
+
+.dlq-admin__confirm p {
+  margin-bottom: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.dlq-admin__confirm-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
