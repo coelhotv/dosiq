@@ -1411,3 +1411,67 @@ onAction((alert, action) => {
 - Implementar consolidação de MedicineForm (4-6h estimados)
 - Implementar consolidação de ProtocolForm (6-8h estimados)
 - Criar testes abrangentes antes de cada refatoração
+
+---
+
+## Memory Entry — 2026-02-16 18:56
+**Contexto / Objetivo**
+- Corrigir bot do Telegram que estava com erro de produção (ERR_MODULE_NOT_FOUND)
+- Implementar melhorias de confiabilidade P1 (DLQ Admin, Daily Digest, Simple Retry)
+- Seguir workflow Git obrigatório com PRs e code review
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/bot/tasks.js` — Removido import de retryManager inexistente, simplificado sendDoseNotification
+  - `api/notify.js` — Adicionado retry de 2 tentativas, DLQ digest schedule (09:00)
+  - `api/dlq.js` — Criado endpoint GET para listar notificações falhadas
+  - `api/dlq/[id]/retry.js` — Criado endpoint POST para re-tentar notificação
+  - `api/dlq/[id]/discard.js` — Criado endpoint POST para descartar notificação
+  - `src/services/api/dlqService.js` — Criado serviço frontend para DLQ
+  - `src/views/admin/DLQAdmin.jsx` — Criada view de administração do DLQ
+  - `server/utils/retryManager.js` — Criado helper de retry com isRetryableError
+- Comportamento impactado:
+  - Bot agora funciona em produção sem erros de módulo
+  - Notificações falhadas podem ser gerenciadas via interface admin
+  - Digest diário enviado às 09:00 para ADMIN_CHAT_ID
+  - Retry automático de 2 tentativas para erros transitórios
+
+**O que deu certo**
+- Abordagem incremental: P0 → P1A → P1B → P1C
+- Validação completa antes de cada commit (lint, test:critical, build)
+- Code review do Gemini identificou issues importantes
+- Correções aplicadas rapidamente após feedback do revisor
+- Commits semânticos e atômicos facilitaram revisão
+- Helper function `wrapSendMessageResult` reduziu duplicação
+
+**O que não deu certo / riscos**
+- P1 original era over-engineered (retryManager complexo causou a falha inicial)
+- Rollback incompleto deixou import órfão
+- Gemini review exigiu correções adicionais (status 'retrying', constantes, duplicação)
+
+**Causa raiz (se foi debug)**
+- Sintoma: Vercel deployment falhando com ERR_MODULE_NOT_FOUND
+- Causa: `server/bot/tasks.js` importava `sendWithRetry` de `./retryManager.js` que não existia
+- Correção: Remover import e simplificar para `bot.sendMessage()` direto
+- Prevenção: Sempre validar imports antes de commitar, usar `npm run build` localmente
+
+**Decisões & trade-offs**
+- Decisão: Simplificar arquitetura ao invés de retry complexo
+- Alternativas consideradas: Implementar retryManager completo, usar biblioteca externa
+- Por que: Simplicidade reduz pontos de falha, DLQ já captura falhas para revisão manual
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** verificar se arquivos importados existem antes de commitar
+- **SEMPRE** rodar `npm run build` localmente antes de push
+- Usar abordagem incremental: P0 (bloqueante) → P1 (melhorias) → P2 (opcional)
+- Simplificar ao invés de over-engineer - complexidade causa falhas
+- Gemini Code Review é obrigatório - aguardar comentários antes de merge
+- Configurar ADMIN_CHAT_ID na Vercel para DLQ digest funcionar
+- Retry simples (2 tentativas) é suficiente para a maioria dos casos
+
+**Pendências / próximos passos**
+- Configurar ADMIN_CHAT_ID na Vercel (variável de ambiente)
+- Monitorar logs da Vercel por 24-48 horas
+- Testar DLQ Admin interface em produção
+- Validar digest diário às 09:00 (horário de Brasília)
+- Considerar P2: Notification Stats Dashboard Widget
