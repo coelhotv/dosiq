@@ -1,0 +1,429 @@
+/* src/views/admin/DLQAdmin.css */
+/* Dead Letter Queue Admin Interface Styles */
+
+.dlq-admin {
+  padding: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.dlq-admin__header {
+  margin-bottom: var(--space-6);
+}
+
+.dlq-admin__header h1 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.dlq-admin__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Controls */
+.dlq-admin__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.dlq-admin__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dlq-admin__filter label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.dlq-admin__select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.dlq-admin__select:hover {
+  border-color: var(--color-primary);
+}
+
+.dlq-admin__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha);
+}
+
+.dlq-admin__stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.dlq-admin__stat {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.dlq-admin__stat strong {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Message */
+.dlq-admin__message {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.dlq-admin__message--success {
+  background: var(--color-success-alpha);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.dlq-admin__message--error {
+  background: var(--color-error-alpha);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+
+/* Error state */
+.dlq-admin__error {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--color-error);
+}
+
+.dlq-admin__error p {
+  margin-bottom: var(--space-4);
+}
+
+/* Loading */
+.dlq-admin__loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+/* Table */
+.dlq-admin__table-container {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+}
+
+.dlq-admin__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.dlq-admin__table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-semibold);
+  border-bottom: 1px solid var(--border-primary);
+  white-space: nowrap;
+}
+
+.dlq-admin__table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.dlq-admin__row:hover {
+  background: var(--surface-hover);
+}
+
+.dlq-admin__row:last-child td {
+  border-bottom: none;
+}
+
+/* Cells */
+.dlq-admin__cell--date {
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.dlq-admin__cell--user {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.dlq-admin__cell--error {
+  max-width: 200px;
+}
+
+.dlq-admin__error-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-error);
+}
+
+.dlq-admin__cell--attempts {
+  text-align: center;
+}
+
+/* Status badge */
+.dlq-admin__status {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-xs);
+  background: var(--surface-secondary);
+}
+
+/* Actions */
+.dlq-admin__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dlq-admin__action-btn {
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dlq-admin__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dlq-admin__action-btn--view {
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+
+.dlq-admin__action-btn--view:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.dlq-admin__action-btn--retry {
+  background: var(--color-primary);
+  color: white;
+}
+
+.dlq-admin__action-btn--retry:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.dlq-admin__action-btn--discard {
+  background: var(--surface-secondary);
+  color: var(--color-error);
+}
+
+.dlq-admin__action-btn--discard:hover:not(:disabled) {
+  background: var(--color-error-alpha);
+}
+
+/* Empty state */
+.dlq-admin__empty {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--text-tertiary);
+}
+
+/* Pagination */
+.dlq-admin__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+}
+
+.dlq-admin__page-btn {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dlq-admin__page-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--color-primary);
+}
+
+.dlq-admin__page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dlq-admin__page-info {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Details Modal */
+.dlq-admin__details {
+  padding: var(--space-4);
+  max-width: 600px;
+}
+
+.dlq-admin__details h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-4) 0;
+  color: var(--text-primary);
+}
+
+.dlq-admin__detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.dlq-admin__detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dlq-admin__detail-item--full {
+  grid-column: 1 / -1;
+}
+
+.dlq-admin__detail-item label {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dlq-admin__detail-value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.dlq-admin__detail-value--mono {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.dlq-admin__detail-value--error {
+  color: var(--color-error);
+}
+
+.dlq-admin__detail-value--code {
+  background: var(--surface-secondary);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.dlq-admin__detail-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dlq-admin {
+    padding: var(--space-3);
+  }
+
+  .dlq-admin__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dlq-admin__filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dlq-admin__table th,
+  .dlq-admin__table td {
+    padding: var(--space-2);
+  }
+
+  .dlq-admin__actions {
+    flex-direction: column;
+  }
+
+  .dlq-admin__detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dlq-admin__detail-actions {
+    flex-direction: column;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .dlq-admin__table th {
+  background: var(--surface-tertiary);
+}
+
+[data-theme="dark"] .dlq-admin__action-btn--view {
+  background: var(--surface-tertiary);
+}
+
+[data-theme="dark"] .dlq-admin__detail-value--code {
+  background: var(--surface-tertiary);
+}
+
+/* Confirmation Modal */
+.dlq-admin__confirm {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.dlq-admin__confirm h2 {
+  margin-bottom: var(--space-3);
+  color: var(--text-primary);
+}
+
+.dlq-admin__confirm p {
+  margin-bottom: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.dlq-admin__confirm-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}

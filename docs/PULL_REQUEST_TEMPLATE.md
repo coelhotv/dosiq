@@ -1,164 +1,219 @@
-# 📦 Onda 1 - Fundação: Testes, Validação, Cache, Onboarding
+<!--
+  ⚠️  IMPORTANTE: Este é um TEMPLATE de estrutura para Pull Requests.
+
+  Este documento serve como GUIA para criar novas PRs. NÃO copie e cole
+  este arquivo inteiro. Em vez disso, use a estrutura abaixo como
+  referência para preencher sua própria descrição de PR.
+
+  Instruções:
+  1. Substitua todos os textos entre [colchetes] pelo conteúdo real
+  2. Remova seções que não se aplicam ao seu caso
+  3. Adapte a estrutura conforme necessário para o escopo da sua mudança
+  4. Use checkboxes (\- [ ]) apenas para itens realmente concluídos
+-->
+
+# 📦 [Título da PR - Ex: feat(scope): descrição breve]
 
 ## 🎯 Resumo
 
-Esta PR entrega a **Onda 1** do projeto Meus Remédios, focada em fundamentos técnicos sólidos: testes automatizados, validação de dados, performance e experiência de primeiro uso.
+<!--
+  Descreva em 2-3 linhas o objetivo desta PR.
+  O que está sendo entregue? Qual problema resolve?
+-->
+
+[Exemplo: Esta PR implementa o sistema de cache SWR para otimizar o carregamento do Dashboard, reduzindo o tempo de resposta em 95%.]
 
 ---
 
 ## 📋 Tarefas Implementadas
 
-### ✅ Tarefa 1.1 - Testes Unitários (110 testes)
-- [x] Setup Vitest com jsdom e Testing Library
-- [x] Testes de componentes (Button, Calendar, Modal, Card)
-- [x] Testes de hooks (useCachedQuery)
-- [x] Testes de serviços (logService, stockService)
-- [x] Testes de schemas (23 testes de validação)
+<!--
+  Liste as tarefas/tickets concluídos nesta PR.
+  Use checkboxes para indicar o status de cada item.
+  Agrupe por categorias lógicas se houver muitas tarefas.
+-->
 
-### ✅ Tarefa 1.2 - Validação com Zod
-- [x] Schemas para medicamentos, protocolos, estoque e logs
-- [x] Helper de validação com mensagens em português
-- [x] Integração com formulários existentes
-- [x] 23 testes cobrindo edge cases
+### [Categoria 1 - Ex: Funcionalidades Principais]
+- [ ] [Descrição da tarefa 1]
+- [ ] [Descrição da tarefa 2]
+- [ ] [Descrição da tarefa 3]
 
-### ✅ Tarefa 1.3 - Persistência de Sessões do Bot
-- [x] SessionManager com Supabase
-- [x] TTL de 30 minutos configurável
-- [x] Cache local em memória
-- [x] Auto-cleanup de sessões expiradas
-- [x] Testes de persistência (simulação de restart)
+### [Categoria 2 - Ex: Testes e Qualidade]
+- [ ] [Descrição do teste/validação 1]
+- [ ] [Descrição do teste/validação 2]
 
-### ✅ Tarefa 1.4 - Onboarding Wizard
-- [x] Wizard de 4 passos mobile-first
-- [x] Boas-vindas, primeiro remédio, protocolo, Telegram
-- [x] Persistência de progresso
-- [x] Validação em tempo real
+<!--
+  EXEMPLO REAL (para referência - NÃO copie):
 
-### ✅ Tarefa 1.5 - Cache SWR
-- [x] Sistema de cache em memória (QueryCache)
-- [x] Hook useCachedQuery com stale-while-revalidate
-- [x] Deduplicação de requests
-- [x] **95% melhoria no carregamento do Dashboard**
+  ### ✅ Testes Unitários
+  - [x] Setup Vitest com jsdom
+  - [x] Testes de componentes (Button, Modal)
+  - [x] Testes de hooks (useCachedQuery)
+  - [x] 110 testes cobrindo schemas e serviços
 
-### ✅ Tarefa 1.6 - View de Estoque Otimizada
-- [x] View SQL `medicine_stock_summary`
-- [x] Agregação em tempo real
-- [x] Índices otimizados
-- [x] **5x mais rápida que consultas anteriores**
+  ### ✅ Validação com Zod
+  - [x] Schemas para medicamentos e protocolos
+  - [x] Integração com formulários existentes
+-->
 
 ---
 
-## 📊 Métricas de Melhoria
+## 📊 Métricas de Melhoria (se aplicável)
+
+<!--
+  Opcional: Inclua métricas quantitativas quando relevante.
+  Compare "antes" vs "depois" quando possível.
+  Remova esta seção se não houver métricas significativas.
+-->
 
 | Métrica | Antes | Depois | Melhoria |
 |---------|-------|--------|----------|
-| Cobertura de Testes | ~10% | **~75%** | +65% |
-| Tempo Dashboard | ~2s | **~100ms** | **95%** |
-| Query Estoque | ~500ms | **~100ms** | **5x** |
-| Validação de Forms | Cliente apenas | **Cliente + Servidor** | Segurança |
-| Sessões Bot | Memória apenas | **Persistente** | Confiabilidade |
+| [Ex: Tempo de carregamento] | [~2s] | [~100ms] | [95%] |
+| [Ex: Cobertura de testes] | [~10%] | [~75%] | [+65%] |
+| [Ex: Tempo de query] | [~500ms] | [~100ms] | [5x] |
 
 ---
 
 ## 🔧 Arquivos Principais
 
-```
-src/
-├── components/
-│   └── onboarding/          # Wizard de 4 passos
-├── hooks/
-│   └── useCachedQuery.js    # Hook SWR
-├── lib/
-│   └── queryCache.js        # Sistema de cache
-├── schemas/
-│   ├── *.js                 # Schemas Zod
-│   └── __tests__/
-└── services/api/
-    ├── cachedServices.js    # Serviços com cache
-    └── __tests__/           # Testes de serviços
+<!--
+  Liste os arquivos/diretórios mais importantes alterados.
+  Use uma estrutura de árvore para facilitar a navegação.
+  Foque nos arquivos que reviewers devem priorizar.
+-->
 
-server/
-└── services/
-    └── sessionManager.js    # Persistência de sessões
-
-docs/
-├── BENCHMARK_CACHE_SWR.md   # Documentação de performance
-├── BENCHMARK_STOCK_VIEW.md
-├── SCHEMAS_VALIDACAO.md
-└── GUIA_TITULACAO.md
 ```
+[caminho/]
+├── [diretorio/]
+│   ├── [arquivo-modificado.js]     # [breve descrição da mudança]
+│   └── [novo-arquivo.js]           # [breve descrição do novo arquivo]
+└── [outro-diretorio/]
+    └── [arquivo-alterado.jsx]
+```
+
+<!--
+  EXEMPLO REAL (para referência - NÃO copie):
+
+  src/
+  ├── components/
+  │   └── onboarding/          # Novo wizard de 4 passos
+  ├── hooks/
+  │   └── useCachedQuery.js    # Hook SWR customizado
+  └── services/api/
+      └── cachedServices.js    # Integração com cache
+-->
 
 ---
 
 ## ✅ Checklist de Verificação
 
+<!--
+  Marque apenas os itens que foram VERIFICADOS nesta PR.
+  Não marque por "achar que deve estar certo" - execute os comandos.
+-->
+
 ### Código
-- [ ] Todos os testes passam (`npm test`)
+- [ ] Todos os testes passam (`npm run test:critical`)
 - [ ] Lint sem erros (`npm run lint`)
 - [ ] Build bem-sucedido (`npm run build`)
-- [ ] Type checking passa (se aplicável)
 
 ### Funcionalidade
-- [ ] Onboarding funciona em mobile
-- [ ] Cache invalida corretamente após mutações
-- [ ] Sessões do bot persistem após restart
-- [ ] Validações exibem mensagens em português
-
-### Performance
-- [ ] Dashboard carrega em < 200ms (com cache)
-- [ ] Query de estoque otimizada (< 100ms)
-- [ ] Sem memory leaks no cache
+- [ ] [Verificação específica 1 - ex: "Onboarding funciona em mobile"]
+- [ ] [Verificação específica 2 - ex: "Cache invalida após mutações"]
 
 ### Documentação
-- [ ] README atualizado (se necessário)
-- [ ] JSDoc em funções públicas
-- [ ] Migrations documentadas
+- [ ] [Código documentado com JSDoc quando necessário]
+- [ ] [README atualizado se houver mudanças de API]
 
 ---
 
 ## 🚀 Como Testar
 
+<!--
+  Forneça instruções passo a passo para testar as mudanças.
+  Seja específico - quais comandos executar, qual comportamento esperar.
+-->
+
 ```bash
-# 1. Instalar dependências
-npm install
+# 1. [Primeiro passo - ex: Instalar dependências]
+[comando]
 
-# 2. Executar testes
-npm test
+# 2. [Segundo passo - ex: Executar testes]
+[comando]
 
-# 3. Verificar lint
-npm run lint
-
-# 4. Build de produção
-npm run build
-
-# 5. Testar localmente
-npm run dev
+# 3. [Terceiro passo - ex: Iniciar servidor de desenvolvimento]
+[comando]
 ```
+
+<!--
+  Descreva o comportamento esperado para validação:
+
+  **Resultado esperado:**
+  - [Descrição do que o reviewer deve observar]
+  - [Outra observação importante]
+-->
 
 ---
 
 ## 🔗 Issues Relacionadas
 
-- Closes #wave-1
-- Related to #onboarding
-- Related to #performance
+<!--
+  Liste issues/tickets que esta PR resolve ou relaciona.
+  Use palavras-chave do GitHub para auto-fechar issues: Closes, Fixes, Resolves
+-->
+
+- Closes #[número-da-issue]
+- Related to #[número-da-issue-relacionada]
+- Fixes #[número-do-bug]
 
 ---
 
 ## 📝 Notas para Reviewers
 
-1. **Testes:** Foco nos testes de integração do cache e sessões
-2. **Performance:** Verificar benchmarks documentados em `docs/`
-3. **Segurança:** Validar schemas Zod cobrem todos os inputs
-4. **UX:** Testar onboarding em dispositivo móvel real
+<!--
+  Adicione contexto adicional que ajude os reviewers a entenderem
+  decisões técnicas, pontos de atenção ou áreas que precisam de
+  revisão mais cuidadosa.
+
+  Opcional: remova esta seção se não houver notas específicas.
+-->
+
+1. **[Tópico 1 - ex: Testes]:** [Instrução específica - ex: "Foco nos testes de integração do cache"]
+2. **[Tópico 2 - ex: Performance]:** [Instrução específica - ex: "Verificar benchmarks em docs/"]
+3. **[Tópico 3]:** [Instrução específica]
 
 ---
 
-## 🏷️ Versão
+## 🏷️ Informações de Versionamento
 
-**Tipo:** Minor (`2.2.1` → `2.3.0`)
-**Tag sugerida:** `v2.3.0`
+<!--
+  Opcional: Indique o tipo de versionamento sugerido.
+  Remova se o versionamento for gerenciado automaticamente.
+-->
+
+**Tipo:** [Major / Minor / Patch]
+**Versão anterior:** [x.x.x]
+**Versão sugerida:** [x.x.x]
 
 ---
+
+<!--
+  Abaixo estão exemplos de seções adicionais que podem ser
+  incluídas conforme a necessidade da PR:
+
+  ## 🔄 Mudanças de Breaking Change
+  - [Descrição do que quebra e como migrar]
+
+  ## 🛡️ Considerações de Segurança
+  - [Descrição de medidas de segurança implementadas]
+
+  ## 📸 Screenshots / GIFs
+  [Inclua evidências visuais quando relevante]
+
+  ## 🧪 Casos de Teste Específicos
+  - [Caso de teste 1]
+  - [Caso de teste 2]
+-->
 
 /cc @reviewers
+/cc @gemini-code-assist
