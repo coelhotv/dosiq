@@ -41,3 +41,4 @@ plans/
 .vitest-cache/
 .vercel
 .env*.local
+*.icloud

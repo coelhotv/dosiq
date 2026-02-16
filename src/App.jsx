@@ -8,6 +8,7 @@ import Protocols from './views/Protocols'
 import Dashboard from './views/Dashboard'
 import History from './views/History'
 import Settings from './views/Settings'
+import DLQAdmin from './views/admin/DLQAdmin'
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
 import Loading from '@shared/components/ui/Loading'
@@ -104,6 +105,8 @@ function App() {
         return <History />
       case 'settings':
         return <Settings />
+      case 'admin-dlq':
+        return <DLQAdmin />
       case 'dashboard':
       default:
         return (
