@@ -1,6 +1,5 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
-import { sendWithRetry } from './retryManager.js';
 import { enqueue, ErrorCategories } from '../services/deadLetterQueue.js';
 import { getCurrentCorrelationId, getOrGenerateCorrelationId } from './correlationLogger.js';
 import {
@@ -17,6 +16,23 @@ import {
 import { calculateDaysRemaining } from '../utils/formatters.js';
 
 const logger = createLogger('Tasks');
+
+// --- Helper Functions ---
+
+/**
+ * Wrap bot.sendMessage result with correlation metadata
+ * @param {object} result - Result from bot.sendMessage
+ * @param {string} correlationId - Correlation ID for tracking
+ * @returns {object} Wrapped result with metadata
+ */
+function wrapSendMessageResult(result, correlationId) {
+  return {
+    ...result,
+    correlationId,
+    attempts: 1,
+    retried: false
+  };
+}
 
 // --- Markdown Escaping Utility ---
 
@@ -185,29 +201,15 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
     ]
   };
 
-  // P1: Enviar com retry automático
-  const result = await sendWithRetry(
-    async () => {
-      return await bot.sendMessage(chatId, message, {
-        parse_mode: 'MarkdownV2',
-        reply_markup: keyboard
-      });
-    },
-    {
-      correlationId,
-      userId: p.user_id,
-      protocolId: p.id,
-      notificationType: 'dose_reminder',
-      chatId
-    },
-    {
-      maxRetries: 3,
-      baseDelay: 1000,
-      maxDelay: 30000
-    }
+  // Direct send - bot adapter already handles errors and returns result object
+  // Wrap result with correlation metadata
+  return wrapSendMessageResult(
+    await bot.sendMessage(chatId, message, {
+      parse_mode: 'MarkdownV2',
+      reply_markup: keyboard
+    }),
+    correlationId
   );
-  
-  return result;
 }
 
 /**
@@ -445,44 +447,33 @@ async function checkUserReminders(bot, userId, chatId) {
           const message = formatSoftReminderMessage(p);
           const correlationId = getOrGenerateCorrelationId();
           
-          const result = await sendWithRetry(
-            async () => {
-              return await bot.sendMessage(chatId, message, {
-                parse_mode: 'MarkdownV2',
-                reply_markup: {
-                  inline_keyboard: [[
-                    { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-                    { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
-                    { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
-                  ]]
-                }
-              });
-            },
-            {
-              correlationId,
-              userId,
-              protocolId: p.id,
-              notificationType: 'soft_reminder',
-              chatId
-            },
-            {
-              maxRetries: 3,
-              baseDelay: 1000,
-              maxDelay: 30000
-            }
+          // Direct send - bot adapter already handles errors and returns result object
+          // Wrap result with correlation metadata
+          const notificationResult = wrapSendMessageResult(
+            await bot.sendMessage(chatId, message, {
+              parse_mode: 'MarkdownV2',
+              reply_markup: {
+                inline_keyboard: [[
+                  { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+                  { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+                  { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
+                ]]
+              }
+            }),
+            correlationId
           );
           
-          if (!result.success) {
+          if (!notificationResult.success) {
             logger.error(`Falha ao enviar soft reminder`, {
               userId,
               medicine: p.medicine?.name,
               protocolId: p.id,
               chatId,
-              error: result.error,
-              attempts: result.attempts
+              error: notificationResult.error,
+              attempts: notificationResult.attempts
             });
             
-            // P1: Enviar para DLQ
+            // Enviar para DLQ
             await enqueue(
               {
                 userId,
@@ -491,14 +482,14 @@ async function checkUserReminders(bot, userId, chatId) {
                 chatId,
                 payload: { medicineName: p.medicine?.name }
               },
-              result.error,
-              result.attempts,
+              notificationResult.error,
+              notificationResult.attempts,
               correlationId
             );
             continue;
           }
           
-          const messageId = result.result?.messageId;
+          const messageId = notificationResult.result?.messageId;
           
           logger.info(`Soft reminder enviado com sucesso`, {
             userId,
@@ -506,8 +497,8 @@ async function checkUserReminders(bot, userId, chatId) {
             protocolId: p.id,
             chatId,
             messageId,
-            attempts: result.attempts,
-            retried: result.retried
+            attempts: notificationResult.attempts,
+            retried: notificationResult.retried
           });
 
           const logged = await logSuccessfulNotification(userId, p.id, 'soft_reminder', {
