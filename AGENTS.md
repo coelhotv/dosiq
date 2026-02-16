@@ -202,7 +202,7 @@ export PATH="$HOME/.local/bin:$PATH"
 which gh
 ```
 
-**Para persistir:** Carregue de `~/.zshrc`.
+**Para persistir:** Adicione as linhas de `export` ao final do seu arquivo de configuração de shell (ex: `~/.zshrc` para Zsh ou `~/.bash_profile` para Bash).
 
 ### CLI Tools Disponíveis
 
