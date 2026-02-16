@@ -1,7 +1,5 @@
 name: PR Auto-Trigger Gemini Review
 
-# Automatically triggers Gemini Code Review on new PRs
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -19,131 +17,80 @@ env:
   WAIT_MINUTES: 5
 
 jobs:
-  # ==========================================
-  # JOB 1: Postar comentário inicial
-  # ==========================================
   post-initial-comment:
     name: Post Initial Comment
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.type != 'Bot'
-    
-    outputs:
-      pr_number: ${{ steps.extract-pr.outputs.pr_number }}
-      
+    if: ${{ github.event.pull_request.user.type != 'Bot' }}
     steps:
-      - name: Extract PR Info
-        id: extract-pr
-        run: |
-          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-      
-      - name: Post Gemini Review Command
+      - name: Post Command
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const prNumber = context.payload.pull_request.number;
             const prAuthor = context.payload.pull_request.user.login;
-            const eventType = context.eventName;
             const action = context.payload.action;
+            const body = (action === 'opened' || action === 'reopened')
+              ? `## 🤖 Gemini Code Review\n\nOlá @${prAuthor}! Vou iniciar a revisão do seu PR.\n\n🔍 **Comando enviado:** \`/gemini review\`\n\n⏳ Aguarde **5 minutos** para o processamento.`
+              : `## 🔄 Atualização detectada\n\n@${prAuthor}, novos commits enviados. Reiniciando revisão automática...\n\n🔍 **Comando enviado:** \`/gemini review\``;
             
-            let message = '';
-            if (action === 'opened' || action === 'reopened') {
-              message = `## 🤖 Gemini Code Review\n\nOlá @${prAuthor}! Vou iniciar a revisão do seu PR.\n\n🔍 **Comando enviado:** \`/gemini review\`\n\n⏳ Aguarde **5 minutos** para o processamento e aplicação de auto-fixes.`;
-            } else {
-              message = `## 🔄 Nova atualização detectada\n\n@${prAuthor}, novos commits foram enviados. Reiniciando revisão automática...\n\n🔍 **Comando enviado:** \`/gemini review\``;
-            }
-            
-            // Post command comment
             await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: prNumber,
-              body: message
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
             });
-            
-            console.log(`Gemini review triggered for PR #${prNumber} due to ${action}`);
 
-  # ==========================================
-  # JOB 2: Aguardar análise do Gemini
-  # ==========================================
   wait-analysis:
-    name: Wait for Gemini Analysis
+    name: Wait for Analysis
     runs-on: ubuntu-latest
     needs: post-initial-comment
-    
     steps:
-      - name: Wait for Gemini Analysis
-        run: |
-          echo "⏳ Waiting ${{ env.WAIT_MINUTES }} minutes for Gemini analysis..."
-          sleep $(( ${{ env.WAIT_MINUTES }} * 60 ))
-          echo "✅ Wait complete."
+      - name: Wait
+        run: sleep $(( ${{ env.WAIT_MINUTES }} * 60 ))
 
-  # ==========================================
-  # JOB 3: Validar PR (Lint + Tests)
-  # ==========================================
   validate-pr:
     name: Validate PR
     runs-on: ubuntu-latest
     needs: wait-analysis
-    
+    outputs:
+      status: ${{ steps.lint-result.outputs.status }}
+      smoke_status: ${{ steps.smoke-result.outputs.smoke_status }}
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
-      - name: Install Dependencies
+      - name: Install
         run: npm ci
-      
       - name: Run Lint
         id: lint-result
         run: |
-          echo "🔍 Running lint..."
-          if npm run lint; then
-            echo "status=passed" >> $GITHUB_OUTPUT
-            echo "✅ Lint passed"
-          else
-            echo "status=failed" >> $GITHUB_OUTPUT
-            echo "❌ Lint failed"
-          fi
-      
-      - name: Run Smoke Tests
+          if npm run lint; then echo "status=passed" >> $GITHUB_OUTPUT; else echo "status=failed" >> $GITHUB_OUTPUT; fi
+      - name: Run Smoke
         id: smoke-result
         run: |
-          echo "🧪 Running smoke tests..."
-          if npm run test:smoke; then
-            echo "smoke_status=passed" >> $GITHUB_OUTPUT
-            echo "✅ Smoke tests passed"
-          else
-            echo "smoke_status=failed" >> $GITHUB_OUTPUT
-            echo "⚠️ Smoke tests had failures"
-          fi
+          if npm run test:smoke; then echo "smoke_status=passed" >> $GITHUB_OUTPUT; else echo "smoke_status=failed" >> $GITHUB_OUTPUT; fi
 
-  # ==========================================
-  # JOB 4: Postar resumo no PR
-  # ==========================================
   post-summary:
     name: Post Summary
     runs-on: ubuntu-latest
     needs: validate-pr
-    
+    if: ${{ always() }}
     steps:
       - name: Post Summary Comment
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const prNumber = context.payload.pull_request.number;
+            const lintStatus = "${{ needs.validate-pr.outputs.status }}" || "unknown";
+            const smokeStatus = "${{ needs.validate-pr.outputs.smoke_status }}" || "unknown";
             
             await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: prNumber,
-              body: `## 🤖 Gemini Code Review - Concluído\n\n### ✅ Validação\n\n- **Lint:** ✅ Passou\n- **Smoke Tests:** ✅ Concluído\n\n### 📋 Próximos Passos\n\n1. ✅ Se todos os checks passaram, o PR está pronto para merge\n2. ⚠️ Se há issues, resolva-os antes de mergear\n3. 💬 Use \`/gemini review\` para re-rodar a análise\n\n---\n*Revisão automática executada em ${{ env.WAIT_MINUTES }} minutos.*`
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## 🤖 Gemini Code Review - Concluído\n\n### ✅ Validação\n\n- **Lint:** ${lintStatus === 'passed' ? '✅ Passou' : '❌ Falhou'}\n- **Smoke Tests:** ${smokeStatus === 'passed' ? '✅ Passou' : '⚠️ Falhou'}\n\n### 📋 Próximos Passos\n\n1. ✅ Se todos passaram, o PR está pronto para merge\n2. ⚠️ Se há falhas, resolva-as antes de prosseguir\n3. 💬 Use \`/gemini review\` para re-rodar`
             });

@@ -1,9 +1,5 @@
 name: Gemini Code Reviewer
 
-# Triggers:
-# 1. On PR comment with /gemini review command
-# 2. Manually via workflow_dispatch
-
 on:
   issue_comment:
     types: [created]
@@ -11,10 +7,10 @@ on:
     inputs:
       pr_number:
         description: 'PR Number to review'
-        required: false
+        required: true
         type: string
       skip_wait:
-        description: 'Skip 5-minute wait (for testing)'
+        description: 'Skip 5-minute wait'
         required: false
         type: boolean
         default: false
@@ -31,416 +27,181 @@ env:
 
 jobs:
   # ==========================================
-  # JOB 1: Detectar comando /gemini review ou menção
+  # JOB 1: Preparar Contexto
   # ==========================================
-  detect-gemini-command:
-    name: Detect Gemini Command
+  prepare:
+    name: Prepare Context
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'issue_comment' && 
-      (startsWith(github.event.comment.body, '/gemini review') || 
-       contains(github.event.comment.body, '@gemini-code-assist'))
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'issue_comment' && (startsWith(github.event.comment.body, '/gemini review') || contains(github.event.comment.body, '@gemini-code-assist'))) }}
     
     outputs:
-      pr_number: ${{ steps.extract-pr.outputs.pr_number }}
-      pr_owner: ${{ steps.extract-pr.outputs.pr_owner }}
-      pr_repo: ${{ steps.extract-pr.outputs.pr_repo }}
+      pr_number: ${{ steps.context.outputs.pr_number }}
+      branch: ${{ steps.context.outputs.branch }}
+      skip_wait: ${{ steps.context.outputs.skip_wait }}
     
     steps:
-      - name: Extract PR Info
-        id: extract-pr
-        run: |
-          # Parse PR info from issue comment
-          PR_NUMBER=$(echo "${{ github.event.issue.number }}")
-          PR_OWNER="${{ github.event.repository.owner.login }}"
-          PR_REPO="${{ github.event.repository.name }}"
-          
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "pr_owner=$PR_OWNER" >> $GITHUB_OUTPUT
-          echo "pr_repo=$PR_REPO" >> $GITHUB_OUTPUT
-          
-          echo "Detected /gemini review command on PR #$PR_NUMBER"
-      
-      - name: Acknowledge Review Request
+      - name: Fetch PR Data
+        id: context
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const prNumber = ${{ github.event.issue.number }};
+            const prNumber = context.eventName === 'workflow_dispatch' 
+              ? context.payload.inputs.pr_number 
+              : context.payload.issue.number.toString();
             
+            const skipWait = context.eventName === 'workflow_dispatch'
+              ? context.payload.inputs.skip_wait.toString()
+              : 'false';
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(prNumber)
+            });
+
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('branch', pr.head.ref);
+            core.setOutput('skip_wait', skipWait);
+
+      - name: Acknowledge
+        if: ${{ github.event_name == 'issue_comment' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
             await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt("${{ steps.context.outputs.pr_number }}"),
               body: `## 🤖 Gemini Code Review Iniciado\n\n⏳ **Aguarde ${{ env.WAIT_MINUTES }} minutos** para análise completa...\n\n📋 **O que será feito:**\n1. Gemini analisará seu código\n2. Identificarei issues de lint, formatting, lógica e arquitetura\n3. Aplicarei fixes automáticos quando possível\n4. Validarei com lint + testes\n5. Reportarei resumo no PR`
             });
 
   # ==========================================
-  # JOB 2: Aguardar análise do Gemini
+  # JOB 2: Aguardar e Coletar Comentários
   # ==========================================
-  wait-gemini-analysis:
-    name: Wait for Gemini Analysis
+  fetch-comments:
+    name: Fetch Gemini Comments
     runs-on: ubuntu-latest
-    needs: detect-gemini-command
-    
-    if: github.event_name != 'workflow_dispatch' || 
-        !contains(github.event.inputs.skip_wait, true)
-    
+    needs: prepare
     steps:
-      - name: Wait for Gemini Analysis
-        id: wait
-        run: |
-          WAIT_MINUTES=${{ env.WAIT_MINUTES }}
-          echo "⏳ Waiting ${WAIT_MINUTES} minutes for Gemini analysis..."
-          
-          # Convert minutes to seconds
-          SECONDS=$((WAIT_MINUTES * 60))
-          sleep $SECONDS
-          
-          echo "✅ Wait complete. Fetching Gemini review comments..."
+      - name: Wait
+        if: ${{ needs.prepare.outputs.skip_wait != 'true' }}
+        run: sleep $(( ${{ env.WAIT_MINUTES }} * 60 ))
       
-      - name: Fetch Gemini Review Comments
-        id: fetch-comments
+      - name: Fetch
         uses: actions/github-script@v7
         with:
-          result-encoding: string
           script: |
-            const { owner, repo } = context.repo;
-            const prNumber = ${{ needs.detect-gemini-command.outputs.pr_number }};
-            
             const { data: comments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt("${{ needs.prepare.outputs.pr_number }}"),
               per_page: 100
             });
             
-            // Filter for Gemini bot comments
             const geminiComments = comments.filter(c => 
               c.user.type === 'Bot' && 
-              (c.user.login.includes('gemini') || 
-               c.user.login.includes('google'))
+              (c.user.login.includes('gemini') || c.user.login.includes('google'))
             );
             
-            console.log(`Found ${geminiComments.length} Gemini review comments`);
-            
-            // Save comments to file for parsing
-            const fs = require('fs');
-            fs.writeFileSync(
-              'gemini-comments.json', 
-              JSON.stringify(geminiComments, null, 2)
-            );
+            require('fs').writeFileSync('gemini-comments.json', JSON.stringify(geminiComments, null, 2));
 
-      - name: Upload Gemini Comments
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: gemini-comments
-          path: gem
+          path: gemini-comments.json
           retention-days: 1
 
   # ==========================================
-  # JOB 3: Parseini-comments.jsonar e Auto-Fixar Issues
+  # JOB 3: Auto-Fix
   # ==========================================
-  parse-and-fix:
-    name: Parse and Auto-Fix Issues
+  fix:
+    name: Apply Auto-Fixes
     runs-on: ubuntu-latest
-    needs: wait-gemini-analysis
-    # Allow manual trigger without wait
-    if: github.event_name != 'workflow_dispatch' || 
-        contains(github.event.inputs.skip_wait, false)
-    
+    needs: [prepare, fetch-comments]
     outputs:
-      backup_commit: ${{ steps.backup.outputs.commit }}
-      lint_count: ${{ steps.apply-fixes.outputs.lint_count }}
-      formatting_count: ${{ steps.apply-fixes.outputs.formatting_count }}
-      logic_count: ${{ steps.apply-fixes.outputs.logic_count }}
-      arch_count: ${{ steps.apply-fixes.outputs.arch_count }}
-      conflict_count: ${{ steps.apply-fixes.outputs.conflict_count }}
-      manual_issues: ${{ steps.identify-manual.outputs.issues }}
-    
+      changes: ${{ steps.check.outputs.count }}
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
+          ref: ${{ needs.prepare.outputs.branch }}
           fetch-depth: 0
       
-      - name: Download Gemini Comments
-        uses: actions/download-artifact@v4
-        with:
-          name: gemini-comments
-          path: .
-      
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       
-      - name: Install Dependencies
+      - name: Install
         run: npm ci
       
-      # ==========================================
-      # Step 3a: Backup Current State
-      # ==========================================
-      - name: Create Backup Commit
-        id: backup
+      - name: Fix
         run: |
-          BACKUP_COMMIT=$(git rev-parse HEAD)
-          echo "commit=$BACKUP_COMMIT" >> $GITHUB_OUTPUT
-          echo "📦 Backup created: $BACKUP_COMMIT"
+          npm run lint -- --fix || true
+          npx prettier --write "src/**/*.{js,jsx,css,md}" || true
       
-      # ==========================================
-      # Step 3b: Parse Gemini Comments
-      # ==========================================
-      - name: Parse Gemini Review Comments
-        id: parse-comments
-        uses: actions/github-script@v7
-        with:
-          result-encoding: string
-          script: |
-            const fs = require('fs');
-            
-            // Read Gemini comments
-            const comments = JSON.parse(fs.readFileSync('gemini-comments.json', 'utf8'));
-            
-            // Parse issues from comments
-            const issues = [];
-            
-            for (const comment of comments) {
-              const body = comment.body;
-              
-              // Parse different types of issues based on Gemini's output format
-              // This is a simplified parser - adjust based on actual Gemini output
-              
-              // Lint issues
-              const lintRegex = /lint[:\s]+(\w+)[:\s]+(.+?)(?:\n|$)/gi;
-              let match;
-              while ((match = lintRegex.exec(body)) !== null) {
-                issues.push({
-                  type: 'lint',
-                  file: match[1],
-                  description: match[2],
-                  line: null
-                });
-              }
-              
-              // Formatting issues
-              const formatRegex = /format[:\s]+(\w+\.\w+)[:\s]+(.+?)(?:\n|$)/gi;
-              while ((match = formatRegex.exec(body)) !== null) {
-                issues.push({
-                  type: 'formatting',
-                  file: match[1],
-                  description: match[2],
-                  line: null
-                });
-              }
-              
-              // Logic issues
-              const logicRegex = /logic[:\s]+(\w+\.\w+)[:\s]+line\s+(\d+)[:\s]+(.+?)(?:\n|$)/gi;
-              while ((match = logicRegex.exec(body)) !== null) {
-                issues.push({
-                  type: 'logic',
-                  file: match[1],
-                  line: parseInt(match[2]),
-                  description: match[3]
-                });
-              }
-              
-              // Architecture issues
-              const archRegex = /architecture[:\s]+(.+?)(?:\n|$)/gi;
-              while ((match = archRegex.exec(body)) !== null) {
-                issues.push({
-                  type: 'architecture',
-                  description: match[1]
-                });
-              }
-            }
-            
-            // Save parsed issues
-            fs.writeFileSync('parsed-issues.json', JSON.stringify(issues, null, 2));
-            console.log(`Parsed ${issues.length} issues from Gemini comments`);
+      - name: Check Changes
+        id: check
+        run: echo "count=$(git diff --name-only | wc -l)" >> $GITHUB_OUTPUT
       
-      # ==========================================
-      # Step 3c: Apply Lint/Formatting Fixes
-      # ==========================================
-      - name: Apply Lint/Formatting Fixes
-        id: apply-fixes
-        run: |
-          LINT_COUNT=0
-          FORMAT_COUNT=0
-          LOGIC_COUNT=0
-          ARCH_COUNT=0
-          CONFLICT_COUNT=0
-          
-          # Run lint with auto-fix
-          echo "🔧 Applying lint fixes..."
-          npm run lint -- --fix 2>&1 || true
-          LINT_CHANGED=$(git diff --name-only | wc -l)
-          LINT_COUNT=$LINT_CHANGED
-          
-          # Run prettier
-          echo "🎨 Applying formatting fixes..."
-          npx prettier --write "src/**/*.{js,jsx,css,md}" 2>&1 || true
-          FORMAT_CHANGED=$(git diff --name-only | wc -l)
-          FORMAT_COUNT=$FORMAT_CHANGED
-          
-          # Output counts
-          echo "lint_count=$LINT_COUNT" >> $GITHUB_OUTPUT
-          echo "formatting_count=$FORMAT_COUNT" >> $GITHUB_OUTPUT
-          echo "logic_count=$LOGIC_COUNT" >> $GITHUB_OUTPUT
-          echo "arch_count=$ARCH_COUNT" >> $GITHUB_OUTPUT
-          echo "conflict_count=$CONFLICT_COUNT" >> $GITHUB_OUTPUT
-      
-      # ==========================================
-      # Step 3d: Identify Issues Requiring Manual Review
-      # ==========================================
-      - name: Identify Manual Review Issues
-        id: identify-manual
-        uses: actions/github-script@v7
-        with:
-          result-encoding: string
-          script: |
-            const fs = require('fs');
-            
-            // Issues that require manual review
-            const manualIssues = [
-              {
-                type: 'security',
-                description: 'Security vulnerability detected - manual review required'
-              },
-              {
-                type: 'business_logic',
-                description: 'Business logic changes require human review'
-              },
-              {
-                type: 'database',
-                description: 'Database query modifications need review'
-              },
-              {
-                type: 'breaking',
-                description: 'Breaking change detected - requires team approval'
-              }
-            ];
-            
-            fs.writeFileSync(
-              'manual-issues.json', 
-              JSON.stringify(manualIssues, null, 2)
-            );
-            
-            console.log(`Identified ${manualIssues.length} issues requiring manual review`);
-      
-      # ==========================================
-      # Step 3e: Commit All Auto-Fixes
-      # ==========================================
-      - name: Check for Changes
-        id: check-changes
-        run: |
-          CHANGED=$(git diff --name-only | wc -l)
-          if [ "$CHANGED" -gt 0 ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "📝 Found $CHANGED files to commit"
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "✅ No changes to commit"
-          fi
-      
-      - name: Create Auto-Fix Commit
-        if: steps.check-changes.outputs.has_changes == 'true'
+      - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: |
-            fix: auto-fix issues from Gemini Code Reviewer
-            
-            - Lint fixes applied
-            - Formatting fixes applied
-            - Validated with npm run lint
-          branch: ${{ github.event.pull_request.head.ref }}
-          file_pattern: |
-            src/**/*.{js,jsx}
-            src/**/*.css
-            src/**/*.md
-      
-      - name: Push Changes
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: |
-          echo "🔄 Pushing changes to branch..."
-          git push origin ${{ github.event.pull_request.head.ref }} || true
+          commit_message: "fix: auto-fix issues from Gemini Code Reviewer [skip ci]"
+          branch: ${{ needs.prepare.outputs.branch }}
 
   # ==========================================
-  # JOB 4: Validar após Auto-Fixes
+  # JOB 4: Validar
   # ==========================================
-  validate-after-fix:
-    name: Validate After Fix
+  validate:
+    name: Validate Build
     runs-on: ubuntu-latest
-    needs: parse-and-fix
-    
+    needs: [prepare, fix]
+    outputs:
+      lint: ${{ steps.check.outputs.lint }}
+      smoke: ${{ steps.check.outputs.smoke }}
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0
-      
-      - name: Setup Node.js
+          ref: ${{ needs.prepare.outputs.branch }}
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
-      - name: Install Dependencies
+      - name: Install
         run: npm ci
-      
-      - name: Run Lint Validation
-        id: lint-validation
+      - name: Run Checks
+        id: check
         run: |
-          echo "🔍 Running lint validation..."
-          if npm run lint; then
-            echo "status=passed" >> $GITHUB_OUTPUT
-            echo "✅ Lint passed"
-          else
-            echo "status=failed" >> $GITHUB_OUTPUT
-            echo "❌ Lint failed"
-          fi
-      
-      - name: Run Smoke Tests
-        id: smoke-validation
-        run: |
-          echo "🧪 Running smoke tests..."
-          if npm run test:smoke; then
-            echo "smoke_status=passed" >> $GITHUB_OUTPUT
-            echo "✅ Smoke tests passed"
-          else
-            echo "smoke_status=failed" >> $GITHUB_OUTPUT
-            echo "⚠️ Smoke tests had failures"
-          fi
+          if npm run lint; then echo "lint=passed" >> $GITHUB_OUTPUT; else echo "lint=failed" >> $GITHUB_OUTPUT; fi
+          if npm run test:smoke; then echo "smoke=passed" >> $GITHUB_OUTPUT; else echo "smoke=failed" >> $GITHUB_OUTPUT; fi
 
   # ==========================================
-  # JOB 5: Postar Resumo no PR
+  # JOB 5: Resumo
   # ==========================================
-  post-summary:
-    name: Post Review Summary
+  summary:
+    name: Post Summary
     runs-on: ubuntu-latest
-    needs: [parse-and-fix, validate-after-fix]
-    
+    needs: [prepare, fix, validate]
+    if: ${{ always() }}
     steps:
-      - name: Post Summary Comment
+      - name: Post
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const prNumber = ${{ github.event.issue.number }};
-            
-            // Get counts from previous jobs
-            const lintCount = '${{ needs.parse-and-fix.outputs.lint_count }}' || '0';
-            const formatCount = '${{ needs.parse-and-fix.outputs.formatting_count }}' || '0';
-            const logicCount = '${{ needs.parse-and-fix.outputs.logic_count }}' || '0';
-            const archCount = '${{ needs.parse-and-fix.outputs.arch_count }}' || '0';
-            const validationStatus = '${{ needs.validate-after-fix.outputs.lint-validation.status }}' || 'unknown';
+            const changes = "${{ needs.fix.outputs.changes }}" || "0";
+            const lint = "${{ needs.validate.outputs.lint }}" || "unknown";
+            const smoke = "${{ needs.validate.outputs.smoke }}" || "unknown";
+            const prNumber = parseInt("${{ needs.prepare.outputs.pr_number }}");
             
             await github.rest.issues.createComment({
-              owner,
-              repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               issue_number: prNumber,
-              body: `## 🤖 Gemini Code Review - Resumo\n\n### ✅ Auto-Fixes Aplicados\n\n| Tipo | Qtd | Status |\n|------|-----|--------|\n| Lint | ${lintCount} | ✅ |\n| Formatting | ${formatCount} | ✅ |\n| Logic | ${logicCount} | ✅ |\n| Architecture | ${archCount} | ✅ |\n\n### 📊 Validação\n\n- **Lint:** ${validationStatus === 'passed' ? '✅ Passou' : '❌ Falhou'}\n- **Smoke Tests:** ✅ Concluído\n\n### ⚠️ Requer Revisão Manual\n\nPor favor, revise os seguintes itens manualmente:\n\n1. **Security Issues** - Vulnerabilidades de segurança\n2. **Business Logic** - Mudanças em lógica de negócio\n3. **Breaking Changes** - Alterações que quebram compatibilidade\n\n### 📝 Próximos Passos\n\n1. ✅ Se todos os checks passaram, o PR está pronto para merge\n2. ⚠️ Se há items acima, resolva-os antes de mergear\n3. 💬 Use \\`/gemini review\\` para re-rodar a análise`
+              body: `## 🤖 Gemini Code Review - Resumo\n\n### ✅ Auto-Fixes Aplicados\n- Arquivos modificados: ${changes}\n\n### 📊 Validação Pós-Fix\n- **Lint:** ${lint === 'passed' ? '✅ Passou' : '❌ Falhou'}\n- **Smoke Tests:** ${smoke === 'passed' ? '✅ Passou' : '❌ Falhou'}\n\n💬 Novos commits ou a menção \`@gemini-code-assist\` reiniciarão esta análise.`
             });
