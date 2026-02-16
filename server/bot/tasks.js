@@ -17,6 +17,23 @@ import { calculateDaysRemaining } from '../utils/formatters.js';
 
 const logger = createLogger('Tasks');
 
+// --- Helper Functions ---
+
+/**
+ * Wrap bot.sendMessage result with correlation metadata
+ * @param {object} result - Result from bot.sendMessage
+ * @param {string} correlationId - Correlation ID for tracking
+ * @returns {object} Wrapped result with metadata
+ */
+function wrapSendMessageResult(result, correlationId) {
+  return {
+    ...result,
+    correlationId,
+    attempts: 1,
+    retried: false
+  };
+}
+
 // --- Markdown Escaping Utility ---
 
 /**
@@ -190,13 +207,8 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
     reply_markup: keyboard
   });
 
-  // Add correlationId to result for logging
-  return {
-    ...result,
-    correlationId,
-    attempts: 1,
-    retried: false
-  };
+  // Wrap result with correlation metadata
+  return wrapSendMessageResult(result, correlationId);
 }
 
 /**
@@ -446,13 +458,8 @@ async function checkUserReminders(bot, userId, chatId) {
             }
           });
 
-          // Add correlationId to result
-          const notificationResult = {
-            ...result,
-            correlationId,
-            attempts: 1,
-            retried: false
-          };
+          // Wrap result with correlation metadata
+          const notificationResult = wrapSendMessageResult(result, correlationId);
           
           if (!notificationResult.success) {
             logger.error(`Falha ao enviar soft reminder`, {
