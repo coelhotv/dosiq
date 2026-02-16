@@ -108,7 +108,7 @@ export async function enqueue(notificationData, error, retryCount, correlationId
         correlation_id: correlationId,
         status: DLQStatus.PENDING
       }, {
-        onConflict: 'user_id,protocol_id,notification_type',
+        onConflict: 'correlation_id',
         ignoreDuplicates: false
       })
       .select('id')
