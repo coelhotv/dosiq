@@ -1057,6 +1057,9 @@ async function runUserMonthlyReport(bot, userId, chatId) {
 
 // --- DLQ Digest ---
 
+const DLQ_DIGEST_LIMIT = 10;
+const ERROR_MESSAGE_TRUNCATE_LENGTH = 50;
+
 /**
  * Envia digest diário de notificações falhadas para o admin
  * @param {object} bot - Bot adapter
@@ -1067,13 +1070,13 @@ export async function sendDLQDigest(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   
   try {
-    // Buscar notificações falhadas pendentes
+    // Buscar notificações falhadas pendentes (inclui retrying)
     const { data: failedNotifications, error } = await supabase
       .from('failed_notification_queue')
       .select('*')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'retrying'])
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(DLQ_DIGEST_LIMIT);
     
     if (error) {
       logger.error('Erro ao buscar notificações falhadas', { correlationId, error });
@@ -1136,7 +1139,7 @@ function formatDLQDigestMessage(notifications) {
       dateStyle: 'short',
       timeStyle: 'short'
     });
-    const error = n.error_message?.substring(0, 50) || 'Unknown error';
+    const error = n.error_message?.substring(0, ERROR_MESSAGE_TRUNCATE_LENGTH) || 'Unknown error';
     const escapedError = escapeMarkdown(error);
     const escapedType = escapeMarkdown(n.notification_type || 'unknown');
     const escapedTime = escapeMarkdown(time);
