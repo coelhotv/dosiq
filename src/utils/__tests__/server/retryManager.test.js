@@ -124,9 +124,13 @@ describe('RetryManager', () => {
         .mockRejectedValueOnce(networkError)
         .mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, { ...DEFAULT_RETRY_CONFIG, jitter: false }, {
-        operation: 'test',
-      })
+      const result = await sendWithRetry(
+        mockOperation,
+        { ...DEFAULT_RETRY_CONFIG, jitter: false },
+        {
+          operation: 'test',
+        }
+      )
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(2)
@@ -136,9 +140,13 @@ describe('RetryManager', () => {
       const networkError = new Error('ETIMEDOUT')
       const mockOperation = vi.fn().mockRejectedValue(networkError)
 
-      const result = await sendWithRetry(mockOperation, { ...DEFAULT_RETRY_CONFIG, jitter: false }, {
-        operation: 'test',
-      })
+      const result = await sendWithRetry(
+        mockOperation,
+        { ...DEFAULT_RETRY_CONFIG, jitter: false },
+        {
+          operation: 'test',
+        }
+      )
 
       expect(result.success).toBe(false)
       expect(result.attempts).toBe(3)
