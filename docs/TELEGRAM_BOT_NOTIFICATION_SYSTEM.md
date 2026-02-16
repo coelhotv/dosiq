@@ -637,5 +637,45 @@ console.table({
 
 ---
 
+## 📎 Anexo: Incidente 2026-02-16 - Correção de Parsing Markdown
+
+### Resumo do Incidente
+Em 16/02/2026 às 20:30, notificações falharam com erro:
+```
+Bad Request: can't parse entities: Character '!' is reserved and must be escaped with the preceding '\\'
+```
+
+### Root Cause
+1. **Literais de template** continham `!` não escapados:
+   - `server/bot/tasks.js:66` - "Hora do seu remédio!"
+   - `server/bot/tasks.js:151` - "Parabéns! ... alvo!"
+   - 7 localizações ao total
+
+2. **DLQ schema** não tinha UNIQUE constraint para upsert
+
+### Correções Aplicadas
+```javascript
+// ANTES (com erro)
+let message = `💊 *Hora do seu remédio!*\n\n`;
+
+// DEPOIS (corrigido)
+let message = `💊 *Hora do seu remédio\!*\n\n`;
+```
+
+### Validação de Mensagens
+Para prevenir recorrência:
+```bash
+# Verificar caracteres não escapados
+grep -rn "![^}]" server/bot/*.js
+```
+
+### LIÇÕES APRENDIDAS
+1. TODAS as mensagens MarkdownV2 DEVEM escapar caracteres especiais
+2. Usar `escapeMarkdown()` ou criar `telegramFormatter` centralizado
+3. Migrations DEVEM ser idempotentes (IF NOT EXISTS)
+4. Verificar Vercel deployments após push
+
+---
+
 *Documentação mantida pela equipe de arquitetura.  
-Última atualização: 2026-02-15*
+Última atualização: 2026-02-16*

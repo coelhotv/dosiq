@@ -88,4 +88,55 @@
 
 ---
 
-*Última atualização: 2026-02-15 | Documentação do sistema de notificações v3.0.0*
+## Memory Entry — 2026-02-16 00:55
+**Contexto / Objetivo**
+- Corrigir falha de parsing Markdown no bot Telegram (20:30)
+- Identificar root cause e implementar fixes imediatos
+- Documentar arquitetura de melhorias futuras
+
+**O que foi feito (mudanças)**
+- Branch: Main (deploy direto para produção)
+- Arquivos alterados:
+  - `server/bot/tasks.js` — escapados 7 caracteres `!` em mensagens MarkdownV2
+  - `.migrations/add_dead_letter_queue.sql` — migration idempotente com IF NOT EXISTS
+  - `server/services/deadLetterQueue.js` — alterado onConflict para 'correlation_id'
+  - `scripts/validate-dlq-fix.sh` — criado script de validação
+- Arquivos criados:
+  - `plans/telegram-notification-fixes-plan.md` — plano de fixes imediato
+  - `plans/telegram-architecture-improvements.md` — arquitetura de melhorias futuras
+
+**Root Cause Identificado**
+1. Markdown escaping: Literais de template com `!` não escapados (ex: `Hora do seu remédio!`)
+2. DLQ schema: Falta UNIQUE constraint para upsert com onConflict
+
+**O que deu certo**
+- Vercel logs funcionando com VERCEL_TOKEN
+- Deploy automático funcionando (código já incluiu escapeMarkdown anterior)
+- Notificação 21:52 enviada com sucesso após fix
+- DLQ funcionando corretamente (notification enqueued to DLQ)
+
+**O que não deu certo / riscos**
+- Stale deployments: Vercel estava rodando código antigo sem o escape fix
+- Múltiplos `!` em mensagens não detectados inicialmente (precisou de 3 iterações)
+- Migration original sem idempotência falhou com "policy already exists"
+
+**Regras locais para o futuro (lições acionáveis)**
+- TODAS as mensagens MarkdownV2 DEVEM usar escapeMarkdown() ou telegramFormatter
+- Literal `!` em templates string é字符 especial em MarkdownV2 e DEVE ser escapado como `\!`
+- Migrations DEVEM usar IF NOT EXISTS para políticas RLS e constraints
+- Usar `grep -n "![^}]" server/bot/*.js` para encontrar caracteres não escapados
+- Commit inicial com escapeMarkdown existía mas código não foi redeployado
+
+**Documentação Atualizada**
+- `docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md` - Precisa de atualização com lessons learned
+- `server/BOT README.md` - Verificar seção de troubleshooting
+
+**Pendências / próximos passos**
+- Implementar Fase 1: Retry mechanism + telegramFormatter library
+- Implementar Fase 2: Alerting + métricas
+- Atualizar docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md com novos aprendizados
+- Adicionar testes unitários para formatação de mensagens
+
+---
+
+*Última atualização: 2026-02-16 | Correção de parsing Markdown e DLQ schema*
