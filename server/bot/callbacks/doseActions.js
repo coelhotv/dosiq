@@ -132,7 +132,7 @@ async function handleTakeDose(bot, callbackQuery) {
     const quickActions = {
       inline_keyboard: [
         [
-          { text: '📊 Ver Status', callback_data: 'quick_status' },
+          { text: '📊 Ver Hoje', callback_data: 'cmd:hoje' },
           { text: '📦 Ver Estoque', callback_data: 'quick_stock' }
         ],
         [{ text: '📝 Registrar Outra', callback_data: 'quick_register' }]

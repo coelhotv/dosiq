@@ -43,6 +43,8 @@ export async function handleConversationalCallbacks(bot) {
       await handleCancel(bot, callbackQuery);
     } else if (data === 'quick_status') {
       await handleQuickStatus(bot, callbackQuery);
+    } else if (data === 'cmd:hoje') {
+      await handleQuickHoje(bot, callbackQuery);
     } else if (data === 'quick_stock') {
       await handleQuickStock(bot, callbackQuery);
     } else if (data === 'quick_register') {
@@ -413,6 +415,17 @@ async function handleQuickStock(bot, callbackQuery) {
   // Import and call stock handler
   const { handleEstoque } = await import('../commands/estoque.js');
   await handleEstoque(bot, { chat: { id: chatId } });
+}
+
+async function handleQuickHoje(bot, callbackQuery) {
+  const { message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  
+  await bot.answerCallbackQuery(id);
+  
+  // Import and call hoje handler
+  const { handleHoje } = await import('../commands/hoje.js');
+  await handleHoje(bot, { chat: { id: chatId } });
 }
 
 async function handleQuickRegister(bot, callbackQuery) {
