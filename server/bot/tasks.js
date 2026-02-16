@@ -63,7 +63,7 @@ function formatDoseReminderMessage(protocol, scheduledTime) {
   const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
   const notes = protocol.notes ? escapeMarkdown(protocol.notes) : null;
 
-  let message = `💊 *Hora do seu remédio!*\n\n`;
+  let message = `💊 *Hora do seu remédio\\!*\n\n`;
   message += `🩹 **${name}**\n`;
   message += `📋 ${dosage} ${unit}\n`;
   message += `⏰ Horário: ${scheduledTime}\n`;
@@ -116,7 +116,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
     zeroStock.forEach(m => {
       message += `❌ **${escapeMarkdown(m.name)}**\n`;
     });
-    message += '\n⚠️ Reponha o estoque o quanto antes!\n\n';
+    message += '\n⚠️ Reponha o estoque o quanto antes\\!\n\n';
   }
 
   if (lowStock.length > 0) {
@@ -148,7 +148,7 @@ function formatTitrationAlertMessage(protocol) {
   message += `Etapa atual: ${currentStage + 1}/${totalStages}\n\n`;
 
   if (protocol.titration_status === 'alvo_atingido') {
-    message += `✅ *Parabéns!* Você atingiu a dose alvo!\n`;
+    message += `✅ *Parabéns\\!* Você atingiu a dose alvo\\!*\n`;
     message += `Continue com o acompanhamento médico.`;
   } else if (protocol.titration_status === 'titulando') {
     const nextStage = protocol.titration_schedule?.[currentStage + 1];
@@ -609,11 +609,11 @@ async function runUserDailyDigest(bot, userId, chatId) {
     message += `📈 Taxa de adesão: ${percentage}%\n\n`;
 
     if (percentage === 100) {
-      message += '🎉 *Parabéns! Você completou todas as doses hoje!*';
+      message += '🎉 *Parabéns\\! Você completou todas as doses hoje\\!*';
     } else if (percentage >= 80) {
-      message += '👍 *Bom trabalho! Continue assim!*';
+      message += '👍 *Bom trabalho\\! Continue assim\\!*';
     } else if (percentage >= 50) {
-      message += '⚠️ *Atenção! Tome as doses restantes.*';
+      message += '⚠️ *Atenção\\! Tome as doses restantes\\!*';
     } else {
       message += '🚨 *Cuidado! Você está atrasado nas doses.*';
     }
@@ -844,11 +844,11 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     message += `📋 Doses esperadas: ${expectedDoses}\n\n`;
 
     if (percentage >= 90) {
-      message += '🎉 *Excelente!* Você está muito bem com seu tratamento!';
+      message += '🎉 *Excelente\\! Você está muito bem com seu tratamento\\!*';
     } else if (percentage >= 70) {
-      message += '👍 *Bom trabalho!* Continue se esforçando para melhorar.';
+      message += '👍 *Bom trabalho\\!* Continue se esforçando para melhorar.';
     } else {
-      message += '⚠️ *Atenção!* Tente melhorar sua regularidade nas doses.';
+      message += '⚠️ *Atenção\\!* Tente melhorar sua regularidade nas doses.';
     }
 
     const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
