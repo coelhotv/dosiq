@@ -1054,3 +1054,100 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     logger.error(`Error sending monthly report`, err, { userId });
   }
 }
+
+// --- DLQ Digest ---
+
+const DLQ_DIGEST_LIMIT = 10;
+const ERROR_MESSAGE_TRUNCATE_LENGTH = 50;
+
+/**
+ * Envia digest diário de notificações falhadas para o admin
+ * @param {object} bot - Bot adapter
+ * @param {object} options - Options with correlationId
+ * @returns {Promise<object>} Resultado da operação
+ */
+export async function sendDLQDigest(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  try {
+    // Buscar notificações falhadas pendentes (inclui retrying)
+    const { data: failedNotifications, error } = await supabase
+      .from('failed_notification_queue')
+      .select('*')
+      .in('status', ['pending', 'retrying'])
+      .order('created_at', { ascending: false })
+      .limit(DLQ_DIGEST_LIMIT);
+    
+    if (error) {
+      logger.error('Erro ao buscar notificações falhadas', { correlationId, error });
+      return { sent: false, reason: 'query_failed', error: error.message };
+    }
+    
+    if (!failedNotifications || failedNotifications.length === 0) {
+      logger.debug('No failed notifications in DLQ', { correlationId });
+      return { sent: false, reason: 'no_failures' };
+    }
+    
+    // Verificar se ADMIN_CHAT_ID está configurado
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    if (!adminChatId) {
+      logger.warn('ADMIN_CHAT_ID not configured, skipping DLQ digest', { correlationId });
+      return { sent: false, reason: 'no_admin_chat_id' };
+    }
+    
+    // Formatar mensagem
+    const message = formatDLQDigestMessage(failedNotifications);
+    
+    // Enviar digest
+    const result = await bot.sendMessage(adminChatId, message, { parse_mode: 'MarkdownV2' });
+    
+    if (!result.success) {
+      logger.error('Failed to send DLQ digest', { 
+        correlationId, 
+        error: result.error,
+        count: failedNotifications.length 
+      });
+      return { sent: false, reason: 'send_failed', error: result.error };
+    }
+    
+    logger.info('DLQ digest sent', { 
+      correlationId, 
+      count: failedNotifications.length,
+      messageId: result.messageId 
+    });
+    
+    return { sent: true, count: failedNotifications.length, messageId: result.messageId };
+    
+  } catch (err) {
+    logger.error('Error in sendDLQDigest', err, { correlationId });
+    return { sent: false, reason: 'exception', error: err.message };
+  }
+}
+
+/**
+ * Formata mensagem de digest do DLQ
+ * @param {Array} notifications - Lista de notificações falhadas
+ * @returns {string} Mensagem formatada em MarkdownV2
+ */
+function formatDLQDigestMessage(notifications) {
+  const count = notifications.length;
+  const header = `⚠️ *DLQ Digest: ${count} notificações falhadas*\n\n`;
+  
+  const items = notifications.map((n, i) => {
+    const time = new Date(n.created_at).toLocaleString('pt-BR', { 
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short'
+    });
+    const error = n.error_message?.substring(0, ERROR_MESSAGE_TRUNCATE_LENGTH) || 'Unknown error';
+    const escapedError = escapeMarkdown(error);
+    const escapedType = escapeMarkdown(n.notification_type || 'unknown');
+    const escapedTime = escapeMarkdown(time);
+    
+    return `${i + 1}\\. \\[${escapedTime}\\]\n   Tipo: ${escapedType}\n   Erro: ${escapedError}`;
+  }).join('\n\n');
+  
+  const footer = `\n\n_Acesse /admin/dlq para gerenciar_`;
+  
+  return header + items + footer;
+}
