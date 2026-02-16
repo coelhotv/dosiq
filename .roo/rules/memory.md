@@ -917,5 +917,56 @@ export function StockAlertsWidget() {
 
 **Autor**: automated agent (orchestrator)
 
+---
+
+## Memory Entry — 2026-02-16 10:30
+**Contexto / Objetivo**
+- Analisar erro de produção no Telegram bot: `ERR_MODULE_NOT_FOUND: Cannot find module 'retryManager.js'`
+- Criar plano de correção para o coder agent
+- Revisar e simplificar o plano P1 original que causou falhas
+
+**O que foi feito (mudanças)**
+- Arquivos criados:
+  - `plans/TELEGRAM_BOT_FIX_PLAN.md` — Plano de correção P0 detalhado
+  - `plans/TELEGRAM_P1_SIMPLIFIED_PLAN.md` — Plano P1 simplificado baseado em lições aprendidas
+- Análise realizada:
+  - Identificado que `server/bot/tasks.js` importa `sendWithRetry` de `./retryManager.js` que não existe
+  - O P1 foi parcialmente implementado e depois revertido, mas o import ficou órfão
+  - O bot adapter em `api/notify.js` já retorna result objects com error handling adequado
+
+**O que deu certo**
+- Análise sistemática do erro identificou a causa raiz rapidamente
+- Revisão do plano P1 original revelou over-engineering
+- Solução simplificada proposta: remover dependência de retryManager e usar bot.sendMessage diretamente
+
+**O que não deu certo / riscos**
+- P1 original era muito complexo para as necessidades atuais
+- Rollback foi incompleto, deixando import órfão
+- Múltiplas falhas causaram perda de contexto do agent
+
+**Causa raiz (se foi debug)**
+- Sintoma: Vercel build falhando com ERR_MODULE_NOT_FOUND
+- Causa: `tasks.js` importa `sendWithRetry` de arquivo que não existe
+- Correção: Remover import e usar bot.sendMessage diretamente
+- Prevenção: Sempre validar que arquivos importados existem antes de commitar
+
+**Decisões & trade-offs**
+- Decisão: Simplificar arquitetura removendo retryManager
+- Alternativas consideradas: Criar retryManager.js conforme spec original
+- Por que: Over-engineering causou problemas; solução simples é mais robusta
+
+**Regras locais para o futuro (lições acionáveis)**
+- **NUNCA** importar arquivos que não existem
+- Sempre validar imports com `npm run build` antes de push
+- Começar com solução simples, adicionar complexidade apenas quando necessário
+- O bot adapter em `api/notify.js` já tem error handling adequado
+- DLQ, correlationLogger, notificationDeduplicator, protocolCache estão funcionando e devem ser mantidos
+- Retry mechanism pode ser adicionado depois se necessário, mas não é crítico
+
+**Pendências / próximos passos**
+- Implementar P0 fix: remover import de retryManager em tasks.js
+- Deploy para produção e verificar que notificações funcionam
+- Implementar P1 simplificado: DLQ admin interface, daily digest
+- Considerar retry simples (2 tentativas) no bot adapter se necessário
 
 *Última atualização: 2026-02-16 | Recuperação de memória -entries perdidas restauradas (Feb 9-13, 2026)*
