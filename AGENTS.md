@@ -187,6 +187,32 @@ meus-remedios/
 
 ---
 
+## 🔧 Environment Setup
+
+### CLI Tools PATH
+
+**IMPORTANTE:** Antes de executar comandos CLI (gh, vercel, etc.), configure o PATH:
+
+```bash
+# Adicionar ao PATH para a sessão atual
+export PATH="/usr/local/sbin:/usr/local/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Verificar se gh está disponível
+which gh
+```
+
+**Para persistir:** Adicione as linhas de `export` ao final do seu arquivo de configuração de shell (ex: `~/.zshrc` para Zsh ou `~/.bash_profile` para Bash).
+
+### CLI Tools Disponíveis
+
+| Tool | Instalação | Uso |
+|------|-----------|-----|
+| `gh` (GitHub CLI) | `brew install gh` | Criar PRs, issues, reviews |
+| `vercel` | `npm i -g vercel` | Deploy e logs de produção |
+
+---
+
 ## 🚀 Build and Development Commands
 
 ### Development
