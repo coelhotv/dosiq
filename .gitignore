@@ -11,7 +11,6 @@ node_modules/
 dist/
 dist-ssr
 *.local
-*-lock.json
 package-lock.json
 run/
 
