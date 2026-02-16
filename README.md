@@ -96,6 +96,15 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ### Gerenciamento de Tratamento
 - ✅ **Integração Telegram 2.0**: Vínculo seguro via token temporário e suporte multi-usuário no bot.
+
+### Bot Telegram - Confiabilidade (v2.8.1)
+- ✅ **DLQ Admin Interface**: Interface administrativa para gerenciar notificações falhadas em `/admin/dlq`.
+- ✅ **Daily DLQ Digest**: Digest diário enviado às 09:00 para o admin com notificações falhadas.
+- ✅ **Simple Retry**: Retry automático de 2 tentativas para erros transitórios (network, rate limit, HTTP 5xx).
+- ✅ **Correlation IDs**: Rastreamento end-to-end de notificações com UUIDs.
+- ✅ **Error Categorization**: Identificação automática de erros retryable vs non-retryable.
+
+### Gerenciamento de Tratamento (continuação)
 - ✅ **Calendário Interativo**: Visualização mensal de doses tomadas com navegação e seleção de data.
 - ✅ **Histórico Completo**: Visualização detalhada integrada ao calendário com suporte a edições rápidas.
 - ✅ **Edição e Exclusão**: Flexibilidade total para ajustar registros passados com restauração automática de estoque.
