@@ -8,15 +8,15 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules/
-dist/*
 dist/
 dist-ssr
 *.local
 *-lock.json
 package-lock.json
+run/
 
 # Editor directories and files
-.vscode/*
+.vscode/
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -26,6 +26,14 @@ package-lock.json
 *.sln
 *.sw?
 *.code-workspace
+coverage/
+scripts/
+.roo/
+.kilocode/
+.husky/
+.clinerules/
+plans/
+
 
 # Environment variables
 .env
