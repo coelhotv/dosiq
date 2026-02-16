@@ -117,7 +117,13 @@ export default async function handler(req, res) {
 
       if (updateError) {
         logger.error('Failed to update notification status', updateError, { id });
-        // Message was sent, so we still return success
+        // Message was sent, but status update failed - return warning
+        return res.status(200).json({
+          success: true,
+          message: 'Notification sent successfully, but status update failed',
+          messageId: telegramResult.messageId,
+          warning: 'A entrada permanece na DLQ e pode ser reenviada. Verifique manualmente.'
+        });
       }
 
       logger.info('Notification retry successful', { 

@@ -1,6 +1,7 @@
 // api/dlq.js
 // Dead Letter Queue Admin API - List failed notifications
 import { createClient } from '@supabase/supabase-js';
+import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
     const status = req.query.status || null;
 
     // Validate status if provided
-    const validStatuses = ['pending', 'retrying', 'resolved', 'discarded', 'failed'];
+    const validStatuses = Object.values(DLQStatus);
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({ 
         error: `Invalid status. Valid values: ${validStatuses.join(', ')}` 

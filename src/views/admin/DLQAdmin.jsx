@@ -7,6 +7,10 @@ import Loading from '../../components/ui/Loading';
 import Modal from '../../components/ui/Modal';
 import './DLQAdmin.css';
 
+// Constantes de formatação
+const USER_ID_TRUNCATE_LENGTH = 8;
+const ERROR_MESSAGE_TRUNCATE_LENGTH = 50;
+
 /**
  * DLQAdmin - Interface de administração da Dead Letter Queue
  * 
@@ -36,6 +40,10 @@ export default function DLQAdmin() {
   const [showDetails, setShowDetails] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
+  
+  // Estados de confirmação
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Carregar dados
   const loadEntries = useCallback(async () => {
@@ -65,39 +73,65 @@ export default function DLQAdmin() {
     loadEntries();
   }, [loadEntries]);
 
-  // Handlers de ação
+  // Handlers de ação com Modal de confirmação
   const handleRetry = async (id) => {
-    if (!window.confirm('Deseja retentar esta notificação?')) return;
-    
-    setActionLoading(id);
-    setActionMessage(null);
-    
-    try {
-      const result = await dlqService.retry(id);
-      setActionMessage({ type: 'success', text: result.message || 'Notificação reenviada com sucesso!' });
-      loadEntries(); // Recarregar lista
-    } catch (err) {
-      setActionMessage({ type: 'error', text: err.message });
-    } finally {
-      setActionLoading(null);
-    }
+    setConfirmAction({
+      type: 'retry',
+      id,
+      message: 'Deseja retentar esta notificação?',
+      onConfirm: async () => {
+        setActionLoading(id);
+        setActionMessage(null);
+        
+        try {
+          const result = await dlqService.retry(id);
+          setActionMessage({ type: 'success', text: result.message || 'Notificação reenviada com sucesso!' });
+          loadEntries(); // Recarregar lista
+        } catch (err) {
+          setActionMessage({ type: 'error', text: err.message });
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
   };
 
   const handleDiscard = async (id) => {
-    if (!window.confirm('Deseja descartar esta notificação? Esta ação não pode ser desfeita.')) return;
-    
-    setActionLoading(id);
-    setActionMessage(null);
-    
-    try {
-      const result = await dlqService.discard(id);
-      setActionMessage({ type: 'success', text: result.message || 'Notificação descartada.' });
-      loadEntries(); // Recarregar lista
-    } catch (err) {
-      setActionMessage({ type: 'error', text: err.message });
-    } finally {
-      setActionLoading(null);
+    setConfirmAction({
+      type: 'discard',
+      id,
+      message: 'Deseja descartar esta notificação? Esta ação não pode ser desfeita.',
+      onConfirm: async () => {
+        setActionLoading(id);
+        setActionMessage(null);
+        
+        try {
+          const result = await dlqService.discard(id);
+          setActionMessage({ type: 'success', text: result.message || 'Notificação descartada.' });
+          loadEntries(); // Recarregar lista
+        } catch (err) {
+          setActionMessage({ type: 'error', text: err.message });
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+  
+  // Handler de confirmação
+  const handleConfirmAction = async () => {
+    if (confirmAction?.onConfirm) {
+      await confirmAction.onConfirm();
     }
+    setShowConfirmModal(false);
+    setConfirmAction(null);
+  };
+  
+  const handleCancelConfirm = () => {
+    setShowConfirmModal(false);
+    setConfirmAction(null);
   };
 
   const handleViewDetails = (entry) => {
@@ -217,7 +251,7 @@ export default function DLQAdmin() {
                       </td>
                       <td className="dlq-admin__cell dlq-admin__cell--user">
                         <span className="dlq-admin__user-id">
-                          {entry.user_id ? entry.user_id.substring(0, 8) + '...' : '-'}
+                          {entry.user_id ? entry.user_id.substring(0, USER_ID_TRUNCATE_LENGTH) + '...' : '-'}
                         </span>
                       </td>
                       <td className="dlq-admin__cell">
@@ -234,8 +268,8 @@ export default function DLQAdmin() {
                       <td className="dlq-admin__cell dlq-admin__cell--error">
                         <span className="dlq-admin__error-text" title={entry.error_message}>
                           {entry.error_message ? 
-                            (entry.error_message.length > 50 
-                              ? entry.error_message.substring(0, 50) + '...' 
+                            (entry.error_message.length > ERROR_MESSAGE_TRUNCATE_LENGTH 
+                              ? entry.error_message.substring(0, ERROR_MESSAGE_TRUNCATE_LENGTH) + '...' 
                               : entry.error_message) 
                             : '-'}
                         </span>
@@ -454,6 +488,24 @@ export default function DLQAdmin() {
               )}
               <Button variant="ghost" onClick={() => setShowDetails(false)}>
                 Fechar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal de confirmação */}
+      {showConfirmModal && confirmAction && (
+        <Modal isOpen={showConfirmModal} onClose={handleCancelConfirm}>
+          <div className="dlq-admin__confirm">
+            <h2>Confirmar Ação</h2>
+            <p>{confirmAction.message}</p>
+            <div className="dlq-admin__confirm-actions">
+              <Button onClick={handleConfirmAction} disabled={actionLoading === confirmAction.id}>
+                Confirmar
+              </Button>
+              <Button variant="secondary" onClick={handleCancelConfirm}>
+                Cancelar
               </Button>
             </div>
           </div>
