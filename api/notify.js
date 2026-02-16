@@ -173,13 +173,19 @@ export default async function handler(req, res) {
       results.push('daily_digest');
     }
 
-    // 3. Stock Alerts: Daily at 09:00
+    // 3. Tasks at 09:00: Stock Alerts + DLQ Digest
     if (currentHour === 9 && currentMinute === 0) {
       await withCorrelation(
         (context) => checkStockAlerts(bot, context),
         { correlationId, jobType: 'stock_alerts' }
       );
       results.push('stock_alerts');
+
+      await withCorrelation(
+        (context) => sendDLQDigest(bot, context),
+        { correlationId, jobType: 'dlq_digest' }
+      );
+      results.push('dlq_digest');
     }
 
     // 4. Titration Alerts: Daily at 08:00
@@ -207,15 +213,6 @@ export default async function handler(req, res) {
         { correlationId, jobType: 'monthly_report' }
       );
       results.push('monthly_report');
-    }
-
-    // 7. DLQ Digest: Daily at 09:00
-    if (currentHour === 9 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => sendDLQDigest(bot, context),
-        { correlationId, jobType: 'dlq_digest' }
-      );
-      results.push('dlq_digest');
     }
 
     logger.info('Cron jobs completed', {
