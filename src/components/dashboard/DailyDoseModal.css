@@ -215,7 +215,7 @@
     border-width: 2px;
     border-color: var(--text-primary);
   }
-  
+
   /* Empty states para seções de doses */
   .dose-list-section__empty {
     padding: var(--space-4, 1rem);
@@ -226,37 +226,37 @@
     color: var(--text-secondary, #b4b4c8);
     font-size: var(--text-sm, 0.875rem);
   }
-  
+
   .dose-list-section__empty--taken {
     border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
     background: color-mix(in srgb, var(--color-success) 5%, transparent);
   }
-  
+
   .dose-list-section__empty--missed {
     border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
     background: color-mix(in srgb, var(--color-error) 5%, transparent);
   }
-  
+
   /* Separador entre seções */
   .dose-list-section + .dose-list-section {
     border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
     padding-top: var(--space-4, 1rem);
   }
-  
+
   /* Ajustes específicos para seção de doses perdidas */
   .dose-list-section--missed .dose-list-item {
     opacity: 0.85;
   }
-  
+
   /* Títulos de seção com mais destaque */
   .dose-list-section__title {
     transition: opacity 0.2s ease;
   }
-  
+
   .dose-list-section__title:hover {
     opacity: 0.8;
   }
-  
+
   /* Animação de entrada para seções */
   @keyframes slideInUp {
     from {
@@ -268,15 +268,15 @@
       transform: translateY(0);
     }
   }
-  
+
   .dose-list-section {
     animation: slideInUp 0.3s ease-out;
   }
-  
+
   .dose-list-section:nth-child(2) {
     animation-delay: 0.1s;
   }
-  
+
   /* Reduced motion para animações */
   @media (prefers-reduced-motion: reduce) {
     .dose-list-section {

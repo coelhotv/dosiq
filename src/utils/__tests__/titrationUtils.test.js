@@ -19,7 +19,7 @@ describe('calculateTitrationData', () => {
     it('should return null when protocol has no titration_schedule', () => {
       const protocol = {
         titration_schedule: [],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       expect(calculateTitrationData(protocol)).toBeNull()
@@ -27,7 +27,7 @@ describe('calculateTitrationData', () => {
 
     it('should return null when titration_schedule is undefined', () => {
       const protocol = {
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       expect(calculateTitrationData(protocol)).toBeNull()
@@ -35,7 +35,7 @@ describe('calculateTitrationData', () => {
 
     it('should return null when stage_started_at is not set', () => {
       const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }]
+        titration_schedule: [{ days: 7, dosage: 1 }],
       }
 
       expect(calculateTitrationData(protocol)).toBeNull()
@@ -45,7 +45,7 @@ describe('calculateTitrationData', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
         stage_started_at: baseDate,
-        current_stage_index: 5
+        current_stage_index: 5,
       }
 
       expect(calculateTitrationData(protocol)).toBeNull()
@@ -58,10 +58,10 @@ describe('calculateTitrationData', () => {
         titration_schedule: [
           { days: 7, dosage: 1, note: 'Etapa 1' },
           { days: 7, dosage: 2, note: 'Etapa 2' },
-          { days: 7, dosage: 3, note: 'Etapa 3' }
+          { days: 7, dosage: 3, note: 'Etapa 3' },
         ],
         stage_started_at: baseDate,
-        current_stage_index: 1
+        current_stage_index: 1,
       }
 
       const result = calculateTitrationData(protocol)
@@ -72,10 +72,8 @@ describe('calculateTitrationData', () => {
 
     it('should default to stage 0 when current_stage_index is undefined', () => {
       const protocol = {
-        titration_schedule: [
-          { days: 7, dosage: 1, note: 'Etapa 1' }
-        ],
-        stage_started_at: baseDate
+        titration_schedule: [{ days: 7, dosage: 1, note: 'Etapa 1' }],
+        stage_started_at: baseDate,
       }
 
       const result = calculateTitrationData(protocol)
@@ -88,7 +86,7 @@ describe('calculateTitrationData', () => {
     it('should calculate days elapsed correctly for single day', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be 1 day after start
@@ -111,7 +109,7 @@ describe('calculateTitrationData', () => {
     it('should cap visual day at totalDays', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be 11 days after start (past the 7 day stage)
@@ -134,7 +132,7 @@ describe('calculateTitrationData', () => {
     it('should ensure day is at least 1', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be same day as start
@@ -158,7 +156,7 @@ describe('calculateTitrationData', () => {
     it('should calculate progress percentage correctly at 50%', () => {
       const protocol = {
         titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be 5 days after start (50%)
@@ -180,7 +178,7 @@ describe('calculateTitrationData', () => {
     it('should cap progress at 100%', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be well past the stage end
@@ -202,7 +200,7 @@ describe('calculateTitrationData', () => {
     it('should calculate low progress at start', () => {
       const protocol = {
         titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be 1 day after start
@@ -227,7 +225,7 @@ describe('calculateTitrationData', () => {
     it('should indicate transition is due when days exceed total', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be past the stage end (day 9)
@@ -249,7 +247,7 @@ describe('calculateTitrationData', () => {
     it('should not indicate transition when within stage duration', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be within stage (day 5)
@@ -273,7 +271,7 @@ describe('calculateTitrationData', () => {
     it('should calculate positive days remaining', () => {
       const protocol = {
         titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be day 3 (4th day)
@@ -296,7 +294,7 @@ describe('calculateTitrationData', () => {
     it('should calculate negative days remaining when past end', () => {
       const protocol = {
         titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate
+        stage_started_at: baseDate,
       }
 
       // Mock current date to be past stage end (day 10)
@@ -319,10 +317,8 @@ describe('calculateTitrationData', () => {
   describe('stage note', () => {
     it('should return stage note from current stage', () => {
       const protocol = {
-        titration_schedule: [
-          { days: 7, dosage: 1, note: 'Introdução gradual' }
-        ],
-        stage_started_at: baseDate
+        titration_schedule: [{ days: 7, dosage: 1, note: 'Introdução gradual' }],
+        stage_started_at: baseDate,
       }
 
       const result = calculateTitrationData(protocol)
@@ -332,10 +328,8 @@ describe('calculateTitrationData', () => {
 
     it('should handle stage without note', () => {
       const protocol = {
-        titration_schedule: [
-          { days: 7, dosage: 1 }
-        ],
-        stage_started_at: baseDate
+        titration_schedule: [{ days: 7, dosage: 1 }],
+        stage_started_at: baseDate,
       }
 
       const result = calculateTitrationData(protocol)
@@ -350,10 +344,10 @@ describe('calculateTitrationData', () => {
         titration_schedule: [
           { days: 7, dosage: 0.5, note: 'Semana 1' },
           { days: 7, dosage: 1, note: 'Semana 2' },
-          { days: 14, dosage: 2, note: 'Manutenção' }
+          { days: 14, dosage: 2, note: 'Manutenção' },
         ],
         stage_started_at: baseDate,
-        current_stage_index: 2
+        current_stage_index: 2,
       }
 
       // Mock current date to be 5 days into stage 3 (day 20 total)

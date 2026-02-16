@@ -18,13 +18,17 @@ export default function ProtocolForm({
   preselectedMedicine = null,
   title,
   showTitration = true,
-  showTreatmentPlan = true
+  showTreatmentPlan = true,
 }) {
   const isSimpleMode = mode === 'simple'
   const [formData, setFormData] = useState({
-    medicine_id: protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || '',
+    medicine_id:
+      protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || '',
     treatment_plan_id: protocol?.treatment_plan_id || initialValues?.treatment_plan_id || '',
-    name: protocol?.name || initialValues?.name || (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Protocolo` : ''),
+    name:
+      protocol?.name ||
+      initialValues?.name ||
+      (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Protocolo` : ''),
     frequency: protocol?.frequency || initialValues?.frequency || 'diário',
     time_schedule: protocol?.time_schedule || initialValues?.time_schedule || [],
     dosage_per_intake: protocol?.dosage_per_intake || initialValues?.dosage_per_intake || '',
@@ -32,13 +36,18 @@ export default function ProtocolForm({
     titration_status: protocol?.titration_status || initialValues?.titration_status || 'estável',
     titration_schedule: protocol?.titration_schedule || initialValues?.titration_schedule || [],
     notes: protocol?.notes || initialValues?.notes || '',
-    active: protocol?.active !== undefined ? protocol.active : (initialValues?.active !== undefined ? initialValues.active : true)
+    active:
+      protocol?.active !== undefined
+        ? protocol.active
+        : initialValues?.active !== undefined
+          ? initialValues.active
+          : true,
   })
-  
+
   const [enableTitration, setEnableTitration] = useState(
-    (protocol?.titration_schedule?.length > 0) || (protocol?.titration_status === 'titulando')
+    protocol?.titration_schedule?.length > 0 || protocol?.titration_status === 'titulando'
   )
-  
+
   const [timeInput, setTimeInput] = useState('')
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -50,42 +59,42 @@ export default function ProtocolForm({
     if (!protocol && enableTitration && formData.titration_schedule?.length > 0) {
       const firstStage = formData.titration_schedule[0]
       if (firstStage.dosage && !formData.dosage_per_intake) {
-        setFormData(prev => ({ ...prev, dosage_per_intake: firstStage.dosage }))
+        setFormData((prev) => ({ ...prev, dosage_per_intake: firstStage.dosage }))
       }
     }
   }, [enableTitration, formData.titration_schedule, protocol, formData.dosage_per_intake])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
     }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const addTime = () => {
     if (!timeInput) return
-    
+
     if (formData.time_schedule.includes(timeInput)) {
       setErrors({ time_schedule: 'Horário já adicionado' })
       return
     }
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      time_schedule: [...prev.time_schedule, timeInput].sort()
+      time_schedule: [...prev.time_schedule, timeInput].sort(),
     }))
     setTimeInput('')
-    setErrors(prev => ({ ...prev, time_schedule: '' }))
+    setErrors((prev) => ({ ...prev, time_schedule: '' }))
   }
 
   const removeTime = (time) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      time_schedule: prev.time_schedule.filter(t => t !== time)
+      time_schedule: prev.time_schedule.filter((t) => t !== time),
     }))
   }
 
@@ -132,11 +141,11 @@ export default function ProtocolForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
       const isTitrating = enableTitration && formData.titration_schedule.length > 0
 
@@ -151,15 +160,15 @@ export default function ProtocolForm({
         titration_status: isTitrating ? 'titulando' : formData.titration_status,
         titration_schedule: isTitrating ? formData.titration_schedule : [],
         notes: formData.notes.trim() || null,
-        active: formData.active
+        active: formData.active,
       }
-      
+
       const savedProtocol = await onSave(dataToSave)
-      
+
       if (isSimpleMode) {
         setSaveSuccess(true)
       }
-      
+
       if (autoAdvance && onSuccess) {
         setTimeout(() => {
           onSuccess(savedProtocol)
@@ -175,11 +184,15 @@ export default function ProtocolForm({
   }
 
   const formTitle = title || (protocol ? 'Editar Protocolo' : 'Novo Protocolo')
-  
+
   return (
-    <form className={`protocol-form ${isSimpleMode ? 'protocol-form-simple' : ''}`} onSubmit={handleSubmit} style={{ paddingBottom: isSimpleMode ? '0' : '80px' }}>
+    <form
+      className={`protocol-form ${isSimpleMode ? 'protocol-form-simple' : ''}`}
+      onSubmit={handleSubmit}
+      style={{ paddingBottom: isSimpleMode ? '0' : '80px' }}
+    >
       <h3>{formTitle}</h3>
-      
+
       {!isSimpleMode && (
         <div className="form-group">
           <label htmlFor="medicine_id">
@@ -195,9 +208,12 @@ export default function ProtocolForm({
               disabled={!!protocol} // Não permite mudar medicamento ao editar
             >
               <option value="">Selecione um medicamento</option>
-              {medicines.map(medicine => (
+              {medicines.map((medicine) => (
                 <option key={medicine.id} value={medicine.id}>
-                  {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : `(${medicine.type === 'suplemento' ? 'Sup.' : 'N/A'})`}
+                  {medicine.name}{' '}
+                  {medicine.dosage_per_pill
+                    ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})`
+                    : `(${medicine.type === 'suplemento' ? 'Sup.' : 'N/A'})`}
                 </option>
               ))}
             </select>
@@ -205,7 +221,7 @@ export default function ProtocolForm({
           {errors.medicine_id && <span className="error-message">{errors.medicine_id}</span>}
         </div>
       )}
-      
+
       {isSimpleMode && formData.medicine_id && (
         <input type="hidden" name="medicine_id" value={formData.medicine_id} />
       )}
@@ -220,8 +236,10 @@ export default function ProtocolForm({
             onChange={handleChange}
           >
             <option value="">Nenhum (Protocolo isolado)</option>
-            {treatmentPlans.map(plan => (
-              <option key={plan.id} value={plan.id}>{plan.name}</option>
+            {treatmentPlans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+              </option>
             ))}
           </select>
           <small style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>
@@ -263,7 +281,7 @@ export default function ProtocolForm({
               className={errors.frequency ? 'error' : ''}
             >
               <option value="">Selecione a frequência</option>
-              {FREQUENCIES.map(freq => (
+              {FREQUENCIES.map((freq) => (
                 <option key={freq} value={freq}>
                   {FREQUENCY_LABELS[freq]}
                 </option>
@@ -290,21 +308,35 @@ export default function ProtocolForm({
               step="0.1"
             />
           </ShakeEffect>
-          {errors.dosage_per_intake && <span className="error-message">{errors.dosage_per_intake}</span>}
+          {errors.dosage_per_intake && (
+            <span className="error-message">{errors.dosage_per_intake}</span>
+          )}
         </div>
       </div>
 
       {!isSimpleMode && showTitration && (
-        <div className="form-row" style={{ flexDirection: 'column', gap: 'var(--space-2)', border: '1px solid var(--border-color)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', marginBottom: 'var(--space-4)' }}>
+        <div
+          className="form-row"
+          style={{
+            flexDirection: 'column',
+            gap: 'var(--space-2)',
+            border: '1px solid var(--border-color)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--bg-tertiary)',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
           <div className="form-group checkbox-group" style={{ marginBottom: 0 }}>
             <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={enableTitration}
                 onChange={(e) => {
-                   setEnableTitration(e.target.checked)
-                   if (e.target.checked) setFormData(prev => ({ ...prev, titration_status: 'titulando' }))
-                   else setFormData(prev => ({ ...prev, titration_status: 'estável' }))
+                  setEnableTitration(e.target.checked)
+                  if (e.target.checked)
+                    setFormData((prev) => ({ ...prev, titration_status: 'titulando' }))
+                  else setFormData((prev) => ({ ...prev, titration_status: 'estável' }))
                 }}
               />
               <span>📈 Regime de Titulação Inteligente</span>
@@ -314,10 +346,12 @@ export default function ProtocolForm({
           {enableTitration ? (
             <TitrationWizard
               schedule={formData.titration_schedule}
-              onChange={(newSchedule) => setFormData(prev => ({ ...prev, titration_schedule: newSchedule }))}
+              onChange={(newSchedule) =>
+                setFormData((prev) => ({ ...prev, titration_schedule: newSchedule }))
+              }
             />
           ) : (
-             <div className="form-row" style={{ marginTop: 'var(--space-2)' }}>
+            <div className="form-row" style={{ marginTop: 'var(--space-2)' }}>
               <div className="form-group">
                 <label htmlFor="target_dosage">Dose Alvo (mg)</label>
                 <input
@@ -362,12 +396,7 @@ export default function ProtocolForm({
               onChange={(e) => setTimeInput(e.target.value)}
               className={errors.time_schedule ? 'error' : ''}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addTime}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={addTime}>
               ➕ Adicionar
             </Button>
           </div>
@@ -376,14 +405,10 @@ export default function ProtocolForm({
 
         {formData.time_schedule.length > 0 && (
           <div className="time-schedule-list">
-            {formData.time_schedule.map(time => (
+            {formData.time_schedule.map((time) => (
               <div key={time} className="time-chip">
                 <span>{time}</span>
-                <button
-                  type="button"
-                  onClick={() => removeTime(time)}
-                  className="remove-time"
-                >
+                <button type="button" onClick={() => removeTime(time)} className="remove-time">
                   ✕
                 </button>
               </div>
@@ -395,7 +420,7 @@ export default function ProtocolForm({
       {saveSuccess && isSimpleMode && (
         <div className="success-message">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>Protocolo criado com sucesso!</span>
         </div>
@@ -403,14 +428,19 @@ export default function ProtocolForm({
 
       <div className="form-group">
         <label htmlFor="notes">
-          Observações{!isSimpleMode && ''}{isSimpleMode && ' (opcional)'}
+          Observações{!isSimpleMode && ''}
+          {isSimpleMode && ' (opcional)'}
         </label>
         <textarea
           id="notes"
           name="notes"
           value={formData.notes}
           onChange={handleChange}
-          placeholder={isSimpleMode ? "Ex: Tomar após as refeições" : "Informações adicionais sobre o protocolo..."}
+          placeholder={
+            isSimpleMode
+              ? 'Ex: Tomar após as refeições'
+              : 'Informações adicionais sobre o protocolo...'
+          }
           rows={isSimpleMode ? 3 : 3}
           disabled={isSubmitting}
         />
@@ -435,9 +465,9 @@ export default function ProtocolForm({
           {isSimpleMode ? (
             <>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <span>{errors.submit}</span>
             </>
@@ -449,12 +479,7 @@ export default function ProtocolForm({
 
       <div className={`form-actions ${isSimpleMode ? 'form-actions-simple' : ''}`}>
         {!isSimpleMode && onCancel && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
         )}
@@ -473,26 +498,29 @@ export default function ProtocolForm({
             ) : (
               'Salvando...'
             )
+          ) : isSimpleMode ? (
+            <>
+              Criar Protocolo
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="icon-right"
+                style={{ marginLeft: '8px', width: '16px', height: '16px' }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </>
+          ) : protocol ? (
+            'Atualizar'
           ) : (
-            isSimpleMode ? (
-              <>
-                Criar Protocolo
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icon-right" style={{ marginLeft: '8px', width: '16px', height: '16px' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </>
-            ) : (
-              protocol ? 'Atualizar' : 'Criar Protocolo'
-            )
+            'Criar Protocolo'
           )}
         </Button>
       </div>
-      
-      {isSimpleMode && (
-        <p className="form-hint">
-          * Campos obrigatórios
-        </p>
-      )}
+
+      {isSimpleMode && <p className="form-hint">* Campos obrigatórios</p>}
     </form>
   )
 }

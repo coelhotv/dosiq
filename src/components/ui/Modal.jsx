@@ -8,7 +8,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
     } else {
       document.body.style.overflow = 'unset'
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset'
     }
@@ -20,7 +20,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
         onClose()
       }
     }
-    
+
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
@@ -36,9 +36,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
             ✕
           </button>
         </div>
-        <div className="modal-body">
-          {children}
-        </div>
+        <div className="modal-body">{children}</div>
       </div>
     </div>
   )

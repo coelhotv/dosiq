@@ -1,13 +1,13 @@
 /**
  * Insight Service - Geração e seleção de insights contextuais
- * 
+ *
  * Funcionalidades:
  * - Geração de insights baseados em dados do usuário
  * - Sistema de prioridade (critical > important > informational)
  * - Frequency capping para evitar repetição
  * - Persistência em localStorage
  * - Integração com analyticsService para insights baseados em padrões de uso
- * 
+ *
  * @module insightService
  */
 
@@ -24,7 +24,7 @@ export const INSIGHT_PRIORITY = {
   high: 2,
   medium: 3,
   low: 4,
-  info: 5
+  info: 5,
 }
 
 // Tipos de insight disponíveis
@@ -35,7 +35,7 @@ export const INSIGHT_TYPES = {
   STOCK_WARNING: 'STOCK_WARNING',
   PROTOCOL_REMINDER: 'PROTOCOL_REMINDER',
   MISSED_DOSE_ALERT: 'MISSED_DOSE_ALERT',
-  IMPROVEMENT_OPPORTUNITY: 'IMPROVEMENT_OPPORTUNITY'
+  IMPROVEMENT_OPPORTUNITY: 'IMPROVEMENT_OPPORTUNITY',
 }
 
 //=============================================================================
@@ -51,25 +51,24 @@ function getMostActiveHour() {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const doseEvents = analyticsService.getEvents({
       name: 'dose_registered',
-      since: sevenDaysAgo
+      since: sevenDaysAgo,
     })
 
     if (doseEvents.length === 0) return null
 
     const hourCounts = {}
-    doseEvents.forEach(event => {
+    doseEvents.forEach((event) => {
       const hour = new Date(event.timestamp).getHours()
       hourCounts[hour] = (hourCounts[hour] || 0) + 1
     })
 
-    const mostActiveEntry = Object.entries(hourCounts)
-      .sort((a, b) => b[1] - a[1])[0]
+    const mostActiveEntry = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]
 
     if (!mostActiveEntry) return null
 
     return {
       hour: parseInt(mostActiveEntry[0]),
-      count: mostActiveEntry[1]
+      count: mostActiveEntry[1],
     }
   } catch {
     console.error('[InsightService] Erro ao buscar horário de maior atividade')
@@ -100,15 +99,14 @@ function getFeatureUsage() {
     const featureEvents = {
       swipe_used: summary.eventCounts?.['swipe_used'] || 0,
       sparkline_tapped: summary.eventCounts?.['sparkline_tapped'] || 0,
-      milestone_achieved: summary.eventCounts?.['milestone_achieved'] || 0
+      milestone_achieved: summary.eventCounts?.['milestone_achieved'] || 0,
     }
 
-    const sorted = Object.entries(featureEvents)
-      .sort((a, b) => b[1] - a[1])
+    const sorted = Object.entries(featureEvents).sort((a, b) => b[1] - a[1])
 
     return {
       mostUsed: sorted[0]?.[0] || null,
-      leastUsed: sorted[sorted.length - 1]?.[0] || null
+      leastUsed: sorted[sorted.length - 1]?.[0] || null,
     }
   } catch {
     console.error('[InsightService] Erro ao buscar uso de features')
@@ -125,19 +123,18 @@ function getAdherenceByDayOfWeek() {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     const doseEvents = analyticsService.getEvents({
       name: 'dose_registered',
-      since: thirtyDaysAgo
+      since: thirtyDaysAgo,
     })
 
     if (doseEvents.length === 0) return null
 
     const dayCounts = {}
-    doseEvents.forEach(event => {
+    doseEvents.forEach((event) => {
       const day = new Date(event.timestamp).toLocaleDateString('pt-BR', { weekday: 'long' })
       dayCounts[day] = (dayCounts[day] || 0) + 1
     })
 
-    const sorted = Object.entries(dayCounts)
-      .sort((a, b) => b[1] - a[1])
+    const sorted = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])
 
     if (sorted.length === 0) return null
 
@@ -145,7 +142,7 @@ function getAdherenceByDayOfWeek() {
       bestDay: sorted[0]?.[0] || null,
       worstDay: sorted[sorted.length - 1]?.[0] || null,
       bestCount: sorted[0]?.[1] || 0,
-      worstCount: sorted[sorted.length - 1]?.[1] || 0
+      worstCount: sorted[sorted.length - 1]?.[1] || 0,
     }
   } catch {
     console.error('[InsightService] Erro ao analisar adesão por dia')
@@ -164,7 +161,7 @@ function getAdherenceByDayOfWeek() {
  */
 function createBestTimeInsight(onNavigate) {
   const mostActive = getMostActiveHour()
-  
+
   if (!mostActive || mostActive.count < 3) return null
 
   const timeLabel = formatHour(mostActive.hour)
@@ -180,7 +177,7 @@ function createBestTimeInsight(onNavigate) {
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'best_time' })
       onNavigate?.('settings')
-    }
+    },
   }
 }
 
@@ -191,7 +188,7 @@ function createBestTimeInsight(onNavigate) {
  */
 function createFeatureDiscoveryInsight(onNavigate) {
   const usage = getFeatureUsage()
-  
+
   // Se usuário nunca usou sparkline mas usa swipe regularmente
   if (usage.leastUsed === 'sparkline_tapped' && usage.mostUsed === 'swipe_used') {
     return {
@@ -205,7 +202,7 @@ function createFeatureDiscoveryInsight(onNavigate) {
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'feature_discovery_sparkline' })
         onNavigate?.('stats')
-      }
+      },
     }
   }
 
@@ -219,7 +216,7 @@ function createFeatureDiscoveryInsight(onNavigate) {
  */
 function createWeakDayInsight(onNavigate) {
   const dayAnalysis = getAdherenceByDayOfWeek()
-  
+
   if (!dayAnalysis || !dayAnalysis.worstDay || dayAnalysis.bestCount === 0) return null
 
   // Se o pior dia tem significativamente menos doses (menos de 50% do melhor)
@@ -235,7 +232,7 @@ function createWeakDayInsight(onNavigate) {
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'weak_day' })
         onNavigate?.('settings')
-      }
+      },
     }
   }
 
@@ -263,7 +260,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'streak_achievement' })
         onNavigate?.('history')
-      }
+      },
     })
   }
 
@@ -280,7 +277,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'perfect_week' })
         shareAchievement()
-      }
+      },
     })
   }
 
@@ -297,7 +294,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'good_week' })
         onNavigate?.('history')
-      }
+      },
     })
   }
 
@@ -315,12 +312,12 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'improvement' })
         onNavigate?.('stats')
-      }
+      },
     })
   }
 
   // Insight: Estoque Saudável
-  const lowStockCount = stockSummary?.filter(s => s.isLow || s.isZero).length || 0
+  const lowStockCount = stockSummary?.filter((s) => s.isLow || s.isZero).length || 0
   if (lowStockCount === 0 && stockSummary?.length > 0) {
     insights.push({
       id: 'stock_healthy',
@@ -333,7 +330,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'stock_healthy' })
         onNavigate?.('stock')
-      }
+      },
     })
   }
 
@@ -351,7 +348,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'missed_doses_today' })
         onNavigate?.('register')
-      }
+      },
     })
   }
 
@@ -368,7 +365,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'low_adherence_week' })
         onNavigate?.('protocols')
-      }
+      },
     })
   }
 
@@ -385,7 +382,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'streak_broken' })
         onNavigate?.('register')
-      }
+      },
     })
   }
 
@@ -403,7 +400,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'protocol_reminder' })
         onNavigate?.('protocols')
-      }
+      },
     })
   }
 
@@ -417,7 +414,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
   const weakDayInsight = createWeakDayInsight(onNavigate)
   if (weakDayInsight) insights.push(weakDayInsight)
 
-  return insights.filter(insight => insight !== null)
+  return insights.filter((insight) => insight !== null)
 }
 
 /**
@@ -440,9 +437,7 @@ function calculateTrendFromData(dailyAdherence) {
   const currentAvg = currentWeek.reduce((sum, d) => sum + d.adherence, 0) / currentWeek.length
   const previousAvg = previousWeek.reduce((sum, d) => sum + d.adherence, 0) / previousWeek.length
 
-  const percentageChange = previousAvg > 0
-    ? ((currentAvg - previousAvg) / previousAvg) * 100
-    : 0
+  const percentageChange = previousAvg > 0 ? ((currentAvg - previousAvg) / previousAvg) * 100 : 0
 
   let direction = 'neutral'
   if (percentageChange > 5) direction = 'up'
@@ -450,7 +445,7 @@ function calculateTrendFromData(dailyAdherence) {
 
   return {
     direction,
-    percentage: Math.abs(Math.round(percentageChange))
+    percentage: Math.abs(Math.round(percentageChange)),
   }
 }
 
@@ -485,8 +480,8 @@ export function selectBestInsight(params) {
   const insights = generateAllInsights(params)
 
   // Filtrar insights aplicáveis (sem frequency capping)
-  const applicableInsights = insights.filter(insight =>
-    insight.condition === undefined || insight.condition
+  const applicableInsights = insights.filter(
+    (insight) => insight.condition === undefined || insight.condition
   )
 
   if (applicableInsights.length === 0) {
@@ -498,12 +493,12 @@ export function selectBestInsight(params) {
   const lastShownId = history[0]?.id
 
   // Filtrar para mostrar insight diferente do último
-  const differentInsights = applicableInsights.filter(i => i.id !== lastShownId)
+  const differentInsights = applicableInsights.filter((i) => i.id !== lastShownId)
   const candidates = differentInsights.length > 0 ? differentInsights : applicableInsights
 
   // Ordenar por prioridade
-  const sortedInsights = candidates.sort((a, b) =>
-    INSIGHT_PRIORITY[a.priority] - INSIGHT_PRIORITY[b.priority]
+  const sortedInsights = candidates.sort(
+    (a, b) => INSIGHT_PRIORITY[a.priority] - INSIGHT_PRIORITY[b.priority]
   )
 
   const selectedInsight = sortedInsights[0]
@@ -512,7 +507,7 @@ export function selectBestInsight(params) {
   try {
     analyticsService.track('insight_shown', {
       insight_id: selectedInsight.id,
-      priority: selectedInsight.priority
+      priority: selectedInsight.priority,
     })
   } catch (err) {
     console.error('[InsightService] Erro ao rastrear insight:', err)
@@ -541,7 +536,7 @@ export function getDefaultInsight(onNavigate) {
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'default' })
       onNavigate?.('help')
-    }
+    },
   }
 }
 
@@ -552,7 +547,7 @@ export function getDefaultInsight(onNavigate) {
  */
 export function shouldShowInsight(insightId) {
   const history = getInsightHistory()
-  const lastShown = history.find(h => h.id === insightId)
+  const lastShown = history.find((h) => h.id === insightId)
 
   if (!lastShown) return true
 
@@ -582,7 +577,7 @@ export function saveInsightToHistory(insightId) {
     const history = getInsightHistory()
     history.unshift({
       id: insightId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
 
     const trimmedHistory = history.slice(0, MAX_HISTORY)
@@ -620,5 +615,5 @@ export default {
   saveInsightToHistory,
   clearInsightHistory,
   INSIGHT_PRIORITY,
-  INSIGHT_TYPES
+  INSIGHT_TYPES,
 }

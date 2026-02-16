@@ -1,6 +1,6 @@
 /**
  * PWA Detection Utilities
- * 
+ *
  * Helper functions to detect PWA installation state, browser capabilities,
  * and platform-specific behaviors.
  */
@@ -10,8 +10,9 @@
  * @returns {boolean} True if running as installed PWA
  */
 export function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true
+  return (
+    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+  )
 }
 
 /**
@@ -22,7 +23,7 @@ export function isIOSSafari() {
   const userAgent = window.navigator.userAgent.toLowerCase()
   const isIOS = /iphone|ipad|ipod/.test(userAgent)
   const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent)
-  
+
   return isIOS && isSafari
 }
 
@@ -34,7 +35,7 @@ export function isChromeAndroid() {
   const userAgent = window.navigator.userAgent.toLowerCase()
   const isAndroid = /android/.test(userAgent)
   const isChrome = /chrome/.test(userAgent) && /mobile/.test(userAgent)
-  
+
   return isAndroid && isChrome
 }
 
@@ -52,29 +53,36 @@ export function supportsBeforeInstallPrompt() {
  */
 export function isDesktopChrome() {
   const userAgent = window.navigator.userAgent.toLowerCase()
-  
+
   console.log('[PWA Utils] isDesktopChrome - User agent:', userAgent)
-  
+
   // More flexible detection for Chrome on any platform (including macOS)
   const hasChrome = /chrome|chromium/.test(userAgent)
   const hasEdge = /edg|edge/.test(userAgent)
   const hasOpera = /opr|opera/.test(userAgent)
   const hasBrave = /brave/.test(userAgent)
   const hasMobile = /mobile|android/.test(userAgent)
-  
+
   const isChrome = hasChrome && !hasMobile
   const isEdge = hasEdge && !hasMobile
   const isOpera = hasOpera && !hasMobile
   const isBraveBrowser = hasBrave && !hasMobile
-  
+
   const result = isChrome || isEdge || isOpera || isBraveBrowser
-  
+
   console.log('[PWA Utils] Detection:', {
-    hasChrome, hasEdge, hasOpera, hasBrave, hasMobile,
-    isChrome, isEdge, isOpera, isBraveBrowser,
-    result
+    hasChrome,
+    hasEdge,
+    hasOpera,
+    hasBrave,
+    hasMobile,
+    isChrome,
+    isEdge,
+    isOpera,
+    isBraveBrowser,
+    result,
   })
-  
+
   // Show banner for ANY Chromium desktop browser, not just those with beforeinstallprompt
   return result
 }
@@ -98,7 +106,7 @@ export function isChromiumDesktop() {
   const isEdge = /edg|edge/.test(userAgent)
   const isOpera = /opr|opera/.test(userAgent)
   const isBrave = /brave/.test(userAgent)
-  
+
   return isDesktop && (isChrome || isEdge || isOpera || isBrave)
 }
 
@@ -150,7 +158,7 @@ export function isDismissalExpired() {
   try {
     const expiry = localStorage.getItem('pwa-install-dismissed-expiry')
     if (!expiry) return true
-    
+
     return new Date() > new Date(expiry)
   } catch {
     return true
@@ -168,32 +176,29 @@ export function getInstallInstructions() {
       steps: [
         'Toque no botão Compartilhar no Safari',
         'Role para baixo e toque em "Adicionar à Tela de Início"',
-        'Toque em "Adicionar" para confirmar'
+        'Toque em "Adicionar" para confirmar',
       ],
-      icon: '📱'
+      icon: '📱',
     }
   }
-  
+
   if (isChromeAndroid()) {
     return {
       title: 'Instalar o App',
       steps: [
         'Toque no menu (⋮) no Chrome',
         'Selecione "Adicionar à tela inicial"',
-        'Confirme para instalar'
+        'Confirme para instalar',
       ],
-      icon: '📲'
+      icon: '📲',
     }
   }
-  
+
   // Desktop Chrome/Edge
   return {
     title: 'Instalar o App',
-    steps: [
-      'Clique em "Instalar" no prompt',
-      'Ou use o menu (⋮) > Instalar Meus Remédios'
-    ],
-    icon: '💻'
+    steps: ['Clique em "Instalar" no prompt', 'Ou use o menu (⋮) > Instalar Meus Remédios'],
+    icon: '💻',
   }
 }
 
@@ -209,6 +214,6 @@ export function getPWAState() {
     isDesktopChrome: isDesktopChrome(),
     supportsBeforeInstallPrompt: supportsBeforeInstallPrompt(),
     wasDismissed: wasPromptDismissed() && !isDismissalExpired(),
-    canShowPrompt: !isStandalone() && (!wasPromptDismissed() || isDismissalExpired())
+    canShowPrompt: !isStandalone() && (!wasPromptDismissed() || isDismissalExpired()),
   }
 }

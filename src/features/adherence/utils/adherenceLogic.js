@@ -1,135 +1,136 @@
 /**
  * Adherence Logic - Funções puras para cálculo de adesão client-side
- * 
+ *
  * Migrado de adherenceService para suportar "Custo Zero" de queries.
  * @module adherenceLogic
  */
 
 /**
  * Calcula doses esperadas para um conjunto de protocolos em um período
- * @param {Array} protocols 
- * @param {number} days 
+ * @param {Array} protocols
+ * @param {number} days
  * @returns {number}
  */
 export function calculateExpectedDoses(protocols, days) {
-  if (!protocols || protocols.length === 0) return 0;
+  if (!protocols || protocols.length === 0) return 0
 
   return protocols.reduce((total, protocol) => {
-    const timesPerDay = protocol.time_schedule?.length || 1;
-    const frequency = protocol.frequency || 'daily';
+    const timesPerDay = protocol.time_schedule?.length || 1
+    const frequency = protocol.frequency || 'daily'
 
-    let dailyDoses = timesPerDay;
+    let dailyDoses = timesPerDay
 
     switch (frequency.toLowerCase()) {
       case 'daily':
       case 'diariamente':
       case 'diário':
-        dailyDoses = timesPerDay;
-        break;
+        dailyDoses = timesPerDay
+        break
       case 'weekly':
       case 'semanal':
       case 'semanalmente':
-        dailyDoses = timesPerDay / 7;
-        break;
+        dailyDoses = timesPerDay / 7
+        break
       case 'every_other_day':
       case 'dia_sim_dia_nao':
       case 'dia sim, dia não':
-        dailyDoses = timesPerDay / 2;
-        break;
+        dailyDoses = timesPerDay / 2
+        break
       default:
-        dailyDoses = timesPerDay;
+        dailyDoses = timesPerDay
     }
 
-    return total + (dailyDoses * days);
-  }, 0);
+    return total + dailyDoses * days
+  }, 0)
 }
 
 /**
  * Calcula o streak e score baseado em logs e protocolos em memória
- * @param {Array} logs 
- * @param {Array} protocols 
- * @param {number} days 
+ * @param {Array} logs
+ * @param {Array} protocols
+ * @param {number} days
  * @returns {Object}
  */
 export function calculateAdherenceStats(logs, protocols, days = 30) {
   const toLocalDateString = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
-  const logsByDay = new Map();
-  logs.forEach(log => {
-    const dayKey = toLocalDateString(log.taken_at);
-    if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, []);
-    logsByDay.get(dayKey).push(log);
-  });
+  const logsByDay = new Map()
+  logs.forEach((log) => {
+    const dayKey = toLocalDateString(log.taken_at)
+    if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, [])
+    logsByDay.get(dayKey).push(log)
+  })
 
-  let totalExpected = 0;
-  let totalFollowed = 0;
-  let totalTakenAnytime = 0;
-  let currentStreak = 0;
-  const todayStr = toLocalDateString(new Date());
+  let totalExpected = 0
+  let totalFollowed = 0
+  let totalTakenAnytime = 0
+  let currentStreak = 0
+  const todayStr = toLocalDateString(new Date())
 
   for (let i = 0; i < days; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = toLocalDateString(date);
-    const dayLogs = logsByDay.get(dateStr) || [];
-    
-    let dayExpected = 0;
-    let dayFollowed = 0;
-    let dayTakenAnytime = 0;
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    const dateStr = toLocalDateString(date)
+    const dayLogs = logsByDay.get(dateStr) || []
 
-    protocols.forEach(protocol => {
+    let dayExpected = 0
+    let dayFollowed = 0
+    let dayTakenAnytime = 0
+
+    protocols.forEach((protocol) => {
       // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
       // Em uma versão futura, considerar a frequência (daily, weekly, etc) aqui também
-      const schedule = protocol.time_schedule || [];
-      dayExpected += schedule.length;
-      
-      schedule.forEach(time => {
-        if (isProtocolFollowed(time, dayLogs, dateStr)) {
-          dayFollowed++;
-        }
-        
-        // Verifica se tomou em qualquer horário do dia
-        if (dayLogs.some(l => l.protocol_id === protocol.id)) {
-          dayTakenAnytime++;
-        }
-      });
-    });
+      const schedule = protocol.time_schedule || []
+      dayExpected += schedule.length
 
-    totalExpected += dayExpected;
-    totalFollowed += dayFollowed;
-    totalTakenAnytime += dayTakenAnytime;
+      schedule.forEach((time) => {
+        if (isProtocolFollowed(time, dayLogs, dateStr)) {
+          dayFollowed++
+        }
+
+        // Verifica se tomou em qualquer horário do dia
+        if (dayLogs.some((l) => l.protocol_id === protocol.id)) {
+          dayTakenAnytime++
+        }
+      })
+    })
+
+    totalExpected += dayExpected
+    totalFollowed += dayFollowed
+    totalTakenAnytime += dayTakenAnytime
 
     // Lógica de Streak
-    const minAdherence = 0.8;
-    const isDaySuccessful = dayExpected > 0 && (dayFollowed / dayExpected >= minAdherence);
-    
+    const minAdherence = 0.8
+    const isDaySuccessful = dayExpected > 0 && dayFollowed / dayExpected >= minAdherence
+
     if (isDaySuccessful) {
-      currentStreak++;
+      currentStreak++
     } else if (dateStr === todayStr) {
       // Se hoje ainda não terminou, não quebra o streak
-      continue;
+      continue
     } else if (i > 0 || (i === 0 && dayExpected > 0)) {
       // Se não for hoje e falhou, ou se for hoje e já temos falha clara, interrompe
       // Mas só se houver doses esperadas
-      if (dayExpected > 0) break;
+      if (dayExpected > 0) break
     }
   }
 
-  const score = totalExpected > 0 ? Math.min(Math.round((totalFollowed / totalExpected) * 100), 100) : 0;
+  const score =
+    totalExpected > 0 ? Math.min(Math.round((totalFollowed / totalExpected) * 100), 100) : 0
 
   return {
     score,
     taken: totalFollowed, // Representa doses seguidas corretamente na janela
     takenAnytime: totalTakenAnytime,
     expected: totalExpected,
-    currentStreak
-  };
+    currentStreak,
+  }
 }
 
 /**
@@ -142,21 +143,21 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
  * @returns {boolean}
  */
 export function isProtocolFollowed(scheduledTime, logs, dateStr) {
-  if (!scheduledTime || !logs || logs.length === 0) return false;
+  if (!scheduledTime || !logs || logs.length === 0) return false
 
-  return logs.some(log => {
+  return logs.some((log) => {
     // 1. Verificar se o log é do mesmo dia local
-    const logDate = new Date(log.taken_at);
-    const lYear = logDate.getFullYear();
-    const lMonth = String(logDate.getMonth() + 1).padStart(2, '0');
-    const lDay = String(logDate.getDate()).padStart(2, '0');
-    const logDateStr = `${lYear}-${lMonth}-${lDay}`;
+    const logDate = new Date(log.taken_at)
+    const lYear = logDate.getFullYear()
+    const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
+    const lDay = String(logDate.getDate()).padStart(2, '0')
+    const logDateStr = `${lYear}-${lMonth}-${lDay}`
 
-    if (logDateStr !== dateStr) return false;
+    if (logDateStr !== dateStr) return false
 
     // 2. Verificar janela de 2h
-    return isDoseInToleranceWindow(scheduledTime, log.taken_at);
-  });
+    return isDoseInToleranceWindow(scheduledTime, log.taken_at)
+  })
 }
 
 /**
@@ -167,20 +168,20 @@ export function isProtocolFollowed(scheduledTime, logs, dateStr) {
  * @returns {boolean}
  */
 export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
-  if (!scheduledTime || !logTakenAt) return false;
+  if (!scheduledTime || !logTakenAt) return false
 
-  const [sH, sM] = scheduledTime.split(':').map(Number);
-  const takenDate = new Date(logTakenAt);
-  
+  const [sH, sM] = scheduledTime.split(':').map(Number)
+  const takenDate = new Date(logTakenAt)
+
   // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada,
   // usando o fuso horário local do dispositivo do usuário.
-  const scheduledDate = new Date(takenDate);
-  scheduledDate.setHours(sH, sM, 0, 0);
+  const scheduledDate = new Date(takenDate)
+  scheduledDate.setHours(sH, sM, 0, 0)
 
-  const diffMs = Math.abs(takenDate.getTime() - scheduledDate.getTime());
-  const twoHoursInMs = 2 * 60 * 60 * 1000;
+  const diffMs = Math.abs(takenDate.getTime() - scheduledDate.getTime())
+  const twoHoursInMs = 2 * 60 * 60 * 1000
 
-  return diffMs <= twoHoursInMs;
+  return diffMs <= twoHoursInMs
 }
 
 /**
@@ -191,38 +192,38 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
  */
 export function getNextDoseTime(protocol) {
   if (!protocol || !protocol.time_schedule || protocol.time_schedule.length === 0) {
-    return '--:--';
+    return '--:--'
   }
 
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   // Converte horários do cronograma para minutos e ordena
   const scheduleMinutes = protocol.time_schedule
-    .map(time => {
-      const [h, m] = time.split(':').map(Number);
-      return h * 60 + m;
+    .map((time) => {
+      const [h, m] = time.split(':').map(Number)
+      return h * 60 + m
     })
-    .sort((a, b) => a - b);
+    .sort((a, b) => a - b)
 
   // Janela de tolerância: 2 horas (120 minutos)
-  const toleranceWindowMinutes = 2 * 60;
+  const toleranceWindowMinutes = 2 * 60
 
   // Encontra o próximo horário hoje (incluindo janela de 2h de tolerância)
   // Uma dose é considerada "ativa" até 2 horas após o horário agendado
-  const nextToday = scheduleMinutes.find(m => m + toleranceWindowMinutes > currentMinutes);
+  const nextToday = scheduleMinutes.find((m) => m + toleranceWindowMinutes > currentMinutes)
 
   if (nextToday !== undefined) {
-    const h = String(Math.floor(nextToday / 60)).padStart(2, '0');
-    const m = String(nextToday % 60).padStart(2, '0');
-    return `${h}:${m}`;
+    const h = String(Math.floor(nextToday / 60)).padStart(2, '0')
+    const m = String(nextToday % 60).padStart(2, '0')
+    return `${h}:${m}`
   }
-  
+
   // Se não houver mais doses hoje, retorna a primeira dose de amanhã
-  const firstTomorrow = scheduleMinutes[0];
-  const h = String(Math.floor(firstTomorrow / 60)).padStart(2, '0');
-  const m = String(firstTomorrow % 60).padStart(2, '0');
-  return `${h}:${m}`;
+  const firstTomorrow = scheduleMinutes[0]
+  const h = String(Math.floor(firstTomorrow / 60)).padStart(2, '0')
+  const m = String(firstTomorrow % 60).padStart(2, '0')
+  return `${h}:${m}`
 }
 
 /**
@@ -233,16 +234,16 @@ export function getNextDoseTime(protocol) {
  */
 export function getNextDoseWindowEnd(nextDoseTime) {
   if (!nextDoseTime || nextDoseTime === '--:--') {
-    return null;
+    return null
   }
 
-  const [hours, minutes] = nextDoseTime.split(':').map(Number);
-  const windowEndMinutes = (hours * 60 + minutes) + (2 * 60); // +2 horas
+  const [hours, minutes] = nextDoseTime.split(':').map(Number)
+  const windowEndMinutes = hours * 60 + minutes + 2 * 60 // +2 horas
 
-  const endHours = String(Math.floor(windowEndMinutes / 60) % 24).padStart(2, '0');
-  const endMinutes = String(windowEndMinutes % 60).padStart(2, '0');
+  const endHours = String(Math.floor(windowEndMinutes / 60) % 24).padStart(2, '0')
+  const endMinutes = String(windowEndMinutes % 60).padStart(2, '0')
 
-  return `${endHours}:${endMinutes}`;
+  return `${endHours}:${endMinutes}`
 }
 
 /**
@@ -252,19 +253,19 @@ export function getNextDoseWindowEnd(nextDoseTime) {
  */
 export function isInToleranceWindow(nextDoseTime) {
   if (!nextDoseTime || nextDoseTime === '--:--') {
-    return false;
+    return false
   }
 
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
-  const [hours, minutes] = nextDoseTime.split(':').map(Number);
-  const doseMinutes = hours * 60 + minutes;
-  const toleranceWindowMinutes = 2 * 60;
+  const [hours, minutes] = nextDoseTime.split(':').map(Number)
+  const doseMinutes = hours * 60 + minutes
+  const toleranceWindowMinutes = 2 * 60
 
   // Está dentro da janela se o horário atual for maior que o agendado
   // mas menor que o agendado + 2 horas
-  return currentMinutes > doseMinutes && currentMinutes <= doseMinutes + toleranceWindowMinutes;
+  return currentMinutes > doseMinutes && currentMinutes <= doseMinutes + toleranceWindowMinutes
 }
 
 /**
@@ -274,15 +275,15 @@ export function isInToleranceWindow(nextDoseTime) {
  * @returns {number}
  */
 export function calculateDailyIntake(medicineId, protocols) {
-  if (!protocols) return 0;
-  
+  if (!protocols) return 0
+
   return protocols
-    .filter(p => p.medicine_id === medicineId && p.active)
+    .filter((p) => p.medicine_id === medicineId && p.active)
     .reduce((total, p) => {
-      const dosesPerDay = p.time_schedule?.length || 1;
-      const dosage = p.dosage_per_intake || 1;
-      return total + (dosesPerDay * dosage);
-    }, 0);
+      const dosesPerDay = p.time_schedule?.length || 1
+      const dosage = p.dosage_per_intake || 1
+      return total + dosesPerDay * dosage
+    }, 0)
 }
 
 /**
@@ -292,8 +293,8 @@ export function calculateDailyIntake(medicineId, protocols) {
  * @returns {number}
  */
 export function calculateDaysRemaining(totalQuantity, dailyIntake) {
-  if (dailyIntake <= 0) return Infinity;
-  return Math.floor(totalQuantity / dailyIntake);
+  if (dailyIntake <= 0) return Infinity
+  return Math.floor(totalQuantity / dailyIntake)
 }
 
 /**
@@ -306,41 +307,41 @@ export function calculateDaysRemaining(totalQuantity, dailyIntake) {
  */
 export function calculateDosesByDate(date, logs, protocols) {
   if (!date || !protocols || protocols.length === 0) {
-    return { takenDoses: [], missedDoses: [] };
+    return { takenDoses: [], missedDoses: [] }
   }
 
-  const takenDoses = [];
-  const missedDoses = [];
+  const takenDoses = []
+  const missedDoses = []
 
   // Converter data string para objeto Date (meia-noite local)
-  const targetDate = new Date(date + 'T00:00:00');
-  const dayOfWeek = targetDate.getDay(); // 0=Domingo, 1=Segunda, etc.
+  const targetDate = new Date(date + 'T00:00:00')
+  const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
 
   // Filtrar protocolos aplicáveis para esta data
-  const applicableProtocols = protocols.filter(protocol => {
+  const applicableProtocols = protocols.filter((protocol) => {
     // Protocolo deve estar ativo
-    if (!protocol.active) return false;
+    if (!protocol.active) return false
 
     // Verificar se o protocolo já começou
     if (protocol.start_date) {
-      const startDate = new Date(protocol.start_date);
-      if (targetDate < startDate) return false;
+      const startDate = new Date(protocol.start_date)
+      if (targetDate < startDate) return false
     }
 
     // Verificar se o protocolo já terminou
     if (protocol.end_date) {
-      const endDate = new Date(protocol.end_date);
-      if (targetDate > endDate) return false;
+      const endDate = new Date(protocol.end_date)
+      if (targetDate > endDate) return false
     }
 
     // Verificar frequência
-    const frequency = (protocol.frequency || 'diário').toLowerCase();
+    const frequency = (protocol.frequency || 'diário').toLowerCase()
 
     switch (frequency) {
       case 'diário':
       case 'diariamente':
       case 'daily':
-        return true;
+        return true
 
       case 'semanal':
       case 'semanalmente':
@@ -349,17 +350,30 @@ export function calculateDosesByDate(date, logs, protocols) {
         if (protocol.days && Array.isArray(protocol.days)) {
           // Mapear nomes de dias para números (0-6)
           const dayMap = {
-            'domingo': 0, 'sunday': 0,
-            'segunda': 1, 'segunda-feira': 1, 'monday': 1,
-            'terça': 2, 'terça-feira': 2, 'tuesday': 2,
-            'quarta': 3, 'quarta-feira': 3, 'wednesday': 3,
-            'quinta': 4, 'quinta-feira': 4, 'thursday': 4,
-            'sexta': 5, 'sexta-feira': 5, 'friday': 5,
-            'sábado': 6, 'sabado': 6, 'saturday': 6
-          };
-          return protocol.days.some(day => dayMap[day.toLowerCase()] === dayOfWeek);
+            domingo: 0,
+            sunday: 0,
+            segunda: 1,
+            'segunda-feira': 1,
+            monday: 1,
+            terça: 2,
+            'terça-feira': 2,
+            tuesday: 2,
+            quarta: 3,
+            'quarta-feira': 3,
+            wednesday: 3,
+            quinta: 4,
+            'quinta-feira': 4,
+            thursday: 4,
+            sexta: 5,
+            'sexta-feira': 5,
+            friday: 5,
+            sábado: 6,
+            sabado: 6,
+            saturday: 6,
+          }
+          return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
         }
-        return false;
+        return false
 
       case 'dia_sim_dia_nao':
       case 'dia sim, dia não':
@@ -367,77 +381,77 @@ export function calculateDosesByDate(date, logs, protocols) {
       case 'alternating':
         // Calcular dias desde a data de início
         if (protocol.start_date) {
-          const startDate = new Date(protocol.start_date);
-          const diffTime = targetDate.getTime() - startDate.getTime();
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          const startDate = new Date(protocol.start_date)
+          const diffTime = targetDate.getTime() - startDate.getTime()
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
           // Dia sim, dia não: dias pares = dose, ímpares = sem dose
-          return diffDays % 2 === 0;
+          return diffDays % 2 === 0
         }
         // Se não tiver data de início, assumir que começa hoje (dia 0 = dose)
-        return true;
+        return true
 
       case 'personalizado':
       case 'custom':
         // Para frequência personalizada, verificar se há lógica específica
         // Por padrão, assume-se que não há dose
-        return false;
+        return false
 
       case 'quando_necessário':
       case 'when_needed':
       case 'prn':
         // Doses "quando necessário" não são esperadas
-        return false;
+        return false
 
       default:
-        return true;
+        return true
     }
-  });
+  })
 
   // Gerar slots de doses esperados para cada protocolo aplicável
-  const expectedDoses = [];
-  applicableProtocols.forEach(protocol => {
-    const schedule = protocol.time_schedule || [];
-    schedule.forEach(time => {
+  const expectedDoses = []
+  applicableProtocols.forEach((protocol) => {
+    const schedule = protocol.time_schedule || []
+    schedule.forEach((time) => {
       expectedDoses.push({
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         scheduledTime: time,
         expectedQuantity: protocol.dosage_per_intake || 1,
         protocol: protocol,
-        medicine: protocol.medicine || null
-      });
-    });
-  });
+        medicine: protocol.medicine || null,
+      })
+    })
+  })
 
   // Criar cópia dos logs para rastrear quais já foram associados
-  const unmatchedLogs = [...(logs || [])];
+  const unmatchedLogs = [...(logs || [])]
 
   // Para cada dose esperada, tentar encontrar um log correspondente
-  expectedDoses.forEach(expectedDose => {
-    let matchedLogIndex = -1;
+  expectedDoses.forEach((expectedDose) => {
+    let matchedLogIndex = -1
 
     // Procurar log que corresponda a este horário esperado
     for (let i = 0; i < unmatchedLogs.length; i++) {
-      const log = unmatchedLogs[i];
-      
+      const log = unmatchedLogs[i]
+
       // Verificar se o log é do mesmo protocolo
-      if (log.protocol_id !== expectedDose.protocolId) continue;
+      if (log.protocol_id !== expectedDose.protocolId) continue
 
       // Verificar se está na janela de tolerância (+/- 2h)
       if (isDoseInToleranceWindow(expectedDose.scheduledTime, log.taken_at)) {
-        matchedLogIndex = i;
-        break;
+        matchedLogIndex = i
+        break
       }
     }
 
     if (matchedLogIndex >= 0) {
       // Dose tomada - mover log para takenDoses
-      const matchedLog = unmatchedLogs.splice(matchedLogIndex, 1)[0];
+      const matchedLog = unmatchedLogs.splice(matchedLogIndex, 1)[0]
       takenDoses.push({
         ...matchedLog,
         scheduledTime: expectedDose.scheduledTime,
-        expectedQuantity: expectedDose.expectedQuantity
-      });
+        expectedQuantity: expectedDose.expectedQuantity,
+      })
     } else {
       // Dose perdida - criar entrada sintética
       missedDoses.push({
@@ -450,21 +464,21 @@ export function calculateDosesByDate(date, logs, protocols) {
         protocol: expectedDose.protocol,
         medicine: expectedDose.medicine,
         status: 'missed',
-        isSynthetic: true
-      });
+        isSynthetic: true,
+      })
     }
-  });
+  })
 
   // Logs restantes que não correspondem a nenhuma dose esperada
   // (doses extras, fora do horário, etc.) - adicionar como takenDoses
-  unmatchedLogs.forEach(log => {
+  unmatchedLogs.forEach((log) => {
     takenDoses.push({
       ...log,
       scheduledTime: null,
       expectedQuantity: log.quantity_taken || 1,
-      isExtra: true
-    });
-  });
+      isExtra: true,
+    })
+  })
 
-  return { takenDoses, missedDoses };
+  return { takenDoses, missedDoses }
 }

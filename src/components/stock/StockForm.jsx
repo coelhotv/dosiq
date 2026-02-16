@@ -8,27 +8,27 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
     quantity: '',
     unit_price: '',
     purchase_date: new Date().toISOString().split('T')[0],
-    expiration_date: ''
+    expiration_date: '',
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const validate = () => {
     const newErrors = {}
-    
+
     if (!formData.medicine_id) {
       newErrors.medicine_id = 'Selecione um medicamento'
     }
-    
+
     if (!formData.quantity || formData.quantity <= 0) {
       newErrors.quantity = 'Quantidade deve ser maior que zero'
     }
@@ -36,31 +36,31 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
     if (formData.unit_price && isNaN(formData.unit_price)) {
       newErrors.unit_price = 'Deve ser um número'
     }
-    
+
     if (formData.expiration_date && formData.expiration_date < formData.purchase_date) {
       newErrors.expiration_date = 'Data de validade não pode ser anterior à compra'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
       const dataToSave = {
         medicine_id: formData.medicine_id,
         quantity: parseFloat(formData.quantity),
         unit_price: formData.unit_price ? parseFloat(formData.unit_price) : 0,
         purchase_date: formData.purchase_date || null,
-        expiration_date: formData.expiration_date || null
+        expiration_date: formData.expiration_date || null,
       }
-      
+
       await onSave(dataToSave)
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -73,7 +73,7 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
   return (
     <form className="stock-form" onSubmit={handleSubmit}>
       <h3>Adicionar Estoque</h3>
-      
+
       <div className="form-group">
         <label htmlFor="medicine_id">
           Medicamento <span className="required">*</span>
@@ -86,9 +86,12 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
           className={errors.medicine_id ? 'error' : ''}
         >
           <option value="">Selecione um medicamento</option>
-          {medicines.map(medicine => (
+          {medicines.map((medicine) => (
             <option key={medicine.id} value={medicine.id}>
-              {medicine.name} {medicine.dosage_per_pill ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})` : ''}
+              {medicine.name}{' '}
+              {medicine.dosage_per_pill
+                ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})`
+                : ''}
             </option>
           ))}
         </select>
@@ -153,30 +156,19 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             onChange={handleChange}
             className={errors.expiration_date ? 'error' : ''}
           />
-          {errors.expiration_date && <span className="error-message">{errors.expiration_date}</span>}
+          {errors.expiration_date && (
+            <span className="error-message">{errors.expiration_date}</span>
+          )}
         </div>
       </div>
 
-      {errors.submit && (
-        <div className="error-banner">
-          ❌ {errors.submit}
-        </div>
-      )}
+      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
 
       <div className="form-actions">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button 
-          type="submit" 
-          variant="primary"
-          disabled={isSubmitting}
-        >
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? 'Salvando...' : 'Adicionar Estoque'}
         </Button>
       </div>

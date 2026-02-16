@@ -1,8 +1,8 @@
 /**
  * DoseListItem - Componente para exibir uma dose individual na lista do drill-down
- * 
+ *
  * Mostra informações de uma dose (tomada ou perdida) com indicador visual de status.
- * 
+ *
  * @component
  * @example
  * <DoseListItem log={log} isTaken={true} scheduledTime="08:00" />
@@ -21,7 +21,7 @@ const formatTime = (dateStr) => {
   const date = new Date(dateStr)
   return date.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -66,42 +66,35 @@ const getQuantityLabel = (quantity, unit = 'comprimido') => {
  * @param {Function} props.onClick - Handler de click opcional
  * @param {number} props.index - Índice para animação staggered
  */
-export function DoseListItem({
-  log,
-  isTaken,
-  status,
-  scheduledTime,
-  onClick,
-  index = 0
-}) {
+export function DoseListItem({ log, isTaken, status, scheduledTime, onClick, index = 0 }) {
   // Determinar o status efetivo
   const effectiveStatus = status || (isTaken ? 'taken' : 'missed')
   const medicineName = formatMedicineName(log.medicine?.name)
   const protocolName = log.protocol?.name || 'Protocolo'
   const unit = log.medicine?.type === 'cápsula' ? 'cápsula' : 'comprimido'
   // Usar expectedQuantity para doses futuras (scheduled/missed), quantity_taken para doses tomadas
-  const quantity = effectiveStatus === 'taken'
-    ? (log.quantity_taken || 1)
-    : (log.expectedQuantity || log.quantity_taken || 1)
+  const quantity =
+    effectiveStatus === 'taken'
+      ? log.quantity_taken || 1
+      : log.expectedQuantity || log.quantity_taken || 1
   const quantityLabel = getQuantityLabel(quantity, unit)
-  
+
   // Horário real se tomada, ou previsto se perdida/agendada
-  const displayTime = effectiveStatus === 'taken'
-    ? formatTime(log.taken_at)
-    : (scheduledTime || '--:--')
+  const displayTime =
+    effectiveStatus === 'taken' ? formatTime(log.taken_at) : scheduledTime || '--:--'
 
   // Label de status em português
   const statusLabels = {
     taken: 'Tomada',
     missed: 'Perdida',
-    scheduled: 'Agendada'
+    scheduled: 'Agendada',
   }
 
   // Ícone baseado no status
   const statusIcons = {
     taken: '✓',
     missed: '✕',
-    scheduled: '○'
+    scheduled: '○',
   }
 
   return (
@@ -113,7 +106,7 @@ export function DoseListItem({
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.2,
-        delay: index * 0.05 // Staggered animation
+        delay: index * 0.05, // Staggered animation
       }}
       data-testid={`dose-list-item-${log.id}`}
     >
@@ -122,24 +115,22 @@ export function DoseListItem({
           {statusIcons[effectiveStatus]}
         </span>
       </div>
-      
+
       <div className="dose-list-item__content">
         <div className="dose-list-item__header">
           <span className="dose-medicine-name" title={log.medicine?.name}>
             {medicineName}
           </span>
         </div>
-        
+
         <div className="dose-list-item__details">
-          <span className="dose-protocol-name">
-            {protocolName}
-          </span>
+          <span className="dose-protocol-name">{protocolName}</span>
           <span className="dose-quantity" aria-label={`Quantidade: ${quantityLabel}`}>
             {quantityLabel}
           </span>
         </div>
       </div>
-      
+
       <div className="dose-list-item__time">
         <time
           className="dose-time"

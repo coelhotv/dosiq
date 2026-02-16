@@ -394,15 +394,15 @@
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .dlq-admin__table th {
+[data-theme='dark'] .dlq-admin__table th {
   background: var(--surface-tertiary);
 }
 
-[data-theme="dark"] .dlq-admin__action-btn--view {
+[data-theme='dark'] .dlq-admin__action-btn--view {
   background: var(--surface-tertiary);
 }
 
-[data-theme="dark"] .dlq-admin__detail-value--code {
+[data-theme='dark'] .dlq-admin__detail-value--code {
   background: var(--surface-tertiary);
 }
 

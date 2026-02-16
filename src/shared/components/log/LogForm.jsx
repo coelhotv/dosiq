@@ -3,7 +3,13 @@ import Button from '@shared/components/ui/Button'
 import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
 import './LogForm.css'
 
-export default function LogForm({ protocols, treatmentPlans = [], initialValues, onSave, onCancel }) {
+export default function LogForm({
+  protocols,
+  treatmentPlans = [],
+  initialValues,
+  onSave,
+  onCancel,
+}) {
   // Helper to format date to local ISO string (YYYY-MM-DDTHH:mm) for datetime-local input
   const toLocalISO = (dateStr) => {
     const date = dateStr ? new Date(dateStr) : new Date()
@@ -12,43 +18,55 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
   }
 
   const [formData, setFormData] = useState({
-    type: initialValues?.type || (initialValues?.protocol_id ? 'protocol' : (initialValues?.treatment_plan_id ? 'plan' : 'protocol')),
+    type:
+      initialValues?.type ||
+      (initialValues?.protocol_id
+        ? 'protocol'
+        : initialValues?.treatment_plan_id
+          ? 'plan'
+          : 'protocol'),
     id: initialValues?.id || null, // For editing
     protocol_id: initialValues?.protocol_id || '',
     treatment_plan_id: initialValues?.treatment_plan_id || '',
     taken_at: toLocalISO(initialValues?.taken_at),
     quantity_taken: initialValues?.quantity_taken || '',
-    notes: initialValues?.notes || ''
+    notes: initialValues?.notes || '',
   })
-  
+
   const [selectedPlanProtocols, setSelectedPlanProtocols] = useState([])
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const selectedProtocol = protocols.find(p => p.id === formData.protocol_id)
-  const selectedPlan = treatmentPlans.find(p => p.id === formData.treatment_plan_id)
+  const selectedProtocol = protocols.find((p) => p.id === formData.protocol_id)
+  const selectedPlan = treatmentPlans.find((p) => p.id === formData.treatment_plan_id)
 
   // Atualizar formData quando initialValues mudar (Deep Linking Interno)
   useEffect(() => {
     if (initialValues) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        type: initialValues.type || (initialValues.protocol_id ? 'protocol' : (initialValues.treatment_plan_id ? 'plan' : 'protocol')),
+        type:
+          initialValues.type ||
+          (initialValues.protocol_id
+            ? 'protocol'
+            : initialValues.treatment_plan_id
+              ? 'plan'
+              : 'protocol'),
         protocol_id: initialValues.protocol_id || '',
         treatment_plan_id: initialValues.treatment_plan_id || '',
         taken_at: toLocalISO(initialValues.taken_at),
         quantity_taken: initialValues.quantity_taken || '',
-        notes: initialValues.notes || ''
-      }));
+        notes: initialValues.notes || '',
+      }))
     }
-  }, [initialValues]);
+  }, [initialValues])
 
   // Auto-select all protocols when a plan is selected
   useEffect(() => {
     if (formData.type === 'plan' && formData.treatment_plan_id) {
-      const plan = treatmentPlans.find(p => p.id === formData.treatment_plan_id)
+      const plan = treatmentPlans.find((p) => p.id === formData.treatment_plan_id)
       if (plan) {
-        const activeIds = plan.protocols?.filter(p => p.active).map(p => p.id) || []
+        const activeIds = plan.protocols?.filter((p) => p.active).map((p) => p.id) || []
         setSelectedPlanProtocols(activeIds)
       }
     } else {
@@ -58,34 +76,35 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const toggleProtocol = (protocolId) => {
-    setSelectedPlanProtocols(prev => {
+    setSelectedPlanProtocols((prev) => {
       if (prev.includes(protocolId)) {
-        return prev.filter(id => id !== protocolId)
+        return prev.filter((id) => id !== protocolId)
       } else {
         return [...prev, protocolId]
       }
     })
-    
+
     // Clear error if selection becomes valid
-    if (errors.submit && selectedPlanProtocols.length === 0) { // logic inverted because state update is async, but simple check is enough
-       setErrors(prev => ({ ...prev, submit: '' }))
+    if (errors.submit && selectedPlanProtocols.length === 0) {
+      // logic inverted because state update is async, but simple check is enough
+      setErrors((prev) => ({ ...prev, submit: '' }))
     }
   }
 
   const validate = () => {
     const newErrors = {}
-    
+
     if (formData.type === 'protocol' && !formData.protocol_id) {
       newErrors.protocol_id = 'Selecione um protocolo'
     }
-    
+
     if (formData.type === 'plan') {
       if (!formData.treatment_plan_id) {
         newErrors.treatment_plan_id = 'Selecione um plano'
@@ -93,21 +112,21 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         newErrors.submit = 'Selecione pelo menos um medicamento para registrar'
       }
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
       if (formData.type === 'protocol') {
-        const protocol = protocols.find(p => p.id === formData.protocol_id)
+        const protocol = protocols.find((p) => p.id === formData.protocol_id)
         if (!protocol) {
           throw new Error('Protocolo não encontrado')
         }
@@ -115,11 +134,13 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         const dataToSave = {
           protocol_id: formData.protocol_id,
           medicine_id: protocol.medicine_id,
-          quantity_taken: formData.quantity_taken ? parseFloat(formData.quantity_taken) : protocol.dosage_per_intake,
+          quantity_taken: formData.quantity_taken
+            ? parseFloat(formData.quantity_taken)
+            : protocol.dosage_per_intake,
           taken_at: new Date(formData.taken_at).toISOString(),
-          notes: formData.notes.trim() || null
+          notes: formData.notes.trim() || null,
         }
-        
+
         if (formData.id) {
           await onSave({ ...dataToSave, id: formData.id })
         } else {
@@ -127,28 +148,29 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         }
       } else {
         // Plan bulk log
-        const plan = treatmentPlans.find(p => p.id === formData.treatment_plan_id)
+        const plan = treatmentPlans.find((p) => p.id === formData.treatment_plan_id)
         if (!plan) {
           throw new Error('Plano não encontrado')
         }
-        
+
         // Filter only selected protocols
-        const protocolsToLog = plan.protocols?.filter(p =>
-          p.active && selectedPlanProtocols.includes(p.id)
-        ) || []
-        
+        const protocolsToLog =
+          plan.protocols?.filter((p) => p.active && selectedPlanProtocols.includes(p.id)) || []
+
         if (protocolsToLog.length === 0) {
           throw new Error('Nenhum protocolo selecionado')
         }
 
-        const logsToSave = protocolsToLog.map(p => ({
+        const logsToSave = protocolsToLog.map((p) => ({
           protocol_id: p.id,
           medicine_id: p.medicine_id,
           quantity_taken: p.dosage_per_intake,
           taken_at: new Date(formData.taken_at).toISOString(),
-          notes: formData.notes.trim() ? `[Plano: ${plan.name}] ${formData.notes.trim()}` : `[Plano: ${plan.name}]`
+          notes: formData.notes.trim()
+            ? `[Plano: ${plan.name}] ${formData.notes.trim()}`
+            : `[Plano: ${plan.name}]`,
         }))
-        
+
         await onSave(logsToSave)
       }
     } catch (error) {
@@ -163,19 +185,19 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
   return (
     <form className="log-form" onSubmit={handleSubmit}>
       <h3>Registrar Medicamento Tomado</h3>
-      
+
       <div className="log-type-toggle">
-        <button 
-          type="button" 
+        <button
+          type="button"
           className={formData.type === 'protocol' ? 'active' : ''}
-          onClick={() => setFormData(prev => ({ ...prev, type: 'protocol' }))}
+          onClick={() => setFormData((prev) => ({ ...prev, type: 'protocol' }))}
         >
           💊 Único Remédio
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className={formData.type === 'plan' ? 'active' : ''}
-          onClick={() => setFormData(prev => ({ ...prev, type: 'plan' }))}
+          onClick={() => setFormData((prev) => ({ ...prev, type: 'plan' }))}
           disabled={treatmentPlans.length === 0 || formData.id}
         >
           📁 Plano Completo
@@ -183,7 +205,9 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
       </div>
 
       <div className="form-group">
-        <label htmlFor="taken_at">Data e Hora do Registro <span className="required">*</span></label>
+        <label htmlFor="taken_at">
+          Data e Hora do Registro <span className="required">*</span>
+        </label>
         <input
           type="datetime-local"
           id="taken_at"
@@ -207,7 +231,7 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
             className={errors.protocol_id ? 'error' : ''}
           >
             <option value="">Selecione um protocolo</option>
-            {protocols.map(protocol => (
+            {protocols.map((protocol) => (
               <option key={protocol.id} value={protocol.id}>
                 {protocol.name} - {protocol.medicine?.name}
               </option>
@@ -228,13 +252,15 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
             className={errors.treatment_plan_id ? 'error' : ''}
           >
             <option value="">Selecione um plano</option>
-            {treatmentPlans.map(plan => (
+            {treatmentPlans.map((plan) => (
               <option key={plan.id} value={plan.id}>
-                {plan.name} ({plan.protocols?.filter(p => p.active).length || 0} remédios)
+                {plan.name} ({plan.protocols?.filter((p) => p.active).length || 0} remédios)
               </option>
             ))}
           </select>
-          {errors.treatment_plan_id && <span className="error-message">{errors.treatment_plan_id}</span>}
+          {errors.treatment_plan_id && (
+            <span className="error-message">{errors.treatment_plan_id}</span>
+          )}
         </div>
       )}
 
@@ -246,7 +272,10 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
               type="number"
               id="quantity_taken"
               name="quantity_taken"
-              value={formData.quantity_taken || (selectedProtocol ? selectedProtocol.dosage_per_intake : '')}
+              value={
+                formData.quantity_taken ||
+                (selectedProtocol ? selectedProtocol.dosage_per_intake : '')
+              }
               onChange={handleChange}
               step="0.1"
               min="0.1"
@@ -264,21 +293,25 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         <div className="protocol-info">
           <p className="plan-summary-title">Selecione os medicamentos tomados:</p>
           <div className="plan-medicines-list">
-            {selectedPlan.protocols?.filter(p => p.active).map(p => (
-              <ProtocolChecklistItem
-                key={p.id}
-                protocol={p}
-                isSelected={selectedPlanProtocols.includes(p.id)}
-                onToggle={toggleProtocol}
-              />
-            ))}
+            {selectedPlan.protocols
+              ?.filter((p) => p.active)
+              .map((p) => (
+                <ProtocolChecklistItem
+                  key={p.id}
+                  protocol={p}
+                  isSelected={selectedPlanProtocols.includes(p.id)}
+                  onToggle={toggleProtocol}
+                />
+              ))}
           </div>
-          <div style={{ 
-            marginTop: '8px', 
-            fontSize: '11px', 
-            color: 'var(--text-tertiary)', 
-            textAlign: 'right' 
-          }}>
+          <div
+            style={{
+              marginTop: '8px',
+              fontSize: '11px',
+              color: 'var(--text-tertiary)',
+              textAlign: 'right',
+            }}
+          >
             {selectedPlanProtocols.length} selecionados
           </div>
         </div>
@@ -296,35 +329,29 @@ export default function LogForm({ protocols, treatmentPlans = [], initialValues,
         />
       </div>
 
-      {errors.submit && (
-        <div className="error-banner">
-          ❌ {errors.submit}
-        </div>
-      )}
+      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
 
       <div className="form-actions">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           variant="primary"
           disabled={
-            isSubmitting || 
-            (formData.type === 'protocol' ? !formData.protocol_id : (!formData.treatment_plan_id || selectedPlanProtocols.length === 0))
+            isSubmitting ||
+            (formData.type === 'protocol'
+              ? !formData.protocol_id
+              : !formData.treatment_plan_id || selectedPlanProtocols.length === 0)
           }
         >
-          {isSubmitting ? 'Salvando...' : 
-            formData.id ? '💾 Atualizar Registro' :
-            formData.type === 'plan' && selectedPlanProtocols.length > 0 
-              ? `✅ Registrar (${selectedPlanProtocols.length})` 
-              : '✅ Registrar Dose'
-          }
+          {isSubmitting
+            ? 'Salvando...'
+            : formData.id
+              ? '💾 Atualizar Registro'
+              : formData.type === 'plan' && selectedPlanProtocols.length > 0
+                ? `✅ Registrar (${selectedPlanProtocols.length})`
+                : '✅ Registrar Dose'}
         </Button>
       </div>
     </form>

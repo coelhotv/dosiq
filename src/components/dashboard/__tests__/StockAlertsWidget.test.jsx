@@ -5,7 +5,7 @@ import '@testing-library/jest-dom'
 
 // Mock do useDashboardContext
 vi.mock('../../../hooks/useDashboardContext', () => ({
-  useDashboardContext: vi.fn()
+  useDashboardContext: vi.fn(),
 }))
 
 describe('StockAlertsWidget', () => {
@@ -21,7 +21,7 @@ describe('StockAlertsWidget', () => {
       threshold: 10,
       unit: 'un',
       days_until_empty: 5,
-      priority: 'high'
+      priority: 'high',
     },
     {
       id: 'stock-2',
@@ -31,8 +31,8 @@ describe('StockAlertsWidget', () => {
       threshold: 10,
       unit: 'un',
       days_until_empty: 10,
-      priority: 'medium'
-    }
+      priority: 'medium',
+    },
   ]
 
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: mockLowStockItems,
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -56,7 +56,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -69,7 +69,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [],
-      loading: true
+      loading: true,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -81,7 +81,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [mockLowStockItems[0]],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -93,7 +93,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [mockLowStockItems[0]],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -105,7 +105,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [mockLowStockItems[0]],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -120,7 +120,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: mockLowStockItems,
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -134,13 +134,13 @@ describe('StockAlertsWidget', () => {
       ...mockLowStockItems[0],
       current_quantity: 1,
       days_until_empty: 1,
-      priority: 'critical'
+      priority: 'critical',
     }
 
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [criticalItem],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -152,7 +152,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [mockLowStockItems[0]],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -167,7 +167,7 @@ describe('StockAlertsWidget', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [mockLowStockItems[0]],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={mockOnAddStock} onViewDetails={mockOnViewDetails} />)
@@ -182,7 +182,7 @@ describe('StockAlertsWidget - Widget Header', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       lowStockItems: [],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={() => {}} onViewDetails={() => {}} />)
@@ -196,9 +196,9 @@ describe('StockAlertsWidget - Widget Header', () => {
       lowStockItems: [
         { id: '1', medicine_name: 'Med 1' },
         { id: '2', medicine_name: 'Med 2' },
-        { id: '3', medicine_name: 'Med 3' }
+        { id: '3', medicine_name: 'Med 3' },
       ],
-      loading: false
+      loading: false,
     })
 
     render(<StockAlertsWidget onAddStock={() => {}} onViewDetails={() => {}} />)

@@ -189,11 +189,11 @@
 }
 
 /* Dark theme adjustments */
-[data-theme="dark"] .dose-list-item {
+[data-theme='dark'] .dose-list-item {
   background: var(--glass-bg-light);
 }
 
-[data-theme="dark"] .dose-list-item:hover {
+[data-theme='dark'] .dose-list-item:hover {
   background: var(--glass-bg);
 }
 

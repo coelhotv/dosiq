@@ -112,8 +112,13 @@
 }
 
 @keyframes notificationPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
 }
 
 .notification-icon {
@@ -163,7 +168,9 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
 }
 
@@ -188,7 +195,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-skip-telegram {
@@ -216,8 +225,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .qr-container {
@@ -293,7 +308,9 @@
   border-radius: var(--radius-md, 8px);
   font-weight: 600;
   font-size: 0.9375rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .bot-link:hover {
@@ -314,7 +331,9 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
 }
 

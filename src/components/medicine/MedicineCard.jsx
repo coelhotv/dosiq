@@ -1,8 +1,8 @@
 // MedicineCard.jsx
-import React from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import './MedicineCard.css'; // Make sure this path is correct
+import React from 'react'
+import Card from '../ui/Card'
+import Button from '../ui/Button'
+import './MedicineCard.css' // Make sure this path is correct
 
 function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
   return (
@@ -10,7 +10,10 @@ function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
       <div className="medicine-header">
         <h4 className="medicine-name">{medicine.name}</h4>
         {hasDependencies && (
-          <span className="dependency-indicator" title="Este medicamento possui protocolos e/ou estoque associados.">
+          <span
+            className="dependency-indicator"
+            title="Este medicamento possui protocolos e/ou estoque associados."
+          >
             ⚠️
           </span>
         )}
@@ -52,23 +55,15 @@ function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
       </div>
 
       <div className="medicine-actions">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onEdit(medicine)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onEdit(medicine)}>
           ✏️ Editar
         </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          onClick={() => onDelete(medicine)}
-        >
+        <Button variant="danger" size="sm" onClick={() => onDelete(medicine)}>
           🗑️ Excluir
         </Button>
       </div>
     </Card>
-  );
+  )
 }
 
-export default MedicineCard;
+export default MedicineCard

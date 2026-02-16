@@ -62,8 +62,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Empty State */
@@ -130,11 +134,21 @@
   animation-fill-mode: both;
 }
 
-.last-doses-widget__item:nth-child(1) { animation-delay: 0ms; }
-.last-doses-widget__item:nth-child(2) { animation-delay: 50ms; }
-.last-doses-widget__item:nth-child(3) { animation-delay: 100ms; }
-.last-doses-widget__item:nth-child(4) { animation-delay: 150ms; }
-.last-doses-widget__item:nth-child(5) { animation-delay: 200ms; }
+.last-doses-widget__item:nth-child(1) {
+  animation-delay: 0ms;
+}
+.last-doses-widget__item:nth-child(2) {
+  animation-delay: 50ms;
+}
+.last-doses-widget__item:nth-child(3) {
+  animation-delay: 100ms;
+}
+.last-doses-widget__item:nth-child(4) {
+  animation-delay: 150ms;
+}
+.last-doses-widget__item:nth-child(5) {
+  animation-delay: 200ms;
+}
 
 @keyframes slide-in {
   from {
@@ -270,14 +284,14 @@
 }
 
 /* Dark Theme Adjustments */
-[data-theme="dark"] .last-doses-widget {
+[data-theme='dark'] .last-doses-widget {
   background: var(--glass-bg-dark, rgba(0, 0, 0, 0.2));
 }
 
-[data-theme="dark"] .last-doses-widget__item {
+[data-theme='dark'] .last-doses-widget__item {
   background: var(--glass-light-dark, rgba(255, 255, 255, 0.03));
 }
 
-[data-theme="dark"] .last-doses-widget__item:hover {
+[data-theme='dark'] .last-doses-widget__item:hover {
   background: var(--glass-standard-dark, rgba(255, 255, 255, 0.08));
 }

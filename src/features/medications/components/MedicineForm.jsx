@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
-import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@medications/constants/medicineSchema'
+import {
+  MEDICINE_TYPES,
+  DOSAGE_UNITS,
+  DOSAGE_UNIT_LABELS,
+} from '@medications/constants/medicineSchema'
 import './MedicineForm.css'
 
 /**
@@ -26,7 +30,7 @@ export default function MedicineForm({
   showSuccessMessage = true,
   showCancelButton = true,
   submitButtonLabel,
-  title
+  title,
 }) {
   const [formData, setFormData] = useState({
     name: medicine?.name || '',
@@ -34,9 +38,9 @@ export default function MedicineForm({
     active_ingredient: medicine?.active_ingredient || '',
     dosage_per_pill: medicine?.dosage_per_pill || '',
     type: medicine?.type || 'medicamento',
-    dosage_unit: medicine?.dosage_unit || 'mg'
+    dosage_unit: medicine?.dosage_unit || 'mg',
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shakeFields, setShakeFields] = useState({})
@@ -44,10 +48,10 @@ export default function MedicineForm({
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     // Limpa erro do campo quando usuário começa a digitar
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
     // Limpa mensagem de sucesso ao editar
     if (saveSuccess) {
@@ -83,11 +87,11 @@ export default function MedicineForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
       // Converte strings vazias para null e números para o tipo correto
       const dataToSave = {
@@ -96,15 +100,15 @@ export default function MedicineForm({
         active_ingredient: formData.active_ingredient.trim() || null,
         dosage_per_pill: formData.dosage_per_pill ? parseFloat(formData.dosage_per_pill) : null,
         type: formData.type,
-        dosage_unit: formData.dosage_unit
+        dosage_unit: formData.dosage_unit,
       }
-      
+
       const savedMedicine = await onSave(dataToSave)
-      
+
       if (showSuccessMessage) {
         setSaveSuccess(true)
       }
-      
+
       if (autoAdvance && onSuccess) {
         setTimeout(() => {
           onSuccess(savedMedicine)
@@ -125,16 +129,16 @@ export default function MedicineForm({
   return (
     <form className="medicine-form" onSubmit={handleSubmit}>
       <h3>{formTitle}</h3>
-      
+
       {saveSuccess && showSuccessMessage && (
         <div className="success-message">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>Medicamento salvo com sucesso!</span>
         </div>
       )}
-      
+
       <div className="form-group">
         <label htmlFor="type">Tipo</label>
         <select
@@ -144,7 +148,7 @@ export default function MedicineForm({
           onChange={handleChange}
           disabled={isSubmitting}
         >
-          {MEDICINE_TYPES.map(type => (
+          {MEDICINE_TYPES.map((type) => (
             <option key={type} value={type}>
               {type === 'medicamento' ? 'Medicamento' : 'Suplemento'}
             </option>
@@ -154,7 +158,8 @@ export default function MedicineForm({
 
       <div className="form-group">
         <label htmlFor="name">
-          Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'} <span className="required">*</span>
+          Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'}{' '}
+          <span className="required">*</span>
         </label>
         <ShakeEffect trigger={shakeFields.name}>
           <input
@@ -200,7 +205,10 @@ export default function MedicineForm({
 
       <div className="form-group">
         <label htmlFor="dosage_per_pill">Dosagem</label>
-        <div className="dosage-input-group" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
+        <div
+          className="dosage-input-group"
+          style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}
+        >
           <ShakeEffect trigger={shakeFields.dosage_per_pill}>
             <input
               type="number"
@@ -220,7 +228,7 @@ export default function MedicineForm({
             onChange={handleChange}
             disabled={isSubmitting}
           >
-            {DOSAGE_UNITS.map(unit => (
+            {DOSAGE_UNITS.map((unit) => (
               <option key={unit} value={unit}>
                 {DOSAGE_UNIT_LABELS[unit] || unit}
               </option>
@@ -230,32 +238,18 @@ export default function MedicineForm({
         {errors.dosage_per_pill && <span className="error-message">{errors.dosage_per_pill}</span>}
       </div>
 
-      {errors.submit && (
-        <div className="error-banner">
-          ❌ {errors.submit}
-        </div>
-      )}
+      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
 
       <div className="form-actions">
         {showCancelButton && (
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
         )}
-        <Button 
-          type="submit" 
-          variant="primary"
-          disabled={isSubmitting}
-        >
-          {isSubmitting 
-            ? 'Salvando...' 
-            : submitButtonLabel || (medicine ? 'Atualizar' : 'Cadastrar')
-          }
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
+          {isSubmitting
+            ? 'Salvando...'
+            : submitButtonLabel || (medicine ? 'Atualizar' : 'Cadastrar')}
         </Button>
       </div>
     </form>

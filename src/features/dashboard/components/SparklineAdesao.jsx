@@ -25,15 +25,15 @@ import './SparklineAdesao.css'
 function isDateVisibleInBrazil(dateStr) {
   const now = new Date()
   const brazilOffset = -3 * 60 * 60 * 1000 // GMT-3 in milliseconds
-  
+
   // Current time in Brazil
   const nowInBrazil = new Date(now.getTime() + brazilOffset)
-  
+
   // Compare dates (ignoring time)
   const nowDateStr = nowInBrazil.toISOString().split('T')[0]
   const nowDate = new Date(nowDateStr + 'T00:00:00')
   const inputDate = new Date(dateStr + 'T00:00:00')
-  
+
   return inputDate <= nowDate
 }
 
@@ -80,7 +80,7 @@ const createSmoothPath = (points, height) => {
 
   for (let i = 0; i < points.length; i++) {
     const [x, y] = points[i].split(',').map(Number)
-    
+
     if (i === 0) {
       path = `M ${x},${height} L ${x},${y}`
     } else if (i < points.length - 1) {
@@ -124,32 +124,35 @@ export function SparklineAdesao({
   showAxis = false,
   showTooltip = true,
   className = '',
-  onDayClick
+  onDayClick,
 }) {
   // Handler memoizado para evitar recriações
-  const handleDayClick = useCallback((dayData) => {
-    // Track analytics
-    analyticsService.track('sparkline_day_clicked', {
-      date: dayData.date,
-      adherence: dayData.adherence,
-      taken: dayData.taken,
-      expected: dayData.expected
-    })
-    
-    // Chamar callback se fornecido
-    onDayClick?.(dayData)
-  }, [onDayClick])
+  const handleDayClick = useCallback(
+    (dayData) => {
+      // Track analytics
+      analyticsService.track('sparkline_day_clicked', {
+        date: dayData.date,
+        adherence: dayData.adherence,
+        taken: dayData.taken,
+        expected: dayData.expected,
+      })
+
+      // Chamar callback se fornecido
+      onDayClick?.(dayData)
+    },
+    [onDayClick]
+  )
 
   const handleSparklineTap = (dayData) => {
     analyticsService.track('sparkline_tapped', {
       date: dayData.date,
-      adherence: dayData.adherence
+      adherence: dayData.adherence,
     })
   }
   const sizes = {
     small: { width: 120, height: 32, padding: 4 },
     medium: { width: 200, height: 40, padding: 6 },
-    large: { width: 280, height: 48, padding: 8 }
+    large: { width: 280, height: 48, padding: 8 },
   }
 
   const { width, height, padding } = sizes[size] || sizes.medium
@@ -167,19 +170,19 @@ export function SparklineAdesao({
       const date = new Date(today)
       date.setDate(date.getDate() - i)
       const dateKey = date.toISOString().split('T')[0]
-      
+
       // Pular dias que são "futuros" no horário do Brasil
       if (!isDateVisibleInBrazil(dateKey)) {
         continue
       }
-      
-      const dayData = adherenceByDay.find(d => d.date === dateKey)
+
+      const dayData = adherenceByDay.find((d) => d.date === dateKey)
       data.push({
         date: dateKey,
         dayName: date.toLocaleDateString('pt-BR', { weekday: 'short' }),
         adherence: dayData?.adherence ?? 0,
         taken: dayData?.taken ?? 0,
-        expected: dayData?.expected ?? 0
+        expected: dayData?.expected ?? 0,
       })
     }
 
@@ -190,17 +193,19 @@ export function SparklineAdesao({
   const stats = useMemo(() => {
     if (chartData.length === 0) return { average: 0, trend: 'stable' }
 
-    const validData = chartData.filter(d => d.adherence > 0)
+    const validData = chartData.filter((d) => d.adherence > 0)
     if (validData.length === 0) return { average: 0, trend: 'stable' }
 
-    const average = Math.round(validData.reduce((sum, d) => sum + d.adherence, 0) / validData.length)
+    const average = Math.round(
+      validData.reduce((sum, d) => sum + d.adherence, 0) / validData.length
+    )
 
     // Calcular tendência
     let trend = 'stable'
     if (validData.length >= 2) {
       const firstHalf = validData.slice(0, Math.floor(validData.length / 2))
       const secondHalf = validData.slice(Math.floor(validData.length / 2))
-      
+
       const firstAvg = firstHalf.reduce((sum, d) => sum + d.adherence, 0) / firstHalf.length
       const secondAvg = secondHalf.reduce((sum, d) => sum + d.adherence, 0) / secondHalf.length
 
@@ -248,15 +253,19 @@ export function SparklineAdesao({
   // Não renderizar se não há dados
   if (chartData.length === 0) {
     return (
-      <div className={`sparkline-adhesion sparkline-empty ${className}`} role="img" aria-label="Sem dados de adesão">
+      <div
+        className={`sparkline-adhesion sparkline-empty ${className}`}
+        role="img"
+        aria-label="Sem dados de adesão"
+      >
         <span className="sparkline-empty-text">Sem dados</span>
       </div>
     )
   }
 
   // Detectar prefers-reduced-motion
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
     <div
@@ -265,11 +274,7 @@ export function SparklineAdesao({
       aria-label={`Gráfico de adesão: ${stats.average}% média em 7 dias. Tendência: ${stats.trend}`}
       onClick={() => handleSparklineTap(chartData[chartData.length - 1])}
     >
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="sparkline-svg"
-        preserveAspectRatio="none"
-      >
+      <svg viewBox={`0 0 ${width} ${height}`} className="sparkline-svg" preserveAspectRatio="none">
         <defs>
           {/* Gradiente de área */}
           <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -320,13 +325,13 @@ export function SparklineAdesao({
           strokeLinejoin="round"
           filter="url(#sparklineGlow)"
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ 
-            pathLength: 1, 
-            opacity: 1 
+          animate={{
+            pathLength: 1,
+            opacity: 1,
           }}
-          transition={{ 
+          transition={{
             duration: prefersReducedMotion ? 0 : 0.8,
-            ease: 'easeOut'
+            ease: 'easeOut',
           }}
         />
 
@@ -336,21 +341,22 @@ export function SparklineAdesao({
             key={d.date}
             cx={d.x}
             cy={d.y}
-            r={onDayClick ? (size === 'small' ? 2.5 : 3) : (size === 'small' ? 1 : 1.5)}
+            r={onDayClick ? (size === 'small' ? 2.5 : 3) : size === 'small' ? 1 : 1.5}
             fill={getAdherenceColor(d.adherence)}
             className={`sparkline-dot ${onDayClick ? 'sparkline-dot--clickable' : ''}`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{
               delay: prefersReducedMotion ? 0 : i * 0.1,
-              duration: 0.2
+              duration: 0.2,
             }}
             // Acessibilidade
             role={onDayClick ? 'button' : 'graphics-symbol'}
             tabIndex={onDayClick ? 0 : -1}
-            aria-label={onDayClick
-              ? `Ver detalhes de ${d.dayName}: ${d.adherence}% de adesão, ${d.taken} de ${d.expected} doses`
-              : `${d.dayName}: ${d.adherence}%`
+            aria-label={
+              onDayClick
+                ? `Ver detalhes de ${d.dayName}: ${d.adherence}% de adesão, ${d.taken} de ${d.expected} doses`
+                : `${d.dayName}: ${d.adherence}%`
             }
             // Interatividade
             onClick={(e) => {
@@ -368,7 +374,7 @@ export function SparklineAdesao({
             // Cursor e eventos
             style={{
               cursor: onDayClick ? 'pointer' : 'default',
-              pointerEvents: onDayClick ? 'all' : 'none'
+              pointerEvents: onDayClick ? 'all' : 'none',
             }}
             // Dados para testes
             data-date={d.date}
@@ -382,13 +388,9 @@ export function SparklineAdesao({
       {showTooltip && (
         <div className="sparkline-tooltip-container">
           {chartData.map((d, i) => (
-            <div 
-              key={d.date}
-              className="sparkline-day-tooltip"
-              style={{ '--day-index': i }}
-            >
+            <div key={d.date} className="sparkline-day-tooltip" style={{ '--day-index': i }}>
               <span className="sparkline-day-name">{d.dayName}</span>
-              <span 
+              <span
                 className="sparkline-day-value"
                 style={{ color: getAdherenceColor(d.adherence) }}
               >

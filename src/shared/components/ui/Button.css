@@ -27,40 +27,40 @@
 
 /* Sizes - Mobile First Scale (Reduzido) */
 .btn-sm {
-  padding: var(--space-1) var(--space-3);     /* 4px 12px - Compacto */
-  font-size: var(--font-size-xs);              /* 12px */
+  padding: var(--space-1) var(--space-3); /* 4px 12px - Compacto */
+  font-size: var(--font-size-xs); /* 12px */
   min-height: 28px;
 }
 
 .btn-md {
-  padding: var(--space-2) var(--space-4);     /* 8px 16px - Padrão mobile */
-  font-size: var(--font-size-sm);              /* 14px */
+  padding: var(--space-2) var(--space-4); /* 8px 16px - Padrão mobile */
+  font-size: var(--font-size-sm); /* 14px */
   min-height: 36px;
 }
 
 .btn-lg {
-  padding: var(--space-3) var(--space-5);     /* 12px 20px - Era 32px 128px! */
-  font-size: var(--font-size-base);            /* 16px */
-  min-height: 44px;                            /* Touch target */
-  max-width: 100%;                             /* Não ultrapassar container */
+  padding: var(--space-3) var(--space-5); /* 12px 20px - Era 32px 128px! */
+  font-size: var(--font-size-base); /* 16px */
+  min-height: 44px; /* Touch target */
+  max-width: 100%; /* Não ultrapassar container */
 }
 
 /* Primary variant - Neon cyan glow */
 .btn-primary {
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
-  color: #000;                                  /* Contraste em fundo claro */
+  color: #000; /* Contraste em fundo claro */
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.3);  /* Sutil */
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.3); /* Sutil */
 }
 
 .btn-primary:hover:not(:disabled) {
   box-shadow: var(--glow-hover-primary);
-  transform: translateY(-1px);                   /* Era -2px, agora mais sutil */
+  transform: translateY(-1px); /* Era -2px, agora mais sutil */
   transition: var(--transition-hover), var(--transition-glow);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);          /* Era 0.95, agora mais sutil */
+  transform: translateY(0) scale(0.98); /* Era 0.95, agora mais sutil */
   transition: var(--transition-active);
 }
 

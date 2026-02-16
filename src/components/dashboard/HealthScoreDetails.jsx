@@ -1,41 +1,41 @@
-import React from 'react';
-import Modal from '../ui/Modal';
-import './HealthScoreDetails.css';
+import React from 'react'
+import Modal from '../ui/Modal'
+import './HealthScoreDetails.css'
 
 /**
  * HealthScoreDetails - Modal de detalhamento do Health Score (Breakdown)
  */
 export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummary }) {
-  if (!stats || !stats.rates) return null;
+  if (!stats || !stats.rates) return null
 
-  const { adherence: adherenceRate, punctuality: punctualityRate, stock: stockRate } = stats.rates;
-  const totalScore = stats.score;
+  const { adherence: adherenceRate, punctuality: punctualityRate, stock: stockRate } = stats.rates
+  const totalScore = stats.score
 
   // Insights Acionáveis
-  const insights = [];
+  const insights = []
   if (adherenceRate < 0.9) {
     insights.push({
       type: 'warning',
       text: 'Você perdeu algumas doses nos últimos 30 dias. Tente manter a constância.',
-      action: 'Dica: Use as notificações do Telegram.'
-    });
+      action: 'Dica: Use as notificações do Telegram.',
+    })
   }
   if (stockRate < 1) {
-    const lowItems = stockSummary.filter(s => s.isLow || s.isZero);
+    const lowItems = stockSummary.filter((s) => s.isLow || s.isZero)
     if (lowItems.length > 0) {
       insights.push({
         type: 'danger',
-        text: `Estoque crítico para: ${lowItems.map(i => i.medicine.name).join(', ')}.`,
-        action: 'Ação: Registre novas compras no widget de Estoque.'
-      });
+        text: `Estoque crítico para: ${lowItems.map((i) => i.medicine.name).join(', ')}.`,
+        action: 'Ação: Registre novas compras no widget de Estoque.',
+      })
     }
   }
   if (stats.currentStreak < 3) {
     insights.push({
       type: 'info',
       text: 'Comece uma nova sequência (streak) hoje para subir seu score rapidamente!',
-      action: 'Objetivo: 7 dias seguidos.'
-    });
+      action: 'Objetivo: 7 dias seguidos.',
+    })
   }
 
   return (
@@ -50,7 +50,8 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
             <span className="health-details__score-label">Score Atual</span>
           </div>
           <p className="health-details__description">
-            Seu score de <strong>{totalScore}</strong> é reflexo da sua constância nos últimos 30 dias.
+            Seu score de <strong>{totalScore}</strong> é reflexo da sua constância nos últimos 30
+            dias.
           </p>
         </div>
 
@@ -61,8 +62,8 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
               <span>{Math.round(adherenceRate * 100)}%</span>
             </div>
             <div className="health-details__progress-bar">
-              <div 
-                className="health-details__progress-fill" 
+              <div
+                className="health-details__progress-fill"
                 style={{ width: `${adherenceRate * 100}%`, backgroundColor: 'var(--cyan-primary)' }}
               />
             </div>
@@ -75,9 +76,12 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
               <span>{Math.round(punctualityRate * 100)}%</span>
             </div>
             <div className="health-details__progress-bar">
-              <div 
-                className="health-details__progress-fill" 
-                style={{ width: `${punctualityRate * 100}%`, backgroundColor: 'var(--purple-primary)' }}
+              <div
+                className="health-details__progress-fill"
+                style={{
+                  width: `${punctualityRate * 100}%`,
+                  backgroundColor: 'var(--purple-primary)',
+                }}
               />
             </div>
             <span className="health-details__metric-weight">Peso: 20%</span>
@@ -89,8 +93,8 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
               <span>{Math.round(stockRate * 100)}%</span>
             </div>
             <div className="health-details__progress-bar">
-              <div 
-                className="health-details__progress-fill" 
+              <div
+                className="health-details__progress-fill"
                 style={{ width: `${stockRate * 100}%`, backgroundColor: 'var(--neon-green)' }}
               />
             </div>
@@ -102,7 +106,10 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
           <h3>Como Melhorar</h3>
           {insights.length > 0 ? (
             insights.map((insight, idx) => (
-              <div key={idx} className={`health-details__insight-card health-details__insight-card--${insight.type}`}>
+              <div
+                key={idx}
+                className={`health-details__insight-card health-details__insight-card--${insight.type}`}
+              >
                 <p>{insight.text}</p>
                 <small>{insight.action}</small>
               </div>
@@ -115,5 +122,5 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
         </div>
       </div>
     </Modal>
-  );
+  )
 }

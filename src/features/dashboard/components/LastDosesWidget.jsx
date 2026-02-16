@@ -4,10 +4,10 @@ import './LastDosesWidget.css'
 
 /**
  * LastDosesWidget - Widget de Últimas Doses Tomadas
- * 
+ *
  * Exibe as 5 doses mais recentes tomadas, ordenadas cronologicamente
  * (mais recentes primeiro), independente do dia em que foram tomadas.
- * 
+ *
  * Features:
  * - Lista até 5 doses mais recentes
  * - Ordenação inversa cronológica (mais recente primeiro)
@@ -23,7 +23,7 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
     if (!logs || logs.length === 0) return []
 
     // Filtrar apenas doses tomadas (com taken_at válido)
-    const takenDoses = logs.filter(log => log.taken_at && log.quantity_taken > 0)
+    const takenDoses = logs.filter((log) => log.taken_at && log.quantity_taken > 0)
 
     // Ordenar por taken_at descendente (mais recente primeiro)
     const sortedDoses = takenDoses.sort((a, b) => {
@@ -37,12 +37,12 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
   // Criar mapas para lookup rápido
   const medicineMap = useMemo(() => {
     if (!medicines) return new Map()
-    return new Map(medicines.map(m => [m.id, m]))
+    return new Map(medicines.map((m) => [m.id, m]))
   }, [medicines])
 
   const protocolMap = useMemo(() => {
     if (!protocols) return new Map()
-    return new Map(protocols.map(p => [p.id, p]))
+    return new Map(protocols.map((p) => [p.id, p]))
   }, [protocols])
 
   // Formatar horário relativo
@@ -82,7 +82,7 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -114,9 +114,7 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
       {lastDoses.length === 0 ? (
         <div className="last-doses-widget__empty">
           <span className="last-doses-widget__empty-icon">💊</span>
-          <p className="last-doses-widget__empty-text">
-            Nenhuma dose registrada recentemente
-          </p>
+          <p className="last-doses-widget__empty-text">Nenhuma dose registrada recentemente</p>
           <button
             className={viewAllClassName || 'last-doses-widget__empty-action'}
             onClick={onViewHistory}
@@ -136,26 +134,21 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
                   key={dose.id || `${dose.medicine_id}-${index}`}
                   className="last-doses-widget__item"
                 >
-                  <div className="last-doses-widget__item-icon">
-                    💊
-                  </div>
+                  <div className="last-doses-widget__item-icon">💊</div>
                   <div className="last-doses-widget__item-content">
                     <div className="last-doses-widget__item-main">
-                      <span className="last-doses-widget__item-name">
-                        {medicine.name}
-                      </span>
+                      <span className="last-doses-widget__item-name">{medicine.name}</span>
                       <span className="last-doses-widget__item-time">
                         {formatRelativeTime(dose.taken_at)}
                       </span>
                     </div>
                     <div className="last-doses-widget__item-details">
                       <span className="last-doses-widget__item-quantity">
-                        {dose.quantity_taken * (medicine.dosage_per_pill || 1)}{medicine.dosage_unit || 'mg'}
+                        {dose.quantity_taken * (medicine.dosage_per_pill || 1)}
+                        {medicine.dosage_unit || 'mg'}
                       </span>
                       {protocol && (
-                        <span className="last-doses-widget__item-protocol">
-                          • {protocol.name}
-                        </span>
+                        <span className="last-doses-widget__item-protocol">• {protocol.name}</span>
                       )}
                     </div>
                   </div>

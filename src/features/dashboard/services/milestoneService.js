@@ -1,6 +1,6 @@
 /**
  * milestoneService.js - Serviço de gerenciamento de milestones e conquistas
- * 
+ *
  * Funcionalidades:
  * - Detecção de milestones de streak
  * - Persistência em localStorage
@@ -18,7 +18,7 @@ export const MILESTONES = {
     type: 'streak',
     threshold: 3,
     badge: 'bronze',
-    icon: '🥉'
+    icon: '🥉',
   },
   streak_7: {
     id: 'streak_7',
@@ -27,7 +27,7 @@ export const MILESTONES = {
     type: 'streak',
     threshold: 7,
     badge: 'silver',
-    icon: '🥈'
+    icon: '🥈',
   },
   streak_14: {
     id: 'streak_14',
@@ -36,7 +36,7 @@ export const MILESTONES = {
     type: 'streak',
     threshold: 14,
     badge: 'gold',
-    icon: '🥇'
+    icon: '🥇',
   },
   streak_30: {
     id: 'streak_30',
@@ -45,7 +45,7 @@ export const MILESTONES = {
     type: 'streak',
     threshold: 30,
     badge: 'diamond',
-    icon: '💎'
+    icon: '💎',
   },
   streak_90: {
     id: 'streak_90',
@@ -54,7 +54,7 @@ export const MILESTONES = {
     type: 'streak',
     threshold: 90,
     badge: 'platinum',
-    icon: '👑'
+    icon: '👑',
   },
   adherence_week_100: {
     id: 'adherence_week_100',
@@ -63,8 +63,8 @@ export const MILESTONES = {
     type: 'adherence',
     threshold: 100,
     badge: 'gold',
-    icon: '⭐'
-  }
+    icon: '⭐',
+  },
 }
 
 /**
@@ -105,7 +105,7 @@ export function checkNewMilestones(stats) {
   const achieved = getAchievedMilestones()
 
   // Verificar streaks
-  Object.values(MILESTONES).forEach(milestone => {
+  Object.values(MILESTONES).forEach((milestone) => {
     if (achieved.includes(milestone.id)) return
 
     let shouldTrigger = false

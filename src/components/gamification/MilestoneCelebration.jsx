@@ -8,7 +8,7 @@ export default function MilestoneCelebration({ milestone, visible, onClose }) {
     if (visible && milestone) {
       analyticsService.track('milestone_achieved', {
         milestoneId: milestone.id,
-        milestoneName: milestone.name
+        milestoneName: milestone.name,
       })
     }
   }, [visible, milestone])
@@ -35,7 +35,7 @@ export default function MilestoneCelebration({ milestone, visible, onClose }) {
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          
+
           {/* Modal */}
           <motion.div
             className="milestone-modal"
@@ -47,11 +47,7 @@ export default function MilestoneCelebration({ milestone, visible, onClose }) {
             <div className="milestone-icon">{milestone.icon}</div>
             <h2 className="milestone-title">{milestone.name}</h2>
             <p className="milestone-description">{milestone.description}</p>
-            <button
-              className="milestone-button"
-              onClick={onClose}
-              type="button"
-            >
+            <button className="milestone-button" onClick={onClose} type="button">
               Continuar
             </button>
           </motion.div>

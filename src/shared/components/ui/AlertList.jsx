@@ -3,9 +3,9 @@ import './AlertList.css'
 
 /**
  * AlertList - Componente base reutilizável para listas de alertas
- * 
+ *
  * Usado por SmartAlerts e StockAlertsWidget para padronizar UX.
- * 
+ *
  * @param {Object} props
  * @param {Array} props.alerts - Lista de alertas [{ id, severity, title, message, actions }]
  * @param {Function} props.onAction - Callback quando uma ação é clicada (alert, action)
@@ -26,10 +26,10 @@ export default function AlertList({
   emptyIcon = '✅',
   emptyMessage = 'Nenhum alerta',
   title,
-  headerAction
+  headerAction,
 }) {
   const [expanded, setExpanded] = useState(false)
-  
+
   const totalAlerts = alerts.length
   const hasAlerts = totalAlerts > 0
   const displayLimit = expanded ? Infinity : maxVisible
@@ -60,9 +60,7 @@ export default function AlertList({
         <div className="alert-list__header">
           <div className="alert-list__title-group">
             <h3 className="alert-list__title">{title}</h3>
-            {totalAlerts > 0 && (
-              <span className="alert-list__badge">{totalAlerts}</span>
-            )}
+            {totalAlerts > 0 && <span className="alert-list__badge">{totalAlerts}</span>}
           </div>
           {headerAction}
         </div>
@@ -70,15 +68,11 @@ export default function AlertList({
 
       <div className="alert-list__content">
         {displayItems.map((alert) => (
-          <div 
-            key={alert.id} 
-            className={`alert-list__item alert-list__item--${alert.severity}`}
-          >
+          <div key={alert.id} className={`alert-list__item alert-list__item--${alert.severity}`}>
             <div className="alert-list__item-icon">
-              {alert.severity === 'critical' ? '⚠️' : 
-               alert.severity === 'warning' ? '⚡' : 'ℹ️'}
+              {alert.severity === 'critical' ? '⚠️' : alert.severity === 'warning' ? '⚡' : 'ℹ️'}
             </div>
-            
+
             <div className="alert-list__item-content">
               <h4 className="alert-list__item-title">{alert.title}</h4>
               <p className="alert-list__item-message">{alert.message}</p>
@@ -103,10 +97,7 @@ export default function AlertList({
       </div>
 
       {showExpandButton && hasMore && (
-        <button 
-          className="alert-list__expand-btn"
-          onClick={() => setExpanded(!expanded)}
-        >
+        <button className="alert-list__expand-btn" onClick={() => setExpanded(!expanded)}>
           {expanded ? 'Ver menos ↑' : `Ver mais (${alerts.length - displayLimit}) ↓`}
         </button>
       )}

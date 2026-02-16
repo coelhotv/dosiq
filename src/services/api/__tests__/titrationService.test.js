@@ -7,7 +7,7 @@ import {
   formatDaysRemaining,
   isTitrationActive,
   hasReachedTarget,
-  getTitrationSummary
+  getTitrationSummary,
 } from '../titrationService'
 
 describe('titrationService', () => {
@@ -24,12 +24,12 @@ describe('titrationService', () => {
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Etapa inicial' },
           { dosage: 2, duration_days: 7, description: 'Etapa intermediária' },
-          { dosage: 3, duration_days: 7, description: 'Dose alvo' }
+          { dosage: 3, duration_days: 7, description: 'Dose alvo' },
         ],
         current_stage_index: 0,
         stage_started_at: '2024-01-01T00:00:00Z',
         start_date: '2024-01-01',
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = calculateTitrationSteps(protocol)
@@ -45,12 +45,12 @@ describe('titrationService', () => {
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Etapa 1' },
           { dosage: 2, duration_days: 7, description: 'Etapa 2' },
-          { dosage: 3, duration_days: 7, description: 'Etapa 3' }
+          { dosage: 3, duration_days: 7, description: 'Etapa 3' },
         ],
         current_stage_index: 1,
         stage_started_at: '2024-01-08T00:00:00Z',
         start_date: '2024-01-01',
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = calculateTitrationSteps(protocol)
@@ -63,12 +63,12 @@ describe('titrationService', () => {
       const protocol = {
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Semana 1' },
-          { dosage: 2, duration_days: 7, description: 'Semana 2' }
+          { dosage: 2, duration_days: 7, description: 'Semana 2' },
         ],
         current_stage_index: 0,
         stage_started_at: '2024-01-01T00:00:00Z',
         start_date: '2024-01-01',
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = calculateTitrationSteps(protocol)
@@ -78,12 +78,10 @@ describe('titrationService', () => {
 
     it('should use mg as default unit', () => {
       const protocol = {
-        titration_schedule: [
-          { dosage: 1, duration_days: 7, description: 'Etapa 1' }
-        ],
+        titration_schedule: [{ dosage: 1, duration_days: 7, description: 'Etapa 1' }],
         current_stage_index: 0,
         stage_started_at: '2024-01-01T00:00:00Z',
-        medicine: null
+        medicine: null,
       }
 
       const result = calculateTitrationSteps(protocol)
@@ -93,10 +91,7 @@ describe('titrationService', () => {
 
   describe('getDaysUntilNextStep', () => {
     it('should return 0 for last step', () => {
-      const steps = [
-        { endDate: new Date('2024-01-07') },
-        { endDate: new Date('2024-01-14') }
-      ]
+      const steps = [{ endDate: new Date('2024-01-07') }, { endDate: new Date('2024-01-14') }]
       const result = getDaysUntilNextStep(1, steps, new Date('2024-01-01'))
       expect(result).toBe(0)
     })
@@ -105,12 +100,12 @@ describe('titrationService', () => {
       const today = new Date()
       const futureDate = new Date(today)
       futureDate.setDate(futureDate.getDate() + 5)
-      
+
       const steps = [
         { endDate: futureDate },
-        { endDate: new Date(today.getTime() + 86400000 * 10) }
+        { endDate: new Date(today.getTime() + 86400000 * 10) },
       ]
-      
+
       const result = getDaysUntilNextStep(0, steps, today)
       expect(result).toBeGreaterThanOrEqual(4)
       expect(result).toBeLessThanOrEqual(6)
@@ -126,11 +121,15 @@ describe('titrationService', () => {
     it('should return 0 when step not started', () => {
       const futureDate = new Date()
       futureDate.setDate(futureDate.getDate() + 1)
-      
+
       const steps = [
-        { startDate: futureDate, endDate: new Date(futureDate.getTime() + 86400000 * 7), durationDays: 7 }
+        {
+          startDate: futureDate,
+          endDate: new Date(futureDate.getTime() + 86400000 * 7),
+          durationDays: 7,
+        },
       ]
-      
+
       const result = getStepProgress(0, steps, new Date())
       expect(result).toBe(0)
     })
@@ -138,11 +137,15 @@ describe('titrationService', () => {
     it('should return 100 when step completed', () => {
       const pastDate = new Date()
       pastDate.setDate(pastDate.getDate() - 10)
-      
+
       const steps = [
-        { startDate: pastDate, endDate: new Date(pastDate.getTime() + 86400000 * 7), durationDays: 7 }
+        {
+          startDate: pastDate,
+          endDate: new Date(pastDate.getTime() + 86400000 * 7),
+          durationDays: 7,
+        },
       ]
-      
+
       const result = getStepProgress(0, steps, pastDate)
       expect(result).toBe(100)
     })
@@ -151,11 +154,9 @@ describe('titrationService', () => {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - 3)
       const endDate = new Date(startDate.getTime() + 86400000 * 6)
-      
-      const steps = [
-        { startDate, endDate, durationDays: 7 }
-      ]
-      
+
+      const steps = [{ startDate, endDate, durationDays: 7 }]
+
       const result = getStepProgress(0, steps, startDate)
       expect(result).toBeGreaterThan(0)
       expect(result).toBeLessThan(100)
@@ -195,7 +196,7 @@ describe('titrationService', () => {
     it('should return true for active titration', () => {
       const protocol = {
         titration_status: 'titulando',
-        titration_schedule: [{ dosage: 1, duration_days: 7 }]
+        titration_schedule: [{ dosage: 1, duration_days: 7 }],
       }
       expect(isTitrationActive(protocol)).toBe(true)
     })
@@ -203,7 +204,7 @@ describe('titrationService', () => {
     it('should return false when status is not titulando', () => {
       const protocol = {
         titration_status: 'estável',
-        titration_schedule: [{ dosage: 1, duration_days: 7 }]
+        titration_schedule: [{ dosage: 1, duration_days: 7 }],
       }
       expect(isTitrationActive(protocol)).toBe(false)
     })
@@ -211,7 +212,7 @@ describe('titrationService', () => {
     it('should return false when no titration schedule', () => {
       const protocol = {
         titration_status: 'titulando',
-        titration_schedule: []
+        titration_schedule: [],
       }
       expect(isTitrationActive(protocol)).toBe(false)
     })
@@ -241,7 +242,7 @@ describe('titrationService', () => {
     it('should return null when no active titration', () => {
       const protocol = {
         titration_status: 'estável',
-        titration_schedule: []
+        titration_schedule: [],
       }
       expect(getTitrationSummary(protocol)).toBeNull()
     })
@@ -249,14 +250,12 @@ describe('titrationService', () => {
     it('should return summary for active titration', () => {
       const protocol = {
         titration_status: 'titulando',
-        titration_schedule: [
-          { dosage: 1, duration_days: 7, description: 'Etapa 1' }
-        ],
+        titration_schedule: [{ dosage: 1, duration_days: 7, description: 'Etapa 1' }],
         current_stage_index: 0,
         stage_started_at: '2024-01-01T00:00:00Z',
         start_date: '2024-01-01',
         dosage_per_intake: 1,
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = getTitrationSummary(protocol)
@@ -271,13 +270,13 @@ describe('titrationService', () => {
         titration_status: 'alvo_atingido',
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Etapa 1' },
-          { dosage: 2, duration_days: 7, description: 'Etapa 2' }
+          { dosage: 2, duration_days: 7, description: 'Etapa 2' },
         ],
         current_stage_index: 1,
         stage_started_at: '2024-01-08T00:00:00Z',
         start_date: '2024-01-01',
         dosage_per_intake: 2,
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = getTitrationSummary(protocol)
@@ -288,14 +287,12 @@ describe('titrationService', () => {
     it('should include estimated end date', () => {
       const protocol = {
         titration_status: 'titulando',
-        titration_schedule: [
-          { dosage: 1, duration_days: 7, description: 'Etapa 1' }
-        ],
+        titration_schedule: [{ dosage: 1, duration_days: 7, description: 'Etapa 1' }],
         current_stage_index: 0,
         stage_started_at: '2024-01-01T00:00:00Z',
         start_date: '2024-01-01',
         dosage_per_intake: 1,
-        medicine: { dosage_unit: 'mg' }
+        medicine: { dosage_unit: 'mg' },
       }
 
       const result = getTitrationSummary(protocol)
