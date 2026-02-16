@@ -1,12 +1,12 @@
 /**
  * Cached Services - Wrappers com cache SWR para os services da API
- * 
+ *
  * Este arquivo fornece versões cacheadas dos métodos de leitura dos services,
  * mantendo a API original intacta para compatibilidade.
- * 
+ *
  * As mutations (create/update/delete) automaticamente invalidam o cache
  * relevante após sucesso.
- * 
+ *
  * @module cachedServices
  */
 
@@ -33,7 +33,7 @@ export const CACHE_KEYS = {
   LOGS_BY_MONTH: 'logs:month',
   LOGS_PAGINATED: 'logs:paginated',
   TREATMENT_PLANS: 'treatmentPlans',
-  TREATMENT_PLAN_BY_ID: 'treatmentPlan'
+  TREATMENT_PLAN_BY_ID: 'treatmentPlan',
 }
 
 /**
@@ -81,7 +81,7 @@ export const cachedMedicineService = {
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}:*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}:*`)
     console.log('[cachedMedicineService] Cache invalidado após delete')
-  }
+  },
 }
 
 /**
@@ -138,7 +138,7 @@ export const cachedProtocolService = {
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
     invalidateCache(`${CACHE_KEYS.LOGS}*`)
     console.log('[cachedProtocolService] Cache invalidado após delete')
-  }
+  },
 }
 
 /**
@@ -221,7 +221,7 @@ export const cachedStockService = {
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após increase')
     return result
-  }
+  },
 }
 
 /**
@@ -312,7 +312,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     console.log('[cachedLogService] Cache invalidado após delete')
-  }
+  },
 }
 
 /**
@@ -350,7 +350,7 @@ export const cachedTreatmentPlanService = {
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
     invalidateCache(generateCacheKey(CACHE_KEYS.TREATMENT_PLAN_BY_ID, { id }))
     console.log('[cachedTreatmentPlanService] Cache invalidado após delete')
-  }
+  },
 }
 
 // Exporta todas as chaves de cache para uso externo
@@ -362,5 +362,5 @@ export const cachedServices = {
   protocolService: cachedProtocolService,
   stockService: cachedStockService,
   logService: cachedLogService,
-  treatmentPlanService: cachedTreatmentPlanService
+  treatmentPlanService: cachedTreatmentPlanService,
 }

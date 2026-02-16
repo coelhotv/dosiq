@@ -10,16 +10,18 @@ export const treatmentPlanService = {
   async getAll() {
     const { data, error } = await supabase
       .from('treatment_plans')
-      .select(`
+      .select(
+        `
         *,
         protocols:protocols(
           *,
           medicine:medicines(*)
         )
-      `)
+      `
+      )
       .eq('user_id', await getUserId())
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   },
@@ -33,7 +35,7 @@ export const treatmentPlanService = {
       .insert([{ ...plan, user_id: await getUserId() }])
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -49,7 +51,7 @@ export const treatmentPlanService = {
       .eq('user_id', await getUserId())
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -64,7 +66,7 @@ export const treatmentPlanService = {
       .delete()
       .eq('id', id)
       .eq('user_id', await getUserId())
-    
+
     if (error) throw error
-  }
+  },
 }

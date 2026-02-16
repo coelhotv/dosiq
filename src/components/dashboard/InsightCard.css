@@ -85,11 +85,11 @@
   .insight-card {
     flex-direction: column;
   }
-  
+
   .insight-card__icon {
     align-self: flex-start;
   }
-  
+
   .insight-card__action {
     width: 100%;
     justify-content: center;

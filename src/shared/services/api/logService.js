@@ -1,6 +1,10 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
-import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@shared/constants/logSchema'
+import {
+  validateLogCreate,
+  validateLogUpdate,
+  validateLogBulkArray,
+} from '@shared/constants/logSchema'
 
 /**
  * Log Service - Medicine intake logging
@@ -17,15 +21,17 @@ export const logService = {
   async getAll(limit = 50) {
     const { data, error } = await supabase
       .from('medicine_logs')
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `)
+      `
+      )
       .eq('user_id', await getUserId())
       .order('taken_at', { ascending: false })
       .limit(limit)
-    
+
     if (error) throw error
     return data
   },
@@ -36,16 +42,18 @@ export const logService = {
   async getByProtocol(protocolId, limit = 50) {
     const { data, error } = await supabase
       .from('medicine_logs')
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `)
+      `
+      )
       .eq('protocol_id', protocolId)
       .eq('user_id', await getUserId())
       .order('taken_at', { ascending: false })
       .limit(limit)
-    
+
     if (error) throw error
     return data
   },
@@ -61,7 +69,7 @@ export const logService = {
     // Validação Zod
     const validation = validateLogCreate(log)
     if (!validation.success) {
-      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
@@ -71,15 +79,17 @@ export const logService = {
     const { data, error } = await supabase
       .from('medicine_logs')
       .insert([{ ...validatedLog, user_id: await getUserId() }])
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `)
+      `
+      )
       .single()
-    
+
     if (error) throw error
-    
+
     // Then, decrease stock
     try {
       await stockService.decrease(validatedLog.medicine_id, validatedLog.quantity_taken)
@@ -89,7 +99,7 @@ export const logService = {
       console.error('Erro ao decrementar estoque:', stockError)
       throw new Error('Remédio registrado, mas erro ao atualizar estoque: ' + stockError.message)
     }
-    
+
     return data
   },
 
@@ -103,9 +113,11 @@ export const logService = {
     // Validação Zod em lote
     const validation = validateLogBulkArray(logs)
     if (!validation.success) {
-      const errorMessages = validation.errors.map(e =>
-        e.index >= 0 ? `[${e.index + 1}] ${e.field}: ${e.message}` : `${e.field}: ${e.message}`
-      ).join('; ')
+      const errorMessages = validation.errors
+        .map((e) =>
+          e.index >= 0 ? `[${e.index + 1}] ${e.field}: ${e.message}` : `${e.field}: ${e.message}`
+        )
+        .join('; ')
       throw new Error(`Erro de validação em lote: ${errorMessages}`)
     }
 
@@ -113,18 +125,15 @@ export const logService = {
 
     // 1. Create all logs
     const userId = await getUserId()
-    const logsWithUser = validatedLogs.map(log => ({ ...log, user_id: userId }))
-    const { data, error } = await supabase
-      .from('medicine_logs')
-      .insert(logsWithUser)
-      .select(`
+    const logsWithUser = validatedLogs.map((log) => ({ ...log, user_id: userId }))
+    const { data, error } = await supabase.from('medicine_logs').insert(logsWithUser).select(`
         *,
         protocol:protocols(*),
         medicine:medicines(*)
       `)
-    
+
     if (error) throw error
-    
+
     // 2. Decrease stock for each
     const errors = []
     for (const log of validatedLogs) {
@@ -134,13 +143,13 @@ export const logService = {
         errors.push(`${log.medicine_id}: ${stockError.message}`)
       }
     }
-    
+
     if (errors.length > 0) {
       console.error('Erros ao decrementar estoque no lote:', errors)
-      // We don't throw here to avoid partial failure confusion, 
+      // We don't throw here to avoid partial failure confusion,
       // but ideally we'd handle this better
     }
-    
+
     return data
   },
 
@@ -154,7 +163,7 @@ export const logService = {
     // Validação Zod (parcial, pois é update)
     const validation = validateLogUpdate(updates)
     if (!validation.success) {
-      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
@@ -164,7 +173,7 @@ export const logService = {
       .select('*')
       .eq('id', id)
       .single()
-    
+
     if (fetchError) throw fetchError
 
     // 2. Adjust stock if quantity changed BEFORE updating the log
@@ -177,7 +186,11 @@ export const logService = {
           await stockService.decrease(oldLog.medicine_id, delta)
         } else if (delta < 0) {
           // Less medicine taken -> increase (refund) stock
-          await stockService.increase(oldLog.medicine_id, Math.abs(delta), `Ajuste de dose (ID: ${id})`)
+          await stockService.increase(
+            oldLog.medicine_id,
+            Math.abs(delta),
+            `Ajuste de dose (ID: ${id})`
+          )
         }
       } catch (stockError) {
         console.error('Erro ao ajustar estoque no update:', stockError)
@@ -191,15 +204,17 @@ export const logService = {
       .update(updates)
       .eq('id', id)
       .eq('user_id', await getUserId())
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `)
+      `
+      )
       .single()
-    
+
     if (error) throw error
-    
+
     return data
   },
 
@@ -214,7 +229,7 @@ export const logService = {
       .select('*')
       .eq('id', id)
       .single()
-    
+
     if (fetchError) throw fetchError
 
     // 2. Restore stock FIRST (it's the most likely to fail due to schema/logic)
@@ -232,7 +247,7 @@ export const logService = {
       .delete()
       .eq('id', id)
       .eq('user_id', await getUserId())
-    
+
     if (error) throw error
   },
 
@@ -246,21 +261,24 @@ export const logService = {
     // 1. Get paginated data
     const { data, error, count } = await supabase
       .from('medicine_logs')
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' }
+      )
       .eq('user_id', await getUserId())
       .order('taken_at', { ascending: false })
       .range(offset, offset + limit - 1)
-    
+
     if (error) throw error
-    
+
     return {
       data: data || [],
       total: count || 0,
-      hasMore: (offset + limit) < (count || 0)
+      hasMore: offset + limit < (count || 0),
     }
   },
 
@@ -282,26 +300,29 @@ export const logService = {
     const endDateObj = new Date(endDate + 'T00:00:00')
     endDateObj.setDate(endDateObj.getDate() + 1)
     const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59'
-    
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' }
+      )
       .eq('user_id', await getUserId())
       .gte('taken_at', startUtc)
       .lte('taken_at', endUtc)
       .order('taken_at', { ascending: false })
       .range(offset, offset + limit - 1)
-    
+
     if (error) throw error
-    
+
     return {
       data: data || [],
       total: count || 0,
-      hasMore: (offset + limit) < (count || 0)
+      hasMore: offset + limit < (count || 0),
     }
   },
 
@@ -316,24 +337,27 @@ export const logService = {
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
     const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-    
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
-      .select(`
+      .select(
+        `
         *,
         protocol:protocols(*),
         medicine:medicines(*)
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' }
+      )
       .eq('user_id', await getUserId())
       .gte('taken_at', `${startDate}T00:00:00.000Z`)
       .lte('taken_at', `${endDate}T23:59:59.999Z`)
       .order('taken_at', { ascending: false })
-    
+
     if (error) throw error
-    
+
     return {
       data: data || [],
-      total: count || 0
+      total: count || 0,
     }
-  }
+  },
 }

@@ -250,20 +250,20 @@
     padding: 10px;
     gap: 8px;
   }
-  
+
   .stock-alerts__item-name {
     font-size: 13px;
   }
-  
+
   .stock-alerts__item-stock {
     font-size: 11px;
   }
-  
+
   .stock-alerts__add-btn {
     padding: 5px 10px;
     font-size: 10px;
   }
-  
+
   .stock-alerts__status-badge {
     font-size: 8px;
     padding: 2px 5px;

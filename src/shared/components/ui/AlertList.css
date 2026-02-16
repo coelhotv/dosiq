@@ -90,8 +90,14 @@
 }
 
 @keyframes alert-slide-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .alert-list__item:hover {
@@ -233,25 +239,25 @@
     padding: 10px;
     gap: 8px;
   }
-  
+
   .alert-list__item-title {
     font-size: 14px;
   }
-  
+
   .alert-list__item-message {
     font-size: 12px;
   }
-  
+
   .alert-list__btn {
     padding: 4px 8px;
     font-size: 11px;
     min-height: 26px;
   }
-  
+
   .alert-list__header {
     padding: 12px;
   }
-  
+
   .alert-list__title {
     font-size: 14px;
   }

@@ -1,12 +1,12 @@
 /**
  * API Services Barrel Export
- * 
+ *
  * This file re-exports all services from their individual modules.
  * This allows existing imports to work without changes:
- * 
+ *
  * Before: import { medicineService, protocolService } from '../services/api'
  * After:  import { medicineService, protocolService } from '../services/api' (unchanged)
- * 
+ *
  * CACHE SWR (v1.5):
  * - cached* services fornecem cache automático com invalidação
  * - use useCachedQuery hook para integração React
@@ -30,5 +30,5 @@ export {
   cachedLogService,
   cachedTreatmentPlanService,
   cachedServices,
-  CACHE_KEYS
+  CACHE_KEYS,
 } from './cachedServices'

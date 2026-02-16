@@ -3,7 +3,7 @@ import './Calendar.css'
 
 /**
  * Calendar - Componente de calendario reutilizavel com features opcionais
- * 
+ *
  * @typedef {Object} CalendarProps
  * @property {Array<string>} [markedDates=[]] - Datas com marcacao
  * @property {Date} [selectedDate] - Data selecionada
@@ -22,7 +22,7 @@ export default function Calendar({
   onLoadMonth,
   enableSwipe = false,
   enableMonthPicker = false,
-  monthPickerRange = { start: -12, end: 3 }
+  monthPickerRange = { start: -12, end: 3 },
 }) {
   const [viewDate, setViewDate] = useState(new Date())
   const [isLoading, setIsLoading] = useState(false)
@@ -37,14 +37,14 @@ export default function Calendar({
     const month = viewDate.getMonth()
 
     let isCancelled = false
-    
+
     // Usar requestAnimationFrame para evitar setState sincrono no effect
     const frameId = requestAnimationFrame(() => {
       setIsLoading(true)
     })
-    
+
     onLoadMonth(year, month)
-      .catch(err => {
+      .catch((err) => {
         if (!isCancelled) {
           console.error('Error in onLoadMonth:', err)
         }
@@ -63,7 +63,7 @@ export default function Calendar({
 
   // Navigation handlers
   const handlePreviousMonth = () => {
-    setViewDate(prevDate => {
+    setViewDate((prevDate) => {
       const newDate = new Date(prevDate)
       newDate.setMonth(newDate.getMonth() - 1)
       return newDate
@@ -71,7 +71,7 @@ export default function Calendar({
   }
 
   const handleNextMonth = () => {
-    setViewDate(prevDate => {
+    setViewDate((prevDate) => {
       const newDate = new Date(prevDate)
       newDate.setMonth(newDate.getMonth() + 1)
       return newDate
@@ -115,10 +115,20 @@ export default function Calendar({
     if (!enableMonthPicker) return []
 
     const monthNamesLocal = [
-      'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+      'Janeiro',
+      'Fevereiro',
+      'Marco',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
     ]
-    
+
     const options = []
     const today = new Date()
     const startDate = new Date(today.getFullYear(), today.getMonth() + monthPickerRange.start, 1)
@@ -128,7 +138,7 @@ export default function Calendar({
     while (current <= endDate) {
       options.push({
         value: `${current.getFullYear()}-${current.getMonth()}`,
-        label: `${monthNamesLocal[current.getMonth()]} ${current.getFullYear()}`
+        label: `${monthNamesLocal[current.getMonth()]} ${current.getFullYear()}`,
       })
       current = new Date(current.getFullYear(), current.getMonth() + 1, 1)
     }
@@ -144,8 +154,18 @@ export default function Calendar({
   const month = viewDate.getMonth()
 
   const monthNames = [
-    'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    'Janeiro',
+    'Fevereiro',
+    'Marco',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
   ]
 
   // Build calendar days
@@ -167,18 +187,21 @@ export default function Calendar({
     dayDate.setHours(0, 0, 0, 0)
 
     const isToday = dayDate.getTime() === today.getTime()
-    const isSelected = selectedDate &&
+    const isSelected =
+      selectedDate &&
       dayDate.getFullYear() === selectedDate.getFullYear() &&
       dayDate.getMonth() === selectedDate.getMonth() &&
       dayDate.getDate() === selectedDate.getDate()
 
     // Verificar se ha doses registradas neste dia
-    const hasLog = markedDates.some(dateStr => {
+    const hasLog = markedDates.some((dateStr) => {
       const dLog = new Date(dateStr)
       // Use UTC comparison para evitar problemas de timezone
-      return dLog.getUTCFullYear() === dayDate.getFullYear() &&
+      return (
+        dLog.getUTCFullYear() === dayDate.getFullYear() &&
         dLog.getUTCMonth() === dayDate.getMonth() &&
         dLog.getUTCDate() === dayDate.getDate()
+      )
     })
 
     days.push(
@@ -198,11 +221,7 @@ export default function Calendar({
     if (enableMonthPicker) {
       return (
         <div className="calendar-controls">
-          <button 
-            onClick={handlePreviousMonth} 
-            disabled={isLoading} 
-            aria-label="Mes anterior"
-          >
+          <button onClick={handlePreviousMonth} disabled={isLoading} aria-label="Mes anterior">
             {'<'}
           </button>
           <select
@@ -212,17 +231,13 @@ export default function Calendar({
             disabled={isLoading}
             aria-label="Selecionar mes"
           >
-            {generateMonthOptions().map(opt => (
+            {generateMonthOptions().map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
           </select>
-          <button 
-            onClick={handleNextMonth} 
-            disabled={isLoading} 
-            aria-label="Proximo mes"
-          >
+          <button onClick={handleNextMonth} disabled={isLoading} aria-label="Proximo mes">
             {'>'}
           </button>
         </div>
@@ -232,21 +247,13 @@ export default function Calendar({
     // Controles simples (default)
     return (
       <div className="calendar-controls">
-        <button 
-          onClick={handlePreviousMonth} 
-          disabled={isLoading}
-          aria-label="Mes anterior"
-        >
+        <button onClick={handlePreviousMonth} disabled={isLoading} aria-label="Mes anterior">
           {'<'}
         </button>
         <div className="current-month">
           {monthNames[month]} {year}
         </div>
-        <button 
-          onClick={handleNextMonth} 
-          disabled={isLoading}
-          aria-label="Proximo mes"
-        >
+        <button onClick={handleNextMonth} disabled={isLoading} aria-label="Proximo mes">
           {'>'}
         </button>
       </div>
@@ -257,7 +264,13 @@ export default function Calendar({
     <div className="calendar-widget">
       {renderControls()}
       <div className="calendar-weekdays">
-        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
+        <div>Dom</div>
+        <div>Seg</div>
+        <div>Ter</div>
+        <div>Qua</div>
+        <div>Qui</div>
+        <div>Sex</div>
+        <div>Sab</div>
       </div>
       <div
         className="calendar-grid"
@@ -267,9 +280,11 @@ export default function Calendar({
       >
         {isLoading && enableLazyLoad ? (
           <div className="calendar-skeleton">
-            {Array(35).fill(0).map((_, i) => (
-              <div key={i} className="skeleton-day"></div>
-            ))}
+            {Array(35)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="skeleton-day"></div>
+              ))}
           </div>
         ) : (
           days

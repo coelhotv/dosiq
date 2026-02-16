@@ -7,37 +7,37 @@ const mockSupabase = {
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      })
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
+      }),
     }),
     insert: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
-      })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
     }),
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: null })
-          })
-        })
-      })
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      }),
     }),
     delete: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null })
-      })
-    })
-  })
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    }),
+  }),
 }
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
 vi.mock('../../../lib/supabase', () => ({
   supabase: mockSupabase,
-  getUserId: mockGetUserId
+  getUserId: mockGetUserId,
 }))
 
 describe('protocolService', () => {
@@ -49,29 +49,29 @@ describe('protocolService', () => {
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null })
-          })
-        })
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
       }),
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
       }),
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: null, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        }),
       }),
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null })
-        })
-      })
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      }),
     })
   })
 
@@ -80,15 +80,15 @@ describe('protocolService', () => {
       const { protocolService } = await import('../protocolService')
       const mockProtocols = [
         { id: '1', name: 'Protocolo 1', medicine: { name: 'Med 1' } },
-        { id: '2', name: 'Protocolo 2', medicine: { name: 'Med 2' } }
+        { id: '2', name: 'Protocolo 2', medicine: { name: 'Med 2' } },
       ]
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null })
-          })
-        })
+            order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+          }),
+        }),
       })
 
       const result = await protocolService.getAll()
@@ -102,9 +102,9 @@ describe('protocolService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') })
-          })
-        })
+            order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') }),
+          }),
+        }),
       })
 
       await expect(protocolService.getAll()).rejects.toThrow('DB Error')
@@ -115,19 +115,19 @@ describe('protocolService', () => {
     it('should fetch only active protocols', async () => {
       const { protocolService } = await import('../protocolService')
       const mockProtocols = [
-        { id: '1', name: 'Protocolo Ativo', active: true, medicine: { name: 'Med 1' } }
+        { id: '1', name: 'Protocolo Ativo', active: true, medicine: { name: 'Med 1' } },
       ]
 
       const mockEq = vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null })
+        order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
       })
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: mockEq
-          })
-        })
+            eq: mockEq,
+          }),
+        }),
       })
 
       const result = await protocolService.getActive()
@@ -144,10 +144,10 @@ describe('protocolService', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null }),
+            }),
+          }),
+        }),
       })
 
       const result = await protocolService.getById('1')
@@ -161,10 +161,10 @@ describe('protocolService', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: null, error: new Error('Not found') })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: null, error: new Error('Not found') }),
+            }),
+          }),
+        }),
       })
 
       await expect(protocolService.getById('999')).rejects.toThrow('Not found')
@@ -179,16 +179,16 @@ describe('protocolService', () => {
         name: 'Novo Protocolo',
         frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
-        dosage_per_intake: 1
+        dosage_per_intake: 1,
       }
       const createdProtocol = { id: '1', ...newProtocol, user_id: 'test-user-id' }
 
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: createdProtocol, error: null })
-          })
-        })
+            single: vi.fn().mockResolvedValue({ data: createdProtocol, error: null }),
+          }),
+        }),
       })
 
       const result = await protocolService.create(newProtocol)
@@ -201,7 +201,7 @@ describe('protocolService', () => {
         name: 'A', // Nome muito curto
         frequency: 'diário',
         time_schedule: ['08:00'],
-        dosage_per_intake: 0 // Dosagem inválida
+        dosage_per_intake: 0, // Dosagem inválida
       }
 
       await expect(protocolService.create(invalidProtocol)).rejects.toThrow()
@@ -217,18 +217,20 @@ describe('protocolService', () => {
         dosage_per_intake: 1,
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Etapa 1' },
-          { dosage: 2, duration_days: 7, description: 'Etapa 2' }
+          { dosage: 2, duration_days: 7, description: 'Etapa 2' },
         ],
         current_stage_index: 0,
-        titration_status: 'titulando'
+        titration_status: 'titulando',
       }
 
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: { id: '1', ...protocolWithTitration }, error: null })
-          })
-        })
+            single: vi
+              .fn()
+              .mockResolvedValue({ data: { id: '1', ...protocolWithTitration }, error: null }),
+          }),
+        }),
       })
 
       const result = await protocolService.create(protocolWithTitration)
@@ -247,11 +249,11 @@ describe('protocolService', () => {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: updatedProtocol, error: null })
-              })
-            })
-          })
-        })
+                single: vi.fn().mockResolvedValue({ data: updatedProtocol, error: null }),
+              }),
+            }),
+          }),
+        }),
       })
 
       const result = await protocolService.update('1', updates)
@@ -277,9 +279,9 @@ describe('protocolService', () => {
             eq: vi.fn().mockImplementation(() => {
               deleteCalled = true
               return { error: null }
-            })
-          })
-        })
+            }),
+          }),
+        }),
       })
 
       await protocolService.delete('1')
@@ -292,9 +294,9 @@ describe('protocolService', () => {
       mockSupabase.from.mockReturnValue({
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ error: new Error('Delete failed') })
-          })
-        })
+            eq: vi.fn().mockResolvedValue({ error: new Error('Delete failed') }),
+          }),
+        }),
       })
 
       await expect(protocolService.delete('1')).rejects.toThrow('Delete failed')
@@ -304,16 +306,14 @@ describe('protocolService', () => {
   describe('getByMedicineId', () => {
     it('should fetch protocols by medicine ID', async () => {
       const { protocolService } = await import('../protocolService')
-      const mockProtocols = [
-        { id: '1', medicine_id: 'med-1', name: 'Protocolo 1' }
-      ]
+      const mockProtocols = [{ id: '1', medicine_id: 'med-1', name: 'Protocolo 1' }]
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: mockProtocols, error: null })
-          })
-        })
+            eq: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+          }),
+        }),
       })
 
       const result = await protocolService.getByMedicineId('med-1')
@@ -328,10 +328,10 @@ describe('protocolService', () => {
         id: '1',
         titration_schedule: [
           { dosage: 1, duration_days: 7, description: 'Etapa 1' },
-          { dosage: 2, duration_days: 7, description: 'Etapa 2' }
+          { dosage: 2, duration_days: 7, description: 'Etapa 2' },
         ],
         current_stage_index: 0,
-        stage_started_at: '2024-01-01T00:00:00Z'
+        stage_started_at: '2024-01-01T00:00:00Z',
       }
 
       // Mock para getById
@@ -339,10 +339,10 @@ describe('protocolService', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null }),
+            }),
+          }),
+        }),
       })
 
       // Mock para update
@@ -353,12 +353,12 @@ describe('protocolService', () => {
               select: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
                   data: { ...mockProtocol, current_stage_index: 1, titration_status: 'titulando' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       })
 
       const result = await protocolService.advanceTitrationStage('1')
@@ -369,11 +369,9 @@ describe('protocolService', () => {
       const { protocolService } = await import('../protocolService')
       const mockProtocol = {
         id: '1',
-        titration_schedule: [
-          { dosage: 1, duration_days: 7, description: 'Etapa 1' }
-        ],
+        titration_schedule: [{ dosage: 1, duration_days: 7, description: 'Etapa 1' }],
         current_stage_index: 0,
-        stage_started_at: '2024-01-01T00:00:00Z'
+        stage_started_at: '2024-01-01T00:00:00Z',
       }
 
       // Mock para getById
@@ -381,10 +379,10 @@ describe('protocolService', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null }),
+            }),
+          }),
+        }),
       })
 
       // Mock para update (alvo atingido)
@@ -395,12 +393,12 @@ describe('protocolService', () => {
               select: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
                   data: { ...mockProtocol, titration_status: 'alvo_atingido' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       })
 
       const result = await protocolService.advanceTitrationStage('1')
@@ -412,20 +410,22 @@ describe('protocolService', () => {
       const mockProtocol = {
         id: '1',
         titration_schedule: [],
-        current_stage_index: 0
+        current_stage_index: 0,
       }
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: mockProtocol, error: null }),
+            }),
+          }),
+        }),
       })
 
-      await expect(protocolService.advanceTitrationStage('1')).rejects.toThrow('Este protocolo não possui regime de titulação')
+      await expect(protocolService.advanceTitrationStage('1')).rejects.toThrow(
+        'Este protocolo não possui regime de titulação'
+      )
     })
   })
 })

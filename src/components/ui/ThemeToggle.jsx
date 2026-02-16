@@ -1,6 +1,6 @@
 /**
  * ThemeToggle.jsx - Componente de alternância de tema claro/escuro
- * 
+ *
  * Funcionalidades:
  * - Toggle switch visual para alternar entre tema claro e escuro
  * - Usa ícones SVG de sol e lua
@@ -19,10 +19,7 @@ import './ThemeToggle.css'
  * @param {string} props.size - Tamanho do toggle ('sm', 'md', 'lg')
  * @param {string} props.className - Classes CSS adicionais
  */
-function ThemeToggle({ 
-  size = 'md',
-  className = ''
-}) {
+function ThemeToggle({ size = 'md', className = '' }) {
   const { toggleTheme, isDark } = useTheme()
 
   const handleToggle = (e) => {
@@ -30,7 +27,7 @@ function ThemeToggle({
     toggleTheme()
     analyticsService.track('theme_changed', {
       from: !isDark ? 'light' : 'dark',
-      to: isDark ? 'light' : 'dark'
+      to: isDark ? 'light' : 'dark',
     })
   }
 
@@ -54,13 +51,26 @@ function ThemeToggle({
         </span>
 
         {/* Thumb central */}
-        <span className={`theme-toggle__thumb ${isDark ? 'theme-toggle__thumb--dark' : 'theme-toggle__thumb--light'}`}>
+        <span
+          className={`theme-toggle__thumb ${isDark ? 'theme-toggle__thumb--dark' : 'theme-toggle__thumb--light'}`}
+        >
           {isDark ? (
-            <svg className="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M17.25 6.25a.75.75 0 01.75.75 8.25 8.25 0 01-8.25 8.25.75.75 0 01-1.5 0 9.75 9.75 0 019.5-12.75.75.75 0 01.75.75z" fill="currentColor" />
+            <svg
+              className="theme-toggle__icon theme-toggle__icon--moon"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                d="M17.25 6.25a.75.75 0 01.75.75 8.25 8.25 0 01-8.25 8.25.75.75 0 01-1.5 0 9.75 9.75 0 019.5-12.75.75.75 0 01.75.75z"
+                fill="currentColor"
+              />
             </svg>
           ) : (
-            <svg className="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true">
+            <svg
+              className="theme-toggle__icon theme-toggle__icon--sun"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
               <circle cx="10" cy="10" r="4" fill="currentColor" />
             </svg>
           )}

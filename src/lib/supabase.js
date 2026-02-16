@@ -4,34 +4,36 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Variáveis de ambiente do Supabase não configuradas. Verifique o arquivo .env'
-  )
+  throw new Error('Variáveis de ambiente do Supabase não configuradas. Verifique o arquivo .env')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
+    detectSessionInUrl: true,
+  },
 })
 
 export const getUserId = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuário não autenticado')
   return user.id
 }
 
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   return user
 }
 
 export const signIn = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
   })
   if (error) throw error
   return data
@@ -40,7 +42,7 @@ export const signIn = async (email, password) => {
 export const signUp = async (email, password) => {
   const { data, error } = await supabase.auth.signUp({
     email,
-    password
+    password,
   })
   if (error) throw error
   return data
@@ -57,7 +59,7 @@ export const onAuthStateChange = (callback) => {
 
 export const updatePassword = async (newPassword) => {
   const { data, error } = await supabase.auth.updateUser({
-    password: newPassword
+    password: newPassword,
   })
   if (error) throw error
   return data

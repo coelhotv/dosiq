@@ -57,7 +57,7 @@
 }
 
 .userName {
-  font-size: var(--text-3xl);                   /* 30px - destaque máximo para conexão emocional */
+  font-size: var(--text-3xl); /* 30px - destaque máximo para conexão emocional */
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   cursor: pointer;
@@ -84,7 +84,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-sticky);
-  
+
   /* Outline style like original UI */
   background: transparent;
   color: var(--neon-cyan);
@@ -96,7 +96,7 @@
   cursor: pointer;
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
   transition: all var(--transition-fast);
-  
+
   /* Touch target */
   min-height: 48px;
   min-width: 180px;
@@ -237,13 +237,13 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-6);      /* 12px 24px */
+  padding: var(--space-3) var(--space-6); /* 12px 24px */
   min-height: 48px;
   min-width: 200px;
-  background: rgba(236, 72, 153, 0.2);         /* Magenta semi-transparente */
-  border: 1px solid rgba(236, 72, 153, 0.5);   /* Borda translúcida */
+  background: rgba(236, 72, 153, 0.2); /* Magenta semi-transparente */
+  border: 1px solid rgba(236, 72, 153, 0.5); /* Borda translúcida */
   border-radius: var(--radius-button);
-  color: #fff;                                  /* Texto branco */
+  color: #fff; /* Texto branco */
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-transform: uppercase;
@@ -253,12 +253,12 @@
   box-shadow:
     0 4px 16px rgba(236, 72, 153, 0.25),
     0 8px 24px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(8px);                   /* Efeito glass */
+  backdrop-filter: blur(8px); /* Efeito glass */
   -webkit-backdrop-filter: blur(8px);
 }
 
 .fab :global(.btn-add-manual):hover {
-  background: rgba(236, 72, 153, 0.35);        /* Mais opaco no hover */
+  background: rgba(236, 72, 153, 0.35); /* Mais opaco no hover */
   border-color: rgba(236, 72, 153, 0.7);
   box-shadow:
     0 6px 20px rgba(236, 72, 153, 0.35),
@@ -279,12 +279,12 @@
     padding: var(--space-3);
     padding-bottom: calc(var(--space-20) + var(--space-4));
   }
-  
+
   .welcome {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .userInfo {
     width: 100%;
     justify-content: space-between;
@@ -329,7 +329,7 @@
   .viewAllLink {
     text-decoration: underline;
   }
-  
+
   .sparklineContainer {
     border-width: 2px;
   }
@@ -354,7 +354,7 @@
   .container {
     padding-bottom: 0;
   }
-  
+
   .fab,
   .viewAllLink {
     display: none;

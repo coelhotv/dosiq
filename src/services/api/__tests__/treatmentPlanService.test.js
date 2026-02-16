@@ -5,36 +5,36 @@ const mockSupabase = {
   from: vi.fn().mockReturnValue({
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: [], error: null })
-      })
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
     }),
     insert: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
-      })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
     }),
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: null })
-          })
-        })
-      })
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      }),
     }),
     delete: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null })
-      })
-    })
-  })
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    }),
+  }),
 }
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
 vi.mock('../../../lib/supabase', () => ({
   supabase: mockSupabase,
-  getUserId: mockGetUserId
+  getUserId: mockGetUserId,
 }))
 
 describe('treatmentPlanService', () => {
@@ -44,28 +44,28 @@ describe('treatmentPlanService', () => {
     mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null })
-        })
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }),
       }),
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
       }),
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: null, error: null })
-            })
-          })
-        })
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        }),
       }),
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null })
-        })
-      })
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      }),
     })
   })
 
@@ -76,23 +76,21 @@ describe('treatmentPlanService', () => {
         {
           id: '1',
           name: 'Plano 1',
-          protocols: [
-            { id: 'p1', name: 'Protocolo 1', medicine: { name: 'Med 1' } }
-          ]
+          protocols: [{ id: 'p1', name: 'Protocolo 1', medicine: { name: 'Med 1' } }],
         },
         {
           id: '2',
           name: 'Plano 2',
-          protocols: []
-        }
+          protocols: [],
+        },
       ]
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: mockPlans, error: null })
-          })
-        })
+            order: vi.fn().mockResolvedValue({ data: mockPlans, error: null }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.getAll()
@@ -107,9 +105,9 @@ describe('treatmentPlanService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') })
-          })
-        })
+            order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') }),
+          }),
+        }),
       })
 
       await expect(treatmentPlanService.getAll()).rejects.toThrow('DB Error')
@@ -121,9 +119,9 @@ describe('treatmentPlanService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null })
-          })
-        })
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.getAll()
@@ -136,21 +134,21 @@ describe('treatmentPlanService', () => {
       const { treatmentPlanService } = await import('../treatmentPlanService')
       const newPlan = {
         name: 'Novo Plano de Tratamento',
-        description: 'Descrição do plano'
+        description: 'Descrição do plano',
       }
       const createdPlan = {
         id: '1',
         ...newPlan,
         user_id: 'test-user-id',
-        created_at: '2024-01-01T00:00:00Z'
+        created_at: '2024-01-01T00:00:00Z',
       }
 
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: createdPlan, error: null })
-          })
-        })
+            single: vi.fn().mockResolvedValue({ data: createdPlan, error: null }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.create(newPlan)
@@ -165,9 +163,9 @@ describe('treatmentPlanService', () => {
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') })
-          })
-        })
+            single: vi.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') }),
+          }),
+        }),
       })
 
       await expect(treatmentPlanService.create(newPlan)).rejects.toThrow('Insert failed')
@@ -182,10 +180,10 @@ describe('treatmentPlanService', () => {
           select: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
               data: { id: '1', name: 'Plano Mínimo', user_id: 'test-user-id' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.create(newPlan)
@@ -201,7 +199,7 @@ describe('treatmentPlanService', () => {
         id: '1',
         name: 'Plano Atualizado',
         description: 'Nova descrição',
-        user_id: 'test-user-id'
+        user_id: 'test-user-id',
       }
 
       mockSupabase.from.mockReturnValue({
@@ -209,11 +207,11 @@ describe('treatmentPlanService', () => {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: updatedPlan, error: null })
-              })
-            })
-          })
-        })
+                single: vi.fn().mockResolvedValue({ data: updatedPlan, error: null }),
+              }),
+            }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.update('1', updates)
@@ -230,11 +228,13 @@ describe('treatmentPlanService', () => {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: null, error: new Error('Update failed') })
-              })
-            })
-          })
-        })
+                single: vi
+                  .fn()
+                  .mockResolvedValue({ data: null, error: new Error('Update failed') }),
+              }),
+            }),
+          }),
+        }),
       })
 
       await expect(treatmentPlanService.update('999', updates)).rejects.toThrow('Update failed')
@@ -254,14 +254,14 @@ describe('treatmentPlanService', () => {
                     id: '1',
                     name: 'Plano Original',
                     description: 'Apenas descrição atualizada',
-                    user_id: 'test-user-id'
+                    user_id: 'test-user-id',
                   },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       })
 
       const result = await treatmentPlanService.update('1', updates)
@@ -281,9 +281,9 @@ describe('treatmentPlanService', () => {
             eq: vi.fn().mockImplementation(() => {
               deleteCalled = true
               return { error: null }
-            })
-          })
-        })
+            }),
+          }),
+        }),
       })
 
       await treatmentPlanService.delete('1')
@@ -296,9 +296,9 @@ describe('treatmentPlanService', () => {
       mockSupabase.from.mockReturnValue({
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ error: new Error('Delete failed') })
-          })
-        })
+            eq: vi.fn().mockResolvedValue({ error: new Error('Delete failed') }),
+          }),
+        }),
       })
 
       await expect(treatmentPlanService.delete('999')).rejects.toThrow('Delete failed')
@@ -315,10 +315,10 @@ describe('treatmentPlanService', () => {
             if (field === 'id') idFilters.push(value)
             if (field === 'user_id') userFilters.push(value)
             return {
-              eq: vi.fn().mockResolvedValue({ error: null })
+              eq: vi.fn().mockResolvedValue({ error: null }),
             }
-          })
-        })
+          }),
+        }),
       })
 
       await treatmentPlanService.delete('plan-123')

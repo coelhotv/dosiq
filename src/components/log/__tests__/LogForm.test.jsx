@@ -5,28 +5,28 @@ import LogForm from '../LogForm'
 // Mock Button component
 vi.mock('../../ui/Button', () => ({
   default: ({ children, onClick, type, disabled, variant }) => (
-    <button 
-      onClick={onClick} 
-      type={type} 
+    <button
+      onClick={onClick}
+      type={type}
       disabled={disabled}
       className={`btn btn-${variant || 'primary'}`}
     >
       {children}
     </button>
-  )
+  ),
 }))
 
 // Mock ProtocolChecklistItem
 vi.mock('../../protocol/ProtocolChecklistItem', () => ({
   default: ({ protocol, isSelected, onToggle }) => (
-    <div 
+    <div
       data-testid={`protocol-item-${protocol.id}`}
       className={isSelected ? 'selected' : ''}
       onClick={() => onToggle(protocol.id)}
     >
       {protocol.name}
     </div>
-  )
+  ),
 }))
 
 describe('LogForm', () => {
@@ -38,7 +38,7 @@ describe('LogForm', () => {
       medicine: { id: 'med-1', name: 'Dipirona' },
       dosage_per_intake: 1,
       time_schedule: ['08:00', '14:00', '20:00'],
-      active: true
+      active: true,
     },
     {
       id: 'proto-2',
@@ -47,8 +47,8 @@ describe('LogForm', () => {
       medicine: { id: 'med-2', name: 'Paracetamol' },
       dosage_per_intake: 2,
       time_schedule: ['08:00', '20:00'],
-      active: true
-    }
+      active: true,
+    },
   ]
 
   const mockTreatmentPlans = [
@@ -57,9 +57,9 @@ describe('LogForm', () => {
       name: 'Tratamento Completo',
       protocols: [
         { ...mockProtocols[0], active: true },
-        { ...mockProtocols[1], active: true }
-      ]
-    }
+        { ...mockProtocols[1], active: true },
+      ],
+    },
   ]
 
   const mockOnSave = vi.fn()
@@ -71,25 +71,13 @@ describe('LogForm', () => {
 
   describe('rendering', () => {
     it('should render form with title', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByText('Registrar Medicamento Tomado')).toBeInTheDocument()
     })
 
     it('should render protocol type toggle buttons', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByText('💊 Único Remédio')).toBeInTheDocument()
       expect(screen.getByText('📁 Plano Completo')).toBeInTheDocument()
@@ -97,7 +85,7 @@ describe('LogForm', () => {
 
     it('should disable plan button when no treatment plans', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={[]}
           onSave={mockOnSave}
@@ -110,49 +98,25 @@ describe('LogForm', () => {
     })
 
     it('should render datetime-local input', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByLabelText(/Data e Hora do Registro/i)).toBeInTheDocument()
     })
 
     it('should render protocol select when type is protocol', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByLabelText(/Protocolo/i)).toBeInTheDocument()
     })
 
     it('should render notes textarea', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByLabelText(/Observações/i)).toBeInTheDocument()
     })
 
     it('should render cancel and submit buttons', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByText('Cancelar')).toBeInTheDocument()
       expect(screen.getByText('✅ Registrar Dose')).toBeInTheDocument()
@@ -162,7 +126,7 @@ describe('LogForm', () => {
   describe('form type switching', () => {
     it('should switch to plan type when clicking plan button', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -178,7 +142,7 @@ describe('LogForm', () => {
 
     it('should switch back to protocol type when clicking protocol button', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -197,7 +161,7 @@ describe('LogForm', () => {
 
     it('should disable plan type toggle when editing existing log', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           initialValues={{ id: 'log-1', protocol_id: 'proto-1' }}
@@ -212,13 +176,7 @@ describe('LogForm', () => {
 
   describe('protocol selection', () => {
     it('should show protocol info when protocol selected', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const select = screen.getByLabelText(/Protocolo/i)
       fireEvent.change(select, { target: { value: 'proto-1' } })
@@ -228,13 +186,7 @@ describe('LogForm', () => {
     })
 
     it('should show quantity input with default dosage when protocol selected', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const select = screen.getByLabelText(/Protocolo/i)
       fireEvent.change(select, { target: { value: 'proto-1' } })
@@ -247,7 +199,7 @@ describe('LogForm', () => {
   describe('plan selection', () => {
     it('should auto-select all active protocols when plan selected', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -268,7 +220,7 @@ describe('LogForm', () => {
 
     it('should allow toggling individual protocols in plan', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -290,7 +242,7 @@ describe('LogForm', () => {
 
     it('should show count of selected protocols', () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -309,13 +261,7 @@ describe('LogForm', () => {
 
   describe('validation', () => {
     it('should show error when protocol not selected', async () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       fireEvent.click(screen.getByText('✅ Registrar Dose'))
 
@@ -326,7 +272,7 @@ describe('LogForm', () => {
 
     it('should show error when plan not selected', async () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -345,7 +291,7 @@ describe('LogForm', () => {
 
     it('should show error when no protocols selected in plan', async () => {
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -355,7 +301,7 @@ describe('LogForm', () => {
 
       // Switch to plan type
       fireEvent.click(screen.getByText('📁 Plano Completo'))
-      
+
       // Select plan
       const planSelect = screen.getByLabelText(/Plano de Tratamento/i)
       fireEvent.change(planSelect, { target: { value: 'plan-1' } })
@@ -367,22 +313,18 @@ describe('LogForm', () => {
       fireEvent.click(screen.getByText(/Registrar/))
 
       await waitFor(() => {
-        expect(screen.getByText('Selecione pelo menos um medicamento para registrar')).toBeInTheDocument()
+        expect(
+          screen.getByText('Selecione pelo menos um medicamento para registrar')
+        ).toBeInTheDocument()
       })
     })
 
     it('should clear error when field is corrected', async () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Trigger error
       fireEvent.click(screen.getByText('✅ Registrar Dose'))
-      
+
       await waitFor(() => {
         expect(screen.getByText('Selecione um protocolo')).toBeInTheDocument()
       })
@@ -399,13 +341,7 @@ describe('LogForm', () => {
     it('should call onSave with correct data for new protocol log', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Select protocol
       const select = screen.getByLabelText(/Protocolo/i)
@@ -423,12 +359,14 @@ describe('LogForm', () => {
       fireEvent.click(screen.getByText('✅ Registrar Dose'))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          protocol_id: 'proto-1',
-          medicine_id: 'med-1',
-          quantity_taken: 2,
-          notes: 'Test note'
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            protocol_id: 'proto-1',
+            medicine_id: 'med-1',
+            quantity_taken: 2,
+            notes: 'Test note',
+          })
+        )
       })
     })
 
@@ -440,11 +378,11 @@ describe('LogForm', () => {
         protocol_id: 'proto-1',
         quantity_taken: 1,
         taken_at: '2024-01-15T10:00:00Z',
-        notes: 'Existing note'
+        notes: 'Existing note',
       }
 
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           initialValues={initialValues}
           onSave={mockOnSave}
@@ -460,24 +398,20 @@ describe('LogForm', () => {
       fireEvent.click(screen.getByText('💾 Atualizar Registro'))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          id: 'log-1',
-          protocol_id: 'proto-1',
-          quantity_taken: 3
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'log-1',
+            protocol_id: 'proto-1',
+            quantity_taken: 3,
+          })
+        )
       })
     })
 
     it('should use protocol default dosage when quantity not specified', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Select protocol
       const select = screen.getByLabelText(/Protocolo/i)
@@ -487,9 +421,11 @@ describe('LogForm', () => {
       fireEvent.click(screen.getByText('✅ Registrar Dose'))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          quantity_taken: 1 // Default from protocol
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            quantity_taken: 1, // Default from protocol
+          })
+        )
       })
     })
   })
@@ -499,7 +435,7 @@ describe('LogForm', () => {
       mockOnSave.mockResolvedValue(undefined)
 
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -527,13 +463,13 @@ describe('LogForm', () => {
             expect.objectContaining({
               protocol_id: 'proto-1',
               medicine_id: 'med-1',
-              quantity_taken: 1
+              quantity_taken: 1,
             }),
             expect.objectContaining({
               protocol_id: 'proto-2',
               medicine_id: 'med-2',
-              quantity_taken: 2
-            })
+              quantity_taken: 2,
+            }),
           ])
         )
       })
@@ -543,7 +479,7 @@ describe('LogForm', () => {
       mockOnSave.mockResolvedValue(undefined)
 
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           treatmentPlans={mockTreatmentPlans}
           onSave={mockOnSave}
@@ -572,13 +508,7 @@ describe('LogForm', () => {
     it('should display error when onSave throws', async () => {
       mockOnSave.mockRejectedValue(new Error('Stock insufficient'))
 
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Select protocol and submit
       const select = screen.getByLabelText(/Protocolo/i)
@@ -592,17 +522,14 @@ describe('LogForm', () => {
 
     it('should disable buttons while submitting', async () => {
       let resolveSave
-      mockOnSave.mockImplementation(() => new Promise(resolve => {
-        resolveSave = resolve
-      }))
-
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
+      mockOnSave.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveSave = resolve
+          })
       )
+
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Select protocol and submit
       const select = screen.getByLabelText(/Protocolo/i)
@@ -621,13 +548,7 @@ describe('LogForm', () => {
 
   describe('cancel action', () => {
     it('should call onCancel when cancel button clicked', () => {
-      render(
-        <LogForm 
-          protocols={mockProtocols}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<LogForm protocols={mockProtocols} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       fireEvent.click(screen.getByText('Cancelar'))
 
@@ -642,11 +563,11 @@ describe('LogForm', () => {
         protocol_id: 'proto-1',
         quantity_taken: 3,
         taken_at: '2024-01-15T10:00:00Z',
-        notes: 'Existing note'
+        notes: 'Existing note',
       }
 
       render(
-        <LogForm 
+        <LogForm
           protocols={mockProtocols}
           initialValues={initialValues}
           onSave={mockOnSave}
@@ -655,7 +576,7 @@ describe('LogForm', () => {
       )
 
       expect(screen.getByText('💾 Atualizar Registro')).toBeInTheDocument()
-      
+
       const quantityInput = screen.getByLabelText(/Quantidade Tomada/i)
       expect(quantityInput).toHaveValue(3)
 

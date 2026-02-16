@@ -13,7 +13,7 @@
    Applied when [data-theme="dark"] is set
    ============================================ */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Background Colors */
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -22,7 +22,7 @@
   --bg-overlay: rgba(0, 0, 0, 0.7);
   --bg-glass: rgba(31, 41, 55, 0.8);
   --bg-glass-dark: rgba(17, 24, 39, 0.9);
-  
+
   /* Aliases */
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -31,13 +31,13 @@
 }
 
 /* Text Colors */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
   --text-inverse: #ffffff;
   --text-link: #f472b6;
-  
+
   /* Aliases */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -47,11 +47,11 @@
 }
 
 /* Border Colors */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --border-light: #1f2937;
   --border-default: #374151;
   --border-dark: #4b5563;
-  
+
   /* Aliases */
   --color-border-light: var(--border-light);
   --color-border-default: var(--border-default);
@@ -61,7 +61,7 @@
 }
 
 /* Neon Colors - More vibrant in dark mode */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --neon-cyan: #22d3ee;
   --neon-pink: #f472b6;
   --neon-magenta: #e879f9;
@@ -74,7 +74,7 @@
 }
 
 /* Glow Effects - More intense in dark mode */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
   --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
   --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
@@ -86,7 +86,7 @@
 }
 
 /* Shadows - Darker for dark mode */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
@@ -94,7 +94,7 @@
 }
 
 /* State Colors - Brighter in dark mode */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --state-hover: rgba(244, 114, 182, 0.15);
   --state-active: rgba(244, 114, 182, 0.25);
   --state-focus: rgba(244, 114, 182, 0.35);
@@ -103,7 +103,7 @@
 }
 
 /* Toggle Colors */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --color-toggle-track: #374151;
   --color-sun: #93c5fd;
   --color-moon: #60a5fa;
@@ -118,8 +118,8 @@
    Adjust gradient backgrounds for dark mode visibility
    ============================================ */
 
-[data-theme="dark"] body::before {
-  background: 
+[data-theme='dark'] body::before {
+  background:
     radial-gradient(circle at 20% 50%, rgba(34, 211, 238, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 40% 20%, rgba(232, 121, 249, 0.15) 0%, transparent 50%);
@@ -129,14 +129,14 @@
    DARK THEME SCROLLBAR
    ============================================ */
 
-[data-theme="dark"] ::-webkit-scrollbar-track {
+[data-theme='dark'] ::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
   background: var(--bg-tertiary);
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
 }

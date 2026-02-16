@@ -6,17 +6,17 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     name: plan?.name || '',
     description: plan?.description || '',
-    objective: plan?.objective || ''
+    objective: plan?.objective || '',
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
@@ -32,14 +32,14 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
-    
+
     setIsSubmitting(true)
     try {
       await onSave({
         ...formData,
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        objective: formData.objective.trim() || null
+        objective: formData.objective.trim() || null,
       })
     } catch (error) {
       console.error('Erro ao salvar plano de tratamento:', error)
@@ -98,26 +98,13 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         />
       </div>
 
-      {errors.submit && (
-        <div className="error-banner">
-          ❌ {errors.submit}
-        </div>
-      )}
+      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
 
       <div className="form-actions">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button 
-          type="submit" 
-          variant="primary"
-          disabled={isSubmitting}
-        >
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? 'Salvando...' : plan ? 'Atualizar Plano' : 'Criar Plano'}
         </Button>
       </div>

@@ -51,9 +51,7 @@ export const adherenceService = {
     const takenDoses = logs?.length || 0
 
     // Calcular score (0-100)
-    const score = expectedDoses > 0 
-      ? Math.round((takenDoses / expectedDoses) * 100)
-      : 0
+    const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
 
     return {
       score: Math.min(score, 100), // Cap at 100%
@@ -61,7 +59,7 @@ export const adherenceService = {
       expected: expectedDoses,
       period,
       startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
+      endDate: endDate.toISOString(),
     }
   },
 
@@ -104,9 +102,7 @@ export const adherenceService = {
     const expectedDoses = calculateExpectedDoses([protocol], days)
     const takenDoses = logs?.length || 0
 
-    const score = expectedDoses > 0
-      ? Math.round((takenDoses / expectedDoses) * 100)
-      : 0
+    const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
 
     return {
       protocolId,
@@ -114,7 +110,7 @@ export const adherenceService = {
       medicineName: protocol.medicine?.name,
       score: Math.min(score, 100),
       taken: takenDoses,
-      expected: expectedDoses
+      expected: expectedDoses,
     }
   },
 
@@ -148,7 +144,7 @@ export const adherenceService = {
           score: 0,
           taken: 0,
           expected: 0,
-          error: true
+          error: true,
         }
       }
     })
@@ -220,7 +216,7 @@ export const adherenceService = {
     const [overall, protocols, streaks] = await Promise.all([
       this.calculateAdherence(period),
       this.calculateAllProtocolsAdherence(period),
-      this.getCurrentStreak()
+      this.getCurrentStreak(),
     ])
 
     return {
@@ -230,7 +226,7 @@ export const adherenceService = {
       period,
       protocolScores: protocols,
       currentStreak: streaks.currentStreak,
-      longestStreak: streaks.longestStreak
+      longestStreak: streaks.longestStreak,
     }
   },
 
@@ -241,7 +237,7 @@ export const adherenceService = {
    */
   async getDailyAdherence(days = 7) {
     const userId = await getUserId()
-    
+
     const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
@@ -259,7 +255,7 @@ export const adherenceService = {
     // Doses tomadas em GMT-3 podem aparecer no dia seguinte em UTC
     const adjustedStartDate = new Date(startDate)
     adjustedStartDate.setHours(adjustedStartDate.getHours() - 24)
-    
+
     const adjustedEndDate = new Date(endDate)
     adjustedEndDate.setHours(adjustedEndDate.getHours() + 24)
 
@@ -288,22 +284,20 @@ export const adherenceService = {
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
       const dateKey = `${year}-${month}-${day}`
-      
+
       const taken = logsByDay.get(dateKey) || 0
-      const adherence = dailyExpected > 0 
-        ? Math.round((taken / dailyExpected) * 100)
-        : 0
-      
+      const adherence = dailyExpected > 0 ? Math.round((taken / dailyExpected) * 100) : 0
+
       dailyData.push({
         date: dateKey,
         taken,
         expected: Math.round(dailyExpected),
-        adherence: Math.min(adherence, 100)
+        adherence: Math.min(adherence, 100),
       })
     }
 
     return dailyData
-  }
+  },
 }
 
 /**
@@ -343,7 +337,7 @@ function calculateExpectedDoses(protocols, days) {
         dailyDoses = timesPerDay
     }
 
-    return total + (dailyDoses * days)
+    return total + dailyDoses * days
   }, 0)
 }
 
@@ -369,7 +363,7 @@ function calculateDailyExpectedDoses(protocols) {
 function groupLogsByDay(logs) {
   const days = new Map()
 
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const date = new Date(log.taken_at)
     // Usar data local para evitar problemas de fuso horário
     const year = date.getFullYear()
@@ -418,8 +412,12 @@ function calculateStreaks(logsByDay, dailyExpected) {
 
   // Verificar se o streak ainda está ativo
   const lastLogDate = dates[0]
-  const hasTakenToday = lastLogDate === today && (logsByDay.get(today) || 0) >= dailyExpected * minAdherenceRate
-  const hasTakenYesterday = lastLogDate === yesterdayKey || (dates.includes(yesterdayKey) && (logsByDay.get(yesterdayKey) || 0) >= dailyExpected * minAdherenceRate)
+  const hasTakenToday =
+    lastLogDate === today && (logsByDay.get(today) || 0) >= dailyExpected * minAdherenceRate
+  const hasTakenYesterday =
+    lastLogDate === yesterdayKey ||
+    (dates.includes(yesterdayKey) &&
+      (logsByDay.get(yesterdayKey) || 0) >= dailyExpected * minAdherenceRate)
 
   if (!hasTakenToday && !hasTakenYesterday) {
     isCurrent = false
@@ -432,7 +430,7 @@ function calculateStreaks(logsByDay, dailyExpected) {
     const checkMonth = String(checkDate.getMonth() + 1).padStart(2, '0')
     const checkDay = String(checkDate.getDate()).padStart(2, '0')
     const dateKey = `${checkYear}-${checkMonth}-${checkDay}`
-    
+
     const taken = logsByDay.get(dateKey) || 0
     const adherenceRate = dailyExpected > 0 ? taken / dailyExpected : 0
 

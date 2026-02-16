@@ -27,16 +27,20 @@ function App() {
 
   useEffect(() => {
     // Check initial session
-    getCurrentUser().then(user => {
-      setSession(user)
-      setIsLoading(false)
-    }).catch(() => {
-      setSession(null)
-      setIsLoading(false)
-    })
+    getCurrentUser()
+      .then((user) => {
+        setSession(user)
+        setIsLoading(false)
+      })
+      .catch(() => {
+        setSession(null)
+        setIsLoading(false)
+      })
 
     // Listen for changes
-    const { data: { subscription } } = onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = onAuthStateChange((_event, session) => {
       setSession(session?.user ?? null)
     })
 
@@ -55,23 +59,28 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        className="app-container"
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
         <Loading text="Carregando..." />
       </div>
     )
   }
 
-  const isAuthenticated = !!session;
+  const isAuthenticated = !!session
 
   const renderCurrentView = () => {
     if (!session) {
       return showAuth ? (
-        <Auth onAuthSuccess={() => { setShowAuth(false); setCurrentView('landing') }} />
-      ) : (
-        <Landing
-          isAuthenticated={false}
-          onOpenAuth={() => setShowAuth(true)}
+        <Auth
+          onAuthSuccess={() => {
+            setShowAuth(false)
+            setCurrentView('landing')
+          }}
         />
+      ) : (
+        <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
       )
     }
 
@@ -88,15 +97,15 @@ function App() {
         return <Medicines onNavigateToProtocol={navigateToProtocol} />
       case 'stock':
         return (
-          <Stock 
+          <Stock
             initialParams={initialStockParams}
             onClearParams={() => setInitialStockParams(null)}
           />
         )
       case 'protocols':
         return (
-          <Protocols 
-            initialParams={initialProtocolParams} 
+          <Protocols
+            initialParams={initialProtocolParams}
             onClearParams={() => setInitialProtocolParams(null)}
             onNavigateToStock={navigateToStock}
           />
@@ -110,14 +119,16 @@ function App() {
       case 'dashboard':
       default:
         return (
-          <Dashboard onNavigate={(view, params) => {
-            if (view === 'stock' && params?.medicineId) {
-              setInitialStockParams({ medicineId: params.medicineId })
-            } else if (view === 'protocols' && params?.medicineId) {
-              setInitialProtocolParams({ medicineId: params.medicineId })
-            }
-            setCurrentView(view)
-          }} />
+          <Dashboard
+            onNavigate={(view, params) => {
+              if (view === 'stock' && params?.medicineId) {
+                setInitialStockParams({ medicineId: params.medicineId })
+              } else if (view === 'protocols' && params?.medicineId) {
+                setInitialProtocolParams({ medicineId: params.medicineId })
+              }
+              setCurrentView(view)
+            }}
+          />
         )
     }
   }
@@ -129,14 +140,16 @@ function App() {
           <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
             {renderCurrentView()}
 
-            <footer style={{
-            textAlign: 'center',
-            marginTop: 'var(--space-8)',
-            paddingBottom: 'var(--space-8)',
-            color: 'var(--text-tertiary)',
-            fontSize: 'var(--font-size-sm)'
-          }}>
-  {/*           <span 
+            <footer
+              style={{
+                textAlign: 'center',
+                marginTop: 'var(--space-8)',
+                paddingBottom: 'var(--space-8)',
+                color: 'var(--text-tertiary)',
+                fontSize: 'var(--font-size-sm)',
+              }}
+            >
+              {/*           <span 
               onClick={() => setShowDebug(!showDebug)} 
               style={{ 
                 cursor: 'pointer', 
@@ -148,16 +161,19 @@ function App() {
             >
               {showDebug ? '[-] hide debug' : '[+] check system'}
             </span>
-    */}        </footer>
-        </main>
+    */}{' '}
+            </footer>
+          </main>
 
-        {isAuthenticated && <BottomNav currentView={currentView} setCurrentView={setCurrentView} />}
-        
-        {/* Onboarding Wizard - apenas para usuários autenticados */}
-        {isAuthenticated && <OnboardingWizard />}
-        
-        {/* PWA Install Prompt - para todos os usuários */}
-        <InstallPrompt />
+          {isAuthenticated && (
+            <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+          )}
+
+          {/* Onboarding Wizard - apenas para usuários autenticados */}
+          {isAuthenticated && <OnboardingWizard />}
+
+          {/* PWA Install Prompt - para todos os usuários */}
+          <InstallPrompt />
         </div>
       </DashboardProvider>
     </OnboardingProvider>

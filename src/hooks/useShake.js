@@ -1,6 +1,6 @@
 /**
  * useShake.js - Hook standalone para shake effect
- * 
+ *
  * Hook reutilizável para efeito de shake em elementos
  */
 
@@ -9,7 +9,7 @@ import { useHapticFeedback } from './useHapticFeedback'
 
 /**
  * Hook useShake
- * 
+ *
  * @param {Object} options
  * @param {string} options.direction - Direção: 'horizontal' ou 'vertical'
  * @param {Function} options.onComplete - Callback quando animação terminar
@@ -32,6 +32,6 @@ export function useShake(options = {}) {
 
   return {
     isShaking,
-    shake
+    shake,
   }
 }

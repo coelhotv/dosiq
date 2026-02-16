@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import './Landing.css'; // Keep this import
+import React, { useState, useEffect } from 'react'
+import './Landing.css' // Keep this import
 // Consider importing common components from a centralized place
 // import { Button } from '../components/ui/Button'; // Example
 
@@ -9,16 +9,20 @@ const FloatingCard = ({ icon, text, animationDelay }) => (
     <div className="card-icon">{icon}</div>
     <div className="card-text">{text}</div>
   </div>
-);
+)
 
-export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}, onContinue = () => {} }) {
-  const [scrollY, setScrollY] = useState(0);
+export default function Landing({
+  isAuthenticated = false,
+  onOpenAuth = () => {},
+  onContinue = () => {},
+}) {
+  const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    const handleScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div className="landing-container">
@@ -36,7 +40,8 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           </h1>
 
           <p className="hero-subtitle">
-            Organize medicamentos, controle estoque e automatize lembretes — tudo em sincronização perfeita entre seus dispositivos.
+            Organize medicamentos, controle estoque e automatize lembretes — tudo em sincronização
+            perfeita entre seus dispositivos.
           </p>
 
           <div className="hero-cta">
@@ -92,37 +97,55 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           <div className="feature-card">
             <div className="feature-icon glow-cyan">🎯</div>
             <h3>Doses Precisas</h3>
-            <p>Agende medicamentos com horários específicos e receba lembretes automáticos para não esquecer nenhuma dose.</p>
+            <p>
+              Agende medicamentos com horários específicos e receba lembretes automáticos para não
+              esquecer nenhuma dose.
+            </p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon glow-magenta">📦</div>
             <h3>Controle de Estoque</h3>
-            <p>Monitore a quantidade de medicamentos e receba alertas quando estiverem acabando. Reposição facilitada.</p>
+            <p>
+              Monitore a quantidade de medicamentos e receba alertas quando estiverem acabando.
+              Reposição facilitada.
+            </p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon glow-cyan">📋</div>
             <h3>Protocolos Flexíveis</h3>
-            <p>Configure tratamentos com titulação de dose, múltiplos medicamentos e acompanhe toda evolução.</p>
+            <p>
+              Configure tratamentos com titulação de dose, múltiplos medicamentos e acompanhe toda
+              evolução.
+            </p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon glow-magenta">📊</div>
             <h3>Relatórios Detalhados</h3>
-            <p>Acesse histórico completo com gráficos, adesão a tratamento e compartilhe com seu médico.</p>
+            <p>
+              Acesse histórico completo com gráficos, adesão a tratamento e compartilhe com seu
+              médico.
+            </p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon glow-cyan">🤖</div>
             <h3>Bot Telegram</h3>
-            <p>Receba lembretes, verifique status e tome doses direto do Telegram. Automação total opcional.</p>
+            <p>
+              Receba lembretes, verifique status e tome doses direto do Telegram. Automação total
+              opcional.
+            </p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon glow-magenta">🔒</div>
             <h3>100% Seguro</h3>
-            <p>Dados criptografados, backup automático e autenticação segura. Sua privacidade é prioridade.</p>
+            <p>
+              Dados criptografados, backup automático e autenticação segura. Sua privacidade é
+              prioridade.
+            </p>
           </div>
         </div>
       </section>
@@ -138,25 +161,37 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           <div className="benefit-item">
             <div className="benefit-number">1</div>
             <h3>Maior Adesão</h3>
-            <p>Lembretes inteligentes garantem que você nunca perca uma dose. Estudos mostram aumento de 87% na adesão ao tratamento.</p>
+            <p>
+              Lembretes inteligentes garantem que você nunca perca uma dose. Estudos mostram aumento
+              de 87% na adesão ao tratamento.
+            </p>
           </div>
 
           <div className="benefit-item">
             <div className="benefit-number">2</div>
             <h3>Menos Stress</h3>
-            <p>Elimine a ansiedade de "será que tomei o remédio?". Histórico automático registra tudo para você.</p>
+            <p>
+              Elimine a ansiedade de "será que tomei o remédio?". Histórico automático registra tudo
+              para você.
+            </p>
           </div>
 
           <div className="benefit-item">
             <div className="benefit-number">3</div>
             <h3>Dados para seu Médico</h3>
-            <p>Compartilhe relatórios precisos com seu médico. Dados reais melhoram diagnósticos e ajustes de tratamento.</p>
+            <p>
+              Compartilhe relatórios precisos com seu médico. Dados reais melhoram diagnósticos e
+              ajustes de tratamento.
+            </p>
           </div>
 
           <div className="benefit-item">
             <div className="benefit-number">4</div>
             <h3>Controle Total</h3>
-            <p>Monitore estoques, evite desperdícios e planeje reposições com antecedência. Economize tempo e dinheiro.</p>
+            <p>
+              Monitore estoques, evite desperdícios e planeje reposições com antecedência. Economize
+              tempo e dinheiro.
+            </p>
           </div>
         </div>
       </section>
@@ -204,9 +239,7 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           </div>
         </div>
 
-        <p className="sync-info">
-          ✨ Login uma vez. Tudo sincronizado automaticamente.
-        </p>
+        <p className="sync-info">✨ Login uma vez. Tudo sincronizado automaticamente.</p>
       </section>
 
       {/* Telegram Section */}
@@ -278,5 +311,5 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
         <p className="footer-tagline">Saúde em primeiro lugar. Tecnologia a serviço do bem.</p>
       </footer>
     </div>
-  );
+  )
 }

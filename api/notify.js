@@ -16,32 +16,43 @@ const logger = createLogger('CronNotify');
 // --- Bot Adapter (Minimal for Notifications) ---
 function createNotifyBotAdapter(token) {
   const telegramFetch = async (method, body) => {
+    let res;
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      
+
       if (!data.ok) {
         logger.error(`Erro na API do Telegram (${method})`, null, { error: data });
-        throw new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
+        const error = new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
+        // Anexar status HTTP para detecção de erros retryable
+        error.response = { status: res.status };
+        error.statusCode = res.status;
+        throw error;
       }
-      
+
       return data.result;
     } catch (err) {
+      // Se o erro não tem response, adicionar baseado no fetch response
+      if (!err.response && res) {
+        err.response = { status: res.status };
+        err.statusCode = res.status;
+      }
       logger.error(`Erro de fetch (${method})`, err);
       throw err;  // SEMPRE re-lançar o erro
     }
   };
 
   /**
-   * Verifica se um erro é passível de retry
+   * Verifica se um erro é passível de retry (transitório)
    * @param {Error} error - Objeto de erro
-   * @returns {boolean} true se o erro é transiente
+   * @returns {boolean} true se o erro é transitório e pode ser retentado
    */
   function isRetryableError(error) {
+    // Network errors (connection issues)
     const retryableCodes = [
       'ETIMEDOUT',
       'ECONNRESET',
@@ -51,41 +62,73 @@ function createNotifyBotAdapter(token) {
       'ECONNABORTED',
       'Network Error'
     ];
-    
-    return retryableCodes.some(code =>
+
+    if (retryableCodes.some(code =>
       error.message?.includes(code) ||
       error.code === code
-    );
+    )) {
+      return true;
+    }
+
+    // Telegram API rate limiting (429 Too Many Requests)
+    if (error.response?.status === 429) {
+      return true;
+    }
+
+    // Telegram API internal errors (5xx)
+    if (error.response?.status >= 500) {
+      return true;
+    }
+
+    return false;
   }
 
   return {
     sendMessage: async (chatId, text, options = {}) => {
-      try {
-        const result = await telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
-        
-        logger.debug(`Mensagem Telegram enviada com sucesso`, {
-          chatId,
-          messageId: result.message_id
-        });
-        
-        return {
-          success: true,
-          messageId: result.message_id,
-          timestamp: new Date().toISOString()
-        };
-      } catch (err) {
-        logger.error(`Falha ao enviar mensagem Telegram`, err, { chatId });
-        
-        return {
-          success: false,
-          error: {
-            code: err.name || 'SEND_FAILED',
-            message: err.message,
-            retryable: isRetryableError(err)
-          },
-          timestamp: new Date().toISOString()
-        };
+      const maxAttempts = 2; // Simple: just 2 attempts
+      let lastError;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const result = await telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
+
+          logger.debug(`Mensagem Telegram enviada`, {
+            chatId,
+            messageId: result.message_id,
+            attempt
+          });
+
+          return {
+            success: true,
+            messageId: result.message_id,
+            timestamp: new Date().toISOString(),
+            attempts: attempt
+          };
+        } catch (err) {
+          lastError = err;
+
+          // Only retry on network/retryable errors
+          if (!isRetryableError(err) || attempt === maxAttempts) {
+            break;
+          }
+
+          // Simple delay: 1 second
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
+
+      logger.error(`Falha ao enviar mensagem Telegram após ${maxAttempts} tentativas`, lastError, { chatId });
+
+      return {
+        success: false,
+        error: {
+          code: lastError.name || 'SEND_FAILED',
+          message: lastError.message,
+          retryable: isRetryableError(lastError)
+        },
+        timestamp: new Date().toISOString(),
+        attempts: maxAttempts
+      };
     }
   };
 }

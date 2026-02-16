@@ -15,14 +15,14 @@
   right: 16px;
   z-index: 9999; /* Highest z-index to ensure clickability */
   pointer-events: auto;
-  
+
   background: var(--glass-standard, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-heavy, rgba(255, 255, 255, 0.15));
   border-radius: var(--border-radius-xl, 16px);
   box-shadow: var(--shadow-2xl, 0 25px 50px -12px rgba(0, 0, 0, 0.5));
-  
+
   padding: var(--spacing-md, 16px);
   max-width: 600px;
   margin: 0 auto;
@@ -39,7 +39,11 @@
   flex-shrink: 0;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--color-primary, #ec4899), var(--color-secondary, #06b6d4));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary, #ec4899),
+    var(--color-secondary, #06b6d4)
+  );
   border-radius: var(--border-radius-lg, 12px);
   display: flex;
   align-items: center;
@@ -78,7 +82,11 @@
 }
 
 .install-prompt__install-btn {
-  background: linear-gradient(135deg, var(--color-primary, #ec4899), var(--color-primary-dark, #db2777));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary, #ec4899),
+    var(--color-primary-dark, #db2777)
+  );
   color: white;
   border: none;
   border-radius: var(--border-radius-md, 8px);
@@ -96,7 +104,11 @@
 .install-prompt__install-btn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.4));
-  background: linear-gradient(135deg, var(--color-primary-light, #f472b6), var(--color-primary, #ec4899));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light, #f472b6),
+    var(--color-primary, #ec4899)
+  );
 }
 
 .install-prompt__install-btn:active {
@@ -218,7 +230,11 @@
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, var(--color-primary, #ec4899), var(--color-secondary, #06b6d4));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary, #ec4899),
+    var(--color-secondary, #06b6d4)
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -266,7 +282,11 @@
 
 .install-prompt__modal-btn {
   width: 100%;
-  background: linear-gradient(135deg, var(--color-primary, #ec4899), var(--color-secondary, #06b6d4));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary, #ec4899),
+    var(--color-secondary, #06b6d4)
+  );
   color: white;
   border: none;
   border-radius: var(--border-radius-md, 8px);
@@ -374,7 +394,7 @@
   .install-prompt__modal-btn {
     transition: none;
   }
-  
+
   .install-prompt__install-btn:hover,
   .install-prompt__modal-btn:hover {
     transform: none;

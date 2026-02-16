@@ -1,6 +1,6 @@
 /**
  * OnboardingContext - Contexto React para gerenciamento do onboarding
- * 
+ *
  * @module OnboardingContext
  */
 

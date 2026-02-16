@@ -51,9 +51,7 @@ export default function Auth({ onAuthSuccess }) {
           </div>
           <h1>{isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}</h1>
           <p className="auth-subtitle">
-            {isLogin 
-              ? 'Acesse sua agenda de medicamentos' 
-              : 'Comece a gerenciar sua saúde hoje'}
+            {isLogin ? 'Acesse sua agenda de medicamentos' : 'Comece a gerenciar sua saúde hoje'}
           </p>
         </div>
 
@@ -88,19 +86,15 @@ export default function Auth({ onAuthSuccess }) {
           {error && <div className="auth-error">{error}</div>}
           {message && <div className="auth-message">{message}</div>}
 
-          <Button 
-            type="submit" 
-            className="auth-submit-btn" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastrar')}
+          <Button type="submit" className="auth-submit-btn" disabled={isLoading}>
+            {isLoading ? 'Carregando...' : isLogin ? 'Entrar' : 'Cadastrar'}
           </Button>
         </form>
 
         <div className="auth-footer">
           <p>
             {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-            <button 
+            <button
               className="toggle-auth-btn"
               onClick={() => {
                 setIsLogin(!isLogin)

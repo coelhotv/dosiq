@@ -55,7 +55,8 @@
 
 /* Animação para streak alto */
 @keyframes streakPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
   }
   50% {
