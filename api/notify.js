@@ -16,21 +16,31 @@ const logger = createLogger('CronNotify');
 // --- Bot Adapter (Minimal for Notifications) ---
 function createNotifyBotAdapter(token) {
   const telegramFetch = async (method, body) => {
+    let res;
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      
+
       if (!data.ok) {
         logger.error(`Erro na API do Telegram (${method})`, null, { error: data });
-        throw new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
+        const error = new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
+        // Anexar status HTTP para detecção de erros retryable
+        error.response = { status: res.status };
+        error.statusCode = res.status;
+        throw error;
       }
-      
+
       return data.result;
     } catch (err) {
+      // Se o erro não tem response, adicionar baseado no fetch response
+      if (!err.response && res) {
+        err.response = { status: res.status };
+        err.statusCode = res.status;
+      }
       logger.error(`Erro de fetch (${method})`, err);
       throw err;  // SEMPRE re-lançar o erro
     }

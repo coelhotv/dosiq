@@ -1,4 +1,4 @@
-// tests/server/bot/retryManager.test.js
+// tests/server/utils/retryManager.test.js
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 
 // Mock dependencies
@@ -25,11 +25,17 @@ vi.mock('../../../../server/services/notificationMetrics.js', () => ({
 // Import after mocks (use dynamic import to support ESM)
 let DEFAULT_RETRY_CONFIG
 let sendWithRetry
+let isRetryableError
+let calculateDelay
+let sleep
 
 beforeAll(async () => {
-  const mod = await import('../../../../server/bot/retryManager.js')
+  const mod = await import('../../../../server/utils/retryManager.js')
   DEFAULT_RETRY_CONFIG = mod.DEFAULT_RETRY_CONFIG
   sendWithRetry = mod.sendWithRetry
+  isRetryableError = mod.isRetryableError
+  calculateDelay = mod.calculateDelay
+  sleep = mod.sleep
 })
 
 describe('RetryManager', () => {
@@ -42,13 +48,59 @@ describe('RetryManager', () => {
       expect(DEFAULT_RETRY_CONFIG).toBeDefined()
       expect(DEFAULT_RETRY_CONFIG.maxRetries).toBe(3)
       expect(DEFAULT_RETRY_CONFIG.baseDelay).toBe(1000)
-      expect(DEFAULT_RETRY_CONFIG.maxDelay).toBe(30000)
+      expect(DEFAULT_RETRY_CONFIG.maxDelay).toBe(10000)
       expect(DEFAULT_RETRY_CONFIG.jitter).toBe(true)
     })
+  })
 
-    it('deve ter tipos de erro configurados', () => {
-      expect(DEFAULT_RETRY_CONFIG.retryableErrorTypes).toContain('network_error')
-      expect(DEFAULT_RETRY_CONFIG.retryableErrorTypes).toContain('rate_limit')
+  describe('isRetryableError', () => {
+    it('deve identificar erros de rede como retryable', () => {
+      const networkError = new Error('ETIMEDOUT')
+      expect(isRetryableError(networkError)).toBe(true)
+    })
+
+    it('deve identificar erro 429 como retryable', () => {
+      const rateLimitError = new Error('Rate limited')
+      rateLimitError.response = { status: 429 }
+      expect(isRetryableError(rateLimitError)).toBe(true)
+    })
+
+    it('deve identificar erro 5xx como retryable', () => {
+      const serverError = new Error('Internal server error')
+      serverError.response = { status: 500 }
+      expect(isRetryableError(serverError)).toBe(true)
+    })
+
+    it('não deve identificar erros de cliente como retryable', () => {
+      const clientError = new Error('Bad request')
+      clientError.response = { status: 400 }
+      expect(isRetryableError(clientError)).toBe(false)
+    })
+  })
+
+  describe('sleep', () => {
+    it('deve aguardar o tempo especificado', async () => {
+      const start = Date.now()
+      await sleep(100)
+      const elapsed = Date.now() - start
+      expect(elapsed).toBeGreaterThanOrEqual(90) // Allow some margin
+    })
+  })
+
+  describe('calculateDelay', () => {
+    it('deve calcular delay com backoff exponencial', () => {
+      const delay1 = calculateDelay(1, { baseDelay: 1000, maxDelay: 10000, jitter: false })
+      const delay2 = calculateDelay(2, { baseDelay: 1000, maxDelay: 10000, jitter: false })
+      const delay3 = calculateDelay(3, { baseDelay: 1000, maxDelay: 10000, jitter: false })
+
+      expect(delay1).toBe(1000)
+      expect(delay2).toBe(2000)
+      expect(delay3).toBe(4000)
+    })
+
+    it('deve respeitar maxDelay', () => {
+      const delay = calculateDelay(10, { baseDelay: 1000, maxDelay: 5000, jitter: false })
+      expect(delay).toBe(5000)
     })
   })
 
@@ -56,39 +108,36 @@ describe('RetryManager', () => {
     it('deve retornar sucesso na primeira tentativa', async () => {
       const mockOperation = vi.fn().mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, {
-        userId: 'user-123',
-        notificationType: 'dose_reminder',
+      const result = await sendWithRetry(mockOperation, DEFAULT_RETRY_CONFIG, {
+        operation: 'test',
       })
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(1)
-      expect(result.correlationId).toBe('test-correlation-id')
       expect(mockOperation).toHaveBeenCalledTimes(1)
     })
 
     it('deve fazer retry em erro de rede', async () => {
+      const networkError = new Error('ETIMEDOUT')
       const mockOperation = vi
         .fn()
-        .mockRejectedValueOnce(new Error('network error'))
+        .mockRejectedValueOnce(networkError)
         .mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, {
-        userId: 'user-123',
-        notificationType: 'dose_reminder',
+      const result = await sendWithRetry(mockOperation, { ...DEFAULT_RETRY_CONFIG, jitter: false }, {
+        operation: 'test',
       })
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(2)
-      expect(result.retried).toBe(true)
     })
 
     it('deve falhar após todas as tentativas', async () => {
-      const mockOperation = vi.fn().mockRejectedValue(new Error('persistent error'))
+      const networkError = new Error('ETIMEDOUT')
+      const mockOperation = vi.fn().mockRejectedValue(networkError)
 
-      const result = await sendWithRetry(mockOperation, {
-        userId: 'user-123',
-        notificationType: 'dose_reminder',
+      const result = await sendWithRetry(mockOperation, { ...DEFAULT_RETRY_CONFIG, jitter: false }, {
+        operation: 'test',
       })
 
       expect(result.success).toBe(false)
@@ -97,11 +146,12 @@ describe('RetryManager', () => {
     })
 
     it('deve não fazer retry para erros não recuperáveis', async () => {
-      const mockOperation = vi.fn().mockRejectedValue(new Error('invalid chat id'))
+      const clientError = new Error('Bad request')
+      clientError.response = { status: 400 }
+      const mockOperation = vi.fn().mockRejectedValue(clientError)
 
-      const result = await sendWithRetry(mockOperation, {
-        userId: 'user-123',
-        notificationType: 'dose_reminder',
+      const result = await sendWithRetry(mockOperation, DEFAULT_RETRY_CONFIG, {
+        operation: 'test',
       })
 
       expect(result.success).toBe(false)
@@ -109,41 +159,13 @@ describe('RetryManager', () => {
     })
 
     it('deve aceitar configuração customizada', async () => {
-      const customConfig = { maxRetries: 1, baseDelay: 100, jitter: false }
+      const customConfig = { maxRetries: 1, baseDelay: 100, maxDelay: 1000, jitter: false }
       const mockOperation = vi.fn().mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123' }, customConfig)
+      const result = await sendWithRetry(mockOperation, customConfig, { operation: 'test' })
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(1)
-    })
-
-    it('deve calcular delay crescente entre tentativas', async () => {
-      const mockOperation = vi
-        .fn()
-        .mockRejectedValueOnce(new Error('timeout'))
-        .mockRejectedValueOnce(new Error('timeout'))
-        .mockRejectedValueOnce(new Error('timeout'))
-        .mockResolvedValue({ success: true })
-
-      const startTime = Date.now()
-      await sendWithRetry(
-        mockOperation,
-        { userId: 'user-123' },
-        { maxRetries: 4, baseDelay: 100, jitter: false }
-      )
-      const elapsed = Date.now() - startTime
-
-      // Deve ter esperado pelo menos a soma dos delays (100 + 200 + 400 = 700ms)
-      expect(elapsed).toBeGreaterThanOrEqual(700)
-    })
-
-    it('deve gerar correlationId se não fornecido', async () => {
-      const mockOperation = vi.fn().mockResolvedValue({ success: true })
-
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123' })
-
-      expect(result.correlationId).toBe('test-correlation-id')
     })
   })
 })
