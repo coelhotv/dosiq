@@ -7,6 +7,42 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [2.8.1] - 2026-02-16
+
+### Telegram Bot Reliability
+
+#### 🐛 Correções Críticas
+- **P0**: Removido import de `retryManager.js` inexistente que causava falha no deploy
+- Simplificado `sendDoseNotification` para usar `bot.sendMessage()` diretamente
+- Helper function `wrapSendMessageResult` para reduzir duplicação
+
+#### ✨ Novas Funcionalidades
+- **P1A - DLQ Admin Interface**: Interface administrativa para gerenciar notificações falhadas
+  - API endpoints: GET `/api/dlq`, POST `/api/dlq/:id/retry`, POST `/api/dlq/:id/discard`
+  - View em `/admin/dlq` com tabela, filtros e paginação
+  - Modal de confirmação para ações destrutivas
+- **P1B - Daily DLQ Digest**: Digest diário enviado às 09:00 (horário de Brasília)
+  - Lista até 10 notificações falhadas (status: pending, retrying)
+  - Mensagem formatada em MarkdownV2
+  - Requer configuração de `ADMIN_CHAT_ID` na Vercel
+- **P1C - Simple Retry**: Retry automático de 2 tentativas
+  - Identificação de erros retryable (network, rate limit, HTTP 5xx)
+  - Delay simples de 1 segundo entre tentativas
+  - Helper `isRetryableError` para categorização
+
+#### 📊 Estatísticas
+- **4 PRs mergeados**: #26, #27, #28, #29
+- **8 arquivos novos**: DLQ API endpoints, view admin, retryManager
+- **162 testes passando**: 13 novos testes para retryManager
+
+#### ⚙️ Configuração Necessária
+Para ativar o digest diário, configure a variável de ambiente na Vercel:
+```bash
+ADMIN_CHAT_ID=123456789  # Obter via @userinfobot no Telegram
+```
+
+---
+
 ## [2.8.0] - 2026-02-12
 
 ### Phase 4: Distribuição e Navegação

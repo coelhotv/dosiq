@@ -78,47 +78,51 @@ ADD COLUMN IF NOT EXISTS verification_token text;
 - **Resilient Delivery (v3.0.0)**: Retry automático com exponential backoff
 - **Dead Letter Queue**: Falhas armazenadas para retry manual
 
-## Notification System (v3.0.0)
+## Notification System (v3.1.0)
 
-O sistema de notificações implementa uma arquitetura resiliente de 3 fases:
+O sistema de notificações implementa uma arquitetura resiliente e simplificada:
 
-### Fase P0 - Fundamentos de Erro
-- **Result Object Pattern**: Nunca silencia falhas
-- **Database Status Tracking**: `status_ultima_notificacao` na tabela user_settings
-- **Structured Logging**: Logger com níveis (ERROR, WARN, INFO, DEBUG, TRACE)
-
-### Fase P1 - Camada de Confiabilidade
-- **Retry Manager**: Exponential backoff (1s → 2s → 4s) com jitter (±25%)
-- **Correlation Logger**: UUID tracing para rastreamento end-to-end
-- **Dead Letter Queue**: PostgreSQL-based DLQ com RLS
-- **Error Categorization**: Detecção automática de erros não-recuperáveis
-
-### Fase P2 - Observabilidade
-- **Notification Metrics**: Métricas em memória (p50/p95/p99 latência)
-- **Health Check API**: `GET /api/health/notifications`
-- **Dashboard Widget**: `NotificationStatsWidget` no Dashboard
-- **Alert Thresholds**: Configuráveis para diferentes severidades
+### Componentes Principais
+- **Simple Retry**: 2 tentativas com delay de 1s para erros transitórios
+- **Dead Letter Queue**: Armazenamento de falhas para revisão manual
+- **DLQ Admin Interface**: Interface web em `/admin/dlq` para gerenciar falhas
+- **Daily Digest**: Resumo diário enviado às 09:00 para o admin
+- **Correlation IDs**: Rastreamento end-to-end com UUIDs
 
 ### Fluxo de Notificação
 ```
-1. CRON Trigger → 2. Deduplication Check → 3. Retry Manager
+1. CRON Trigger → 2. Deduplication Check → 3. Send with Retry
                                      ↓
-              ┌─────────────────────────────────────┐
-              │  Tentativa 1 → Falha → Retry 1s     │
-              │  Tentativa 2 → Falha → Retry 2s     │
-              │  Tentativa 3 → Falha → DLQ          │
-              └─────────────────────────────────────┘
+               ┌─────────────────────────────────────┐
+               │  Tentativa 1 → Falha → Retry 1s     │
+               │  Tentativa 2 → Falha → DLQ          │
+               └─────────────────────────────────────┘
                                      ↓
-                        Sucesso → Métricas + Log
+                         Sucesso → Log + Update DB
+```
+
+### DLQ Admin Interface
+Acesse `/admin/dlq` no app para:
+- Listar notificações falhadas com paginação
+- Filtrar por status (pending, retrying, discarded)
+- Re-tentar notificação individual
+- Descartar notificação
+
+### Configuração
+```bash
+# Variáveis de ambiente necessárias
+ADMIN_CHAT_ID=123456789  # Para digest diário (obter via @userinfobot)
 ```
 
 ### Arquivos Principais
 ```
-server/bot/retryManager.js              # Retry com exponential backoff
-server/bot/correlationLogger.js         # UUID tracing
-server/services/deadLetterQueue.js      # DLQ PostgreSQL
-server/services/notificationMetrics.js  # Métricas em memória
-api/health/notifications.js             # Health check endpoint
+api/notify.js                    # Bot adapter com retry
+api/dlq.js                       # DLQ list endpoint
+api/dlq/[id]/retry.js            # Retry endpoint
+api/dlq/[id]/discard.js          # Discard endpoint
+server/bot/tasks.js              # sendDLQDigest function
+server/utils/retryManager.js     # Retry helpers
+src/views/admin/DLQAdmin.jsx     # Admin interface
 ```
 
 ### Monitoramento
