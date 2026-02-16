@@ -8,14 +8,14 @@ import {
   validateMedicineCreate,
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
-  getMedicineErrorMessage
+  getMedicineErrorMessage,
 } from './medicineSchema'
 
 import {
   validateProtocolCreate,
   validateProtocolUpdate,
   mapProtocolErrorsToForm,
-  getProtocolErrorMessage
+  getProtocolErrorMessage,
 } from './protocolSchema'
 
 import {
@@ -24,7 +24,7 @@ import {
   validateStockDecrease,
   validateStockIncrease,
   mapStockErrorsToForm,
-  getStockErrorMessage
+  getStockErrorMessage,
 } from './stockSchema'
 
 import {
@@ -34,7 +34,7 @@ import {
   mapLogErrorsToForm,
   mapBulkLogErrors,
   getLogErrorMessage,
-  getBulkLogErrorMessage
+  getBulkLogErrorMessage,
 } from './logSchema'
 
 /**
@@ -96,12 +96,12 @@ const validationMap = {
 
 /**
  * Valida uma entidade de forma genérica
- * 
+ *
  * @param {EntityType} entityType - Tipo da entidade
  * @param {Object} data - Dados a serem validados
  * @param {ValidationOperation} operation - Operação (create, update, etc.)
  * @returns {{ success: boolean, data?: Object, errors?: Array, error?: ValidationError }}
- * 
+ *
  * @example
  * const result = validateEntity('medicine', { name: 'Paracetamol', ... }, 'create')
  * if (!result.success) {
@@ -110,7 +110,7 @@ const validationMap = {
  */
 export function validateEntity(entityType, data, operation = 'create') {
   const validator = validationMap[entityType]
-  
+
   if (!validator) {
     return {
       success: false,
@@ -118,12 +118,12 @@ export function validateEntity(entityType, data, operation = 'create') {
         `Tipo de entidade desconhecido: ${entityType}`,
         [{ field: 'entity', message: `Tipo "${entityType}" não é suportado` }],
         entityType
-      )
+      ),
     }
   }
-  
+
   const validateFn = validator[operation]
-  
+
   if (!validateFn) {
     return {
       success: false,
@@ -131,28 +131,24 @@ export function validateEntity(entityType, data, operation = 'create') {
         `Operação "${operation}" não suportada para ${entityType}`,
         [{ field: 'operation', message: `Operação "${operation}" não disponível` }],
         entityType
-      )
+      ),
     }
   }
-  
+
   const result = validateFn(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const error = new ValidationError(
-    validator.getMessage(result.errors),
-    result.errors,
-    entityType
-  )
-  
+
+  const error = new ValidationError(validator.getMessage(result.errors), result.errors, entityType)
+
   return { success: false, errors: result.errors, error }
 }
 
 /**
  * Converte erros de validação para formato de formulário
- * 
+ *
  * @param {EntityType} entityType - Tipo da entidade
  * @param {Array} errors - Array de erros da validação
  * @param {boolean} isBulk - Se é validação em lote
@@ -160,21 +156,21 @@ export function validateEntity(entityType, data, operation = 'create') {
  */
 export function mapErrorsToForm(entityType, errors, isBulk = false) {
   const validator = validationMap[entityType]
-  
+
   if (!validator) {
     return { general: `Tipo de entidade desconhecido: ${entityType}` }
   }
-  
+
   if (isBulk && validator.mapBulkErrors) {
     return validator.mapBulkErrors(errors)
   }
-  
+
   return validator.mapErrors(errors)
 }
 
 /**
  * Obtém mensagem de erro formatada
- * 
+ *
  * @param {EntityType} entityType - Tipo da entidade
  * @param {Array} errors - Array de erros
  * @param {boolean} isBulk - Se é validação em lote
@@ -182,15 +178,15 @@ export function mapErrorsToForm(entityType, errors, isBulk = false) {
  */
 export function getErrorMessage(entityType, errors, isBulk = false) {
   const validator = validationMap[entityType]
-  
+
   if (!validator) {
     return 'Erro de validação desconhecido'
   }
-  
+
   if (isBulk && validator.getBulkMessage) {
     return validator.getBulkMessage(errors)
   }
-  
+
   return validator.getMessage(errors)
 }
 
@@ -222,7 +218,7 @@ export function isValidISODate(date) {
 export function isValidDateString(date) {
   const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   if (!dateSchema.safeParse(date).success) return false
-  
+
   const parsed = new Date(date)
   return !isNaN(parsed.getTime())
 }
@@ -244,7 +240,7 @@ export function isValidTime(time) {
  */
 export function sanitizeString(str) {
   if (typeof str !== 'string') return ''
-  
+
   return str
     .replace(/[<>]/g, '') // Remove < e >
     .trim()
@@ -253,17 +249,17 @@ export function sanitizeString(str) {
 
 /**
  * Hook helper para React - prepara estado de erros para formulários
- * 
+ *
  * @param {EntityType} entityType - Tipo da entidade
  * @returns {{
  *   validate: (data: Object, operation?: string) => { success: boolean, data?: Object, errors?: Array },
  *   getFormErrors: (errors: Array) => Object,
  *   getErrorMessage: (errors: Array) => string
  * }}
- * 
+ *
  * @example
  * const { validate, getFormErrors, getErrorMessage } = useValidation('medicine')
- * 
+ *
  * const handleSubmit = (data) => {
  *   const result = validate(data, 'create')
  *   if (!result.success) {

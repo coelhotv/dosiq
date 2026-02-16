@@ -10,13 +10,13 @@ export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
 
 // Labels de unidade para exibição
 export const DOSAGE_UNIT_LABELS = {
-  'mg': 'mg',
-  'mcg': 'mcg',
-  'g': 'g',
-  'ml': 'ml',
-  'ui': 'UI',
-  'cp': 'cp/cap',
-  'gotas': 'gotas'
+  mg: 'mg',
+  mcg: 'mcg',
+  g: 'g',
+  ml: 'ml',
+  ui: 'UI',
+  cp: 'cp/cap',
+  gotas: 'gotas',
 }
 
 // Tipos de medicamento
@@ -24,8 +24,8 @@ export const MEDICINE_TYPES = ['medicamento', 'suplemento']
 
 // Labels de tipo para exibição
 export const MEDICINE_TYPE_LABELS = {
-  'medicamento': 'Medicamento',
-  'suplemento': 'Suplemento'
+  medicamento: 'Medicamento',
+  suplemento: 'Suplemento',
 }
 
 /**
@@ -37,34 +37,35 @@ export const medicineSchema = z.object({
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
     .max(200, 'Nome não pode ter mais de 200 caracteres')
     .trim(),
-  
+
   laboratory: z
     .string()
     .max(200, 'Laboratório não pode ter mais de 200 caracteres')
     .optional()
     .nullable()
-    .transform(val => val || null),
-  
+    .transform((val) => val || null),
+
   active_ingredient: z
     .string()
     .max(300, 'Princípio ativo não pode ter mais de 300 caracteres')
     .optional()
     .nullable()
-    .transform(val => val || null),
-  
+    .transform((val) => val || null),
+
   dosage_per_pill: z
     .number()
     .positive('Dosagem deve ser maior que zero')
     .max(10000, 'Dosagem parece estar muito alta. Verifique o valor'),
-  
-  dosage_unit: z
-    .enum(DOSAGE_UNITS, {
-      errorMap: () => ({ message: 'Unidade de dosagem inválida. Use: mg, mcg, g, ml, UI, cp ou gotas' })
+
+  dosage_unit: z.enum(DOSAGE_UNITS, {
+    errorMap: () => ({
+      message: 'Unidade de dosagem inválida. Use: mg, mcg, g, ml, UI, cp ou gotas',
     }),
-  
+  }),
+
   type: z
     .enum(MEDICINE_TYPES, {
-      errorMap: () => ({ message: 'Tipo inválido. Opções: medicamento, suplemento' })
+      errorMap: () => ({ message: 'Tipo inválido. Opções: medicamento, suplemento' }),
     })
     .default('medicamento'),
 })
@@ -96,16 +97,16 @@ export const medicineFullSchema = medicineSchema.extend({
  */
 export function validateMedicine(data) {
   const result = medicineSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -116,16 +117,16 @@ export function validateMedicine(data) {
  */
 export function validateMedicineCreate(data) {
   const result = medicineCreateSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -136,16 +137,16 @@ export function validateMedicineCreate(data) {
  */
 export function validateMedicineUpdate(data) {
   const result = medicineUpdateSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -156,14 +157,14 @@ export function validateMedicineUpdate(data) {
  */
 export function mapMedicineErrorsToForm(zodErrors) {
   const formErrors = {}
-  
-  zodErrors.forEach(error => {
+
+  zodErrors.forEach((error) => {
     const field = error.path[0]
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
   })
-  
+
   return formErrors
 }
 
@@ -174,11 +175,11 @@ export function mapMedicineErrorsToForm(zodErrors) {
  */
 export function getMedicineErrorMessage(errors) {
   if (!errors || errors.length === 0) return ''
-  
+
   if (errors.length === 1) {
     return errors[0].message
   }
-  
+
   return `Existem ${errors.length} erros no formulário. Verifique os campos destacados.`
 }
 

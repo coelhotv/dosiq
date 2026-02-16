@@ -16,13 +16,15 @@ export const protocolService = {
   async getAll() {
     const { data, error } = await supabase
       .from('protocols')
-      .select(`
+      .select(
+        `
         *,
         medicine:medicines(*)
-      `)
+      `
+      )
       .eq('user_id', await getUserId())
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   },
@@ -33,14 +35,16 @@ export const protocolService = {
   async getActive() {
     const { data, error } = await supabase
       .from('protocols')
-      .select(`
+      .select(
+        `
         *,
         medicine:medicines(*)
-      `)
+      `
+      )
       .eq('user_id', await getUserId())
       .eq('active', true)
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   },
@@ -51,14 +55,16 @@ export const protocolService = {
   async getById(id) {
     const { data, error } = await supabase
       .from('protocols')
-      .select(`
+      .select(
+        `
         *,
         medicine:medicines(*)
-      `)
+      `
+      )
       .eq('id', id)
       .eq('user_id', await getUserId())
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -73,7 +79,7 @@ export const protocolService = {
     // Validação Zod
     const validation = validateProtocolCreate(protocol)
     if (!validation.success) {
-      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
@@ -81,19 +87,24 @@ export const protocolService = {
 
     const { data, error } = await supabase
       .from('protocols')
-      .insert([{
-        ...validatedProtocol,
-        user_id: await getUserId(),
-        // Ensure defaults for titration
-        titration_schedule: validatedProtocol.titration_schedule || [],
-        current_stage_index: validatedProtocol.current_stage_index || 0,
-        stage_started_at: validatedProtocol.titration_schedule?.length > 0 ? new Date().toISOString() : null
-      }])
-      .select(`
+      .insert([
+        {
+          ...validatedProtocol,
+          user_id: await getUserId(),
+          // Ensure defaults for titration
+          titration_schedule: validatedProtocol.titration_schedule || [],
+          current_stage_index: validatedProtocol.current_stage_index || 0,
+          stage_started_at:
+            validatedProtocol.titration_schedule?.length > 0 ? new Date().toISOString() : null,
+        },
+      ])
+      .select(
+        `
         *,
         medicine:medicines(*),
         treatment_plan:treatment_plans(*)
-      `)
+      `
+      )
       .single()
 
     if (error) throw error
@@ -110,7 +121,7 @@ export const protocolService = {
     // Validação Zod
     const validation = validateProtocolUpdate(updates)
     if (!validation.success) {
-      const errorMessages = validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')
+      const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
@@ -119,11 +130,13 @@ export const protocolService = {
       .update(validation.data)
       .eq('id', id)
       .eq('user_id', await getUserId())
-      .select(`
+      .select(
+        `
         *,
         medicine:medicines(*),
         treatment_plan:treatment_plans(*)
-      `)
+      `
+      )
       .single()
 
     if (error) throw error
@@ -139,7 +152,7 @@ export const protocolService = {
       .delete()
       .eq('id', id)
       .eq('user_id', await getUserId())
-    
+
     if (error) throw error
   },
 
@@ -149,10 +162,10 @@ export const protocolService = {
       .from('protocols')
       .select(`*`)
       .eq('medicine_id', medicineId)
-      .eq('user_id', await getUserId());
+      .eq('user_id', await getUserId())
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   },
 
   /**
@@ -163,7 +176,7 @@ export const protocolService = {
   async advanceTitrationStage(id, markAsCompleted = false) {
     // 1. Get current protocol
     const protocol = await this.getById(id)
-    
+
     if (!protocol.titration_schedule || protocol.titration_schedule.length === 0) {
       throw new Error('Este protocolo não possui regime de titulação')
     }
@@ -179,29 +192,31 @@ export const protocolService = {
         .update({
           titration_status: 'alvo_atingido',
           current_stage_index: protocol.titration_schedule.length - 1, // Keep at last stage
-          stage_started_at: new Date().toISOString()
+          stage_started_at: new Date().toISOString(),
         })
         .eq('id', id)
         .eq('user_id', await getUserId())
-        .select(`
+        .select(
+          `
           *,
           medicine:medicines(*),
           treatment_plan:treatment_plans(*)
-        `)
+        `
+        )
         .single()
-      
+
       if (error) throw error
       return data
     }
 
     // 3. Advance to next stage
     const nextStage = protocol.titration_schedule[nextStageIndex]
-    
+
     const updates = {
       current_stage_index: nextStageIndex,
       stage_started_at: new Date().toISOString(),
       dosage_per_intake: nextStage.dosage,
-      titration_status: markAsCompleted ? 'alvo_atingido' : 'titulando'
+      titration_status: markAsCompleted ? 'alvo_atingido' : 'titulando',
     }
 
     const { data, error } = await supabase
@@ -209,14 +224,16 @@ export const protocolService = {
       .update(updates)
       .eq('id', id)
       .eq('user_id', await getUserId())
-      .select(`
+      .select(
+        `
         *,
         medicine:medicines(*),
         treatment_plan:treatment_plans(*)
-      `)
+      `
+      )
       .single()
-    
+
     if (error) throw error
     return data
-  }
+  },
 }

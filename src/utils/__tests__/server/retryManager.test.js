@@ -7,19 +7,19 @@ vi.mock('../../../../server/bot/logger.js', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
-  }))
+    debug: vi.fn(),
+  })),
 }))
 
 vi.mock('../../../../server/bot/correlationLogger.js', () => ({
-  generateCorrelationId: vi.fn(() => 'test-correlation-id')
+  generateCorrelationId: vi.fn(() => 'test-correlation-id'),
 }))
 
 vi.mock('../../../../server/services/notificationMetrics.js', () => ({
   recordSuccess: vi.fn(),
   recordFailure: vi.fn(),
   recordRetry: vi.fn(),
-  recordRateLimitHit: vi.fn()
+  recordRateLimitHit: vi.fn(),
 }))
 
 // Import after mocks (use dynamic import to support ESM)
@@ -56,7 +56,10 @@ describe('RetryManager', () => {
     it('deve retornar sucesso na primeira tentativa', async () => {
       const mockOperation = vi.fn().mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123', notificationType: 'dose_reminder' })
+      const result = await sendWithRetry(mockOperation, {
+        userId: 'user-123',
+        notificationType: 'dose_reminder',
+      })
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(1)
@@ -65,11 +68,15 @@ describe('RetryManager', () => {
     })
 
     it('deve fazer retry em erro de rede', async () => {
-      const mockOperation = vi.fn()
+      const mockOperation = vi
+        .fn()
         .mockRejectedValueOnce(new Error('network error'))
         .mockResolvedValue({ success: true, messageId: '123' })
 
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123', notificationType: 'dose_reminder' })
+      const result = await sendWithRetry(mockOperation, {
+        userId: 'user-123',
+        notificationType: 'dose_reminder',
+      })
 
       expect(result.success).toBe(true)
       expect(result.attempts).toBe(2)
@@ -79,7 +86,10 @@ describe('RetryManager', () => {
     it('deve falhar após todas as tentativas', async () => {
       const mockOperation = vi.fn().mockRejectedValue(new Error('persistent error'))
 
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123', notificationType: 'dose_reminder' })
+      const result = await sendWithRetry(mockOperation, {
+        userId: 'user-123',
+        notificationType: 'dose_reminder',
+      })
 
       expect(result.success).toBe(false)
       expect(result.attempts).toBe(3)
@@ -89,7 +99,10 @@ describe('RetryManager', () => {
     it('deve não fazer retry para erros não recuperáveis', async () => {
       const mockOperation = vi.fn().mockRejectedValue(new Error('invalid chat id'))
 
-      const result = await sendWithRetry(mockOperation, { userId: 'user-123', notificationType: 'dose_reminder' })
+      const result = await sendWithRetry(mockOperation, {
+        userId: 'user-123',
+        notificationType: 'dose_reminder',
+      })
 
       expect(result.success).toBe(false)
       expect(result.attempts).toBe(1)
@@ -106,14 +119,19 @@ describe('RetryManager', () => {
     })
 
     it('deve calcular delay crescente entre tentativas', async () => {
-      const mockOperation = vi.fn()
+      const mockOperation = vi
+        .fn()
         .mockRejectedValueOnce(new Error('timeout'))
         .mockRejectedValueOnce(new Error('timeout'))
         .mockRejectedValueOnce(new Error('timeout'))
         .mockResolvedValue({ success: true })
 
       const startTime = Date.now()
-      await sendWithRetry(mockOperation, { userId: 'user-123' }, { maxRetries: 4, baseDelay: 100, jitter: false })
+      await sendWithRetry(
+        mockOperation,
+        { userId: 'user-123' },
+        { maxRetries: 4, baseDelay: 100, jitter: false }
+      )
       const elapsed = Date.now() - startTime
 
       // Deve ter esperado pelo menos a soma dos delays (100 + 200 + 400 = 700ms)

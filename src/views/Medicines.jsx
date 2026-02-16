@@ -18,21 +18,20 @@ export default function Medicines({ onNavigateToProtocol }) {
   const [filterType, setFilterType] = useState('all') // 'all', 'medicamento', 'suplemento'
   const [medicineDependencies, setMedicineDependencies] = useState({}) // { medicineId: { hasProtocols: boolean, hasStock: boolean } }
 
-
   const loadDependencies = useCallback(async (medicines) => {
-    const dependencies = {};
+    const dependencies = {}
     for (const medicine of medicines) {
       const [protocols, stock] = await Promise.all([
         protocolService.getByMedicineId(medicine.id),
         stockService.getByMedicine(medicine.id),
-      ]);
+      ])
       dependencies[medicine.id] = {
         hasProtocols: protocols.length > 0,
         hasStock: stock.length > 0,
-      };
+      }
     }
-    setMedicineDependencies(dependencies);
-  }, []);
+    setMedicineDependencies(dependencies)
+  }, [])
 
   const loadMedicines = useCallback(async () => {
     try {
@@ -49,8 +48,7 @@ export default function Medicines({ onNavigateToProtocol }) {
     } finally {
       setIsLoading(false)
     }
-  }, [loadDependencies]);
-
+  }, [loadDependencies])
 
   useEffect(() => {
     loadMedicines()
@@ -76,7 +74,9 @@ export default function Medicines({ onNavigateToProtocol }) {
         showSuccess('Medicamento cadastrado com sucesso!')
 
         // UX: Offer to create a protocol immediately
-        if (window.confirm('✨ Medicamento criado! Deseja criar um protocolo de uso para ele agora?')) {
+        if (
+          window.confirm('✨ Medicamento criado! Deseja criar um protocolo de uso para ele agora?')
+        ) {
           if (onNavigateToProtocol) {
             onNavigateToProtocol(newMedicine.id)
             return // Exit early to avoid closing/reloading the current screen unnecessarily
@@ -93,14 +93,15 @@ export default function Medicines({ onNavigateToProtocol }) {
   }
 
   const handleDelete = async (medicine) => {
-    const hasDependencies = medicineDependencies[medicine.id]?.hasProtocols || medicineDependencies[medicine.id]?.hasStock;
+    const hasDependencies =
+      medicineDependencies[medicine.id]?.hasProtocols || medicineDependencies[medicine.id]?.hasStock
 
     if (hasDependencies) {
       const confirmation = window.confirm(
         `Este medicamento possui${medicineDependencies[medicine.id].hasProtocols ? 'protocolos e' : ''} ${medicineDependencies[medicine.id].hasStock ? 'estoque' : ''} associado(s).\nTem certeza que deseja excluí-lo?`
-      );
+      )
       if (!confirmation) {
-        return;
+        return
       }
     }
     if (!window.confirm(`Tem certeza que deseja excluir "${medicine.name}"?`)) {
@@ -135,9 +136,7 @@ export default function Medicines({ onNavigateToProtocol }) {
       <div className="medicines-header">
         <div>
           <h2>💊 Medicamentos e Suplementos</h2>
-          <p className="medicines-subtitle">
-            Gerencie seus medicamentos cadastrados
-          </p>
+          <p className="medicines-subtitle">Gerencie seus medicamentos cadastrados</p>
         </div>
         <Button variant="primary" onClick={handleAdd}>
           ➕ Adicionar
@@ -168,17 +167,9 @@ export default function Medicines({ onNavigateToProtocol }) {
         </Button>
       </div>
 
-      {successMessage && (
-        <div className="success-banner fade-in">
-          ✅ {successMessage}
-        </div>
-      )}
+      {successMessage && <div className="success-banner fade-in">✅ {successMessage}</div>}
 
-      {error && (
-        <div className="error-banner fade-in">
-          ❌ {error}
-        </div>
-      )}
+      {error && <div className="error-banner fade-in">❌ {error}</div>}
 
       {medicines.length === 0 ? (
         <EmptyState
@@ -191,9 +182,11 @@ export default function Medicines({ onNavigateToProtocol }) {
       ) : (
         <div className="medicines-grid">
           {medicines
-            .filter(m => filterType === 'all' || m.type === filterType)
-            .map(medicine => {
-              const hasDependencies = medicineDependencies[medicine.id]?.hasProtocols || medicineDependencies[medicine.id]?.hasStock;
+            .filter((m) => filterType === 'all' || m.type === filterType)
+            .map((medicine) => {
+              const hasDependencies =
+                medicineDependencies[medicine.id]?.hasProtocols ||
+                medicineDependencies[medicine.id]?.hasStock
               return (
                 <MedicineCard
                   key={medicine.id}
@@ -202,7 +195,7 @@ export default function Medicines({ onNavigateToProtocol }) {
                   onDelete={handleDelete}
                   hasDependencies={hasDependencies} // Pass this prop to MedicineCard
                 />
-              );
+              )
             })}
         </div>
       )}

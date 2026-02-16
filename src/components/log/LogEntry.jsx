@@ -5,7 +5,7 @@ export default function LogEntry({ log, onEdit, onDelete }) {
     const date = new Date(dateString)
     return {
       date: date.toLocaleDateString('pt-BR'),
-      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     }
   }
 
@@ -25,26 +25,25 @@ export default function LogEntry({ log, onEdit, onDelete }) {
             </button>
           )}
           {onDelete && log.id && (
-            <button className="btn-delete-log" onClick={() => {
-              if (window.confirm('Excluir este registro de dose? O estoque será devolvido.')) {
-                onDelete(log.id)
-              }
-            }}>
+            <button
+              className="btn-delete-log"
+              onClick={() => {
+                if (window.confirm('Excluir este registro de dose? O estoque será devolvido.')) {
+                  onDelete(log.id)
+                }
+              }}
+            >
               🗑️
             </button>
           )}
-          <div className="log-badge">
-            ✅ Tomado
-          </div>
+          <div className="log-badge">✅ Tomado</div>
         </div>
       </div>
 
       <div className="log-content">
         <div className="log-medicine">
           <h4>{log.medicine?.name}</h4>
-          {log.protocol && (
-            <span className="log-protocol">{log.protocol.name}</span>
-          )}
+          {log.protocol && <span className="log-protocol">{log.protocol.name}</span>}
         </div>
 
         <div className="log-details">

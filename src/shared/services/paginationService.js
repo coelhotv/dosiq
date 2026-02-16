@@ -21,7 +21,7 @@ export const paginationService = {
       page: response.page || 1,
       pageSize: response.pageSize || DEFAULT_PAGE_SIZE,
       hasMore: response.hasMore !== false,
-      totalPages: Math.ceil((response.total || 0) / (response.pageSize || DEFAULT_PAGE_SIZE))
+      totalPages: Math.ceil((response.total || 0) / (response.pageSize || DEFAULT_PAGE_SIZE)),
     }
   },
 
@@ -30,5 +30,5 @@ export const paginationService = {
    */
   shouldFetchMore: (currentItems, total) => {
     return currentItems.length < total
-  }
+  },
 }

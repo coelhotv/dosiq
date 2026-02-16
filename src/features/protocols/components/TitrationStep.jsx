@@ -2,7 +2,7 @@ import './TitrationStep.css'
 
 /**
  * Componente de etapa individual da timeline de titulação
- * 
+ *
  * @param {Object} props
  * @param {number} props.stepNumber - Número da etapa
  * @param {number} props.dose - Dose da etapa
@@ -25,13 +25,13 @@ export default function TitrationStep({
   endDate,
   description,
   isLast = false,
-  daysRemaining = 0
+  daysRemaining = 0,
 }) {
   const formatDate = (date) => {
     if (!date) return ''
     return new Date(date).toLocaleDateString('pt-BR', {
       day: '2-digit',
-      month: '2-digit'
+      month: '2-digit',
     })
   }
 
@@ -69,9 +69,7 @@ export default function TitrationStep({
       <div className="step-content">
         <div className="step-header">
           <span className="step-number">Etapa {stepNumber}</span>
-          {status === 'current' && (
-            <span className="step-badge current">{getStatusLabel()}</span>
-          )}
+          {status === 'current' && <span className="step-badge current">{getStatusLabel()}</span>}
         </div>
 
         <div className="step-dose">
@@ -81,20 +79,12 @@ export default function TitrationStep({
           <span className="duration">{durationDays} dias</span>
         </div>
 
-        {description && (
-          <p className="step-description">{description}</p>
-        )}
+        {description && <p className="step-description">{description}</p>}
 
         <div className="step-dates">
-          {startDate && (
-            <span className="date-start">{formatDate(startDate)}</span>
-          )}
-          {startDate && endDate && (
-            <span className="date-separator">→</span>
-          )}
-          {endDate && (
-            <span className="date-end">{formatDate(endDate)}</span>
-          )}
+          {startDate && <span className="date-start">{formatDate(startDate)}</span>}
+          {startDate && endDate && <span className="date-separator">→</span>}
+          {endDate && <span className="date-end">{formatDate(endDate)}</span>}
         </div>
 
         {status === 'current' && daysRemaining > 0 && (

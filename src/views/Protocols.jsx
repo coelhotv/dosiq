@@ -22,22 +22,21 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
   const [editingPlan, setEditingPlan] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
 
-
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const [medicinesData, protocolsData, plansData] = await Promise.all([
         medicineService.getAll(),
         protocolService.getAll(),
-        treatmentPlanService.getAll()
+        treatmentPlanService.getAll(),
       ])
-      
+
       // Enrich protocols with titration data
-      const enrichedProtocols = protocolsData.map(p => ({
+      const enrichedProtocols = protocolsData.map((p) => ({
         ...p,
-        titration_scheduler_data: calculateTitrationData(p)
+        titration_scheduler_data: calculateTitrationData(p),
       }))
 
       setMedicines(medicinesData)
@@ -94,12 +93,16 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
       } else {
         await protocolService.create(protocolData)
         showSuccess('Protocolo criado com sucesso!')
-        
-        if (window.confirm('Protocolo criado! Deseja adicionar o estoque inicial deste medicamento agora?')) {
+
+        if (
+          window.confirm(
+            'Protocolo criado! Deseja adicionar o estoque inicial deste medicamento agora?'
+          )
+        ) {
           onNavigateToStock(protocolData.medicine_id)
         }
       }
-      
+
       setIsModalOpen(false)
       setEditingProtocol(null)
       if (onClearParams) onClearParams()
@@ -118,7 +121,7 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
         await treatmentPlanService.create(planData)
         showSuccess('Plano de tratamento criado!')
       }
-      
+
       setIsPlanModalOpen(false)
       setEditingPlan(null)
       await loadData()
@@ -154,7 +157,11 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
   }
 
   const handleDeletePlan = async (plan) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o plano "${plan.name}" e desvincular seus remédios?`)) {
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir o plano "${plan.name}" e desvincular seus remédios?`
+      )
+    ) {
       return
     }
 
@@ -174,8 +181,8 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
   }
 
   // Separar protocolos ativos e inativos
-  const activeProtocols = protocols.filter(p => p.active)
-  const inactiveProtocols = protocols.filter(p => !p.active)
+  const activeProtocols = protocols.filter((p) => p.active)
+  const inactiveProtocols = protocols.filter((p) => !p.active)
 
   if (isLoading) {
     return (
@@ -204,17 +211,9 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
         </div>
       </div>
 
-      {successMessage && (
-        <div className="success-banner fade-in">
-          ✅ {successMessage}
-        </div>
-      )}
+      {successMessage && <div className="success-banner fade-in">✅ {successMessage}</div>}
 
-      {error && (
-        <div className="error-banner fade-in">
-          ❌ {error}
-        </div>
-      )}
+      {error && <div className="error-banner fade-in">❌ {error}</div>}
 
       {medicines.length === 0 ? (
         <div className="empty-state">
@@ -229,7 +228,7 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
             <div className="treatment-plans-section">
               <h3 className="section-title plans">📁 Planos de Tratamento</h3>
               <div className="plans-grid">
-                {treatmentPlans.map(plan => (
+                {treatmentPlans.map((plan) => (
                   <Card key={plan.id} className="treatment-plan-card">
                     <div className="plan-header">
                       <div>
@@ -237,20 +236,24 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
                         <p className="plan-objective">{plan.objective}</p>
                       </div>
                       <div className="plan-actions">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>✏️</Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan)}>🗑️</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
+                          ✏️
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan)}>
+                          🗑️
+                        </Button>
                       </div>
                     </div>
                     {plan.description && <p className="plan-desc">{plan.description}</p>}
-                    
+
                     <div className="plan-protocols-list">
                       {plan.protocols && plan.protocols.length > 0 ? (
-                        plan.protocols.map(p => (
+                        plan.protocols.map((p) => (
                           <div key={p.id} className="plan-protocol-row">
-                             <span>💊 {p.name}</span>
-                             <span className={`titration-status-mini ${p.titration_status}`}>
-                                {p.titration_status === 'titulando' ? '📈 Titulando' : '✅'}
-                             </span>
+                            <span>💊 {p.name}</span>
+                            <span className={`titration-status-mini ${p.titration_status}`}>
+                              {p.titration_status === 'titulando' ? '📈 Titulando' : '✅'}
+                            </span>
                           </div>
                         ))
                       ) : (
@@ -267,10 +270,13 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
           {activeProtocols.length > 0 && (
             <div className="protocols-section">
               <h3 className="section-title active">
-                {treatmentPlans.length > 0 ? '🔍 Todos os Protocolos Ativos' : '✅ Protocolos Ativos'} ({activeProtocols.length})
+                {treatmentPlans.length > 0
+                  ? '🔍 Todos os Protocolos Ativos'
+                  : '✅ Protocolos Ativos'}{' '}
+                ({activeProtocols.length})
               </h3>
               <div className="protocols-grid">
-                {activeProtocols.map(protocol => (
+                {activeProtocols.map((protocol) => (
                   <ProtocolCard
                     key={protocol.id}
                     protocol={protocol}
@@ -290,7 +296,7 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
                 ⏸️ Protocolos Pausados ({inactiveProtocols.length})
               </h3>
               <div className="protocols-grid">
-                {inactiveProtocols.map(protocol => (
+                {inactiveProtocols.map((protocol) => (
                   <ProtocolCard
                     key={protocol.id}
                     protocol={protocol}

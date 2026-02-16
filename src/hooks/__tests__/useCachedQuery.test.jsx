@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { 
-  useCachedQuery, 
-  useCachedQueries, 
+import {
+  useCachedQuery,
+  useCachedQueries,
   useCachedMutation,
   invalidateCache,
-  clearCache
+  clearCache,
 } from '../useCachedQuery'
 
 describe('useCachedQuery', () => {
@@ -60,9 +60,7 @@ describe('useCachedQuery', () => {
 
     it('should not fetch when enabled is false', async () => {
       const fetcher = vi.fn().mockResolvedValue({ data: 'test' })
-      const { result } = renderHook(() => 
-        useCachedQuery('test-key', fetcher, { enabled: false })
-      )
+      const { result } = renderHook(() => useCachedQuery('test-key', fetcher, { enabled: false }))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -75,10 +73,11 @@ describe('useCachedQuery', () => {
 
   describe('refetch functionality', () => {
     it('should refetch data with force option', async () => {
-      const fetcher = vi.fn()
+      const fetcher = vi
+        .fn()
         .mockResolvedValueOnce({ data: 'first' })
         .mockResolvedValueOnce({ data: 'second' })
-      
+
       const { result } = renderHook(() => useCachedQuery('test-key', fetcher))
 
       await waitFor(() => {
@@ -97,10 +96,11 @@ describe('useCachedQuery', () => {
     })
 
     it('should refresh data in background', async () => {
-      const fetcher = vi.fn()
+      const fetcher = vi
+        .fn()
         .mockResolvedValueOnce({ data: 'first' })
         .mockResolvedValueOnce({ data: 'second' })
-      
+
       const { result } = renderHook(() => useCachedQuery('test-key', fetcher))
 
       await waitFor(() => {
@@ -126,7 +126,7 @@ describe('useCachedQuery', () => {
   describe('initial data', () => {
     it('should use initial data', async () => {
       const fetcher = vi.fn().mockResolvedValue({ data: 'fetched' })
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useCachedQuery('test-key', fetcher, { initialData: { data: 'initial' } })
       )
 
@@ -143,10 +143,8 @@ describe('useCachedQuery', () => {
     it('should call onSuccess callback', async () => {
       const onSuccess = vi.fn()
       const fetcher = vi.fn().mockResolvedValue({ data: 'test' })
-      
-      renderHook(() => 
-        useCachedQuery('test-key', fetcher, { onSuccess })
-      )
+
+      renderHook(() => useCachedQuery('test-key', fetcher, { onSuccess }))
 
       await waitFor(() => {
         expect(onSuccess).toHaveBeenCalledWith({ data: 'test' })
@@ -157,10 +155,8 @@ describe('useCachedQuery', () => {
       const onError = vi.fn()
       const error = new Error('Fetch failed')
       const fetcher = vi.fn().mockRejectedValue(error)
-      
-      renderHook(() => 
-        useCachedQuery('error-key', fetcher, { onError })
-      )
+
+      renderHook(() => useCachedQuery('error-key', fetcher, { onError }))
 
       await waitFor(() => {
         expect(onError).toHaveBeenCalledWith(error)
@@ -171,7 +167,7 @@ describe('useCachedQuery', () => {
   describe('stale time', () => {
     it('should respect stale time option', async () => {
       const fetcher = vi.fn().mockResolvedValue({ data: 'test' })
-      const { result, rerender } = renderHook(() => 
+      const { result, rerender } = renderHook(() =>
         useCachedQuery('test-key', fetcher, { staleTime: 5000 })
       )
 
@@ -193,15 +189,17 @@ describe('useCachedQuery', () => {
 
   describe('cleanup', () => {
     it('should not update state after unmount', async () => {
-      const fetcher = vi.fn().mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve({ data: 'test' }), 100))
-      )
-      
+      const fetcher = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(() => resolve({ data: 'test' }), 100))
+        )
+
       const { result, unmount } = renderHook(() => useCachedQuery('test-key', fetcher))
 
       unmount()
 
-      await new Promise(resolve => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 150))
 
       // Should not throw error after unmount
       expect(result.current.data).toBe(undefined)
@@ -225,11 +223,11 @@ describe('useCachedQueries', () => {
     const fetcher2 = vi.fn().mockResolvedValue({ data: 'second' })
     const fetcher3 = vi.fn().mockResolvedValue({ data: 'third' })
 
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedQueries([
         { key: 'key1', fetcher: fetcher1 },
         { key: 'key2', fetcher: fetcher2 },
-        { key: 'key3', fetcher: fetcher3 }
+        { key: 'key3', fetcher: fetcher3 },
       ])
     )
 
@@ -250,11 +248,11 @@ describe('useCachedQueries', () => {
     const fetcher2 = vi.fn().mockRejectedValue(new Error('Error 2'))
     const fetcher3 = vi.fn().mockResolvedValue({ data: 'third' })
 
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedQueries([
         { key: 'key1', fetcher: fetcher1 },
         { key: 'key2', fetcher: fetcher2 },
-        { key: 'key3', fetcher: fetcher3 }
+        { key: 'key3', fetcher: fetcher3 },
       ])
     )
 
@@ -273,10 +271,10 @@ describe('useCachedQueries', () => {
     const fetcher1 = vi.fn().mockResolvedValue({ data: 'first' })
     const fetcher2 = vi.fn().mockResolvedValue({ data: 'second' })
 
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedQueries([
         { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2, options: { enabled: false } }
+        { key: 'key2', fetcher: fetcher2, options: { enabled: false } },
       ])
     )
 
@@ -291,17 +289,19 @@ describe('useCachedQueries', () => {
   })
 
   it('should refetch all queries', async () => {
-    const fetcher1 = vi.fn()
+    const fetcher1 = vi
+      .fn()
       .mockResolvedValueOnce({ data: 'first-1' })
       .mockResolvedValueOnce({ data: 'first-2' })
-    const fetcher2 = vi.fn()
+    const fetcher2 = vi
+      .fn()
       .mockResolvedValueOnce({ data: 'second-1' })
       .mockResolvedValueOnce({ data: 'second-2' })
 
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedQueries([
         { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2 }
+        { key: 'key2', fetcher: fetcher2 },
       ])
     )
 
@@ -337,7 +337,7 @@ describe('useCachedMutation', () => {
 
   it('should execute mutation successfully', async () => {
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedMutation(mutationFn, { invalidateKeys: ['test-key'] })
     )
 
@@ -354,9 +354,7 @@ describe('useCachedMutation', () => {
   it('should handle mutation errors', async () => {
     const error = new Error('Mutation failed')
     const mutationFn = vi.fn().mockRejectedValue(error)
-    const { result } = renderHook(() => 
-      useCachedMutation(mutationFn)
-    )
+    const { result } = renderHook(() => useCachedMutation(mutationFn))
 
     await act(async () => {
       try {
@@ -373,7 +371,7 @@ describe('useCachedMutation', () => {
 
   it('should invalidate cache keys after successful mutation', async () => {
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedMutation(mutationFn, { invalidateKeys: ['key1', 'key2'] })
     )
 
@@ -387,7 +385,7 @@ describe('useCachedMutation', () => {
 
   it('should invalidate single cache key', async () => {
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useCachedMutation(mutationFn, { invalidateKeys: 'single-key' })
     )
 
@@ -401,10 +399,8 @@ describe('useCachedMutation', () => {
   it('should call onSuccess callback', async () => {
     const onSuccess = vi.fn()
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    
-    const { result } = renderHook(() => 
-      useCachedMutation(mutationFn, { onSuccess })
-    )
+
+    const { result } = renderHook(() => useCachedMutation(mutationFn, { onSuccess }))
 
     await act(async () => {
       await result.current.mutate({ input: 'test' })
@@ -417,10 +413,8 @@ describe('useCachedMutation', () => {
     const onError = vi.fn()
     const error = new Error('Mutation failed')
     const mutationFn = vi.fn().mockRejectedValue(error)
-    
-    const { result } = renderHook(() => 
-      useCachedMutation(mutationFn, { onError })
-    )
+
+    const { result } = renderHook(() => useCachedMutation(mutationFn, { onError }))
 
     await act(async () => {
       try {
@@ -435,9 +429,7 @@ describe('useCachedMutation', () => {
 
   it('should reset mutation state', async () => {
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => 
-      useCachedMutation(mutationFn)
-    )
+    const { result } = renderHook(() => useCachedMutation(mutationFn))
 
     await act(async () => {
       await result.current.mutate({ input: 'test' })
@@ -490,9 +482,7 @@ describe('useCachedQuery - edge cases', () => {
 
   it('should handle mutation with no invalidate keys', async () => {
     const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => 
-      useCachedMutation(mutationFn)
-    )
+    const { result } = renderHook(() => useCachedMutation(mutationFn))
 
     await act(async () => {
       await result.current.mutate({ input: 'test' })

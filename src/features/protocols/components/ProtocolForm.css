@@ -35,7 +35,7 @@
   align-items: flex-start;
 }
 
-.time-input-group input[type="time"] {
+.time-input-group input[type='time'] {
   flex: 1;
 }
 
@@ -82,7 +82,7 @@
   user-select: none;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 20px;
   height: 20px;
   cursor: pointer;
@@ -106,7 +106,7 @@
   .time-input-group {
     flex-direction: column;
   }
-  
+
   .time-input-group button {
     width: 100%;
   }

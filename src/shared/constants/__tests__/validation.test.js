@@ -6,7 +6,7 @@ import {
   validateLogCreate,
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
-  validateEntity
+  validateEntity,
 } from '../index'
 
 describe('Schemas de Validação Zod', () => {
@@ -15,7 +15,7 @@ describe('Schemas de Validação Zod', () => {
       const medicine = {
         name: 'Paracetamol',
         dosage_per_pill: 500,
-        dosage_unit: 'mg'
+        dosage_unit: 'mg',
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(true)
@@ -26,7 +26,7 @@ describe('Schemas de Validação Zod', () => {
       const medicine = {
         name: 'A',
         dosage_per_pill: 500,
-        dosage_unit: 'mg'
+        dosage_unit: 'mg',
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
@@ -38,7 +38,7 @@ describe('Schemas de Validação Zod', () => {
       const medicine = {
         name: 'Paracetamol',
         dosage_per_pill: -10,
-        dosage_unit: 'mg'
+        dosage_unit: 'mg',
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
@@ -49,7 +49,7 @@ describe('Schemas de Validação Zod', () => {
       const medicine = {
         name: 'Paracetamol',
         dosage_per_pill: 500,
-        dosage_unit: 'tablets'
+        dosage_unit: 'tablets',
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
@@ -60,7 +60,7 @@ describe('Schemas de Validação Zod', () => {
       const medicine = {
         name: 'Paracetamol',
         dosage_per_pill: 500,
-        dosage_unit: 'mg'
+        dosage_unit: 'mg',
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(true)
@@ -70,7 +70,7 @@ describe('Schemas de Validação Zod', () => {
     it('deve mapear erros para formato de formulário', () => {
       const errors = [
         { path: ['name'], message: 'Nome muito curto' },
-        { path: ['dosage_per_pill'], message: 'Dosagem inválida' }
+        { path: ['dosage_per_pill'], message: 'Dosagem inválida' },
       ]
       const formErrors = mapMedicineErrorsToForm(errors)
       expect(formErrors.name).toBe('Nome muito curto')
@@ -93,7 +93,7 @@ describe('Schemas de Validação Zod', () => {
       const stock = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
-        purchase_date: '2024-01-15'
+        purchase_date: '2024-01-15',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(true)
@@ -103,7 +103,7 @@ describe('Schemas de Validação Zod', () => {
       const stock = {
         medicine_id: 'invalid-id',
         quantity: 30,
-        purchase_date: '2024-01-15'
+        purchase_date: '2024-01-15',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
@@ -115,7 +115,7 @@ describe('Schemas de Validação Zod', () => {
       const stock = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: -5,
-        purchase_date: '2024-01-15'
+        purchase_date: '2024-01-15',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
@@ -126,7 +126,7 @@ describe('Schemas de Validação Zod', () => {
       const stock = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
-        purchase_date: '2030-01-15'
+        purchase_date: '2030-01-15',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
@@ -138,7 +138,7 @@ describe('Schemas de Validação Zod', () => {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
         purchase_date: '2024-01-15',
-        expiration_date: '2023-12-01'
+        expiration_date: '2023-12-01',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
@@ -149,7 +149,7 @@ describe('Schemas de Validação Zod', () => {
       const stock = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
-        purchase_date: '2024-01-15'
+        purchase_date: '2024-01-15',
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(true)
@@ -161,7 +161,7 @@ describe('Schemas de Validação Zod', () => {
       const log = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity_taken: 1,
-        taken_at: '2024-01-15T10:00:00Z'
+        taken_at: '2024-01-15T10:00:00Z',
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(true)
@@ -171,7 +171,7 @@ describe('Schemas de Validação Zod', () => {
       const log = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity_taken: 1,
-        taken_at: '2030-01-15T10:00:00Z'
+        taken_at: '2030-01-15T10:00:00Z',
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(false)
@@ -182,7 +182,7 @@ describe('Schemas de Validação Zod', () => {
       const log = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity_taken: 150,
-        taken_at: '2024-01-15T10:00:00Z'
+        taken_at: '2024-01-15T10:00:00Z',
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(false)
@@ -197,7 +197,7 @@ describe('Schemas de Validação Zod', () => {
         name: 'Protocolo Teste',
         frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
-        dosage_per_intake: 1
+        dosage_per_intake: 1,
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(true)
@@ -209,7 +209,7 @@ describe('Schemas de Validação Zod', () => {
         name: 'Protocolo Teste',
         frequency: 'diário',
         time_schedule: ['8:00 AM'], // formato inválido
-        dosage_per_intake: 1
+        dosage_per_intake: 1,
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
@@ -222,7 +222,7 @@ describe('Schemas de Validação Zod', () => {
         name: 'Protocolo Teste',
         frequency: 'diário',
         time_schedule: [],
-        dosage_per_intake: 1
+        dosage_per_intake: 1,
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
@@ -239,10 +239,10 @@ describe('Schemas de Validação Zod', () => {
         titration_status: 'titulando',
         titration_schedule: [
           { dosage: 25, duration_days: 7 },
-          { dosage: 50, duration_days: 7 }
+          { dosage: 50, duration_days: 7 },
         ],
         current_stage_index: 0,
-        stage_started_at: '2024-01-15T00:00:00Z'
+        stage_started_at: '2024-01-15T00:00:00Z',
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(true)

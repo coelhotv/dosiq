@@ -1,16 +1,15 @@
-
 .dashboard-container-v2 {
-  padding: var(--space-3);                      /* 12px - era 24px */
+  padding: var(--space-3); /* 12px - era 24px */
   color: var(--text-primary);
   font-family: var(--font-family);
-  max-width: 100%;                              /* Full width mobile */
+  max-width: 100%; /* Full width mobile */
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .dashboard-container-v2 {
     max-width: 720px;
-    padding: var(--space-4);                    /* 16px em tablet+ */
+    padding: var(--space-4); /* 16px em tablet+ */
   }
 }
 
@@ -19,8 +18,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: var(--space-3);                /* 12px - era 24px */
-  gap: var(--space-2);                          /* 8px - era 12px */
+  margin-bottom: var(--space-3); /* 12px - era 24px */
+  gap: var(--space-2); /* 8px - era 12px */
 }
 
 .dash-header__top {
@@ -101,7 +100,7 @@
   border-radius: 25%;
   object-fit: cover;
   box-shadow: 0 0 15px rgba(0, 114, 255, 0.4);
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   transition: transform 0.3s ease;
 }
 
@@ -114,20 +113,20 @@
 .top-cards-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);                          /* 8px - era 16px */
-  margin-bottom: var(--space-3);                /* 12px - era 24px */
+  gap: var(--space-2); /* 8px - era 16px */
+  margin-bottom: var(--space-3); /* 12px - era 24px */
 }
 
 .info-card {
   background: var(--bg-secondary);
-  border-radius: var(--radius-lg);              /* 12px */
-  padding: var(--space-3);                      /* 12px - era 20px */
+  border-radius: var(--radius-lg); /* 12px */
+  padding: var(--space-3); /* 12px - era 20px */
   border: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: auto;                                 /* Remover altura fixa */
-  min-height: 70px;                             /* Mínimo reduzido */
+  height: auto; /* Remover altura fixa */
+  min-height: 70px; /* Mínimo reduzido */
   position: relative;
   overflow: hidden;
 }
@@ -139,7 +138,7 @@
   right: 0;
   width: 100px;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03));
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
   transform: skewX(-20deg) translateX(50%);
 }
 
@@ -152,9 +151,9 @@
 
 .highlight-value {
   display: block;
-  font-size: var(--font-size-xl);               /* 20px - era 28px */
+  font-size: var(--font-size-xl); /* 20px - era 28px */
   font-weight: 700;
-  margin-top: var(--space-1);                   /* 4px - era 8px */
+  margin-top: var(--space-1); /* 4px - era 8px */
   line-height: 1;
 }
 
@@ -178,11 +177,11 @@
 /* Titration Card - Mais compacto */
 .titration-card {
   background: var(--bg-secondary);
-  border-radius: var(--radius-xl);              /* 16px - era 20px */
-  padding: var(--space-3);                      /* 12px - era 24px */
+  border-radius: var(--radius-xl); /* 16px - era 20px */
+  padding: var(--space-3); /* 12px - era 24px */
   border: 1px solid var(--border-light);
-  margin-bottom: var(--space-4);                /* 16px - era 32px */
-  box-shadow: var(--shadow-sm);                 /* Sutil */
+  margin-bottom: var(--space-4); /* 16px - era 32px */
+  box-shadow: var(--shadow-sm); /* Sutil */
 }
 
 .titration-header h3 {
@@ -252,7 +251,7 @@
 
 .action-button-full {
   width: 100%;
-  background: linear-gradient(90deg, #00E5FF, #AA00FF);
+  background: linear-gradient(90deg, #00e5ff, #aa00ff);
   border: none;
   padding: 16px;
   border-radius: 12px;
@@ -277,28 +276,28 @@
 
 /* Inventory Alerts - Mais compacto */
 .inventory-section {
-  margin-bottom: var(--space-16);               /* Space for fab/nav */
+  margin-bottom: var(--space-16); /* Space for fab/nav */
 }
 
 .section-title {
-  font-size: var(--font-size-xs);               /* 12px */
+  font-size: var(--font-size-xs); /* 12px */
   color: var(--text-secondary);
-  letter-spacing: 1px;                          /* Era 1.5px */
+  letter-spacing: 1px; /* Era 1.5px */
   text-transform: uppercase;
-  margin-bottom: var(--space-2);                /* 8px */
+  margin-bottom: var(--space-2); /* 8px */
   font-weight: 600;
 }
 
 .inventory-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);                          /* 8px */
+  gap: var(--space-2); /* 8px */
 }
 
 .inventory-item {
   background: var(--bg-secondary);
-  border-radius: var(--radius-lg);              /* 12px */
-  padding: var(--space-3);                      /* 12px - era 16px */
+  border-radius: var(--radius-lg); /* 12px */
+  padding: var(--space-3); /* 12px - era 16px */
   display: flex;
   align-items: center;
   transition: transform 0.2s;
@@ -352,17 +351,17 @@
 
 /* Treatment Plans Shortcuts - Mais compacto */
 .treatment-plans-section {
-  margin-bottom: var(--space-4);                /* 16px - era 32px */
+  margin-bottom: var(--space-4); /* 16px - era 32px */
 }
 
 .treatment-plans-scroll {
   display: flex;
-  gap: var(--space-2);                          /* 8px - era 12px */
+  gap: var(--space-2); /* 8px - era 12px */
   overflow-x: auto;
-  padding-bottom: var(--space-2);               /* 8px */
+  padding-bottom: var(--space-2); /* 8px */
   /* Hide scrollbar */
-  scrollbar-width: none;  /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .treatment-plans-scroll::-webkit-scrollbar {
@@ -370,11 +369,11 @@
 }
 
 .plan-shortcut-card {
-  min-width: 120px;                             /* Era 140px */
+  min-width: 120px; /* Era 140px */
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);              /* 12px */
-  padding: var(--space-3);                      /* 12px - era 16px */
+  border-radius: var(--radius-lg); /* 12px */
+  padding: var(--space-3); /* 12px - era 16px */
   display: flex;
   flex-direction: column;
   transition: all 0.2s;
@@ -408,14 +407,14 @@
 
 /* History Calendar Section - Mais compacto */
 .history-section {
-  margin-bottom: var(--space-6);                /* 24px - era 40px */
+  margin-bottom: var(--space-6); /* 24px - era 40px */
 }
 
 .calendar-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);              /* 16px - era 20px */
-  padding: var(--space-3);                      /* 12px - era 24px */
+  border-radius: var(--radius-xl); /* 16px - era 20px */
+  padding: var(--space-3); /* 12px - era 24px */
 }
 
 .calendar-logs-list {
@@ -458,13 +457,13 @@
 .treatment-plans-list-interactive {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);                          /* 8px - era 16px */
+  gap: var(--space-2); /* 8px - era 16px */
 }
 
 .treatment-plan-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);              /* 12px - era 16px */
+  border-radius: var(--radius-lg); /* 12px - era 16px */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -476,7 +475,7 @@
 }
 
 .plan-card-header {
-  padding: var(--space-3);                      /* 12px - era 16px */
+  padding: var(--space-3); /* 12px - era 16px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -502,7 +501,7 @@
 
 .plan-title {
   margin: 0;
-  font-size: var(--font-size-base);             /* 16px - era 15px */
+  font-size: var(--font-size-base); /* 16px - era 15px */
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -617,7 +616,7 @@
   .dashboard-container-v2 {
     padding: var(--space-4);
   }
-  
+
   .user-name {
     font-size: var(--font-size-2xl);
   }

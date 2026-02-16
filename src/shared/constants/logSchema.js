@@ -14,12 +14,10 @@ export const logSchema = z.object({
     .uuid('ID do protocolo deve ser um UUID válido')
     .optional()
     .nullable()
-    .transform(val => val || null),
-  
-  medicine_id: z
-    .string()
-    .uuid('ID do medicamento deve ser um UUID válido'),
-  
+    .transform((val) => val || null),
+
+  medicine_id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
+
   taken_at: z
     .string()
     .datetime('Data e hora devem estar no formato ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)')
@@ -30,18 +28,18 @@ export const logSchema = z.object({
       const futureLimit = new Date(now.getTime() + 5 * 60 * 1000)
       return parsed <= futureLimit
     }, 'Data/hora não pode estar no futuro'),
-  
+
   quantity_taken: z
     .number()
     .positive('Quantidade tomada deve ser maior que zero')
     .max(100, 'Quantidade máxima por registro é 100'),
-  
+
   notes: z
     .string()
     .max(500, 'Notas não podem ter mais de 500 caracteres')
     .optional()
     .nullable()
-    .transform(val => val || null),
+    .transform((val) => val || null),
 })
 
 /**
@@ -90,16 +88,16 @@ export const logBulkCreateSchema = z.object({
  */
 export function validateLog(data) {
   const result = logCreateSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -119,16 +117,16 @@ export function validateLogCreate(data) {
  */
 export function validateLogUpdate(data) {
   const result = logUpdateSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -139,16 +137,16 @@ export function validateLogUpdate(data) {
  */
 export function validateLogBulkCreate(data) {
   const result = logBulkCreateSchema.safeParse(data)
-  
+
   if (result.success) {
     return { success: true, data: result.data }
   }
-  
-  const errors = result.error.issues.map(err => ({
+
+  const errors = result.error.issues.map((err) => ({
     field: err.path.join('.'),
-    message: err.message
+    message: err.message,
   }))
-  
+
   return { success: false, errors }
 }
 
@@ -159,48 +157,50 @@ export function validateLogBulkCreate(data) {
  */
 export function validateLogBulkArray(logs) {
   if (!Array.isArray(logs)) {
-    return { 
-      success: false, 
-      errors: [{ index: -1, field: 'logs', message: 'Deve ser um array de registros' }] 
+    return {
+      success: false,
+      errors: [{ index: -1, field: 'logs', message: 'Deve ser um array de registros' }],
     }
   }
-  
+
   if (logs.length === 0) {
-    return { 
-      success: false, 
-      errors: [{ index: -1, field: 'logs', message: 'Adicione pelo menos um registro' }] 
+    return {
+      success: false,
+      errors: [{ index: -1, field: 'logs', message: 'Adicione pelo menos um registro' }],
     }
   }
-  
+
   if (logs.length > 50) {
-    return { 
-      success: false, 
-      errors: [{ index: -1, field: 'logs', message: 'Máximo de 50 registros por operação em lote' }] 
+    return {
+      success: false,
+      errors: [
+        { index: -1, field: 'logs', message: 'Máximo de 50 registros por operação em lote' },
+      ],
     }
   }
-  
+
   const allErrors = []
   const validLogs = []
-  
+
   logs.forEach((log, index) => {
     const result = logCreateSchema.safeParse(log)
     if (result.success) {
       validLogs.push(result.data)
     } else {
-      result.error.issues.forEach(err => {
+      result.error.issues.forEach((err) => {
         allErrors.push({
           index,
           field: err.path.join('.'),
-          message: err.message
+          message: err.message,
         })
       })
     }
   })
-  
+
   if (allErrors.length > 0) {
     return { success: false, errors: allErrors }
   }
-  
+
   return { success: true, data: validLogs }
 }
 
@@ -211,14 +211,14 @@ export function validateLogBulkArray(logs) {
  */
 export function mapLogErrorsToForm(zodErrors) {
   const formErrors = {}
-  
-  zodErrors.forEach(error => {
+
+  zodErrors.forEach((error) => {
     const field = error.path[0]
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
   })
-  
+
   return formErrors
 }
 
@@ -229,8 +229,8 @@ export function mapLogErrorsToForm(zodErrors) {
  */
 export function mapBulkLogErrors(errors) {
   const mappedErrors = {}
-  
-  errors.forEach(error => {
+
+  errors.forEach((error) => {
     if (error.index >= 0) {
       if (!mappedErrors[error.index]) {
         mappedErrors[error.index] = {}
@@ -238,7 +238,7 @@ export function mapBulkLogErrors(errors) {
       mappedErrors[error.index][error.field] = error.message
     }
   })
-  
+
   return mappedErrors
 }
 
@@ -249,11 +249,11 @@ export function mapBulkLogErrors(errors) {
  */
 export function getLogErrorMessage(errors) {
   if (!errors || errors.length === 0) return ''
-  
+
   if (errors.length === 1) {
     return errors[0].message
   }
-  
+
   return `Existem ${errors.length} erros no formulário. Verifique os campos destacados.`
 }
 
@@ -264,13 +264,13 @@ export function getLogErrorMessage(errors) {
  */
 export function getBulkLogErrorMessage(errors) {
   if (!errors || errors.length === 0) return ''
-  
-  const indicesAfetados = [...new Set(errors.map(e => e.index))].filter(i => i >= 0)
-  
+
+  const indicesAfetados = [...new Set(errors.map((e) => e.index))].filter((i) => i >= 0)
+
   if (indicesAfetados.length === 1) {
     return `Erro no registro ${indicesAfetados[0] + 1}. Verifique os campos.`
   }
-  
+
   return `${errors.length} erro(s) encontrado(s) em ${indicesAfetados.length} registro(s). Verifique os campos destacados.`
 }
 

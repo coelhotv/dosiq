@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import PulseEffect from '@shared/components/ui/animations/PulseEffect';
-import { analyticsService } from '@dashboard/services/analyticsService';
-import './SwipeRegisterItem.css';
+import React, { useState } from 'react'
+import { motion, useMotionValue, useTransform } from 'framer-motion'
+import PulseEffect from '@shared/components/ui/animations/PulseEffect'
+import { analyticsService } from '@dashboard/services/analyticsService'
+import './SwipeRegisterItem.css'
 
 /**
  * SwipeRegisterItem - Item de medicamento com gesto de deslizar para confirmar.
@@ -21,45 +21,38 @@ export default function SwipeRegisterItem({
   time,
   isSelected = false,
   onToggleSelection,
-  onRegister
+  onRegister,
 }) {
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [showPulse, setShowPulse] = useState(false);
-  const x = useMotionValue(0);
-  
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [showPulse, setShowPulse] = useState(false)
+  const x = useMotionValue(0)
+
   // Mapear o arraste para opacidade e cor do fundo de confirmação
-  const background = useTransform(
-    x,
-    [0, 200],
-    ['rgba(0, 229, 255, 0)', 'rgba(0, 229, 255, 0.2)']
-  );
-  
-  const opacity = useTransform(x, [0, 150], [0, 1]);
+  const background = useTransform(x, [0, 200], ['rgba(0, 229, 255, 0)', 'rgba(0, 229, 255, 0.2)'])
+
+  const opacity = useTransform(x, [0, 150], [0, 1])
 
   const handleDragEnd = async (_, info) => {
     // Threshold de 70% da largura (assumindo largura aprox de 300-350 no mobile)
     // Usaremos um valor fixo de 150px para maior consistência tátil
     if (info.offset.x > 150) {
-      setIsSuccess(true);
+      setIsSuccess(true)
       try {
-        await onRegister?.(medicine.id, dosagePerIntake);
-        setShowPulse(true);
-        analyticsService.track('swipe_used', { medicine: medicine.name });
+        await onRegister?.(medicine.id, dosagePerIntake)
+        setShowPulse(true)
+        analyticsService.track('swipe_used', { medicine: medicine.name })
       } catch (err) {
-        console.error('Erro ao registrar via swipe:', err);
-        setIsSuccess(false);
+        console.error('Erro ao registrar via swipe:', err)
+        setIsSuccess(false)
         // O Framer Motion vai resetar a posição automaticamente se não mudarmos o estado
       }
     }
-  };
+  }
 
   return (
     <div className="swipe-item-container">
       {/* Camada de Fundo (Ação) */}
-      <motion.div 
-        className="swipe-item-action"
-        style={{ background, opacity }}
-      >
+      <motion.div className="swipe-item-action" style={{ background, opacity }}>
         <span className="swipe-item-action__text">CONFIRMAR DOSE</span>
         <span className="swipe-item-action__icon">✓</span>
       </motion.div>
@@ -77,8 +70,8 @@ export default function SwipeRegisterItem({
         <div
           className="swipe-item-card__checkbox-wrapper"
           onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelection?.(medicine.id);
+            e.stopPropagation()
+            onToggleSelection?.(medicine.id)
           }}
         >
           <div className={`swipe-item-card__checkbox ${isSelected ? 'checked' : ''}`}>
@@ -100,5 +93,5 @@ export default function SwipeRegisterItem({
 
       <PulseEffect trigger={showPulse} onComplete={() => setShowPulse(false)} />
     </div>
-  );
+  )
 }

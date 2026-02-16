@@ -19,7 +19,9 @@ export default function Settings() {
 
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       setUser(user)
 
       const { data, error } = await supabase
@@ -27,10 +29,11 @@ export default function Settings() {
         .select('*')
         .eq('user_id', user.id)
         .single() // Might fail if no settings exist yet
-      
+
       if (!error && data) {
         setSettings(data)
-      } else if (error && error.code !== 'PGRST116') { // Ignore "not found"
+      } else if (error && error.code !== 'PGRST116') {
+        // Ignore "not found"
         console.error(error)
       }
     } catch (err) {
@@ -55,7 +58,7 @@ export default function Settings() {
       setError('Senha deve ter no mínimo 6 caracteres')
       return
     }
-    
+
     try {
       await updatePassword(newPassword)
       setMessage('Senha atualizada com sucesso!')
@@ -68,18 +71,19 @@ export default function Settings() {
 
   const generateTelegramToken = async () => {
     const token = Math.random().toString(36).substring(2, 8).toUpperCase()
-    
+
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({ 
+      const { error } = await supabase.from('user_settings').upsert(
+        {
           user_id: user.id,
           verification_token: token,
-          updated_at: new Date()
-        }, { onConflict: 'user_id' })
+          updated_at: new Date(),
+        },
+        { onConflict: 'user_id' }
+      )
 
       if (error) throw error
-      
+
       setTelegramToken(token)
     } catch (err) {
       console.error(err)
@@ -88,21 +92,26 @@ export default function Settings() {
   }
 
   const handleDisconnectTelegram = async () => {
-    if (!window.confirm('Deseja realmente desconectar o Telegram? Você parará de receber notificações.')) return
+    if (
+      !window.confirm(
+        'Deseja realmente desconectar o Telegram? Você parará de receber notificações.'
+      )
+    )
+      return
 
     try {
       const { error } = await supabase
         .from('user_settings')
-        .update({ 
+        .update({
           telegram_chat_id: null,
           verification_token: null,
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .eq('user_id', user.id)
 
       if (error) throw error
-      
-      setSettings(prev => ({ ...prev, telegram_chat_id: null }))
+
+      setSettings((prev) => ({ ...prev, telegram_chat_id: null }))
       setTelegramToken(null)
       setMessage('Telegram desconectado com sucesso!')
       setTimeout(() => setMessage(null), 3000)
@@ -117,7 +126,7 @@ export default function Settings() {
   return (
     <div className="settings-container">
       <h2 className="page-title">Configurações</h2>
-      
+
       <div className="settings-section glass-card">
         <h3>Minha Conta</h3>
         <div className="profile-info">
@@ -141,20 +150,22 @@ export default function Settings() {
               onChange={(e) => setNewPassword(e.target.value)}
               className="settings-input"
             />
-            <Button type="submit" disabled={!newPassword}>Atualizar</Button>
+            <Button type="submit" disabled={!newPassword}>
+              Atualizar
+            </Button>
           </div>
         </form>
       </div>
 
       <div className="settings-section glass-card">
         <h3>Integração Telegram</h3>
-        <p className="section-desc">
-          Receba notificações e gerencie seus remédios pelo Telegram.
-        </p>
-        
+        <p className="section-desc">Receba notificações e gerencie seus remédios pelo Telegram.</p>
+
         <div className="telegram-status">
-          Status: 
-          <span className={`status-badge ${settings?.telegram_chat_id ? 'connected' : 'disconnected'}`}>
+          Status:
+          <span
+            className={`status-badge ${settings?.telegram_chat_id ? 'connected' : 'disconnected'}`}
+          >
             {settings?.telegram_chat_id ? 'Conectado' : 'Não Conectado'}
           </span>
         </div>
@@ -173,10 +184,8 @@ export default function Settings() {
             ) : (
               <div className="token-display">
                 <p>Envie este comando para o bot:</p>
-                <div className="code-box">
-                  /start {telegramToken}
-                </div>
-                <a 
+                <div className="code-box">/start {telegramToken}</div>
+                <a
                   href={`https://t.me/meus_remedios_bot?start=${telegramToken}`}
                   target="_blank"
                   rel="noreferrer"
@@ -184,8 +193,8 @@ export default function Settings() {
                 >
                   Abrir Bot no Telegram ↗
                 </a>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="btn-cancel-token"
                   onClick={() => setTelegramToken(null)}
                 >

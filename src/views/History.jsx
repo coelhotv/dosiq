@@ -30,7 +30,7 @@ export default function History() {
       const [protocolsData, plansData, logsForMonth] = await Promise.all([
         protocolService.getActive(),
         treatmentPlanService.getAll(),
-        logService.getByMonth(new Date().getFullYear(), new Date().getMonth())
+        logService.getByMonth(new Date().getFullYear(), new Date().getMonth()),
       ])
 
       setProtocols(protocolsData)
@@ -94,8 +94,8 @@ export default function History() {
     try {
       await logService.delete(id)
       showSuccess('Registro removido e estoque restabelecido!')
-      setCurrentMonthLogs(prev => prev.filter(log => log.id !== id))
-      setTotalLogs(prev => Math.max(0, prev - 1))
+      setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
+      setTotalLogs((prev) => Math.max(0, prev - 1))
     } catch (err) {
       setError('Erro ao remover registro: ' + err.message)
     }
@@ -118,15 +118,15 @@ export default function History() {
 
   const groupLogsByDate = (logs) => {
     const grouped = {}
-    
-    logs.forEach(log => {
+
+    logs.forEach((log) => {
       const date = new Date(log.taken_at).toLocaleDateString('pt-BR')
       if (!grouped[date]) {
         grouped[date] = []
       }
       grouped[date].push(log)
     })
-    
+
     return grouped
   }
 
@@ -148,11 +148,13 @@ export default function History() {
   }
 
   const displayDate = selectedCalendarDate || new Date()
-  const dayLogs = currentMonthLogs.filter(log => {
+  const dayLogs = currentMonthLogs.filter((log) => {
     const d = new Date(log.taken_at)
-    return d.getFullYear() === displayDate.getFullYear() &&
-           d.getMonth() === displayDate.getMonth() &&
-           d.getDate() === displayDate.getDate()
+    return (
+      d.getFullYear() === displayDate.getFullYear() &&
+      d.getMonth() === displayDate.getMonth() &&
+      d.getDate() === displayDate.getDate()
+    )
   })
 
   return (
@@ -169,17 +171,9 @@ export default function History() {
         </Button>
       </div>
 
-      {successMessage && (
-        <div className="success-banner fade-in">
-          ✅ {successMessage}
-        </div>
-      )}
+      {successMessage && <div className="success-banner fade-in">✅ {successMessage}</div>}
 
-      {error && (
-        <div className="error-banner fade-in">
-          ❌ {error}
-        </div>
-      )}
+      {error && <div className="error-banner fade-in">❌ {error}</div>}
 
       {currentMonthLogs.length === 0 ? (
         <EmptyState
@@ -208,51 +202,84 @@ export default function History() {
             </div>
           </div>
 
-          <div className="history-calendar-section" style={{ 
-            background: 'var(--bg-glass)', 
-            borderRadius: 'var(--radius-lg)', 
-            padding: 'var(--space-6)',
-            marginBottom: 'var(--space-8)',
-            border: '1px solid var(--border-color)'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 'var(--space-8)', alignItems: 'start' }}>
+          <div
+            className="history-calendar-section"
+            style={{
+              background: 'var(--bg-glass)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 'var(--space-6)',
+              marginBottom: 'var(--space-8)',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 300px',
+                gap: 'var(--space-8)',
+                alignItems: 'start',
+              }}
+            >
               <CalendarWithMonthCache
                 onLoadMonth={handleCalendarLoadMonth}
-                markedDates={currentMonthLogs.map(log => log.taken_at)}
+                markedDates={currentMonthLogs.map((log) => log.taken_at)}
                 selectedDate={selectedCalendarDate}
                 onDayClick={(date) => setSelectedCalendarDate(date)}
               />
-              
+
               <div className="day-details">
-                <h4 style={{ marginBottom: 'var(--space-4)', fontSize: '13px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                <h4
+                  style={{
+                    marginBottom: 'var(--space-4)',
+                    fontSize: '13px',
+                    color: 'var(--text-tertiary)',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   Doses de {displayDate.toLocaleDateString('pt-BR')}
                 </h4>
-                
+
                 {dayLogs.length === 0 ? (
-                  <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                  <p
+                    style={{
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--text-tertiary)',
+                      fontStyle: 'italic',
+                    }}
+                  >
                     Nenhum registro selecionado
                   </p>
                 ) : (
                   <div className="day-logs-mini">
-                    {dayLogs.map(log => (
-                      <div 
-                        key={log.id} 
+                    {dayLogs.map((log) => (
+                      <div
+                        key={log.id}
                         onClick={() => handleEditClick(log)}
-                        style={{ 
-                          padding: 'var(--space-3)', 
-                          background: 'rgba(255,255,255,0.03)', 
+                        style={{
+                          padding: 'var(--space-3)',
+                          background: 'rgba(255,255,255,0.03)',
                           borderRadius: 'var(--radius-md)',
                           marginBottom: 'var(--space-2)',
                           borderLeft: '3px solid var(--accent-success)',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: '13px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
                           <span>{log.medicine?.name}</span>
                           <span>✏️</span>
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                          {new Date(log.taken_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(log.taken_at).toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </div>
                       </div>
                     ))}
@@ -263,7 +290,7 @@ export default function History() {
           </div>
 
           <div className="history-timeline">
-            {dates.map(date => (
+            {dates.map((date) => (
               <div key={date} className="timeline-day">
                 <div className="day-header">
                   <h3>{date}</h3>
@@ -272,11 +299,11 @@ export default function History() {
                   </span>
                 </div>
                 <div className="day-logs">
-                  {groupedLogs[date].map(log => (
-                    <LogEntry 
-                      key={log.id} 
-                      log={log} 
-                      onEdit={handleEditClick} 
+                  {groupedLogs[date].map((log) => (
+                    <LogEntry
+                      key={log.id}
+                      log={log}
+                      onEdit={handleEditClick}
                       onDelete={handleDeleteLog}
                     />
                   ))}

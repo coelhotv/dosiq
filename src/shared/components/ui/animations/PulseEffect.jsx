@@ -1,6 +1,6 @@
 /**
  * PulseEffect.jsx - Componente de efeito de pulsação
- * 
+ *
  * Funcionalidades:
  * - Anel de pulsação ao redor de elementos
  * - Glow effect para destacar elementos
@@ -13,19 +13,14 @@ import './Animations.css'
 
 /**
  * Componente PulseEffect
- * 
+ *
  * @param {Object} props
  * @param {boolean} props.trigger - Controla quando disparar a pulsação
  * @param {Function} props.onComplete - Callback quando animação terminar
  * @param {string} props.variant - Variante: 'ring' (anel) ou 'glow' (brilho)
  * @param {React.ReactNode} props.children - Elemento a ser destacado
  */
-function PulseEffect({ 
-  trigger = false, 
-  onComplete,
-  variant = 'ring',
-  children 
-}) {
+function PulseEffect({ trigger = false, onComplete, variant = 'ring', children }) {
   const [isPulsing, setIsPulsing] = useState(false)
   const { trigger: haptic } = useHapticFeedback()
 

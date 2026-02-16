@@ -2,8 +2,16 @@ import Card from '@shared/components/ui/Card'
 import StockIndicator from './StockIndicator'
 import './StockCard.css'
 
-export default function StockCard({ medicine, stockEntries, totalQuantity, daysRemaining, isLow, dailyIntake, onClick }) {
-  const isOutOfStock = totalQuantity === 0;
+export default function StockCard({
+  medicine,
+  stockEntries,
+  totalQuantity,
+  daysRemaining,
+  isLow,
+  dailyIntake,
+  onClick,
+}) {
+  const isOutOfStock = totalQuantity === 0
 
   const formatDate = (dateString) => {
     if (!dateString) return '-'
@@ -27,7 +35,7 @@ export default function StockCard({ medicine, stockEntries, totalQuantity, daysR
   }
 
   return (
-    <Card 
+    <Card
       className={`stock-card-detail ${isLow ? 'low-stock-card' : ''} ${isOutOfStock ? 'out-of-stock-card' : ''} ${onClick ? 'clickable' : ''}`}
       onClick={onClick}
     >
@@ -35,7 +43,10 @@ export default function StockCard({ medicine, stockEntries, totalQuantity, daysR
         <div className="medicine-info-top">
           <h4 className="medicine-name">{medicine.name}</h4>
           {medicine.dosage_per_pill && (
-            <span className="medicine-dosage">{medicine.dosage_per_pill}{medicine.dosage_unit || 'mg'}</span>
+            <span className="medicine-dosage">
+              {medicine.dosage_per_pill}
+              {medicine.dosage_unit || 'mg'}
+            </span>
           )}
         </div>
         <div className="stock-days-badge">
@@ -55,16 +66,16 @@ export default function StockCard({ medicine, stockEntries, totalQuantity, daysR
         <div className="stock-entries">
           <h5>Histórico de Compras</h5>
           <div className="entries-list">
-            {stockEntries.map(entry => (
+            {stockEntries.map((entry) => (
               <div key={entry.id} className="entry-item">
                 <div className="entry-info">
                   <span className="entry-quantity">{entry.quantity} un.</span>
                   <span className="entry-price">
-                    {entry.unit_price > 0 ? `(R$ ${parseFloat(entry.unit_price).toFixed(2)}/un)` : ''}
+                    {entry.unit_price > 0
+                      ? `(R$ ${parseFloat(entry.unit_price).toFixed(2)}/un)`
+                      : ''}
                   </span>
-                  <span className="entry-date">
-                    Compra: {formatDate(entry.purchase_date)}
-                  </span>
+                  <span className="entry-date">Compra: {formatDate(entry.purchase_date)}</span>
                 </div>
                 {entry.unit_price > 0 && (
                   <div className="entry-total">
@@ -73,15 +84,20 @@ export default function StockCard({ medicine, stockEntries, totalQuantity, daysR
                 )}
                 {entry.expiration_date && (
                   <div className="entry-expiration">
-                    <span 
+                    <span
                       className={`expiration-badge ${
-                        isExpired(entry.expiration_date) ? 'expired' : 
-                        isExpiringSoon(entry.expiration_date) ? 'expiring-soon' : ''
+                        isExpired(entry.expiration_date)
+                          ? 'expired'
+                          : isExpiringSoon(entry.expiration_date)
+                            ? 'expiring-soon'
+                            : ''
                       }`}
                     >
-                      {isExpired(entry.expiration_date) ? '⚠️ Vencido' : 
-                       isExpiringSoon(entry.expiration_date) ? '⏰ Vence em breve' : 
-                       `Validade: ${formatDate(entry.expiration_date)}`}
+                      {isExpired(entry.expiration_date)
+                        ? '⚠️ Vencido'
+                        : isExpiringSoon(entry.expiration_date)
+                          ? '⏰ Vence em breve'
+                          : `Validade: ${formatDate(entry.expiration_date)}`}
                     </span>
                   </div>
                 )}

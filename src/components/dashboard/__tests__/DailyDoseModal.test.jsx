@@ -10,15 +10,17 @@ vi.mock('../../ui/Modal', () => ({
     return (
       <div role="dialog" aria-modal="true" data-testid="modal">
         <div data-testid="modal-title">{title}</div>
-        <button data-testid="modal-close" onClick={onClose}>Fechar</button>
+        <button data-testid="modal-close" onClick={onClose}>
+          Fechar
+        </button>
         {children}
       </div>
     )
-  }
+  },
 }))
 
 vi.mock('../../ui/Loading', () => ({
-  default: ({ message }) => <div data-testid="loading">{message}</div>
+  default: ({ message }) => <div data-testid="loading">{message}</div>,
 }))
 
 vi.mock('../../ui/EmptyState', () => ({
@@ -33,7 +35,7 @@ vi.mock('../../ui/EmptyState', () => ({
         </button>
       )}
     </div>
-  )
+  ),
 }))
 
 vi.mock('../DoseListItem', () => ({
@@ -41,14 +43,14 @@ vi.mock('../DoseListItem', () => ({
     <div data-testid={`dose-item-${log.id}`} data-taken={isTaken}>
       {log.medicine?.name}
     </div>
-  )
+  ),
 }))
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>
-  }
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+  },
 }))
 
 describe('DailyDoseModal', () => {
@@ -59,21 +61,21 @@ describe('DailyDoseModal', () => {
       taken_at: '2026-02-11T08:30:00Z',
       quantity_taken: 1,
       medicine: { name: 'Paracetamol', type: 'comprimido' },
-      protocol: { name: 'Protocolo Manhã' }
+      protocol: { name: 'Protocolo Manhã' },
     },
     {
       id: 'log-2',
       taken_at: '2026-02-11T14:00:00Z',
       quantity_taken: 2,
       medicine: { name: 'Ibuprofeno', type: 'comprimido' },
-      protocol: { name: 'Protocolo Tarde' }
-    }
+      protocol: { name: 'Protocolo Tarde' },
+    },
   ]
 
   const mockDailySummary = {
     adherence: 85,
     taken: 3,
-    expected: 4
+    expected: 4,
   }
 
   const mockOnClose = vi.fn()
@@ -539,8 +541,8 @@ describe('DailyDoseModal', () => {
         frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
         dosage_per_intake: 1,
-        medicine: { name: 'Paracetamol', type: 'comprimido' }
-      }
+        medicine: { name: 'Paracetamol', type: 'comprimido' },
+      },
     ]
 
     it('deve exibir seção de doses perdidas quando há doses perdidas', () => {
@@ -553,8 +555,8 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T11:00:00Z', // 08:00 local
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
-          protocol: { name: 'Protocolo Manhã' }
-        }
+          protocol: { name: 'Protocolo Manhã' },
+        },
       ]
 
       render(
@@ -582,7 +584,7 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T11:00:00Z',
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
-          protocol: { name: 'Protocolo Manhã' }
+          protocol: { name: 'Protocolo Manhã' },
         },
         {
           id: 'log-2',
@@ -591,8 +593,8 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T23:00:00Z',
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
-          protocol: { name: 'Protocolo Manhã' }
-        }
+          protocol: { name: 'Protocolo Manhã' },
+        },
       ]
 
       render(
@@ -620,8 +622,8 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T11:00:00Z',
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
-          protocol: { name: 'Protocolo Manhã' }
-        }
+          protocol: { name: 'Protocolo Manhã' },
+        },
       ]
 
       render(
@@ -653,8 +655,8 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T11:00:00Z',
           quantity_taken: 1,
           medicine: { name: 'Paracetamol', type: 'comprimido' },
-          protocol: { name: 'Protocolo Manhã' }
-        }
+          protocol: { name: 'Protocolo Manhã' },
+        },
       ]
 
       render(
@@ -723,8 +725,8 @@ describe('DailyDoseModal', () => {
           frequency: 'diário',
           time_schedule: ['08:00', '12:00', '18:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Antibiótico', type: 'cápsula' }
-        }
+          medicine: { name: 'Antibiótico', type: 'cápsula' },
+        },
       ]
 
       // Apenas uma dose tomada, duas perdidas
@@ -736,8 +738,8 @@ describe('DailyDoseModal', () => {
           taken_at: '2026-02-11T11:00:00Z',
           quantity_taken: 1,
           medicine: { name: 'Antibiótico', type: 'cápsula' },
-          protocol: { name: 'Tratamento' }
-        }
+          protocol: { name: 'Tratamento' },
+        },
       ]
 
       render(

@@ -10,7 +10,7 @@ describe('ProtocolChecklistItem', () => {
       dosage_per_intake: 1,
       active: true,
       medicine_id: 'm1',
-      medicine: { name: 'Aspirina' }
+      medicine: { name: 'Aspirina' },
     }
     const onToggle = vi.fn()
 
@@ -28,7 +28,7 @@ describe('ProtocolChecklistItem', () => {
       dosage_per_intake: 1,
       active: true,
       medicine_id: 'm1',
-      medicine: { name: 'Aspirina' }
+      medicine: { name: 'Aspirina' },
     }
     const onToggle = vi.fn()
 
@@ -44,7 +44,7 @@ describe('ProtocolChecklistItem', () => {
       dosage_per_intake: 1,
       active: true,
       medicine_id: 'm1',
-      medicine: { name: 'Aspirina' }
+      medicine: { name: 'Aspirina' },
     }
     const onToggle = vi.fn()
 
@@ -63,7 +63,7 @@ describe('ProtocolChecklistItem', () => {
       active: true,
       medicine_id: 'm1',
       medicine: { name: 'Aspirina' },
-      titration_status: 'titulando'
+      titration_status: 'titulando',
     }
     const onToggle = vi.fn()
 
@@ -80,7 +80,7 @@ describe('ProtocolChecklistItem', () => {
       active: true,
       medicine_id: 'm1',
       medicine: { name: 'Aspirina' },
-      titration_status: 'estável'
+      titration_status: 'estável',
     }
     const onToggle = vi.fn()
 
@@ -102,8 +102,8 @@ describe('ProtocolChecklistItem', () => {
         totalSteps: 5,
         day: 10,
         totalDays: 30,
-        progressPercent: 33
-      }
+        progressPercent: 33,
+      },
     }
     const onToggle = vi.fn()
 
@@ -121,7 +121,7 @@ describe('ProtocolChecklistItem', () => {
       active: true,
       medicine_id: 'm1',
       medicine: { name: 'Aspirina' },
-      time_schedule: ['08:00', '12:00', '20:00']
+      time_schedule: ['08:00', '12:00', '20:00'],
     }
     const onToggle = vi.fn()
 
@@ -139,7 +139,7 @@ describe('ProtocolChecklistItem', () => {
       dosage_per_intake: 1,
       active: true,
       medicine_id: 'm1',
-      medicine: { name: 'Aspirina' }
+      medicine: { name: 'Aspirina' },
     }
     const onToggle = vi.fn()
 
@@ -155,7 +155,7 @@ describe('ProtocolChecklistItem', () => {
       dosage_per_intake: 2,
       active: true,
       medicine_id: 'm1',
-      medicine: { name: 'Aspirina' }
+      medicine: { name: 'Aspirina' },
     }
     const onToggle = vi.fn()
 

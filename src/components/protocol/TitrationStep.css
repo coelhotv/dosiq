@@ -63,7 +63,8 @@
 }
 
 @keyframes pulse-indicator {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
   }
   50% {

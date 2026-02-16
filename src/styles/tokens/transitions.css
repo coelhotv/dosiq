@@ -15,24 +15,24 @@
   --duration-75: 75ms;
   --duration-100: 100ms;
   --duration-150: 150ms;
-  
+
   /* Fast */
   --duration-200: 200ms;
   --duration-250: 250ms;
   --duration-300: 300ms;
-  
+
   /* Medium */
   --duration-350: 350ms;
   --duration-400: 400ms;
   --duration-500: 500ms;
-  
+
   /* Slow */
   --duration-700: 700ms;
   --duration-1000: 1000ms;
-  
+
   /* Ultra slow */
   --duration-2000: 2000ms;
-  
+
   /* Aliases for compatibility */
   --transition-fast: var(--duration-150);
   --transition-normal: var(--duration-200);
@@ -48,24 +48,24 @@
 :root {
   /* Linear */
   --ease-linear: linear;
-  
+
   /* Standard */
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Smooth */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Bounce */
   --ease-in-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-out-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
+
   /* Elastic */
   --ease-elastic-1: cubic-bezier(0.5, 0.75, 0.75, 1);
   --ease-elastic-2: cubic-bezier(0.5, 1, 0.75, 1);
   --ease-elastic-3: cubic-bezier(0.5, 1.25, 0.75, 1);
-  
+
   /* Aliases */
   --ease-default: var(--ease-in-out);
   --ease-spring: var(--ease-out-bounce);
@@ -89,13 +89,21 @@
    KEYFRAME ANIMATIONS
    ============================================ */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes fadeInUp {
@@ -187,7 +195,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -216,14 +225,16 @@
 }
 
 @keyframes ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(-5%);
     animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
   }
@@ -243,19 +254,28 @@
 }
 
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-4px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(4px);
   }
 }
 
 @keyframes gradientShift {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -329,9 +349,9 @@
    THEME TRANSITION
    ============================================ */
 :root {
-  --theme-transition: background-color var(--duration-200) ease,
-                      color var(--duration-200) ease,
-                      border-color var(--duration-200) ease;
+  --theme-transition:
+    background-color var(--duration-200) ease, color var(--duration-200) ease,
+    border-color var(--duration-200) ease;
 }
 
 /* Transition class applied during theme change */
@@ -346,16 +366,16 @@ html.theme-transitioning * {
 :root {
   /* Hover suave */
   --transition-hover: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Focus visível */
   --transition-focus: all 0.15s ease-out;
-  
+
   /* Active feedback */
   --transition-active: all 0.1s ease-in;
-  
+
   /* Scale effect */
   --transition-scale: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  
+
   /* Glow effect */
   --transition-glow: box-shadow 0.3s ease-out;
 }

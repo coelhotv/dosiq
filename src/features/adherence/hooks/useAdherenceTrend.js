@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
-import { getAdherenceTrend, getTrendEmoji, getTrendLabel } from '@dashboard/services/adherenceTrendService'
+import {
+  getAdherenceTrend,
+  getTrendEmoji,
+  getTrendLabel,
+} from '@dashboard/services/adherenceTrendService'
 
 /**
  * Hook para obter dados de tendência de adesão
- * 
+ *
  * @returns {Object} - { trend, percentage, direction, magnitude, emoji, label, loading, error }
  */
 export function useAdherenceTrend() {
@@ -11,7 +15,7 @@ export function useAdherenceTrend() {
     percentage: 0,
     direction: 'neutral',
     magnitude: 0,
-    hasPreviousWeek: false
+    hasPreviousWeek: false,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -29,7 +33,7 @@ export function useAdherenceTrend() {
             percentage: data.percentage || 0,
             direction: data.direction || 'neutral',
             magnitude: data.magnitude || 0,
-            hasPreviousWeek: data.hasPreviousWeek || false
+            hasPreviousWeek: data.hasPreviousWeek || false,
           })
           setError(null)
         }
@@ -41,7 +45,7 @@ export function useAdherenceTrend() {
             percentage: 0,
             direction: 'neutral',
             magnitude: 0,
-            hasPreviousWeek: false
+            hasPreviousWeek: false,
           })
         }
       } finally {
@@ -58,13 +62,13 @@ export function useAdherenceTrend() {
     }
   }, [])
 
-  const emoji = useMemo(() => 
-    getTrendEmoji(trendData.direction, trendData.magnitude),
+  const emoji = useMemo(
+    () => getTrendEmoji(trendData.direction, trendData.magnitude),
     [trendData.direction, trendData.magnitude]
   )
 
-  const label = useMemo(() => 
-    getTrendLabel(trendData.direction, trendData.percentage),
+  const label = useMemo(
+    () => getTrendLabel(trendData.direction, trendData.percentage),
     [trendData.direction, trendData.percentage]
   )
 
@@ -76,7 +80,7 @@ export function useAdherenceTrend() {
     label,
     hasPreviousWeek: trendData.hasPreviousWeek,
     loading,
-    error
+    error,
   }
 }
 

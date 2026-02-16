@@ -1,21 +1,21 @@
 /**
  * Query Cache - Implementação SWR (Stale-While-Revalidate)
- * 
+ *
  * Características:
  * - Cache com stale time de 30s
  * - Revalidação em background
  * - Deduplicação de requests
  * - Limite de 50 entradas (LRU eviction)
  * - Invalidação de cache por chave ou pattern
- * 
+ *
  * @module queryCache
  */
 
 const CACHE_CONFIG = {
   STALE_TIME: 30 * 1000, // 30 segundos
-  MAX_ENTRIES: 200,      // Limite elevado para suportar volumetria do Dashboard
+  MAX_ENTRIES: 200, // Limite elevado para suportar volumetria do Dashboard
   GC_INTERVAL: 60 * 1000, // Garbage collection a cada 60s
-  PERSIST_KEY: 'meus_remedios_query_cache'
+  PERSIST_KEY: 'meus_remedios_query_cache',
 }
 
 // Estrutura do cache: Map<key, { data, timestamp, isRevalidating }>
@@ -29,7 +29,7 @@ function persistCache() {
     const entries = Array.from(cache.entries())
       .filter(([, value]) => !value.isRevalidating) // Não persiste estados transitórios
       .slice(0, CACHE_CONFIG.MAX_ENTRIES)
-    
+
     localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
   } catch (error) {
     console.warn('[QueryCache] Erro ao persistir cache:', error)
@@ -86,8 +86,7 @@ function garbageCollect() {
   if (cache.size <= CACHE_CONFIG.MAX_ENTRIES) return
 
   // Ordena entradas por último acesso (menor primeiro)
-  const sortedEntries = Array.from(accessCount.entries())
-    .sort((a, b) => a[1] - b[1])
+  const sortedEntries = Array.from(accessCount.entries()).sort((a, b) => a[1] - b[1])
 
   // Remove as entradas mais antigas até estar dentro do limite
   const entriesToRemove = sortedEntries.slice(0, cache.size - CACHE_CONFIG.MAX_ENTRIES)
@@ -97,7 +96,9 @@ function garbageCollect() {
     pendingRequests.delete(key)
   })
 
-  console.log(`[QueryCache] GC: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`)
+  console.log(
+    `[QueryCache] GC: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`
+  )
   persistCache()
 }
 
@@ -121,12 +122,12 @@ function isStale(timestamp) {
 
 /**
  * Executa uma query com cache SWR
- * 
+ *
  * Fluxo:
  * 1. Se tem cache válido (não stale): retorna imediatamente
  * 2. Se tem cache stale: retorna stale + revalida em background
  * 3. Se não tem cache: executa fetcher e armazena
- * 
+ *
  * @param {string} key - Chave única do cache
  * @param {Function} fetcher - Função que retorna Promise com os dados
  * @param {Object} options - Opções adicionais
@@ -154,7 +155,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
   // Se tem cache stale, retorna stale + revalida em background
   if (cached) {
     console.log(`[QueryCache] Cache HIT (stale): ${key}, revalidando...`)
-    
+
     // Revalidação em background (não espera)
     const revalidationPromise = (async () => {
       try {
@@ -175,17 +176,17 @@ export async function cachedQuery(key, fetcher, options = {}) {
 
     // Não bloqueia o retorno dos dados stale
     cached.isRevalidating = true
-    
+
     // Executa revalidação em background mas não aguarda
     revalidationPromise.catch(() => {}) // Swallow errors for background revalidation
-    
+
     updateAccess(key)
     return cached.data
   }
 
   // Cache MISS: executa fetcher
   console.log(`[QueryCache] Cache MISS: ${key}`)
-  
+
   const fetchPromise = (async () => {
     try {
       const data = await fetcher()
@@ -211,7 +212,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
 
 /**
  * Invalida entradas do cache
- * 
+ *
  * @param {string|RegExp} pattern - Chave exata ou regex para matching
  * @returns {number} Número de entradas invalidadas
  */
@@ -261,7 +262,7 @@ export function invalidateCache(pattern) {
 
 /**
  * Preenche o cache com dados (útil para SSR ou pré-carregamento)
- * 
+ *
  * @param {string} key - Chave do cache
  * @param {*} data - Dados a serem armazenados
  */
@@ -280,7 +281,7 @@ export function prefetchCache(key, data) {
 export function getCacheStats() {
   const entries = Array.from(cache.entries())
   const staleCount = entries.filter(([, v]) => isStale(v.timestamp)).length
-  
+
   return {
     size: cache.size,
     staleEntries: staleCount,
@@ -291,8 +292,8 @@ export function getCacheStats() {
       key,
       age: Date.now() - value.timestamp,
       isStale: isStale(value.timestamp),
-      isRevalidating: value.isRevalidating
-    }))
+      isRevalidating: value.isRevalidating,
+    })),
   }
 }
 

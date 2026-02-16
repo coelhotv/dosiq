@@ -2,20 +2,20 @@ import Calendar from './Calendar'
 
 /**
  * @deprecated Use Calendar com props enableLazyLoad=true, enableSwipe=true, enableMonthPicker=true
- * 
+ *
  * CalendarWithMonthCache foi consolidado no componente Calendar.
- * 
+ *
  * Migração:
  * Antes:
- *   <CalendarWithMonthCache 
+ *   <CalendarWithMonthCache
  *     onLoadMonth={handleLoadMonth}
  *     markedDates={markedDates}
  *     selectedDate={selectedDate}
  *     onDayClick={handleDayClick}
  *   />
- * 
+ *
  * Depois:
- *   <Calendar 
+ *   <Calendar
  *     enableLazyLoad={true}
  *     enableSwipe={true}
  *     enableMonthPicker={true}
@@ -29,7 +29,7 @@ export default function CalendarWithMonthCache({
   onLoadMonth,
   markedDates = [],
   selectedDate,
-  onDayClick
+  onDayClick,
 }) {
   // Redirect para Calendar com features ativadas
   return (

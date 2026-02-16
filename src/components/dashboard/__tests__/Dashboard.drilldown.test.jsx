@@ -5,37 +5,37 @@ import '@testing-library/jest-dom'
 
 // Mock dos hooks e serviços
 vi.mock('../../../hooks/useDashboardContext', () => ({
-  useDashboard: vi.fn()
+  useDashboard: vi.fn(),
 }))
 
 vi.mock('../../../hooks/useAdherenceTrend', () => ({
-  useAdherenceTrend: vi.fn()
+  useAdherenceTrend: vi.fn(),
 }))
 
 vi.mock('../../../hooks/useInsights', () => ({
-  useInsights: vi.fn()
+  useInsights: vi.fn(),
 }))
 
 vi.mock('../../../hooks/useCachedQuery', () => ({
-  useCachedQuery: vi.fn()
+  useCachedQuery: vi.fn(),
 }))
 
 vi.mock('../../../lib/supabase', () => ({
   getCurrentUser: vi.fn().mockResolvedValue({
     email: 'test@example.com',
-    user_metadata: { full_name: 'Test User' }
-  })
+    user_metadata: { full_name: 'Test User' },
+  }),
 }))
 
 vi.mock('../../../services/analyticsService', () => ({
   analyticsService: {
-    track: vi.fn()
-  }
+    track: vi.fn(),
+  },
 }))
 
 // Mock dos componentes filhos para simplificar testes
 vi.mock('../../ui/Loading', () => ({
-  default: ({ text }) => <div data-testid="loading">{text}</div>
+  default: ({ text }) => <div data-testid="loading">{text}</div>,
 }))
 
 vi.mock('../../ui/Modal', () => ({
@@ -43,15 +43,17 @@ vi.mock('../../ui/Modal', () => ({
     if (!isOpen) return null
     return (
       <div data-testid="modal" role="dialog" aria-modal="true">
-        <button data-testid="modal-close" onClick={onClose}>Fechar</button>
+        <button data-testid="modal-close" onClick={onClose}>
+          Fechar
+        </button>
         {children}
       </div>
     )
-  }
+  },
 }))
 
 vi.mock('../../ui/ThemeToggle', () => ({
-  default: () => <div data-testid="theme-toggle" />
+  default: () => <div data-testid="theme-toggle" />,
 }))
 
 vi.mock('../../ui/EmptyState', () => ({
@@ -60,7 +62,7 @@ vi.mock('../../ui/EmptyState', () => ({
       <h3>{title}</h3>
       <p>{description}</p>
     </div>
-  )
+  ),
 }))
 
 vi.mock('../HealthScoreCard', () => ({
@@ -68,11 +70,11 @@ vi.mock('../HealthScoreCard', () => ({
     <div data-testid="health-score-card" onClick={onClick}>
       Score: {score}
     </div>
-  )
+  ),
 }))
 
 vi.mock('../HealthScoreDetails', () => ({
-  default: ({ isOpen }) => isOpen ? <div data-testid="health-details" /> : null
+  default: ({ isOpen }) => (isOpen ? <div data-testid="health-details" /> : null),
 }))
 
 vi.mock('../SmartAlerts', () => ({
@@ -82,15 +84,15 @@ vi.mock('../SmartAlerts', () => ({
         Ação
       </button>
     </div>
-  )
+  ),
 }))
 
 vi.mock('../InsightCard', () => ({
-  default: ({ text }) => <div data-testid="insight-card">{text}</div>
+  default: ({ text }) => <div data-testid="insight-card">{text}</div>,
 }))
 
 vi.mock('../TreatmentAccordion', () => ({
-  default: ({ children }) => <div data-testid="treatment-accordion">{children}</div>
+  default: ({ children }) => <div data-testid="treatment-accordion">{children}</div>,
 }))
 
 vi.mock('../SwipeRegisterItem', () => ({
@@ -98,13 +100,13 @@ vi.mock('../SwipeRegisterItem', () => ({
     <div data-testid="swipe-register-item">
       <button onClick={onRegister}>Registrar</button>
     </div>
-  )
+  ),
 }))
 
 vi.mock('../SparklineAdesao', () => ({
   default: ({ adherenceByDay, onDayClick }) => (
     <div data-testid="sparkline-adesao">
-      {adherenceByDay.map(day => (
+      {adherenceByDay.map((day) => (
         <button
           key={day.date}
           data-testid={`sparkline-dot-${day.date}`}
@@ -114,7 +116,7 @@ vi.mock('../SparklineAdesao', () => ({
         </button>
       ))}
     </div>
-  )
+  ),
 }))
 
 vi.mock('../DailyDoseModal', () => ({
@@ -122,23 +124,29 @@ vi.mock('../DailyDoseModal', () => ({
     if (!isOpen) return null
     return (
       <div data-testid="daily-dose-modal" data-date={date}>
-        <button data-testid="modal-close-btn" onClick={onClose}>Fechar</button>
+        <button data-testid="modal-close-btn" onClick={onClose}>
+          Fechar
+        </button>
         {isLoading && <div data-testid="modal-loading">Carregando...</div>}
         {error && (
           <div data-testid="modal-error">
             Erro
-            <button data-testid="retry-btn" onClick={onRetry}>Retry</button>
+            <button data-testid="retry-btn" onClick={onRetry}>
+              Retry
+            </button>
           </div>
         )}
         {!isLoading && !error && (
           <div data-testid="modal-content">
             <div data-testid="modal-summary">
               {dailySummary && (
-                <span>{dailySummary.taken} de {dailySummary.expected} doses</span>
+                <span>
+                  {dailySummary.taken} de {dailySummary.expected} doses
+                </span>
               )}
             </div>
             <div data-testid="modal-logs">
-              {logs.map(log => (
+              {logs.map((log) => (
                 <div key={log.id} data-testid={`log-${log.id}`}>
                   {log.medicine?.name}
                 </div>
@@ -148,15 +156,15 @@ vi.mock('../DailyDoseModal', () => ({
         )}
       </div>
     )
-  }
+  },
 }))
 
 vi.mock('../../gamification/ConfettiAnimation', () => ({
-  default: () => null
+  default: () => null,
 }))
 
 vi.mock('../../gamification/MilestoneCelebration', () => ({
-  default: () => null
+  default: () => null,
 }))
 
 vi.mock('../../log/LogForm', () => ({
@@ -165,26 +173,26 @@ vi.mock('../../log/LogForm', () => ({
       <button onClick={() => onSave({})}>Salvar</button>
       <button onClick={onCancel}>Cancelar</button>
     </div>
-  )
+  ),
 }))
 
 // Mock dos serviços
 const mockLogService = {
-  getByDateRange: vi.fn()
+  getByDateRange: vi.fn(),
 }
 
 const mockTreatmentPlanService = {
-  getAll: vi.fn().mockResolvedValue([])
+  getAll: vi.fn().mockResolvedValue([]),
 }
 
 const mockAdherenceService = {
-  getDailyAdherence: vi.fn()
+  getDailyAdherence: vi.fn(),
 }
 
 vi.mock('../../../services/api', () => ({
   cachedLogService: mockLogService,
   cachedTreatmentPlanService: mockTreatmentPlanService,
-  adherenceService: mockAdherenceService
+  adherenceService: mockAdherenceService,
 }))
 
 describe('Dashboard - Sparkline Drill-Down Integration', () => {
@@ -195,7 +203,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
     { date: '2026-02-08', adherence: 100, taken: 4, expected: 4 },
     { date: '2026-02-09', adherence: 75, taken: 3, expected: 4 },
     { date: '2026-02-10', adherence: 100, taken: 4, expected: 4 },
-    { date: '2026-02-11', adherence: 85, taken: 4, expected: 5 }
+    { date: '2026-02-11', adherence: 85, taken: 4, expected: 5 },
   ]
 
   const mockDayLogs = [
@@ -204,15 +212,15 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
       taken_at: '2026-02-11T08:30:00Z',
       quantity_taken: 1,
       medicine: { name: 'Paracetamol', type: 'comprimido' },
-      protocol: { name: 'Protocolo Manhã' }
+      protocol: { name: 'Protocolo Manhã' },
     },
     {
       id: 'log-2',
       taken_at: '2026-02-11T14:00:00Z',
       quantity_taken: 2,
       medicine: { name: 'Ibuprofeno', type: 'comprimido' },
-      protocol: { name: 'Protocolo Tarde' }
-    }
+      protocol: { name: 'Protocolo Tarde' },
+    },
   ]
 
   beforeEach(() => {
@@ -227,20 +235,20 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
       stockSummary: [],
       refresh: vi.fn(),
       isDoseInToleranceWindow: vi.fn().mockReturnValue(false),
-      isLoading: false
+      isLoading: false,
     })
 
     const { useAdherenceTrend } = require('../../../hooks/useAdherenceTrend')
     useAdherenceTrend.mockReturnValue({
       trend: 'stable',
       percentage: 0,
-      magnitude: 'neutral'
+      magnitude: 'neutral',
     })
 
     const { useInsights } = require('../../../hooks/useInsights')
     useInsights.mockReturnValue({
       insight: null,
-      loading: false
+      loading: false,
     })
 
     // Mock useCachedQuery para drill-down
@@ -252,14 +260,14 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
           data: { data: mockDayLogs, total: 2, hasMore: false },
           isLoading: false,
           error: null,
-          executeQuery: vi.fn()
+          executeQuery: vi.fn(),
         }
       }
       return {
         data: null,
         isLoading: false,
         error: null,
-        executeQuery: vi.fn()
+        executeQuery: vi.fn(),
       }
     })
 
@@ -305,7 +313,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
       // Verificar que useCachedQuery foi chamado com a key correta
       await waitFor(() => {
         const calls = useCachedQuery.mock.calls
-        const drillDownCall = calls.find(call => call[0] && call[0].includes('logs-drilldown-'))
+        const drillDownCall = calls.find((call) => call[0] && call[0].includes('logs-drilldown-'))
         expect(drillDownCall).toBeTruthy()
         expect(drillDownCall[0]).toBe('logs-drilldown-2026-02-11')
       })
@@ -406,7 +414,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
             data: null,
             isLoading: true,
             error: null,
-            executeQuery: vi.fn()
+            executeQuery: vi.fn(),
           }
         }
         return { data: null, isLoading: false, error: null, executeQuery: vi.fn() }
@@ -436,7 +444,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
             data: null,
             isLoading: false,
             error: new Error('Falha ao carregar'),
-            executeQuery: vi.fn()
+            executeQuery: vi.fn(),
           }
         }
         return { data: null, isLoading: false, error: null, executeQuery: vi.fn() }
@@ -466,7 +474,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
             data: null,
             isLoading: false,
             error: new Error('Falha ao carregar'),
-            executeQuery: mockExecuteQuery
+            executeQuery: mockExecuteQuery,
           }
         }
         return { data: null, isLoading: false, error: null, executeQuery: vi.fn() }
@@ -497,7 +505,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
       useAdherenceTrend.mockReturnValue({
         trend: 'up',
         percentage: 15,
-        magnitude: 'high'
+        magnitude: 'high',
       })
 
       const { useDashboard } = require('../../../hooks/useDashboardContext')
@@ -508,7 +516,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
         stockSummary: [],
         refresh: vi.fn(),
         isDoseInToleranceWindow: vi.fn(),
-        isLoading: false
+        isLoading: false,
       })
 
       render(<Dashboard onNavigate={vi.fn()} />)
@@ -518,7 +526,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
       })
 
       // Verificar que todos os dias estão renderizados
-      mockDailyAdherence.forEach(day => {
+      mockDailyAdherence.forEach((day) => {
         expect(screen.getByTestId(`sparkline-dot-${day.date}`)).toBeInTheDocument()
       })
     })
@@ -558,7 +566,7 @@ describe('Dashboard - Sparkline Drill-Down Integration', () => {
           'sparkline_drilldown_opened',
           expect.objectContaining({
             date: '2026-02-11',
-            adherence: 85
+            adherence: 85,
           })
         )
       })

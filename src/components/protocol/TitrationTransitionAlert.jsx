@@ -16,23 +16,21 @@ export default function TitrationTransitionAlert({ protocol, onAdvance, onDismis
       <div className="alert-icon">⚠️</div>
       <div className="alert-content">
         <h4>
-          {isFinalStage 
-            ? '🎯 Protocolo de Titulação Concluído!' 
+          {isFinalStage
+            ? '🎯 Protocolo de Titulação Concluído!'
             : '📈 Hora de Avançar para a Próxima Etapa'}
         </h4>
         <p className="alert-protocol-name">
           <strong>{protocol.medicine?.name}</strong> - {protocol.name}
         </p>
-        
+
         {isFinalStage ? (
           <div className="transition-info">
             <p>
-              Você completou todas as etapas do protocolo de titulação!
-              A dose atual de <strong>{currentStage.dosage} comp.</strong> é a dose de manutenção.
+              Você completou todas as etapas do protocolo de titulação! A dose atual de{' '}
+              <strong>{currentStage.dosage} comp.</strong> é a dose de manutenção.
             </p>
-            <p className="alert-note">
-              {currentStage.note}
-            </p>
+            <p className="alert-note">{currentStage.note}</p>
           </div>
         ) : (
           <div className="transition-info">
@@ -57,28 +55,18 @@ export default function TitrationTransitionAlert({ protocol, onAdvance, onDismis
           </div>
         )}
       </div>
-      
+
       <div className="alert-actions">
         {isFinalStage ? (
-          <Button 
-            variant="primary" 
-            onClick={() => onAdvance(protocol.id, true)}
-          >
+          <Button variant="primary" onClick={() => onAdvance(protocol.id, true)}>
             ✅ Marcar como Concluído
           </Button>
         ) : (
           <>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => onDismiss(protocol.id)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => onDismiss(protocol.id)}>
               Lembrar Depois
             </Button>
-            <Button 
-              variant="primary" 
-              onClick={() => onAdvance(protocol.id, false)}
-            >
+            <Button variant="primary" onClick={() => onAdvance(protocol.id, false)}>
               🚀 Avançar Agora
             </Button>
           </>

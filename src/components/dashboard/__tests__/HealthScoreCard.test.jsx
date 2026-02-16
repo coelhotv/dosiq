@@ -5,7 +5,7 @@ import '@testing-library/jest-dom'
 
 // Mock do useDashboardContext
 vi.mock('../../../hooks/useDashboardContext', () => ({
-  useDashboardContext: vi.fn()
+  useDashboardContext: vi.fn(),
 }))
 
 describe('HealthScoreCard', () => {
@@ -19,7 +19,7 @@ describe('HealthScoreCard', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       healthScore: 85,
-      loading: false
+      loading: false,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -30,11 +30,11 @@ describe('HealthScoreCard', () => {
 
   it('should display correct score label based on value', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
-    
+
     // Test excellent score
     useDashboardContext.mockReturnValue({
       healthScore: 95,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByText('Excelente')).toBeInTheDocument()
@@ -42,7 +42,7 @@ describe('HealthScoreCard', () => {
     // Test good score
     useDashboardContext.mockReturnValue({
       healthScore: 75,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByText('Bom')).toBeInTheDocument()
@@ -50,7 +50,7 @@ describe('HealthScoreCard', () => {
     // Test fair score
     useDashboardContext.mockReturnValue({
       healthScore: 55,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByText('Regular')).toBeInTheDocument()
@@ -58,7 +58,7 @@ describe('HealthScoreCard', () => {
     // Test poor score
     useDashboardContext.mockReturnValue({
       healthScore: 35,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByText('Atenção')).toBeInTheDocument()
@@ -68,7 +68,7 @@ describe('HealthScoreCard', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       healthScore: null,
-      loading: true
+      loading: true,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -80,7 +80,7 @@ describe('HealthScoreCard', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       healthScore: null,
-      loading: false
+      loading: false,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -92,7 +92,7 @@ describe('HealthScoreCard', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       healthScore: 75,
-      loading: false
+      loading: false,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -110,9 +110,9 @@ describe('HealthScoreCard', () => {
       scoreBreakdown: {
         adherence: 90,
         stock: 70,
-        consistency: 80
+        consistency: 80,
       },
-      loading: false
+      loading: false,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -130,7 +130,7 @@ describe('HealthScoreCard', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
     useDashboardContext.mockReturnValue({
       healthScore: 75,
-      loading: false
+      loading: false,
     })
 
     render(<HealthScoreCard onClick={mockOnClick} />)
@@ -141,11 +141,11 @@ describe('HealthScoreCard', () => {
 
   it('should apply correct color class based on score', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
-    
+
     // Test green for high score
     useDashboardContext.mockReturnValue({
       healthScore: 85,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByTestId('health-score-card')).toHaveClass('score-excellent')
@@ -153,7 +153,7 @@ describe('HealthScoreCard', () => {
     // Test yellow for medium score
     useDashboardContext.mockReturnValue({
       healthScore: 55,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByTestId('health-score-card')).toHaveClass('score-fair')
@@ -161,7 +161,7 @@ describe('HealthScoreCard', () => {
     // Test red for low score
     useDashboardContext.mockReturnValue({
       healthScore: 35,
-      loading: false
+      loading: false,
     })
     render(<HealthScoreCard onClick={mockOnClick} />)
     expect(screen.getByTestId('health-score-card')).toHaveClass('score-poor')
@@ -171,7 +171,7 @@ describe('HealthScoreCard', () => {
 describe('HealthScoreCard - Score Categories', () => {
   it('should display correct emoji for score range', () => {
     const { useDashboardContext } = require('../../../hooks/useDashboardContext')
-    
+
     const testCases = [
       { score: 100, emoji: '🌟' },
       { score: 90, emoji: '🌟' },
@@ -180,13 +180,13 @@ describe('HealthScoreCard - Score Categories', () => {
       { score: 60, emoji: '😐' },
       { score: 50, emoji: '😟' },
       { score: 40, emoji: '⚠️' },
-      { score: 20, emoji: '🚨' }
+      { score: 20, emoji: '🚨' },
     ]
 
     testCases.forEach(({ score, emoji }) => {
       useDashboardContext.mockReturnValue({
         healthScore: score,
-        loading: false
+        loading: false,
       })
 
       const { container } = render(<HealthScoreCard onClick={() => {}} />)

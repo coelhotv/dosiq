@@ -1,8 +1,8 @@
 /**
  * DailyDoseModal - Modal para exibir detalhes das doses de um dia específico
- * 
+ *
  * Exibe lista de doses tomadas e perdidas para o dia selecionado no sparkline.
- * 
+ *
  * @component
  * @example
  * <DailyDoseModal
@@ -36,7 +36,7 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
-    month: 'long'
+    month: 'long',
   })
 }
 
@@ -50,7 +50,7 @@ const formatShortDate = (dateStr) => {
   const date = new Date(dateStr + 'T00:00:00')
   return date.toLocaleDateString('pt-BR', {
     day: 'numeric',
-    month: 'short'
+    month: 'short',
   })
 }
 
@@ -129,7 +129,7 @@ export function DailyDoseModal({
   isLoading = false,
   error = null,
   dailySummary = null,
-  onRetry
+  onRetry,
 }) {
   const { modalRef, handleKeyDown } = useFocusTrap(isOpen)
 
@@ -139,7 +139,7 @@ export function DailyDoseModal({
     if (!protocols) {
       return { takenDoses: logs || [], missedDoses: [], scheduledDoses: [] }
     }
-    
+
     try {
       return calculateDosesByDate(date, logs, protocols)
     } catch (err) {
@@ -156,17 +156,12 @@ export function DailyDoseModal({
 
   // Calcular porcentagem de adesão
   const adherencePercent = dailySummary?.adherence ?? 0
-  const adherenceStatus = 
-    adherencePercent >= 80 ? 'good' :
-    adherencePercent >= 50 ? 'warning' : 'poor'
+  const adherenceStatus =
+    adherencePercent >= 80 ? 'good' : adherencePercent >= 50 ? 'warning' : 'poor'
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={formattedDate}
-    >
-      <div 
+    <Modal isOpen={isOpen} onClose={onClose} title={formattedDate}>
+      <div
         ref={modalRef}
         className="daily-dose-modal"
         onKeyDown={handleKeyDown}
@@ -182,18 +177,17 @@ export function DailyDoseModal({
 
         {/* Badge de adesão */}
         {dailySummary && (
-          <div 
-            className="daily-dose-summary"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            <span 
+          <div className="daily-dose-summary" aria-live="polite" aria-atomic="true">
+            <span
               className={`adherence-badge adherence-badge--${adherenceStatus}`}
               aria-label={`Adesão: ${adherencePercent}%`}
             >
               {adherencePercent}% adesão
             </span>
-            <span className="dose-count" aria-label={`${dailySummary.taken} de ${dailySummary.expected} doses`}>
+            <span
+              className="dose-count"
+              aria-label={`${dailySummary.taken} de ${dailySummary.expected} doses`}
+            >
               {dailySummary.taken} de {dailySummary.expected} doses
             </span>
           </div>
@@ -212,10 +206,14 @@ export function DailyDoseModal({
             icon="⚠️"
             title="Erro ao carregar"
             message="Não foi possível carregar os dados deste dia."
-            action={onRetry ? {
-              label: 'Tentar novamente',
-              onClick: onRetry
-            } : null}
+            action={
+              onRetry
+                ? {
+                    label: 'Tentar novamente',
+                    onClick: onRetry,
+                  }
+                : null
+            }
           />
         )}
 
@@ -231,17 +229,10 @@ export function DailyDoseModal({
         {/* Lista de doses tomadas */}
         {!isLoading && !error && takenDoses.length > 0 && (
           <div className="dose-list-section">
-            <h3 className="dose-list-section__title">
-              Doses Tomadas ({takenDoses.length})
-            </h3>
+            <h3 className="dose-list-section__title">Doses Tomadas ({takenDoses.length})</h3>
             <div className="dose-list" role="list" aria-label={`Doses tomadas em ${shortDate}`}>
               {takenDoses.map((log, index) => (
-                <DoseListItem
-                  key={log.id}
-                  log={log}
-                  isTaken={true}
-                  index={index}
-                />
+                <DoseListItem key={log.id} log={log} isTaken={true} index={index} />
               ))}
             </div>
           </div>
@@ -297,9 +288,7 @@ export function DailyDoseModal({
         {/* Footer informativo */}
         {hasDoses && (
           <div className="daily-dose-footer">
-            <p className="daily-dose-hint">
-              💡 Clique em uma dose para ver detalhes
-            </p>
+            <p className="daily-dose-hint">💡 Clique em uma dose para ver detalhes</p>
           </div>
         )}
       </div>

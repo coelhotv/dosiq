@@ -49,7 +49,9 @@
   padding: 1rem;
   background: var(--color-surface-elevated, #f9fafb);
   border-radius: var(--radius-lg, 12px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .benefit-item:hover {
@@ -90,7 +92,11 @@
 
 .welcome-note {
   padding: 1rem;
-  background: linear-gradient(135deg, var(--color-primary-light, #dbeafe) 0%, var(--color-primary-lighter, #eff6ff) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light, #dbeafe) 0%,
+    var(--color-primary-lighter, #eff6ff) 100%
+  );
   border-radius: var(--radius-lg, 12px);
   border-left: 4px solid var(--color-primary, #3b82f6);
 }

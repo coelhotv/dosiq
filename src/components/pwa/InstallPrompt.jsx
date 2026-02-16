@@ -10,12 +10,12 @@ import {
   wasPromptDismissed,
   dismissPrompt,
   isDismissalExpired,
-  getInstallInstructions
+  getInstallInstructions,
 } from './pwaUtils'
 
 /**
  * PWA Install Prompt Component
- * 
+ *
  * Displays an install prompt for users on supported platforms.
  * - iOS Safari: Shows custom instructions for "Add to Home Screen"
  * - Chrome/Android & Desktop: Shows native install button or custom instructions
@@ -30,14 +30,14 @@ export default function InstallPrompt() {
     isIOSSafari: false,
     isChromeAndroid: false,
     isDesktopChrome: false,
-    canShowNativePrompt: false
+    canShowNativePrompt: false,
   })
 
   // Detect platform and check if prompt should be shown
   useEffect(() => {
     const checkVisibility = () => {
       console.log('[PWA Install] Checking visibility...')
-      
+
       // Don't show if already in standalone mode
       if (isStandalone()) {
         console.log('[PWA Install] Hidden: Running in standalone mode')
@@ -61,7 +61,7 @@ export default function InstallPrompt() {
       const isDesktop = isDesktopChrome()
       console.log('[PWA Install] isDesktopChrome result:', isDesktop)
       const supportsInstall = 'BeforeInstallPromptEvent' in window
-      
+
       console.log('[PWA Install] Platform detection:', { isIOS, isAndroid, isDesktop })
       console.log('[PWA Install] User agent:', navigator.userAgent)
       console.log('[PWA Install] BeforeInstallPromptEvent supported:', supportsInstall)
@@ -70,7 +70,7 @@ export default function InstallPrompt() {
         isIOSSafari: isIOS,
         isChromeAndroid: isAndroid,
         isDesktopChrome: isDesktop,
-        canShowNativePrompt: canShowNativePrompt()
+        canShowNativePrompt: canShowNativePrompt(),
       })
 
       // Show prompt for supported platforms
@@ -85,7 +85,7 @@ export default function InstallPrompt() {
   // Listen for beforeinstallprompt event (Chrome/Edge)
   useEffect(() => {
     console.log('[PWA Install] Setting up beforeinstallprompt listener')
-    
+
     const handleBeforeInstallPrompt = (event) => {
       console.log('[PWA Install] beforeinstallprompt event fired!')
       // Prevent the default browser prompt
@@ -95,7 +95,7 @@ export default function InstallPrompt() {
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    
+
     // Check if event was already fired (before this component mounted)
     console.log('[PWA Install] Component mounted, checking for deferred prompt...')
 
@@ -116,7 +116,7 @@ export default function InstallPrompt() {
     console.log('[PWA Install] Platform info:', platformInfo)
     console.log('[PWA Install] Deferred prompt available:', !!deferredPrompt)
     console.log('[PWA Install] Native prompt supported:', canShowNativePrompt())
-    
+
     // iOS Safari - show instructions
     if (platformInfo.isIOSSafari) {
       console.log('[PWA Install] iOS Safari detected - showing instructions')
@@ -130,15 +130,15 @@ export default function InstallPrompt() {
       try {
         // Show the native install prompt
         deferredPrompt.prompt()
-        
+
         // Wait for user choice
         const { outcome } = await deferredPrompt.userChoice
         console.log('[PWA Install] User choice outcome:', outcome)
-        
+
         if (outcome === 'accepted') {
           setIsVisible(false)
         }
-        
+
         // Clear the deferred prompt
         setDeferredPrompt(null)
       } catch (error) {
@@ -153,16 +153,18 @@ export default function InstallPrompt() {
       setShowIOSInstructions(true) // Reuse the instructions modal
       return
     }
-    
+
     // Desktop Chrome/Edge without deferred prompt (common in dev/localhost)
     // Show instructions instead of doing nothing
     if (platformInfo.isDesktopChrome) {
       console.log('[PWA Install] Desktop Chrome without deferred prompt - showing instructions')
-      console.log('[PWA Install] Note: beforeinstallprompt may not fire on localhost or in development')
+      console.log(
+        '[PWA Install] Note: beforeinstallprompt may not fire on localhost or in development'
+      )
       setShowIOSInstructions(true)
       return
     }
-    
+
     console.log('[PWA Install] No matching platform handler - browser may not support PWA install')
   }, [deferredPrompt, platformInfo])
 
@@ -181,22 +183,22 @@ export default function InstallPrompt() {
       return {
         title: 'Adicione à Tela de Início',
         description: 'Acesse o Meus Remédios rapidamente como um app nativo',
-        buttonText: 'Ver Como Instalar'
+        buttonText: 'Ver Como Instalar',
       }
     }
-    
+
     if (platformInfo.isChromeAndroid) {
       return {
         title: 'Instale o Meus Remédios',
         description: 'Acesse rapidamente como um app nativo no seu Android',
-        buttonText: 'Instalar Agora'
+        buttonText: 'Instalar Agora',
       }
     }
-    
+
     return {
       title: 'Instale o Meus Remédios',
       description: 'Acesse rapidamente como um app nativo no seu computador',
-      buttonText: 'Instalar Agora'
+      buttonText: 'Instalar Agora',
     }
   }
 
@@ -220,15 +222,15 @@ export default function InstallPrompt() {
             <div className="install-prompt__content">
               {/* App Icon */}
               <div className="install-prompt__icon">
-                <span role="img" aria-label="Ícone do app">💊</span>
+                <span role="img" aria-label="Ícone do app">
+                  💊
+                </span>
               </div>
 
               {/* Text Content */}
               <div className="install-prompt__text">
                 <h3 className="install-prompt__title">{promptText.title}</h3>
-                <p className="install-prompt__description">
-                  {promptText.description}
-                </p>
+                <p className="install-prompt__description">{promptText.description}</p>
               </div>
 
               {/* Actions */}
@@ -303,17 +305,20 @@ export default function InstallPrompt() {
 
                 {platformInfo.isIOSSafari && (
                   <div className="install-prompt__ios-hint">
-                    <span role="img" aria-label="Dica">💡</span>
-                    <span>Procure o botão 
-                      <svg 
-                        className="install-prompt__share-icon" 
-                        viewBox="0 0 24 24" 
+                    <span role="img" aria-label="Dica">
+                      💡
+                    </span>
+                    <span>
+                      Procure o botão
+                      <svg
+                        className="install-prompt__share-icon"
+                        viewBox="0 0 24 24"
                         fill="currentColor"
                         aria-hidden="true"
                       >
                         <path d="M16 5l-1.42-1.42-4.58 4.59V0h-2v8.17L3.42 3.58 2 5l7 7 7-7zm7 6v8c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-8H0v8c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-8h-2z" />
-                      </svg>
-                      {' '}na barra do Safari
+                      </svg>{' '}
+                      na barra do Safari
                     </span>
                   </div>
                 )}

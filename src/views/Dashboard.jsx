@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   cachedLogService as logService,
   cachedTreatmentPlanService as treatmentPlanService,
-  adherenceService
+  adherenceService,
 } from '@shared/services'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
@@ -45,62 +45,55 @@ export default function Dashboard({ onNavigate }) {
     stockSummary,
     refresh,
     isDoseInToleranceWindow,
-    isLoading: contextLoading
-  } = useDashboard();
+    isLoading: contextLoading,
+  } = useDashboard()
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [_error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
   const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
-  
+
   // Dados de adesão para Sparkline
   const [dailyAdherence, setDailyAdherence] = useState([])
   const [isAdherenceLoading, setIsAdherenceLoading] = useState(true)
-  
+
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
-  
+
   // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
   // Estrutura: Map<alertId, { snoozedAt: timestamp, expiresAt: timestamp, scheduledTime: string }>
   const [snoozedAlerts, setSnoozedAlerts] = useState(() => {
     try {
       const data = localStorage.getItem(SNOOZE_STORAGE_KEY)
       if (!data) return new Map()
-      
+
       const parsed = JSON.parse(data)
       const map = new Map()
       const now = Date.now()
-      
+
       // Limpar expirados ao carregar
       parsed.forEach(([id, value]) => {
         if (value.expiresAt > now) {
           map.set(id, value)
         }
       })
-      
+
       return map
     } catch {
       return new Map()
     }
   })
-  
+
   // Dados de tendência de adesão
-  const { 
-    trend, 
-    percentage, 
-    magnitude 
-  } = useAdherenceTrend()
-  
+  const { trend, percentage, magnitude } = useAdherenceTrend()
+
   // Dados de insight
-  const {
-    insight,
-    loading: insightLoading
-  } = useInsights({
+  const { insight, loading: insightLoading } = useInsights({
     stats,
     dailyAdherence,
     stockSummary,
     logs,
-    onNavigate
+    onNavigate,
   })
 
   // DEBUG: Log insight data received from hook
@@ -110,48 +103,48 @@ export default function Dashboard({ onNavigate }) {
     stats,
     dailyAdherence: dailyAdherence?.length || 0,
     stockSummary: stockSummary?.length || 0,
-    logs: logs?.length || 0
+    logs: logs?.length || 0,
   })
-  
+
   // Estado para controle de animação de confete
   const [showConfetti, setShowConfetti] = useState(false)
 
   // Estados para controle de celebração de milestones
   const [currentMilestone, setCurrentMilestone] = useState(null)
   const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false)
-  
+
   // === NOVOS ESTADOS PARA DRILL-DOWN DO SPARKLINE ===
   /**
    * Data selecionada no sparkline
    * @type {string | null} - Formato 'YYYY-MM-DD'
    */
   const [selectedDate, setSelectedDate] = useState(null)
-  
+
   /**
    * Controle de abertura do modal de drill-down
    * @type {boolean}
    */
   const [isDrillDownModalOpen, setIsDrillDownModalOpen] = useState(false)
-  
+
   // Fetch dos logs do dia selecionado usando cache
   // Usar uma key fixa que muda apenas quando selectedDate muda
   const drillDownCacheKey = useMemo(() => {
     return selectedDate ? `logs-drilldown-${selectedDate}` : null
   }, [selectedDate])
-  
+
   const {
     data: dayLogsData,
     isLoading: isDayLogsLoading,
     error: dayLogsError,
-    executeQuery: refetchDayLogs
+    executeQuery: refetchDayLogs,
   } = useCachedQuery(
     drillDownCacheKey,
     async () => {
       if (!selectedDate) return { data: [], total: 0, hasMore: false }
-      
+
       // Garantir que a data está no formato correto (YYYY-MM-DD)
       const formattedDate = selectedDate.split('T')[0]
-      
+
       // logService.getByDateRange retorna { data, total, hasMore }
       const result = await logService.getByDateRange(formattedDate, formattedDate, 50)
       return result
@@ -163,24 +156,27 @@ export default function Dashboard({ onNavigate }) {
         console.error('Erro ao carregar logs do dia:', err)
         analyticsService.track('drilldown_error', {
           error: err.message,
-          date: selectedDate
+          date: selectedDate,
         })
-      }
+      },
     }
   )
-  
+
   // Handler para click em um dia do sparkline
-  const handleDayClick = useMemo(() => (dayData) => {
-    setSelectedDate(dayData.date)
-    setIsDrillDownModalOpen(true)
-    analyticsService.track('sparkline_drilldown_opened', {
-      date: dayData.date,
-      adherence: dayData.adherence,
-      taken: dayData.taken,
-      expected: dayData.expected
-    })
-  }, [])
-  
+  const handleDayClick = useMemo(
+    () => (dayData) => {
+      setSelectedDate(dayData.date)
+      setIsDrillDownModalOpen(true)
+      analyticsService.track('sparkline_drilldown_opened', {
+        date: dayData.date,
+        adherence: dayData.adherence,
+        taken: dayData.taken,
+        expected: dayData.expected,
+      })
+    },
+    []
+  )
+
   // Handler para fechar o modal de drill-down
   const handleCloseDrillDown = () => {
     setIsDrillDownModalOpen(false)
@@ -189,32 +185,29 @@ export default function Dashboard({ onNavigate }) {
       setSelectedDate(null)
     }, 300)
   }
-  
+
   // Handler para retry em caso de erro
   const handleRetryDayLogs = () => {
     refetchDayLogs({ force: true })
   }
-  
+
   // Extrair array de logs do resultado paginado
   const dayLogs = dayLogsData?.data || []
-  
+
   // Obter resumo do dia selecionado
   const selectedDaySummary = useMemo(() => {
     if (!selectedDate || !dailyAdherence.length) return null
-    return dailyAdherence.find(d => d.date === selectedDate)
+    return dailyAdherence.find((d) => d.date === selectedDate)
   }, [selectedDate, dailyAdherence])
-  
+
   // 1. Carregar Nome do Usuário e Planos de Tratamento
-  
+
   // 1. Carregar Nome do Usuário e Planos de Tratamento
   useEffect(() => {
     async function loadInitialData() {
       try {
-        const [user, plans] = await Promise.all([
-          getCurrentUser(),
-          treatmentPlanService.getAll()
-        ]);
-        
+        const [user, plans] = await Promise.all([getCurrentUser(), treatmentPlanService.getAll()])
+
         if (user) {
           const name = user.user_metadata?.full_name || user.email.split('@')[0]
           setUserName(name.charAt(0).toUpperCase() + name.slice(1))
@@ -250,13 +243,13 @@ export default function Dashboard({ onNavigate }) {
     const array = Array.from(snoozedAlerts.entries())
     localStorage.setItem(SNOOZE_STORAGE_KEY, JSON.stringify(array))
   }, [snoozedAlerts])
-  
+
   // Limpeza periódica de alertas expirados
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now()
-      
-      setSnoozedAlerts(prev => {
+
+      setSnoozedAlerts((prev) => {
         const cleaned = new Map()
         prev.forEach((value, key) => {
           if (value.expiresAt > now) {
@@ -266,7 +259,7 @@ export default function Dashboard({ onNavigate }) {
         return cleaned
       })
     }, 60 * 1000) // Verificar a cada minuto
-    
+
     return () => clearInterval(interval)
   }, [])
   useEffect(() => {
@@ -295,72 +288,74 @@ export default function Dashboard({ onNavigate }) {
 
   // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
   const standaloneProtocols = useMemo(() => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const toleranceWindowMinutes = 2 * 60; // 2 horas de tolerância
-    
+    const now = new Date()
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+    const toleranceWindowMinutes = 2 * 60 // 2 horas de tolerância
+
     return rawProtocols
-      .filter(p => !p.treatment_plan_id && p.active)
+      .filter((p) => !p.treatment_plan_id && p.active)
       .sort((a, b) => {
         // Converter next_dose para minutos
         const getMinutes = (time) => {
-          if (!time || time === '--:--') return Infinity;
-          const [h, m] = time.split(':').map(Number);
-          return h * 60 + m;
-        };
-        
-        const aMinutes = getMinutes(a.next_dose);
-        const bMinutes = getMinutes(b.next_dose);
-        
+          if (!time || time === '--:--') return Infinity
+          const [h, m] = time.split(':').map(Number)
+          return h * 60 + m
+        }
+
+        const aMinutes = getMinutes(a.next_dose)
+        const bMinutes = getMinutes(b.next_dose)
+
         // Verificar se está dentro da janela de tolerância (2h após o horário)
-        const aIsInToleranceWindow = a.is_in_tolerance_window ||
-          (aMinutes >= currentMinutes - toleranceWindowMinutes && aMinutes < currentMinutes);
-        const bIsInToleranceWindow = b.is_in_tolerance_window ||
-          (bMinutes >= currentMinutes - toleranceWindowMinutes && bMinutes < currentMinutes);
-        
+        const aIsInToleranceWindow =
+          a.is_in_tolerance_window ||
+          (aMinutes >= currentMinutes - toleranceWindowMinutes && aMinutes < currentMinutes)
+        const bIsInToleranceWindow =
+          b.is_in_tolerance_window ||
+          (bMinutes >= currentMinutes - toleranceWindowMinutes && bMinutes < currentMinutes)
+
         // Verificar se é dose futura (ainda não passou)
-        const aIsFuture = aMinutes >= currentMinutes;
-        const bIsFuture = bMinutes >= currentMinutes;
-        
+        const aIsFuture = aMinutes >= currentMinutes
+        const bIsFuture = bMinutes >= currentMinutes
+
         // Prioridade: 1. Dentro da janela de tolerância (urgente), 2. Futuro, 3. Passado
-        if (aIsInToleranceWindow && !bIsInToleranceWindow) return -1;
-        if (!aIsInToleranceWindow && bIsInToleranceWindow) return 1;
-        
+        if (aIsInToleranceWindow && !bIsInToleranceWindow) return -1
+        if (!aIsInToleranceWindow && bIsInToleranceWindow) return 1
+
         // Ambos dentro ou ambos fora da janela - ordenar por futuro vs passado
-        if (aIsFuture && !bIsFuture) return -1;
-        if (!aIsFuture && bIsFuture) return 1;
-        
+        if (aIsFuture && !bIsFuture) return -1
+        if (!aIsFuture && bIsFuture) return 1
+
         // Mesmo grupo
         if (aIsFuture && bIsFuture) {
           // Ambos futuros - ordenar cronologicamente (mais cedo primeiro)
-          return aMinutes - bMinutes;
+          return aMinutes - bMinutes
         }
-        
+
         // Ambos passados (doses de amanhã) - ordenar por proximidade com o horário atual
         // (mais próximo de "agora" primeiro, ou seja, decrescente)
-        return bMinutes - aMinutes;
+        return bMinutes - aMinutes
       })
-      .slice(0, 5);
-  }, [rawProtocols]);
+      .slice(0, 5)
+  }, [rawProtocols])
 
   // 2. Injetar dados de próxima dose nos planos de tratamento
   const treatmentPlans = useMemo(() => {
-    return rawTreatmentPlans.map(plan => ({
+    return rawTreatmentPlans.map((plan) => ({
       ...plan,
-      protocols: plan.protocols?.map(p => {
-        const liveProtocol = rawProtocols.find(rp => rp.id === p.id);
-        return liveProtocol || p;
-      })
-    }));
-  }, [rawTreatmentPlans, rawProtocols]);
+      protocols: plan.protocols?.map((p) => {
+        const liveProtocol = rawProtocols.find((rp) => rp.id === p.id)
+        return liveProtocol || p
+      }),
+    }))
+  }, [rawTreatmentPlans, rawProtocols])
 
   // Fallback: protocolos do primeiro plano se não houver avulsos
   const fallbackProtocols = useMemo(() => {
-    if (standaloneProtocols.length > 0) return [];
-    if (treatmentPlans.length === 0) return [];
-    
-    return treatmentPlans[0].protocols?.filter(p => p.active).slice(0, 5) || [];
-  }, [standaloneProtocols, treatmentPlans]);
+    if (standaloneProtocols.length > 0) return []
+    if (treatmentPlans.length === 0) return []
+
+    return treatmentPlans[0].protocols?.filter((p) => p.active).slice(0, 5) || []
+  }, [standaloneProtocols, treatmentPlans])
 
   // 2. Saudação Dinâmica baseada no horário
   const getGreeting = () => {
@@ -373,49 +368,49 @@ export default function Dashboard({ onNavigate }) {
 
   // 3. Orquestração de Alertas Inteligentes
   const smartAlerts = useMemo(() => {
-    const alerts = [];
-    const now = new Date();
-    const nowTimestamp = now.getTime();
-    
+    const alerts = []
+    const now = new Date()
+    const nowTimestamp = now.getTime()
+
     // Limpar alertas expirados do Map
-    const validSnoozedAlerts = new Map();
+    const validSnoozedAlerts = new Map()
     snoozedAlerts.forEach((value, key) => {
       if (value.expiresAt > nowTimestamp) {
-        validSnoozedAlerts.set(key, value);
+        validSnoozedAlerts.set(key, value)
       }
-    });
-    
+    })
+
     // Atualizar estado se houve limpeza
     if (validSnoozedAlerts.size !== snoozedAlerts.size) {
-      setSnoozedAlerts(validSnoozedAlerts);
+      setSnoozedAlerts(validSnoozedAlerts)
     }
-    
+
     // Alerta de Estoque Crítico e Baixo
     // Agregação consolidada: stockSummary já contém um item por medicamento.
     // Garantimos que cada medicine_id tenha apenas UM alerta, priorizando o crítico.
-    const processedMedicineIds = new Set();
+    const processedMedicineIds = new Set()
 
-    stockSummary.forEach(item => {
-      const medId = item.medicine.id;
-      if (processedMedicineIds.has(medId)) return;
+    stockSummary.forEach((item) => {
+      const medId = item.medicine.id
+      if (processedMedicineIds.has(medId)) return
 
       // Priorização rígida utilizando flags do stockSummary consolidado
       if (item.isZero || item.isLow) {
-        const severity = item.isZero ? 'critical' : 'warning';
-        const title = item.isZero ? 'Estoque Zerado' : 'Estoque Baixo';
-        
-        let daysLabel = '';
+        const severity = item.isZero ? 'critical' : 'warning'
+        const title = item.isZero ? 'Estoque Zerado' : 'Estoque Baixo'
+
+        let daysLabel = ''
         if (item.isZero || item.daysRemaining === 0) {
-          daysLabel = 'hoje';
+          daysLabel = 'hoje'
         } else if (item.daysRemaining === Infinity) {
-          daysLabel = 'em breve';
+          daysLabel = 'em breve'
         } else {
-          daysLabel = `em ${item.daysRemaining} dias`;
+          daysLabel = `em ${item.daysRemaining} dias`
         }
 
         const message = item.isZero
           ? `O estoque total de ${item.medicine.name} acabou.`
-          : `${item.medicine.name} acabará ${daysLabel} (Total: ${item.total} restantes).`;
+          : `${item.medicine.name} acabará ${daysLabel} (Total: ${item.total} restantes).`
 
         alerts.push({
           id: `stock-${item.medicine.id}`,
@@ -426,62 +421,65 @@ export default function Dashboard({ onNavigate }) {
           medicine_id: item.medicine.id,
           scheduled_time: null,
           actions: [
-            { label: 'COMPRAR', type: 'placeholder', title: 'Em breve: integração com farmácias para compra direta' },
-            { label: 'ESTOQUE', type: 'secondary' }
-          ]
-        });
-        processedMedicineIds.add(medId);
+            {
+              label: 'COMPRAR',
+              type: 'placeholder',
+              title: 'Em breve: integração com farmácias para compra direta',
+            },
+            { label: 'ESTOQUE', type: 'secondary' },
+          ],
+        })
+        processedMedicineIds.add(medId)
       }
-    });
+    })
 
     // Alerta de Doses Atrasadas
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
-    rawProtocols.forEach(p => {
-      p.time_schedule?.forEach(time => {
-        const [h, m] = time.split(':').map(Number);
-        const doseMinutes = h * 60 + m;
-        const delay = currentMinutes - doseMinutes;
+    rawProtocols.forEach((p) => {
+      p.time_schedule?.forEach((time) => {
+        const [h, m] = time.split(':').map(Number)
+        const doseMinutes = h * 60 + m
+        const delay = currentMinutes - doseMinutes
 
         // Uma dose é considerada atrasada apenas se passaram mais de 120 minutos (2 horas) do horário previsto
         // E ela deve ser de hoje (delay < 1440)
-        const isPastTolerance = delay > 120;
+        const isPastTolerance = delay > 120
 
         if (delay > 0 && delay < 1440) {
           // Verificar se já foi tomada dentro da janela de tolerância
-          const alreadyTaken = logs.some(l =>
-            l.protocol_id === p.id &&
-            isDoseInToleranceWindow(time, l.taken_at)
-          );
+          const alreadyTaken = logs.some(
+            (l) => l.protocol_id === p.id && isDoseInToleranceWindow(time, l.taken_at)
+          )
 
           if (!alreadyTaken && isPastTolerance) {
             alerts.push({
               id: `delay-${p.id}-${time}`,
               severity: delay > 240 ? 'critical' : 'warning', // Mais de 4h de atraso vira crítico
               title: delay > 240 ? 'Atraso Crítico' : 'Dose Atrasada',
-              message: `${p.medicine?.name} era às ${time} (${Math.floor(delay/60)}h ${delay%60}min atrás)`,
+              message: `${p.medicine?.name} era às ${time} (${Math.floor(delay / 60)}h ${delay % 60}min atrás)`,
               protocol_id: p.id,
               scheduled_time: time, // CRÍTICO: Necessário para cálculo de expiração do snooze
               delay_minutes: delay,
               actions: [
                 { label: 'TOMAR', type: 'primary' },
-                { label: 'ADIAR', type: 'secondary' }
-              ]
-            });
+                { label: 'ADIAR', type: 'secondary' },
+              ],
+            })
           }
         }
-      });
-    });
+      })
+    })
 
     // Filtrar alertas snoozed (que ainda não expiraram)
     return alerts
-      .filter(alert => {
-        const snoozed = validSnoozedAlerts.get(alert.id);
-        if (!snoozed) return true; // Não está snoozed
-        return snoozed.expiresAt <= nowTimestamp; // Expirou? Mostrar novamente
+      .filter((alert) => {
+        const snoozed = validSnoozedAlerts.get(alert.id)
+        if (!snoozed) return true // Não está snoozed
+        return snoozed.expiresAt <= nowTimestamp // Expirou? Mostrar novamente
       })
-      .sort((a) => (a.severity === 'critical' ? -1 : 1));
-  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlerts]);
+      .sort((a) => (a.severity === 'critical' ? -1 : 1))
+  }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlerts])
 
   const handleRegisterDose = async (medicineId, protocolId, quantityTaken = 1) => {
     try {
@@ -489,66 +487,66 @@ export default function Dashboard({ onNavigate }) {
         medicine_id: medicineId,
         protocol_id: protocolId,
         quantity_taken: quantityTaken,
-        taken_at: new Date().toISOString()
-      });
-      analyticsService.track('dose_registered', { timestamp: Date.now() });
-      refresh(); // Atualiza dashboard context
+        taken_at: new Date().toISOString(),
+      })
+      analyticsService.track('dose_registered', { timestamp: Date.now() })
+      refresh() // Atualiza dashboard context
     } catch (err) {
-      console.error(err);
-      alert('Erro ao registrar dose. Tente novamente.');
+      console.error(err)
+      alert('Erro ao registrar dose. Tente novamente.')
     }
-  };
+  }
 
-  const [selectedMedicines, setSelectedMedicines] = useState({});
-  
+  const [selectedMedicines, setSelectedMedicines] = useState({})
 
   const toggleMedicineSelection = (planId, protocolId) => {
-    setSelectedMedicines(prev => {
-      const planSelections = prev[planId] || [];
-      const isSelected = planSelections.includes(protocolId);
-      
+    setSelectedMedicines((prev) => {
+      const planSelections = prev[planId] || []
+      const isSelected = planSelections.includes(protocolId)
+
       const newSelections = isSelected
-        ? planSelections.filter(id => id !== protocolId)
-        : [...planSelections, protocolId];
-        
+        ? planSelections.filter((id) => id !== protocolId)
+        : [...planSelections, protocolId]
+
       return {
         ...prev,
-        [planId]: newSelections
-      };
-    });
-  };
+        [planId]: newSelections,
+      }
+    })
+  }
 
   const handleBatchRegister = async (plan, selectedProtocolIds) => {
     try {
       // Se nada selecionado, registra todos por padrão
-      const protocolsToLog = selectedProtocolIds && selectedProtocolIds.length > 0
-        ? plan.protocols.filter(p => selectedProtocolIds.includes(p.id))
-        : plan.protocols.filter(p => p.active);
+      const protocolsToLog =
+        selectedProtocolIds && selectedProtocolIds.length > 0
+          ? plan.protocols.filter((p) => selectedProtocolIds.includes(p.id))
+          : plan.protocols.filter((p) => p.active)
 
-      if (protocolsToLog.length === 0) return;
+      if (protocolsToLog.length === 0) return
 
-      const logsToSave = protocolsToLog.map(p => ({
+      const logsToSave = protocolsToLog.map((p) => ({
         protocol_id: p.id,
         medicine_id: p.medicine_id,
         quantity_taken: p.dosage_per_intake || 1,
         taken_at: new Date().toISOString(),
-        notes: `[Lote Dashboard] Plano: ${plan.name}`
-      }));
+        notes: `[Lote Dashboard] Plano: ${plan.name}`,
+      }))
 
-      await logService.createBulk(logsToSave);
-      
+      await logService.createBulk(logsToSave)
+
       // Limpar seleção do plano após sucesso
-      setSelectedMedicines(prev => ({
+      setSelectedMedicines((prev) => ({
         ...prev,
-        [plan.id]: []
-      }));
-      
-      refresh();
+        [plan.id]: [],
+      }))
+
+      refresh()
     } catch (err) {
-      console.error('Erro no registro em lote:', err);
-      alert('Erro ao registrar lote. Tente novamente.');
+      console.error('Erro no registro em lote:', err)
+      alert('Erro ao registrar lote. Tente novamente.')
     }
-  };
+  }
 
   if (isLoading || contextLoading) return <Loading text="Sincronizando Command Center..." />
 
@@ -559,8 +557,13 @@ export default function Dashboard({ onNavigate }) {
         <div className={styles.welcome}>
           <span className={styles.greeting}>{getGreeting()}</span>
           <div className={styles.userInfo}>
-            <button className={styles.userName} onClick={() => onNavigate?.('settings')} title="Configurações">
-              {userName}<span className={styles.dot}>.</span>
+            <button
+              className={styles.userName}
+              onClick={() => onNavigate?.('settings')}
+              title="Configurações"
+            >
+              {userName}
+              <span className={styles.dot}>.</span>
             </button>
             <ThemeToggle size="sm" position="inline" />
           </div>
@@ -574,7 +577,7 @@ export default function Dashboard({ onNavigate }) {
           onClick={() => setIsHealthDetailsOpen(true)}
         />
       </header>
-      
+
       {/* Sparkline de Adesão Semanal */}
       {!isAdherenceLoading && dailyAdherence.length > 0 && (
         <div className={styles.sparklineContainer}>
@@ -608,95 +611,98 @@ export default function Dashboard({ onNavigate }) {
       {/* 2. Smart Alerts Section */}
       <section aria-live="polite" aria-label="Alertas de tratamento">
         <SmartAlerts
-        alerts={smartAlerts}
-        onAction={(alert, action) => {
-          if (action.label === 'TOMAR') {
-            if (alert.protocol_id) {
-              setPrefillData({ protocol_id: alert.protocol_id, type: 'protocol' });
-            } else if (alert.treatment_plan_id) {
-              setPrefillData({ treatment_plan_id: alert.treatment_plan_id, type: 'plan' });
-            }
-            setIsModalOpen(true);
-          } else if (action.label === 'COMPRAR') {
-            // Placeholder - tooltip informa integração futura
-          } else if (action.label === 'ESTOQUE') {
-            onNavigate('stock', { medicineId: alert.medicine_id });
-          } else if (action.label === 'ADIAR') {
-            // Calcular tempo de expiração: horário previsto + 4 horas
-            const scheduledTime = alert.scheduled_time;
-            
-            if (scheduledTime) {
-              const [h, m] = scheduledTime.split(':').map(Number);
-              const scheduledDate = new Date();
-              scheduledDate.setHours(h, m, 0, 0);
-              
-              // Se horário já passou hoje, usar amanhã
-              const now = new Date();
-              if (scheduledDate < now) {
-                scheduledDate.setDate(scheduledDate.getDate() + 1);
+          alerts={smartAlerts}
+          onAction={(alert, action) => {
+            if (action.label === 'TOMAR') {
+              if (alert.protocol_id) {
+                setPrefillData({ protocol_id: alert.protocol_id, type: 'protocol' })
+              } else if (alert.treatment_plan_id) {
+                setPrefillData({ treatment_plan_id: alert.treatment_plan_id, type: 'plan' })
               }
-              
-              const expiresAt = scheduledDate.getTime() + SNOOZE_DURATION_MS;
-              
-              setSnoozedAlerts(prev => {
-                const newMap = new Map(prev);
-                newMap.set(alert.id, {
-                  snoozedAt: Date.now(),
-                  expiresAt: expiresAt,
-                  scheduledTime: scheduledTime
-                });
-                return newMap;
-              });
-            } else {
-              // Para alertas sem scheduled_time (ex: estoque), usar expiração padrão de 4 horas
-              const expiresAt = Date.now() + SNOOZE_DURATION_MS;
-              setSnoozedAlerts(prev => {
-                const newMap = new Map(prev);
-                newMap.set(alert.id, {
-                  snoozedAt: Date.now(),
-                  expiresAt: expiresAt,
-                  scheduledTime: null
-                });
-                return newMap;
-              });
-            }
-          }
-        }}
-      />
+              setIsModalOpen(true)
+            } else if (action.label === 'COMPRAR') {
+              // Placeholder - tooltip informa integração futura
+            } else if (action.label === 'ESTOQUE') {
+              onNavigate('stock', { medicineId: alert.medicine_id })
+            } else if (action.label === 'ADIAR') {
+              // Calcular tempo de expiração: horário previsto + 4 horas
+              const scheduledTime = alert.scheduled_time
 
+              if (scheduledTime) {
+                const [h, m] = scheduledTime.split(':').map(Number)
+                const scheduledDate = new Date()
+                scheduledDate.setHours(h, m, 0, 0)
+
+                // Se horário já passou hoje, usar amanhã
+                const now = new Date()
+                if (scheduledDate < now) {
+                  scheduledDate.setDate(scheduledDate.getDate() + 1)
+                }
+
+                const expiresAt = scheduledDate.getTime() + SNOOZE_DURATION_MS
+
+                setSnoozedAlerts((prev) => {
+                  const newMap = new Map(prev)
+                  newMap.set(alert.id, {
+                    snoozedAt: Date.now(),
+                    expiresAt: expiresAt,
+                    scheduledTime: scheduledTime,
+                  })
+                  return newMap
+                })
+              } else {
+                // Para alertas sem scheduled_time (ex: estoque), usar expiração padrão de 4 horas
+                const expiresAt = Date.now() + SNOOZE_DURATION_MS
+                setSnoozedAlerts((prev) => {
+                  const newMap = new Map(prev)
+                  newMap.set(alert.id, {
+                    snoozedAt: Date.now(),
+                    expiresAt: expiresAt,
+                    scheduledTime: null,
+                  })
+                  return newMap
+                })
+              }
+            }
+          }}
+        />
       </section>
 
       {/* 3. Tratamento - Parte Superior: Planos Completos */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>TRATAMENTO</h2>
-          <span className={styles.sectionSubtitle}>{treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}</span>
+          <span className={styles.sectionSubtitle}>
+            {treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}
+          </span>
         </div>
 
         <div className={styles.plansList}>
-          {treatmentPlans.map(plan => (
+          {treatmentPlans.map((plan) => (
             <TreatmentAccordion
               key={plan.id}
               protocol={{
                 id: plan.id,
                 name: plan.name,
                 medicines_count: plan.protocols?.length || 0,
-                next_dose: plan.protocols?.[0]?.next_dose || '--:--'
+                next_dose: plan.protocols?.[0]?.next_dose || '--:--',
               }}
               selectedMedicines={selectedMedicines[plan.id] || []}
               onBatchRegister={(p, selectedIds) => handleBatchRegister(plan, selectedIds)}
             >
-              {plan.protocols?.filter(p => p.active).map(p => (
-                <SwipeRegisterItem
-                  key={p.id}
-                  medicine={p.medicine}
-                  dosagePerIntake={p.dosage_per_intake}
-                  time={p.next_dose || '--:--'}
-                  isSelected={(selectedMedicines[plan.id] || []).includes(p.id)}
-                  onToggleSelection={() => toggleMedicineSelection(plan.id, p.id)}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
-                />
-              ))}
+              {plan.protocols
+                ?.filter((p) => p.active)
+                .map((p) => (
+                  <SwipeRegisterItem
+                    key={p.id}
+                    medicine={p.medicine}
+                    dosagePerIntake={p.dosage_per_intake}
+                    time={p.next_dose || '--:--'}
+                    isSelected={(selectedMedicines[plan.id] || []).includes(p.id)}
+                    onToggleSelection={() => toggleMedicineSelection(plan.id, p.id)}
+                    onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
+                  />
+                ))}
             </TreatmentAccordion>
           ))}
         </div>
@@ -711,7 +717,7 @@ export default function Dashboard({ onNavigate }) {
         <div className={styles.standaloneList}>
           {standaloneProtocols.length > 0 ? (
             <>
-              {standaloneProtocols.map(p => (
+              {standaloneProtocols.map((p) => (
                 <SwipeRegisterItem
                   key={p.id}
                   medicine={p.medicine}
@@ -720,20 +726,17 @@ export default function Dashboard({ onNavigate }) {
                   onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
                 />
               ))}
-              
+
               {/* Link Ver todos para standaloneProtocols */}
               {standaloneProtocols.length > 0 && (
-                <button 
-                  className={styles.viewAllLink}
-                  onClick={() => onNavigate?.('protocols')}
-                >
+                <button className={styles.viewAllLink} onClick={() => onNavigate?.('protocols')}>
                   Ver todos →
                 </button>
               )}
             </>
           ) : fallbackProtocols.length > 0 ? (
             <>
-              {fallbackProtocols.map(p => (
+              {fallbackProtocols.map((p) => (
                 <SwipeRegisterItem
                   key={p.id}
                   medicine={p.medicine}
@@ -742,13 +745,10 @@ export default function Dashboard({ onNavigate }) {
                   onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
                 />
               ))}
-              
+
               {/* Link Ver todos para fallback */}
               {fallbackProtocols.length > 0 && (
-                <button 
-                  className={styles.viewAllLink}
-                  onClick={() => onNavigate?.('protocols')}
-                >
+                <button className={styles.viewAllLink} onClick={() => onNavigate?.('protocols')}>
                   Ver todos →
                 </button>
               )}
@@ -780,10 +780,13 @@ export default function Dashboard({ onNavigate }) {
 
       {/* 5. Floating Action Button */}
       <div className={styles.fab}>
-        <button className="btn-add-manual" onClick={() => {
-          setPrefillData(null);
-          setIsModalOpen(true);
-        }}>
+        <button
+          className="btn-add-manual"
+          onClick={() => {
+            setPrefillData(null)
+            setIsModalOpen(true)
+          }}
+        >
           + REGISTRO MANUAL
         </button>
       </div>
@@ -791,8 +794,8 @@ export default function Dashboard({ onNavigate }) {
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
-          setPrefillData(null);
+          setIsModalOpen(false)
+          setPrefillData(null)
         }}
       >
         <LogForm
@@ -801,12 +804,12 @@ export default function Dashboard({ onNavigate }) {
           initialValues={prefillData}
           onSave={async (data) => {
             if (Array.isArray(data)) {
-              await logService.createBulk(data);
+              await logService.createBulk(data)
             } else {
-              await logService.create(data);
+              await logService.create(data)
             }
-            setIsModalOpen(false);
-            refresh();
+            setIsModalOpen(false)
+            refresh()
           }}
           onCancel={() => setIsModalOpen(false)}
         />

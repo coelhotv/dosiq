@@ -38,7 +38,7 @@
   transition: background-color 0.3s ease;
 }
 
-[data-theme="dark"] .theme-toggle__track {
+[data-theme='dark'] .theme-toggle__track {
   background: var(--color-toggle-track-dark, #374151);
 }
 
@@ -103,8 +103,8 @@
 }
 
 /* Highlight label when theme is active */
-[data-theme="dark"] .theme-toggle__label--dark,
-:not([data-theme="dark"]) .theme-toggle__label--light {
+[data-theme='dark'] .theme-toggle__label--dark,
+:not([data-theme='dark']) .theme-toggle__label--light {
   opacity: 0.6;
 }
 

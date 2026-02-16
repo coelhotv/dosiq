@@ -22,7 +22,7 @@
   --bg-overlay: rgba(0, 0, 0, 0.5);
   --bg-glass: rgba(255, 255, 255, 0.8);
   --bg-glass-dark: rgba(17, 24, 39, 0.8);
-  
+
   /* Aliases */
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -37,7 +37,7 @@
   --text-tertiary: #6b7280;
   --text-inverse: #ffffff;
   --text-link: #ec4899;
-  
+
   /* Aliases */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -51,7 +51,7 @@
   --border-light: #f3f4f6;
   --border-default: #e5e7eb;
   --border-dark: #d1d5db;
-  
+
   /* Aliases */
   --color-border-light: var(--border-light);
   --color-border-default: var(--border-default);
@@ -69,8 +69,8 @@
   --neon-orange: #f97316;
   --neon-yellow: #eab308;
   --neon-red: #ef4444;
-  --neon-blue: #0072FF;
-  --neon-purple: #AA00FF;
+  --neon-blue: #0072ff;
+  --neon-purple: #aa00ff;
 }
 
 /* Glow Effects */

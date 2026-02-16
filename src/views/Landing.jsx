@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import './Landing.css';
+import React, { useState, useEffect } from 'react'
+import './Landing.css'
 
 const FloatingCard = ({ icon, text, animationDelay }) => (
   <div className={`floating-card card-1`} style={{ animationDelay: `${animationDelay}s` }}>
     <div className="card-icon">{icon}</div>
     <div className="card-text">{text}</div>
   </div>
-);
+)
 
-export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}, onContinue = () => {} }) {
-  const [scrollY, setScrollY] = useState(0);
+export default function Landing({
+  isAuthenticated = false,
+  onOpenAuth = () => {},
+  onContinue = () => {},
+}) {
+  const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    const handleScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div className="landing-container">
@@ -32,7 +36,8 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           </h1>
 
           <p className="hero-subtitle">
-            Crie sua conta e gerencie seus remédios de forma fácil e intuitiva, direto no seu celular ou computador.
+            Crie sua conta e gerencie seus remédios de forma fácil e intuitiva, direto no seu
+            celular ou computador.
           </p>
 
           <div className="hero-cta">
@@ -193,9 +198,7 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
           </div>
         </div>
 
-        <p className="sync-info">
-          ✨ Sincronize uma vez, acesse em qualquer lugar.
-        </p>
+        <p className="sync-info">✨ Sincronize uma vez, acesse em qualquer lugar.</p>
       </section>
 
       <section className="telegram-section">
@@ -264,5 +267,5 @@ export default function Landing({ isAuthenticated = false, onOpenAuth = () => {}
         <p className="footer-tagline">Saúde em primeiro lugar. Tecnologia a serviço do bem.</p>
       </footer>
     </div>
-  );
+  )
 }

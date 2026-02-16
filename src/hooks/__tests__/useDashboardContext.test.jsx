@@ -19,12 +19,12 @@ describe('useDashboard', () => {
 
   it('should provide default values when provider is used', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.medicines).toBeDefined()
@@ -37,12 +37,12 @@ describe('useDashboard', () => {
 
   it('should provide refresh function', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.refresh).toBeDefined()
@@ -51,12 +51,12 @@ describe('useDashboard', () => {
 
   it('should provide lastSync timestamp', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.lastSync).toBeDefined()
@@ -65,12 +65,12 @@ describe('useDashboard', () => {
 
   it('should provide isDoseInToleranceWindow function', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.isDoseInToleranceWindow).toBeDefined()
@@ -79,12 +79,12 @@ describe('useDashboard', () => {
 
   it('should provide isFetching state', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.isFetching).toBeDefined()
@@ -93,12 +93,12 @@ describe('useDashboard', () => {
 
   it('should provide hasError state', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.hasError).toBeDefined()
@@ -107,12 +107,12 @@ describe('useDashboard', () => {
 
   it('should provide stats with rates', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.stats).toBeDefined()
@@ -123,12 +123,12 @@ describe('useDashboard', () => {
 
   it('should provide stockSummary array', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.stockSummary).toBeDefined()
@@ -137,12 +137,12 @@ describe('useDashboard', () => {
 
   it('should provide protocols with nextDose', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.protocols).toBeDefined()
@@ -161,12 +161,12 @@ describe('useDashboard - Health Score Calculation', () => {
 
   it('should calculate score within valid range', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.stats).toBeDefined()
@@ -176,12 +176,12 @@ describe('useDashboard - Health Score Calculation', () => {
 
   it('should provide rates breakdown', async () => {
     const { result } = renderHook(() => useDashboard(), {
-      wrapper: DashboardProvider
+      wrapper: DashboardProvider,
     })
 
     // Wait for initial load
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
 
     expect(result.current.stats.rates).toBeDefined()

@@ -3,7 +3,7 @@
 
 /**
  * DLQ Service - Gerencia operações da Dead Letter Queue
- * 
+ *
  * Endpoints:
  * - GET /api/dlq - Lista notificações falhadas
  * - POST /api/dlq/[id]/retry - Retenta uma notificação
@@ -19,21 +19,21 @@ export const dlqService = {
    * @returns {Promise<{data: Array, total: number, page: number, pageSize: number, totalPages: number}>}
    */
   async getAll({ limit = 20, offset = 0, status = null } = {}) {
-    const params = new URLSearchParams();
-    params.append('limit', limit.toString());
-    params.append('offset', offset.toString());
+    const params = new URLSearchParams()
+    params.append('limit', limit.toString())
+    params.append('offset', offset.toString())
     if (status) {
-      params.append('status', status);
+      params.append('status', status)
     }
 
-    const response = await fetch(`/api/dlq?${params.toString()}`);
-    
+    const response = await fetch(`/api/dlq?${params.toString()}`)
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || 'Falha ao carregar DLQ');
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      throw new Error(error.error || 'Falha ao carregar DLQ')
     }
 
-    return response.json();
+    return response.json()
   },
 
   /**
@@ -45,17 +45,17 @@ export const dlqService = {
     const response = await fetch(`/api/dlq/${id}/retry`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+        'Content-Type': 'application/json',
+      },
+    })
 
-    const result = await response.json();
+    const result = await response.json()
 
     if (!response.ok) {
-      throw new Error(result.error || 'Falha ao retentar notificação');
+      throw new Error(result.error || 'Falha ao retentar notificação')
     }
 
-    return result;
+    return result
   },
 
   /**
@@ -65,23 +65,23 @@ export const dlqService = {
    * @returns {Promise<{success: boolean, message?: string}>}
    */
   async discard(id, reason = null) {
-    const body = reason ? { reason } : {};
+    const body = reason ? { reason } : {}
 
     const response = await fetch(`/api/dlq/${id}/discard`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
-    });
+      body: JSON.stringify(body),
+    })
 
-    const result = await response.json();
+    const result = await response.json()
 
     if (!response.ok) {
-      throw new Error(result.error || 'Falha ao descartar notificação');
+      throw new Error(result.error || 'Falha ao descartar notificação')
     }
 
-    return result;
+    return result
   },
 
   /**
@@ -90,15 +90,15 @@ export const dlqService = {
    * @returns {string} Data formatada em PT-BR
    */
   formatDate(dateString) {
-    if (!dateString) return '-';
+    if (!dateString) return '-'
     return new Date(dateString).toLocaleString('pt-BR', {
       timeZone: 'America/Sao_Paulo',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    });
+      minute: '2-digit',
+    })
   },
 
   /**
@@ -108,14 +108,14 @@ export const dlqService = {
    */
   formatNotificationType(type) {
     const types = {
-      'dose_reminder': 'Lembrete de Dose',
-      'stock_alert': 'Alerta de Estoque',
-      'daily_digest': 'Resumo Diário',
-      'adherence_report': 'Relatório de Adesão',
-      'titration_alert': 'Alerta de Titulação',
-      'monthly_report': 'Relatório Mensal'
-    };
-    return types[type] || type || 'Desconhecido';
+      dose_reminder: 'Lembrete de Dose',
+      stock_alert: 'Alerta de Estoque',
+      daily_digest: 'Resumo Diário',
+      adherence_report: 'Relatório de Adesão',
+      titration_alert: 'Alerta de Titulação',
+      monthly_report: 'Relatório Mensal',
+    }
+    return types[type] || type || 'Desconhecido'
   },
 
   /**
@@ -125,13 +125,13 @@ export const dlqService = {
    */
   formatStatus(status) {
     const statuses = {
-      'pending': 'Pendente',
-      'retrying': 'Retentando',
-      'resolved': 'Resolvido',
-      'discarded': 'Descartado',
-      'failed': 'Falhou'
-    };
-    return statuses[status] || status || 'Desconhecido';
+      pending: 'Pendente',
+      retrying: 'Retentando',
+      resolved: 'Resolvido',
+      discarded: 'Descartado',
+      failed: 'Falhou',
+    }
+    return statuses[status] || status || 'Desconhecido'
   },
 
   /**
@@ -141,13 +141,13 @@ export const dlqService = {
    */
   getStatusColor(status) {
     const colors = {
-      'pending': 'var(--color-warning)',
-      'retrying': 'var(--color-info)',
-      'resolved': 'var(--color-success)',
-      'discarded': 'var(--text-tertiary)',
-      'failed': 'var(--color-error)'
-    };
-    return colors[status] || 'var(--text-secondary)';
+      pending: 'var(--color-warning)',
+      retrying: 'var(--color-info)',
+      resolved: 'var(--color-success)',
+      discarded: 'var(--text-tertiary)',
+      failed: 'var(--color-error)',
+    }
+    return colors[status] || 'var(--text-secondary)'
   },
 
   /**
@@ -157,19 +157,19 @@ export const dlqService = {
    */
   formatErrorCategory(category) {
     const categories = {
-      'network_error': 'Erro de Rede',
-      'rate_limit': 'Limite de Requisições',
-      'invalid_chat': 'Chat Inválido',
-      'message_too_long': 'Mensagem Longa',
-      'telegram_api_error': 'Erro da API Telegram',
-      'telegram_400': 'Requisição Inválida',
-      'telegram_401': 'Não Autorizado',
-      'telegram_403': 'Proibido',
-      'telegram_404': 'Não Encontrado',
-      'unknown': 'Desconhecido'
-    };
-    return categories[category] || category || 'Desconhecido';
-  }
-};
+      network_error: 'Erro de Rede',
+      rate_limit: 'Limite de Requisições',
+      invalid_chat: 'Chat Inválido',
+      message_too_long: 'Mensagem Longa',
+      telegram_api_error: 'Erro da API Telegram',
+      telegram_400: 'Requisição Inválida',
+      telegram_401: 'Não Autorizado',
+      telegram_403: 'Proibido',
+      telegram_404: 'Não Encontrado',
+      unknown: 'Desconhecido',
+    }
+    return categories[category] || category || 'Desconhecido'
+  },
+}
 
-export default dlqService;
+export default dlqService

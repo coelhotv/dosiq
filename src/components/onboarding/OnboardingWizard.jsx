@@ -15,7 +15,7 @@ export default function OnboardingWizard() {
     nextStep,
     prevStep,
     skipOnboarding,
-    completeOnboarding
+    completeOnboarding,
   } = useOnboarding()
 
   if (isLoading || !isOpen) return null
@@ -24,7 +24,7 @@ export default function OnboardingWizard() {
     { id: 0, name: 'Boas-vindas', component: WelcomeStep },
     { id: 1, name: 'Medicamento', component: FirstMedicineStep },
     { id: 2, name: 'Protocolo', component: FirstProtocolStep },
-    { id: 3, name: 'Telegram', component: TelegramIntegrationStep }
+    { id: 3, name: 'Telegram', component: TelegramIntegrationStep },
   ]
 
   const CurrentStepComponent = steps[currentStep].component
@@ -50,21 +50,12 @@ export default function OnboardingWizard() {
               <div
                 key={step.id}
                 className={`progress-step ${
-                  index < currentStep
-                    ? 'completed'
-                    : index === currentStep
-                    ? 'active'
-                    : ''
+                  index < currentStep ? 'completed' : index === currentStep ? 'active' : ''
                 }`}
               >
                 <div className="step-number">
                   {index < currentStep ? (
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   ) : (
@@ -73,11 +64,7 @@ export default function OnboardingWizard() {
                 </div>
                 <span className="step-name">{step.name}</span>
                 {index < steps.length - 1 && (
-                  <div
-                    className={`step-connector ${
-                      index < currentStep ? 'completed' : ''
-                    }`}
-                  />
+                  <div className={`step-connector ${index < currentStep ? 'completed' : ''}`} />
                 )}
               </div>
             ))}
@@ -95,11 +82,7 @@ export default function OnboardingWizard() {
         <div className="onboarding-navigation">
           <div className="nav-left">
             {!isFirstStep && (
-              <Button
-                variant="secondary"
-                onClick={prevStep}
-                className="btn-previous"
-              >
+              <Button variant="secondary" onClick={prevStep} className="btn-previous">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -115,21 +98,14 @@ export default function OnboardingWizard() {
           </div>
 
           <div className="nav-center">
-            <button
-              onClick={handleSkip}
-              className="btn-skip"
-            >
+            <button onClick={handleSkip} className="btn-skip">
               Pular tour
             </button>
           </div>
 
           <div className="nav-right">
             {isLastStep ? (
-              <Button
-                variant="primary"
-                onClick={handleFinish}
-                className="btn-finish"
-              >
+              <Button variant="primary" onClick={handleFinish} className="btn-finish">
                 Concluir
                 <svg
                   viewBox="0 0 24 24"
@@ -142,11 +118,7 @@ export default function OnboardingWizard() {
                 </svg>
               </Button>
             ) : (
-              <Button
-                variant="primary"
-                onClick={nextStep}
-                className="btn-next"
-              >
+              <Button variant="primary" onClick={nextStep} className="btn-next">
                 Próximo
                 <svg
                   viewBox="0 0 24 24"

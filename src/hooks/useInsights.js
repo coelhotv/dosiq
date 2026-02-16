@@ -3,7 +3,7 @@ import { selectBestInsight } from '../services/insightService'
 
 /**
  * Hook para obter insights contextuais para o usuário
- * 
+ *
  * @param {Object} params - Parâmetros de dados do usuário
  * @param {Object} params.stats - Estatísticas de adesão
  * @param {Array} params.dailyAdherence - Dados de adesão diária
@@ -30,7 +30,7 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
           dailyAdherence: dailyAdherence?.length || 0,
           stockSummary: stockSummary?.length || 0,
           logs: logs?.length || 0,
-          hasOnNavigate: !!onNavigate
+          hasOnNavigate: !!onNavigate,
         })
 
         const selectedInsight = selectBestInsight({
@@ -38,7 +38,7 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
           dailyAdherence,
           stockSummary,
           logs,
-          onNavigate
+          onNavigate,
         })
 
         // DEBUG: Log selected insight
@@ -61,7 +61,7 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
             text: 'Continue registrando suas doses para manter o controle do seu tratamento.',
             highlight: '',
             actionLabel: 'Saiba mais',
-            onAction: () => onNavigate?.('help')
+            onAction: () => onNavigate?.('help'),
           })
         }
       } finally {
@@ -81,7 +81,7 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
   return {
     insight,
     loading,
-    error
+    error,
   }
 }
 

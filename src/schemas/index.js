@@ -1,26 +1,26 @@
 /**
  * Schemas de Validação Zod - Meus Remédios
- * 
+ *
  * Este módulo exporta todos os schemas de validação e helpers
  * para validação de dados da aplicação.
  */
 
 // Schemas individuais
-export { 
-  medicineSchema, 
-  medicineCreateSchema, 
+export {
+  medicineSchema,
+  medicineCreateSchema,
   medicineUpdateSchema,
   medicineFullSchema,
   validateMedicine,
   validateMedicineCreate,
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
-  getMedicineErrorMessage
+  getMedicineErrorMessage,
 } from './medicineSchema'
 
-export { 
-  protocolSchema, 
-  protocolCreateSchema, 
+export {
+  protocolSchema,
+  protocolCreateSchema,
   protocolUpdateSchema,
   protocolFullSchema,
   titrationStageSchema,
@@ -29,12 +29,12 @@ export {
   validateProtocolUpdate,
   validateTitrationStage,
   mapProtocolErrorsToForm,
-  getProtocolErrorMessage
+  getProtocolErrorMessage,
 } from './protocolSchema'
 
-export { 
-  stockSchema, 
-  stockCreateSchema, 
+export {
+  stockSchema,
+  stockCreateSchema,
   stockUpdateSchema,
   stockFullSchema,
   stockDecreaseSchema,
@@ -45,12 +45,12 @@ export {
   validateStockDecrease,
   validateStockIncrease,
   mapStockErrorsToForm,
-  getStockErrorMessage
+  getStockErrorMessage,
 } from './stockSchema'
 
-export { 
-  logSchema, 
-  logCreateSchema, 
+export {
+  logSchema,
+  logCreateSchema,
   logUpdateSchema,
   logFullSchema,
   logBulkCreateSchema,
@@ -62,7 +62,7 @@ export {
   mapLogErrorsToForm,
   mapBulkLogErrors,
   getLogErrorMessage,
-  getBulkLogErrorMessage
+  getBulkLogErrorMessage,
 } from './logSchema'
 
 // Helper geral de validação

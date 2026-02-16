@@ -45,20 +45,20 @@ import './AdherenceProgress.css'
  *
  * @see {@link AdherenceWidget} - Para widget completo com dados e funcionalidades
  */
-export default function AdherenceProgress({ 
-  score = 0, 
-  size = 120, 
+export default function AdherenceProgress({
+  score = 0,
+  size = 120,
   strokeWidth = 10,
-  className = ''
+  className = '',
 }) {
   // Garantir valor entre 0 e 100
   const normalizedScore = Math.min(Math.max(score, 0), 100)
-  
+
   // Cálculos para o círculo
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (normalizedScore / 100) * circumference
-  
+
   // Determinar cor baseado no score
   const getScoreColor = () => {
     if (score >= 80) return '#00ff88' // Verde neon
@@ -66,17 +66,12 @@ export default function AdherenceProgress({
     if (score >= 40) return '#ff9500' // Laranja
     return '#ff3366' // Vermelho/rosa
   }
-  
+
   const scoreColor = getScoreColor()
-  
+
   return (
     <div className={`adherence-progress ${className}`} style={{ width: size, height: size }}>
-      <svg 
-        className="progress-ring" 
-        width={size} 
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-      >
+      <svg className="progress-ring" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* Círculo de fundo */}
         <circle
           className="progress-ring-circle-bg"
@@ -86,7 +81,7 @@ export default function AdherenceProgress({
           strokeWidth={strokeWidth}
           fill="transparent"
         />
-        
+
         {/* Círculo de progresso */}
         <circle
           className="progress-ring-circle"
@@ -102,11 +97,11 @@ export default function AdherenceProgress({
           style={{
             transform: 'rotate(-90deg)',
             transformOrigin: '50% 50%',
-            transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.3s ease'
+            transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.3s ease',
           }}
         />
       </svg>
-      
+
       {/* Texto central */}
       <div className="progress-text">
         <span className="progress-percentage" style={{ color: scoreColor }}>

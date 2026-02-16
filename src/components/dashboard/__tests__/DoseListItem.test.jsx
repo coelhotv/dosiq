@@ -6,8 +6,8 @@ import '@testing-library/jest-dom'
 // Mock framer-motion para evitar animações em testes
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>
-  }
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+  },
 }))
 
 describe('DoseListItem', () => {
@@ -17,11 +17,11 @@ describe('DoseListItem', () => {
     quantity_taken: 2,
     medicine: {
       name: 'Paracetamol',
-      type: 'comprimido'
+      type: 'comprimido',
     },
     protocol: {
-      name: 'Protocolo Manhã'
-    }
+      name: 'Protocolo Manhã',
+    },
   }
 
   describe('renderização básica', () => {
@@ -87,7 +87,10 @@ describe('DoseListItem', () => {
     it('deve truncar nomes de medicamentos muito longos', () => {
       const longNameLog = {
         ...mockLog,
-        medicine: { ...mockLog.medicine, name: 'Nome de Medicamento Muito Longo Que Excede o Limite de Caracteres' }
+        medicine: {
+          ...mockLog.medicine,
+          name: 'Nome de Medicamento Muito Longo Que Excede o Limite de Caracteres',
+        },
       }
       render(<DoseListItem log={longNameLog} isTaken={true} index={0} />)
 
@@ -99,7 +102,7 @@ describe('DoseListItem', () => {
     it('deve exibir "Remédio" quando o nome do medicamento está ausente', () => {
       const noNameLog = {
         ...mockLog,
-        medicine: { ...mockLog.medicine, name: null }
+        medicine: { ...mockLog.medicine, name: null },
       }
       render(<DoseListItem log={noNameLog} isTaken={true} index={0} />)
 
@@ -109,7 +112,7 @@ describe('DoseListItem', () => {
     it('deve usar "cápsula" como unidade quando o tipo for cápsula', () => {
       const capsuleLog = {
         ...mockLog,
-        medicine: { ...mockLog.medicine, type: 'cápsula' }
+        medicine: { ...mockLog.medicine, type: 'cápsula' },
       }
       render(<DoseListItem log={capsuleLog} isTaken={true} index={0} />)
 
@@ -121,7 +124,7 @@ describe('DoseListItem', () => {
     it('deve lidar com protocolo ausente exibindo "Protocolo" padrão', () => {
       const noProtocolLog = {
         ...mockLog,
-        protocol: null
+        protocol: null,
       }
       render(<DoseListItem log={noProtocolLog} isTaken={true} index={0} />)
 
@@ -131,7 +134,7 @@ describe('DoseListItem', () => {
     it('deve exibir "--:--" quando o horário não está disponível', () => {
       const noTimeLog = {
         ...mockLog,
-        taken_at: null
+        taken_at: null,
       }
       render(<DoseListItem log={noTimeLog} isTaken={false} index={0} />)
 
@@ -141,7 +144,7 @@ describe('DoseListItem', () => {
     it('deve usar quantidade padrão de 1 quando não especificada', () => {
       const noQuantityLog = {
         ...mockLog,
-        quantity_taken: null
+        quantity_taken: null,
       }
       render(<DoseListItem log={noQuantityLog} isTaken={true} index={0} />)
 
@@ -151,7 +154,7 @@ describe('DoseListItem', () => {
     it('deve lidar com dados de medicamento ausentes', () => {
       const noMedicineLog = {
         ...mockLog,
-        medicine: null
+        medicine: null,
       }
       render(<DoseListItem log={noMedicineLog} isTaken={true} index={0} />)
 

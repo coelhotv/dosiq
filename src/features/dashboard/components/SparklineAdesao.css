@@ -44,7 +44,9 @@
 /* Pontos de dados */
 .sparkline-dot {
   cursor: pointer;
-  transition: r 0.2s ease, transform 0.2s ease;
+  transition:
+    r 0.2s ease,
+    transform 0.2s ease;
   r: 1.5;
 }
 
@@ -95,7 +97,7 @@
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .sparkline-average {
+[data-theme='dark'] .sparkline-average {
   color: var(--text-primary);
 }
 
@@ -151,7 +153,9 @@
 .sparkline-dot--clickable {
   stroke: var(--bg-primary, #050505);
   stroke-width: 1px;
-  transition: r 0.2s ease, stroke-width 0.2s ease;
+  transition:
+    r 0.2s ease,
+    stroke-width 0.2s ease;
   r: 3;
 }
 

@@ -25,7 +25,7 @@ export default function DashboardWidgets({
   stockSummary = [],
   // Callbacks de navegação
   onNavigate,
-  onOpenLogModal
+  onOpenLogModal,
 }) {
   const [lowStockItems, setLowStockItems] = useState([])
   const [outOfStockItems, setOutOfStockItems] = useState([])
@@ -37,14 +37,14 @@ export default function DashboardWidgets({
       const lowStock = []
       const outOfStock = []
 
-      stockSummary.forEach(item => {
+      stockSummary.forEach((item) => {
         const stockInfo = {
           medicineId: item.medicine.id,
           name: item.medicine.name,
           currentStock: item.total,
           minStock: Math.ceil((item.dailyIntake || 1) * 7), // 7 dias de estoque mínimo
           unit: item.medicine.dosage_unit || 'un',
-          daysRemaining: item.daysRemaining
+          daysRemaining: item.daysRemaining,
         }
 
         if (item.total === 0) {

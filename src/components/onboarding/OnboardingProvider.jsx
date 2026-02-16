@@ -9,7 +9,7 @@ export function OnboardingProvider({ children }) {
   const [onboardingData, setOnboardingData] = useState({
     medicine: null,
     protocol: null,
-    telegramConnected: false
+    telegramConnected: false,
   })
 
   const TOTAL_STEPS = 4
@@ -23,7 +23,7 @@ export function OnboardingProvider({ children }) {
     try {
       setIsLoading(true)
       const userId = await getUserId()
-      
+
       const { data, error } = await supabase
         .from('user_settings')
         .select('onboarding_completed')
@@ -51,16 +51,17 @@ export function OnboardingProvider({ children }) {
   const completeOnboarding = useCallback(async () => {
     try {
       const userId = await getUserId()
-      
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
+
+      const { error } = await supabase.from('user_settings').upsert(
+        {
           user_id: userId,
           onboarding_completed: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        })
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id',
+        }
+      )
 
       if (error) {
         console.error('Erro ao salvar status do onboarding:', error)
@@ -81,21 +82,24 @@ export function OnboardingProvider({ children }) {
   }, [completeOnboarding])
 
   const nextStep = useCallback(() => {
-    setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS - 1))
+    setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS - 1))
   }, [TOTAL_STEPS])
 
   const prevStep = useCallback(() => {
-    setCurrentStep(prev => Math.max(prev - 1, 0))
+    setCurrentStep((prev) => Math.max(prev - 1, 0))
   }, [])
 
-  const goToStep = useCallback((step) => {
-    setCurrentStep(Math.max(0, Math.min(step, TOTAL_STEPS - 1)))
-  }, [TOTAL_STEPS])
+  const goToStep = useCallback(
+    (step) => {
+      setCurrentStep(Math.max(0, Math.min(step, TOTAL_STEPS - 1)))
+    },
+    [TOTAL_STEPS]
+  )
 
   const updateOnboardingData = useCallback((key, value) => {
-    setOnboardingData(prev => ({
+    setOnboardingData((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }))
   }, [])
 
@@ -111,14 +115,10 @@ export function OnboardingProvider({ children }) {
     prevStep,
     goToStep,
     completeOnboarding,
-    skipOnboarding
+    skipOnboarding,
   }
 
-  return (
-    <OnboardingContext.Provider value={value}>
-      {children}
-    </OnboardingContext.Provider>
-  )
+  return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>
 }
 
 export default OnboardingProvider

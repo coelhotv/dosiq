@@ -279,7 +279,6 @@
   color: var(--text-tertiary);
 }
 
-
 .protocol-actions {
   display: flex;
   gap: var(--space-2);
@@ -302,13 +301,13 @@
 }
 
 /* Timeline Button - Primary Action */
-.protocol-actions button[variant="primary"] {
+.protocol-actions button[variant='primary'] {
   background: linear-gradient(135deg, var(--color-primary), #0051d5);
   border-color: var(--color-primary);
   font-weight: 600;
 }
 
-.protocol-actions button[variant="primary"]:hover {
+.protocol-actions button[variant='primary']:hover {
   background: linear-gradient(135deg, #0051d5, var(--color-primary));
   transform: translateY(-1px);
   box-shadow: var(--glow-hover-primary);
@@ -335,7 +334,7 @@
   }
 
   /* Mobile: Timeline button full width on first position */
-  .protocol-actions button[variant="primary"] {
+  .protocol-actions button[variant='primary'] {
     order: -1;
   }
 }

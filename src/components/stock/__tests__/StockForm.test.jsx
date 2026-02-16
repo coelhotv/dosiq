@@ -5,15 +5,15 @@ import StockForm from '../StockForm'
 // Mock Button component
 vi.mock('../../ui/Button', () => ({
   default: ({ children, onClick, type, disabled, variant }) => (
-    <button 
-      onClick={onClick} 
-      type={type} 
+    <button
+      onClick={onClick}
+      type={type}
       disabled={disabled}
       className={`btn btn-${variant || 'primary'}`}
     >
       {children}
     </button>
-  )
+  ),
 }))
 
 describe('StockForm', () => {
@@ -22,20 +22,20 @@ describe('StockForm', () => {
       id: 'med-1',
       name: 'Dipirona',
       dosage_per_pill: 500,
-      dosage_unit: 'mg'
+      dosage_unit: 'mg',
     },
     {
       id: 'med-2',
       name: 'Paracetamol',
       dosage_per_pill: 750,
-      dosage_unit: 'mg'
+      dosage_unit: 'mg',
     },
     {
       id: 'med-3',
       name: 'Vitamina C',
       dosage_per_pill: 1000,
-      dosage_unit: 'mg'
-    }
+      dosage_unit: 'mg',
+    },
   ]
 
   const mockOnSave = vi.fn()
@@ -47,41 +47,23 @@ describe('StockForm', () => {
 
   describe('rendering', () => {
     it('should render form with title', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByText('Adicionar Estoque')).toBeInTheDocument()
     })
 
     it('should render medicine select with options', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByLabelText(/Medicamento/i)).toBeInTheDocument()
-      
+
       // Check that medicines are listed with dosage info
       expect(screen.getByText('Dipirona (500mg)')).toBeInTheDocument()
       expect(screen.getByText('Paracetamol (750mg)')).toBeInTheDocument()
     })
 
     it('should render quantity input', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       expect(quantityInput).toBeInTheDocument()
@@ -91,13 +73,7 @@ describe('StockForm', () => {
     })
 
     it('should render unit price input', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const priceInput = screen.getByLabelText(/Preço Unitário/i)
       expect(priceInput).toBeInTheDocument()
@@ -107,31 +83,19 @@ describe('StockForm', () => {
     })
 
     it('should render purchase date input with default to today', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const dateInput = screen.getByLabelText(/Data da Compra/i)
       expect(dateInput).toBeInTheDocument()
       expect(dateInput).toHaveAttribute('type', 'date')
-      
+
       // Should have today's date as default
       const today = new Date().toISOString().split('T')[0]
       expect(dateInput).toHaveValue(today)
     })
 
     it('should render expiration date input', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const dateInput = screen.getByLabelText(/Data de Validade/i)
       expect(dateInput).toBeInTheDocument()
@@ -139,13 +103,7 @@ describe('StockForm', () => {
     })
 
     it('should render cancel and submit buttons', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       expect(screen.getByRole('button', { name: /Cancelar/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Adicionar Estoque/i })).toBeInTheDocument()
@@ -159,11 +117,11 @@ describe('StockForm', () => {
         quantity: 30,
         unit_price: 0.5,
         purchase_date: '2024-01-15',
-        expiration_date: '2025-01-15'
+        expiration_date: '2025-01-15',
       }
 
       render(
-        <StockForm 
+        <StockForm
           medicines={mockMedicines}
           initialValues={initialValues}
           onSave={mockOnSave}
@@ -180,11 +138,11 @@ describe('StockForm', () => {
 
     it('should handle partial initial values', () => {
       const initialValues = {
-        medicine_id: 'med-1'
+        medicine_id: 'med-1',
       }
 
       render(
-        <StockForm 
+        <StockForm
           medicines={mockMedicines}
           initialValues={initialValues}
           onSave={mockOnSave}
@@ -199,13 +157,7 @@ describe('StockForm', () => {
 
   describe('validation', () => {
     it('should show error when medicine not selected', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Set quantity but not medicine
       const quantityInput = screen.getByLabelText(/Quantidade/i)
@@ -219,13 +171,7 @@ describe('StockForm', () => {
     })
 
     it('should show error when quantity is zero', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Select medicine and set quantity to 0
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
@@ -242,13 +188,7 @@ describe('StockForm', () => {
     })
 
     it('should show error when quantity is negative', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -264,13 +204,7 @@ describe('StockForm', () => {
     })
 
     it('should show error when quantity is empty', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -283,13 +217,7 @@ describe('StockForm', () => {
     })
 
     it('should show error when unit price is not a number', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -308,13 +236,7 @@ describe('StockForm', () => {
     })
 
     it('should show error when expiration date is before purchase date', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -331,18 +253,14 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(screen.getByText('Data de validade não pode ser anterior à compra')).toBeInTheDocument()
+        expect(
+          screen.getByText('Data de validade não pode ser anterior à compra')
+        ).toBeInTheDocument()
       })
     })
 
     it('should clear error when field is corrected', async () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Trigger error
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
@@ -365,13 +283,7 @@ describe('StockForm', () => {
     it('should call onSave with correct data when form is valid', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Fill in the form
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
@@ -397,7 +309,7 @@ describe('StockForm', () => {
           quantity: 30,
           unit_price: 0.5,
           purchase_date: '2024-01-15',
-          expiration_date: '2025-01-15'
+          expiration_date: '2025-01-15',
         })
       })
     })
@@ -405,13 +317,7 @@ describe('StockForm', () => {
     it('should parse float values correctly', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -425,23 +331,19 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          quantity: 10.5,
-          unit_price: 1.234
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            quantity: 10.5,
+            unit_price: 1.234,
+          })
+        )
       })
     })
 
     it('should use 0 as default unit price when not provided', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -452,22 +354,18 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          unit_price: 0
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            unit_price: 0,
+          })
+        )
       })
     })
 
     it('should use null for dates when not provided', async () => {
       mockOnSave.mockResolvedValue(undefined)
 
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -485,26 +383,25 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
-          purchase_date: null,
-          expiration_date: null
-        }))
+        expect(mockOnSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            purchase_date: null,
+            expiration_date: null,
+          })
+        )
       })
     })
 
     it('should disable buttons while submitting', async () => {
       let resolveSave
-      mockOnSave.mockImplementation(() => new Promise(resolve => {
-        resolveSave = resolve
-      }))
-
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
+      mockOnSave.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveSave = resolve
+          })
       )
+
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       // Fill in required fields
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
@@ -527,13 +424,7 @@ describe('StockForm', () => {
     it('should display error when onSave throws', async () => {
       mockOnSave.mockRejectedValue(new Error('Database error'))
 
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
@@ -551,13 +442,7 @@ describe('StockForm', () => {
 
   describe('cancel action', () => {
     it('should call onCancel when cancel button clicked', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }))
 
@@ -567,13 +452,7 @@ describe('StockForm', () => {
 
   describe('input changes', () => {
     it('should update form data when inputs change', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const medicineSelect = screen.getByLabelText(/Medicamento/i)
       fireEvent.change(medicineSelect, { target: { value: 'med-2' } })
@@ -585,13 +464,7 @@ describe('StockForm', () => {
     })
 
     it('should handle decimal values correctly', () => {
-      render(
-        <StockForm 
-          medicines={mockMedicines}
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      )
+      render(<StockForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10.5' } })

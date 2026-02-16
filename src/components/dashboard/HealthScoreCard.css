@@ -1,15 +1,15 @@
 .health-score-card {
   display: flex;
   align-items: center;
-  gap: var(--space-2);                          /* 8px */
-  padding: var(--space-2) var(--space-3);       /* 8px 12px - mais compacto */
+  gap: var(--space-2); /* 8px */
+  padding: var(--space-2) var(--space-3); /* 8px 12px - mais compacto */
   background: var(--gradient-hero);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border);        /* Mais fino */
-  border-radius: var(--radius-card-md);         /* 12px */
+  border: 1px solid var(--glass-border); /* Mais fino */
+  border-radius: var(--radius-card-md); /* 12px */
   box-shadow: var(--shadow-sm);
   min-width: unset;
-  max-height: 80px;                             /* Mais baixo */
+  max-height: 80px; /* Mais baixo */
   transition: var(--transition-hover);
 }
 
@@ -18,21 +18,21 @@
 }
 
 .health-score-card--clickable:hover {
-  transform: translateY(-1px);                   /* Mais sutil */
+  transform: translateY(-1px); /* Mais sutil */
   border-color: var(--neon-cyan);
   box-shadow: var(--glow-hover-primary), var(--shadow-card-hover);
   transition: var(--transition-hover), var(--transition-glow);
 }
 
 .health-score-card--clickable:active {
-  transform: translateY(0) scale(0.98);          /* Mais sutil */
+  transform: translateY(0) scale(0.98); /* Mais sutil */
   box-shadow: var(--glow-active);
   transition: var(--transition-active);
 }
 
 .health-score-card__chart {
   position: relative;
-  width: 48px;                                  /* Mais compacto: 56px -> 48px */
+  width: 48px; /* Mais compacto: 56px -> 48px */
   height: 48px;
   display: flex;
   align-items: center;
@@ -50,21 +50,21 @@
 .health-score-card__bg {
   fill: none;
   stroke: var(--bg-tertiary);
-  stroke-width: 5;                              /* Era 6 */
+  stroke-width: 5; /* Era 6 */
 }
 
 .health-score-card__progress {
   fill: none;
   stroke: var(--neon-cyan);
-  stroke-width: 5;                              /* Era 6 */
+  stroke-width: 5; /* Era 6 */
   stroke-linecap: round;
   transition: stroke-dashoffset var(--transition-slow);
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.5));  /* Menos intenso */
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.5)); /* Menos intenso */
 }
 
 .health-score-card__value {
   position: absolute;
-  font-size: var(--font-size-sm);               /* 14px - mais compacto */
+  font-size: var(--font-size-sm); /* 14px - mais compacto */
   font-weight: 700;
   color: var(--text-primary-dark);
   text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
@@ -73,7 +73,7 @@
 .health-score-card__info {
   display: flex;
   flex-direction: column;
-  gap: 0;                                       /* Sem gap - ultra compacto */
+  gap: 0; /* Sem gap - ultra compacto */
   flex: 1;
   line-height: 1.3;
 }
@@ -85,7 +85,7 @@
 }
 
 .health-score-card__label {
-  font-size: 10px;                              /* Mais pequeno */
+  font-size: 10px; /* Mais pequeno */
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-secondary);
@@ -110,7 +110,7 @@
 }
 
 .health-score-card__status-label {
-  font-size: 11px;                              /* Mais pequeno */
+  font-size: 11px; /* Mais pequeno */
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -122,7 +122,7 @@
 }
 
 .health-score-card__streak-value {
-  font-size: 11px;                              /* Muito menor: era 2xl (24px) */
+  font-size: 11px; /* Muito menor: era 2xl (24px) */
   font-weight: 600;
   color: var(--neon-magenta);
 }

@@ -8,7 +8,7 @@ vi.mock('../ui/Button', () => ({
     <button onClick={onClick} disabled={disabled} type={type}>
       {children}
     </button>
-  )
+  ),
 }))
 
 // Mock TitrationWizard since it's used in component
@@ -18,31 +18,25 @@ vi.mock('./TitrationWizard', () => ({
       <div>Titration Wizard</div>
       <button onClick={() => onChange(schedule)}>Mock Wizard</button>
     </div>
-  )
+  ),
 }))
 
 describe('ProtocolForm', () => {
   const mockMedicines = [
     { id: '1', name: 'Medicine A', dosage_per_pill: 50, dosage_unit: 'mg' },
-    { id: '2', name: 'Medicine B', dosage_per_pill: 100, dosage_unit: 'mg' }
+    { id: '2', name: 'Medicine B', dosage_per_pill: 100, dosage_unit: 'mg' },
   ]
 
   const mockTreatmentPlans = [
     { id: 'tp1', name: 'Plan A' },
-    { id: 'tp2', name: 'Plan B' }
+    { id: 'tp2', name: 'Plan B' },
   ]
 
   const mockOnSave = vi.fn()
   const mockOnCancel = vi.fn()
 
   it('renders correctly for a new protocol', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     expect(screen.getByText('Novo Protocolo')).toBeDefined()
     expect(screen.getByLabelText(/Nome do Protocolo/i)).toBeDefined()
@@ -56,7 +50,7 @@ describe('ProtocolForm', () => {
       frequency: 'diário',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
-      active: true
+      active: true,
     }
 
     render(
@@ -87,29 +81,37 @@ describe('ProtocolForm', () => {
   })
 
   it('validates required fields on submit', async () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     fireEvent.click(screen.getByText('Criar Protocolo'))
 
     await waitFor(() => {
-      expect(screen.getByText((content, element) => 
-        content === 'Selecione um medicamento' && element.classList.contains('error-message')
-      )).toBeInTheDocument()
-      expect(screen.getByText((content, element) => 
-        content === 'Nome do protocolo é obrigatório' && element.classList.contains('error-message')
-      )).toBeInTheDocument()
-      expect(screen.getByText((content, element) => 
-        content === 'Frequência é obrigatória' && element.classList.contains('error-message')
-      )).toBeInTheDocument()
-      expect(screen.getByText((content, element) => 
-        content === 'Adicione pelo menos um horário' && element.classList.contains('error-message')
-      )).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          (content, element) =>
+            content === 'Selecione um medicamento' && element.classList.contains('error-message')
+        )
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          (content, element) =>
+            content === 'Nome do protocolo é obrigatório' &&
+            element.classList.contains('error-message')
+        )
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          (content, element) =>
+            content === 'Frequência é obrigatória' && element.classList.contains('error-message')
+        )
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          (content, element) =>
+            content === 'Adicione pelo menos um horário' &&
+            element.classList.contains('error-message')
+        )
+      ).toBeInTheDocument()
     })
 
     expect(mockOnSave).not.toHaveBeenCalled()
@@ -118,17 +120,13 @@ describe('ProtocolForm', () => {
   it('submits form with valid data', async () => {
     mockOnSave.mockResolvedValue({})
 
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     // Fill form
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
+    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+      target: { value: 'Test Protocol' },
+    })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
@@ -152,19 +150,13 @@ describe('ProtocolForm', () => {
         titration_status: 'estável',
         titration_schedule: [],
         notes: null,
-        active: true
+        active: true,
       })
     })
   })
 
   it('adds and removes time schedule', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     const timeInput = screen.getByLabelText(/Horários/i)
 
@@ -184,13 +176,7 @@ describe('ProtocolForm', () => {
   })
 
   it('prevents duplicate time schedule', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     const timeInput = screen.getByLabelText(/Horários/i)
 
@@ -206,13 +192,7 @@ describe('ProtocolForm', () => {
   })
 
   it('enables titration mode', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     const titrationCheckbox = screen.getByLabelText(/Regime de Titulação Inteligente/i)
     expect(titrationCheckbox).not.toBeChecked()
@@ -223,13 +203,7 @@ describe('ProtocolForm', () => {
   })
 
   it('disables titration mode', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     const titrationCheckbox = screen.getByLabelText(/Regime de Titulação Inteligente/i)
     fireEvent.click(titrationCheckbox)
@@ -241,13 +215,7 @@ describe('ProtocolForm', () => {
   })
 
   it('calls onCancel when cancel button is clicked', () => {
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     fireEvent.click(screen.getByText('Cancelar'))
     expect(mockOnCancel).toHaveBeenCalled()
@@ -261,7 +229,7 @@ describe('ProtocolForm', () => {
       frequency: 'diário',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
-      active: true
+      active: true,
     }
 
     render(
@@ -281,17 +249,13 @@ describe('ProtocolForm', () => {
     const errorMessage = 'Erro ao salvar'
     mockOnSave.mockRejectedValue(new Error(errorMessage))
 
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={mockOnSave}
-        onCancel={mockOnCancel}
-      />
-    )
+    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
     // Fill form with valid data
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
+    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+      target: { value: 'Test Protocol' },
+    })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
@@ -309,17 +273,13 @@ describe('ProtocolForm', () => {
 
   it('validates dosage must be greater than zero', async () => {
     const onSave = vi.fn().mockResolvedValue({})
-    
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={onSave}
-        onCancel={mockOnCancel}
-      />
-    )
+
+    render(<ProtocolForm medicines={mockMedicines} onSave={onSave} onCancel={mockOnCancel} />)
 
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
+    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+      target: { value: 'Test Protocol' },
+    })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     // Set dosage to 0 which should fail validation
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '0' } })
@@ -330,7 +290,7 @@ describe('ProtocolForm', () => {
 
     // Click submit
     fireEvent.click(screen.getByText('Criar Protocolo'))
-    
+
     // onSave should NOT have been called because validation should have failed
     await waitFor(() => {
       expect(onSave).not.toHaveBeenCalled()
@@ -339,18 +299,14 @@ describe('ProtocolForm', () => {
 
   it('validates target dosage must be a number', async () => {
     const onSave = vi.fn().mockResolvedValue({})
-    
-    render(
-      <ProtocolForm
-        medicines={mockMedicines}
-        onSave={onSave}
-        onCancel={mockOnCancel}
-      />
-    )
+
+    render(<ProtocolForm medicines={mockMedicines} onSave={onSave} onCancel={mockOnCancel} />)
 
     // Fill all required fields first
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), { target: { value: 'Test Protocol' } })
+    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+      target: { value: 'Test Protocol' },
+    })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
     fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
 
@@ -364,10 +320,13 @@ describe('ProtocolForm', () => {
 
     // Click submit
     fireEvent.click(screen.getByText('Criar Protocolo'))
-    
+
     // With empty target dosage, validation should pass and onSave should be called
-    await waitFor(() => {
-      expect(onSave).toHaveBeenCalled()
-    }, { timeout: 1000 })
+    await waitFor(
+      () => {
+        expect(onSave).toHaveBeenCalled()
+      },
+      { timeout: 1000 }
+    )
   })
 })

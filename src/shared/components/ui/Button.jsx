@@ -1,13 +1,13 @@
 import './Button.css'
 
-export default function Button({ 
-  children, 
-  variant = 'primary', 
+export default function Button({
+  children,
+  variant = 'primary',
   size = 'md',
-  onClick, 
+  onClick,
   disabled = false,
   type = 'button',
-  className = ''
+  className = '',
 }) {
   return (
     <button

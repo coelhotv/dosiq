@@ -150,11 +150,7 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
       {/* Score principal e streak */}
       <div className="adherence-main">
         <div className="score-section">
-          <AdherenceProgress 
-            score={data?.overallScore || 0} 
-            size={140}
-            strokeWidth={12}
-          />
+          <AdherenceProgress score={data?.overallScore || 0} size={140} strokeWidth={12} />
           <div className="score-info">
             <span className={`score-label ${getScoreStatus(data?.overallScore || 0)}`}>
               {getScoreLabel(data?.overallScore || 0)}
@@ -199,15 +195,16 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
                 </div>
                 <div className="protocol-score">
                   <div className="mini-progress">
-                    <div 
+                    <div
                       className="mini-progress-bar"
-                      style={{ 
+                      style={{
                         width: `${protocol.score}%`,
-                        backgroundColor: protocol.score >= 80 
-                          ? '#00ff88' 
-                          : protocol.score >= 60 
-                            ? '#ffd700' 
-                            : '#ff3366'
+                        backgroundColor:
+                          protocol.score >= 80
+                            ? '#00ff88'
+                            : protocol.score >= 60
+                              ? '#ffd700'
+                              : '#ff3366',
                       }}
                     />
                   </div>
@@ -222,14 +219,10 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
       {/* Dicas baseadas no score */}
       <div className="adherence-tips">
         {(data?.overallScore || 0) < 60 && (
-          <p className="tip-text">
-            💡 Dica: Configure lembretes para não esquecer suas doses
-          </p>
+          <p className="tip-text">💡 Dica: Configure lembretes para não esquecer suas doses</p>
         )}
         {(data?.overallScore || 0) >= 90 && (
-          <p className="tip-text success">
-            🌟 Parabéns! Você está mantendo uma adesão excelente!
-          </p>
+          <p className="tip-text success">🌟 Parabéns! Você está mantendo uma adesão excelente!</p>
         )}
       </div>
     </div>

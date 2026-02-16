@@ -12,9 +12,18 @@
   display: inline-block;
 }
 
-.loading-sm { width: 24px; height: 24px; }
-.loading-md { width: 40px; height: 40px; }
-.loading-lg { width: 64px; height: 64px; }
+.loading-sm {
+  width: 24px;
+  height: 24px;
+}
+.loading-md {
+  width: 40px;
+  height: 40px;
+}
+.loading-lg {
+  width: 64px;
+  height: 64px;
+}
 
 .spinner-ring {
   position: absolute;

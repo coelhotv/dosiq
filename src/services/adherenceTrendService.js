@@ -1,11 +1,11 @@
 /**
  * Adherence Trend Service - Cálculo de tendência de adesão
- * 
+ *
  * Funcionalidades:
  * - Cálculo de variação percentual entre semanas
  * - Direção de tendência (up, down, neutral)
  * - Magnitude da variação para emojis
- * 
+ *
  * @module adherenceTrendService
  */
 
@@ -35,13 +35,13 @@ export function calculateTrendPercentage(currentWeekData, previousWeekData) {
   }
 
   // Calcular médias
-  const currentAvg = currentWeekData.reduce((sum, d) => sum + (d.adherence || 0), 0) / currentWeekData.length
-  const previousAvg = previousWeekData.reduce((sum, d) => sum + (d.adherence || 0), 0) / previousWeekData.length
+  const currentAvg =
+    currentWeekData.reduce((sum, d) => sum + (d.adherence || 0), 0) / currentWeekData.length
+  const previousAvg =
+    previousWeekData.reduce((sum, d) => sum + (d.adherence || 0), 0) / previousWeekData.length
 
   // Calcular variação percentual
-  const percentageChange = previousAvg > 0
-    ? ((currentAvg - previousAvg) / previousAvg) * 100
-    : 0
+  const percentageChange = previousAvg > 0 ? ((currentAvg - previousAvg) / previousAvg) * 100 : 0
 
   // Determinar direção
   let direction = 'neutral'
@@ -57,7 +57,7 @@ export function calculateTrendPercentage(currentWeekData, previousWeekData) {
   return {
     percentage: Math.min(magnitude, 100), // Cap em 100%
     direction,
-    magnitude
+    magnitude,
   }
 }
 
@@ -77,7 +77,7 @@ export async function getAdherenceTrend(weeks = 2) {
         percentage: 0,
         direction: 'neutral',
         magnitude: 0,
-        hasPreviousWeek: false
+        hasPreviousWeek: false,
       }
     }
 
@@ -89,7 +89,7 @@ export async function getAdherenceTrend(weeks = 2) {
 
     return {
       ...trend,
-      hasPreviousWeek: previousWeek.length > 0
+      hasPreviousWeek: previousWeek.length > 0,
     }
   } catch (error) {
     console.error('Erro ao calcular tendência de adesão:', error)
@@ -97,7 +97,7 @@ export async function getAdherenceTrend(weeks = 2) {
       percentage: 0,
       direction: 'neutral',
       magnitude: 0,
-      error: error.message
+      error: error.message,
     }
   }
 }
@@ -149,5 +149,5 @@ export default {
   calculateTrendPercentage,
   getAdherenceTrend,
   getTrendEmoji,
-  getTrendLabel
+  getTrendLabel,
 }

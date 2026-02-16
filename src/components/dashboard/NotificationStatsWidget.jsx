@@ -34,7 +34,7 @@ function getStatusColor(status) {
   const colors = {
     healthy: 'var(--color-success)',
     warning: 'var(--color-warning)',
-    critical: 'var(--color-error)'
+    critical: 'var(--color-error)',
   }
   return colors[status] || 'var(--color-text-secondary)'
 }
@@ -57,11 +57,11 @@ function getErrorRateColor(healthChecks) {
  */
 function getStatusMessage(status, checks) {
   if (status === 'critical') {
-    const criticalCheck = Object.values(checks).find(c => c.status === 'critical')
+    const criticalCheck = Object.values(checks).find((c) => c.status === 'critical')
     return criticalCheck?.message || '⚠️ Problema crítico detectado'
   }
   if (status === 'warning') {
-    const warningCheck = Object.values(checks).find(c => c.status === 'warning')
+    const warningCheck = Object.values(checks).find((c) => c.status === 'warning')
     return warningCheck?.message || '⚡ Sistema operando com ressalvas'
   }
   return '✅ Sistema operando normalmente'
@@ -79,7 +79,7 @@ export default function NotificationStatsWidget() {
 
   useEffect(() => {
     loadMetrics()
-    
+
     // Atualizar a cada 30 segundos
     const interval = setInterval(loadMetrics, 30000)
     return () => clearInterval(interval)
@@ -88,15 +88,15 @@ export default function NotificationStatsWidget() {
   const loadMetrics = async () => {
     try {
       setLoading(true)
-      
+
       // Busca métricas do endpoint de health
       const response = await fetch('/api/health/notifications')
       if (!response.ok) {
         throw new Error('Falha ao carregar métricas')
       }
-      
+
       const healthData = await response.json()
-      
+
       // Transforma dados de health em formato do widget
       const data = {
         sentToday: healthData.metrics?.successful || 0,
@@ -104,9 +104,9 @@ export default function NotificationStatsWidget() {
         errorRate: healthData.metrics?.errorRate || 0,
         inDlq: healthData.checks?.dlqSize?.value || 0,
         avgDeliveryTime: healthData.metrics?.avgDeliveryTime || 0,
-        lastSuccessfulSend: healthData.checks?.lastSuccessfulSend?.value
+        lastSuccessfulSend: healthData.checks?.lastSuccessfulSend?.value,
       }
-      
+
       setMetrics(data)
       setHealthStatus(healthData.status || 'healthy')
       setHealthChecks(healthData.checks || {})
@@ -147,11 +147,11 @@ export default function NotificationStatsWidget() {
     errorRate = 0,
     inDlq = 0,
     avgDeliveryTime = 0,
-    lastSuccessfulSend
+    lastSuccessfulSend,
   } = metrics || {}
 
   // Calcular tempo desde último envio
-  const timeSinceLastSend = lastSuccessfulSend 
+  const timeSinceLastSend = lastSuccessfulSend
     ? Math.round((Date.now() - new Date(lastSuccessfulSend)) / (1000 * 60))
     : null
 
@@ -160,10 +160,7 @@ export default function NotificationStatsWidget() {
       <div className="notification-stats__grid">
         {/* Enviadas com sucesso */}
         <div className="notification-stats__item notification-stats__item--success">
-          <div 
-            className="notification-stats__value" 
-            style={{ color: 'var(--color-success)' }}
-          >
+          <div className="notification-stats__value" style={{ color: 'var(--color-success)' }}>
             {formatNumber(sentToday)}
           </div>
           <div className="notification-stats__label">Enviadas (hoje)</div>
@@ -171,10 +168,7 @@ export default function NotificationStatsWidget() {
 
         {/* Falhas */}
         <div className="notification-stats__item notification-stats__item--error">
-          <div 
-            className="notification-stats__value" 
-            style={{ color: 'var(--color-error)' }}
-          >
+          <div className="notification-stats__value" style={{ color: 'var(--color-error)' }}>
             {formatNumber(failed)}
           </div>
           <div className="notification-stats__label">Falhas</div>
@@ -204,18 +198,14 @@ export default function NotificationStatsWidget() {
 
         {/* Tempo médio de entrega */}
         <div className="notification-stats__item">
-          <div className="notification-stats__value">
-            {formatDuration(avgDeliveryTime)}
-          </div>
+          <div className="notification-stats__value">{formatDuration(avgDeliveryTime)}</div>
           <div className="notification-stats__label">Tempo médio</div>
         </div>
 
         {/* Último envio */}
         <div className="notification-stats__item">
           <div className="notification-stats__value">
-            {timeSinceLastSend !== null 
-              ? `${timeSinceLastSend}min` 
-              : '-'}
+            {timeSinceLastSend !== null ? `${timeSinceLastSend}min` : '-'}
           </div>
           <div className="notification-stats__label">Último envio</div>
         </div>

@@ -1,6 +1,6 @@
 /**
  * ConfettiAnimation.jsx - Componente de animação de confete
- * 
+ *
  * Funcionalidades:
  * - Dispara animação de confete na tela
  * - Usa Vibration API para feedback adicional
@@ -13,17 +13,13 @@ import './Animations.css'
 
 /**
  * Componente ConfettiAnimation
- * 
+ *
  * @param {Object} props
  * @param {boolean} props.trigger - Controla quando disparar o confete
  * @param {Function} props.onComplete - Callback quando animação terminar
  * @param {string} props.type - Tipo: 'burst' (central) ou 'rain' (caindo)
  */
-function ConfettiAnimation({ 
-  trigger = false, 
-  onComplete,
-  type = 'burst'
-}) {
+function ConfettiAnimation({ trigger = false, onComplete, type = 'burst' }) {
   const [particles, setParticles] = useState([])
   const { trigger: haptic } = useHapticFeedback()
 
@@ -38,7 +34,7 @@ function ConfettiAnimation({
     const particleCount = type === 'burst' ? 50 : 100
 
     for (let i = 0; i < particleCount; i++) {
-      const angle = (Math.random() * 360) * (Math.PI / 180)
+      const angle = Math.random() * 360 * (Math.PI / 180)
       const velocity = 5 + Math.random() * 10
       const size = 6 + Math.random() * 8
       const colorIndex = Math.floor(Math.random() * 5)
@@ -54,7 +50,7 @@ function ConfettiAnimation({
         color: ['#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#3b82f6'][colorIndex],
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 10,
-        duration
+        duration,
       })
     }
 
@@ -92,7 +88,7 @@ function ConfettiAnimation({
             '--vx': `${p.vx}`,
             '--vy': `${p.vy}`,
             animation: `confetti-fall ${p.duration}s linear forwards`,
-            transform: `rotate(${p.rotation}deg)`
+            transform: `rotate(${p.rotation}deg)`,
           }}
         />
       ))}

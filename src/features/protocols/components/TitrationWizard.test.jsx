@@ -8,7 +8,7 @@ vi.mock('../ui/Button', () => ({
     <button onClick={onClick} type={type}>
       {children}
     </button>
-  )
+  ),
 }))
 
 describe('TitrationWizard', () => {
@@ -24,7 +24,7 @@ describe('TitrationWizard', () => {
   it('renders correctly with existing schedule', () => {
     const schedule = [
       { days: 7, dosage: 1, note: 'Introdução' },
-      { days: 14, dosage: 2, note: 'Aumento' }
+      { days: 14, dosage: 2, note: 'Aumento' },
     ]
     const onChange = vi.fn()
     render(<TitrationWizard schedule={schedule} onChange={onChange} />)
@@ -32,7 +32,9 @@ describe('TitrationWizard', () => {
     expect(screen.getByText('Etapa 1')).toBeInTheDocument()
     expect(screen.getByText('Etapa 2')).toBeInTheDocument()
     // Find the summary element and verify it contains the total days
-    const summaryElement = screen.getByText((content) => content.includes('21') && content.includes('dias'))
+    const summaryElement = screen.getByText(
+      (content) => content.includes('21') && content.includes('dias')
+    )
     expect(summaryElement).toBeInTheDocument()
   })
 
@@ -52,15 +54,13 @@ describe('TitrationWizard', () => {
 
     fireEvent.click(screen.getByText('➕ Adicionar Etapa'))
 
-    expect(onChange).toHaveBeenCalledWith([
-      { days: 7, dosage: 1, note: 'Introdução' }
-    ])
+    expect(onChange).toHaveBeenCalledWith([{ days: 7, dosage: 1, note: 'Introdução' }])
   })
 
   it('removes a stage', () => {
     const schedule = [
       { days: 7, dosage: 1, note: 'Introdução' },
-      { days: 14, dosage: 2, note: 'Aumento' }
+      { days: 14, dosage: 2, note: 'Aumento' },
     ]
     const onChange = vi.fn()
     render(<TitrationWizard schedule={schedule} onChange={onChange} />)
@@ -68,15 +68,11 @@ describe('TitrationWizard', () => {
     const removeButtons = screen.getAllByTitle('Remover etapa')
     fireEvent.click(removeButtons[0])
 
-    expect(onChange).toHaveBeenCalledWith([
-      { days: 14, dosage: 2, note: 'Aumento' }
-    ])
+    expect(onChange).toHaveBeenCalledWith([{ days: 14, dosage: 2, note: 'Aumento' }])
   })
 
   it('updates a stage field', () => {
-    const schedule = [
-      { days: 7, dosage: 1, note: 'Introdução' }
-    ]
+    const schedule = [{ days: 7, dosage: 1, note: 'Introdução' }]
     const onChange = vi.fn()
     render(<TitrationWizard schedule={schedule} onChange={onChange} />)
 
@@ -85,22 +81,22 @@ describe('TitrationWizard', () => {
     const daysInput = stageInputs[0] // First input is for the first stage
     fireEvent.change(daysInput, { target: { value: '10' } })
 
-    expect(onChange).toHaveBeenCalledWith([
-      { days: 10, dosage: 1, note: 'Introdução' }
-    ])
+    expect(onChange).toHaveBeenCalledWith([{ days: 10, dosage: 1, note: 'Introdução' }])
   })
 
   it('calculates total days correctly', () => {
     const schedule = [
       { days: 7, dosage: 1, note: 'Introdução' },
       { days: 14, dosage: 2, note: 'Aumento' },
-      { days: 21, dosage: 3, note: 'Manutenção' }
+      { days: 21, dosage: 3, note: 'Manutenção' },
     ]
     const onChange = vi.fn()
     render(<TitrationWizard schedule={schedule} onChange={onChange} />)
 
     // Find the summary element and verify it contains the total days
-    const summaryElement = screen.getByText((content) => content.includes('42') && content.includes('dias'))
+    const summaryElement = screen.getByText(
+      (content) => content.includes('42') && content.includes('dias')
+    )
     expect(summaryElement).toBeInTheDocument()
   })
 
@@ -132,7 +128,12 @@ describe('TitrationWizard', () => {
 
     expect(screen.queryByText('Etapa 1')).not.toBeInTheDocument()
 
-    rerender(<TitrationWizard schedule={[{ days: 7, dosage: 1, note: 'Introdução' }]} onChange={onChange} />)
+    rerender(
+      <TitrationWizard
+        schedule={[{ days: 7, dosage: 1, note: 'Introdução' }]}
+        onChange={onChange}
+      />
+    )
 
     expect(screen.getByText('Etapa 1')).toBeInTheDocument()
   })

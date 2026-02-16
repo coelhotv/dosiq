@@ -28,20 +28,17 @@ export default function StockIndicator({ quantity, lowThreshold = 10, isLow }) {
     <div className="stock-indicator">
       <div className="stock-header">
         <span className="stock-quantity">{quantity} comprimidos</span>
-        <span 
-          className="stock-status" 
-          style={{ color: getStatusColor() }}
-        >
+        <span className="stock-status" style={{ color: getStatusColor() }}>
           {getStatusText()}
         </span>
       </div>
-      
+
       <div className="stock-bar">
-        <div 
-          className="stock-fill" 
-          style={{ 
+        <div
+          className="stock-fill"
+          style={{
             width: `${getPercentage()}%`,
-            background: getStatusColor()
+            background: getStatusColor(),
           }}
         />
       </div>

@@ -17,65 +17,64 @@ export default function Stock({ initialParams, onClearParams }) {
   const [selectedMedicineId, setSelectedMedicineId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
 
-
   const loadData = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const [medicinesData, protocols] = await Promise.all([
         medicineService.getAll(),
-        protocolService.getActive()
+        protocolService.getActive(),
       ])
-      
+
       // Calcular consumo diário por medicamento
       const dailyIntakeMap = {}
-      const activeMedicineIds = new Set(protocols.map(p => p.medicine_id))
+      const activeMedicineIds = new Set(protocols.map((p) => p.medicine_id))
 
-      protocols.forEach(p => {
+      protocols.forEach((p) => {
         if (p.active) {
           const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
           dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
         }
       })
-      
+
       setMedicines(medicinesData)
-      
+
       // Carregar estoque para cada medicamento
       const stockPromises = medicinesData.map(async (medicine) => {
         const entries = await stockService.getByMedicine(medicine.id)
         const total = entries.reduce((sum, entry) => sum + entry.quantity, 0)
-        
+
         const dailyIntake = dailyIntakeMap[medicine.id] || 0
         const daysRemaining = dailyIntake > 0 ? total / dailyIntake : Infinity
         const isLow = dailyIntake > 0 && daysRemaining < 4
-        
-        return { 
-          medicineId: medicine.id, 
+
+        return {
+          medicineId: medicine.id,
           hasActiveProtocol: activeMedicineIds.has(medicine.id),
-          entries, 
+          entries,
           total,
           dailyIntake,
           daysRemaining,
-          isLow
+          isLow,
         }
       })
-      
+
       const stockResults = await Promise.all(stockPromises)
-      
+
       // Organizar dados de estoque por medicamento
       const stockMap = {}
-      stockResults.forEach(result => {
+      stockResults.forEach((result) => {
         stockMap[result.medicineId] = {
           hasActiveProtocol: result.hasActiveProtocol,
           entries: result.entries,
           total: result.total,
           dailyIntake: result.dailyIntake,
           daysRemaining: result.daysRemaining,
-          isLow: result.isLow
+          isLow: result.isLow,
         }
       })
-      
+
       setStockData(stockMap)
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
@@ -125,21 +124,28 @@ export default function Stock({ initialParams, onClearParams }) {
   }
 
   // Filtrar medicamentos que têm estoque ou foram cadastrados
-  const medicinesWithStock = medicines.map(medicine => ({
+  const medicinesWithStock = medicines.map((medicine) => ({
     medicine,
-    stock: stockData[medicine.id] || { entries: [], total: 0, daysRemaining: Infinity, isLow: false, dailyIntake: 0, hasActiveProtocol: false }
+    stock: stockData[medicine.id] || {
+      entries: [],
+      total: 0,
+      daysRemaining: Infinity,
+      isLow: false,
+      dailyIntake: 0,
+      hasActiveProtocol: false,
+    },
   }))
 
   // Separar em categorias baseadas na nova regra
   const outOfStockMedicines = medicinesWithStock.filter(
-    item => item.stock.total === 0 && item.stock.hasActiveProtocol
+    (item) => item.stock.total === 0 && item.stock.hasActiveProtocol
   )
   const lowStockMedicines = medicinesWithStock
-    .filter(item => item.stock.total > 0 && item.stock.isLow)
+    .filter((item) => item.stock.total > 0 && item.stock.isLow)
     .sort((a, b) => a.stock.daysRemaining - b.stock.daysRemaining)
 
   const okStockMedicines = medicinesWithStock
-    .filter(item => item.stock.total > 0 && !item.stock.isLow)
+    .filter((item) => item.stock.total > 0 && !item.stock.isLow)
     .sort((a, b) => a.stock.daysRemaining - b.stock.daysRemaining)
 
   if (isLoading) {
@@ -156,7 +162,7 @@ export default function Stock({ initialParams, onClearParams }) {
         <div>
           <h2>📦 Estoque</h2>
           <p className="stock-subtitle">
-            <span className="live-indicator"></span> 
+            <span className="live-indicator"></span>
             Sincronizado com protocolos ativos
           </p>
         </div>
@@ -165,17 +171,9 @@ export default function Stock({ initialParams, onClearParams }) {
         </Button>
       </div>
 
-      {successMessage && (
-        <div className="success-banner fade-in">
-          ✨ {successMessage}
-        </div>
-      )}
+      {successMessage && <div className="success-banner fade-in">✨ {successMessage}</div>}
 
-      {error && (
-        <div className="error-banner fade-in">
-          ❌ {error}
-        </div>
-      )}
+      {error && <div className="error-banner fade-in">❌ {error}</div>}
 
       {medicines.length === 0 ? (
         <EmptyState
@@ -183,7 +181,7 @@ export default function Stock({ initialParams, onClearParams }) {
           title="Nenhum medicamento cadastrado"
           description="Cadastre seus medicamentos para começar a controlar seu estoque"
           ctaLabel="Cadastrar Medicamento"
-          onCtaClick={() => window.location.href = '/medicines/new'}
+          onCtaClick={() => (window.location.href = '/medicines/new')}
         />
       ) : (
         <div className="stock-content">
@@ -268,12 +266,18 @@ export default function Stock({ initialParams, onClearParams }) {
       >
         <StockForm
           medicines={medicines}
-          initialValues={selectedMedicineId ? { medicine_id: selectedMedicineId } : (initialParams ? { medicine_id: initialParams.medicineId } : null)}
+          initialValues={
+            selectedMedicineId
+              ? { medicine_id: selectedMedicineId }
+              : initialParams
+                ? { medicine_id: initialParams.medicineId }
+                : null
+          }
           onSave={handleSaveStock}
           onCancel={() => {
-             setIsModalOpen(false)
-             setSelectedMedicineId(null)
-             if (onClearParams) onClearParams()
+            setIsModalOpen(false)
+            setSelectedMedicineId(null)
+            if (onClearParams) onClearParams()
           }}
         />
       </Modal>

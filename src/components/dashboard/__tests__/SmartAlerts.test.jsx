@@ -5,7 +5,7 @@ import '@testing-library/jest-dom'
 
 // Mock do useDashboardContext
 vi.mock('../../../hooks/useDashboardContext', () => ({
-  useDashboardContext: vi.fn()
+  useDashboardContext: vi.fn(),
 }))
 
 describe('SmartAlerts', () => {
@@ -20,7 +20,7 @@ describe('SmartAlerts', () => {
       dosage: '500mg',
       scheduled_time: '08:00',
       taken_at: null,
-      protocol_id: 'proto-1'
+      protocol_id: 'proto-1',
     },
     {
       id: 'alert-2',
@@ -30,8 +30,8 @@ describe('SmartAlerts', () => {
       medicine_id: 'med-2',
       medicine_name: 'Paracetamol',
       current_stock: 5,
-      threshold: 10
-    }
+      threshold: 10,
+    },
   ]
 
   const mockOnRegister = vi.fn()
@@ -47,7 +47,7 @@ describe('SmartAlerts', () => {
       smartAlerts: mockAlerts,
       loading: false,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -62,7 +62,7 @@ describe('SmartAlerts', () => {
       smartAlerts: [],
       loading: false,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -76,7 +76,7 @@ describe('SmartAlerts', () => {
       smartAlerts: [],
       loading: true,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -90,7 +90,7 @@ describe('SmartAlerts', () => {
       smartAlerts: [mockAlerts[0]],
       loading: false,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -107,7 +107,7 @@ describe('SmartAlerts', () => {
       smartAlerts: [mockAlerts[1]],
       loading: false,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -124,7 +124,7 @@ describe('SmartAlerts', () => {
       smartAlerts: mockAlerts,
       loading: false,
       onRegister: mockOnRegister,
-      onDismiss: mockOnDismiss
+      onDismiss: mockOnDismiss,
     })
 
     render(<SmartAlerts />)
@@ -144,14 +144,14 @@ describe('SmartAlerts - Alert Types', () => {
       message: 'Dipirona 500mg está programada para agora',
       medicine_name: 'Dipirona',
       dosage: '500mg',
-      scheduled_time: '08:00'
+      scheduled_time: '08:00',
     }
 
     useDashboardContext.mockReturnValue({
       smartAlerts: [alert],
       loading: false,
       onRegister: vi.fn(),
-      onDismiss: vi.fn()
+      onDismiss: vi.fn(),
     })
 
     render(<SmartAlerts />)
@@ -169,14 +169,14 @@ describe('SmartAlerts - Alert Types', () => {
       message: 'Paracetamol está com apenas 5 unidades',
       medicine_name: 'Paracetamol',
       current_stock: 5,
-      threshold: 10
+      threshold: 10,
     }
 
     useDashboardContext.mockReturnValue({
       smartAlerts: [alert],
       loading: false,
       onRegister: vi.fn(),
-      onDismiss: vi.fn()
+      onDismiss: vi.fn(),
     })
 
     render(<SmartAlerts />)
@@ -195,14 +195,14 @@ describe('SmartAlerts - Alert Types', () => {
       medicine_name: 'Omeprazol',
       dosage: '20mg',
       scheduled_time: '08:00',
-      minutes_late: 45
+      minutes_late: 45,
     }
 
     useDashboardContext.mockReturnValue({
       smartAlerts: [alert],
       loading: false,
       onRegister: vi.fn(),
-      onDismiss: vi.fn()
+      onDismiss: vi.fn(),
     })
 
     render(<SmartAlerts />)

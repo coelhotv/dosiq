@@ -54,7 +54,7 @@
   margin-top: 1.5rem;
 }
 
-.first-medicine-step .form-actions button[type="submit"] {
+.first-medicine-step .form-actions button[type='submit'] {
   width: 100%;
   display: flex;
   align-items: center;
