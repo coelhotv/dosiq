@@ -1,0 +1,16 @@
+# .gemini/config.yaml
+# Configuração para Gemini Code Assist
+
+$schema: "http://json-schema.org/draft-07/schema#"
+
+code_review:
+  comment_severity_threshold: MEDIUM
+  max_review_comments: 20
+  pull_request_opened:
+    help: true
+    summary: true
+    code_review: true
+    include_drafts: false
+
+memory_config:
+  disabled: false

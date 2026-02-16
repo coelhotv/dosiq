@@ -31,13 +31,15 @@ env:
 
 jobs:
   # ==========================================
-  # JOB 1: Detectar comando /gemini review
+  # JOB 1: Detectar comando /gemini review ou menção
   # ==========================================
   detect-gemini-command:
     name: Detect Gemini Command
     runs-on: ubuntu-latest
-    if: github.event_name == 'issue_comment' && 
-        startsWith(github.event.comment.body, '/gemini review')
+    if: |
+      github.event_name == 'issue_comment' && 
+      (startsWith(github.event.comment.body, '/gemini review') || 
+       contains(github.event.comment.body, '@gemini-code-assist'))
     
     outputs:
       pr_number: ${{ steps.extract-pr.outputs.pr_number }}
