@@ -202,13 +202,14 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
   };
 
   // Direct send - bot adapter already handles errors and returns result object
-  const result = await bot.sendMessage(chatId, message, {
-    parse_mode: 'MarkdownV2',
-    reply_markup: keyboard
-  });
-
   // Wrap result with correlation metadata
-  return wrapSendMessageResult(result, correlationId);
+  return wrapSendMessageResult(
+    await bot.sendMessage(chatId, message, {
+      parse_mode: 'MarkdownV2',
+      reply_markup: keyboard
+    }),
+    correlationId
+  );
 }
 
 /**
@@ -447,19 +448,20 @@ async function checkUserReminders(bot, userId, chatId) {
           const correlationId = getOrGenerateCorrelationId();
           
           // Direct send - bot adapter already handles errors and returns result object
-          const result = await bot.sendMessage(chatId, message, {
-            parse_mode: 'MarkdownV2',
-            reply_markup: {
-              inline_keyboard: [[
-                { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
-                { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
-                { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
-              ]]
-            }
-          });
-
           // Wrap result with correlation metadata
-          const notificationResult = wrapSendMessageResult(result, correlationId);
+          const notificationResult = wrapSendMessageResult(
+            await bot.sendMessage(chatId, message, {
+              parse_mode: 'MarkdownV2',
+              reply_markup: {
+                inline_keyboard: [[
+                  { text: '✅ Tomei', callback_data: `take_:${p.id}:${p.dosage_per_intake}` },
+                  { text: '⏰ Adiar', callback_data: `snooze_:${p.id}` },
+                  { text: '⏭️ Pular', callback_data: `skip_:${p.id}` }
+                ]]
+              }
+            }),
+            correlationId
+          );
           
           if (!notificationResult.success) {
             logger.error(`Falha ao enviar soft reminder`, {
