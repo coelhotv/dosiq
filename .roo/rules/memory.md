@@ -884,4 +884,38 @@ export function StockAlertsWidget() {
 
 ---
 
+## Memory Entry — 2026-02-16 06:09
+**Contexto / Objetivo**
+- Execução da Fase 1 (P1) do plano `plans/telegram-architecture-improvements.md` introduziu mecanismos de retry e formatação MarkdownV2 para o bot Telegram.
+- A decisão operacional foi: reverter a implantação da P1 e remover artefatos da branch porque a execução trouxe mais problemas do que soluções.
+
+**Ações realizadas**
+- Verificado que `feature/bot-X/retry-mechanism` não estava mergeada em `main`.
+- Deletada a branch local e remota: `feature/bot-X/retry-mechanism` (`git branch -D` e `git push origin --delete`).
+- Removido de `main` o arquivo `server/bot/retryManager.js` e commitada a remoção (`chore(bot): remove P1 files (abandon plan)`).
+- PR #25 recebeu comentário de encerramento e foi fechado.\
+
+**Evidências / O que deu certo**
+- Não foi necessário reescrever o histórico de `main` (nenhum force-push) — segurança preservada.
+- Validações locais (lint, testes direcionados) foram executadas com sucesso após correções pontuais.
+- A branch foi removida do repositório remoto e local.
+
+**Riscos / O que não deu certo**
+- A P1 introduziu incompatibilidades de escaping MarkdownV2 e problemas em testes/CI — demonstrando falta de cobertura para mensagens externas.
+- Ajustes pontuais em testes foram necessários para alinhar expectativas; isso indica que testes devem ser mais abrangentes antes da integração.
+
+**Lições aprendidas e salvaguardas**
+1. Testar mudanças de infra/robustez em staging com tráfego e cenário real antes de integrar ao `main`.
+2. Criar uma biblioteca de formatação Telegram (`telegramFormatter`) com testes de fuzzing e fixtures cobrindo todos os caracteres especiais MarkdownV2.
+3. Atualizar `docs/PULL_REQUEST_TEMPLATE.md` com checklist obrigatório para PRs que toquem infra/bot: lint, test:critical, smoke preview, rollback plan.
+4. Evitar `force-push` em `main`; usar `git revert` para desfazer merges quando necessário.
+5. Monitoramento: métricas de erro, DLQ size e alertas para regressões — requisito antes de qualquer re-implementação.
+
+**Próximos passos**
+- Arquivar `plans/telegram-architecture-improvements.md` como "on hold".
+- Documentar no onboarding o requisito de validar mensagens Telegram com `escapeMarkdownV2` antes de mudanças de template.
+
+**Autor**: automated agent (orchestrator)
+
+
 *Última atualização: 2026-02-16 | Recuperação de memória -entries perdidas restauradas (Feb 9-13, 2026)*
