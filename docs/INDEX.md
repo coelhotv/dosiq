@@ -29,8 +29,8 @@
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
 | [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) | Convenções de nomenclatura, imports, React patterns | 🔄 Em migração |
-| [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Novo (Fase 1) |
-| [`standards/GIT_WORKFLOW.md`](PADROES_CODIGO.md#git-workflow) | Workflow Git obrigatório | 🔄 Para extrair |
+| [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
+| [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório | ✅ Completo (Fase 3) |
 | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
 
 ### 📖 Referência de API
@@ -39,7 +39,7 @@
 |-----------|-----------|--------|
 | [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services | ✅ Migrado |
 | [`reference/HOOKS.md`](reference/HOOKS.md) | Hooks customizados | ✅ Migrado |
-| [`reference/SCHEMAS.md`](PADROES_CODIGO.md#validação-zod) | Schemas Zod | 🔄 Para extrair |
+| [`reference/SCHEMAS.md`](reference/SCHEMAS.md) | Schemas Zod e validação | ✅ Completo (Fase 3) |
 
 ### 🎯 Guias de Features
 
