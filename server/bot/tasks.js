@@ -13,7 +13,7 @@ import {
   getCurrentDateInTimezone,
   formatTimeInTimezone
 } from '../utils/timezone.js';
-import { calculateDaysRemaining } from '../utils/formatters.js';
+import { calculateDaysRemaining, escapeMarkdownV2 } from '../utils/formatters.js';
 
 const logger = createLogger('Tasks');
 
@@ -34,36 +34,6 @@ function wrapSendMessageResult(result, correlationId) {
   };
 }
 
-// --- Markdown Escaping Utility ---
-
-/**
- * Escape special Markdown characters for Telegram
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-function escapeMarkdown(text) {
-  if (!text) return '';
-  return text
-    .replace(/_/g, '\\_')
-    .replace(/\*/g, '\\*')
-    .replace(/\[/g, '\\[')
-    .replace(/\]/g, '\\]')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-    .replace(/~/g, '\\~')
-    .replace(/`/g, '\\`')
-    .replace(/>/g, '\\>')
-    .replace(/#/g, '\\#')
-    .replace(/\+/g, '\\+')
-    .replace(/-/g, '\\-')
-    .replace(/=/g, '\\=')
-    .replace(/\|/g, '\\|')
-    .replace(/{/g, '\\{')
-    .replace(/}/g, '\\}')
-    .replace(/\./g, '\\.')
-    .replace(/!/g, '\\!');
-}
-
 // --- Rich Message Formatting Functions ---
 
 /**
@@ -74,10 +44,10 @@ function escapeMarkdown(text) {
  */
 function formatDoseReminderMessage(protocol, scheduledTime) {
   const medicine = protocol.medicine || {};
-  const name = escapeMarkdown(medicine.name || 'Medicamento');
-  const dosage = escapeMarkdown(String(protocol.dosage_per_intake ?? 1));
-  const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
-  const notes = protocol.notes ? escapeMarkdown(protocol.notes) : null;
+  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
+  const dosage = escapeMarkdownV2(String(protocol.dosage_per_intake ?? 1));
+  const unit = escapeMarkdownV2(medicine.dosage_unit || 'unidades');
+  const notes = protocol.notes ? escapeMarkdownV2(protocol.notes) : null;
 
   let message = `💊 *Hora do seu remédio\\!*\n\n`;
   message += `🩹 **${name}**\n`;
@@ -106,12 +76,12 @@ function formatDoseReminderMessage(protocol, scheduledTime) {
  */
 function formatSoftReminderMessage(protocol) {
   const medicine = protocol.medicine || {};
-  const name = escapeMarkdown(medicine.name || 'Medicamento');
-  const dosage = escapeMarkdown(String(protocol.dosage_per_intake ?? 1));
-  const unit = escapeMarkdown(medicine.dosage_unit || 'unidades');
+  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
+  const dosage = escapeMarkdownV2(String(protocol.dosage_per_intake ?? 1));
+  const unit = escapeMarkdownV2(medicine.dosage_unit || 'unidades');
 
   let message = `⏳ *Lembrete*\n\n`;
-  message += `Você ainda não registrou sua dose de **${name}** (${dosage} ${unit}).\n\n`;
+  message += `Você ainda não registrou sua dose de **${name}** \\(${dosage} ${unit}\\)\\.\n\n`;
   message += `Caso já tenha tomado, registre agora:`;
 
   return message;
@@ -130,7 +100,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
     message += '🚨 *ALERTA DE ESTOQUE ZERADO*\n\n';
     message += 'Os seguintes medicamentos estão sem estoque:\n\n';
     zeroStock.forEach(m => {
-      message += `❌ **${escapeMarkdown(m.name)}**\n`;
+      message += `❌ **${escapeMarkdownV2(m.name)}**\n`;
     });
     message += '\n⚠️ Reponha o estoque o quanto antes\\!\n\n';
   }
@@ -139,10 +109,10 @@ function formatStockAlertMessage(zeroStock, lowStock) {
     message += '⚠️ *Alerta de Estoque Baixo*\n\n';
     message += 'Atenção aos seguintes medicamentos:\n\n';
     lowStock.forEach(m => {
-      const days = m.days <= 0 ? 'estoque zerado' : `~${m.days} dia(s) restante(s)`;
-      message += `📦 **${escapeMarkdown(m.name)}**\n   └ ${days}\n`;
+      const days = m.days <= 0 ? 'estoque zerado' : `\\~${m.days} dia\\(s\\) restante\\(s\\)`;
+      message += `📦 **${escapeMarkdownV2(m.name)}**\n   └ ${days}\n`;
     });
-    message += '\n💡 Considere repor o estoque em breve.';
+    message += '\n💡 Considere repor o estoque em breve\\.';
   }
 
   return message;
@@ -155,7 +125,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
  */
 function formatTitrationAlertMessage(protocol) {
   const medicine = protocol.medicine || {};
-  const name = escapeMarkdown(medicine.name || 'Medicamento');
+  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
   const currentStage = protocol.current_stage_index || 0;
   const totalStages = protocol.titration_schedule?.length || 0;
 
@@ -164,12 +134,12 @@ function formatTitrationAlertMessage(protocol) {
   message += `Etapa atual: ${currentStage + 1}/${totalStages}\n\n`;
 
   if (protocol.titration_status === 'alvo_atingido') {
-    message += `✅ *Parabéns\\!* Você atingiu a dose alvo\\!*\n`;
-    message += `Continue com o acompanhamento médico.`;
+    message += `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\n`;
+    message += `Continue com o acompanhamento médico\\.`;
   } else if (protocol.titration_status === 'titulando') {
     const nextStage = protocol.titration_schedule?.[currentStage + 1];
     if (nextStage) {
-      message += `📈 Próxima etapa: ${nextStage.dosage} ${escapeMarkdown(medicine.dosage_unit || 'mg')}\n`;
+      message += `📈 Próxima etapa: ${nextStage.dosage} ${escapeMarkdownV2(medicine.dosage_unit || 'mg')}\n`;
       message += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
     }
   }
@@ -595,7 +565,7 @@ async function runUserDailyDigest(bot, userId, chatId) {
     const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
 
     let message = `📊 *Resumo do Dia*\n\n`;
-    message += `📅 ${escapeMarkdown(dateStr)}\n\n`;
+    message += `📅 ${escapeMarkdownV2(dateStr)}\n\n`;
     message += `✅ Doses tomadas: ${takenDoses}/${expectedDoses}\n`;
     message += `📈 Taxa de adesão: ${percentage}%\n\n`;
 
@@ -606,7 +576,7 @@ async function runUserDailyDigest(bot, userId, chatId) {
     } else if (percentage >= 50) {
       message += '⚠️ *Atenção\\! Tome as doses restantes\\!*';
     } else {
-      message += '🚨 *Cuidado! Você está atrasado nas doses.*';
+      message += '🚨 *Cuidado\\! Você está atrasado nas doses\\.*';
     }
 
     const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
@@ -837,9 +807,9 @@ async function runUserWeeklyAdherenceReport(bot, userId, chatId) {
     if (percentage >= 90) {
       message += '🎉 *Excelente\\! Você está muito bem com seu tratamento\\!*';
     } else if (percentage >= 70) {
-      message += '👍 *Bom trabalho\\!* Continue se esforçando para melhorar.';
+      message += '👍 *Bom trabalho\\!* Continue se esforçando para melhorar\\.';
     } else {
-      message += '⚠️ *Atenção\\!* Tente melhorar sua regularidade nas doses.';
+      message += '⚠️ *Atenção\\!* Tente melhorar sua regularidade nas doses\\.';
     }
 
     const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
@@ -1026,11 +996,11 @@ async function runUserMonthlyReport(bot, userId, chatId) {
     message += `📋 Doses esperadas: ${expectedDoses}\n\n`;
 
     if (percentage >= 90) {
-      message += '🏆 *Parabéns!* Mês excelente de tratamento!';
+      message += '🏆 *Parabéns\\!* Mês excelente de tratamento\\!';
     } else if (percentage >= 70) {
-      message += '👍 *Bom trabalho!* Você está no caminho certo.';
+      message += '👍 *Bom trabalho\\!* Você está no caminho certo\\.';
     } else {
-      message += '💪 *Vamos melhorar!* O próximo mês será melhor.';
+      message += '💪 *Vamos melhorar\\!* O próximo mês será melhor\\.';
     }
 
     const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
@@ -1140,9 +1110,9 @@ function formatDLQDigestMessage(notifications) {
       timeStyle: 'short'
     });
     const error = n.error_message?.substring(0, ERROR_MESSAGE_TRUNCATE_LENGTH) || 'Unknown error';
-    const escapedError = escapeMarkdown(error);
-    const escapedType = escapeMarkdown(n.notification_type || 'unknown');
-    const escapedTime = escapeMarkdown(time);
+    const escapedError = escapeMarkdownV2(error);
+    const escapedType = escapeMarkdownV2(n.notification_type || 'unknown');
+    const escapedTime = escapeMarkdownV2(time);
     
     return `${i + 1}\\. \\[${escapedTime}\\]\n   Tipo: ${escapedType}\n   Erro: ${escapedError}`;
   }).join('\n\n');
