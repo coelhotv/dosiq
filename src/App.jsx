@@ -113,7 +113,7 @@ function App() {
       case 'history':
         return <History />
       case 'settings':
-        return <Settings />
+        return <Settings onNavigate={setCurrentView} />
       case 'admin-dlq':
         return <DLQAdmin />
       case 'dashboard':
