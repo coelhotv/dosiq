@@ -10,28 +10,31 @@
 
 ### 🚀 Para Novos Desenvolvedores
 
-1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido
-2. [`architecture/OVERVIEW.md`](ARQUITETURA.md) - Visão geral da arquitetura *(em migração)*
-3. [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) - Padrões de código *(em migração)*
+1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido ✅
+2. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v2.8.0) ✅
+3. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos ✅
 4. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes ✅
 
 ### 🏗️ Arquitetura & Design
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [`architecture/OVERVIEW.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema | 🔄 Em migração |
+| [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v2.8.0) | ✅ Atual |
 | [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase | ✅ Migrado |
 | [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system | ✅ Migrado |
-| [`architecture/TELEGRAM_BOT.md`](TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) | Sistema de notificações do bot | 🔄 Em migração |
+
+**Nota**: ARQUITETURA.md permanece na raiz como documento primário. ARQUITETURA_FRAMEWORK.md arquivado (conteúdo sobreposto).
 
 ### 📏 Padrões de Desenvolvimento
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) | Convenções de nomenclatura, imports, React patterns | 🔄 Em migração |
+| [`PADROES_CODIGO.md`](PADROES_CODIGO.md) | Convenções completas de nomenclatura, imports, React | ✅ Atual (v2.8.0) |
 | [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
-| [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório | ✅ Completo (Fase 3) |
+| [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório extraído | ✅ Completo (Fase 3) |
 | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
+
+**Nota**: PADROES_CODIGO.md permanece na raiz como documento primário (1500+ linhas). Consolidação futura opcional.
 
 ### 📖 Referência de API
 
