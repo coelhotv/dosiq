@@ -267,13 +267,14 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     if (totalStock < pillsToDecrease) {
       const { data: med } = await supabase
         .from('medicines')
-        .select('name')
+        .select('name, dosage_unit')
         .eq('id', medicineId)
         .single();
       
+      const unit = med?.dosage_unit || 'mg';
       const message = `⚠️ Estoque insuficiente\\!\n\n` +
         `Medicamento: ${escapeMarkdownV2(med?.name || 'Desconhecido')}\n` +
-        `Dosagem solicitada: ${quantity}mg\n` +
+        `Dosagem solicitada: ${quantity}${escapeMarkdownV2(unit)}\n` +
         `Comprimidos necessários: ${pillsToDecrease}\n` +
         `Estoque disponível: ${totalStock} comprimidos\n\n` +
         `Por favor, adicione estoque antes de registrar a dose\\.`;

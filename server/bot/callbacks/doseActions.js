@@ -124,7 +124,7 @@ async function handleTakeDose(bot, callbackQuery) {
       if (daysRemaining <= 0) {
         confirmMsg += `\n\n⚠️ *ATENÇÃO:* Estoque zerado\\!`;
       } else {
-        confirmMsg += `\n\n⚠️ Estoque baixo: \~${daysRemaining} dias restantes`;
+        confirmMsg += `\n\n⚠️ Estoque baixo: \\~${daysRemaining} dias restantes`;
       }
     }
 
