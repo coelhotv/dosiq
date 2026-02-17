@@ -12,6 +12,8 @@ import react from '@vitejs/plugin-react'
  * - Features (nova organização)
  *
  * NÃO inclui componentes de UI que são mais lentos de testar.
+ *
+ * Otimizado para CI com pool 'forks' (menos uso de memória que 'threads')
  */
 export default defineConfig({
   plugins: [react()],
@@ -36,14 +38,17 @@ export default defineConfig({
       'node_modules/',
     ],
 
-    // Pool otimizado para CI (Vitest 4+)
-    pool: 'threads',
-    maxThreads: 2,
-    minThreads: 1,
+    // Pool otimizado para CI - forks usa menos memória que threads
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true, // Executar sequencialmente para evitar OOM
+      },
+    },
 
-    // Timeouts agressivos
-    testTimeout: 10000,
-    hookTimeout: 5000,
+    // Timeouts generosos para execução sequencial
+    testTimeout: 15000,
+    hookTimeout: 10000,
 
     // Reporter minimalista
     reporters: ['dot'],
