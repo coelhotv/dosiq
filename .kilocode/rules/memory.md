@@ -1562,3 +1562,63 @@ onAction((alert, action) => {
 **Pendências / próximos passos**
 - Issue #45: Traduzir JSDoc específico (5 min)
 - Issue #46: Auditar todo o projeto (1-2 horas)
+
+---
+
+## Memory Entry — 2026-02-17 20:37
+**Contexto / Objetivo**
+- Implementar especificação TELEGRAM_MARKDOWNV2_ESCAPE_SPEC.md
+- Corrigir erro DLQ: "Character '!' is reserved and must be escaped"
+- Garantir que todas as mensagens do bot Telegram usem MarkdownV2 corretamente
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `server/utils/formatters.js` — Criada função `escapeMarkdownV2()` com 18 caracteres reservados
+  - `server/utils/__tests__/formatters.test.js` — 63 testes unitários
+  - `server/bot/tasks.js` — 8 funções atualizadas com escape
+  - `server/bot/commands/*.js` — 7 arquivos de comandos migrados para MarkdownV2
+  - `server/bot/callbacks/*.js` — 2 arquivos de callbacks migrados para MarkdownV2
+  - `docs/architecture/TELEGRAM_BOT.md` — Documentação consolidada do bot
+  - `package.json` — Version bump para 2.9.0
+  - `CHANGELOG.md` — Release notes v2.9.0
+- Comportamento impactado:
+  - Todas as mensagens do bot agora escapam caracteres especiais corretamente
+  - Erro DLQ "Character '!' is reserved" resolvido
+  - Unidade de dosagem dinâmica (mg/ml/U/mcg) nas mensagens
+
+**O que deu certo**
+- Abordagem incremental com múltiplos PRs pequenos (5 PRs)
+- Code review do Gemini identificou issues críticos antes do merge
+- Validação completa (lint, test:critical, build) antes de cada merge
+- Commits semânticos e atômicos facilitaram revisão
+- Criar issues de backlog para sugestões menores permitiu merge rápido
+
+**O que não deu certo / riscos**
+- PR #36 precisou de rebase devido a commits desatualizados
+- PR #47 tinha 2 Major issues que precisaram correção (unidade hardcoded, til não escapado)
+- JSDoc em inglês identificado como padrão recorrente (issues #33, #45, #46)
+
+**Causa raiz (se foi debug)**
+- Sintoma: DLQ registrou erro "Character '!' is reserved and must be escaped"
+- Causa: Função `escapeMarkdown` local não era exportada e não escapava backslash primeiro
+- Correção: Criar função `escapeMarkdownV2()` exportada com escape de backslash primeiro
+- Prevenção: Sempre escapar backslash primeiro em funções de escape
+
+**Decisões & trade-offs**
+- Decisão: Usar múltiplos PRs pequenos em vez de um PR grande
+- Alternativas consideradas: Um PR único com todas as mudanças
+- Por que: PRs menores são mais fáceis de revisar e reduzem risco de conflitos
+
+**Regras locais para o futuro (lições acionáveis)**
+- SEMPRE escapar backslash primeiro em funções de escape MarkdownV2
+- Usar `escapeMarkdownV2()` para todas as mensagens com `parse_mode: 'MarkdownV2'`
+- NÃO escapar texto em `answerCallbackQuery` (plain text, não Markdown)
+- JSDoc deve ser em português desde o primeiro commit
+- Gemini Code Review é obrigatório antes de merge
+- Criar issues de backlog para sugestões menores (não bloqueantes)
+- Usar `gh pr merge <number> --merge --delete-branch` para merge com cleanup
+
+**Pendências / próximos passos**
+- Issues de backlog: #33, #34, #39, #43, #45, #46 (documentação e otimização)
+- Monitorar logs da Vercel por 24-48 horas após deploy
+- Validar funcionamento do bot em produção

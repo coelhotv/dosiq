@@ -1,7 +1,7 @@
 # Meus Remédios - AI Agent Guide
 
 > **Aplicativo de gerenciamento de medicamentos em português brasileiro**  
-> **Versão:** 2.8.1 | React 19 + Vite + Supabase
+> **Versão:** 2.9.0 | React 19 + Vite + Supabase
 
 ---
 
