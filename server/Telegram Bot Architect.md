@@ -354,7 +354,7 @@ const HEALTH_THRESHOLDS = {
 
 ### Documentação Relacionada
 
-- [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](../docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) - Documentação completa
+- [`docs/architecture/TELEGRAM_BOT.md`](../docs/architecture/TELEGRAM_BOT.md) - Documentação consolidada
 - [`docs/past_deliveries/BOT_REFACTORING_GUIDE.md`](../docs/past_deliveries/BOT_REFACTORING_GUIDE.md) - Guia de migração
 
 ---

@@ -134,7 +134,7 @@ curl https://seu-app.vercel.app/api/health/notifications
 LOG_LEVEL=DEBUG npm run bot
 ```
 
-Veja a documentação completa em [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](../docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md).
+Veja a documentação completa em [`docs/architecture/TELEGRAM_BOT.md`](../docs/architecture/TELEGRAM_BOT.md).
 
 ## Development
 

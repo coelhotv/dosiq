@@ -35,7 +35,7 @@
 | **Use hooks** | [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) |
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
-| **Telegram bot** | [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) *(consolidating)* |
+| **Telegram bot** | [`docs/architecture/TELEGRAM_BOT.md`](docs/architecture/TELEGRAM_BOT.md) ✅ |
 
 **Agent-specific rules:**
 - **Code mode**: [`.roo/rules-code/rules.md`](.roo/rules-code/rules.md)
@@ -514,5 +514,5 @@ npm run test:coverage
 ---
 
 *Última atualização: 2026-02-17*  
-*Versão do projeto: 2.8.1*  
+*Versão do projeto: 2.9.0*  
 *Formato: Routing Table (Phase 3 - Documentation Overhaul)*

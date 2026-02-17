@@ -22,6 +22,7 @@
 | [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v2.8.0) | ✅ Atual |
 | [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase | ✅ Migrado |
 | [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system | ✅ Migrado |
+| [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) | Bot Telegram consolidado (v3.1.0) | ✅ Completo |
 
 **Nota**: ARQUITETURA.md permanece na raiz como documento primário. ARQUITETURA_FRAMEWORK.md arquivado (conteúdo sobreposto).
 
@@ -92,7 +93,7 @@
 | Como funciona a arquitetura | [`architecture/OVERVIEW.md`](ARQUITETURA.md) |
 | Esquemas do banco de dados | [`architecture/DATABASE.md`](architecture/DATABASE.md) |
 | Sistema CSS e tokens | [`architecture/CSS.md`](architecture/CSS.md) |
-| Bot do Telegram | [`architecture/TELEGRAM_BOT.md`](TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) |
+| Bot do Telegram | [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) |
 | Como nomear variáveis/funções | [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) |
 | Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
 | Como criar PR | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) |
