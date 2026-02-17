@@ -4,7 +4,7 @@ import Button from '../components/ui/Button'
 import Loading from '../components/ui/Loading'
 import './Settings.css'
 
-export default function Settings() {
+export default function Settings({ onNavigate }) {
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -211,7 +211,7 @@ export default function Settings() {
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
 
         <div className="admin-actions">
-          <Button variant="outline" onClick={() => (window.location.hash = 'admin-dlq')}>
+          <Button variant="outline" onClick={() => onNavigate('admin-dlq')}>
             📋 Gerenciar Notificações Falhadas (DLQ)
           </Button>
         </div>
