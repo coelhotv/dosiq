@@ -1,6 +1,6 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
-import { calculateDaysRemaining, calculateStreak } from '../../utils/formatters.js';
+import { calculateDaysRemaining, calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
@@ -114,17 +114,17 @@ async function handleTakeDose(bot, callbackQuery) {
     const streak = calculateStreak(allLogs);
 
     // Update the message
-    let confirmMsg = `✅ Dose de *${medicineName}* registrada!`;
+    let confirmMsg = `✅ Dose de *${escapeMarkdownV2(medicineName)}* registrada\\!`;
     
     if (streak > 1) {
-      confirmMsg += `\n🔥 *${streak} dias seguidos!*`;
+      confirmMsg += `\n🔥 *${streak} dias seguidos\\!*`;
     }
     
     if (daysRemaining !== null && daysRemaining <= 7) {
       if (daysRemaining <= 0) {
-        confirmMsg += `\n\n⚠️ *ATENÇÃO:* Estoque zerado!`;
+        confirmMsg += `\n\n⚠️ *ATENÇÃO:* Estoque zerado\\!`;
       } else {
-        confirmMsg += `\n\n⚠️ Estoque baixo: ~${daysRemaining} dias restantes`;
+        confirmMsg += `\n\n⚠️ Estoque baixo: \\~${daysRemaining} dias restantes`;
       }
     }
 
@@ -142,7 +142,7 @@ async function handleTakeDose(bot, callbackQuery) {
     await bot.editMessageText(confirmMsg, {
       chat_id: chatId,
       message_id: message.message_id,
-      parse_mode: 'Markdown',
+      parse_mode: 'MarkdownV2',
       reply_markup: quickActions
     });
     
@@ -220,14 +220,14 @@ async function handleSkipDose(bot, callbackQuery) {
     };
     
     const confirmText = `⚠️ *Confirmar ação*\n\n` +
-      `Você está prestes a *pular* a dose de *${medicineName}*.\n\n` +
-      `Esta ação não poderá ser desfeita.\n\n` +
-      `_Confirme em 30 segundos..._`;
+      `Você está prestes a *pular* a dose de *${escapeMarkdownV2(medicineName)}*\\.\n\n` +
+      `Esta ação não poderá ser desfeita\\.\n\n` +
+      `_Confirme em 30 segundos\\.\\.\\._`;
     
     await bot.editMessageText(confirmText, {
       chat_id: chatId,
       message_id: message.message_id,
-      parse_mode: 'Markdown',
+      parse_mode: 'MarkdownV2',
       reply_markup: confirmKeyboard
     });
     
@@ -279,11 +279,11 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
     
     // Confirm the skip
     await bot.editMessageText(
-      `❌ Dose de *${medicineName}* pulada.`,
+      `❌ Dose de *${escapeMarkdownV2(medicineName)}* pulada\\.`,
       {
         chat_id: chatId,
         message_id: message.message_id,
-        parse_mode: 'Markdown'
+        parse_mode: 'MarkdownV2'
       }
     );
     
@@ -319,17 +319,17 @@ async function handleCancelSkipDose(bot, callbackQuery) {
       await bot.editMessageText(state.originalText, {
         chat_id: chatId,
         message_id: message.message_id,
-        parse_mode: 'Markdown',
+        parse_mode: 'MarkdownV2',
         reply_markup: state.originalReplyMarkup
       });
     } else {
       // Show cancellation message
       await bot.editMessageText(
-        `✅ Ação cancelada. Nenhuma dose foi pulada.`,
+        `✅ Ação cancelada\\. Nenhuma dose foi pulada\\.`,
         {
           chat_id: chatId,
           message_id: message.message_id,
-          parse_mode: 'Markdown'
+          parse_mode: 'MarkdownV2'
         }
       );
     }
@@ -362,11 +362,11 @@ async function handleSkipTimeout(bot, chatId, messageId) {
     if (state.originalText) {
       try {
         await bot.editMessageText(
-          state.originalText + '\n\n_⏱️ Confirmação expirada._',
+          state.originalText + '\n\n_⏱️ Confirmação expirada\\._',
           {
             chat_id: chatId,
             message_id: messageId,
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
             reply_markup: state.originalReplyMarkup
           }
         );
