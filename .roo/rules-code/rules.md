@@ -1,7 +1,14 @@
 # 📝 Regras de Código - Meus Remédios
 
-> **Versão:** 2.8.0 | **Atualizado:** 2026-02-13  
+> **Versão:** 2.8.1 | **Atualizado:** 2026-02-17
 > Documento consolidado de padrões de código para desenvolvedores e agentes de IA.
+
+> **📚 DOCUMENTAÇÃO COMPLETA:**
+> Este arquivo contém regras essenciais. Para detalhes completos, consulte:
+> - **Testing**: [`docs/standards/TESTING.md`](../../docs/standards/TESTING.md)
+> - **Git Workflow**: [`docs/standards/GIT_WORKFLOW.md`](../../docs/standards/GIT_WORKFLOW.md)
+> - **Code Patterns**: [`docs/PADROES_CODIGO.md`](../../docs/PADROES_CODIGO.md) *(consolidando para docs/standards/CODE_PATTERNS.md)*
+> - **Schemas**: [`docs/reference/SCHEMAS.md`](../../docs/reference/SCHEMAS.md)
 
 ---
 

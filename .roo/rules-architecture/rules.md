@@ -1,7 +1,14 @@
 # 🏗️ Regras de Arquitetura - Meus Remédios
 
-> **Versão:** 2.8.0 | **Atualizado:** 2026-02-13  
+> **Versão:** 2.8.1 | **Atualizado:** 2026-02-17
 > Documento consolidado de padrões arquiteturais e governança técnica.
+
+> **📚 DOCUMENTAÇÃO COMPLETA:**
+> Este arquivo contém regras essenciais. Para detalhes completos, consulte:
+> - **Architecture**: [`docs/ARQUITETURA.md`](../../docs/ARQUITETURA.md) *(consolidando para docs/architecture/OVERVIEW.md)*
+> - **Database**: [`docs/architecture/DATABASE.md`](../../docs/architecture/DATABASE.md)
+> - **CSS**: [`docs/architecture/CSS.md`](../../docs/architecture/CSS.md)
+> - **Services API**: [`docs/reference/SERVICES.md`](../../docs/reference/SERVICES.md)
 
 ---
 

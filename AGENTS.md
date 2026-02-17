@@ -1,1223 +1,518 @@
 # Meus Remédios - AI Agent Guide
 
-> **Aplicativo de gerenciamento de medicamentos em português brasileiro**
-> Versão: 2.7.0 | React 19 + Vite + Supabase
+> **Aplicativo de gerenciamento de medicamentos em português brasileiro**  
+> **Versão:** 2.8.1 | React 19 + Vite + Supabase
 
 ---
 
-## 📋 Project Overview
+## 📋 Project Identity
 
-**Meus Remédios** is a comprehensive medication management application that only uses free tier services, featuring:
+**Meus Remédios** is a medication management PWA featuring:
+- Multi-user authentication (Supabase Auth + RLS)
+- Treatment protocols with dose titration
+- Stock management with alerts
+- Telegram Bot integration
+- Dashboard with gamification
+- PWA capabilities (Service Worker, Push Notifications)
 
-- **Multi-user authentication** via Supabase Auth with Row-Level Security (RLS)
-- **Treatment protocols** with complex scheduling and dose titration support
-- **Stock management** with automatic tracking and alerts
-- **Telegram Bot integration** for reminders and conversational interactions
-- **Dashboard** with insights, adherence tracking, and gamification
-- **Onboarding wizard** (4 steps) for new users
-
-### Architecture Summary
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CLIENTE (BROWSER)                              │
-│                        React 19 + Vite (SPA)                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────────────┐ │
-│  │   Views     │  │ Components  │  │   Services Layer (Zod + SWR Cache)  │ │
-│  │  (Pages)    │  │  (UI/Forms) │  │   ├─ medicineService.js             │ │
-│  └─────────────┘  └─────────────┘  │   ├─ protocolService.js             │ │
-│                                    │   ├─ stockService.js                │ │
-│                                    │   └─ logService.js                  │ │
-│                                    └─────────────────┬───────────────────┘ │
-│                                                      │                      │
-│                                           ┌──────────▼──────────┐          │
-│                                           │   Supabase Client   │          │
-│                                           └──────────┬──────────┘          │
-└──────────────────────────────────────────────────────┼──────────────────────┘
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    │                  │                  │
-                              ┌─────▼─────┐     ┌─────▼─────┐     ┌──────▼──────┐
-                              │  VERCEL   │     │  VERCEL   │     │  TELEGRAM   │
-                              │  STATIC   │     │   API     │     │    BOT      │
-                              │  (SPA)    │     │ (Webhooks)│     │ (Node.js)   │
-                              └───────────┘     └─────┬─────┘     └─────────────┘
-                                                      │
-                                               ┌──────▼───────┐
-                                               │  SUPABASE    │
-                                               │ ┌──────────┐ │
-                                               │ │PostgreSQL│ │
-                                               │ │  + RLS   │ │
-                                               │ └──────────┘ │
-                                               │ ┌──────────┐ │
-                                               │ │  Auth    │ │
-                                               │ └──────────┘ │
-                                               └──────────────┘
-```
+**Tech Stack**: React 19 + Vite 7 + Supabase + Zod + SWR Cache + Vitest
 
 ---
 
-## 🏗️ Technology Stack
+## 🗺️ Documentation Map
 
-### Core Technologies
+**For detailed information, read the appropriate document:**
 
-| Camada | Tecnologia | Versão | Propósito |
-|--------|-----------|--------|-----------|
-| **Frontend** | React | 19.2.0 | UI Library (ES Modules nativo) |
-| **Build Tool** | Vite | 7.2.4 | Build e Dev Server |
-| **Backend** | Supabase | 2.90.1 | PostgreSQL + Auth + REST API |
-| **Validação** | Zod | 4.3.6 | Runtime validation |
-| **Cache** | SWR Custom | - | Stale-While-Revalidate cache |
-| **Estilos** | CSS Vanilla | - | Design system customizado |
-| **Testes** | Vitest | 4.0.16 | Unit testing |
-| **Bot** | node-telegram-bot-api | 0.67.0 | Telegram integration |
-| **Deploy** | Vercel | - | Hosting + Serverless Functions |
-| **Cron** | cron-job.org | - | Free crons for Telegram bot |
+| Need to... | Read... |
+|-----------|---------|
+| **Set up environment** | [`docs/getting-started/SETUP.md`](docs/getting-started/SETUP.md) |
+| **Understand architecture** | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) *(consolidating)* |
+| **Learn coding standards** | [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md) *(consolidating)* |
+| **Write tests** | [`docs/standards/TESTING.md`](docs/standards/TESTING.md) ✅ |
+| **Follow Git workflow** | [`docs/standards/GIT_WORKFLOW.md`](docs/standards/GIT_WORKFLOW.md) ✅ |
+| **Create PR** | [`docs/standards/PULL_REQUEST_TEMPLATE.md`](docs/standards/PULL_REQUEST_TEMPLATE.md) |
+| **Use services API** | [`docs/reference/SERVICES.md`](docs/reference/SERVICES.md) |
+| **Use hooks** | [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) |
+| **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
+| **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
+| **Telegram bot** | [`docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](docs/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) *(consolidating)* |
 
-### Key Dependencies
+**Agent-specific rules:**
+- **Code mode**: [`.roo/rules-code/rules.md`](.roo/rules-code/rules.md)
+- **Architecture mode**: [`.roo/rules-architecture/rules.md`](.roo/rules-architecture/rules.md)
+- **Long-term memory**: [`.roo/rules/memory.md`](.roo/rules/memory.md)
 
-```json
-{
-  "dependencies": {
-    "@supabase/supabase-js": "^2.90.1",
-    "framer-motion": "^12.33.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "zod": "^4.3.6"
-  }
+---
+
+## 🚨 Critical Constraints (NON-NEGOTIABLE)
+
+These rules prevent recurring errors and **must be followed unconditionally**:
+
+### 1. React Hook Declaration Order
+```jsx
+// ✅ CORRECT - Prevents TDZ (Temporal Dead Zone)
+function Component() {
+  const [data, setData] = useState()        // 1. States first
+  const processed = useMemo(() => ..., [data]) // 2. Memos
+  useEffect(() => { ... }, [processed])     // 3. Effects
+  const handleClick = () => { ... }         // 4. Handlers
+}
+
+// ❌ WRONG - ReferenceError
+function Component() {
+  const processed = useMemo(() => data + 1, [data]) // data is undefined!
+  const [data, setData] = useState(0)               // Too late
+}
+```
+
+### 2. Zod Schema Values in Portuguese
+```javascript
+// ✅ CORRECT - UI consistency
+const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado']
+const MEDICINE_TYPES = ['comprimido', 'cápsula', 'líquido', 'injeção']
+
+// ❌ WRONG - Never use English in schemas
+const FREQUENCIES = ['daily', 'weekly'] // Causes UI inconsistencies
+```
+
+### 3. Telegram Bot Callback Data Limits
+```javascript
+// ❌ WRONG - Exceeds 64 bytes
+callback_data: `reg_med:${medicineId}:${protocolId}` // ~81 chars
+
+// ✅ CORRECT - Use numeric indices
+callback_data: `reg_med:${index}` // ~15 chars
+session.set('medicineMap', medicines) // Store mapping in session
+```
+
+### 4. Dosage Recording Units
+```javascript
+// ✅ CORRECT - Record in pills (within Zod limit of 100)
+const pillsToDecrease = quantity / dosagePerPill
+await logService.create({ quantity_taken: pillsToDecrease })
+
+// ❌ WRONG - Exceeds Zod schema limit
+await logService.create({ quantity_taken: 2000 }) // mg exceeds limit!
+```
+
+### 5. Operation Order for Dose Registration
+```javascript
+// ✅ CORRECT - Validate → Record → Decrement
+try {
+  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
+  await logService.create(log)
+  await stockService.decrease(medicineId, pillsToDecrease)
+}
+```
+
+### 6. LogForm Dual Return Type
+```jsx
+// ✅ ALWAYS check both return types
+if (Array.isArray(logData)) {
+  await logService.createBulk(logData) // type === 'plan'
+} else {
+  await logService.create(logData)     // type === 'protocol'
 }
 ```
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Development Commands
 
-```
-meus-remedios/
-├── src/
-│   ├── components/
-│   │   ├── ui/              # Componentes atômicos (Button, Card, Modal, Loading)
-│   │   ├── medicine/        # Domínio: Medicamentos (MedicineCard, MedicineForm)
-│   │   ├── protocol/        # Domínio: Protocolos (ProtocolCard, ProtocolForm, TitrationWizard)
-│   │   ├── stock/           # Domínio: Estoque (StockCard, StockForm, StockIndicator)
-│   │   ├── log/             # Domínio: Registros (LogEntry, LogForm)
-│   │   ├── dashboard/       # Domínio: Dashboard (InsightCard, HealthScoreCard, etc)
-│   │   ├── adherence/       # Domínio: Adesão (AdherenceWidget, StreakBadge)
-│   │   ├── onboarding/      # Wizard de primeiros passos (4 steps)
-│   │   └── animations/      # Efeitos visuais (Confetti, Pulse, Shake)
-│   ├── hooks/
-│   │   ├── useCachedQuery.js    # Hook SWR para cache de queries
-│   │   ├── useDashboardContext.jsx
-│   │   ├── useInsights.js
-│   │   └── useAdherenceTrend.js
-│   ├── lib/
-│   │   ├── supabase.js      # Cliente Supabase configurado
-│   │   └── queryCache.js    # Implementação SWR customizada
-│   ├── schemas/             # Validação Zod (23+ testes)
-│   │   ├── index.js         # Exportações centralizadas
-│   │   ├── medicineSchema.js
-│   │   ├── protocolSchema.js
-│   │   ├── stockSchema.js
-│   │   ├── logSchema.js
-│   │   └── validationHelper.js
-│   ├── services/
-│   │   ├── api/             # Serviços da API
-│   │   │   ├── cachedServices.js   # Wrappers com cache SWR
-│   │   │   ├── medicineService.js
-│   │   │   ├── protocolService.js
-│   │   │   ├── stockService.js
-│   │   │   ├── logService.js
-│   │   │   ├── treatmentPlanService.js
-│   │   │   ├── adherenceService.js
-│   │   │   └── titrationService.js
-│   │   ├── api.js           # Exportações principais
-│   │   ├── insightService.js
-│   │   ├── analyticsService.js
-│   │   ├── milestoneService.js
-│   │   └── paginationService.js
-│   ├── utils/
-│   │   ├── adherenceLogic.js
-│   │   └── titrationUtils.js
-│   ├── styles/
-│   │   ├── tokens.css       # Design tokens (cores, espaçamentos)
-│   │   └── index.css        # Estilos globais
-│   ├── views/               # Páginas principais
-│   │   ├── Auth.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── History.jsx
-│   │   ├── Landing.jsx
-│   │   ├── Medicines.jsx
-│   │   ├── Protocols.jsx
-│   │   ├── Settings.jsx
-│   │   └── Stock.jsx
-│   ├── App.jsx              # Componente principal com roteamento
-│   ├── main.jsx             # Entry point
-│   └── test/
-│       └── setup.js         # Configuração Vitest
-├── server/                  # Bot do Telegram (Node.js independente)
-│   ├── bot/
-│   │   ├── commands/        # Comandos Telegram (/start, /hoje, /registrar, etc)
-│   │   ├── callbacks/       # Handlers de callback queries
-│   │   ├── middleware/      # Middlewares (auth, logging)
-│   │   ├── alerts.js        # Sistema de alertas inteligentes
-│   │   ├── scheduler.js     # Agendador de tarefas
-│   │   ├── tasks.js         # Tarefas do cron
-│   │   ├── logger.js        # Logger estruturado
-│   │   └── health-check.js  # Health checks
-│   ├── services/
-│   │   └── supabase.js      # Cliente Supabase para o bot
-│   └── index.js             # Entry point do bot
-├── api/                     # Serverless Functions (Vercel)
-│   ├── telegram.js          # Webhook para bot (POST)
-│   └── notify.js            # Cron job endpoint (GET/POST)
-├── .migrations/             # Migrações SQL
-│   └── *.sql
-├── docs/                    # Documentação técnica
-│   ├── ARQUITETURA.md
-│   ├── PADROES_CODIGO.md
-│   ├── API_SERVICES.md
-│   ├── HOOKS.md
-│   └── ...
-├── package.json
-├── vite.config.js
-├── vitest.config.js         # Configurações múltiplas de teste
-├── eslint.config.js
-└── vercel.json              # Configuração de rotas Vercel
+```bash
+# Development
+npm run dev          # Vite dev server (http://localhost:5173)
+npm run bot          # Telegram bot locally
+
+# Build & Deploy
+npm run build        # Production build
+npm run preview      # Preview build locally
+
+# Testing (see docs/standards/TESTING.md)
+npm run test         # All tests
+npm run test:smoke   # Smoke tests only (~10s)
+npm run test:critical # Critical tests (services, utils, schemas, hooks)
+npm run test:changed # Only changed files since main
+
+# Validation
+npm run lint         # ESLint check
+npm run validate     # Lint + tests
+npm run validate:full # Lint + tests + coverage + build
 ```
 
 ---
 
-## 🔧 Environment Setup
+## 🧪 Testing Rules
 
-### CLI Tools PATH
+### Where to Put Tests
+**Rule**: ALL tests use `__tests__/` subfolder pattern
 
-**IMPORTANTE:** Antes de executar comandos CLI (gh, vercel, etc.), configure o PATH:
-
-```bash
-# Adicionar ao PATH para a sessão atual
-export PATH="/usr/local/sbin:/usr/local/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
-
-# Verificar se gh está disponível
-which gh
+```
+src/services/api/
+  medicineService.js
+  __tests__/
+    medicineService.test.js
 ```
 
-**Para persistir:** Adicione as linhas de `export` ao final do seu arquivo de configuração de shell (ex: `~/.zshrc` para Zsh ou `~/.bash_profile` para Bash).
+### Naming Conventions
+| Type | Pattern | Example |
+|------|---------|---------|
+| Unit test | `{file}.test.{js,jsx}` | `medicineService.test.js` |
+| Smoke test | `{file}.smoke.test.{js,jsx}` | `medicineSchema.smoke.test.js` |
+| Integration | `{file}.integration.test.{js,jsx}` | `stockService.integration.test.js` |
 
-### CLI Tools Disponíveis
+### Which Test Command to Run
 
-| Tool | Instalação | Uso |
-|------|-----------|-----|
-| `gh` (GitHub CLI) | `brew install gh` | Criar PRs, issues, reviews |
-| `vercel` | `npm i -g vercel` | Deploy e logs de produção |
+| File Type | Command | Rationale |
+|-----------|---------|-----------|
+| `*.service.js` | `npm run test:critical` | Services are business logic |
+| `*.schema.js` | `npm run test:critical` | Schemas are critical validation |
+| `*.util.js` | `npm run test:critical` | Pure functions |
+| `*.jsx` (component) | `npm run test:components` | UI components |
+| Any file | `npm run test:changed` | Quick check before commit |
+
+**📖 Complete guide**: [`docs/standards/TESTING.md`](docs/standards/TESTING.md)
 
 ---
 
-## 🚀 Build and Development Commands
+## 🔄 Git Workflow Summary
 
-### Development
-
-```bash
-# Instalar dependências
-npm install
-
-# Servidor de desenvolvimento (Vite)
-npm run dev
-# Acesse: http://localhost:5173
-
-# Iniciar bot do Telegram localmente (em outro terminal)
-npm run bot
-# ou: cd server && npm run dev
+```
+1. CREATE BRANCH:    git checkout -b feature/wave-X/nome
+2. MAKE CHANGES:     Follow coding standards
+3. VALIDATE:         npm run validate (MUST PASS)
+4. COMMIT:           git commit -m "feat(scope): descrição"
+5. PUSH:             git push origin feature/wave-X/nome
+6. CREATE PR:        Use template, fill all sections
+7. WAIT FOR REVIEW:  Address all comments
+8. MERGE & CLEANUP:  Merge with --no-ff, delete branch
 ```
 
-### Build and Deploy
+**⚠️ NEVER:**
+- Commit directly to `main`
+- Skip validation
+- Use `--no-verify`
+- Merge without review
 
-```bash
-# Build de produção
-npm run build
-
-# Preview do build local
-npm run preview
-
-# Deploy na Vercel
-vercel --prod
-```
-
-### Linting
-
-```bash
-# ESLint - verificação de código
-npm run lint
-```
+**📖 Complete guide**: [`docs/standards/GIT_WORKFLOW.md`](docs/standards/GIT_WORKFLOW.md)
 
 ---
 
-## 🧪 Testing Commands
+## 💻 Code Style Quick Reference
 
-O projeto possui 110+ testes unitários com Vitest e múltiplas configurações otimizadas:
+### Naming Conventions
 
-### Testes Base
+| Element | Convention | Example |
+|---------|-----------|---------|
+| Components | PascalCase | `MedicineCard.jsx` |
+| Functions/Variables | camelCase | `calculateAdherence`, `medicineName` |
+| Constants | SCREAMING_SNAKE | `CACHE_STALE_TIME`, `MAX_RETRIES` |
+| Hooks | use + PascalCase | `useCachedQuery`, `useDashboardContext` |
+| Branches | kebab-case | `feature/wave-2/fix-login` |
 
-```bash
-# Todos os testes (CI/CD completo)
-npm run test
+### Language Rules
 
-# Modo watch para desenvolvimento
-npm run test:watch
+| Context | Language | Example |
+|---------|---------|---------|
+| Code (variables, functions) | English | `const medicineName = ''` |
+| Error messages | Portuguese | `'Nome é obrigatório'` |
+| UI (labels, buttons) | Portuguese | `Salvar Medicamento` |
+| Documentation | Portuguese | This file |
+| Commits | Portuguese | `feat: adiciona validação Zod` |
+| Database tables/columns | Portuguese | `medicamentos.nome` |
+| Internal thinking | English | Planning/analysis |
+
+### Import Order
+
+```jsx
+// 1. React and external libraries
+import { useState, useEffect } from 'react'
+import { z } from 'zod'
+
+// 2. Internal components
+import Button from '../ui/Button'
+
+// 3. Hooks and utils
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
+
+// 4. Services and schemas
+import { medicineService } from '@features/medications/services/medicineService'
+
+// 5. CSS (always last)
+import './MedicineForm.css'
 ```
 
-### Testes Otimizados (Fase 1)
+**📖 Complete guide**: [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md) *(consolidating to `docs/standards/CODE_PATTERNS.md`)*
 
+---
+
+## 🔒 Security
+
+### Authentication & Authorization
+- JWT tokens managed by Supabase Auth
+- Automatic session refresh
+- **RLS (Row Level Security)** on all tables - users can only access their own data
+
+### Data Validation
+- **Zod schemas**: Runtime validation in all services
+- **No data** reaches backend without validation
+- Error messages in Portuguese
+
+### Environment Variables
 ```bash
-# Apenas arquivos modificados desde main
-npm run test:changed
-
-# Testes relacionados aos arquivos staged
-npm run test:related
-
-# Testes críticos (services, utils, schemas, hooks)
-npm run test:critical
-
-# Exclui testes de integração
-npm run test:unit
-
-# Saída resumida (30 primeiras linhas)
-npm run test:quick
+# Required in .env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+TELEGRAM_BOT_TOKEN=...
+CRON_SECRET=...
 ```
 
-### Testes Fase 2 (Seleção Inteligente)
+**⚠️ NEVER** commit `.env` file (already in `.gitignore`)
 
-```bash
-# Script customizado baseado em git diff
-npm run test:smart
+---
 
-# Alias para test:changed
-npm run test:git
+## 🧠 Agent Memory System
 
-# Alias para test:related
-npm run test:affected
+### Long-Term Memory
+All lessons learned and patterns are stored in:
+- [`.roo/rules/memory.md`](.roo/rules/memory.md) - Memory entries with lessons
 
-# Suite mínima de smoke tests
-npm run test:smoke
-
-# Configuração light de testes
-npm run test:light
+### Memory Entry Format
+```markdown
+## Memory Entry — YYYY-MM-DD HH:MM
+**Contexto / Objetivo**
+**O que foi feito**
+**O que deu certo**
+**O que não deu certo**
+**Regras locais para o futuro**
+**Pendências**
 ```
-
-### Validação Completa
-
-```bash
-# Lint + testes críticos (pre-push)
-npm run validate
-
-# Lint + testes relacionados (pre-commit rápido)
-npm run validate:quick
-```
-
-### Configurações de Teste
-
-| Arquivo | Propósito |
-|---------|-----------|
-| `vitest.config.js` | Configuração padrão (threads otimizadas) |
-| `vitest.critical.config.js` | Apenas testes essenciais (exclui UI) |
-| `vitest.smoke.config.js` | Suite mínima para health check |
-| `vitest.light.config.js` | Configuração leve para desenvolvimento rápido |
 
 ---
 
 ## 🎯 Design Principles & Heuristics
 
-### Universal Constraints (Obrigatórios)
+### Universal Constraints (From Memory)
 
-These rules prevent recurring errors and must be followed unconditionally:
-
-#### 1. React Hook Declaration Order
-**Rule:** States → Memos → Effects → Handlers
-```jsx
-// ✅ CORRECT - Prevents TDZ (Temporal Dead Zone)
-function Component() {
-  // 1. States first
-  const [data, setData] = useState()
-  const [loading, setLoading] = useState(false)
-  
-  // 2. Memos (depend on states)
-  const processedData = useMemo(() => process(data), [data])
-  
-  // 3. Effects (depend on memos/states)
-  useEffect(() => { /* ... */ }, [processedData])
-  
-  // 4. Handlers last
-  const handleClick = () => { /* ... */ }
-}
-
-// ❌ WRONG - ReferenceError: Cannot access before initialization
-function Component() {
-  const processed = useMemo(() => data + 1, [data]) // data is undefined!
-  const [data, setData] = useState(0) // Declared too late
-}
-```
-
-#### 2. Zod Schema Values in Portuguese
-**Rule:** All enum values must be in Portuguese for UI consistency
-```javascript
-// ✅ CORRECT
-const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário']
-const MEDICINE_TYPES = ['comprimido', 'cápsula', 'líquido', 'injeção', 'pomada', 'spray', 'outro']
-const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
-
-// ❌ WRONG - Mixing languages causes UI inconsistencies
-const FREQUENCIES = ['daily', 'weekly'] // Never use English in schemas
-```
-
-#### 3. Telegram Bot Callback Data Limits
-**Rule:** `callback_data` must be < 64 bytes; use numeric indices instead of UUIDs
-```javascript
-// ❌ WRONG - Exceeds 64 bytes (BUTTON_DATA_INVALID)
-callback_data: `reg_med:${medicineId}:${protocolId}` // ~81 chars
-
-// ✅ CORRECT - Compact and within limits
-callback_data: `reg_med:${index}` // ~15 chars
-// Store mapping in session: session.set('medicineMap', medicines)
-```
-
-#### 4. Dosage Recording Units
-**Rule:** Always record `quantity_taken` in pills, never in milligrams
-```javascript
-// dosage_per_intake = pills per dose (e.g., 4)
-// dosage_per_pill = mg per pill (e.g., 500)
-// dosage_real = 4 * 500 = 2000mg
-
-// ✅ CORRECT - Store pills (within Zod limit of 100)
-const pillsToDecrease = quantity / dosagePerPill
-await logService.create({ quantity_taken: pillsToDecrease })
-
-// ❌ WRONG - Exceeds Zod schema limit (100)
-await logService.create({ quantity_taken: 2000 }) // mg exceeds limit!
-```
-
-#### 5. Operation Order for Dose Registration
-**Rule:** Validate → Record → Decrement
-```javascript
-try {
-  // 1. Validate stock
-  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
-  
-  // 2. Record dose
-  await logService.create(log)
-  
-  // 3. Decrement stock
-  await stockService.decrease(medicineId, pillsToDecrease)
-}
-```
+| Constraint | Rule | Example |
+|-----------|------|---------|
+| **Hook Order** | States → Memos → Effects → Handlers | Prevents TDZ |
+| **Zod Enums** | Portuguese only | `['diário', 'semanal']` |
+| **Telegram Callback** | < 64 bytes | Use indices, not UUIDs |
+| **Dosage Units** | Pills, never mg | `quantity_taken = pills` |
+| **Operation Order** | Validate → Record → Decrement | Stock consistency |
 
 ### Context-Dependent Recommendations
 
 #### When to Use Client-Side vs API Calculation
 | Scenario | Recommendation | Rationale |
 |----------|---------------|-----------|
-| Data already in SWR cache | Client-side | Zero network requests |
+| Data in SWR cache | Client-side | Zero network requests |
 | Complex aggregation | Client-side | Avoid server load |
-| Data across multiple users | API | RLS constraints |
-| Timezone-sensitive | Client-side | Use Brazil local time (GMT-3) |
+| Timezone-sensitive | Client-side | Brazil local time (GMT-3) |
 | Large datasets (>1000 rows) | API | Memory optimization |
 
-#### Test Command Selection Matrix
-| File Type | Recommended Command | Rationale |
-|-----------|---------------------|-----------|
-| `*.service.js` | `npm run test:critical` | Services require integration context |
-| `*.schema.js` | `npm run test:critical` | Schemas have critical validation logic |
-| `*.util.js` | `npm run test:light` | Pure functions, no component deps |
-| `*.jsx` (component) | `npx vitest --config vitest.component.config.js` | Isolated component testing |
-| Config files | `npm run test:full` | May affect entire suite |
-
-#### LogForm Return Type Handling
-```jsx
-// LogForm has TWO return modes - ALWAYS check both:
-if (Array.isArray(logData)) {
-  // type === 'plan' (bulk registration)
-  await logService.createBulk(logData)
-} else {
-  // type === 'protocol' (single registration)
-  await logService.create(logData)
-}
-```
-
-## 🎨 Code Style Guidelines
-
-### Nomenclatura Obrigatória
-
-| Elemento | Convenção | Exemplo |
-|----------|-----------|---------|
-| Componentes | PascalCase | `MedicineCard.jsx` |
-| Funções/Variáveis | camelCase | `calculateAdherence`, `medicineName` |
-| Constantes | SCREAMING_SNAKE | `CACHE_STALE_TIME`, `MAX_RETRIES` |
-| Arquivos | kebab-case ou PascalCase | `medicine-service.js`, `MedicineCard.jsx` |
-| Hooks | use + PascalCase | `useCachedQuery`, `useDashboardContext` |
-| Branches | kebab-case | `feature/wave-2/fix-login` |
-
-### Idiomas
-
-| Contexto | Idioma | Exemplo |
-|----------|--------|---------|
-| Código (variáveis, funções) | Inglês | `const medicineName = ''` |
-| Mensagens de erro | Português | `'Nome é obrigatório'` |
-| UI (labels, botões) | Português | `Salvar Medicamento` |
-| Documentação | Português | Este arquivo |
-| Commits | Português | `feat: adiciona validação Zod` |
-| Nomes de arquivos | Inglês | `medicineService.js` |
-| Tabelas/Colunas DB | Português | `medicamentos.nome` |
-| Raciocínio interno | Inglês | Internal planning/thinking |
-| Comentários de código | Português | `// Calcula a adesão` |
-
-### Estrutura de Imports
-
-```jsx
-// 1. React e bibliotecas externas
-import { useState, useEffect } from 'react'
-import { z } from 'zod'
-
-// 2. Componentes internos
-import Button from '../ui/Button'
-import Card from '../ui/Card'
-
-// 3. Hooks e utils
-import { useCachedQuery } from '../../hooks/useCachedQuery'
-import { formatDate } from '../../utils/date'
-
-// 4. Services e schemas
-import { medicineService } from '../../services/api/medicineService'
-import { validateMedicine } from '../../schemas/medicineSchema'
-
-// 5. CSS (sempre por último)
-import './MedicineForm.css'
-```
-
-### Regras de Validação Zod (Obrigatório)
-
-Todo service DEVE validar dados com Zod antes de enviar ao Supabase:
-
-```javascript
-// medicineService.js
-import { validateMedicineCreate } from '../schemas/medicineSchema'
-
-export const medicineService = {
-  async create(medicine) {
-    // ✅ SEMPRE validar antes de enviar
-    const validation = validateMedicineCreate(medicine)
-    if (!validation.success) {
-      throw new Error(`Erro de validação: ${validation.errors.map(e => e.message).join(', ')}`)
-    }
-    
-    const { data, error } = await supabase
-      .from('medicines')
-      .insert(validation.data)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
-  }
-}
-```
-
-### Cache SWR (Obrigatório para Leituras)
-
-```javascript
-// ✅ SEMPRE usar cachedServices para leituras
-import { cachedMedicineService } from '../services/api/cachedServices'
-
-// Em componentes:
-const { data, isLoading } = useCachedQuery(
-  'medicines',
-  () => cachedMedicineService.getAll(),
-  { staleTime: 30000 }
-)
-
-// ✅ Invalidar cache após mutations
-async function handleCreate(medicine) {
-  await cachedMedicineService.create(medicine)
-  // Cache é invalidado automaticamente no service
-}
-```
+#### Test Command Selection
+| File Type | Command | Rationale |
+|-----------|---------|-----------|
+| `*.service.js` | `npm run test:critical` | Business logic |
+| `*.schema.js` | `npm run test:critical` | Critical validation |
+| `*.util.js` | `npm run test:critical` | Pure functions |
+| `*.jsx` (component) | `npm run test:components` | UI testing |
+| Config files | `npm run test` | May affect entire suite |
 
 ---
 
-## 🤖 Agent Long-Term Memory System
-
-### Memory Structure
-
-This project uses a structured memory system for tracking lessons learned, patterns, and decisions:
+## 📁 Project Structure (Quick Reference)
 
 ```
-.roo/rules/
-├── memory.md              # Long-term memory (lessons learned, patterns)
-├── rules-code/rules.md    # Coding standards and patterns
-└── rules-architecture/rules.md  # Architecture governance
+src/
+├── features/          # Domain-driven features (F4.6)
+│   ├── adherence/
+│   ├── dashboard/
+│   ├── medications/
+│   ├── protocols/
+│   └── stock/
+├── shared/            # Shared resources
+│   ├── components/
+│   ├── hooks/
+│   ├── services/
+│   ├── constants/
+│   └── utils/
+└── views/             # Page components
+
+server/                # Telegram Bot (Node.js)
+├── bot/
+│   ├── commands/
+│   ├── callbacks/
+│   └── tasks.js
+├── services/
+└── utils/
+
+api/                   # Serverless Functions (Vercel)
+├── telegram.js        # Bot webhook
+└── notify.js          # Cron endpoint
 ```
 
-### Memory Entry Format
-
-When adding to `.roo/rules/memory.md`, use this template:
-
-```markdown
-## Memory Entry — YYYY-MM-DD HH:MM
-**Contexto / Objetivo**
-- What was the goal of this task?
-
-**O que foi feito (mudanças)**
-- Files changed
-- New files created
-- Configurations modified
-
-**O que deu certo**
-- Successful patterns
-- Solutions that worked
-
-**O que não deu certo / riscos**
-- Failures or challenges
-- What to avoid
-
-**Regras locais para o futuro (lições acionáveis)**
-- Actionable lessons for future work
-
-**Pendências / próximos passos**
-- Outstanding tasks
-- Follow-up actions
-```
-
-### Memory Retention Policy
-
-| Memory Type | Retention | Update Frequency |
-|-------------|-----------|------------------|
-| Code patterns | Permanent | When patterns change |
-| Architecture decisions | Permanent | When architecture evolves |
-| Bug fixes | 1 year | After each fix |
-| Temporary workarounds | Until resolved | After fix |
+**📖 Complete architecture**: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
 
 ---
 
-## 🤖 Gemini Code Reviewer Integration
+## ✅ Pre-Commit Checklist
 
-### Overview
+Before committing, verify:
 
-This project uses **Gemini Code Reviewer GitHub App** for automated code reviews in all PRs. The integration uses GitHub Actions to:
-
-1. **Auto-trigger** review on new PRs
-2. **Wait** 5 minutes for Gemini analysis
-3. **Parse** review comments and identify issues
-4. **Auto-fix** lint, formatting, logic, and architecture issues when safe
-5. **Validate** fixes with lint and smoke tests
-6. **Post** summary in PR
-
-### Quick Start
-
-#### Automatic (Recommended)
-The workflow `.github/workflows/pr-auto-trigger.yml` automatically posts `/gemini review` on every PR opened.
-
-#### Manual
-In any PR comment, type:
-
-```
-/gemini review
-```
-
-### Workflow Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    GEMINI CODE REVIEWER WORKFLOW                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  1️⃣  PR ABERTO                                                         │
-│      └─→ pr-auto-trigger.yml posta /gemini review                         │
-│                                                                             │
-│  2️⃣  GEMINI ANALISA                                                    │
-│      └─→ Aguarda 5 minutos para análise completa                          │
-│                                                                             │
-│  3️⃣  PARSE COMENTÁRIOS                                                 │
-│      └─→ Identifica tipos de issues                                       │
-│          ├─ Lint                                                          │
-│          ├─ Formatting                                                    │
-│          ├─ Logic                                                         │
-│          ├─ Architecture                                                  │
-│          └─ Conflicts                                                     │
-│                                                                             │
-│  4️⃣  AUTO-FIX                                                           │
-│      └─→ Aplica fixes automaticamente quando seguro                       │
-│          ├─ Lint: Sempre                                                  │
-│          ├─ Formatting: Sempre                                             │
-│          ├─ Logic: diff ≤ 5 linhas, sem business logic                    │
-│          ├─ Architecture: arquivo único                                    │
-│          └─ Conflicts: auto-resolvable                                    │
-│                                                                             │
-│  5️⃣  VALIDATE                                                           │
-│      └─→ npm run lint + npm run test:smoke                                │
-│                                                                             │
-│  6️⃣  COMMIT & PUSH                                                      │
-│      └─→ Cria commit automático se houver fixes                           │
-│                                                                             │
-│  7️⃣  POST SUMMARY                                                       │
-│      └─→ Resume no PR com métricas                                       │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Issue Types & Auto-Fix Rules
-
-| Tipo | Auto-Fix | Condições | Requer Manual |
-|------|----------|-----------|---------------|
-| **Lint** | ✅ | Sempre | ❌ |
-| **Formatting** | ✅ | Sempre | ❌ |
-| **Logic** | ✅ | diff ≤ 5 linhas, sem business logic | ⚠️ Se complexo |
-| **Architecture** | ✅ | Arquivo único afetado | ⚠️ Multi-arquivo |
-| **Conflicts** | ✅ | Auto-resolvable | ⚠️ Complexos |
-| **Security** | ❌ | Jamais | ✅ |
-| **Business Logic** | ❌ | Jamais | ✅ |
-| **Breaking Changes** | ❌ | Jamais | ✅ |
-
-### Available Commands
-
-| Comando | Ação |
-|---------|------|
-| `/gemini review` | Inicia review completa |
-| `/gemini summary` | Resume apenas issues críticas |
-| `/gemini skip` | Pula review para este PR |
-
-### GitHub App
-
-- **App**: [Gemini Code Reviewer](https://github.com/apps/gemini-code-reviewer)
-- **Permissões**: read/write em PRs, issues
-- **Instalação**: Automática via Organization settings
-
-### Troubleshooting
-
-#### Gemini não posta review
-```bash
-# Verificar:
-1. App está instalado no repositório?
-2. Token tem permissões 'repo'?
-3. Workflow está habilitado em Actions tab?
-```
-
-#### Auto-fix não Commita
-```bash
-# Possíveis causas:
-1. Issues não são do tipo auto-fixável
-2. Token sem 'contents: write' permission
-3. Branch protection bloqueando force push
-4. Pre-commit hooks bloqueando
-```
-
-#### Build falha após Auto-Fix
-```yaml
-# O workflow faz rollback automático
-# Verificar:
-1. Log do workflow para ver o que quebrou
-2. Commit de backup é criado automaticamente
-3. PR recebe comentário de rollback
-```
-
-### For AI Agents
-
-When working with code reviews, follow these guidelines:
-
-1. **Don't skip the review process** - Always wait for Gemini to analyze your changes
-2. **Check auto-fixes** - Review the auto-fix commits Gemini creates
-3. **Address manual issues** - Some issues require human review
-4. **Re-run when needed** - Use `/gemini review` after making changes
-
-```bash
-# Workflow for AI agents:
-1. Make changes to code
-2. git commit -m "feat: add new feature"
-3. git push origin feature/branch
-4. Wait for /gemini review to auto-trigger
-5. Check Gemini's comments and auto-fixes
-6. Address any manual issues
-7. Use /gemini review again if needed
-```
+- [ ] Code follows naming conventions (PascalCase, camelCase, etc.)
+- [ ] Props have validation/default values
+- [ ] Zod validation applied in all services
+- [ ] Cache invalidated after mutations (use cachedServices)
+- [ ] Errors handled with try/catch
+- [ ] Tests added for new logic
+- [ ] `console.log` debug statements removed
+- [ ] CSS follows mobile-first
+- [ ] Imports organized correctly
+- [ ] States declared BEFORE useMemo/useEffect
+- [ ] `npm run validate` passes (lint + tests)
 
 ---
 
-## 🔄 Git Workflow (RIGID PROCESS - MANDATORY)
+## 🚫 Anti-Patterns (STRICTLY PROHIBITED)
 
-> **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
-
-### Workflow Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    MANDATORY GITHUB WORKFLOW                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  1️⃣  CREATE BRANCH      (Never work on main!)                              │
-│  2️⃣  MAKE CHANGES       (Follow all coding standards)                      │
-│  3️⃣  VALIDATE LOCALLY   (Lint + Tests + Build)                             │
-│  4️⃣  COMMIT             (Atomic commits, semantic messages)                │
-│  5️⃣  PUSH BRANCH        (To origin)                                        │
-│  6️⃣  CREATE PULL REQUEST (Use PR template)                                 │
-│  7️⃣  WAIT FOR REVIEW    (Address all comments)                             │
-│  8️⃣  MERGE & CLEANUP    (--no-ff, delete branch)                           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Detailed Steps
-
-#### 1. CREATE BRANCH (MANDATORY)
-
-```bash
-# Step 1: Always start from updated main
-git checkout main
-git pull origin main
-
-# Step 2: Create branch with proper naming
-git checkout -b feature/wave-X/nome-descritivo
-
-# Naming conventions:
-#   feature/wave-2/add-login          - New features
-#   fix/wave-2/fix-login-error        - Bug fixes
-#   docs/wave-2/update-api-docs       - Documentation
-#   hotfix/security-patch             - Critical fixes
-```
-
-**⚠️ NEVER:**
-- Work directly on `main`
-- Commit to `main`
-- Push to `main` without PR
-
-#### 2. MAKE CHANGES
-
-- Edit files following:
-  - `.roo/rules-code/rules.md` (coding standards)
-  - `.roo/rules-architecture/rules.md` (architecture)
-- Keep changes focused and atomic
-- One logical change per commit
-
-#### 3. VALIDATE LOCALLY (MANDATORY - ALL MUST PASS)
-
-```bash
-# Run ALL three validations:
-npm run lint          # Must have 0 errors
-npm run test:critical # 143 tests must pass
-npm run build         # Production build must succeed
-
-# Or use the combined command:
-npm run validate      # Runs lint + test:critical
-```
-
-**If any validation fails:**
-```bash
-# 1. Fix all errors
-# 2. Re-run validation
-# 3. Only proceed when all pass
-```
-
-**⚠️ NEVER:**
-- Skip validation
-- Use `--no-verify` to bypass
-- Commit with failing tests
-
-#### 4. COMMIT (Atomic / Semantic)
-
-```bash
-# Stage related files
-git add src/components/MedicineForm.jsx
-git add src/components/MedicineForm.css
-
-# Commit with semantic message (in Portuguese)
-git commit -m "feat(medicine): adicionar validação de dosagem"
-
-# Format: type(scope): description
-type = feat|fix|docs|test|refactor|style|chore
-scope = component|service|api|test|docs|config
-description = em português, minúsculas
-```
-
-**Commit Types:**
-| Type | When to Use | Example |
-|------|-------------|---------|
-| `feat` | New feature | `feat(dashboard): adicionar widget de adesão` |
-| `fix` | Bug fix | `fix(service): corrigir cálculo de estoque` |
-| `docs` | Documentation | `docs(api): atualizar documentação de endpoints` |
-| `test` | Tests only | `test(service): adicionar testes de protocolo` |
-| `refactor` | Refactoring | `refactor(hook): simplificar useCachedQuery` |
-| `style` | Formatting | `style(lint): corrigir formatação` |
-| `chore` | Maintenance | `chore(deps): atualizar dependências` |
-
-#### 5. PUSH BRANCH
-
-```bash
-git push origin feature/wave-X/nome-descritivo
-```
-
-#### 6. CREATE PULL REQUEST (MANDATORY)
-
-**Using GitHub CLI:**
-```bash
-gh pr create --title "feat: descrição resumida" \
-             --body-file docs/PULL_REQUEST_TEMPLATE.md
-```
-
-**Using GitHub Web:**
-1. Go to: https://github.com/coelhotv/meus-remedios/pulls
-2. Click "New Pull Request"
-3. Select: `main` ← `feature/wave-X/nome-descritivo`
-4. **USE TEMPLATE:** Copy from [`docs/PULL_REQUEST_TEMPLATE.md`](docs/PULL_REQUEST_TEMPLATE.md:1)
-5. Fill ALL sections:
-   - **Summary:** What this PR does
-   - **Tasks:** Checklist of completed items
-   - **Metrics:** Performance/quality improvements
-   - **Files:** List of changed files
-   - **Checklist:** Code quality verifications
-   - **Testing:** How to test
-6. Assign reviewers
-7. Link related issues (Closes #123)
-8. Add appropriate labels
-
-**PR Title Format:**
-```
-feat(scope): brief description
-fix(scope): brief description
-docs(scope): brief description
-```
-
-#### 7. WAIT FOR REVIEW
-
-**During Review:**
-- Respond to comments within 24 hours
-- Make requested changes promptly
-- Explain reasoning if you disagree (respectfully)
-- Re-request review after making changes
-- Address ALL comments before merging
-
-**Review Checklist for Reviewers:**
-- [ ] Code follows naming conventions
-- [ ] Zod validation applied
-- [ ] Tests added/updated
-- [ ] No console.log debug statements
-- [ ] Lint passes
-- [ ] Build succeeds
-- [ ] Documentation updated (if needed)
-
-#### 8. MERGE & CLEANUP
-
-**After PR Approval:**
-
-```bash
-# On GitHub:
-# 1. Click "Merge pull request"
-# 2. Select "Create a merge commit" (--no-ff)
-# 3. Confirm merge
-
-# Locally:
-git checkout main
-git pull origin main
-
-# Delete branch
-git branch -d feature/wave-X/nome-descritivo
-git push origin --delete feature/wave-X/nome-descritivo
-```
-
-**⚠️ Merge Requirements:**
-- All status checks pass (CI/CD)
-- At least 1 approval from reviewer
-- No unresolved comments
-- Branch is up to date with main
-
-### Anti-Patterns (STRICTLY PROHIBITED)
-
-| Anti-Pattern | Consequence | What To Do Instead |
-|--------------|-------------|-------------------|
-| Commit directly to `main` | Unreviewed code in production | Always create feature branch |
-| Skip local validation | Broken builds in CI/CD | Run `npm run validate` before every push |
-| Push without PR | No code review | Create PR using template |
-| Use `--no-verify` | Bypass quality gates | Fix errors, don't bypass |
-| Merge own PR | No quality assurance | Wait for reviewer approval |
-| Large PRs (>500 lines) | Difficult review | Split into smaller PRs |
-| Keep merged branches | Repository clutter | Delete immediately after merge |
-
-### Emergency Procedures
-
-**Only for critical production issues:**
-
-```bash
-# ⚠️ REQUIRES human approval documented
-
-# 1. Create hotfix branch from main
-git checkout main
-git checkout -b hotfix/critical-fix
-
-# 2. Make minimal fix
-
-# 3. Validate quickly
-npm run lint && npm run test:critical
-
-# 4. Commit with [HOTFIX] tag
-git commit -m "hotfix: descrição da correção crítica"
-
-# 5. Push and create PR with URGENT label
-gh pr create --title "[HOTFIX] fix: descrição" --label urgent
-
-# 6. Request immediate review
-
-# 7. After merge, schedule post-incident review
-```
-
-**Post-Incident Requirements:**
-1. Document what happened
-2. Explain why normal process was bypassed
-3. Schedule follow-up to prevent recurrence
-
-### Workflow Summary Card
-
-```
-┌─────────────────────────────────────────────┐
-│  BEFORE ANY CODE CHANGE:                    │
-│  1. git checkout -b feature/wave-X/name     │
-│                                             │
-│  BEFORE COMMIT:                             │
-│  2. npm run validate                        │
-│                                             │
-│  AFTER PUSH:                                │
-│  3. Create PR with template                 │
-│  4. Wait for review                         │
-│  5. Merge with --no-ff                      │
-│  6. Delete branch                           │
-└─────────────────────────────────────────────┘
-```
+| Anti-Pattern | Consequence | Prevention |
+|--------------|-------------|------------|
+| Declare state after useMemo | ReferenceError (TDZ) | States → Memos → Effects |
+| Skip validation | Broken build | Always run `npm run validate` |
+| Commit to main | Unreviewed code | Always create branch |
+| Ignore lint errors | Build fails | Fix all errors |
+| Mix languages in schemas | UI inconsistency | Portuguese only |
+| Use `--no-verify` | Bypass quality gates | Fix errors properly |
 
 ---
 
-## 🛡️ Security Considerations
+## 🤖 Agent Modes Available
 
-### Autenticação
-- JWT tokens gerenciados pelo Supabase Auth
-- Refresh automático de sessão
-- RLS (Row Level Security) em todas as tabelas
+For specialized tasks, switch to appropriate mode:
 
-### Autorização (RLS)
-```sql
--- Exemplo de política RLS
-CREATE POLICY "Users can only see their own medicines"
-  ON medicines
-  FOR ALL
-  USING (user_id = auth.uid());
-```
-
-### Variáveis de Ambiente
-
-Arquivo `.env` obrigatório:
-
-```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-aqui
-
-# Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN=seu-token-do-botfather
-
-# External Cron Secret (for cron-job.org)
-CRON_SECRET=chave-secreta-aleatoria
-```
-
-⚠️ **NUNCA** commite o arquivo `.env` - já está no `.gitignore`.
-
-### Validação de Dados
-- **Zod Schemas:** Validação runtime em todos os services
-- **Nenhum dado** chega ao backend sem validação
-- Mensagens de erro em português
+| Mode | When to Use | Purpose |
+|------|------------|---------|
+| **🏗️ Architect** | Planning, design, strategy | System design, technical specs |
+| **💻 Code** | Writing/modifying code | Implementation, refactoring |
+| **❓ Ask** | Need explanations | Understanding, recommendations |
+| **🪲 Debug** | Troubleshooting issues | Error investigation, diagnosis |
+| **🪃 Orchestrator** | Complex multi-step projects | Coordination, workflow management |
 
 ---
 
-## 📚 Key Documentation
+## 📚 Complete Documentation Index
 
-### Documentação Técnica (docs/)
+**Master index with reading order**: [`docs/INDEX.md`](docs/INDEX.md)
 
-| Arquivo | Conteúdo |
-|---------|----------|
-| `ARQUITETURA.md` | Visão arquitetural completa e fluxo de dados |
-| `PADROES_CODIGO.md` | Convenções detalhadas de código e anti-patterns |
-| `API_SERVICES.md` | Documentação das APIs internas dos services |
-| `HOOKS.md` | Documentação dos hooks customizados |
-| `SETUP.md` | Guia completo de configuração do ambiente |
-| `QUICKSTART.md` | Início rápido para desenvolvedores |
-| `database-schema.md` | Esquema completo do banco de dados |
-| `CSS_ARCHITECTURE.md` | Documentação dos padrões de CSS a serem utilizados |
+### By Category
 
-### Documentação de Funcionalidades
+**Getting Started**
+- [`docs/getting-started/SETUP.md`](docs/getting-started/SETUP.md) - Environment setup
 
-| Arquivo | Conteúdo |
-|---------|----------|
-| `GUIA_TITULACAO.md` | Tutorial de protocolos em titulação |
-| `TRANSICAO_AUTOMATICA.md` | Sistema de transição automática de doses |
-| `user-guide.md` | Guia do usuário final |
+**Architecture**
+- [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) - System overview *(consolidating)*
+- [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) - Database schemas
+- [`docs/architecture/CSS.md`](docs/architecture/CSS.md) - CSS architecture
 
----
+**Standards**
+- [`docs/standards/TESTING.md`](docs/standards/TESTING.md) - Testing guide ✅
+- [`docs/standards/GIT_WORKFLOW.md`](docs/standards/GIT_WORKFLOW.md) - Git workflow ✅
+- [`docs/standards/PULL_REQUEST_TEMPLATE.md`](docs/standards/PULL_REQUEST_TEMPLATE.md) - PR template
+- [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md) - Code patterns *(consolidating)*
 
-## 🔧 Development Tips
+**Reference**
+- [`docs/reference/SERVICES.md`](docs/reference/SERVICES.md) - Service APIs
+- [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) - Custom hooks
 
-### Fluxo de Dados com Cache SWR
-
-```
-1. Componente solicita dados
-         ↓
-2. useCachedQuery verifica cache
-         ↓
-3. Cache HIT (fresh)? → Retorna imediatamente (~0-50ms)
-   Cache HIT (stale)? → Retorna + revalida background
-   Cache MISS? → Executa fetcher
-         ↓
-4. Dados armazenados no Map
-         ↓
-5. Componente atualizado
-```
-
-### Estratégias de Performance
-
-| Estratégia | Implementação | Impacto |
-|------------|---------------|---------|
-| Cache SWR | `queryCache.js` | 95% mais rápido em re-leituras |
-| View Materializada | `medicine_stock_summary` | 5x mais rápido consultas estoque |
-| Deduplicação | `pendingRequests` Map | Evita requests duplicados |
-| LRU Eviction | 50 entradas máximo | Previne memory leaks |
-| React 19 | Compiler otimizado | Menos re-renders |
-
-### Onboarding Flow
-
-```
-Novo Usuário
-     ↓
-Auth (Cadastro/Login)
-     ↓
-OnboardingProvider verifica user_settings.onboarding_completed
-     ↓
-Se FALSE → Abre OnboardingWizard
-     ↓
-Step 0: WelcomeStep (Boas-vindas)
-     ↓
-Step 1: FirstMedicineStep (Cadastro primeiro remédio)
-     ↓
-Step 2: FirstProtocolStep (Configura primeira rotina)
-     ↓
-Step 3: TelegramIntegrationStep (Bot opcional)
-     ↓
-Salva onboarding_completed = true
-     ↓
-Dashboard
-```
+**Features**
+- [`docs/features/TITRATION.md`](docs/features/TITRATION.md) - Titration guide
+- [`docs/features/AUTO_TRANSITION.md`](docs/features/AUTO_TRANSITION.md) - Auto transition
+- [`docs/features/USER_GUIDE.md`](docs/features/USER_GUIDE.md) - User guide
 
 ---
 
-## 🧪 Testing Strategies
+## 🎓 Common Workflows
 
-### Component Testing Best Practices
-
-#### Mocking Framer Motion
-```jsx
-// ✅ CORRECT - Destructure all animation props
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: vi.fn(({ initial, animate, transition, ...props }) => <div {...props} />),
-  },
-  AnimatePresence: vi.fn(({ children }) => <>{children}</>),
-}))
-```
-
-#### Mock Path Resolution
-```javascript
-// Verify actual folder structure before mocking
-// ❌ WRONG - incorrect relative path
-vi.mock('../../../hooks/useCachedQuery')
-
-// ✅ CORRECT - matches actual structure
-vi.mock('../../hooks/useCachedQuery')
-```
-
-#### Date Handling in Tests
-```javascript
-// ✅ CORRECT - Use relative dates to avoid timezone issues
-const getRelativeDate = (daysOffset = 0) => {
-  const date = new Date()
-  date.setDate(date.getDate() + daysOffset)
-  return date.toISOString().split('T')[0]
-}
-
-// ❌ WRONG - Fixed dates may be filtered as future dates
-const date = '2026-02-11' // May fail if component filters future dates
-```
-
-#### Component Testing Configuration
-```bash
-# Use dedicated config for component tests (excludes from default config)
-npx vitest run --config vitest.component.config.js
-```
-
-### Smoke Test Requirements
-
-Smoke tests must be isolated from other tests due to mock conflicts:
+### Creating a New Feature
 
 ```bash
-# ✅ CORRECT - Run smoke tests separately
-npm run test:smoke
+# 1. Create branch
+git checkout -b feature/wave-X/new-feature
 
-# ❌ WRONG - Don't include smoke tests with other test suites
+# 2. Create service with Zod validation
+# See: docs/reference/SERVICES.md
+
+# 3. Create component
+# See: docs/PADROES_CODIGO.md (consolidating to docs/standards/CODE_PATTERNS.md)
+
+# 4. Write tests
+# See: docs/standards/TESTING.md
+
+# 5. Validate
+npm run validate
+
+# 6. Create PR
+# See: docs/standards/GIT_WORKFLOW.md
 ```
 
-**Configuration:** Smoke tests use `vitest.smoke.config.js` with isolated settings.
+### Fixing a Bug
 
-## 🚨 Common Issues
+```bash
+# 1. Create branch
+git checkout -b fix/wave-X/bug-description
 
-### ESLint e React Refresh
-- **Problema:** Fast Refresh quebrado
-- **Causa:** Exportar componentes e hooks do mesmo arquivo
-- **Solução:** Separar em arquivos dedicados
+# 2. Identify root cause
+# Use git debugging: git log -S "search_term" -p
 
-### ESLint Unused Disable Directives
-- **Problema:** ESLint reports "Unused eslint-disable directive"
-- **Causa:** Código já está em conformidade, diretiva desnecessária
-- **Solução:** Remover a diretiva — o código já está correto
+# 3. Write failing test first
+# See: docs/standards/TESTING.md
 
-### Vitest Pool Configuration (v4+)
-- **Problema:** Erro com `poolOptions.threads`
-- **Causa:** API mudou no Vitest 4
-- **Solução:** Usar `pool: 'forks'` e `maxWorkers` em vez de `poolOptions.threads`
+# 4. Fix the bug
 
-### Test Commands Not Available
-- **Problema:** `--related` não existe no Vitest CLI
-- **Solução:** Usar `--changed=main` como alternativa
+# 5. Ensure test passes
+npm run test:changed
 
-### Cache SWR
-- **Problema:** Dados desatualizados após mutation
-- **Causa:** Esquecer de invalidar cache
-- **Solução:** Usar sempre `cachedServices` que invalidam automaticamente
+# 6. Validate and PR
+npm run validate && git push
+```
 
-### Supabase RLS
-- **Problema:** "Nenhum dado retornado"
-- **Causa:** Política RLS bloqueando acesso
-- **Solução:** Verificar se usuário está autenticado e políticas estão corretas
+### Adding Tests
 
-### Bot Telegram
-- **Problema:** Bot não responde no webhook
-- **Causa:** Token inválido ou webhook não configurado
-- **Solução:** Verificar `TELEGRAM_BOT_TOKEN` e configurar webhook apontando para `/api/telegram`
+```bash
+# 1. Create test file in __tests__/ subdirectory
+# Format: {sourceFile}.test.{js,jsx}
 
-### BUTTON_DATA_INVALID Error
-- **Problema:** Telegram rejeita callback
-- **Causa:** `callback_data` excede 64 bytes
-- **Solução:** Usar índices numéricos em vez de UUIDs
+# 2. Follow test patterns
+# See: docs/standards/TESTING.md
+
+# 3. Run tests
+npm run test:changed
+
+# 4. Check coverage
+npm run test:coverage
+```
 
 ---
 
 ## 📞 Resources
 
-- **Supabase Docs:** https://supabase.com/docs
-- **Vite Docs:** https://vitejs.dev/guide/
-- **Vitest Docs:** https://vitest.dev/
-- **Zod Docs:** https://zod.dev/
-- **Telegram Bot API:** https://core.telegram.org/bots/api
+### Documentation
+- **Master Index**: [`docs/INDEX.md`](docs/INDEX.md)
+- **Testing Guide**: [`docs/standards/TESTING.md`](docs/standards/TESTING.md)
+- **Git Workflow**: [`docs/standards/GIT_WORKFLOW.md`](docs/standards/GIT_WORKFLOW.md)
+
+### External
+- **Supabase Docs**: https://supabase.com/docs
+- **Vite Docs**: https://vitejs.dev/guide/
+- **Vitest Docs**: https://vitest.dev/
+- **Zod Docs**: https://zod.dev/
+- **Telegram Bot API**: https://core.telegram.org/bots/api
 
 ---
 
-*Última atualização: 12/02/2026*
-*Versão do projeto: 2.7.0*
+*Última atualização: 2026-02-17*  
+*Versão do projeto: 2.8.1*  
+*Formato: Routing Table (Phase 3 - Documentation Overhaul)*
