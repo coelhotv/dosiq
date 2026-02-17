@@ -1518,3 +1518,47 @@ onAction((alert, action) => {
 **Pendências / próximos passos**
 - Issue #33: Traduzir JSDoc de escapeMarkdownV2 para português (5 min)
 - Issue #34: Otimizar escapeMarkdownV2 com regex única (10 min)
+
+---
+
+## Memory Entry — 2026-02-17 16:40
+**Contexto / Objetivo**
+- Merge PR #44 (refactor(bot): extract formatters and improve code organization)
+- Criar backlog items para melhorias de JSDoc identificadas no code review
+- Documentar regra de JSDoc em português para evitar reincidência
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - Nenhum arquivo de código alterado (apenas operações Git/GitHub e documentação)
+- Operações realizadas:
+  - Merge PR #44 via `gh pr merge 44 --merge --delete-branch`
+  - Criação de Issue #45: Traduzir JSDoc de formatStockStatus e formatProtocol
+  - Criação de Issue #46: Auditar JSDoc de todo o projeto para garantir comentários em português
+
+**O que deu certo**
+- Merge executado com sucesso via GitHub CLI (fast-forward)
+- Branch remota automaticamente deletada após merge
+- Issues criadas com descrições detalhadas e estimativas
+
+**O que não deu certo / riscos**
+- Padrão recorrente de JSDoc em inglês identificado em múltiplos PRs (#32, #42, #44)
+- Necessidade de regra explícita para evitar reincidência
+
+**Causa raiz (se foi debug)**
+- N/A (operação administrativa sem bugs)
+
+**Decisões & trade-offs**
+- Decisão: Aceitar JSDoc em inglês como débito técnico e criar issues de backlog
+- Alternativas consideradas: Corrigir antes do merge, rejeitar PR
+- Por que: Issues são menores (documentação), não bloqueiam funcionalidade
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** escrever JSDoc em português desde o primeiro commit
+- Verificar JSDoc antes de criar PR
+- Adicionar verificação de JSDoc em inglês ao code review checklist
+- Usar template: `/** * Descrição em português. * @param {tipo} nome - Descrição. * @returns {tipo} Descrição. */`
+- Criar issues de backlog para review comments menores (não bloqueantes)
+
+**Pendências / próximos passos**
+- Issue #45: Traduzir JSDoc específico (5 min)
+- Issue #46: Auditar todo o projeto (1-2 horas)
