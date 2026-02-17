@@ -7,6 +7,31 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [2.9.0] - 2026-02-17
+
+### Telegram MarkdownV2 Escape System
+
+#### ✨ Novas Funcionalidades
+- **Função `escapeMarkdownV2()`**: Escape de 18 caracteres reservados do Telegram MarkdownV2
+  - Caracteres: `_ * [ ] ( ) ~ \` > # + - = | { } . !`
+  - Aplicado em todos os comandos, callbacks e tasks do bot
+- **63 testes unitários**: Cobertura completa de edge cases
+- **Documentação consolidada**: `docs/architecture/TELEGRAM_BOT.md`
+
+#### 🐛 Correções
+- **Erro DLQ resolvido**: "Character '!' is reserved and must be escaped"
+- **Unidade de dosagem dinâmica**: Mensagens de estoque insuficiente agora mostram mg/ml/U/mcg corretamente
+- **Escape consistente**: Todos os textos de usuário agora escapados corretamente
+
+#### 📦 Commits Incluídos
+- PR #32: Criar função escapeMarkdownV2
+- PR #36: Adicionar testes unitários (63 testes)
+- PR #42: Atualizar tasks.js com escape
+- PR #44: Atualizar comandos do bot com escape
+- PR #47: Atualizar callbacks do bot com escape
+
+---
+
 ## [2.8.1] - 2026-02-16
 
 ### Telegram Bot Reliability
