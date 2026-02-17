@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
 
 // Helper function to fetch medicines
 async function fetchMedicines(userId, medicineName = null) {
@@ -30,7 +31,7 @@ export async function handleAdicionarEstoque(bot, msg) {
     const medicines = await fetchMedicines(userId);
 
     if (!medicines || medicines.length === 0) {
-      return bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados. Use o app web para cadastrar.');
+      return bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados\\. Use o app web para cadastrar\\.');
     }
 
     // Create keyboard using indices to avoid 64-byte limit
@@ -54,7 +55,7 @@ export async function handleAdicionarEstoque(bot, msg) {
     });
 
     await bot.sendMessage(chatId, '📦 *Adicionar ao Estoque*\nSelecione o medicamento:', {
-      parse_mode: 'Markdown',
+      parse_mode: 'MarkdownV2',
       reply_markup: {
         inline_keyboard: keyboard
       }
@@ -62,10 +63,10 @@ export async function handleAdicionarEstoque(bot, msg) {
 
   } catch (err) {
     if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.');
     }
     console.error('Erro ao iniciar adição de estoque:', err);
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao buscar seus medicamentos.');
+    bot.sendMessage(chatId, '❌ Ocorreu um erro ao buscar seus medicamentos\\.');
   }
 }
 
@@ -75,7 +76,7 @@ export async function handleReporShortcut(bot, msg, match) {
   const quantity = parseFloat(match[2]?.replace(',', '.'));
 
   if (!medicineName || isNaN(quantity)) {
-    return bot.sendMessage(chatId, '⚠️ Uso correto: `/repor NomeDoRemedio Quantidade`\nEx: `/repor Entresto 20`', { parse_mode: 'Markdown' });
+    return bot.sendMessage(chatId, '⚠️ Uso correto: `/repor NomeDoRemedio Quantidade`\nEx: `/repor Entresto 20`', { parse_mode: 'MarkdownV2' });
   }
 
   try {
@@ -83,7 +84,8 @@ export async function handleReporShortcut(bot, msg, match) {
     const medicines = await fetchMedicines(userId, medicineName);
 
     if (!medicines || medicines.length === 0) {
-      return bot.sendMessage(chatId, `❌ Medicamento "${medicineName}" não encontrado.`);
+      const escapedName = escapeMarkdownV2(medicineName);
+      return bot.sendMessage(chatId, `❌ Medicamento "${escapedName}" não encontrado\\.`);
     }
 
     if (medicines.length > 1) {
@@ -103,7 +105,7 @@ export async function handleReporShortcut(bot, msg, match) {
         medicineMap
       });
       
-      return bot.sendMessage(chatId, 'Foram encontrados vários medicamentos. Selecione um:', {
+      return bot.sendMessage(chatId, 'Foram encontrados vários medicamentos\\. Selecione um:', {
         reply_markup: { inline_keyboard: keyboard }
       });
     }
@@ -113,10 +115,10 @@ export async function handleReporShortcut(bot, msg, match) {
 
   } catch (err) {
     if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.');
     }
     console.error('Erro no atalho de repor:', err);
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação.');
+    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação\\.');
   }
 }
 
@@ -133,9 +135,11 @@ export async function processAddStock(bot, chatId, userId, medicineId, quantity,
 
     if (error) throw error;
 
-    await bot.sendMessage(chatId, `✅ Adicionado *${quantity}x* ao estoque de *${medicineName}*!`, { parse_mode: 'Markdown' });
+    const escapedName = escapeMarkdownV2(medicineName);
+    const escapedQty = escapeMarkdownV2(String(quantity));
+    await bot.sendMessage(chatId, `✅ Adicionado *${escapedQty}x* ao estoque de *${escapedName}*\\!`, { parse_mode: 'MarkdownV2' });
   } catch (err) {
     console.error('Erro ao adicionar estoque:', err);
-    bot.sendMessage(chatId, '❌ Erro ao atualizar estoque.');
+    bot.sendMessage(chatId, '❌ Erro ao atualizar estoque\\.');
   }
 }

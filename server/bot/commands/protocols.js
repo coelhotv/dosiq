@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession, getSession } from '../state.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
 
 export async function handlePausar(bot, msg, match) {
   const chatId = msg.chat.id;
@@ -18,7 +19,7 @@ export async function handlePausar(bot, msg, match) {
         .eq('active', true);
 
       if (!protocols || protocols.length === 0) {
-        return bot.sendMessage(chatId, 'Você não possui protocolos ativos.');
+        return bot.sendMessage(chatId, 'Você não possui protocolos ativos\\.');
       }
 
       const protocolMap = protocols.map((p, index) => ({
@@ -42,10 +43,10 @@ export async function handlePausar(bot, msg, match) {
     await toggleProtocol(bot, chatId, userId, medicineName, false);
   } catch (err) {
     if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.');
     }
     console.error('Erro em handlePausar:', err);
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação.');
+    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação\\.');
   }
 }
 
@@ -65,7 +66,7 @@ export async function handleRetomar(bot, msg, match) {
         .eq('active', false);
 
       if (!protocols || protocols.length === 0) {
-        return bot.sendMessage(chatId, 'Você não possui protocolos pausados.');
+        return bot.sendMessage(chatId, 'Você não possui protocolos pausados\\.');
       }
 
       const protocolMap = protocols.map((p, index) => ({
@@ -89,10 +90,10 @@ export async function handleRetomar(bot, msg, match) {
     await toggleProtocol(bot, chatId, userId, medicineName, true);
   } catch (err) {
     if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.');
     }
     console.error('Erro em handleRetomar:', err);
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação.');
+    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação\\.');
   }
 }
 
@@ -105,7 +106,8 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
       .ilike('name', `%${medicineName}%`);
 
     if (!medicines || medicines.length === 0) {
-      return bot.sendMessage(chatId, `❌ Medicamento "${medicineName}" não encontrado.`);
+      const escapedName = escapeMarkdownV2(medicineName);
+      return bot.sendMessage(chatId, `❌ Medicamento "${escapedName}" não encontrado\\.`);
     }
 
     const medicineIds = medicines.map(m => m.id);
@@ -119,15 +121,17 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
       .single();
 
     if (error || !protocol) {
-      return bot.sendMessage(chatId, `❌ Não foi possível encontrar um protocolo para "${medicineName}".`);
+      const escapedName = escapeMarkdownV2(medicineName);
+      return bot.sendMessage(chatId, `❌ Não foi possível encontrar um protocolo para "${escapedName}"\\.`);
     }
 
     const statusStr = active ? 'retomado' : 'pausado';
-    await bot.sendMessage(chatId, `✅ Protocolo de *${protocol.medicine.name}* foi ${statusStr}.`, { parse_mode: 'Markdown' });
+    const escapedMedName = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
+    await bot.sendMessage(chatId, `✅ Protocolo de *${escapedMedName}* foi ${statusStr}\\.`, { parse_mode: 'MarkdownV2' });
 
   } catch (err) {
     console.error('Erro ao alternar protocolo:', err);
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação.');
+    bot.sendMessage(chatId, '❌ Ocorreu um erro ao processar sua solicitação\\.');
   }
 }
 
@@ -157,10 +161,11 @@ export async function handleProtocolCallback(bot, callbackQuery) {
     if (error) throw error;
 
     const statusStr = active ? 'retomado' : 'pausado';
-    await bot.editMessageText(`✅ Protocolo de *${protocol.medicine.name}* foi ${statusStr}.`, {
+    const escapedMedName = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
+    await bot.editMessageText(`✅ Protocolo de *${escapedMedName}* foi ${statusStr}\\.`, {
       chat_id: chatId,
       message_id: message.message_id,
-      parse_mode: 'Markdown'
+      parse_mode: 'MarkdownV2'
     });
     await bot.answerCallbackQuery(id);
   } catch (err) {
