@@ -18,10 +18,15 @@ export function calculateDaysRemaining(totalQuantity, dailyUsage) {
 
 /**
  * Format stock status message
+ * @param {object} medicine - Medicine object with name and dosage_unit
+ * @param {number} totalQuantity - Total stock quantity
+ * @param {number|null} daysRemaining - Days of stock remaining
+ * @returns {string} Formatted message with MarkdownV2 escaping
  */
 export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
-  const unit = medicine.dosage_unit || 'unidades';
-  let status = `💊 *${medicine.name}*\n`;
+  const unit = escapeMarkdownV2(medicine.dosage_unit || 'unidades');
+  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
+  let status = `💊 *${name}*\n`;
   status += `📦 Estoque: ${totalQuantity} ${unit}\n`;
   
   if (daysRemaining !== null) {
@@ -39,11 +44,17 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
 
 /**
  * Format protocol info
+ * @param {object} protocol - Protocol object with medicine, time_schedule, etc.
+ * @returns {string} Formatted message with MarkdownV2 escaping
  */
 export function formatProtocol(protocol) {
-  let msg = `💊 *${protocol.medicine.name}*\n`;
-  msg += `⏰ Horários: ${protocol.time_schedule.join(', ')}\n`;
-  msg += `📏 Dose: ${protocol.dosage_per_intake}x\n`;
+  const name = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
+  const times = escapeMarkdownV2(protocol.time_schedule?.join(', ') || '');
+  const dosage = escapeMarkdownV2(String(protocol.dosage_per_intake ?? 1));
+  
+  let msg = `💊 *${name}*\n`;
+  msg += `⏰ Horários: ${times}\n`;
+  msg += `📏 Dose: ${dosage}x\n`;
   
   if (protocol.titration_schedule && protocol.titration_schedule.length > 0) {
     const currentStage = protocol.current_stage_index || 0;
@@ -51,7 +62,8 @@ export function formatProtocol(protocol) {
   }
   
   if (protocol.notes) {
-    msg += `📝 _${protocol.notes}_\n`;
+    const notes = escapeMarkdownV2(protocol.notes);
+    msg += `📝 _${notes}_\n`;
   }
   
   return msg;

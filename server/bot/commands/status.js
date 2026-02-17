@@ -17,7 +17,7 @@ export async function handleStatus(bot, msg) {
     if (error) throw error;
 
     if (!protocols || protocols.length === 0) {
-      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos no momento.');
+      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos no momento\\.');
     }
     
     // Fallback removed
@@ -28,9 +28,9 @@ export async function handleStatus(bot, msg) {
       message += formatProtocol(p) + '\n';
     });
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
   } catch (err) {
     console.error('Erro ao buscar protocolos:', err);
-    await bot.sendMessage(chatId, 'Erro ao buscar seus dados.');
+    await bot.sendMessage(chatId, 'Erro ao buscar seus dados\\.');
   }
 }

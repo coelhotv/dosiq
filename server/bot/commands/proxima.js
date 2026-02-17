@@ -1,6 +1,6 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
-import { getCurrentTime } from '../../utils/formatters.js';
+import { getCurrentTime, escapeMarkdownV2 } from '../../utils/formatters.js';
 
 export async function handleProxima(bot, msg) {
   const chatId = msg.chat.id;
@@ -17,7 +17,7 @@ export async function handleProxima(bot, msg) {
     if (error) throw error;
 
     if (!protocols || protocols.length === 0) {
-      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos.');
+      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos\\.');
     }
 
     const currentTime = getCurrentTime();
@@ -41,25 +41,30 @@ export async function handleProxima(bot, msg) {
     upcomingDoses.sort((a, b) => a.time.localeCompare(b.time));
 
     if (upcomingDoses.length === 0) {
-      return await bot.sendMessage(chatId, 'Não há mais doses programadas para hoje. ✅');
+      return await bot.sendMessage(chatId, 'Não há mais doses programadas para hoje\\.');
     }
 
     const next = upcomingDoses[0];
+    const medicineName = escapeMarkdownV2(next.medicine || 'Medicamento');
+    const dosage = escapeMarkdownV2(String(next.dosage ?? 1));
+    const time = escapeMarkdownV2(next.time);
+    
     let message = `⏰ *Próxima Dose:*\n\n`;
-    message += `🕐 Horário: *${next.time}*\n`;
-    message += `💊 Medicamento: *${next.medicine}*\n`;
-    message += `📏 Quantidade: ${next.dosage}x\n`;
+    message += `🕐 Horário: *${time}*\n`;
+    message += `💊 Medicamento: *${medicineName}*\n`;
+    message += `📏 Quantidade: ${dosage}x\n`;
     
     if (next.notes) {
-      message += `📝 _${next.notes}_\n`;
+      const notes = escapeMarkdownV2(next.notes);
+      message += `📝 _${notes}_\n`;
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
   } catch (err) {
     if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      return bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.');
     }
     console.error('Erro ao buscar próxima dose:', err);
-    await bot.sendMessage(chatId, 'Erro ao buscar próxima dose.');
+    await bot.sendMessage(chatId, 'Erro ao buscar próxima dose\\.');
   }
 }

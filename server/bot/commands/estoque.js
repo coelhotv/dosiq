@@ -22,7 +22,7 @@ export async function handleEstoque(bot, msg) {
     if (medError) throw medError;
 
     if (!medicines || medicines.length === 0) {
-      return await bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados.');
+      return await bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados\\.');
     }
 
     let message = '📦 *Estoque de Medicamentos:*\n\n';
@@ -60,16 +60,16 @@ export async function handleEstoque(bot, msg) {
     }
 
     if (!hasMedicinesToShow) {
-      return await bot.sendMessage(chatId, 'Não há medicamentos com protocolos ativos para exibir no estoque.');
+      return await bot.sendMessage(chatId, 'Não há medicamentos com protocolos ativos para exibir no estoque\\.');
     }
 
     if (hasLowStock) {
-      message += '\n⚠️ *Atenção:* Alguns medicamentos estão com estoque baixo!';
+      message += '\n⚠️ *Atenção:* Alguns medicamentos estão com estoque baixo\\!';
     }
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
   } catch (err) {
     console.error('Erro ao buscar estoque:', err);
-    await bot.sendMessage(chatId, 'Erro ao buscar estoque.');
+    await bot.sendMessage(chatId, 'Erro ao buscar estoque\\.');
   }
 }
