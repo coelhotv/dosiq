@@ -10,29 +10,26 @@ export default defineConfig({
     css: false,
 
     // ==========================================
-    // OTIMIZAÇÕES PARA MACBOOK AIR 2013 (Vitest 4+)
+    // OTIMIZAÇÕES PARA VITEST 4+ (Testing Infrastructure Overhaul)
     // ==========================================
 
     // Executar apenas 1 thread para evitar sobrecarga
     pool: 'threads',
-    singleThread: true,  // MUITO importante para machines antigas
+    singleThread: true,
     maxThreads: 1,
     minThreads: 1,
-
-    // Não isolar testes (mais rápido, mas cuidado com estado compartilhado)
-    isolate: false,
 
     // Limites de tempo mais generosos
     testTimeout: 30000,
     hookTimeout: 10000,
 
-    // Excluir testes de componentes UI que são lentos
+    // Incluir TODOS os testes (incluindo components/ e features/)
+    include: ['src/**/*.test.{js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/cypress/**',
-      '**/.{idea,git,cache,out,temp}/**',
-      '**/src/components/**/*.test.jsx',
+      '**/.{idea,git,cache,output,temp}/**',
     ],
 
     // Coverage mais leve
@@ -44,6 +41,9 @@ export default defineConfig({
         'src/test/',
         'src/main.jsx',
         'src/App.jsx',
+        '**/__tests__/**',
+        '**/*.test.{js,jsx}',
+        '**/*.config.js',
       ],
     },
   },

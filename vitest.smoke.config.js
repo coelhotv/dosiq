@@ -7,14 +7,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
-    include: ['src/**/*.smoke.test.jsx', 'src/**/*.smoke.test.js'],
+    include: ['src/**/*.smoke.test.{js,jsx}'],
+    
+    // Vitest 4+ API (removed deprecated poolOptions.threads)
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 1,
-        isolate: false,
-      },
-    },
+    maxThreads: 1,
+    minThreads: 1,
+    
     testTimeout: 5000,
     reporters: ['dot'],
   },
