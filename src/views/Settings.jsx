@@ -209,12 +209,9 @@ export default function Settings() {
       <div className="settings-section glass-card">
         <h3>Administração</h3>
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
-        
+
         <div className="admin-actions">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.hash = 'admin-dlq'}
-          >
+          <Button variant="outline" onClick={() => (window.location.hash = 'admin-dlq')}>
             📋 Gerenciar Notificações Falhadas (DLQ)
           </Button>
         </div>
