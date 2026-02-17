@@ -17,11 +17,11 @@ export function calculateDaysRemaining(totalQuantity, dailyUsage) {
 }
 
 /**
- * Format stock status message
- * @param {object} medicine - Medicine object with name and dosage_unit
- * @param {number} totalQuantity - Total stock quantity
- * @param {number|null} daysRemaining - Days of stock remaining
- * @returns {string} Formatted message with MarkdownV2 escaping
+ * Formata mensagem de status do estoque.
+ * @param {object} medicine - Objeto do medicamento com name e dosage_unit
+ * @param {number} totalQuantity - Quantidade total em estoque
+ * @param {number|null} daysRemaining - Dias restantes de estoque
+ * @returns {string} Mensagem formatada com escape MarkdownV2
  */
 export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
   const unit = escapeMarkdownV2(medicine.dosage_unit || 'unidades');
@@ -43,9 +43,9 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
 }
 
 /**
- * Format protocol info
- * @param {object} protocol - Protocol object with medicine, time_schedule, etc.
- * @returns {string} Formatted message with MarkdownV2 escaping
+ * Formata informações do protocolo.
+ * @param {object} protocol - Objeto do protocolo com medicine, time_schedule, etc.
+ * @returns {string} Mensagem formatada com escape MarkdownV2
  */
 export function formatProtocol(protocol) {
   const name = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
@@ -117,39 +117,45 @@ export function calculateStreak(logs, timezone = 'America/Sao_Paulo') {
 }
 
 /**
- * Escape special characters for Telegram MarkdownV2 format
- * According to: https://core.telegram.org/bots/api#markdownv2-style
+ * Escapa caracteres especiais para o formato Telegram MarkdownV2.
+ * Conforme: https://core.telegram.org/bots/api#markdownv2-style
  * 
- * @param {string} text - Text to escape
- * @returns {string} Escaped text safe for MarkdownV2
+ * @param {string} text - Texto a ser escapado
+ * @returns {string} Texto seguro para MarkdownV2
  * 
  * @example
- * escapeMarkdownV2("Omega 3!") // Returns "Omega 3\!"
- * escapeMarkdownV2("Vitamina D (1000UI)") // Returns "Vitamina D \(1000UI\)"
+ * escapeMarkdownV2("Omega 3!") // Retorna "Omega 3\!"
+ * escapeMarkdownV2("Vitamina D (1000UI)") // Retorna "Vitamina D \(1000UI\)"
  */
 export function escapeMarkdownV2(text) {
   if (!text || typeof text !== 'string') return '';
   
-  // Order matters: escape backslash FIRST to avoid double-escaping
-  // Then escape all other reserved characters
-  return text
-    .replace(/\\/g, '\\\\')  // Must be first!
-    .replace(/_/g, '\\_')
-    .replace(/\*/g, '\\*')
-    .replace(/\[/g, '\\[')
-    .replace(/\]/g, '\\]')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-    .replace(/~/g, '\\~')
-    .replace(/`/g, '\\`')
-    .replace(/>/g, '\\>')
-    .replace(/#/g, '\\#')
-    .replace(/\+/g, '\\+')
-    .replace(/-/g, '\\-')
-    .replace(/=/g, '\\=')
-    .replace(/\|/g, '\\|')
-    .replace(/{/g, '\\{')
-    .replace(/}/g, '\\}')
-    .replace(/\./g, '\\.')
-    .replace(/!/g, '\\!');
+  // Uma única regex com callback para melhor performance
+  // Ordem importa: primeiro escaping de backslash para evitar double-escaping
+  // Nota: dentro de [], apenas ] e \ precisam de escape, não _ ou [
+
+  return text.replace(/([\\*()`>#+\-=|{}.!_[\]~])/g, (match) => {
+    const escapeMap = {
+      '\\': '\\\\',
+      '_': '\\_',
+      '*': '\\*',
+      '[': '\\[',
+      ']': '\\]',
+      '(': '\\(',
+      ')': '\\)',
+      '~': '\\~',
+      '`': '\\`',
+      '>': '\\>',
+      '#': '\\#',
+      '+': '\\+',
+      '-': '\\-',
+      '=': '\\=',
+      '|': '\\|',
+      '{': '\\{',
+      '}': '\\}',
+      '.': '\\.',
+      '!': '\\!'
+    };
+    return escapeMap[match] || match;
+  });
 }
