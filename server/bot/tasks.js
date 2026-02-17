@@ -109,7 +109,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
     message += '⚠️ *Alerta de Estoque Baixo*\n\n';
     message += 'Atenção aos seguintes medicamentos:\n\n';
     lowStock.forEach(m => {
-      const days = m.days <= 0 ? 'estoque zerado' : `\\~${m.days} dia\\(s\\) restante\\(s\\)`;
+      const days = m.days <= 0 ? 'estoque zerado' : escapeMarkdownV2(`~${m.days} dia(s) restante(s)`);
       message += `📦 **${escapeMarkdownV2(m.name)}**\n   └ ${days}\n`;
     });
     message += '\n💡 Considere repor o estoque em breve\\.';
