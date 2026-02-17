@@ -1,6 +1,6 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
-import { getCurrentTime } from '../../utils/formatters.js';
+import { getCurrentTime, escapeMarkdownV2 } from '../../utils/formatters.js';
 
 export async function handleHoje(bot, msg) {
   const chatId = msg.chat.id;
@@ -10,7 +10,7 @@ export async function handleHoje(bot, msg) {
     try {
       userId = await getUserIdByChatId(chatId);
     } catch {
-      return await bot.sendMessage(chatId, '⚠️ Você precisa vincular sua conta primeiro. Use /start para instruções.');
+      return await bot.sendMessage(chatId, '⚠️ Você precisa vincular sua conta primeiro\\. Use /start para instruções\\.');
     }
 
     const { data: protocols, error } = await supabase
@@ -22,7 +22,7 @@ export async function handleHoje(bot, msg) {
     if (error) throw error;
 
     if (!protocols || protocols.length === 0) {
-      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos.');
+      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos\\.');
     }
 
     // Get today's date in SP timezone
@@ -83,20 +83,24 @@ export async function handleHoje(bot, msg) {
     schedule.sort((a, b) => a.time.localeCompare(b.time));
 
     const currentTime = getCurrentTime();
-    let message = `📅 *Doses de Hoje* (${new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(new Date())})\n\n`;
+    const todayFormatted = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    let message = `📅 *Doses de Hoje* \\(${escapeMarkdownV2(todayFormatted)}\\)\n\n`;
 
     schedule.forEach(item => {
       const status = item.taken ? '✅' : (item.time <= currentTime ? '⏰' : '⏱️');
-      message += `${status} ${item.time} - ${item.medicine} (${item.dosage}x)\n`;
+      const medicineName = escapeMarkdownV2(item.medicine || 'Medicamento');
+      const time = escapeMarkdownV2(item.time);
+      const dosage = escapeMarkdownV2(String(item.dosage ?? 1));
+      message += `${status} ${time} \\- ${medicineName} \\(${dosage}x\\)\n`;
     });
 
     const taken = schedule.filter(s => s.taken).length;
     const total = schedule.length;
     message += `\n📊 Progresso: ${taken}/${total} doses`;
 
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
   } catch (err) {
     console.error('Erro ao buscar agenda:', err);
-    await bot.sendMessage(chatId, 'Erro ao buscar agenda de hoje.');
+    await bot.sendMessage(chatId, 'Erro ao buscar agenda de hoje\\.');
   }
 }
