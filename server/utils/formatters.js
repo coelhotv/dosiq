@@ -103,3 +103,41 @@ export function calculateStreak(logs, timezone = 'America/Sao_Paulo') {
   
   return streak;
 }
+
+/**
+ * Escape special characters for Telegram MarkdownV2 format
+ * According to: https://core.telegram.org/bots/api#markdownv2-style
+ * 
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text safe for MarkdownV2
+ * 
+ * @example
+ * escapeMarkdownV2("Omega 3!") // Returns "Omega 3\!"
+ * escapeMarkdownV2("Vitamina D (1000UI)") // Returns "Vitamina D \(1000UI\)"
+ */
+export function escapeMarkdownV2(text) {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Order matters: escape backslash FIRST to avoid double-escaping
+  // Then escape all other reserved characters
+  return text
+    .replace(/\\/g, '\\\\')  // Must be first!
+    .replace(/_/g, '\\_')
+    .replace(/\*/g, '\\*')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/~/g, '\\~')
+    .replace(/`/g, '\\`')
+    .replace(/>/g, '\\>')
+    .replace(/#/g, '\\#')
+    .replace(/\+/g, '\\+')
+    .replace(/-/g, '\\-')
+    .replace(/=/g, '\\=')
+    .replace(/\|/g, '\\|')
+    .replace(/{/g, '\\{')
+    .replace(/}/g, '\\}')
+    .replace(/\./g, '\\.')
+    .replace(/!/g, '\\!');
+}
