@@ -1475,3 +1475,46 @@ onAction((alert, action) => {
 - Testar DLQ Admin interface em produção
 - Validar digest diário às 09:00 (horário de Brasília)
 - Considerar P2: Notification Stats Dashboard Widget
+
+---
+
+## Memory Entry — 2026-02-17 07:28
+**Contexto / Objetivo**
+- Merge PR #32 (fix/telegram-markdownv2-escape) para main
+- Criar 2 issues de backlog para melhorias menores identificadas no code review
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - Nenhum arquivo de código alterado (apenas operações Git/GitHub)
+- Operações realizadas:
+  - Merge PR #32 via `gh pr merge 32 --merge --delete-branch`
+  - Criação de Issue #33: Traduzir JSDoc para português
+  - Criação de Issue #34: Otimizar escapeMarkdownV2 com regex única
+
+**O que deu certo**
+- Merge executado com sucesso via GitHub CLI
+- Branch remota automaticamente deletada após merge
+- Issues criadas com descrições detalhadas e código de exemplo
+- Validação de estado do repositório confirmou merge bem-sucedido
+
+**O que não deu certo / riscos**
+- Tentativa inicial de criar issue com `--body` multilinha falhou
+- Correção: Usar `--body-file` com arquivo temporário
+
+**Causa raiz (se foi debug)**
+- N/A (operação administrativa sem bugs)
+
+**Decisões & trade-offs**
+- Decisão: Aceitar review comments como issues de backlog ao invés de corrigir antes do merge
+- Alternativas consideradas: Corrigir antes do merge, criar nova branch para correções
+- Por que: Issues são menores (estilo e otimização), não bloqueiam funcionalidade
+
+**Regras locais para o futuro (lições acionáveis)**
+- Usar `gh pr merge <number> --merge --delete-branch` para merge com cleanup automático
+- Usar `--body-file` ao criar issues com corpo multilinha
+- Criar issues de backlog para review comments menores (não bloqueantes)
+- Validar estado do repositório com `git log --oneline -5` após merge
+
+**Pendências / próximos passos**
+- Issue #33: Traduzir JSDoc de escapeMarkdownV2 para português (5 min)
+- Issue #34: Otimizar escapeMarkdownV2 com regex única (10 min)

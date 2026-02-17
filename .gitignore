@@ -27,11 +27,8 @@ run/
 *.code-workspace
 coverage/
 scripts/
-.roo/
-.kilocode/
 .husky/
-.clinerules/
-plans/
+
 
 
 # Environment variables
