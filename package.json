@@ -16,6 +16,7 @@
     "test:coverage": "vitest run --config vitest.ci.config.js",
     "test:components": "vitest run 'src/**/components/**/__tests__/*.test.jsx'",
     "test:services": "vitest run 'src/**/services/**/__tests__/*.test.js' 'src/features/**/services/__tests__/*.test.js'",
+    "test:critical": "vitest run 'src/**/services/**/__tests__/*.test.js' 'src/**/utils/**/__tests__/*.test.js' 'src/**/schemas/**/__tests__/*.test.js' 'src/**/hooks/**/__tests__/*.test.jsx' --exclude '**/*.smoke.test.*'",
     "// --- Validation Scripts ---": "",
     "validate": "npm run lint && npm run test",
     "validate:quick": "npm run lint && npm run test:changed",
