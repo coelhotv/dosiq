@@ -1,7 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { getSession, setSession, clearSession } from '../state.js';
-import { calculateStreak } from '../../utils/formatters.js';
+import { calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 
 const logger = createLogger('ConversationalCallbacks');
@@ -96,10 +96,10 @@ async function handleAddStockMedSelected(bot, callbackQuery) {
     waitingForInput: true 
   });
 
-  await bot.editMessageText(`📦 *${medicineName}*\nDigite a quantidade a ser adicionada ao estoque:`, {
+  await bot.editMessageText(`📦 *${escapeMarkdownV2(medicineName)}*\nDigite a quantidade a ser adicionada ao estoque:`, {
     chat_id: chatId,
     message_id: message.message_id,
-    parse_mode: 'Markdown',
+    parse_mode: 'MarkdownV2',
     reply_markup: {
       inline_keyboard: [[{ text: '❌ Cancelar', callback_data: 'conv_cancel' }]]
     }
@@ -114,7 +114,7 @@ async function handleManualStockInput(bot, msg, session) {
   const quantity = parseFloat(text);
 
   if (isNaN(quantity) || quantity <= 0) {
-    return bot.sendMessage(chatId, '⚠️ Por favor, digite um número válido.');
+    return bot.sendMessage(chatId, '⚠️ Por favor, digite um número válido\\.', { parse_mode: 'MarkdownV2' });
   }
 
   await processAddStock(bot, chatId, session.medicineId, quantity, session.medicineName);
@@ -183,10 +183,10 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
     ]
   };
 
-  await bot.editMessageText(`💊 *${medicineName}*\nQual a quantidade tomada?\n\n_Você também pode digitar um valor (ex: 1.25)_`, {
+  await bot.editMessageText(`💊 *${escapeMarkdownV2(medicineName)}*\nQual a quantidade tomada?\n\n_Você também pode digitar um valor \\(ex: 1\\.25\\)_`, {
     chat_id: chatId,
     message_id: message.message_id,
-    parse_mode: 'Markdown',
+    parse_mode: 'MarkdownV2',
     reply_markup: keyboard
   });
 
@@ -214,7 +214,7 @@ async function handleManualQuantityInput(bot, msg, session) {
   const quantity = parseFloat(text);
 
   if (isNaN(quantity) || quantity <= 0) {
-    return bot.sendMessage(chatId, '⚠️ Por favor, digite um número válido (ex: 1 ou 0.5).');
+    return bot.sendMessage(chatId, '⚠️ Por favor, digite um número válido \\(ex: 1 ou 0\\.5\\)\\.', { parse_mode: 'MarkdownV2' });
   }
 
   await processDoseRegistration(bot, chatId, session.protocolId, session.medicineId, quantity);
@@ -226,9 +226,10 @@ async function handleCancel(bot, callbackQuery) {
   const chatId = message.chat.id;
   
   clearSession(chatId);
-  await bot.editMessageText('Operação cancelada.', {
+  await bot.editMessageText('Operação cancelada\\.', {
     chat_id: chatId,
-    message_id: message.message_id
+    message_id: message.message_id,
+    parse_mode: 'MarkdownV2'
   });
   await bot.answerCallbackQuery(id);
 }
@@ -270,20 +271,21 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
         .eq('id', medicineId)
         .single();
       
-      const message = `⚠️ Estoque insuficiente!\n\n` +
-        `Medicamento: ${med?.name || 'Desconhecido'}\n` +
+      const message = `⚠️ Estoque insuficiente\\!\n\n` +
+        `Medicamento: ${escapeMarkdownV2(med?.name || 'Desconhecido')}\n` +
         `Dosagem solicitada: ${quantity}mg\n` +
         `Comprimidos necessários: ${pillsToDecrease}\n` +
         `Estoque disponível: ${totalStock} comprimidos\n\n` +
-        `Por favor, adicione estoque antes de registrar a dose.`;
+        `Por favor, adicione estoque antes de registrar a dose\\.`;
       
       if (editMessageId) {
         await bot.editMessageText(message, {
           chat_id: chatId,
-          message_id: editMessageId
+          message_id: editMessageId,
+          parse_mode: 'MarkdownV2'
         });
       } else {
-        await bot.sendMessage(chatId, message);
+        await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
       }
       return;
     }
@@ -315,18 +317,18 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
         .eq('id', medicineId)
         .single();
       
-      const message = `❌ Erro ao registrar dose de *${med?.name || 'Desconhecido'}*.\n\n` +
-        `Detalhes do erro: ${logError.message || 'Erro desconhecido'}\n\n` +
-        `Por favor, tente novamente ou contate o suporte.`;
+      const message = `❌ Erro ao registrar dose de *${escapeMarkdownV2(med?.name || 'Desconhecido')}*\\.\n\n` +
+        `Detalhes do erro: ${escapeMarkdownV2(logError.message || 'Erro desconhecido')}\n\n` +
+        `Por favor, tente novamente ou contate o suporte\\.`;
       
       if (editMessageId) {
         await bot.editMessageText(message, {
           chat_id: chatId,
           message_id: editMessageId,
-          parse_mode: 'Markdown'
+          parse_mode: 'MarkdownV2'
         });
       } else {
-        await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
       }
       return;
     }
@@ -361,20 +363,20 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     const streak = calculateStreak(allLogs);
 
     const unit = med?.dosage_unit || 'mg';
-    let message = `✅ Dose de *${quantity}${unit} ${med?.name || ''}* registrada com sucesso!`;
+    let message = `✅ Dose de *${quantity}${escapeMarkdownV2(unit)} ${escapeMarkdownV2(med?.name || '')}* registrada com sucesso\\!`;
     
     if (streak > 1) {
-      message += `\n🔥 *${streak} dias seguidos!*`;
+      message += `\n🔥 *${streak} dias seguidos\\!*`;
     }
 
     if (editMessageId) {
       await bot.editMessageText(message, {
         chat_id: chatId,
         message_id: editMessageId,
-        parse_mode: 'Markdown'
+        parse_mode: 'MarkdownV2'
       });
     } else {
-      await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
     }
   } catch (err) {
     logger.error('Erro ao registrar dose manual:', err, { 
@@ -386,11 +388,11 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     
     // Handle unlinked user case
     if (err.message === 'User not linked') {
-      await bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
+      await bot.sendMessage(chatId, '❌ Conta não vinculada\\. Use /start para vincular\\.', { parse_mode: 'MarkdownV2' });
       return;
     }
     
-    bot.sendMessage(chatId, '❌ Erro ao registrar a dose. Tente novamente.');
+    bot.sendMessage(chatId, '❌ Erro ao registrar a dose\\. Tente novamente\\.', { parse_mode: 'MarkdownV2' });
   }
 }
 
