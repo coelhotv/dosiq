@@ -41,13 +41,17 @@ export default defineConfig({
       'src/utils/**/*.test.{js,jsx}',
       'src/schemas/**/*.test.{js,jsx}',
       'src/hooks/**/*.test.{js,jsx}',
-      'src/features/**/*.test.{js,jsx}',
+      // Features: apenas services, utils, hooks (NÃO components)
+      'src/features/**/services/**/*.test.{js,jsx}',
+      'src/features/**/utils/**/*.test.{js,jsx}',
+      'src/features/**/hooks/**/*.test.{js,jsx}',
     ],
     exclude: [
       '**/*.smoke.test.*',
       '**/*.integration.test.*',
       'src/components/**/*',
       'src/shared/components/**/*',
+      'src/features/**/components/**/*', // Excluir UI components de features
       'node_modules/',
       // TEMPORÁRIO: Excluir teste com unhandled promise rejections
       // TODO: Fixar useCachedQuery.test.jsx para lidar com erros corretamente
