@@ -5,7 +5,7 @@ Convenções e melhores práticas para manter consistência no projeto.
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
 > - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
 > - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
-> - **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural completo
+> - **[`ARQUITETURA.md`](docs/ARQUITETURA.md:1)** - Framework arquitetural completo
 
 ## 📚 Referências Rápidas
 
