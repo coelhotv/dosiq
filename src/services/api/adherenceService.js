@@ -1,4 +1,5 @@
 import { supabase, getUserId } from '../../lib/supabase'
+import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate } from '../../utils/dateUtils.js'
 
 /**
  * Adherence Service - Cálculo de adesão ao tratamento
@@ -183,17 +184,16 @@ export const adherenceService = {
 
     if (protocolError) throw protocolError
 
-    const dailyExpected = calculateDailyExpectedDoses(protocols)
-
-    if (dailyExpected === 0 || !logs || logs.length === 0) {
+    // Verificar se há protocolos ativos
+    if (!protocols || protocols.length === 0 || !logs || logs.length === 0) {
       return { currentStreak: 0, longestStreak: 0 }
     }
 
     // Agrupar logs por dia
     const logsByDay = groupLogsByDay(logs)
 
-    // Calcular streaks
-    const { currentStreak, longestStreak } = calculateStreaks(logsByDay, dailyExpected)
+    // Calcular streaks (passa protocols para calcular expected por dia)
+    const { currentStreak, longestStreak } = calculateStreaks(logsByDay, protocols)
 
     return { currentStreak, longestStreak }
   },
@@ -269,9 +269,6 @@ export const adherenceService = {
 
     if (logError) throw logError
 
-    // Calcular doses esperadas por dia
-    const dailyExpected = calculateDailyExpectedDoses(protocols)
-
     // Agrupar logs por dia
     const logsByDay = groupLogsByDay(logs)
 
@@ -280,18 +277,18 @@ export const adherenceService = {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(endDate)
       date.setDate(date.getDate() - i)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const dateKey = `${year}-${month}-${day}`
+      const dateKey = formatLocalDate(date)
+
+      // Calcular doses esperadas para este dia específico (filtra por start_date/end_date)
+      const dayExpected = calculateDailyExpectedDoses(protocols, dateKey)
 
       const taken = logsByDay.get(dateKey) || 0
-      const adherence = dailyExpected > 0 ? Math.round((taken / dailyExpected) * 100) : 0
+      const adherence = dayExpected > 0 ? Math.round((taken / dayExpected) * 100) : 0
 
       dailyData.push({
         date: dateKey,
         taken,
-        expected: Math.round(dailyExpected),
+        expected: Math.round(dayExpected),
         adherence: Math.min(adherence, 100),
       })
     }
@@ -301,13 +298,24 @@ export const adherenceService = {
 }
 
 /**
- * Calcula doses esperadas para um conjunto de protocolos
+ * Calcula doses esperadas para um conjunto de protocolos.
+ * Considera start_date e end_date para calcular dias efetivos de cada protocolo.
+ *
  * @param {Array} protocols - Array de protocolos
- * @param {number} days - Número de dias
+ * @param {number} days - Número de dias do período de análise
+ * @param {Date} endDate - Data final do período (padrão: hoje)
  * @returns {number}
  */
-function calculateExpectedDoses(protocols, days) {
+function calculateExpectedDoses(protocols, days, endDate = new Date()) {
   if (!protocols || protocols.length === 0) return 0
+
+  // Calcular data de início do período de análise
+  const periodStart = new Date(endDate)
+  periodStart.setHours(0, 0, 0, 0)
+  periodStart.setDate(periodStart.getDate() - days + 1)
+
+  const periodEnd = new Date(endDate)
+  periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
@@ -337,19 +345,51 @@ function calculateExpectedDoses(protocols, days) {
         dailyDoses = timesPerDay
     }
 
-    return total + dailyDoses * days
+    // Calcular dias efetivos do protocolo dentro do período de análise
+    let effectiveDays = 0
+
+    // Se não tiver start_date, assume que o protocolo estava ativo desde o início do período
+    const protocolStartDate = protocol.start_date
+      ? parseLocalDate(protocol.start_date)
+      : periodStart
+
+    // Se não tiver end_date, assume que o protocolo continua ativo
+    const protocolEndDate = protocol.end_date
+      ? new Date(protocol.end_date + 'T23:59:59')
+      : periodEnd
+
+    // Calcular interseção entre período do protocolo e período de análise
+    const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
+    const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
+
+    // Calcular número de dias efetivos (inclusive)
+    if (effectiveEnd >= effectiveStart) {
+      const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
+      effectiveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    }
+
+    return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
 }
 
 /**
- * Calcula doses esperadas por dia
+ * Calcula doses esperadas por dia para uma data específica.
+ * Filtra protocolos que estavam ativos na data.
+ *
  * @param {Array} protocols - Array de protocolos
+ * @param {string} dateStr - Data no formato YYYY-MM-DD (opcional, padrão: hoje)
  * @returns {number}
  */
-function calculateDailyExpectedDoses(protocols) {
+function calculateDailyExpectedDoses(protocols, dateStr = null) {
   if (!protocols || protocols.length === 0) return 0
 
+  // Se não houver data, usar hoje
+  const targetDate = dateStr || formatLocalDate(new Date())
+
   return protocols.reduce((total, protocol) => {
+    // Verificar se o protocolo estava ativo nesta data
+    if (!isProtocolActiveOnDate(protocol, targetDate)) return total
+
     const timesPerDay = protocol.time_schedule?.length || 1
     return total + timesPerDay
   }, 0)
@@ -364,12 +404,7 @@ function groupLogsByDay(logs) {
   const days = new Map()
 
   logs.forEach((log) => {
-    const date = new Date(log.taken_at)
-    // Usar data local para evitar problemas de fuso horário
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const dayKey = `${year}-${month}-${day}`
+    const dayKey = formatLocalDate(new Date(log.taken_at))
     days.set(dayKey, (days.get(dayKey) || 0) + 1)
   })
 
@@ -378,15 +413,17 @@ function groupLogsByDay(logs) {
 
 /**
  * Calcula streaks (atual e maior)
+ * Considera start_date e end_date dos protocolos para calcular expected por dia.
+ *
  * @param {Map} logsByDay - Logs agrupados por dia
- * @param {number} dailyExpected - Doses esperadas por dia
+ * @param {Array} protocols - Array de protocolos ativos
  * @returns {{currentStreak: number, longestStreak: number}}
  */
-function calculateStreaks(logsByDay, dailyExpected) {
+function calculateStreaks(logsByDay, protocols) {
   // Criar array de datas ordenadas (mais recente primeiro)
   const dates = Array.from(logsByDay.keys()).sort().reverse()
 
-  if (dates.length === 0) {
+  if (dates.length === 0 || !protocols || protocols.length === 0) {
     return { currentStreak: 0, longestStreak: 0 }
   }
 
@@ -396,28 +433,27 @@ function calculateStreaks(logsByDay, dailyExpected) {
   let isCurrent = true
   const minAdherenceRate = 0.8 // 80% de adesão para contar o dia
 
-  // Usar data local para today/yesterday (evita problemas de fuso horário)
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const today = `${year}-${month}-${day}`
+  // Usar funções utilitárias para today/yesterday (timezone local)
+  const today = formatLocalDate(new Date())
+  const yesterdayDate = new Date()
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+  const yesterdayKey = formatLocalDate(yesterdayDate)
 
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayYear = yesterday.getFullYear()
-  const yesterdayMonth = String(yesterday.getMonth() + 1).padStart(2, '0')
-  const yesterdayDay = String(yesterday.getDate()).padStart(2, '0')
-  const yesterdayKey = `${yesterdayYear}-${yesterdayMonth}-${yesterdayDay}`
+  // Calcular expected para hoje e ontem
+  const todayExpected = calculateDailyExpectedDoses(protocols, today)
+  const yesterdayExpected = calculateDailyExpectedDoses(protocols, yesterdayKey)
 
   // Verificar se o streak ainda está ativo
   const lastLogDate = dates[0]
   const hasTakenToday =
-    lastLogDate === today && (logsByDay.get(today) || 0) >= dailyExpected * minAdherenceRate
+    lastLogDate === today &&
+    todayExpected > 0 &&
+    (logsByDay.get(today) || 0) >= todayExpected * minAdherenceRate
   const hasTakenYesterday =
     lastLogDate === yesterdayKey ||
     (dates.includes(yesterdayKey) &&
-      (logsByDay.get(yesterdayKey) || 0) >= dailyExpected * minAdherenceRate)
+      yesterdayExpected > 0 &&
+      (logsByDay.get(yesterdayKey) || 0) >= yesterdayExpected * minAdherenceRate)
 
   if (!hasTakenToday && !hasTakenYesterday) {
     isCurrent = false
@@ -426,15 +462,19 @@ function calculateStreaks(logsByDay, dailyExpected) {
   // Calcular streak atual
   let checkDate = new Date()
   while (true) {
-    const checkYear = checkDate.getFullYear()
-    const checkMonth = String(checkDate.getMonth() + 1).padStart(2, '0')
-    const checkDay = String(checkDate.getDate()).padStart(2, '0')
-    const dateKey = `${checkYear}-${checkMonth}-${checkDay}`
+    const dateKey = formatLocalDate(checkDate)
+
+    // Calcular expected para este dia específico (filtra por start_date/end_date)
+    const dayExpected = calculateDailyExpectedDoses(protocols, dateKey)
 
     const taken = logsByDay.get(dateKey) || 0
-    const adherenceRate = dailyExpected > 0 ? taken / dailyExpected : 0
+    const adherenceRate = dayExpected > 0 ? taken / dayExpected : 0
 
-    if (adherenceRate >= minAdherenceRate) {
+    // Se não há doses esperadas neste dia (protocolo ainda não tinha começado ou já terminou),
+    // não conta nem quebra o streak
+    if (dayExpected === 0) {
+      // Continua para o próximo dia sem afetar o streak
+    } else if (adherenceRate >= minAdherenceRate) {
       if (isCurrent) currentStreak++
       tempStreak++
     } else {

@@ -198,6 +198,7 @@ describe('Schemas de Validação Zod', () => {
         frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
         dosage_per_intake: 1,
+        start_date: '2024-01-15',
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(true)
@@ -210,6 +211,7 @@ describe('Schemas de Validação Zod', () => {
         frequency: 'diário',
         time_schedule: ['8:00 AM'], // formato inválido
         dosage_per_intake: 1,
+        start_date: '2024-01-15',
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
@@ -223,6 +225,7 @@ describe('Schemas de Validação Zod', () => {
         frequency: 'diário',
         time_schedule: [],
         dosage_per_intake: 1,
+        start_date: '2024-01-15',
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
@@ -243,6 +246,7 @@ describe('Schemas de Validação Zod', () => {
         ],
         current_stage_index: 0,
         stage_started_at: '2024-01-15T00:00:00Z',
+        start_date: '2024-01-15',
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(true)
