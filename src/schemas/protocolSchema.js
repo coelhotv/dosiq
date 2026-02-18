@@ -5,6 +5,15 @@ import { z } from 'zod'
  * Baseado na tabela 'protocols' do Supabase
  */
 
+/**
+ * Retorna a data atual no formato YYYY-MM-DD
+ * @returns {string} Data atual
+ */
+export const getTodayDateString = () => {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+}
+
 // Frequências válidas (valores reais para o banco)
 export const FREQUENCIES = [
   'diário',
@@ -135,6 +144,18 @@ export const protocolSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  start_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de início deve estar no formato YYYY-MM-DD')
+    .describe('Data de início do protocolo'),
+
+  end_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de término deve estar no formato YYYY-MM-DD')
+    .nullable()
+    .optional()
+    .describe('Data de término do protocolo (NULL se ativo)'),
 })
 
 /**
@@ -166,6 +187,19 @@ export const protocolCreateSchema = protocolSchema
     {
       message: 'Índice do estágio atual é maior que o número de estágios definidos',
       path: ['current_stage_index'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Se end_date está definido, deve ser maior ou igual a start_date
+      if (data.end_date && data.start_date) {
+        return new Date(data.end_date) >= new Date(data.start_date)
+      }
+      return true
+    },
+    {
+      message: 'Data de término deve ser maior ou igual à data de início',
+      path: ['end_date'],
     }
   )
 
