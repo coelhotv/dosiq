@@ -448,6 +448,140 @@ For specialized tasks, switch to appropriate mode:
 
 ---
 
+## 🔄 Agent Feedback Loop
+
+### Overview
+
+This section defines the continuous feedback process between AI agents to ensure quality, prevent recurring errors, and promote organizational learning.
+
+### Agent Handoff Protocol
+
+When delegating tasks between agents, the following protocol MUST be followed:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AGENT HANDOFF PROTOCOL                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. ORCHESTRATOR → SPECIALIST                                   │
+│     ├── Define clear scope and expected output                  │
+│     ├── Provide all relevant context from previous tasks        │
+│     ├── Specify validation criteria                             │
+│     └── Set explicit completion signal (attempt_completion)     │
+│                                                                 │
+│  2. SPECIALIST → ORCHESTRATOR                                   │
+│     ├── Report findings/implementation via attempt_completion   │
+│     ├── Include specific file paths and line numbers            │
+│     ├── Document any issues encountered                         │
+│     └── Suggest next steps if applicable                        │
+│                                                                 │
+│  3. ORCHESTRATOR → NEXT SPECIALIST                              │
+│     ├── Include learnings from previous specialist              │
+│     ├── Update TODO list with current status                    │
+│     └── Adjust scope based on findings                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Quality Gates Between Phases
+
+Before proceeding to the next phase, validate:
+
+| Gate | Validation | Command/Action |
+|------|------------|----------------|
+| **Code Complete** | Lint passes | `npm run lint` |
+| **Tests Pass** | Critical tests pass | `npm run test:critical` |
+| **Build Success** | Production build works | `npm run build` |
+| **No Duplicates** | No duplicate files created | `find src -name "*File*" -type f` |
+| **Memory Updated** | Lessons learned documented | Update `.kilocode/rules/memory.md` |
+
+### Mandatory Post-Task Review
+
+After each significant task completion, the agent MUST:
+
+1. **Document Findings**:
+   ```markdown
+   ## Task Review — YYYY-MM-DD
+   **Task**: [Description]
+   **Files Modified**: [List with paths]
+   **Issues Found**: [Any problems encountered]
+   **Lessons Learned**: [What to remember for future]
+   **Follow-up Needed**: [Yes/No - if yes, what]
+   ```
+
+2. **Update Memory** (if significant):
+   - Add entry to `.kilocode/rules/memory.md`
+   - Follow the Memory Entry Format defined in this file
+
+3. **Report to Orchestrator**:
+   - Use `attempt_completion` with comprehensive summary
+   - Include specific file paths and line numbers for changes
+   - List any issues that need follow-up
+
+### Continuous Improvement Cycle
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              CONTINUOUS IMPROVEMENT CYCLE                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
+│   │  PLAN    │───▶│  EXECUTE │───▶│  REVIEW  │───▶│  LEARN   │ │
+│   └──────────┘    └──────────┘    └──────────┘    └──────────┘ │
+│        ▲                                                │       │
+│        └────────────────────────────────────────────────┘       │
+│                                                                 │
+│   PLAN:   Define scope, identify risks, check for duplicates    │
+│   EXECUTE: Implement changes, follow coding standards           │
+│   REVIEW: Validate (lint, tests, build), check for issues       │
+│   LEARN:  Update memory, document lessons, improve process      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Escalation Procedures
+
+When issues are found that require attention:
+
+| Issue Type | Action | Escalate To |
+|------------|--------|-------------|
+| **CRITICAL** (blocks production) | Stop immediately, report to user | User/Orchestrator |
+| **HIGH** (affects functionality) | Fix before proceeding, document | Orchestrator |
+| **MEDIUM** (improvement) | Create GitHub Issue, continue | Backlog |
+| **LOW** (nice to have) | Note in completion report | Backlog |
+
+### Inter-Agent Communication Standards
+
+When agents communicate via `attempt_completion`:
+
+1. **Be Specific**: Include exact file paths and line numbers
+2. **Be Comprehensive**: Summarize all changes, not just the main one
+3. **Be Honest**: Report issues encountered, even if resolved
+4. **Be Forward-Looking**: Suggest next steps or follow-up items
+
+Example completion report:
+```markdown
+## Task Complete: [Task Name]
+
+### Changes Made
+- `src/path/to/file.js` (line 42): Added validation
+- `src/another/file.jsx` (line 15-20): Fixed bug
+
+### Issues Found
+- Duplicate file at `src/old/location.js` - deleted
+- Test failing due to mock - fixed by updating mock
+
+### Validation
+- ✅ Lint: 0 errors
+- ✅ Tests: 146 passed
+- ✅ Build: Success
+
+### Follow-up Needed
+- Issue #XX created for remaining refactoring
+```
+
+---
+
 ## 📚 Complete Documentation Index
 
 **Master index with reading order**: [`docs/INDEX.md`](docs/INDEX.md)
