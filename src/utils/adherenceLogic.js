@@ -96,9 +96,10 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
     const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
 
     // Calcular número de dias efetivos (inclusive)
+    // Nota: effectiveEnd é definido como T23:59:59, então Math.ceil já conta o dia corretamente
     if (effectiveEnd >= effectiveStart) {
       const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
-      effectiveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+      effectiveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     }
 
     return total + dailyDoses * Math.max(effectiveDays, 0)
