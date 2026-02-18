@@ -1924,3 +1924,50 @@ onAction((alert, action) => {
 - Monitorar deploy da Vercel
 - Validar funcionamento em produção
 - Considerar criar lint rule customizada para detectar exports duplicados
+
+---
+
+## Memory Entry — 2026-02-18 20:00
+**Contexto / Objetivo**
+- Corrigir bug na DLQ Admin UI onde descartar mensagem falhada retornava erro "The string did not match the expected pattern"
+- Investigar causa raiz e aplicar correção
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `vercel.json` — Adicionados rewrites explícitos para rotas DLQ
+- Comportamento impactado:
+  - Rotas `/api/dlq`, `/api/dlq/:id/retry`, `/api/dlq/:id/discard` agora funcionam corretamente
+  - Erro 405 Method Not Allowed resolvido
+
+**O que deu certo**
+- Análise do log do browser (`bug_logs/dlq-discard.txt`) identificou erro 405 Method Not Allowed
+- Diagnóstico rápido: catch-all rewrite `/(.*)` interceptava rotas DLQ não configuradas
+- Solução simples: adicionar rewrites explícitos antes do catch-all
+- Validação completa: lint (0 errors), build (sucesso), testes críticos (passaram)
+
+**O que não deu certo / riscos**
+- Erro inicial "The string did not match the expected pattern" era misleading (erro do jsdom)
+- O erro real era 405 Method Not Allowed do servidor
+
+**Causa raiz (se foi debug)**
+- Sintoma: DLQ Admin UI retornava erro ao tentar descartar mensagem
+- Causa: `vercel.json` não tinha rewrites para rotas DLQ, catch-all `/(.*) -> /index.html` interceptava POST requests
+- Correção: Adicionar rewrites explícitos para `/api/dlq`, `/api/dlq/:id/retry`, `/api/dlq/:id/discard`
+- Prevenção: Sempre adicionar rewrites explícitos para novas rotas API no `vercel.json`
+
+**Decisões & trade-offs**
+- Decisão: Adicionar também rewrite para `/api/health/notifications` (rota existente não configurada)
+- Alternativas consideradas: Usar regex para capturar todas as rotas `/api/*`
+- Por que: Rewrites explícitos são mais claros e fáceis de manter
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** adicionar rewrites explícitos no `vercel.json` para novas rotas API
+- O catch-all `/(.*) -> /index.html` deve ser sempre o **último** rewrite
+- Erros 405 em rotas API geralmente indicam configuração faltando no `vercel.json`
+- Verificar logs do browser (Network tab) para identificar erros HTTP reais
+- Erros do jsdom podem ser misleading - sempre verificar o erro HTTP real
+
+**Pendências / próximos passos**
+- Merge PR #60 após review
+- Testar DLQ Admin UI em produção após deploy
+- Verificar se há outras rotas API sem rewrite no `vercel.json`
