@@ -26,8 +26,8 @@
       "destination": "/api/dlq/:id/discard.js"
     },
     {
-      "source": "/api/health/notifications",
-      "destination": "/api/health/notifications.js"
+      "source": "/api/health/(.*)",
+      "destination": "/api/health/$1.js"
     },
     {
       "source": "/(.*)",
