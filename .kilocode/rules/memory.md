@@ -1671,3 +1671,52 @@ onAction((alert, action) => {
 **Pendências / próximos passos**
 - Issue #54 criada para tracking: https://github.com/coelhotv/meus-remedios/issues/54
 - Aguardar review do PR #50 com as correções aplicadas
+
+---
+
+## Memory Entry — 2026-02-18 13:15
+**Contexto / Objetivo**
+- Corrigir HIGH priority issue do PR #50 review: Timezone inconsistency em protocolSchema.js
+- Criar GitHub issues para MEDIUM priority items (backlog)
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/schemas/protocolSchema.js` — Adicionado `T00:00:00` na validação de datas
+  - `src/shared/constants/protocolSchema.js` — Adicionado `T00:00:00` na validação de datas
+  - `src/features/protocols/constants/protocolSchema.js` — Adicionado `T00:00:00` na validação de datas
+- Issues criadas:
+  - Issue #55: Remover getTodayDateString duplicado de protocolSchema
+  - Issue #56: Usar parseLocalDate de dateUtils em adherenceLogic
+
+**O que deu certo**
+- Correção aplicada consistentemente em todos os 3 arquivos de schema
+- Validação completa passou: lint (0 errors), test:critical (166 passed), build (sucesso)
+- Commit semântico com descrição clara
+- Push para PR branch executado com pre-commit hooks
+
+**O que não deu certo / riscos**
+- Labels 'refactor' e 'backlog' não existem no repositório GitHub
+- Issues criadas sem labels (não crítico)
+
+**Causa raiz (se foi debug)**
+- Sintoma: Validação de datas em protocolSchema.js podia falhar incorretamente
+- Causa: `new Date('YYYY-MM-DD')` cria data em UTC (meia-noite UTC), que em GMT-3 é 21:00 do dia anterior
+- Correção: Usar `new Date(dateStr + 'T00:00:00')` que cria meia-noite em timezone local
+- Prevenção: Padronizar uso de `T00:00:00` em todas as comparações de data
+
+**Decisões & trade-offs**
+- Decisão: Aplicar correção em todos os 3 arquivos de schema duplicados
+- Alternativas consideradas: Consolidar schemas em um único arquivo primeiro
+- Por que: Manter consistência imediata enquanto aguarda refactoring maior
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** usar `new Date(dateStr + 'T00:00:00')` para comparações de data em timezone local
+- **NUNCA** usar `new Date('YYYY-MM-DD')` diretamente - isso cria data em UTC
+- Verificar se labels existem antes de usar `gh issue create --label`
+- Aplicar correções em todos os arquivos duplicados para manter consistência
+- Criar issues de backlog para refactoring menores identificados em code review
+
+**Pendências / próximos passos**
+- Issue #55: Consolidar getTodayDateString com getTodayLocal (15 min)
+- Issue #56: Usar parseLocalDate em adherenceLogic.js (10 min)
+- Aguardar review do PR #50
