@@ -1,21 +1,13 @@
 import { z } from 'zod'
+import { getTodayLocal } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para Protocolos
  * Baseado na tabela 'protocols' do Supabase
  */
 
-/**
- * Retorna a data atual no formato YYYY-MM-DD (considerando fuso horário local)
- * @returns {string} Data atual
- */
-export const getTodayDateString = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+// Reexporta getTodayLocal como getTodayDateString para manter a compatibilidade
+export const getTodayDateString = getTodayLocal
 
 // Frequências válidas (valores reais para o banco)
 export const FREQUENCIES = [

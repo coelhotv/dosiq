@@ -1775,3 +1775,72 @@ onAction((alert, action) => {
 - Issues de backlog: #51, #52, #53, #54, #55, #56 (melhorias menores)
 - Monitorar deploy da Vercel após release
 - Validar funcionamento em produção
+
+---
+
+## Memory Entry — 2026-02-18 19:06
+**Contexto / Objetivo**
+- Debug produção: adherence score não considerava start_date dos protocolos
+- Investigar por que feature implementada no PR #50 não funcionava em produção
+- Consolidar arquivos duplicados identificados durante investigação
+
+**O que foi feito (mudanças)**
+- Arquivos deletados (duplicados):
+  - `src/features/dashboard/utils/adherenceLogic.js` — Versão desatualizada sem `isProtocolActiveOnDate`
+  - `src/features/adherence/utils/adherenceLogic.js` — Outra versão desatualizada
+  - `src/features/adherence/utils/__tests__/*.test.js` — Testes duplicados
+  - `src/shared/constants/protocolSchema.js` — Schema duplicado
+  - `src/features/protocols/constants/protocolSchema.js` — Schema duplicado
+- Arquivos modificados:
+  - `src/features/dashboard/hooks/useDashboardContext.jsx` — Import de `@utils/adherenceLogic`
+  - `src/features/dashboard/components/DailyDoseModal.jsx` — Import de `@utils/adherenceLogic`
+  - `src/features/protocols/components/ProtocolCard.jsx` — Import de `@schemas/protocolSchema`
+  - `src/features/protocols/components/ProtocolForm.jsx` — Import de `@schemas/protocolSchema`, adicionado start_date/end_date ao formData
+  - `src/features/protocols/services/protocolService.js` — Import de `@schemas/protocolSchema`
+  - `src/shared/constants/validationHelper.js` — Import de `@schemas/protocolSchema`
+  - `src/shared/constants/index.js` — Re-export de `@schemas/protocolSchema`
+  - `src/schemas/protocolSchema.js` — Usa `getTodayLocal` de dateUtils
+  - `vite.config.js` — Adicionados aliases `@schemas` e `@utils`
+
+**O que deu certo**
+- Investigação sistemática: código → deployment → database → imports
+- Uso de `grep -r` para encontrar todos os arquivos duplicados
+- Validação completa antes de commit: lint (0 errors), test:critical (146 passed), build (sucesso)
+- Commits semânticos com descrição clara
+- PR #57 criado com descrição detalhada
+
+**O que não deu certo / riscos**
+- Hipótese inicial (migration não executada) estava incorreta
+- Arquivos duplicados não foram detectados no code review do PR #50
+- Build inicial falhou por falta de aliases `@schemas` e `@utils` no vite.config.js
+
+**Causa raiz (se foi debug)**
+- Sintoma: Adherence score não considerava start_date dos protocolos em produção
+- Causa: Dashboard importava `adherenceLogic.js` de `src/features/dashboard/utils/` que não tinha a correção do PR #50
+- Correção: Deletar arquivos duplicados e consolidar imports usando aliases `@utils/` e `@schemas/`
+- Prevenção: Verificar se existem arquivos duplicados antes de implementar features
+
+**Decisões & trade-offs**
+- Decisão: Consolidar todos os arquivos duplicados em vez de apenas corrigir imports
+- Alternativas consideradas: Apenas atualizar imports nos arquivos duplicados
+- Por que: Arquivos duplicados são débito técnico que causa confusão e bugs
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** verificar se existem arquivos duplicados antes de implementar features críticas
+- Usar `grep -r "function_name" src/` ou `grep -r "export.*function" src/` para encontrar duplicatas
+- **SEMPRE** usar path aliases (`@utils/`, `@schemas/`) para imports em vez de caminhos relativos
+- Quando encontrar arquivo duplicado, consolidar em um único local canônico
+- Adicionar aliases ao vite.config.js quando criar novos diretórios canônicos
+- Testes podem passar mesmo com código duplicado - verificar imports reais usados pela aplicação
+- **CRÍTICO**: Code review deve verificar se PRs atualizam TODOS os arquivos duplicados
+
+**Processos a ajustar**
+- Adicionar step no code review: "Verificar se existem arquivos duplicados que precisam ser atualizados"
+- Considerar criar lint rule customizada para detectar exports duplicados
+- Documentar estrutura canônica de diretórios no AGENTS.md ou PADROES_CODIGO.md
+
+**Pendências / próximos passos**
+- Merge PR #57 após review
+- Monitorar deploy da Vercel
+- Validar funcionamento em produção
+- Issues fechadas: #52, #55, #56
