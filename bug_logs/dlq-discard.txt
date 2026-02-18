@@ -1,0 +1,13 @@
+index-CJRb6ZM-.js:167 
+        
+        
+       POST https://meus-remedios.vercel.app/api/dlq/03d1e8ba-d51d-4c24-b201-fd72aa63d746/discard 405 (Method Not Allowed)
+discard @ index-CJRb6ZM-.js:167
+onConfirm @ index-CJRb6ZM-.js:167
+Pe @ index-CJRb6ZM-.js:167
+Fv @ index-CJRb6ZM-.js:8
+(anonymous) @ index-CJRb6ZM-.js:8
+tp @ index-CJRb6ZM-.js:8
+th @ index-CJRb6ZM-.js:8
+ph @ index-CJRb6ZM-.js:9
+E1 @ index-CJRb6ZM-.js:9
