@@ -6,7 +6,7 @@ import { getTodayLocal } from '../utils/dateUtils.js'
  * Baseado na tabela 'protocols' do Supabase
  */
 
-// Re-export getTodayLocal as getTodayDateString for backward compatibility
+// Reexporta getTodayLocal como getTodayDateString para manter a compatibilidade
 export const getTodayDateString = getTodayLocal
 
 // Frequências válidas (valores reais para o banco)
