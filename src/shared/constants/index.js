@@ -18,6 +18,7 @@ export {
   getMedicineErrorMessage,
 } from './medicineSchema'
 
+// Re-exporta protocolSchema do local consolidado
 export {
   protocolSchema,
   protocolCreateSchema,
@@ -30,7 +31,7 @@ export {
   validateTitrationStage,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
-} from './protocolSchema'
+} from '@schemas/protocolSchema'
 
 export {
   stockSchema,

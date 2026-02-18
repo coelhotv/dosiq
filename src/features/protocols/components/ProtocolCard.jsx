@@ -7,7 +7,7 @@ import StreakBadge from '@adherence/components/StreakBadge'
 import Modal from '@shared/components/ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
 
-import { FREQUENCY_LABELS } from '@protocols/constants/protocolSchema'
+import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 
 import './ProtocolCard.css'
 

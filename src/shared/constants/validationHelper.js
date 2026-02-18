@@ -16,7 +16,7 @@ import {
   validateProtocolUpdate,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
-} from './protocolSchema'
+} from '@schemas/protocolSchema'
 
 import {
   validateStockCreate,
