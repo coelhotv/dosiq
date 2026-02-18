@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
-import { FREQUENCIES, FREQUENCY_LABELS } from '@protocols/constants/protocolSchema'
+import { FREQUENCIES, FREQUENCY_LABELS, getTodayDateString } from '@schemas/protocolSchema'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({
@@ -42,6 +42,8 @@ export default function ProtocolForm({
         : initialValues?.active !== undefined
           ? initialValues.active
           : true,
+    start_date: protocol?.start_date || initialValues?.start_date || getTodayDateString(),
+    end_date: protocol?.end_date || initialValues?.end_date || '',
   })
 
   const [enableTitration, setEnableTitration] = useState(

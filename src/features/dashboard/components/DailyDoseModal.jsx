@@ -21,7 +21,7 @@ import Modal from '@shared/components/ui/Modal'
 import Loading from '@shared/components/ui/Loading'
 import EmptyState from '@shared/components/ui/EmptyState'
 import DoseListItem from './DoseListItem'
-import { calculateDosesByDate } from '@dashboard/utils/adherenceLogic'
+import { calculateDosesByDate } from '@utils/adherenceLogic'
 import './DailyDoseModal.css'
 
 /**

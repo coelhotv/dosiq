@@ -8,7 +8,7 @@ import {
   calculateDailyIntake,
   calculateDaysRemaining,
   isDoseInToleranceWindow,
-} from '@dashboard/utils/adherenceLogic'
+} from '@utils/adherenceLogic'
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'

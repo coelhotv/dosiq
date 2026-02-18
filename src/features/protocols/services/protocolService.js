@@ -1,5 +1,5 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { validateProtocolCreate, validateProtocolUpdate } from '@shared/constants/protocolSchema'
+import { validateProtocolCreate, validateProtocolUpdate } from '@schemas/protocolSchema'
 
 /**
  * Protocol Service - CRUD operations for protocols
