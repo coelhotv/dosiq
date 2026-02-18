@@ -6,13 +6,51 @@
  */
 
 /**
- * Calcula doses esperadas para um conjunto de protocolos em um período
- * @param {Array} protocols
- * @param {number} days
- * @returns {number}
+ * Verifica se um protocolo estava ativo em uma data específica.
+ * Considera start_date e end_date do protocolo.
+ *
+ * @param {Object} protocol - Protocolo a verificar
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {boolean} true se o protocolo estava ativo na data
  */
-export function calculateExpectedDoses(protocols, days) {
+export function isProtocolActiveOnDate(protocol, dateStr) {
+  // Converte dateStr para Date (meia-noite local)
+  const currentDate = new Date(dateStr + 'T00:00:00')
+
+  // Verificar se o protocolo já começou
+  if (protocol.start_date) {
+    const startDate = new Date(protocol.start_date + 'T00:00:00')
+    if (currentDate < startDate) return false
+  }
+
+  // Verificar se o protocolo já terminou
+  if (protocol.end_date) {
+    const endDate = new Date(protocol.end_date + 'T00:00:00')
+    if (currentDate > endDate) return false
+  }
+
+  return true
+}
+
+/**
+ * Calcula doses esperadas para um conjunto de protocolos em um período.
+ * Considera start_date e end_date para calcular dias efetivos de cada protocolo.
+ *
+ * @param {Array} protocols - Lista de protocolos
+ * @param {number} days - Número de dias do período de análise
+ * @param {Date} endDate - Data final do período (padrão: hoje)
+ * @returns {number} Total de doses esperadas
+ */
+export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
   if (!protocols || protocols.length === 0) return 0
+
+  // Calcular data de início do período de análise
+  const periodStart = new Date(endDate)
+  periodStart.setHours(0, 0, 0, 0)
+  periodStart.setDate(periodStart.getDate() - days + 1)
+
+  const periodEnd = new Date(endDate)
+  periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
@@ -40,7 +78,30 @@ export function calculateExpectedDoses(protocols, days) {
         dailyDoses = timesPerDay
     }
 
-    return total + dailyDoses * days
+    // Calcular dias efetivos do protocolo dentro do período de análise
+    let effectiveDays = 0
+
+    // Se não tiver start_date, assume que o protocolo estava ativo desde o início do período
+    const protocolStartDate = protocol.start_date
+      ? new Date(protocol.start_date + 'T00:00:00')
+      : periodStart
+
+    // Se não tiver end_date, assume que o protocolo continua ativo
+    const protocolEndDate = protocol.end_date
+      ? new Date(protocol.end_date + 'T23:59:59')
+      : periodEnd
+
+    // Calcular interseção entre período do protocolo e período de análise
+    const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
+    const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
+
+    // Calcular número de dias efetivos (inclusive)
+    if (effectiveEnd >= effectiveStart) {
+      const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
+      effectiveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+    }
+
+    return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
 }
 
@@ -84,6 +145,9 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
     let dayTakenAnytime = 0
 
     protocols.forEach((protocol) => {
+      // Verificar se o protocolo estava ativo nesta data
+      if (!isProtocolActiveOnDate(protocol, dateStr)) return
+
       // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
       // Em uma versão futura, considerar a frequência (daily, weekly, etc) aqui também
       const schedule = protocol.time_schedule || []
