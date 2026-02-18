@@ -1622,3 +1622,52 @@ onAction((alert, action) => {
 - Issues de backlog: #33, #34, #39, #43, #45, #46 (documentação e otimização)
 - Monitorar logs da Vercel por 24-48 horas após deploy
 - Validar funcionamento do bot em produção
+
+---
+
+## Memory Entry — 2026-02-18 03:55
+**Contexto / Objetivo**
+- Corrigir 2 problemas HIGH priority identificados no PR #50 review
+- Timezone Inconsistency: `adherenceService.js` usava `new Date(dateStr + 'T00:00:00')` (local) enquanto schema validation usava `new Date('YYYY-MM-DD')` (UTC)
+- Duplicated Logic: `isProtocolActiveOnDate` estava duplicada em `adherenceLogic.js` e `adherenceService.js`
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `src/utils/dateUtils.js` — Criado módulo compartilhado com funções de data em timezone local
+  - `src/utils/adherenceLogic.js` — Removida função duplicada, importa de dateUtils.js
+  - `src/services/api/adherenceService.js` — Removida função duplicada, importa de dateUtils.js, atualizadas todas as formatações de data
+- Comportamento impactado:
+  - Todas as operações de data agora usam timezone local consistente (GMT-3 para Brasil)
+  - Funções `parseLocalDate()`, `formatLocalDate()`, `isProtocolActiveOnDate()` centralizadas
+
+**O que deu certo**
+- Criação de módulo compartilhado `dateUtils.js` com funções bem documentadas
+- Re-export de `isProtocolActiveOnDate` em `adherenceLogic.js` mantém compatibilidade com imports existentes
+- Validação completa passou: lint (0 errors), test:critical (166 passed), build (sucesso)
+- Commit semântico com descrição clara das mudanças
+
+**O que não deu certo / riscos**
+- Erro de lint inicial: importei `parseLocalDate` e `formatLocalDate` em `adherenceLogic.js` mas não usei
+- Correção: Removidos imports não utilizados
+
+**Causa raiz (se foi debug)**
+- Sintoma: Cálculos de adesão podiam estar incorretos devido a inconsistência de timezone
+- Causa: `new Date('YYYY-MM-DD')` cria data em UTC (meia-noite UTC), que em GMT-3 é 21:00 do dia anterior
+- Correção: Padronizar para `new Date(dateStr + 'T00:00:00')` que cria meia-noite em timezone local
+- Prevenção: Usar sempre funções de `dateUtils.js` para manipulação de datas
+
+**Decisões & trade-offs**
+- Decisão: Criar módulo separado `dateUtils.js` em vez de adicionar funções em arquivo existente
+- Alternativas consideradas: Adicionar funções em `adherenceLogic.js`, criar classe DateUtils
+- Por que: Módulo separado permite reuso em qualquer parte do código sem dependências circulares
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** usar `parseLocalDate(dateStr)` ou `new Date(dateStr + 'T00:00:00')` para datas em timezone local
+- **NUNCA** usar `new Date('YYYY-MM-DD')` diretamente - isso cria data em UTC
+- Centralizar funções de data em módulo compartilhado evita duplicação e inconsistências
+- Re-exportar funções em módulos existentes mantém compatibilidade com imports
+- Verificar imports não utilizados antes de commitar (lint ajuda a identificar)
+
+**Pendências / próximos passos**
+- Issue #54 criada para tracking: https://github.com/coelhotv/meus-remedios/issues/54
+- Aguardar review do PR #50 com as correções aplicadas
