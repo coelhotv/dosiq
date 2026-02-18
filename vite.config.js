@@ -10,6 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@features': path.resolve(__dirname, './src/features'),
       '@shared': path.resolve(__dirname, './src/shared'),
+      '@services': path.resolve(__dirname, './src/services'),
       '@dashboard': path.resolve(__dirname, './src/features/dashboard'),
       '@medications': path.resolve(__dirname, './src/features/medications'),
       '@protocols': path.resolve(__dirname, './src/features/protocols'),

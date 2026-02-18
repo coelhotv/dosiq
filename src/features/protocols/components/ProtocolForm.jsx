@@ -273,6 +273,36 @@ export default function ProtocolForm({
 
       <div className="form-row">
         <div className="form-group">
+          <label htmlFor="start_date">
+            Data de Início <span className="required">*</span>
+          </label>
+          <input
+            type="date"
+            id="start_date"
+            name="start_date"
+            value={formData.start_date}
+            onChange={handleChange}
+            required
+          />
+          <small>Quando você começou este protocolo</small>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="end_date">Data de Término (opcional)</label>
+          <input
+            type="date"
+            id="end_date"
+            name="end_date"
+            value={formData.end_date || ''}
+            onChange={handleChange}
+            min={formData.start_date}
+          />
+          <small>Deixe em branco para protocolo contínuo</small>
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
           <label htmlFor="frequency">
             Frequência <span className="required">*</span>
           </label>

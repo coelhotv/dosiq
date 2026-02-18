@@ -1844,3 +1844,83 @@ onAction((alert, action) => {
 - Monitorar deploy da Vercel
 - Validar funcionamento em produção
 - Issues fechadas: #52, #55, #56
+
+---
+
+## Memory Entry — 2026-02-18 21:15
+**Contexto / Objetivo**
+- Debug produção: 3 issues reportados após PR #57 merge
+- Issue 1: Sparkline não considerava start_date dos protocolos
+- Issue 2: Drilldown modal header com totais incorretos
+- Issue 3: ProtocolForm não exibia campos start_date/end_date
+- Atualizar AGENTS.md com processos para prevenir bugs futuros
+
+**O que foi feito (mudanças)**
+- Arquivos deletados (duplicados):
+  - `src/features/adherence/services/adherenceService.js` — Versão desatualizada sem `isProtocolActiveOnDate`
+  - `src/components/protocol/` — Diretório inteiro (18 arquivos) com ProtocolForm desatualizado
+  - `src/components/dashboard/` — Diretório inteiro (35 arquivos) duplicados não utilizados
+  - `src/hooks/useAdherenceTrend.js` — Duplicado não utilizado
+  - `src/services/adherenceTrendService.js` — Duplicado não utilizado
+- Arquivos modificados:
+  - `src/features/protocols/components/ProtocolForm.jsx` — Adicionados campos start_date/end_date no JSX
+  - `src/shared/services/index.js` — Atualizado import de adherenceService para `@services/api/`
+  - `src/features/dashboard/services/adherenceTrendService.js` — Atualizado import
+  - `src/features/adherence/components/AdherenceWidget.jsx` — Atualizado import
+  - `src/components/onboarding/FirstProtocolStep.jsx` — Atualizado import ProtocolForm
+  - `vite.config.js` — Adicionado alias `@services`
+- Documentação atualizada:
+  - `AGENTS.md` — Adicionado "### 0. Duplicate File Prevention" como HIGHEST PRIORITY
+  - `AGENTS.md` — Atualizado Pre-Commit Checklist com verificação de duplicados
+  - `AGENTS.md` — Atualizado Anti-Patterns com "Modify duplicate file" e "Assume import location"
+  - `AGENTS.md` — Adicionado workflow "Before Modifying ANY Existing File"
+  - `AGENTS.md` — Adicionado workflow "Debugging Production Issues"
+  - `AGENTS.md` — Atualizado Universal Constraints com "Duplicate Files" e "Import Path"
+  - `AGENTS.md` — Atualizado versão para 3.0.0
+
+**O que deu certo**
+- Investigação sistemática: encontrar todos os arquivos duplicados antes de corrigir
+- Uso de `find src -name "*File*" -type f` para identificar duplicados
+- Uso de `grep -r "from.*ServiceName" src/` para rastrear imports reais
+- Validação completa: lint (0 errors), test:critical (146 passed), build (sucesso)
+- PR #59 criado com descrição detalhada das mudanças
+
+**O que não deu certo / riscos**
+- Arquivos duplicados não foram detectados no code review do PR #57
+- Path aliases (`@adherence/services/`) mascaravam a localização real dos arquivos
+- Testes passavam porque testavam o arquivo correto, mas app usava arquivo errado
+
+**Causa raiz (se foi debug)**
+- Sintoma: 3 issues de produção após PR #57 merge
+- Causa: Aplicação importava de `@adherence/services/adherenceService` (desatualizado) ao invés de `@services/api/adherenceService` (correto)
+- Causa: ProtocolForm em `src/components/protocol/` não tinha campos start_date/end_date, mas app importava de lá
+- Correção: Deletar todos os arquivos duplicados e atualizar imports para localizações canônicas
+- Prevenção: Adicionar verificação de duplicados ao AGENTS.md como HIGHEST PRIORITY
+
+**Decisões & trade-offs**
+- Decisão: Deletar diretórios inteiros (`src/components/protocol/`, `src/components/dashboard/`) ao invés de atualizar
+- Alternativas consideradas: Atualizar arquivos duplicados individualmente
+- Por que: Diretórios eram completamente obsoletos e causavam confusão
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** executar `find src -name "*TargetFile*" -type f` antes de modificar qualquer arquivo
+- **SEMPRE** verificar `vite.config.js` para entender para onde path aliases resolvem
+- **SEMPRE** usar `grep -r "from.*TargetFile" src/` para rastrear imports reais
+- **NUNCA** assumir localização de arquivo baseado em nome - verificar import real
+- **CRÍTICO**: Code review DEVE verificar se existem arquivos duplicados que precisam ser atualizados
+- Quando encontrar arquivo duplicado, DELETAR ao invés de atualizar
+- Usar path aliases canônicos (`@services/`, `@schemas/`, `@utils/`) para evitar ambiguidade
+
+**Processos adicionados ao AGENTS.md**
+- "### 0. Duplicate File Prevention" como HIGHEST PRIORITY constraint
+- Pre-Commit Checklist com verificação de duplicados
+- Anti-Patterns com "Modify duplicate file" e "Assume import location"
+- Workflow "Before Modifying ANY Existing File"
+- Workflow "Debugging Production Issues"
+- Universal Constraints com "Duplicate Files" e "Import Path"
+
+**Pendências / próximos passos**
+- Merge PR #59 após review
+- Monitorar deploy da Vercel
+- Validar funcionamento em produção
+- Considerar criar lint rule customizada para detectar exports duplicados

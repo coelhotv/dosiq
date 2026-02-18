@@ -1,7 +1,7 @@
 # Meus Remédios - AI Agent Guide
 
 > **Aplicativo de gerenciamento de medicamentos em português brasileiro**  
-> **Versão:** 2.9.0 | React 19 + Vite + Supabase
+> **Versão:** 3.0.0 | React 19 + Vite + Supabase
 
 ---
 
@@ -47,6 +47,45 @@
 ## 🚨 Critical Constraints (NON-NEGOTIABLE)
 
 These rules prevent recurring errors and **must be followed unconditionally**:
+
+### 0. Duplicate File Prevention (HIGHEST PRIORITY)
+
+**This rule prevents production bugs caused by outdated duplicate files.**
+
+```bash
+# BEFORE modifying ANY file, ALWAYS run these checks:
+
+# 1. Search for duplicate files with same name
+find src -name "ProtocolForm*" -type f
+find src -name "*Service.js" -type f | grep -i adherence
+
+# 2. Search for all exports of the same function
+grep -r "export.*adherenceService" src/
+
+# 3. Check which file is ACTUALLY imported (trace imports)
+grep -r "from.*adherenceService" src/
+```
+
+**Canonical File Locations:**
+| Domain | Canonical Location | DO NOT USE |
+|--------|-------------------|------------|
+| Services | `src/services/api/*.js` | `src/features/*/services/*.js` |
+| Schemas | `src/schemas/*.js` | `src/shared/constants/*.js` |
+| Utils | `src/utils/*.js` | `src/features/*/utils/*.js` |
+| Protocol Components | `src/features/protocols/components/*.jsx` | `src/components/protocol/*.jsx` |
+| Dashboard Components | `src/features/dashboard/components/*.jsx` | `src/components/dashboard/*.jsx` |
+
+**Path Aliases (defined in `vite.config.js`):**
+| Alias | Resolves To |
+|-------|-------------|
+| `@services` | `src/services` |
+| `@schemas` | `src/schemas` |
+| `@utils` | `src/utils` |
+| `@protocols` | `src/features/protocols` |
+| `@adherence` | `src/features/adherence` |
+| `@dashboard` | `src/features/dashboard` |
+
+**⚠️ CRITICAL**: When you see `import { x } from '@adherence/services/...'`, this resolves to `src/features/adherence/services/...`, NOT `src/services/api/...`. Always verify the actual file being imported!
 
 ### 1. React Hook Declaration Order
 ```jsx
@@ -301,6 +340,8 @@ All lessons learned and patterns are stored in:
 | **Telegram Callback** | < 64 bytes | Use indices, not UUIDs |
 | **Dosage Units** | Pills, never mg | `quantity_taken = pills` |
 | **Operation Order** | Validate → Record → Decrement | Stock consistency |
+| **Duplicate Files** | Check before modifying | `find src -name "*File*"` |
+| **Import Path** | Verify actual resolution | Check `vite.config.js` aliases |
 
 ### Context-Dependent Recommendations
 
@@ -362,6 +403,8 @@ api/                   # Serverless Functions (Vercel)
 
 Before committing, verify:
 
+- [ ] **NO duplicate files exist** (run `find src -name "*ComponentName*" -type f`)
+- [ ] **Import resolves to correct file** (check `vite.config.js` aliases)
 - [ ] Code follows naming conventions (PascalCase, camelCase, etc.)
 - [ ] Props have validation/default values
 - [ ] Zod validation applied in all services
@@ -380,6 +423,8 @@ Before committing, verify:
 
 | Anti-Pattern | Consequence | Prevention |
 |--------------|-------------|------------|
+| **Modify duplicate file** | Production bug | Check for duplicates FIRST |
+| **Assume import location** | Wrong file modified | Trace actual import path |
 | Declare state after useMemo | ReferenceError (TDZ) | States → Memos → Effects |
 | Skip validation | Broken build | Always run `npm run validate` |
 | Commit to main | Unreviewed code | Always create branch |
@@ -436,6 +481,28 @@ For specialized tasks, switch to appropriate mode:
 
 ## 🎓 Common Workflows
 
+### Before Modifying ANY Existing File
+
+**This workflow prevents production bugs caused by duplicate files.**
+
+```bash
+# Step 1: Check for duplicate files
+find src -name "*TargetFile*" -type f
+
+# Step 2: If duplicates exist, identify which one is ACTUALLY used
+grep -r "from.*TargetFile" src/ | head -20
+
+# Step 3: Check path aliases in vite.config.js
+# An import like "@adherence/services/x" resolves to "src/features/adherence/services/x"
+
+# Step 4: Verify the correct file before making changes
+# The canonical location is usually:
+# - Services: src/services/api/
+# - Schemas: src/schemas/
+# - Utils: src/utils/
+# - Components: src/features/{domain}/components/
+```
+
 ### Creating a New Feature
 
 ```bash
@@ -467,16 +534,45 @@ git checkout -b fix/wave-X/bug-description
 # 2. Identify root cause
 # Use git debugging: git log -S "search_term" -p
 
-# 3. Write failing test first
+# 3. CRITICAL: Check for duplicate files before modifying
+find src -name "*TargetFile*" -type f
+grep -r "from.*TargetFile" src/
+
+# 4. Write failing test first
 # See: docs/standards/TESTING.md
 
-# 4. Fix the bug
+# 5. Fix the bug (in the CORRECT file)
 
-# 5. Ensure test passes
+# 6. Ensure test passes
 npm run test:changed
 
-# 6. Validate and PR
+# 7. Validate and PR
 npm run validate && git push
+```
+
+### Debugging Production Issues
+
+**Systematic approach for production bugs:**
+
+```bash
+# Step 1: Identify the symptom
+# What is the user seeing? What should they see?
+
+# Step 2: Trace the data flow
+# Where does the data come from? Service → Hook → Component
+
+# Step 3: Check for duplicate files
+find src -name "*ServiceName*" -type f
+find src -name "*ComponentName*" -type f
+
+# Step 4: Verify which file is ACTUALLY being used
+grep -r "from.*ServiceName" src/
+grep -r "from.*ComponentName" src/
+
+# Step 5: Check path aliases in vite.config.js
+# An import like "@adherence/services/x" resolves to "src/features/adherence/services/x"
+
+# Step 6: Fix the CORRECT file and delete duplicates
 ```
 
 ### Adding Tests
@@ -513,6 +609,6 @@ npm run test:coverage
 
 ---
 
-*Última atualização: 2026-02-17*  
-*Versão do projeto: 2.9.0*  
+*Última atualização: 2026-02-18*  
+*Versão do projeto: 3.0.0*  
 *Formato: Routing Table (Phase 3 - Documentation Overhaul)*
