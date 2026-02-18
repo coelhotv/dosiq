@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Button from '../ui/Button'
 import ShakeEffect from '../animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
-import { FREQUENCIES, FREQUENCY_LABELS } from '../../schemas/protocolSchema'
+import { FREQUENCIES, FREQUENCY_LABELS, getTodayDateString } from '../../schemas/protocolSchema'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({
@@ -42,6 +42,8 @@ export default function ProtocolForm({
         : initialValues?.active !== undefined
           ? initialValues.active
           : true,
+    start_date: protocol?.start_date || initialValues?.start_date || getTodayDateString(),
+    end_date: protocol?.end_date || initialValues?.end_date || '',
   })
 
   const [enableTitration, setEnableTitration] = useState(
@@ -161,6 +163,8 @@ export default function ProtocolForm({
         titration_schedule: isTitrating ? formData.titration_schedule : [],
         notes: formData.notes.trim() || null,
         active: formData.active,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
       }
 
       const savedProtocol = await onSave(dataToSave)
@@ -265,6 +269,36 @@ export default function ProtocolForm({
           />
         </ShakeEffect>
         {errors.name && <span className="error-message">{errors.name}</span>}
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label htmlFor="start_date">
+            Data de Início <span className="required">*</span>
+          </label>
+          <input
+            type="date"
+            id="start_date"
+            name="start_date"
+            value={formData.start_date}
+            onChange={handleChange}
+            required
+          />
+          <small>Quando você começou este protocolo</small>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="end_date">Data de Término (opcional)</label>
+          <input
+            type="date"
+            id="end_date"
+            name="end_date"
+            value={formData.end_date || ''}
+            onChange={handleChange}
+            min={formData.start_date}
+          />
+          <small>Deixe em branco para protocolo contínuo</small>
+        </div>
       </div>
 
       <div className="form-row">
