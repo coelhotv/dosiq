@@ -6,12 +6,15 @@ import { z } from 'zod'
  */
 
 /**
- * Retorna a data atual no formato YYYY-MM-DD
+ * Retorna a data atual no formato YYYY-MM-DD (considerando fuso horário local)
  * @returns {string} Data atual
  */
 export const getTodayDateString = () => {
   const today = new Date()
-  return today.toISOString().split('T')[0]
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 // Frequências válidas (valores reais para o banco)
