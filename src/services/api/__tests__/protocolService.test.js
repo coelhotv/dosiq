@@ -180,6 +180,7 @@ describe('protocolService', () => {
         frequency: 'diário',
         time_schedule: ['08:00', '20:00'],
         dosage_per_intake: 1,
+        start_date: '2024-01-15',
       }
       const createdProtocol = { id: '1', ...newProtocol, user_id: 'test-user-id' }
 
@@ -221,6 +222,7 @@ describe('protocolService', () => {
         ],
         current_stage_index: 0,
         titration_status: 'titulando',
+        start_date: '2024-01-15',
       }
 
       mockSupabase.from.mockReturnValue({

@@ -155,7 +155,7 @@ Agrupadores de protocolos (ex: "Protocolo Anti-Inflamatório").
 
 ### `protocols`
 
-Dita como o medicamento deve ser tomado. **Atualizado com campos de notificação (v3.0.0)**.
+Dita como o medicamento deve ser tomado. **Atualizado com campos de notificação e datas de vigência (v3.0.0)**.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -171,9 +171,11 @@ Dita como o medicamento deve ser tomado. **Atualizado com campos de notificaçã
 | `titration_schedule` | jsonb (default: '[]') | Estágios da titulação |
 | `current_stage_index` | integer (default: 0) | Índice do estágio atual |
 | `stage_started_at` | timestamptz | Data de início do estágio |
-| `last_notified_at` | timestamptz | **Última notificação enviada (NOVO)** |
-| `last_soft_reminder_at` | timestamptz | **Último lembrete suave (NOVO)** |
-| `status_ultima_notificacao` | varchar | **Status da última notificação (NOVO)**: 'pendente', 'enviada', 'falhou', 'tentando_novamente' |
+| `start_date` | date (NOT NULL) | **Data de início do protocolo (NOVO)** - Usado para cálculo de adesão |
+| `end_date` | date (NULL) | **Data de término do protocolo (NOVO)** - NULL se ativo indefinidamente |
+| `last_notified_at` | timestamptz | Última notificação enviada |
+| `last_soft_reminder_at` | timestamptz | Último lembrete suave |
+| `status_ultima_notificacao` | varchar | Status da última notificação: 'pendente', 'enviada', 'falhou', 'tentando_novamente' |
 | `active` | boolean (default: true) | Se o protocolo está ativo |
 | `notes` | text | Observações gerais |
 | `user_id` | uuid (FK) | Dono do registro |

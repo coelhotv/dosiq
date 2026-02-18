@@ -7,6 +7,47 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [3.0.0] - 2026-02-18
+
+### Protocol Start/End Dates for Accurate Adherence
+
+#### ✨ Novas Funcionalidades
+- **Campos `start_date` e `end_date` em protocolos**: Nova coluna para definir período de vigência
+  - Cálculo de adesão agora considera apenas dias a partir da data de início
+  - Corrige problema onde protocolos novos exibiam score artificialmente baixo
+  - Usuários podem definir duração do protocolo ou deixar em aberto
+- **Módulo `dateUtils.js`**: Funções compartilhadas para manipulação de datas
+  - `parseLocalDate()` - Converte string para data em timezone local
+  - `formatLocalDate()` - Formata data para string YYYY-MM-DD
+  - `isProtocolActiveOnDate()` - Verifica se protocolo está ativo em uma data
+
+#### 🔄 Mudanças
+- **Cálculo de Adesão**: Refatorado para respeitar limites de data do protocolo
+  - `effectiveDays` agora considera apenas dias entre `start_date` e data atual
+  - Protocolos com `end_date` definido não são considerados após término
+- **Manipulação de Datas**: Padronizada para timezone local (GMT-3 para Brasil)
+  - Todas as comparações de data usam `new Date(dateStr + 'T00:00:00')`
+  - Eliminada inconsistência entre UTC e timezone local
+
+#### 🐛 Correções
+- **Inconsistência de timezone em validação de datas**: `protocolSchema.js` agora usa timezone local
+- **Bug de cálculo de effectiveDays**: Removido dia extra que era adicionado incorretamente
+- **Duplicação de código**: Função `isProtocolActiveOnDate` centralizada em `dateUtils.js`
+
+#### 📦 Commits Incluídos
+- Criação de módulo `dateUtils.js` com funções compartilhadas
+- Atualização de `adherenceService.js` para usar novas funções
+- Atualização de `adherenceLogic.js` para re-exportar funções
+- Correção de timezone em `protocolSchema.js` (3 arquivos)
+- Migração SQL para adicionar colunas `start_date` e `end_date`
+
+#### 📊 Estatísticas
+- **3 arquivos novos**: `dateUtils.js`, migração SQL
+- **5 arquivos modificados**: adherenceService, adherenceLogic, protocolSchema (x3)
+- **166 testes passando**: Sem regressões
+
+---
+
 ## [2.9.0] - 2026-02-17
 
 ### Telegram MarkdownV2 Escape System
