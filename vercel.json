@@ -14,6 +14,22 @@
       "destination": "/api/notify.js"
     },
     {
+      "source": "/api/dlq",
+      "destination": "/api/dlq.js"
+    },
+    {
+      "source": "/api/dlq/:id/retry",
+      "destination": "/api/dlq/:id/retry.js"
+    },
+    {
+      "source": "/api/dlq/:id/discard",
+      "destination": "/api/dlq/:id/discard.js"
+    },
+    {
+      "source": "/api/health/(.*)",
+      "destination": "/api/health/$1.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -1,4 +1,0 @@
-InstallPrompt.jsx?t=1770922148000:73 [PWA Install] Button clicked
-InstallPrompt.jsx?t=1770922148000:74 [PWA Install] Platform info: {isIOSSafari: false, isChromeAndroid: false, isDesktopChrome: false}isChromeAndroid: falseisDesktopChrome: falseisIOSSafari: false[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
-InstallPrompt.jsx?t=1770922148000:75 [PWA Install] Deferred prompt available: false
-InstallPrompt.jsx?t=1770922148000:101 [PWA Install] No matching platform handler - browser may not support PWA install
