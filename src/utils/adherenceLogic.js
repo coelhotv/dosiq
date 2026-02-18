@@ -5,32 +5,10 @@
  * @module adherenceLogic
  */
 
-/**
- * Verifica se um protocolo estava ativo em uma data específica.
- * Considera start_date e end_date do protocolo.
- *
- * @param {Object} protocol - Protocolo a verificar
- * @param {string} dateStr - Data no formato YYYY-MM-DD
- * @returns {boolean} true se o protocolo estava ativo na data
- */
-export function isProtocolActiveOnDate(protocol, dateStr) {
-  // Converte dateStr para Date (meia-noite local)
-  const currentDate = new Date(dateStr + 'T00:00:00')
+import { isProtocolActiveOnDate } from './dateUtils.js'
 
-  // Verificar se o protocolo já começou
-  if (protocol.start_date) {
-    const startDate = new Date(protocol.start_date + 'T00:00:00')
-    if (currentDate < startDate) return false
-  }
-
-  // Verificar se o protocolo já terminou
-  if (protocol.end_date) {
-    const endDate = new Date(protocol.end_date + 'T00:00:00')
-    if (currentDate > endDate) return false
-  }
-
-  return true
-}
+// Re-export para manter compatibilidade com imports existentes
+export { isProtocolActiveOnDate }
 
 /**
  * Calcula doses esperadas para um conjunto de protocolos em um período.
