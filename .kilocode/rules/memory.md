@@ -1720,3 +1720,58 @@ onAction((alert, action) => {
 - Issue #55: Consolidar getTodayDateString com getTodayLocal (15 min)
 - Issue #56: Usar parseLocalDate em adherenceLogic.js (10 min)
 - Aguardar review do PR #50
+
+---
+
+## Memory Entry - 2026-02-18 17:54
+**Contexto / Objetivo**
+- Final validation and merge of PR #50 (Protocol Start/End Dates for Accurate Adherence)
+- Create version 3.0.0 release with Git tag and GitHub release
+- Document lessons learned from the release process
+
+**O que foi feito (mudanças)**
+- Operações realizadas:
+  - Validação final: lint (0 errors, 2 warnings), test:critical (166 passed), build (sucesso em 8.32s)
+  - Merge PR #50 via `gh pr merge 50 --merge --delete-branch` (fast-forward)
+  - Version bump para 3.0.0 em package.json
+  - Git tag v3.0.0 criado e pushed
+  - GitHub release criado: https://github.com/coelhotv/meus-remedios/releases/tag/v3.0.0
+- Arquivos alterados:
+  - `package.json` - Version bump de 2.9.0 para 3.0.0
+  - `RELEASE_NOTES_v3.0.0.md` - Criado para GitHub release
+
+**O que deu certo**
+- Validação completa passou sem erros
+- PR #50 mergeou com fast-forward (branch remota deletada automaticamente)
+- Pre-commit hooks executaram testes críticos antes do push
+- GitHub release criado com sucesso usando `--notes-file`
+- Tag v3.0.0 pushed com sucesso
+
+**O que não deu certo / riscos**
+- Nenhum erro encontrado durante o processo de release
+
+**Causa raiz (se foi debug)**
+- N/A (operação de release sem bugs)
+
+**Decisões & trade-offs**
+- Decisão: Usar fast-forward merge ao invés de --no-ff
+- Alternativas consideradas: Usar `--no-ff` para preservar histórico
+- Por que: Branch já tinha commits atômicos bem estruturados, fast-forward foi mais limpo
+
+- Decisão: Criar arquivo RELEASE_NOTES_v3.0.0.md separado para GitHub release
+- Alternativas consideradas: Usar CHANGELOG.md diretamente
+- Por que: Release notes mais focadas e concisas para GitHub
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** rodar validação completa antes de merge: lint, test:critical, build
+- Usar `gh pr view <number> --json state,mergeable,statusCheckRollup` para verificar status do PR
+- Usar `gh pr merge <number> --merge --delete-branch` para merge com cleanup automático
+- Usar `npm version <version> --no-git-tag-version` para version bump sem criar tag automática
+- Usar `gh release create <tag> --title "<title>" --notes-file <file>` para GitHub release
+- Pre-commit hooks executam automaticamente antes de push (testes críticos)
+- Criar release notes focadas para GitHub, diferente de CHANGELOG.md completo
+
+**Pendências / próximos passos**
+- Issues de backlog: #51, #52, #53, #54, #55, #56 (melhorias menores)
+- Monitorar deploy da Vercel após release
+- Validar funcionamento em produção
