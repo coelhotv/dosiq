@@ -163,6 +163,8 @@ export default function ProtocolForm({
         titration_schedule: isTitrating ? formData.titration_schedule : [],
         notes: formData.notes.trim() || null,
         active: formData.active,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
       }
 
       const savedProtocol = await onSave(dataToSave)
