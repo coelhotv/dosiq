@@ -26,7 +26,6 @@ run/
 *.sw?
 *.code-workspace
 coverage/
-scripts/
 .husky/
 
 

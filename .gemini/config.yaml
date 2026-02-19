@@ -1,16 +1,52 @@
 # .gemini/config.yaml
 # Configuração para Gemini Code Assist
+# Refatorado em 2026-02-19 para integração otimizada
 
 $schema: "http://json-schema.org/draft-07/schema#"
 
 code_review:
+  # Threshold mínimo para comentários (MEDIUM = ignora LOW)
   comment_severity_threshold: MEDIUM
+  
+  # Limite de comentários por review
   max_review_comments: 20
+  
+  # Review automático quando PR é aberto
   pull_request_opened:
     help: true
     summary: true
     code_review: true
     include_drafts: false
+  
+  # NOVO: Re-review automático quando novos commits são pushados
+  pull_request_synchronize:
+    code_review: true
+    summary: true
+  
+  # NOVO: Filtros de path para focar em código crítico
+  excluded_paths:
+    - "docs/archive/**"
+    - "**/dist/**"
+    - "**/node_modules/**"
+    - "**/*.min.js"
+    - "**/coverage/**"
+    - ".vitest-cache*/**"
+  
+  # NOVO: Paths prioritários para review
+  included_paths:
+    - "src/**"
+    - "server/**"
+    - "api/**"
+    - ".github/workflows/**"
 
 memory_config:
   disabled: false
+
+# NOVO: Configurações de output estruturado
+output_config:
+  # Gerar JSON estruturado para agentes
+  structured_output: true
+  # Incluir sugestões de código
+  include_suggestions: true
+  # Incluir linhas de código afetadas
+  include_code_snippets: true
