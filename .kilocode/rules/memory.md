@@ -2021,3 +2021,50 @@ onAction((alert, action) => {
 - Aguardar Gemini re-review do PR #73
 - Merge PR #73 após aprovação
 - Testar DLQ Admin UI em produção após deploy
+
+---
+
+## Memory Entry — 2026-02-19 17:40
+**Contexto / Objetivo**
+- Finalizar PR #73 (DLQ Admin UI routing + authentication fix)
+- Confirmar funcionamento em produção
+- Limpar branch após merge
+
+**O que foi feito (mudanças)**
+- Operações realizadas:
+  - Merge PR #73 via `gh pr merge 73 --merge --delete-branch`
+  - Validação em produção confirmada pelo usuário
+  - Branch local e remota deletadas
+  - Issue #74 criada para refactoring (extrair `verifyAdminAccess` para módulo compartilhado)
+- Arquivos alterados no PR:
+  - `vercel.json` — `rewrites` com `:id` parameter syntax
+  - `api/dlq.js`, `api/dlq/[id]/retry.js`, `api/dlq/[id]/discard.js` — `verifyAdminAccess()`
+  - `src/services/api/dlqService.js` — Auth header
+
+**O que deu certo**
+- Abordagem incremental: primeiro corrigir roteamento, depois adicionar segurança
+- Gemini Code Assist identificou issues críticos antes do merge
+- Validação completa antes de cada push (lint, test:critical, build)
+- Branch cleanup automático via `--delete-branch` flag
+
+**O que não deu certo / riscos**
+- Nenhum erro crítico encontrado
+
+**Causa raiz (se foi debug)**
+- N/A (operação de merge e cleanup)
+
+**Decisões & trade-offs**
+- Decisão: Criar Issue #74 para refactoring ao invés de incluir no PR
+- Alternativas consideradas: Incluir refactoring no mesmo PR
+- Por que: Manter PR focado na correção do bug, refactoring é melhoria opcional
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** usar `gh pr merge <number> --merge --delete-branch` para merge com cleanup automático
+- Gemini Code Assist é obrigatório antes de merge - aguardar review comments
+- Criar issues de backlog para refactoring identificados em code review
+- Testar em produção após deploy para confirmar funcionamento
+- `rewrites` é a propriedade moderna do Vercel, `routes` é legacy
+- **SEMPRE** adicionar autenticação em endpoints que usam `service_role` key
+
+**Pendências / próximos passos**
+- Issue #74: Extrair `verifyAdminAccess` para `server/utils/auth.js` (15-20 min, média prioridade)
