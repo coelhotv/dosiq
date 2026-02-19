@@ -155,8 +155,9 @@ jobs:
     name: Parse Gemini Comments
     runs-on: ubuntu-latest
     needs: [detect, poll-review]
-    # Executa se detectou review OU polling encontrou review
-    if: needs.detect.outputs.has_gemini_review == 'true' || needs.poll-review.outputs.review_found == 'true'
+    # Executa sempre que detect OU poll-review terminaram (mesmo se skipped)
+    # Só roda se detectou review do Gemini OU polling encontrou review
+    if: always() && (needs.detect.outputs.has_gemini_review == 'true' || needs.poll-review.outputs.review_found == 'true')
     outputs:
       total_issues: ${{ steps.parse.outputs.total_issues }}
       auto_fixable: ${{ steps.parse.outputs.auto_fixable }}
@@ -281,7 +282,8 @@ jobs:
     name: Apply Auto-Fixes
     runs-on: ubuntu-latest
     needs: [detect, parse]
-    if: needs.parse.outputs.auto_fixable > 0
+    # Só executa se parse rodou e encontrou issues auto-fixable
+    if: always() && needs.parse.result == 'success' && needs.parse.outputs.auto_fixable > 0
     
     steps:
       - name: Checkout
@@ -357,7 +359,8 @@ jobs:
     name: Post Summary
     runs-on: ubuntu-latest
     needs: [detect, parse, validate]
-    if: always() && needs.parse.outputs.total_issues != ''
+    # Só executa se parse rodou com sucesso
+    if: always() && needs.parse.result == 'success'
     
     steps:
       - name: Download Output
