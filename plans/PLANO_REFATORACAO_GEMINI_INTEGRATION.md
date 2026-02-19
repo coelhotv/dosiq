@@ -617,14 +617,66 @@ ls -la .github/workflows/
 
 | Teste | Tipo | Responsável | Status |
 |-------|------|-------------|--------|
-| 1. Sintaxe YAML | Auto | Agente | ⏳ |
-| 2. Trigger Gemini | Manual+Auto | Usuário+Agente | ⏳ |
-| 3. Parsing | Auto | Agente | ⏳ |
-| 4. Webhook | Manual+Auto | Usuário+Agente | ⏳ |
-| 5. Auto-Fix | Auto | Agente | ⏳ |
-| 6. Output JSON | Auto | Agente | ⏳ |
-| 7. Agentes Coder | Auto | Agente | ⏳ |
-| 8. Cleanup | Manual+Auto | Usuário+Agente | ⏳ |
+| 1. Sintaxe YAML | Auto | Agente | ✅ Passou |
+| 2. Trigger Gemini | Auto | Agente | ✅ Passou |
+| 3. Parsing | Auto | Agente | ✅ Passou |
+| 4. Webhook | Auto | Agente | ✅ Passou |
+| 5. Auto-Fix | Auto | Agente | ⚠️ Timing Issue |
+| 6. Output JSON | Auto | Agente | ⚠️ Timing Issue |
+| 7. Agentes Coder | Auto | Agente | ⏳ Pendente (P2) |
+| 8. Cleanup | Auto | Agente | ✅ Passou |
+
+---
+
+### 🐛 Bug Descoberto: Timing Issue
+
+**Problema:**
+O Gemini Code Assist posta um resumo inicial rapidamente (~30s), mas os comentários inline (review comments) vêm depois (~60-90s). O workflow é triggerado pelo `pull_request_review` event quando o resumo é postado, mas quando executa, os comentários inline ainda não estão disponíveis.
+
+**Sintoma:**
+- Parsing encontra 0 review comments
+- Artifact não é gerado
+- Resumo postado mostra "Total de Issues: 0"
+
+**Solução Proposta:**
+Adicionar um delay ou polling no workflow para aguardar os comentários inline:
+
+```yaml
+# Opção 1: Delay fixo
+- name: Wait for Gemini inline comments
+  run: sleep 90
+
+# Opção 2: Polling com timeout
+- name: Poll for inline comments
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const maxAttempts = 10;
+      const interval = 15000; // 15 seconds
+      
+      for (let i = 0; i < maxAttempts; i++) {
+        const { data: comments } = await github.rest.pulls.listReviewComments({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          pull_number: prNumber
+        });
+        
+        const geminiComments = comments.filter(c => 
+          c.user.login === 'gemini-code-assist[bot]'
+        );
+        
+        if (geminiComments.length > 0) {
+          console.log(`Found ${geminiComments.length} inline comments`);
+          return;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+      
+      console.log('No inline comments found after timeout');
+```
+
+**Status:** Issue criada para correção
 
 ---
 
