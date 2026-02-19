@@ -1,7 +1,7 @@
 # Documentação - Meus Remédios
 
-**Versão:** 2.8.1  
-**Última Atualização:** 2026-02-17  
+**Versão:** 3.0.0  
+**Última Atualização:** 2026-02-19  
 **Status:** Índice Principal de Documentação
 
 ---
@@ -34,6 +34,7 @@
 | [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
 | [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório extraído | ✅ Completo (Fase 3) |
 | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
+| [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) | Integração GitHub Actions + Gemini Code Assist | ✅ Completo (v1.0.0) |
 
 **Nota**: PADROES_CODIGO.md permanece na raiz como documento primário (1500+ linhas). Consolidação futura opcional.
 
@@ -97,6 +98,7 @@
 | Como nomear variáveis/funções | [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) |
 | Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
 | Como criar PR | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) |
+| Gemini Code Assist | [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) |
 | API de um service específico | [`reference/SERVICES.md`](reference/SERVICES.md) |
 | Como usar um hook | [`reference/HOOKS.md`](reference/HOOKS.md) |
 | Protocolos em titulação | [`features/TITRATION.md`](features/TITRATION.md) |
@@ -164,5 +166,5 @@ Este índice faz parte da **Phase 2: Documentation Restructure** do plano de ove
 ---
 
 *Índice criado em: 2026-02-17*  
-*Última atualização: 2026-02-17*  
-*Versão do projeto: 2.8.1*
+*Última atualização: 2026-02-19*  
+*Versão do projeto: 3.0.0*
