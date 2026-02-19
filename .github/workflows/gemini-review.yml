@@ -1,19 +1,27 @@
-name: Gemini Code Reviewer
+name: Gemini Code Review Parser
+
+# Refatorado em 2026-02-19
+# - Removido tempo de espera fixo (5 min)
+# - Adicionado trigger via webhook (pull_request_review)
+# - Implementado parsing de comentários do Gemini
+# - Output estruturado para agentes coder
 
 on:
+  # Trigger quando Gemini posta review
+  pull_request_review:
+    types: [submitted]
+  
+  # Trigger quando Gemini comenta (fallback)
   issue_comment:
     types: [created]
+  
+  # Manual
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR Number to review'
+        description: 'PR Number to process'
         required: true
         type: string
-      skip_wait:
-        description: 'Skip 5-minute wait'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -21,112 +29,266 @@ permissions:
   issues: write
 
 env:
-  GEMINI_BOT_NAME: 'gemini-code-reviewer[bot]'
+  GEMINI_BOT_LOGIN: 'gemini-code-assist[bot]'
   NODE_VERSION: '20'
-  WAIT_MINUTES: 5
 
 jobs:
   # ==========================================
-  # JOB 1: Preparar Contexto
+  # JOB 1: Detectar Review do Gemini
   # ==========================================
-  prepare:
-    name: Prepare Context
+  detect:
+    name: Detect Gemini Review
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'issue_comment' && (startsWith(github.event.comment.body, '/gemini review') || contains(github.event.comment.body, '@gemini-code-assist'))) }}
-    
     outputs:
       pr_number: ${{ steps.context.outputs.pr_number }}
       branch: ${{ steps.context.outputs.branch }}
-      skip_wait: ${{ steps.context.outputs.skip_wait }}
+      has_gemini_review: ${{ steps.context.outputs.has_gemini_review }}
     
     steps:
-      - name: Fetch PR Data
+      - name: Extract Context
         id: context
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = context.eventName === 'workflow_dispatch' 
-              ? context.payload.inputs.pr_number 
-              : context.payload.issue.number.toString();
+            let prNumber;
+            let hasGeminiReview = false;
             
-            const skipWait = context.eventName === 'workflow_dispatch'
-              ? context.payload.inputs.skip_wait.toString()
-              : 'false';
-
+            // Determinar PR number baseado no evento
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = context.payload.inputs.pr_number;
+            } else if (context.eventName === 'pull_request_review') {
+              prNumber = context.payload.pull_request.number;
+              // Verificar se é review do Gemini
+              hasGeminiReview = context.payload.review.user.login === 'gemini-code-assist[bot]';
+            } else if (context.eventName === 'issue_comment') {
+              prNumber = context.payload.issue.number;
+              // Verificar se é comentário do Gemini ou comando manual
+              const commentUser = context.payload.comment.user.login;
+              const commentBody = context.payload.comment.body;
+              hasGeminiReview = commentUser === 'gemini-code-assist[bot]' ||
+                               commentBody.includes('/gemini review') ||
+                               commentBody.includes('@gemini-code-assist');
+            }
+            
+            // Buscar dados do PR
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: parseInt(prNumber)
             });
-
+            
             core.setOutput('pr_number', prNumber);
             core.setOutput('branch', pr.head.ref);
-            core.setOutput('skip_wait', skipWait);
+            core.setOutput('has_gemini_review', hasGeminiReview.toString());
+            
+            console.log(`PR #${prNumber}, Branch: ${pr.head.ref}, Gemini Review: ${hasGeminiReview}`);
 
-      - name: Acknowledge
-        if: ${{ github.event_name == 'issue_comment' }}
+  # ==========================================
+  # JOB 2: Polling para Review (se necessário)
+  # ==========================================
+  poll-review:
+    name: Poll for Gemini Review
+    runs-on: ubuntu-latest
+    needs: detect
+    # Só executa se não detectou review do Gemini ainda
+    if: needs.detect.outputs.has_gemini_review != 'true'
+    timeout-minutes: 10
+    outputs:
+      review_found: ${{ steps.poll.outputs.review_found }}
+    
+    steps:
+      - name: Poll for Gemini Review
+        id: poll
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({
+            const maxAttempts = 20; // 20 * 30s = 10 min
+            const interval = 30000; // 30 seconds
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            
+            for (let i = 0; i < maxAttempts; i++) {
+              console.log(`Attempt ${i + 1}/${maxAttempts}: Checking for Gemini review...`);
+              
+              // Buscar reviews do PR
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              // Buscar comentários do PR
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100
+              });
+              
+              // Verificar se Gemini postou review ou comentário
+              const geminiReview = reviews.find(r => 
+                r.user.login === 'gemini-code-assist[bot]'
+              );
+              
+              const geminiComment = comments.find(c => 
+                c.user.login === 'gemini-code-assist[bot]'
+              );
+              
+              if (geminiReview || geminiComment) {
+                console.log('✅ Gemini review found!');
+                core.setOutput('review_found', 'true');
+                return;
+              }
+              
+              // Aguardar antes da próxima tentativa
+              if (i < maxAttempts - 1) {
+                await new Promise(resolve => setTimeout(resolve, interval));
+              }
+            }
+            
+            console.log('⚠️ No Gemini review found after polling');
+            core.setOutput('review_found', 'false');
+
+  # ==========================================
+  # JOB 3: Parsear Comentários
+  # ==========================================
+  parse:
+    name: Parse Gemini Comments
+    runs-on: ubuntu-latest
+    needs: [detect, poll-review]
+    # Executa se detectou review OU polling encontrou review
+    if: needs.detect.outputs.has_gemini_review == 'true' || needs.poll-review.outputs.review_found == 'true'
+    outputs:
+      total_issues: ${{ steps.parse.outputs.total_issues }}
+      auto_fixable: ${{ steps.parse.outputs.auto_fixable }}
+      needs_agent: ${{ steps.parse.outputs.needs_agent }}
+      critical: ${{ steps.parse.outputs.critical }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.branch }}
+      
+      - name: Fetch Gemini Comments
+        id: fetch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            
+            // Buscar reviews do PR
+            const { data: reviews } = await github.rest.pulls.listReviews({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: parseInt("${{ steps.context.outputs.pr_number }}"),
-              body: `## 🤖 Gemini Code Review Iniciado\n\n⏳ **Aguarde ${{ env.WAIT_MINUTES }} minutos** para análise completa...\n\n📋 **O que será feito:**\n1. Gemini analisará seu código\n2. Identificarei issues de lint, formatting, lógica e arquitetura\n3. Aplicarei fixes automáticos quando possível\n4. Validarei com lint + testes\n5. Reportarei resumo no PR`
+              pull_number: prNumber
             });
-
-  # ==========================================
-  # JOB 2: Aguardar e Coletar Comentários
-  # ==========================================
-  fetch-comments:
-    name: Fetch Gemini Comments
-    runs-on: ubuntu-latest
-    needs: prepare
-    steps:
-      - name: Wait
-        if: ${{ needs.prepare.outputs.skip_wait != 'true' }}
-        run: sleep $(( ${{ env.WAIT_MINUTES }} * 60 ))
-      
-      - name: Fetch
-        uses: actions/github-script@v7
-        with:
-          script: |
+            
+            // Buscar comentários do PR
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: parseInt("${{ needs.prepare.outputs.pr_number }}"),
+              issue_number: prNumber,
               per_page: 100
             });
             
-            const geminiComments = comments.filter(c => 
-              c.user.type === 'Bot' && 
-              (c.user.login.includes('gemini') || c.user.login.includes('google'))
+            // Buscar comentários inline (review comments)
+            const { data: reviewComments } = await github.rest.pulls.listReviewComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            
+            // Filtrar apenas comentários do Gemini
+            const geminiReviews = reviews.filter(r => 
+              r.user.login === 'gemini-code-assist[bot]'
             );
             
-            require('fs').writeFileSync('gemini-comments.json', JSON.stringify(geminiComments, null, 2));
+            const geminiComments = comments.filter(c => 
+              c.user.login === 'gemini-code-assist[bot]'
+            );
+            
+            const geminiReviewComments = reviewComments.filter(c => 
+              c.user.login === 'gemini-code-assist[bot]'
+            );
+            
+            // Salvar para parsing
+            const data = {
+              reviews: geminiReviews,
+              comments: geminiComments,
+              reviewComments: geminiReviewComments
+            };
+            
+            require('fs').writeFileSync('gemini-raw-comments.json', JSON.stringify(data, null, 2));
+            
+            console.log(`Found ${geminiReviews.length} reviews, ${geminiComments.length} comments, ${geminiReviewComments.length} review comments`);
 
-      - name: Upload
+      - name: Parse Comments
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Carregar parser
+            const parser = require('./.github/scripts/parse-gemini-comments.js');
+            
+            // Carregar dados brutos
+            const rawData = JSON.parse(fs.readFileSync('gemini-raw-comments.json', 'utf8'));
+            
+            // Parsear todos os comentários inline (mais úteis)
+            const parsedComments = rawData.reviewComments.map(c => parser.parseGeminiComment(c));
+            
+            // Categorizar issues
+            const categorized = parser.categorizeIssues(parsedComments);
+            
+            // Gerar output estruturado
+            const output = parser.generateStructuredOutput(
+              parseInt("${{ needs.detect.outputs.pr_number }}"),
+              `review-${Date.now()}`,
+              parsedComments
+            );
+            
+            // Salvar output
+            fs.mkdirSync('.gemini-output', { recursive: true });
+            fs.writeFileSync(
+              `.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`,
+              JSON.stringify(output, null, 2)
+            );
+            
+            // Outputs para próximos jobs
+            core.setOutput('total_issues', output.summary.total_issues);
+            core.setOutput('auto_fixable', output.summary.auto_fixable);
+            core.setOutput('needs_agent', output.summary.needs_agent);
+            core.setOutput('critical', output.summary.critical);
+            
+            console.log('📊 Parsing Results:');
+            console.log(`  Total Issues: ${output.summary.total_issues}`);
+            console.log(`  Auto-fixable: ${output.summary.auto_fixable}`);
+            console.log(`  Needs Agent: ${output.summary.needs_agent}`);
+            console.log(`  Critical: ${output.summary.critical}`);
+
+      - name: Upload Structured Output
         uses: actions/upload-artifact@v4
         with:
-          name: gemini-comments
-          path: gemini-comments.json
-          retention-days: 1
+          name: gemini-review-output
+          path: .gemini-output/
+          retention-days: 7
 
   # ==========================================
-  # JOB 3: Auto-Fix
+  # JOB 4: Auto-Fix (se aplicável)
   # ==========================================
-  fix:
+  auto-fix:
     name: Apply Auto-Fixes
     runs-on: ubuntu-latest
-    needs: [prepare, fetch-comments]
-    outputs:
-      changes: ${{ steps.check.outputs.count }}
+    needs: [detect, parse]
+    if: needs.parse.outputs.auto_fixable > 0
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ needs.prepare.outputs.branch }}
+          ref: ${{ needs.detect.outputs.branch }}
           fetch-depth: 0
       
       - name: Setup Node
@@ -138,43 +300,50 @@ jobs:
       - name: Install
         run: npm ci
       
-      - name: Fix
+      - name: Apply Fixes
         run: |
           npm run lint -- --fix || true
-          npx prettier --write "src/**/*.{js,jsx,css,md}" || true
+          npx prettier --write "src/**/*.{js,jsx,css}" || true
       
       - name: Check Changes
         id: check
         run: echo "count=$(git diff --name-only | wc -l)" >> $GITHUB_OUTPUT
       
-      - name: Commit
+      - name: Commit Auto-Fixes
+        if: steps.check.outputs.count > 0
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "fix: auto-fix issues from Gemini Code Reviewer [skip ci]"
-          branch: ${{ needs.prepare.outputs.branch }}
+          commit_message: "fix: auto-fix issues from Gemini Code Review [skip ci]"
+          branch: ${{ needs.detect.outputs.branch }}
 
   # ==========================================
-  # JOB 4: Validar
+  # JOB 5: Validar
   # ==========================================
   validate:
     name: Validate Build
     runs-on: ubuntu-latest
-    needs: [prepare, fix]
+    needs: [detect, auto-fix]
+    # Sempre executa, mesmo se não houve auto-fix
+    if: always() && needs.detect.outputs.has_gemini_review == 'true'
     outputs:
       lint: ${{ steps.check.outputs.lint }}
       smoke: ${{ steps.check.outputs.smoke }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.branch }}
+          ref: ${{ needs.detect.outputs.branch }}
+      
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+      
       - name: Install
         run: npm ci
+      
       - name: Run Checks
         id: check
         run: |
@@ -182,26 +351,94 @@ jobs:
           if npm run test:smoke; then echo "smoke=passed" >> $GITHUB_OUTPUT; else echo "smoke=failed" >> $GITHUB_OUTPUT; fi
 
   # ==========================================
-  # JOB 5: Resumo
+  # JOB 6: Postar Resumo
   # ==========================================
   summary:
     name: Post Summary
     runs-on: ubuntu-latest
-    needs: [prepare, fix, validate]
-    if: ${{ always() }}
+    needs: [detect, parse, validate]
+    if: always() && needs.parse.outputs.total_issues != ''
+    
     steps:
-      - name: Post
+      - name: Download Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+      
+      - name: Post Summary
         uses: actions/github-script@v7
         with:
           script: |
-            const changes = "${{ needs.fix.outputs.changes }}" || "0";
+            const fs = require('fs');
+            
+            // Carregar output estruturado
+            let output;
+            try {
+              output = JSON.parse(fs.readFileSync(`.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`, 'utf8'));
+            } catch (e) {
+              output = { summary: {}, issues: [] };
+            }
+            
             const lint = "${{ needs.validate.outputs.lint }}" || "unknown";
             const smoke = "${{ needs.validate.outputs.smoke }}" || "unknown";
-            const prNumber = parseInt("${{ needs.prepare.outputs.pr_number }}");
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            
+            // Construir tabela de issues
+            const issuesTable = output.issues.slice(0, 10).map(i => 
+              `| ${i.file ? i.file.split('/').pop() : 'N/A'} | ${i.line || '-'} | ${i.severity} | ${i.auto_fixable ? '✅' : '❌'} |`
+            ).join('\n');
+            
+            const summaryTotal = output.summary.total_issues || 0;
+            const summaryAutoFixable = output.summary.auto_fixable || 0;
+            const summaryNeedsAgent = output.summary.needs_agent || 0;
+            const summaryCritical = output.summary.critical || 0;
+            
+            const lintStatus = lint === 'passed' ? '✅ Passou' : '❌ Falhou';
+            const smokeStatus = smoke === 'passed' ? '✅ Passou' : '❌ Falhou';
+            
+            const criticalWarning = output.critical_requires_human 
+              ? '⚠️ **Atenção:** Issues críticos detectados que requerem revisão humana.' 
+              : '';
+            
+            // Build body without template literals that confuse YAML parser
+            const body = [
+              '## 🤖 Gemini Code Review - Resumo',
+              '',
+              '### 📊 Estatísticas',
+              '',
+              '| Categoria | Quantidade |',
+              '|-----------|------------|',
+              `| Total de Issues | ${summaryTotal} |`,
+              `| Auto-fixable | ${summaryAutoFixable} |`,
+              `| Requer Agente | ${summaryNeedsAgent} |`,
+              `| Críticos | ${summaryCritical} |`,
+              '',
+              '### 📋 Issues Principais',
+              '',
+              '| Arquivo | Linha | Severidade | Auto-fixable |',
+              '|---------|-------|------------|--------------|',
+              issuesTable || '| Nenhum issue encontrado | - | - | - |',
+              '',
+              '### ✅ Validação Pós-Fix',
+              '',
+              `- **Lint:** ${lintStatus}`,
+              `- **Smoke Tests:** ${smokeStatus}`,
+              '',
+              '### 📁 Output Estruturado',
+              '',
+              `O arquivo \`.gemini-output/review-${prNumber}.json\` foi gerado com todos os issues parseados para consumo por agentes coder.`,
+              '',
+              criticalWarning,
+              '',
+              '---',
+              '💬 Use `/gemini review` ou mencione `@gemini-code-assist` para nova análise.'
+            ].filter(line => line !== null).join('\n');
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `## 🤖 Gemini Code Review - Resumo\n\n### ✅ Auto-Fixes Aplicados\n- Arquivos modificados: ${changes}\n\n### 📊 Validação Pós-Fix\n- **Lint:** ${lint === 'passed' ? '✅ Passou' : '❌ Falhou'}\n- **Smoke Tests:** ${smoke === 'passed' ? '✅ Passou' : '❌ Falhou'}\n\n💬 Novos commits ou a menção \`@gemini-code-assist\` reiniciarão esta análise.`
+              body: body
             });
