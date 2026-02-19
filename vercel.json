@@ -6,6 +6,14 @@
   },
   "rewrites": [
     {
+      "source": "/api/dlq/:id/retry",
+      "destination": "/api/dlq/[id]/retry.js"
+    },
+    {
+      "source": "/api/dlq/:id/discard",
+      "destination": "/api/dlq/[id]/discard.js"
+    },
+    {
       "source": "/api/telegram",
       "destination": "/api/telegram.js"
     },
@@ -18,16 +26,8 @@
       "destination": "/api/dlq.js"
     },
     {
-      "source": "/api/dlq/:id/retry",
-      "destination": "/api/dlq/:id/retry.js"
-    },
-    {
-      "source": "/api/dlq/:id/discard",
-      "destination": "/api/dlq/:id/discard.js"
-    },
-    {
-      "source": "/api/health/(.*)",
-      "destination": "/api/health/$1.js"
+      "source": "/api/health/:path*",
+      "destination": "/api/health/:path*.js"
     },
     {
       "source": "/(.*)",
