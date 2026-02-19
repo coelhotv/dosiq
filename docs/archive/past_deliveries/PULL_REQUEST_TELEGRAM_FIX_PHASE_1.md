@@ -159,3 +159,4 @@ npm run build
 ---
 
 /cc @reviewers
+/cc @gemini-code-assist

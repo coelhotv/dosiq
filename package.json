@@ -26,6 +26,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@babel/generator": "^7.28.6",
     "@supabase/supabase-js": "^2.90.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.33.0",
