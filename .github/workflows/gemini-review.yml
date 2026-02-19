@@ -321,12 +321,14 @@ jobs:
           ls -la
           echo "Files in .gemini-output:"
           ls -la .gemini-output/ || echo "Directory .gemini-output not found"
+          echo "Absolute path:"
+          realpath .gemini-output/ || echo "realpath not available"
       
       - name: Upload Structured Output
         uses: actions/upload-artifact@v4
         with:
           name: gemini-review-output
-          path: .gemini-output/
+          path: ${{ github.workspace }}/.gemini-output/
           retention-days: 7
           if-no-files-found: error
 
