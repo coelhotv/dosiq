@@ -314,12 +314,21 @@ jobs:
             console.log(`  Needs Agent: ${output.summary.needs_agent}`);
             console.log(`  Critical: ${output.summary.critical}`);
 
+      - name: Debug - List files
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+          echo "Files in .gemini-output:"
+          ls -la .gemini-output/ || echo "Directory .gemini-output not found"
+      
       - name: Upload Structured Output
         uses: actions/upload-artifact@v4
         with:
           name: gemini-review-output
           path: .gemini-output/
           retention-days: 7
+          if-no-files-found: error
 
   # ==========================================
   # JOB 4: Auto-Fix (se aplicável)
