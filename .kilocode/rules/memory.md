@@ -1971,3 +1971,53 @@ onAction((alert, action) => {
 - Merge PR #60 após review
 - Testar DLQ Admin UI em produção após deploy
 - Verificar se há outras rotas API sem rewrite no `vercel.json`
+
+---
+
+## Memory Entry — 2026-02-19 14:38
+**Contexto / Objetivo**
+- Corrigir issues de segurança e roteamento identificados pelo Gemini no PR #73
+- O PR original usava `routes` (legacy) e não tinha autenticação nos endpoints DLQ
+- Gemini identificou 1 CRITICAL, 2 HIGH e 1 MEDIUM issues
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `vercel.json` — Substituído `routes` por `rewrites` com `:id` parameter syntax
+  - `api/dlq.js` — Adicionada função `verifyAdminAccess()` com Supabase Auth + ADMIN_CHAT_ID
+  - `api/dlq/[id]/retry.js` — Adicionada verificação de admin antes de processar
+  - `api/dlq/[id]/discard.js` — Adicionada verificação de admin antes de processar
+  - `src/services/api/dlqService.js` — Adicionado envio de token de autenticação via header
+- Comportamento impactado:
+  - DLQ endpoints agora exigem usuário autenticado com telegram_chat_id = ADMIN_CHAT_ID
+  - Frontend envia token de sessão do Supabase Auth no header Authorization
+
+**O que deu certo**
+- Uso de Supabase Auth para verificar identidade do usuário
+- Verificação de admin via comparação de telegram_chat_id com ADMIN_CHAT_ID
+- Substituição de `routes` (legacy) por `rewrites` (moderno) no vercel.json
+- Validação completa: lint (0 errors), test:critical (146 passed), build (sucesso)
+
+**O que não deu certo / riscos**
+- Import inicial incorreto: `./supabaseClient` não existia
+- Correção: Usar import correto `../../lib/supabase` (mesmo padrão dos outros services)
+
+**Causa raiz (se foi debug)**
+- N/A (implementação de segurança preventiva baseada em code review)
+
+**Decisões & trade-offs**
+- Decisão: Usar Supabase Auth + ADMIN_CHAT_ID para autenticação de admin
+- Alternativas consideradas: Usar CRON_SECRET (não exposto ao frontend), criar tabela de admins
+- Por que: Supabase Auth já está implementado, ADMIN_CHAT_ID já existe como env var
+
+**Regras locais para o futuro (lições acionáveis)**
+- **SEMPRE** adicionar autenticação em endpoints que usam `service_role` key
+- `service_role` key bypassa RLS - qualquer endpoint que a usa precisa de autenticação
+- Usar Supabase Auth para verificar identidade do usuário no frontend
+- Verificar se o usuário é admin via campo específico (ex: telegram_chat_id = ADMIN_CHAT_ID)
+- `rewrites` é a propriedade moderna do Vercel, `routes` é legacy
+- Usar `:id` syntax em `rewrites` para parâmetros dinâmicos
+
+**Pendências / próximos passos**
+- Aguardar Gemini re-review do PR #73
+- Merge PR #73 após aprovação
+- Testar DLQ Admin UI em produção após deploy
