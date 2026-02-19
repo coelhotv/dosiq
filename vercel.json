@@ -4,34 +4,34 @@
     "api/notify.js": { "maxDuration": 60 },
     "api/telegram.js": { "maxDuration": 10 }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/telegram",
-      "destination": "/api/telegram.js"
+      "src": "/api/dlq/([^/]+)/retry",
+      "dest": "/api/dlq/$1/retry.js"
     },
     {
-      "source": "/api/notify",
-      "destination": "/api/notify.js"
+      "src": "/api/dlq/([^/]+)/discard",
+      "dest": "/api/dlq/$1/discard.js"
     },
     {
-      "source": "/api/dlq",
-      "destination": "/api/dlq.js"
+      "src": "/api/telegram",
+      "dest": "/api/telegram.js"
     },
     {
-      "source": "/api/dlq/:id/retry",
-      "destination": "/api/dlq/:id/retry.js"
+      "src": "/api/notify",
+      "dest": "/api/notify.js"
     },
     {
-      "source": "/api/dlq/:id/discard",
-      "destination": "/api/dlq/:id/discard.js"
+      "src": "/api/dlq",
+      "dest": "/api/dlq.js"
     },
     {
-      "source": "/api/health/(.*)",
-      "destination": "/api/health/$1.js"
+      "src": "/api/health/(.*)",
+      "dest": "/api/health/$1.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
