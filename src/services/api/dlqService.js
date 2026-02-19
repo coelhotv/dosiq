@@ -1,6 +1,8 @@
 // src/services/api/dlqService.js
 // Dead Letter Queue Service - Frontend API client for DLQ admin
 
+import { supabase } from '../../lib/supabase'
+
 /**
  * DLQ Service - Gerencia operações da Dead Letter Queue
  *
@@ -8,8 +10,21 @@
  * - GET /api/dlq - Lista notificações falhadas
  * - POST /api/dlq/[id]/retry - Retenta uma notificação
  * - POST /api/dlq/[id]/discard - Descarta uma notificação
+ *
+ * Autenticação:
+ * - Usa o token de sessão do Supabase Auth
+ * - Usuário deve ter telegram_chat_id igual ao ADMIN_CHAT_ID
  */
 export const dlqService = {
+  /**
+   * Obtém o token de autorização da sessão atual
+   * @returns {Promise<string|null>} Token de acesso ou null se não autenticado
+   */
+  async _getAuthToken() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token || null
+  },
+
   /**
    * Lista notificações falhadas com paginação
    * @param {Object} options - Opções de paginação e filtro
@@ -19,6 +34,11 @@ export const dlqService = {
    * @returns {Promise<{data: Array, total: number, page: number, pageSize: number, totalPages: number}>}
    */
   async getAll({ limit = 20, offset = 0, status = null } = {}) {
+    const token = await this._getAuthToken()
+    if (!token) {
+      throw new Error('Não autenticado. Faça login para acessar a DLQ.')
+    }
+
     const params = new URLSearchParams()
     params.append('limit', limit.toString())
     params.append('offset', offset.toString())
@@ -26,10 +46,17 @@ export const dlqService = {
       params.append('status', status)
     }
 
-    const response = await fetch(`/api/dlq?${params.toString()}`)
+    const response = await fetch(`/api/dlq?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      if (response.status === 401) {
+        throw new Error('Não autorizado. Apenas administradores podem acessar a DLQ.')
+      }
       throw new Error(error.error || 'Falha ao carregar DLQ')
     }
 
@@ -42,16 +69,25 @@ export const dlqService = {
    * @returns {Promise<{success: boolean, message?: string, messageId?: string}>}
    */
   async retry(id) {
+    const token = await this._getAuthToken()
+    if (!token) {
+      throw new Error('Não autenticado. Faça login para acessar a DLQ.')
+    }
+
     const response = await fetch(`/api/dlq/${id}/retry`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     })
 
     const result = await response.json()
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Não autorizado. Apenas administradores podem acessar a DLQ.')
+      }
       throw new Error(result.error || 'Falha ao retentar notificação')
     }
 
@@ -65,12 +101,18 @@ export const dlqService = {
    * @returns {Promise<{success: boolean, message?: string}>}
    */
   async discard(id, reason = null) {
+    const token = await this._getAuthToken()
+    if (!token) {
+      throw new Error('Não autenticado. Faça login para acessar a DLQ.')
+    }
+
     const body = reason ? { reason } : {}
 
     const response = await fetch(`/api/dlq/${id}/discard`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     })
@@ -78,6 +120,9 @@ export const dlqService = {
     const result = await response.json()
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Não autorizado. Apenas administradores podem acessar a DLQ.')
+      }
       throw new Error(result.error || 'Falha ao descartar notificação')
     }
 
