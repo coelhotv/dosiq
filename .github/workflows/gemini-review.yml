@@ -328,7 +328,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gemini-review-output
-          path: ${{ github.workspace }}/.gemini-output/
+          path: .gemini-output/*.json
           retention-days: 7
           if-no-files-found: error
 
