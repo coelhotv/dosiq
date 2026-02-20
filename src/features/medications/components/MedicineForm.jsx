@@ -5,7 +5,7 @@ import {
   MEDICINE_TYPES,
   DOSAGE_UNITS,
   DOSAGE_UNIT_LABELS,
-} from '@medications/constants/medicineSchema'
+} from '@schemas/medicineSchema'
 import './MedicineForm.css'
 
 /**
