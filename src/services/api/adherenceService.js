@@ -1,4 +1,4 @@
-import { supabase, getUserId } from '../../lib/supabase'
+import { supabase, getUserId } from '@shared/utils/supabase'
 import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate } from '../../utils/dateUtils.js'
 
 /**

@@ -1,7 +1,7 @@
 // src/services/api/dlqService.js
 // Dead Letter Queue Service - Frontend API client for DLQ admin
 
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@shared/utils/supabase'
 
 /**
  * DLQ Service - Gerencia operações da Dead Letter Queue
