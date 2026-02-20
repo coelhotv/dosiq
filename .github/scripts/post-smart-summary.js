@@ -33,6 +33,8 @@ const SUMMARY_MARKER = '<!-- GEMINI_REVIEW_SUMMARY -->';
  */
 async function postOrUpdateSummary(reviewData, prNumber, github, context) {
   // Buscar comentários existentes no PR
+  // Nota: per_page=100 é suficiente para a maioria dos casos.
+  // PRs com >100 comentários são raros; se necessário, implementar paginação futuramente.
   const { data: comments } = await github.rest.issues.listComments({
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -95,12 +97,8 @@ function generateSummaryBody(reviewData, prNumber) {
   const summary = reviewData.summary || {};
   const issues = reviewData.issues || [];
 
-  // Timestamp da atualização
-  const timestamp = new Date().toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    dateStyle: 'short',
-    timeStyle: 'medium'
-  });
+  // Timestamp da atualização (UTC ISO 8601 para consistência cross-platform)
+  const timestamp = new Date().toISOString();
 
   // Estatísticas
   const totalIssues = summary.total_issues || 0;
@@ -156,8 +154,11 @@ O arquivo \`.gemini-output/review-${prNumber}.json\` foi gerado com todos os iss
  */
 function escapeMarkdown(text) {
   if (!text) return '';
-  // Escapar caracteres especiais do markdown
-  return text.replace(/[|]/g, '\\|');
+  // Escapar caracteres especiais do markdown para tabelas
+  // Inclui: pipe, underscore, asterisco, backtick, colchetes, parenteses,
+  // hash, plus, minus, dot, exclamation, tilde
+  // eslint-disable-next-line no-useless-escape
+  return text.replace(/[|_*`\[\]()#+\-.!~]/g, '\\$&');
 }
 
 module.exports = {
