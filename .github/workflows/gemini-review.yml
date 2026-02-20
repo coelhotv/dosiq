@@ -11,6 +11,11 @@ on:
   pull_request_review:
     types: [submitted]
   
+  # Trigger quando PR é atualizado (novos commits)
+  # Necessário para P2.5 - Trigger de Re-review Automático
+  pull_request:
+    types: [synchronize]
+  
   # Trigger quando Gemini comenta (fallback)
   issue_comment:
     types: [created]
@@ -518,7 +523,45 @@ jobs:
             console.log(`Summary ${result.action}: ${result.url}`);
 
   # ==========================================
-  # JOB 8: Criar Issues para Refactoring (P2.3)
+  # JOB 8: Trigger Re-review Automático (P2.5)
+  # ==========================================
+  # Detecta quando novos commits são pushados e
+  # automaticamente solicita re-review do Gemini
+  # se as alterações forem significativas
+  # ==========================================
+  trigger-rereview:
+    name: Trigger Re-review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Check and Trigger Re-review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { shouldTriggerRereview, triggerRereview } = require('./.github/scripts/trigger-re-review.js');
+            
+            const shouldTrigger = await shouldTriggerRereview(
+              context.payload.pull_request.number,
+              github,
+              context
+            );
+            
+            if (shouldTrigger) {
+              console.log('Alterações significativas detectadas, solicitando re-review...');
+              await triggerRereview(
+                context.payload.pull_request.number,
+                github,
+                context
+              );
+            } else {
+              console.log('Alterações menores, sem necessidade de re-review');
+            }
+
+  # ==========================================
+  # JOB 9: Criar Issues para Refactoring (P2.3)
   # ==========================================
   # Cria GitHub Issues automaticamente para issues MEDIUM
   # que não podem ser auto-fixados. Isso move discussões de
