@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { signIn, signUp } from '../lib/supabase'
-import Button from '../components/ui/Button'
+import { signIn, signUp } from '@shared/utils/supabase'
+import Button from '@shared/components/ui/Button'
 import './Auth.css'
 
 export default function Auth({ onAuthSuccess }) {

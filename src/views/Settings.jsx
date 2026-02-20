@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { supabase, signOut, updatePassword } from '../lib/supabase'
-import Button from '../components/ui/Button'
-import Loading from '../components/ui/Loading'
+import { supabase, signOut, updatePassword } from '@shared/utils/supabase'
+import Button from '@shared/components/ui/Button'
+import Loading from '@shared/components/ui/Loading'
 import './Settings.css'
 
 export default function Settings({ onNavigate }) {

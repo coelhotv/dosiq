@@ -1,10 +1,10 @@
 // src/views/admin/DLQAdmin.jsx
 // Dead Letter Queue Admin Interface
 import { useState, useEffect, useCallback } from 'react'
-import { dlqService } from '../../services/api/dlqService'
-import Button from '../../components/ui/Button'
-import Loading from '../../components/ui/Loading'
-import Modal from '../../components/ui/Modal'
+import { dlqService } from '@services/api/dlqService'
+import Button from '@shared/components/ui/Button'
+import Loading from '@shared/components/ui/Loading'
+import Modal from '@shared/components/ui/Modal'
 import './DLQAdmin.css'
 
 // Constantes de formatação
