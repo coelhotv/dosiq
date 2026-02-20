@@ -61,6 +61,11 @@ jobs:
               prNumber = context.payload.pull_request.number;
               // Verificar se é review do Gemini
               hasGeminiReview = context.payload.review.user.login === 'gemini-code-assist[bot]';
+            } else if (context.eventName === 'pull_request') {
+              // P2.5: Trigger de Re-review Automático
+              prNumber = context.payload.pull_request.number;
+              // Não é review do Gemini, é trigger por novo commit
+              hasGeminiReview = false;
             } else if (context.eventName === 'issue_comment') {
               prNumber = context.payload.issue.number;
               // Verificar se é comentário do Gemini ou comando manual
