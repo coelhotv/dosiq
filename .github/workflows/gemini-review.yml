@@ -410,8 +410,59 @@ jobs:
           if npm run lint; then echo "lint=passed" >> $GITHUB_OUTPUT; else echo "lint=failed" >> $GITHUB_OUTPUT; fi
           if npm run test:smoke; then echo "smoke=passed" >> $GITHUB_OUTPUT; else echo "smoke=failed" >> $GITHUB_OUTPUT; fi
 
+
   # ==========================================
-  # JOB 6: Postar Resumo
+  # JOB 6: Aplicar Labels
+  # ==========================================
+  apply-labels:
+    name: Apply Labels
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    if: always() && needs.detect.outputs.should_run == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+      
+      - name: Apply Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Carregar output estruturado
+            let reviewData;
+            try {
+              reviewData = JSON.parse(fs.readFileSync(`.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`, 'utf8'));
+            } catch (e) {
+              console.log('Review file not found, using empty data');
+              reviewData = { summary: { total_issues: 0, auto_fixable: 0, critical: 0, needs_agent: 0 }, issues: [] };
+            }
+            
+            const { applyLabels } = require('./.github/scripts/apply-labels.js');
+            const labels = await applyLabels(reviewData, ${{ needs.detect.outputs.pr_number }});
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ needs.detect.outputs.pr_number }},
+                labels: labels
+              });
+              console.log(`Applied ${labels.length} labels:`, labels);
+            } else {
+              console.log('No labels to apply');
+            }
+
+
+  # ==========================================
+  # JOB 7: Postar Resumo
   # ==========================================
   summary:
     name: Post Summary
