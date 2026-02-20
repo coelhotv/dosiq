@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
-import {
-  MEDICINE_TYPES,
-  DOSAGE_UNITS,
-  DOSAGE_UNIT_LABELS,
-} from '@schemas/medicineSchema'
+import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@schemas/medicineSchema'
 import './MedicineForm.css'
 
 /**
