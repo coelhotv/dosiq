@@ -157,7 +157,7 @@ function escapeMarkdown(text) {
   // Escapar caracteres especiais do markdown para tabelas
   // Inclui: pipe, underscore, asterisco, backtick, colchetes, parenteses,
   // hash, plus, minus, dot, exclamation, tilde
-  // eslint-disable-next-line no-useless-escape
+   
   return text.replace(/[|_*`\[\]()#+\-.!~]/g, '\\$&');
 }
 

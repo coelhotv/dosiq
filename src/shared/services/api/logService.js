@@ -1,10 +1,6 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
-import {
-  validateLogCreate,
-  validateLogUpdate,
-  validateLogBulkArray,
-} from '@schemas/logSchema'
+import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
 
 /**
  * Log Service - Medicine intake logging
