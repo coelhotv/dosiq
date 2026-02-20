@@ -2,7 +2,7 @@ import { supabase, getUserId } from '@shared/utils/supabase'
 import {
   validateMedicineCreate,
   validateMedicineUpdate,
-} from '@medications/constants/medicineSchema'
+} from '@schemas/medicineSchema'
 
 /**
  * Medicine Service - CRUD operations for medicines
