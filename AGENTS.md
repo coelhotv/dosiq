@@ -15,7 +15,7 @@
 - Dashboard with gamification
 - PWA capabilities (Service Worker, Push Notifications)
 
-**Tech Stack**: React 19 + Vite 7 + Supabase + Zod + SWR Cache + Vitest
+**Tech Stack**: React 19 + Vite 7 + Supabase + Zod + Framer Motion 12 + Custom Cache Hook (useCachedQuery) + Vitest
 
 ---
 
@@ -33,9 +33,11 @@
 | **Create PR** | [`docs/standards/PULL_REQUEST_TEMPLATE.md`](docs/standards/PULL_REQUEST_TEMPLATE.md) |
 | **Use services API** | [`docs/reference/SERVICES.md`](docs/reference/SERVICES.md) |
 | **Use hooks** | [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) |
+| **Use Zod schemas** | [`docs/reference/SCHEMAS.md`](docs/reference/SCHEMAS.md) ✅ |
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
 | **Telegram bot** | [`docs/architecture/TELEGRAM_BOT.md`](docs/architecture/TELEGRAM_BOT.md) ✅ |
+| **Gemini/AI code review** | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) ✅ |
 
 **Agent-specific rules:**
 - **Code mode**: [`.roo/rules-code/rules.md`](.roo/rules-code/rules.md)
@@ -67,23 +69,35 @@ grep -r "from.*adherenceService" src/
 ```
 
 **Canonical File Locations:**
-| Domain | Canonical Location | DO NOT USE |
+| Domain | Canonical Location | DO NOT USE (legado) |
 |--------|-------------------|------------|
-| Services | `src/services/api/*.js` | `src/features/*/services/*.js` |
+| API Services | `src/services/api/*.js` | `src/components/*/services/*.js` |
+| Shared Services | `src/shared/services/*.js` e `src/shared/services/api/*.js` | — |
+| Feature Services | `src/features/*/services/*.js` *(legítimo para lógica local da feature)* | — |
 | Schemas | `src/schemas/*.js` | `src/shared/constants/*.js` |
+| Feature-local Schemas | `src/features/*/constants/*.js` *(ex: medicineSchema, stockSchema)* | — |
 | Utils | `src/utils/*.js` | `src/features/*/utils/*.js` |
+| Hooks | `src/shared/hooks/*.js` | `src/hooks/*.js` *(diretório legado)* |
+| Shared Components | `src/shared/components/**/*.jsx` | `src/components/**/*.jsx` *(diretório legado)* |
 | Protocol Components | `src/features/protocols/components/*.jsx` | `src/components/protocol/*.jsx` |
 | Dashboard Components | `src/features/dashboard/components/*.jsx` | `src/components/dashboard/*.jsx` |
+
+> **⚠️ Diretórios Legados**: `src/components/` e `src/hooks/` estão sendo migrados para `src/shared/components/` e `src/shared/hooks/`. Esses dirs legados são a **principal causa de duplicatas** no projeto. Ao criar novos arquivos, use SEMPRE os locais canônicos acima.
 
 **Path Aliases (defined in `vite.config.js`):**
 | Alias | Resolves To |
 |-------|-------------|
+| `@` | `src/` |
+| `@features` | `src/features` |
+| `@shared` | `src/shared` |
 | `@services` | `src/services` |
+| `@dashboard` | `src/features/dashboard` |
+| `@medications` | `src/features/medications` |
+| `@protocols` | `src/features/protocols` |
+| `@stock` | `src/features/stock` |
+| `@adherence` | `src/features/adherence` |
 | `@schemas` | `src/schemas` |
 | `@utils` | `src/utils` |
-| `@protocols` | `src/features/protocols` |
-| `@adherence` | `src/features/adherence` |
-| `@dashboard` | `src/features/dashboard` |
 
 **⚠️ CRITICAL**: When you see `import { x } from '@adherence/services/...'`, this resolves to `src/features/adherence/services/...`, NOT `src/services/api/...`. Always verify the actual file being imported!
 
@@ -168,15 +182,20 @@ npm run build        # Production build
 npm run preview      # Preview build locally
 
 # Testing (see docs/standards/TESTING.md)
-npm run test         # All tests
+npm run test         # All tests (run once)
+npm run test:watch   # Tests in watch mode (local dev)
 npm run test:smoke   # Smoke tests only (~10s)
 npm run test:critical # Critical tests (services, utils, schemas, hooks)
 npm run test:changed # Only changed files since main
+npm run test:components # Components (src/components + src/shared/components)
+npm run test:services   # Services + features (src/services + src/features)
+npm run test:coverage   # Full suite with coverage report (CI)
 
 # Validation
-npm run lint         # ESLint check
-npm run validate     # Lint + tests
-npm run validate:full # Lint + tests + coverage + build
+npm run lint          # ESLint check
+npm run validate      # Lint + all tests
+npm run validate:quick # Lint + test:changed (fastest pre-commit check)
+npm run validate:full  # Lint + coverage + build (full CI)
 ```
 
 ---
@@ -368,32 +387,47 @@ All lessons learned and patterns are stored in:
 
 ```
 src/
-├── features/          # Domain-driven features (F4.6)
-│   ├── adherence/
-│   ├── dashboard/
-│   ├── medications/
-│   ├── protocols/
-│   └── stock/
-├── shared/            # Shared resources
-│   ├── components/
-│   ├── hooks/
-│   ├── services/
-│   ├── constants/
-│   └── utils/
-└── views/             # Page components
+├── features/          # Domain-driven features (F4.6) — CANONICAL
+│   ├── adherence/     # components/, hooks/
+│   ├── dashboard/     # components/, hooks/, services/
+│   ├── medications/   # components/, services/, constants/
+│   ├── protocols/     # components/, services/, utils/
+│   └── stock/         # components/, services/, constants/
+├── shared/            # Shared resources — CANONICAL
+│   ├── components/    # ui/, gamification/, log/, onboarding/
+│   ├── hooks/         # useCachedQuery, useTheme, useHapticFeedback, useShake
+│   ├── services/      # cachedServices, migrationService, paginationService
+│   │   └── api/       # logService (canônico para logs)
+│   ├── constants/     # ⚠️ LEGADO — schemas sendo migrados para src/schemas/
+│   └── utils/         # supabase.js (cliente), queryCache.js
+├── services/          # Serviços de API canônicos
+│   └── api/           # medicineService, protocolService, stockService, etc.
+├── schemas/           # Zod schemas globais canônicos
+├── utils/             # Utilitários globais (dateUtils, adherenceLogic, titrationUtils)
+├── views/             # Page components
+├── components/        # ⚠️ LEGADO — migrando para src/shared/components/
+└── hooks/             # ⚠️ LEGADO — migrando para src/shared/hooks/
 
-server/                # Telegram Bot (Node.js)
+server/                # Telegram Bot (Node.js separado — server/package.json)
 ├── bot/
-│   ├── commands/
-│   ├── callbacks/
-│   └── tasks.js
-├── services/
-└── utils/
+│   ├── commands/      # /start, /hoje, /registrar, /estoque, etc.
+│   ├── callbacks/     # doseActions, conversational
+│   ├── middleware/    # commandWrapper, userResolver
+│   ├── scheduler.js   # Cron jobs
+│   ├── alerts.js      # Sistema de alertas
+│   └── tasks.js       # Tarefas agendadas
+├── services/          # userService, sessionManager, deadLetterQueue, etc.
+└── utils/             # formatters, timezone, retryManager
 
 api/                   # Serverless Functions (Vercel)
-├── telegram.js        # Bot webhook
-└── notify.js          # Cron endpoint
+├── telegram.js        # Webhook Telegram
+├── notify.js          # Endpoint de notificações (cron)
+├── dlq.js             # Dead Letter Queue
+├── dlq/[id]/          # retry.js, discard.js (rotas dinâmicas)
+└── health/            # notifications.js (health check)
 ```
+
+> **⚠️ Sobre dirs legados**: `src/components/` e `src/hooks/` são os principais responsáveis pelas duplicatas de arquivos. Ao buscar bugs, SEMPRE verifique se o arquivo está sendo importado do local canônico ou do legado.
 
 **📖 Complete architecture**: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
 
@@ -743,6 +777,6 @@ npm run test:coverage
 
 ---
 
-*Última atualização: 2026-02-18*  
-*Versão do projeto: 3.0.0*  
+*Última atualização: 2026-02-20*
+*Versão do projeto: 3.0.0*
 *Formato: Routing Table (Phase 3 - Documentation Overhaul)*
