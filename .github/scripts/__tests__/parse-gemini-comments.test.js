@@ -16,7 +16,7 @@ import {
   isAutoFixable,
   isSecurityIssue,
   generateStructuredOutput
-} from '../parse-gemini-comments.js';
+} from '../parse-gemini-comments.cjs';
 
 // ==========================================
 // DADOS DE TESTE (Formato real do Gemini PR #25)
