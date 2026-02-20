@@ -13,7 +13,7 @@ import {
   applyLabelsWithReplace,
   removeOldLabels,
   LABELS
-} from '../apply-labels.js';
+} from '../apply-labels.cjs';
 
 // ==========================================
 // TEST RUNNER SIMPLES

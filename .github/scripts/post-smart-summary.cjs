@@ -161,7 +161,7 @@ function escapeMarkdown(text) {
   return text.replace(/[|_*`\[\]()#+\-.!~]/g, '\\$&');
 }
 
-export {
+module.exports = {
   postOrUpdateSummary,
   generateSummaryBody,
   SUMMARY_MARKER

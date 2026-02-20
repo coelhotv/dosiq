@@ -253,8 +253,8 @@ ${suggestion}
 *Issue criada automaticamente pelo Gemini Code Assist Integration*`;
 }
 
-// Exporta funções para uso em workflows (ES Module)
-export {
+// Exporta funções para uso em workflows (CommonJS)
+module.exports = {
   createIssuesFromReview,
   createIssue,
   findSimilarIssue,

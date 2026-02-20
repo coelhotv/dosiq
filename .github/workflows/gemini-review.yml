@@ -289,7 +289,7 @@ jobs:
             const fs = require('fs');
             
             // Carregar parser
-            const parser = require('./.github/scripts/parse-gemini-comments.js');
+            const parser = require('./.github/scripts/parse-gemini-comments.cjs');
             
             // Carregar dados brutos
             const rawData = JSON.parse(fs.readFileSync('gemini-raw-comments.json', 'utf8'));
@@ -457,7 +457,7 @@ jobs:
               reviewData = { summary: { total_issues: 0, auto_fixable: 0, critical: 0, needs_agent: 0 }, issues: [] };
             }
             
-            const { applyLabels } = require('./.github/scripts/apply-labels.js');
+            const { applyLabels } = require('./.github/scripts/apply-labels.cjs');
             const labels = await applyLabels(reviewData, ${{ needs.detect.outputs.pr_number }});
             
             if (labels.length > 0) {
@@ -517,7 +517,7 @@ jobs:
             const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
             
             // Importar e executar script de resumo inteligente
-            const { postOrUpdateSummary } = require('./.github/scripts/post-smart-summary.js');
+            const { postOrUpdateSummary } = require('./.github/scripts/post-smart-summary.cjs');
             const result = await postOrUpdateSummary(reviewData, prNumber, github, context);
             
             console.log(`Summary ${result.action}: ${result.url}`);
@@ -541,7 +541,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { shouldTriggerRereview, triggerRereview } = require('./.github/scripts/trigger-re-review.js');
+            const { shouldTriggerRereview, triggerRereview } = require('./.github/scripts/trigger-re-review.cjs');
             
             const shouldTrigger = await shouldTriggerRereview(
               context.payload.pull_request.number,
@@ -611,7 +611,7 @@ jobs:
             console.log(`Encontrados ${mediumIssues.length} issues MEDIUM não-auto-fixáveis`);
             
             // Importar e executar script de criação de issues
-            const { createIssuesFromReview } = require('./.github/scripts/create-issues.js');
+            const { createIssuesFromReview } = require('./.github/scripts/create-issues.cjs');
             const issues = await createIssuesFromReview(
               reviewData,
               ${{ needs.detect.outputs.pr_number }},

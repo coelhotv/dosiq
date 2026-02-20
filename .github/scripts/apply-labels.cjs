@@ -158,8 +158,8 @@ async function applyLabelsWithReplace(github, reviewData, prNumber) {
   return labels;
 }
 
-// Exporta funções para uso em workflows (ES Module)
-export {
+// Exporta funções para uso em workflows (CommonJS)
+module.exports = {
   applyLabels,
   applyLabelsWithReplace,
   removeOldLabels,

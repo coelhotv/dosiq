@@ -275,8 +275,8 @@ function generateAutoFixCommands(autoFixableIssues) {
   return commands;
 }
 
-// Exporta funções para uso em workflows (ES Module)
-export {
+// Exporta funções para uso em workflows (CommonJS)
+module.exports = {
   parseGeminiComment,
   categorizeIssues,
   normalizePriority,
