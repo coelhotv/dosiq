@@ -21,7 +21,9 @@ export const dlqService = {
    * @returns {Promise<string|null>} Token de acesso ou null se não autenticado
    */
   async _getAuthToken() {
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     return session?.access_token || null
   },
 
@@ -48,7 +50,7 @@ export const dlqService = {
 
     const response = await fetch(`/api/dlq?${params.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     })
 
@@ -78,7 +80,7 @@ export const dlqService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     })
 
@@ -112,7 +114,7 @@ export const dlqService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     })
