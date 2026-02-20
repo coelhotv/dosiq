@@ -13,7 +13,7 @@ import {
   extractIssueFromBody,
   calculateSimilarity,
   REFACTOR_LABELS
-} from '../create-issues.js';
+} from '../create-issues.cjs';
 
 // ==========================================
 // DADOS DE TESTE

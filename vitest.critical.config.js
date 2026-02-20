@@ -28,6 +28,9 @@ export default defineConfig({
       '@protocols': path.resolve(__dirname, './src/features/protocols'),
       '@stock': path.resolve(__dirname, './src/features/stock'),
       '@adherence': path.resolve(__dirname, './src/features/adherence'),
+      '@schemas': path.resolve(__dirname, './src/schemas'),
+      '@services': path.resolve(__dirname, './src/services'),
+      '@utils': path.resolve(__dirname, './src/utils'),
     },
   },
   test: {
@@ -55,8 +58,8 @@ export default defineConfig({
       'node_modules/',
       // TEMPORÁRIO: Excluir testes com problemas (unhandled rejections, env issues)
       // TODO: Fixar estes testes para funcionar no CI sem env vars
-      'src/hooks/__tests__/useCachedQuery.test.jsx',
-      'src/hooks/__tests__/useDashboardContext.test.jsx',
+      'src/shared/hooks/__tests__/useCachedQuery.test.jsx',
+      'src/features/dashboard/hooks/__tests__/useDashboardContext.test.jsx',
       'src/services/__tests__/api.test.js',
     ],
 
