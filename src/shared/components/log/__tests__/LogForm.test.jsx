@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import LogForm from '../LogForm'
 
 // Mock Button component
-vi.mock('../../ui/Button', () => ({
+vi.mock('@shared/components/ui/Button', () => ({
   default: ({ children, onClick, type, disabled, variant }) => (
     <button
       onClick={onClick}
@@ -17,7 +17,7 @@ vi.mock('../../ui/Button', () => ({
 }))
 
 // Mock ProtocolChecklistItem
-vi.mock('../../protocol/ProtocolChecklistItem', () => ({
+vi.mock('@protocols/components/ProtocolChecklistItem', () => ({
   default: ({ protocol, isSelected, onToggle }) => (
     <div
       data-testid={`protocol-item-${protocol.id}`}
