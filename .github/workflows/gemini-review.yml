@@ -66,6 +66,11 @@ jobs:
               prNumber = context.payload.pull_request.number;
               // Verificar se é review do Gemini
               hasGeminiReview = context.payload.review.user.login === 'gemini-code-assist[bot]';
+            } else if (context.eventName === 'pull_request') {
+              // P2.5: Trigger de Re-review Automático
+              prNumber = context.payload.pull_request.number;
+              // Não é review do Gemini, é trigger por novo commit
+              hasGeminiReview = false;
             } else if (context.eventName === 'issue_comment') {
               prNumber = context.payload.issue.number;
               // Verificar se é comentário do Gemini ou comando manual
@@ -553,4 +558,78 @@ jobs:
               );
             } else {
               console.log('Alterações menores, sem necessidade de re-review');
+            }
+
+  # ==========================================
+  # JOB 9: Criar Issues para Refactoring (P2.3)
+  # ==========================================
+  # Cria GitHub Issues automaticamente para issues MEDIUM
+  # que não podem ser auto-fixados. Isso move discussões de
+  # refactoring para fora da timeline do PR.
+  # ==========================================
+  create-issues:
+    name: Create GitHub Issues
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    if: always() && needs.detect.outputs.should_run == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+      
+      - name: Create Issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Carregar output estruturado
+            let reviewData;
+            try {
+              reviewData = JSON.parse(fs.readFileSync(`.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`, 'utf8'));
+            } catch (e) {
+              console.log('Review file not found, skipping issue creation');
+              return;
+            }
+            
+            // Só criar issues se houver MEDIUM não-auto-fixable
+            const mediumIssues = reviewData.issues.filter(i =>
+              i.severity === 'MEDIUM' && !i.auto_fixable
+            );
+            
+            if (mediumIssues.length === 0) {
+              console.log('Nenhum issue MEDIUM para criar');
+              return;
+            }
+            
+            console.log(`Encontrados ${mediumIssues.length} issues MEDIUM não-auto-fixáveis`);
+            
+            // Importar e executar script de criação de issues
+            const { createIssuesFromReview } = require('./.github/scripts/create-issues.js');
+            const issues = await createIssuesFromReview(
+              reviewData,
+              ${{ needs.detect.outputs.pr_number }},
+              github,
+              context
+            );
+            
+            if (issues.length > 0) {
+              console.log(`✅ Criadas ${issues.length} issues: ${issues.map(i => '#' + i).join(', ')}`);
+              
+              // Adicionar comentário no PR com link para as issues criadas
+              const issueLinks = issues.map(num => `- #${num}`).join('\n');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ needs.detect.outputs.pr_number }},
+                body: `## 🤖 Issues de Refactoring Criadas\n\nForam criadas as seguintes issues para acompanhamento de refactoring:\n\n${issueLinks}\n\nEstas issues podem ser implementadas em um PR futuro.`
+              });
+            } else {
+              console.log('Nenhuma issue nova criada (já existem issues similares)');
             }
