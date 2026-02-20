@@ -56,31 +56,22 @@ async function applyLabels(reviewData, prNumber) {
     labels.push(LABELS.NEEDS_HUMAN_REVIEW);
   }
   
-  // 4. Adicionar "security-issue" se há issues de segurança
-  const hasSecurity = reviewData.issues?.some(
-    issue => issue.category === 'security'
-  );
+  // Mapeamento de categorias para labels
+  const categoryLabels = [
+    { category: 'security', label: LABELS.SECURITY_ISSUE },
+    { category: 'performance', label: LABELS.PERFORMANCE_ISSUE },
+    { category: 'documentation', label: LABELS.NEEDS_DOCS_UPDATE }
+  ];
   
-  if (hasSecurity) {
-    labels.push(LABELS.SECURITY_ISSUE);
-  }
-  
-  // 5. Adicionar "performance-issue" se há issues de performance
-  const hasPerformance = reviewData.issues?.some(
-    issue => issue.category === 'performance'
-  );
-  
-  if (hasPerformance) {
-    labels.push(LABELS.PERFORMANCE_ISSUE);
-  }
-  
-  // 6. Adicionar "needs-docs-update" se há issues de documentação
-  const hasDocs = reviewData.issues?.some(
-    issue => issue.category === 'documentation'
-  );
-  
-  if (hasDocs) {
-    labels.push(LABELS.NEEDS_DOCS_UPDATE);
+  // Aplicar labels baseadas em categorias
+  for (const { category, label } of categoryLabels) {
+    const hasIssueOfCategory = reviewData.issues?.some(
+      issue => issue.category === category
+    );
+    
+    if (hasIssueOfCategory) {
+      labels.push(label);
+    }
   }
   
   console.log(`Applying ${labels.length} labels to PR #${prNumber}:`, labels);
@@ -125,7 +116,7 @@ async function removeOldLabels(github, prNumber, labelsToKeep) {
           name: label
         });
         console.log(`Removed label: ${label}`);
-      } catch (error) {
+      } catch {
         // Label pode já ter sido removida
         console.log(`Label ${label} already removed or not found`);
       }
@@ -152,16 +143,16 @@ async function applyLabelsWithReplace(github, reviewData, prNumber) {
   if (labels.length > 0) {
     const { owner, repo } = await github.rest.repos.get();
     
-    // Usar setLabels para substituir todas as labels do PR
-    // Isso remove labels antigas automaticamente
-    await github.rest.issues.setLabels({
+    // Usar addLabels para adicionar apenas labels do Gemini
+    // Isso preserva labels existentes de humanos ou outras automações
+    await github.rest.issues.addLabels({
       owner,
       repo,
       issue_number: prNumber,
       labels: labels
     });
     
-    console.log(`Set ${labels.length} labels on PR #${prNumber}`);
+    console.log(`Added ${labels.length} labels to PR #${prNumber}`);
   }
   
   return labels;
