@@ -20,6 +20,9 @@ export default defineConfig({
       '@protocols': path.resolve(__dirname, './src/features/protocols'),
       '@stock': path.resolve(__dirname, './src/features/stock'),
       '@adherence': path.resolve(__dirname, './src/features/adherence'),
+      '@schemas': path.resolve(__dirname, './src/schemas'),
+      '@services': path.resolve(__dirname, './src/services'),
+      '@utils': path.resolve(__dirname, './src/utils'),
     },
   },
   test: {
