@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { useCachedQuery } from '../useCachedQuery'
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 
 describe('Smoke: useCachedQuery', () => {
   it('fetches data on mount and returns loading state', async () => {

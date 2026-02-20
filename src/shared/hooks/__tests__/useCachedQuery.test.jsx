@@ -6,7 +6,7 @@ import {
   useCachedMutation,
   invalidateCache,
   clearCache,
-} from '../useCachedQuery'
+} from '@shared/hooks/useCachedQuery'
 
 describe('useCachedQuery', () => {
   beforeEach(() => {
