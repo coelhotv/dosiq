@@ -3,7 +3,7 @@ import {
   validateStockCreate,
   validateStockDecrease,
   validateStockIncrease,
-} from '@shared/constants/stockSchema'
+} from '@schemas/stockSchema'
 
 /**
  * Stock Service - Manage medicine stock
