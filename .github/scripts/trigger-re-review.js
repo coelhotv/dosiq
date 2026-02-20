@@ -130,20 +130,27 @@ Alterações significativas detectadas após o último review. Solicitando re-an
  * @returns {Promise<Date|null>} Timestamp do último review ou null
  */
 async function getLastGeminiReviewTimestamp(github, owner, repo, prNumber) {
-  // Buscar reviews do PR
-  const { data: reviews } = await github.rest.pulls.listReviews({
-    owner,
-    repo,
-    pull_number: prNumber
-  });
+  // Buscar reviews do PR (com paginação)
+  const reviews = await fetchAllPages(
+    ({ page, per_page }) => github.rest.pulls.listReviews({
+      owner,
+      repo,
+      pull_number: prNumber,
+      page,
+      per_page
+    })
+  );
 
-  // Buscar comentários do PR
-  const { data: comments } = await github.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: prNumber,
-    per_page: 100
-  });
+  // Buscar comentários do PR (com paginação)
+  const comments = await fetchAllPages(
+    ({ page, per_page }) => github.rest.issues.listComments({
+      owner,
+      repo,
+      issue_number: prNumber,
+      page,
+      per_page
+    })
+  );
 
   // Filtrar reviews do Gemini
   const geminiReviews = reviews.filter(
@@ -155,12 +162,16 @@ async function getLastGeminiReviewTimestamp(github, owner, repo, prNumber) {
     comment => comment.user && comment.user.login === 'gemini-code-assist[bot]'
   );
 
-  // Buscar comentários inline (review comments)
-  const { data: reviewComments } = await github.rest.pulls.listReviewComments({
-    owner,
-    repo,
-    pull_number: prNumber
-  });
+  // Buscar comentários inline (review comments) com paginação
+  const reviewComments = await fetchAllPages(
+    ({ page, per_page }) => github.rest.pulls.listReviewComments({
+      owner,
+      repo,
+      pull_number: prNumber,
+      page,
+      per_page
+    })
+  );
 
   const geminiReviewComments = reviewComments.filter(
     comment => comment.user && comment.user.login === 'gemini-code-assist[bot]'
@@ -194,13 +205,16 @@ async function getLastGeminiReviewTimestamp(github, owner, repo, prNumber) {
  * @returns {Promise<Array>} Lista de commits
  */
 async function getCommitsSinceTimestamp(github, owner, repo, prNumber, sinceTimestamp) {
-  // Buscar todos os commits do PR
-  const { data: commits } = await github.rest.pulls.listCommits({
-    owner,
-    repo,
-    pull_number: prNumber,
-    per_page: 100
-  });
+  // Buscar todos os commits do PR (com paginação)
+  const commits = await fetchAllPages(
+    ({ page, per_page }) => github.rest.pulls.listCommits({
+      owner,
+      repo,
+      pull_number: prNumber,
+      page,
+      per_page
+    })
+  );
 
   // Filtrar commits após o timestamp
   return commits.filter(commit => {
@@ -218,15 +232,44 @@ async function getCommitsSinceTimestamp(github, owner, repo, prNumber, sinceTime
  * @returns {Promise<Array>} Lista de arquivos alterados
  */
 async function getChangedFiles(github, owner, repo, prNumber) {
-  // Buscar arquivos alterados no PR
-  const { data: files } = await github.rest.pulls.listFiles({
-    owner,
-    repo,
-    pull_number: prNumber,
-    per_page: 100
-  });
+  // Buscar arquivos alterados no PR (com paginação)
+  const files = await fetchAllPages(
+    ({ page, per_page }) => github.rest.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+      page,
+      per_page
+    })
+  );
 
   return files;
+}
+
+/**
+ * Busca todos os itens de uma API paginada do GitHub
+ * @param {Function} fetchFn - Função que faz a chamada à API (deve aceitar { page, per_page })
+ * @param {number} perPage - Quantidade de itens por página (default: 100)
+ * @returns {Promise<Array>} Lista completa de itens
+ */
+async function fetchAllPages(fetchFn, perPage = 100) {
+  const allItems = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data } = await fetchFn({ page, per_page: perPage });
+    allItems.push(...data);
+
+    // Se retornou menos itens que o perPage, chegamos ao fim
+    if (data.length < perPage) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+  }
+
+  return allItems;
 }
 
 module.exports = {

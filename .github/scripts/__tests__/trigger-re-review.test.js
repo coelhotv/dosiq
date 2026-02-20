@@ -9,17 +9,18 @@ const { describe, it, expect, beforeEach, vi } = require('vitest');
 
 // Mock do cliente GitHub
 function createMockGithub() {
+  const mockFn = vi.fn();
   return {
     rest: {
       pulls: {
-        listReviews: vi.fn(),
-        listCommits: vi.fn(),
-        listFiles: vi.fn(),
-        listReviewComments: vi.fn()
+        listReviews: mockFn,
+        listCommits: mockFn,
+        listFiles: mockFn,
+        listReviewComments: mockFn
       },
       issues: {
-        listComments: vi.fn(),
-        createComment: vi.fn()
+        listComments: mockFn,
+        createComment: mockFn
       }
     }
   };
