@@ -4,7 +4,7 @@ import {
   validateLogCreate,
   validateLogUpdate,
   validateLogBulkArray,
-} from '@shared/constants/logSchema'
+} from '@schemas/logSchema'
 
 /**
  * Log Service - Medicine intake logging
