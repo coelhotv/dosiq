@@ -15,7 +15,7 @@ import Loading from '@shared/components/ui/Loading'
 import Landing from './views/Landing'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
-import InstallPrompt from './components/pwa/InstallPrompt'
+import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 
 function App() {
   const [session, setSession] = useState(null)
