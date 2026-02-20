@@ -43,6 +43,7 @@ jobs:
       pr_number: ${{ steps.context.outputs.pr_number }}
       branch: ${{ steps.context.outputs.branch }}
       has_gemini_review: ${{ steps.context.outputs.has_gemini_review }}
+      should_run: ${{ steps.context.outputs.should_run }}
     
     steps:
       - name: Extract Context
@@ -80,6 +81,7 @@ jobs:
             core.setOutput('pr_number', prNumber);
             core.setOutput('branch', pr.head.ref);
             core.setOutput('has_gemini_review', hasGeminiReview.toString());
+            core.setOutput('should_run', 'true');
             
             console.log(`PR #${prNumber}, Branch: ${pr.head.ref}, Gemini Review: ${hasGeminiReview}`);
 
@@ -462,16 +464,24 @@ jobs:
 
 
   # ==========================================
-  # JOB 7: Postar Resumo
+  # JOB 7: Postar Resumo (Editável)
+  # ==========================================
+  # P2.2: Resumo Editável - Mantém apenas um comentário por PR
+  # Estratégia: Verifica se existe comentário com marcador GEMINI_REVIEW_SUMMARY
+  # - Se existir: atualiza o comentário existente
+  # - Se não existir: cria novo comentário
   # ==========================================
   summary:
-    name: Post Summary
+    name: Post/Update Summary
     runs-on: ubuntu-latest
     needs: [detect, parse, validate]
     # Só executa se parse rodou com sucesso
     if: always() && needs.parse.result == 'success'
     
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
       - name: Download Output
         uses: actions/download-artifact@v4
         with:
@@ -479,78 +489,25 @@ jobs:
           path: .gemini-output/
         continue-on-error: true
       
-      - name: Post Summary
+      - name: Post or Update Summary
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             
             // Carregar output estruturado
-            let output;
+            let reviewData;
             try {
-              output = JSON.parse(fs.readFileSync(`.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`, 'utf8'));
+              reviewData = JSON.parse(fs.readFileSync(`.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json`, 'utf8'));
             } catch (e) {
-              output = { summary: {}, issues: [] };
+              console.log('Review file not found, using empty data');
+              reviewData = { summary: { total_issues: 0, auto_fixable: 0, critical: 0, needs_agent: 0 }, issues: [] };
             }
             
-            const lint = "${{ needs.validate.outputs.lint }}" || "unknown";
-            const smoke = "${{ needs.validate.outputs.smoke }}" || "unknown";
             const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
             
-            // Construir tabela de issues
-            const issuesTable = output.issues.slice(0, 10).map(i => 
-              `| ${i.file ? i.file.split('/').pop() : 'N/A'} | ${i.line || '-'} | ${i.severity} | ${i.auto_fixable ? '✅' : '❌'} |`
-            ).join('\n');
+            // Importar e executar script de resumo inteligente
+            const { postOrUpdateSummary } = require('./.github/scripts/post-smart-summary.js');
+            const result = await postOrUpdateSummary(reviewData, prNumber, github, context);
             
-            const summaryTotal = output.summary.total_issues || 0;
-            const summaryAutoFixable = output.summary.auto_fixable || 0;
-            const summaryNeedsAgent = output.summary.needs_agent || 0;
-            const summaryCritical = output.summary.critical || 0;
-            
-            const lintStatus = lint === 'passed' ? '✅ Passou' : '❌ Falhou';
-            const smokeStatus = smoke === 'passed' ? '✅ Passou' : '❌ Falhou';
-            
-            const criticalWarning = output.critical_requires_human 
-              ? '⚠️ **Atenção:** Issues críticos detectados que requerem revisão humana.' 
-              : '';
-            
-            // Build body without template literals that confuse YAML parser
-            const body = [
-              '## 🤖 Gemini Code Review - Resumo',
-              '',
-              '### 📊 Estatísticas',
-              '',
-              '| Categoria | Quantidade |',
-              '|-----------|------------|',
-              `| Total de Issues | ${summaryTotal} |`,
-              `| Auto-fixable | ${summaryAutoFixable} |`,
-              `| Requer Agente | ${summaryNeedsAgent} |`,
-              `| Críticos | ${summaryCritical} |`,
-              '',
-              '### 📋 Issues Principais',
-              '',
-              '| Arquivo | Linha | Severidade | Auto-fixable |',
-              '|---------|-------|------------|--------------|',
-              issuesTable || '| Nenhum issue encontrado | - | - | - |',
-              '',
-              '### ✅ Validação Pós-Fix',
-              '',
-              `- **Lint:** ${lintStatus}`,
-              `- **Smoke Tests:** ${smokeStatus}`,
-              '',
-              '### 📁 Output Estruturado',
-              '',
-              `O arquivo \`.gemini-output/review-${prNumber}.json\` foi gerado com todos os issues parseados para consumo por agentes coder.`,
-              '',
-              criticalWarning,
-              '',
-              '---',
-              '💬 Use `/gemini review` ou mencione `@gemini-code-assist` para nova análise.'
-            ].filter(line => line !== null).join('\n');
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: body
-            });
+            console.log(`Summary ${result.action}: ${result.url}`);
