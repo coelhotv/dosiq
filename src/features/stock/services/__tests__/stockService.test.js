@@ -35,7 +35,7 @@ const mockSupabase = {
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('@shared/utils/supabase', () => ({
   supabase: mockSupabase,
   getUserId: mockGetUserId,
 }))
@@ -74,7 +74,7 @@ describe('stockService', () => {
 
   describe('getByMedicine', () => {
     it('should fetch stock entries for a specific medicine', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockStock = [
         { id: '1', medicine_id: 'med-1', quantity: 10 },
         { id: '2', medicine_id: 'med-1', quantity: 5 },
@@ -97,7 +97,7 @@ describe('stockService', () => {
 
   describe('getTotalQuantity', () => {
     it('should return total quantity from view', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -116,7 +116,7 @@ describe('stockService', () => {
 
   describe('getStockSummary', () => {
     it('should return stock summary from view', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockSummary = {
         medicine_id: 'med-1',
         total_quantity: 25,
@@ -140,7 +140,7 @@ describe('stockService', () => {
 
   describe('getLowStockMedicines', () => {
     it('should return medicines below threshold using RPC', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockLowStock = [{ medicine_id: 'med-1', total_quantity: 5 }]
 
       mockSupabase.rpc.mockResolvedValue({ data: mockLowStock, error: null })
@@ -152,7 +152,7 @@ describe('stockService', () => {
 
   describe('add', () => {
     it('should add new stock entry', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const newStock = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
@@ -173,14 +173,14 @@ describe('stockService', () => {
     })
 
     it('should throw error when data is invalid', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       await expect(stockService.add({ quantity: 30 })).rejects.toThrow()
     })
   })
 
   describe('decrease', () => {
     it('should throw error when stock is insufficient', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockStock = [
         { id: '1', medicine_id: '123e4567-e89b-12d3-a456-426614174000', quantity: 5 },
       ]
@@ -203,7 +203,7 @@ describe('stockService', () => {
     })
 
     it('should update stock when sufficient', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockStock = [
         { id: '1', medicine_id: '123e4567-e89b-12d3-a456-426614174000', quantity: 10 },
       ]
@@ -234,7 +234,7 @@ describe('stockService', () => {
 
   describe('increase', () => {
     it('should create adjustment entry', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       const mockResult = {
         id: 'stock-2',
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
@@ -256,7 +256,7 @@ describe('stockService', () => {
 
   describe('delete', () => {
     it('should delete a stock entry', async () => {
-      const { stockService } = await import('../stockService')
+      const { stockService } = await import('@stock/services/stockService')
       let deleteCalled = false
 
       mockSupabase.from.mockReturnValue({

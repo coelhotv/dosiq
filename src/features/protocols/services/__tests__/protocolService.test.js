@@ -35,7 +35,7 @@ const mockSupabase = {
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('@shared/utils/supabase', () => ({
   supabase: mockSupabase,
   getUserId: mockGetUserId,
 }))
@@ -77,7 +77,7 @@ describe('protocolService', () => {
 
   describe('getAll', () => {
     it('should fetch all protocols with medicine info', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocols = [
         { id: '1', name: 'Protocolo 1', medicine: { name: 'Med 1' } },
         { id: '2', name: 'Protocolo 2', medicine: { name: 'Med 2' } },
@@ -97,7 +97,7 @@ describe('protocolService', () => {
     })
 
     it('should throw error when supabase returns error', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -113,7 +113,7 @@ describe('protocolService', () => {
 
   describe('getActive', () => {
     it('should fetch only active protocols', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocols = [
         { id: '1', name: 'Protocolo Ativo', active: true, medicine: { name: 'Med 1' } },
       ]
@@ -137,7 +137,7 @@ describe('protocolService', () => {
 
   describe('getById', () => {
     it('should fetch a single protocol by ID', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocol = { id: '1', name: 'Protocolo 1', medicine: { name: 'Med 1' } }
 
       mockSupabase.from.mockReturnValue({
@@ -155,7 +155,7 @@ describe('protocolService', () => {
     })
 
     it('should throw error when protocol not found', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -173,7 +173,7 @@ describe('protocolService', () => {
 
   describe('create', () => {
     it('should create a new protocol with valid data', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const newProtocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Novo Protocolo',
@@ -197,7 +197,7 @@ describe('protocolService', () => {
     })
 
     it('should throw validation error with invalid data', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const invalidProtocol = {
         name: 'A', // Nome muito curto
         frequency: 'diário',
@@ -209,7 +209,7 @@ describe('protocolService', () => {
     })
 
     it('should handle titration schedule correctly', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const protocolWithTitration = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Protocolo com Titulação',
@@ -242,7 +242,7 @@ describe('protocolService', () => {
 
   describe('update', () => {
     it('should update an existing protocol', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const updates = { name: 'Protocolo Atualizado' }
       const updatedProtocol = { id: '1', name: 'Protocolo Atualizado', user_id: 'test-user-id' }
 
@@ -263,7 +263,7 @@ describe('protocolService', () => {
     })
 
     it('should throw validation error with invalid updates', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const invalidUpdates = { name: 'A' } // Nome muito curto
 
       await expect(protocolService.update('1', invalidUpdates)).rejects.toThrow()
@@ -272,7 +272,7 @@ describe('protocolService', () => {
 
   describe('delete', () => {
     it('should delete a protocol', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       let deleteCalled = false
 
       mockSupabase.from.mockReturnValue({
@@ -291,7 +291,7 @@ describe('protocolService', () => {
     })
 
     it('should throw error when delete fails', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
 
       mockSupabase.from.mockReturnValue({
         delete: vi.fn().mockReturnValue({
@@ -307,7 +307,7 @@ describe('protocolService', () => {
 
   describe('getByMedicineId', () => {
     it('should fetch protocols by medicine ID', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocols = [{ id: '1', medicine_id: 'med-1', name: 'Protocolo 1' }]
 
       mockSupabase.from.mockReturnValue({
@@ -325,7 +325,7 @@ describe('protocolService', () => {
 
   describe('advanceTitrationStage', () => {
     it('should advance to next titration stage', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocol = {
         id: '1',
         titration_schedule: [
@@ -368,7 +368,7 @@ describe('protocolService', () => {
     })
 
     it('should mark as completed when reaching final stage', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocol = {
         id: '1',
         titration_schedule: [{ dosage: 1, duration_days: 7, description: 'Etapa 1' }],
@@ -408,7 +408,7 @@ describe('protocolService', () => {
     })
 
     it('should throw error when protocol has no titration schedule', async () => {
-      const { protocolService } = await import('../protocolService')
+      const { protocolService } = await import('@protocols/services/protocolService')
       const mockProtocol = {
         id: '1',
         titration_schedule: [],
