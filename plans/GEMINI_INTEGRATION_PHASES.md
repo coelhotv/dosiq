@@ -1391,6 +1391,7 @@ Sprint 1 (Reduzir Noise + Automatizar)
 Sprint 2 (Melhorar Workflow)
 ├── P2.5: Trigger de Re-review automático
 └── P2.3: Criar Issues para refactoring
+└── P2.4: Reply a Comments
 
 Sprint 3 (Otimização)
 ├── P3.1: Cache de Reviews
