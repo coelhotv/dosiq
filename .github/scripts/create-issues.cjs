@@ -16,6 +16,60 @@ const REFACTOR_LABELS = {
   TECH_DEBT: 'tech-debt'
 };
 
+// Keywords que indicam itens acionáveis
+const ACTIONABLE_KEYWORDS = [
+  'sugestão', 'sugestao', 'sugerir', 'suggested',
+  'bug', 'erro', 'error', 'problem', 'problema',
+  'melhoria', 'improvement', 'improve', 'melhorar',
+  'crítico', 'critico', 'critical',
+  'refatorar', 'refactor', 'refactoring',
+  'extrair', 'extract', 'extracting',
+  'consolidar', 'consolidate',
+  'duplicado', 'duplicated', 'duplicate',
+  'complexo', 'complex', 'complexity',
+  'considerar', 'consider', 'considering'
+];
+
+// Keywords que indicam elogios (devem ser filtrados)
+const COMPLIMENT_KEYWORDS = [
+  'excelente', 'excellent', 'ótimo', 'otimo', 'great',
+  'muito bom', 'very good', 'eficaz', 'effective',
+  'essencial', 'essential', 'crucial', 'crucial',
+  'inteligente', 'intelligent', 'smart',
+  'bem implementado', 'well implemented',
+  'boa prática', 'good practice'
+];
+
+/**
+ * Determina se uma issue deve ser criada baseada na análise do conteúdo
+ *
+ * @param {Object} issue - A issue do review do Gemini
+ * @returns {boolean} True se a issue deve ser criada
+ */
+function shouldCreateIssue(issue) {
+  const text = (issue.issue || '').toLowerCase();
+
+  // Deve ter keyword acionável
+  const hasActionable = ACTIONABLE_KEYWORDS.some(kw => text.includes(kw));
+  if (!hasActionable) return false;
+
+  // Não deve ser elogio puro (verifica se começa com ou contém frases de elogio)
+  const isCompliment = COMPLIMENT_KEYWORDS.some(kw =>
+    text.startsWith(kw) ||
+    text.includes(`é ${kw}`) ||
+    text.includes(`é uma ${kw}`) ||
+    text.includes(`é uma solução ${kw}`)
+  );
+  if (isCompliment) return false;
+
+  // Deve ter sugestão real de código (não vazia ou placeholder)
+  const hasRealSuggestion = issue.suggestion &&
+    issue.suggestion.trim().length > 20 &&
+    !issue.suggestion.includes('Nenhuma sugestão');
+
+  return hasRealSuggestion;
+}
+
 /**
  * Cria GitHub Issues para issues não-críticos
  *
@@ -30,9 +84,11 @@ const REFACTOR_LABELS = {
 async function createIssuesFromReview(reviewData, prNumber, github, context) {
   const createdIssues = [];
 
-  // Filtrar apenas issues MEDIUM que não são auto-fixáveis
+  // Filtrar apenas issues MEDIUM que não são auto-fixáveis e são acionáveis
   const mediumIssues = reviewData.issues?.filter(
-    issue => issue.severity === 'MEDIUM' && !issue.auto_fixable
+    issue => issue.severity === 'MEDIUM' &&
+             !issue.auto_fixable &&
+             shouldCreateIssue(issue)
   ) || [];
 
   if (mediumIssues.length === 0) {
@@ -262,5 +318,8 @@ module.exports = {
   generateIssueBody,
   extractIssueFromBody,
   calculateSimilarity,
-  REFACTOR_LABELS
+  shouldCreateIssue,
+  REFACTOR_LABELS,
+  ACTIONABLE_KEYWORDS,
+  COMPLIMENT_KEYWORDS
 };
