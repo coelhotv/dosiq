@@ -1,8 +1,8 @@
 # Plano de Evolução: Gemini Code Assist Integration
 
 > **Fases P2 → P3 → P4 da integração GitHub Actions + Gemini Code Assist**  
-> **Versão:** 1.1.0 | Última atualização: 2026-02-20  
-> **Status:** 📋 Planejado | **Próxima Fase:** P2
+> **Versão:** 1.3.0 | Última atualização: 2026-02-21  
+> **Status:** ✅ Produção | **Próxima Fase:** P3 (Intelligence & Metrics)
 
 ---
 
@@ -20,7 +20,7 @@ Este documento define as próximas fases de evolução da integração com Gemin
 4. **Revisão**: Novos commits **não** disparam revisão automática (apenas triggers manuais `/gemini review` ou `@gemini-code-assist` funcionam)
 5. **Noise**: Comentários do workflow atual "sujam" a timeline a cada interação
 
-### Estado Atual (P1 - Implementado ✅)
+### Estado Atual (P1 + P2 - Implementados ✅)
 
 | Componente | Status | Arquivo |
 |------------|--------|---------|
@@ -30,13 +30,22 @@ Este documento define as próximas fases de evolução da integração com Gemin
 | Output estruturado | ✅ | `.gemini-output/review-{pr_number}.json` |
 | Documentação | ✅ | `docs/standards/GEMINI_INTEGRATION.md` |
 
+### Fase P2 - Implementação Concluída ✅
+
+| Fase | Item | PR | Status |
+|------|------|-----|--------|
+| P2.1 | Labels Automáticas | #75 | ✅ Em Produção |
+| P2.2 | Resumo Editável | #76 | ✅ Em Produção |
+| P2.3 | Create Issues | #78, #108 | ✅ Em Produção |
+| P2.5 | Trigger Re-review | #77 | ✅ Em Produção |
+
 ### Próximas Fases Resumidas
 
 | Fase | Nome | Objetivo Principal | Complexidade |
 |------|------|-------------------|--------------|
-| **P2** | GitHub-Native Automation | Labels, Issues, Reply to Comments (sem poluir timeline) | Média |
-| **P3** | Intelligence & Metrics | Cache, Path Filters, Analytics | Alta |
-| **P4** | Agent Integration | AI Agents consumindo output | Alta |
+| **P2** | GitHub-Native Automation | Labels, Issues, Reply to Comments (sem poluir timeline) | Média ✅ |
+| **P3** | Intelligence & Metrics | Cache, Path Filters, Analytics | Alta 🔄 |
+| **P4** | Agent Integration | AI Agents consumindo output | Alta ⏳ |
 
 ---
 
@@ -45,12 +54,18 @@ Este documento define as próximas fases de evolução da integração com Gemin
 ### Objetivo
 Aprofundar a integração com recursos nativos do GitHub para automação de workflow, rastreamento de issues e comunicação em PRs - **sem poluir a timeline do PR com comentários repetidos**.
 
-### P2.1 - Labels Automáticas
+---
+
+### P2.1 - Labels Automáticas ✅ IMPLEMENTADO
+
+**Status:** ✅ Em Produção  
+**PR:** #75  
+**Data:** Sprint 1 (Concluído)
 
 #### Descrição
 Aplicar labels automaticamente aos PRs baseado nos issues encontrados pelo Gemini. Esta abordagem **não adiciona comentários à timeline**, apenas atualiza metadados do PR.
 
-#### Labels Propostas
+#### Labels Implementadas
 
 | Label | Condição | Cor |
 |-------|----------|-----|
@@ -63,7 +78,7 @@ Aplicar labels automaticamente aos PRs baseado nos issues encontrados pelo Gemin
 
 #### Implementação Técnica
 
-**Arquivo:** `.github/scripts/apply-labels.js` (novo)
+**Arquivo:** `.github/scripts/apply-labels.js`
 
 ```javascript
 /**
@@ -101,59 +116,32 @@ async function applyLabels(reviewData, prNumber) {
 }
 ```
 
-**Modificação:** Adicionar job ao `gemini-review.yml`:
+**Job no Workflow:** `apply-labels`
 
-```yaml
-# Job 7: Aplicar Labels
-apply-labels:
-  name: Apply Labels
-  needs: [detect, parse]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Apply Labels
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { applyLabels } = require('.github/scripts/apply-labels.js');
-          const reviewData = require('.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json');
-          const labels = await applyLabels(reviewData, ${{ needs.detect.outputs.pr_number }});
-          
-          await github.rest.issues.addLabels({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: ${{ needs.detect.outputs.pr_number }},
-            labels: labels
-          });
-```
-
-**Arquivos para Criar:**
-- `.github/scripts/apply-labels.js`
-- `.github/scripts/__tests__/apply-labels.test.js`
-
-**Critérios de Validação:**
-- [ ] Labels são aplicadas automaticamente após review
-- [ ] Labels removidas quando issues são resolvidos
-- [ ] Não duplica labels já existentes
-- [ ] **Não adiciona comentários à timeline**
+#### Critérios de Validação ✅
+- [x] Labels são aplicadas automaticamente após review
+- [x] Labels removidas quando issues são resolvidos
+- [x] Não duplica labels já existentes
+- [x] **Não adiciona comentários à timeline**
 
 ---
 
-### P2.2 - Resumos Inteligentes (Sem Poluir Timeline)
+### P2.2 - Resumos Inteligentes (Sem Poluir Timeline) ✅ IMPLEMENTADO
+
+**Status:** ✅ Em Produção  
+**PR:** #76  
+**Data:** Sprint 1 (Concluído)
 
 #### Problema Atual
 O workflow atual posta um **resumo estruturado** em comentário a cada execução, poluindo a timeline do PR.
 
-#### Solução Proposta: Resumo Único Editável
+#### Solução Implementada: Resumo Único Editável
 
 Postar **apenas um comentário** por PR e **editá-lo** em execuções subsequentes, em vez de criar novos comentários.
 
 #### Implementação Técnica
 
-**Arquivo:** `.github/scripts/post-smart-summary.js` (novo)
+**Arquivo:** `.github/scripts/post-smart-summary.js`
 
 ```javascript
 /**
@@ -202,80 +190,27 @@ async function postOrUpdateSummary(reviewData, prNumber, github, context) {
     console.log('Resumo criado (primeira vez)');
   }
 }
-
-function generateSummaryBody(reviewData, marker) {
-  const timestamp = new Date().toLocaleString('pt-BR');
-  
-  return `${marker}
-## 🤖 Gemini Code Review - Resumo
-
-*Última atualização: ${timestamp}*
-
-### 📊 Estatísticas
-
-| Categoria | Quantidade |
-|-----------|------------|
-| Total de Issues | ${reviewData.summary.total_issues} |
-| Auto-fixable | ${reviewData.summary.auto_fixable} |
-| Requer Agente | ${reviewData.summary.needs_agent} |
-| Críticos | ${reviewData.summary.critical} |
-
-### 📋 Issues Principais
-
-| Arquivo | Linha | Severidade | Categoria |
-|---------|-------|------------|-----------|
-${reviewData.issues.slice(0, 10).map(i => 
-  `| ${i.file.split('/').pop()} | ${i.line} | ${i.priority} | ${i.category || 'geral'} |`
-).join('\n')}
-
-${reviewData.issues.length > 10 ? `*...e mais ${reviewData.issues.length - 10} issues*` : ''}
-
-### 📁 Output Estruturado
-
-O arquivo \`.gemini-output/review-${reviewData.pr_number}.json\` foi gerado com todos os issues parseados.
-
----
-💡 *Este comentário é atualizado automaticamente a cada review.*
-`;
-}
-
-module.exports = { postOrUpdateSummary };
 ```
 
-**Modificação no Workflow:**
-
-```yaml
-# Job 6: Postar Resumo (ATUALIZADO - edição ao invés de novo comentário)
-post-summary:
-  name: Post/Update Summary
-  needs: [detect, parse, validate]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Post or Update Summary
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { postOrUpdateSummary } = require('.github/scripts/post-smart-summary.js');
-          const reviewData = require('.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json');
-          await postOrUpdateSummary(reviewData, ${{ needs.detect.outputs.pr_number }}, github, context);
-```
-
-**Critérios de Validação:**
-- [ ] Apenas **um** comentário de resumo por PR
-- [ ] Comentário é **editado** em execuções subsequentes
-- [ ] Timestamp mostra última atualização
-- [ ] Timeline do PR não é poluída
+#### Critérios de Validação ✅
+- [x] Apenas **um** comentário de resumo por PR
+- [x] Comentário é **editado** em execuções subsequentes
+- [x] Timestamp mostra última atualização
+- [x] Timeline do PR não é poluída
 
 ---
 
-### P2.3 - Criação de GitHub Issues (Para Issues Não-Críticos)
+### P2.3 - Criação de GitHub Issues (Para Issues Não-Críticos) ✅ IMPLEMENTADO
+
+**Status:** ✅ Em Produção  
+**PR:** #78 (Implementação), #108 (Hotfix)  
+**Data:** Sprint 2 (Concluído)
 
 #### Descrição
 Criar GitHub Issues automaticamente para issues MEDIUM que não podem ser auto-fixados. Esta abordagem move discussões de refactoring para fora da timeline do PR.
+
+#### Hotfix PR #108
+Filtro para ignorar "elogios" (compliments) do Gemini na criação de issues. Evita criar issues desnecessárias quando o Gemini apenas elogia o código sem apontar problemas reais.
 
 #### Estratégia de Prioridade
 
@@ -288,7 +223,7 @@ Criar GitHub Issues automaticamente para issues MEDIUM que não podem ser auto-f
 
 #### Implementação Técnica
 
-**Arquivo:** `.github/scripts/create-issues.js` (novo)
+**Arquivo:** `.github/scripts/create-issues.js`
 
 ```javascript
 /**
@@ -300,9 +235,9 @@ Criar GitHub Issues automaticamente para issues MEDIUM que não podem ser auto-f
 async function createIssuesFromReview(reviewData, prNumber, github, context) {
   const createdIssues = [];
   
-  // Filtrar apenas MEDIUM que não são auto-fixable
+  // Filtrar apenas MEDIUM que não são auto-fixable e não são compliments
   const mediumIssues = reviewData.issues.filter(
-    i => i.priority === 'MEDIUM' && !i.auto_fixable
+    i => i.priority === 'MEDIUM' && !i.auto_fixable && !i.is_compliment
   );
   
   for (const issue of mediumIssues) {
@@ -328,114 +263,18 @@ async function createIssuesFromReview(reviewData, prNumber, github, context) {
   
   return createdIssues;
 }
-
-function generateIssueBody(issue, prNumber) {
-  return `## 🤖 Identificado pelo Gemini Code Assist
-
-### Issue
-${issue.issue}
-
-### Arquivo
-[${issue.file}](${issue.url}) (linha ${issue.line})
-
-### Sugestão
-\`\`\`${issue.language || 'javascript'}
-${issue.suggestion}
-\`\`\`
-
-### Contexto
-- **PR:** #${prNumber}
-- **Prioridade:** ${issue.priority}
-- **Categoria:** ${issue.category || 'geral'}
-
-### Checklist
-- [ ] Avaliar se a sugestão faz sentido para o projeto
-- [ ] Implementar alteração se aprovada
-- [ ] Atualizar testes se necessário
-- [ ] Marcar como concluída
-
----
-*Issue criada automaticamente pelo Gemini Code Assist Integration*
-`;
-}
-
-/**
- * Verifica se existe issue similar já criada
- */
-async function findSimilarIssue(issue, github, context) {
-  const { data: issues } = await github.rest.issues.listForRepo({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    labels: '🤖 gemini-refactor',
-    state: 'open'
-  });
-  
-  // Verificar se alguma issue menciona o mesmo arquivo + linha similar
-  return issues.find(i => 
-    i.body.includes(issue.file) && 
-    i.body.includes(`linha ${issue.line}`)
-  );
-}
-
-module.exports = { createIssuesFromReview };
 ```
 
-**Modificação no Workflow:**
-
-```yaml
-# Job 8: Criar Issues para Refactoring
-# Só executa se houver issues MEDIUM não-auto-fixable
-create-issues:
-  name: Create GitHub Issues
-  needs: [detect, parse]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Create Issues
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { createIssuesFromReview } = require('.github/scripts/create-issues.js');
-          const reviewData = require('.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json');
-          
-          // Só criar issues se houver MEDIUM não-auto-fixable
-          const mediumIssues = reviewData.issues.filter(i => 
-            i.priority === 'MEDIUM' && !i.auto_fixable
-          );
-          
-          if (mediumIssues.length === 0) {
-            console.log('Nenhum issue MEDIUM para criar');
-            return;
-          }
-          
-          const issues = await createIssuesFromReview(
-            reviewData, 
-            ${{ needs.detect.outputs.pr_number }},
-            github,
-            context
-          );
-          
-          if (issues.length > 0) {
-            console.log(`Criadas ${issues.length} issues: ${issues.map(i => '#' + i).join(', ')}`);
-          }
-```
-
-**Arquivos para Criar:**
-- `.github/scripts/create-issues.js`
-- `.github/scripts/__tests__/create-issues.test.js`
-
-**Critérios de Validação:**
-- [ ] Issues são criadas apenas para MEDIUM não-auto-fixable
-- [ ] Não cria issues duplicadas
-- [ ] **Não adiciona comentários à timeline do PR**
-- [ ] Issues linkadas ao PR via referência
+#### Critérios de Validação ✅
+- [x] Issues são criadas apenas para MEDIUM não-auto-fixable
+- [x] Não cria issues duplicadas
+- [x] **Não adiciona comentários à timeline do PR**
+- [x] Issues linkadas ao PR via referência
+- [x] **Hotfix #108**: Filtra compliments do Gemini
 
 ---
 
-### P2.4 - Reply Estratégico a Comentários do Gemini
+### P2.4 - Reply Estratégico a Comentários do Gemini ⏳ PENDENTE
 
 #### Descrição
 Ao invés de criar novos comentários na timeline, **responder diretamente** aos comentários inline do Gemini quando issues forem resolvidos.
@@ -506,64 +345,7 @@ async function checkResolutions(prNumber, github, context) {
   }
 }
 
-/**
- * Verifica se uma linha específica foi modificada entre dois commits
- */
-async function checkIfLineChanged(filePath, line, oldCommit, newCommit, github, context) {
-  try {
-    const { data: diff } = await github.rest.repos.compareCommits({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      base: oldCommit,
-      head: newCommit
-    });
-    
-    // Verificar se o arquivo foi modificado
-    const fileDiff = diff.files.find(f => f.filename === filePath);
-    if (!fileDiff) return false;
-    
-    // Analisar patch para ver se a linha foi modificada
-    // Simplificação: assumimos resolvido se o arquivo foi tocado
-    return true;
-  } catch (error) {
-    console.error('Erro ao comparar commits:', error);
-    return false;
-  }
-}
-
 module.exports = { checkResolutions };
-```
-
-**Novo Trigger no Workflow:**
-
-```yaml
-on:
-  # ... triggers existentes ...
-  
-  # NOVO: Verificar resoluções quando PR é atualizado
-  pull_request:
-    types: [synchronize]
-
-jobs:
-  # NOVO: Job para verificar resoluções de issues
-  check-resolutions:
-    name: Check Issue Resolutions
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Check Resolved Issues
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { checkResolutions } = require('.github/scripts/check-resolutions.js');
-            await checkResolutions(
-              context.payload.pull_request.number,
-              github,
-              context
-            );
 ```
 
 **Arquivos para Criar:**
@@ -576,7 +358,11 @@ jobs:
 
 ---
 
-### P2.5 - Trigger de Revisão em Novos Commits
+### P2.5 - Trigger de Revisão em Novos Commits ✅ IMPLEMENTADO
+
+**Status:** ✅ Em Produção  
+**PR:** #77  
+**Data:** Sprint 2 (Concluído)
 
 #### Problema Observado
 Novos commits no mesmo PR **não** disparam revisão automática do Gemini, apesar do workflow postar resumos.
@@ -587,7 +373,7 @@ Adicionar um job que posta um comentário `/gemini review` quando detectar alter
 
 #### Implementação Técnica
 
-**Arquivo:** `.github/scripts/trigger-re-review.js` (novo)
+**Arquivo:** `.github/scripts/trigger-re-review.js`
 
 ```javascript
 /**
@@ -673,62 +459,22 @@ async function triggerRereview(prNumber, github, context) {
 module.exports = { shouldTriggerRereview, triggerRereview };
 ```
 
-**Modificação no Workflow:**
-
-```yaml
-  # NOVO: Job para trigger de re-review
-  trigger-rereview:
-    name: Trigger Re-review
-    runs-on: ubuntu-latest
-    needs: detect
-    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Check and Trigger Re-review
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { shouldTriggerRereview, triggerRereview } = require('.github/scripts/trigger-re-review.js');
-            
-            const shouldTrigger = await shouldTriggerRereview(
-              ${{ needs.detect.outputs.pr_number }},
-              github,
-              context
-            );
-            
-            if (shouldTrigger) {
-              console.log('Alterações significativas detectadas, solicitando re-review...');
-              await triggerRereview(
-                ${{ needs.detect.outputs.pr_number }},
-                github,
-                context
-              );
-            } else {
-              console.log('Alterações menores, sem necessidade de re-review');
-            }
-```
-
-**Arquivos para Criar:**
-- `.github/scripts/trigger-re-review.js`
-
-**Critérios de Validação:**
-- [ ] Re-review é solicitado apenas para alterações significativas
-- [ ] Critérios configuráveis (arquivos críticos, linhas alteradas)
-- [ ] Não spamma re-reviews desnecessários
+#### Critérios de Validação ✅
+- [x] Re-review é solicitado apenas para alterações significativas
+- [x] Critérios configuráveis (arquivos críticos, linhas alteradas)
+- [x] Não spamma re-reviews desnecessários
 
 ---
 
 ### P2 - Resumo de Implementação
 
-| Item | Arquivos | Job no Workflow | Prioridade | Polui Timeline? |
-|------|----------|-----------------|------------|-----------------|
-| P2.1 - Labels | `apply-labels.js` + testes | `apply-labels` | **Alta** | ❌ Não |
-| P2.2 - Resumo Editável | `post-smart-summary.js` | `post-summary` | **Alta** | ❌ Não (edita) |
-| P2.3 - Create Issues | `create-issues.js` + testes | `create-issues` | **Média** | ❌ Não |
-| P2.4 - Reply a Comments | `check-resolutions.js` | `check-resolutions` | **Média** | ❌ Não (threads) |
-| P2.5 - Trigger Re-review | `trigger-re-review.js` | `trigger-rereview` | **Média** | ✅ Sim (1x) |
+| Item | Arquivos | Job no Workflow | Prioridade | Status | Polui Timeline? |
+|------|----------|-----------------|------------|--------|-----------------|
+| P2.1 - Labels | `apply-labels.js` + testes | `apply-labels` | **Alta** | ✅ | ❌ Não |
+| P2.2 - Resumo Editável | `post-smart-summary.js` | `post-summary` | **Alta** | ✅ | ❌ Não (edita) |
+| P2.3 - Create Issues | `create-issues.js` + testes | `create-issues` | **Média** | ✅ | ❌ Não |
+| P2.4 - Reply a Comments | `check-resolutions.js` | `check-resolutions` | **Média** | ⏳ | ❌ Não (threads) |
+| P2.5 - Trigger Re-review | `trigger-re-review.js` | `trigger-rereview` | **Média** | ✅ | ✅ Sim (1x) |
 
 **Dependências:**
 ```
@@ -965,7 +711,8 @@ Definir especificação formal para comunicação entre o sistema de reviews e a
 
 **Arquivo:** `docs/standards/GEMINI_AGENT_PROTOCOL.md` (novo)
 
-```markdown
+#### Exemplo:
+
 # Gemini Agent Protocol v1.0
 
 ## Visão Geral
@@ -1344,13 +1091,13 @@ export default async function handler(req, res) {
 
 ### P4 - Resumo de Implementação
 
-| Item | Arquivos | Complexidade | Prioridade |
-|------|----------|--------------|------------|
-| P4.1 - API Supabase | `save-to-supabase.js`, migration | Alta | **Alta** |
-| P4.2 - Protocolo | `GEMINI_AGENT_PROTOCOL.md` | Média | **Alta** |
-| P4.3 - Webhook | `notify-agents.js` | Média | **Média** |
-| P4.4 - CLI | `gemini-agent-cli.js` | Média | **Baixa** |
-| P4.5 - Endpoint | `api/gemini-reviews.js` | Média | **Alta** |
+| Item | Arquivos | Complexidade | Prioridade | Status |
+|------|----------|--------------|------------|--------|
+| P4.1 - API Supabase | `save-to-supabase.js`, migration | Alta | **Alta** | ⏳ |
+| P4.2 - Protocolo | `GEMINI_AGENT_PROTOCOL.md` | Média | **Alta** | ⏳ |
+| P4.3 - Webhook | `notify-agents.js` | Média | **Média** | ⏳ |
+| P4.4 - CLI | `gemini-agent-cli.js` | Média | **Baixa** | ⏳ |
+| P4.5 - Endpoint | `api/gemini-reviews.js` | Média | **Alta** | ⏳ |
 
 **Dependências:**
 ```
@@ -1369,37 +1116,84 @@ P4.1 (API) ─┬─> P4.2 (Protocolo)
 
 ### Matriz de Prioridade (Considerando Feedback)
 
-| Item | Impacto DX | Complexidade | Polui Timeline? | Prioridade |
-|------|-----------|--------------|-----------------|------------|
-| **P2.1 - Labels** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **1** |
-| **P2.2 - Resumo Editável** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **2** |
-| **P2.5 - Trigger Re-review** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ✅ Sim (1x) | **3** |
-| **P2.3 - Create Issues** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **4** |
-| **P3.1 - Cache** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **5** |
-| **P3.2 - Path Filters** | ⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **6** |
-| **P4.1 - Agent API** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ❌ Não | **7** |
-| **P2.4 - Reply a Comments** | ⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **8** |
-| **P3.3 - Métricas** | ⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **9** |
+| Item | Impacto DX | Complexidade | Polui Timeline? | Prioridade | Status |
+|------|-----------|--------------|-----------------|------------|--------|
+| **P2.1 - Labels** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **1** | ✅ |
+| **P2.2 - Resumo Editável** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **2** | ✅ |
+| **P2.5 - Trigger Re-review** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ✅ Sim (1x) | **3** | ✅ |
+| **P2.3 - Create Issues** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **4** | ✅ |
+| **P3.1 - Cache** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **5** | 🔄 |
+| **P3.2 - Path Filters** | ⭐⭐⭐⭐ | ⭐⭐ | ❌ Não | **6** | 🔄 |
+| **P4.1 - Agent API** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ❌ Não | **7** | ⏳ |
+| **P2.4 - Reply a Comments** | ⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **8** | ⏳ |
+| **P3.3 - Métricas** | ⭐⭐⭐ | ⭐⭐⭐ | ❌ Não | **9** | ⏳ |
 
-### Roadmap de Implementação Ajustado
+---
+
+## 🗺️ Roadmap de Implementação
 
 ```
-Sprint 1 (Reduzir Noise + Automatizar)
-├── P2.1: Labels Automáticas (sem comentários)
-└── P2.2: Resumo Editável (um comentário só)
-
-Sprint 2 (Melhorar Workflow)
-├── P2.5: Trigger de Re-review automático
-└── P2.3: Criar Issues para refactoring
-└── P2.4: Reply a Comments
-
-Sprint 3 (Otimização)
-├── P3.1: Cache de Reviews
-└── P3.2: Path Filters
-
-Sprint 4 (Agent Integration)
-└── P4.1: API via Supabase
+✅ Sprint 1 (Concluído): P2.1 + P2.2
+│   ├── P2.1: Labels Automáticas (PR #75)
+│   └── P2.2: Resumo Editável (PR #76)
+│
+✅ Sprint 2 (Concluído): P2.5 + P2.3 + Hotfix
+│   ├── P2.5: Trigger de Re-review automático (PR #77)
+│   ├── P2.3: Criar Issues para refactoring (PR #78)
+│   └── Hotfix #108: Filtrar compliments do Gemini
+│
+🔄 Sprint 3 (Próximo): P3.1 (Cache) + P3.2 (Path Filters)
+│   ├── P3.1: Cache de Reviews
+│   └── P3.2: Path Filters
+│
+⏳ Sprint 4 (Futuro): P4.1 (Agent API)
+│   ├── P4.1: API via Supabase
+│   └── P4.2: Protocolo para Agents
+│
+⏳ Sprint 5 (Futuro): P2.4 + P3.3 + P4.3-4.5
+    ├── P2.4: Reply a Comments
+    ├── P3.3: Métricas
+    └── P4.3-4.5: Webhooks, CLI, Endpoints
 ```
+
+---
+
+## 📚 Lições Aprendidas
+
+### Sprint 1 & 2 - Implementação P2
+
+#### Git Workflow Importance
+- **Branch por Feature**: Cada item P2 teve seu próprio PR (#75, #76, #77, #78)
+- **Code Review Cycle**: Gemini Code Assist revisou cada PR antes do merge
+- **Merge com Cleanup**: Uso de `--delete-branch` mantém o repositório limpo
+
+#### validate:quick vs validate
+- Durante desenvolvimento: `npm run validate:quick` (lint + test:changed) para feedback rápido
+- Antes de criar PR: `npm run validate` (lint + all tests) para garantir qualidade
+- Em CI/CD: `npm run validate:full` (lint + coverage + build) para validação completa
+
+#### Code Review Cycle com Priority Handling
+- **CRITICAL/HIGH**: Requerem atenção imediata, labels `👀 needs-human-review`
+- **MEDIUM**: Convertidos para GitHub Issues com label `🤖 gemini-refactor`
+- **LOW**: Backlog para quando possível
+
+#### Compliment Filtering (PR #108)
+O Gemini às vezes "elogia" o código em vez de apontar problemas. O hotfix #108 adicionou filtro para ignorar esses "compliments" na criação de issues, evitando issues desnecessárias como "Ótimo uso de hooks!" ou "Código bem estruturado".
+
+```javascript
+// Exemplo de filtro implementado
+const mediumIssues = reviewData.issues.filter(
+  i => i.priority === 'MEDIUM' && 
+       !i.auto_fixable && 
+       !i.is_compliment  // <- Hotfix #108
+);
+```
+
+#### Testes são Críticos
+- Cada script tem seus testes em `__tests__/`
+- `parse-gemini-comments.test.js` validou o parsing de comentários
+- `apply-labels.test.js` validou a lógica de labels
+- `create-issues.test.js` validou a criação de issues
 
 ---
 
@@ -1408,15 +1202,15 @@ Sprint 4 (Agent Integration)
 ```
 .github/
 ├── workflows/
-│   ├── gemini-review.yml              # (modificado)
+│   ├── gemini-review.yml              # (modificado - P2)
 │   └── gemini-metrics-report.yml      # (novo - P3.3)
 ├── scripts/
 │   ├── parse-gemini-comments.js       # (existente)
-│   ├── apply-labels.js                # (novo - P2.1)
-│   ├── post-smart-summary.js          # (novo - P2.2)
-│   ├── create-issues.js               # (novo - P2.3)
+│   ├── apply-labels.js                # ✅ (P2.1 - PR #75)
+│   ├── post-smart-summary.js          # ✅ (P2.2 - PR #76)
+│   ├── create-issues.js               # ✅ (P2.3 - PR #78)
 │   ├── check-resolutions.js           # (novo - P2.4)
-│   ├── trigger-re-review.js           # (novo - P2.5)
+│   ├── trigger-re-review.js           # ✅ (P2.5 - PR #77)
 │   ├── review-cache.js                # (novo - P3.1)
 │   ├── path-filter.js                 # (novo - P3.2)
 │   ├── metrics-collector.js           # (novo - P3.3)
@@ -1425,6 +1219,11 @@ Sprint 4 (Agent Integration)
 └── config.yaml                        # (modificado - P3.2)
 
 api/
+├── dlq.js                             # (existente)
+├── dlq/
+│   ├── [id]/
+│   │   ├── retry.js                   # (existente)
+│   │   └── discard.js                 # (existente)
 └── gemini-reviews.js                  # (novo - P4.5)
 
 scripts/
@@ -1432,6 +1231,7 @@ scripts/
 
 docs/standards/
 ├── GEMINI_INTEGRATION.md              # (existente)
+├── GEMINI_INTEGRATION_PHASES.md       # (este documento)
 └── GEMINI_AGENT_PROTOCOL.md           # (novo - P4.2)
 
 supabase/migrations/
@@ -1442,13 +1242,14 @@ supabase/migrations/
 
 ## ✅ Checklist de Validação por Fase
 
-### Fase P2 - Validação
+### Fase P2 - Validação ✅
 
-- [ ] Labels aplicadas **sem** comentários na timeline
-- [ ] Apenas **um** comentário de resumo por PR (editável)
-- [ ] Issues criadas em repositório (não comentários)
-- [ ] Replies em threads (não na timeline principal)
-- [ ] Re-review solicitado apenas quando necessário
+- [x] Labels aplicadas **sem** comentários na timeline
+- [x] Apenas **um** comentário de resumo por PR (editável)
+- [x] Issues criadas em repositório (não comentários)
+- [x] Replies em threads (não na timeline principal)
+- [x] Re-review solicitado apenas quando necessário
+- [x] Hotfix #108: Compliments filtrados
 
 ### Fase P3 - Validação
 
@@ -1492,10 +1293,10 @@ Todas as funcionalidades P2 foram redesenhadas para **minimizar poluição da ti
 1. **Assíncrono**: Resumo primeiro (~30s), inline comments depois (~60-90s)
 2. **Trigger Manual**: Apenas `/gemini review` ou `@gemini-code-assist` funcionam
 3. **Bots não invocam**: Comentários de actions/bots não disparam Gemini
-4. **Sem auto-re-review**: Novos commits não disparam revisão automática (precisamos de P2.5)
+4. **Sem auto-re-review**: Novos commits não disparam revisão automática (P2.5 resolve isso)
 
 ---
 
-*Documento atualizado em: 2026-02-20*
-*Versão: 1.2.0*
-*Status: 📋 Planejado | Próximo: Implementação P2.1 + P2.2*
+*Documento atualizado em: 2026-02-21*  
+*Versão: 1.3.0*  
+*Status: ✅ Produção | P2 Concluído | Próximo: Sprint 3 (P3.1 + P3.2)*

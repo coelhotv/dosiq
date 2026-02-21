@@ -1,13 +1,13 @@
 /**
- * PWA Detection Utilities
+ * Utilitários de Detecção PWA
  *
- * Helper functions to detect PWA installation state, browser capabilities,
- * and platform-specific behaviors.
+ * Funções auxiliares para detectar estado de instalação do PWA,
+ * capacidades do navegador e comportamentos específicos por plataforma.
  */
 
 /**
- * Check if the app is running in standalone mode (installed as PWA)
- * @returns {boolean} True if running as installed PWA
+ * Verifica se o app está rodando em modo standalone (instalado como PWA)
+ * @returns {boolean} Verdadeiro se estiver rodando como PWA instalado
  */
 export function isStandalone() {
   return (
@@ -16,8 +16,8 @@ export function isStandalone() {
 }
 
 /**
- * Check if the browser is iOS Safari
- * @returns {boolean} True if running on iOS Safari
+ * Verifica se o navegador é o iOS Safari
+ * @returns {boolean} Verdadeiro se estiver rodando no iOS Safari
  */
 export function isIOSSafari() {
   const userAgent = window.navigator.userAgent.toLowerCase()
@@ -28,8 +28,8 @@ export function isIOSSafari() {
 }
 
 /**
- * Check if the browser is Chrome on Android
- * @returns {boolean} True if running on Chrome Android
+ * Verifica se o navegador é o Chrome no Android
+ * @returns {boolean} Verdadeiro se estiver rodando no Chrome Android
  */
 export function isChromeAndroid() {
   const userAgent = window.navigator.userAgent.toLowerCase()
@@ -40,23 +40,21 @@ export function isChromeAndroid() {
 }
 
 /**
- * Check if the browser supports beforeinstallprompt event (Chrome/Edge)
- * @returns {boolean} True if beforeinstallprompt is supported
+ * Verifica se o navegador suporta o evento beforeinstallprompt (Chrome/Edge)
+ * @returns {boolean} Verdadeiro se beforeinstallprompt for suportado
  */
 export function supportsBeforeInstallPrompt() {
   return 'BeforeInstallPromptEvent' in window
 }
 
 /**
- * Check if the browser is desktop Chrome/Edge/Opera (Chromium-based)
- * @returns {boolean} True if desktop Chromium browser
+ * Verifica se o navegador é desktop Chrome/Edge/Opera (baseado em Chromium)
+ * @returns {boolean} Verdadeiro se for um navegador Chromium desktop
  */
 export function isDesktopChrome() {
   const userAgent = window.navigator.userAgent.toLowerCase()
 
-  console.log('[PWA Utils] isDesktopChrome - User agent:', userAgent)
-
-  // More flexible detection for Chrome on any platform (including macOS)
+  // Detecção flexível para Chrome em qualquer plataforma desktop (incluindo macOS)
   const hasChrome = /chrome|chromium/.test(userAgent)
   const hasEdge = /edg|edge/.test(userAgent)
   const hasOpera = /opr|opera/.test(userAgent)
@@ -68,36 +66,21 @@ export function isDesktopChrome() {
   const isOpera = hasOpera && !hasMobile
   const isBraveBrowser = hasBrave && !hasMobile
 
-  const result = isChrome || isEdge || isOpera || isBraveBrowser
-
-  console.log('[PWA Utils] Detection:', {
-    hasChrome,
-    hasEdge,
-    hasOpera,
-    hasBrave,
-    hasMobile,
-    isChrome,
-    isEdge,
-    isOpera,
-    isBraveBrowser,
-    result,
-  })
-
-  // Show banner for ANY Chromium desktop browser, not just those with beforeinstallprompt
-  return result
+  // Exibe o banner para qualquer navegador Chromium desktop
+  return isChrome || isEdge || isOpera || isBraveBrowser
 }
 
 /**
- * Check if the browser supports native beforeinstallprompt event
- * @returns {boolean} True if BeforeInstallPromptEvent is supported
+ * Verifica se o navegador suporta o evento nativo beforeinstallprompt
+ * @returns {boolean} Verdadeiro se BeforeInstallPromptEvent for suportado
  */
 export function canShowNativePrompt() {
   return supportsBeforeInstallPrompt()
 }
 
 /**
- * Check if browser is any Chromium-based browser that might support PWA
- * @returns {boolean} True if Chromium-based desktop browser
+ * Verifica se o navegador é qualquer Chromium desktop com suporte a PWA
+ * @returns {boolean} Verdadeiro se for navegador Chromium desktop
  */
 export function isChromiumDesktop() {
   const userAgent = window.navigator.userAgent.toLowerCase()
@@ -111,8 +94,8 @@ export function isChromiumDesktop() {
 }
 
 /**
- * Check if the prompt was previously dismissed by the user
- * @returns {boolean} True if user dismissed the prompt
+ * Verifica se o prompt foi dispensado anteriormente pelo usuário
+ * @returns {boolean} Verdadeiro se o usuário dispensou o prompt
  */
 export function wasPromptDismissed() {
   try {
@@ -124,8 +107,8 @@ export function wasPromptDismissed() {
 }
 
 /**
- * Mark the prompt as dismissed by the user
- * @param {number} days - Number of days to remember dismissal (default: 30)
+ * Marca o prompt como dispensado pelo usuário
+ * @param {number} days - Número de dias para lembrar da dispensa (padrão: 30)
  */
 export function dismissPrompt(days = 30) {
   try {
@@ -134,25 +117,25 @@ export function dismissPrompt(days = 30) {
     expiryDate.setDate(expiryDate.getDate() + days)
     localStorage.setItem('pwa-install-dismissed-expiry', expiryDate.toISOString())
   } catch {
-    // Ignore localStorage errors
+    // Ignora erros de localStorage
   }
 }
 
 /**
- * Reset the dismissed state (useful for testing or after expiry)
+ * Redefine o estado de dispensa (útil para testes ou após expiração)
  */
 export function resetDismissedState() {
   try {
     localStorage.removeItem('pwa-install-dismissed')
     localStorage.removeItem('pwa-install-dismissed-expiry')
   } catch {
-    // Ignore localStorage errors
+    // Ignora erros de localStorage
   }
 }
 
 /**
- * Check if the dismissal has expired
- * @returns {boolean} True if dismissal has expired or doesn't exist
+ * Verifica se a dispensa expirou
+ * @returns {boolean} Verdadeiro se a dispensa expirou ou não existe
  */
 export function isDismissalExpired() {
   try {
@@ -166,8 +149,8 @@ export function isDismissalExpired() {
 }
 
 /**
- * Get the appropriate install instructions based on platform
- * @returns {Object} Install instructions for the current platform
+ * Retorna as instruções de instalação adequadas à plataforma atual
+ * @returns {Object} Instruções de instalação para a plataforma atual
  */
 export function getInstallInstructions() {
   if (isIOSSafari()) {
@@ -203,8 +186,8 @@ export function getInstallInstructions() {
 }
 
 /**
- * Comprehensive PWA state detection
- * @returns {Object} Complete PWA state information
+ * Detecção completa do estado PWA
+ * @returns {Object} Informações completas sobre o estado PWA atual
  */
 export function getPWAState() {
   return {

@@ -14,13 +14,13 @@ import {
 } from './pwaUtils'
 
 /**
- * PWA Install Prompt Component
+ * Componente de Prompt de Instalação PWA
  *
- * Displays an install prompt for users on supported platforms.
- * - iOS Safari: Shows custom instructions for "Add to Home Screen"
- * - Chrome/Android & Desktop: Shows native install button or custom instructions
- * - Dismissible with localStorage persistence
- * - Hides when app is already installed (standalone mode)
+ * Exibe um prompt de instalação para usuários em plataformas suportadas.
+ * - iOS Safari: Mostra instruções customizadas para "Adicionar à Tela de Início"
+ * - Chrome/Android e Desktop: Mostra botão de instalação nativo ou instruções customizadas
+ * - Dispensável com persistência via localStorage
+ * - Oculto quando o app já está instalado (modo standalone)
  */
 export default function InstallPrompt() {
   const [isVisible, setIsVisible] = useState(false)
@@ -33,38 +33,25 @@ export default function InstallPrompt() {
     canShowNativePrompt: false,
   })
 
-  // Detect platform and check if prompt should be shown
+  // Detecta plataforma e verifica se o prompt deve ser exibido
   useEffect(() => {
     const checkVisibility = () => {
-      console.log('[PWA Install] Checking visibility...')
-
-      // Don't show if already in standalone mode
+      // Não exibir se já estiver em modo standalone
       if (isStandalone()) {
-        console.log('[PWA Install] Hidden: Running in standalone mode')
         setIsVisible(false)
         return
       }
 
-      // Don't show if user recently dismissed
+      // Não exibir se o usuário dispensou recentemente
       if (wasPromptDismissed() && !isDismissalExpired()) {
-        console.log('[PWA Install] Hidden: Recently dismissed')
         setIsVisible(false)
         return
       }
 
-      // Detect platform
-      console.log('[PWA Install] Starting platform detection...')
+      // Detecta plataforma
       const isIOS = isIOSSafari()
-      console.log('[PWA Install] isIOSSafari:', isIOS)
       const isAndroid = isChromeAndroid()
-      console.log('[PWA Install] isChromeAndroid:', isAndroid)
       const isDesktop = isDesktopChrome()
-      console.log('[PWA Install] isDesktopChrome result:', isDesktop)
-      const supportsInstall = 'BeforeInstallPromptEvent' in window
-
-      console.log('[PWA Install] Platform detection:', { isIOS, isAndroid, isDesktop })
-      console.log('[PWA Install] User agent:', navigator.userAgent)
-      console.log('[PWA Install] BeforeInstallPromptEvent supported:', supportsInstall)
 
       setPlatformInfo({
         isIOSSafari: isIOS,
@@ -73,111 +60,87 @@ export default function InstallPrompt() {
         canShowNativePrompt: canShowNativePrompt(),
       })
 
-      // Show prompt for supported platforms
+      // Exibe o prompt para plataformas suportadas
       const shouldShow = isIOS || isAndroid || isDesktop
-      console.log('[PWA Install] Should show banner:', shouldShow)
       setIsVisible(shouldShow)
     }
 
     checkVisibility()
   }, [])
 
-  // Listen for beforeinstallprompt event (Chrome/Edge)
+  // Escuta o evento beforeinstallprompt (Chrome/Edge)
   useEffect(() => {
-    console.log('[PWA Install] Setting up beforeinstallprompt listener')
-
     const handleBeforeInstallPrompt = (event) => {
-      console.log('[PWA Install] beforeinstallprompt event fired!')
-      // Prevent the default browser prompt
+      // Previne o prompt padrão do navegador
       event.preventDefault()
-      // Store the event for later use
+      // Armazena o evento para uso posterior
       setDeferredPrompt(event)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // Check if event was already fired (before this component mounted)
-    console.log('[PWA Install] Component mounted, checking for deferred prompt...')
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
   }, [])
 
-  // Handle dismiss
+  // Trata a ação de dispensar o prompt
   const handleDismiss = useCallback(() => {
     setIsVisible(false)
-    dismissPrompt(30) // Remember dismissal for 30 days
+    dismissPrompt(30) // Lembra da dispensa por 30 dias
   }, [])
 
-  // Handle install click
+  // Trata o clique no botão de instalação
   const handleInstall = useCallback(async () => {
-    console.log('[PWA Install] Button clicked')
-    console.log('[PWA Install] Platform info:', platformInfo)
-    console.log('[PWA Install] Deferred prompt available:', !!deferredPrompt)
-    console.log('[PWA Install] Native prompt supported:', canShowNativePrompt())
-
-    // iOS Safari - show instructions
+    // iOS Safari - exibe instruções
     if (platformInfo.isIOSSafari) {
-      console.log('[PWA Install] iOS Safari detected - showing instructions')
       setShowIOSInstructions(true)
       return
     }
 
-    // Chrome/Edge with deferred prompt
+    // Chrome/Edge com prompt adiado disponível
     if (deferredPrompt) {
-      console.log('[PWA Install] Triggering deferred prompt...')
       try {
-        // Show the native install prompt
+        // Exibe o prompt nativo de instalação
         deferredPrompt.prompt()
 
-        // Wait for user choice
+        // Aguarda a escolha do usuário
         const { outcome } = await deferredPrompt.userChoice
-        console.log('[PWA Install] User choice outcome:', outcome)
 
         if (outcome === 'accepted') {
           setIsVisible(false)
         }
 
-        // Clear the deferred prompt
+        // Limpa o prompt adiado
         setDeferredPrompt(null)
       } catch (error) {
-        console.error('[PWA Install] Error showing prompt:', error)
+        console.error('[PWA Install] Erro ao exibir prompt:', error)
       }
       return
     }
 
-    // Chrome Android without deferred prompt - show manual instructions
+    // Chrome Android sem prompt adiado - exibe instruções manuais
     if (platformInfo.isChromeAndroid) {
-      console.log('[PWA Install] Chrome Android without deferred prompt - showing instructions')
-      setShowIOSInstructions(true) // Reuse the instructions modal
+      setShowIOSInstructions(true) // Reutiliza o modal de instruções
       return
     }
 
-    // Desktop Chrome/Edge without deferred prompt (common in dev/localhost)
-    // Show instructions instead of doing nothing
+    // Desktop Chrome/Edge sem prompt adiado (comum em dev/localhost)
+    // Exibe instruções em vez de não fazer nada
     if (platformInfo.isDesktopChrome) {
-      console.log('[PWA Install] Desktop Chrome without deferred prompt - showing instructions')
-      console.log(
-        '[PWA Install] Note: beforeinstallprompt may not fire on localhost or in development'
-      )
       setShowIOSInstructions(true)
       return
     }
-
-    console.log('[PWA Install] No matching platform handler - browser may not support PWA install')
   }, [deferredPrompt, platformInfo])
 
-  // Close instructions modal
+  // Fecha o modal de instruções
   const handleCloseInstructions = useCallback(() => {
-    console.log('[PWA Install] Closing instructions modal')
     setShowIOSInstructions(false)
     setIsVisible(false)
     dismissPrompt(30)
-    console.log('[PWA Install] Instructions modal closed, banner dismissed for 30 days')
   }, [])
 
-  // Get appropriate text based on platform
+  // Retorna texto adequado conforme a plataforma
   const getPromptText = () => {
     if (platformInfo.isIOSSafari) {
       return {
@@ -207,7 +170,7 @@ export default function InstallPrompt() {
 
   return (
     <>
-      {/* Main Install Prompt Banner */}
+      {/* Banner principal de instalação */}
       <AnimatePresence>
         {isVisible && !showIOSInstructions && (
           <motion.div
@@ -220,20 +183,20 @@ export default function InstallPrompt() {
             aria-label="Prompt de instalação do app"
           >
             <div className="install-prompt__content">
-              {/* App Icon */}
+              {/* Ícone do app */}
               <div className="install-prompt__icon">
                 <span role="img" aria-label="Ícone do app">
                   💊
                 </span>
               </div>
 
-              {/* Text Content */}
+              {/* Conteúdo textual */}
               <div className="install-prompt__text">
                 <h3 className="install-prompt__title">{promptText.title}</h3>
                 <p className="install-prompt__description">{promptText.description}</p>
               </div>
 
-              {/* Actions */}
+              {/* Ações */}
               <div className="install-prompt__actions">
                 <button
                   className="install-prompt__install-btn"
@@ -256,7 +219,7 @@ export default function InstallPrompt() {
         )}
       </AnimatePresence>
 
-      {/* iOS/Android Instructions Modal */}
+      {/* Modal de instruções iOS/Android */}
       <AnimatePresence>
         {showIOSInstructions && (
           <motion.div
