@@ -32,7 +32,7 @@ const mockSupabase = {
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('@shared/utils/supabase', () => ({
   supabase: mockSupabase,
   getUserId: mockGetUserId,
 }))
@@ -71,7 +71,7 @@ describe('treatmentPlanService', () => {
 
   describe('getAll', () => {
     it('should fetch all treatment plans with protocols', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const mockPlans = [
         {
           id: '1',
@@ -100,7 +100,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should throw error when supabase returns error', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -114,7 +114,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should return empty array when no plans exist', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -131,7 +131,7 @@ describe('treatmentPlanService', () => {
 
   describe('create', () => {
     it('should create a new treatment plan', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const newPlan = {
         name: 'Novo Plano de Tratamento',
         description: 'Descrição do plano',
@@ -157,7 +157,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should throw error when creation fails', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const newPlan = { name: 'Plano com Erro' }
 
       mockSupabase.from.mockReturnValue({
@@ -172,7 +172,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should create minimal plan with only name', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const newPlan = { name: 'Plano Mínimo' }
 
       mockSupabase.from.mockReturnValue({
@@ -193,7 +193,7 @@ describe('treatmentPlanService', () => {
 
   describe('update', () => {
     it('should update an existing treatment plan', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const updates = { name: 'Plano Atualizado', description: 'Nova descrição' }
       const updatedPlan = {
         id: '1',
@@ -220,7 +220,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should throw error when update fails', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const updates = { name: 'Plano Falho' }
 
       mockSupabase.from.mockReturnValue({
@@ -241,7 +241,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should update partial data', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const updates = { description: 'Apenas descrição atualizada' }
 
       mockSupabase.from.mockReturnValue({
@@ -272,7 +272,7 @@ describe('treatmentPlanService', () => {
 
   describe('delete', () => {
     it('should delete a treatment plan', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       let deleteCalled = false
 
       mockSupabase.from.mockReturnValue({
@@ -291,7 +291,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should throw error when delete fails', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
 
       mockSupabase.from.mockReturnValue({
         delete: vi.fn().mockReturnValue({
@@ -305,7 +305,7 @@ describe('treatmentPlanService', () => {
     })
 
     it('should use user_id filter for security', async () => {
-      const { treatmentPlanService } = await import('../treatmentPlanService')
+      const { treatmentPlanService } = await import('@protocols/services/treatmentPlanService')
       const idFilters = []
       const userFilters = []
 

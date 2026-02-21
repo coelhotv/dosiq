@@ -8,7 +8,7 @@ import {
   isTitrationActive,
   hasReachedTarget,
   getTitrationSummary,
-} from '../titrationService'
+} from '@protocols/services/titrationService'
 
 describe('titrationService', () => {
   describe('calculateTitrationSteps', () => {

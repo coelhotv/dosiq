@@ -56,7 +56,7 @@ const mocks = vi.hoisted(() => {
 })
 
 // Mock do stockService
-vi.mock('../stockService', () => ({
+vi.mock('@stock/services/stockService', () => ({
   stockService: {
     decrease: vi.fn().mockResolvedValue(undefined),
     increase: vi.fn().mockResolvedValue(undefined),
@@ -64,12 +64,12 @@ vi.mock('../stockService', () => ({
 }))
 
 // Mock do módulo supabase
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('@shared/utils/supabase', () => ({
   supabase: mocks.mockSupabase,
   getUserId: mocks.mockGetUserId,
 }))
 
-import { logService } from '../logService'
+import { logService } from '@shared/services/api/logService'
 
 describe('logService', () => {
   beforeEach(() => {

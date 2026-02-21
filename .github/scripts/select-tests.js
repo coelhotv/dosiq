@@ -92,14 +92,6 @@ function mapToTestFiles(changedFiles) {
       testFiles.add(testsDir);
     }
     
-    // Para services: também incluir teste na pasta __tests__ de api/
-    if (file.includes('/services/')) {
-      const serviceTest = path.join('src/services/api/__tests__', `${baseName}.test${ext}`);
-      if (testFileExists(serviceTest)) {
-        testFiles.add(serviceTest);
-      }
-    }
-    
     // Para utils: procurar em utils/__tests__/
     if (file.includes('/utils/')) {
       const utilTest = path.join('src/utils/__tests__', `${baseName}.test${ext}`);
@@ -116,13 +108,6 @@ function mapToTestFiles(changedFiles) {
       }
     }
     
-    // Para lib: procurar em lib/__tests__/
-    if (file.includes('/lib/')) {
-      const libTest = path.join('src/lib/__tests__', `${baseName}.test${ext}`);
-      if (testFileExists(libTest)) {
-        testFiles.add(libTest);
-      }
-    }
   });
   
   return Array.from(testFiles);

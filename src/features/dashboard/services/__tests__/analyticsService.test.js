@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import { analyticsService } from '@dashboard/services/analyticsService'
 
 // Simple localStorage mock
 const localStorageMock = {
@@ -30,8 +31,6 @@ Object.defineProperty(global, 'crypto', {
   writable: true,
   configurable: true,
 })
-
-const { analyticsService } = require('../analyticsService')
 
 describe('analyticsService', () => {
   beforeEach(() => {

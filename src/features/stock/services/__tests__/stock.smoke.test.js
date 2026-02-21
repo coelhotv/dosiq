@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock must be defined with factory function (hoisted to top)
-vi.mock('../../../lib/supabase', () => {
+vi.mock('@shared/utils/supabase', () => {
   const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
 
   // Mock for getTotalQuantity - uses medicine_stock_summary view
@@ -35,7 +35,7 @@ vi.mock('../../../lib/supabase', () => {
 })
 
 // Import after mock
-import { stockService } from '../stockService'
+import { stockService } from '@stock/services/stockService'
 
 describe('Smoke: Stock Service', () => {
   beforeEach(() => {
