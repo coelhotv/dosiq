@@ -34,11 +34,14 @@ const ACTIONABLE_KEYWORDS = [
 const COMPLIMENT_KEYWORDS = [
   'excelente', 'excellent', 'ótimo', 'otimo', 'great',
   'muito bom', 'very good', 'eficaz', 'effective',
-  'essencial', 'essential', 'crucial', 'crucial',
+  'essencial', 'essential', 'crucial',
   'inteligente', 'intelligent', 'smart',
   'bem implementado', 'well implemented',
   'boa prática', 'good practice'
 ];
+
+// Constantes de configuração do filtro
+const MIN_SUGGESTION_LENGTH = 20;
 
 /**
  * Determina se uma issue deve ser criada baseada na análise do conteúdo
@@ -64,7 +67,7 @@ function shouldCreateIssue(issue) {
 
   // Deve ter sugestão real de código (não vazia ou placeholder)
   const hasRealSuggestion = issue.suggestion &&
-    issue.suggestion.trim().length > 20 &&
+    issue.suggestion.trim().length > MIN_SUGGESTION_LENGTH &&
     !issue.suggestion.includes('Nenhuma sugestão');
 
   return hasRealSuggestion;
