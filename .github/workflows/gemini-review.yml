@@ -183,6 +183,19 @@ jobs:
           ref: ${{ needs.detect.outputs.branch }}
       
       # ==========================================
+      # P3.1: Cache de Reviews
+      # Restaura cache de reviews anteriores para evitar re-análise
+      # ==========================================
+      - name: Restore Review Cache
+        id: cache-restore
+        uses: actions/cache@v4
+        with:
+          path: .gemini-cache
+          key: gemini-review-cache-${{ github.run_id }}
+          restore-keys: |
+            gemini-review-cache-
+      
+      # ==========================================
       # FIX: Aguardar comentários inline do Gemini
       # O Gemini posta um resumo inicial rapidamente (~30s),
       # mas os comentários inline vêm depois (~60-90s).
@@ -326,6 +339,27 @@ jobs:
             console.log(`  Needs Agent: ${output.summary.needs_agent}`);
             console.log(`  Critical: ${output.summary.critical}`);
 
+      # ==========================================
+      # P3.1: Limpeza de Cache Expirado
+      # Remove entradas com mais de 30 dias
+      # ==========================================
+      - name: Clean Expired Cache
+        run: |
+          if [ -d ".gemini-cache" ]; then
+            echo "🧹 Cleaning expired cache entries..."
+            node -e "
+              const { cleanExpiredCache, getCacheStats } = require('./.github/scripts/review-cache.js');
+              const statsBefore = getCacheStats();
+              console.log('Cache stats before cleanup:', statsBefore);
+              const removed = cleanExpiredCache(30);
+              const statsAfter = getCacheStats();
+              console.log('Cache stats after cleanup:', statsAfter);
+              console.log(\`Removed \${removed} expired entries\`);
+            "
+          else
+            echo "No cache directory found, skipping cleanup"
+          fi
+      
       - name: Debug - List files
         run: |
           echo "Current directory: $(pwd)"
@@ -333,8 +367,20 @@ jobs:
           ls -la
           echo "Files in .gemini-output:"
           ls -la .gemini-output/ || echo "Directory .gemini-output not found"
+          echo "Files in .gemini-cache:"
+          ls -la .gemini-cache/ || echo "Directory .gemini-cache not found"
           echo "Absolute path:"
           realpath .gemini-output/ || echo "realpath not available"
+      
+      # ==========================================
+      # P3.1: Save Review Cache
+      # Salva cache para uso em execuções futuras
+      # ==========================================
+      - name: Save Review Cache
+        uses: actions/cache@v4
+        with:
+          path: .gemini-cache
+          key: gemini-review-cache-${{ github.run_id }}
       
       - name: Upload Structured Output
         uses: actions/upload-artifact@v4
