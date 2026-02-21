@@ -3,7 +3,7 @@
 > **Projeto**: Meus Remédios - Medication Management PWA  
 > **Versão**: 3.0.0 | React 19 + Vite + Supabase  
 > **Idioma**: Português (documentação), Inglês (pensamento/código)  
-> **Última Atualização**: 2026-02-19
+> **Última Atualização**: 2026-02-21
 
 ---
 
@@ -421,14 +421,16 @@ grep -r "from.*TargetFile" src/ | head -20
 - [ ] CSS follows mobile-first
 - [ ] Imports organized correctly
 - [ ] States declared BEFORE useMemo/useEffect
-- [ ] `npm run validate` passes (lint + tests)
+- [ ] `npm run validate:quick` passes (lint + changed tests)
 
 ### 6.3 Test Commands
 ```bash
 npm run test:critical    # Services, utils, schemas, hooks
 npm run test:changed     # Files modified since main
 npm run test:smoke       # Minimal suite (~10s)
-npm run validate         # Lint + critical tests
+npm run validate:quick   # Lint + changed tests (fastest)
+npm run validate         # Lint + all tests (full)
+npm run validate:full    # Lint + coverage + build (CI)
 npm run build            # Production build check
 ```
 
@@ -439,8 +441,8 @@ git checkout -b feature/wave-X/name
 
 # 2. Make changes (follow standards)
 
-# 3. Validate (MUST PASS)
-npm run validate
+# 3. Validate (MUST PASS) - quick check for development
+npm run validate:quick
 
 # 4. Commit with semantic message
 git commit -m "feat(scope): descrição"
@@ -465,7 +467,7 @@ gh pr merge <number> --merge --delete-branch
 | **Modify duplicate file** | Production bug | Check for duplicates FIRST |
 | **Assume import location** | Wrong file modified | Trace actual import path |
 | Declare state after useMemo | ReferenceError (TDZ) | States → Memos → Effects |
-| Skip validation | Broken build | Always run `npm run validate` |
+| Skip validation | Broken build | Always run `npm run validate:quick` |
 | Commit to main | Unreviewed code | Always create branch |
 | Ignore lint errors | Build fails | Fix all errors |
 | Mix languages in schemas | UI inconsistency | Portuguese only |
@@ -1080,6 +1082,25 @@ gh pr merge <number> --merge --delete-branch
 
 ---
 
+## Memory Entry — 2026-02-21 17:48
+**Contexto / Objetivo**
+- Atualizar regras e memória do agente para usar `npm run validate:quick` em vez de `npm run validate`
+- `validate:quick` é mais rápido (lint + test:changed) para feedback durante desenvolvimento
+- Manter `validate` completo para CI/CD e antes de criar PR
+
+**O que foi feito (mudanças)**
+- Arquivos alterados:
+  - `.roo/rules/memory.md` — Atualizado checklist pré-commit, comandos de teste, workflow Git, e anti-patterns
+  - `.roo/rules-code/rules.md` — Atualizado checklist pré-commit com novo comando de validação
+
+**Regras locais para o futuro (lições acionáveis)**
+- Usar `npm run validate:quick` (lint + test:changed) para validação rápida durante desenvolvimento
+- Usar `npm run validate` (lint + all tests) antes de criar PR ou push
+- Usar `npm run validate:full` (lint + coverage + build) para CI/CD completo
+- `validate:quick` é o comando padrão para pre-commit checks
+
+---
+
 *Fim do arquivo de memória consolidado.*
 
 ---
@@ -1096,6 +1117,6 @@ gh pr merge <number> --merge --delete-branch
 
 ---
 
-*Última atualização deste arquivo: 2026-02-19*  
+*Última atualização deste arquivo: 2026-02-21*  
 *Versão do projeto: 3.0.0*  
-*Entradas de memória: 35+*
+*Entradas de memória: 36+*
