@@ -232,6 +232,39 @@ describe('Schemas de Validação Zod', () => {
       expect(result.errors[0].message).toContain('pelo menos um horário')
     })
 
+    describe('Validação end_date >= start_date', () => {
+      const baseProtocol = {
+        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Protocolo Teste',
+        frequency: 'diário',
+        time_schedule: ['08:00'],
+        dosage_per_intake: 1,
+        start_date: '2024-01-15',
+      }
+
+      it('deve aceitar end_date igual a start_date', () => {
+        const result = validateProtocolCreate({ ...baseProtocol, end_date: '2024-01-15' })
+        expect(result.success).toBe(true)
+      })
+
+      it('deve aceitar end_date maior que start_date', () => {
+        const result = validateProtocolCreate({ ...baseProtocol, end_date: '2024-02-15' })
+        expect(result.success).toBe(true)
+      })
+
+      it('deve rejeitar end_date menor que start_date', () => {
+        const result = validateProtocolCreate({ ...baseProtocol, end_date: '2024-01-01' })
+        expect(result.success).toBe(false)
+        expect(result.errors.some((e) => e.field === 'end_date')).toBe(true)
+        expect(result.errors.some((e) => e.message.includes('maior ou igual'))).toBe(true)
+      })
+
+      it('deve aceitar end_date ausente (protocolo sem data de término)', () => {
+        const result = validateProtocolCreate({ ...baseProtocol })
+        expect(result.success).toBe(true)
+      })
+    })
+
     it('deve validar titulação corretamente', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
