@@ -19,10 +19,67 @@ export { isProtocolActiveOnDate }
  * @param {Date} endDate - Data final do período (padrão: hoje)
  * @returns {number} Total de doses esperadas
  */
+/**
+ * Calcula a taxa de doses diárias de um protocolo conforme sua frequência
+ * @param {string} frequency - Frequência do protocolo (daily, weekly, every_other_day, etc.)
+ * @param {number} timesPerDay - Número de horários no time_schedule
+ * @returns {number} Taxa de doses por dia
+ */
+function getDailyDoseRate(frequency, timesPerDay) {
+  switch (frequency.toLowerCase()) {
+    case 'daily':
+    case 'diariamente':
+    case 'diário':
+      return timesPerDay
+    case 'weekly':
+    case 'semanal':
+    case 'semanalmente':
+      return timesPerDay / 7
+    case 'every_other_day':
+    case 'dia_sim_dia_nao':
+    case 'dia sim, dia não':
+    case 'dias_alternados':
+      return timesPerDay / 2
+    case 'quando_necessário':
+    case 'personalizado':
+      return 0
+    default:
+      return timesPerDay
+  }
+}
+
+/**
+ * Calcula o número de dias efetivos de um protocolo dentro de um período de análise
+ * @param {Object} protocol - Protocolo com start_date e end_date opcionais
+ * @param {Date} periodStart - Início do período de análise
+ * @param {Date} periodEnd - Fim do período de análise
+ * @returns {number} Número de dias efetivos (interseção entre protocolo e período)
+ */
+function getEffectiveDays(protocol, periodStart, periodEnd) {
+  // Sem start_date: assume ativo desde o início do período
+  const protocolStartDate = protocol.start_date
+    ? new Date(protocol.start_date + 'T00:00:00')
+    : periodStart
+
+  // Sem end_date: assume protocolo ainda ativo
+  const protocolEndDate = protocol.end_date
+    ? new Date(protocol.end_date + 'T23:59:59')
+    : periodEnd
+
+  // Interseção entre período do protocolo e período de análise
+  const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
+  const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
+
+  if (effectiveEnd < effectiveStart) return 0
+
+  // effectiveEnd é T23:59:59, então Math.ceil conta o dia final corretamente
+  const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
 export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
   if (!protocols || protocols.length === 0) return 0
 
-  // Calcular data de início do período de análise
   const periodStart = new Date(endDate)
   periodStart.setHours(0, 0, 0, 0)
   periodStart.setDate(periodStart.getDate() - days + 1)
@@ -33,53 +90,8 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
   return protocols.reduce((total, protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
     const frequency = protocol.frequency || 'daily'
-
-    let dailyDoses = timesPerDay
-
-    switch (frequency.toLowerCase()) {
-      case 'daily':
-      case 'diariamente':
-      case 'diário':
-        dailyDoses = timesPerDay
-        break
-      case 'weekly':
-      case 'semanal':
-      case 'semanalmente':
-        dailyDoses = timesPerDay / 7
-        break
-      case 'every_other_day':
-      case 'dia_sim_dia_nao':
-      case 'dia sim, dia não':
-        dailyDoses = timesPerDay / 2
-        break
-      default:
-        dailyDoses = timesPerDay
-    }
-
-    // Calcular dias efetivos do protocolo dentro do período de análise
-    let effectiveDays = 0
-
-    // Se não tiver start_date, assume que o protocolo estava ativo desde o início do período
-    const protocolStartDate = protocol.start_date
-      ? new Date(protocol.start_date + 'T00:00:00')
-      : periodStart
-
-    // Se não tiver end_date, assume que o protocolo continua ativo
-    const protocolEndDate = protocol.end_date
-      ? new Date(protocol.end_date + 'T23:59:59')
-      : periodEnd
-
-    // Calcular interseção entre período do protocolo e período de análise
-    const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
-    const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
-
-    // Calcular número de dias efetivos (inclusive)
-    // Nota: effectiveEnd é definido como T23:59:59, então Math.ceil já conta o dia corretamente
-    if (effectiveEnd >= effectiveStart) {
-      const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
-      effectiveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    }
-
+    const dailyDoses = getDailyDoseRate(frequency, timesPerDay)
+    const effectiveDays = getEffectiveDays(protocol, periodStart, periodEnd)
     return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
 }

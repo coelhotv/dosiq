@@ -2,6 +2,7 @@
 // Dead Letter Queue Admin API - Discard a failed notification
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
+import { verifyAdminAccess } from '../../../server/utils/auth.js';
 
 const logger = createLogger('DLQDiscard');
 
@@ -10,56 +11,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 
-/**
- * Verifica se o usuário autenticado é um administrador
- * @param {string} authHeader - Header de autorização com Bearer token
- * @returns {Promise<{authorized: boolean, error?: string, userId?: string}>}
- */
-async function verifyAdminAccess(authHeader) {
-  // Verificar se o header existe
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { authorized: false, error: 'Token de autorização não fornecido' };
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-
-  // Criar cliente Supabase com o token do usuário
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: { Authorization: `Bearer ${token}` }
-    }
-  });
-
-  try {
-    // Verificar o token e obter o usuário
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { authorized: false, error: 'Token inválido ou expirado' };
-    }
-
-    // Buscar o telegram_chat_id do usuário
-    const { data: userSettings, error: settingsError } = await supabase
-      .from('user_settings')
-      .select('telegram_chat_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (settingsError || !userSettings?.telegram_chat_id) {
-      return { authorized: false, error: 'Configurações de usuário não encontradas' };
-    }
-
-    // Verificar se o telegram_chat_id corresponde ao ADMIN_CHAT_ID
-    if (userSettings.telegram_chat_id !== adminChatId) {
-      return { authorized: false, error: 'Acesso negado. Apenas administradores podem acessar.' };
-    }
-
-    return { authorized: true, userId: user.id };
-  } catch (err) {
-    logger.error('Erro na verificação de admin', err);
-    return { authorized: false, error: 'Erro interno na verificação de acesso' };
-  }
-}
 
 /**
  * DLQ Discard API Handler
