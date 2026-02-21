@@ -1,6 +1,6 @@
 # 🏗️ Regras de Arquitetura - Meus Remédios
 
-> **Versão:** 2.8.1 | **Atualizado:** 2026-02-17
+> **Versão:** 2.8.1 | **Atualizado:** 2026-02-21
 > Documento consolidado de padrões arquiteturais e governança técnica.
 
 > **📚 DOCUMENTAÇÃO COMPLETA:**
@@ -64,24 +64,24 @@
 │  │  └───────────┘  └───────────────────┘  └─────────────────────┘  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 └───────────────────────────────────────────────────────────────────────────┘
-                                       │
-                      ┌────────────────┼────────────────┐
-                      │                │                │
-               ┌──────▼──────┐   ┌─────▼─────┐   ┌─────▼─────┐
-               │  SUPABASE   │   │  VERCEL   │   │  VERCEL   │
-               │ ┌─────────┐ │   │    API    │   │   CRON    │
-               │ │PostgreSQL│ │   │(Webhooks)│   │(Agend.)   │
-               │ │+ RLS     │ │   └───────────┘   └───────────┘
-               │ └─────────┘ │         │
-               │ ┌─────────┐ │         │
-               │ │  Auth   │ │         │
-               │ └─────────┘ │         │
-               └──────┬──────┘         │
-                      │                │
-               ┌──────▼────────────────▼──────┐
-               │      TELEGRAM BOT            │
-               │   (Node.js + Standardized)   │
-               └──────────────────────────────┘
+                                        │
+                       ┌────────────────┼────────────────┐
+                       │                │                │
+                ┌──────▼──────┐   ┌─────▼─────┐   ┌─────▼─────┐
+                │  SUPABASE   │   │  VERCEL   │   │  VERCEL   │
+                │ ┌─────────┐ │   │    API    │   │   CRON    │
+                │ │PostgreSQL│ │   │(Webhooks)│   │(Agend.)   │
+                │ │+ RLS     │ │   └───────────┘   └───────────┘
+                │ └─────────┘ │         │
+                │ ┌─────────┐ │         │
+                │ │  Auth   │ │         │
+                │ └─────────┘ │         │
+                └──────┬──────┘         │
+                       │                │
+                ┌──────▼────────────────▼──────┐
+                │      TELEGRAM BOT            │
+                │   (Node.js + Standardized)   │
+                └──────────────────────────────┘
 ```
 
 ---
@@ -308,8 +308,8 @@ CREATE POLICY "Users can only see their own medicines"
 |----------|---------|-----------------|---------|
 | **Pre-commit** | `npm run lint` | Sempre | Husky hook |
 | **Pre-push** | `npm run test:critical` | Services/schemas/hooks | Husky hook |
-| **Pre-PR** | `npm run validate` | Antes de abrir PR | Manual |
-| **CI/CD** | `npm run test:full` | Todos os merges | GitHub Actions |
+| **Pre-PR** | `npm run validate:quick` | Antes de abrir PR | Manual |
+| **CI/CD** | `npm run validate:full` | Todos os merges | GitHub Actions |
 
 ### Test Command Matrix
 
@@ -407,7 +407,8 @@ npm run test:critical # 143 tests must pass
 npm run build         # Build must succeed
 
 # Quick validation:
-npm run validate      # Runs lint + test:critical
+npm run validate:quick   # Runs lint + test:changed (fastest)
+npm run validate         # Runs lint + all tests (full)
 ```
 
 **If validation fails:**
@@ -507,7 +508,7 @@ git push origin --delete feature/wave-X/nome-descritivo
 | Anti-Pattern | Consequence | Prevention |
 |--------------|-------------|------------|
 | Commit directly to `main` | Unreviewed code in production | Always create branch first |
-| Skip local validation | Broken builds in CI | Run `npm run validate` before push |
+| Skip local validation | Broken builds in CI | Run `npm run validate:quick` before push |
 | Push without PR | No code review | Always create PR |
 | Use `--no-verify` | Skip quality gates | Never use except emergencies |
 | Merge own PR without review | No quality assurance | Wait for reviewer approval |
@@ -609,15 +610,15 @@ analyticsService.track('push_opted_in', { source: 'settings_page' })
 │    (Autorização e Coordenação)          │
 └─────────────┬───────────────────────────┘
               │
-    ┌─────────┼─────────┐
-    ↓         ↓         ↓
+     ┌─────────┼─────────┐
+     ↓         ↓         ↓
 ┌───────┐ ┌───────┐ ┌───────┐
 │Backend│ │Frontend│ │Infra  │
 │ Agent │ │ Agent  │ │ Agent │
 └───┬───┘ └───┬───┘ └───┬───┘
     │         │         │
     ↓         ↓         ↓
-Subagentes Subagentes Subagentes
+ Subagentes Subagentes Subagentes
 ```
 
 ### Responsabilidades por Agente
@@ -684,4 +685,4 @@ Antes de aprovar qualquer PR, verificar:
 
 ---
 
-*Última atualização: 13/02/2026 | v2.8.0*
+*Última atualização: 21/02/2026 | v2.8.1*
