@@ -43,7 +43,7 @@ export default defineConfig({
       'src/services/**/*.test.{js,jsx}',
       'src/utils/**/*.test.{js,jsx}',
       'src/schemas/**/*.test.{js,jsx}',
-      'src/hooks/**/*.test.{js,jsx}',
+      'src/shared/hooks/**/*.test.{js,jsx}',
       // Features: apenas services, utils, hooks (NÃO components)
       'src/features/**/services/**/*.test.{js,jsx}',
       'src/features/**/utils/**/*.test.{js,jsx}',
