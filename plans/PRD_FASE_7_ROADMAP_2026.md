@@ -1,531 +1,720 @@
-# PRD Fase 7: Inteligencia e Monetizacao (Condicional)
+# PRD Fase 7: Voz, IA Aplicada e Expansão Internacional (Condicional)
 
-**Versao:** 1.0  
-**Status:** DRAFT  
-**Data:** 08/02/2026  
-**Fase do Roadmap:** 7 de 7  
-**Baseline:** Fase 6 concluida (Cuidador + Offline + Multi-perfil)  
-**Principio:** Custo operacional R$ 1-20/mes (primeira fase com custo variavel)  
-**Condicional:** Ativacao depende de gatilhos de validacao  
+**Versão:** 2.0
+**Status:** DRAFT
+**Data:** 21/02/2026
+**Fase do Roadmap:** 7 de 7
+**Baseline:** v2.8.1 + Fases 5, 5.5 e 6 concluídas
+**Princípio:** Custo operacional R$ 0 (Voice + i18n + B2B) ou R$ 1-20/mês (Groq + OCR — condicionais)
+**Condicional:** Ativação depende de gatilhos de validação
 
 ---
 
-## 1. Visao Geral e Objetivos Estrategicos
+## 1. Visão Geral e Objetivos Estratégicos
 
-A Fase 7 e a unica fase condicional do roadmap. Introduz inteligencia artificial (chatbot), backup criptografado, notificacoes avancadas para cuidadores e importacao via OCR. E a primeira fase que aceita custo operacional variavel, justificado pela base de usuarios validada.
+A Fase 7 opera em dois modos simultâneos:
 
-### Gatilhos de Ativacao
+**Modo gratuito (V01-V02, L01-L04, B01-B02):** Features de voz, internacionalização e portal B2B que custam R$ 0 e podem ser ativadas assim que os gatilhos mínimos forem atingidos.
+
+**Modo condicional (F7.1-F7.4):** IA, backup e OCR com custo variável (R$ 1-20/mês), ativados apenas com validação de base de usuários.
+
+**Contexto acumulado das fases anteriores que potencializa a Fase 7:**
+- Usuários têm meses de dados históricos → Groq chatbot tem contexto rico (medicamentos, aderência, histórico)
+- WhatsApp Bot (F6.0) é o canal pelo qual o chatbot também responderá
+- Heatmap de padrões e score de risco (Fase 5.5) → Voice interface pode narrar esses insights
+- Portal Médico (B01) usa o mesmo modelo de compartilhamento do Modo Cuidador (F6.1)
+
+### Gatilhos de Ativação
 
 | Gatilho | Meta | Status |
 |---------|------|--------|
-| Usuarios registrados | >= 100 | Pendente |
-| Usuarios ativos mensais | >= 50 | Pendente |
+| Usuários registrados | >= 100 | Pendente |
+| Usuários ativos mensais | >= 50 | Pendente |
 | Receita mensal potencial validada | >= R$ 500 | Pendente |
-| Instalacoes PWA | >= 30% dos usuarios mobile | Pendente |
+| Instalações PWA | >= 30% dos usuários mobile | Pendente |
 
-**Regra:** Ativar Fase 7 quando pelo menos 2 dos 4 gatilhos forem atingidos.
+**Regra:** Ativar features condicionais (F7.1-F7.4) quando pelo menos 2 dos 4 gatilhos forem atingidos. Features gratuitas (Voice, i18n, B2B) podem ser ativadas com apenas 1 gatilho atingido.
 
-### Objetivos Estrategicos
+### Objetivos Estratégicos
 
-| ID | Objetivo | Metrica Primaria |
+| ID | Objetivo | Métrica Primária |
 |----|----------|-----------------|
-| OE7.1 | Oferecer assistente IA para duvidas sobre medicamentos | > 2 perguntas/dia/usuario |
-| OE7.2 | Garantir seguranca de dados com backup criptografado | > 30% usuarios com backup ativo |
-| OE7.3 | Aumentar valor para cuidadores com relatorios automaticos | > 50% cuidadores recebem relatorio semanal |
-| OE7.4 | Simplificar cadastro de medicamentos via OCR | > 80% acuracia na identificacao |
-| OE7.5 | Validar modelo freemium | > 5% conversao para plano pago |
+| OE7.1 | Oferecer registro de dose por voz (acessibilidade) | > 20% dos registros via voz em usuários 50+ |
+| OE7.2 | Preparar internacionalização (PT-PT, ES, mercado LATAM) | App funcional em PT-PT e ES |
+| OE7.3 | Criar canal B2B para profissionais de saúde | > 5% usuários compartilham com médico via portal |
+| OE7.4 | Oferecer assistente IA para dúvidas sobre medicamentos | > 2 perguntas/dia/usuário ativo |
+| OE7.5 | Garantir segurança de dados com backup criptografado | > 30% usuários com backup ativo |
+| OE7.6 | Simplificar cadastro de medicamentos via OCR | > 80% acurácia na identificação |
+| OE7.7 | Validar modelo de monetização | > 5% conversão freemium ou receita via B2B |
 
-### Pre-requisitos
+### Pré-requisitos
 
-- Fase 6 concluida (Cuidador, Offline, Multi-perfil)
-- Gatilhos de ativacao atingidos
-- Conta Groq API configurada (free tier: 30 req/min)
-- Decisao sobre modelo de monetizacao (freemium vs doacao)
+- ✅ Fase 6 concluída (WhatsApp Bot, Cuidador multi-canal, Multi-perfil)
+- ✅ Fase 5.5 concluída (insights preditivos com dados históricos ricos)
+- Gatilhos de ativação atingidos (ao menos 1 para features gratuitas, 2 para condicionais)
+- Conta Groq API configurada (free tier: 30 req/min) — apenas para F7.4
 
 ---
 
 ## 2. Escopo de Features
 
+### Grupo A — Gratuito (custo R$ 0, ativar com 1 gatilho)
+
+| ID | Feature | Prioridade | Story Points | Novas Dependências |
+|----|---------|------------|-------------|-------------------|
+| **V01** | **Registro de Dose por Voz** | **P0** | **13** | **Nenhuma (Web Speech API nativa)** |
+| **V02** | **Resumo de Doses por Voz** | **P1** | **5** | **Nenhuma (Web Speech Synthesis nativa)** |
+| **L01** | **Arquitetura i18n (react-i18next)** | **P0** | **8** | **react-i18next (~30KB)** |
+| **L02** | **Português Portugal (PT-PT)** | **P1** | **3** | **Nenhuma** |
+| **L03** | **Espanhol (ES)** | **P1** | **5** | **Nenhuma** |
+| **L04** | **Abstração de Base de Medicamentos por País** | **P2** | **8** | **Nenhuma** |
+| **B01** | **Portal Médico/Farmacêutico (read-only)** | **P1** | **13** | **Nenhuma** |
+| **B02** | **Integração Farmácia via Afiliação** | **P2** | **8** | **Nenhuma** |
+
+**Esforço Grupo A:** 63 SP
+
+### Grupo B — Condicional (custo R$ 1-20/mês, ativar com 2 gatilhos)
+
 | ID | Feature | Prioridade | Story Points | Custo Estimado |
 |----|---------|------------|-------------|---------------|
-| F7.1 | Chatbot IA com Groq | P0 | 13 | R$ 0-5/mes (free tier) |
-| F7.2 | Backup Automatico Criptografado | P1 | 8 | R$ 0-5/mes (storage) |
-| F7.3 | Notificacoes Avancadas Cuidador | P1 | 5 | R$ 0 (Telegram) |
-| F7.4 | Importacao via Foto OCR | P2 | 21 | R$ 0-10/mes (API OCR) |
+| F7.1 | Chatbot IA com Groq (multi-canal: web + WhatsApp) | P0 | 13 | R$ 0-5/mês (free tier) |
+| F7.2 | Backup Automático Criptografado | P1 | 8 | R$ 0-5/mês (storage) |
+| F7.3 | Notificações Avançadas Cuidador (relatório semanal) | P1 | 5 | R$ 0 (bot) |
+| F7.4 | Importação via Foto OCR | P2 | 21 | R$ 0-10/mês (Tesseract.js) |
 
-**Esforco Total:** 47 story points  
-**Custo Operacional Estimado:** R$ 1-20/mes  
-
-### Fora de Escopo
-
-- Prescricao digital ou integracao com farmacias
-- Modelo de assinatura complexo (manter simples)
-- IA generativa para recomendacoes medicas (risco regulatorio)
-- Integracao com wearables (Apple Health, Google Fit)
+**Esforço Grupo B:** 47 SP
+**Esforço Total Fase 7:** 110 SP
 
 ---
 
-## 3. Descricao Detalhada de Features
+## 3. Descrição Detalhada — Grupo A (Gratuito)
 
-### F7.1 Chatbot IA com Groq
+### V01 Registro de Dose por Voz ⭐ NOVO
 
-**Titulo:** Assistente IA para duvidas sobre medicamentos usando Groq API  
-**Rastreabilidade:** Roadmap 2026 - Fase 7, C01  
+**Título:** Registro de dose via reconhecimento de voz (Web Speech API — custo zero)
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, V01
 
-**Descricao:**  
-Chatbot integrado ao app e ao bot Telegram que responde duvidas sobre medicamentos do usuario. Usa Groq API (LLaMA 3) para respostas rapidas e gratuitas (free tier). Contexto limitado aos medicamentos cadastrados do usuario. Inclui disclaimer medico obrigatorio em todas as respostas.
+**Descrição:**
+"Tomei meu remédio" → o app reconhece a fala, exibe os protocolos do horário atual para confirmação e registra a dose. Usa Web Speech API (nativa em todos os browsers modernos — Chrome, Safari 17+, Firefox), sem dependência de serviço externo, funciona offline com reconhecimento local em devices modernos.
 
-**Requisitos Tecnicos:**
+**Por que é diferencial no mercado BR:**
+- 40% dos usuários de apps de saúde no Brasil têm 50+ anos
+- Interface por voz elimina 3-4 toques de precisão por um comando natural
+- Nenhuma solução de saúde digital no Brasil oferece registro de dose por voz
+- Acessibilidade real para usuários com dificuldade motora (~15M no Brasil)
 
-**Backend (Vercel Serverless):**
-- Endpoint `api/chat/ask.js` (POST)
-- Integracao com Groq SDK (`groq-sdk`)
-- System prompt com contexto dos medicamentos do usuario
-- Rate limiting: 10 perguntas/hora/usuario
-- Historico de conversa: ultimas 5 mensagens (contexto)
-- Timeout: 10s por resposta
-
-**System Prompt:**
+**Fluxo de Interação:**
 
 ```
-Voce e um assistente de saude do app Meus Remedios. Voce ajuda o usuario 
-a entender seus medicamentos, horarios e possiveis efeitos colaterais.
-
-REGRAS OBRIGATORIAS:
-1. SEMPRE inclua o disclaimer: "Esta informacao nao substitui orientacao medica."
-2. NUNCA recomende iniciar, parar ou alterar dosagem de medicamentos.
-3. NUNCA faca diagnosticos.
-4. Responda APENAS sobre os medicamentos listados abaixo.
-5. Se a pergunta nao for sobre medicamentos, responda educadamente que 
-   so pode ajudar com duvidas sobre medicamentos.
-6. Respostas em portugues brasileiro, linguagem acessivel.
-
-Medicamentos do usuario:
-{medications_context}
+Usuário fala: "Tomei meu remédio"
+  → Speech Recognition → texto transcrito
+  → Parser: identifica intenção "registrar dose"
+  → Mostra protocolos do horário atual (sem abrir teclado)
+  → Usuário confirma por voz ("sim") ou toque
+  → Dose registrada → feedback por voz: "Losartana registrada!"
 ```
 
-**Frontend:**
-- Componente `src/components/chat/ChatInterface.jsx`
-- Componente `src/components/chat/ChatMessage.jsx`
-- Componente `src/components/chat/ChatInput.jsx`
-- Rota `#/assistente`
-- Historico local (localStorage, ultimas 50 mensagens)
-- Indicador de "digitando..." durante resposta
+**Frases suportadas (parser de intenção):**
+- "Tomei meu remédio" / "Já tomei" / "Tomei agora"
+- "Qual remédio preciso tomar?" → aciona V02
+- "Quanto estoque tenho de [nome]?" → consulta estoque
+- "Minha adesão essa semana" → lê o score em voz
 
-**Bot Telegram:**
-- Comando `/perguntar {texto}` ou `/p {texto}`
-- Resposta formatada em MarkdownV2
-- Disclaimer inline em todas as respostas
+**Requisitos Técnicos:**
+- Hook `src/shared/hooks/useVoiceInput.js` (Speech Recognition API)
+- Service `src/features/dashboard/services/voiceIntentParser.js` (regex + NLP simples)
+- Componente `src/shared/components/ui/VoiceButton.jsx` (microfone FAB)
+- Feature flag: desabilitado se browser não suporta (`'webkitSpeechRecognition' in window`)
+- Graceful degradation: exibe mensagem "Voz não suportada" e mantém interface táctil
 
-**Criterios de Aceitacao:**
-- [ ] Chatbot responde em < 5s
-- [ ] Disclaimer presente em TODAS as respostas
-- [ ] Contexto limitado aos medicamentos do usuario
-- [ ] Rate limit de 10 perguntas/hora/usuario
-- [ ] Recusa educada para perguntas fora do escopo
-- [ ] Nunca recomenda alterar tratamento
-- [ ] Funciona via web e Telegram
-- [ ] Historico de conversa persistido localmente
-- [ ] Fallback gracioso se Groq API indisponivel
-- [ ] Feedback positivo/negativo por resposta (thumbs up/down)
+**Suporte por Browser:**
 
-**Exemplos de Interacao:**
+| Browser | Suporte | Nota |
+|---------|---------|------|
+| Chrome (Android/Desktop) | ✅ Pleno | Reconhecimento local desde Chrome 88 |
+| Safari (iOS 17+) | ✅ Pleno | iOS 17 adicionou suporte |
+| Safari (iOS < 17) | ⚠️ Limitado | Graceful degradation |
+| Firefox | ⚠️ Limitado | API disponível mas menos robusta |
 
-| Pergunta | Resposta Esperada |
-|----------|------------------|
-| "Posso tomar Losartana com cafe?" | "A Losartana pode ser tomada com ou sem alimentos. O cafe nao interfere significativamente na absorcao. Esta informacao nao substitui orientacao medica." |
-| "Qual o efeito colateral do Ibuprofeno?" | "Os efeitos colaterais mais comuns do Ibuprofeno incluem dor de estomago, nausea e tontura. Se sentir algum efeito colateral, consulte seu medico. Esta informacao nao substitui orientacao medica." |
-| "Estou com dor de cabeca, o que tomo?" | "Nao posso recomendar medicamentos. Consulte seu medico ou farmaceutico para orientacao sobre dor de cabeca. Esta informacao nao substitui orientacao medica." |
-| "Qual a capital da Franca?" | "Desculpe, so posso ajudar com duvidas sobre seus medicamentos. Posso ajudar com algo sobre Losartana, Ibuprofeno ou seus outros medicamentos?" |
+**Critérios de Aceitação:**
+- [ ] Ativação via botão de microfone no dashboard (FAB acessível)
+- [ ] Reconhece "Tomei meu remédio" com > 85% de precisão
+- [ ] Exibe protocolos do horário atual para confirmação sem teclado
+- [ ] Confirmação por voz ("sim"/"não") ou toque
+- [ ] Feedback de voz ao registrar ("Losartana de 8h registrada")
+- [ ] Feature flag: desativado graciosamente em browsers sem suporte
+- [ ] Respeita `prefers-reduced-motion` (sem animações excessivas durante voz)
+- [ ] LGPD: nenhum áudio enviado a servidores (processamento local)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-7.1.1 | Usuario | Abre `#/assistente` -> digita "Posso tomar Losartana a noite?" -> resposta em < 5s com disclaimer |
-| UC-7.1.2 | Usuario | No Telegram: `/perguntar efeito colateral losartana` -> resposta formatada |
-| UC-7.1.3 | Usuario | Faz pergunta fora do escopo -> recusa educada |
-| UC-7.1.4 | Usuario | Groq API fora do ar -> mensagem "Assistente temporariamente indisponivel" |
-| UC-7.1.5 | Usuario | Da thumbs down em resposta -> feedback registrado para melhoria |
-
-**Dependencias:** Groq API (free tier), Vercel Serverless, Bot Telegram  
-**Impacto Financeiro:** R$ 0-5/mes (Groq free tier: 30 req/min, 14.4K tokens/min)  
+**Dependências:** Nenhuma nova (Web Speech API nativa)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F7.2 Backup Automatico Criptografado
+### V02 Resumo de Doses por Voz ⭐ NOVO
 
-**Titulo:** Backup automatico dos dados do usuario com criptografia client-side  
-**Rastreabilidade:** Roadmap 2026 - Fase 7, C02  
+**Título:** Narração das próximas doses e status do dia por síntese de voz
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, V02
 
-**Descricao:**  
-Sistema de backup automatico que exporta todos os dados do usuario em formato JSON criptografado. A chave de criptografia e derivada de uma senha escolhida pelo usuario (PBKDF2 + AES-256-GCM). O backup e armazenado no Supabase Storage (free tier: 1GB). Restauracao possivel em qualquer dispositivo com a senha correta.
+**Descrição:**
+"Quais remédios ainda preciso tomar?" → síntese de voz lista as doses pendentes do dia. Usa Web Speech Synthesis API (nativa, zero custo). Complementa V01 — juntos formam uma interface hands-free completa.
 
-**Requisitos Tecnicos:**
+**Frases de ativação:**
+- "Quais remédios ainda preciso tomar?"
+- "Meu próximo remédio é qual?"
+- "Meu histórico de hoje"
 
-**Criptografia (Web Crypto API):**
-- Derivacao de chave: PBKDF2 (100.000 iteracoes, SHA-256)
-- Criptografia: AES-256-GCM
-- Salt unico por backup (armazenado no header do arquivo)
-- IV unico por operacao de criptografia
-- Zero dependencias externas (Web Crypto API nativa)
+**Resposta de voz (exemplo):**
+> "Você ainda tem 2 doses para hoje: Metformina às 13h e Rivotril às 21h. Sua adesão hoje é de 67%. Bora caprichar!"
 
-**Backend:**
-- Supabase Storage bucket `backups` (privado, RLS)
-- Politica: usuario so acessa seus proprios backups
-- Limite: 1 backup por usuario (sobrescreve anterior)
-- Tamanho maximo: 5MB por backup
+**Critérios de Aceitação:**
+- [ ] Síntese de voz clara em português brasileiro
+- [ ] Velocidade de fala ajustável (configuração do sistema respeitada)
+- [ ] Botão de interrupção (parar narração)
+- [ ] Funciona com app em segundo plano (notificação do sistema)
 
-**Frontend:**
-- Service `src/services/backupService.js`
-- Metodos: `createBackup(password)`, `restoreBackup(file, password)`, `scheduleAutoBackup()`
-- Componente `src/components/settings/BackupSettings.jsx`
-- Componente `src/components/settings/RestoreBackup.jsx`
-- Auto-backup semanal (se habilitado, senha salva em memoria apenas durante sessao)
+**Dependências:** V01 (hook useVoiceInput), Web Speech Synthesis (nativa)
+**Impacto Financeiro:** R$ 0
 
-**Estrutura do Backup:**
+---
 
-```json
-{
-  "version": "1.0",
-  "created_at": "2026-02-08T10:00:00Z",
-  "salt": "base64...",
-  "iv": "base64...",
-  "data": "encrypted_base64..."
+### L01 Arquitetura i18n (react-i18next) ⭐ NOVO
+
+**Título:** Scaffold de internacionalização para múltiplos idiomas sem reescrita
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, L01
+
+**Descrição:**
+Refatoração pontual para extrair todas as strings hardcoded para arquivos de locale. A estrutura do código não muda — apenas strings são externalizadas. Habilita PT-PT, ES e qualquer idioma futuro sem reescrita.
+
+**Estratégia de migração:**
+1. Instalar `react-i18next` e configurar
+2. Criar `src/locales/pt-BR/` com todas as strings atuais (linha de base)
+3. Usar `i18n.t('key')` nas strings identificadas (gradual, por feature)
+4. Não quebrar nada — PT-BR continua idêntico
+
+**Estrutura de locales:**
+```
+src/locales/
+├── pt-BR/            ← baseline (extraído das strings atuais)
+│   ├── common.json   ← botões, labels, ações genéricas
+│   ├── dashboard.json
+│   ├── medications.json
+│   ├── protocols.json
+│   ├── stock.json
+│   ├── adherence.json
+│   └── errors.json
+├── pt-PT/            ← L02 (diferenças mínimas: "comprimido" vs "comprido", etc.)
+└── es/               ← L03
+```
+
+**Critérios de Aceitação:**
+- [ ] Zero regressão em PT-BR após migração
+- [ ] Todas as strings da UI externalizadas para `pt-BR/`
+- [ ] Strings de erro em português mantidas (já estavam corretas)
+- [ ] `i18n.changeLanguage()` muda idioma instantaneamente sem reload
+- [ ] Bundle de locale carregado sob demanda (lazy)
+
+**Dependências:** react-i18next (~30KB)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### L02 Português Portugal (PT-PT) ⭐ NOVO
+
+**Título:** Primeiro idioma adicional — Português de Portugal
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, L02
+
+**Justificativa:** Portugal tem mercado de saúde digital subatendido. Zero adaptação de banco de dados (mesmo schema). ANVISA → INFARMED (Portugal) para interações medicamentosas.
+
+**Diferenças PT-BR vs PT-PT (exemplos):**
+- "comprimido" → "comprimido" (igual)
+- "celular" → "telemóvel"
+- "aplicativo" → "aplicação"
+- "você" → "você/tu" (ajuste de tom)
+- Unidades monetárias: R$ → €
+
+**Critérios de Aceitação:**
+- [ ] Arquivo `pt-PT/` com 100% das strings traduzidas
+- [ ] Detecção automática por `navigator.language`
+- [ ] Opção de seleção manual em Configurações
+- [ ] Fuso horário: Europe/Lisbon suportado
+
+**Dependências:** L01 (arquitetura i18n)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### L03 Espanhol (ES) ⭐ NOVO
+
+**Título:** Espanhol para mercado LATAM e hispânicos nos EUA
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, L03
+
+**Mercado potencial:**
+- Chile, Argentina, Colômbia, México: ~100M de usuários potenciais
+- US Hispanic market: ~60M pessoas, maior comunidade imigrante
+- App stores em espanhol: mercado 5x maior que Brasil
+
+**Escopo:** Espanhol neutro (LATAM) como primeira variante. ES-ES e ES-MX como variantes futuras.
+
+**Critérios de Aceitação:**
+- [ ] Arquivo `es/` com 100% das strings traduzidas
+- [ ] Detecção automática por `navigator.language`
+- [ ] Unidades monetárias: $ (neutro)
+- [ ] Validações de data respeitam localização
+
+**Dependências:** L01 (arquitetura i18n)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### L04 Abstração de Base de Medicamentos por País ⭐ NOVO
+
+**Título:** Interface IDrugDatabase com adapters por país para interações medicamentosas
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, L04
+
+**Descrição:**
+A base de interações medicamentosas da Fase 5 (F5.6) foi construída sobre dados ANVISA (Brasil). Para expandir internacionalmente, é necessário abstrair a fonte de dados:
+
+```javascript
+// Interface
+interface IDrugDatabase {
+  checkInteractions(medications: string[]): Interaction[]
+  getDrugInfo(name: string): DrugInfo | null
+  searchDrug(query: string): DrugSuggestion[]
 }
+
+// Adapters
+AnvisaAdapter implements IDrugDatabase  // Brasil (já existe)
+InfarmedAdapter implements IDrugDatabase // Portugal
+FDAAdapter implements IDrugDatabase      // EUA
+EMAAdapter implements IDrugDatabase      // Europa
 ```
 
-**Dados Incluidos no Backup:**
-- Medicamentos
-- Protocolos
-- Historico de doses (ultimos 365 dias)
-- Estoque
-- Perfis
-- Configuracoes
-- Rituais (localStorage)
+**Critérios de Aceitação:**
+- [ ] `AnvisaAdapter` refatora a base existente sem regressão
+- [ ] `InfarmedAdapter` para PT-PT com dados básicos
+- [ ] Seleção automática do adapter pelo `navigator.language`
+- [ ] Fallback para ANVISA se adapter do país não encontrado
 
-**Criterios de Aceitacao:**
+**Dependências:** L01, F5.6 (interações existentes)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### B01 Portal Médico/Farmacêutico ⭐ NOVO
+
+**Título:** Link read-only compartilhado com profissional de saúde (com consentimento LGPD)
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, B01
+
+**Descrição:**
+O paciente gera um link temporário (com expiração) para o médico ou farmacêutico visualizar seus dados clínicos em uma interface otimizada para profissionais: adesão histórica, protocolos, timeline de titulação, estoque. Sem necessidade de o profissional ter conta no app.
+
+**Diferenciação vs Modo Cuidador (F6.1):**
+
+| | Modo Cuidador | Portal Profissional |
+|--|---|---|
+| Quem usa | Familiar/amigo | Médico/Farmacêutico |
+| Conta necessária | Sim | Não |
+| Notificações | Sim (alertas de dose) | Não |
+| Foco | Acompanhamento contínuo | Consulta pontual |
+| Link | Permanente (revogável) | Temporário (expiração: 7/30 dias) |
+| Interface | Dashboard adaptado | Visão clínica resumida |
+
+**Requisitos Técnicos:**
+- Endpoint `api/professional-view/:token` (sem autenticação, token de acesso)
+- Token gerado com expiração: `token = jwt.sign({ userId, scope }, secret, { expiresIn: '7d' })`
+- Página pública `src/views/ProfessionalView.jsx` (sem layout do app)
+- Dados exibidos: adesão (gráfico), protocolos ativos, última dose, estoque, score de risco (Fase 5.5)
+- LGPD: consentimento explícito ao gerar o link ("Você está compartilhando seus dados com um profissional")
+
+**Potential Premium Feature:**
+- Link básico (7 dias, 1 profissional): gratuito
+- Link avançado (30 dias, múltiplos profissionais, histórico completo): Premium
+
+**Critérios de Aceitação:**
+- [ ] Link gerado com expiração configurável (7 ou 30 dias)
+- [ ] Página pública funciona sem login
+- [ ] Exibe: adesão, protocolos, estoque, score de risco (Fase 5.5)
+- [ ] Consentimento explícito LGPD ao gerar (double opt-in)
+- [ ] Link pode ser revogado a qualquer momento
+- [ ] Não exibe dados sensíveis além dos clínicos (sem histórico de pagamentos, configurações)
+- [ ] Validade visível na página: "Dados de [data] — válido até [data]"
+
+**Dependências:** F5.1 (dados de relatório), Fase 5.5 (score de risco), F6.1 (modelo de compartilhamento)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### B02 Integração Farmácia via Afiliação ⭐ NOVO
+
+**Título:** Link afiliado para farmácias quando estoque está crítico
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, B02
+
+**Descrição:**
+Quando o estoque de um medicamento está baixo (< 7 dias), o app exibe um CTA "Comprar em [Farmácia]" com link de afiliação para farmácias parceiras (Ultrafarma, Droga Raia, Drogasil). Modelo CPA (custo por aquisição) — zero custo de integração, receita variável.
+
+**Implementação:** Deep links para busca pré-preenchida nas farmácias:
+```
+https://www.ultrafarma.com.br/busca?q=losartana+50mg&referral=meusremedios
+```
+
+**Critérios de Aceitação:**
+- [ ] CTA aparece nos alertas de estoque baixo (SmartAlerts e StockAlertsWidget)
+- [ ] Link abre a farmácia com busca pré-preenchida pelo nome do medicamento
+- [ ] Mínimo 3 farmácias BR como opções
+- [ ] Tracking de cliques via `analyticsService.js` existente (✅ F4.4)
+- [ ] Desativável pelo usuário (configuração de privacidade)
+- [ ] Zero coleta de dados de compra — apenas o clique é rastreado localmente
+
+**Dependências:** analyticsService (✅ F4.4), SmartAlerts (✅ HCC)
+**Impacto Financeiro:** R$ 0 (receita potencial via CPA)
+
+---
+
+## 4. Descrição Detalhada — Grupo B (Condicional)
+
+### F7.1 Chatbot IA com Groq (multi-canal)
+
+**Título:** Assistente IA para dúvidas sobre medicamentos via web e WhatsApp
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, C01
+
+**Descrição:**
+Chatbot integrado ao app web **e ao WhatsApp Bot** (F6.0) que responde dúvidas sobre medicamentos do usuário. Usa Groq API (LLaMA 3) com free tier (30 req/min). Contexto rico: inclui medicamentos cadastrados, adesão recente, insights preditivos da Fase 5.5.
+
+**System Prompt Atualizado (com contexto da Fase 5.5):**
+
+```
+Você é um assistente de saúde do app Meus Remédios.
+
+REGRAS OBRIGATÓRIAS:
+1. SEMPRE inclua: "Esta informação não substitui orientação médica."
+2. NUNCA recomende iniciar, parar ou alterar dosagem.
+3. NUNCA faça diagnósticos.
+4. Responda APENAS sobre os medicamentos listados abaixo.
+5. Respostas em português brasileiro, linguagem acessível.
+
+Contexto do usuário:
+- Medicamentos: {medications_context}
+- Adesão últimos 30d: {adherence_score}%
+- Streak atual: {streak} dias
+- Score de risco: {risk_score_context}  ← novo (Fase 5.5)
+- Próxima reposição prevista: {refill_prediction}  ← novo (Fase 5.5)
+```
+
+**Canais:**
+- Web: componente `src/features/dashboard/components/ChatInterface.jsx`, rota `#/assistente`
+- WhatsApp: comando `/perguntar {texto}` ou `/p {texto}` via `WhatsAppAdapter` (F6.0)
+- Telegram: comando `/perguntar {texto}` (já existente, adaptar)
+
+**Critérios de Aceitação:**
+- [ ] Chatbot responde em < 5s
+- [ ] Disclaimer em TODAS as respostas
+- [ ] Funciona via web, WhatsApp e Telegram
+- [ ] Rate limit: 10 perguntas/hora/usuário
+- [ ] Contexto inclui insights preditivos da Fase 5.5
+- [ ] Feedback thumbs up/down por resposta
+- [ ] Fallback gracioso se Groq API indisponível
+
+**Exemplos de Interação com Contexto Fase 5.5:**
+
+| Pergunta | Resposta com Contexto |
+|----------|----------------------|
+| "Posso tomar Losartana com café?" | "Sim, pode tomar com ou sem alimentos. Ps: vi que sua adesão está em 73% essa semana — tente tomar no mesmo horário do café da manhã para lembrar. Esta informação não substitui orientação médica." |
+
+**Dependências:** Groq API, WhatsApp Bot (F6.0), Fase 5.5 (contexto)
+**Impacto Financeiro:** R$ 0-5/mês (Groq free tier: 30 req/min, 14.4K tokens/min)
+
+---
+
+### F7.2 Backup Automático Criptografado
+
+*(Conteúdo original preservado — sem mudanças de escopo)*
+
+**Criptografia (Web Crypto API — nativa, zero dependências):**
+- Derivação de chave: PBKDF2 (100.000 iterações, SHA-256)
+- Criptografia: AES-256-GCM
+- Salt único por backup (armazenado no header)
+- Zero dependências externas
+
+**Dados Incluídos no Backup:**
+- Medicamentos, Protocolos, Histórico de doses (últimos 365 dias)
+- Estoque, Perfis, Configurações, Rituais (localStorage)
+- Insights preditivos cacheados (Fase 5.5) — *novo*
+
+**Critérios de Aceitação:**
 - [ ] Backup criptografado com AES-256-GCM
-- [ ] Chave derivada com PBKDF2 (100K iteracoes)
-- [ ] Restauracao funcional com senha correta
-- [ ] Erro claro com senha incorreta (sem revelar dados parciais)
+- [ ] Chave derivada com PBKDF2 (100K iterações)
+- [ ] Restauração funcional com senha correta em outro dispositivo
 - [ ] Auto-backup semanal (se habilitado)
 - [ ] Tamanho do backup < 5MB
 - [ ] Upload para Supabase Storage com RLS
-- [ ] Download e restauracao funcional em outro dispositivo
-- [ ] Indicador visual de ultimo backup realizado
-- [ ] Opcao de backup manual a qualquer momento
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-7.2.1 | Usuario | Vai em Perfil -> Backup -> define senha -> "Criar backup" -> upload para Supabase |
-| UC-7.2.2 | Usuario | Novo dispositivo -> "Restaurar backup" -> insere senha -> dados restaurados |
-| UC-7.2.3 | Usuario | Habilita auto-backup -> backup semanal automatico (domingo 3h) |
-| UC-7.2.4 | Usuario | Tenta restaurar com senha errada -> erro "Senha incorreta" |
-
-**Dependencias:** Supabase Storage (free tier), Web Crypto API  
-**Impacto Financeiro:** R$ 0-5/mes (Supabase Storage free: 1GB)  
+**Dependências:** Supabase Storage (free tier: 1GB), Web Crypto API
+**Impacto Financeiro:** R$ 0-5/mês
 
 ---
 
-### F7.3 Notificacoes Avancadas Cuidador
+### F7.3 Notificações Avançadas Cuidador
 
-**Titulo:** Relatorios semanais automaticos e alertas criticos para cuidadores  
-**Rastreabilidade:** Roadmap 2026 - Fase 7, C04  
+**Título:** Relatórios semanais automáticos e alertas críticos para cuidadores
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 7, C04
 
-**Descricao:**  
-Expandir o sistema de cuidador (F6.1) com relatorios semanais automaticos e alertas criticos. O cuidador recebe no Telegram um resumo semanal da adesao do paciente e alertas imediatos para situacoes criticas (3+ doses consecutivas perdidas, estoque zerado).
+**Descrição:**
+Expande o Modo Cuidador (F6.1) com relatórios semanais automáticos. O cuidador recebe pelo canal configurado (WhatsApp ou Telegram — graças ao adapter pattern da F6.0) um resumo semanal da adesão do paciente.
 
-**Requisitos Tecnicos:**
-
-**Cron Jobs (Vercel):**
-- `api/cron/caregiver-weekly-report.js` (executa domingos 9h)
-- `api/cron/caregiver-critical-alerts.js` (executa a cada 6h)
-
-**Relatorio Semanal (Telegram):**
+**Relatório Semanal (via canal configurado do cuidador):**
 
 ```
-📊 Relatorio Semanal - {nome_paciente}
-Periodo: {data_inicio} a {data_fim}
+📊 Relatório Semanal — [Nome do paciente]
+Período: [data início] a [data fim]
 
-Adesao Geral: {score}%
-Doses Tomadas: {tomadas}/{total}
-Streak Atual: {streak} dias
-Estoque Critico: {medicamentos_criticos}
+Adesão Geral: [score]% | Streak: [streak] dias
+Doses Tomadas: [tomadas]/[total]
+⚠️ Estoque Crítico: [medicamentos com < 7 dias]
+🎯 Risco de Abandono: [protocolos com score Crítico]  ← Fase 5.5
 
 Detalhes por medicamento:
-- Losartana 50mg: {score}% ({tomadas}/{total})
-- Ibuprofeno 400mg: {score}% ({tomadas}/{total})
+- Losartana 50mg: [score]% ([tomadas]/[total])
 ```
 
-**Alertas Criticos:**
+**Alertas Críticos:**
 
-| Alerta | Condicao | Urgencia |
-|--------|----------|----------|
-| Doses consecutivas perdidas | >= 3 doses seguidas sem registro | Alta |
-| Estoque zerado | Quantidade = 0 | Alta |
-| Adesao semanal critica | Score < 50% na semana | Media |
+| Alerta | Condição | Canal |
+|--------|----------|-------|
+| Doses consecutivas perdidas | >= 3 doses seguidas | WhatsApp ou Telegram |
+| Estoque zerado | Quantidade = 0 | WhatsApp ou Telegram |
+| Protocolo em risco | Score Crítico por 3 dias (Fase 5.5) | WhatsApp ou Telegram |
 
-**Criterios de Aceitacao:**
-- [ ] Relatorio semanal enviado todo domingo as 9h
-- [ ] Relatorio inclui score, doses, streak e estoque
-- [ ] Alerta critico enviado em ate 6h apos condicao
-- [ ] Cuidador pode desativar relatorio semanal
-- [ ] Cuidador pode desativar alertas criticos
-- [ ] Paciente pode desativar envio para cuidador especifico
-- [ ] Formatacao MarkdownV2 no Telegram
+**Critérios de Aceitação:**
+- [ ] Relatório semanal enviado todo domingo às 9h pelo canal configurado
+- [ ] Inclui score de risco da Fase 5.5 como dado novo
+- [ ] Alerta crítico enviado em até 6h após condição
+- [ ] Cuidador pode desativar relatório semanal independentemente
+- [ ] Usa adapter pattern de F6.0 (Telegram ou WhatsApp conforme canal do cuidador)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-7.3.1 | Cuidador | Domingo 9h -> recebe relatorio semanal no Telegram -> ve que adesao caiu para 60% |
-| UC-7.3.2 | Cuidador | Paciente perde 3 doses seguidas -> cuidador recebe alerta critico -> liga para paciente |
-| UC-7.3.3 | Paciente | Desativa relatorio semanal para cuidador especifico -> cuidador para de receber |
-
-**Dependencias:** F6.1 (Modo Cuidador), Vercel Cron, Bot Telegram  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** F6.1 (Modo Cuidador), WhatsApp Bot (F6.0), Fase 5.5 (score de risco)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F7.4 Importacao via Foto OCR
+### F7.4 Importação via Foto OCR
 
-**Titulo:** Cadastro de medicamento via foto da caixa/receita usando OCR  
-**Rastreabilidade:** Roadmap 2026 - Fase 7, N07  
+*(Conteúdo original preservado — sem mudanças de escopo)*
 
-**Descricao:**  
-Permitir que o usuario tire uma foto da caixa do medicamento ou da receita medica e o sistema extraia automaticamente o nome do medicamento e a dosagem. Usa OCR (Tesseract.js client-side ou API externa) para reconhecimento de texto. Resultado apresentado para confirmacao antes de cadastrar.
+**Opção preferida: Tesseract.js client-side (custo R$ 0)**
+- ~2MB worker, lazy loaded
+- Modelo português (`por`)
+- Processamento 100% no dispositivo
 
-**Requisitos Tecnicos:**
-
-**Opcao A: Client-side (Tesseract.js) - Preferida (custo R$ 0)**
-- Instalar `tesseract.js` (~2MB worker, lazy loaded)
-- Processamento 100% no dispositivo do usuario
-- Modelo portugues (`por`) para melhor acuracia
-- Tempo estimado: 3-8s por imagem
-
-**Opcao B: API Externa (Google Vision / AWS Textract) - Fallback**
-- Endpoint `api/ocr/extract.js` (proxy para API)
-- Custo: ~R$ 0.01 por imagem
-- Tempo estimado: 1-3s por imagem
-
-**Frontend:**
-- Componente `src/components/import/PhotoImport.jsx`
-- Componente `src/components/import/CameraCapture.jsx` (acesso a camera)
-- Componente `src/components/import/OCRResult.jsx` (resultado para confirmacao)
-- Rota `#/importar/foto`
-
-**Fluxo de Processamento:**
-
+**Fluxo:**
 ```
-[Camera/Galeria] -> [Pre-processamento (crop, contraste)]
-    -> [OCR (Tesseract.js)] -> [Regex para extrair nome + dosagem]
-    -> [Fuzzy match com base de medicamentos conhecidos]
-    -> [Resultado para confirmacao do usuario]
-    -> [Cadastro do medicamento]
+[Câmera/Galeria] → [Pré-processamento (crop, contraste)]
+  → [OCR (Tesseract.js)] → [Regex para extrair nome + dosagem]
+  → [Fuzzy match com base ANVISA (~5.000 medicamentos)]
+  → [Resultado para confirmação do usuário]
+  → [Cadastro do medicamento]
 ```
 
-**Base de Medicamentos Conhecidos:**
-- JSON local com ~5.000 medicamentos mais comuns no Brasil
-- Campos: nome_comercial, principio_ativo, dosagens_comuns
-- Usado para fuzzy matching e autocomplete
-
-**Criterios de Aceitacao:**
-- [ ] Acesso a camera funcional (com permissao)
-- [ ] Upload de foto da galeria como alternativa
-- [ ] OCR identifica nome do medicamento com > 80% acuracia
-- [ ] OCR identifica dosagem com > 70% acuracia
-- [ ] Resultado apresentado para confirmacao (editavel)
-- [ ] Fuzzy match sugere medicamento mais proximo
-- [ ] Processamento em < 8s (client-side) ou < 3s (API)
-- [ ] Funciona com fotos de caixas e receitas impressas
+**Critérios de Aceitação:**
+- [ ] OCR identifica nome com > 80% acurácia
+- [ ] OCR identifica dosagem com > 70% acurácia
+- [ ] Resultado editável antes de confirmar
+- [ ] Processamento < 8s (client-side)
 - [ ] Fallback manual se OCR falhar
-- [ ] Lazy loading do worker Tesseract (nao impacta bundle inicial)
+- [ ] LGPD: imagem nunca enviada ao servidor (Tesseract.js local)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-7.4.1 | Usuario | Toca "Importar foto" -> tira foto da caixa -> OCR extrai "Losartana 50mg" -> confirma -> medicamento cadastrado |
-| UC-7.4.2 | Usuario | Foto da receita -> OCR extrai 3 medicamentos -> confirma cada um -> todos cadastrados |
-| UC-7.4.3 | Usuario | Foto com baixa qualidade -> OCR falha -> usuario digita manualmente (fallback) |
-| UC-7.4.4 | Usuario | OCR extrai "Losartan" -> fuzzy match sugere "Losartana" -> usuario confirma |
-
-**Dependencias:** Tesseract.js (client-side) ou API OCR (server-side)  
-**Impacto Financeiro:** R$ 0 (Tesseract.js) ou R$ 0-10/mes (API externa)  
+**Dependências:** Tesseract.js (~2MB, lazy loaded)
+**Impacto Financeiro:** R$ 0 (Tesseract.js) ou R$ 0-10/mês (API externa)
 
 ---
 
-## 4. Modelo de Monetizacao (Proposta)
+## 5. Modelo de Monetização
 
-### 4.1 Freemium
+### 5.1 Freemium
 
-| Tier | Preco | Features |
+| Tier | Preço | Features |
 |------|-------|----------|
-| Free | R$ 0 | Todas as features atuais (Fases 1-6) |
-| Premium | R$ 9,90/mes | Chatbot IA ilimitado, backup automatico, OCR ilimitado, relatorios avancados cuidador |
+| Free | R$ 0 | Todas as features das Fases 1–6 + Voice + i18n |
+| Premium | R$ 9,90/mês | Chatbot IA ilimitado, backup automático, OCR, Portal Profissional avançado (30 dias, múltiplos profissionais), suporte prioritário |
+| Família | R$ 14,90/mês | Premium + até 5 perfis + Cuidador avançado |
 
-### 4.2 Alternativa: Doacao
+### 5.2 Canal B2B (novo)
 
-| Modelo | Implementacao |
-|--------|--------------|
-| "Pague o que quiser" | Botao de doacao via Pix (sem gateway) |
-| Sponsor | Link para GitHub Sponsors |
+| Modelo | Implementação | Potencial |
+|--------|--------------|-----------|
+| Afiliação farmácias (B02) | CPA — zero custo de integração | R$ 1-50/mês dependendo do volume |
+| Portal Profissional Premium (B01) | Plano Premium cobre link de 30 dias | Parte do tier Premium |
+| White-label para clínicas | Não nesta fase — roadmap futuro | Fase 8+ |
 
-### 4.3 Decisao
+### 5.3 Decisão
 
-A decisao entre freemium e doacao sera tomada com base nos dados de engajamento coletados nas Fases 3-6. Se o engajamento for alto (DAU/MAU > 30%), freemium. Se for moderado, doacao.
-
-**Implementacao tecnica do paywall (se freemium):**
-- Feature flags em localStorage + Supabase
-- Verificacao client-side (confianca no usuario, sem DRM complexo)
-- Upgrade via Stripe Checkout (hosted page, sem PCI compliance)
+Freemium vs doação será decidido com base em dados de engajamento das Fases 3-6. Se DAU/MAU > 30%, freemium. Se moderado, doação via PIX.
 
 ---
 
-## 5. Requisitos Nao-Funcionais
+## 6. Requisitos Não-Funcionais
 
-| Requisito | Especificacao | Metrica |
+| Requisito | Especificação | Métrica |
 |-----------|--------------|---------|
 | Performance | Resposta chatbot | < 5s |
 | Performance | OCR client-side | < 8s |
+| Performance | Voice recognition (V01) | < 2s para início de reconhecimento |
 | Performance | Backup criptografia | < 3s para 5MB |
-| Seguranca | Criptografia backup | AES-256-GCM + PBKDF2 100K |
-| Seguranca | Groq API key | Server-side only (Vercel env) |
-| Seguranca | Dados do chatbot | Nenhum dado persistido no Groq |
-| Privacidade | OCR client-side | Zero upload de imagens |
-| Privacidade | Chatbot | Historico local only |
-| Disponibilidade | Chatbot | Fallback gracioso se API indisponivel |
-| Disponibilidade | OCR | Fallback manual sempre disponivel |
-| Custo | Total operacional | R$ 1-20/mes maximo |
-| Regulatorio | Chatbot | Disclaimer obrigatorio, sem diagnosticos |
+| Segurança | Criptografia backup | AES-256-GCM + PBKDF2 100K |
+| Segurança | Groq API key | Server-side only (Vercel env) |
+| Segurança | Portal Profissional | JWT com expiração, revogável |
+| Privacidade | OCR | Zero upload de imagens (Tesseract local) |
+| Privacidade | Voice | Nenhum áudio enviado a servidores |
+| Privacidade | Chatbot | Histórico local only |
+| Privacidade | Portal B2B | Consentimento LGPD explícito |
+| Disponibilidade | Chatbot | Fallback gracioso se Groq indisponível |
+| i18n | PT-PT e ES | 100% das strings cobertas |
+| Regulatório | Chatbot | Disclaimer obrigatório, sem diagnósticos |
 
 ---
 
-## 6. Plano de Testes
+## 7. Plano de Testes
 
-### 6.1 Testes Unitarios (Vitest)
+### 7.1 Testes Unitários (Vitest)
 
-| Componente | Cenarios |
+| Componente | Cenários |
 |------------|----------|
-| ChatInterface | Envia mensagem, recebe resposta, exibe disclaimer, rate limit |
-| backupService | Criptografa, descriptografa, senha errada, formato invalido |
-| OCRResult | Exibe resultado, permite edicao, fuzzy match |
-| caregiver-weekly-report | Gera relatorio correto, formata MarkdownV2 |
-| caregiver-critical-alerts | Detecta 3+ doses perdidas, estoque zerado |
+| useVoiceInput | Reconhece "tomei meu remédio", graceful degradation, feature flag |
+| voiceIntentParser | Parser de intenções, frases variadas, fora do escopo |
+| i18n locale PT-BR | Zero strings faltando, 100% cobertura |
+| i18n locale PT-PT | Diferenças BR→PT respeitadas |
+| IDrugDatabase adapters | AnvisaAdapter, InfarmedAdapter — contrato respeitado |
+| Portal Profissional | Token gerado, expiração, revogação |
+| ChatInterface | Disclaimer presente, rate limit, contexto Fase 5.5 incluído |
+| backupService | Criptografa, descriptografa, senha errada |
 
-### 6.2 Testes de Integracao
+### 7.2 Testes de Integração
 
-| Cenario | Validacao |
+| Cenário | Validação |
 |---------|-----------|
-| Chatbot end-to-end | Pergunta -> API Groq -> resposta com disclaimer |
-| Backup + restore | Cria backup -> novo dispositivo -> restaura com senha -> dados corretos |
-| OCR + cadastro | Foto -> OCR -> confirmacao -> medicamento cadastrado corretamente |
-| Relatorio cuidador | Cron executa -> cuidador recebe relatorio no Telegram |
-| Alerta critico | 3 doses perdidas -> cuidador recebe alerta em < 6h |
+| Voice end-to-end | Fala → reconhecimento → confirmação → dose registrada |
+| i18n switch | Muda idioma → toda UI atualiza instantaneamente |
+| Portal Profissional | Gera link → médico acessa → vê dados corretos → link expira |
+| Chatbot multi-canal | Pergunta via web e WhatsApp → resposta com disclaimer |
+| Backup + restore cross-device | Cria → novo dispositivo → restaura com senha |
+| OCR + cadastro | Foto → OCR → confirmação → medicamento cadastrado |
+| F7.3 Cuidador semanal | Cron executa → cuidador recebe via WhatsApp |
 
-### 6.3 Testes de Seguranca
+### 7.3 Testes de Segurança
 
-| Cenario | Validacao |
+| Cenário | Validação |
 |---------|-----------|
-| Backup com senha errada | Erro claro, sem dados parciais revelados |
-| Groq API key exposure | Key nunca exposta no client-side |
-| Rate limiting chatbot | 11a pergunta na hora bloqueada |
-| RLS backup storage | Usuario A nao acessa backup do usuario B |
-
-### 6.4 Cobertura Alvo
-
-| Metrica | Meta |
-|---------|------|
-| Cobertura de linhas | > 88% (novos componentes) |
-| Cobertura de branches | > 82% |
-| Testes de seguranca | >= 5 cenarios |
+| Backup senha errada | Erro claro, sem dados parciais |
+| Groq API key exposure | Key nunca exposta no client |
+| Portal link expirado | Retorna 410 Gone após expiração |
+| RLS backup storage | Usuário A não acessa backup de B |
+| Voice — nenhum áudio enviado | Verificação de rede (DevTools) |
 
 ---
 
-## 7. Indicadores de Sucesso
+## 8. Indicadores de Sucesso
 
 | KPI | Baseline | Meta | Ferramenta |
 |-----|----------|------|------------|
-| Uso chatbot | 0 | > 2 perguntas/dia/usuario | Supabase query |
-| Satisfacao chatbot | 0 | > 70% thumbs up | Analytics local |
-| Backups ativos | 0 | > 30% usuarios | Supabase Storage |
-| Restauracoes bem-sucedidas | 0 | > 95% taxa de sucesso | Analytics local |
-| Cuidadores com relatorio semanal | 0 | > 50% cuidadores | Supabase query |
-| Alertas criticos enviados | 0 | Tracking | Cron logs |
-| OCR acuracia | 0 | > 80% nome, > 70% dosagem | Analytics local |
-| Conversao freemium | 0 | > 5% | Stripe dashboard |
-| Custo operacional | R$ 0 | < R$ 20/mes | Groq + Supabase dashboards |
-| Cobertura de testes | > 87% | > 90% | Vitest coverage |
+| Registros de dose por voz | 0 | > 20% em usuários 50+ | Analytics local |
+| App funcional em PT-PT | — | ✅ 100% strings traduzidas | i18n coverage |
+| App funcional em ES | — | ✅ 100% strings traduzidas | i18n coverage |
+| Portal Profissional usado | 0 | > 5% usuários | Analytics local |
+| Uso chatbot | 0 | > 2 perguntas/dia/usuário | Supabase query |
+| Satisfação chatbot | 0 | > 70% thumbs up | Analytics local |
+| Backups ativos | 0 | > 30% usuários | Supabase Storage |
+| OCR acurácia | 0 | > 80% nome, > 70% dosagem | Analytics local |
+| Conversão freemium | 0 | > 5% | Stripe/Pix dashboard |
+| Receita via afiliação (B02) | R$ 0 | Tracking de cliques | analyticsService |
+| Custo operacional | R$ 0 | < R$ 20/mês | Groq + Supabase |
 
 ---
 
-## 8. Riscos e Mitigacoes
+## 9. Riscos e Mitigações
 
-| Risco | Probabilidade | Impacto | Mitigacao |
-|-------|--------------|---------|-----------|
-| Groq free tier descontinuado | Media | Alto | Alternativas: Cloudflare Workers AI (free), Ollama self-hosted, OpenRouter |
-| Chatbot da resposta medica incorreta | Media | Critico | Disclaimer obrigatorio, system prompt restritivo, feedback loop, revisao periodica |
-| Tesseract.js lento em dispositivos antigos | Alta | Medio | Timeout de 15s, fallback manual, opcao de API externa |
-| Custo operacional excede R$ 20/mes | Baixa | Medio | Rate limiting agressivo, cache de respostas comuns, monitoramento diario |
-| Baixa conversao freemium | Alta | Medio | Modelo de doacao como alternativa, features free generosas |
-| Regulatorio: chatbot interpretado como aconselhamento medico | Baixa | Critico | Disclaimer em todas as respostas, termos de uso claros, nunca recomendar tratamento |
-| Web Crypto API nao disponivel em navegadores antigos | Baixa | Medio | Feature detection, fallback para backup nao-criptografado com aviso |
-| Supabase Storage atingir 1GB | Media | Medio | Limite 1 backup/usuario, compressao, cleanup de backups antigos |
+| Risco | Prob | Impacto | Mitigação |
+|-------|------|---------|-----------|
+| Web Speech API limitado em iOS < 17 | Alta | Médio | Feature flag, graceful degradation para input manual |
+| Groq free tier descontinuado | Média | Alto | Alternativas: Cloudflare Workers AI (free), Ollama self-hosted |
+| i18n retrofit causa regressão em PT-BR | Média | Alto | Migração gradual por feature, testes a cada commit |
+| Portal Profissional mal usado (dados sem consentimento) | Baixa | Alto | Consentimento duplo, link com expiração curta, revogação |
+| Tesseract.js lento em devices antigos | Alta | Médio | Timeout de 15s, fallback manual sempre disponível |
+| Custo Groq excede R$ 20/mês | Baixa | Médio | Rate limiting agressivo, cache de respostas comuns |
+| Regulatório: chatbot interpretado como conselho médico | Baixa | Crítico | Disclaimer em 100% das respostas, termos de uso claros |
 
 ---
 
-## 9. Consideracoes Regulatorias
+## 10. Considerações LGPD e Regulatórias
 
 ### LGPD
 
-| Aspecto | Tratamento |
+| Feature | Tratamento |
 |---------|-----------|
-| Chatbot | Historico local only, nenhum dado persistido no Groq |
-| Backup | Criptografado com chave do usuario, servidor nao tem acesso |
-| OCR | Processamento client-side (Tesseract.js), imagem nunca enviada |
-| Cuidador | Consentimento explicito do paciente, revogacao a qualquer momento |
+| Voice Interface | Nenhum áudio enviado a servidores — processamento local |
+| Chatbot | Histórico local only, nenhum dado persistido no Groq |
+| Backup | Criptografado com chave do usuário, servidor não tem acesso |
+| OCR | Tesseract.js local — imagem nunca enviada |
+| Portal Profissional | Consentimento explícito, link temporário, revogação a qualquer momento |
+| Afiliação farmácias | Opt-out disponível, apenas clique rastreado (sem dados de compra) |
 
-### Regulatorio Saude
+### Regulatório Saúde
 
-| Aspecto | Tratamento |
+| Feature | Tratamento |
 |---------|-----------|
-| Chatbot | NAO e dispositivo medico, NAO faz diagnostico, disclaimer obrigatorio |
-| Interacoes | Informativo apenas, fonte citada, recomendacao de consultar medico |
-| OCR | Ferramenta de conveniencia, usuario confirma todos os dados |
+| Chatbot | NÃO é dispositivo médico, NÃO faz diagnóstico, disclaimer obrigatório |
+| Portal Profissional | Dados informativos para profissional já habilitado — não é aconselhamento |
+| Interações (L04) | Informativo apenas, fonte citada, recomendação de consultar médico |
 
 ---
 
-## 10. Cronograma de Implementacao
+## 11. Cronograma de Implementação
 
-| Ordem | Feature | Dependencia | Story Points |
-|-------|---------|-------------|-------------|
-| 1 | F7.1 Chatbot IA Groq | Groq API, Vercel Serverless | 13 |
+### Grupo A — Gratuito (assim que 1 gatilho atingido)
+
+| Ordem | Feature | Dependência | SP |
+|-------|---------|-------------|-----|
+| 1 | L01 Arquitetura i18n | react-i18next | 8 |
+| 2 | V01 Registro por Voz | Web Speech API (nativa) | 13 |
+| 3 | V02 Resumo por Voz | V01 | 5 |
+| 4 | L02 PT-PT | L01 | 3 |
+| 5 | L03 Espanhol | L01 | 5 |
+| 6 | B01 Portal Profissional | F5.5 (score risco), F6.1 (modelo) | 13 |
+| 7 | B02 Afiliação Farmácias | analyticsService ✅ | 8 |
+| 8 | L04 Drug DB Abstraction | L01, F5.6 | 8 |
+
+### Grupo B — Condicional (2 gatilhos atingidos)
+
+| Ordem | Feature | Dependência | SP |
+|-------|---------|-------------|-----|
+| 1 | F7.1 Chatbot Groq (multi-canal) | Groq API, WhatsApp Bot ✅ | 13 |
 | 2 | F7.2 Backup Criptografado | Supabase Storage, Web Crypto | 8 |
-| 3 | F7.3 Notificacoes Avancadas Cuidador | F6.1 (Cuidador), Vercel Cron | 5 |
-| 4 | F7.4 Importacao OCR | Tesseract.js, Camera API | 21 |
+| 3 | F7.3 Notificações Avançadas Cuidador | F6.1 ✅, WhatsApp Bot ✅ | 5 |
+| 4 | F7.4 Importação OCR | Tesseract.js | 21 |
 
 ---
 
-## 11. Definicao de Pronto (DoD)
+## 12. Definição de Pronto (DoD)
 
-- [ ] Codigo implementado e revisado
-- [ ] Testes unitarios passando com cobertura > 88%
-- [ ] Testes de seguranca passando (criptografia, RLS, API keys)
+**Grupo A:**
+- [ ] Voice interface com graceful degradation em iOS < 17
+- [ ] Zero regressão em PT-BR após i18n retrofit
+- [ ] PT-PT e ES com 100% de strings traduzidas
+- [ ] Portal Profissional com consentimento LGPD e expiração
+- [ ] Links de afiliação rastreados via analyticsService existente
+- [ ] Testes críticos continuando passando
+
+**Grupo B (adicional):**
 - [ ] Chatbot com disclaimer em 100% das respostas
-- [ ] Backup criptografado funcional (criar + restaurar)
-- [ ] OCR com > 80% acuracia em testes com 50 imagens
-- [ ] Relatorio semanal cuidador funcional
-- [ ] Custo operacional monitorado e < R$ 20/mes
-- [ ] Sem regressao em funcionalidades existentes
-- [ ] Modelo de monetizacao definido e implementado (se aplicavel)
-- [ ] Termos de uso atualizados com disclaimers do chatbot
+- [ ] Chatbot funcional via web e WhatsApp
+- [ ] Backup criptografado funcional (criar + restaurar cross-device)
+- [ ] OCR com > 80% acurácia em testes com 50 imagens
+- [ ] Custo operacional monitorado e < R$ 20/mês
+- [ ] Modelo de monetização definido e implementado
 
 ---
 
-*Documento elaborado em 08/02/2026*  
-*Referencia: Roadmap 2026 v3.0 - Fase 7*  
-*NOTA: Esta fase e CONDICIONAL. Ativacao depende dos gatilhos de validacao.*  
-*Proxima revisao: quando gatilhos de ativacao forem atingidos*
+*Documento revisado em: 21/02/2026*
+*Referência: Roadmap 2026 v3.2 - Fase 7*
+*Baseline: v2.8.1 + Fases 5, 5.5 e 6*
+*NOTA: Features do Grupo A (Voice, i18n, B2B) têm custo R$ 0 e podem ser ativadas com 1 gatilho. Features do Grupo B (IA, OCR, Backup) são condicionais a 2 gatilhos.*
+*Próxima revisão: quando gatilhos de ativação forem atingidos*

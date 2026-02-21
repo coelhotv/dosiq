@@ -1,304 +1,231 @@
-# PRD Fase 5: Valor Clinico e Exportacao
+# PRD Fase 5: Valor Clínico e Portabilidade
 
-**Versao:** 1.0  
-**Status:** DRAFT  
-**Data:** 08/02/2026  
-**Fase do Roadmap:** 5 de 7  
-**Baseline:** Fase 4 concluida (PWA + Router + Push)  
-**Principio:** Custo operacional R$ 0  
+**Versão:** 2.0
+**Status:** DRAFT
+**Data:** 21/02/2026
+**Fase do Roadmap:** 5 de 7
+**Baseline:** v2.8.1 — Fase 4 concluída (PWA ✅, Push VAPID ✅, Analytics ✅, Hash Router ✅, Bot Standardization ✅)
+**Próxima Fase:** 5.5 — Inteligência Preditiva Client-Side (depende da Fase 5)
+**Princípio:** Custo operacional R$ 0
 
 ---
 
-## 1. Visao Geral e Objetivos Estrategicos
+## 1. Visão Geral e Objetivos Estratégicos
 
-A Fase 5 agrega valor clinico real ao Meus Remedios com relatorios exportaveis para medicos, exportacao de dados pessoais, calendario visual de doses e alertas inteligentes de interacao medicamentosa. Posiciona o produto como ferramenta de saude seria, nao apenas um lembrete de doses.
+A Fase 5 posiciona o Meus Remédios como ferramenta clínica séria, não apenas um lembrete de doses. Vai além da exportação básica de dados para entregar valor real nas situações que mais importam: consultas médicas, emergências hospitalares, controle de prescrições vencendo e consciência de custo do tratamento.
 
-### Objetivos Estrategicos
+**Relação com Fase 5.5:** A Fase 5 alimenta a Fase 5.5 (Inteligência Preditiva). O calendário visual (F5.4) e os dados de doses coletados aqui são a base do heatmap de padrões (I02) e do score de risco por protocolo (I04) da próxima fase. O `unit_price` do estoque coletado em F5.10 é a fonte da análise de custo inteligente (I05).
 
-| ID | Objetivo | Metrica Primaria |
+### Objetivos Estratégicos
+
+| ID | Objetivo | Métrica Primária |
 |----|----------|-----------------|
-| OE5.1 | Gerar relatorios clinicos exportaveis para consultas medicas | Downloads PDF > 20% usuarios/semana |
-| OE5.2 | Garantir portabilidade de dados do usuario | Exports CSV/JSON > 10% usuarios |
-| OE5.3 | Fornecer visao mensal intuitiva do historico de doses | Uso calendario > 30% sessoes |
-| OE5.4 | Aumentar seguranca com alertas de interacao medicamentosa | Alertas exibidos rastreados |
-| OE5.5 | Proatividade na reposicao de estoque via bot | Notificacoes de estoque enviadas |
+| OE5.1 | Gerar relatórios clínicos exportáveis para consultas médicas | Downloads PDF > 20% usuários/semana |
+| OE5.2 | Garantir portabilidade de dados do usuário | Exports CSV/JSON > 10% usuários |
+| OE5.3 | Fornecer visão mensal intuitiva do histórico de doses | Uso calendário > 30% sessões |
+| OE5.4 | Aumentar segurança com alertas de interação medicamentosa | Alertas exibidos rastreados |
+| OE5.5 | Proatividade na reposição de estoque via bot | Notificações de estoque enviadas |
+| OE5.6 | Otimizar a preparação para consultas médicas | Modo Consulta utilizado > 20% dos usuários |
+| OE5.7 | Garantir segurança em emergências com dados offline | Cartão de Emergência gerado > 15% usuários |
+| OE5.8 | Prevenir descontinuação por receita vencida | Alertas de prescrição disparados antes do vencimento |
+| OE5.9 | Trazer consciência de custo do tratamento | Análise de custo visualizada > 35% com `unit_price` preenchido |
 
-### Pre-requisitos
+### Pré-requisitos (todos já concluídos em v2.8.1)
 
-- Fase 4 concluida (Hash Router para navegacao de relatorios, PWA para cache)
-- adherenceService funcional com calculo por periodo
-- Cache SWR operacional
-- Bot Telegram com commandWrapper e middleware
+- ✅ Fase 4 concluída: Hash Router (9 rotas), PWA (Workbox), Push Notifications (VAPID), Analytics Service, Bot messageFormatter/errorHandler
+- ✅ `adherenceService` funcional com cálculo por período
+- ✅ Cache SWR operacional
+- ✅ `unit_price` em `stockSchema` já coletado pelos usuários existentes
 
 ---
 
 ## 2. Escopo de Features
 
-| ID | Feature | Prioridade | Story Points | Novas Dependencias |
+| ID | Feature | Prioridade | Story Points | Novas Dependências |
 |----|---------|------------|-------------|-------------------|
-| F5.1 | Relatorios PDF com Graficos | P0 | 13 | jspdf + jspdf-autotable (~300KB) |
-| F5.2 | Exportacao de Dados CSV/JSON | P0 | 5 | Nenhuma (APIs nativas) |
-| F5.3 | Compartilhamento de Relatorio via Link | P1 | 5 | Nenhuma |
-| F5.4 | Calendario Visual de Doses | P0 | 8 | Nenhuma (SVG/CSS grid) |
-| F5.5 | Notificacoes Proativas de Estoque no Bot | P1 | 3 | Nenhuma |
-| F5.6 | Alertas de Interacao Medicamentosa | P1 | 13 | Nenhuma (base de dados local JSON) |
+| F5.1 | Relatórios PDF com Gráficos | P0 | 13 | jspdf + jspdf-autotable (~300KB) |
+| F5.2 | Exportação de Dados CSV/JSON | P0 | 5 | Nenhuma (APIs nativas) |
+| F5.3 | Compartilhamento de Relatório via Link | P1 | 5 | Nenhuma |
+| F5.4 | Calendário Visual de Doses | P0 | 8 | Nenhuma (SVG/CSS grid) |
+| F5.5 | Notificações Proativas de Estoque no Bot | P1 | 3 | Nenhuma |
+| F5.6 | Alertas de Interação Medicamentosa (ANVISA) | P1 | 13 | Nenhuma (base JSON local) |
+| **F5.7** | **Modo Consulta Médica** | **P0** | **8** | **jspdf (já em F5.1)** |
+| **F5.8** | **Cartão de Emergência (offline)** | **P0** | **5** | **Nenhuma (PWA cache ✅)** |
+| **F5.9** | **Rastreador de Prescrições** | **P1** | **3** | **Nenhuma (campo end_date já existe)** |
+| **F5.10** | **Análise de Custo do Tratamento** | **P1** | **5** | **Nenhuma (unit_price já coletado)** |
 
-**Esforco Total:** 47 story points  
-**Novas dependencias npm:** jspdf (~250KB), jspdf-autotable (~50KB)  
+**Esforço Total:** 68 SP (+21 vs original)
+**Novas dependências npm:** jspdf (~250KB), jspdf-autotable (~50KB) — lazy loaded
 
 ### Fora de Escopo
 
-- Exportacao FHIR (eliminada por complexidade)
-- Integracao com sistemas hospitalares
-- Prescricao digital
+- Exportação FHIR (eliminada por complexidade)
+- Integração com sistemas hospitalares
+- Prescrição digital
 - Qualquer feature com custo recorrente
 
 ---
 
-## 3. Descricao Detalhada de Features
+## 3. Descrição Detalhada de Features
 
-### F5.1 Relatorios PDF com Graficos
+### F5.1 Relatórios PDF com Gráficos
 
-**Titulo:** Geracao de relatorios PDF client-side com graficos de adesao e dados clinicos  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, P08  
+**Título:** Geração de relatórios PDF client-side com gráficos de adesão e dados clínicos
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, P08
 
-**Descricao:**  
-Gerar relatorios PDF completos no client-side usando jsPDF, contendo dados de adesao, estoque, timeline de titulacao e graficos de tendencia. O relatorio e formatado para impressao A4 e pode ser compartilhado com medicos em consultas. Nenhum dado e enviado para servidor externo.
+**Descrição:**
+Gerar relatórios PDF completos no client-side usando jsPDF, contendo dados de adesão, estoque, timeline de titulação e gráficos de tendência. O relatório é formatado para impressão A4. Nenhum dado enviado para servidor externo.
 
-**Requisitos Tecnicos:**
-- Instalar `jspdf` e `jspdf-autotable`
-- Service `src/services/reportService.js` (geracao de PDF)
-- Componente `src/components/reports/ReportGenerator.jsx` (UI de configuracao)
-- Componente `src/components/reports/ReportPreview.jsx` (preview antes de gerar)
-- Rota `#/relatorio` e `#/relatorio/:periodo`
+**Nota de integração:** A Análise de Custo (F5.10) será incluída como seção opcional neste PDF. O Score de Risco por protocolo da Fase 5.5 (I04) também será incorporado quando disponível.
 
 **Estrutura do PDF:**
 
-| Secao | Conteudo |
+| Seção | Conteúdo |
 |-------|----------|
-| Cabecalho | Nome do usuario, data de geracao, periodo |
-| Resumo de Adesao | Score geral, score por protocolo, streak atual |
-| Grafico de Tendencia | Adesao diaria dos ultimos 7/30/90 dias (SVG convertido) |
-| Lista de Medicamentos | Nome, dosagem, frequencia, horarios |
-| Historico de Doses | Tabela com data, medicamento, horario previsto, horario registrado, status |
+| Cabeçalho | Nome do usuário, data de geração, período |
+| Resumo de Adesão | Score geral, score por protocolo, streak atual |
+| Gráfico de Tendência | Adesão diária dos últimos 7/30/90 dias (SVG convertido) |
+| Lista de Medicamentos | Nome, dosagem, frequência, horários |
+| Histórico de Doses | Tabela com data, medicamento, horário previsto, registrado, status |
 | Estoque Atual | Medicamento, quantidade atual, dias restantes estimados |
-| Timeline de Titulacao | Etapas concluidas, etapa atual, proxima etapa |
-| Rodape | Disclaimer: "Este relatorio nao substitui orientacao medica" |
+| Timeline de Titulação | Etapas concluídas, etapa atual, próxima etapa |
+| Análise de Custo *(opcional)* | Custo mensal por medicamento (se `unit_price` preenchido) |
+| Rodapé | Disclaimer: "Este relatório não substitui orientação médica" |
 
-**Periodos Disponiveis:**
-
-| Periodo | Label | Dados Incluidos |
-|---------|-------|----------------|
-| 7d | Ultima semana | Detalhado (todas as doses) |
-| 30d | Ultimo mes | Resumido (adesao diaria) |
-| 90d | Ultimo trimestre | Agregado (adesao semanal) |
-
-**Criterios de Aceitacao:**
-- [ ] PDF gerado em < 3s para periodo de 30 dias
+**Critérios de Aceitação:**
+- [ ] PDF gerado em < 3s para período de 30 dias
 - [ ] PDF formatado para A4 com margens adequadas
-- [ ] Grafico de tendencia renderizado corretamente no PDF
-- [ ] Tabelas com quebra de pagina automatica
-- [ ] Disclaimer presente no rodape de todas as paginas
-- [ ] Preview disponivel antes de gerar/baixar
-- [ ] Funciona offline (dados do cache)
+- [ ] Gráfico de tendência renderizado corretamente no PDF
+- [ ] Tabelas com quebra de página automática
+- [ ] Disclaimer presente no rodapé de todas as páginas
+- [ ] Preview disponível antes de gerar/baixar
+- [ ] Funciona offline (dados do cache SWR — PWA já configurado)
 - [ ] Nome do arquivo: `meus-remedios-relatorio-{periodo}-{data}.pdf`
+- [ ] jsPDF lazy loaded (dynamic import — não impacta bundle inicial 762KB)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.1.1 | Usuario | Navega para `#/relatorio` -> seleciona periodo 30d -> preview -> clica "Baixar PDF" -> arquivo salvo |
-| UC-5.1.2 | Usuario | Gera PDF -> compartilha com medico via WhatsApp/email |
-| UC-5.1.3 | Usuario | Gera PDF offline -> dados do cache utilizados -> disclaimer de dados potencialmente desatualizados |
-
-**Dependencias:** jsPDF, adherenceService, Hash Router  
-**Impacto Financeiro:** R$ 0 (geracao client-side)  
+**Dependências:** jsPDF, adherenceService, Hash Router (✅ já entregue)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F5.2 Exportacao de Dados CSV/JSON
+### F5.2 Exportação de Dados CSV/JSON
 
-**Titulo:** Exportacao completa de dados do usuario em formato CSV e JSON  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, N01  
+**Título:** Exportação completa de dados do usuário em formato CSV e JSON
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N01
 
-**Descricao:**  
-Permitir ao usuario exportar todos os seus dados em formato CSV ou JSON. Atende ao principio de portabilidade de dados e transparencia. Inclui medicamentos, protocolos, historico de doses, estoque e configuracoes.
-
-**Requisitos Tecnicos:**
-- Service `src/services/exportService.js`
-- Metodos: `exportCSV()`, `exportJSON()`, `exportAll(format)`
-- Componente `src/components/settings/DataExport.jsx`
+**Requisitos Técnicos:**
+- Service `src/features/dashboard/services/exportService.js`
+- Métodos: `exportCSV()`, `exportJSON()`, `exportAll(format)`
+- Componente em `src/features/dashboard/components/DataExport.jsx`
 - Usar APIs nativas: `Blob`, `URL.createObjectURL`, `<a download>`
-- Nenhuma dependencia externa necessaria
 
-**Dados Exportaveis:**
+**Dados Exportáveis:**
 
 | Entidade | Campos | Formato CSV | Formato JSON |
 |----------|--------|-------------|-------------|
 | Medicamentos | id, nome, dosagem, forma, notas | medicamentos.csv | medicamentos.json |
-| Protocolos | id, nome, medicamentos, horarios, titulacao | protocolos.csv | protocolos.json |
-| Historico de Doses | id, medicamento, data, horario_previsto, horario_registrado, status | historico_doses.csv | historico_doses.json |
-| Estoque | id, medicamento, quantidade, data_entrada, validade | estoque.csv | estoque.json |
-| Configuracoes | tema, notificacoes, onboarding | - | configuracoes.json |
+| Protocolos | id, nome, medicamentos, horários, titulação | protocolos.csv | protocolos.json |
+| Histórico de Doses | id, medicamento, data, horário_previsto, horário_registrado, status | historico_doses.csv | historico_doses.json |
+| Estoque | id, medicamento, quantidade, data_entrada, validade, unit_price | estoque.csv | estoque.json |
+| Configurações | tema, notificações, onboarding | — | configuracoes.json |
 
-**Criterios de Aceitacao:**
-- [ ] Export CSV gera arquivo valido abrivel em Excel/Google Sheets
-- [ ] Export JSON gera arquivo valido e formatado (pretty-print)
-- [ ] Todos os dados do usuario incluidos (sem dados de outros usuarios)
+**Critérios de Aceitação:**
+- [ ] Export CSV gera arquivo válido abrível em Excel/Google Sheets
+- [ ] Export JSON gera arquivo válido e formatado (pretty-print)
 - [ ] Encoding UTF-8 com BOM para compatibilidade Excel
-- [ ] Nomes de arquivo: `meus-remedios-{entidade}-{data}.{ext}`
-- [ ] Opcao de exportar tudo em ZIP (opcional, se viavel sem lib externa)
-- [ ] Funciona offline (dados do cache)
+- [ ] `unit_price` incluído no export de estoque (relevante para análise externa)
+- [ ] Funciona offline (dados do cache SWR)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.2.1 | Usuario | Vai em Perfil -> "Exportar dados" -> seleciona CSV -> seleciona entidades -> download |
-| UC-5.2.2 | Usuario | Exporta JSON completo -> usa para backup manual |
-| UC-5.2.3 | Usuario | Exporta historico CSV -> abre no Excel -> analisa padroes |
-
-**Dependencias:** Nenhuma  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** Nenhuma nova
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F5.3 Compartilhamento de Relatorio via Link
+### F5.3 Compartilhamento de Relatório via Link
 
-**Titulo:** Gerar link temporario para compartilhar relatorio com medico  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, N05  
+**Título:** Gerar link temporário para compartilhar relatório com médico
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N05
 
-**Descricao:**  
-Permitir ao usuario gerar um link temporario (hash-based, sem servidor) que contem um snapshot dos dados de adesao. O link codifica os dados em base64 no proprio hash da URL, sem necessidade de armazenamento server-side. Valido enquanto a URL existir (sem expiracao tecnica, mas com aviso de "dados de {data}").
+**Descrição:**
+Link hash-based que codifica snapshot dos dados de adesão em base64 na URL. Sem armazenamento server-side. Nota: o Modo Consulta Médica (F5.7) oferece uma versão mais completa e otimizada deste caso de uso.
 
-**Requisitos Tecnicos:**
-- Service `src/services/shareService.js`
-- Metodo: `generateShareLink(reportData)` -> URL com dados em hash
-- Rota `#/compartilhado/:data` (decodifica e exibe relatorio read-only)
-- Componente `src/components/reports/SharedReport.jsx` (visualizacao publica)
-- Dados comprimidos com `btoa()` (base64) - limite pratico ~2KB de dados
-- Versao resumida do relatorio (score, streak, ultimos 7 dias)
+**Critérios de Aceitação:**
+- [ ] Link gerado copiável para clipboard (Web Share API ou fallback)
+- [ ] Link abre visualização read-only do relatório resumido
+- [ ] Nenhum dado armazenado no servidor
+- [ ] Aviso de data de geração visível
+- [ ] Dados sensíveis (nome completo) não incluídos no link
+- [ ] Funciona em qualquer navegador sem login
 
-**Criterios de Aceitacao:**
-- [ ] Link gerado copiavel para clipboard (Web Share API ou fallback)
-- [ ] Link abre visualizacao read-only do relatorio resumido
-- [ ] Nenhum dado armazenado no servidor para compartilhamento
-- [ ] Aviso de data de geracao visivel no relatorio compartilhado
-- [ ] Dados sensiveis (nome completo) nao incluidos no link
-- [ ] Funciona em qualquer navegador (sem necessidade de login)
-
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.3.1 | Usuario | Gera relatorio -> clica "Compartilhar" -> link copiado -> envia para medico via WhatsApp |
-| UC-5.3.2 | Medico | Recebe link -> abre no navegador -> ve resumo de adesao do paciente |
-
-**Dependencias:** F5.1 (ReportGenerator), Hash Router  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** F5.1 (ReportGenerator), Hash Router (✅ já entregue)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F5.4 Calendario Visual de Doses
+### F5.4 Calendário Visual de Doses
 
-**Titulo:** Visao mensal de calendario com status de doses por dia  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, N08  
+**Título:** Visão mensal de calendário com status de doses por dia
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N08
 
-**Descricao:**  
-Calendario visual mensal mostrando o status de adesao de cada dia com cores semanticas. Permite ao usuario identificar padroes de falha (dias da semana, periodos) e ter uma visao macro do tratamento. Implementado com CSS Grid e SVG, sem dependencia externa.
-
-**Requisitos Tecnicos:**
-- Componente `src/components/calendar/DoseCalendar.jsx`
-- Componente `src/components/calendar/CalendarDay.jsx`
-- CSS Grid para layout do calendario (7 colunas)
-- Rota `#/calendario` e `#/calendario/:mes`
-- Navegacao entre meses (setas ou swipe)
-- Dados do adherenceService agrupados por dia
+**Nota de integração com Fase 5.5:** Este calendário usa a classificação Taken/Missed/Scheduled já implementada no Sparkline drilldown (pós-F4) como padrão visual. O heatmap de padrões (I02 da Fase 5.5) é a evolução natural deste componente — ao clicar em um dia no calendário, o usuário pode navegar para o heatmap da semana correspondente.
 
 **Cores por Status:**
 
 | Status | Cor | Significado |
 |--------|-----|------------|
-| 100% adesao | Verde (#10b981) | Todas as doses tomadas |
-| 50-99% adesao | Amarelo (#f59e0b) | Algumas doses perdidas |
-| 1-49% adesao | Laranja (#f97316) | Maioria das doses perdidas |
-| 0% adesao | Vermelho (#ef4444) | Nenhuma dose tomada |
+| 100% adesão | Verde (#10b981) | Todas as doses tomadas |
+| 50-99% adesão | Âmbar (#f59e0b) | Algumas doses perdidas |
+| 1-49% adesão | Laranja (#f97316) | Maioria das doses perdidas |
+| 0% adesão | Vermelho (#ef4444) | Nenhuma dose tomada |
 | Sem dados | Cinza (#6b7280) | Dia futuro ou sem protocolo |
 | Hoje | Borda accent (#6366f1) | Dia atual destacado |
 
-**Criterios de Aceitacao:**
-- [ ] Calendario exibe mes completo com dias corretos
-- [ ] Cores refletem adesao real do dia
-- [ ] Navegacao entre meses funcional (setas e swipe)
-- [ ] Toque em dia abre detalhe das doses do dia
+**Critérios de Aceitação:**
+- [ ] Calendário exibe mês completo com dias corretos
+- [ ] Cores refletem adesão real do dia (usando lógica de 2h de tolerância do pós-F4)
+- [ ] Navegação entre meses funcional (setas e swipe)
+- [ ] Toque em dia abre detalhe das doses (DailyDoseModal existente)
 - [ ] Responsivo em viewports >= 320px
-- [ ] Legenda de cores visivel
-- [ ] Performance: renderizacao < 100ms por mes
+- [ ] Legenda de cores visível
+- [ ] Performance: renderização < 100ms por mês
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.4.1 | Usuario | Navega para `#/calendario` -> ve mes atual -> identifica padrao de falha nas segundas-feiras |
-| UC-5.4.2 | Usuario | Toca em dia amarelo -> ve quais doses foram perdidas naquele dia |
-| UC-5.4.3 | Usuario | Navega para mes anterior -> compara adesao entre meses |
-
-**Dependencias:** adherenceService, Hash Router  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** adherenceService, Hash Router (✅)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F5.5 Notificacoes Proativas de Estoque no Bot
+### F5.5 Notificações Proativas de Estoque no Bot
 
-**Titulo:** Bot envia alerta automatico quando estoque esta proximo do fim  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, N09  
+**Título:** Bot envia alerta automático quando estoque está próximo do fim
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N09
 
-**Descricao:**  
-O bot Telegram envia notificacao proativa quando o estoque de um medicamento esta previsto para acabar em 7 dias ou menos. Calculo baseado no consumo diario do protocolo ativo. Enviado uma vez por dia (manha) para evitar spam.
+**Nota de integração com Fase 5.5:** A Fase 5.5 (I01 — Previsão de Reposição) usa consumo real vs consumo teórico desta feature. F5.5 é baseado em cálculo teórico (`time_schedule × dosage_per_intake`); I01 da Fase 5.5 refina usando consumo real dos logs. Ambos coexistem e se complementam.
 
-**Requisitos Tecnicos:**
-- Cron job Vercel `api/cron/stock-alerts.js` (executa 1x/dia as 8h)
-- Query Supabase: estoque atual / doses diarias <= 7
-- Mensagem formatada em MarkdownV2 com inline button "Ver Estoque"
-- Inline button abre deep link `#/estoque`
-- Respeitar preferencia de notificacao do usuario
-- Rate limit: 1 alerta por medicamento por dia
+**Requisitos Técnicos:**
+- Usa `messageFormatter.js` existente (F4.5) para formatação MarkdownV2
+- Reutiliza lógica de deduplicação existente (`deduplicationService`)
+- Cron job Vercel `api/cron/stock-alerts.js` (1x/dia às 8h)
+- Deep link `#/estoque` via inline button (Hash Router ✅)
 
-**Criterios de Aceitacao:**
-- [ ] Alerta enviado quando estoque <= 7 dias de consumo
+**Critérios de Aceitação:**
+- [ ] Alerta enviado quando estoque <= 7 dias de consumo teórico
 - [ ] Mensagem inclui nome do medicamento e dias restantes
-- [ ] Inline button "Ver Estoque" abre app na tela de estoque
-- [ ] Maximo 1 alerta por medicamento por dia
-- [ ] Nao envia se usuario desativou notificacoes de estoque
-- [ ] Cron job executa em < 10s para todos os usuarios
+- [ ] Inline button "Ver Estoque" abre `#/estoque`
+- [ ] Máximo 1 alerta por medicamento por dia (deduplicationService)
+- [ ] Usa `messageFormatter.js` existente (sem formatação manual)
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.5.1 | Usuario | Recebe mensagem no Telegram: "Estoque baixo: Losartana - restam 5 dias" -> toca "Ver Estoque" -> app abre em `#/estoque` |
-| UC-5.5.2 | Usuario | Compra medicamento -> atualiza estoque -> alerta nao enviado no dia seguinte |
-
-**Dependencias:** Bot Telegram, Vercel Cron, Deep Linking (F4.1)  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** Bot Telegram com messageFormatter (✅ F4.5), Deep Linking (✅ F4.1)
+**Impacto Financeiro:** R$ 0
 
 ---
 
-### F5.6 Alertas de Interacao Medicamentosa
+### F5.6 Alertas de Interação Medicamentosa
 
-**Titulo:** Sistema de alertas de interacao medicamentosa baseado em base de dados local  
-**Rastreabilidade:** Roadmap 2026 - Fase 5, N02  
+**Título:** Sistema de alertas de interação medicamentosa baseado em base de dados ANVISA local
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N02
 
-**Descricao:**  
-Sistema que verifica interacoes conhecidas entre os medicamentos do usuario e exibe alertas no dashboard. Baseado em uma base de dados JSON local (sem API externa) com as interacoes mais comuns. Diferenciador competitivo que agrega valor clinico real.
-
-**Requisitos Tecnicos:**
-- Base de dados `src/data/drugInteractions.json` (interacoes mais comuns)
-- Service `src/services/interactionService.js`
-- Metodo: `checkInteractions(medications)` -> lista de alertas
-- Componente `src/components/alerts/InteractionAlert.jsx`
-- Integracao com SmartAlerts existente (prioridade media)
-- Base inicial: ~200 interacoes mais comuns (expandivel)
+**Descrição:**
+Sistema que verifica interações conhecidas entre os medicamentos do usuário e exibe alertas no dashboard via `SmartAlerts` existente. Base de dados JSON local (~200+ interações) derivada do Bulário Eletrônico da ANVISA (dados públicos).
 
 **Estrutura da Base de Dados:**
 
@@ -310,90 +237,262 @@ Sistema que verifica interacoes conhecidas entre os medicamentos do usuario e ex
       "drug_b": "ibuprofeno",
       "severity": "moderate",
       "description": "Ibuprofeno pode reduzir o efeito anti-hipertensivo da Losartana",
-      "recommendation": "Evitar uso prolongado. Consulte seu medico.",
-      "source": "Anvisa"
+      "recommendation": "Evitar uso prolongado. Consulte seu médico.",
+      "source": "ANVISA - Bulário Eletrônico"
     }
   ]
 }
 ```
 
-**Niveis de Severidade:**
+**Níveis de Severidade:**
 
-| Nivel | Cor | Acao |
+| Nível | Cor | Ação |
 |-------|-----|------|
-| severe | Vermelho (#ef4444) | Alerta critico no topo do dashboard |
-| moderate | Amarelo (#f59e0b) | Alerta informativo no SmartAlerts |
-| mild | Azul (#3b82f6) | Nota informativa (expandivel) |
+| severe | Vermelho (#ef4444) | Alerta crítico no topo via SmartAlerts |
+| moderate | Âmbar (#f59e0b) | Alerta informativo no SmartAlerts |
+| mild | Azul (#3b82f6) | Nota informativa (expansível) |
 
-**Criterios de Aceitacao:**
-- [ ] Interacoes verificadas ao cadastrar novo medicamento
-- [ ] Interacoes verificadas ao abrir dashboard (cache de resultado)
-- [ ] Alerta exibido com severidade, descricao e recomendacao
-- [ ] Disclaimer: "Consulte seu medico. Este alerta e informativo."
+**Critérios de Aceitação:**
+- [ ] Interações verificadas ao cadastrar novo medicamento
+- [ ] Integrado ao `SmartAlerts` existente (HCC) — sem novo componente de alerta
+- [ ] Alerta exibido com severidade, descrição e recomendação
+- [ ] Disclaimer: "Consulte seu médico. Este alerta é informativo."
 - [ ] Base de dados local (sem chamadas externas)
-- [ ] Busca case-insensitive e com normalizacao de acentos
-- [ ] Base inicial com >= 200 interacoes documentadas
+- [ ] Busca case-insensitive com normalização de acentos
+- [ ] Base inicial >= 200 interações documentadas com fonte ANVISA
 
-**Casos de Uso:**
-
-| UC | Ator | Fluxo |
-|----|------|-------|
-| UC-5.6.1 | Usuario | Cadastra Ibuprofeno -> ja tem Losartana -> alerta "Interacao moderada" exibido |
-| UC-5.6.2 | Usuario | Abre dashboard -> SmartAlerts mostra "1 interacao medicamentosa detectada" -> expande -> ve detalhes |
-| UC-5.6.3 | Usuario | Remove medicamento -> alerta de interacao desaparece |
-
-**Dependencias:** SmartAlerts (HCC), medicationService  
-**Impacto Financeiro:** R$ 0  
+**Dependências:** SmartAlerts (✅ HCC), medicationService
+**Impacto Financeiro:** R$ 0
 
 ---
 
-## 4. Requisitos Nao-Funcionais
+### F5.7 Modo Consulta Médica ⭐ NOVO
 
-| Requisito | Especificacao | Metrica |
+**Título:** Resumo clínico otimizado para consultas médicas com PDF e QR code
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N11
+
+**Descrição:**
+Gera em 1 toque um resumo otimizado para apresentar ao médico: adesão dos últimos 7/30 dias, timeline de titulação atual, estoque e última dose de cada protocolo. Disponível como PDF A4 (formato consulta, não histórico completo) e como QR code que codifica a URL de compartilhamento (F5.3).
+
+**Diferenciação vs F5.1 (PDF Completo):**
+- F5.1: Relatório histórico completo, configurável, para o paciente
+- F5.7: Resumo de 1 página otimizado para o médico ver durante a consulta (< 30s para gerar)
+
+**Requisitos Técnicos:**
+- Componente `src/features/dashboard/components/ConsultationCard.jsx`
+- Rota `#/consulta` — acessível via Quick Actions existente
+- PDF gerado com jsPDF (lazy, já instalado em F5.1)
+- QR code gerado com `qrcode` (tiny library, ~15KB) ou via URL encoding CSS/canvas nativo
+- Dados: adesão 30d + streak + estoque + última dose + titulação atual
+
+**Estrutura do Resumo (1 página A4):**
+
+```
+MEUS REMÉDIOS — Resumo para Consulta
+Gerado em: [data e hora]
+
+📊 ADESÃO (últimos 30 dias): 87% | Streak: 12 dias consecutivos
+
+💊 MEDICAMENTOS ATIVOS:
+├── Losartana 50mg — 1x/dia (8h) | Última dose: ontem 8:12 | Estoque: 23 dias
+├── Metformina 500mg — 2x/dia | Última dose: hoje 8:05 | Estoque: 45 dias
+└── Rivotril 0,5mg — 1x/noite | Em titulação: Etapa 2/4 (15 dias) | Estoque: 8 dias
+
+⚠️ ATENÇÃO: Estoque de Rivotril para ~8 dias
+
+[QR Code de acesso ao relatório completo]
+
+"Este resumo não substitui avaliação médica completa"
+```
+
+**Critérios de Aceitação:**
+- [ ] Gerado em < 10s (1 página apenas)
+- [ ] Botão de atalho no dashboard ("Para Consulta") na seção Quick Actions
+- [ ] QR code funcional que abre o link de compartilhamento (F5.3)
+- [ ] Funciona offline (dados do cache PWA)
+- [ ] PDF imprimível em A4
+- [ ] Inclui alerta visual se algum estoque está crítico (< 7 dias)
+- [ ] Não inclui dados pessoais além do resumo (privacidade ao mostrar ao médico)
+
+**Dependências:** F5.1 (jsPDF já instalado), F5.3 (link de compartilhamento), Push Notifications (✅ F4.3 — pode complementar)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### F5.8 Cartão de Emergência (offline) ⭐ NOVO
+
+**Título:** Cartão imprimível com medicamentos ativos para emergências hospitalares
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N12
+
+**Descrição:**
+QR code imprimível (cartão de carteira, 85×54mm) com os medicamentos ativos, dosagens e alergias do usuário. Funciona 100% sem internet — os dados são codificados no próprio QR code. Médicos do pronto-socorro podem escanear e ver os medicamentos sem que o paciente precise explicar.
+
+**Por que é crítico:** Em emergências, usuários frequentemente estão incapacitados de informar seus medicamentos. Um cartão na carteira ou no celular (tela de bloqueio) resolve essa situação real.
+
+**Requisitos Técnicos:**
+- Dados armazenados no Service Worker cache (PWA ✅ F4.2) e localStorage
+- QR code contém URL com dados em base64 (sem necessidade de servidor)
+- Componente `src/features/medications/components/EmergencyCard.jsx`
+- Rota `#/cartao-emergencia`
+- CSS @media print otimizado para cartão de crédito (85×54mm)
+- Layout de tela de bloqueio (wallpaper gerado como imagem)
+
+**Estrutura do QR code:**
+
+```json
+{
+  "v": "1",
+  "n": "João",
+  "m": [
+    {"n": "Losartana", "d": "50mg", "f": "1x/dia"},
+    {"n": "Metformina", "d": "500mg", "f": "2x/dia"}
+  ],
+  "a": ["Penicilina"],
+  "dt": "2026-02-21"
+}
+```
+
+**Critérios de Aceitação:**
+- [ ] QR code legível em qualquer leitor padrão (câmera do celular)
+- [ ] Link gerado pelo QR code abre página sem necessidade de login
+- [ ] Funciona 100% offline (QR code não depende de servidor)
+- [ ] CSS print otimizado para cartão 85×54mm
+- [ ] Opção de salvar como imagem para tela de bloqueio
+- [ ] Dados do QR code atualizados automaticamente ao alterar medicamentos
+- [ ] Aviso de data de geração no cartão ("Atualizado em: DD/MM/AAAA")
+- [ ] Campo de alergias editável (não está em `medicineSchema`, usar localStorage)
+
+**Dependências:** PWA cache (✅ F4.2), Hash Router (✅ F4.1)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### F5.9 Rastreador de Prescrições ⭐ NOVO
+
+**Título:** Alertas automáticos antes do vencimento de prescrições
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N13
+
+**Descrição:**
+O campo `end_date` já existe em `protocolSchema.js` e é usado para definir o fim de um tratamento. Esta feature interpreta `end_date` como vencimento da prescrição e dispara alertas antecipados via bot (Telegram, e futuramente WhatsApp na Fase 6) e push notification (✅ F4.3) em 30, 7 e 1 dia antes.
+
+**Requisitos Técnicos:**
+- Cron job `api/cron/prescription-alerts.js` (1x/dia às 8h)
+- Query: `protocols WHERE end_date BETWEEN now() AND now() + 30 days AND active = true`
+- Usa `messageFormatter.js` existente (✅ F4.5) para mensagem do bot
+- Push notification via `api/push-send.js` existente (✅ F4.3)
+- In-app: card de alerta no `SmartAlerts` (HCC)
+- Inline button: "Ver Protocolo" → deep link `#/protocolos/:id`
+
+**Mensagem Bot (exemplo):**
+
+```
+⚠️ Prescrição vencendo em 7 dias
+
+Protocolo: Losartana 50mg
+Vencimento: 28/02/2026
+
+📋 Agende sua consulta para renovar a prescrição.
+```
+
+**Critérios de Aceitação:**
+- [ ] Alerta via bot em 30, 7 e 1 dia antes do `end_date`
+- [ ] Push notification em 7 dias antes (se opt-in ✅ F4.3)
+- [ ] Card in-app no `SmartAlerts` aparece com 30 dias de antecedência
+- [ ] Apenas protocolos ativos (`active = true`) geram alerta
+- [ ] Rate limit: 1 alerta/protocolo/gatilho (30d, 7d, 1d)
+- [ ] Inline button abre `#/protocolos/:id` para o protocolo específico
+- [ ] Zero migration de banco (campo `end_date` já existe)
+
+**Dependências:** messageFormatter (✅ F4.5), Push Notifications (✅ F4.3), SmartAlerts (✅ HCC)
+**Impacto Financeiro:** R$ 0
+
+---
+
+### F5.10 Análise de Custo do Tratamento ⭐ NOVO
+
+**Título:** Análise de custo mensal do tratamento usando preços já cadastrados
+**Rastreabilidade:** Roadmap 2026 v3.2 - Fase 5, N14
+
+**Descrição:**
+O campo `unit_price` já existe em `stockSchema.js` e já é coletado dos usuários. Esta feature transforma esse dado dormente em análise de custo mensal, com breakdown por medicamento e comparativo com mês anterior.
+
+**Nota de integração com Fase 5.5:** Este componente alimenta `costAnalysisService.js` da Fase 5.5 (I05), que calcula o custo baseado em **consumo real** (logs) vs o cálculo simples aqui baseado em **consumo teórico**. Ambos coexistem: este (F5.10) é o resumo simples; I05 é a análise inteligente.
+
+**Cálculo:**
+```
+custo_mensal_medicamento = consumo_teórico_mensal × unit_price_médio
+custo_total_mensal = Σ custo_por_medicamento
+```
+
+**Requisitos Técnicos:**
+- Service `src/features/stock/services/costAnalysisService.js` (versão simples — Fase 5.5 expande)
+- Componente `src/features/stock/components/CostSummaryCard.jsx`
+- Posição: aba Estoque ou seção de Settings
+- Integração: seção opcional no PDF de relatório (F5.1)
+
+**Critérios de Aceitação:**
+- [ ] Visível apenas quando >= 1 medicamento tem `unit_price > 0`
+- [ ] CTA "Atualizar preço" leva direto ao formulário de estoque do medicamento
+- [ ] Comparativo com mês anterior (se dados disponíveis)
+- [ ] Incluído como seção opcional no PDF de relatório (F5.1)
+- [ ] Zero migration de banco (unit_price já em stockSchema)
+
+**Dependências:** stockSchema (✅ unit_price existente), F5.1 (integração PDF)
+**Impacto Financeiro:** R$ 0
+
+---
+
+## 4. Requisitos Não-Funcionais
+
+| Requisito | Especificação | Métrica |
 |-----------|--------------|---------|
-| Performance | Geracao de PDF | < 3s para 30 dias |
-| Performance | Renderizacao calendario | < 100ms por mes |
-| Performance | Verificacao de interacoes | < 50ms |
-| Seguranca | Dados no link compartilhado | Sem nome completo ou dados sensiveis |
-| Privacidade | Geracao de PDF | 100% client-side, zero upload |
-| Privacidade | Base de interacoes | Local, sem chamadas externas |
-| Acessibilidade | Calendario | Navegavel por teclado, cores + icones |
-| Acessibilidade | PDF | Texto selecionavel (nao imagem) |
-| Compatibilidade | PDF download | Chrome, Safari, Firefox (mobile + desktop) |
-| Bundle Size | jsPDF + autotable | Lazy loaded, nao impacta bundle inicial |
+| Performance | Geração de PDF completo | < 3s para 30 dias |
+| Performance | Modo Consulta Médica (1 página) | < 10s |
+| Performance | Renderização calendário | < 100ms por mês |
+| Performance | Verificação de interações | < 50ms |
+| Segurança | Dados no link compartilhado | Sem nome completo ou dados sensíveis |
+| Privacidade | Geração de PDF | 100% client-side, zero upload |
+| Privacidade | Base de interações | Local, sem chamadas externas |
+| Privacidade | Cartão de Emergência | Dados mínimos, opt-in de alergias |
+| Acessibilidade | Calendário | Navegável por teclado, cores + ícones |
+| Acessibilidade | PDF | Texto selecionável (não imagem) |
+| Bundle Size | jsPDF + autotable | Lazy loaded, não impacta bundle inicial (762KB atual) |
 
 ---
 
 ## 5. Plano de Testes
 
-### 5.1 Testes Unitarios (Vitest)
+### 5.1 Testes Unitários (Vitest)
 
-| Componente | Cenarios |
+| Componente | Cenários |
 |------------|----------|
-| reportService | Gera PDF valido, inclui todas as secoes, respeita periodo, disclaimer presente |
-| exportService | CSV valido, JSON valido, UTF-8 BOM, todos os dados incluidos |
-| shareService | Gera link, decodifica link, limite de tamanho, dados sensiveis excluidos |
-| DoseCalendar | Renderiza mes correto, cores por status, navegacao entre meses |
-| interactionService | Detecta interacao conhecida, ignora desconhecida, case-insensitive |
-| stock-alerts cron | Calcula dias restantes, envia alerta, respeita rate limit |
+| reportService | Gera PDF válido, inclui todas as seções, respeita período, disclaimer presente |
+| exportService | CSV válido, JSON válido, UTF-8 BOM, unit_price incluído |
+| shareService | Gera link, decodifica link, limite de tamanho |
+| DoseCalendar | Renderiza mês correto, cores por status, navegação, tolerância 2h |
+| interactionService | Detecta interação conhecida, ignora desconhecida, case-insensitive |
+| ConsultationCard | Gera resumo 1 página, QR code gerado, dados corretos |
+| EmergencyCard | QR code legível, dados offline, formato cartão |
+| costAnalysisService | Calcula custo, não exibe sem unit_price, CTA correto |
 
-### 5.2 Testes de Integracao
+### 5.2 Testes de Integração
 
-| Cenario | Validacao |
+| Cenário | Validação |
 |---------|-----------|
-| Gerar PDF + preview | Seleciona periodo -> preview renderiza -> PDF baixado com dados corretos |
-| Export + reimport | Exporta JSON -> dados completos e validos |
-| Calendario + detalhe | Toca em dia -> detalhe mostra doses corretas |
-| Interacao + cadastro | Cadastra medicamento com interacao -> alerta exibido no dashboard |
-| Estoque + bot | Estoque baixo -> cron executa -> mensagem recebida no Telegram |
+| Gerar PDF + análise de custo | PDF inclui seção de custo quando unit_price presente |
+| Modo Consulta + QR code | PDF gerado, QR code abre link correto |
+| Cartão Emergência offline | Funciona sem internet, QR code escaneável |
+| Prescrição vencendo → bot alert | Cron detecta, mensagem enviada com messageFormatter |
+| Prescrição vencendo → push | Push notification recebida se opt-in |
+| Calendário + DailyDoseModal | Toque em dia abre modal com doses corretas |
 
 ### 5.3 Cobertura Alvo
 
-| Metrica | Meta |
+| Métrica | Meta |
 |---------|------|
 | Cobertura de linhas | > 85% (novos componentes) |
 | Cobertura de branches | > 80% |
-| Interacoes na base | >= 200 pares documentados |
+| Interações na base | >= 200 pares documentados |
 
 ---
 
@@ -401,57 +500,79 @@ Sistema que verifica interacoes conhecidas entre os medicamentos do usuario e ex
 
 | KPI | Baseline | Meta | Ferramenta |
 |-----|----------|------|------------|
-| Downloads PDF/semana | 0 | > 20% usuarios | Analytics local |
-| Exports de dados | 0 | > 10% usuarios | Analytics local |
-| Uso calendario visual | 0 | > 30% sessoes | Analytics local |
-| Links compartilhados | 0 | > 5% usuarios | Analytics local |
-| Alertas interacao exibidos | 0 | Tracking de ocorrencias | Analytics local |
-| Notificacoes estoque enviadas | 0 | Tracking | Supabase query |
-| Cobertura de testes | > 82% | > 85% | Vitest coverage |
+| Downloads PDF/semana | 0 | > 20% usuários | Analytics local |
+| Modo Consulta utilizado | 0 | > 20% usuários | Analytics local |
+| Cartão Emergência gerado | 0 | > 15% usuários | Analytics local |
+| Alertas prescrição enviados | 0 | Tracking de ocorrências | Supabase/Cron logs |
+| Análise de custo visualizada | 0 | > 35% com unit_price | Analytics local |
+| Exports de dados | 0 | > 10% usuários | Analytics local |
+| Uso calendário visual | 0 | > 30% sessões | Analytics local |
+| Alertas interação exibidos | 0 | Tracking | Analytics local |
+| Cobertura de testes | 93 críticos | > 120 críticos | Vitest coverage |
 
 ---
 
-## 7. Riscos e Mitigacoes
+## 7. Riscos e Mitigações
 
-| Risco | Probabilidade | Impacto | Mitigacao |
-|-------|--------------|---------|-----------|
-| jsPDF bundle size impacta carregamento | Media | Medio | Lazy loading (dynamic import), so carrega quando usuario acessa relatorios |
-| Base de interacoes incompleta gera falsa seguranca | Alta | Alto | Disclaimer claro em todos os alertas, fonte citada, recomendacao de consultar medico |
-| Link compartilhado com dados desatualizados | Media | Baixo | Data de geracao visivel, aviso "dados de {data}" |
-| Calendario com muitos dias sem dados confunde usuario | Baixa | Baixo | Legenda clara, empty state para meses sem dados |
-| Cron de estoque falha silenciosamente | Media | Medio | Logging no Vercel, alerta manual se cron nao executa em 48h |
-| PDF nao renderiza corretamente em todos os dispositivos | Media | Medio | Testes em multiplos dispositivos, fallback para HTML printavel |
-
----
-
-## 8. Cronograma de Implementacao
-
-| Ordem | Feature | Dependencia | Story Points |
-|-------|---------|-------------|-------------|
-| 1 | F5.4 Calendario Visual | adherenceService, Hash Router | 8 |
-| 2 | F5.2 Exportacao CSV/JSON | Nenhuma | 5 |
-| 3 | F5.1 Relatorios PDF | jsPDF (instalar), adherenceService | 13 |
-| 4 | F5.3 Compartilhamento via Link | F5.1 | 5 |
-| 5 | F5.5 Notificacoes Estoque Bot | Deep Linking, Bot | 3 |
-| 6 | F5.6 Alertas Interacao | SmartAlerts, base JSON | 13 |
+| Risco | Prob | Impacto | Mitigação |
+|-------|------|---------|-----------|
+| jsPDF bundle impacta carregamento | Média | Médio | Lazy loading (dynamic import) — já previsto |
+| Base ANVISA incompleta gera falsa segurança | Alta | Alto | Disclaimer claro em todos os alertas, fonte citada |
+| Cartão Emergência com dados desatualizados | Média | Alto | Data de atualização visível, aviso de sincronização |
+| QR code muito grande para cartão físico | Média | Baixo | Dados mínimos no QR (JSON comprimido), limite de 4KB |
+| Cron de alertas falha silenciosamente | Média | Médio | Logging estruturado, DLQ existente no bot |
+| unit_price não preenchido pelos usuários | Alta | Baixo | CTA contextual para preencher, feature só exibe quando disponível |
 
 ---
 
-## 9. Definicao de Pronto (DoD)
+## 8. Cronograma de Implementação
 
-- [ ] Codigo implementado e revisado
-- [ ] Testes unitarios passando com cobertura > 85%
+| Ordem | Feature | Dependência | SP |
+|-------|---------|-------------|-----|
+| 1 | F5.4 Calendário Visual | adherenceService, Hash Router ✅ | 8 |
+| 2 | F5.8 Cartão de Emergência | PWA cache ✅, Hash Router ✅ | 5 |
+| 3 | F5.9 Rastreador de Prescrições | messageFormatter ✅, Push ✅ | 3 |
+| 4 | F5.2 Exportação CSV/JSON | Nenhuma | 5 |
+| 5 | F5.1 Relatórios PDF | jsPDF, adherenceService | 13 |
+| 6 | F5.7 Modo Consulta Médica | F5.1, F5.3 | 8 |
+| 7 | F5.3 Compartilhamento via Link | F5.1 | 5 |
+| 8 | F5.5 Notificações Estoque Bot | messageFormatter ✅, Deep Links ✅ | 3 |
+| 9 | F5.10 Análise de Custo | unit_price ✅, F5.1 | 5 |
+| 10 | F5.6 Alertas Interação ANVISA | SmartAlerts ✅, base JSON | 13 |
+
+---
+
+## 9. Definição de Pronto (DoD)
+
+- [ ] Código implementado e revisado
+- [ ] Testes unitários passando com cobertura > 85%
 - [ ] PDF gerado corretamente em Chrome, Safari e Firefox
-- [ ] Exportacao CSV abrivel em Excel sem problemas de encoding
-- [ ] Calendario responsivo e acessivel
-- [ ] Base de interacoes com >= 200 pares documentados
-- [ ] Disclaimer presente em relatorios e alertas de interacao
-- [ ] Cron de estoque funcional no Vercel
-- [ ] Sem regressao em funcionalidades existentes
-- [ ] jsPDF lazy loaded (nao impacta bundle inicial)
+- [ ] Exportação CSV abrível em Excel sem problemas de encoding
+- [ ] Calendário responsivo e acessível (tolerância 2h respeitada)
+- [ ] Base de interações com >= 200 pares documentados (fonte ANVISA)
+- [ ] Disclaimer presente em relatórios e alertas de interação
+- [ ] Cartão de Emergência funcional offline
+- [ ] Alertas de prescrição disparando via bot e push
+- [ ] Análise de custo exibida apenas com unit_price disponível
+- [ ] jsPDF lazy loaded (não impacta bundle inicial 762KB)
+- [ ] Sem regressão — 93 testes críticos continuam passando
 
 ---
 
-*Documento elaborado em 08/02/2026*  
-*Referencia: Roadmap 2026 v3.0 - Fase 5*  
-*Proxima revisao: apos conclusao da Fase 5*
+## 10. Entregáveis para a Fase 5.5
+
+Ao concluir a Fase 5, os seguintes artefatos estarão prontos para a Fase 5.5 (Inteligência Preditiva):
+
+| Artefato | Usado em |
+|----------|---------|
+| `costAnalysisService.js` (versão simples) | Fase 5.5 I05 expande com consumo real |
+| Dados de `unit_price` incentivados pelo CTA | Fase 5.5 I05 análise de custo real |
+| `DoseCalendar.jsx` com padrão visual | Fase 5.5 I02 heatmap herda o padrão de cores |
+| Dados de doses históricos acumulados | Fase 5.5 I01–I04 todos dependem desses dados |
+
+---
+
+*Documento revisado em: 21/02/2026*
+*Referência: Roadmap 2026 v3.2 - Fase 5*
+*Baseline: v2.8.1 (pós-Fase 4 completa)*
+*Próxima revisão: após conclusão da Fase 5*
