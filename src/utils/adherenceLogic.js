@@ -38,7 +38,11 @@ function getDailyDoseRate(frequency, timesPerDay) {
     case 'every_other_day':
     case 'dia_sim_dia_nao':
     case 'dia sim, dia não':
+    case 'dias_alternados':
       return timesPerDay / 2
+    case 'quando_necessário':
+    case 'personalizado':
+      return 0
     default:
       return timesPerDay
   }

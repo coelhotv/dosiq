@@ -44,7 +44,7 @@ export async function verifyAdminAccess(authHeader) {
       return { authorized: false, error: 'Configurações de usuário não encontradas' };
     }
 
-    if (userSettings.telegram_chat_id !== adminChatId) {
+    if (String(userSettings.telegram_chat_id) !== String(adminChatId)) {
       return { authorized: false, error: 'Acesso negado. Apenas administradores podem acessar.' };
     }
 
