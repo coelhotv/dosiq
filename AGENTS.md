@@ -68,21 +68,21 @@ grep -r "export.*adherenceService" src/
 grep -r "from.*adherenceService" src/
 ```
 
-**Canonical File Locations:**
-| Domain | Canonical Location | DO NOT USE (legado) |
-|--------|-------------------|------------|
-| API Services | `src/services/api/*.js` | `src/components/*/services/*.js` |
-| Shared Services | `src/shared/services/*.js` e `src/shared/services/api/*.js` | — |
-| Feature Services | `src/features/*/services/*.js` *(legítimo para lógica local da feature)* | — |
-| Schemas | `src/schemas/*.js` | `src/shared/constants/*.js` |
-| Feature-local Schemas | `src/features/*/constants/*.js` *(ex: medicineSchema, stockSchema)* | — |
-| Utils | `src/utils/*.js` | `src/features/*/utils/*.js` |
-| Hooks | `src/shared/hooks/*.js` | `src/hooks/*.js` *(diretório legado)* |
-| Shared Components | `src/shared/components/**/*.jsx` | `src/components/**/*.jsx` *(diretório legado)* |
-| Protocol Components | `src/features/protocols/components/*.jsx` | `src/components/protocol/*.jsx` |
-| Dashboard Components | `src/features/dashboard/components/*.jsx` | `src/components/dashboard/*.jsx` |
+**Canonical File Locations (Wave 9 — estrutura final):**
+| Domain | Canonical Location | Obs |
+|--------|-------------------|-----|
+| API Services (adherence/dlq) | `src/services/api/adherenceService.js`, `dlqService.js` | Únicos sem equivalente em feature |
+| Feature Services | `src/features/*/services/*.js` | Ex: `@medications/services/medicineService` |
+| Shared Services | `src/shared/services/*.js` e `src/shared/services/api/logService.js` | cachedServices, migrationService |
+| Schemas | `src/schemas/*.js` | **Único local** para schemas Zod |
+| Utils | `src/utils/*.js` | adherenceLogic, dateUtils, titrationUtils |
+| Hooks | `src/shared/hooks/*.js` | useCachedQuery, useTheme, useHapticFeedback, useShake |
+| Shared Components | `src/shared/components/**/*.jsx` | ui/, gamification/, log/, onboarding/, pwa/ |
+| Feature Components | `src/features/*/components/*.jsx` | Componentes específicos da feature |
+| Supabase client | `@shared/utils/supabase` | Era `src/lib/supabase.js` (deletado) |
+| Cache util | `@shared/utils/queryCache` | Era `src/lib/queryCache.js` (deletado) |
 
-> **⚠️ Diretórios Legados**: `src/components/` e `src/hooks/` estão sendo migrados para `src/shared/components/` e `src/shared/hooks/`. Esses dirs legados são a **principal causa de duplicatas** no projeto. Ao criar novos arquivos, use SEMPRE os locais canônicos acima.
+> **✅ Wave 9 concluída**: `src/lib/`, `src/hooks/`, `src/components/`, `src/shared/constants/`, `src/features/*/constants/` e serviços duplicados em `src/services/api/` foram **deletados**. ESLint `no-restricted-imports` agora bloqueia importações de caminhos legados.
 
 **Path Aliases (defined in `vite.config.js`):**
 | Alias | Resolves To |
@@ -206,7 +206,7 @@ npm run validate:full  # Lint + coverage + build (full CI)
 **Rule**: ALL tests use `__tests__/` subfolder pattern
 
 ```
-src/services/api/
+src/features/medications/services/
   medicineService.js
   __tests__/
     medicineService.test.js
@@ -390,23 +390,20 @@ src/
 ├── features/          # Domain-driven features (F4.6) — CANONICAL
 │   ├── adherence/     # components/, hooks/
 │   ├── dashboard/     # components/, hooks/, services/
-│   ├── medications/   # components/, services/, constants/
+│   ├── medications/   # components/, services/
 │   ├── protocols/     # components/, services/, utils/
-│   └── stock/         # components/, services/, constants/
+│   └── stock/         # components/, services/
 ├── shared/            # Shared resources — CANONICAL
-│   ├── components/    # ui/, gamification/, log/, onboarding/
+│   ├── components/    # ui/, gamification/, log/, onboarding/, pwa/
 │   ├── hooks/         # useCachedQuery, useTheme, useHapticFeedback, useShake
-│   ├── services/      # cachedServices, migrationService, paginationService
+│   ├── services/      # cachedServices, migrationService
 │   │   └── api/       # logService (canônico para logs)
-│   ├── constants/     # ⚠️ LEGADO — schemas sendo migrados para src/schemas/
 │   └── utils/         # supabase.js (cliente), queryCache.js
-├── services/          # Serviços de API canônicos
-│   └── api/           # medicineService, protocolService, stockService, etc.
-├── schemas/           # Zod schemas globais canônicos
+├── services/          # ✅ Apenas 2 serviços sem equivalente em feature
+│   └── api/           # adherenceService.js, dlqService.js — APENAS ESTES 2
+├── schemas/           # Zod schemas globais (ÚNICO local — use @schemas/)
 ├── utils/             # Utilitários globais (dateUtils, adherenceLogic, titrationUtils)
-├── views/             # Page components
-├── components/        # ⚠️ LEGADO — migrando para src/shared/components/
-└── hooks/             # ⚠️ LEGADO — migrando para src/shared/hooks/
+└── views/             # Page components
 
 server/                # Telegram Bot (Node.js separado — server/package.json)
 ├── bot/
@@ -427,7 +424,7 @@ api/                   # Serverless Functions (Vercel)
 └── health/            # notifications.js (health check)
 ```
 
-> **⚠️ Sobre dirs legados**: `src/components/` e `src/hooks/` são os principais responsáveis pelas duplicatas de arquivos. Ao buscar bugs, SEMPRE verifique se o arquivo está sendo importado do local canônico ou do legado.
+> **✅ Wave 9 concluída**: `src/lib/`, `src/hooks/`, `src/components/`, `src/shared/constants/` e `src/features/*/constants/` foram deletados. Não há mais diretórios legados em `src/`. O ESLint bloqueia importações de caminhos antigos.
 
 **📖 Complete architecture**: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
 
@@ -664,11 +661,13 @@ grep -r "from.*TargetFile" src/ | head -20
 # An import like "@adherence/services/x" resolves to "src/features/adherence/services/x"
 
 # Step 4: Verify the correct file before making changes
-# The canonical location is usually:
-# - Services: src/services/api/
-# - Schemas: src/schemas/
+# The canonical location is:
+# - Feature services: src/features/{domain}/services/
+# - Shared services: src/shared/services/ or src/shared/services/api/
+# - Admin services (adherence/dlq): src/services/api/
+# - Schemas: src/schemas/  ← ÚNICO local, use @schemas/
 # - Utils: src/utils/
-# - Components: src/features/{domain}/components/
+# - Components: src/features/{domain}/components/ or src/shared/components/
 ```
 
 ### Creating a New Feature
@@ -777,6 +776,6 @@ npm run test:coverage
 
 ---
 
-*Última atualização: 2026-02-20*
+*Última atualização: 2026-02-21*
 *Versão do projeto: 3.0.0*
-*Formato: Routing Table (Phase 3 - Documentation Overhaul)*
+*Formato: Routing Table (Wave 9 — Legacy Cleanup concluído)*
