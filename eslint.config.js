@@ -44,6 +44,27 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])' }],
+
+      // Prevenir regressão para diretórios legados deletados na Wave 9
+      'no-restricted-imports': ['error', {
+        patterns: [
+          // src/lib/ foi deletado — use @shared/utils/supabase ou @shared/utils/queryCache
+          {
+            group: ['**/lib/supabase*', '**/lib/queryCache*'],
+            message: 'src/lib/ foi removido. Use "@shared/utils/supabase" ou "@shared/utils/queryCache".',
+          },
+          // @shared/constants/ foi deletado — use @schemas/
+          {
+            group: ['@shared/constants', '@shared/constants/**'],
+            message: '@shared/constants/ foi removido. Use "@schemas/" (ex: "@schemas/medicineSchema").',
+          },
+          // Feature-level constants foram deletados — use @schemas/
+          {
+            group: ['@medications/constants/**', '@stock/constants/**'],
+            message: 'Feature constants/ foram removidos. Use "@schemas/" diretamente.',
+          },
+        ],
+      }],
     },
   },
 ])
