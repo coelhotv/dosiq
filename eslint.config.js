@@ -50,8 +50,28 @@ export default defineConfig([
         patterns: [
           // src/lib/ foi deletado — use @shared/utils/supabase ou @shared/utils/queryCache
           {
-            group: ['**/lib/supabase*', '**/lib/queryCache*'],
+            group: ['**/lib/**'],
             message: 'src/lib/ foi removido. Use "@shared/utils/supabase" ou "@shared/utils/queryCache".',
+          },
+          // src/hooks/ foi deletado — use aliases @shared/hooks/ ou @feature/hooks/
+          {
+            group: [
+              './hooks', './hooks/**',
+              '../hooks', '../hooks/**',
+              '../../hooks', '../../hooks/**',
+              '../../../hooks', '../../../hooks/**',
+            ],
+            message: 'src/hooks/ foi removido. Use "@shared/hooks/" ou o alias da feature (ex: "@dashboard/hooks/", "@medications/hooks/").',
+          },
+          // src/components/ foi deletado — use aliases @shared/components/ ou @feature/components/
+          {
+            group: [
+              './components', './components/**',
+              '../components', '../components/**',
+              '../../components', '../../components/**',
+              '../../../components', '../../../components/**',
+            ],
+            message: 'src/components/ foi removido. Use "@shared/components/" ou o alias da feature (ex: "@medications/components/", "@stock/components/").',
           },
           // @shared/constants/ foi deletado — use @schemas/
           {
