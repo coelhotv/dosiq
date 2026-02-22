@@ -178,7 +178,7 @@ DECLARE
     'partial', 'wontfix', 'duplicate',
     'pendente', 'em_progresso', 'corrigido', 'descartado'
   ];
-  valid_resolution_types TEXT[] := ARRAY['fixed', 'rejected', 'partial', NULL];
+  valid_resolution_types TEXT[] := ARRAY['fixed', 'rejected', 'partial'];
 BEGIN
   -- Validar status
   IF NOT (new_status = ANY(valid_statuses)) THEN
@@ -186,8 +186,8 @@ BEGIN
   END IF;
   
   -- Validar resolution_type se fornecido
-  IF resolution_type IS NOT NULL AND NOT (resolution_type = ANY(ARRAY['fixed', 'rejected', 'partial'])) THEN
-    RAISE EXCEPTION 'Tipo de resolução inválido: %. Tipos permitidos: fixed, rejected, partial', resolution_type;
+  IF resolution_type IS NOT NULL AND NOT (resolution_type = ANY(valid_resolution_types)) THEN
+    RAISE EXCEPTION 'Tipo de resolução inválido: %. Tipos permitidos: %', resolution_type, array_to_string(valid_resolution_types, ', ');
   END IF;
   
   UPDATE gemini_reviews
