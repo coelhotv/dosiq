@@ -26,15 +26,15 @@ describe('Gemini Review Schema', () => {
 
   describe('Constantes', () => {
     it('deve ter status definidos corretamente', () => {
-      expect(REVIEW_STATUSES).toEqual(['pending', 'in_progress', 'fixed', 'discarded'])
+      expect(REVIEW_STATUSES).toEqual(['pendente', 'em_progresso', 'corrigido', 'descartado'])
     })
 
     it('deve ter prioridades definidas corretamente', () => {
-      expect(REVIEW_PRIORITIES).toEqual(['critical', 'high', 'medium', 'low'])
+      expect(REVIEW_PRIORITIES).toEqual(['critica', 'alta', 'media', 'baixa'])
     })
 
     it('deve ter categorias definidas corretamente', () => {
-      expect(REVIEW_CATEGORIES).toEqual(['style', 'bug', 'security', 'performance', 'maintainability'])
+      expect(REVIEW_CATEGORIES).toEqual(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade'])
     })
   })
 
@@ -51,8 +51,8 @@ describe('Gemini Review Schema', () => {
       line_start: 10,
       line_end: 20,
       issue_hash: 'd41d8cd98f00b204e9800998ecf8427e',
-      status: 'pending',
-      priority: 'high',
+      status: 'pendente',
+      priority: 'alta',
       category: 'bug',
       title: 'Função não tratada',
       description: 'A função não tem tratamento de erro',
@@ -132,7 +132,7 @@ describe('Gemini Review Schema', () => {
       delete withoutStatus.status
       const result = geminiReviewSchema.safeParse(withoutStatus)
       expect(result.success).toBe(true)
-      expect(result.data.status).toBe('pending')
+      expect(result.data.status).toBe('pendente')
     })
   })
 
@@ -146,8 +146,8 @@ describe('Gemini Review Schema', () => {
       commit_sha: 'abc123def456',
       file_path: 'src/services/api/medicineService.js',
       issue_hash: 'd41d8cd98f00b204e9800998ecf8427e',
-      status: 'pending',
-      priority: 'high',
+      status: 'pendente',
+      priority: 'alta',
       category: 'bug',
       title: 'Função não tratada',
       description: 'A função não tem tratamento de erro',
@@ -180,7 +180,7 @@ describe('Gemini Review Schema', () => {
   describe('Schema de Atualização', () => {
     it('deve aceitar dados parciais para atualização', () => {
       const partialUpdate = {
-        status: 'in_progress',
+        status: 'em_progresso',
       }
       const result = geminiReviewUpdateSchema.safeParse(partialUpdate)
       expect(result.success).toBe(true)
@@ -188,7 +188,7 @@ describe('Gemini Review Schema', () => {
 
     it('deve aceitar apenas prioridade na atualização', () => {
       const partialUpdate = {
-        priority: 'critical',
+        priority: 'critica',
       }
       const result = geminiReviewUpdateSchema.safeParse(partialUpdate)
       expect(result.success).toBe(true)
@@ -207,7 +207,7 @@ describe('Gemini Review Schema', () => {
   describe('Schema de Atualização de Status', () => {
     it('deve validar atualização de status válida', () => {
       const statusUpdate = {
-        status: 'fixed',
+        status: 'corrigido',
         resolved_by: '550e8400-e29b-41d4-a716-446655440000',
         resolved_at: '2026-02-22T10:00:00Z',
       }
@@ -217,7 +217,7 @@ describe('Gemini Review Schema', () => {
 
     it('deve validar apenas status (sem resolved_by)', () => {
       const statusUpdate = {
-        status: 'in_progress',
+        status: 'em_progresso',
       }
       const result = geminiReviewStatusUpdateSchema.safeParse(statusUpdate)
       expect(result.success).toBe(true)
@@ -249,19 +249,19 @@ describe('Gemini Review Schema', () => {
     })
 
     it('deve validar filtro por status', () => {
-      const filters = { status: 'pending' }
+      const filters = { status: 'pendente' }
       const result = geminiReviewFiltersSchema.safeParse(filters)
       expect(result.success).toBe(true)
     })
 
     it('deve validar filtro por categoria', () => {
-      const filters = { category: 'security' }
+      const filters = { category: 'seguranca' }
       const result = geminiReviewFiltersSchema.safeParse(filters)
       expect(result.success).toBe(true)
     })
 
     it('deve validar filtro por prioridade', () => {
-      const filters = { priority: 'critical' }
+      const filters = { priority: 'critica' }
       const result = geminiReviewFiltersSchema.safeParse(filters)
       expect(result.success).toBe(true)
     })
@@ -269,7 +269,7 @@ describe('Gemini Review Schema', () => {
     it('deve validar múltiplos filtros', () => {
       const filters = {
         pr_number: 42,
-        status: 'pending',
+        status: 'pendente',
         category: 'bug',
       }
       const result = geminiReviewFiltersSchema.safeParse(filters)
@@ -299,7 +299,7 @@ describe('Gemini Review Schema', () => {
       commit_sha: 'abc123def456',
       file_path: 'src/services/api/medicineService.js',
       issue_hash: 'd41d8cd98f00b204e9800998ecf8427e',
-      status: 'pending',
+      status: 'pendente',
     }
 
     describe('validateGeminiReview', () => {
@@ -340,14 +340,14 @@ describe('Gemini Review Schema', () => {
 
     describe('validateGeminiReviewUpdate', () => {
       it('deve retornar sucesso para atualização parcial', () => {
-        const result = validateGeminiReviewUpdate({ status: 'fixed' })
+        const result = validateGeminiReviewUpdate({ status: 'corrigido' })
         expect(result.success).toBe(true)
       })
     })
 
     describe('validateGeminiReviewStatusUpdate', () => {
       it('deve retornar sucesso para atualização de status', () => {
-        const result = validateGeminiReviewStatusUpdate({ status: 'fixed' })
+        const result = validateGeminiReviewStatusUpdate({ status: 'corrigido' })
         expect(result.success).toBe(true)
       })
 
@@ -377,10 +377,10 @@ describe('Gemini Review Schema', () => {
   describe('Helpers', () => {
     describe('getStatusLabel', () => {
       it('deve retornar label em português para status válido', () => {
-        expect(getStatusLabel('pending')).toBe('Pendente')
-        expect(getStatusLabel('in_progress')).toBe('Em Progresso')
-        expect(getStatusLabel('fixed')).toBe('Corrigido')
-        expect(getStatusLabel('discarded')).toBe('Descartado')
+        expect(getStatusLabel('pendente')).toBe('Pendente')
+        expect(getStatusLabel('em_progresso')).toBe('Em Progresso')
+        expect(getStatusLabel('corrigido')).toBe('Corrigido')
+        expect(getStatusLabel('descartado')).toBe('Descartado')
       })
 
       it('deve retornar o próprio status se não encontrar label', () => {
@@ -390,10 +390,10 @@ describe('Gemini Review Schema', () => {
 
     describe('getPriorityLabel', () => {
       it('deve retornar label em português para prioridade válida', () => {
-        expect(getPriorityLabel('critical')).toBe('Crítica')
-        expect(getPriorityLabel('high')).toBe('Alta')
-        expect(getPriorityLabel('medium')).toBe('Média')
-        expect(getPriorityLabel('low')).toBe('Baixa')
+        expect(getPriorityLabel('critica')).toBe('Crítica')
+        expect(getPriorityLabel('alta')).toBe('Alta')
+        expect(getPriorityLabel('media')).toBe('Média')
+        expect(getPriorityLabel('baixa')).toBe('Baixa')
       })
 
       it('deve retornar a própria prioridade se não encontrar label', () => {
@@ -403,11 +403,11 @@ describe('Gemini Review Schema', () => {
 
     describe('getCategoryLabel', () => {
       it('deve retornar label em português para categoria válida', () => {
-        expect(getCategoryLabel('style')).toBe('Estilo')
+        expect(getCategoryLabel('estilo')).toBe('Estilo')
         expect(getCategoryLabel('bug')).toBe('Bug')
-        expect(getCategoryLabel('security')).toBe('Segurança')
+        expect(getCategoryLabel('seguranca')).toBe('Segurança')
         expect(getCategoryLabel('performance')).toBe('Performance')
-        expect(getCategoryLabel('maintainability')).toBe('Manutenibilidade')
+        expect(getCategoryLabel('manutenibilidade')).toBe('Manutenibilidade')
       })
 
       it('deve retornar a própria categoria se não encontrar label', () => {
@@ -416,20 +416,20 @@ describe('Gemini Review Schema', () => {
     })
 
     describe('isFinalStatus', () => {
-      it('deve retornar true para status final "fixed"', () => {
-        expect(isFinalStatus('fixed')).toBe(true)
+      it('deve retornar true para status final "corrigido"', () => {
+        expect(isFinalStatus('corrigido')).toBe(true)
       })
 
-      it('deve retornar true para status final "discarded"', () => {
-        expect(isFinalStatus('discarded')).toBe(true)
+      it('deve retornar true para status final "descartado"', () => {
+        expect(isFinalStatus('descartado')).toBe(true)
       })
 
-      it('deve retornar false para status não final "pending"', () => {
-        expect(isFinalStatus('pending')).toBe(false)
+      it('deve retornar false para status não final "pendente"', () => {
+        expect(isFinalStatus('pendente')).toBe(false)
       })
 
-      it('deve retornar false para status não final "in_progress"', () => {
-        expect(isFinalStatus('in_progress')).toBe(false)
+      it('deve retornar false para status não final "em_progresso"', () => {
+        expect(isFinalStatus('em_progresso')).toBe(false)
       })
     })
   })

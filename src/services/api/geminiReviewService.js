@@ -19,9 +19,9 @@ export const geminiReviewService = {
    * Lista reviews com filtros opcionais
    * @param {Object} filters - Filtros de busca
    * @param {number} [filters.pr_number] - Número do PR
-   * @param {string} [filters.status] - Status: 'pending', 'in_progress', 'fixed', 'discarded'
-   * @param {string} [filters.category] - Categoria: 'style', 'bug', 'security', 'performance', 'maintainability'
-   * @param {string} [filters.priority] - Prioridade: 'critical', 'high', 'medium', 'low'
+   * @param {string} [filters.status] - Status: 'pendente', 'em_progresso', 'corrigido', 'descartado'
+   * @param {string} [filters.category] - Categoria: 'estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade'
+   * @param {string} [filters.priority] - Prioridade: 'critica', 'alta', 'media', 'baixa'
    * @returns {Promise<Array>} Lista de reviews
    * @throws {Error} Se houver erro na consulta
    */
@@ -192,7 +192,7 @@ export const geminiReviewService = {
   /**
    * Atualiza o status de uma review
    * @param {string} id - UUID da review
-   * @param {string} status - Novo status: 'pending', 'in_progress', 'fixed', 'discarded'
+   * @param {string} status - Novo status: 'pendente', 'em_progresso', 'corrigido', 'descartado'
    * @param {string} [resolvedBy] - UUID do usuário que resolveu (opcional)
    * @returns {Promise<Object>} Review atualizada
    * @throws {Error} Se dados forem inválidos ou houver erro
@@ -208,7 +208,7 @@ export const geminiReviewService = {
     }
 
     // Se status for final, adicionar resolved_at
-    if (status === 'fixed' || status === 'discarded') {
+    if (status === 'corrigido' || status === 'descartado') {
       updateData.resolved_at = new Date().toISOString()
     } else {
       updateData.resolved_at = null
@@ -251,7 +251,7 @@ export const geminiReviewService = {
     const updateData = { status }
 
     // Se status for final, adicionar resolved_at
-    if (status === 'fixed' || status === 'discarded') {
+    if (status === 'corrigido' || status === 'descartado') {
       updateData.resolved_at = new Date().toISOString()
     }
 
