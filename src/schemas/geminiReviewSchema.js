@@ -12,55 +12,55 @@ import { z } from 'zod'
 // ============================================================================
 
 /**
- * Status possíveis das reviews
+ * Status possíveis das reviews (em português)
  * @readonly
  */
-export const REVIEW_STATUSES = ['pending', 'in_progress', 'fixed', 'discarded']
+export const REVIEW_STATUSES = ['pendente', 'em_progresso', 'corrigido', 'descartado']
 
 /**
  * Labels para exibição dos status
  * @readonly
  */
 export const REVIEW_STATUS_LABELS = {
-  pending: 'Pendente',
-  in_progress: 'Em Progresso',
-  fixed: 'Corrigido',
-  discarded: 'Descartado',
+  pendente: 'Pendente',
+  em_progresso: 'Em Progresso',
+  corrigido: 'Corrigido',
+  descartado: 'Descartado',
 }
 
 /**
- * Prioridades possíveis
+ * Prioridades possíveis (em português)
  * @readonly
  */
-export const REVIEW_PRIORITIES = ['critical', 'high', 'medium', 'low']
+export const REVIEW_PRIORITIES = ['critica', 'alta', 'media', 'baixa']
 
 /**
  * Labels para exibição das prioridades
  * @readonly
  */
 export const REVIEW_PRIORITY_LABELS = {
-  critical: 'Crítica',
-  high: 'Alta',
-  medium: 'Média',
-  low: 'Baixa',
+  critica: 'Crítica',
+  alta: 'Alta',
+  media: 'Média',
+  baixa: 'Baixa',
 }
 
 /**
- * Categorias possíveis
+ * Categorias possíveis (em português)
  * @readonly
  */
-export const REVIEW_CATEGORIES = ['style', 'bug', 'security', 'performance', 'maintainability']
+export const REVIEW_CATEGORIES = ['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade']
 
 /**
  * Labels para exibição das categorias
  * @readonly
  */
 export const REVIEW_CATEGORY_LABELS = {
-  style: 'Estilo',
+  estilo: 'Estilo',
   bug: 'Bug',
-  security: 'Segurança',
+  seguranca: 'Segurança',
   performance: 'Performance',
-  maintainability: 'Manutenibilidade',
+  manutenibilidade: 'Manutenibilidade',
 }
 
 // ============================================================================
@@ -88,7 +88,7 @@ export const geminiReviewSchema = z.object({
   // Status, prioridade e categoria
   status: z.enum(REVIEW_STATUSES, {
     errorMap: () => ({ message: 'Status inválido' }),
-  }).default('pending'),
+  }).default('pendente'),
 
   priority: z.enum(REVIEW_PRIORITIES, {
     errorMap: () => ({ message: 'Prioridade inválida' }),
@@ -369,5 +369,5 @@ export function getCategoryLabel(category) {
  * @returns {boolean} true se o status é final
  */
 export function isFinalStatus(status) {
-  return status === 'fixed' || status === 'discarded'
+  return status === 'corrigido' || status === 'descartado'
 }
