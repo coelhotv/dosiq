@@ -2,7 +2,7 @@
 
 > Source of truth for all project-specific rules learned through development.
 > Do NOT duplicate these in AGENTS.md, .gemini/styleguide.md, or other files — link here.
-> See [README.md](README.md) for how this system works.
+> See [README.md](/.memory/README.md) for how this system works.
 
 ---
 
