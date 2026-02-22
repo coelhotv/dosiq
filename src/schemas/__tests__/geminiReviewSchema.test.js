@@ -28,10 +28,18 @@ describe('Gemini Review Schema', () => {
     it('deve ter status definidos corretamente', () => {
       expect(REVIEW_STATUSES).toEqual([
         // Workflow Intelligence
-        'detected', 'reported', 'assigned', 'resolved',
-        'partial', 'wontfix', 'duplicate',
+        'detected',
+        'reported',
+        'assigned',
+        'resolved',
+        'partial',
+        'wontfix',
+        'duplicate',
         // Legados
-        'pendente', 'em_progresso', 'corrigido', 'descartado'
+        'pendente',
+        'em_progresso',
+        'corrigido',
+        'descartado',
       ])
     })
 
