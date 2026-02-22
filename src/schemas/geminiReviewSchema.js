@@ -15,17 +15,56 @@ import { z } from 'zod'
  * Status possíveis das reviews (em português)
  * @readonly
  */
-export const REVIEW_STATUSES = ['pendente', 'em_progresso', 'corrigido', 'descartado']
+export const REVIEW_STATUSES = [
+  // Estados do Workflow Intelligence
+  'detected', // Detectado pelo Gemini
+  'reported', // Reportado ao GitHub (issue criada)
+  'assigned', // Atribuído a agent
+  'resolved', // Completamente resolvido
+  'partial', // Parcialmente resolvido
+  'wontfix', // Ignorado/falso positivo
+  'duplicate', // Duplicata
+  // Estados legados (compatibilidade)
+  'pendente',
+  'em_progresso',
+  'corrigido',
+  'descartado',
+]
 
 /**
  * Labels para exibição dos status
  * @readonly
  */
 export const REVIEW_STATUS_LABELS = {
+  // Workflow Intelligence
+  detected: 'Detectado',
+  reported: 'Reportado',
+  assigned: 'Atribuído',
+  resolved: 'Resolvido',
+  partial: 'Parcial',
+  wontfix: 'Ignorado',
+  duplicate: 'Duplicado',
+  // Legados
   pendente: 'Pendente',
   em_progresso: 'Em Progresso',
   corrigido: 'Corrigido',
   descartado: 'Descartado',
+}
+
+/**
+ * Tipos de resolução possíveis
+ * @readonly
+ */
+export const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial']
+
+/**
+ * Labels para exibição dos tipos de resolução
+ * @readonly
+ */
+export const RESOLUTION_TYPE_LABELS = {
+  fixed: 'Corrigido',
+  rejected: 'Rejeitado',
+  partial: 'Parcial',
 }
 
 /**
@@ -82,26 +121,36 @@ export const geminiReviewSchema = z.object({
   line_start: z.number().int().positive().nullable().optional(),
   line_end: z.number().int().positive().nullable().optional(),
 
-  // Hash único
-  issue_hash: z.string().min(1, 'Hash da issue é obrigatório'),
-
   // Status, prioridade e categoria
-  status: z.enum(REVIEW_STATUSES, {
-    errorMap: () => ({ message: 'Status inválido' }),
-  }).default('pendente'),
+  status: z
+    .enum(REVIEW_STATUSES, {
+      errorMap: () => ({ message: 'Status inválido' }),
+    })
+    .default('pendente'),
 
-  priority: z.enum(REVIEW_PRIORITIES, {
-    errorMap: () => ({ message: 'Prioridade inválida' }),
-  }).nullable().optional(),
+  priority: z
+    .enum(REVIEW_PRIORITIES, {
+      errorMap: () => ({ message: 'Prioridade inválida' }),
+    })
+    .nullable()
+    .optional(),
 
-  category: z.enum(REVIEW_CATEGORIES, {
-    errorMap: () => ({ message: 'Categoria inválida' }),
-  }).nullable().optional(),
+  category: z
+    .enum(REVIEW_CATEGORIES, {
+      errorMap: () => ({ message: 'Categoria inválida' }),
+    })
+    .nullable()
+    .optional(),
 
   // Conteúdo da review
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   suggestion: z.string().nullable().optional(),
+
+  // Workflow Intelligence
+  issue_hash: z.string().min(1).nullable().optional(),
+  github_issue_number: z.number().int().positive().nullable().optional(),
+  resolution_type: z.enum(RESOLUTION_TYPES).nullable().optional(),
 
   // Timestamps
   created_at: z.string().datetime().optional(),
@@ -138,6 +187,7 @@ export const geminiReviewStatusUpdateSchema = z.object({
   status: z.enum(REVIEW_STATUSES, {
     errorMap: () => ({ message: 'Status inválido' }),
   }),
+  resolution_type: z.enum(RESOLUTION_TYPES).nullable().optional(),
   resolved_by: z.string().uuid().nullable().optional(),
   resolved_at: z.string().datetime().nullable().optional(),
 })
