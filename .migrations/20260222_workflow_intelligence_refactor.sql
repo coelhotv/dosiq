@@ -173,9 +173,25 @@ CREATE OR REPLACE FUNCTION batch_update_review_status(
 RETURNS INTEGER AS $$
 DECLARE
   updated_count INTEGER;
+  valid_statuses TEXT[] := ARRAY[
+    'detected', 'reported', 'assigned', 'resolved',
+    'partial', 'wontfix', 'duplicate',
+    'pendente', 'em_progresso', 'corrigido', 'descartado'
+  ];
+  valid_resolution_types TEXT[] := ARRAY['fixed', 'rejected', 'partial', NULL];
 BEGIN
+  -- Validar status
+  IF NOT (new_status = ANY(valid_statuses)) THEN
+    RAISE EXCEPTION 'Status inválido: %. Status permitidos: %', new_status, array_to_string(valid_statuses, ', ');
+  END IF;
+  
+  -- Validar resolution_type se fornecido
+  IF resolution_type IS NOT NULL AND NOT (resolution_type = ANY(ARRAY['fixed', 'rejected', 'partial'])) THEN
+    RAISE EXCEPTION 'Tipo de resolução inválido: %. Tipos permitidos: fixed, rejected, partial', resolution_type;
+  END IF;
+  
   UPDATE gemini_reviews
-  SET 
+  SET
     status = new_status,
     resolution_type = COALESCE(resolution_type, gemini_reviews.resolution_type),
     updated_at = NOW()
