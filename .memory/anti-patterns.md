@@ -21,8 +21,11 @@
 | AP-014 | Use `--no-verify` to skip hooks | Bypass quality gates | Fix errors properly instead | — |
 | AP-015 | Call `logNotification()` after `shouldSendNotification()` | Duplicate notification logs | `shouldSendNotification()` already logs internally | R-032 |
 | AP-016 | Endpoint with `service_role` key without auth | Unauthenticated access bypasses RLS | Add Supabase Auth + admin check | R-042 |
+| AP-020 | Code agent merging its own PR | Unreviewed code, conflicts of interest | Separate responsibilities: Code creates, DevOps merges | R-060 |
+| AP-021 | Skipping Gemini Code Assist review to save time | Missed CRITICAL/HIGH issues, production bugs | Always wait for Gemini review, address all CRITICAL/HIGH | R-062 |
+| AP-022 | Sequential task creation without validation gates | Accumulated errors, no quality checkpoints | Pause between tasks for review, use quality gates | R-061 |
 
 ---
 
-*Last updated: 2026-02-21*
-*Anti-patterns: AP-001 to AP-016*
+*Last updated: 2026-02-22*
+*Anti-patterns: AP-001 to AP-022*

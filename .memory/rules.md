@@ -138,5 +138,25 @@ callback_data: `reg_med:${medicineId}:${protocolId}`
 
 ---
 
-*Last updated: 2026-02-21*
-*Rules: R-001 to R-051*
+## Agent Coordination
+
+### R-060: No Self-Merge for Code Agents [CRITICAL]
+**Rule:** Never allow a code agent to merge its own PR. Code creates PR → Debug/Code reviews → DevOps merges only after explicit approval.
+**Source:** journal/2026-W09 (coordination failure)
+
+### R-061: Mandatory Review Pause [HIGH]
+**Rule:** Always have a pause for review between coding tasks. Never create sequential tasks without validation gates. Quality checkpoints must exist between implementation phases.
+**Source:** journal/2026-W09 (coordination failure)
+
+### R-062: Quality Over Speed [HIGH]
+**Rule:** One well-reviewed PR is worth more than 3 rushed PRs. Never sacrifice code review rigor for delivery speed. Gemini Code Assist review is non-negotiable.
+**Source:** journal/2026-W09 (coordination failure)
+
+### R-063: Process as Protection [MEDIUM]
+**Rule:** The rigorous workflow exists to prevent errors. Never skip steps "just this once." Process violations compound into production failures.
+**Source:** journal/2026-W09 (coordination failure)
+
+---
+
+*Last updated: 2026-02-22*
+*Rules: R-001 to R-063*
