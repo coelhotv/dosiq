@@ -26,7 +26,13 @@ describe('Gemini Review Schema', () => {
 
   describe('Constantes', () => {
     it('deve ter status definidos corretamente', () => {
-      expect(REVIEW_STATUSES).toEqual(['pendente', 'em_progresso', 'corrigido', 'descartado'])
+      expect(REVIEW_STATUSES).toEqual([
+        // Workflow Intelligence
+        'detected', 'reported', 'assigned', 'resolved',
+        'partial', 'wontfix', 'duplicate',
+        // Legados
+        'pendente', 'em_progresso', 'corrigido', 'descartado'
+      ])
     })
 
     it('deve ter prioridades definidas corretamente', () => {
