@@ -20,18 +20,16 @@ import {
 
 let fetchCalls = [];
 let fetchMockResponse = { ok: true, status: 200 };
-let fetchShouldFail = false;
 let fetchFailCount = 0;
+let fetchCurrentFailCount = 0;
 
-// Mock global fetch
+// Mock global fetch - centralized logic for test configuration
 global.fetch = async (url, options) => {
   fetchCalls.push({ url, options });
   
-  if (fetchShouldFail) {
-    fetchFailCount--;
-    if (fetchFailCount <= 0) {
-      fetchShouldFail = false;
-    }
+  // Simulate network failures for configured number of calls
+  if (fetchCurrentFailCount < fetchFailCount) {
+    fetchCurrentFailCount++;
     throw new Error('Network error');
   }
   
@@ -42,11 +40,17 @@ global.fetch = async (url, options) => {
   };
 };
 
-function resetFetchMock() {
+/**
+ * Reset fetch mock with configurable behavior
+ * @param {Object} config - Configuration object
+ * @param {number} [config.failCount=0] - Number of calls to fail with network error
+ * @param {Object} [config.response={ok: true, status: 200}] - Response to return
+ */
+function resetFetchMock(config = {}) {
   fetchCalls = [];
-  fetchMockResponse = { ok: true, status: 200 };
-  fetchShouldFail = false;
-  fetchFailCount = 0;
+  fetchMockResponse = config.response || { ok: true, status: 200 };
+  fetchFailCount = config.failCount || 0;
+  fetchCurrentFailCount = 0;
 }
 
 // ==========================================
@@ -267,8 +271,7 @@ test('should parse JSON array of objects with url property', () => {
 console.log('\n📋 Tests for sendWebhookWithRetry:\n');
 
 await testAsync('should send webhook successfully with HMAC signature', async () => {
-  resetFetchMock();
-  fetchMockResponse = { ok: true, status: 200 };
+  resetFetchMock({ response: { ok: true, status: 200 } });
   
   const result = await sendWebhookWithRetry(
     'https://webhook.example.com',
@@ -289,15 +292,8 @@ await testAsync('should send webhook successfully with HMAC signature', async ()
 });
 
 await testAsync('should retry on network error and eventually succeed', async () => {
-  resetFetchMock();
-  // Fails on first 2 calls, then resets mock to success
-  global.fetch = async (url, options) => {
-    fetchCalls.push({ url, options });
-    if (fetchCalls.length <= 2) {
-      throw new Error('Network error');
-    }
-    return { ok: true, status: 200, text: async () => 'OK' };
-  };
+  // Configure mock to fail first 2 calls, then succeed
+  resetFetchMock({ failCount: 2, response: { ok: true, status: 200 } });
   
   const result = await sendWebhookWithRetry(
     'https://webhook.example.com',
@@ -307,16 +303,12 @@ await testAsync('should retry on network error and eventually succeed', async ()
   
   // After retry, should succeed on 3rd attempt
   assert.strictEqual(result.success, true);
-  assert.ok(fetchCalls.length === 3);
+  assert.strictEqual(fetchCalls.length, 3);
 });
 
 await testAsync('should return error on 4xx client error without retry', async () => {
-  resetFetchMock();
-  // Restore standard mock for this test
-  global.fetch = async (url, options) => {
-    fetchCalls.push({ url, options });
-    return { ok: false, status: 404, text: async () => 'Not Found' };
-  };
+  // Configure mock to return 404 (no retry for 4xx)
+  resetFetchMock({ response: { ok: false, status: 404 } });
   
   const result = await sendWebhookWithRetry(
     'https://webhook.example.com',
@@ -360,8 +352,7 @@ await testAsync('should retry on 5xx server error', async () => {
 console.log('\n📋 Tests for notifyAgents:\n');
 
 await testAsync('should notify multiple webhooks successfully', async () => {
-  resetFetchMock();
-  fetchMockResponse = { ok: true, status: 200 };
+  resetFetchMock({ response: { ok: true, status: 200 } });
   
   const webhooks = ['https://webhook1.com', 'https://webhook2.com'];
   const context = { prNumber: 117, branch: 'feature/test', commitSha: 'abc123' };
@@ -393,8 +384,8 @@ await testAsync('should return error when context is invalid', async () => {
 });
 
 await testAsync('should continue even if one webhook fails permanently', async () => {
-  resetFetchMock();
-  // Simulates permanent failure on first webhook, success on second
+  resetFetchMock(); // Reset state before custom mock
+  // Custom mock: first webhook fails, second succeeds
   global.fetch = async (url, options) => {
     fetchCalls.push({ url, options });
     
@@ -414,7 +405,7 @@ await testAsync('should continue even if one webhook fails permanently', async (
   
   const result = await notifyAgents(mockReviewData, webhooks, 'secret', context);
   
-  assert.strictEqual(result.success, false); // Nem todos tiveram sucesso
+  assert.strictEqual(result.success, false); // Not all succeeded
   assert.strictEqual(result.results.length, 2);
   assert.strictEqual(result.results[0].success, false);
   assert.strictEqual(result.results[1].success, true);
