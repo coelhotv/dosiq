@@ -65,5 +65,31 @@ export {
   getBulkLogErrorMessage,
 } from './logSchema'
 
+export {
+  geminiReviewSchema,
+  geminiReviewCreateSchema,
+  geminiReviewUpdateSchema,
+  geminiReviewStatusUpdateSchema,
+  geminiReviewFiltersSchema,
+  geminiReviewFullSchema,
+  validateGeminiReview,
+  validateGeminiReviewCreate,
+  validateGeminiReviewUpdate,
+  validateGeminiReviewStatusUpdate,
+  validateGeminiReviewFilters,
+  mapGeminiReviewErrorsToForm,
+  getGeminiReviewErrorMessage,
+  getStatusLabel,
+  getPriorityLabel,
+  getCategoryLabel,
+  isFinalStatus,
+  REVIEW_STATUSES,
+  REVIEW_STATUS_LABELS,
+  REVIEW_PRIORITIES,
+  REVIEW_PRIORITY_LABELS,
+  REVIEW_CATEGORIES,
+  REVIEW_CATEGORY_LABELS,
+} from './geminiReviewSchema'
+
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper'
