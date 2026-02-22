@@ -1,15 +1,17 @@
 /**
  * Script de notificação de agents externos via webhook
- * 
+ *
  * Este módulo envia notificações HTTP POST para agents externos (como Kilocode)
  * quando novas reviews do Gemini Code Assist estão disponíveis.
- * 
+ *
  * Componente P4.7 da arquitetura de integração Gemini-Agent.
- * 
+ *
  * @module notify-agents
  * @version 1.0.0
  * @created 2026-02-22
  */
+
+const crypto = require('crypto');
 
 /**
  * Configurações do webhook
@@ -118,6 +120,12 @@ async function sendWebhookWithRetry(webhookUrl, payload, secret, options = {}) {
   const maxRetries = options.maxRetries || WEBHOOK_CONFIG.MAX_RETRIES;
   const retryDelays = WEBHOOK_CONFIG.RETRY_DELAYS;
 
+  // Calculate HMAC signature for webhook authentication
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(JSON.stringify(payload))
+    .digest('hex');
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`📤 Enviando webhook para ${webhookUrl} (tentativa ${attempt}/${maxRetries})`);
@@ -130,7 +138,7 @@ async function sendWebhookWithRetry(webhookUrl, payload, secret, options = {}) {
         headers: {
           'Content-Type': 'application/json',
           'X-Gemini-Event': 'review_available',
-          'Authorization': `Bearer ${secret}`,
+          'X-Gemini-Signature-256': `sha256=${signature}`,
           'X-Webhook-Attempt': attempt.toString()
         },
         body: JSON.stringify(payload),
@@ -269,7 +277,13 @@ function parseWebhookUrls(webhooksConfig) {
     // Tenta parsear como JSON array
     const parsed = JSON.parse(webhooksConfig);
     if (Array.isArray(parsed)) {
-      return parsed.filter(url => typeof url === 'string' && url.startsWith('http'));
+      return parsed
+        .map(item => {
+          if (typeof item === 'string') return item;
+          if (typeof item === 'object' && item !== null && typeof item.url === 'string') return item.url;
+          return null;
+        })
+        .filter(url => url && url.startsWith('http'));
     }
   } catch {
     // Não é JSON, tenta split por vírgula

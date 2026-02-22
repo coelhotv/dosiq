@@ -1,6 +1,6 @@
 /**
- * Testes unitários para notify-agents.cjs
- * 
+ * Unit tests for notify-agents.cjs
+ *
  * @run node .github/scripts/__tests__/notify-agents.test.js
  */
 
@@ -15,7 +15,7 @@ import {
 } from '../notify-agents.cjs';
 
 // ==========================================
-// MOCK DE FETCH GLOBAL
+// GLOBAL FETCH MOCK
 // ==========================================
 
 let fetchCalls = [];
@@ -117,63 +117,63 @@ async function testAsync(name, fn) {
 }
 
 // ------------------------------------------
-// Testes de shouldNotify
+// Tests for shouldNotify
 // ------------------------------------------
 
-console.log('\n📋 Testes de shouldNotify:\n');
+console.log('\n📋 Tests for shouldNotify:\n');
 
-test('deve retornar true quando há issue CRITICAL (modo critical)', () => {
+test('should return true for CRITICAL issue in critical mode', () => {
   const result = shouldNotify(mockReviewData, 'critical');
   assert.strictEqual(result, true);
 });
 
-test('deve retornar false quando não há issue CRITICAL (modo critical)', () => {
+test('should return false when no CRITICAL issue in critical mode', () => {
   const result = shouldNotify(mockReviewDataNoCritical, 'critical');
   assert.strictEqual(result, false);
 });
 
-test('deve retornar true quando há issue HIGH (modo high)', () => {
+test('should return true for HIGH issue in high mode', () => {
   const result = shouldNotify(mockReviewDataNoCritical, 'high');
   assert.strictEqual(result, true);
 });
 
-test('deve retornar false quando não há HIGH nem CRITICAL (modo high)', () => {
+test('should return false when no HIGH or CRITICAL in high mode', () => {
   const result = shouldNotify(mockReviewDataOnlyMedium, 'high');
   assert.strictEqual(result, false);
 });
 
-test('deve retornar true quando há qualquer issue (modo all)', () => {
+test('should return true for any issue in all mode', () => {
   const result = shouldNotify(mockReviewDataOnlyMedium, 'all');
   assert.strictEqual(result, true);
 });
 
-test('deve retornar false quando não há issues (modo all)', () => {
+test('should return false when no issues in all mode', () => {
   const result = shouldNotify({ summary: { total_issues: 0 } }, 'all');
   assert.strictEqual(result, false);
 });
 
-test('deve usar modo critical como padrão', () => {
+test('should use critical mode as default', () => {
   const result = shouldNotify(mockReviewData);
   assert.strictEqual(result, true);
 });
 
-test('deve retornar false para dados inválidos', () => {
+test('should return false for invalid data', () => {
   const result = shouldNotify(null);
   assert.strictEqual(result, false);
 });
 
-test('deve retornar false para dados sem summary', () => {
+test('should return false for data without summary', () => {
   const result = shouldNotify({});
   assert.strictEqual(result, false);
 });
 
 // ------------------------------------------
-// Testes de formatWebhookPayload
+// Tests for formatWebhookPayload
 // ------------------------------------------
 
-console.log('\n📋 Testes de formatWebhookPayload:\n');
+console.log('\n📋 Tests for formatWebhookPayload:\n');
 
-test('deve formatar payload corretamente', () => {
+test('should format payload correctly', () => {
   const payload = formatWebhookPayload(mockReviewData, 117, 'feature/test', 'abc123');
   
   assert.strictEqual(payload.event, 'gemini_review_available');
@@ -188,11 +188,11 @@ test('deve formatar payload corretamente', () => {
   assert.ok(new Date(payload.timestamp).toISOString() === payload.timestamp);
 });
 
-test('deve usar URL base customizada quando fornecida', () => {
+test('should use custom base URL when provided', () => {
   const payload = formatWebhookPayload(
-    mockReviewData, 
-    117, 
-    'feature/test', 
+    mockReviewData,
+    117,
+    'feature/test',
     'abc123',
     'https://custom.api.com'
   );
@@ -200,7 +200,7 @@ test('deve usar URL base customizada quando fornecida', () => {
   assert.ok(payload.api_endpoint.includes('custom.api.com'));
 });
 
-test('deve lidar com dados de summary ausentes', () => {
+test('should handle missing summary data', () => {
   const payload = formatWebhookPayload({}, 117, 'feature/test', 'abc123');
   
   assert.strictEqual(payload.issue_count, 0);
@@ -208,7 +208,7 @@ test('deve lidar com dados de summary ausentes', () => {
   assert.strictEqual(payload.high_count, 0);
 });
 
-test('deve usar fallback para critical_count quando critical está presente', () => {
+test('should use fallback for critical_count when critical is present', () => {
   const data = { summary: { critical: 2, high: 1 } };
   const payload = formatWebhookPayload(data, 117, 'feature/test', 'abc123');
   
@@ -217,48 +217,56 @@ test('deve usar fallback para critical_count quando critical está presente', ()
 });
 
 // ------------------------------------------
-// Testes de parseWebhookUrls
+// Tests for parseWebhookUrls
 // ------------------------------------------
 
-console.log('\n📋 Testes de parseWebhookUrls:\n');
+console.log('\n📋 Tests for parseWebhookUrls:\n');
 
-test('deve parsear JSON array corretamente', () => {
+test('should parse JSON array correctly', () => {
   const urls = parseWebhookUrls('["https://webhook1.com", "https://webhook2.com"]');
   assert.strictEqual(urls.length, 2);
   assert.strictEqual(urls[0], 'https://webhook1.com');
   assert.strictEqual(urls[1], 'https://webhook2.com');
 });
 
-test('deve parsear string separada por vírgula', () => {
+test('should parse comma-separated string', () => {
   const urls = parseWebhookUrls('https://webhook1.com, https://webhook2.com');
   assert.strictEqual(urls.length, 2);
   assert.strictEqual(urls[0], 'https://webhook1.com');
   assert.strictEqual(urls[1], 'https://webhook2.com');
 });
 
-test('deve retornar array vazio para input vazio', () => {
+test('should return empty array for empty input', () => {
   const urls = parseWebhookUrls('');
   assert.strictEqual(urls.length, 0);
 });
 
-test('deve retornar array vazio para input null', () => {
+test('should return empty array for null input', () => {
   const urls = parseWebhookUrls(null);
   assert.strictEqual(urls.length, 0);
 });
 
-test('deve filtrar URLs inválidas', () => {
+
+test('should filter invalid URLs', () => {
   const urls = parseWebhookUrls('["https://valid.com", "not-a-url", "https://another.com"]');
   assert.strictEqual(urls.length, 2);
   assert.ok(urls.every(url => url.startsWith('http')));
 });
 
+test('should parse JSON array of objects with url property', () => {
+  const urls = parseWebhookUrls('[{"name":"agent1","url":"https://webhook1.com"},{"url":"https://webhook2.com"}, {"name":"invalid"}]');
+  assert.strictEqual(urls.length, 2);
+  assert.strictEqual(urls[0], 'https://webhook1.com');
+  assert.strictEqual(urls[1], 'https://webhook2.com');
+});
+
 // ------------------------------------------
-// Testes de sendWebhookWithRetry (async)
+// Tests for sendWebhookWithRetry (async)
 // ------------------------------------------
 
-console.log('\n📋 Testes de sendWebhookWithRetry:\n');
+console.log('\n📋 Tests for sendWebhookWithRetry:\n');
 
-await testAsync('deve enviar webhook com sucesso', async () => {
+await testAsync('should send webhook successfully with HMAC signature', async () => {
   resetFetchMock();
   fetchMockResponse = { ok: true, status: 200 };
   
@@ -276,12 +284,13 @@ await testAsync('deve enviar webhook com sucesso', async () => {
   assert.strictEqual(call.options.method, 'POST');
   assert.strictEqual(call.options.headers['Content-Type'], 'application/json');
   assert.strictEqual(call.options.headers['X-Gemini-Event'], 'review_available');
-  assert.strictEqual(call.options.headers['Authorization'], 'Bearer secret-token');
+  assert.ok(call.options.headers['X-Gemini-Signature-256']);
+  assert.ok(call.options.headers['X-Gemini-Signature-256'].startsWith('sha256='));
 });
 
-await testAsync('deve fazer retry em erro de rede e eventualmente suceder', async () => {
+await testAsync('should retry on network error and eventually succeed', async () => {
   resetFetchMock();
-  // Falha nas 2 primeiras, depois reseta o mock global para sucesso
+  // Fails on first 2 calls, then resets mock to success
   global.fetch = async (url, options) => {
     fetchCalls.push({ url, options });
     if (fetchCalls.length <= 2) {
@@ -296,14 +305,14 @@ await testAsync('deve fazer retry em erro de rede e eventualmente suceder', asyn
     'secret-token'
   );
   
-  // Após retry, deve ter sucedido na 3a tentativa
+  // After retry, should succeed on 3rd attempt
   assert.strictEqual(result.success, true);
   assert.ok(fetchCalls.length === 3);
 });
 
-await testAsync('deve retornar erro em cliente 4xx sem retry', async () => {
+await testAsync('should return error on 4xx client error without retry', async () => {
   resetFetchMock();
-  // Restaura mock padrão para este teste
+  // Restore standard mock for this test
   global.fetch = async (url, options) => {
     fetchCalls.push({ url, options });
     return { ok: false, status: 404, text: async () => 'Not Found' };
@@ -317,13 +326,13 @@ await testAsync('deve retornar erro em cliente 4xx sem retry', async () => {
   
   assert.strictEqual(result.success, false);
   assert.strictEqual(result.status, 404);
-  assert.strictEqual(fetchCalls.length, 1); // Sem retry para 4xx
+  assert.strictEqual(fetchCalls.length, 1); // No retry for 4xx
 });
 
-await testAsync('deve fazer retry em erro 5xx', async () => {
+await testAsync('should retry on 5xx server error', async () => {
   resetFetchMock();
   let callCount = 0;
-  // Mock que falha 2 vezes com 503, depois retorna 200
+  // Mock that fails 2 times with 503, then returns 200
   global.fetch = async (url, options) => {
     callCount++;
     fetchCalls.push({ url, options });
@@ -339,18 +348,18 @@ await testAsync('deve fazer retry em erro 5xx', async () => {
     'secret-token'
   );
   
-  // Deve ter sucesso após retry
+  // Should succeed after retry
   assert.strictEqual(result.success, true);
-  assert.ok(fetchCalls.length > 1); // Deve ter feito retry
+  assert.ok(fetchCalls.length > 1); // Should have retried
 });
 
 // ------------------------------------------
-// Testes de notifyAgents (async)
+// Tests for notifyAgents (async)
 // ------------------------------------------
 
-console.log('\n📋 Testes de notifyAgents:\n');
+console.log('\n📋 Tests for notifyAgents:\n');
 
-await testAsync('deve notificar múltiplos webhooks com sucesso', async () => {
+await testAsync('should notify multiple webhooks successfully', async () => {
   resetFetchMock();
   fetchMockResponse = { ok: true, status: 200 };
   
@@ -364,7 +373,7 @@ await testAsync('deve notificar múltiplos webhooks com sucesso', async () => {
   assert.ok(result.results.every(r => r.success));
 });
 
-await testAsync('deve retornar sucesso quando não há webhooks configurados', async () => {
+await testAsync('should return success when no webhooks are configured', async () => {
   resetFetchMock();
   
   const context = { prNumber: 117, branch: 'feature/test', commitSha: 'abc123' };
@@ -374,7 +383,7 @@ await testAsync('deve retornar sucesso quando não há webhooks configurados', a
   assert.strictEqual(result.results.length, 0);
 });
 
-await testAsync('deve retornar erro quando contexto é inválido', async () => {
+await testAsync('should return error when context is invalid', async () => {
   resetFetchMock();
   
   const result = await notifyAgents(mockReviewData, ['https://webhook.com'], 'secret', null);
@@ -383,9 +392,9 @@ await testAsync('deve retornar erro quando contexto é inválido', async () => {
   assert.ok(result.error);
 });
 
-await testAsync('deve continuar mesmo se um webhook falhar permanentemente', async () => {
+await testAsync('should continue even if one webhook fails permanently', async () => {
   resetFetchMock();
-  // Simula falha permanente no primeiro webhook, sucesso no segundo
+  // Simulates permanent failure on first webhook, success on second
   global.fetch = async (url, options) => {
     fetchCalls.push({ url, options });
     
@@ -412,20 +421,20 @@ await testAsync('deve continuar mesmo se um webhook falhar permanentemente', asy
 });
 
 // ------------------------------------------
-// Testes de WEBHOOK_CONFIG
+// Tests for WEBHOOK_CONFIG
 // ------------------------------------------
 
-console.log('\n📋 Testes de WEBHOOK_CONFIG:\n');
+console.log('\n📋 Tests for WEBHOOK_CONFIG:\n');
 
-test('deve ter timeout de 10 segundos', () => {
+test('should have 10 second timeout', () => {
   assert.strictEqual(WEBHOOK_CONFIG.TIMEOUT_MS, 10000);
 });
 
-test('deve ter max_retries de 3', () => {
+test('should have max_retries of 3', () => {
   assert.strictEqual(WEBHOOK_CONFIG.MAX_RETRIES, 3);
 });
 
-test('deve ter delays exponenciais', () => {
+test('should have exponential delays', () => {
   assert.strictEqual(WEBHOOK_CONFIG.RETRY_DELAYS.length, 3);
   assert.strictEqual(WEBHOOK_CONFIG.RETRY_DELAYS[0], 1000);
   assert.strictEqual(WEBHOOK_CONFIG.RETRY_DELAYS[1], 2000);
@@ -433,11 +442,11 @@ test('deve ter delays exponenciais', () => {
 });
 
 // ==========================================
-// RELATÓRIO FINAL
+// FINAL REPORT
 // ==========================================
 
 console.log('\n' + '='.repeat(50));
-console.log(`📊 Resultados: ${passed} passaram, ${failed} falharam`);
+console.log(`📊 Results: ${passed} passed, ${failed} failed`);
 console.log('='.repeat(50) + '\n');
 
 process.exit(failed > 0 ? 1 : 0);
