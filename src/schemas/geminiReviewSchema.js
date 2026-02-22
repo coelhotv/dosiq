@@ -17,18 +17,18 @@ import { z } from 'zod'
  */
 export const REVIEW_STATUSES = [
   // Estados do Workflow Intelligence
-  'detected',      // Detectado pelo Gemini
-  'reported',      // Reportado ao GitHub (issue criada)
-  'assigned',      // Atribuído a agent
-  'resolved',      // Completamente resolvido
-  'partial',       // Parcialmente resolvido
-  'wontfix',       // Ignorado/falso positivo
-  'duplicate',     // Duplicata
+  'detected', // Detectado pelo Gemini
+  'reported', // Reportado ao GitHub (issue criada)
+  'assigned', // Atribuído a agent
+  'resolved', // Completamente resolvido
+  'partial', // Parcialmente resolvido
+  'wontfix', // Ignorado/falso positivo
+  'duplicate', // Duplicata
   // Estados legados (compatibilidade)
   'pendente',
   'em_progresso',
   'corrigido',
-  'descartado'
+  'descartado',
 ]
 
 /**
