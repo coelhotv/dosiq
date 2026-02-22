@@ -75,11 +75,7 @@ export const geminiReviewService = {
       throw new Error('ID da review é obrigatório')
     }
 
-    const { data, error } = await supabase
-      .from('gemini_reviews')
-      .select('*')
-      .eq('id', id)
-      .single()
+    const { data, error } = await supabase.from('gemini_reviews').select('*').eq('id', id).single()
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -142,10 +138,7 @@ export const geminiReviewService = {
       validatedReviews.push(validation.data)
     }
 
-    const { data, error } = await supabase
-      .from('gemini_reviews')
-      .insert(validatedReviews)
-      .select()
+    const { data, error } = await supabase.from('gemini_reviews').insert(validatedReviews).select()
 
     if (error) {
       console.error('Erro ao criar reviews em lote:', error)
@@ -365,10 +358,7 @@ export const geminiReviewService = {
       throw new Error('ID da review é obrigatório')
     }
 
-    const { error } = await supabase
-      .from('gemini_reviews')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('gemini_reviews').delete().eq('id', id)
 
     if (error) {
       console.error('Erro ao deletar review:', error)

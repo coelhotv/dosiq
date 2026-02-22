@@ -34,7 +34,13 @@ describe('Gemini Review Schema', () => {
     })
 
     it('deve ter categorias definidas corretamente', () => {
-      expect(REVIEW_CATEGORIES).toEqual(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade'])
+      expect(REVIEW_CATEGORIES).toEqual([
+        'estilo',
+        'bug',
+        'seguranca',
+        'performance',
+        'manutenibilidade',
+      ])
     })
   })
 

@@ -86,17 +86,25 @@ export const geminiReviewSchema = z.object({
   issue_hash: z.string().min(1, 'Hash da issue é obrigatório'),
 
   // Status, prioridade e categoria
-  status: z.enum(REVIEW_STATUSES, {
-    errorMap: () => ({ message: 'Status inválido' }),
-  }).default('pendente'),
+  status: z
+    .enum(REVIEW_STATUSES, {
+      errorMap: () => ({ message: 'Status inválido' }),
+    })
+    .default('pendente'),
 
-  priority: z.enum(REVIEW_PRIORITIES, {
-    errorMap: () => ({ message: 'Prioridade inválida' }),
-  }).nullable().optional(),
+  priority: z
+    .enum(REVIEW_PRIORITIES, {
+      errorMap: () => ({ message: 'Prioridade inválida' }),
+    })
+    .nullable()
+    .optional(),
 
-  category: z.enum(REVIEW_CATEGORIES, {
-    errorMap: () => ({ message: 'Categoria inválida' }),
-  }).nullable().optional(),
+  category: z
+    .enum(REVIEW_CATEGORIES, {
+      errorMap: () => ({ message: 'Categoria inválida' }),
+    })
+    .nullable()
+    .optional(),
 
   // Conteúdo da review
   title: z.string().nullable().optional(),

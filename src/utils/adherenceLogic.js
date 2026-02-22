@@ -62,9 +62,7 @@ function getEffectiveDays(protocol, periodStart, periodEnd) {
     : periodStart
 
   // Sem end_date: assume protocolo ainda ativo
-  const protocolEndDate = protocol.end_date
-    ? new Date(protocol.end_date + 'T23:59:59')
-    : periodEnd
+  const protocolEndDate = protocol.end_date ? new Date(protocol.end_date + 'T23:59:59') : periodEnd
 
   // Interseção entre período do protocolo e período de análise
   const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
