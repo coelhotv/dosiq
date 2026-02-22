@@ -1,187 +1,376 @@
 # Workflow Intelligence Refactor
 
-> **Documento de Especificação Técnica**
-> **Versão:** 1.0.0 | **Data:** 2026-02-22
-> **Status:** 🔄 Em Implementação
+> **Documento de Especificação Técnica - Fase 2 do Sistema Gemini Integration**
+> **Versão:** 2.0.0 | **Data:** 2026-02-22
+> **Status:** 📋 Especificação Completa para Implementação
 > **Prioridade:** CRITICAL
+> **Autor:** Architect Mode
 
 ---
 
 ## 📋 Sumário Executivo
 
-Este documento especifica a refatoração do sistema de integração com o Gemini Code Assist para resolver problemas de **loops circulares**, **duplicação de issues** e **re-trigger sem memória** identificados no PR #120 e nas issues #121, #122 e #123.
+Este documento especifica a refatoração completa do sistema de integração com o Gemini Code Assist para resolver problemas críticos de **loops circulares**, **duplicação de issues** e **re-trigger sem memória** identificados nos PRs #120, #121, #122, #123.
 
-### Problemas Identificados
-
-| Issue | Descrição | Severidade |
-|-------|-----------|------------|
-| #121 | Valor do campo `resolved_by` não está de acordo com o schema UUID | MEDIUM |
-| #122 | Falta validação de JSON Schema nos testes | MEDIUM |
-| #123 | Duplicata da issue #121 | - |
-| PR #120 | Documentação do protocolo criada com inconsistências nos exemplos | MEDIUM |
-
----
-
-## 🔍 Diagnóstico do Problema
-
-### Caso PR #120: Documentação do Protocolo P4.2
-
-O PR #120 entregou a documentação formal do protocolo de comunicação entre sistema de reviews do Gemini e agents de IA (`GEMINI_AGENT_PROTOCOL.md`). Durante o code review automatizado do Gemini, foram identificadas inconsistências nos exemplos que precisam ser corrigidas.
-
-**Problemas Identificados:**
-
-1. **Inconsistência de Schema (Issue #121):**
-   - Campo `resolved_by` nos exemplos usa `"agent-123"` (string arbitrária)
-   - Schema define formato UUID (`550e8400-e29b-41d4-a716-446655440001`)
-   - Impacto: Validação falha quando agents tentam usar exemplos como referência
-
-2. **Validação Insuficiente (Issue #122):**
-   - Testes verificam sintaxe JSON mas não conformidade com schema
-   - Falta biblioteca `ajv` ou similar para validação de schema
-   - Impacto: Inconsistências não são detectadas em CI
-
-3. **Issue #123:**
-   - Duplicata da issue #121 (mesmo problema relatado duas vezes)
-
-### Causas Fundamentais
+### Problema Central: Loop Circular de Issues
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CAUSAS FUNDAMENTAIS                          │
+│                    LOOP CIRCULAR ATUAL                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. REVIEW INCOMPLETO DOS EXEMPLOS                              │
-│     ├── Exemplos JSON não revisados contra o schema definido   │
-│     ├── Formato de UUID não padronizado nos exemplos           │
-│     └── Valores placeholder ("agent-123") não substituídos     │
+│  1. Developer push PR #120                                      │
+│         │                                                       │
+│         ▼                                                       │
+│  2. Workflow detecta review do Gemini                           │
+│         │                                                       │
+│         ▼                                                       │
+│  3. create-issues.cjs executa → Cria Issue #121                 │
+│         │                                                       │
+│         ▼                                                       │
+│  4. Agente corrige → commit "Fixes #121"                        │
+│         │                                                       │
+│         ▼                                                       │
+│  5. synchronize dispara re-análise → Cria Issue #123            │
+│         │   (MESMA sugestão, mesmo código!)                     │
+│         ▼                                                       │
+│  6. NOVO commit → NOVA issue → loop infinito                    │
 │                                                                 │
-│  2. VALIDAÇÃO DE SCHEMA AUSENTE                                 │
-│     ├── Testes não validam exemplos contra JSON Schema         │
-│     ├── Falta integração com biblioteca de validação           │
-│     └── Inconsistências só detectadas em code review manual    │
-│                                                                 │
-│  3. DEDUPLICAÇÃO DE ISSUES FUTURA                               │
-│     ├── Necessário implementar hash de conteúdo (issue_hash)   │
-│     ├── Prevenir criação de issues duplicadas para mesmo item  │
-│     └── Rastreamento de estado por issue individual            │
+│  Resultado: Backlog poluído com 2-3 issues duplicadas/PR        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Issues de Referência
+
+| Issue | Descrição | Causa Raiz | Status |
+|-------|-----------|------------|--------|
+| #121 | Valor `resolved_by` não conforme schema UUID | Exemplo incorreto na documentação | 🔴 HIGH |
+| #122 | Falta validação JSON Schema nos testes | Testes apenas sintáticos, não semânticos | 🟡 MEDIUM |
+| #123 | Duplicata da issue #121 | Deduplicação insuficiente | 🔴 HIGH |
+| PR #120 | Documentação com inconsistências | Review incompleto de exemplos | 🟡 MEDIUM |
+
+### Solução Proposta
+
+Implementar um **sistema de hash SHA-256** com **estados expandidos** e **persistência em Supabase** para eliminar loops circulares e duplicações.
+
 ---
 
-## 🔗 Integração com GEMINI_INTEGRATION_PHASES.md
+## 🔍 Diagnóstico Detalhado
 
-### Mapeamento do Que Continua Válido
+### 1.1 Análise do Sistema Atual
 
-| Componente | Status | Justificativa |
-|------------|--------|---------------|
-| P4.1 - API Supabase | ✅ Mantido | Base para novo sistema de estados |
-| P4.2 - Protocolo | 🔄 Ajustado | Corrigir schema UUID (Issue #121) |
-| P4.3 - Webhook Agents | ✅ Mantido | Necessário para notificação |
-| P4.4 - CLI | ✅ Mantido | Interface power-user |
-| P4.5 - Endpoint REST | ✅ Mantido | API pública para agents |
-| P4.6 - UI Human | ✅ Mantido | Interface revisores |
-| P4.7 - Webhook GitHub | 🔄 Ajustado | Adicionar deduplicação |
+#### 1.1.1 Fluxo de Dados Atual (Problemático)
 
-### O Que Precisa Ser Ajustado
-
-#### 1. Schema de Dados (P4.1)
-
-**Atual:** Tabela `gemini_reviews` armazena review completo como JSONB
-
-**Problema:** Não permite rastreamento individual de issues
-
-**Ajuste:** Expandir schema com campos de controle
-
-```sql
--- Campos a adicionar:
-- issue_hash (TEXT UNIQUE)          -- Hash SHA-256 do conteúdo
-- github_issue_number (INTEGER)     -- Referência à Issue criada
-- resolution_type (ENUM)            -- Tipo de resolução
-- status (ENUM expandido)           -- Estados detalhados
+```mermaid
+flowchart TD
+    A[Developer Push PR] --> B[Trigger: pull_request/synchronize]
+    B --> C[Job: Detect Gemini Review]
+    C --> D[Job: Parse Comments]
+    D --> E[Script: parse-gemini-comments.cjs]
+    E --> F[Script: create-issues.cjs]
+    F --> G{findSimilarIssue?}
+    G -->|Não encontrou| H[Criar GitHub Issue]
+    G -->|Similaridade < 80%| H
+    H --> I[Issue #N Criada]
+    I --> J[Agente Corrige]
+    J --> K[Commit: Fixes #N]
+    K --> B
+    B --> L[Re-análise SEM memória]
+    L --> H
+    H --> M[Issue #N+1 Duplicada!]
 ```
 
-#### 2. Protocolo (P4.2)
+#### 1.1.2 Problema na Deduplicação Atual
 
-**Atual:** Exemplos com `resolved_by: "agent-123"`
-
-**Problema:** Inconsistência com schema UUID (Issue #121)
-
-**Ajuste:** Atualizar todos os exemplos para usar UUID válidos
+O script [`create-issues.cjs`](.github/scripts/create-issues.cjs:1) usa uma lógica fraca de similaridade:
 
 ```javascript
-// Antes (INCORRETO)
-"resolved_by": "agent-123"
+// ❌ PROBLEMA: Lógica de deduplicação insuficiente
+// .github/scripts/create-issues.cjs (trecho problemático)
 
-// Depois (CORRETO)
-"resolved_by": "550e8400-e29b-41d4-a716-446655440001"
-```
-
-#### 3. Validação de Testes (Issue #122)
-
-**Atual:** Testes verificam apenas sintaxe JSON
-
-**Ajuste:** Adicionar validação de schema com `ajv`
-
-```javascript
-// Novo teste a adicionar
-const Ajv = require('ajv');
-const ajv = new Ajv();
-const schema = extractSchemaFromMarkdown();
-const validate = ajv.compile(schema);
-
-// Validar cada exemplo JSON
-examples.forEach(example => {
-  const valid = validate(example);
-  expect(valid).toBe(true);
-});
-```
-
-#### 4. Webhook Handler (P4.7)
-
-**Atual:** Processa todo evento sem verificar se já foi processado
-
-**Problema:** Re-trigger sem memória causa loops
-
-**Ajuste:** Adicionar deduplicação baseada em hash
-
-```javascript
-// Verificar se já processado
-const issueHash = calculateHash(fileContent + line + issue);
-const existing = await supabase
-  .from('gemini_reviews')
-  .select('id')
-  .eq('issue_hash', issueHash)
-  .single();
-
-if (existing) {
-  console.log(`Issue ${issueHash} já existe, ignorando...`);
-  return;
+function findSimilarIssue(newIssue, existingIssues) {
+  for (const existing of existingIssues) {
+    // Compara apenas arquivo + linha
+    if (existing.file === newIssue.file && 
+        existing.line === newIssue.line) {
+      // Similaridade de texto simples (80% threshold)
+      const similarity = calculateSimilarity(
+        existing.issue, 
+        newIssue.issue
+      );
+      if (similarity > 0.8) {
+        return existing; // Match encontrado
+      }
+    }
+  }
+  return null;
 }
 ```
 
-### O Que Deve Ser Cancelado/Removido
+**Problemas identificados:**
+1. **Falso negativo**: Mesma issue em linha diferente (código movido) = duplicata
+2. **Falso positivo**: Issues diferentes na mesma linha = ignoradas
+3. **Sem persistência**: Issues só comparadas no contexto do PR atual
+4. **Não considera**: Resoluções anteriores (wontfix, resolved)
 
-| Item | Ação | Motivo |
-|------|------|--------|
-| Cache de arquivo (P3.1) | Remover | Substituído por hash de issue |
-| `create-issues.js` atual | Refatorar | Usar novo sistema de hash |
-| `trigger-re-review.js` | Ajustar | Adicionar checkpoint de commit |
+#### 1.1.3 Separação de Estados
+
+O workflow atual não persiste estado no banco:
+
+```javascript
+// ❌ PROBLEMA: Estados voláteis
+// Workflow YAML atual salva apenas em arquivo JSON temporário
+
+- name: Save Review Data
+  run: |
+    echo '${{ steps.parse.outputs.review_data }}' > review.json
+    # Arquivo perdido após job terminar!
+```
+
+Isso significa que:
+- Não há rastreamento de qual issue já foi criada
+- Não há histórico de resoluções
+- Cada PR é processado como "primeira vez"
+
+#### 1.1.4 Re-trigger sem Checkpoint
+
+O evento `synchronize` (novo commit) dispara análise completa:
+
+```yaml
+# ❌ PROBLEMA: Re-trigger sem memória
+# .github/workflows/gemini-review.yml
+
+on:
+  pull_request:
+    types: [synchronize]  # Dispara em CADA novo commit
+```
+
+Sem verificar:
+- Quais issues já foram resolvidas
+- Quais foram marcadas como `wontfix`
+- Se houve mudança real no código afetado
+
+### 1.2 Causas Raiz Consolidadas
+
+| Problema | Severidade | Localização | Impacto |
+|----------|------------|-------------|---------|
+| **Deduplicação incompleta** | CRITICAL | `create-issues.cjs` usa apenas arquivo+linha | Issues duplicadas |
+| **Separação de estados** | HIGH | Workflow não persiste em `gemini_reviews` | Sem memória entre runs |
+| **Re-trigger sem checkpoint** | HIGH | `synchronize` dispara análise completa | Loop circular |
+| **Agents criando issues** | MEDIUM | Fora do fluxo de deduplicação | Duplicatas externas |
+| **Validação de schema ausente** | MEDIUM | Testes não usam JSON Schema | Inconsistências |
 
 ---
 
-## 🏗️ Proposta Arquitetural
+## 🔗 Integração com Sistema Existente
 
-### Sistema de Hash (SHA-256)
+### 2.1 Mapeamento: Proposta ↔ Plano Original
 
-#### Cálculo do `issue_hash`
+| Componente da Proposta | Origem no Sistema Atual | Decisão de Design |
+|------------------------|------------------------|-------------------|
+| Sistema de Hash (`issue_hash`) | Evolução da tabela `gemini_reviews` | **UPGRADE** - Adicionar campo UNIQUE hash |
+| Script `persist-reviews.cjs` | Integração de parsing + storage | **NOVO** - Workflow salva em Supabase |
+| Estados Expandidos (8 estados) | Evolução dos 4 status atuais | **EXPANDIR** - Granularidade maior |
+| `check-resolutions.cjs` melhorado | Script existente de resolução | **EXPANDIR** - Atualizar Supabase também |
+| Webhook com `review_ids` | Sistema atual de notificação | **ENRIQUECER** - Payload com IDs específicos |
+| Batch Update API | Não existia | **NOVO** - Endpoint para atualização em lote |
+
+### 2.2 Componentes que Continuam Válidos
+
+#### Sem Mudanças Necessárias
+
+| Componente | Localização | Justificativa |
+|------------|-------------|---------------|
+| Labels Automáticas | `.github/scripts/apply-labels.cjs` | Funciona independentemente |
+| Resumo Editável | `.github/scripts/post-smart-summary.cjs` | Não precisa de alterações |
+| Path Filters | `.github/workflows/gemini-review.yml` | Configuração YAML continua válida |
+| UI Human Review | `src/views/admin/DLQAdmin.jsx` | Interface complementar |
+| Estrutura de Fases | Documentação existente | Sequência lógica mantida |
+
+#### Complementares
+
+| Componente | Função | Relação com Workflow Intelligence |
+|------------|--------|-----------------------------------|
+| Cache de Reviews (P3.1) | Cache de arquivo | Performance ≠ Deduplicação (diferentes objetivos) |
+| Notificação Telegram | Alertas | Consumirá dados do novo sistema |
+
+### 2.3 O Que Precisa Ser Ajustado
+
+#### 2.3.1 Schema `gemini_reviews` - UPGRADE NECESSÁRIO
+
+**Estado Atual:**
+```sql
+-- Schema atual (simplificado)
+CREATE TABLE gemini_reviews (
+  id UUID PRIMARY KEY,
+  pr_number INTEGER,
+  file_path TEXT,
+  line_start INTEGER,
+  status TEXT CHECK (status IN ('pendente', 'em_progresso', 'corrigido', 'descartado')),
+  issue_hash TEXT,  -- Existe mas não é UNIQUE
+  review_data JSONB
+);
+```
+
+**Upgrade Necessário:**
+```sql
+-- ALTER TABLE para Workflow Intelligence
+ALTER TABLE gemini_reviews 
+  ADD COLUMN IF NOT EXISTS issue_hash TEXT UNIQUE,  -- Agora UNIQUE
+  ADD COLUMN IF NOT EXISTS github_issue_number INTEGER,
+  ADD COLUMN IF NOT EXISTS resolution_type TEXT CHECK (
+    resolution_type IN ('fixed', 'rejected', 'partial', null)
+  ),
+  -- Expandir CHECK constraint de status
+  DROP CONSTRAINT IF EXISTS gemini_reviews_status_check,
+  ADD CONSTRAINT gemini_reviews_status_check CHECK (
+    status IN ('detected', 'reported', 'assigned', 'resolved', 'partial', 'wontfix', 'duplicate')
+  );
+```
+
+#### 2.3.2 Estados do Protocolo - EXPANDIR
+
+**De:** 4 estados simples
+```
+pendente → em_progresso → corrigido/descartado
+```
+
+**Para:** 7 estados granulares
+```
+detected → reported → assigned → resolved/partial/wontfix/duplicate
+```
+
+| Estado | Descrição | Transições Permitidas |
+|--------|-----------|----------------------|
+| `detected` | Issue detectada pelo Gemini, ainda não processada | reported |
+| `reported` | Issue reportada ao GitHub (issue criada) | assigned, duplicate, wontfix |
+| `assigned` | Issue atribuída a um agent | resolved, partial, wontfix |
+| `resolved` | Issue completamente resolvida | - (final) |
+| `partial` | Parcialmente resolvida (alguns pontos pendentes) | reported (reativar) |
+| `wontfix` | Será ignorada (falso positivo) | - (final) |
+| `duplicate` | Duplicata de outra issue | - (final) |
+
+#### 2.3.3 `create-issues.cjs` - REFATORAR
+
+**Remover:**
+- Função `findSimilarIssue()` - Lógica fraca de similaridade
+- Comparação baseada em arquivo+linha+80% texto
+
+**Substituir por:**
+- `checkExistingHash()` - Deduplicação por SHA-256
+- Query no Supabase: `SELECT * FROM gemini_reviews WHERE issue_hash = $1`
+
+#### 2.3.4 `check-resolutions.cjs` - EXPANDIR Escopo
+
+**Original:** Responder em threads de comentários
+**Expandido:** 
+- Responder em threads
+- Atualizar Supabase ao detectar "Fixes #X"
+- Verificar resolução parcial vs completa
+
+#### 2.3.5 Webhook - ENRIQUECER Payload
+
+**Adicionar ao payload de notificação:**
+```json
+{
+  "event": "gemini_review_ready",
+  "pr_number": 120,
+  "review_ids": ["uuid-1", "uuid-2"],  // NOVO: IDs específicos
+  "issue_hashes": ["sha256-1", "sha256-2"],  // NOVO: Hashes para deduplicação
+  "timestamp": "2026-02-22T16:00:00Z"
+}
+```
+
+### 2.4 O Que Deve Ser Cancelado/Removido
+
+| Item | Razão | Substituto |
+|------|-------|------------|
+| `findSimilarIssue()` em `create-issues.cjs` | Lógica fraca de similaridade | `checkExistingHash()` por SHA-256 |
+| Estado `pendente` genérico | Muito ambíguo | Estados granulares: detected, reported, etc. |
+| `review_data` JSONB como única fonte | Dados duplicados, sem índice | Campos normalizados + JSONB para dados brutos |
+| Cache de arquivo em `.gemini-cache/` | Persistência frágil | Supabase como source of truth |
+
+---
+
+## 🏗️ Arquitetura da Solução
+
+### 3.1 Visão Geral
+
+```mermaid
+flowchart TB
+    subgraph GitHub["GitHub"]
+        PR[Pull Request]
+        WF[Workflow gemini-review.yml]
+        Issues[GitHub Issues]
+    end
+    
+    subgraph Scripts["GitHub Scripts"]
+        Parse[parse-gemini-comments.cjs]
+        Persist[persist-reviews.cjs]
+        Create[create-issues.cjs]
+        Check[check-resolutions.cjs]
+    end
+    
+    subgraph Supabase["Supabase"]
+        Table[(gemini_reviews)]
+        HashIndex[(issue_hash INDEX)]
+        StatusIndex[(status INDEX)]
+    end
+    
+    subgraph API["API Vercel"]
+        BatchAPI[POST /api/gemini-reviews/batch]
+        Webhook[Webhook Handler]
+    end
+    
+    subgraph Agents["Agents Externos"]
+        Kilocode[Kilocode/Roo]
+        Human[Human Review]
+    end
+    
+    PR -->|Trigger| WF
+    WF -->|Chama| Parse
+    Parse -->|Issues parseados| Persist
+    Persist -->|Upsert com hash| Table
+    Persist -->|Issues novos| Create
+    Create -->|Criar| Issues
+    Create -->|Atualizar status| Table
+    Issues -->|Close/Comment| Check
+    Check -->|Atualizar| Table
+    Table -->|Query| BatchAPI
+    BatchAPI -->|Webhook| Agents
+    Agents -->|Status updates| Webhook
+    Webhook -->|Atualizar| Table
+```
+
+### 3.2 Sistema de Hash SHA-256
+
+#### 3.2.1 Cálculo do `issue_hash`
+
+O hash deve ser determinístico e baseado em campos imutáveis da issue:
 
 ```javascript
+// scripts/persist-reviews.cjs
+
 const crypto = require('crypto');
 
 /**
  * Calcula hash único para uma issue do Gemini
+ * 
+ * Campos incluídos no hash (imutáveis):
+ * - file_path: Caminho do arquivo
+ * - line_start: Linha inicial
+ * - line_end: Linha final
+ * - title: Título da issue
+ * - description: Descrição detalhada
+ * 
+ * Campos EXCLUÍDOS do hash (mutáveis):
+ * - created_at: Timestamp varia
+ * - updated_at: Timestamp varia
+ * - status: Estado muda
+ * - resolved_by: Depende de quem resolve
+ * - github_issue_number: Atribuído depois
+ * 
  * @param {Object} issue - Dados da issue
  * @returns {string} Hash SHA-256 (64 caracteres hex)
  */
@@ -192,384 +381,750 @@ function calculateIssueHash(issue) {
     line_end: issue.line_end,
     title: issue.title,
     description: issue.description,
-    // NÃO incluir campos variáveis:
-    // - created_at
-    // - updated_at
-    // - status
-    // - resolved_by
-  });
+    // Normalizar para garantir determinismo
+    suggestion: issue.suggestion?.trim() || null
+  }, null, 0); // null, 0 = sem espaços para consistência
   
   return crypto
     .createHash('sha256')
     .update(content)
     .digest('hex');
 }
-```
 
-#### Uso do Hash
-
-```javascript
-// Ao processar review do Gemini
-for (const issue of reviewData.issues) {
-  const issueHash = calculateIssueHash(issue);
-  
-  // Verificar duplicata
-  const { data: existing } = await supabase
+/**
+ * Verifica se uma issue já existe no banco
+ * 
+ * @param {string} issueHash - Hash SHA-256 da issue
+ * @param {Object} supabase - Cliente Supabase
+ * @returns {Promise<Object|null>} Issue existente ou null
+ */
+async function checkExistingHash(issueHash, supabase) {
+  const { data, error } = await supabase
     .from('gemini_reviews')
-    .select('id, status, github_issue_number')
+    .select('id, status, github_issue_number, created_at')
     .eq('issue_hash', issueHash)
-    .single();
+    .maybeSingle();
   
-  if (existing) {
-    // Issue já existe - verificar se precisa atualizar
-    if (existing.status === 'descartado') {
-      // Issue foi marcada como falso positivo, ignorar
-      continue;
-    }
-    
-    // Atualizar referências se necessário
-    await updateExistingIssue(existing.id, issue);
-  } else {
-    // Criar nova issue
-    await createNewIssue(issue, issueHash);
+  if (error) {
+    console.error('Erro ao verificar hash:', error);
+    throw error;
   }
+  
+  return data;
 }
+
+module.exports = { calculateIssueHash, checkExistingHash };
 ```
 
-### Estados Expandidos na Tabela `gemini_reviews`
+#### 3.2.2 Fluxo de Deduplicação
 
-#### Estados Anteriores (Simplificado)
-
-```
-pending → in_progress → completed
-```
-
-#### Estados Novos (Expandido)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     DIAGRAMA DE ESTADOS                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   [*] ──▶ detected                                              │
-│              │                                                  │
-│              ▼                                                  │
-│         reported ──▶ github_issue_number atribuído              │
-│              │                                                  │
-│              ├──▶ assigned (agent inicia trabalho)              │
-│              │       │                                          │
-│              │       ├──▶ resolved (fixed)                      │
-│              │       │       │                                  │
-│              │       │       └──▶ [*]                           │
-│              │       │                                          │
-│              │       ├──▶ wontfix (rejected)                    │
-│              │       │       │                                  │
-│              │       │       └──▶ [*]                           │
-│              │       │                                          │
-│              │       └──▶ duplicate (já existe)                 │
-│              │               │                                  │
-│              │               └──▶ [*]                           │
-│              │                                                  │
-│              └──▶ partial (parcialmente resolvido)              │
-│                      │                                          │
-│                      └──▶ reported (reativado)                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[Nova Issue Detectada] --> B[Calcular SHA-256 Hash]
+    B --> C{Hash existe no<br/>gemini_reviews?}
+    C -->|Não| D[Status: detected]
+    C -->|Sim| E{Status atual?}
+    
+    E -->|wontfix| F[Ignorar - Falso Positivo]
+    E -->|resolved| G{Re-introduzido?}
+    E -->|duplicate| H[Ignorar - Duplicata]
+    E -->|detected/reported| I[Atualizar referências]
+    E -->|assigned| J[Notificar agent]
+    E -->|partial| K[Reativar para reported]
+    
+    G -->|Sim| L[Novo hash = re-introdução]
+    G -->|Não| F
+    
+    D --> M[Criar registro]
+    I --> M
+    L --> M
+    K --> N[Atualizar status]
+    
+    M --> O[Retornar para workflow]
+    N --> O
+    F --> P[Log: Ignorado]
+    H --> P
 ```
 
-#### Tabela de Estados
+### 3.3 Script `persist-reviews.cjs`
 
-| Estado | Descrição | Transições Permitidas |
-|--------|-----------|----------------------|
-| `detected` | Issue detectada pelo Gemini, ainda não processada | reported |
-| `reported` | Issue reportada ao GitHub (issue criada) | assigned, duplicate |
-| `assigned` | Issue atribuída a um agent | resolved, partial, wontfix |
-| `resolved` | Issue completamente resolvida | - (final) |
-| `partial` | Parcialmente resolvida (alguns pontos pendentes) | reported (reativar) |
-| `wontfix` | Será ignorada (falso positivo ou não aplicável) | - (final) |
-| `duplicate` | Duplicata de outra issue | - (final) |
-
-### Script `persist-reviews.cjs`
-
-Novo script responsável por persistir reviews do Gemini no Supabase com deduplicação.
+Novo script responsável por persistir reviews no Supabase com deduplicação inteligente:
 
 ```javascript
 #!/usr/bin/env node
-// scripts/persist-reviews.cjs
+/**
+ * Persist Reviews - Workflow Intelligence
+ * 
+ * Persiste reviews do Gemini no Supabase com deduplicação por hash.
+ * Este é o ponto central do sistema de Workflow Intelligence.
+ * 
+ * @module persist-reviews
+ * @version 2.0.0
+ * @requires @supabase/supabase-js
+ */
 
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Configuração
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ Variáveis de ambiente SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias');
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+/**
+ * Resultado da persistência
+ * @typedef {Object} PersistResult
+ * @property {number} created - Quantidade de issues criadas
+ * @property {number} updated - Quantidade de issues atualizadas
+ * @property {number} skipped - Quantidade ignoradas (duplicatas/falso positivo)
+ * @property {number} reactivated - Quantidade reativadas (resolved → detected)
+ * @property {Array<string>} errors - Erros encontrados
+ * @property {Array<Object>} createdIssues - Issues criadas (com IDs)
+ */
 
 /**
  * Persiste reviews do Gemini com deduplicação por hash
+ * 
  * @param {Object} reviewData - Dados do review parseado
- * @param {number} prNumber - Número do PR
- * @returns {Promise<Object>} Resultado da persistência
+ * @param {number} reviewData.pr_number - Número do PR
+ * @param {string} reviewData.commit_sha - SHA do commit
+ * @param {Array<Object>} reviewData.issues - Lista de issues
+ * @param {Object} options - Opções de processamento
+ * @param {boolean} [options.dryRun=false] - Simulação sem persistir
+ * @returns {Promise<PersistResult>} Resultado da persistência
  */
-async function persistReviews(reviewData, prNumber) {
+async function persistReviews(reviewData, options = {}) {
+  const { pr_number, commit_sha, issues = [] } = reviewData;
+  const { dryRun = false } = options;
+  
+  console.log(`🔄 Persistindo ${issues.length} issues para PR #${pr_number}...`);
+  
+  /** @type {PersistResult} */
   const results = {
     created: 0,
     updated: 0,
     skipped: 0,
-    duplicates: 0,
-    errors: []
+    reactivated: 0,
+    errors: [],
+    createdIssues: []
   };
 
-  for (const issue of reviewData.issues) {
+  for (const issue of issues) {
     try {
       const issueHash = calculateIssueHash(issue);
       
       // Verificar se issue já existe
-      const { data: existing } = await supabase
-        .from('gemini_reviews')
-        .select('id, status, github_issue_number, issue_hash')
-        .eq('issue_hash', issueHash)
-        .maybeSingle();
+      const existing = await checkExistingHash(issueHash, supabase);
 
       if (existing) {
-        // Issue existe - verificar se precisa atualizar
-        if (shouldUpdateIssue(existing, issue)) {
-          await updateExistingIssue(existing.id, issue, prNumber);
-          results.updated++;
-        } else {
-          results.skipped++;
+        const action = await handleExistingIssue(existing, issue, pr_number, commit_sha, dryRun);
+        
+        switch (action) {
+          case 'skipped':
+            results.skipped++;
+            console.log(`  ⏭️  Skipped (hash: ${issueHash.substring(0, 16)}...)`);
+            break;
+          case 'updated':
+            results.updated++;
+            console.log(`  📝 Updated (id: ${existing.id})`);
+            break;
+          case 'reactivated':
+            results.reactivated++;
+            console.log(`  🔄 Reactivated (id: ${existing.id})`);
+            break;
         }
         continue;
       }
 
       // Criar nova issue
-      await createNewIssue(issue, issueHash, prNumber);
-      results.created++;
+      if (!dryRun) {
+        const newIssue = await createNewIssue(issue, issueHash, pr_number, commit_sha);
+        results.created++;
+        results.createdIssues.push(newIssue);
+        console.log(`  ✅ Created (id: ${newIssue.id}, hash: ${issueHash.substring(0, 16)}...)`);
+      } else {
+        results.created++;
+        console.log(`  [DRY RUN] Would create issue with hash: ${issueHash.substring(0, 16)}...`);
+      }
       
     } catch (error) {
-      console.error(`Erro ao processar issue: ${error.message}`);
-      results.errors.push({ issue: issue.title, error: error.message });
+      console.error(`  ❌ Error processing issue "${issue.title}":`, error.message);
+      results.errors.push({ 
+        issue: issue.title, 
+        error: error.message,
+        stack: error.stack 
+      });
     }
   }
+
+  // Log resumido
+  console.log('\n📊 Resumo:');
+  console.log(`   Criadas: ${results.created}`);
+  console.log(`   Atualizadas: ${results.updated}`);
+  console.log(`   Ignoradas: ${results.skipped}`);
+  console.log(`   Reativadas: ${results.reactivated}`);
+  console.log(`   Erros: ${results.errors.length}`);
 
   return results;
 }
 
 /**
  * Calcula hash SHA-256 para uma issue
+ * 
+ * @param {Object} issue - Dados da issue
+ * @returns {string} Hash SHA-256 (64 caracteres hexadecimais)
  */
 function calculateIssueHash(issue) {
   const content = JSON.stringify({
-    file_path: issue.file_path,
-    line_start: issue.line_start,
-    line_end: issue.line_end,
-    title: issue.title,
-    description: issue.description
-  });
+    file_path: issue.file_path || issue.file,
+    line_start: issue.line_start || issue.line,
+    line_end: issue.line_end || issue.line,
+    title: issue.title || issue.issue?.substring(0, 100) || 'Untitled',
+    description: issue.description || issue.issue || '',
+    suggestion: issue.suggestion?.trim() || null
+  }, Object.keys({}).sort()); // Ordenar chaves para consistência
   
-  return crypto.createHash('sha256').update(content).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(content)
+    .digest('hex');
 }
 
 /**
- * Determina se uma issue existente precisa ser atualizada
+ * Verifica se uma issue já existe no banco
+ * 
+ * @param {string} issueHash - Hash SHA-256
+ * @returns {Promise<Object|null>} Registro existente ou null
  */
-function shouldUpdateIssue(existing, newIssue) {
-  // Atualizar se status é 'detected' ou 'reported'
-  // Não atualizar se já está 'assigned', 'resolved', etc.
-  const updatableStatuses = ['detected', 'reported'];
-  return updatableStatuses.includes(existing.status);
+async function checkExistingHash(issueHash) {
+  const { data, error } = await supabase
+    .from('gemini_reviews')
+    .select('id, status, github_issue_number, created_at, updated_at')
+    .eq('issue_hash', issueHash)
+    .maybeSingle();
+  
+  if (error) {
+    console.error('Erro ao verificar hash:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+/**
+ * Decide ação para issue existente
+ * 
+ * @param {Object} existing - Registro existente
+ * @param {Object} newIssue - Nova issue detectada
+ * @param {number} prNumber - Número do PR
+ * @param {string} commitSha - SHA do commit
+ * @param {boolean} dryRun - Modo simulação
+ * @returns {Promise<string>} Ação: 'skipped', 'updated', 'reactivated'
+ */
+async function handleExistingIssue(existing, newIssue, prNumber, commitSha, dryRun) {
+  const { id, status } = existing;
+  
+  // Estados finais - ignorar
+  const finalStatuses = ['wontfix', 'duplicate'];
+  if (finalStatuses.includes(status)) {
+    return 'skipped';
+  }
+  
+  // Resolvida - verificar se é re-introdução
+  if (status === 'resolved') {
+    // Se chegou aqui com mesmo hash, é código idêntico = re-introdução
+    if (!dryRun) {
+      await supabase
+        .from('gemini_reviews')
+        .update({
+          status: 'detected',
+          pr_number: prNumber,
+          commit_sha: commitSha,
+          updated_at: new Date().toISOString(),
+          resolution_type: null,
+          resolved_by: null,
+          resolved_at: null
+        })
+        .eq('id', id);
+    }
+    return 'reactivated';
+  }
+  
+  // Parcial - reativar para reported
+  if (status === 'partial') {
+    if (!dryRun) {
+      await supabase
+        .from('gemini_reviews')
+        .update({
+          status: 'reported',
+          pr_number: prNumber,
+          commit_sha: commitSha,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+    }
+    return 'reactivated';
+  }
+  
+  // Detected/reported/assigned - atualizar referências
+  if (!dryRun) {
+    await supabase
+      .from('gemini_reviews')
+      .update({
+        pr_number: prNumber,
+        commit_sha: commitSha,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+  }
+  return 'updated';
 }
 
 /**
  * Cria nova issue no Supabase
+ * 
+ * @param {Object} issue - Dados da issue
+ * @param {string} issueHash - Hash SHA-256
+ * @param {number} prNumber - Número do PR
+ * @param {string} commitSha - SHA do commit
+ * @returns {Promise<Object>} Issue criada
  */
-async function createNewIssue(issue, issueHash, prNumber) {
-  const { error } = await supabase
+async function createNewIssue(issue, issueHash, prNumber, commitSha) {
+  const insertData = {
+    pr_number: prNumber,
+    commit_sha: commitSha,
+    file_path: issue.file_path || issue.file,
+    line_start: issue.line_start || issue.line || null,
+    line_end: issue.line_end || issue.line || null,
+    issue_hash: issueHash,
+    status: 'detected',
+    priority: mapPriority(issue.priority),
+    category: mapCategory(issue.category),
+    title: issue.title || issue.issue?.substring(0, 200) || 'Sem título',
+    description: issue.description || issue.issue || '',
+    suggestion: issue.suggestion || null,
+    review_data: issue
+  };
+  
+  const { data, error } = await supabase
     .from('gemini_reviews')
-    .insert({
-      pr_number: prNumber,
-      commit_sha: issue.commit_sha,
-      file_path: issue.file_path,
-      line_start: issue.line_start,
-      line_end: issue.line_end,
-      issue_hash: issueHash,
-      status: 'detected',
-      priority: mapPriority(issue.priority),
-      category: mapCategory(issue.category),
-      title: issue.title,
-      description: issue.description,
-      suggestion: issue.suggestion,
-      review_data: issue
-    });
+    .insert(insertData)
+    .select()
+    .single();
 
-  if (error) throw error;
+  if (error) {
+    // Tratar violação de UNIQUE constraint
+    if (error.code === '23505') {
+      throw new Error(`Hash collision detectado: ${issueHash}`);
+    }
+    throw error;
+  }
+  
+  return data;
 }
 
 /**
- * Atualiza issue existente
+ * Mapeia prioridade do Gemini para formato do banco
+ * 
+ * @param {string} priority - Prioridade do Gemini
+ * @returns {string} Prioridade mapeada
  */
-async function updateExistingIssue(id, issue, prNumber) {
-  const { error } = await supabase
-    .from('gemini_reviews')
-    .update({
-      pr_number: prNumber,
-      commit_sha: issue.commit_sha,
-      updated_at: new Date().toISOString(),
-      review_data: issue
-    })
-    .eq('id', id);
-
-  if (error) throw error;
-}
-
-// Mapeamento de prioridades
 function mapPriority(priority) {
   const map = {
     'CRITICAL': 'critica',
     'HIGH': 'alta',
     'MEDIUM': 'media',
-    'LOW': 'baixa'
+    'LOW': 'baixa',
+    'critical': 'critica',
+    'high': 'alta',
+    'medium': 'media',
+    'low': 'baixa'
   };
   return map[priority] || 'media';
 }
 
-// Mapeamento de categorias
+/**
+ * Mapeia categoria do Gemini para formato do banco
+ * 
+ * @param {string} category - Categoria do Gemini
+ * @returns {string} Categoria mapeada
+ */
 function mapCategory(category) {
   const map = {
     'style': 'estilo',
     'bug': 'bug',
     'security': 'seguranca',
     'performance': 'performance',
-    'maintainability': 'manutenibilidade'
+    'maintainability': 'manutenibilidade',
+    'refactoring': 'manutenibilidade',
+    'best-practice': 'manutenibilidade'
   };
-  return map[category] || 'geral';
+  return map[category?.toLowerCase()] || 'geral';
 }
 
-module.exports = { persistReviews, calculateIssueHash };
-
-// Execução direta (CLI)
+// CLI Interface
 if (require.main === module) {
-  const reviewFile = process.argv[2];
+  const args = process.argv.slice(2);
+  const reviewFile = args[0];
+  const dryRun = args.includes('--dry-run');
+  
   if (!reviewFile) {
-    console.error('Uso: node persist-reviews.cjs <review-json-file>');
+    console.error('❌ Uso: node persist-reviews.cjs <review-json-file> [--dry-run]');
+    console.error('');
+    console.error('Exemplo:');
+    console.error('  node persist-reviews.cjs review-data.json');
+    console.error('  node persist-reviews.cjs review-data.json --dry-run');
     process.exit(1);
   }
   
-  const reviewData = require(`../${reviewFile}`);
-  persistReviews(reviewData, reviewData.pr_number)
-    .then(results => {
-      console.log('Persistência concluída:', results);
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('Erro:', error);
-      process.exit(1);
-    });
+  try {
+    const reviewData = require(`./${reviewFile}`);
+    persistReviews(reviewData, { dryRun })
+      .then(results => {
+        console.log('\n✅ Persistência concluída');
+        process.exit(results.errors.length > 0 ? 1 : 0);
+      })
+      .catch(error => {
+        console.error('\n❌ Erro fatal:', error);
+        process.exit(1);
+      });
+  } catch (error) {
+    console.error(`❌ Erro ao carregar arquivo ${reviewFile}:`, error.message);
+    process.exit(1);
+  }
 }
+
+module.exports = { 
+  persistReviews, 
+  calculateIssueHash, 
+  checkExistingHash 
+};
 ```
 
-### Refatoração de `create-issues.cjs`
-
-Script existente deve ser refatorado para usar o novo sistema de hash.
+### 3.4 Refatoração de `create-issues.cjs`
 
 ```javascript
-// .github/scripts/create-issues.cjs (refatorado)
+/**
+ * Create Issues - Workflow Intelligence v2.0
+ * 
+ * Cria GitHub Issues para reviews MEDIUM com deduplicação via Supabase.
+ * Integração com persist-reviews.cjs para eliminar duplicatas.
+ * 
+ * @module create-issues
+ * @version 2.0.0
+ * @requires ./persist-reviews.cjs
+ */
 
-const { persistReviews } = require('../../scripts/persist-reviews.cjs');
+const { persistReviews } = require('./persist-reviews.cjs');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Labels para issues de refactoring
+const REFACTOR_LABELS = {
+  GEMINI_REFACTOR: '🤖 gemini-refactor',
+  REFACTORING: 'refactoring',
+  TECH_DEBT: 'tech-debt'
+};
 
 /**
  * Cria GitHub Issues para reviews MEDIUM não-auto-fixable
- * COM deduplicação via hash
+ * COM deduplicação via hash no Supabase
+ * 
+ * @param {Object} reviewData - Dados do review
+ * @param {number} prNumber - Número do PR
+ * @param {Object} github - Cliente GitHub
+ * @param {Object} context - Contexto do GitHub Actions
+ * @returns {Promise<number[]>} Números das issues criadas
  */
 async function createIssuesFromReview(reviewData, prNumber, github, context) {
-  // 1. Persistir reviews no Supabase (com deduplicação)
-  const persistResult = await persistReviews(reviewData, prNumber);
-  console.log('Persistência:', persistResult);
-
+  console.log(`🔄 Criando issues para PR #${prNumber}...`);
+  
+  // 1. PRIMEIRO: Persistir reviews no Supabase (com deduplicação)
+  console.log('  Passo 1: Persistindo no Supabase...');
+  const persistResult = await persistReviews(reviewData, { 
+    pr_number: prNumber,
+    commit_sha: reviewData.commit_sha 
+  });
+  
+  console.log(`  Resultado: ${persistResult.created} criadas, ${persistResult.updated} atualizadas, ${persistResult.skipped} ignoradas`);
+  
   // 2. Buscar issues que precisam ser criadas no GitHub
-  const { data: pendingIssues } = await supabase
+  // Apenas: status='detected' + priority='media' + sem github_issue_number
+  console.log('  Passo 2: Buscando issues pendentes...');
+  const { data: pendingIssues, error } = await supabase
     .from('gemini_reviews')
     .select('*')
     .eq('pr_number', prNumber)
     .eq('status', 'detected')
-    .eq('priority', 'media');
-
+    .eq('priority', 'media')
+    .is('github_issue_number', null)
+    .limit(10); // Limitar para não sobrecarregar
+  
+  if (error) {
+    console.error('Erro ao buscar issues pendentes:', error);
+    throw error;
+  }
+  
+  if (!pendingIssues || pendingIssues.length === 0) {
+    console.log('  ℹ️  Nenhuma issue pendente para criar');
+    return [];
+  }
+  
+  console.log(`  ${pendingIssues.length} issues pendentes encontradas`);
+  
   // 3. Criar issues no GitHub
   const createdIssues = [];
   for (const issue of pendingIssues) {
-    const githubIssue = await createGitHubIssue(issue, prNumber, github, context);
-    
-    // 4. Atualizar Supabase com referência
-    await supabase
-      .from('gemini_reviews')
-      .update({
-        status: 'reported',
-        github_issue_number: githubIssue.number,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', issue.id);
-    
-    createdIssues.push(githubIssue.number);
+    try {
+      console.log(`  Criando issue: ${issue.title.substring(0, 50)}...`);
+      
+      const githubIssue = await createGitHubIssue(issue, prNumber, github, context);
+      
+      // 4. Atualizar Supabase com referência
+      await supabase
+        .from('gemini_reviews')
+        .update({
+          status: 'reported',
+          github_issue_number: githubIssue.number,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', issue.id);
+      
+      createdIssues.push(githubIssue.number);
+      console.log(`    ✅ Issue #${githubIssue.number} criada`);
+      
+    } catch (error) {
+      console.error(`    ❌ Erro ao criar issue para ${issue.title}:`, error.message);
+    }
   }
-
+  
+  console.log(`\n✅ ${createdIssues.length} issues criadas no GitHub`);
   return createdIssues;
 }
+
+/**
+ * Cria uma issue no GitHub
+ * 
+ * @param {Object} issue - Dados da issue do Supabase
+ * @param {number} prNumber - Número do PR
+ * @param {Object} github - Cliente GitHub
+ * @param {Object} context - Contexto
+ * @returns {Promise<Object>} Issue criada
+ */
+async function createGitHubIssue(issue, prNumber, github, context) {
+  const { owner, repo } = context.repo;
+  
+  // Construir corpo da issue
+  const body = buildIssueBody(issue, prNumber);
+  
+  // Criar issue
+  const { data: githubIssue } = await github.rest.issues.create({
+    owner,
+    repo,
+    title: `[Refactor] ${issue.title}`,
+    body: body,
+    labels: [
+      REFACTOR_LABELS.GEMINI_REFACTOR,
+      REFACTOR_LABELS.REFACTORING,
+      `priority:${issue.priority}`
+    ]
+  });
+  
+  // Comentar no PR linkando a issue
+  await github.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: prNumber,
+    body: `🤖 **Gemini Code Assist** criou issue #${githubIssue.number} para tracking desta sugestão de refactoring.`
+  });
+  
+  return githubIssue;
+}
+
+/**
+ * Constrói o corpo da issue no GitHub
+ * 
+ * @param {Object} issue - Dados da issue
+ * @param {number} prNumber - Número do PR
+ * @returns {string} Corpo formatado em Markdown
+ */
+function buildIssueBody(issue, prNumber) {
+  const lines = [
+    `## 📋 Sugestão de Refactoring`,
+    ``,
+    `**Detectado em:** PR #${prNumber}`,
+    `**Arquivo:** \`${issue.file_path}\``,
+    `**Linhas:** ${issue.line_start}-${issue.line_end}`,
+    `**Categoria:** ${issue.category}`,
+    `**Prioridade:** ${issue.priority}`,
+    `**Hash:** \`${issue.issue_hash?.substring(0, 16)}...\``,
+    ``,
+    `### Descrição`,
+    issue.description,
+    ``,
+    `### Sugestão`,
+    '```javascript',
+    issue.suggestion || 'Nenhuma sugestão específica',
+    '```',
+    ``,
+    `---`,
+    `*Esta issue foi criada automaticamente pelo Gemini Code Assist. O hash único garante que não haverá duplicatas.*`,
+    `*Para reabrir após correção parcial, use o comando "/gemini reopen".*`
+  ];
+  
+  return lines.join('\n');
+}
+
+module.exports = { createIssuesFromReview };
 ```
 
 ---
 
-## 🗄️ Schema Atualizado
+## 🗄️ Schema e Migration
 
-### Migration SQL
+### 4.1 Migration SQL Completa
 
 ```sql
--- .migrations/20260222_add_workflow_intelligence_fields.sql
-
+-- .migrations/20260222_workflow_intelligence_refactor.sql
 -- ============================================
 -- Workflow Intelligence Refactor Migration
--- Adiciona campos para deduplicação e tracking
+-- Versão: 2.0.0
+-- Data: 2026-02-22
+-- Autor: Architect
 -- ============================================
 
--- Adicionar novos campos à tabela gemini_reviews
-ALTER TABLE gemini_reviews
-  -- Hash único para deduplicação
-  ADD COLUMN IF NOT EXISTS issue_hash TEXT UNIQUE,
-  
-  -- Referência à issue do GitHub
-  ADD COLUMN IF NOT EXISTS github_issue_number INTEGER,
-  
-  -- Tipo de resolução (quando completado)
-  ADD COLUMN IF NOT EXISTS resolution_type TEXT CHECK (
-    resolution_type IN ('fixed', 'rejected', 'partial', null)
-  ),
-  
-  -- Estado expandido
-  ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'detected' CHECK (
-    status IN (
-      'detected',      -- Detectado pelo Gemini
-      'reported',      -- Reportado ao GitHub (issue criada)
-      'assigned',      -- Atribuído a agent
-      'resolved',      -- Completamente resolvido
-      'partial',       -- Parcialmente resolvido
-      'wontfix',       -- Ignorado/falso positivo
-      'duplicate'      -- Duplicata
-    )
-  );
+-- ============================================
+-- PARTE 1: Backup dos dados existentes
+-- ============================================
 
--- Criar índices para performance
+-- Criar tabela de backup
+CREATE TABLE IF NOT EXISTS gemini_reviews_backup_20260222 AS 
+SELECT * FROM gemini_reviews;
+
+-- Registrar quantidade de registros
+DO $$
+DECLARE
+  backup_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO backup_count FROM gemini_reviews_backup_20260222;
+  RAISE NOTICE 'Backup criado com % registros', backup_count;
+END $$;
+
+-- ============================================
+-- PARTE 2: Adicionar novos campos
+-- ============================================
+
+-- Adicionar issue_hash com UNIQUE constraint
+ALTER TABLE gemini_reviews
+  ADD COLUMN IF NOT EXISTS issue_hash TEXT,
+  ADD COLUMN IF NOT EXISTS github_issue_number INTEGER,
+  ADD COLUMN IF NOT EXISTS resolution_type TEXT,
+  ADD COLUMN IF NOT EXISTS resolved_by TEXT,
+  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+
+-- Criar UNIQUE constraint no hash (após popular dados)
+-- Nota: Só pode ser aplicado se não houver duplicatas
+-- ALTER TABLE gemini_reviews ADD CONSTRAINT unique_issue_hash UNIQUE (issue_hash);
+
+-- ============================================
+-- PARTE 3: Migrar dados existentes
+-- ============================================
+
+-- Atualizar registros existentes com hash baseado nos dados
+-- Isso precisa ser feito via script Node.js para calcular SHA-256
+-- O script scripts/migrate-hashes.cjs deve ser executado
+
+-- Comentário para documentação
+COMMENT ON COLUMN gemini_reviews.issue_hash IS 
+  'SHA-256 hash do conteúdo da issue para deduplicação determinística';
+
+COMMENT ON COLUMN gemini_reviews.github_issue_number IS 
+  'Número da issue correspondente no GitHub';
+
+COMMENT ON COLUMN gemini_reviews.resolution_type IS 
+  'Tipo de resolução: fixed, rejected, partial';
+
+COMMENT ON COLUMN gemini_reviews.resolved_by IS 
+  'UUID do agent ou usuário que resolveu';
+
+COMMENT ON COLUMN gemini_reviews.resolved_at IS 
+  'Timestamp de resolução';
+
+-- ============================================
+-- PARTE 4: Atualizar CHECK constraint de status
+-- ============================================
+
+-- Remover constraint antiga (se existir)
+ALTER TABLE gemini_reviews 
+  DROP CONSTRAINT IF EXISTS gemini_reviews_status_check;
+
+-- Adicionar nova constraint com estados expandidos
+ALTER TABLE gemini_reviews
+  ADD CONSTRAINT gemini_reviews_status_check 
+  CHECK (status IN (
+    'detected',      -- Detectado pelo Gemini
+    'reported',      -- Reportado ao GitHub (issue criada)
+    'assigned',      -- Atribuído a agent
+    'resolved',      -- Completamente resolvido
+    'partial',       -- Parcialmente resolvido
+    'wontfix',       -- Ignorado/falso positivo
+    'duplicate',     -- Duplicata
+    -- Estados legados (para compatibilidade)
+    'pendente',
+    'em_progresso', 
+    'corrigido',
+    'descartado'
+  ));
+
+-- ============================================
+-- PARTE 5: Criar índices de performance
+-- ============================================
+
+-- Índice para busca por hash (único após migração)
 CREATE INDEX IF NOT EXISTS idx_gemini_reviews_issue_hash 
   ON gemini_reviews(issue_hash);
 
+-- Índice para busca por issue do GitHub
 CREATE INDEX IF NOT EXISTS idx_gemini_reviews_github_issue 
-  ON gemini_reviews(github_issue_number);
+  ON gemini_reviews(github_issue_number) 
+  WHERE github_issue_number IS NOT NULL;
 
+-- Índice para busca por status
 CREATE INDEX IF NOT EXISTS idx_gemini_reviews_status 
   ON gemini_reviews(status);
 
+-- Índice composto para queries do workflow
 CREATE INDEX IF NOT EXISTS idx_gemini_reviews_pr_status 
-  ON gemini_reviews(pr_number, status);
+  ON gemini_reviews(pr_number, status) 
+  WHERE status IN ('detected', 'reported');
 
--- Atualizar RLS policies para novos campos
+-- Índice para ordenação por data
+CREATE INDEX IF NOT EXISTS idx_gemini_reviews_created 
+  ON gemini_reviews(created_at DESC);
+
+-- ============================================
+-- PARTE 6: Atualizar RLS policies
+-- ============================================
+
+-- Garantir RLS habilitado
+ALTER TABLE gemini_reviews ENABLE ROW LEVEL SECURITY;
+
+-- Remover policies antigas
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON gemini_reviews;
+DROP POLICY IF EXISTS "Enable insert for service role" ON gemini_reviews;
+DROP POLICY IF EXISTS "Enable update for service role" ON gemini_reviews;
+
+-- Criar policies atualizadas
 CREATE POLICY "Enable read access for authenticated users" 
   ON gemini_reviews FOR SELECT 
   USING (auth.role() = 'authenticated');
@@ -582,427 +1137,898 @@ CREATE POLICY "Enable update for service role"
   ON gemini_reviews FOR UPDATE 
   USING (auth.role() = 'service_role');
 
--- Comentários documentando os campos
-COMMENT ON COLUMN gemini_reviews.issue_hash IS 
-  'SHA-256 hash do conteúdo da issue para deduplicação';
+-- ============================================
+-- PARTE 7: Trigger para updated_at automático
+-- ============================================
 
-COMMENT ON COLUMN gemini_reviews.github_issue_number IS 
-  'Número da issue correspondente no GitHub';
+-- Função de atualização
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-COMMENT ON COLUMN gemini_reviews.resolution_type IS 
-  'Tipo de resolução: fixed, rejected, partial';
+-- Trigger (remover se existir para evitar duplicatas)
+DROP TRIGGER IF EXISTS set_updated_at ON gemini_reviews;
 
-COMMENT ON COLUMN gemini_reviews.status IS 
-  'Estado expandido: detected, reported, assigned, resolved, partial, wontfix, duplicate';
+CREATE TRIGGER set_updated_at
+  BEFORE UPDATE ON gemini_reviews
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- PARTE 8: Função auxiliar para batch update
+-- ============================================
+
+CREATE OR REPLACE FUNCTION batch_update_review_status(
+  review_ids UUID[],
+  new_status TEXT,
+  resolution_type TEXT DEFAULT NULL
+)
+RETURNS INTEGER AS $$
+DECLARE
+  updated_count INTEGER;
+BEGIN
+  UPDATE gemini_reviews
+  SET 
+    status = new_status,
+    resolution_type = COALESCE(resolution_type, gemini_reviews.resolution_type),
+    updated_at = NOW()
+  WHERE id = ANY(review_ids);
+  
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RETURN updated_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- VERIFICAÇÃO FINAL
+-- ============================================
+
+DO $$
+DECLARE
+  total_records INTEGER;
+  with_hash INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO total_records FROM gemini_reviews;
+  SELECT COUNT(*) INTO with_hash FROM gemini_reviews WHERE issue_hash IS NOT NULL;
+  
+  RAISE NOTICE '============================================';
+  RAISE NOTICE 'Migration concluída!';
+  RAISE NOTICE 'Total de registros: %', total_records;
+  RAISE NOTICE 'Registros com hash: %', with_hash;
+  RAISE NOTICE '============================================';
+END $$;
 ```
 
-### Schema Zod Atualizado
+### 4.2 Schema Zod Atualizado
 
 ```javascript
 // src/schemas/geminiReviewSchema.js (atualizado)
 
-const { z } = require('zod');
+import { z } from 'zod';
 
-// Estados expandidos
-const ReviewStatusEnum = z.enum([
+// ============================================================================
+// CONSTANTES
+// ============================================================================
+
+/**
+ * Status expandidos para Workflow Intelligence
+ * @readonly
+ */
+export const REVIEW_STATUSES = [
   'detected',
   'reported', 
   'assigned',
   'resolved',
   'partial',
   'wontfix',
-  'duplicate'
-]);
+  'duplicate',
+  // Estados legados para compatibilidade
+  'pendente',
+  'em_progresso',
+  'corrigido',
+  'descartado'
+];
 
-// Tipos de resolução
-const ResolutionTypeEnum = z.enum([
-  'fixed',
-  'rejected', 
-  'partial'
-]);
+/**
+ * Labels para exibição dos status (Workflow Intelligence)
+ * @readonly
+ */
+export const REVIEW_STATUS_LABELS = {
+  // Estados novos
+  detected: 'Detectado',
+  reported: 'Reportado',
+  assigned: 'Atribuído',
+  resolved: 'Resolvido',
+  partial: 'Parcial',
+  wontfix: 'Ignorado',
+  duplicate: 'Duplicata',
+  // Estados legados
+  pendente: 'Pendente',
+  em_progresso: 'Em Progresso',
+  corrigido: 'Corrigido',
+  descartado: 'Descartado'
+};
 
-// Schema de review atualizado
-const GeminiReviewSchema = z.object({
-  id: z.string().uuid(),
-  pr_number: z.number().int().positive(),
-  commit_sha: z.string().length(40),
-  file_path: z.string(),
-  line_start: z.number().int().positive(),
-  line_end: z.number().int().positive(),
+/**
+ * Tipos de resolução
+ * @readonly
+ */
+export const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial', null];
+
+/**
+ * Prioridades
+ * @readonly
+ */
+export const REVIEW_PRIORITIES = ['critica', 'alta', 'media', 'baixa'];
+
+/**
+ * Labels de prioridades
+ * @readonly
+ */
+export const REVIEW_PRIORITY_LABELS = {
+  critica: 'Crítica',
+  alta: 'Alta',
+  media: 'Média',
+  baixa: 'Baixa'
+};
+
+/**
+ * Categorias
+ * @readonly
+ */
+export const REVIEW_CATEGORIES = [
+  'estilo',
+  'bug',
+  'seguranca',
+  'performance',
+  'manutenibilidade',
+  'geral'
+];
+
+// ============================================================================
+// SCHEMAS ZOD
+// ============================================================================
+
+/**
+ * Schema para criação de review
+ */
+export const geminiReviewCreateSchema = z.object({
+  pr_number: z.number().int().positive('Número do PR deve ser positivo'),
+  commit_sha: z.string().min(1, 'Commit SHA é obrigatório'),
+  file_path: z.string().min(1, 'Caminho do arquivo é obrigatório'),
+  line_start: z.number().int().positive().nullable().optional(),
+  line_end: z.number().int().positive().nullable().optional(),
   
-  // NOVOS CAMPOS
-  issue_hash: z.string().length(64).optional(), // SHA-256 = 64 chars hex
-  github_issue_number: z.number().int().positive().optional(),
-  resolution_type: ResolutionTypeEnum.optional(),
-  status: ReviewStatusEnum.default('detected'),
+  // Workflow Intelligence: Hash único
+  issue_hash: z.string().length(64, 'Hash SHA-256 deve ter 64 caracteres'),
   
-  priority: z.enum(['critica', 'alta', 'media', 'baixa']),
-  category: z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade', 'geral']),
-  title: z.string().max(200),
-  description: z.string().max(2000),
+  // Estado inicial sempre 'detected'
+  status: z.literal('detected').default('detected'),
+  
+  priority: z.enum(REVIEW_PRIORITIES).default('media'),
+  category: z.enum(REVIEW_CATEGORIES).default('geral'),
+  
+  title: z.string().min(1).max(200, 'Título deve ter no máximo 200 caracteres'),
+  description: z.string().max(2000).optional(),
   suggestion: z.string().max(1000).optional(),
-  review_data: z.record(z.unknown()),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime()
+  
+  // Dados brutos do review
+  review_data: z.record(z.unknown()).optional()
 });
 
-// Schema para criação
-const GeminiReviewCreateSchema = GeminiReviewSchema.omit({
-  id: true,
-  created_at: true, 
-  updated_at: true
+/**
+ * Schema para atualização de review
+ */
+export const geminiReviewUpdateSchema = z.object({
+  status: z.enum(REVIEW_STATUSES).optional(),
+  github_issue_number: z.number().int().positive().nullable().optional(),
+  resolution_type: z.enum(['fixed', 'rejected', 'partial']).nullable().optional(),
+  resolved_by: z.string().uuid().nullable().optional(),
+  resolved_at: z.string().datetime().nullable().optional(),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  suggestion: z.string().max(1000).optional()
 });
 
-// Schema para atualização
-const GeminiReviewUpdateSchema = GeminiReviewSchema.partial().omit({
-  id: true,
-  created_at: true
+/**
+ * Schema para batch update
+ */
+export const geminiReviewBatchUpdateSchema = z.object({
+  review_ids: z.array(z.string().uuid()).min(1),
+  status: z.enum(REVIEW_STATUSES),
+  resolution_type: z.enum(['fixed', 'rejected', 'partial']).optional()
 });
 
-// Função de validação
-function validateGeminiReview(data) {
-  const result = GeminiReviewSchema.safeParse(data);
-  return {
-    success: result.success,
-    data: result.success ? result.data : null,
-    errors: result.success ? [] : result.error.errors
-  };
+/**
+ * Schema de filtros
+ */
+export const geminiReviewFiltersSchema = z.object({
+  pr_number: z.number().int().positive().optional(),
+  status: z.enum(REVIEW_STATUSES).optional(),
+  priority: z.enum(REVIEW_PRIORITIES).optional(),
+  category: z.enum(REVIEW_CATEGORIES).optional(),
+  issue_hash: z.string().length(64).optional()
+});
+
+// ============================================================================
+// FUNÇÕES DE VALIDAÇÃO
+// ============================================================================
+
+export function validateGeminiReviewCreate(data) {
+  const result = geminiReviewCreateSchema.safeParse(data);
+  return formatValidationResult(result);
 }
 
-module.exports = {
-  ReviewStatusEnum,
-  ResolutionTypeEnum,
-  GeminiReviewSchema,
-  GeminiReviewCreateSchema,
-  GeminiReviewUpdateSchema,
-  validateGeminiReview
-};
+export function validateGeminiReviewUpdate(data) {
+  const result = geminiReviewUpdateSchema.safeParse(data);
+  return formatValidationResult(result);
+}
+
+export function validateGeminiReviewBatchUpdate(data) {
+  const result = geminiReviewBatchUpdateSchema.safeParse(data);
+  return formatValidationResult(result);
+}
+
+export function validateGeminiReviewFilters(data) {
+  const result = geminiReviewFiltersSchema.safeParse(data);
+  return formatValidationResult(result);
+}
+
+function formatValidationResult(result) {
+  if (result.success) {
+    return { success: true, data: result.data, errors: [] };
+  }
+  return {
+    success: false,
+    data: null,
+    errors: result.error.errors.map(e => ({
+      field: e.path.join('.'),
+      message: e.message
+    }))
+  };
+}
 ```
 
 ---
 
-## 📅 Plano de Implementação
+## 🔧 Modificações no Workflow YAML
 
-### Sprint 6: Workflow Intelligence Foundation
+### 5.1 Job: Persist Reviews
 
-**Semana 1-2 (2026-02-24 a 2026-03-07)**
+```yaml
+# .github/workflows/gemini-review.yml (modificações)
 
-| Dia | Tarefa | Responsável |
-|-----|--------|-------------|
-| 1-2 | Criar migration SQL com novos campos | Architect |
-| 3-4 | Implementar `persist-reviews.cjs` | Code |
-| 5-6 | Atualizar schema Zod | Code |
-| 7 | Testes unitários para hash e deduplicação | Code |
-| 8-10 | Refatorar `create-issues.cjs` | Code |
-| 11-12 | Integrar com workflow existente | Code |
-| 13-14 | Testes E2E e validação | Architect |
+jobs:
+  # ... jobs anteriores (detect, poll-review, parse) ...
+  
+  # ==========================================
+  # JOB 4: Persistir Reviews no Supabase
+  # Workflow Intelligence: Deduplicação por Hash
+  # ==========================================
+  persist:
+    name: Persist Reviews to Supabase
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    if: always() && needs.parse.outputs.total_issues > 0
+    outputs:
+      created: ${{ steps.persist.outputs.created }}
+      updated: ${{ steps.persist.outputs.updated }}
+      skipped: ${{ steps.persist.outputs.skipped }}
+      errors: ${{ steps.persist.outputs.errors }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.branch }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js
+        working-directory: .github/scripts
+      
+      - name: Download Review Data
+        uses: actions/download-artifact@v4
+        with:
+          name: review-data
+          path: .github/scripts
+      
+      - name: Persist Reviews
+        id: persist
+        working-directory: .github/scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node persist-reviews.cjs review-data.json | tee persist-output.log
+          
+          # Extrair métricas para outputs
+          echo "created=$(grep 'Criadas:' persist-output.log | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "updated=$(grep 'Atualizadas:' persist-output.log | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "skipped=$(grep 'Ignoradas:' persist-output.log | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "errors=$(grep 'Erros:' persist-output.log | awk '{print $2}')" >> $GITHUB_OUTPUT
 
-**Entregáveis:**
-- ✅ Migration SQL aplicada
-- ✅ Script `persist-reviews.cjs` funcionando
-- ✅ Sistema de hash SHA-256 operacional
-- ✅ Deduplicação funcionando em staging
+  # ==========================================
+  # JOB 5: Criar GitHub Issues
+  # Workflow Intelligence: Só cria issues novas
+  # ==========================================
+  create-issues:
+    name: Create GitHub Issues
+    runs-on: ubuntu-latest
+    needs: [detect, persist]
+    if: always() && needs.persist.outputs.created > 0
+    outputs:
+      issue_count: ${{ steps.create.outputs.issue_count }}
+      issue_numbers: ${{ steps.create.outputs.issue_numbers }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js
+        working-directory: .github/scripts
+      
+      - name: Create Issues
+        id: create
+        uses: actions/github-script@v7
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        with:
+          script: |
+            const { createIssuesFromReview } = require('./.github/scripts/create-issues.cjs');
+            
+            const reviewData = require('./review-data.json');
+            const prNumber = parseInt('${{ needs.detect.outputs.pr_number }}');
+            
+            const createdIssues = await createIssuesFromReview(
+              reviewData, 
+              prNumber, 
+              github, 
+              context
+            );
+            
+            core.setOutput('issue_count', createdIssues.length);
+            core.setOutput('issue_numbers', createdIssues.join(','));
+
+  # ==========================================
+  # JOB 6: Check Resolutions
+  # Workflow Intelligence: Atualiza Supabase
+  # ==========================================
+  check-resolutions:
+    name: Check Issue Resolutions
+    runs-on: ubuntu-latest
+    needs: [detect]
+    # Executa em synchronize (novo commit) para verificar resoluções
+    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Precisa do histórico completo
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js
+        working-directory: .github/scripts
+      
+      - name: Check Resolutions
+        uses: actions/github-script@v7
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        with:
+          script: |
+            const { checkResolutionsAndUpdate } = require('./.github/scripts/check-resolutions.cjs');
+            
+            const prNumber = context.payload.pull_request.number;
+            
+            await checkResolutionsAndUpdate(prNumber, github, context);
+```
 
 ---
 
-### Sprint 7: Integração e Refatoração
+## 🌐 API Endpoints
 
-**Semana 3-4 (2026-03-10 a 2026-03-21)**
+### 6.1 Batch Update Endpoint
+
+```javascript
+// api/gemini-reviews/batch-update.js
+
+/**
+ * Batch Update API
+ * 
+ * Endpoint para atualização em lote de reviews.
+ * Permite agents externos atualizarem status de múltiplas issues.
+ * 
+ * @route POST /api/gemini-reviews/batch-update
+ * @auth Bearer token (Supabase JWT)
+ * @body { review_ids: string[], status: string, resolution_type?: string }
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { 
+  validateGeminiReviewBatchUpdate 
+} from '../../src/schemas/geminiReviewSchema.js';
+
+// Configuração CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
+export default async function handler(req, res) {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
+  }
+
+  // Apenas POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      error: 'Method not allowed',
+      message: 'Use POST para batch update'
+    });
+  }
+
+  try {
+    // Verificar autenticação
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Bearer token obrigatório'
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Inicializar Supabase com token do usuário
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY,
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      }
+    );
+
+    // Verificar sessão
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Token inválido'
+      });
+    }
+
+    // Validar body
+    const validation = validateGeminiReviewBatchUpdate(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Validation error',
+        errors: validation.errors
+      });
+    }
+
+    const { review_ids, status, resolution_type } = validation.data;
+
+    // Executar batch update
+    const { data: updatedIds, error: rpcError } = await supabase.rpc(
+      'batch_update_review_status',
+      {
+        review_ids: review_ids,
+        new_status: status,
+        resolution_type: resolution_type || null
+      }
+    );
+
+    if (rpcError) {
+      console.error('RPC error:', rpcError);
+      throw rpcError;
+    }
+
+    // Buscar registros atualizados
+    const { data: updatedReviews, error: selectError } = await supabase
+      .from('gemini_reviews')
+      .select('id, status, github_issue_number, title')
+      .in('id', review_ids);
+
+    if (selectError) {
+      console.error('Select error:', selectError);
+      throw selectError;
+    }
+
+    // Resposta de sucesso
+    const response = {
+      success: true,
+      updated_count: updatedIds || review_ids.length,
+      updated_reviews: updatedReviews,
+      user_id: user.id,
+      timestamp: new Date().toISOString()
+    };
+
+    // Set CORS headers
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('Batch update error:', error);
+    
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+    
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+}
+```
+
+### 6.2 Webhook Handler Atualizado
+
+```javascript
+// api/webhooks/gemini-review.js
+
+/**
+ * Webhook Handler para Gemini Reviews
+ * 
+ * Notifica agents externos quando novas reviews estão prontas.
+ * Inclui review_ids específicos para processamento direto.
+ * 
+ * @route POST /api/webhooks/gemini-review
+ * @auth X-Webhook-Secret
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  // Verificar método
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Verificar secret
+  const secret = req.headers['x-webhook-secret'];
+  if (secret !== process.env.WEBHOOK_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { pr_number, event } = req.body;
+
+    if (event === 'reviews_ready') {
+      // Buscar reviews não atribuídas deste PR
+      const { data: reviews, error } = await supabase
+        .from('gemini_reviews')
+        .select('id, issue_hash, title, description, file_path, priority, category')
+        .eq('pr_number', prNumber)
+        .eq('status', 'reported')
+        .is('github_issue_number', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Enriquecer payload com IDs específicos
+      const payload = {
+        event: 'gemini_reviews_available',
+        pr_number: prNumber,
+        review_count: reviews.length,
+        review_ids: reviews.map(r => r.id),
+        issue_hashes: reviews.map(r => r.issue_hash),
+        reviews: reviews.map(r => ({
+          id: r.id,
+          hash: r.issue_hash.substring(0, 16) + '...',
+          title: r.title,
+          file: r.file_path,
+          priority: r.priority
+        })),
+        timestamp: new Date().toISOString(),
+        // URL para batch update
+        batch_update_url: `${process.env.VERCEL_URL}/api/gemini-reviews/batch-update`
+      };
+
+      // Notificar agents registrados
+      await notifyAgents(payload);
+
+      return res.status(200).json({
+        success: true,
+        notified: payload.review_count
+      });
+    }
+
+    return res.status(400).json({ error: 'Unknown event type' });
+
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function notifyAgents(payload) {
+  // Implementação de notificação para agents
+  // Ex: Telegram, Slack, WebSocket
+  console.log('Notifying agents:', payload);
+}
+```
+
+---
+
+## 📅 Plano de Implementação Revisado
+
+### 7.1 Sequência de Sprints
+
+```mermaid
+gantt
+    title Workflow Intelligence Implementation Timeline
+    dateFormat  YYYY-MM-DD
+    section Sprint 5
+    Migration SQL           :s5-1, 2026-02-24, 2d
+    persist-reviews.cjs     :s5-2, after s5-1, 3d
+    Schema Zod Update       :s5-3, after s5-1, 2d
+    Unit Tests              :s5-4, after s5-2, 2d
+    Integration             :s5-5, after s5-4, 3d
+    
+    section Sprint 6
+    Refatorar create-issues :s6-1, 2026-03-10, 3d
+    Expandir check-resolut  :s6-2, after s6-1, 3d
+    Batch API Endpoint      :s6-3, after s6-2, 2d
+    E2E Tests               :s6-4, after s6-3, 4d
+    
+    section Sprint 7
+    Webhook Handler         :s7-1, 2026-03-24, 3d
+    Agent Integration       :s7-2, after s7-1, 3d
+    Retry System            :s7-3, after s7-2, 2d
+    Load Testing            :s7-4, after s7-3, 4d
+    
+    section Sprint 8
+    UI Human Review         :s8-1, 2026-04-07, 5d
+    CLI Tool                :s8-2, after s8-1, 3d
+    Documentation           :s8-3, after s8-2, 4d
+    
+    section Sprint 9
+    Metrics                 :s9-1, 2026-04-21, 3d
+    Automated Reports       :s9-2, after s9-1, 3d
+    Performance Opt         :s9-3, after s9-2, 4d
+    Training                :s9-4, after s9-3, 2d
+```
+
+### 7.2 Sprint 5: Workflow Intelligence Foundation
+
+**Período:** 2026-02-24 a 2026-03-07 (2 semanas)
+
+| Dia | Tarefa | Responsável | Entregável |
+|-----|--------|-------------|------------|
+| 1-2 | Criar migration SQL | Architect | `.migrations/20260222_workflow_intelligence.sql` |
+| 3-4 | Implementar `persist-reviews.cjs` | Code | Script funcional com deduplicação |
+| 5-6 | Atualizar schema Zod | Code | `src/schemas/geminiReviewSchema.js` atualizado |
+| 7 | Testes unitários | Code | Testes para hash e deduplicação |
+| 8-10 | Integrar ao workflow | Code | YAML atualizado com novo job |
+| 11-12 | Testes E2E em staging | Architect | Validação do fluxo completo |
+| 13-14 | Code review e ajustes | Architect | PR aprovado |
+
+**Entregáveis:**
+- ✅ Migration SQL aplicada em staging
+- ✅ Script `persist-reviews.cjs` funcionando
+- ✅ Sistema de hash SHA-256 operacional
+- ✅ Deduplicação ativa em ambiente de teste
+
+**Métricas de Aceite:**
+- Hash calculado em < 10ms por issue
+- Deduplicação 100% acurada (zero falsos positivos)
+- Backup de dados existentes criado
+
+### 7.3 Sprint 6: Integração e Refatoração
+
+**Período:** 2026-03-10 a 2026-03-21 (2 semanas)
 
 | Dia | Tarefa | Responsável |
 |-----|--------|-------------|
-| 15-16 | Corrigir exemplos no GEMINI_AGENT_PROTOCOL.md (Issue #121) | Code |
-| 17-18 | Adicionar validação de schema nos testes (Issue #122) | Code |
-| 19-20 | Implementar checkpoint de commit no trigger-re-review | Code |
-| 21-22 | Resolver loop circular no workflow (Issue #123) | Code |
-| 23-24 | Testes de integração completos | Architect |
-| 25-26 | Code review e ajustes | Architect |
+| 15-17 | Refatorar `create-issues.cjs` | Code |
+| 18-20 | Expandir `check-resolutions.cjs` | Code |
+| 21-22 | Criar endpoint batch update | Code |
+| 23-24 | Testes de integração | Architect |
+| 25-26 | Code review | Architect |
 | 27-28 | Deploy para produção | DevOps |
 
 **Entregáveis:**
-- ✅ Issue #121 resolvida (UUID nos exemplos)
-- ✅ Issue #122 resolvida (validação de schema)
-- ✅ Issue #123 resolvida (sem duplicatas)
-- ✅ Loop circular eliminado
+- ✅ `create-issues.cjs` usando Supabase
+- ✅ `findSimilarIssue()` removido
+- ✅ `check-resolutions.cjs` atualizando Supabase
+- ✅ Endpoint `/api/gemini-reviews/batch-update` funcionando
 
----
+### 7.4 Sprint 7: Webhooks e Notificação
 
-### Sprint 8: Webhooks e Notificação
-
-**Semana 5-6 (2026-03-24 a 2026-04-04)**
+**Período:** 2026-03-24 a 2026-04-04 (2 semanas)
 
 | Dia | Tarefa | Responsável |
 |-----|--------|-------------|
-| 29-30 | Implementar webhook handler atualizado | Code |
-| 31-32 | Adicionar notificação de agents (P4.3) | Code |
-| 33-34 | Sistema de retry com backoff exponencial | Code |
-| 35-36 | DLQ (Dead Letter Queue) para falhas | Code |
-| 37-38 | Testes de carga e resiliência | Architect |
-| 39-40 | Documentação técnica atualizada | Documentation |
+| 29-30 | Implementar webhook handler | Code |
+| 31-32 | Integrar com Kilocode/Roo | Code |
+| 33-34 | Sistema de retry | Code |
+| 35-36 | DLQ para falhas | Code |
+| 37-38 | Testes de carga | Architect |
+| 39-40 | Documentação técnica | Documentation |
 | 41-42 | Deploy e monitoramento | DevOps |
 
 **Entregáveis:**
-- ✅ Webhook handler com deduplicação
-- ✅ Sistema de notificação de agents
+- ✅ Webhook com payload enriquecido
+- ✅ Notificação de agents
 - ✅ Retry automático com backoff
 - ✅ DLQ para falhas persistentes
 
----
+### 7.5 Sprint 8: UI e CLI
 
-### Sprint 9: UI e CLI
-
-**Semana 7-8 (2026-04-07 a 2026-04-18)**
+**Período:** 2026-04-07 a 2026-04-18 (2 semanas)
 
 | Dia | Tarefa | Responsável |
 |-----|--------|-------------|
-| 43-44 | Implementar UI de reviews (P4.6) | Code |
-| 45-46 | Componentes de filtro e busca | Code |
+| 43-44 | UI de reviews | Code |
+| 45-46 | Filtros e busca | Code |
 | 47-48 | Dashboard de métricas | Code |
-| 49-50 | CLI para agents (P4.4) | Code |
-| 51-52 | Comandos: list, show, claim, resolve | Code |
-| 53-54 | Testes de usabilidade | Architect |
-| 55-56 | Ajustes e polimento | Code |
+| 49-50 | CLI `gemini-agent` | Code |
+| 51-52 | Testes de usabilidade | Architect |
+| 53-54 | Ajustes e polimento | Code |
 
-**Entregáveis:**
-- ✅ UI de reviews funcionando
-- ✅ Dashboard com filtros
-- ✅ CLI `gemini-agent` instalável
-- ✅ Documentação de uso
+### 7.6 Sprint 9: Métricas e Polimento
 
----
-
-### Sprint 10: Métricas e Polimento
-
-**Semana 9-10 (2026-04-21 a 2026-05-02)**
+**Período:** 2026-04-21 a 2026-05-02 (2 semanas)
 
 | Dia | Tarefa | Responsável |
 |-----|--------|-------------|
-| 57-58 | Implementar coleta de métricas | Code |
-| 59-60 | Relatório semanal automático (P3.3) | Code |
+| 57-58 | Coleta de métricas | Code |
+| 59-60 | Relatório semanal automático | Code |
 | 61-62 | Otimizações de performance | Architect |
-| 63-64 | Cache de queries frequentes | Code |
+| 63-64 | Cache de queries | Code |
 | 65-66 | Documentação final | Documentation |
 | 67-68 | Treinamento da equipe | Team |
-| 69-70 | Retrospectiva e lições aprendidas | All |
-
-**Entregáveis:**
-- ✅ Métricas de efetividade
-- ✅ Relatórios automáticos
-- ✅ Performance otimizada
-- ✅ Documentação completa
-
----
-
-## 📊 Diagramas
-
-### Fluxo de Dados Integrado
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           FLUXO DE DADOS INTEGRADO                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────────────┐   │
-│  │  GitHub  │────▶│  Gemini  │────▶│ Webhook  │────▶│  persist-reviews │   │
-│  │   PR     │     │  Review  │     │  Handler │     │     .cjs         │   │
-│  └──────────┘     └──────────┘     └──────────┘     └────────┬─────────┘   │
-│                                                              │             │
-│                                                              ▼             │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                      SUPABASE - gemini_reviews                       │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │  │
-│  │  │ issue_hash  │  │   status    │  │  github_    │  │  review_   │ │  │
-│  │  │  (SHA-256)  │  │  (enum)     │  │  issue_num  │  │   data     │ │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                              │             │
-│                    ┌─────────────────────────────────────────┼─────────┐   │
-│                    │                                         │         │   │
-│                    ▼                                         ▼         │   │
-│  ┌───────────────────┐     ┌──────────────────┐     ┌────────────────┐  │   │
-│  │   create-issues   │     │  Webhook Agents  │     │   UI Human     │  │   │
-│  │      .cjs         │     │     (P4.3)       │     │   (P4.6)       │  │   │
-│  └─────────┬─────────┘     └────────┬─────────┘     └───────┬────────┘  │   │
-│            │                        │                       │           │   │
-│            ▼                        ▼                       ▼           │   │
-│  ┌───────────────────┐     ┌──────────────────┐     ┌────────────────┐  │   │
-│  │   GitHub Issues   │     │  External Agents │     │  Human Review  │  │   │
-│  │   (#121, #122)    │     │  (Kilocode, etc) │     │  (Aprove/Reject)│  │   │
-│  └───────────────────┘     └──────────────────┘     └────────────────┘  │   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Estados da Sugestão (Detalhado)
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         MÁQUINA DE ESTADOS DETALHADA                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌──────────┐                                                              │
-│   │   [*]    │───(Gemini detecta issue)───▶┌──────────┐                    │
-│   │ (início) │                              │ detected │                    │
-│   └──────────┘                              │  (novo)  │                    │
-│                                             └────┬─────┘                    │
-│                                                  │                          │
-│                          (calcular issue_hash)   │                          │
-│                                                  ▼                          │
-│                                             ┌──────────┐                    │
-│                                    ┌───────│  Hash    │                    │
-│                                    │       │  existe? │                    │
-│                                    │       └────┬─────┘                    │
-│                                    │            │                          │
-│                            (não)   │    (sim)   │                          │
-│                                    │            ▼                          │
-│                                    │    ┌──────────┐                       │
-│                                    │    │duplicate │───▶[*]               │
-│                                    │    │(fim)     │                       │
-│                                    │    └──────────┘                       │
-│                                    │                                       │
-│                                    ▼                                       │
-│                             ┌──────────┐                                   │
-│                    (criar   │ reported │                                   │
-│                  GitHub     │(issue    │                                   │
-│                    Issue)   │ criada)  │                                   │
-│                             └────┬─────┘                                   │
-│                                  │                                         │
-│                    (atribuir a   │  (ignorar)                              │
-│                       agent)     │                                         │
-│                                  ▼                                         │
-│                             ┌──────────┐                                   │
-│                             │ wontfix  │───▶[*]                           │
-│                             │(falso    │                                   │
-│                             │positivo) │                                   │
-│                             └──────────┘                                   │
-│                                  │                                         │
-│                                  ▼                                         │
-│                             ┌──────────┐                                   │
-│                             │ assigned │                                   │
-│                             │(agent    │                                   │
-│                             │trabalhando)│                                 │
-│                             └────┬─────┘                                   │
-│                                  │                                         │
-│           ┌──────────────────────┼──────────────────────┐                  │
-│           │                      │                      │                  │
-│    (todos │              (alguns │               (nenhum│                 │
-│  corrigidos)              parcial)              aplicável)                 │
-│           │                      │                      │                  │
-│           ▼                      ▼                      ▼                  │
-│     ┌──────────┐          ┌──────────┐          ┌──────────┐               │
-│     │ resolved │          │ partial  │          │ wontfix  │               │
-│     │  (fixed) │          │(parcial) │          │(rejected)│               │
-│     └────┬─────┘          └────┬─────┘          └────┬─────┘               │
-│          │                     │                     │                      │
-│          ▼                     ▼                     ▼                      │
-│        [*]                   │                   [*]                       │
-│                              │                                             │
-│                              │(reativar)                                   │
-│                              ▼                                             │
-│                         ┌──────────┐                                       │
-│                         │ reported │(loop)                                  │
-│                         └──────────┘                                       │
-│                                                                            │
-└────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Sequência de Resolução de Issues
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    SEQUÊNCIA: RESOLUÇÃO DE ISSUE #121                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Developer          GitHub Actions           Supabase          GitHub       │
-│      │                    │                     │                │          │
-│      │  Push PR #120      │                     │                │          │
-│      │───────────────────▶│                     │                │          │
-│      │                    │                     │                │          │
-│      │                    │  Gemini Review      │                │          │
-│      │                    │◀────────────────────│                │          │
-│      │                    │                     │                │          │
-│      │                    │  Parse Comments     │                │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │  Calcular Hashes    │                │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │  Verificar Duplicatas                  │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │  Nova Issue         │                │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │  Criar GitHub Issue │                │          │
-│      │                    │─────────────────────────────────────▶│          │
-│      │                    │                     │                │          │
-│      │                    │  Atualizar          │                │          │
-│      │                    │  github_issue_number│                │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │                     │    Issue #121  │          │
-│      │◀──────────────────────────────────────────────────────────│          │
-│      │                    │                     │                │          │
-│      │  Corrige UUID      │                     │                │          │
-│      │  nos exemplos      │                     │                │          │
-│      │───────────────────▶│                     │                │          │
-│      │                    │                     │                │          │
-│      │                    │  Update Status      │                │          │
-│      │                    │  ─▶ resolved        │                │          │
-│      │                    │────────────────────▶│                │          │
-│      │                    │                     │                │          │
-│      │                    │                     │  Close Issue   │          │
-│      │                    │─────────────────────────────────────▶│          │
-│      │                    │                     │                │          │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
 
 ---
 
 ## ✅ Checklist de Implementação
 
-### Sprint 6
+### Fase 1: Preparação
 - [ ] Migration SQL criada e testada
-- [ ] Script `persist-reviews.cjs` implementado
-- [ ] Sistema de hash SHA-256 funcionando
+- [ ] Backup dos dados existentes
+- [ ] Variáveis de ambiente configuradas
+- [ ] Dependências instaladas (`@supabase/supabase-js`)
+
+### Fase 2: Scripts Core
+- [ ] `scripts/persist-reviews.cjs` implementado
+- [ ] `scripts/migrate-hashes.cjs` para dados legados
+- [ ] `.github/scripts/create-issues.cjs` refatorado
+- [ ] `.github/scripts/check-resolutions.cjs` expandido
+- [ ] `findSimilarIssue()` removido
+
+### Fase 3: Schema e API
+- [ ] Migration aplicada em staging
 - [ ] Schema Zod atualizado
-- [ ] Testes unitários passando
-
-### Sprint 7
-- [ ] Issue #121 corrigida (UUID nos exemplos)
-- [ ] Issue #122 corrigida (validação de schema)
-- [ ] Issue #123 corrigida (sem duplicatas)
-- [ ] Loop circular resolvido
-- [ ] Deploy em produção
-
-### Sprint 8
+- [ ] Service layer atualizado
+- [ ] Endpoint `/api/gemini-reviews/batch-update` criado
 - [ ] Webhook handler atualizado
-- [ ] Notificação de agents implementada
-- [ ] Sistema de retry com backoff
-- [ ] DLQ configurada
 
-### Sprint 9
-- [ ] UI de reviews implementada
-- [ ] Dashboard com filtros
-- [ ] CLI funcionando
-- [ ] Documentação atualizada
+### Fase 4: Workflow
+- [ ] Job `persist-reviews` adicionado ao YAML
+- [ ] Job `create-issues` atualizado
+- [ ] Job `check-resolutions` atualizado
+- [ ] Testes em staging
 
-### Sprint 10
-- [ ] Métricas coletando dados
-- [ ] Relatórios automáticos
-- [ ] Performance otimizada
-- [ ] Treinamento realizado
+### Fase 5: Validação
+- [ ] Zero issues duplicadas em 10 PRs de teste
+- [ ] Loop circular eliminado
+- [ ] Tempos de resposta < 2s
+- [ ] Code review aprovado
+
+---
+
+## 📊 Métricas de Sucesso e KPIs
+
+### 8.1 Métricas Principais
+
+| Métrica | Antes | Depois | Target |
+|---------|-------|--------|--------|
+| Issues duplicadas/PR | 2-3 | 0 | **0** |
+| Taxa de duplicação | 40-60% | 0% | **< 5%** |
+| Tempo de resolução | 3 dias | 1.5 dias | **< 2 dias** |
+| Ruído no backlog | Alto | Baixo | **Mínimo** |
+| Rastreabilidade | Fragmentada | Completa | **100%** |
+| Falsos positivos (wontfix) | 15% | 10% | **< 10%** |
+
+### 8.2 KPIs Técnicos
+
+| KPI | Descrição | Target |
+|-----|-----------|--------|
+| Hash collision rate | Taxa de colisão de SHA-256 | < 0.001% |
+| Persist latency | Tempo para persistir review | < 500ms |
+| Query performance | Busca por hash | < 50ms |
+| API availability | Uptime do batch update | > 99.9% |
+| Webhook delivery | Taxa de entrega | > 99% |
+
+### 8.3 Instrumentação
+
+```javascript
+// Métricas a serem coletadas
+
+const metrics = {
+  // Contadores
+  'issues_created_total': 0,
+  'issues_duplicated_prevented': 0,
+  'issues_reactivated': 0,
+  
+  // Histograms
+  'persist_duration_ms': [],
+  'hash_calculation_duration_ms': [],
+  
+  // Gauges
+  'issues_by_status': {
+    detected: 0,
+    reported: 0,
+    assigned: 0,
+    resolved: 0,
+    partial: 0,
+    wontfix: 0
+  },
+  
+  // Taxas
+  'duplicate_prevention_rate': 0, // issues_prevented / total_processed
+  'resolution_rate': 0 // resolved / (resolved + partial + wontfix)
+};
+```
 
 ---
 
 ## 📚 Referências
 
-- [GEMINI_INTEGRATION_PHASES.md](./GEMINI_INTEGRATION_PHASES.md) - Plano original de integração
-- [GEMINI_AGENT_PROTOCOL.md](../docs/standards/GEMINI_AGENT_PROTOCOL.md) - Protocolo padronizado
+### Documentação Interna
+
+- [GEMINI_AGENT_PROTOCOL.md](./GEMINI_AGENT_PROTOCOL.md) - Protocolo de comunicação
+- [Padrões de Código](../docs/PADROES_CODIGO.md) - Guia de desenvolvimento
+- [Git Workflow](../docs/standards/GIT_WORKFLOW.md) - Processo de Git
+
+### Código Fonte
+
+- [`.github/scripts/`](.github/scripts/) - Scripts do workflow
+- [`src/schemas/geminiReviewSchema.js`](src/schemas/geminiReviewSchema.js) - Schema Zod
+- [`src/services/api/geminiReviewService.js`](src/services/api/geminiReviewService.js) - Service layer
+
+### Issues de Referência
+
 - [Issue #121](https://github.com/coelhotv/meus-remedios/issues/121) - Schema UUID
 - [Issue #122](https://github.com/coelhotv/meus-remedios/issues/122) - Validação JSON Schema
 - [Issue #123](https://github.com/coelhotv/meus-remedios/issues/123) - Duplicação
-- [PR #120](https://github.com/coelhotv/meus-remedios/pull/120) - Protocolo P4.2
+- [PR #120](https://github.com/coelhotv/meus-remedios/pull/120) - Documentação P4.2
 
 ---
 
@@ -1010,9 +2036,43 @@ module.exports = {
 
 | Versão | Data | Autor | Descrição |
 |--------|------|-------|-----------|
-| 1.0.0 | 2026-02-22 | Architect | Documento inicial criado |
+| 2.0.0 | 2026-02-22 | Architect | Documento recriado com Workflow Intelligence completo |
+| 1.0.0 | 2026-02-22 | Architect | Documento inicial (incompleto) |
+
+---
+
+## 🎯 Resumo Visual
+
+```mermaid
+flowchart TB
+    subgraph "Antigo (Problemático)" 
+        direction TB
+        A1[parse-gemini-comments.cjs] --> B1[create-issues.cjs]
+        B1 --> C1{findSimilarIssue?}
+        C1 -->|Fraco| D1[Criar Issue]
+        D1 --> E1[Loop! Re-trigger sem memória]
+        E1 --> B1
+    end
+    
+    subgraph "Novo (Workflow Intelligence)"
+        direction TB
+        A2[parse-gemini-comments.cjs] --> B2[persist-reviews.cjs]
+        B2 --> C2{Hash SHA-256 existe?}
+        C2 -->|Sim| D2[Verificar status]
+        C2 -->|Não| E2[Criar em Supabase]
+        D2 --> F2{wontfix? resolved?}
+        F2 -->|Sim| G2[Ignorar]
+        F2 -->|Não| H2[Atualizar]
+        E2 --> I2[create-issues.cjs]
+        H2 --> I2
+        I2 --> J2[Criar GitHub Issue]
+        J2 --> K2[Atualizar status: reported]
+    end
+    
+    Antigo -.->|Substituído por| Novo
+```
 
 ---
 
 *Documento mantido pela equipe de Arquitetura Meus Remédios*  
-*Para dúvidas, consultar Tech Lead*
+*Para dúvidas, consultar Tech Lead ou abrir issue com label `architect-question`*
