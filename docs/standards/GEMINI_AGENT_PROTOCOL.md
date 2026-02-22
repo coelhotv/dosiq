@@ -431,7 +431,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
   -d '{
     "status": "corrigido",
     "resolution": "fixed",
-    "resolved_by": "agent-123",
+    "resolved_by": "550e8400-e29b-41d4-a716-446655440001",
     "notes": "Substituída interpolação por prepared statements usando Supabase query builder"
   }'
 ```
@@ -446,7 +446,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
     "status": "corrigido",
     "resolution": "fixed",
     "resolved_at": "2026-02-22T11:45:00.000Z",
-    "resolved_by": "agent-123",
+    "resolved_by": "550e8400-e29b-41d4-a716-446655440001",
     "updated_at": "2026-02-22T11:45:00.000Z"
   }
 }
@@ -464,7 +464,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
   -d '{
     "status": "descartado",
     "resolution": "rejected",
-    "resolved_by": "agent-123",
+    "resolved_by": "550e8400-e29b-41d4-a716-446655440002",
     "notes": "Falso positivo - a query já utiliza prepared statements internamente"
   }'
 ```
@@ -479,7 +479,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
     "status": "descartado",
     "resolution": "rejected",
     "resolved_at": "2026-02-22T11:50:00.000Z",
-    "resolved_by": "agent-123",
+    "resolved_by": "550e8400-e29b-41d4-a716-446655440002",
     "updated_at": "2026-02-22T11:50:00.000Z"
   }
 }
@@ -615,18 +615,31 @@ app.post('/webhook/gemini', async (req, res) => {
       headers: { 'Authorization': `Bearer ${TOKEN}` }
     }).then(r => r.json());
     
-    // 3. Processar (implementação específica)
-    await processReview(review.data);
-    
-    // 4. Finalizar
-    await fetch(`${API_URL}/gemini-reviews/${data.review_id}`, {
-      method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${TOKEN}` },
-      body: JSON.stringify({ 
-        status: 'corrigido',
-        resolution: 'fixed'
-      })
-    });
+    try {
+      // 3. Processar (implementação específica)
+      await processReview(review.data);
+      
+      // 4. Finalizar com sucesso
+      await fetch(`${API_URL}/gemini-reviews/${data.review_id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+        body: JSON.stringify({
+          status: 'corrigido',
+          resolution: 'fixed'
+        })
+      });
+    } catch (error) {
+      console.error('Falha ao processar a review:', error);
+      // Reverter para pendente em caso de falha
+      await fetch(`${API_URL}/gemini-reviews/${data.review_id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+        body: JSON.stringify({
+          status: 'pendente',
+          notes: `Falha no processamento automático: ${error.message}`
+        })
+      });
+    }
   }
   
   res.status(200).json({ received: true });
