@@ -1,6 +1,7 @@
 # .gemini/config.yaml
 # Configuração para Gemini Code Assist
 # Refatorado em 2026-02-19 para integração otimizada
+# Atualizado em 2026-02-21 com filtros de path inteligentes (P3.2)
 
 $schema: "http://json-schema.org/draft-07/schema#"
 
@@ -18,31 +19,47 @@ code_review:
     code_review: true
     include_drafts: false
   
-  # NOVO: Re-review automático quando novos commits são pushados
+  # Re-review automático quando novos commits são pushados
   pull_request_synchronize:
     code_review: true
     summary: true
   
-  # NOVO: Filtros de path para focar em código crítico
+  # P3.2: Filtros de path inteligentes - Paths a ignorar completamente
   excluded_paths:
     - "docs/archive/**"
+    - "docs/old/**"
     - "**/dist/**"
     - "**/node_modules/**"
+    - "**/*.md"
+    - ".github/**/*.yml"
+    - "plans/old/**"
+    - "bug_logs/**"
+    - "screenshots/**"
+    - "**/*.test.js"
+    - "**/*.test.jsx"
+    - "**/__tests__/**"
     - "**/*.min.js"
     - "**/coverage/**"
     - ".vitest-cache*/**"
   
-  # NOVO: Paths prioritários para review
+  # P3.2: Paths com prioridade máxima para review
+  critical_paths:
+    - "src/services/api/**"
+    - "src/schemas/**"
+    - "server/bot/**"
+    - "api/**"
+    - "src/features/**/services/**"
+  
+  # Paths adicionais incluídos no review (não-críticos mas relevantes)
   included_paths:
     - "src/**"
     - "server/**"
-    - "api/**"
     - ".github/workflows/**"
 
 memory_config:
   disabled: false
 
-# NOVO: Configurações de output estruturado
+# Configurações de output estruturado
 output_config:
   # Gerar JSON estruturado para agentes
   structured_output: true
