@@ -42,47 +42,38 @@
 **Agent-specific rules:**
 - **Code mode**: [`.roo/rules-code/rules.md`](.roo/rules-code/rules.md)
 - **Architecture mode**: [`.roo/rules-architecture/rules.md`](.roo/rules-architecture/rules.md)
-- **Long-term memory**: [`.roo/rules/memory.md`](.roo/rules/memory.md)
+- **Long-term memory**: [`.memory/`](.memory/) (rules, knowledge, anti-patterns, journal)
 
 ---
 
-## 🚨 Critical Constraints (NON-NEGOTIABLE)
+## 🚨 Critical Constraints (Top 5 Quick Reference)
 
-These rules prevent recurring errors and **must be followed unconditionally**:
+> Complete rules with examples: [`.memory/rules.md`](.memory/rules.md)
+> Anti-patterns table: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
 
-### 0. Duplicate File Prevention (HIGHEST PRIORITY)
-
-**This rule prevents production bugs caused by outdated duplicate files.**
-
-```bash
-# BEFORE modifying ANY file, ALWAYS run these checks:
-
-# 1. Search for duplicate files with same name
-find src -name "ProtocolForm*" -type f
-find src -name "*Service.js" -type f | grep -i adherence
-
-# 2. Search for all exports of the same function
-grep -r "export.*adherenceService" src/
-
-# 3. Check which file is ACTUALLY imported (trace imports)
-grep -r "from.*adherenceService" src/
-```
+| # | Constraint | Rule | Ref |
+|---|-----------|------|-----|
+| 1 | **Duplicate Files** | Check `find src -name "*File*"` before modifying ANY file | R-001 |
+| 2 | **Hook Order** | States -> Memos -> Effects -> Handlers (prevents TDZ) | R-010 |
+| 3 | **Timezone** | Always `parseLocalDate()`, never bare `new Date('YYYY-MM-DD')` | R-020 |
+| 4 | **Zod Enums** | Portuguese only: `['diario', 'semanal']` | R-021 |
+| 5 | **Dosage Units** | Pills (not mg), `quantity_taken` within Zod limit of 100 | R-022 |
 
 **Canonical File Locations (Wave 9 — estrutura final):**
 | Domain | Canonical Location | Obs |
 |--------|-------------------|-----|
-| API Services (adherence/dlq) | `src/services/api/adherenceService.js`, `dlqService.js` | Únicos sem equivalente em feature |
+| API Services (adherence/dlq) | `src/services/api/adherenceService.js`, `dlqService.js` | Unicos sem equivalente em feature |
 | Feature Services | `src/features/*/services/*.js` | Ex: `@medications/services/medicineService` |
 | Shared Services | `src/shared/services/*.js` e `src/shared/services/api/logService.js` | cachedServices, migrationService |
-| Schemas | `src/schemas/*.js` | **Único local** para schemas Zod |
+| Schemas | `src/schemas/*.js` | **Unico local** para schemas Zod |
 | Utils | `src/utils/*.js` | adherenceLogic, dateUtils, titrationUtils |
 | Hooks | `src/shared/hooks/*.js` | useCachedQuery, useTheme, useHapticFeedback, useShake |
 | Shared Components | `src/shared/components/**/*.jsx` | ui/, gamification/, log/, onboarding/, pwa/ |
-| Feature Components | `src/features/*/components/*.jsx` | Componentes específicos da feature |
+| Feature Components | `src/features/*/components/*.jsx` | Componentes especificos da feature |
 | Supabase client | `@shared/utils/supabase` | Era `src/lib/supabase.js` (deletado) |
 | Cache util | `@shared/utils/queryCache` | Era `src/lib/queryCache.js` (deletado) |
 
-> **✅ Wave 9 concluída**: `src/lib/`, `src/hooks/`, `src/components/`, `src/shared/constants/`, `src/features/*/constants/` e serviços duplicados em `src/services/api/` foram **deletados**. ESLint `no-restricted-imports` agora bloqueia importações de caminhos legados.
+> **Wave 9 concluida**: `src/lib/`, `src/hooks/`, `src/components/`, `src/shared/constants/`, `src/features/*/constants/` e servicos duplicados em `src/services/api/` foram **deletados**. ESLint `no-restricted-imports` agora bloqueia importacoes de caminhos legados.
 
 **Path Aliases (defined in `vite.config.js`):**
 | Alias | Resolves To |
@@ -99,74 +90,7 @@ grep -r "from.*adherenceService" src/
 | `@schemas` | `src/schemas` |
 | `@utils` | `src/utils` |
 
-**⚠️ CRITICAL**: When you see `import { x } from '@adherence/services/...'`, this resolves to `src/features/adherence/services/...`, NOT `src/services/api/...`. Always verify the actual file being imported!
-
-### 1. React Hook Declaration Order
-```jsx
-// ✅ CORRECT - Prevents TDZ (Temporal Dead Zone)
-function Component() {
-  const [data, setData] = useState()        // 1. States first
-  const processed = useMemo(() => ..., [data]) // 2. Memos
-  useEffect(() => { ... }, [processed])     // 3. Effects
-  const handleClick = () => { ... }         // 4. Handlers
-}
-
-// ❌ WRONG - ReferenceError
-function Component() {
-  const processed = useMemo(() => data + 1, [data]) // data is undefined!
-  const [data, setData] = useState(0)               // Too late
-}
-```
-
-### 2. Zod Schema Values in Portuguese
-```javascript
-// ✅ CORRECT - UI consistency
-const FREQUENCIES = ['diário', 'dias_alternados', 'semanal', 'personalizado']
-const MEDICINE_TYPES = ['comprimido', 'cápsula', 'líquido', 'injeção']
-
-// ❌ WRONG - Never use English in schemas
-const FREQUENCIES = ['daily', 'weekly'] // Causes UI inconsistencies
-```
-
-### 3. Telegram Bot Callback Data Limits
-```javascript
-// ❌ WRONG - Exceeds 64 bytes
-callback_data: `reg_med:${medicineId}:${protocolId}` // ~81 chars
-
-// ✅ CORRECT - Use numeric indices
-callback_data: `reg_med:${index}` // ~15 chars
-session.set('medicineMap', medicines) // Store mapping in session
-```
-
-### 4. Dosage Recording Units
-```javascript
-// ✅ CORRECT - Record in pills (within Zod limit of 100)
-const pillsToDecrease = quantity / dosagePerPill
-await logService.create({ quantity_taken: pillsToDecrease })
-
-// ❌ WRONG - Exceeds Zod schema limit
-await logService.create({ quantity_taken: 2000 }) // mg exceeds limit!
-```
-
-### 5. Operation Order for Dose Registration
-```javascript
-// ✅ CORRECT - Validate → Record → Decrement
-try {
-  if (stock < pillsToDecrease) throw new Error('Estoque insuficiente')
-  await logService.create(log)
-  await stockService.decrease(medicineId, pillsToDecrease)
-}
-```
-
-### 6. LogForm Dual Return Type
-```jsx
-// ✅ ALWAYS check both return types
-if (Array.isArray(logData)) {
-  await logService.createBulk(logData) // type === 'plan'
-} else {
-  await logService.create(logData)     // type === 'protocol'
-}
-```
+**CRITICAL**: `@adherence/services/x` resolves to `src/features/adherence/services/x`, NOT `src/services/api/`. Always verify!
 
 ---
 
@@ -331,36 +255,20 @@ CRON_SECRET=...
 
 ## 🧠 Agent Memory System
 
-### Long-Term Memory
-All lessons learned and patterns are stored in:
-- [`.roo/rules/memory.md`](.roo/rules/memory.md) - Memory entries with lessons
+All lessons learned, rules, and domain knowledge are stored in [`.memory/`](.memory/):
 
-### Memory Entry Format
-```markdown
-## Memory Entry — YYYY-MM-DD HH:MM
-**Contexto / Objetivo**
-**O que foi feito**
-**O que deu certo**
-**O que não deu certo**
-**Regras locais para o futuro**
-**Pendências**
-```
+| File | Contains |
+|------|----------|
+| [`.memory/rules.md`](.memory/rules.md) | Graduated rules (R-NNN) — the "brain" |
+| [`.memory/knowledge.md`](.memory/knowledge.md) | Domain facts, component APIs, patterns |
+| [`.memory/anti-patterns.md`](.memory/anti-patterns.md) | Mistake prevention table (AP-NNN) |
+| [`.memory/journal/`](.memory/journal/) | Chronological session entries (weekly) |
+
+**Session protocol:** See [`.memory/README.md`](.memory/README.md) for full loading and writing instructions.
 
 ---
 
 ## 🎯 Design Principles & Heuristics
-
-### Universal Constraints (From Memory)
-
-| Constraint | Rule | Example |
-|-----------|------|---------|
-| **Hook Order** | States → Memos → Effects → Handlers | Prevents TDZ |
-| **Zod Enums** | Portuguese only | `['diário', 'semanal']` |
-| **Telegram Callback** | < 64 bytes | Use indices, not UUIDs |
-| **Dosage Units** | Pills, never mg | `quantity_taken = pills` |
-| **Operation Order** | Validate → Record → Decrement | Stock consistency |
-| **Duplicate Files** | Check before modifying | `find src -name "*File*"` |
-| **Import Path** | Verify actual resolution | Check `vite.config.js` aliases |
 
 ### Context-Dependent Recommendations
 
@@ -450,18 +358,9 @@ Before committing, verify:
 
 ---
 
-## 🚫 Anti-Patterns (STRICTLY PROHIBITED)
+## 🚫 Anti-Patterns
 
-| Anti-Pattern | Consequence | Prevention |
-|--------------|-------------|------------|
-| **Modify duplicate file** | Production bug | Check for duplicates FIRST |
-| **Assume import location** | Wrong file modified | Trace actual import path |
-| Declare state after useMemo | ReferenceError (TDZ) | States → Memos → Effects |
-| Skip validation | Broken build | Always run `npm run validate` |
-| Commit to main | Unreviewed code | Always create branch |
-| Ignore lint errors | Build fails | Fix all errors |
-| Mix languages in schemas | UI inconsistency | Portuguese only |
-| Use `--no-verify` | Bypass quality gates | Fix errors properly |
+> Complete table with 16 anti-patterns: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
 
 ---
 
@@ -524,7 +423,7 @@ Before proceeding to the next phase, validate:
 | **Tests Pass** | Critical tests pass | `npm run test:critical` |
 | **Build Success** | Production build works | `npm run build` |
 | **No Duplicates** | No duplicate files created | `find src -name "*File*" -type f` |
-| **Memory Updated** | Lessons learned documented | Update `.kilocode/rules/memory.md` |
+| **Memory Updated** | Lessons learned documented | Update `.memory/journal/` |
 
 ### Mandatory Post-Task Review
 
@@ -541,8 +440,8 @@ After each significant task completion, the agent MUST:
    ```
 
 2. **Update Memory** (if significant):
-   - Add entry to `.kilocode/rules/memory.md`
-   - Follow the Memory Entry Format defined in this file
+   - Add entry to `.memory/journal/[current-week].md`
+   - Follow the format in [`.memory/README.md`](.memory/README.md)
 
 3. **Report to Orchestrator**:
    - Use `attempt_completion` with comprehensive summary
