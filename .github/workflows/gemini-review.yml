@@ -472,10 +472,10 @@ jobs:
             
             // Notificar agents
             const secret = process.env.AGENT_WEBHOOK_SECRET || '';
-            const context = { prNumber, branch, commitSha };
+            const webhookContext = { prNumber, branch, commitSha };
             
             try {
-              const result = await notifyAgents(reviewData, agentWebhooks, secret, context);
+              const result = await notifyAgents(reviewData, agentWebhooks, secret, webhookContext);
               
               // Log de resultados
               const successCount = result.results.filter(r => r.success).length;
