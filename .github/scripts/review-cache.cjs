@@ -271,15 +271,22 @@ function getCacheStats() {
   const metadata = loadMetadata();
   const entries = Object.values(metadata.entries);
 
+  if (entries.length === 0) {
+    return {
+      totalEntries: 0,
+      lastCleanup: metadata.lastCleanup,
+      oldestEntry: null,
+      newestEntry: null
+    };
+  }
+
+  entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
   return {
     totalEntries: entries.length,
     lastCleanup: metadata.lastCleanup,
-    oldestEntry: entries.length > 0
-      ? entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))[0].timestamp
-      : null,
-    newestEntry: entries.length > 0
-      ? entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].timestamp
-      : null
+    oldestEntry: entries[0].timestamp,
+    newestEntry: entries[entries.length - 1].timestamp
   };
 }
 

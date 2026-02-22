@@ -220,8 +220,7 @@ test('cleanExpiredCache mantém entradas recentes', () => {
 
 // Teste 13: getCacheStats retorna estatísticas corretas
 test('getCacheStats retorna estatísticas corretas', () => {
-  // Limpa e cria caches conhecidos
-  clearAllCache();
+  // Limpa e cria caches conhecidos (setup já chama clearAllCache)
   setup();
 
   setCachedReview(TEST_FILE, 60, { id: 300 });
