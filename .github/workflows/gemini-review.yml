@@ -392,7 +392,116 @@ jobs:
           include-hidden-files: true
 
   # ==========================================
-  # JOB 4: Auto-Fix (se aplicável)
+  # JOB 4: Notificar Agents Externos (P4.7)
+  # ==========================================
+  # Envia webhooks para agents externos (como Kilocode) quando
+  # novas reviews do Gemini Code Assist estão disponíveis.
+  # Não falha o workflow se o webhook falhar.
+  # ==========================================
+  notify-agents:
+    name: Notify External Agents
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    # Executa se parse rodou com sucesso
+    if: always() && needs.parse.result == 'success'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download Review Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Notify Agents
+        id: notify
+        uses: actions/github-script@v7
+        env:
+          AGENT_WEBHOOK_URLS: ${{ secrets.AGENT_WEBHOOK_URLS }}
+          AGENT_WEBHOOK_SECRET: ${{ secrets.AGENT_WEBHOOK_SECRET }}
+          NOTIFY_MODE: 'critical' # 'critical', 'high', 'all'
+        with:
+          script: |
+            const fs = require('fs');
+            const {
+              shouldNotify,
+              notifyAgents,
+              parseWebhookUrls
+            } = require('./.github/scripts/notify-agents.cjs');
+            
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            const branch = "${{ needs.detect.outputs.branch }}";
+            const commitSha = "${{ github.event.pull_request.head.sha || github.sha }}";
+            
+            // Carregar dados da review
+            let reviewData;
+            try {
+              reviewData = JSON.parse(fs.readFileSync(`.gemini-output/review-${prNumber}.json`, 'utf8'));
+            } catch (e) {
+              console.log('⚠️ Arquivo de review não encontrado, pulando notificação');
+              return;
+            }
+            
+            // Verificar se deve notificar
+            const notifyMode = process.env.NOTIFY_MODE || 'critical';
+            if (!shouldNotify(reviewData, notifyMode)) {
+              console.log(`ℹ️ Nenhum issue ${notifyMode.toUpperCase()} encontrado, pulando notificação`);
+              return;
+            }
+            
+            console.log(`🔔 Issues ${notifyMode.toUpperCase()} detectados, notificando agents...`);
+            
+            // Parsear webhooks configurados
+            const webhooksConfig = process.env.AGENT_WEBHOOK_URLS;
+            const agentWebhooks = parseWebhookUrls(webhooksConfig);
+            
+            if (agentWebhooks.length === 0) {
+              console.log('ℹ️ Nenhum webhook configurado em AGENT_WEBHOOK_URLS');
+              return;
+            }
+            
+            console.log(`📡 ${agentWebhooks.length} webhook(s) configurado(s)`);
+            
+            // Notificar agents
+            const secret = process.env.AGENT_WEBHOOK_SECRET || '';
+            const context = { prNumber, branch, commitSha };
+            
+            try {
+              const result = await notifyAgents(reviewData, agentWebhooks, secret, context);
+              
+              // Log de resultados
+              const successCount = result.results.filter(r => r.success).length;
+              console.log(`✅ ${successCount}/${result.results.length} notificações enviadas com sucesso`);
+              
+              // Falhas individuais são logadas mas não falham o workflow
+              const failures = result.results.filter(r => !r.success);
+              if (failures.length > 0) {
+                console.log('⚠️ Falhas:');
+                failures.forEach(f => {
+                  console.log(`  - ${f.webhook}: ${f.error || f.status}`);
+                });
+              }
+              
+              core.setOutput('notified', successCount > 0);
+              core.setOutput('success_count', successCount);
+              core.setOutput('failure_count', failures.length);
+              
+            } catch (error) {
+              // Nunca falha o workflow por erro de webhook
+              console.log(`⚠️ Erro ao notificar agents: ${error.message}`);
+              console.log('Workflow continua normalmente...');
+            }
+
+  # ==========================================
+  # JOB 5: Auto-Fix (se aplicável)
   # ==========================================
   auto-fix:
     name: Apply Auto-Fixes
