@@ -11,23 +11,21 @@ Este documento contém as diretrizes e convenções de código que o Gemini Code
 
 ## 📋 Regras de Ouro (Golden Rules)
 
-1. **Idiomas**:
-   - Código (variáveis, funções, classes): **Inglês**.
-   - Mensagens de erro, labels de UI e comentários explicativos: **Português (Brasil)**.
-   - Constantes de esquemas (Zod enums): **Português (Brasil)** para consistência na UI.
+> Regras completas com exemplos: `.memory/rules.md`
+> Anti-patterns com prevenção: `.memory/anti-patterns.md`
 
-2. **Ordem dos Hooks**:
-   - Respeite sempre a ordem: States → Memos → Effects → Handlers.
+**Top 5 (referência rápida):**
 
-3. **Gerenciamento de Estado e Cache**:
-   - Use obrigatoriamente `useCachedQuery` (SWR customizado) para buscas de dados.
-   - Garanta a invalidação do cache após mutações.
+1. **Arquivos duplicados** (R-001): Sempre verificar com `find src -name "*File*"` antes de modificar.
+2. **Ordem dos Hooks** (R-010): States -> Memos -> Effects -> Handlers (previne TDZ).
+3. **Timezone** (R-020): Sempre `parseLocalDate()`, nunca `new Date('YYYY-MM-DD')` direto.
+4. **Zod Enums** (R-021): Sempre em Português. Código em Inglês, UI/erros em Português.
+5. **Dosagem** (R-022): Registrar em comprimidos (não mg), `quantity_taken` <= 100.
 
-4. **Bot do Telegram**:
-   - Os dados de callback (`callback_data`) devem ser menores que 64 bytes. Use índices em vez de UUIDs.
-
-5. **Estoque**:
-   - Registre doses sempre em unidades (comprimidos, cápsulas), nunca em miligramas.
+**Outras regras importantes:**
+- Cache: usar `useCachedQuery` (SWR customizado), invalidar após mutações.
+- Telegram: `callback_data` < 64 bytes (usar índices, não UUIDs).
+- MarkdownV2: sempre usar `escapeMarkdownV2()` (R-031).
 
 ## 🔍 Foco da Revisão
 

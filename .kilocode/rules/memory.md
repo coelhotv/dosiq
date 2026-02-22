@@ -1,1 +1,1 @@
-/Users/accoelho/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/.roo/rules/memory.md
+../../.memory/rules.md
