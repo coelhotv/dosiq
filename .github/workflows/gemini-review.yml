@@ -679,3 +679,59 @@ jobs:
             } else {
               console.log('Nenhuma issue nova criada (já existem issues similares)');
             }
+
+  # ==========================================
+  # JOB 10: Check Resolutions (P2.4)
+  # ==========================================
+  # Verifica se issues apontados pelo Gemini em comentários
+  # inline foram resolvidos em novos commits e responde em
+  # threads sem poluir a timeline principal do PR.
+  # ==========================================
+  check-resolutions:
+    name: Check Resolution of Gemini Comments
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    # Só executa se parse rodou com sucesso e é trigger por synchronize (novos commits)
+    if: always() && needs.parse.result == 'success' && github.event_name == 'pull_request' && github.event.action == 'synchronize'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.branch }}
+          fetch-depth: 0  # Necessário para comparação de commits
+
+      - name: Download Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+
+      - name: Check Resolutions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { checkResolutions, shouldCheckResolutions } = require('./.github/scripts/check-resolutions.cjs');
+
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+
+            // Verificar se deve rodar (há novos commits após último review do Gemini)
+            const shouldRun = await shouldCheckResolutions(prNumber, github, context);
+
+            if (!shouldRun) {
+              console.log('ℹ️ Nenhuma ação necessária - sem novos commits ou sem comentários do Gemini');
+              return;
+            }
+
+            // Executar verificação de resoluções
+            const results = await checkResolutions(prNumber, github, context);
+
+            // Output para debugging
+            core.setOutput('checked', results.checked);
+            core.setOutput('resolved', results.resolved);
+            core.setOutput('partial', results.partial);
+            core.setOutput('rejected', results.rejected);
+            core.setOutput('replies_count', results.replies.length);
+
+            console.log('✅ Verificação de resoluções concluída');
