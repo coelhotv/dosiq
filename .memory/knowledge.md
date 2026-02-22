@@ -184,4 +184,37 @@ varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])'
 
 ---
 
-*Last updated: 2026-02-21*
+## Template: Code Mode Task Instructions
+
+Every delegation to Code mode MUST include:
+
+### Preâmbulo Obrigatório (OBRIGATÓRIO)
+```markdown
+### Antes de Começar (OBRIGATÓRIO)
+1. Ler `.memory/rules.md` - todas as regras R-NNN
+2. Ler `.memory/anti-patterns.md` - todos os anti-patterns AP-NNN
+3. Verificar arquivos duplicados: `find src -name "*TargetFile*" -type f`
+```
+
+### Sequência de Validação Explícita
+```markdown
+### Validação por Fase
+- **Durante desenvolvimento:** `npm run validate:quick` (R-051)
+- **Antes do commit:** `npm run validate:quick`
+- **Antes do push:** `npm run test:critical`
+- **Após commit:** Criar PR imediatamente com `gh pr create`
+```
+
+### Checklist de Conformidade
+```markdown
+### Checklist de Conformidade
+- [ ] Li `.memory/rules.md` (sim/não)
+- [ ] Li `.memory/anti-patterns.md` (sim/não)
+- [ ] Verifiquei regras específicas: R-001, R-051, R-060, etc.
+- [ ] Validei com `validate:quick` durante dev
+- [ ] Criei PR imediatamente após commit
+```
+
+---
+
+*Last updated: 2026-02-22*
