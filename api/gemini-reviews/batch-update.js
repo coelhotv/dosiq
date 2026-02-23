@@ -8,8 +8,9 @@
  * @version 1.0.0
  */
 
-const { createClient } = require('@supabase/supabase-js')
-const { z } = require('zod')
+import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import crypto from 'crypto'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -75,14 +76,31 @@ const batchUpdateSchema = z.object({
 // ============================================================================
 
 /**
- * Verifica se a requisição está autenticada
+ * Verifica se a requisição está autenticada usando timing-safe comparison
  * @param {Object} req - Requisição HTTP
  * @returns {boolean} true se autenticado
  */
 function isAuthenticated(req) {
   const authHeader = req.headers.authorization || ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
-  return token === AGENT_WEBHOOK_SECRET
+
+  if (!token || !AGENT_WEBHOOK_SECRET) {
+    return false
+  }
+
+  // Timing-safe comparison para prevenir timing attacks
+  try {
+    const tokenBuffer = Buffer.from(token)
+    const secretBuffer = Buffer.from(AGENT_WEBHOOK_SECRET)
+
+    if (tokenBuffer.length !== secretBuffer.length) {
+      return false
+    }
+
+    return crypto.timingSafeEqual(tokenBuffer, secretBuffer)
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -170,7 +188,7 @@ async function processBatchUpdates(supabase, updates) {
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Verificar método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -179,19 +197,19 @@ module.exports = async function handler(req, res) {
     })
   }
 
+  // Verificar variáveis de ambiente PRIMEIRO (antes da autenticação)
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return res.status(500).json({
+      success: false,
+      error: 'Configuração do servidor incompleta.',
+    })
+  }
+
   // Verificar autenticação
   if (!isAuthenticated(req)) {
     return res.status(401).json({
       success: false,
       error: 'Não autorizado. Token inválido ou ausente.',
-    })
-  }
-
-  // Verificar variáveis de ambiente
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({
-      success: false,
-      error: 'Configuração do servidor incompleta.',
     })
   }
 
