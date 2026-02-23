@@ -232,5 +232,117 @@ try {
 
 ---
 
-*Last updated: 2026-02-22*
-*Rules: R-001 to R-074*
+## Low-RAM Machine Optimization (2026-02-23)
+
+### R-075: Low-RAM Test Compatibility [CRITICAL for MacBook Air 2013]
+**Rule:** All tests must pass on 8GB RAM machines using `npm run test:lowram`. Split large test files (>300 lines) into smaller files by test scope (one hook/component per file). Each file = fresh worker = no memory accumulation.
+
+**Source:** 2026-02-23 low-RAM optimization sprint
+
+```bash
+# MacBook Air 2013 (8GB) command
+npm run test:lowram  # Sequential execution, excludes memory-intensive tests
+```
+
+---
+
+### R-076: Disable localStorage in Tests [HIGH]
+**Rule:** Tests must disable localStorage persistence to save ~200MB memory. The queryCache must check `process.env.NODE_ENV === 'test'` and skip `localStorage.setItem()` / `localStorage.getItem()` operations.
+
+**Source:** 2026-02-23 queryCache optimization
+
+```javascript
+// CORRECT - Skip localStorage in test env
+function persistCache() {
+  if (process.env.NODE_ENV === 'test') return
+  localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
+}
+
+// WRONG - Accumulates memory in tests
+function persistCache() {
+  localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
+}
+```
+
+---
+
+### R-077: Cancel setInterval in Tests [HIGH]
+**Rule:** Global `setInterval` (e.g., for garbage collection) MUST be cancellable and restarted in test hooks. Intervals that run during tests cause memory accumulation. Export `cancelGarbageCollection()` / `restartGarbageCollection()` functions from modules.
+
+**Source:** 2026-02-23 queryCache GC optimization
+
+```javascript
+// Module: queryCache.js
+let gcInterval = setInterval(garbageCollect, 60000)
+export function cancelGarbageCollection() {
+  if (gcInterval) { clearInterval(gcInterval); gcInterval = null }
+}
+export function restartGarbageCollection() {
+  if (!gcInterval) { gcInterval = setInterval(garbageCollect, 60000) }
+}
+
+// Test setup
+beforeAll(() => { cancelGarbageCollection() })
+afterAll(() => { restartGarbageCollection() })
+```
+
+---
+
+### R-078: Aggressive Test Cleanup [HIGH]
+**Rule:** Every test's `afterEach` hook must call: (1) `clearCache()`/`clearState()`, (2) `vi.clearAllMocks()`, (3) `vi.clearAllTimers()`, (4) optionally `if (global.gc) global.gc()` for low-RAM machines.
+
+**Source:** 2026-02-23 test isolation
+
+```javascript
+afterEach(() => {
+  clearCache()
+  vi.clearAllMocks()
+  vi.resetAllMocks()
+  vi.clearAllTimers()
+  if (global.gc) global.gc()  // Hint JVM to GC
+})
+```
+
+---
+
+### R-079: Split Test Files by Scope [HIGH]
+**Rule:** Test files >300 lines must be split by feature/hook/component. Each file tests ONE logical unit to prevent memory accumulation. Pattern: `{source}.test.jsx` for main tests, separate files for related utilities.
+
+**Examples:**
+- ✅ GOOD: `useCachedQuery.test.jsx` (12 tests, 230 lines) + `useCachedQueries.test.jsx` (5 tests, 140 lines)
+- ❌ BAD: Single 500-line file with all query hooks
+
+**Source:** 2026-02-23 test architecture
+
+---
+
+### R-080: Parallel Query Chains Cause OOM [KNOWN LIMITATION]
+**Rule:** Tests using `Promise.all()` on multiple parallel queries (queryCache behavior) accumulate memory faster than single-query tests. Known problematic patterns:
+- `useCachedQueries()` with 3+ parallel fetchers
+- `useCachedMutation()` with multiple cache invalidations
+
+**Current Status:** Excluded from `vitest.lowram.config.js` pending architectural fix to queryCache.
+
+**Workaround:** Run on machines with >16GB RAM or use `npm run test:critical` (parallel pool) instead of `test:lowram` (sequential).
+
+**Architectural Fix (TODO):**
+- Replace `Promise.all()` with streaming/pagination
+- Use `WeakMap` for cache to enable GC of unused entries
+- Implement LRU eviction more aggressively
+
+**Source:** 2026-02-23 useCachedQueries OOM diagnosis
+
+---
+
+## Low-RAM Machine Support Matrix
+
+| Hardware | Status | Command | Notes |
+|----------|--------|---------|-------|
+| MacBook Air 2013 (8GB, Intel) | ✅ Partial | `npm run test:lowram` | 12/25 tests pass; excludes 2 problematic files |
+| MacBook Pro 16GB (M1) | ✅ Full | Any command | All features work |
+| CI/CD (GitHub Actions) | ✅ Full | `npm run validate:full` | No RAM constraints |
+
+---
+
+*Last updated: 2026-02-23*
+*Rules: R-001 to R-080*
