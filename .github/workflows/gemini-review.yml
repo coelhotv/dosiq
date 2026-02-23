@@ -392,6 +392,92 @@ jobs:
           include-hidden-files: true
 
   # ==========================================
+  # JOB 3.5: Persistir Reviews no Supabase (Sprint 6)
+  # ==========================================
+  # Persiste os reviews parseados no Supabase para rastreamento
+  # de Workflow Intelligence. Este job garante que todos os issues
+  # detectados pelo Gemini sejam armazenados para análise e follow-up.
+  # ==========================================
+  persist:
+    name: Persist Reviews to Supabase
+    runs-on: ubuntu-latest
+    needs: [detect, parse]
+    # Executa sempre que parse rodou com sucesso
+    if: always() && needs.parse.result == 'success'
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Download Review Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+      
+      - name: Persist Reviews to Supabase
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const { persistReviews } = require('./.github/scripts/persist-reviews.cjs');
+            
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            const outputDir = '.gemini-output';
+            
+            // Encontrar arquivo de review
+            const reviewFile = path.join(outputDir, `review-${prNumber}.json`);
+            
+            if (!fs.existsSync(reviewFile)) {
+              console.log('⚠️ Arquivo de review não encontrado, pulando persistência');
+              return;
+            }
+            
+            // Carregar dados da review
+            const reviewData = JSON.parse(fs.readFileSync(reviewFile, 'utf8'));
+            
+            console.log(`🔄 Persistindo reviews para PR #${prNumber}...`);
+            
+            try {
+              const result = await persistReviews(reviewData, { dryRun: false });
+              
+              console.log('✅ Persistência concluída:');
+              console.log(`   Criados: ${result.created}`);
+              console.log(`   Atualizados: ${result.updated}`);
+              console.log(`   Ignorados: ${result.skipped}`);
+              console.log(`   Reativados: ${result.reactivated}`);
+              
+              if (result.errors.length > 0) {
+                console.log(`   ⚠️ Erros: ${result.errors.length}`);
+                result.errors.forEach(err => console.log(`      - ${err}`));
+              }
+              
+              core.setOutput('created', result.created);
+              core.setOutput('updated', result.updated);
+              core.setOutput('skipped', result.skipped);
+              
+            } catch (error) {
+              console.error('❌ Erro ao persistir reviews:', error.message);
+              // Não falha o workflow, apenas loga o erro
+              console.log('Workflow continua normalmente...');
+            }
+
+  # ==========================================
   # JOB 4: Notificar Agents Externos (P4.7)
   # ==========================================
   # Envia webhooks para agents externos (como Kilocode) quando
