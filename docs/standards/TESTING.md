@@ -468,7 +468,49 @@ export default defineConfig({
 })
 ```
 
-### 3. `vitest.ci.config.js` (CI/CD com Coverage)
+### 3. `vitest.lowram.config.js` (Máquinas com Pouca RAM - 8GB)
+
+Executado sequencialmente para máquinas com recursos limitados (MacBook Air 2013, etc).
+
+**Características**:
+- `pool: 'forks'` com `singleFork: true` - Execução estritamente sequencial
+- `testTimeout: 15000` - Timeouts mais generosos para máquinas lentas
+- Coverage desabilitado por padrão (economiza ~200MB de memória)
+- Reporter `dot` para output minimalista
+- Exclusões: useCachedQueries e useCachedMutation (requerem arquitetura diferente)
+
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    pool: 'forks',
+    poolOptions: { forks: { singleFork: true } },
+    testTimeout: 15000,
+    hookTimeout: 10000,
+    teardownTimeout: 5000,
+
+    include: ['src/**/*.test.{js,jsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/useCachedQueries.test.jsx',
+      '**/useCachedMutation.test.jsx',
+    ],
+
+    coverage: { enabled: false },
+    reporters: ['dot'],
+    cache: { dir: '.vitest-cache-lowram' },
+  },
+})
+```
+
+**Uso**:
+```bash
+npm run test:lowram
+```
+
+### 4. `vitest.ci.config.js` (CI/CD com Coverage)
 
 Suite completa com relatório de cobertura.
 
@@ -524,6 +566,7 @@ export default defineConfig({
     "test:smoke": "vitest run --config vitest.smoke.config.js",
     "test:critical": "vitest run --config vitest.critical.config.js",
     "test:unit": "vitest run --config vitest.config.js",
+    "test:lowram": "vitest run --config vitest.lowram.config.js",
     "test:changed": "vitest run --changed=main",
     "test:coverage": "vitest run --config vitest.ci.config.js",
     "test:components": "vitest run 'src/**/components/**/__tests__/*.test.jsx'",
@@ -537,16 +580,17 @@ export default defineConfig({
 
 ### Quando Usar Cada Comando
 
-| Situação | Comando | Timeout | Tempo Real |
-|----------|---------|---------|-----------|
-| Durante desenvolvimento | `npm run test:watch` | — | Contínuo |
-| Antes de commit (rápido) | `npm run test:changed` | 5 min | ~30s |
-| Validação para agentes | `npm run validate:agent` | **10 min** | ~3 min |
-| Validação pré-push (humano) | `npm run test:smoke` | 5 min | ~10s |
-| Suite crítica completa | `npm run test:critical` | — | ~3 min |
-| Testes unitários completos | `npm run test:unit` | — | ~8 min |
-| Com cobertura (CI/CD) | `npm run validate:full` | **15 min** | ~10 min |
-| Debug/desenvolvimento isolado | `npm run test:components` | — | ~1 min |
+| Situação | Comando | Timeout | Tempo Real | CPU Threads |
+|----------|---------|---------|-----------|-------------|
+| Durante desenvolvimento | `npm run test:watch` | — | Contínuo | Múltiplas |
+| Antes de commit (rápido) | `npm run test:changed` | 5 min | ~30s | Múltiplas |
+| Validação para agentes | `npm run validate:agent` | **10 min** | ~3 min | Múltiplas |
+| Validação pré-push (humano) | `npm run test:smoke` | 5 min | ~10s | Single |
+| Suite crítica completa | `npm run test:critical` | — | ~3 min | Múltiplas |
+| Testes unitários completos | `npm run test:unit` | — | ~8 min | Single |
+| Com cobertura (CI/CD) | `npm run validate:full` | **15 min** | ~10 min | Múltiplas |
+| **Máquinas com 8GB RAM** | **`npm run test:lowram`** | — | ~1-2 min | **Single (Sequential)** |
+| Debug/desenvolvimento isolado | `npm run test:components` | — | ~1 min | Múltiplas |
 
 ---
 
@@ -800,6 +844,52 @@ poolOptions: {
 pool: 'threads',
 maxThreads: 2,
 minThreads: 1
+```
+
+### Problema: Testes OOM (Out of Memory) em máquinas com 8GB RAM
+
+**Sintomas**:
+- Worker crashes com "JS heap out of memory"
+- Tests começam a passar mas falham ~8 testes depois
+- Vitest timeout "Worker terminated due to reaching memory limit"
+
+**Causas**:
+1. Múltiplas promises não foram GC'd (Promise.all em parallel queries)
+2. SetInterval executando globalmente (garbage collection não parado em testes)
+3. localStorage em jsdom acumulando dados entre testes
+4. Cache crescendo sem limite quando múltiplas entradas adicionadas
+
+**Soluções por severidade**:
+
+**Opção 1 - Imediata (Funciona hoje)**:
+```bash
+npm run test:lowram
+```
+Usa execução sequencial e exclui testes memory-intensive.
+
+**Opção 2 - Para desenvolvimento**:
+```bash
+# Rode testes em arquivo individual (cada arquivo = novo worker)
+NODE_ENV=test npx vitest run src/shared/hooks/__tests__/useCachedQuery.test.jsx
+
+# Rode sem cache accumulation
+npm run test:smoke  # Testes básicos, sempre funciona
+```
+
+**Opção 3 - Arquitetura (Longo prazo)**:
+- Refatorar queryCache para evitar Promise.all em paralelo
+- Implementar page-based cursoring ao invés de acumular 200 entradas
+- Usar WeakMap para cache (permite GC de entries não usadas)
+
+**Debugging**:
+```javascript
+// No seu teste, verifique memory entre testes
+afterEach(() => {
+  clearCache()
+  vi.clearAllMocks()
+  vi.clearAllTimers()
+  if (global.gc) global.gc()  // Force GC hint
+})
 ```
 
 ---
