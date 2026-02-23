@@ -21,6 +21,7 @@
 const { persistReviews, calculateIssueHash } = require('./persist-reviews.cjs');
 const { createClient } = require('@supabase/supabase-js');
 const { z } = require('zod');
+const fs = require('fs');
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -82,8 +83,8 @@ const pendingIssueSchema = z.object({
   title: z.string(),
   description: z.string().nullable().optional(),
   suggestion: z.string().nullable().optional(),
-  priority: z.string(),
-  category: z.string(),
+  priority: z.enum(['critica', 'alta', 'media', 'baixa']),
+  category: z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade', 'general']),
   issue_hash: z.string().length(64),
   status: z.string(),
   github_issue_number: z.number().int().positive().nullable().optional()
