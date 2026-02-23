@@ -30,6 +30,18 @@
       "destination": "/api/health/:path*.js"
     },
     {
+      "source": "/api/gemini-reviews/persist",
+      "destination": "/api/gemini-reviews/persist.js"
+    },
+    {
+      "source": "/api/gemini-reviews/create-issues",
+      "destination": "/api/gemini-reviews/create-issues.js"
+    },
+    {
+      "source": "/api/gemini-reviews/update-status",
+      "destination": "/api/gemini-reviews/update-status.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
