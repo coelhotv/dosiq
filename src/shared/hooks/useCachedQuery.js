@@ -118,6 +118,30 @@ export function useCachedQuery(key, fetcher, options = {}) {
 }
 
 /**
+ * Utilitário para executar múltiplas queries em paralelo
+ * Extraído para evitar duplicação entre fetchAll e refetchAll
+ */
+async function executeParallelQueries(queries) {
+  const promises = queries.map(async (query, index) => {
+    const { key, fetcher, options = {} } = query
+    const { enabled = true, staleTime } = options
+
+    if (!enabled || !key || !fetcher) {
+      return { index, data: undefined, error: null }
+    }
+
+    try {
+      const data = await cachedQuery(key, fetcher, { staleTime })
+      return { index, data, error: null }
+    } catch (error) {
+      return { index, data: undefined, error }
+    }
+  })
+
+  return Promise.all(promises)
+}
+
+/**
  * Hook para múltiplas queries em paralelo com cache SWR
  *
  * @param {Array} queries - Array de { key, fetcher, options }
@@ -133,32 +157,23 @@ export function useCachedQueries(queries) {
     }))
   )
 
+  // Chave estável derivada das query keys (não muda com rerenders desnecessários)
+  const queriesKey = queries.map((q) => q.key ?? 'null').join('|')
+
+  // Ref para acessar queries atualizadas dentro do effect sem re-disparar o effect
+  // (evita render loop causado por [queries] como dependência)
+  const queriesRef = useRef(queries)
+  queriesRef.current = queries
+
   const isMounted = useRef(true)
 
   useEffect(() => {
     isMounted.current = true
 
     const fetchAll = async () => {
-      // Marca todos como loading
       setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
 
-      const promises = queries.map(async (query, index) => {
-        const { key, fetcher, options = {} } = query
-        const { enabled = true, staleTime } = options
-
-        if (!enabled || !key || !fetcher) {
-          return { index, data: undefined, error: null }
-        }
-
-        try {
-          const data = await cachedQuery(key, fetcher, { staleTime })
-          return { index, data, error: null }
-        } catch (error) {
-          return { index, data: undefined, error }
-        }
-      })
-
-      const settled = await Promise.all(promises)
+      const settled = await executeParallelQueries(queriesRef.current)
 
       if (isMounted.current) {
         setResults((prev) => {
@@ -181,7 +196,7 @@ export function useCachedQueries(queries) {
     return () => {
       isMounted.current = false
     }
-  }, [queries])
+  }, [queriesKey])  // Estável: só muda quando as query keys mudam
 
   // Estados combinados
   const isLoading = results.some((r) => r.isLoading)
@@ -189,29 +204,16 @@ export function useCachedQueries(queries) {
   const hasError = results.some((r) => r.error)
   const errors = results.map((r) => r.error).filter(Boolean)
 
-  // Refetch todas as queries
+  // Refetch todas as queries com invalidação
   const refetchAll = useCallback(async () => {
-    queries.forEach((query) => {
+    queriesRef.current.forEach((query) => {
       const { key } = query
       if (key) invalidateCache(key)
     })
 
-    // Recarrega tudo
     setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
 
-    const promises = queries.map(async (query, index) => {
-      const { key, fetcher, options = {} } = query
-      const { staleTime } = options
-
-      try {
-        const data = await cachedQuery(key, fetcher, { staleTime })
-        return { index, data, error: null }
-      } catch (error) {
-        return { index, data: undefined, error }
-      }
-    })
-
-    const settled = await Promise.all(promises)
+    const settled = await executeParallelQueries(queriesRef.current)
 
     if (isMounted.current) {
       setResults((prev) => {
@@ -227,7 +229,7 @@ export function useCachedQueries(queries) {
         return next
       })
     }
-  }, [queries])
+  }, [])  // Sem dependências: sempre usa queriesRef.current (stale-safe)
 
   return {
     results,

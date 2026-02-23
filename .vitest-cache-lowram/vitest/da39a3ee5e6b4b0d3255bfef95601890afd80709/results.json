@@ -1,1 +1,1 @@
-{"version":"4.0.18","results":[[":src/shared/hooks/__tests__/useCachedQuery.test.jsx",{"duration":594.043572,"failed":false}],[":src/shared/hooks/__tests__/useCachedQueries.test.jsx",{"duration":0,"failed":false}]]}
+{"version":"4.0.18","results":[[":src/shared/hooks/__tests__/useCachedQuery.test.jsx",{"duration":545.1425610000001,"failed":false}],[":src/shared/hooks/__tests__/useCachedQueries.test.jsx",{"duration":313.20148900000004,"failed":false}],[":src/shared/hooks/__tests__/useCachedMutation.test.jsx",{"duration":69.82716299999993,"failed":false}]]}
