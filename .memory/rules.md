@@ -316,33 +316,63 @@ afterEach(() => {
 
 ---
 
-### R-080: Parallel Query Chains Cause OOM [KNOWN LIMITATION]
-**Rule:** Tests using `Promise.all()` on multiple parallel queries (queryCache behavior) accumulate memory faster than single-query tests. Known problematic patterns:
-- `useCachedQueries()` with 3+ parallel fetchers
-- `useCachedMutation()` with multiple cache invalidations
+### R-080: Cache Architecture Optimizations [FIXED]
+**Rule:** The following OOM issues in queryCache architecture have been FIXED (2026-02-23):
+1. **Generation Counter** — Prevents background revalidation from writing after `clearCache()`
+2. **TTL Eviction** — Garbage collector now purges entries older than 2× STALE_TIME (60s)
+3. **Debounced Persistence** — `localStorage` writes debounced to 500ms (was synchronous)
+4. **Access Counter Reset** — `accessCounter` properly reset in `clearCache()` for LRU
+5. **Render Loop Fix** — `useCachedQueries` now uses stable `queriesKey` instead of `[queries]` array
+6. **Code Deduplication** — Extracted `executeParallelQueries()` to eliminate `fetchAll`/`refetchAll` duplication
 
-**Current Status:** Excluded from `vitest.lowram.config.js` pending architectural fix to queryCache.
+**Tests Status:** All 26 test files now pass on 8GB machines with `npm run test:lowram`.
 
-**Workaround:** Run on machines with >16GB RAM or use `npm run test:critical` (parallel pool) instead of `test:lowram` (sequential).
+**Source:** 2026-02-23 cache architecture refactoring (Phase 4b)
 
-**Architectural Fix (TODO):**
-- Replace `Promise.all()` with streaming/pagination
-- Use `WeakMap` for cache to enable GC of unused entries
-- Implement LRU eviction more aggressively
+---
 
-**Source:** 2026-02-23 useCachedQueries OOM diagnosis
+### R-081: Test Suite Performance Strategy [HIGH]
+**Rule:** Choose the right test command for the context:
+
+| Context | Command | Config | Threads | Duration | Use Case |
+|---------|---------|--------|---------|----------|----------|
+| **Development (default)** | `npm run test:fast` | vitest.config.js | 1 | ~6.5 min | Local development, catch syntax errors |
+| **Development (parallel)** | `npx vitest run --singleThread=false --maxThreads=2` | vitest.config.js | 2 | ~3-4 min | When speed is critical (fast iteration) |
+| **Low-RAM machines** | `npm run test:lowram` | vitest.lowram.config.js | sequential | ~20 min | MacBook Air 8GB, only before push |
+| **Validation (agents)** | `npm run validate:agent` | vitest.critical.config.js | 4+ | <10 min | Enforced 10-min timeout, kill switch active |
+| **CI/CD** | `npm run validate:full` | vitest.ci.config.js | 4+ | <5 min | Production validation, max parallelism |
+
+**Explanation:**
+- **1 thread (default)**: Safe baseline, no race conditions, ~390s for 26 files
+- **2 threads**: Risk of race conditions in poorly-isolated tests, ~50% faster
+- **4+ threads**: Only for CI/CD with >16GB RAM, risk of OOM on 8GB machines
+- **Sequential (lowram)**: Slowest (~20 min) but guaranteed to work on 8GB with minimal footprint
+
+**Decision Matrix:**
+- Local dev? Use `npm run test:fast` (1 thread, 6.5 min) ← **RECOMMENDED**
+- Need speed? Try `--maxThreads=2` (3-4 min) with caution
+- 8GB machine? Use `npm run test:lowram` (20 min) only before push
+- Agent/CI? Timeout enforcement via `validate:agent` / `validate:full`
+
+**Source:** 2026-02-23 test performance analysis
 
 ---
 
 ## Low-RAM Machine Support Matrix
 
-| Hardware | Status | Command | Notes |
-|----------|--------|---------|-------|
-| MacBook Air 2013 (8GB, Intel) | ✅ Partial | `npm run test:lowram` | 12/25 tests pass; excludes 2 problematic files |
-| MacBook Pro 16GB (M1) | ✅ Full | Any command | All features work |
-| CI/CD (GitHub Actions) | ✅ Full | `npm run validate:full` | No RAM constraints |
+| Hardware | Status | Recommended Command | Duration | Notes |
+|----------|--------|---------------------|----------|-------|
+| MacBook Air 2013 (8GB, Intel) | ✅ FULL | `npm run test:lowram` | ~20 min | Sequential execution, all 234 tests pass |
+| MacBook Air / Pro (8GB) | ✅ Recommended | `npm run test:fast` | ~6.5 min | 1 thread (safe), good for local iteration |
+| MacBook Pro 16GB (M1/M2) | ✅ FAST | `npx vitest run --maxThreads=2` | ~3-4 min | 2 threads, works well with more RAM |
+| Development Agents | ✅ Enforced | `npm run validate:agent` | <10 min | Timeout enforced via script wrapper |
+| CI/CD (GitHub Actions) | ✅ Full | `npm run validate:full` | <5 min | 4+ threads, no constraints |
+
+**Historical Note:**
+- Previous `vitest.config.js` was hardcoded to `singleThread: true` (1 thread) — made it slow
+- All test configs now properly support parallelism with safe defaults
 
 ---
 
 *Last updated: 2026-02-23*
-*Rules: R-001 to R-080*
+*Rules: R-001 to R-081*

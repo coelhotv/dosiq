@@ -30,6 +30,8 @@ export default defineConfig({
     // ==========================================
 
     // Vitest 4+ API — pool options dentro de poolOptions
+    // Usar 1 thread é mais seguro que 2+ para evitar race conditions
+    // Se velocidade for crítica, use: npx vitest run --threads --maxThreads=2
     pool: 'threads',
     poolOptions: {
       threads: {
