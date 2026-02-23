@@ -22,7 +22,7 @@ const CACHE_CONFIG = {
 const cache = new Map()
 
 /**
- * Persiste o cache no LocalStorage
+ * Persiste o cache no LocalStorage (debounced 500ms para evitar writes síncronos repetidos)
  */
 function persistCache() {
   // Skip persistence in test environment to save memory
@@ -30,15 +30,21 @@ function persistCache() {
     return
   }
 
-  try {
-    const entries = Array.from(cache.entries())
-      .filter(([, value]) => !value.isRevalidating) // Não persiste estados transitórios
-      .slice(0, CACHE_CONFIG.MAX_ENTRIES)
+  // Debounce: cancela timer anterior e agenda novo
+  if (persistTimer) clearTimeout(persistTimer)
 
-    localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
-  } catch (error) {
-    console.warn('[QueryCache] Erro ao persistir cache:', error)
-  }
+  persistTimer = setTimeout(() => {
+    try {
+      const entries = Array.from(cache.entries())
+        .filter(([, value]) => !value.isRevalidating) // Não persiste estados transitórios
+        .slice(0, CACHE_CONFIG.MAX_ENTRIES)
+
+      localStorage.setItem(CACHE_CONFIG.PERSIST_KEY, JSON.stringify(entries))
+    } catch (error) {
+      console.warn('[QueryCache] Erro ao persistir cache:', error)
+    }
+    persistTimer = null
+  }, 500)
 }
 
 /**
@@ -76,6 +82,12 @@ const pendingRequests = new Map()
 const accessCount = new Map()
 let accessCounter = 0
 
+// Cache generation counter (invalidates in-flight writes on clearCache)
+let cacheGeneration = 0
+
+// Debounced persistence timer
+let persistTimer = null
+
 /**
  * Gera uma chave de cache única baseada nos parâmetros
  * @param {string} baseKey - Chave base (nome do recurso)
@@ -93,13 +105,30 @@ export function generateCacheKey(baseKey, params = null) {
  * se o limite for excedido (estratégia LRU)
  */
 function garbageCollect() {
+  const now = Date.now()
+  let removedByTTL = 0
+
+  // Fase 1: Remove entradas expiradas por TTL (2x STALE_TIME = 60s)
+  const ttlThreshold = CACHE_CONFIG.STALE_TIME * 2
+  for (const [key, value] of cache.entries()) {
+    if (now - value.timestamp > ttlThreshold) {
+      cache.delete(key)
+      accessCount.delete(key)
+      pendingRequests.delete(key)
+      removedByTTL++
+    }
+  }
+
+  if (removedByTTL > 0) {
+    console.log(`[QueryCache] GC TTL: removidas ${removedByTTL} entradas expiradas`)
+  }
+
+  // Fase 2: LRU eviction se ainda exceder MAX_ENTRIES
   if (cache.size <= CACHE_CONFIG.MAX_ENTRIES) return
 
-  // Ordena entradas por último acesso (menor primeiro)
   const sortedEntries = Array.from(accessCount.entries()).sort((a, b) => a[1] - b[1])
-
-  // Remove as entradas mais antigas até estar dentro do limite
   const entriesToRemove = sortedEntries.slice(0, cache.size - CACHE_CONFIG.MAX_ENTRIES)
+
   entriesToRemove.forEach(([key]) => {
     cache.delete(key)
     accessCount.delete(key)
@@ -107,7 +136,7 @@ function garbageCollect() {
   })
 
   console.log(
-    `[QueryCache] GC: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`
+    `[QueryCache] GC LRU: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`
   )
   persistCache()
 }
@@ -167,14 +196,19 @@ export async function cachedQuery(key, fetcher, options = {}) {
     console.log(`[QueryCache] Cache HIT (stale): ${key}, revalidando...`)
 
     // Revalidação em background (não espera)
+    // Captura a geração atual antes do await para evitar escrever após clearCache()
+    const capturedGen = cacheGeneration
     const revalidationPromise = (async () => {
       try {
         const data = await fetcher()
-        cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
-        updateAccess(key)
-        garbageCollect()
-        persistCache()
-        console.log(`[QueryCache] Revalidação OK: ${key}`)
+        // Só escreve se a geração não mudou (cache não foi limpo)
+        if (capturedGen === cacheGeneration) {
+          cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
+          updateAccess(key)
+          garbageCollect()
+          persistCache()
+          console.log(`[QueryCache] Revalidação OK: ${key}`)
+        }
         return data
       } catch (error) {
         console.error(`[QueryCache] Revalidação falhou: ${key}`, error)
@@ -197,13 +231,18 @@ export async function cachedQuery(key, fetcher, options = {}) {
   // Cache MISS: executa fetcher
   console.log(`[QueryCache] Cache MISS: ${key}`)
 
+  // Captura a geração atual antes do await para evitar escrever após clearCache()
+  const capturedGen = cacheGeneration
   const fetchPromise = (async () => {
     try {
       const data = await fetcher()
-      cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
-      updateAccess(key)
-      garbageCollect()
-      persistCache()
+      // Só escreve se a geração não mudou (cache não foi limpo)
+      if (capturedGen === cacheGeneration) {
+        cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
+        updateAccess(key)
+        garbageCollect()
+        persistCache()
+      }
       return data
     } catch (error) {
       console.error(`[QueryCache] Fetch falhou: ${key}`, error)
@@ -311,10 +350,21 @@ export function getCacheStats() {
  * Limpa todo o cache
  */
 export function clearCache() {
+  // Cancela qualquer persistência pendente
+  if (persistTimer) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
+
+  // Incrementa geração para invalidar qualquer escrita in-flight (background revalidation)
+  cacheGeneration++
+
   const size = cache.size
   cache.clear()
   accessCount.clear()
   pendingRequests.clear()
+  accessCounter = 0  // Reseta counter para LRU funcionar corretamente em runs longos
+
   if (typeof window !== 'undefined' && window.localStorage && process.env.NODE_ENV !== 'test') {
     try {
       localStorage.removeItem(CACHE_CONFIG.PERSIST_KEY)

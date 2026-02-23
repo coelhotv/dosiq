@@ -50,16 +50,13 @@ export default defineConfig({
     hookTimeout: 10000,
     teardownTimeout: 5000,
 
-    // Todos os testes
+    // Todos os testes (incluindo os anteriormente excluídos por OOM — agora corrigidos na refatoração)
     include: ['src/**/*.test.{js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
-      // Exclude memory-intensive tests that require architectural fixes to queryCache
-      '**/useCachedQueries.test.jsx',
-      '**/useCachedMutation.test.jsx',
     ],
 
     // Coverage desabilitado por padrão
