@@ -5,12 +5,19 @@
  * valida autenticação JWT e atualiza o registro no Supabase.
  *
  * @module api/gemini-reviews/update-status
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import {
+  checkRateLimit,
+  getRateLimitHeaders,
+  getClientIP,
+  rateLimitResponse,
+  internalErrorResponse,
+} from './shared/security.js'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -143,7 +150,7 @@ async function updateReviewStatus(supabase, update) {
     .single()
 
   if (error) {
-    throw new Error(`Erro ao atualizar review ${review_id}: ${error.message}`)
+    throw new Error('Erro ao atualizar review')
   }
 
   return data
@@ -164,11 +171,12 @@ async function processSingleUpdate(supabase, update) {
       github_issue_number: updated.github_issue_number,
       success: true,
     }
-  } catch (error) {
+  } catch {
+    // Erro não exposto por segurança
     return {
       review_id: update.review_id,
       success: false,
-      error: error.message,
+      error: 'Falha ao atualizar',
     }
   }
 }
@@ -215,6 +223,12 @@ async function processBatchUpdates(supabase, updates) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Rate limiting
+  const clientIP = getClientIP(req)
+  if (!checkRateLimit(clientIP)) {
+    return rateLimitResponse(res, getRateLimitHeaders(clientIP))
+  }
+
   // Verificar método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -270,12 +284,17 @@ export default async function handler(req, res) {
       const hasErrors = results.errors.length > 0
       const allFailed = results.success.length === 0
 
-      return res.status(hasErrors ? (allFailed ? 500 : 207) : 200).json({
-        success: !allFailed,
-        updated: results.success.length,
-        errors: results.errors,
-        ...(hasErrors && { partial: !allFailed }),
-      })
+      const responseHeaders = getRateLimitHeaders(clientIP)
+
+      return res
+        .status(hasErrors ? (allFailed ? 500 : 207) : 200)
+        .set(responseHeaders)
+        .json({
+          success: !allFailed,
+          updated: results.success.length,
+          errors: results.errors,
+          ...(hasErrors && { partial: !allFailed }),
+        })
     } else {
       // Validação single
       const validation = updateStatusSchema.safeParse(req.body)
@@ -302,12 +321,14 @@ export default async function handler(req, res) {
       if (!result.success) {
         return res.status(500).json({
           success: false,
-          error: result.error,
+          error: 'Falha ao atualizar status',
           review_id: result.review_id,
         })
       }
 
-      return res.status(200).json({
+      const responseHeaders = getRateLimitHeaders(clientIP)
+
+      return res.status(200).set(responseHeaders).json({
         success: true,
         data: {
           review_id: result.review_id,
@@ -317,12 +338,6 @@ export default async function handler(req, res) {
       })
     }
   } catch (error) {
-    console.error('Erro no update-status:', error)
-
-    return res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      message: error.message,
-    })
+    return internalErrorResponse(res, error, 'update-status')
   }
 }
