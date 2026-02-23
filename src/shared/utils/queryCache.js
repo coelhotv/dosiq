@@ -25,6 +25,11 @@ const cache = new Map()
  * Persiste o cache no LocalStorage
  */
 function persistCache() {
+  // Skip persistence in test environment to save memory
+  if (typeof window === 'undefined' || !window.localStorage || process.env.NODE_ENV === 'test') {
+    return
+  }
+
   try {
     const entries = Array.from(cache.entries())
       .filter(([, value]) => !value.isRevalidating) // Não persiste estados transitórios
@@ -40,6 +45,11 @@ function persistCache() {
  * Hidrata o cache a partir do LocalStorage
  */
 function hydrateCache() {
+  // Skip hydration in test environment
+  if (typeof window === 'undefined' || !window.localStorage || process.env.NODE_ENV === 'test') {
+    return
+  }
+
   try {
     const persisted = localStorage.getItem(CACHE_CONFIG.PERSIST_KEY)
     if (persisted) {
@@ -305,14 +315,47 @@ export function clearCache() {
   cache.clear()
   accessCount.clear()
   pendingRequests.clear()
-  if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.removeItem(CACHE_CONFIG.PERSIST_KEY)
+  if (typeof window !== 'undefined' && window.localStorage && process.env.NODE_ENV !== 'test') {
+    try {
+      localStorage.removeItem(CACHE_CONFIG.PERSIST_KEY)
+    } catch (error) {
+      // Silently ignore errors
+    }
   }
   console.log(`[QueryCache] Cache limpo. ${size} entradas removidas.`)
 }
 
 // Garbage collection periódico
-setInterval(garbageCollect, CACHE_CONFIG.GC_INTERVAL)
+let gcInterval = setInterval(garbageCollect, CACHE_CONFIG.GC_INTERVAL)
+
+/**
+ * Cancela o intervalo de garbage collection (para testes)
+ * @internal
+ */
+export function cancelGarbageCollection() {
+  if (gcInterval) {
+    clearInterval(gcInterval)
+    gcInterval = null
+  }
+}
+
+/**
+ * Reinicia o intervalo de garbage collection (para testes)
+ * @internal
+ */
+export function restartGarbageCollection() {
+  if (!gcInterval) {
+    gcInterval = setInterval(garbageCollect, CACHE_CONFIG.GC_INTERVAL)
+  }
+}
+
+/**
+ * Força garbage collection imediatamente
+ * @internal
+ */
+export function forceGarbageCollection() {
+  garbageCollect()
+}
 
 // Exporta configuração para testes
 export { CACHE_CONFIG }

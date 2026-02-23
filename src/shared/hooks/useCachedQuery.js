@@ -311,4 +311,6 @@ export {
   prefetchCache,
   getCacheStats,
   clearCache,
+  cancelGarbageCollection,
+  restartGarbageCollection,
 } from '@shared/utils/queryCache'

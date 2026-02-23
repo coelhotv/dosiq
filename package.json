@@ -18,6 +18,7 @@
     "test:coverage": "vitest run --config vitest.ci.config.js",
     "test:components": "vitest run src/components src/shared/components",
     "test:services": "vitest run src/services src/features",
+    "test:lowram": "vitest run --config vitest.lowram.config.js",
     "// --- Validation Scripts (with timeout protection) ---": "",
     "validate:quick": "npm run lint && node scripts/run-tests-with-timeout.mjs 300 npm run test:changed",
     "validate:agent": "node scripts/run-tests-with-timeout.mjs 600 npm run -- test:critical --bail=1",
