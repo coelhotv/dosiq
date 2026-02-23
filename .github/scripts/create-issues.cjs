@@ -30,9 +30,14 @@ const fs = require('fs');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('❌ Variáveis de ambiente SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias');
-  process.exit(1);
+// Verificar se as variáveis estão configuradas (job será pulado se não estiverem)
+const hasSupabaseConfig = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY;
+
+if (!hasSupabaseConfig) {
+  console.log('⚠️ SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY não configurados. Pulando criação de issues.');
+  console.log('   Configure essas secrets em Settings → Secrets and variables → Actions');
+  // Não falha o workflow, apenas retorna sem fazer nada
+  process.exit(0);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

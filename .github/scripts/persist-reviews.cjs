@@ -41,12 +41,15 @@ const reviewSchema = z.object({
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('❌ Variáveis de ambiente SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias');
-  process.exit(1);
+// Verificar se as variáveis estão configuradas
+const hasSupabaseConfig = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY;
+
+if (!hasSupabaseConfig) {
+  console.log('⚠️ SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY não configurados. Pulando persistência de reviews.');
+  console.log('   Configure essas secrets em Settings → Secrets and variables → Actions');
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) : null;
 
 /**
  * Resultado da persistência
@@ -71,6 +74,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
  * @returns {Promise<PersistResult>} Resultado da persistência
  */
 async function persistReviews(reviewData, options = {}) {
+  // Se Supabase não estiver configurado, retornar sem fazer nada
+  if (!supabase) {
+    console.log('⚠️ Supabase não configurado. Pulando persistência.');
+    return {
+      created: 0,
+      updated: 0,
+      skipped: reviewData.issues?.length || 0,
+      reactivated: 0,
+      errors: [],
+      createdIssues: []
+    };
+  }
+
   // Validar entrada com Zod
   const validation = reviewSchema.safeParse(reviewData);
   if (!validation.success) {
