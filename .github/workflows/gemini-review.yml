@@ -401,7 +401,7 @@ jobs:
   upload-to-blob:
     name: Upload Review to Vercel Blob
     runs-on: ubuntu-latest
-    needs: parse
+    needs: [detect, parse]
     # Executa sempre que parse rodou com sucesso
     if: always() && needs.parse.result == 'success'
     outputs:
