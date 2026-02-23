@@ -6,12 +6,20 @@
  * e atualiza o Supabase com github_issue_number.
  *
  * @module api/gemini-reviews/create-issues
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import {
+  checkRateLimit,
+  getRateLimitHeaders,
+  getClientIP,
+  rateLimitResponse,
+  internalErrorResponse,
+  fetchWithRetry,
+} from './shared/security.js'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -54,13 +62,13 @@ const issueSchema = z.object({
 
 /**
  * Schema para o body da requisição
+ * Nota: github_token removido - usa GITHUB_TOKEN do ambiente apenas
  */
 const createIssuesRequestSchema = z.object({
   pr_number: z.number().int().positive('Número do PR deve ser positivo'),
   commit_sha: z.string().min(1, 'Commit SHA é obrigatório'),
   issues: z.array(issueSchema).min(0),
   blob_url: z.string().url().optional(),
-  github_token: z.string().min(1).optional(),
   owner: z.string().min(1, 'Owner é obrigatório'),
   repo: z.string().min(1, 'Repo é obrigatório'),
 })
@@ -117,7 +125,7 @@ function verifyAuth(req) {
 // ============================================================================
 
 /**
- * Cria uma issue no GitHub
+ * Cria uma issue no GitHub usando fetch com retry
  * @param {Object} issue - Dados da issue do Supabase
  * @param {number} prNumber - Número do PR
  * @param {string} owner - Owner do repositório
@@ -128,24 +136,28 @@ function verifyAuth(req) {
 async function createGitHubIssue(issue, prNumber, owner, repo, token) {
   const body = buildIssueBody(issue, prNumber)
 
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Content-Type': 'application/json',
+  const response = await fetchWithRetry(
+    `https://api.github.com/repos/${owner}/${repo}/issues`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: `[Refactor] ${issue.title}`,
+        body: body,
+        labels: [
+          REFACTOR_LABELS.GEMINI_REFACTOR,
+          REFACTOR_LABELS.REFACTORING,
+          `priority:${issue.priority}`,
+        ],
+      }),
     },
-    body: JSON.stringify({
-      title: `[Refactor] ${issue.title}`,
-      body: body,
-      labels: [
-        REFACTOR_LABELS.GEMINI_REFACTOR,
-        REFACTOR_LABELS.REFACTORING,
-        `priority:${issue.priority}`,
-      ],
-    }),
-  })
+    3 // maxRetries
+  )
 
   if (!response.ok) {
     const error = await response.json()
@@ -156,7 +168,7 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
 }
 
 /**
- * Comenta no PR linkando a issue
+ * Comenta no PR linkando a issue usando fetch com retry
  * @param {number} prNumber - Número do PR
  * @param {number} issueNumber - Número da issue
  * @param {string} owner - Owner do repositório
@@ -165,7 +177,7 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
  */
 async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`,
       {
         method: 'POST',
@@ -178,7 +190,8 @@ async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
         body: JSON.stringify({
           body: `🤖 **Gemini Code Assist** criou issue #${issueNumber} para tracking desta sugestão de refactoring.`,
         }),
-      }
+      },
+      3 // maxRetries
     )
 
     if (!response.ok) {
@@ -273,12 +286,12 @@ async function updateReviewStatus(supabase, id, issueNumber) {
 }
 
 /**
- * Baixa dados do review do Vercel Blob
+ * Baixa dados do review do Vercel Blob usando fetch com retry
  * @param {string} blobUrl - URL do blob
  * @returns {Promise<Object>} Dados do review
  */
 async function downloadFromBlob(blobUrl) {
-  const response = await fetch(blobUrl)
+  const response = await fetchWithRetry(blobUrl, {}, 3)
 
   if (!response.ok) {
     throw new Error(`Falha ao baixar do Blob: ${response.status} ${response.statusText}`)
@@ -322,7 +335,7 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
       if (!issueValidation.success) {
         results.errors.push({
           review_id: issue.id,
-          error: `Dados inválidos: ${issueValidation.error.message}`,
+          error: 'Dados inválidos',
         })
         continue
       }
@@ -349,11 +362,12 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
         title: githubIssue.title,
         url: githubIssue.html_url,
       })
-    } catch (error) {
+    } catch {
+      // Erro não exposto por segurança
       results.errors.push({
         review_id: issue.id,
         title: issue.title,
-        error: error.message,
+        error: 'Falha ao criar issue',
       })
     }
   }
@@ -371,6 +385,12 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Rate limiting
+  const clientIP = getClientIP(req)
+  if (!checkRateLimit(clientIP)) {
+    return rateLimitResponse(res, getRateLimitHeaders(clientIP))
+  }
+
   // Verificar método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -403,10 +423,11 @@ export default async function handler(req, res) {
       try {
         const blobData = await downloadFromBlob(req.body.blob_url)
         requestData = { ...blobData, ...req.body }
-      } catch (error) {
+      } catch {
+        // Erro não exposto por segurança
         return res.status(400).json({
           success: false,
-          error: `Erro ao baixar do Blob: ${error.message}`,
+          error: 'Erro ao baixar dados do Blob',
         })
       }
     } else {
@@ -429,8 +450,8 @@ export default async function handler(req, res) {
 
     const validatedData = validation.data
 
-    // Usar token do body ou do ambiente
-    const githubToken = validatedData.github_token || GITHUB_TOKEN
+    // Usar GITHUB_TOKEN do ambiente apenas (não aceita do body por segurança)
+    const githubToken = GITHUB_TOKEN
 
     if (!githubToken) {
       return res.status(500).json({
@@ -449,18 +470,17 @@ export default async function handler(req, res) {
     const hasErrors = results.errors.length > 0
     const allFailed = results.created === 0 && hasErrors
 
-    return res.status(hasErrors ? (allFailed ? 500 : 207) : 200).json({
-      success: !allFailed,
-      data: results,
-      ...(hasErrors && { partial: !allFailed }),
-    })
-  } catch (error) {
-    console.error('Erro no create-issues:', error)
+    const responseHeaders = getRateLimitHeaders(clientIP)
 
-    return res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      message: error.message,
-    })
+    return res
+      .status(hasErrors ? (allFailed ? 500 : 207) : 200)
+      .set(responseHeaders)
+      .json({
+        success: !allFailed,
+        data: results,
+        ...(hasErrors && { partial: !allFailed }),
+      })
+  } catch (error) {
+    return internalErrorResponse(res, error, 'create-issues')
   }
 }

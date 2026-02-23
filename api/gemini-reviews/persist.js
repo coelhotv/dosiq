@@ -6,13 +6,21 @@
  * deduplicação por hash na tabela gemini_reviews.
  *
  * @module api/gemini-reviews/persist
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import {
+  checkRateLimit,
+  getRateLimitHeaders,
+  getClientIP,
+  rateLimitResponse,
+  internalErrorResponse,
+  fetchWithRetry,
+} from './shared/security.js'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -118,7 +126,7 @@ async function checkExistingHash(supabase, issueHash) {
     .maybeSingle()
 
   if (error) {
-    throw new Error(`Erro ao verificar hash: ${error.message}`)
+    throw new Error(`Erro ao verificar hash`)
   }
 
   return data
@@ -261,9 +269,9 @@ async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
   if (error) {
     // Tratar violação de UNIQUE constraint
     if (error.code === '23505') {
-      throw new Error(`Hash collision detectado: ${issueHash}`)
+      throw new Error(`Hash collision detectado`)
     }
-    throw error
+    throw new Error('Falha ao criar registro')
   }
 
   return data
@@ -317,10 +325,11 @@ async function persistReviews(supabase, reviewData) {
         hash: issueHash,
         status: newIssue.status,
       })
-    } catch (error) {
+    } catch {
+      // Erro não exposto por segurança
       results.errors.push({
         issue: issue.title || 'Sem título',
-        error: error.message,
+        error: 'Falha ao processar',
       })
     }
   }
@@ -329,12 +338,12 @@ async function persistReviews(supabase, reviewData) {
 }
 
 /**
- * Baixa dados do review do Vercel Blob
+ * Baixa dados do review do Vercel Blob usando fetch com retry
  * @param {string} blobUrl - URL do blob
  * @returns {Promise<Object>} Dados do review
  */
 async function downloadFromBlob(blobUrl) {
-  const response = await fetch(blobUrl)
+  const response = await fetchWithRetry(blobUrl, {}, 3)
 
   if (!response.ok) {
     throw new Error(`Falha ao baixar do Blob: ${response.status} ${response.statusText}`)
@@ -353,6 +362,12 @@ async function downloadFromBlob(blobUrl) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Rate limiting
+  const clientIP = getClientIP(req)
+  if (!checkRateLimit(clientIP)) {
+    return rateLimitResponse(res, getRateLimitHeaders(clientIP))
+  }
+
   // Verificar método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -384,10 +399,11 @@ export default async function handler(req, res) {
     if (req.body.blob_url) {
       try {
         reviewData = await downloadFromBlob(req.body.blob_url)
-      } catch (error) {
+      } catch {
+        // Erro não exposto por segurança
         return res.status(400).json({
           success: false,
-          error: `Erro ao baixar do Blob: ${error.message}`,
+          error: 'Erro ao baixar dados do Blob',
         })
       }
     } else {
@@ -417,17 +433,13 @@ export default async function handler(req, res) {
     const results = await persistReviews(supabase, validatedData)
 
     // Retornar resultado
-    return res.status(200).json({
+    const responseHeaders = getRateLimitHeaders(clientIP)
+
+    return res.status(200).set(responseHeaders).json({
       success: true,
       data: results,
     })
   } catch (error) {
-    console.error('Erro no persist:', error)
-
-    return res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      message: error.message,
-    })
+    return internalErrorResponse(res, error, 'persist')
   }
 }
