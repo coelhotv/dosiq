@@ -580,17 +580,23 @@ export default defineConfig({
 
 ### Quando Usar Cada Comando
 
-| Situação | Comando | Timeout | Tempo Real | CPU Threads |
-|----------|---------|---------|-----------|-------------|
-| Durante desenvolvimento | `npm run test:watch` | — | Contínuo | Múltiplas |
-| Antes de commit (rápido) | `npm run test:changed` | 5 min | ~30s | Múltiplas |
-| Validação para agentes | `npm run validate:agent` | **10 min** | ~3 min | Múltiplas |
-| Validação pré-push (humano) | `npm run test:smoke` | 5 min | ~10s | Single |
-| Suite crítica completa | `npm run test:critical` | — | ~3 min | Múltiplas |
-| Testes unitários completos | `npm run test:unit` | — | ~8 min | Single |
-| Com cobertura (CI/CD) | `npm run validate:full` | **15 min** | ~10 min | Múltiplas |
-| **Máquinas com 8GB RAM** | **`npm run test:lowram`** | — | ~1-2 min | **Single (Sequential)** |
-| Debug/desenvolvimento isolado | `npm run test:components` | — | ~1 min | Múltiplas |
+| Situação | Comando | Timeout | Tempo Real | Threads | Recomendado |
+|----------|---------|---------|-----------|---------|-----------|
+| Durante desenvolvimento | `npm run test:watch` | — | Contínuo | 1 | ✅ Sim |
+| **Antes de commit (recomendado)** | **`npm run test:fast`** | — | **~6.5 min** | **1** | **✅ Recomendado** |
+| Antes de commit (rápido) | `npm run test:changed` | 5 min | ~30s | 1 | Para iterações rápidas |
+| Validação para agentes | `npm run validate:agent` | **10 min** | ~3 min | 4+ | ✅ Executado automaticamente |
+| Validação pré-push (humano) | `npm run test:smoke` | — | ~10s | 1 | ✅ Fail-fast |
+| Suite crítica (paralelo) | `npm run test:critical` | — | ~3 min | 4+ | Para CI/CD |
+| Com cobertura (CI/CD) | `npm run validate:full` | **15 min** | ~5 min | 4+ | ✅ Executado em GitHub Actions |
+| **Máquinas com 8GB RAM** | **`npm run test:lowram`** | — | **~20 min** | **Sequential** | **Apenas se test:fast falhar** |
+| Paralelo rápido (risco) | `npx vitest run --maxThreads=2` | — | ~3-4 min | 2 | ⚠️ Pode ter race conditions |
+| Debug/desenvolvimento isolado | `npm run test:components` | — | ~1 min | 1 | Para feature específica |
+
+**Decisão Rápida:**
+- ✅ **Local dev**: Use `npm run test:fast` (~6.5 min, 1 thread, totalmente seguro)
+- ⚠️ **Precisa de velocidade**: Tente `--maxThreads=2` (~3 min) com cuidado
+- ❌ **Se test:fast falhar em 8GB**: Use `npm run test:lowram` (~20 min) antes de push
 
 ---
 
