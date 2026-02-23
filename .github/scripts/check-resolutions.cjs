@@ -239,19 +239,21 @@ async function checkResolutionCompleteness(issue, commitSha, github, context) {
       description.includes('erro') && currentCode.toLowerCase().includes('catch'),
     ];
 
+    const completeCount = completeIndicators.filter(Boolean).length;
+
     // Critérios para resolução parcial
     const partialIndicators = [
       // Se menciona TODO ou FIXME ainda presente
       currentCode.toLowerCase().includes('todo'),
       currentCode.toLowerCase().includes('fixme'),
-      // Se o código mudou mas não conforme sugerido
-      description.includes('refatorar') && relevantLines.length > 0,
+      // Se menciona refatorar E nenhum indicador completo foi atendido
+      // (evita marcar como 'partial' refatorações que já estão completas)
+      description.includes('refatorar') && completeCount === 0,
       // Se há comentários indicando trabalho pendente
       currentCode.toLowerCase().includes('// not implemented'),
       currentCode.toLowerCase().includes('// implementar'),
     ];
 
-    const completeCount = completeIndicators.filter(Boolean).length;
     const partialCount = partialIndicators.filter(Boolean).length;
 
     if (completeCount > 0 && partialCount === 0) {
@@ -649,12 +651,12 @@ function determineResolutionType(comment, completeness = 'none') {
 
   // Se o comentário menciona "TODO", "FIXME", ou sugere melhoras futuras
   // considerar como parcial
+  // Nota: 'sugestão' removido por ser excessivamente amplo
   if (body.includes('todo') ||
       body.includes('fixme') ||
       body.includes('melhoria futura') ||
       body.includes('refatoração') ||
-      body.includes('considerar') ||
-      body.includes('sugestão')) {
+      body.includes('considerar')) {
     return 'partial';
   }
 
