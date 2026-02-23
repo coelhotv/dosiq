@@ -34,6 +34,7 @@
     "@vercel/blob": "^2.3.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.33.0",
+    "jsonwebtoken": "^9.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.3.6"
