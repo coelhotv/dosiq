@@ -89,7 +89,9 @@ export function useCachedQuery(key, fetcher, options = {}) {
 
     if (enabled && key) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      executeQuery()
+      // Catch rejection to prevent unhandled promise warning
+      // (error is already handled in executeQuery catch block and set in state)
+      executeQuery().catch(() => {})
     }
 
     return () => {
