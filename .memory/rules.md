@@ -174,6 +174,8 @@ callback_data: `reg_med:${medicineId}:${protocolId}`
 ### R-070: No `setTimeout` in `act()` Blocks [HIGH]
 **Rule:** Never use `setTimeout(resolve, N)` inside `act()` to "wait for component to load". Use `waitFor(() => expect(result.current.isLoading).toBe(false))` instead. Hardcoded delays fail when component takes longer than N milliseconds.
 
+**When to use:** For waiting on React state changes (loading flags, data arrival). See also R-073 for timer control.
+
 **Source:** useDashboardContext.test.jsx (11 hanging instances before fix)
 
 ```javascript
@@ -218,10 +220,18 @@ try {
 ### R-073: Use Fake Timers for Timer-Dependent Tests [MEDIUM]
 **Rule:** Tests that depend on real elapsed time (e.g., "wait 150ms for 100ms async to settle") are inherently flaky in CI. Use `vi.useFakeTimers()` and `vi.runAllTimersAsync()` for deterministic control. Always call `vi.useRealTimers()` in `afterEach` or `finally`.
 
+**When to use:** For controlling timers in code under test (debounces, throttles, delays). NOT for waiting on React state — use R-070 waitFor() instead.
+
+**Complementary rules:**
+- **R-070:** For waiting on React state changes (use waitFor with polling)
+- **R-073:** For controlling/fast-forwarding time in tests (use fake timers)
+
 **Source:** useCachedQuery.test.jsx "should not update state after unmount"
 
 ### R-074: Use `validate:agent` for Agent Sessions [HIGH]
 **Rule:** When running tests from an agent session, always use `npm run validate:agent` (not `validate:quick` or `validate:full`). The wrapper enforces a 10-minute kill switch. If test suite needs more than 10 minutes, it indicates broken tests that need fixing, not a higher timeout.
+
+**Context:** This is the agent-specific variant of R-081 (Test Suite Performance Strategy). Agents MUST use validate:agent; humans use test:fast/test:lowram/validate:full per R-081.
 
 **Source:** Testing Infrastructure Overhaul 2026-02
 
@@ -334,12 +344,14 @@ afterEach(() => {
 ### R-081: Test Suite Performance Strategy [HIGH]
 **Rule:** Choose the right test command for the context:
 
+⚠️ **AGENT-SPECIFIC NOTE:** Agents MUST ALWAYS use `validate:agent` — see R-074 for mandatory compliance. The table below is primarily guidance for human developers.
+
 | Context | Command | Config | Threads | Duration | Use Case |
 |---------|---------|--------|---------|----------|----------|
 | **Development (default)** | `npm run test:fast` | vitest.config.js | 1 | ~6.5 min | Local development, catch syntax errors |
 | **Development (parallel)** | `npx vitest run --singleThread=false --maxThreads=2` | vitest.config.js | 2 | ~3-4 min | When speed is critical (fast iteration) |
 | **Low-RAM machines** | `npm run test:lowram` | vitest.lowram.config.js | sequential | ~20 min | MacBook Air 8GB, only before push |
-| **Validation (agents)** | `npm run validate:agent` | vitest.critical.config.js | 4+ | <10 min | Enforced 10-min timeout, kill switch active |
+| **Validation (agents)** | `npm run validate:agent` | vitest.critical.config.js | 4+ | <10 min | **MANDATORY (R-074)** — 10-min kill switch |
 | **CI/CD** | `npm run validate:full` | vitest.ci.config.js | 4+ | <5 min | Production validation, max parallelism |
 
 **Explanation:**
