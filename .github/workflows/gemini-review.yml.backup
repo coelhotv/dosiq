@@ -392,113 +392,6 @@ jobs:
           include-hidden-files: true
 
   # ==========================================
-  # JOB 3.4: Upload para Vercel Blob
-  # ==========================================
-  # Faz upload do output estruturado para Vercel Blob.
-  # Permite que endpoints Vercel acessem os dados de review
-  # sem precisar acessar o GitHub Actions diretamente.
-  # ==========================================
-  upload-to-blob:
-    name: Upload Review to Vercel Blob
-    runs-on: ubuntu-latest
-    needs: parse
-    # Executa sempre que parse rodou com sucesso
-    if: always() && needs.parse.result == 'success'
-    outputs:
-      blob_url: ${{ steps.upload.outputs.blob_url }}
-      blob_pathname: ${{ steps.upload.outputs.blob_pathname }}
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
-      - name: Install Dependencies
-        run: npm ci
-      
-      - name: Download Review Output
-        uses: actions/download-artifact@v4
-        with:
-          name: gemini-review-output
-          path: .gemini-output/
-        continue-on-error: false
-      
-      - name: Upload to Vercel Blob
-        id: upload
-        uses: actions/github-script@v7
-        env:
-          VERCEL_BLOB_TOKEN: ${{ secrets.VERCEL_BLOB_TOKEN }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            const { uploadToVercelBlob } = require('./.github/scripts/upload-to-vercel-blob.cjs');
-            
-            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
-            const outputDir = '.gemini-output';
-            
-            // Encontrar arquivo de review
-            const reviewFile = path.join(outputDir, `review-${prNumber}.json`);
-            
-            if (!fs.existsSync(reviewFile)) {
-              throw new Error(`Arquivo de review não encontrado: ${reviewFile}`);
-            }
-            
-            console.log(`🔄 Fazendo upload do review para PR #${prNumber}...`);
-            
-            try {
-              // Fazer upload com nome único incluindo timestamp
-              const timestamp = Date.now();
-              const remoteName = `reviews/pr-${prNumber}/review-${timestamp}.json`;
-              
-              const result = await uploadToVercelBlob(reviewFile, {
-                remoteName,
-                private: true // Arquivos privados, acessados via endpoint Vercel
-              });
-              
-              console.log('✅ Upload concluído:');
-              console.log(`   URL: ${result.url}`);
-              console.log(`   Pathname: ${result.pathname}`);
-              
-              // Outputs para próximos jobs
-              core.setOutput('blob_url', result.url);
-              core.setOutput('blob_pathname', result.pathname);
-              
-              // Salvar metadata para referência
-              const metadata = {
-                pr_number: prNumber,
-                blob_url: result.url,
-                blob_pathname: result.pathname,
-                uploaded_at: new Date().toISOString(),
-                timestamp
-              };
-              
-              fs.mkdirSync('.gemini-output/metadata', { recursive: true });
-              fs.writeFileSync(
-                `.gemini-output/metadata/blob-${prNumber}.json`,
-                JSON.stringify(metadata, null, 2)
-              );
-              
-            } catch (error) {
-              console.error('❌ Erro no upload para Blob:', error.message);
-              throw error;
-            }
-      
-      - name: Upload Blob Metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: blob-metadata
-          path: .gemini-output/metadata/*.json
-          retention-days: 7
-          if-no-files-found: warn
-
-  # ==========================================
   # JOB 3.5: Persistir Reviews no Supabase (Sprint 6)
   # ==========================================
   # Persiste os reviews parseados no Supabase para rastreamento
@@ -508,7 +401,7 @@ jobs:
   persist:
     name: Persist Reviews to Supabase
     runs-on: ubuntu-latest
-    needs: [detect, parse, upload-to-blob]
+    needs: [detect, parse]
     # Executa sempre que parse rodou com sucesso
     if: always() && needs.parse.result == 'success'
     env:

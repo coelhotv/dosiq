@@ -163,12 +163,15 @@ export function useCachedQueries(queries) {
   // Ref para acessar queries atualizadas dentro do effect sem re-disparar o effect
   // (evita render loop causado por [queries] como dependência)
   const queriesRef = useRef(queries)
-  queriesRef.current = queries
 
   const isMounted = useRef(true)
 
+  // Note: Using [queriesKey] instead of [queries] to prevent infinite render loops.
+  // We manually update queriesRef.current inside effect to access fresh query values.
+  // This is intentional — queriesKey is a stable string derived from query keys.
   useEffect(() => {
     isMounted.current = true
+    queriesRef.current = queries // Update ref inside effect (safe)
 
     const fetchAll = async () => {
       setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
@@ -196,6 +199,7 @@ export function useCachedQueries(queries) {
     return () => {
       isMounted.current = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queriesKey])  // Estável: só muda quando as query keys mudam
 
   // Estados combinados

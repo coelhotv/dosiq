@@ -368,7 +368,7 @@ export function clearCache() {
   if (typeof window !== 'undefined' && window.localStorage && process.env.NODE_ENV !== 'test') {
     try {
       localStorage.removeItem(CACHE_CONFIG.PERSIST_KEY)
-    } catch (error) {
+    } catch {
       // Silently ignore errors
     }
   }
