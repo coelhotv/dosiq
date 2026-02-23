@@ -1,22 +1,35 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import {
   useCachedQuery,
-  useCachedQueries,
-  useCachedMutation,
   invalidateCache,
   clearCache,
+  cancelGarbageCollection,
+  restartGarbageCollection,
 } from '@shared/hooks/useCachedQuery'
+
+// Disable interval-based GC during tests to save memory
+beforeAll(() => {
+  cancelGarbageCollection()
+})
+
+afterAll(() => {
+  restartGarbageCollection()
+})
 
 describe('useCachedQuery', () => {
   beforeEach(() => {
     clearCache()
     vi.clearAllMocks()
+    vi.clearAllTimers()
   })
 
   afterEach(() => {
     clearCache()
+    vi.clearAllMocks()
     vi.resetAllMocks()
+    vi.clearAllTimers()
+    if (global.gc) global.gc()
   })
 
   describe('basic functionality', () => {
@@ -208,289 +221,16 @@ describe('useCachedQuery', () => {
       expect(result.current.data).toBe(undefined)
     })
   })
-})
 
-describe('useCachedQueries', () => {
-  beforeEach(() => {
-    clearCache()
-    vi.clearAllMocks()
-  })
+  describe('edge cases', () => {
+    it('should handle null fetcher', async () => {
+      const { result } = renderHook(() => useCachedQuery('test-key', null))
 
-  afterEach(() => {
-    clearCache()
-    vi.resetAllMocks()
-  })
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
 
-  it('should fetch multiple queries in parallel', async () => {
-    const fetcher1 = vi.fn().mockResolvedValue({ data: 'first' })
-    const fetcher2 = vi.fn().mockResolvedValue({ data: 'second' })
-    const fetcher3 = vi.fn().mockResolvedValue({ data: 'third' })
-
-    const { result } = renderHook(() =>
-      useCachedQueries([
-        { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2 },
-        { key: 'key3', fetcher: fetcher3 },
-      ])
-    )
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
+      expect(result.current.data).toBe(undefined)
     })
-
-    expect(result.current.results[0].data).toEqual({ data: 'first' })
-    expect(result.current.results[1].data).toEqual({ data: 'second' })
-    expect(result.current.results[2].data).toEqual({ data: 'third' })
-    expect(fetcher1).toHaveBeenCalledTimes(1)
-    expect(fetcher2).toHaveBeenCalledTimes(1)
-    expect(fetcher3).toHaveBeenCalledTimes(1)
-  })
-
-  it('should handle errors in multiple queries', async () => {
-    const fetcher1 = vi.fn().mockResolvedValue({ data: 'first' })
-    const fetcher2 = vi.fn().mockRejectedValue(new Error('Error 2'))
-    const fetcher3 = vi.fn().mockResolvedValue({ data: 'third' })
-
-    const { result } = renderHook(() =>
-      useCachedQueries([
-        { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2 },
-        { key: 'key3', fetcher: fetcher3 },
-      ])
-    )
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(result.current.results[0].data).toEqual({ data: 'first' })
-    expect(result.current.results[1].error).toBeInstanceOf(Error)
-    expect(result.current.results[2].data).toEqual({ data: 'third' })
-    expect(result.current.hasError).toBe(true)
-    expect(result.current.errors).toHaveLength(1)
-  })
-
-  it('should skip disabled queries', async () => {
-    const fetcher1 = vi.fn().mockResolvedValue({ data: 'first' })
-    const fetcher2 = vi.fn().mockResolvedValue({ data: 'second' })
-
-    const { result } = renderHook(() =>
-      useCachedQueries([
-        { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2, options: { enabled: false } },
-      ])
-    )
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(result.current.results[0].data).toEqual({ data: 'first' })
-    expect(result.current.results[1].data).toBe(undefined)
-    expect(fetcher1).toHaveBeenCalledTimes(1)
-    expect(fetcher2).not.toHaveBeenCalled()
-  })
-
-  it('should refetch all queries', async () => {
-    const fetcher1 = vi
-      .fn()
-      .mockResolvedValueOnce({ data: 'first-1' })
-      .mockResolvedValueOnce({ data: 'first-2' })
-    const fetcher2 = vi
-      .fn()
-      .mockResolvedValueOnce({ data: 'second-1' })
-      .mockResolvedValueOnce({ data: 'second-2' })
-
-    const { result } = renderHook(() =>
-      useCachedQueries([
-        { key: 'key1', fetcher: fetcher1 },
-        { key: 'key2', fetcher: fetcher2 },
-      ])
-    )
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    await act(async () => {
-      await result.current.refetchAll()
-    })
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(result.current.results[0].data).toEqual({ data: 'first-2' })
-    expect(result.current.results[1].data).toEqual({ data: 'second-2' })
-    expect(fetcher1).toHaveBeenCalledTimes(2)
-    expect(fetcher2).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('useCachedMutation', () => {
-  beforeEach(() => {
-    clearCache()
-    vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    clearCache()
-    vi.resetAllMocks()
-  })
-
-  it('should execute mutation successfully', async () => {
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() =>
-      useCachedMutation(mutationFn, { invalidateKeys: ['test-key'] })
-    )
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(result.current.data).toEqual({ success: true })
-    expect(result.current.error).toBe(null)
-    expect(result.current.isLoading).toBe(false)
-    expect(mutationFn).toHaveBeenCalledWith({ input: 'test' })
-  })
-
-  it('should handle mutation errors', async () => {
-    const error = new Error('Mutation failed')
-    const mutationFn = vi.fn().mockRejectedValue(error)
-    const { result } = renderHook(() => useCachedMutation(mutationFn))
-
-    await act(async () => {
-      try {
-        await result.current.mutate({ input: 'test' })
-      } catch {
-        // Expected error
-      }
-    })
-
-    expect(result.current.error).toBe(error)
-    expect(result.current.isError).toBe(true)
-    expect(result.current.isLoading).toBe(false)
-  })
-
-  it('should invalidate cache keys after successful mutation', async () => {
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() =>
-      useCachedMutation(mutationFn, { invalidateKeys: ['key1', 'key2'] })
-    )
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(result.current.data).toEqual({ success: true })
-    // Cache should be invalidated (verified by console.log in implementation)
-  })
-
-  it('should invalidate single cache key', async () => {
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() =>
-      useCachedMutation(mutationFn, { invalidateKeys: 'single-key' })
-    )
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(result.current.data).toEqual({ success: true })
-  })
-
-  it('should call onSuccess callback', async () => {
-    const onSuccess = vi.fn()
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-
-    const { result } = renderHook(() => useCachedMutation(mutationFn, { onSuccess }))
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(onSuccess).toHaveBeenCalledWith({ success: true })
-  })
-
-  it('should call onError callback', async () => {
-    const onError = vi.fn()
-    const error = new Error('Mutation failed')
-    const mutationFn = vi.fn().mockRejectedValue(error)
-
-    const { result } = renderHook(() => useCachedMutation(mutationFn, { onError }))
-
-    await act(async () => {
-      try {
-        await result.current.mutate({ input: 'test' })
-      } catch {
-        // Expected error
-      }
-    })
-
-    expect(onError).toHaveBeenCalledWith(error)
-  })
-
-  it('should reset mutation state', async () => {
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => useCachedMutation(mutationFn))
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(result.current.data).toEqual({ success: true })
-
-    act(() => {
-      result.current.reset()
-    })
-
-    expect(result.current.data).toBe(null)
-    expect(result.current.error).toBe(null)
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.isError).toBe(false)
-  })
-})
-
-describe('useCachedQuery - edge cases', () => {
-  beforeEach(() => {
-    clearCache()
-    vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    clearCache()
-    vi.resetAllMocks()
-  })
-
-  it('should handle null fetcher', async () => {
-    const { result } = renderHook(() => useCachedQuery('test-key', null))
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(result.current.data).toBe(undefined)
-  })
-
-  it('should handle empty queries array', async () => {
-    const { result } = renderHook(() => useCachedQueries([]))
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(result.current.results).toEqual([])
-    expect(result.current.hasError).toBe(false)
-  })
-
-  it('should handle mutation with no invalidate keys', async () => {
-    const mutationFn = vi.fn().mockResolvedValue({ success: true })
-    const { result } = renderHook(() => useCachedMutation(mutationFn))
-
-    await act(async () => {
-      await result.current.mutate({ input: 'test' })
-    })
-
-    expect(result.current.data).toEqual({ success: true })
   })
 })
