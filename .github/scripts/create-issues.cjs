@@ -219,6 +219,62 @@ async function checkExistingIssue(hash) {
 }
 
 /**
+ * Decide se deve criar uma nova issue baseado no status existente
+ *
+ * Regras:
+ * - 'detected', 'reported', 'assigned' → NÃO criar (issue já existe)
+ * - 'resolved', 'wontfix', 'duplicate' → CRIAR (reativar)
+ * - null (não existe) → CRIAR (nova)
+ *
+ * @param {Object|null} existing - Registro existente ou null
+ * @returns {Object} Decisão: { shouldCreate: boolean, action: string }
+ */
+function shouldCreateIssue(existing) {
+  if (!existing) {
+    return { shouldCreate: true, action: 'create', reason: 'Nova issue' };
+  }
+
+  const { status } = existing;
+
+  // Estados ativos - não criar (issue já existe ou está em progresso)
+  const activeStatuses = ['detected', 'reported', 'assigned'];
+  if (activeStatuses.includes(status)) {
+    return {
+      shouldCreate: false,
+      action: 'skip',
+      reason: `Issue já existe com status '${status}'`,
+      existingIssue: existing
+    };
+  }
+
+  // Estados finais - permitir reativação
+  const reactivatableStatuses = ['resolved', 'wontfix', 'duplicate'];
+  if (reactivatableStatuses.includes(status)) {
+    return {
+      shouldCreate: true,
+      action: 'reactivate',
+      reason: `Reativando issue previamente '${status}'`,
+      existingIssue: existing
+    };
+  }
+
+  // Estados legados - tratar como ativos
+  const legacyStatuses = ['pendente', 'em_progresso', 'corrigido', 'descartado'];
+  if (legacyStatuses.includes(status)) {
+    return {
+      shouldCreate: false,
+      action: 'skip',
+      reason: `Issue com status legado '${status}'`,
+      existingIssue: existing
+    };
+  }
+
+  // Status desconhecido - logar warning mas permitir criação
+  console.warn(`⚠️  Status desconhecido '${status}', permitindo criação`);
+  return { shouldCreate: true, action: 'create', reason: 'Status desconhecido' };
+}
+
+/**
  * Cria uma issue no GitHub
  *
  * @param {Object} issue - Dados da issue do Supabase
@@ -309,7 +365,7 @@ function buildIssueBody(issue, prNumber) {
     issue.description || 'Sem descrição detalhada',
     ``,
     `### Sugestão`,
-    '```',
+    '```javascript',
     issue.suggestion || 'Nenhuma sugestão específica',
     '```',
     ``,
@@ -456,6 +512,7 @@ module.exports = {
   createIssuesFromReview,
   fetchPendingIssues,
   checkExistingIssue,
+  shouldCreateIssue,
   createGitHubIssue,
   updateReviewStatus,
   buildIssueBody,
