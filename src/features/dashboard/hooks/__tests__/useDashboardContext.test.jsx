@@ -1,6 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { useDashboard, DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
+
+// Mock all service dependencies so DashboardProvider never hits Supabase
+vi.mock('@medications/services/medicineService', () => ({
+  medicineService: {
+    getAll: vi.fn().mockResolvedValue([]),
+  },
+}))
+
+vi.mock('@protocols/services/protocolService', () => ({
+  protocolService: {
+    getActive: vi.fn().mockResolvedValue([]),
+  },
+}))
+
+vi.mock('@shared/services/api/logService', () => ({
+  logService: {
+    getByDateRange: vi.fn().mockResolvedValue({ data: [] }),
+  },
+}))
 
 describe('useDashboard', () => {
   beforeEach(() => {
@@ -22,9 +41,9 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    // Wait for initial load — polling until async fetches complete
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.medicines).toBeDefined()
@@ -32,7 +51,6 @@ describe('useDashboard', () => {
     expect(result.current.logs).toBeDefined()
     expect(result.current.stockSummary).toBeDefined()
     expect(result.current.stats).toBeDefined()
-    expect(result.current.isLoading).toBe(false)
   })
 
   it('should provide refresh function', async () => {
@@ -40,9 +58,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.refresh).toBeDefined()
@@ -54,9 +71,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.lastSync).toBeDefined()
@@ -68,9 +84,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.isDoseInToleranceWindow).toBeDefined()
@@ -82,9 +97,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.isFetching).toBeDefined()
@@ -96,9 +110,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.hasError).toBeDefined()
@@ -110,9 +123,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.stats).toBeDefined()
@@ -126,9 +138,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.stockSummary).toBeDefined()
@@ -140,9 +151,8 @@ describe('useDashboard', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.protocols).toBeDefined()
@@ -164,9 +174,8 @@ describe('useDashboard - Health Score Calculation', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.stats).toBeDefined()
@@ -179,9 +188,8 @@ describe('useDashboard - Health Score Calculation', () => {
       wrapper: DashboardProvider,
     })
 
-    // Wait for initial load
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
 
     expect(result.current.stats.rates).toBeDefined()

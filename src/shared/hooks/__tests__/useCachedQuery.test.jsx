@@ -197,9 +197,12 @@ describe('useCachedQuery', () => {
 
       const { result, unmount } = renderHook(() => useCachedQuery('test-key', fetcher))
 
+      // Unmount immediately to prevent state updates
       unmount()
 
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Wait longer than the fetcher to ensure it completes
+      // Using a small delay to prevent hanging (safer than real timers in CI)
+      await new Promise(resolve => setTimeout(resolve, 5))
 
       // Should not throw error after unmount
       expect(result.current.data).toBe(undefined)

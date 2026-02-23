@@ -169,5 +169,68 @@ callback_data: `reg_med:${medicineId}:${protocolId}`
 
 ---
 
+## Test Anti-Patterns (Testing Infrastructure Overhaul — 2026-02)
+
+### R-070: No `setTimeout` in `act()` Blocks [HIGH]
+**Rule:** Never use `setTimeout(resolve, N)` inside `act()` to "wait for component to load". Use `waitFor(() => expect(result.current.isLoading).toBe(false))` instead. Hardcoded delays fail when component takes longer than N milliseconds.
+
+**Source:** useDashboardContext.test.jsx (11 hanging instances before fix)
+
+```javascript
+// WRONG — hangs if component takes >100ms
+await act(async () => {
+  await new Promise(resolve => setTimeout(resolve, 100))
+})
+
+// CORRECT — polls until condition or timeout
+await waitFor(() => expect(result.current.isLoading).toBe(false))
+```
+
+### R-071: Mock External Services in Hook Tests [CRITICAL]
+**Rule:** Any hook test that renders a Provider which calls external services (Supabase, API) MUST mock those services at the module level with `vi.mock()`. Without mocks, the hook fires real network calls that hang indefinitely in test environments.
+
+**Source:** useDashboardContext.test.jsx — no mocks for medicineService, protocolService, logService
+
+```javascript
+// Required at the top of any test file that uses DashboardProvider
+vi.mock('@medications/services/medicineService', () => ({
+  medicineService: { getAll: vi.fn().mockResolvedValue([]) },
+}))
+```
+
+### R-072: Always Resolve Dangling Promises [HIGH]
+**Rule:** When a test creates a manually-controlled Promise (capturing `resolve` from the executor), ALWAYS resolve it in a `finally` block. If an assertion fails before the manual `resolve()` call, the Promise stays pending and Vitest hangs waiting for it.
+
+**Source:** StockForm.test.jsx "disable buttons while submitting" test
+
+```javascript
+// WRONG — resolveSave() never called if waitFor throws
+resolveSave()  // ← orphaned if assertion above fails
+
+// CORRECT
+try {
+  await waitFor(() => { expect(...).toBeInTheDocument() })
+} finally {
+  resolveSave?.()
+}
+```
+
+### R-073: Use Fake Timers for Timer-Dependent Tests [MEDIUM]
+**Rule:** Tests that depend on real elapsed time (e.g., "wait 150ms for 100ms async to settle") are inherently flaky in CI. Use `vi.useFakeTimers()` and `vi.runAllTimersAsync()` for deterministic control. Always call `vi.useRealTimers()` in `afterEach` or `finally`.
+
+**Source:** useCachedQuery.test.jsx "should not update state after unmount"
+
+### R-074: Use `validate:agent` for Agent Sessions [HIGH]
+**Rule:** When running tests from an agent session, always use `npm run validate:agent` (not `validate:quick` or `validate:full`). The wrapper enforces a 10-minute kill switch. If test suite needs more than 10 minutes, it indicates broken tests that need fixing, not a higher timeout.
+
+**Source:** Testing Infrastructure Overhaul 2026-02
+
+**Exit codes:**
+- `0` — Tests passed
+- `1` — Tests failed
+- `124` — Timeout exceeded (kill after 10min)
+
+---
+
 *Last updated: 2026-02-22*
-*Rules: R-001 to R-065*
+*Rules: R-001 to R-074*

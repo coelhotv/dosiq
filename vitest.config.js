@@ -29,15 +29,20 @@ export default defineConfig({
     // OTIMIZAÇÕES PARA VITEST 4+ (Testing Infrastructure Overhaul)
     // ==========================================
 
-    // Executar apenas 1 thread para evitar sobrecarga
+    // Vitest 4+ API — pool options dentro de poolOptions
     pool: 'threads',
-    singleThread: true,
-    maxThreads: 1,
-    minThreads: 1,
+    poolOptions: {
+      threads: {
+        singleThread: true,
+        maxThreads: 1,
+        minThreads: 1,
+      },
+    },
 
-    // Limites de tempo mais generosos
-    testTimeout: 30000,
+    // Limites de tempo mais rigorosos (10s suficiente para testes bem escritos)
+    testTimeout: 10000,
     hookTimeout: 10000,
+    teardownTimeout: 5000,
 
     // Incluir TODOS os testes (incluindo components/ e features/)
     include: ['src/**/*.test.{js,jsx}'],

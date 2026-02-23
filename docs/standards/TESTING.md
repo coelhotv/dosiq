@@ -522,28 +522,165 @@ export default defineConfig({
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "vitest run --config vitest.smoke.config.js",
+    "test:critical": "vitest run --config vitest.critical.config.js",
+    "test:unit": "vitest run --config vitest.config.js",
     "test:changed": "vitest run --changed=main",
     "test:coverage": "vitest run --config vitest.ci.config.js",
     "test:components": "vitest run 'src/**/components/**/__tests__/*.test.jsx'",
     "test:services": "vitest run 'src/**/services/**/__tests__/*.test.js'",
-    "validate": "npm run lint && npm run test",
-    "validate:quick": "npm run lint && npm run test:changed",
-    "validate:full": "npm run lint && npm run test:coverage && npm run build"
+    "validate:quick": "npm run lint && node scripts/run-tests-with-timeout.mjs 300 npm run test:changed",
+    "validate:agent": "node scripts/run-tests-with-timeout.mjs 600 npm run -- test:critical --bail=1",
+    "validate:full": "npm run lint && node scripts/run-tests-with-timeout.mjs 900 npm run test:coverage && npm run build"
   }
 }
 ```
 
 ### Quando Usar Cada Comando
 
-| Situação | Comando | Tempo |
-|----------|---------|-------|
-| Durante desenvolvimento | `npm run test:watch` | Contínuo |
-| Antes de commit | `npm run test:changed` | ~30s |
-| Pre-push (manual) | `npm run validate` | ~3 min |
-| CI/CD | `npm run test:coverage` | ~5 min |
-| Debug de build | `npm run test:smoke` | ~10s |
-| Testar apenas componentes | `npm run test:components` | ~1 min |
-| Testar apenas services | `npm run test:services` | ~2 min |
+| Situação | Comando | Timeout | Tempo Real |
+|----------|---------|---------|-----------|
+| Durante desenvolvimento | `npm run test:watch` | — | Contínuo |
+| Antes de commit (rápido) | `npm run test:changed` | 5 min | ~30s |
+| Validação para agentes | `npm run validate:agent` | **10 min** | ~3 min |
+| Validação pré-push (humano) | `npm run test:smoke` | 5 min | ~10s |
+| Suite crítica completa | `npm run test:critical` | — | ~3 min |
+| Testes unitários completos | `npm run test:unit` | — | ~8 min |
+| Com cobertura (CI/CD) | `npm run validate:full` | **15 min** | ~10 min |
+| Debug/desenvolvimento isolado | `npm run test:components` | — | ~1 min |
+
+---
+
+## Timeout Policy e Anti-Padrões de Hang
+
+### Princípio
+
+Toda execução de testes **TEM um limite de tempo global**. Testes que demoram mais de 10-20 minutos destroem a agilidade de desenvolvimento e bloqueiam agentes de programação. Múltiplas camadas de proteção evitam travamentos.
+
+### Limites de Timeout Global
+
+Executados via `scripts/run-tests-with-timeout.mjs` (wrapper Node.js cross-platform):
+
+| Contexto | Timeout | Script | Por quê |
+|----------|---------|--------|---------|
+| **Agente de programação** | 10 min | `validate:agent` | Fail-fast, testes críticos apenas |
+| **Validação rápida** | 5 min | `validate:quick` | Apenas arquivos changed since main |
+| **Suite completa** | 15 min | `validate:full` | Full coverage + build |
+
+### Anti-Padrões Proibidos que Causam Hang
+
+#### AP-T01: `setTimeout` Hardcoded em `act()`
+
+**Problema:** Timing-dependent; falha se componente leva mais de N ms para renderizar.
+
+```javascript
+// ❌ PROIBIDO — pode travar indefinidamente
+await act(async () => {
+  await new Promise(resolve => setTimeout(resolve, 100))
+})
+```
+
+**Solução:** Use `waitFor()` com polling:
+
+```javascript
+// ✅ CORRETO — polling automático até condition ou timeout
+await waitFor(() => {
+  expect(result.current.isLoading).toBe(false)
+})
+```
+
+#### AP-T02: Promise Sem Garantia de Resolução
+
+**Problema:** Se assertion falhar antes de `resolve()` ser chamado, promise fica pendente para sempre.
+
+```javascript
+// ❌ PROIBIDO — resolveSave() nunca executado se waitFor() falhar
+let resolveSave
+mock.mockImplementation(() => new Promise(r => { resolveSave = r }))
+await waitFor(() => { expect(...).toBeDefined() })
+resolveSave() // ← Orphaned se expect acima falhar
+```
+
+**Solução:** Envolver em `try/finally`:
+
+```javascript
+// ✅ CORRETO
+try {
+  await waitFor(() => { expect(...).toBeDefined() })
+} finally {
+  resolveSave?.()  // Sempre executado, mesmo com erro
+}
+```
+
+#### AP-T03: Timers Reais em Testes de Cancelamento/Cleanup
+
+**Problema:** Timing frágil em CI — 150ms em máquina local pode não ser suficiente sob carga.
+
+```javascript
+// ❌ PROIBIDO — flaky em CI
+unmount()
+await new Promise(resolve => setTimeout(resolve, 150))
+expect(result.current.data).toBe(undefined)
+```
+
+**Solução:** Use fake timers para controle determinístico:
+
+```javascript
+// ✅ CORRETO
+vi.useFakeTimers()
+unmount()
+await vi.runAllTimersAsync()  // Drena todos os timers, determinístico
+expect(result.current.data).toBe(undefined)
+vi.useRealTimers()
+```
+
+#### AP-T04: Serviços Externos Sem Mock em Testes de Hooks com Provider
+
+**Problema:** Hook que chama Provider que chama Supabase real sem env vars → promise nunca resolve → hang.
+
+```javascript
+// ❌ PROIBIDO — DashboardProvider chama medicineService.getAll() sem mock
+const { result } = renderHook(() => useDashboard(), {
+  wrapper: DashboardProvider,
+})
+```
+
+**Solução:** Mock todos os serviços antes do `describe`:
+
+```javascript
+// ✅ CORRETO — mockar no top-level (Vitest hoists vi.mock)
+vi.mock('@medications/services/medicineService', () => ({
+  medicineService: { getAll: vi.fn().mockResolvedValue([]) },
+}))
+vi.mock('@protocols/services/protocolService', () => ({
+  protocolService: { getActive: vi.fn().mockResolvedValue([]) },
+}))
+```
+
+### Limites de Timeout por Nível
+
+| Nível | Valor | Config |
+|-------|-------|--------|
+| **Teste individual** | 10s | `testTimeout: 10000` |
+| **Hook lifecycle** | 10s | `hookTimeout: 10000` |
+| **Cleanup após teste** | 5s | `teardownTimeout: 5000` |
+| **Suíte crítica** | 10 min | wrapper `run-tests-with-timeout.mjs 600` |
+| **Suíte completa** | 15 min | wrapper `run-tests-with-timeout.mjs 900` |
+
+### Quando um Teste Fica em Exclusão Temporária
+
+Se um teste deve ser excluído do `vitest.critical.config.js`:
+
+1. **OBRIGATÓRIO:** Adicionar comentário com `// TODO: FIXME — <issue link>`
+2. **OBRIGATÓRIO:** Criar GitHub issue descrevendo o problema
+3. **OBRIGATÓRIO:** Resolver dentro de **2 semanas**
+4. **Consequência:** Após 2 semanas, teste é removido da suite inteira (coverage fica vermelha)
+
+Exemplo:
+```javascript
+// Temporário — exclusão de 2 semanas (resolver até 2026-03-08)
+// TODO: FIXME — https://github.com/project/issues/123
+'src/shared/hooks/__tests__/useCachedQuery.test.jsx',
+```
 
 ---
 

@@ -412,13 +412,15 @@ describe('StockForm', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Cancelar/i })).toBeDisabled()
-        expect(screen.getByRole('button', { name: /Salvando/i })).toBeInTheDocument()
-      })
-
-      // Resolve the promise
-      resolveSave()
+      try {
+        await waitFor(() => {
+          expect(screen.getByRole('button', { name: /Cancelar/i })).toBeDisabled()
+          expect(screen.getByRole('button', { name: /Salvando/i })).toBeInTheDocument()
+        })
+      } finally {
+        // Always resolve the promise to prevent test runner from hanging
+        resolveSave?.()
+      }
     })
 
     it('should display error when onSave throws', async () => {

@@ -38,6 +38,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
 
+    // Fail fast: abort after first failing test file
+    bail: 1,
+
     // Apenas testes críticos (excluir componentes UI e smoke)
     include: [
       'src/services/**/*.test.{js,jsx}',
@@ -56,11 +59,6 @@ export default defineConfig({
       'src/shared/components/**/*',
       'src/features/**/components/**/*', // Excluir UI components de features
       'node_modules/',
-      // TEMPORÁRIO: Excluir testes com problemas (unhandled rejections, env issues)
-      // TODO: Fixar estes testes para funcionar no CI sem env vars
-      'src/shared/hooks/__tests__/useCachedQuery.test.jsx',
-      'src/features/dashboard/hooks/__tests__/useDashboardContext.test.jsx',
-      'src/services/__tests__/api.test.js',
     ],
 
     // Pool otimizado para CI - forks usa menos memória que threads
@@ -71,9 +69,10 @@ export default defineConfig({
       },
     },
 
-    // Timeouts generosos para execução sequencial
-    testTimeout: 15000,
+    // Timeouts rigorosos
+    testTimeout: 10000,
     hookTimeout: 10000,
+    teardownTimeout: 5000,
 
     // Reporter minimalista
     reporters: ['dot'],
