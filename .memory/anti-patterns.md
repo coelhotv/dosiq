@@ -28,5 +28,22 @@
 
 ---
 
-*Last updated: 2026-02-22*
-*Anti-patterns: AP-001 to AP-023*
+## Testing Anti-Patterns (2026-02-23)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-T01 | Use parallel threads (>1) without testing for race conditions | Tests pass locally, fail in CI; unpredictable hangs | Default: 1 thread (`npm run test:fast`). Use `--maxThreads=2` only if test isolation verified | R-081 |
+| AP-T02 | Skip test cleanup (cache, mocks, timers) | Memory accumulation, OOM on 8GB machines, state leaks between tests | Call `afterEach()`: `clearCache()`, `vi.clearAllMocks()`, `vi.clearAllTimers()`, `if (global.gc) global.gc()` | R-078 |
+| AP-T03 | Store data in localStorage during tests | ~200MB memory waste per test suite run | Check `process.env.NODE_ENV === 'test'` and skip persistence in tests | R-076 |
+| AP-T04 | Leave `setInterval()` running during test suite | Garbage collection never runs, memory grows indefinitely | Export `cancelGarbageCollection()` / `restartGarbageCollection()` and call in test hooks | R-077 |
+| AP-T05 | Test file >300 lines with multiple unrelated test suites | Memory accumulation in single worker, OOM on 8GB machines | Split by scope: one hook/component per file (e.g., `useCachedQuery.test.jsx` + separate `useCachedQueries.test.jsx`) | R-079 |
+| AP-T06 | Hardcode `setTimeout()` for timing in `act()` blocks | Timing-dependent, flaky in CI; can timeout unexpectedly | Use `vi.useFakeTimers()` + `vi.runAllTimersAsync()` OR `waitFor()` polling (no hardcoded delays) | R-073 |
+| AP-T07 | Resolve Promise only after assertion without `finally` | If assertion fails, Promise stays pending → Vitest hangs indefinitely | Wrap in `try/finally`: resolve always happens, even on error | R-072 |
+| AP-T08 | Run full test suite on every commit locally | Blocks development, 6.5 min wait time discourages testing | Use `npm run test:changed` (30s) before commit, full suite only on push or before merge | — |
+| AP-T09 | Ignore timeout warnings on slow tests | Tests >15s can trigger 10-min kill switch in agents, fail CI | Optimize slow tests: mock expensive operations, use fake timers, reduce setup overhead | — |
+| AP-T10 | Use `new Date()` in tests without timezone awareness | Tests pass in GMT but fail in GMT-3 (local); date off by 1 day | Always use `parseLocalDate()` or `new Date(str + 'T00:00:00')` for date comparisons | R-020 |
+
+---
+
+*Last updated: 2026-02-23*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10*
