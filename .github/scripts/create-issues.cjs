@@ -442,40 +442,6 @@ function shouldCreateIssueLegacy(issue) {
  * @param {Object} context - Contexto
  * @returns {Promise<Object|null>} Issue existente ou null
  */
-async function findSimilarIssue(issue, github, context) {
-  const { owner, repo } = context.repo;
-
-  // Buscar issues abertas com label gemini-refactor
-  const { data: issues } = await github.rest.issues.listForRepo({
-    owner,
-    repo,
-    state: 'open',
-    labels: REFACTOR_LABELS.GEMINI_REFACTOR,
-    per_page: 100
-  });
-
-  // Verificar se alguma issue menciona o mesmo arquivo e linha similar
-  for (const existingIssue of issues) {
-    const titleMatch = existingIssue.title.match(/\[Refactor\]\s+([^:]+):/);
-    const existingFile = titleMatch ? titleMatch[1] : null;
-    const currentFile = issue.file?.split('/').pop();
-
-    if (existingFile && currentFile && existingFile === currentFile) {
-      const bodyMatch = existingIssue.body?.match(/linha\s+(\d+)/);
-      const existingLine = bodyMatch ? parseInt(bodyMatch[1], 10) : null;
-
-      if (existingLine && issue.line) {
-        const lineDiff = Math.abs(existingLine - issue.line);
-        if (lineDiff <= 5) {
-          return existingIssue;
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
 // ============================================================================
 // CLI INTERFACE
 // ============================================================================
@@ -516,9 +482,6 @@ module.exports = {
   createGitHubIssue,
   updateReviewStatus,
   buildIssueBody,
-
-  // Funções legadas (para compatibilidade)
-  findSimilarIssue,
 
   // Constantes
   REFACTOR_LABELS
