@@ -88,7 +88,7 @@ export const REVIEW_PRIORITY_LABELS = {
  * Categorias possíveis (em português)
  * @readonly
  */
-export const REVIEW_CATEGORIES = ['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade']
+export const REVIEW_CATEGORIES = ['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade', 'general']
 
 /**
  * Labels para exibição das categorias
@@ -100,6 +100,7 @@ export const REVIEW_CATEGORY_LABELS = {
   seguranca: 'Segurança',
   performance: 'Performance',
   manutenibilidade: 'Manutenibilidade',
+  general: 'Geral',
 }
 
 // ============================================================================

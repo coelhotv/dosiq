@@ -24,8 +24,9 @@
 | AP-020 | Code agent merging its own PR | Unreviewed code, conflicts of interest | Separate responsibilities: Code creates, DevOps merges | R-060 |
 | AP-021 | Skipping Gemini Code Assist review to save time | Missed CRITICAL/HIGH issues, production bugs | Always wait for Gemini review, address all CRITICAL/HIGH | R-062 |
 | AP-022 | Sequential task creation without validation gates | Accumulated errors, no quality checkpoints | Pause between tasks for review, use quality gates | R-061 |
+| AP-023 | Not reading memory files before coding | Repeated mistakes, rule violations, wasted effort | **ALWAYS read `.memory/rules.md` and `.memory/anti-patterns.md` before coding** (R-065) | R-065 |
 
 ---
 
 *Last updated: 2026-02-22*
-*Anti-patterns: AP-001 to AP-022*
+*Anti-patterns: AP-001 to AP-023*

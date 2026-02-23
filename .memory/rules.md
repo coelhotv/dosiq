@@ -156,7 +156,18 @@ callback_data: `reg_med:${medicineId}:${protocolId}`
 **Rule:** The rigorous workflow exists to prevent errors. Never skip steps "just this once." Process violations compound into production failures.
 **Source:** journal/2026-W09 (coordination failure)
 
+### R-065: Read Memory Before Coding [CRITICAL]
+**Rule:** Every Code agent MUST read `.memory/rules.md` and `.memory/anti-patterns.md` BEFORE writing any code. This prevents repeating known mistakes and ensures compliance with project standards.
+
+**Required sequence:**
+1. Read `.memory/rules.md` → Note relevant R-NNN rules
+2. Read `.memory/anti-patterns.md` → Note relevant AP-NNN patterns
+3. Check for duplicate files (R-001)
+4. Only then start coding
+
+**Source:** Agent feedback from PR #132 review process
+
 ---
 
 *Last updated: 2026-02-22*
-*Rules: R-001 to R-063*
+*Rules: R-001 to R-065*

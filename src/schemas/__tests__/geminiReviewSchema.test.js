@@ -54,6 +54,7 @@ describe('Gemini Review Schema', () => {
         'seguranca',
         'performance',
         'manutenibilidade',
+        'general',
       ])
     })
   })
