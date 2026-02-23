@@ -110,16 +110,17 @@ npm run test         # All tests (run once)
 npm run test:watch   # Tests in watch mode (local dev)
 npm run test:smoke   # Smoke tests only (~10s)
 npm run test:critical # Critical tests (services, utils, schemas, hooks)
-npm run test:changed # Only changed files since main
+npm run test:unit    # All unit tests without coverage (~8 min)
+npm run test:changed # Only changed files since main (~30s)
 npm run test:components # Components (src/components + src/shared/components)
 npm run test:services   # Services + features (src/services + src/features)
 npm run test:coverage   # Full suite with coverage report (CI)
 
-# Validation
+# Validation (all include timeout protection)
 npm run lint          # ESLint check
-npm run validate      # Lint + all tests
-npm run validate:quick # Lint + test:changed (fastest pre-commit check)
-npm run validate:full  # Lint + coverage + build (full CI)
+npm run validate:agent # **AGENTS USE THIS**: critical tests + bail-fast + 10min timeout
+npm run validate:quick # Lint + test:changed + 5min timeout (pre-commit)
+npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 ```
 
 ---
@@ -151,7 +152,8 @@ src/features/medications/services/
 | `*.schema.js` | `npm run test:critical` | Schemas are critical validation |
 | `*.util.js` | `npm run test:critical` | Pure functions |
 | `*.jsx` (component) | `npm run test:components` | UI components |
-| Any file | `npm run test:changed` | Quick check before commit |
+| Any file (agent session) | `npm run validate:agent` | Timeout + bail-fast (10 min) |
+| Any file (pre-commit) | `npm run test:changed` | Quick check before commit |
 
 **📖 Complete guide**: [`docs/standards/TESTING.md`](docs/standards/TESTING.md)
 
@@ -281,8 +283,9 @@ All lessons learned, rules, and domain knowledge are stored in [`.memory/`](.mem
 | Large datasets (>1000 rows) | API | Memory optimization |
 
 #### Test Command Selection
-| File Type | Command | Rationale |
-|-----------|---------|-----------|
+| Contexto | Comando | Rationale |
+|----------|---------|-----------|
+| Agente — validação rápida | `npm run validate:agent` | Timeout 10min + bail-fast |
 | `*.service.js` | `npm run test:critical` | Business logic |
 | `*.schema.js` | `npm run test:critical` | Critical validation |
 | `*.util.js` | `npm run test:critical` | Pure functions |

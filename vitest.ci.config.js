@@ -38,13 +38,18 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
     ],
     
-    // Pool otimizado para CI
+    // Pool otimizado para CI — Vitest 4+ API
     pool: 'threads',
-    maxThreads: 2,
-    minThreads: 1,
-    
-    testTimeout: 30000,
+    poolOptions: {
+      threads: {
+        maxThreads: 2,
+        minThreads: 1,
+      },
+    },
+
+    testTimeout: 15000,
     hookTimeout: 10000,
+    teardownTimeout: 5000,
     
     // Coverage habilitado
     coverage: {

@@ -25,12 +25,19 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
     include: ['src/**/*.smoke.test.{js,jsx}'],
     
-    // Vitest 4+ API (removed deprecated poolOptions.threads)
+    // Vitest 4+ API — pool options dentro de poolOptions
     pool: 'threads',
-    maxThreads: 1,
-    minThreads: 1,
-    
+    poolOptions: {
+      threads: {
+        singleThread: true,
+        maxThreads: 1,
+        minThreads: 1,
+      },
+    },
+
     testTimeout: 5000,
+    hookTimeout: 10000,
+    teardownTimeout: 5000,
     reporters: ['dot'],
   },
 })
