@@ -217,4 +217,93 @@ Every delegation to Code mode MUST include:
 
 ---
 
-*Last updated: 2026-02-22*
+## Test Suite Strategy (2026-02-23)
+
+### Execution Modes by Context
+
+| Context | Command | Config | Threads | Duration | Use Case | Risk |
+|---------|---------|--------|---------|----------|----------|------|
+| **Local Development (Recommended)** | `npm run test:fast` | vitest.config.js | 1 thread | ~6.5 min | Daily development, before commit | None |
+| Fast Iteration (Risky) | `npx vitest run --singleThread=false --maxThreads=2` | vitest.config.js | 2 threads | ~3-4 min | When speed critical, verify test isolation first | Race conditions |
+| Low-RAM Machines (8GB) | `npm run test:lowram` | vitest.lowram.config.js | Sequential | ~20 min | Before push if test:fast fails with OOM | None (but slow) |
+| Agent Validation | `npm run validate:agent` | vitest.critical.config.js | 4+ threads | <10 min | Automated validation, kill-switch enforced | None (timeout protection) |
+| CI/CD (GitHub Actions) | `npm run validate:full` | vitest.ci.config.js | 4+ threads | <5 min | Production validation, full coverage | None (unlimited resources) |
+
+**Decision Tree:**
+```
+Running locally?
+├─ Yes: Use npm run test:fast (1 thread, safe) ✅
+│  ├─ Takes too long (>10 min)? → Optimize slow tests, don't use --maxThreads=2
+│  └─ Fails with OOM? → Use npm run test:lowram
+└─ No (agent/CI): Timeout protection auto-enforced ✅
+```
+
+### Performance Baseline
+
+- **26 test files** × **~5-15 seconds each** (depending on mocks/setup)
+- **1 thread**: ~6.5-10 minutes (sequential overhead ~3s per file)
+- **2 threads**: ~3-5 minutes (parallelism, but race condition risk)
+- **Sequential (lowram)**: ~20 minutes (memory optimal, time pessimal)
+- **4+ threads (CI/CD)**: ~2-3 minutes (unlimited resources)
+
+### Test File Organization
+
+**Rules:**
+- Keep test files **<300 lines**
+- One logical unit per file (one hook, one component, one service)
+- Split by feature/scope, not by test type
+- Pattern: `{source}.test.jsx` (main tests) + separate files for related tests
+
+**Good:**
+```
+useCachedQuery.test.jsx (12 tests, 230 lines) ← main hook
+useCachedQueries.test.jsx (4 tests, 140 lines) ← parallel variant
+useCachedMutation.test.jsx (7 tests, 140 lines) ← mutation behavior
+```
+
+**Bad:**
+```
+queryHooks.test.jsx (23 tests, 500+ lines) ← everything mixed
+```
+
+### Cache Architecture Optimizations
+
+**SWR Pattern with Cleanup:**
+```javascript
+beforeAll(() => {
+  cancelGarbageCollection()  // Disable during tests
+  // Disable localStorage to save memory
+})
+
+afterEach(() => {
+  clearCache()              // Reset cache state
+  vi.clearAllMocks()        // Reset mocks
+  vi.clearAllTimers()       // Stop fake timers
+  if (global.gc) global.gc() // Hint GC (low-RAM machines)
+})
+
+afterAll(() => {
+  restartGarbageCollection() // Resume cleanup
+})
+```
+
+### Timeout Strategy
+
+- **Individual test**: `testTimeout: 10000` (10s) — fail fast if too slow
+- **Hook timeout**: `hookTimeout: 10000` (10s)
+- **Teardown**: `teardownTimeout: 5000` (5s)
+- **Agent kill-switch**: `validate:agent` enforces 10-min global timeout (exit code 124)
+- **No timeout** for `npm run test:fast` (local user can cancel)
+
+### Race Condition Danger Zone
+
+Parallel execution (>1 thread) risks:
+- ✅ **Safe**: Pure unit tests, mocked dependencies, no shared state
+- ❌ **Risky**: Tests sharing localStorage, global cache, fake timers
+- ❌ **Very Risky**: Tests modifying Supabase mocks, shared DOM
+
+**Default: 1 thread** — safest baseline. Parallelize only after verifying test isolation.
+
+---
+
+*Last updated: 2026-02-23*
