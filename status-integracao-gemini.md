@@ -54,16 +54,36 @@ Criar um pipeline automatizado de revisão de código usando o Gemini Code Assis
 │  GitHub Actions │ ─────────────────→│  Vercel          │ ──────────────────→ │ Supabase  │
 │  (Workflow)     │    (5 min exp)    │  Serverless      │    (server-side)    │ (Postgres)│
 └─────────────────┘                   │  Functions       │                     └───────────┘
-                                      └──────────────────┘
-                                              │
-                                              │ Rate Limit: 60 req/min
-                                              │ Retry: Exponential backoff
-                                              ▼
-                                       ┌──────────────┐
-                                       │  GitHub API  │
-                                       │  (Issues)    │
-                                       └──────────────┘
+        │                             └──────────────────┘
+        │                                     │
+        │ upload-to-blob                      │ Rate Limit: 60 req/min
+        │ (JSON transport)                    │ Retry: Exponential backoff
+        ▼                                     ▼
+┌─────────────────┐                   ┌──────────────┐
+│  Vercel Blob    │                   │  GitHub API  │
+│  (7-day TTL)    │                   │  (Issues)    │
+└─────────────────┘                   └──────────────┘
 ```
+
+#### Vercel Blob - Camada de Transporte
+
+O Vercel Blob é usado como **camada de transporte temporário** para dados JSON entre jobs do GitHub Actions e endpoints Vercel:
+
+| Característica | Valor | Propósito |
+|----------------|-------|-----------|
+| **TTL** | 7 dias | Armazenamento temporário |
+| **Access** | Privado | Requer token de autenticação |
+| **Path Pattern** | `reviews/pr-{n}/review-{ts}.json` | Único por PR + timestamp |
+| **Conteúdo** | Parsed Gemini review JSON | Dados estruturados dos issues |
+
+**Fluxo de Dados:**
+1. `parse` job gera JSON estruturado
+2. `upload-to-blob` job faz upload para Vercel Blob
+3. `persist` e `create-issues` jobs passam `blob_url` para endpoints Vercel
+4. Endpoints baixam JSON do blob e processam
+5. Dados persistidos no Supabase (source of truth)
+
+**Nota:** O Blob **não é source of truth** - Supabase mantém esse papel com deduplicação por hash SHA-256.
 
 ---
 
@@ -457,9 +477,9 @@ Validação completa do workflow realizada com sucesso:
 │          │                        ▼                                    │
 │          │                 ┌──────────────┐                           │
 │          │                 │  Vercel Blob │                           │
-│          │                 │  (JSON cache)│                           │
-│          │                 └──────────────┘                           │
-│          ▼                                                            │
+│          │                 │  (JSON cache)│  ← Transporte temporário   │
+│          │                 └──────────────┘    (7 dias TTL)            │
+│          ▼                                        NÃO é source of truth│
 │  ┌─────────────────┐                                                  │
 │  │  GitHub API     │                                                  │
 │  │  (Issues)       │                                                  │
@@ -467,6 +487,7 @@ Validação completa do workflow realizada com sucesso:
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  Segurança: JWT (5min) | Rate Limit: 60/min | Retry: Exponential       │
+│  Transporte: Vercel Blob (privado, 7 dias TTL)                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -481,11 +502,13 @@ Validação completa do workflow realizada com sucesso:
 | Create Issues Endpoint | [`api/gemini-reviews/create-issues.js`](api/gemini-reviews/create-issues.js) |
 | Update Status Endpoint | [`api/gemini-reviews/update-status.js`](api/gemini-reviews/update-status.js) |
 | Security Utils | [`api/gemini-reviews/shared/security.js`](api/gemini-reviews/shared/security.js) |
+| Blob Upload Script | [`.github/scripts/upload-to-vercel-blob.cjs`](.github/scripts/upload-to-vercel-blob.cjs) |
 | Schema | [`src/schemas/geminiReviewSchema.js`](src/schemas/geminiReviewSchema.js) |
 | Service | [`src/services/api/geminiReviewService.js`](src/services/api/geminiReviewService.js) |
 | Monitoramento | [`docs/operations/MONITORING_VERCEL_ENDPOINTS.md`](docs/operations/MONITORING_VERCEL_ENDPOINTS.md) |
 | Protocolo de Agentes | [`docs/standards/GEMINI_AGENT_PROTOCOL.md`](docs/standards/GEMINI_AGENT_PROTOCOL.md) |
 | Integração | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) |
+| Análise de Blobs | [`plans/vercel-blobs-analysis.md`](plans/vercel-blobs-analysis.md) |
 | Este Documento | `status-integracao-gemini.md` |
 
 ---
