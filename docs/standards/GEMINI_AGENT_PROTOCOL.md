@@ -1,8 +1,41 @@
-# Protocolo Padronizado para Agents - Gemini Reviews
+e# Protocolo Padronizado para Agents - Gemini Reviews
 
 > **Documentação formal do protocolo de comunicação entre sistema de reviews do Gemini e agents de IA**
-> **Versão:** 1.0.0 | Última atualização: 2026-02-22
+> **Versão:** 1.1.0 | Última atualização: 2026-02-24
 > **Público-alvo:** Agents de IA e desenvolvedores
+
+---
+
+## 📐 Arquitetura de Dados
+
+### Visão Geral
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  GitHub Actions │────▶│  Vercel API      │────▶│  Supabase       │
+│  Workflow       │ JWT │  Endpoints       │ SRK │  Database       │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │                                                 │
+        │                                                 │
+        ▼                                                 ▼
+┌─────────────────┐                             ┌─────────────────┐
+│  Vercel Blob    │                             │  Source of      │
+│  (Transporte)   │                             │  Truth          │
+└─────────────────┘                             └─────────────────┘
+```
+
+### Camada de Transporte (Vercel Blob)
+
+O Vercel Blob é usado como **transporte temporário** entre GitHub Actions e Vercel Endpoints:
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **TTL** | 7 dias |
+| **Access** | Privado (token required) |
+| **Conteúdo** | JSON estruturado do review |
+| **Papel** | Transporte, NÃO persistência |
+
+⚠️ **Importante:** Agents devem sempre consultar o Supabase para dados persistentes. O Blob é apenas para transporte interno do workflow.
 
 ---
 
@@ -660,6 +693,7 @@ app.post('/webhook/gemini', async (req, res) => {
 
 | Versão | Data | Descrição |
 |--------|------|-----------|
+| 1.1.0 | 2026-02-24 | Adicionada seção de arquitetura de dados com Vercel Blob |
 | 1.0.0 | 2026-02-22 | Versão inicial do protocolo |
 
 ---

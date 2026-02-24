@@ -1,7 +1,7 @@
 # Gemini Code Assist Integration
 
 > **Documentação oficial da integração GitHub Actions + Gemini Code Assist**  
-> **Versão:** 1.0.0 | Última atualização: 2026-02-19
+> **Versão:** 1.1.0 | Última atualização: 2026-02-24
 
 ---
 
@@ -16,6 +16,30 @@ O projeto **Meus Remédios** utiliza o [Gemini Code Assist](https://cloud.google
 ---
 
 ## 🏗️ Arquitetura
+
+### Visão Geral da Arquitetura
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  GitHub Actions │────▶│  Vercel API      │────▶│  Supabase       │
+│  Workflow       │ JWT │  Endpoints       │ SRK │  Database       │
+│                 │     │                  │     │                 │
+│ • detect        │     │ • persist.js     │     │ • gemini_       │
+│ • parse         │     │ • create-issues  │     │   reviews       │
+│ • upload-to-blob│     │ • update-status  │     │                 │
+│ • persist       │     │                  │     │ SOURCE OF TRUTH │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │                        │
+        │                        ▼
+        │                 ┌──────────────┐
+        │                 │  GitHub API  │
+        │                 │  (Issues)    │
+        ▼                 └──────────────┘
+┌─────────────────┐
+│  Vercel Blob    │  ← Transporte temporário (7 dias TTL)
+│  (JSON cache)   │    NÃO é source of truth
+└─────────────────┘
+```
 
 ### Fluxo de Revisão
 
@@ -58,8 +82,75 @@ flowchart TD
 |------------|---------|--------|
 | **Workflow** | `.github/workflows/gemini-review.yml` | Orquestra toda a integração |
 | **Parser** | `.github/scripts/parse-gemini-comments.js` | Extrai e categoriza comentários |
+| **Blob Upload** | `.github/scripts/upload-to-vercel-blob.cjs` | Upload de JSON para Vercel Blob |
 | **Testes** | `.github/scripts/__tests__/parse-gemini-comments.test.js` | Validação do parser |
 | **Config** | `.gemini/config.yaml` | Configuração do Gemini Code Assist |
+
+---
+
+## 📦 Vercel Blob - Camada de Transporte
+
+### Propósito
+
+O Vercel Blob é usado como **camada de transporte temporário** para dados JSON entre jobs do GitHub Actions e endpoints Vercel. Isso permite que:
+
+1. Jobs do GitHub Actions compartilhem dados estruturados
+2. Endpoints Vercel acessem dados sem conexão direta ao GitHub Actions
+3. O fluxo seja resiliente a falhas de rede
+
+### Características
+
+| Característica | Valor | Descrição |
+|----------------|-------|-----------|
+| **TTL** | 7 dias | Armazenamento temporário, não persistente |
+| **Access** | Privado | Requer `VERCEL_BLOB_TOKEN` para acesso |
+| **Path Pattern** | `reviews/pr-{n}/review-{ts}.json` | Único por PR + timestamp |
+| **Content-Type** | `application/json` | Dados estruturados |
+
+### Fluxo de Dados
+
+```
+1. parse job        → Gera review-{pr_number}.json
+2. upload-to-blob   → Upload para Vercel Blob
+3. persist job      → Passa blob_url para endpoint /api/gemini-reviews/persist
+4. create-issues    → Passa blob_url para endpoint /api/gemini-reviews/create-issues
+5. Endpoints        → Baixam JSON do blob, processam, persistem no Supabase
+```
+
+### Importante
+
+⚠️ **O Vercel Blob NÃO é source of truth.** O Supabase mantém esse papel com:
+- Deduplicação por hash SHA-256
+- Persistência permanente
+- Query capability via SQL
+- RLS (Row Level Security)
+
+### Conteúdo do Blob
+
+```json
+{
+  "pr_number": 144,
+  "commit_sha": "abc123...",
+  "summary": {
+    "total_issues": 5,
+    "auto_fixable": 2,
+    "critical": 0,
+    "needs_agent": 1
+  },
+  "issues": [
+    {
+      "file_path": "src/utils/validationHelper.js",
+      "line_start": 13,
+      "line_end": 15,
+      "title": "Consider adding JSDoc documentation",
+      "description": "...",
+      "suggestion": "...",
+      "priority": "MEDIUM",
+      "category": "manutenibilidade"
+    }
+  ]
+}
+```
 
 ---
 
