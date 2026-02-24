@@ -1079,9 +1079,10 @@ jobs:
   check-resolutions:
     name: Check Resolution via Vercel API
     runs-on: ubuntu-latest
-    needs: [detect, parse]
-    # Só executa se parse rodou com sucesso e é trigger por synchronize (novos commits)
-    if: always() && needs.parse.result == 'success' && github.event_name == 'pull_request' && github.event.action == 'synchronize'
+    needs: [detect, parse, persist]
+    # Executa após persist ter sucesso para ter dados atualizados no Supabase
+    # Remove restrição de synchronize para permitir execução em outros contextos
+    if: always() && needs.persist.result == 'success'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
       VERCEL_API_URL: 'https://meus-remedios.vercel.app'
