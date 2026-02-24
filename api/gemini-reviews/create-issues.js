@@ -20,6 +20,18 @@ import {
   internalErrorResponse,
   fetchWithRetry,
 } from './shared/security.js'
+import {
+  logRequest,
+  logAuth,
+  logSupabase,
+  logGitHub,
+  logBlobDownload,
+  logResult,
+  logError,
+  logInfo,
+} from './shared/logger.js'
+
+const ENDPOINT = 'create-issues'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -100,14 +112,18 @@ const pendingIssueSchema = z.object({
 /**
  * Verifica autenticação JWT
  * @param {Object} req - Requisição HTTP
- * @returns {boolean} true se autenticado
+ * @returns {Object} Resultado com success e reason
  */
 function verifyAuth(req) {
   const authHeader = req.headers.authorization || ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
 
-  if (!token || !VERCEL_GITHUB_ACTIONS_SECRET) {
-    return false
+  if (!token) {
+    return { success: false, reason: 'No token provided' }
+  }
+
+  if (!VERCEL_GITHUB_ACTIONS_SECRET) {
+    return { success: false, reason: 'Secret not configured' }
   }
 
   try {
@@ -115,9 +131,9 @@ function verifyAuth(req) {
       issuer: 'github-actions',
       audience: 'vercel-api',
     })
-    return true
-  } catch {
-    return false
+    return { success: true }
+  } catch (error) {
+    return { success: false, reason: error.message }
   }
 }
 
@@ -136,6 +152,13 @@ function verifyAuth(req) {
  */
 async function createGitHubIssue(issue, prNumber, owner, repo, token) {
   const body = buildIssueBody(issue, prNumber)
+
+  logGitHub(ENDPOINT, 'createIssue', {
+    owner,
+    repo,
+    issueTitle: issue.title?.substring(0, 50),
+    prNumber,
+  })
 
   const response = await fetchWithRetry(
     `https://api.github.com/repos/${owner}/${repo}/issues`,
@@ -162,10 +185,21 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
 
   if (!response.ok) {
     const error = await response.json()
+    logError(ENDPOINT, 'GitHub API error', new Error(`HTTP ${response.status}`), {
+      status: response.status,
+      errorMessage: error.message,
+      errorDetails: error,
+    })
     throw new Error(`GitHub API error: ${response.status} - ${error.message || 'Unknown error'}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+  logGitHub(ENDPOINT, 'issueCreated', {
+    issueNumber: result.number,
+    issueUrl: result.html_url,
+  })
+
+  return result
 }
 
 /**
@@ -177,6 +211,13 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
  * @param {string} token - Token GitHub
  */
 async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
+  logGitHub(ENDPOINT, 'commentOnPR', {
+    prNumber,
+    issueNumber,
+    owner,
+    repo,
+  })
+
   try {
     const response = await fetchWithRetry(
       `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`,
@@ -196,11 +237,17 @@ async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
     )
 
     if (!response.ok) {
-      console.warn(`Não foi possível comentar no PR: ${response.status}`)
+      logError(ENDPOINT, 'Failed to comment on PR', new Error(`HTTP ${response.status}`), {
+        prNumber,
+        issueNumber,
+        status: response.status,
+      })
+    } else {
+      logGitHub(ENDPOINT, 'commentCreated', { prNumber, issueNumber })
     }
   } catch (error) {
     // Não falhar se o comentário não puder ser criado
-    console.warn(`Não foi possível comentar no PR: ${error.message}`)
+    logError(ENDPOINT, 'Exception commenting on PR', error, { prNumber, issueNumber })
   }
 }
 
@@ -249,6 +296,12 @@ function buildIssueBody(issue, prNumber) {
  * @returns {Promise<Array<Object>>} Lista de issues pendentes
  */
 async function fetchPendingIssues(supabase, prNumber) {
+  logSupabase(ENDPOINT, 'select', 'gemini_reviews', {
+    operation: 'fetchPendingIssues',
+    prNumber,
+    filters: { status: 'detected', priority: 'media', github_issue_number: null },
+  })
+
   const { data, error } = await supabase
     .from('gemini_reviews')
     .select('*')
@@ -259,8 +312,17 @@ async function fetchPendingIssues(supabase, prNumber) {
     .limit(10)
 
   if (error) {
+    logError(ENDPOINT, 'Error fetching pending issues', error, {
+      prNumber,
+      errorMessage: error.message,
+    })
     throw new Error(`Falha ao buscar issues pendentes: ${error.message}`)
   }
+
+  logInfo(ENDPOINT, 'Pending issues fetched', {
+    prNumber,
+    count: data?.length || 0,
+  })
 
   return data || []
 }
@@ -272,6 +334,13 @@ async function fetchPendingIssues(supabase, prNumber) {
  * @param {number} issueNumber - Número da issue no GitHub
  */
 async function updateReviewStatus(supabase, id, issueNumber) {
+  logSupabase(ENDPOINT, 'update', 'gemini_reviews', {
+    operation: 'updateReviewStatus',
+    id,
+    issueNumber,
+    newStatus: 'reported',
+  })
+
   const { error } = await supabase
     .from('gemini_reviews')
     .update({
@@ -282,8 +351,15 @@ async function updateReviewStatus(supabase, id, issueNumber) {
     .eq('id', id)
 
   if (error) {
+    logError(ENDPOINT, 'Error updating review status', error, {
+      id,
+      issueNumber,
+      errorMessage: error.message,
+    })
     throw new Error(`Falha ao atualizar review ${id}: ${error.message}`)
   }
+
+  logInfo(ENDPOINT, 'Review status updated', { id, issueNumber, status: 'reported' })
 }
 
 /**
@@ -292,13 +368,25 @@ async function updateReviewStatus(supabase, id, issueNumber) {
  * @returns {Promise<Object>} Dados do review
  */
 async function downloadFromBlob(blobUrl) {
+  logBlobDownload(ENDPOINT, blobUrl, { status: 'starting' })
+
   const response = await fetchWithRetry(blobUrl, {}, 3)
 
   if (!response.ok) {
+    logError(ENDPOINT, 'Blob download failed', new Error(`HTTP ${response.status}`), {
+      status: response.status,
+      statusText: response.statusText,
+    })
     throw new Error(`Falha ao baixar do Blob: ${response.status} ${response.statusText}`)
   }
 
-  return await response.json()
+  const data = await response.json()
+  logBlobDownload(ENDPOINT, blobUrl, {
+    status: 'success',
+    dataSize: JSON.stringify(data).length,
+  })
+
+  return data
 }
 
 // ============================================================================
@@ -315,6 +403,12 @@ async function downloadFromBlob(blobUrl) {
 async function createIssuesFromReview(supabase, reviewData, githubToken) {
   const { pr_number, owner, repo } = reviewData
 
+  logInfo(ENDPOINT, 'createIssuesFromReview started', {
+    pr_number,
+    owner,
+    repo,
+  })
+
   const results = {
     created: 0,
     issues: [],
@@ -325,15 +419,30 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
   const pendingIssues = await fetchPendingIssues(supabase, pr_number)
 
   if (pendingIssues.length === 0) {
+    logInfo(ENDPOINT, 'No pending issues found', { pr_number })
     return results
   }
 
+  logInfo(ENDPOINT, 'Processing pending issues', {
+    pr_number,
+    count: pendingIssues.length,
+  })
+
   // Criar issues no GitHub
-  for (const issue of pendingIssues) {
+  for (const [index, issue] of pendingIssues.entries()) {
     try {
+      logInfo(ENDPOINT, `Processing issue ${index + 1}/${pendingIssues.length}`, {
+        reviewId: issue.id,
+        title: issue.title?.substring(0, 50),
+      })
+
       // Validar issue do Supabase
       const issueValidation = pendingIssueSchema.safeParse(issue)
       if (!issueValidation.success) {
+        logError(ENDPOINT, 'Issue validation failed', new Error('Validation error'), {
+          reviewId: issue.id,
+          errors: issueValidation.error.issues,
+        })
         results.errors.push({
           review_id: issue.id,
           error: 'Dados inválidos',
@@ -363,8 +472,16 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
         title: githubIssue.title,
         url: githubIssue.html_url,
       })
-    } catch {
-      // Erro não exposto por segurança
+
+      logInfo(ENDPOINT, 'Issue created successfully', {
+        reviewId: issue.id,
+        issueNumber: githubIssue.number,
+      })
+    } catch (error) {
+      logError(ENDPOINT, 'Failed to create issue', error, {
+        reviewId: issue.id,
+        title: issue.title,
+      })
       results.errors.push({
         review_id: issue.id,
         title: issue.title,
@@ -372,6 +489,11 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
       })
     }
   }
+
+  logResult(ENDPOINT, 'createIssuesFromReview', {
+    created: results.created,
+    errorsCount: results.errors.length,
+  })
 
   return results
 }
@@ -386,14 +508,19 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Log inicial da requisição
+  logRequest(ENDPOINT, req)
+
   // Rate limiting
   const clientIP = getClientIP(req)
   if (!checkRateLimit(clientIP)) {
+    logInfo(ENDPOINT, 'Rate limit exceeded', { clientIP: clientIP.substring(0, 3) + '***' })
     return rateLimitResponse(res, getRateLimitHeaders(clientIP))
   }
 
   // Verificar método HTTP
   if (req.method !== 'POST') {
+    logInfo(ENDPOINT, 'Method not allowed', { method: req.method })
     return res.status(405).json({
       success: false,
       error: 'Método não permitido. Use POST.',
@@ -402,6 +529,7 @@ export default async function handler(req, res) {
 
   // Verificar variáveis de ambiente
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    logError(ENDPOINT, 'Missing environment variables', new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set'))
     return res.status(500).json({
       success: false,
       error: 'Configuração do servidor incompleta.',
@@ -409,7 +537,10 @@ export default async function handler(req, res) {
   }
 
   // Verificar autenticação
-  if (!verifyAuth(req)) {
+  const authResult = verifyAuth(req)
+  logAuth(ENDPOINT, authResult.success, authResult.reason)
+
+  if (!authResult.success) {
     return res.status(401).json({
       success: false,
       error: 'Não autorizado. Token inválido ou expirado.',
@@ -421,24 +552,44 @@ export default async function handler(req, res) {
 
     // Se blob_url fornecida, baixar dados do Blob
     if (req.body.blob_url) {
+      logInfo(ENDPOINT, 'Blob URL provided, downloading...', {
+        blobUrl: req.body.blob_url.split('?')[0],
+      })
       try {
         const blobData = await downloadFromBlob(req.body.blob_url)
         requestData = { ...blobData, ...req.body }
-      } catch {
-        // Erro não exposto por segurança
+      } catch (error) {
+        logError(ENDPOINT, 'Failed to download from Blob', error, {
+          blobUrl: req.body.blob_url.split('?')[0],
+        })
         return res.status(400).json({
           success: false,
           error: 'Erro ao baixar dados do Blob',
         })
       }
     } else {
+      logInfo(ENDPOINT, 'Using body directly (no blob URL)')
       requestData = req.body
     }
 
     // Validar body da requisição
+    logInfo(ENDPOINT, 'Validating request data', {
+      pr_number: requestData?.pr_number,
+      owner: requestData?.owner,
+      repo: requestData?.repo,
+      commit_sha: requestData?.commit_sha?.substring(0, 8),
+      issuesCount: requestData?.issues?.length || 0,
+    })
+
     const validation = createIssuesRequestSchema.safeParse(requestData)
 
     if (!validation.success) {
+      logInfo(ENDPOINT, 'Validation failed', {
+        errors: validation.error.issues.map((i) => ({
+          field: i.path.join('.'),
+          message: i.message,
+        })),
+      })
       return res.status(400).json({
         success: false,
         error: 'Dados inválidos',
@@ -450,11 +601,17 @@ export default async function handler(req, res) {
     }
 
     const validatedData = validation.data
+    logInfo(ENDPOINT, 'Validation successful', {
+      pr_number: validatedData.pr_number,
+      owner: validatedData.owner,
+      repo: validatedData.repo,
+    })
 
     // Usar GITHUB_TOKEN do ambiente apenas (não aceita do body por segurança)
     const githubToken = GITHUB_TOKEN
 
     if (!githubToken) {
+      logError(ENDPOINT, 'GitHub token not configured', new Error('GITHUB_TOKEN not set'))
       return res.status(500).json({
         success: false,
         error: 'Token GitHub não configurado.',
@@ -462,6 +619,7 @@ export default async function handler(req, res) {
     }
 
     // Criar cliente Supabase
+    logSupabase(ENDPOINT, 'connect', 'gemini_reviews', { operation: 'createClient' })
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // Criar issues
@@ -473,6 +631,12 @@ export default async function handler(req, res) {
 
     const responseHeaders = getRateLimitHeaders(clientIP)
 
+    logResult(ENDPOINT, 'handler', {
+      created: results.created,
+      errorsCount: results.errors.length,
+      allFailed,
+    })
+
     return res
       .status(hasErrors ? (allFailed ? 500 : 207) : 200)
       .set(responseHeaders)
@@ -482,6 +646,10 @@ export default async function handler(req, res) {
         ...(hasErrors && { partial: !allFailed }),
       })
   } catch (error) {
+    logError(ENDPOINT, 'Unhandled error in handler', error, {
+      errorMessage: error.message,
+      errorStack: error.stack,
+    })
     return internalErrorResponse(res, error, 'create-issues')
   }
 }

@@ -18,6 +18,16 @@ import {
   rateLimitResponse,
   internalErrorResponse,
 } from './shared/security.js'
+import {
+  logRequest,
+  logAuth,
+  logSupabase,
+  logResult,
+  logError,
+  logInfo,
+} from './shared/logger.js'
+
+const ENDPOINT = 'update-status'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -85,14 +95,18 @@ const batchUpdateSchema = z.object({
 /**
  * Verifica autenticação JWT
  * @param {Object} req - Requisição HTTP
- * @returns {boolean} true se autenticado
+ * @returns {Object} Resultado com success e reason
  */
 function verifyAuth(req) {
   const authHeader = req.headers.authorization || ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
 
-  if (!token || !VERCEL_GITHUB_ACTIONS_SECRET) {
-    return false
+  if (!token) {
+    return { success: false, reason: 'No token provided' }
+  }
+
+  if (!VERCEL_GITHUB_ACTIONS_SECRET) {
+    return { success: false, reason: 'Secret not configured' }
   }
 
   try {
@@ -100,9 +114,9 @@ function verifyAuth(req) {
       issuer: 'github-actions',
       audience: 'vercel-api',
     })
-    return true
-  } catch {
-    return false
+    return { success: true }
+  } catch (error) {
+    return { success: false, reason: error.message }
   }
 }
 
@@ -118,6 +132,13 @@ function verifyAuth(req) {
  */
 async function updateReviewStatus(supabase, update) {
   const { review_id, status, resolution_type, commit_sha, resolved_by } = update
+
+  logSupabase(ENDPOINT, 'update', 'gemini_reviews', {
+    operation: 'updateReviewStatus',
+    review_id,
+    newStatus: status,
+    resolution_type,
+  })
 
   // Construir objeto de atualização
   const updateData = {
@@ -150,8 +171,20 @@ async function updateReviewStatus(supabase, update) {
     .single()
 
   if (error) {
+    logError(ENDPOINT, 'Error updating review status', error, {
+      review_id,
+      status,
+      errorMessage: error.message,
+      errorCode: error.code,
+    })
     throw new Error('Erro ao atualizar review')
   }
+
+  logInfo(ENDPOINT, 'Review status updated', {
+    review_id,
+    status: data.status,
+    github_issue_number: data.github_issue_number,
+  })
 
   return data
 }
@@ -163,6 +196,11 @@ async function updateReviewStatus(supabase, update) {
  * @returns {Promise<Object>} Resultado da atualização
  */
 async function processSingleUpdate(supabase, update) {
+  logInfo(ENDPOINT, 'Processing single update', {
+    review_id: update.review_id,
+    status: update.status,
+  })
+
   try {
     const updated = await updateReviewStatus(supabase, update)
     return {
@@ -171,8 +209,10 @@ async function processSingleUpdate(supabase, update) {
       github_issue_number: updated.github_issue_number,
       success: true,
     }
-  } catch {
-    // Erro não exposto por segurança
+  } catch (error) {
+    logError(ENDPOINT, 'Failed to process single update', error, {
+      review_id: update.review_id,
+    })
     return {
       review_id: update.review_id,
       success: false,
@@ -188,12 +228,20 @@ async function processSingleUpdate(supabase, update) {
  * @returns {Promise<Object>} Resultado do processamento
  */
 async function processBatchUpdates(supabase, updates) {
+  logInfo(ENDPOINT, 'Processing batch updates', {
+    count: updates.length,
+  })
+
   const results = {
     success: [],
     errors: [],
   }
 
-  for (const update of updates) {
+  for (const [index, update] of updates.entries()) {
+    logInfo(ENDPOINT, `Processing update ${index + 1}/${updates.length}`, {
+      review_id: update.review_id,
+    })
+
     const result = await processSingleUpdate(supabase, update)
 
     if (result.success) {
@@ -210,6 +258,11 @@ async function processBatchUpdates(supabase, updates) {
     }
   }
 
+  logResult(ENDPOINT, 'batchUpdates', {
+    successCount: results.success.length,
+    errorsCount: results.errors.length,
+  })
+
   return results
 }
 
@@ -223,14 +276,19 @@ async function processBatchUpdates(supabase, updates) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Log inicial da requisição
+  logRequest(ENDPOINT, req)
+
   // Rate limiting
   const clientIP = getClientIP(req)
   if (!checkRateLimit(clientIP)) {
+    logInfo(ENDPOINT, 'Rate limit exceeded', { clientIP: clientIP.substring(0, 3) + '***' })
     return rateLimitResponse(res, getRateLimitHeaders(clientIP))
   }
 
   // Verificar método HTTP
   if (req.method !== 'POST') {
+    logInfo(ENDPOINT, 'Method not allowed', { method: req.method })
     return res.status(405).json({
       success: false,
       error: 'Método não permitido. Use POST.',
@@ -239,6 +297,7 @@ export default async function handler(req, res) {
 
   // Verificar variáveis de ambiente
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    logError(ENDPOINT, 'Missing environment variables', new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set'))
     return res.status(500).json({
       success: false,
       error: 'Configuração do servidor incompleta.',
@@ -246,7 +305,10 @@ export default async function handler(req, res) {
   }
 
   // Verificar autenticação
-  if (!verifyAuth(req)) {
+  const authResult = verifyAuth(req)
+  logAuth(ENDPOINT, authResult.success, authResult.reason)
+
+  if (!authResult.success) {
     return res.status(401).json({
       success: false,
       error: 'Não autorizado. Token inválido ou expirado.',
@@ -257,11 +319,26 @@ export default async function handler(req, res) {
     // Detectar se é batch ou single update
     const isBatch = Array.isArray(req.body.updates)
 
+    logInfo(ENDPOINT, 'Request type detected', {
+      isBatch,
+      bodyKeys: Object.keys(req.body || {}),
+    })
+
     if (isBatch) {
+      logInfo(ENDPOINT, 'Processing batch update', {
+        updatesCount: req.body.updates?.length,
+      })
+
       // Validação batch
       const validation = batchUpdateSchema.safeParse(req.body)
 
       if (!validation.success) {
+        logInfo(ENDPOINT, 'Batch validation failed', {
+          errors: validation.error.issues.map((i) => ({
+            field: i.path.join('.'),
+            message: i.message,
+          })),
+        })
         return res.status(400).json({
           success: false,
           error: 'Dados inválidos',
@@ -274,7 +351,12 @@ export default async function handler(req, res) {
 
       const { updates } = validation.data
 
+      logInfo(ENDPOINT, 'Batch validation successful', {
+        updatesCount: updates.length,
+      })
+
       // Criar cliente Supabase
+      logSupabase(ENDPOINT, 'connect', 'gemini_reviews', { operation: 'createClient' })
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
       // Processar atualizações em batch
@@ -286,6 +368,12 @@ export default async function handler(req, res) {
 
       const responseHeaders = getRateLimitHeaders(clientIP)
 
+      logResult(ENDPOINT, 'batchUpdate', {
+        successCount: results.success.length,
+        errorsCount: results.errors.length,
+        allFailed,
+      })
+
       return res
         .status(hasErrors ? (allFailed ? 500 : 207) : 200)
         .set(responseHeaders)
@@ -296,10 +384,21 @@ export default async function handler(req, res) {
           ...(hasErrors && { partial: !allFailed }),
         })
     } else {
+      logInfo(ENDPOINT, 'Processing single update', {
+        review_id: req.body.review_id,
+        status: req.body.status,
+      })
+
       // Validação single
       const validation = updateStatusSchema.safeParse(req.body)
 
       if (!validation.success) {
+        logInfo(ENDPOINT, 'Single validation failed', {
+          errors: validation.error.issues.map((i) => ({
+            field: i.path.join('.'),
+            message: i.message,
+          })),
+        })
         return res.status(400).json({
           success: false,
           error: 'Dados inválidos',
@@ -312,13 +411,22 @@ export default async function handler(req, res) {
 
       const update = validation.data
 
+      logInfo(ENDPOINT, 'Single validation successful', {
+        review_id: update.review_id,
+        status: update.status,
+      })
+
       // Criar cliente Supabase
+      logSupabase(ENDPOINT, 'connect', 'gemini_reviews', { operation: 'createClient' })
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
       // Processar atualização única
       const result = await processSingleUpdate(supabase, update)
 
       if (!result.success) {
+        logError(ENDPOINT, 'Single update failed', new Error(result.error), {
+          review_id: result.review_id,
+        })
         return res.status(500).json({
           success: false,
           error: 'Falha ao atualizar status',
@@ -327,6 +435,11 @@ export default async function handler(req, res) {
       }
 
       const responseHeaders = getRateLimitHeaders(clientIP)
+
+      logResult(ENDPOINT, 'singleUpdate', {
+        review_id: result.review_id,
+        status: result.status,
+      })
 
       return res.status(200).set(responseHeaders).json({
         success: true,
@@ -338,6 +451,10 @@ export default async function handler(req, res) {
       })
     }
   } catch (error) {
+    logError(ENDPOINT, 'Unhandled error in handler', error, {
+      errorMessage: error.message,
+      errorStack: error.stack,
+    })
     return internalErrorResponse(res, error, 'update-status')
   }
 }
