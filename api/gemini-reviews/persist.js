@@ -544,14 +544,9 @@ export default async function handler(req, res) {
         blobUrl: req.body.blob_url.split('?')[0],
       })
       try {
-        reviewData = await downloadFromBlob(req.body.blob_url)
-        // Merge commit_sha and pr_number from request body (they may not be in blob)
-        if (req.body.commit_sha) {
-          reviewData.commit_sha = req.body.commit_sha
-        }
-        if (req.body.pr_number) {
-          reviewData.pr_number = req.body.pr_number
-        }
+        const blobData = await downloadFromBlob(req.body.blob_url)
+        // Mescla os dados do blob com os do corpo da requisição, dando prioridade aos valores do corpo.
+        reviewData = { ...blobData, ...req.body }
       } catch (error) {
         logError(ENDPOINT, 'Failed to download from Blob', error, {
           blobUrl: req.body.blob_url.split('?')[0],
