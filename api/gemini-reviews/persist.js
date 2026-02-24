@@ -69,7 +69,7 @@ const issueSchema = z.object({
   title: z.string().optional(),
   issue: z.string().optional(),
   description: z.string().optional(),
-  suggestion: z.string().optional(),
+  suggestion: z.string().nullable().optional(), // Allow both null and undefined
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
   category: z.string().optional(),
 })
@@ -544,7 +544,9 @@ export default async function handler(req, res) {
         blobUrl: req.body.blob_url.split('?')[0],
       })
       try {
-        reviewData = await downloadFromBlob(req.body.blob_url)
+        const blobData = await downloadFromBlob(req.body.blob_url)
+        // Mescla os dados do blob com os do corpo da requisição, dando prioridade aos valores do corpo.
+        reviewData = { ...blobData, ...req.body }
       } catch (error) {
         logError(ENDPOINT, 'Failed to download from Blob', error, {
           blobUrl: req.body.blob_url.split('?')[0],
