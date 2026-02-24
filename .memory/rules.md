@@ -386,5 +386,172 @@ afterEach(() => {
 
 ---
 
-*Last updated: 2026-02-23*
-*Rules: R-001 to R-081*
+## Schema & Database Synchronization (2026-02-24)
+
+### R-082: Zod-SQL Schema Synchronization [CRITICAL]
+**Rule:** Zod schemas and database schemas MUST be synchronized. Any CHECK constraint, NOT NULL constraint, or enum in the database MUST have a corresponding validation in Zod. When one changes, the other must be updated in the same commit.
+
+**Source:** Sprint 7 Gemini Integration (PR #146, #152) - Multiple constraint violations
+
+**Common mismatches:**
+- Database has CHECK constraint but Zod allows any value
+- Zod has default value that database doesn't accept
+- Database column is NOT NULL but Zod field is optional
+- Zod enum values don't match database CHECK constraint
+
+**Prevention:**
+```javascript
+// CORRECT - Zod matches database CHECK constraint
+// Database: CHECK (category IN ('estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade'))
+const categorySchema = z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade'])
+
+// WRONG - 'geral' is not in the database CHECK constraint
+const categorySchema = z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade', 'geral'])
+```
+
+---
+
+### R-083: Environment Variable Fallbacks [HIGH]
+**Rule:** When accessing environment variables that may have alternative names across environments (local vs CI vs production), always provide fallbacks. Never assume a specific variable name exists everywhere.
+
+**Source:** Sprint 7 Gemini Integration (PR #149) - SUPABASE_URL vs VITE_SUPABASE_URL
+
+**Common scenarios:**
+- `VITE_*` prefix for Vite-exposed variables vs unprefixed for server-side
+- Different naming conventions between CI and production
+- Legacy variable names still in some environments
+
+**Pattern:**
+```javascript
+// CORRECT - Fallback for alternative names
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+
+// WRONG - Assumes specific variable name
+const SUPABASE_URL = process.env.SUPABASE_URL // Fails if only VITE_SUPABASE_URL exists
+```
+
+---
+
+### R-084: Private Storage Authentication [HIGH]
+**Rule:** When accessing private storage (Vercel Blob, S3, etc.), always include authentication headers. Never assume storage is publicly accessible without explicit confirmation.
+
+**Source:** Sprint 7 Gemini Integration (PR #150) - 403 Forbidden on blob downloads
+
+**Pattern:**
+```javascript
+// CORRECT - Include auth header for private storage
+const response = await fetch(blobUrl, {
+  headers: {
+    'Authorization': `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+  }
+})
+
+// WRONG - Assumes public access
+const response = await fetch(blobUrl)
+```
+
+---
+
+### R-085: Nullable Schema Fields [HIGH]
+**Rule:** When a field can receive `null` from external sources (APIs, databases, parsers), use `.nullable().optional()` in Zod. Using only `.optional()` allows `undefined` but rejects `null`.
+
+**Source:** Sprint 7 Gemini Integration (PR #151) - suggestion field rejecting null
+
+**Pattern:**
+```javascript
+// CORRECT - Accepts undefined, null, or string
+const schema = z.object({
+  suggestion: z.string().nullable().optional()
+})
+
+// WRONG - Rejects null (only accepts undefined or string)
+const schema = z.object({
+  suggestion: z.string().optional()
+})
+```
+
+---
+
+### R-086: Serverless Response Format [HIGH]
+**Rule:** In Vercel serverless functions, always use `res.status(code).json(body)` format. Never use Express-style `res.json()` or `res.send()` without explicit status.
+
+**Source:** Sprint 7 Gemini Integration (PR #152) - Response headers not sent correctly
+
+**Pattern:**
+```javascript
+// CORRECT - Vercel serverless format
+return res.status(200).json({ success: true, data })
+
+// WRONG - Express style (may not work correctly in Vercel)
+return res.json({ success: true, data })
+```
+
+---
+
+### R-087: Structured Logging from Day One [HIGH]
+**Rule:** Implement structured logging (with timestamp, level, context, and correlation IDs) from the first commit of any API endpoint. Never treat logging as "nice to have" — it's essential for debugging production issues.
+
+**Source:** Sprint 7 Gemini Integration (PR #148) - Hours wasted debugging without logs
+
+**Pattern:**
+```javascript
+// CORRECT - Structured logging from the start
+export function log(endpoint, level, message, data = {}) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    endpoint,
+    level,
+    message,
+    correlationId: getCorrelationId(),
+    ...data
+  }
+  console.log(JSON.stringify(logEntry))
+}
+
+// WRONG - No structure, hard to parse in production logs
+console.log('Error:', error.message)
+```
+
+---
+
+## Pre-Deployment Validation (2026-02-24)
+
+### R-088: Pre-Deployment Environment Checklist [CRITICAL]
+**Rule:** Before deploying any new API endpoint or service, validate ALL required environment variables exist in the target environment. Create a startup check that fails fast with clear messages.
+
+**Source:** Sprint 7 Gemini Integration (PR #149) - Missing env vars caused 500 errors
+
+**Checklist pattern:**
+```javascript
+// Startup validation
+const REQUIRED_ENV_VARS = [
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'VERCEL_GITHUB_ACTIONS_SECRET',
+  'BLOB_READ_WRITE_TOKEN'
+]
+
+function validateEnvironment() {
+  const missing = REQUIRED_ENV_VARS.filter(v => !process.env[v] && !process.env[`VITE_${v}`])
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
+  }
+}
+```
+
+---
+
+### R-089: Database Column Existence Check [HIGH]
+**Rule:** When writing INSERT statements, verify all columns exist in the target table. Never assume columns exist based on previous versions or documentation — check the actual schema.
+
+**Source:** Sprint 7 Gemini Integration (PR #146) - `review_data` column didn't exist
+
+**Prevention:**
+- Keep migration files synchronized with code
+- Use TypeScript types generated from database schema
+- Add integration tests that actually insert data
+
+---
+
+*Last updated: 2026-02-24*
+*Rules: R-001 to R-089*
