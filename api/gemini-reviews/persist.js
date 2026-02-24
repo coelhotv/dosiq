@@ -69,7 +69,7 @@ const issueSchema = z.object({
   title: z.string().optional(),
   issue: z.string().optional(),
   description: z.string().optional(),
-  suggestion: z.string().optional(),
+  suggestion: z.string().nullable().optional(), // Allow both null and undefined
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
   category: z.string().optional(),
 })
@@ -545,6 +545,13 @@ export default async function handler(req, res) {
       })
       try {
         reviewData = await downloadFromBlob(req.body.blob_url)
+        // Merge commit_sha and pr_number from request body (they may not be in blob)
+        if (req.body.commit_sha) {
+          reviewData.commit_sha = req.body.commit_sha
+        }
+        if (req.body.pr_number) {
+          reviewData.pr_number = req.body.pr_number
+        }
       } catch (error) {
         logError(ENDPOINT, 'Failed to download from Blob', error, {
           blobUrl: req.body.blob_url.split('?')[0],
