@@ -5,8 +5,12 @@
  * abuso e falhas transitórias.
  *
  * @module api/gemini-reviews/shared/security
- * @version 1.0.0
+ * @version 1.1.0
  */
+
+import { logRateLimit, logRetry, logError, logInfo } from './logger.js'
+
+const ENDPOINT = 'security'
 
 // ============================================================================
 // RATE LIMITING
@@ -52,14 +56,17 @@ export function checkRateLimit(ip, options = {}) {
       count: 1,
       resetTime: now + windowMs,
     })
+    logRateLimit(ENDPOINT, ip, true, { count: 1, maxRequests })
     return true
   }
 
   if (data.count >= maxRequests) {
+    logRateLimit(ENDPOINT, ip, false, { count: data.count, maxRequests })
     return false // Rate limit excedido
   }
 
   data.count++
+  logRateLimit(ENDPOINT, ip, true, { count: data.count, maxRequests })
   return true
 }
 
@@ -98,39 +105,72 @@ export function getRateLimitHeaders(ip) {
  */
 export async function fetchWithRetry(url, options = {}, maxRetries = 3) {
   const baseDelay = 1000 // 1 segundo
+  const sanitizedUrl = url.split('?')[0] // Remove query params for logging
+
+  logInfo(ENDPOINT, 'fetchWithRetry starting', {
+    url: sanitizedUrl,
+    maxRetries,
+  })
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      logInfo(ENDPOINT, `Fetch attempt ${attempt + 1}/${maxRetries}`, {
+        url: sanitizedUrl,
+      })
+
       const response = await fetch(url, options)
 
       // Sucesso ou erro não-recuperável (4xx, exceto rate limit)
       if (response.ok) {
+        logInfo(ENDPOINT, 'Fetch successful', {
+          url: sanitizedUrl,
+          status: response.status,
+          attempt: attempt + 1,
+        })
         return response
       }
 
       // Erros 4xx (exceto 429 rate limit) não devem ser retentados
       if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        logInfo(ENDPOINT, 'Fetch failed with client error (no retry)', {
+          url: sanitizedUrl,
+          status: response.status,
+          attempt: attempt + 1,
+        })
         return response
       }
 
       // Se for a última tentativa, retorna a resposta mesmo com erro
       if (attempt === maxRetries - 1) {
+        logError(ENDPOINT, 'Fetch failed after all retries', new Error(`HTTP ${response.status}`), {
+          url: sanitizedUrl,
+          status: response.status,
+          attempts: maxRetries,
+        })
         return response
       }
 
       // Log para debugging (não expõe dados sensíveis)
-      console.warn(`Fetch attempt ${attempt + 1} failed with status ${response.status}, retrying...`)
+      logRetry(ENDPOINT, attempt + 1, maxRetries, `HTTP ${response.status}`)
     } catch (error) {
       // Erros de rede (ECONNRESET, ETIMEDOUT, etc) devem ser retentados
       if (attempt === maxRetries - 1) {
+        logError(ENDPOINT, 'Fetch failed with network error after all retries', error, {
+          url: sanitizedUrl,
+          attempts: maxRetries,
+        })
         throw error // Última tentativa, propagar erro
       }
 
-      console.warn(`Fetch attempt ${attempt + 1} threw error: ${error.message}, retrying...`)
+      logRetry(ENDPOINT, attempt + 1, maxRetries, error.message)
     }
 
     // Exponential backoff: 1s, 2s, 4s
     const delay = baseDelay * Math.pow(2, attempt)
+    logInfo(ENDPOINT, `Waiting ${delay}ms before retry`, {
+      url: sanitizedUrl,
+      delay,
+    })
     await new Promise((resolve) => setTimeout(resolve, delay))
   }
 
@@ -176,7 +216,12 @@ export function rateLimitResponse(res, _headers = {}) {
  * @param {string} context - Contexto do erro para log
  */
 export function internalErrorResponse(res, error, context = 'Operação') {
-  console.error(`Erro em ${context}:`, error)
+  logError(ENDPOINT, `Internal error in ${context}`, error, {
+    context,
+    errorMessage: error.message,
+    errorStack: error.stack,
+    errorName: error.name,
+  })
   return res.status(500).json({
     success: false,
     error: 'Erro interno do servidor',
