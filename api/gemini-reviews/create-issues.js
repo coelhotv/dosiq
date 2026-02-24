@@ -650,9 +650,13 @@ export default async function handler(req, res) {
       allFailed,
     })
 
+    // Set headers individually (Vercel serverless doesn't support .set() chain)
+    Object.entries(responseHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value)
+    })
+
     return res
       .status(hasErrors ? (allFailed ? 500 : 207) : 200)
-      .set(responseHeaders)
       .json({
         success: !allFailed,
         data: results,

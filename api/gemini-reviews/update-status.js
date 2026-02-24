@@ -376,9 +376,13 @@ export default async function handler(req, res) {
         allFailed,
       })
 
+      // Set headers individually (Vercel serverless doesn't support .set() chain)
+      Object.entries(responseHeaders).forEach(([key, value]) => {
+        res.setHeader(key, value)
+      })
+
       return res
         .status(hasErrors ? (allFailed ? 500 : 207) : 200)
-        .set(responseHeaders)
         .json({
           success: !allFailed,
           updated: results.success.length,
@@ -443,7 +447,12 @@ export default async function handler(req, res) {
         status: result.status,
       })
 
-      return res.status(200).set(responseHeaders).json({
+      // Set headers individually (Vercel serverless doesn't support .set() chain)
+      Object.entries(responseHeaders).forEach(([key, value]) => {
+        res.setHeader(key, value)
+      })
+
+      return res.status(200).json({
         success: true,
         data: {
           review_id: result.review_id,
