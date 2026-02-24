@@ -47,6 +47,7 @@ jobs:
     outputs:
       pr_number: ${{ steps.context.outputs.pr_number }}
       branch: ${{ steps.context.outputs.branch }}
+      commit_sha: ${{ steps.context.outputs.commit_sha }}
       has_gemini_review: ${{ steps.context.outputs.has_gemini_review }}
       should_run: ${{ steps.context.outputs.should_run }}
     
@@ -90,10 +91,11 @@ jobs:
             
             core.setOutput('pr_number', prNumber);
             core.setOutput('branch', pr.head.ref);
+            core.setOutput('commit_sha', pr.head.sha);
             core.setOutput('has_gemini_review', hasGeminiReview.toString());
             core.setOutput('should_run', 'true');
             
-            console.log(`PR #${prNumber}, Branch: ${pr.head.ref}, Gemini Review: ${hasGeminiReview}`);
+            console.log(`PR #${prNumber}, Branch: ${pr.head.ref}, SHA: ${pr.head.sha}, Gemini Review: ${hasGeminiReview}`);
 
   # ==========================================
   # JOB 2: Polling para Review (se necessário)
@@ -547,6 +549,7 @@ jobs:
             const { SignJWT } = require('jose');
             
             const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            const commitSha = "${{ needs.detect.outputs.commit_sha }}";
             const metadataDir = '.gemini-output/metadata';
             
             // Buscar blob_url do metadata
@@ -567,6 +570,7 @@ jobs:
             }
             
             console.log(`🔄 Gerando JWT e persistindo reviews para PR #${prNumber}...`);
+            console.log(`   Commit SHA: ${commitSha}`);
             
             try {
               // Gerar JWT
@@ -588,6 +592,8 @@ jobs:
                   'Authorization': `Bearer ${jwt}`
                 },
                 body: JSON.stringify({
+                  pr_number: prNumber,
+                  commit_sha: commitSha,
                   blob_url: blobUrl
                 })
               });
