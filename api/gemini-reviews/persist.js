@@ -617,7 +617,12 @@ export default async function handler(req, res) {
       errorsCount: results.errors.length,
     })
 
-    return res.status(200).set(responseHeaders).json({
+    // Set headers individually (Vercel serverless doesn't support .set() chain)
+    Object.entries(responseHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value)
+    })
+
+    return res.status(200).json({
       success: true,
       data: results,
     })
