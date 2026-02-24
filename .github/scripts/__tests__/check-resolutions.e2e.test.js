@@ -11,6 +11,26 @@
  */
 
 import assert from 'assert';
+import { readFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// ==========================================
+// CONSTANTES
+// ==========================================
+
+const API_BASE_URL = 'https://meus-remedios.vercel.app/api/gemini-reviews';
+const UPDATE_STATUS_ENDPOINT = `${API_BASE_URL}/update-status`;
+
+// UUIDs válidos para testes (formato UUID v4)
+const VALID_UUIDS = {
+  review1: '550e8400-e29b-41d4-a716-446655440001',
+  review2: '550e8400-e29b-41d4-a716-446655440002',
+  review3: '550e8400-e29b-41d4-a716-446655440003',
+};
 
 // ==========================================
 // MOCKS
@@ -105,12 +125,12 @@ Função não está tratando erro corretamente.`,
               patch: `@@ -40,7 +40,10 @@ function processData(data) {
    if (!data) return null;
    
--  return fetchData(data);
-+  try {
-+    return await fetchData(data);
-+  } catch (error) {
-+    console.error('Erro:', error);
-+  }
+ -  return fetchData(data);
+ +  try {
+ +    return await fetchData(data);
+ +  } catch (error) {
+ +    console.error('Erro:', error);
+ +  }
  }`
             }]
           }
@@ -121,6 +141,25 @@ Função não está tratando erro corretamente.`,
       }
     }
   };
+}
+
+// ==========================================
+// CONTADORES DE TESTE
+// ==========================================
+
+let testsPassed = 0;
+let testsFailed = 0;
+const failedTests = [];
+
+function logPass(message) {
+  console.log(`  ✅ Passou: ${message}\n`);
+  testsPassed++;
+}
+
+function logFail(message, error) {
+  console.log(`  ❌ Falhou: ${error.message}\n`);
+  testsFailed++;
+  failedTests.push({ test: message, error: error.message });
 }
 
 // ==========================================
@@ -136,9 +175,9 @@ try {
   const needsResult = { persist: { result: 'success' } };
   const shouldRun = needsResult.persist.result === 'success';
   assert.strictEqual(shouldRun, true, 'Job deve executar quando persist tem sucesso');
-  console.log('  ✅ Passou: Job executa após persist com sucesso\n');
+  logPass('Job executa após persist com sucesso');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Job executa após persist com sucesso', error);
 }
 
 // Teste 2: Job deve pular se persist falhou
@@ -147,9 +186,9 @@ try {
   const needsResult = { persist: { result: 'failure' } };
   const shouldRun = needsResult.persist.result === 'success';
   assert.strictEqual(shouldRun, false, 'Job não deve executar quando persist falha');
-  console.log('  ✅ Passou: Job pula quando persist falha\n');
+  logPass('Job pula quando persist falha');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Job pula quando persist falha', error);
 }
 
 // Teste 3: Endpoint é chamado com JWT correto
@@ -167,7 +206,7 @@ try {
     .setExpirationTime('5m')
     .sign();
 
-  await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+  await fetch(UPDATE_STATUS_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -175,7 +214,7 @@ try {
     },
     body: JSON.stringify({
       updates: [{
-        review_id: 'test-uuid',
+        review_id: VALID_UUIDS.review1,
         status: 'resolved',
         resolution_type: 'fixed',
         commit_sha: 'abc123'
@@ -186,9 +225,9 @@ try {
   assert.strictEqual(fetchCalls.length, 1, 'Fetch deve ser chamado uma vez');
   assert.strictEqual(fetchCalls[0].options.headers.Authorization, 'Bearer mock-jwt-token', 'JWT deve estar no header');
   assert.ok(fetchCalls[0].options.body.includes('resolved'), 'Body deve conter status resolved');
-  console.log('  ✅ Passou: Endpoint chamado com JWT correto\n');
+  logPass('Endpoint chamado com JWT correto');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Endpoint chamado com JWT correto', error);
 } finally {
   restoreFetch();
 }
@@ -203,7 +242,7 @@ try {
 
   // Simula detecção de resolução
   const resolution = {
-    review_id: 'test-uuid',
+    review_id: VALID_UUIDS.review1,
     resolved: true,
     partial: false
   };
@@ -215,7 +254,7 @@ try {
     commit_sha: 'abc123'
   };
 
-  await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+  await fetch(UPDATE_STATUS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ updates: [update] })
@@ -224,9 +263,9 @@ try {
   const body = JSON.parse(fetchCalls[0].options.body);
   assert.strictEqual(body.updates[0].status, 'resolved', 'Status deve ser resolved');
   assert.strictEqual(body.updates[0].resolution_type, 'fixed', 'Resolution type deve ser fixed');
-  console.log('  ✅ Passou: Status atualizado para resolved\n');
+  logPass('Status atualizado para resolved');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Status atualizado para resolved', error);
 } finally {
   restoreFetch();
 }
@@ -240,7 +279,7 @@ try {
   });
 
   const resolution = {
-    review_id: 'test-uuid',
+    review_id: VALID_UUIDS.review2,
     resolved: false,
     partial: true
   };
@@ -252,7 +291,7 @@ try {
     commit_sha: 'abc123'
   };
 
-  await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+  await fetch(UPDATE_STATUS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ updates: [update] })
@@ -261,9 +300,9 @@ try {
   const body = JSON.parse(fetchCalls[0].options.body);
   assert.strictEqual(body.updates[0].status, 'partial', 'Status deve ser partial');
   assert.strictEqual(body.updates[0].resolution_type, 'partial', 'Resolution type deve ser partial');
-  console.log('  ✅ Passou: Status atualizado para partial\n');
+  logPass('Status atualizado para partial');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Status atualizado para partial', error);
 } finally {
   restoreFetch();
 }
@@ -277,16 +316,16 @@ try {
     json: async () => ({ error: 'Internal Server Error' })
   });
 
-  const response = await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+  const response = await fetch(UPDATE_STATUS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ updates: [] })
   });
 
   assert.strictEqual(response.ok, false, 'Response não deve ser ok');
-  console.log('  ✅ Passou: Erro do endpoint tratado corretamente\n');
+  logPass('Erro do endpoint tratado corretamente');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Erro do endpoint tratado corretamente', error);
 } finally {
   restoreFetch();
 }
@@ -300,12 +339,12 @@ try {
   });
 
   const updates = [
-    { review_id: 'uuid-1', status: 'resolved', resolution_type: 'fixed', commit_sha: 'abc' },
-    { review_id: 'uuid-2', status: 'partial', resolution_type: 'partial', commit_sha: 'abc' },
-    { review_id: 'uuid-3', status: 'resolved', resolution_type: 'fixed', commit_sha: 'abc' }
+    { review_id: VALID_UUIDS.review1, status: 'resolved', resolution_type: 'fixed', commit_sha: 'abc' },
+    { review_id: VALID_UUIDS.review2, status: 'partial', resolution_type: 'partial', commit_sha: 'abc' },
+    { review_id: VALID_UUIDS.review3, status: 'resolved', resolution_type: 'fixed', commit_sha: 'abc' }
   ];
 
-  await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+  await fetch(UPDATE_STATUS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ updates })
@@ -313,25 +352,45 @@ try {
 
   const body = JSON.parse(fetchCalls[0].options.body);
   assert.strictEqual(body.updates.length, 3, 'Devem ter 3 atualizações');
-  console.log('  ✅ Passou: Múltiplas atualizações processadas\n');
+  logPass('Múltiplas atualizações processadas');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Múltiplas atualizações processadas', error);
 } finally {
   restoreFetch();
 }
 
-// Teste 8: Dependências do job no workflow
+// Teste 8: Dependências do job no workflow (validação real do arquivo)
 console.log('Teste 8: Dependências do job no workflow');
 try {
-  // Verifica se o job tem as dependências corretas
+  // Caminho para o arquivo de workflow
+  const workflowPath = join(__dirname, '..', '..', 'workflows', 'gemini-review.yml');
+  
+  // Verifica se o arquivo existe
+  if (!existsSync(workflowPath)) {
+    throw new Error(`Arquivo de workflow não encontrado: ${workflowPath}`);
+  }
+  
+  // Lê o conteúdo do arquivo
+  const workflowContent = readFileSync(workflowPath, 'utf-8');
+  
+  // Verifica se o job check-resolutions existe
+  assert.ok(workflowContent.includes('check-resolutions:'), 'Job check-resolutions deve existir no workflow');
+  
+  // Verifica se o job tem a seção 'needs'
+  const needsMatch = workflowContent.match(/check-resolutions:[\s\S]*?needs:\s*\[([^\]]+)\]/);
+  assert.ok(needsMatch, 'Job check-resolutions deve ter dependências (needs)');
+  
+  // Extrai e valida as dependências
+  const needsValue = needsMatch[1];
   const expectedNeeds = ['detect', 'parse', 'persist'];
-  // Simula leitura do workflow (em teste real, leria o arquivo YAML)
-  const jobNeeds = ['detect', 'parse', 'persist']; // Valor atualizado
-
-  assert.deepStrictEqual(jobNeeds, expectedNeeds, 'Job deve depender de detect, parse e persist');
-  console.log('  ✅ Passou: Dependências corretas\n');
+  
+  for (const need of expectedNeeds) {
+    assert.ok(needsValue.includes(need), `Job deve depender de '${need}'`);
+  }
+  
+  logPass('Dependências corretas no workflow real');
 } catch (error) {
-  console.log(`  ❌ Falhou: ${error.message}\n`);
+  logFail('Dependências corretas no workflow real', error);
 }
 
 // ==========================================
@@ -339,5 +398,18 @@ try {
 // ==========================================
 
 console.log('='.repeat(50));
-console.log('✅ Todos os testes E2E passaram!');
+console.log(`📊 Resultado: ${testsPassed} passaram, ${testsFailed} falharam`);
 console.log('='.repeat(50));
+
+if (testsFailed > 0) {
+  console.log('\n❌ Testes que falharam:');
+  failedTests.forEach(({ test, error }) => {
+    console.log(`  - ${test}: ${error}`);
+  });
+  console.log('');
+  // Exit with non-zero code to indicate failure
+  process.exit(1);
+} else {
+  console.log('\n✅ Todos os testes E2E passaram!');
+  process.exit(0);
+}
