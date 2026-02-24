@@ -25,6 +25,7 @@ export function addListener(callback) {
 
 // Issue 4: Incorrect comparison
 export function compareValues(a, b) {
+  // eslint-disable-next-line no-cond-assign -- Intentional bug for Gemini to detect
   if (a = b) {
     return true;
   }
