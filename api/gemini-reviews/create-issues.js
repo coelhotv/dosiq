@@ -37,7 +37,9 @@ const ENDPOINT = 'create-issues'
 // CONFIGURAÇÃO
 // ============================================================================
 
-const SUPABASE_URL = process.env.SUPABASE_URL
+// Fallback para VITE_SUPABASE_URL caso SUPABASE_URL não esteja definida
+// (Vercel pode ter apenas VITE_SUPABASE_URL configurada)
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const VERCEL_GITHUB_ACTIONS_SECRET = process.env.VERCEL_GITHUB_ACTIONS_SECRET
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
