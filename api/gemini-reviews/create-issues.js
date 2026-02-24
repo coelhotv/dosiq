@@ -75,6 +75,7 @@ const createIssuesRequestSchema = z.object({
 
 /**
  * Schema para registro do Supabase
+ * Nota: 'geral' removido do category enum pois não é válido no CHECK constraint
  */
 const pendingIssueSchema = z.object({
   id: z.string().uuid(),
@@ -86,7 +87,7 @@ const pendingIssueSchema = z.object({
   description: z.string().nullable().optional(),
   suggestion: z.string().nullable().optional(),
   priority: z.enum(['critica', 'alta', 'media', 'baixa']),
-  category: z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade', 'geral']),
+  category: z.enum(['estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade']),
   issue_hash: z.string().length(64),
   status: z.string(),
   github_issue_number: z.number().int().positive().nullable().optional(),
