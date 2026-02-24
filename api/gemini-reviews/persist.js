@@ -42,6 +42,8 @@ const ENDPOINT = 'persist'
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const VERCEL_GITHUB_ACTIONS_SECRET = process.env.VERCEL_GITHUB_ACTIONS_SECRET
+// Token para acessar blobs privados do Vercel Blob Storage
+const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_TOKEN
 
 /**
  * UUID do usuário sistema para reviews do Gemini.
@@ -455,7 +457,16 @@ async function persistReviews(supabase, reviewData) {
 async function downloadFromBlob(blobUrl) {
   logBlobDownload(ENDPOINT, blobUrl, { status: 'starting' })
 
-  const response = await fetchWithRetry(blobUrl, {}, 3)
+  // Para blobs privados, precisamos do token de autenticação
+  const headers = {}
+  if (BLOB_READ_WRITE_TOKEN) {
+    headers['Authorization'] = `Bearer ${BLOB_READ_WRITE_TOKEN}`
+    logInfo(ENDPOINT, 'Using BLOB_READ_WRITE_TOKEN for authentication')
+  } else {
+    logInfo(ENDPOINT, 'No BLOB_READ_WRITE_TOKEN found, attempting public access')
+  }
+
+  const response = await fetchWithRetry(blobUrl, { headers }, 3)
 
   if (!response.ok) {
     logError(ENDPOINT, 'Blob download failed', new Error(`HTTP ${response.status}`), {

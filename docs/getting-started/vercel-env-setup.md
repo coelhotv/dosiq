@@ -76,7 +76,7 @@ vercel env add VERCEL_GITHUB_ACTIONS_SECRET preview
 vercel env add VERCEL_GITHUB_ACTIONS_SECRET development
 ```
 
-### 2. `VERCEL_BLOB_TOKEN`
+### 2. `VERCEL_BLOB_TOKEN` / `BLOB_READ_WRITE_TOKEN`
 
 Token para upload/download de arquivos no Vercel Blob.
 
@@ -88,13 +88,26 @@ Token para upload/download de arquivos no Vercel Blob.
 4. Se não tiver um store, crie um clicando "Create Store"
 5. Copie o "Blob Read/Write Token"
 
-#### Configurar no GitHub
+#### Configurar no GitHub (para upload)
 
 ```bash
 gh secret set VERCEL_BLOB_TOKEN --body "vercel_blob_rw_SEU_TOKEN_AQUI"
 ```
 
-**NÃO configure este token no Vercel** - ele é usado apenas pelo GitHub Actions para fazer upload.
+#### Configurar no Vercel (para download pelos endpoints)
+
+**⚠️ IMPORTANTE:** Este token TAMBÉM deve ser configurado no Vercel para que os endpoints da API (`/api/gemini-reviews/persist` e `/api/gemini-reviews/create-issues`) possam baixar arquivos de blobs privados.
+
+```bash
+# Adicionar no Vercel (todos os environments)
+vercel env add BLOB_READ_WRITE_TOKEN production
+# Cole o valor quando solicitado
+
+vercel env add BLOB_READ_WRITE_TOKEN preview
+vercel env add BLOB_READ_WRITE_TOKEN development
+```
+
+O código verifica tanto `BLOB_READ_WRITE_TOKEN` quanto `VERCEL_BLOB_TOKEN`.
 
 ---
 
