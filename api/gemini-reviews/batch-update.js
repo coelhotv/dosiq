@@ -16,7 +16,9 @@ import crypto from 'crypto'
 // CONFIGURAÇÃO
 // ============================================================================
 
-const SUPABASE_URL = process.env.SUPABASE_URL
+// Fallback para VITE_SUPABASE_URL caso SUPABASE_URL não esteja definida
+// (Vercel pode ter apenas VITE_SUPABASE_URL configurada)
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const AGENT_WEBHOOK_SECRET = process.env.AGENT_WEBHOOK_SECRET
 
