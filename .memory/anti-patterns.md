@@ -45,5 +45,21 @@
 
 ---
 
-*Last updated: 2026-02-23*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10*
+## Schema & API Integration Anti-Patterns (2026-02-24)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-S01 | Zod enum values don't match database CHECK constraint | 500 error on INSERT, data rejected by database | Keep Zod and SQL schemas synchronized; test with real INSERT | R-082 |
+| AP-S02 | Use `.optional()` for fields that can be `null` | Zod rejects `null` from APIs/databases, 400 error | Use `.nullable().optional()` for fields that can receive `null` | R-085 |
+| AP-S03 | Assume specific environment variable name | Code fails in CI/production where name differs | Provide fallbacks: `process.env.VAR \|\| process.env.ALTERNATIVE_VAR` | R-083 |
+| AP-S04 | Access private storage without authentication | 403 Forbidden, download fails | Always include auth headers for private blobs/S3/storage | R-084 |
+| AP-S05 | Use Express-style `res.json()` in Vercel serverless | Response may not be sent correctly | Use `res.status(code).json(body)` for Vercel compatibility | R-086 |
+| AP-S06 | Implement logging "later" after functionality works | Hours wasted debugging production issues without visibility | Add structured logging from the first commit of any endpoint | R-087 |
+| AP-S07 | Deploy without validating environment variables | 500 errors in production, missing config | Run startup validation that fails fast with clear messages | R-088 |
+| AP-S08 | INSERT into columns that don't exist | Database error, failed writes | Verify schema before INSERT; keep migrations synchronized | R-089 |
+| AP-S09 | Assume `user_id` or other NOT NULL columns have defaults | INSERT fails with constraint violation | Always include NOT NULL columns in INSERT statements | R-082 |
+
+---
+
+*Last updated: 2026-02-24*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S09*
