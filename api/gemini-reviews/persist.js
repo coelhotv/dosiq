@@ -30,6 +30,14 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const VERCEL_GITHUB_ACTIONS_SECRET = process.env.VERCEL_GITHUB_ACTIONS_SECRET
 
+/**
+ * UUID do usuário sistema para reviews do Gemini.
+ * Este UUID representa o agente automatizado do Gemini Code Assist.
+ * Nota: Este usuário deve existir em auth.users ou a constraint de FK falhará.
+ * Alternativa: tornar user_id nullable via migração se necessário.
+ */
+const GEMINI_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
+
 // ============================================================================
 // SCHEMAS ZOD
 // ============================================================================
@@ -170,7 +178,8 @@ function mapCategory(category) {
     refactoring: 'manutenibilidade',
     'best-practice': 'manutenibilidade',
   }
-  return map[category?.toLowerCase()] || 'geral'
+  // Default para 'manutenibilidade' pois 'geral' não é válido no CHECK constraint
+  return map[category?.toLowerCase()] || 'manutenibilidade'
 }
 
 // ============================================================================
@@ -249,6 +258,7 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
  */
 async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
   const insertData = {
+    user_id: GEMINI_SYSTEM_USER_ID,
     pr_number: prNumber,
     commit_sha: commitSha,
     file_path: issue.file_path || issue.file,
@@ -261,7 +271,6 @@ async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
     title: issue.title || issue.issue?.substring(0, 200) || 'Sem título',
     description: issue.description || issue.issue || '',
     suggestion: issue.suggestion || null,
-    review_data: issue,
   }
 
   const { data, error } = await supabase.from('gemini_reviews').insert(insertData).select().single()
