@@ -21,6 +21,17 @@ import {
   internalErrorResponse,
   fetchWithRetry,
 } from './shared/security.js'
+import {
+  logRequest,
+  logAuth,
+  logSupabase,
+  logBlobDownload,
+  logResult,
+  logError,
+  logInfo,
+} from './shared/logger.js'
+
+const ENDPOINT = 'persist'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -76,14 +87,18 @@ const persistRequestSchema = z.object({
 /**
  * Verifica autenticação JWT
  * @param {Object} req - Requisição HTTP
- * @returns {boolean} true se autenticado
+ * @returns {Object} Resultado com success e reason
  */
 function verifyAuth(req) {
   const authHeader = req.headers.authorization || ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
 
-  if (!token || !VERCEL_GITHUB_ACTIONS_SECRET) {
-    return false
+  if (!token) {
+    return { success: false, reason: 'No token provided' }
+  }
+
+  if (!VERCEL_GITHUB_ACTIONS_SECRET) {
+    return { success: false, reason: 'Secret not configured' }
   }
 
   try {
@@ -91,9 +106,9 @@ function verifyAuth(req) {
       issuer: 'github-actions',
       audience: 'vercel-api',
     })
-    return true
-  } catch {
-    return false
+    return { success: true }
+  } catch (error) {
+    return { success: false, reason: error.message }
   }
 }
 
@@ -127,6 +142,11 @@ function calculateIssueHash(issue) {
  * @returns {Promise<Object|null>} Registro existente ou null
  */
 async function checkExistingHash(supabase, issueHash) {
+  logSupabase(ENDPOINT, 'select', 'gemini_reviews', {
+    operation: 'checkExistingHash',
+    hashPrefix: issueHash.substring(0, 16),
+  })
+
   const { data, error } = await supabase
     .from('gemini_reviews')
     .select('id, status, github_issue_number, created_at, updated_at')
@@ -134,8 +154,17 @@ async function checkExistingHash(supabase, issueHash) {
     .maybeSingle()
 
   if (error) {
-    throw new Error(`Erro ao verificar hash`)
+    logError(ENDPOINT, 'Error checking existing hash', error, {
+      hashPrefix: issueHash.substring(0, 16),
+    })
+    throw new Error(`Erro ao verificar hash: ${error.message}`)
   }
+
+  logInfo(ENDPOINT, 'Hash check result', {
+    hashPrefix: issueHash.substring(0, 16),
+    exists: !!data,
+    status: data?.status,
+  })
 
   return data
 }
@@ -198,14 +227,28 @@ function mapCategory(category) {
 async function handleExistingIssue(supabase, existing, newIssue, prNumber, commitSha) {
   const { id, status } = existing
 
+  logInfo(ENDPOINT, 'handleExistingIssue', {
+    id,
+    currentStatus: status,
+    prNumber,
+    commitSha: commitSha.substring(0, 8),
+  })
+
   // Estados finais - ignorar
   const finalStatuses = ['wontfix', 'duplicate']
   if (finalStatuses.includes(status)) {
+    logInfo(ENDPOINT, 'Issue in final status, skipping', { id, status })
     return 'skipped'
   }
 
   // Resolvida - reativar (re-introdução)
   if (status === 'resolved') {
+    logSupabase(ENDPOINT, 'update', 'gemini_reviews', {
+      operation: 'reactivateResolved',
+      id,
+      fromStatus: 'resolved',
+      toStatus: 'detected',
+    })
     await supabase
       .from('gemini_reviews')
       .update({
@@ -223,6 +266,12 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
 
   // Parcial - reativar para reported
   if (status === 'partial') {
+    logSupabase(ENDPOINT, 'update', 'gemini_reviews', {
+      operation: 'reactivatePartial',
+      id,
+      fromStatus: 'partial',
+      toStatus: 'reported',
+    })
     await supabase
       .from('gemini_reviews')
       .update({
@@ -236,6 +285,11 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
   }
 
   // Detected/reported/assigned - atualizar referências
+  logSupabase(ENDPOINT, 'update', 'gemini_reviews', {
+    operation: 'updateReferences',
+    id,
+    status,
+  })
   await supabase
     .from('gemini_reviews')
     .update({
@@ -273,15 +327,33 @@ async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
     suggestion: issue.suggestion || null,
   }
 
+  logSupabase(ENDPOINT, 'insert', 'gemini_reviews', {
+    operation: 'createNewIssue',
+    hashPrefix: issueHash.substring(0, 16),
+    filePath: insertData.file_path,
+    priority: insertData.priority,
+    category: insertData.category,
+  })
+
   const { data, error } = await supabase.from('gemini_reviews').insert(insertData).select().single()
 
   if (error) {
+    logError(ENDPOINT, 'Error creating new issue', error, {
+      errorCode: error.code,
+      errorMessage: error.message,
+      hashPrefix: issueHash.substring(0, 16),
+    })
     // Tratar violação de UNIQUE constraint
     if (error.code === '23505') {
       throw new Error(`Hash collision detectado`)
     }
     throw new Error('Falha ao criar registro')
   }
+
+  logInfo(ENDPOINT, 'Issue created successfully', {
+    id: data.id,
+    hashPrefix: issueHash.substring(0, 16),
+  })
 
   return data
 }
@@ -295,6 +367,12 @@ async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
 async function persistReviews(supabase, reviewData) {
   const { pr_number, commit_sha, issues } = reviewData
 
+  logInfo(ENDPOINT, 'persistReviews started', {
+    pr_number,
+    commit_sha: commit_sha.substring(0, 8),
+    issuesCount: issues.length,
+  })
+
   const results = {
     created: 0,
     updated: 0,
@@ -304,13 +382,23 @@ async function persistReviews(supabase, reviewData) {
     createdIssues: [],
   }
 
-  for (const issue of issues) {
+  for (const [index, issue] of issues.entries()) {
     try {
       const issueHash = calculateIssueHash(issue)
+      logInfo(ENDPOINT, `Processing issue ${index + 1}/${issues.length}`, {
+        hashPrefix: issueHash.substring(0, 16),
+        title: issue.title || issue.issue?.substring(0, 50) || 'Untitled',
+      })
+
       const existing = await checkExistingHash(supabase, issueHash)
 
       if (existing) {
         const action = await handleExistingIssue(supabase, existing, issue, pr_number, commit_sha)
+        logInfo(ENDPOINT, 'Existing issue handled', {
+          hashPrefix: issueHash.substring(0, 16),
+          action,
+          existingStatus: existing.status,
+        })
 
         switch (action) {
           case 'skipped':
@@ -334,14 +422,25 @@ async function persistReviews(supabase, reviewData) {
         hash: issueHash,
         status: newIssue.status,
       })
-    } catch {
-      // Erro não exposto por segurança
+    } catch (error) {
+      logError(ENDPOINT, 'Error processing issue', error, {
+        issueIndex: index,
+        issueTitle: issue.title || 'Sem título',
+      })
       results.errors.push({
         issue: issue.title || 'Sem título',
         error: 'Falha ao processar',
       })
     }
   }
+
+  logInfo(ENDPOINT, 'persistReviews completed', {
+    created: results.created,
+    updated: results.updated,
+    skipped: results.skipped,
+    reactivated: results.reactivated,
+    errorsCount: results.errors.length,
+  })
 
   return results
 }
@@ -352,13 +451,26 @@ async function persistReviews(supabase, reviewData) {
  * @returns {Promise<Object>} Dados do review
  */
 async function downloadFromBlob(blobUrl) {
+  logBlobDownload(ENDPOINT, blobUrl, { status: 'starting' })
+
   const response = await fetchWithRetry(blobUrl, {}, 3)
 
   if (!response.ok) {
+    logError(ENDPOINT, 'Blob download failed', new Error(`HTTP ${response.status}`), {
+      status: response.status,
+      statusText: response.statusText,
+    })
     throw new Error(`Falha ao baixar do Blob: ${response.status} ${response.statusText}`)
   }
 
-  return await response.json()
+  const data = await response.json()
+  logBlobDownload(ENDPOINT, blobUrl, {
+    status: 'success',
+    dataSize: JSON.stringify(data).length,
+    issuesCount: data?.issues?.length || 0,
+  })
+
+  return data
 }
 
 // ============================================================================
@@ -371,14 +483,19 @@ async function downloadFromBlob(blobUrl) {
  * @param {Object} res - Resposta HTTP
  */
 export default async function handler(req, res) {
+  // Log inicial da requisição
+  logRequest(ENDPOINT, req)
+
   // Rate limiting
   const clientIP = getClientIP(req)
   if (!checkRateLimit(clientIP)) {
+    logInfo(ENDPOINT, 'Rate limit exceeded', { clientIP: clientIP.substring(0, 3) + '***' })
     return rateLimitResponse(res, getRateLimitHeaders(clientIP))
   }
 
   // Verificar método HTTP
   if (req.method !== 'POST') {
+    logInfo(ENDPOINT, 'Method not allowed', { method: req.method })
     return res.status(405).json({
       success: false,
       error: 'Método não permitido. Use POST.',
@@ -387,6 +504,7 @@ export default async function handler(req, res) {
 
   // Verificar variáveis de ambiente
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    logError(ENDPOINT, 'Missing environment variables', new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set'))
     return res.status(500).json({
       success: false,
       error: 'Configuração do servidor incompleta.',
@@ -394,7 +512,10 @@ export default async function handler(req, res) {
   }
 
   // Verificar autenticação
-  if (!verifyAuth(req)) {
+  const authResult = verifyAuth(req)
+  logAuth(ENDPOINT, authResult.success, authResult.reason)
+
+  if (!authResult.success) {
     return res.status(401).json({
       success: false,
       error: 'Não autorizado. Token inválido ou expirado.',
@@ -406,23 +527,41 @@ export default async function handler(req, res) {
 
     // Se blob_url fornecida, baixar dados do Blob
     if (req.body.blob_url) {
+      logInfo(ENDPOINT, 'Blob URL provided, downloading...', {
+        blobUrl: req.body.blob_url.split('?')[0],
+      })
       try {
         reviewData = await downloadFromBlob(req.body.blob_url)
-      } catch {
-        // Erro não exposto por segurança
+      } catch (error) {
+        logError(ENDPOINT, 'Failed to download from Blob', error, {
+          blobUrl: req.body.blob_url.split('?')[0],
+        })
         return res.status(400).json({
           success: false,
           error: 'Erro ao baixar dados do Blob',
         })
       }
     } else {
+      logInfo(ENDPOINT, 'Using body directly (no blob URL)')
       reviewData = req.body
     }
 
     // Validar body da requisição
+    logInfo(ENDPOINT, 'Validating request data', {
+      pr_number: reviewData?.pr_number,
+      commit_sha: reviewData?.commit_sha?.substring(0, 8),
+      issuesCount: reviewData?.issues?.length || 0,
+    })
+
     const validation = persistRequestSchema.safeParse(reviewData)
 
     if (!validation.success) {
+      logInfo(ENDPOINT, 'Validation failed', {
+        errors: validation.error.issues.map((i) => ({
+          field: i.path.join('.'),
+          message: i.message,
+        })),
+      })
       return res.status(400).json({
         success: false,
         error: 'Dados inválidos',
@@ -434,21 +573,44 @@ export default async function handler(req, res) {
     }
 
     const validatedData = validation.data
+    logInfo(ENDPOINT, 'Validation successful', {
+      pr_number: validatedData.pr_number,
+      commit_sha: validatedData.commit_sha.substring(0, 8),
+      issuesCount: validatedData.issues.length,
+    })
 
     // Criar cliente Supabase
+    logSupabase(ENDPOINT, 'connect', 'gemini_reviews', {
+      operation: 'createClient',
+    })
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // Persistir reviews
+    logInfo(ENDPOINT, 'Starting persistReviews', {
+      issuesCount: validatedData.issues.length,
+    })
     const results = await persistReviews(supabase, validatedData)
 
     // Retornar resultado
     const responseHeaders = getRateLimitHeaders(clientIP)
+
+    logResult(ENDPOINT, 'persistReviews', {
+      created: results.created,
+      updated: results.updated,
+      skipped: results.skipped,
+      reactivated: results.reactivated,
+      errorsCount: results.errors.length,
+    })
 
     return res.status(200).set(responseHeaders).json({
       success: true,
       data: results,
     })
   } catch (error) {
+    logError(ENDPOINT, 'Unhandled error in handler', error, {
+      errorMessage: error.message,
+      errorStack: error.stack,
+    })
     return internalErrorResponse(res, error, 'persist')
   }
 }
