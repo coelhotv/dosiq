@@ -1,0 +1,300 @@
+/**
+ * Estilos do componente ReportGenerator.
+ * Segue arquitetura CSS do projeto (docs/architecture/CSS.md).
+ */
+
+/* Container principal */
+.report-generator {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+}
+
+/* Header */
+.report-generator__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.report-generator__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin: 0;
+}
+
+.report-generator__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.report-generator__close:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.1));
+  color: var(--text-primary, #333);
+}
+
+/* Description */
+.report-generator__description {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Form elements */
+.report-generator__form {
+  margin-bottom: 20px;
+}
+
+.report-generator__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  margin-bottom: 8px;
+}
+
+.report-generator__select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.8));
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
+.report-generator__select:hover {
+  border-color: var(--primary, #10b981);
+}
+
+.report-generator__select:focus {
+  outline: none;
+  border-color: var(--primary, #10b981);
+  box-shadow: 0 0 0 3px var(--primary-light, rgba(16, 185, 129, 0.2));
+}
+
+.report-generator__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error message */
+.report-generator__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--error-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--error-border, rgba(239, 68, 68, 0.3));
+  border-radius: 12px;
+  color: var(--error-text, #ef4444);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+.report-generator__error-icon {
+  font-size: 1rem;
+}
+
+/* Actions */
+.report-generator__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-generator__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.report-generator__button--generate {
+  background: var(--primary, #10b981);
+  color: white;
+  border: none;
+}
+
+.report-generator__button--generate:hover:not(:disabled) {
+  background: var(--primary-dark, #059669);
+  transform: translateY(-1px);
+}
+
+.report-generator__button--generate:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.report-generator__button--download {
+  background: var(--primary, #10b981);
+  color: white;
+  border: none;
+}
+
+.report-generator__button--download:hover {
+  background: var(--primary-dark, #059669);
+  transform: translateY(-1px);
+}
+
+.report-generator__button--regenerate {
+  background: transparent;
+  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+}
+
+.report-generator__button--regenerate:hover:not(:disabled) {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.report-generator__icon {
+  font-size: 1.125rem;
+}
+
+/* Spinner */
+.report-generator__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: report-generator-spin 0.8s linear infinite;
+}
+
+@keyframes report-generator-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success state */
+.report-generator__success {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-generator__success-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--success-bg, rgba(16, 185, 129, 0.1));
+  border: 1px solid var(--success-border, rgba(16, 185, 129, 0.3));
+  border-radius: 12px;
+  color: var(--success-text, #10b981);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.report-generator__success-icon {
+  font-size: 1rem;
+}
+
+.report-generator__success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Loading animation */
+.report-generator__loading {
+  margin-top: 16px;
+}
+
+.report-generator__loading-bar {
+  height: 4px;
+  background: var(--loading-bg, rgba(0, 0, 0, 0.1));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.report-generator__loading-progress {
+  height: 100%;
+  background: var(--primary, #10b981);
+  border-radius: 2px;
+  animation: report-generator-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes report-generator-loading {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 50%;
+    margin-left: 25%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+.report-generator__loading-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  text-align: center;
+  margin: 8px 0 0 0;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .report-generator {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-primary: #f5f5f5;
+    --text-secondary: #a3a3a3;
+    --input-bg: rgba(255, 255, 255, 0.1);
+    --input-border: rgba(255, 255, 255, 0.2);
+    --hover-bg: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .report-generator__select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a3a3' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .report-generator {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .report-generator__title {
+    font-size: 1.125rem;
+  }
+
+  .report-generator__button {
+    padding: 12px 16px;
+  }
+}
