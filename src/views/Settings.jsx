@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase, signOut, updatePassword } from '@shared/utils/supabase'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
+import Modal from '@shared/components/ui/Modal'
+import ReportGenerator from '@features/reports/components/ReportGenerator'
 import './Settings.css'
 
 export default function Settings({ onNavigate }) {
@@ -12,6 +14,7 @@ export default function Settings({ onNavigate }) {
   const [newPassword, setNewPassword] = useState('')
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -218,6 +221,17 @@ export default function Settings({ onNavigate }) {
       </div>
 
       <div className="settings-section glass-card">
+        <h3>Relatórios</h3>
+        <p className="section-desc">Gere relatórios em PDF com seu histórico de medicamentos e adesão.</p>
+
+        <div className="report-actions">
+          <Button variant="outline" onClick={() => setIsReportModalOpen(true)}>
+            📊 Gerar Relatório PDF
+          </Button>
+        </div>
+      </div>
+
+      <div className="settings-section glass-card">
         <h3>Administração</h3>
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
 
@@ -236,6 +250,14 @@ export default function Settings({ onNavigate }) {
           Sair da Conta
         </Button>
       </div>
+
+      {/* Modal de Geração de Relatórios */}
+      <Modal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      >
+        <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
+      </Modal>
     </div>
   )
 }
