@@ -158,11 +158,12 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
   const body = buildIssueBody(issue, prNumber)
 
   // Map priority to prefix (P2: Dynamic prefix based on priority)
+  // Note: issue.priority comes from Supabase in Portuguese
   const priorityPrefix = {
-    'CRITICAL': 'Critical',
-    'HIGH': 'High',
-    'MEDIUM': 'Medium',
-    'LOW': 'Low'
+    'critica': 'CRITICAL',
+    'alta': 'High',
+    'media': 'Medium',
+    'baixa': 'Low'
   }
   const prefix = priorityPrefix[issue.priority] || 'Medium'
 
