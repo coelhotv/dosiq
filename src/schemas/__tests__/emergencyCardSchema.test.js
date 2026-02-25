@@ -217,7 +217,7 @@ describe('emergencyCardSchema', () => {
     })
 
     it('should accept undefined notes (converted to null)', () => {
-      const { notes, ...cardWithoutNotes } = validCard
+      const { notes: _notes, ...cardWithoutNotes } = validCard
 
       const result = validateEmergencyCard(cardWithoutNotes)
 
@@ -226,7 +226,7 @@ describe('emergencyCardSchema', () => {
     })
 
     it('should reject missing emergency_contacts', () => {
-      const { emergency_contacts, ...cardWithoutContacts } = validCard
+      const { emergency_contacts: _emergency_contacts, ...cardWithoutContacts } = validCard
 
       const result = validateEmergencyCard(cardWithoutContacts)
 

@@ -12,7 +12,6 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { calculateMonthlyDoseMap, calculateMonthlyStats } from '../doseCalendarService'
-import { parseLocalDate } from '@utils/dateUtils'
 
 describe('doseCalendarService', () => {
   afterEach(() => {

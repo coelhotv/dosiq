@@ -66,7 +66,7 @@ export default function EmergencyCardView({ data, onEdit }) {
     } catch {
       return 'Data inválida'
     }
-  }, [cardData?.last_updated])
+  }, [cardData])
 
   // ===== EFFECTS (R-010: Hook Order) =====
 
@@ -74,22 +74,18 @@ export default function EmergencyCardView({ data, onEdit }) {
    * Carrega dados do cartão se não fornecidos via props.
    */
   useEffect(() => {
-    if (data) {
-      setCardData(data)
-      setIsLoading(false)
-      return
-    }
-
-    const loadCardData = async () => {
-      setIsLoading(true)
-      const result = await emergencyCardService.load()
-      if (result.success) {
-        setCardData(result.data)
+    if (!data) {
+      const loadCardData = async () => {
+        setIsLoading(true)
+        const result = await emergencyCardService.load()
+        if (result.success) {
+          setCardData(result.data)
+        }
+        setIsLoading(false)
       }
-      setIsLoading(false)
-    }
 
-    loadCardData()
+      loadCardData()
+    }
   }, [data])
 
   /**

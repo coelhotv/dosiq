@@ -23,26 +23,31 @@ export default function Emergency({ onNavigate }) {
 
   // ===== EFFECTS (R-010: Hook Order) =====
   useEffect(() => {
-    loadCardData()
+    let mounted = true
+    
+    async function fetchCardData() {
+      setIsLoading(true)
+      const result = await emergencyCardService.load()
+      if (mounted) {
+        if (result.success) {
+          setCardData(result.data)
+          // Se não há dados, entra em modo de edição automaticamente
+          if (!result.data) {
+            setIsEditing(true)
+          }
+        }
+        setIsLoading(false)
+      }
+    }
+    
+    fetchCardData()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   // ===== HANDLERS (R-010: Hook Order) =====
-
-  /**
-   * Carrega os dados do cartão do localStorage.
-   */
-  const loadCardData = async () => {
-    setIsLoading(true)
-    const result = await emergencyCardService.load()
-    if (result.success) {
-      setCardData(result.data)
-      // Se não há dados, entra em modo de edição automaticamente
-      if (!result.data) {
-        setIsEditing(true)
-      }
-    }
-    setIsLoading(false)
-  }
 
   /**
    * Manipula o salvamento bem-sucedido do cartão.
