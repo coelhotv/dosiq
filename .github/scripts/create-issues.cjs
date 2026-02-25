@@ -188,7 +188,7 @@ async function fetchPendingIssues(prNumber) {
     .select('*')
     .eq('pr_number', prNumber)
     .eq('status', 'detected')
-    .eq('priority', 'media')
+    .in('priority', ['media', 'alta', 'critica'])
     .is('github_issue_number', null)
     .limit(10); // Limitar para não sobrecarregar
 
