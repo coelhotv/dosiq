@@ -9,6 +9,7 @@ import Dashboard from './views/Dashboard'
 import History from './views/History'
 import Settings from './views/Settings'
 import Calendar from './views/Calendar'
+import Emergency from './views/Emergency'
 import DLQAdmin from './views/admin/DLQAdmin'
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
@@ -115,6 +116,8 @@ function App() {
         return <History />
       case 'settings':
         return <Settings onNavigate={setCurrentView} />
+      case 'emergency':
+        return <Emergency onNavigate={setCurrentView} />
       case 'admin-dlq':
         return <DLQAdmin />
       case 'calendar':
