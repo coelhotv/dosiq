@@ -157,11 +157,22 @@ function verifyAuth(req) {
 async function createGitHubIssue(issue, prNumber, owner, repo, token) {
   const body = buildIssueBody(issue, prNumber)
 
+  // Map priority to prefix (P2: Dynamic prefix based on priority)
+  const priorityPrefix = {
+    'CRITICAL': 'Critical',
+    'HIGH': 'High',
+    'MEDIUM': 'Medium',
+    'LOW': 'Low'
+  }
+  const prefix = priorityPrefix[issue.priority] || 'Medium'
+
   logGitHub(ENDPOINT, 'createIssue', {
     owner,
     repo,
     issueTitle: issue.title?.substring(0, 50),
     prNumber,
+    priority: issue.priority,
+    prefix
   })
 
   const response = await fetchWithRetry(
@@ -175,7 +186,7 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        title: `[Refactor] ${issue.title}`,
+        title: `[${prefix}] ${issue.title}`,
         body: body,
         labels: [
           REFACTOR_LABELS.GEMINI_REFACTOR,

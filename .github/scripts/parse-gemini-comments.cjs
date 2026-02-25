@@ -194,26 +194,30 @@ function isSecurityIssue(comment) {
 
 /**
  * Gera output estruturado para agentes coder
- * 
+ *
  * @param {number} prNumber - Número do PR
  * @param {string} reviewId - ID do review
  * @param {Array<Object>} parsedComments - Comentários parseados e categorizados
  * @returns {Object} Output estruturado
  */
 function generateStructuredOutput(prNumber, reviewId, parsedComments) {
-  const categorized = categorizeIssues(parsedComments);
-  
+  // P3: Filter out compliments BEFORE categorization
+  const filteredComments = filterCompliments(parsedComments);
+
+  const categorized = categorizeIssues(filteredComments);
+
   return {
     pr_number: prNumber,
     review_id: reviewId,
     timestamp: new Date().toISOString(),
     summary: {
-      total_issues: parsedComments.length,
+      total_issues: filteredComments.length,
       auto_fixable: categorized.autoFixable.length,
       needs_agent: categorized.needsAgent.length,
-      critical: categorized.critical.length
+      critical: categorized.critical.length,
+      filtered_compliments: parsedComments.length - filteredComments.length
     },
-    issues: parsedComments.map(c => ({
+    issues: filteredComments.map(c => ({
       id: c.id,
       file: c.file,
       line: c.line,
@@ -275,6 +279,123 @@ function generateAutoFixCommands(autoFixableIssues) {
   return commands;
 }
 
+// ============================================================================
+// FILTRO DE COMPLIMENTS (P3: Ghost Issues Prevention)
+// ============================================================================
+
+/**
+ * Padrões de comentários que NÃO são problemas
+ * Inclui elogios, reconhecimentos de correção e feedback não-acionável
+ *
+ * IMPORTANTE: Gemini usa badges de prioridade para issues reais.
+ * Comentários sem badge são tipicamente acknowledgments/compliments.
+ */
+const COMPLIMENT_PATTERNS = [
+  // Elogios gerais (Português)
+  /ótimo\s*(trabalho|job)/i,
+  /excelente/i,
+  /fico\s*feliz/i,
+  /bom\s*trabalho/i,
+  /muito\s*bom/i,
+  /boa\s*(implementação|correção|solução)/i,
+
+  // Elogios gerais (Inglês)
+  /good\s*(catch|job|work|point|find)/i,
+  /nice\s*(fix|work|job|catch|solution)/i,
+  /well\s*(done|spotted|found)/i,
+  /great\s*(job|work|fix|solution)/i,
+  /thanks?\s*(for|to)/i,
+  /thank\s*you/i,
+
+  // Reconhecimento de correção
+  /correção\s*(foi|aplicada)/i,
+  /i\s*see\s*(you|this|that)\s*(have|has|'ve)\s*(fixed|corrected|addressed)/i,
+  /this\s*(has\s*been|is)\s*(fixed|corrected|addressed|resolved)/i,
+  /already\s*(fixed|corrected|addressed)/i,
+  /looks\s*(good|better|correct)/i,
+  /properly\s*(fixed|handled|implemented)/i,
+
+  // Confirmação não-acionável
+  /^correct$/i,
+  /^agreed$/i,
+  /makes\s*sense/i,
+  /reasonable/i,
+  /acceptable/i,
+
+  // Marcadores de aprovação
+  /^lgtm$/i,
+  /^sgtm$/i,
+  /^looks good to me$/i,
+  /^seems good to me$/i,
+  /^approved$/i,
+];
+
+/**
+ * Verifica se um comentário é um elogio ou reconhecimento
+ * e não deve ser transformado em issue
+ *
+ * @param {string} body - Corpo do comentário
+ * @returns {boolean} True se é um comentário não-acionável
+ */
+function isCompliment(body) {
+  if (!body) return false;
+
+  // KEY INSIGHT: Gemini issues reais SEMPRE têm badge de prioridade
+  // ![medium](https://www.gstatic.com/codereviewagent/medium-priority.svg)
+  // Comentários sem badge são tipicamente compliments/acknowledgments
+  const hasPriorityBadge = /!\[(critical|high|medium|low)\]\([^)]+\)/i.test(body);
+
+  if (!hasPriorityBadge) {
+    console.log(`[FILTER] No priority badge - likely compliment: "${body.substring(0, 50)}..."`);
+    return true;
+  }
+
+  const normalizedBody = body
+    .replace(/!\[.*?\]\(.*?\)/g, '') // Remove badges
+    .replace(/```[\s\S]*?```/g, '')   // Remove code blocks
+    .trim();
+
+  // Se o corpo está vazio após limpeza, não é elogio
+  if (!normalizedBody) return false;
+
+  // Verificar padrões de elogio
+  for (const pattern of COMPLIMENT_PATTERNS) {
+    if (pattern.test(normalizedBody)) {
+      console.log(`[FILTER] Compliment detected: "${normalizedBody.substring(0, 50)}..."`);
+      return true;
+    }
+  }
+
+  // Verificar se o comentário é muito curto (< 20 chars) e positivo
+  if (normalizedBody.length < 20) {
+    const positiveWords = ['good', 'nice', 'ok', 'done', 'fixed', 'correct', 'bom', 'ótimo'];
+    const hasPositive = positiveWords.some(w => normalizedBody.toLowerCase().includes(w));
+    if (hasPositive) {
+      console.log(`[FILTER] Short positive comment: "${normalizedBody}"`);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Filtra comentários que são elogios ou não-acionáveis
+ *
+ * @param {Array<Object>} comments - Comentários parseados
+ * @returns {Array<Object>} Comentários filtrados
+ */
+function filterCompliments(comments) {
+  const filtered = comments.filter(c => !isCompliment(c.raw || c.issue));
+
+  const removed = comments.length - filtered.length;
+  if (removed > 0) {
+    console.log(`[FILTER] Removed ${removed} compliment(s) from ${comments.length} total comments`);
+  }
+
+  return filtered;
+}
+
 // Exporta funções para uso em workflows (CommonJS)
 module.exports = {
   parseGeminiComment,
@@ -284,5 +405,9 @@ module.exports = {
   isSecurityIssue,
   generateStructuredOutput,
   categorizeIssue,
-  generateAutoFixCommands
+  generateAutoFixCommands,
+  // New exports for P3
+  isCompliment,
+  filterCompliments,
+  COMPLIMENT_PATTERNS
 };
