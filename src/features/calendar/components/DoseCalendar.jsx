@@ -53,7 +53,7 @@ function DoseCalendar() {
   const [viewDate, setViewDate] = useState(new Date())
 
   // 2. Context/Hooks
-  const { logs, protocols, isLoading } = useDashboard()
+  const { logs, protocols } = useDashboard()
 
   // 3. Memos
   /**

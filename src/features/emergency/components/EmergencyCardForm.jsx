@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Button from '@shared/components/ui/Button'
 import Card from '@shared/components/ui/Card'
 import {
@@ -41,20 +41,6 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
     if (!errors || Object.keys(errors).length === 0) return null
     return errors
   }, [errors])
-
-  // ===== EFFECTS (R-010: Hook Order) =====
-  useEffect(() => {
-    if (initialData) {
-      setContacts(
-        initialData.emergency_contacts?.length > 0
-          ? initialData.emergency_contacts
-          : [{ name: '', phone: '', relationship: '' }]
-      )
-      setAllergies(initialData.allergies || [])
-      setBloodType(initialData.blood_type || 'desconhecido')
-      setNotes(initialData.notes || '')
-    }
-  }, [initialData])
 
   // ===== HANDLERS (R-010: Hook Order) =====
 
