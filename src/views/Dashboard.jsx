@@ -22,6 +22,7 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import ThemeToggle from '@shared/components/ui/ThemeToggle'
 import ConfettiAnimation from '@shared/components/ui/animations/ConfettiAnimation'
 import MilestoneCelebration from '@shared/components/gamification/MilestoneCelebration'
+import ReportGenerator from '@features/reports/components/ReportGenerator'
 import { checkNewMilestones } from '@dashboard/services/milestoneService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { getCurrentUser } from '@shared/utils/supabase'
@@ -113,6 +114,9 @@ export default function Dashboard({ onNavigate }) {
   // Estados para controle de celebração de milestones
   const [currentMilestone, setCurrentMilestone] = useState(null)
   const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false)
+
+  // Estado para controle do modal de relatórios
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
 
   // === NOVOS ESTADOS PARA DRILL-DOWN DO SPARKLINE ===
   /**
@@ -596,6 +600,14 @@ export default function Dashboard({ onNavigate }) {
               {userName}
               <span className={styles.dot}>.</span>
             </button>
+            <button
+              className={styles.reportButton}
+              onClick={() => setIsReportModalOpen(true)}
+              title="Gerar Relatório"
+              aria-label="Gerar Relatório PDF"
+            >
+              📊
+            </button>
             <ThemeToggle size="sm" position="inline" />
           </div>
         </div>
@@ -884,6 +896,14 @@ export default function Dashboard({ onNavigate }) {
         dailySummary={selectedDaySummary}
         onRetry={handleRetryDayLogs}
       />
+
+      {/* Modal de Geração de Relatórios */}
+      <Modal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      >
+        <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
+      </Modal>
     </div>
   )
 }
