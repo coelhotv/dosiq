@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { supabase, signOut, updatePassword } from '@shared/utils/supabase'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
+import Modal from '@shared/components/ui/Modal'
 import ExportDialog from '@features/export/components/ExportDialog'
+import ReportGenerator from '@features/reports/components/ReportGenerator'
 import './Settings.css'
 
 export default function Settings({ onNavigate }) {
@@ -14,6 +16,7 @@ export default function Settings({ onNavigate }) {
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -174,7 +177,7 @@ export default function Settings({ onNavigate }) {
 
         {settings?.telegram_chat_id ? (
           <div className="connected-actions">
-            <p className="section-desc success-text">✅ Bot vinculado com sucesso!</p>
+            <p className="section-desc success-text">Bot vinculado com sucesso!</p>
             <Button variant="outline" className="btn-disconnect" onClick={handleDisconnectTelegram}>
               Desconectar Telegram
             </Button>
@@ -193,7 +196,7 @@ export default function Settings({ onNavigate }) {
                   rel="noreferrer"
                   className="telegram-link"
                 >
-                  Abrir Bot no Telegram ↗
+                  Abrir Bot no Telegram
                 </a>
                 <Button
                   variant="ghost"
@@ -214,7 +217,7 @@ export default function Settings({ onNavigate }) {
 
         <div className="emergency-actions">
           <Button variant="outline" onClick={() => onNavigate('emergency')}>
-            🚨 Cartão de Emergência
+            Cartão de Emergência
           </Button>
         </div>
       </div>
@@ -225,7 +228,18 @@ export default function Settings({ onNavigate }) {
 
         <div className="export-actions">
           <Button variant="outline" onClick={() => setIsExportDialogOpen(true)}>
-            📥 Exportar Dados
+            Exportar Dados
+          </Button>
+        </div>
+      </div>
+
+      <div className="settings-section glass-card">
+        <h3>Relatórios</h3>
+        <p className="section-desc">Gere relatórios em PDF com seu histórico de medicamentos e adesão.</p>
+
+        <div className="report-actions">
+          <Button variant="outline" onClick={() => setIsReportModalOpen(true)}>
+            Gerar Relatório PDF
           </Button>
         </div>
       </div>
@@ -236,7 +250,7 @@ export default function Settings({ onNavigate }) {
 
         <div className="admin-actions">
           <Button variant="outline" onClick={() => onNavigate('admin-dlq')}>
-            📋 Gerenciar Notificações Falhadas (DLQ)
+            Gerenciar Notificações Falhadas (DLQ)
           </Button>
         </div>
       </div>
@@ -251,6 +265,14 @@ export default function Settings({ onNavigate }) {
       </div>
 
       <ExportDialog isOpen={isExportDialogOpen} onClose={() => setIsExportDialogOpen(false)} />
+
+      {/* Modal de Geração de Relatórios */}
+      <Modal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      >
+        <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
+      </Modal>
     </div>
   )
 }
