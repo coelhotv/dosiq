@@ -8,6 +8,7 @@ import Protocols from './views/Protocols'
 import Dashboard from './views/Dashboard'
 import History from './views/History'
 import Settings from './views/Settings'
+import Calendar from './views/Calendar'
 import DLQAdmin from './views/admin/DLQAdmin'
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
@@ -116,6 +117,8 @@ function App() {
         return <Settings onNavigate={setCurrentView} />
       case 'admin-dlq':
         return <DLQAdmin />
+      case 'calendar':
+        return <Calendar onNavigate={setCurrentView} />
       case 'dashboard':
       default:
         return (
