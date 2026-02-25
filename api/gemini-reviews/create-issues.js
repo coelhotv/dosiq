@@ -158,11 +158,12 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
   const body = buildIssueBody(issue, prNumber)
 
   // Map priority to prefix (P2: Dynamic prefix based on priority)
+  // Note: issue.priority comes from Supabase in Portuguese
   const priorityPrefix = {
-    'CRITICAL': 'Critical',
-    'HIGH': 'High',
-    'MEDIUM': 'Medium',
-    'LOW': 'Low'
+    'critica': 'CRITICAL',
+    'alta': 'High',
+    'media': 'Medium',
+    'baixa': 'Low'
   }
   const prefix = priorityPrefix[issue.priority] || 'Medium'
 
@@ -314,7 +315,7 @@ async function fetchPendingIssues(supabase, prNumber) {
   logSupabase(ENDPOINT, 'select', 'gemini_reviews', {
     operation: 'fetchPendingIssues',
     prNumber,
-    filters: { status: 'detected', priority: 'media', github_issue_number: null },
+    filters: { status: 'detected', priority: ['media', 'alta', 'critica'], github_issue_number: null },
   })
 
   const { data, error } = await supabase
@@ -322,7 +323,7 @@ async function fetchPendingIssues(supabase, prNumber) {
     .select('*')
     .eq('pr_number', prNumber)
     .eq('status', 'detected')
-    .eq('priority', 'media')
+    .in('priority', ['media', 'alta', 'critica'])
     .is('github_issue_number', null)
     .limit(10)
 
