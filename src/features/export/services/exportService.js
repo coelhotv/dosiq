@@ -12,7 +12,6 @@
 
 import { protocolService } from '@features/protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
-import { stockService } from '@features/stock/services/stockService'
 import { medicineService } from '@features/medications/services/medicineService'
 import { formatLocalDate, parseLocalDate } from '@utils/dateUtils'
 
@@ -234,8 +233,8 @@ function exportLogsCSV(logs) {
  * @returns {string} Conteúdo CSV
  */
 function exportStockCSV(stockData, medicines) {
-  // Cria mapa de medicamentos para lookup
-  const medicineMap = new Map(medicines.map((m) => [m.id, m]))
+  // medicines disponível para referência futura se necessário
+  void medicines
 
   // Achata dados de estoque
   const flatStock = stockData.flatMap((medicine) => {
