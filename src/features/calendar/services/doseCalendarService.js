@@ -205,10 +205,10 @@ function countTakenDosesForDate(logs, protocolId, dateStr, timeSchedule) {
  */
 function determineDayStatus(expected, taken) {
   if (expected === 0) return 'sem_doses'
+  if (taken === 0) return 'perdido'
   if (taken >= expected) return 'completo'
-  if (taken > 0) return 'parcial'
-  // expected > 0 && taken === 0
-  return 'perdido'
+  // Se chegou aqui, é porque 0 < taken < expected
+  return 'parcial'
 }
 
 /**
