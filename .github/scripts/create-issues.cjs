@@ -295,11 +295,19 @@ async function createGitHubIssue(issue, prNumber, github, context) {
   // Construir corpo da issue
   const body = buildIssueBody(issue, prNumber);
 
+  // Mapear prioridade do Supabase (português) para prefixo em inglês
+  const priorityPrefix = {
+    'critica': 'CRITICAL',
+    'alta': 'High',
+    'media': 'Medium',
+    'baixa': 'Low'
+  }[issue.priority] || 'Medium';
+
   // Criar issue
   const { data: githubIssue } = await github.rest.issues.create({
     owner,
     repo,
-    title: `[Refactor] ${issue.title}`,
+    title: `[${priorityPrefix}] ${issue.title}`,
     body: body,
     labels: [
       REFACTOR_LABELS.GEMINI_REFACTOR,
