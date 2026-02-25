@@ -267,7 +267,7 @@ export function renderAdherenceChart(data, width = 600, height = 300) {
     return null
   }
   
-  const { labels, values, expected, taken } = data
+  const { labels, values, expected } = data
   const barCount = labels.length
   
   // Cria canvas

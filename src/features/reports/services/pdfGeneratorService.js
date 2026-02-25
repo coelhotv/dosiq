@@ -8,7 +8,7 @@ import { renderAdherenceChart, renderStockChart } from './chartRenderer.js'
 import { adherenceService } from '@services/api/adherenceService.js'
 import { protocolService } from '@features/protocols/services/protocolService.js'
 import { stockService } from '@features/stock/services/stockService.js'
-import { parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
+import { parseLocalDate } from '@utils/dateUtils.js'
 
 /**
  * Dimensões da página A4 em milímetros.
@@ -85,26 +85,6 @@ function formatTimeSchedule(timeSchedule) {
  */
 function translateStatus(active) {
   return active ? 'Ativo' : 'Inativo'
-}
-
-/**
- * Traduz a frequência do protocolo para português.
- * @param {string} frequency - Frequência em inglês ou português.
- * @returns {string} Frequência traduzida.
- * @private
- */
-function translateFrequency(frequency) {
-  const frequencyMap = {
-    daily: 'Diário',
-    diário: 'Diário',
-    weekly: 'Semanal',
-    semanal: 'Semanal',
-    every_other_day: 'Dias alternados',
-    dias_alternados: 'Dias alternados',
-    as_needed: 'Quando necessário',
-    quando_necessário: 'Quando necessário',
-  }
-  return frequencyMap[frequency?.toLowerCase()] || frequency || 'Diário'
 }
 
 /**
