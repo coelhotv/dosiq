@@ -587,6 +587,13 @@ export default function Dashboard({ onNavigate }) {
             showAxis={false}
             onDayClick={handleDayClick}
           />
+          <button
+            className={styles.viewAllLink}
+            onClick={() => onNavigate?.('calendar')}
+            aria-label="Ver calendário completo"
+          >
+            Ver calendário →
+          </button>
         </div>
       )}
 
