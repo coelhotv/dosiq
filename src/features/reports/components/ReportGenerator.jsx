@@ -238,9 +238,7 @@ export default function ReportGenerator({ onClose }) {
           <div className="report-generator__loading-bar">
             <div className="report-generator__loading-progress" />
           </div>
-          <p className="report-generator__loading-text">
-            Preparando seu relatório, aguarde...
-          </p>
+          <p className="report-generator__loading-text">Preparando seu relatório, aguarde...</p>
         </div>
       )}
     </div>

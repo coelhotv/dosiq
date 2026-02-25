@@ -137,18 +137,16 @@ async function saveToSupabase(data) {
     const emergencyCard = _mapToSupabase(data)
 
     // Usa upsert para criar ou atualizar
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert(
-        {
-          user_id: userId,
-          emergency_card: emergencyCard,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id',
-        }
-      )
+    const { error } = await supabase.from('user_settings').upsert(
+      {
+        user_id: userId,
+        emergency_card: emergencyCard,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id',
+      }
+    )
 
     if (error) {
       // Se a coluna não existir, loga aviso mas não falha

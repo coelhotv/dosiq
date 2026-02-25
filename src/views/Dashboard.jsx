@@ -4,7 +4,10 @@ import {
   cachedTreatmentPlanService as treatmentPlanService,
   adherenceService,
 } from '@shared/services'
-import { getExpiringPrescriptions, PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
+import {
+  getExpiringPrescriptions,
+  PRESCRIPTION_STATUS,
+} from '@features/prescriptions/services/prescriptionService'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
@@ -500,9 +503,7 @@ export default function Dashboard({ onNavigate }) {
         type: 'prescription',
         protocol_id: protocol.id,
         scheduled_time: null,
-        actions: [
-          { label: 'RENOVAR', type: 'primary' },
-        ],
+        actions: [{ label: 'RENOVAR', type: 'primary' }],
       })
     })
 
@@ -898,10 +899,7 @@ export default function Dashboard({ onNavigate }) {
       />
 
       {/* Modal de Geração de Relatórios */}
-      <Modal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      >
+      <Modal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
         <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
       </Modal>
     </div>
