@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, signOut, updatePassword } from '@shared/utils/supabase'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
+import ExportDialog from '@features/export/components/ExportDialog'
 import './Settings.css'
 
 export default function Settings({ onNavigate }) {
@@ -12,6 +13,7 @@ export default function Settings({ onNavigate }) {
   const [newPassword, setNewPassword] = useState('')
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -218,6 +220,17 @@ export default function Settings({ onNavigate }) {
       </div>
 
       <div className="settings-section glass-card">
+        <h3>Exportar Dados</h3>
+        <p className="section-desc">Exporte seus dados em formato CSV ou JSON para backup ou análise.</p>
+
+        <div className="export-actions">
+          <Button variant="outline" onClick={() => setIsExportDialogOpen(true)}>
+            📥 Exportar Dados
+          </Button>
+        </div>
+      </div>
+
+      <div className="settings-section glass-card">
         <h3>Administração</h3>
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
 
@@ -236,6 +249,8 @@ export default function Settings({ onNavigate }) {
           Sair da Conta
         </Button>
       </div>
+
+      <ExportDialog isOpen={isExportDialogOpen} onClose={() => setIsExportDialogOpen(false)} />
     </div>
   )
 }

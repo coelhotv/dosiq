@@ -1,0 +1,175 @@
+/**
+ * ExportDialog Styles
+ *
+ * Estilos para o dialog de exportação de dados.
+ * Segue arquitetura CSS do projeto (docs/architecture/CSS.md).
+ */
+
+.export-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.export-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.export-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* Format Selector */
+.format-selector {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.format-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.format-option:hover {
+  border-color: var(--primary-color, #4f46e5);
+  background: var(--bg-hover, #f0f0ff);
+}
+
+.format-option.selected {
+  border-color: var(--primary-color, #4f46e5);
+  background: var(--primary-light, #eef2ff);
+}
+
+.format-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.format-label {
+  font-weight: 500;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* Date Range */
+.date-range {
+  display: flex;
+  gap: 1rem;
+}
+
+.date-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-input-group label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.date-input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #1a1a2e);
+  transition: border-color 0.2s ease;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+  box-shadow: 0 0 0 3px var(--primary-light, #eef2ff);
+}
+
+.date-input:disabled {
+  background: var(--bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.checkbox-label:hover {
+  background: var(--bg-hover, #f0f0ff);
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--primary-color, #4f46e5);
+  cursor: pointer;
+}
+
+.checkbox-label span {
+  font-size: 0.875rem;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* Error Message */
+.export-error {
+  padding: 0.75rem 1rem;
+  background: var(--error-light, #fef2f2);
+  border: 1px solid var(--error-color, #ef4444);
+  border-radius: 6px;
+  color: var(--error-color, #dc2626);
+  font-size: 0.875rem;
+}
+
+/* Actions */
+.export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .date-range {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .format-selector {
+    flex-direction: column;
+  }
+
+  .export-actions {
+    flex-direction: column-reverse;
+  }
+
+  .export-actions .btn {
+    width: 100%;
+  }
+}
