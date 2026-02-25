@@ -184,6 +184,43 @@ ${issueRows}
 }
 
 /**
+ * Verifica se já existe um comentário de alerta no PR
+ * @param {Object} github - Cliente GitHub Actions
+ * @param {Object} context - Contexto do GitHub Actions
+ * @param {number} prNumber - Número do PR
+ * @returns {Promise<boolean>} True se já existe alerta
+ */
+async function hasExistingAlertComment(github, context, prNumber) {
+  try {
+    const alertMarker = '🛑 Workflow Bloqueado';
+
+    // Usar paginação para garantir que todos os comentários sejam verificados
+    const comments = await github.paginate(github.rest.issues.listComments, {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: prNumber,
+      per_page: 100
+    });
+
+    const hasAlert = comments.some(comment =>
+      comment.body?.includes(alertMarker)
+    );
+
+    if (hasAlert) {
+      logInfo('Comentário de alerta já existe no PR', { prNumber });
+    }
+
+    return hasAlert;
+  } catch (error) {
+    logError('Erro ao verificar comentários existentes', {
+      prNumber,
+      error: error.message
+    });
+    return false; // Em caso de erro, assume que não existe para tentar postar
+  }
+}
+
+/**
  * Posta comentário de alerta no PR via GitHub API
  * @param {Object} github - Cliente GitHub Actions
  * @param {Object} context - Contexto do GitHub Actions
@@ -192,6 +229,13 @@ ${issueRows}
  */
 async function postAlertComment(github, context, prNumber, blockingIssues) {
   try {
+    // Verifica se já existe alerta para evitar duplicatas
+    const hasExisting = await hasExistingAlertComment(github, context, prNumber);
+    if (hasExisting) {
+      logInfo('Pulando criação de comentário - alerta já existe', { prNumber });
+      return;
+    }
+
     const body = generateAlertComment(blockingIssues);
 
     await github.rest.issues.createComment({

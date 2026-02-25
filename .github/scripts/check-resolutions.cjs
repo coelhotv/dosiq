@@ -218,15 +218,17 @@ async function checkResolutionCompleteness(issue, commitSha, github, context) {
     }
 
     const currentCode = relevantLines.join('\n');
+    const currentCodeClean = currentCode.replace(/\s+/g, ' ').toLowerCase();
 
     // Analisar se a issue foi resolvida baseado na descrição e código atual
     const description = (issue.description || issue.issue || '').toLowerCase();
-    const suggestion = (issue.suggestion || '').toLowerCase();
+    const suggestion = (issue.suggestion || '').trim();
+    const suggestionClean = suggestion.replace(/\s+/g, ' ').toLowerCase();
 
     // Critérios para resolução completa
     const completeIndicators = [
       // Se havia sugestão de código e o código mudou significativamente
-      suggestion && currentCode.toLowerCase().includes(suggestion.substring(0, 50)),
+      suggestionClean && currentCodeClean.includes(suggestionClean.substring(0, 50)),
       // Se era sobre remover código e as linhas foram removidas ou alteradas
       description.includes('remover') && relevantLines.length === 0,
       // Se era sobre adicionar e o código agora existe
@@ -244,14 +246,14 @@ async function checkResolutionCompleteness(issue, commitSha, github, context) {
     // Critérios para resolução parcial
     const partialIndicators = [
       // Se menciona TODO ou FIXME ainda presente
-      currentCode.toLowerCase().includes('todo'),
-      currentCode.toLowerCase().includes('fixme'),
+      currentCodeClean.includes('todo'),
+      currentCodeClean.includes('fixme'),
       // Se menciona refatorar E nenhum indicador completo foi atendido
       // (evita marcar como 'partial' refatorações que já estão completas)
       description.includes('refatorar') && completeCount === 0,
       // Se há comentários indicando trabalho pendente
-      currentCode.toLowerCase().includes('// not implemented'),
-      currentCode.toLowerCase().includes('// implementar'),
+      currentCodeClean.includes('// not implemented'),
+      currentCodeClean.includes('// implementar'),
     ];
 
     const partialCount = partialIndicators.filter(Boolean).length;
