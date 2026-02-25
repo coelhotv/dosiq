@@ -71,6 +71,7 @@ const issueSchema = z.object({
   description: z.string().optional(),
   suggestion: z.string().nullable().optional(), // Allow both null and undefined
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
+  severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
   category: z.string().optional(),
 })
 
@@ -324,7 +325,7 @@ async function createNewIssue(supabase, issue, issueHash, prNumber, commitSha) {
     line_end: issue.line_end || issue.line || null,
     issue_hash: issueHash,
     status: 'detected',
-    priority: mapPriority(issue.priority),
+    priority: mapPriority(issue.priority || issue.severity),
     category: mapCategory(issue.category),
     title: issue.title || issue.issue?.substring(0, 200) || 'Sem título',
     description: issue.description || issue.issue || '',
