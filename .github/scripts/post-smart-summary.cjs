@@ -14,7 +14,8 @@
  */
 
 // Marcador para identificar o comentário de resumo
-const SUMMARY_MARKER = '<!-- GEMINI_REVIEW_SUMMARY -->';
+// NOTA: Sem o fechamento --> pois o marcador real contém metadata entre a tag e o fechamento
+const SUMMARY_MARKER = '<!-- GEMINI_REVIEW_SUMMARY';
 
 /**
  * Gera marcador de resumo com tracking de IDs reportados (P5)
