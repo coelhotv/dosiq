@@ -241,36 +241,6 @@ function DoseCalendar() {
         ))}
       </div>
 
-      <div className="dose-calendar__grid">
-        {Object.entries(doseMap).map(([dateStr, dayInfo]) => {
-          if (dayInfo.expected === 0) return null
-
-          const date = parseLocalDate(dateStr)
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          const isFuture = date > today
-          const status = isFuture ? 'futuro' : dayInfo.status
-
-          return (
-            <div
-              key={dateStr}
-              className={`dose-calendar__day dose-calendar__day--${status}`}
-              style={{ '--status-color': STATUS_COLORS[status] }}
-              onClick={() => handleDayClick(date)}
-              role="button"
-              tabIndex={0}
-              aria-label={`${formatDateDisplay(date)}: ${STATUS_LABELS[status]}`}
-            >
-              <span className="dose-calendar__day-number">{date.getDate()}</span>
-              <span
-                className="dose-calendar__day-dot"
-                style={{ backgroundColor: STATUS_COLORS[status] }}
-              />
-            </div>
-          )
-        })}
-      </div>
-
       <Calendar
         markedDates={markedDates}
         selectedDate={selectedDate}

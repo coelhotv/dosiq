@@ -128,7 +128,8 @@ function shouldExpectDosesOnDate(protocol, dateStr) {
       return false
 
     default:
-      return true
+      // Frequências desconhecidas não geram doses esperadas (segurança)
+      return false
   }
 }
 
@@ -204,8 +205,8 @@ function countTakenDosesForDate(logs, protocolId, dateStr, timeSchedule) {
  */
 function determineDayStatus(expected, taken) {
   if (expected === 0) return 'sem_doses'
-  if (taken === expected) return 'completo'
-  if (taken > 0 && taken < expected) return 'parcial'
+  if (taken >= expected) return 'completo'
+  if (taken > 0) return 'parcial'
   // expected > 0 && taken === 0
   return 'perdido'
 }

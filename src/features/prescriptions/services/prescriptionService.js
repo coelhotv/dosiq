@@ -127,20 +127,18 @@ export function getExpiringPrescriptions(protocols, thresholdDays = 30) {
       protocol,
       ...getPrescriptionStatus(protocol),
     }))
+    // Filtro unificado: inclui vencidas e vencendo dentro do threshold
     .filter((item) => {
-      // Inclui apenas vencendo ou vencida
-      return (
-        item.status === PRESCRIPTION_STATUS.VENCENDO ||
-        item.status === PRESCRIPTION_STATUS.VENCIDA
-      )
-    })
-    // Filtra pelo threshold (apenas para status 'vencendo')
-    .filter((item) => {
+      // Vencidas sempre incluídas
       if (item.status === PRESCRIPTION_STATUS.VENCIDA) {
-        return true // Sempre inclui vencidas
+        return true
       }
-      // Para vencendo, verifica se está dentro do threshold
-      return item.daysRemaining !== null && item.daysRemaining <= thresholdDays
+      // Vencendo: verifica se está dentro do threshold
+      if (item.status === PRESCRIPTION_STATUS.VENCENDO) {
+        return item.daysRemaining !== null && item.daysRemaining <= thresholdDays
+      }
+      // Outros status não são incluídos
+      return false
     })
     // Ordena por urgência: vencidas primeiro, depois por dias restantes
     .sort((a, b) => {
