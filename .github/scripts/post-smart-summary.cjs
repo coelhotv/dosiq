@@ -17,7 +17,38 @@
 const SUMMARY_MARKER = '<!-- GEMINI_REVIEW_SUMMARY -->';
 
 /**
+ * Gera marcador de resumo com tracking de IDs reportados (P5)
+ *
+ * @param {Array<string>} reportedIds - IDs dos comentários já reportados
+ * @param {string} timestamp - Timestamp ISO
+ * @returns {string} Marcador HTML com metadata
+ */
+function generateSummaryMarker(reportedIds, timestamp) {
+  return `<!-- GEMINI_REVIEW_SUMMARY
+reported_ids: ${reportedIds.join(',')}
+last_update: ${timestamp}
+-->`;
+}
+
+/**
+ * Parseia o marcador de resumo para extrair IDs reportados
+ *
+ * @param {string} markerContent - Conteúdo do marcador
+ * @returns {Object} IDs reportados e timestamp
+ */
+function parseSummaryMarker(markerContent) {
+  const reportedMatch = markerContent.match(/reported_ids: ([^\n]*)/);
+  const timestampMatch = markerContent.match(/last_update: ([^\n]*)/);
+
+  return {
+    reportedIds: reportedMatch ? reportedMatch[1].split(',').filter(Boolean) : [],
+    lastUpdate: timestampMatch ? timestampMatch[1] : null
+  };
+}
+
+/**
  * Posta ou atualiza o resumo de review no PR
+ * Com tracking de issues já reportados (P5: Duplicate Prevention)
  *
  * @param {Object} reviewData - Dados do review parseado
  * @param {Object} reviewData.summary - Resumo estatístico
@@ -50,8 +81,26 @@ async function postOrUpdateSummary(reviewData, prNumber, github, context) {
       comment.user.login === 'github-actions[bot]'
   );
 
-  // Gerar corpo do resumo
-  const summaryBody = generateSummaryBody(reviewData, prNumber);
+  // P5: Parse IDs já reportados
+  let previouslyReportedIds = [];
+  if (existingComment) {
+    const parsed = parseSummaryMarker(existingComment.body);
+    previouslyReportedIds = parsed.reportedIds;
+    console.log(`Found ${previouslyReportedIds.length} previously reported issues`);
+  }
+
+  // P5: Extrair IDs atuais
+  const currentIds = (reviewData.issues || []).map(i => String(i.id)).filter(Boolean);
+
+  // P5: Calcular novos IDs
+  const newIds = currentIds.filter(id => !previouslyReportedIds.includes(id));
+  const newCount = newIds.length;
+
+  // P5: Atualizar lista de reportados (merge dos anteriores com os novos)
+  const allReportedIds = [...new Set([...previouslyReportedIds, ...currentIds])];
+
+  // Gerar corpo do resumo com tracking
+  const summaryBody = generateSummaryBody(reviewData, prNumber, newCount, allReportedIds);
 
   if (existingComment) {
     // Atualizar comentário existente
@@ -62,11 +111,12 @@ async function postOrUpdateSummary(reviewData, prNumber, github, context) {
       body: summaryBody
     });
 
-    console.log(`✅ Resumo atualizado: ${updatedComment.html_url}`);
+    console.log(`✅ Resumo atualizado: ${newCount} novos issues - ${updatedComment.html_url}`);
     return {
       action: 'updated',
       commentId: updatedComment.id,
-      url: updatedComment.html_url
+      url: updatedComment.html_url,
+      newIssues: newCount
     };
   } else {
     // Criar novo comentário
@@ -77,23 +127,27 @@ async function postOrUpdateSummary(reviewData, prNumber, github, context) {
       body: summaryBody
     });
 
-    console.log(`✅ Resumo criado: ${newComment.html_url}`);
+    console.log(`✅ Resumo criado: ${newCount} issues - ${newComment.html_url}`);
     return {
       action: 'created',
       commentId: newComment.id,
-      url: newComment.html_url
+      url: newComment.html_url,
+      newIssues: newCount
     };
   }
 }
 
 /**
  * Gera o corpo do resumo em formato markdown
+ * Com tracking de novos issues (P5)
  *
  * @param {Object} reviewData - Dados do review
  * @param {number} prNumber - Número do PR
+ * @param {number} newIssuesCount - Quantidade de novos issues desde último report
+ * @param {Array<string>} allReportedIds - Todos os IDs reportados (para tracking)
  * @returns {string} Corpo do resumo em markdown
  */
-function generateSummaryBody(reviewData, prNumber) {
+function generateSummaryBody(reviewData, prNumber, newIssuesCount = 0, allReportedIds = []) {
   const summary = reviewData.summary || {};
   const issues = reviewData.issues || [];
 
@@ -105,6 +159,7 @@ function generateSummaryBody(reviewData, prNumber) {
   const autoFixable = summary.auto_fixable || 0;
   const needsAgent = summary.needs_agent || 0;
   const critical = summary.critical || 0;
+  const filteredCompliments = summary.filtered_compliments || 0;
 
   // Top 10 issues
   const topIssues = issues
@@ -115,7 +170,10 @@ function generateSummaryBody(reviewData, prNumber) {
     )
     .join('\n');
 
-  const body = `${SUMMARY_MARKER}
+  // P5: Usar marcador com tracking de IDs
+  const marker = generateSummaryMarker(allReportedIds, timestamp);
+
+  const body = `${marker}
 ## 🤖 Gemini Code Review - Resumo
 
 *Última atualização: ${timestamp}*
@@ -125,9 +183,11 @@ function generateSummaryBody(reviewData, prNumber) {
 | Categoria | Quantidade |
 |-----------|------------|
 | Total de Issues | ${totalIssues} |
+| **Novos desde último report** | **${newIssuesCount}** |
 | Auto-fixable | ${autoFixable} |
 | Requer Agente | ${needsAgent} |
 | Críticos | ${critical} |
+| Compliments Filtrados | ${filteredCompliments} |
 
 ### 📋 Issues Principais
 
@@ -164,5 +224,7 @@ function escapeMarkdown(text) {
 module.exports = {
   postOrUpdateSummary,
   generateSummaryBody,
+  generateSummaryMarker,
+  parseSummaryMarker,
   SUMMARY_MARKER
 };

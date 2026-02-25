@@ -960,8 +960,8 @@ jobs:
   create-issues:
     name: Create GitHub Issues via Vercel API
     runs-on: ubuntu-latest
-    needs: [detect, parse, upload-to-blob]
-    if: always() && needs.detect.outputs.should_run == 'true' && needs.upload-to-blob.result == 'success'
+    needs: [detect, parse, upload-to-blob, persist]
+    if: always() && needs.detect.outputs.should_run == 'true' && needs.upload-to-blob.result == 'success' && needs.persist.result == 'success'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
       VERCEL_API_URL: 'https://meus-remedios.vercel.app'
