@@ -4,6 +4,7 @@ import {
   cachedTreatmentPlanService as treatmentPlanService,
   adherenceService,
 } from '@shared/services'
+import { getExpiringPrescriptions, PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
@@ -471,6 +472,36 @@ export default function Dashboard({ onNavigate }) {
       })
     })
 
+    // Alerta de Prescrições Vencendo ou Vencidas
+    const expiringPrescriptions = getExpiringPrescriptions(rawProtocols)
+
+    expiringPrescriptions.forEach(({ protocol, status, daysRemaining }) => {
+      const isExpired = status === PRESCRIPTION_STATUS.VENCIDA
+      const severity = isExpired ? 'critical' : 'warning'
+      const title = isExpired ? 'Prescrição Vencida' : 'Prescrição Vencendo'
+
+      let message
+      if (isExpired) {
+        const daysAgo = Math.abs(daysRemaining)
+        message = `A prescrição de ${protocol.medicine?.name || 'medicamento'} está vencida há ${daysAgo} ${daysAgo === 1 ? 'dia' : 'dias'}.`
+      } else {
+        message = `A prescrição de ${protocol.medicine?.name || 'medicamento'} vence em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}.`
+      }
+
+      alerts.push({
+        id: `${protocol.id}_prescription`,
+        severity,
+        title,
+        message,
+        type: 'prescription',
+        protocol_id: protocol.id,
+        scheduled_time: null,
+        actions: [
+          { label: 'RENOVAR', type: 'primary' },
+        ],
+      })
+    })
+
     // Filtrar alertas snoozed (que ainda não expiraram)
     return alerts
       .filter((alert) => {
@@ -631,6 +662,9 @@ export default function Dashboard({ onNavigate }) {
               // Placeholder - tooltip informa integração futura
             } else if (action.label === 'ESTOQUE') {
               onNavigate('stock', { medicineId: alert.medicine_id })
+            } else if (action.label === 'RENOVAR') {
+              // Navegar para a view de protocolos para renovar a prescrição
+              onNavigate('protocols')
             } else if (action.label === 'ADIAR') {
               // Calcular tempo de expiração: horário previsto + 4 horas
               const scheduledTime = alert.scheduled_time
