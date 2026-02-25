@@ -43,8 +43,8 @@ export default function EmergencyCardView({ data, onEdit }) {
       .filter((med) => activeProtocolMedicineIds.has(med.id))
       .map((med) => ({
         name: med.name,
-        dosage: med.dosage,
-        unit: med.unit || 'comprimidos',
+        dosage: med.dosage_per_pill,
+        unit: med.dosage_unit || '',
       }))
   }, [medicines, protocols, isDashboardLoading])
 

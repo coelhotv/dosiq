@@ -1,0 +1,232 @@
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 12245621-6ae2-4d42-941a-d86df85627d3: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 3)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 8f5cae96-b4fb-4f25-b55b-d5cf395f2414: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 4)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 7e79c708-5ff4-45f7-8428-c67d510557f4: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 5)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 155cf942-88bd-413f-b4ed-28b267885dce: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 6)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 054219f8-ed3e-4629-94ae-069ab4c059cd: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 7)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo de992876-67e4-4e51-b75d-a3501bcbac04: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 8)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 3515ccc2-5594-4f54-9ed0-4e277811a428: R0: Acquiring an exclusive Navigator LockManager lock "lock:sb-kwqjtdsqkkbebfiaxubb-auth-token" timed out waiting 10000ms
+    at QN.pN [as lock] (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:36:17818)
+    at async QN._acquireLock (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:7306)
+    at async QN.getUser (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:9253)
+    at async Te (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:52:43797)
+    at async Object.calculateProtocolAdherence (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:873)
+    at async https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:1580
+    at async Promise.all (index 9)
+    at async Promise.all (index 1)
+    at async Object.getAdherenceSummary (https://meus-remedios.vercel.app/assets/index-C5xnOqJa.js:159:2538)
+    at async Promise.all (index 0)
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 7318f7a9-24bb-4653-bb17-3bc69f762634: {message: 'Error: Acquiring an exclusive Navigator LockManage…kbebfiaxubb-auth-token" timed out waiting 10000ms', details: 'Error: Acquiring an exclusive Navigator LockManage…ios.vercel.app/assets/index-C5xnOqJa.js:159:2538)', hint: '', code: ''}
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
+index-C5xnOqJa.js:159 Erro ao calcular adesão para protocolo 7825c527-0a8d-47a9-a525-7e1fe7c98a21: {message: 'Error: Acquiring an exclusive Navigator LockManage…kbebfiaxubb-auth-token" timed out waiting 10000ms', details: 'Error: Acquiring an exclusive Navigator LockManage…ios.vercel.app/assets/index-C5xnOqJa.js:159:2538)', hint: '', code: ''}
+overrideMethod @ hook.js:608
+(anonymous) @ index-C5xnOqJa.js:159
+await in (anonymous)
+calculateAllProtocolsAdherence @ index-C5xnOqJa.js:159
+await in calculateAllProtocolsAdherence
+getAdherenceSummary @ index-C5xnOqJa.js:159
+FL @ index-C5xnOqJa.js:168
+await in FL
+(anonymous) @ index-C5xnOqJa.js:168
+_y @ index-C5xnOqJa.js:9
+(anonymous) @ index-C5xnOqJa.js:9
+Tp @ index-C5xnOqJa.js:9
+bh @ index-C5xnOqJa.js:9
+Mh @ index-C5xnOqJa.js:10
+uT @ index-C5xnOqJa.js:10
+Show 1 more frame
+Show less
