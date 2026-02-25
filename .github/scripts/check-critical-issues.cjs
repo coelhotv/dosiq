@@ -192,16 +192,18 @@ ${issueRows}
  */
 async function hasExistingAlertComment(github, context, prNumber) {
   try {
-    const { data: comments } = await github.rest.issues.listComments({
+    const alertMarker = '🛑 Workflow Bloqueado';
+
+    // Usar paginação para garantir que todos os comentários sejam verificados
+    const comments = await github.paginate(github.rest.issues.listComments, {
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: prNumber,
       per_page: 100
     });
 
-    const alertMarker = '🛑 Workflow Bloqueado';
     const hasAlert = comments.some(comment =>
-      comment.body && comment.body.includes(alertMarker)
+      comment.body?.includes(alertMarker)
     );
 
     if (hasAlert) {

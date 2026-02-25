@@ -31,7 +31,7 @@ const reviewSchema = z.object({
     title: z.string().optional(),
     issue: z.string().optional(),
     description: z.string().optional(),
-    suggestion: z.string().optional(),
+    suggestion: z.string().nullable().optional(),
     priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
     severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
     category: z.string().optional()
