@@ -16,21 +16,23 @@ export const adherenceService = {
   /**
    * Calcula o score de adesão geral do usuário
    * @param {string} period - Período: '7d', '30d', '90d'
+   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
    * @returns {Promise<{score: number, taken: number, expected: number, period: string}>}
    */
-  async calculateAdherence(period = '30d') {
+  async calculateAdherence(period = '30d', userId = null) {
     const days = parseInt(period)
     const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const userId = await getUserId()
+    // Usa userId fornecido ou busca do Supabase
+    const resolvedUserId = userId || (await getUserId())
 
     // Buscar protocolos ativos no período
     const { data: protocols, error: protocolError } = await supabase
       .from('protocols')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .eq('active', true)
 
     if (protocolError) throw protocolError
@@ -39,7 +41,7 @@ export const adherenceService = {
     const { data: logs, error: logError } = await supabase
       .from('medicine_logs')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .gte('taken_at', startDate.toISOString())
       .lte('taken_at', endDate.toISOString())
 
@@ -68,22 +70,24 @@ export const adherenceService = {
    * Calcula adesão por protocolo específico
    * @param {string} protocolId - ID do protocolo
    * @param {string} period - Período: '7d', '30d', '90d'
+   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
    * @returns {Promise<{protocolId: string, name: string, score: number, taken: number, expected: number}>}
    */
-  async calculateProtocolAdherence(protocolId, period = '30d') {
+  async calculateProtocolAdherence(protocolId, period = '30d', userId = null) {
     const days = parseInt(period)
     const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const userId = await getUserId()
+    // Usa userId fornecido ou busca do Supabase
+    const resolvedUserId = userId || (await getUserId())
 
     // Buscar protocolo específico
     const { data: protocol, error: protocolError } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(*)')
       .eq('id', protocolId)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .single()
 
     if (protocolError) throw protocolError
@@ -93,7 +97,7 @@ export const adherenceService = {
       .from('medicine_logs')
       .select('*')
       .eq('protocol_id', protocolId)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .gte('taken_at', startDate.toISOString())
       .lte('taken_at', endDate.toISOString())
 
@@ -118,24 +122,26 @@ export const adherenceService = {
   /**
    * Calcula adesão para todos os protocolos ativos
    * @param {string} period - Período: '7d', '30d', '90d'
+   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
    * @returns {Promise<Array<{protocolId: string, name: string, score: number}>>}
    */
-  async calculateAllProtocolsAdherence(period = '30d') {
-    const userId = await getUserId()
+  async calculateAllProtocolsAdherence(period = '30d', userId = null) {
+    // Usa userId fornecido ou busca do Supabase
+    const resolvedUserId = userId || (await getUserId())
 
     // Buscar todos os protocolos ativos
     const { data: protocols, error } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(*)')
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .eq('active', true)
 
     if (error) throw error
 
-    // Calcular adesão para cada protocolo
+    // Calcular adesão para cada protocolo (passa userId para evitar lock contention)
     const adherencePromises = protocols.map(async (protocol) => {
       try {
-        return await this.calculateProtocolAdherence(protocol.id, period)
+        return await this.calculateProtocolAdherence(protocol.id, period, resolvedUserId)
       } catch (err) {
         console.error(`Erro ao calcular adesão para protocolo ${protocol.id}:`, err)
         return {
@@ -155,10 +161,12 @@ export const adherenceService = {
 
   /**
    * Calcula o streak atual (dias seguidos com adesão >= 80%)
+   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
    * @returns {Promise<{currentStreak: number, longestStreak: number}>}
    */
-  async getCurrentStreak() {
-    const userId = await getUserId()
+  async getCurrentStreak(userId = null) {
+    // Usa userId fornecido ou busca do Supabase
+    const resolvedUserId = userId || (await getUserId())
 
     // Buscar logs dos últimos 90 dias
     const endDate = new Date()
@@ -168,7 +176,7 @@ export const adherenceService = {
     const { data: logs, error } = await supabase
       .from('medicine_logs')
       .select('taken_at')
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .gte('taken_at', startDate.toISOString())
       .lte('taken_at', endDate.toISOString())
       .order('taken_at', { ascending: false })
@@ -179,7 +187,7 @@ export const adherenceService = {
     const { data: protocols, error: protocolError } = await supabase
       .from('protocols')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .eq('active', true)
 
     if (protocolError) throw protocolError
@@ -213,10 +221,14 @@ export const adherenceService = {
    * @returns {Promise<Object>}
    */
   async getAdherenceSummary(period = '30d') {
+    // Obtém userId UMA VEZ para evitar lock contention no Supabase Auth
+    const userId = await getUserId()
+
+    // Passa userId para todas as funções paralelas
     const [overall, protocols, streaks] = await Promise.all([
-      this.calculateAdherence(period),
-      this.calculateAllProtocolsAdherence(period),
-      this.getCurrentStreak(),
+      this.calculateAdherence(period, userId),
+      this.calculateAllProtocolsAdherence(period, userId),
+      this.getCurrentStreak(userId),
     ])
 
     return {
