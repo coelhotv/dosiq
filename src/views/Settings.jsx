@@ -207,6 +207,17 @@ export default function Settings({ onNavigate }) {
       </div>
 
       <div className="settings-section glass-card">
+        <h3>Saúde e Emergência</h3>
+        <p className="section-desc">Informações médicas críticas para situações de emergência.</p>
+
+        <div className="emergency-actions">
+          <Button variant="outline" onClick={() => onNavigate('emergency')}>
+            🚨 Cartão de Emergência
+          </Button>
+        </div>
+      </div>
+
+      <div className="settings-section glass-card">
         <h3>Administração</h3>
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
 
