@@ -627,6 +627,71 @@ jobs:
             }
 
   # ==========================================
+  # JOB 3.6: Verificar Issues Críticas (P1 - Phase 2)
+  # ==========================================
+  # Verifica se existem issues CRITICAL ou HIGH (segurança/performance)
+  # que devem bloquear o workflow. Se encontrar, posta alerta no PR
+  # e bloqueia a execução. Issues MEDIUM/LOW podem criar issues normalmente.
+  # ==========================================
+  check-critical:
+    name: Check Critical/High Issues
+    runs-on: ubuntu-latest
+    needs: [detect, parse, persist]
+    # Executa sempre que persist rodou com sucesso
+    if: always() && needs.persist.result == 'success'
+    outputs:
+      has_blocking_issues: ${{ steps.check.outputs.has_blocking_issues }}
+      has_critical: ${{ steps.check.outputs.has_critical }}
+      has_high_security: ${{ steps.check.outputs.has_high_security }}
+      has_high_performance: ${{ steps.check.outputs.has_high_performance }}
+      blocking_count: ${{ steps.check.outputs.blocking_count }}
+      critical_count: ${{ steps.check.outputs.critical_count }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Download Review Output
+        uses: actions/download-artifact@v4
+        with:
+          name: gemini-review-output
+          path: .gemini-output/
+        continue-on-error: true
+
+      - name: Check for Blocking Issues
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
+            const reviewFile = path.join('.gemini-output', `review-${prNumber}.json`);
+
+            // Carregar e executar verificação
+            const { checkCriticalIssues } = require('./.github/scripts/check-critical-issues.cjs');
+
+            const result = await checkCriticalIssues({
+              reviewFile: fs.existsSync(reviewFile) ? reviewFile : null,
+              github: github,
+              context: context,
+              core: core,
+              prNumber: prNumber
+            });
+
+            console.log(`Verificação concluída: ${result.hasBlockingIssues ? '❌ Issues bloqueantes encontrados' : '✅ Nenhum issue bloqueante'}`);
+
+  # ==========================================
   # JOB 4: Notificar Agents Externos (P4.7)
   # ==========================================
   # Envia webhooks para agents externos (como Kilocode) quando
@@ -960,8 +1025,9 @@ jobs:
   create-issues:
     name: Create GitHub Issues via Vercel API
     runs-on: ubuntu-latest
-    needs: [detect, parse, upload-to-blob, persist]
-    if: always() && needs.detect.outputs.should_run == 'true' && needs.upload-to-blob.result == 'success' && needs.persist.result == 'success'
+    needs: [detect, parse, upload-to-blob, persist, check-critical]
+    # Só cria issues se NÃO houver issues bloqueantes (CRITICAL/HIGH security/performance)
+    if: always() && needs.detect.outputs.should_run == 'true' && needs.upload-to-blob.result == 'success' && needs.persist.result == 'success' && needs.check-critical.outputs.has_blocking_issues != 'true'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
       VERCEL_API_URL: 'https://meus-remedios.vercel.app'
