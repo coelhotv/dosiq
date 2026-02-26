@@ -19,6 +19,7 @@ import {
   rateLimitResponse,
   internalErrorResponse,
   fetchWithRetry,
+  MAX_RETRIES,
 } from './shared/security.js'
 import {
   logRequest,
@@ -196,7 +197,7 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
         ],
       }),
     },
-    3 // maxRetries
+    MAX_RETRIES // maxRetries
   )
 
   if (!response.ok) {
@@ -249,7 +250,7 @@ async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
           body: `🤖 **Gemini Code Assist** criou issue #${issueNumber} para tracking desta sugestão de refactoring.`,
         }),
       },
-      3 // maxRetries
+      MAX_RETRIES // maxRetries
     )
 
     if (!response.ok) {
@@ -395,7 +396,7 @@ async function downloadFromBlob(blobUrl) {
     logInfo(ENDPOINT, 'No BLOB_READ_WRITE_TOKEN found, attempting public access')
   }
 
-  const response = await fetchWithRetry(blobUrl, { headers }, 3)
+  const response = await fetchWithRetry(blobUrl, { headers }, MAX_RETRIES)
 
   if (!response.ok) {
     logError(ENDPOINT, 'Blob download failed', new Error(`HTTP ${response.status}`), {

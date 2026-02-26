@@ -32,6 +32,12 @@ const DEFAULT_RATE_LIMIT = {
 }
 
 /**
+ * Número máximo de tentativas para retry em chamadas externas
+ * @readonly
+ */
+export const MAX_RETRIES = 3
+
+/**
  * Verifica se o IP está dentro do rate limit permitido
  * @param {string} ip - Endereço IP do cliente
  * @param {Object} options - Opções de configuração
