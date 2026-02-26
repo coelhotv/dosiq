@@ -714,12 +714,31 @@ async function checkUserStockAlerts(bot, userId, chatId) {
             chatId,
             messageId: result.messageId
           });
+          await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
         } else {
           logger.error(`Falha ao enviar alerta de estoque crítico`, {
             userId,
             chatId,
             error: result.error
           });
+          
+          // Enviar para DLQ para retry
+          const correlationId = result.correlationId || getCurrentCorrelationId();
+          await enqueue(
+            {
+              userId,
+              protocolId: null,
+              type: 'stock_alert',
+              chatId,
+              payload: {
+                lowStockCount: lowStockMedicines.length,
+                zeroStockCount: zeroStockMedicines.length
+              }
+            },
+            result.error,
+            result.attempts || 1,
+            correlationId
+          );
         }
       } else {
         logger.debug(`Alerta de estoque crítico suprimido por deduplicação`, { userId });
@@ -742,12 +761,30 @@ async function checkUserStockAlerts(bot, userId, chatId) {
             chatId,
             messageId: result.messageId
           });
+          await logSuccessfulNotification(userId, null, 'proactive_stock_alert', { messageId: result.messageId });
         } else {
           logger.error(`Falha ao enviar alerta de estoque proativo`, {
             userId,
             chatId,
             error: result.error
           });
+          
+          // Enviar para DLQ para retry
+          const correlationId = result.correlationId || getCurrentCorrelationId();
+          await enqueue(
+            {
+              userId,
+              protocolId: null,
+              type: 'proactive_stock_alert',
+              chatId,
+              payload: {
+                medicineCount: proactiveStockMedicines.length
+              }
+            },
+            result.error,
+            result.attempts || 1,
+            correlationId
+          );
         }
       } else {
         logger.debug(`Alerta de estoque proativo suprimido por deduplicação`, { userId });

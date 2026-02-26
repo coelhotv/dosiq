@@ -126,7 +126,7 @@ export default function Consultation({ onBack }) {
       }
 
       // Fallback: upload e gera link
-      const shareUrl = await shareService.uploadAndShare(pdfBlob, 'consulta-medica.pdf')
+      const { url: shareUrl } = await shareService.shareReport(pdfBlob, { filename: 'consulta-medica.pdf' })
 
       // Copia link para clipboard
       await navigator.clipboard.writeText(shareUrl)
