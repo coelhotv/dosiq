@@ -19,6 +19,7 @@ import {
   rateLimitResponse,
   internalErrorResponse,
   fetchWithRetry,
+  MAX_RETRIES,
 } from './shared/security.js'
 import {
   logRequest,
@@ -52,12 +53,6 @@ const REFACTOR_LABELS = {
   REFACTORING: 'refactoring',
   TECH_DEBT: 'tech-debt',
 }
-
-/**
- * Número máximo de tentativas para retry em chamadas externas
- * @readonly
- */
-const MAX_RETRIES = 3
 
 // ============================================================================
 // SCHEMAS ZOD
