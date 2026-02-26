@@ -1,53 +1,23 @@
-// api/dlq/[id]/discard.js
-// Dead Letter Queue Admin API - Discard a failed notification
+// api/dlq/_handlers/discard.js
+// Dead Letter Queue Handler - Discard a failed notification
+// NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
-import { verifyAdminAccess } from '../../../server/utils/auth.js';
 
 const logger = createLogger('DLQDiscard');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-const adminChatId = process.env.ADMIN_CHAT_ID;
-
 
 /**
- * DLQ Discard API Handler
- * POST /api/dlq/[id]/discard - Mark a notification as discarded
- * 
- * Path params:
- * - id: UUID of the failed notification
- * 
- * Body params (optional):
- * - reason: Reason for discarding (stored in resolution_notes)
- * 
- * Authentication:
- * - Requires Supabase Auth session token in Authorization header
- * - User must have telegram_chat_id matching ADMIN_CHAT_ID
+ * Handler para descartar notificação da DLQ
+ * @param {object} req - Request object (Vercel)
+ * @param {object} res - Response object (Vercel)
  */
-export default async function handler(req, res) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
-  }
-
-  // Validate environment variables
-  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey || !adminChatId) {
-    logger.error('Missing configuration');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  // Verify admin access
-  const authResult = await verifyAdminAccess(req.headers['authorization']);
-  if (!authResult.authorized) {
-    logger.error('Unauthorized access attempt:', authResult.error);
-    return res.status(401).json({ error: authResult.error });
-  }
-
-  // Get notification ID from path
+export async function handleDiscard(req, res) {
+  // Get notification ID from query (router passa via req.query.id)
   const { id } = req.query;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Missing notification ID' });
   }
@@ -101,10 +71,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to discard notification' });
     }
 
-    logger.info('Notification discarded', { 
-      id, 
+    logger.info('Notification discarded', {
+      id,
       reason,
-      previousStatus: notification.status 
+      previousStatus: notification.status
     });
 
     return res.status(200).json({
@@ -114,7 +84,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     logger.error('Unexpected error during discard', err, { id });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });

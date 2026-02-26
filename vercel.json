@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/dlq/:id/retry",
-      "destination": "/api/dlq/[id]/retry.js"
+      "destination": "/api/dlq.js?action=retry&id=:id"
     },
     {
       "source": "/api/dlq/:id/discard",
-      "destination": "/api/dlq/[id]/discard.js"
+      "destination": "/api/dlq.js?action=discard&id=:id"
     },
     {
       "source": "/api/telegram",
