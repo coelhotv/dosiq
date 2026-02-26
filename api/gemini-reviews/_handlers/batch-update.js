@@ -1,10 +1,10 @@
 /**
- * Endpoint para atualização em batch de reviews do Gemini
+ * Handler para atualização em batch de reviews do Gemini
  *
  * Permite que agents externos atualizem o status de múltiplas reviews
  * de uma única requisição. Usa autenticação via token webhook.
  *
- * @module api/gemini-reviews/batch-update
+ * @module api/gemini-reviews/_handlers/batch-update
  * @version 1.0.0
  */
 
@@ -190,7 +190,7 @@ async function processBatchUpdates(supabase, updates) {
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
-export default async function handler(req, res) {
+export async function handleBatchUpdate(req, res) {
   // Verificar método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({

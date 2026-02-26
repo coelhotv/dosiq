@@ -7,11 +7,15 @@
   "rewrites": [
     {
       "source": "/api/dlq/:id/retry",
-      "destination": "/api/dlq/[id]/retry.js"
+      "destination": "/api/dlq.js?action=retry&id=:id"
     },
     {
       "source": "/api/dlq/:id/discard",
-      "destination": "/api/dlq/[id]/discard.js"
+      "destination": "/api/dlq.js?action=discard&id=:id"
+    },
+    {
+      "source": "/api/gemini-reviews/:action",
+      "destination": "/api/gemini-reviews.js"
     },
     {
       "source": "/api/telegram",
@@ -30,16 +34,8 @@
       "destination": "/api/health/:path*.js"
     },
     {
-      "source": "/api/gemini-reviews/persist",
-      "destination": "/api/gemini-reviews/persist.js"
-    },
-    {
-      "source": "/api/gemini-reviews/create-issues",
-      "destination": "/api/gemini-reviews/create-issues.js"
-    },
-    {
-      "source": "/api/gemini-reviews/update-status",
-      "destination": "/api/gemini-reviews/update-status.js"
+      "source": "/api/share",
+      "destination": "/api/share.js"
     },
     {
       "source": "/(.*)",

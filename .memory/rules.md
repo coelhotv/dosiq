@@ -553,5 +553,47 @@ function validateEnvironment() {
 
 ---
 
+## Serverless Architecture (2026-02-24)
+
+### R-090: Vercel Hobby 12-Function Limit [CRITICAL]
+**Rule:** The Vercel Hobby plan allows a maximum of 12 serverless functions per deployment. Every `.js` file inside `api/` (including subdirectories) counts as a function, UNLESS it is inside a directory prefixed with `_` or `.`. Before creating ANY new `.js` file in `api/`, verify the current function budget.
+
+**Source:** Deployment blocked when adding `api/share.js` (13th function). See `plans/SERVERLESS_CONSOLIDATION.md`.
+
+**Prevention:**
+```bash
+# Count current functions (exclude _-prefixed dirs and non-.js files)
+find api -name "*.js" -not -path "*/_*" -not -path "*/.*" -not -name "CLAUDE.md" | wc -l
+
+# If >= 10: consolidate into existing router instead of creating new file
+```
+
+**Current budget (post-consolidation):** 6/12 functions used, 6 slots free.
+
+**Router pattern for new endpoints:**
+```javascript
+// Instead of creating api/new-endpoint.js, add to existing router:
+// api/domain.js → dispatch by req.query.action or URL segment
+```
+
+---
+
+### R-091: Underscore Prefix for API Utilities [HIGH]
+**Rule:** Helper files, shared utilities, and extracted handler functions inside `api/` MUST be placed in directories prefixed with `_` (underscore). Without the prefix, Vercel counts them as serverless functions even if they don't export an HTTP handler.
+
+**Source:** `api/gemini-reviews/shared/logger.js` and `security.js` were counted as functions, wasting 2 of the 12-function budget.
+
+**Correct patterns:**
+- `api/gemini-reviews/_shared/logger.js` — NOT counted as function
+- `api/gemini-reviews/_handlers/persist.js` — NOT counted as function
+- `api/dlq/_handlers/retry.js` — NOT counted as function
+
+**Wrong patterns:**
+- `api/gemini-reviews/shared/logger.js` — COUNTED as function
+- `api/gemini-reviews/helpers/utils.js` — COUNTED as function
+- `api/utils.js` — COUNTED as function
+
+---
+
 *Last updated: 2026-02-24*
-*Rules: R-001 to R-089*
+*Rules: R-001 to R-091*

@@ -2,6 +2,46 @@
 
 > Referencia para agentes criando ou modificando endpoints API.
 
+## REGRA #1: Function Budget (CRITICO)
+
+**Vercel Hobby: maximo 12 serverless functions por deploy.**
+
+Cada `.js` dentro de `api/` conta como funcao, EXCETO arquivos em diretorios prefixados com `_` ou `.`.
+
+### Budget Atual
+
+| # | Funcao | Descricao | maxDuration |
+|---|--------|-----------|-------------|
+| 1 | `api/dlq.js` | Router DLQ (list + retry + discard) | default |
+| 2 | `api/gemini-reviews.js` | Router Gemini (persist + create-issues + update-status + batch-update) | default |
+| 3 | `api/health/notifications.js` | Health check do sistema de notificacoes | default |
+| 4 | `api/notify.js` | Cron orchestrator | 60s |
+| 5 | `api/share.js` | PDF sharing via Vercel Blob | default |
+| 6 | `api/telegram.js` | Telegram webhook | 10s |
+
+**Total: 6/12 funcoes → 6 slots livres**
+
+### Projecao de Budget (Roadmap 2026)
+
+| Fase | Novos endpoints | Total | Livres |
+|------|----------------|-------|--------|
+| Fase 5 (atual) | `share.js` ja adicionado | 6 | 6 |
+| Fase 5.5 | Nenhum (client-side) | 6 | 6 |
+| Fase 6 | `whatsapp.js` | 7 | 5 |
+| Fase 7 | `portal.js`, `chatbot.js`, `ocr.js` | 8-10 | 2-4 |
+
+### Antes de Criar QUALQUER Novo Arquivo .js em api/
+
+1. Verificar budget: quantas funcoes existem? (`find api -name "*.js" -not -path "*/_*" -not -path "*/.*" | wc -l`)
+2. Se >=10 funcoes: CONSOLIDAR em router existente ao inves de criar novo
+3. Utilitarios/helpers DEVEM estar em diretorios com prefixo `_`:
+   - `api/gemini-reviews/_shared/` — logger, security
+   - `api/gemini-reviews/_handlers/` — handler functions
+   - `api/dlq/_handlers/` — handler functions
+4. NUNCA criar `.js` na raiz de `api/` sem verificar se cabe no budget
+
+---
+
 ## Padrao de Endpoint
 
 ```javascript
@@ -47,6 +87,41 @@ export default async function handler(req, res) {
 }
 ```
 
+## Padrao de Router (para consolidar endpoints)
+
+```javascript
+// api/domain.js — Router pattern
+import { handleAction1 } from './domain/_handlers/action1.js'
+import { handleAction2 } from './domain/_handlers/action2.js'
+
+const ROUTES = {
+  'action1': handleAction1,
+  'action2': handleAction2,
+}
+
+export default async function handler(req, res) {
+  // Se auth e compartilhada, fazer ANTES do dispatch
+  // Se auth difere por action, fazer DENTRO de cada handler
+
+  const action = req.query.action  // via rewrite query params
+  // OU extrair do URL path: req.url.split('?')[0].split('/').pop()
+
+  const routeHandler = ROUTES[action]
+  if (!routeHandler) {
+    return res.status(404).json({ error: `Unknown action: ${action}` })
+  }
+
+  return routeHandler(req, res)
+}
+```
+
+**vercel.json rewrite para router:**
+```json
+{ "source": "/api/domain/:id/action1", "destination": "/api/domain.js?action=action1&id=:id" }
+```
+
+---
+
 ## REGRAS CRITICAS
 
 ### Response Format
@@ -83,6 +158,47 @@ const response = await fetch(blobUrl, {
 - NUNCA `process.exit()` — usar `throw new Error()` (serverless termina a funcao)
 - NUNCA `res.json()` sem `.status()` antes
 - NUNCA commitar env vars ou secrets
+- NUNCA criar `.js` em `api/` sem verificar function budget (R-090)
+- NUNCA colocar utilitarios em `api/` sem prefixo `_` no diretorio (R-091)
+
+---
+
+## Arquitetura de Routers
+
+### DLQ Router (`api/dlq.js`)
+
+| Rota | Metodo | Action | Descricao |
+|------|--------|--------|-----------|
+| `/api/dlq` | GET | — | Lista entries com paginacao |
+| `/api/dlq/:id/retry` | POST | retry | Retry de notificacao falhada |
+| `/api/dlq/:id/discard` | POST | discard | Descartar notificacao |
+
+**Auth:** Compartilhada — `verifyAdminAccess()` (Supabase JWT + ADMIN_CHAT_ID) executada UMA VEZ no router.
+**Handlers:** `api/dlq/_handlers/retry.js`, `api/dlq/_handlers/discard.js`
+
+### Gemini Reviews Router (`api/gemini-reviews.js`)
+
+| Rota | Action | Auth | Descricao |
+|------|--------|------|-----------|
+| `/api/gemini-reviews/persist` | persist | JWT | Persistir reviews do Gemini |
+| `/api/gemini-reviews/create-issues` | create-issues | JWT | Criar issues no GitHub |
+| `/api/gemini-reviews/update-status` | update-status | JWT | Atualizar status de review |
+| `/api/gemini-reviews/batch-update` | batch-update | Webhook Secret | Batch update de agente |
+
+**Auth:** NAO compartilhada — cada handler faz sua propria (JWT vs webhook secret).
+**Handlers:** `api/gemini-reviews/_handlers/*.js`
+**Utilitarios:** `api/gemini-reviews/_shared/logger.js`, `api/gemini-reviews/_shared/security.js`
+
+### Standalone Handlers
+
+| Endpoint | Metodo | Auth | Descricao |
+|----------|--------|------|-----------|
+| `/api/notify` | GET/POST | `CRON_SECRET` | Cron de notificacoes (maxDuration: 60s) |
+| `/api/telegram` | POST | Webhook URL | Telegram bot webhook (maxDuration: 10s) |
+| `/api/share` | POST | Supabase JWT | Upload PDF para Vercel Blob |
+| `/api/health/notifications` | GET | Nenhuma | Health check |
+
+---
 
 ## vercel.json — Rewrites
 
@@ -98,6 +214,11 @@ Ao adicionar novo endpoint, adicionar rewrite ANTES do catch-all:
 }
 ```
 
+Para router com query params:
+```json
+{ "source": "/api/domain/:id/action", "destination": "/api/domain.js?action=action&id=:id" }
+```
+
 Tambem adicionar config de funcao se necessario:
 ```json
 {
@@ -107,19 +228,18 @@ Tambem adicionar config de funcao se necessario:
 }
 ```
 
-## Endpoints Existentes
+---
 
-| Endpoint | Metodo | Funcao | Max Duration |
-|----------|--------|--------|-------------|
-| `/api/notify` | GET | Cron de notificacoes (dose reminders, digests, stock) | 60s |
-| `/api/telegram` | POST | Webhook do Telegram bot | 10s |
-| `/api/dlq` | GET | Lista DLQ (paginado) | default |
-| `/api/dlq/:id/retry` | POST | Retry de notificacao falhada | default |
-| `/api/dlq/:id/discard` | POST | Descartar notificacao | default |
-| `/api/health/notifications` | GET | Health check do sistema de notificacoes | default |
-| `/api/gemini-reviews/persist` | POST | Persistir reviews do Gemini (JWT auth) | default |
-| `/api/gemini-reviews/create-issues` | POST | Criar issues no GitHub (JWT auth) | default |
-| `/api/gemini-reviews/update-status` | POST | Atualizar status de review (JWT auth) | default |
+## Mecanismos de Auth
+
+| Padrao | Usado por | Mecanismo |
+|--------|-----------|-----------|
+| Supabase Auth JWT | DLQ router, share.js | `supabase.auth.getUser(token)` ou `verifyAdminAccess()` |
+| GitHub Actions JWT | Gemini persist/create-issues/update-status | `jwt.verify(token, VERCEL_GITHUB_ACTIONS_SECRET)` |
+| Webhook Secret | Gemini batch-update | `crypto.timingSafeEqual` vs `AGENT_WEBHOOK_SECRET` |
+| Cron Secret | notify.js | Comparacao direta vs `CRON_SECRET` |
+
+---
 
 ## Logging Estruturado
 
@@ -131,10 +251,11 @@ console.log(JSON.stringify({
   endpoint: '/api/exemplo',
   correlationId: req.headers['x-correlation-id'] || crypto.randomUUID(),
   action: 'process_request',
-  pr_number: body.pr_number,
   duration_ms: Date.now() - startTime
 }))
 ```
+
+---
 
 ## Cron Jobs
 
@@ -149,3 +270,37 @@ Schedule (timezone: America/Sao_Paulo):
 - 10:00 dia 1: monthly report
 
 Para adicionar novo cron: estender a logica em `api/notify.js` com novo horario/condicao.
+
+---
+
+## Estrutura de Arquivos
+
+```
+api/
+  CLAUDE.md                          ← este arquivo (nao e funcao)
+  dlq.js                             ← FUNCAO 1 (router DLQ)
+  dlq/
+    _handlers/
+      retry.js                       ← handler extraido (nao contado)
+      discard.js                     ← handler extraido (nao contado)
+  gemini-reviews.js                  ← FUNCAO 2 (router Gemini)
+  gemini-reviews/
+    _shared/
+      logger.js                      ← utilitario (nao contado)
+      security.js                    ← utilitario (nao contado)
+    _handlers/
+      persist.js                     ← handler extraido (nao contado)
+      create-issues.js               ← handler extraido (nao contado)
+      update-status.js               ← handler extraido (nao contado)
+      batch-update.js                ← handler extraido (nao contado)
+  health/
+    notifications.js                 ← FUNCAO 3
+  notify.js                          ← FUNCAO 4 (maxDuration: 60)
+  share.js                           ← FUNCAO 5
+  telegram.js                        ← FUNCAO 6 (maxDuration: 10)
+```
+
+---
+
+*Ultima atualizacao: 24/02/2026*
+*Plano de consolidacao: `plans/SERVERLESS_CONSOLIDATION.md`*
