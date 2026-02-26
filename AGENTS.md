@@ -58,6 +58,7 @@
 | 3 | **Timezone** | Always `parseLocalDate()`, never bare `new Date('YYYY-MM-DD')` | R-020 |
 | 4 | **Zod Enums** | Portuguese only: `['diario', 'semanal']` | R-021 |
 | 5 | **Dosage Units** | Pills (not mg), `quantity_taken` within Zod limit of 100 | R-022 |
+| 6 | **Serverless Limit** | Vercel Hobby max 12 functions. Check budget before adding `.js` to `api/`. Utilities in `_`-prefixed dirs | R-090 |
 
 **Canonical File Locations (Wave 9 — estrutura final):**
 | Domain | Canonical Location | Obs |
@@ -327,12 +328,17 @@ server/                # Telegram Bot (Node.js separado — server/package.json)
 ├── services/          # userService, sessionManager, deadLetterQueue, etc.
 └── utils/             # formatters, timezone, retryManager
 
-api/                   # Serverless Functions (Vercel)
-├── telegram.js        # Webhook Telegram
-├── notify.js          # Endpoint de notificações (cron)
-├── dlq.js             # Dead Letter Queue
-├── dlq/[id]/          # retry.js, discard.js (rotas dinâmicas)
-└── health/            # notifications.js (health check)
+api/                   # Serverless Functions (Vercel) — MAX 12 funcoes no Hobby plan!
+├── dlq.js             # Router DLQ (list + retry + discard)
+│   └── _handlers/     # retry.js, discard.js (nao contados — prefixo _)
+├── gemini-reviews.js  # Router Gemini (persist + create-issues + update-status + batch-update)
+│   ├── _shared/       # logger.js, security.js (nao contados — prefixo _)
+│   └── _handlers/     # persist.js, create-issues.js, update-status.js, batch-update.js
+├── health/            # notifications.js (health check)
+├── notify.js          # Cron orchestrator (maxDuration: 60s)
+├── share.js           # PDF sharing via Vercel Blob
+└── telegram.js        # Webhook Telegram (maxDuration: 10s)
+# Budget: 6/12 funcoes usadas — ver api/CLAUDE.md para detalhes
 ```
 
 > **✅ Wave 9 concluída**: `src/lib/`, `src/hooks/`, `src/components/`, `src/shared/constants/` e `src/features/*/constants/` foram deletados. Não há mais diretórios legados em `src/`. O ESLint bloqueia importações de caminhos antigos.

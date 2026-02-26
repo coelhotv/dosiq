@@ -160,6 +160,22 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 ## Vercel Serverless
 
+### Limite de Funcoes (CRITICO)
+- **Vercel Hobby: maximo 12 serverless functions por deploy** (R-090)
+- Cada `.js` em `api/` conta como funcao. Utilitarios DEVEM estar em diretorios com prefixo `_` (ex: `api/gemini-reviews/_shared/`, `api/dlq/_handlers/`) para NAO serem contados (R-091)
+- Antes de criar QUALQUER novo `.js` em `api/`, verificar o function budget atual (ver `api/CLAUDE.md`)
+- Para novos endpoints, preferir consolidar em routers existentes (router pattern) ao inves de criar novos arquivos
+- Plano de consolidacao completo: `plans/SERVERLESS_CONSOLIDATION.md`
+
+### Arquitetura de Routers
+- `api/dlq.js` — Router: GET list + POST retry + POST discard (auth compartilhada)
+- `api/gemini-reviews.js` — Router: persist + create-issues + update-status + batch-update (auth por handler)
+- `api/health/notifications.js` — Handler standalone (health check)
+- `api/notify.js` — Cron orchestrator (maxDuration: 60s)
+- `api/share.js` — PDF sharing via Vercel Blob
+- `api/telegram.js` — Telegram webhook (maxDuration: 10s)
+
+### Regras de Codigo
 - **NUNCA** usar `process.exit()` — usar `throw new Error()`
 - **SEMPRE** usar `res.status(code).json(body)` — nunca `res.json()` (estilo Express)
 - Rewrites em `vercel.json`: novas rotas ANTES do catch-all `/(.*)`
