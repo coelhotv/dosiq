@@ -1,11 +1,11 @@
 /**
- * Endpoint para criar GitHub Issues a partir de reviews do Gemini
+ * Handler para criar GitHub Issues a partir de reviews do Gemini
  *
  * Recebe dados do review, busca issues pendentes no Supabase
  * (status='detected', priority='media'), cria issues no GitHub via API
  * e atualiza o Supabase com github_issue_number.
  *
- * @module api/gemini-reviews/create-issues
+ * @module api/gemini-reviews/_handlers/create-issues
  * @version 1.1.0
  */
 
@@ -20,7 +20,7 @@ import {
   internalErrorResponse,
   fetchWithRetry,
   MAX_RETRIES,
-} from './shared/security.js'
+} from '../_shared/security.js'
 import {
   logRequest,
   logAuth,
@@ -30,7 +30,7 @@ import {
   logResult,
   logError,
   logInfo,
-} from './shared/logger.js'
+} from '../_shared/logger.js'
 
 const ENDPOINT = 'create-issues'
 
@@ -197,7 +197,7 @@ async function createGitHubIssue(issue, prNumber, owner, repo, token) {
         ],
       }),
     },
-    MAX_RETRIES // maxRetries
+    MAX_RETRIES
   )
 
   if (!response.ok) {
@@ -250,7 +250,7 @@ async function commentOnPR(prNumber, issueNumber, owner, repo, token) {
           body: `🤖 **Gemini Code Assist** criou issue #${issueNumber} para tracking desta sugestão de refactoring.`,
         }),
       },
-      MAX_RETRIES // maxRetries
+      MAX_RETRIES
     )
 
     if (!response.ok) {
@@ -533,7 +533,7 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
-export default async function handler(req, res) {
+export async function handleCreateIssues(req, res) {
   // Log inicial da requisição
   logRequest(ENDPOINT, req)
 

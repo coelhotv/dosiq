@@ -1,11 +1,11 @@
 /**
- * Endpoint para persistir reviews do Gemini no Supabase
+ * Handler para persistir reviews do Gemini no Supabase
  *
  * Recebe dados de review via POST (ou baixa do Vercel Blob se blob_url fornecida),
  * valida autenticação JWT, calcula hash SHA-256 dos issues e persiste com
  * deduplicação por hash na tabela gemini_reviews.
  *
- * @module api/gemini-reviews/persist
+ * @module api/gemini-reviews/_handlers/persist
  * @version 1.1.0
  */
 
@@ -20,7 +20,7 @@ import {
   rateLimitResponse,
   internalErrorResponse,
   fetchWithRetry,
-} from './shared/security.js'
+} from '../_shared/security.js'
 import {
   logRequest,
   logAuth,
@@ -29,7 +29,7 @@ import {
   logResult,
   logError,
   logInfo,
-} from './shared/logger.js'
+} from '../_shared/logger.js'
 
 const ENDPOINT = 'persist'
 
@@ -496,7 +496,7 @@ async function downloadFromBlob(blobUrl) {
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
-export default async function handler(req, res) {
+export async function handlePersist(req, res) {
   // Log inicial da requisição
   logRequest(ENDPOINT, req)
 

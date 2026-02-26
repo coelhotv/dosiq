@@ -1,51 +1,24 @@
-// api/dlq/[id]/retry.js
-// Dead Letter Queue Admin API - Retry a failed notification
+// api/dlq/_handlers/retry.js
+// Dead Letter Queue Handler - Retry a failed notification
+// NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
-import { verifyAdminAccess } from '../../../server/utils/auth.js';
 
 const logger = createLogger('DLQRetry');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-const adminChatId = process.env.ADMIN_CHAT_ID;
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
-
 /**
- * DLQ Retry API Handler
- * POST /api/dlq/[id]/retry - Retry a specific notification
- * 
- * Path params:
- * - id: UUID of the failed notification
- * 
- * Authentication:
- * - Requires Supabase Auth session token in Authorization header
- * - User must have telegram_chat_id matching ADMIN_CHAT_ID
+ * Handler para retry de notificação da DLQ
+ * @param {object} req - Request object (Vercel)
+ * @param {object} res - Response object (Vercel)
  */
-export default async function handler(req, res) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
-  }
-
-  // Validate environment variables
-  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey || !adminChatId) {
-    logger.error('Missing configuration');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  // Verify admin access
-  const authResult = await verifyAdminAccess(req.headers['authorization']);
-  if (!authResult.authorized) {
-    logger.error('Unauthorized access attempt:', authResult.error);
-    return res.status(401).json({ error: authResult.error });
-  }
-
-  // Get notification ID from path
+export async function handleRetry(req, res) {
+  // Get notification ID from query (router passa via req.query.id)
   const { id } = req.query;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Missing notification ID' });
   }
@@ -90,9 +63,9 @@ export default async function handler(req, res) {
 
     if (userError || !userSettings?.telegram_chat_id) {
       logger.error('User chat ID not found', userError, { userId: notification.user_id });
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'User does not have Telegram chat ID configured',
-        success: false 
+        success: false
       });
     }
 
@@ -141,10 +114,10 @@ export default async function handler(req, res) {
         });
       }
 
-      logger.info('Notification retry successful', { 
-        id, 
-        chatId, 
-        messageId: telegramResult.messageId 
+      logger.info('Notification retry successful', {
+        id,
+        chatId,
+        messageId: telegramResult.messageId
       });
 
       return res.status(200).json({
@@ -168,9 +141,9 @@ export default async function handler(req, res) {
         logger.error('Failed to update retry count', updateError, { id });
       }
 
-      logger.error('Notification retry failed', null, { 
-        id, 
-        error: telegramResult.error 
+      logger.error('Notification retry failed', null, {
+        id,
+        error: telegramResult.error
       });
 
       return res.status(500).json({
@@ -181,7 +154,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     logger.error('Unexpected error during retry', err, { id });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
@@ -203,13 +176,13 @@ function formatRetryMessage(notification, medicineName) {
              `💊 ${medicineName}\n` +
              `📅 Horário original: ${timestamp}\n` +
              `\n_Esta é uma nova tentativa de notificação._`;
-    
+
     case 'stock_alert':
       return `⚠️ *Alerta de estoque* (Reenvio)\n\n` +
              `💊 ${medicineName}\n` +
              `📅 Original: ${timestamp}\n` +
              `\n_Esta é uma nova tentativa de notificação._`;
-    
+
     default:
       return `📢 *Notificação* (Reenvio)\n\n` +
              `📅 Original: ${timestamp}\n` +
@@ -239,21 +212,21 @@ async function sendTelegramMessage(token, chatId, text) {
     const data = await response.json();
 
     if (!data.ok) {
-      return { 
-        success: false, 
-        error: `${data.error_code}: ${data.description}` 
+      return {
+        success: false,
+        error: `${data.error_code}: ${data.description}`
       };
     }
 
-    return { 
-      success: true, 
-      messageId: data.result.message_id 
+    return {
+      success: true,
+      messageId: data.result.message_id
     };
 
   } catch (err) {
-    return { 
-      success: false, 
-      error: err.message 
+    return {
+      success: false,
+      error: err.message
     };
   }
 }
