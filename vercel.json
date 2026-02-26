@@ -42,6 +42,14 @@
       "destination": "/api/gemini-reviews/update-status.js"
     },
     {
+      "source": "/api/gemini-reviews/batch-update",
+      "destination": "/api/gemini-reviews/batch-update.js"
+    },
+    {
+      "source": "/api/share",
+      "destination": "/api/share.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
