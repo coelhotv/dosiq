@@ -147,9 +147,50 @@ queryCache.delete('medicines')
 
 ## Vercel Serverless
 
+### Platform Limits (Hobby Plan)
+- **Max 12 serverless functions per deployment** (R-090)
+- Files in `_`-prefixed directories are NOT counted as functions (R-091)
+- Max function duration: 300s (Fluid Compute)
+- Request body max: 4.5MB
+- Function invocations: 1,000,000/month (free)
+
+### Function Budget (post-consolidation)
+
+| # | Function | Type | Description |
+|---|----------|------|-------------|
+| 1 | `api/dlq.js` | Router | GET list + POST retry + POST discard |
+| 2 | `api/gemini-reviews.js` | Router | persist + create-issues + update-status + batch-update |
+| 3 | `api/health/notifications.js` | Standalone | Health check |
+| 4 | `api/notify.js` | Standalone | Cron orchestrator (maxDuration: 60s) |
+| 5 | `api/share.js` | Standalone | PDF sharing via Vercel Blob |
+| 6 | `api/telegram.js` | Standalone | Telegram webhook (maxDuration: 10s) |
+
+**Budget: 6/12 used → 6 free** (enough for Phases 5.5, 6, and 7)
+
+### Router Pattern
+```javascript
+// Router dispatches by action (query param or URL segment)
+// Handlers extracted to _handlers/ directory (not counted as functions)
+// Auth: shared in router (DLQ) or per-handler (Gemini Reviews)
+```
+
+### Auth Mechanisms (4 patterns)
+
+| Pattern | Used by | Mechanism |
+|---------|---------|-----------|
+| Supabase Auth JWT | DLQ router, share.js | `supabase.auth.getUser(token)` + admin check |
+| GitHub Actions JWT | Gemini persist/create-issues/update-status | `jwt.verify(token, VERCEL_GITHUB_ACTIONS_SECRET)` |
+| Webhook Secret | Gemini batch-update | `crypto.timingSafeEqual` vs `AGENT_WEBHOOK_SECRET` |
+| Cron Secret | notify.js | Direct comparison vs `CRON_SECRET` |
+
+### Consolidation Reference
+- Full plan: `plans/SERVERLESS_CONSOLIDATION.md`
+- Detailed API docs: `api/CLAUDE.md`
+
+### General Rules
 - Conditional dotenv: `if (process.env.NODE_ENV !== 'production')`
 - Vercel injects env vars automatically — no dotenv needed in production
-- Rewrites syntax: `{ "source": "/api/dlq/:id/retry", "destination": "/api/dlq/[id]/retry.js" }`
+- Rewrites for routers: `{ "source": "/api/dlq/:id/retry", "destination": "/api/dlq.js?action=retry&id=:id" }`
 - Catch-all `/(.*) -> /index.html` must be LAST rewrite
 
 ---
@@ -306,4 +347,4 @@ Parallel execution (>1 thread) risks:
 
 ---
 
-*Last updated: 2026-02-23*
+*Last updated: 2026-02-24*

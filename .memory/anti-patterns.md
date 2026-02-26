@@ -61,5 +61,14 @@
 
 ---
 
+## Serverless Architecture Anti-Patterns (2026-02-24)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-S10 | Create `.js` file in `api/` without checking function budget | Deployment blocked (Vercel Hobby limit: 12 functions) | Run `find api -name "*.js" -not -path "*/_*" \| wc -l` before adding files. Prefer consolidating into existing routers | R-090 |
+| AP-S11 | Place utility/helper files in `api/` without `_` directory prefix | Utility counted as serverless function, wastes budget | Always use `_`-prefixed directories: `_shared/`, `_handlers/`, `_utils/` | R-091 |
+
+---
+
 *Last updated: 2026-02-24*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S09*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11*
