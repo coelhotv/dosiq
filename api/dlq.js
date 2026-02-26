@@ -103,19 +103,21 @@ export default async function handler(req, res) {
   }
 
   const { action } = req.query;
-  const { method } = req;
 
-  // Roteamento baseado em método e action
-  if (method === 'GET' && !action) {
+  // Roteamento baseado em método e action (padrao router map)
+  if (req.method === 'GET' && !action) {
     return handleList(req, res);
   }
 
-  if (method === 'POST' && action === 'retry') {
-    return handleRetry(req, res);
-  }
-
-  if (method === 'POST' && action === 'discard') {
-    return handleDiscard(req, res);
+  if (req.method === 'POST') {
+    const postRoutes = {
+      'retry': handleRetry,
+      'discard': handleDiscard,
+    };
+    const routeHandler = postRoutes[action];
+    if (routeHandler) {
+      return routeHandler(req, res);
+    }
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
