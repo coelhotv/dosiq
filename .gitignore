@@ -36,6 +36,8 @@ coverage/
 .env.local
 .env.production
 .vitest-cache/
+.vitest-cache-critical/
+.vitest-cache-lowram/
 .vercel
 .env*.local
 *.icloud
