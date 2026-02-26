@@ -20,7 +20,7 @@ import {
   internalErrorResponse,
   fetchWithRetry,
   MAX_RETRIES,
-} from './shared/security.js'
+} from './_shared/security.js'
 import {
   logRequest,
   logAuth,
@@ -30,7 +30,7 @@ import {
   logResult,
   logError,
   logInfo,
-} from './shared/logger.js'
+} from './_shared/logger.js'
 
 const ENDPOINT = 'create-issues'
 
