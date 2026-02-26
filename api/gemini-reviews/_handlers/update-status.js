@@ -1,10 +1,10 @@
 /**
- * Endpoint para atualizar status de resolução de reviews do Gemini
+ * Handler para atualizar status de resolução de reviews do Gemini
  *
  * Recebe atualização de status (resolved, partial, wontfix, duplicate),
  * valida autenticação JWT e atualiza o registro no Supabase.
  *
- * @module api/gemini-reviews/update-status
+ * @module api/gemini-reviews/_handlers/update-status
  * @version 1.1.0
  */
 
@@ -17,7 +17,7 @@ import {
   getClientIP,
   rateLimitResponse,
   internalErrorResponse,
-} from './_shared/security.js'
+} from '../_shared/security.js'
 import {
   logRequest,
   logAuth,
@@ -25,7 +25,7 @@ import {
   logResult,
   logError,
   logInfo,
-} from './_shared/logger.js'
+} from '../_shared/logger.js'
 
 const ENDPOINT = 'update-status'
 
@@ -277,7 +277,7 @@ async function processBatchUpdates(supabase, updates) {
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
-export default async function handler(req, res) {
+export async function handleUpdateStatus(req, res) {
   // Log inicial da requisição
   logRequest(ENDPOINT, req)
 
