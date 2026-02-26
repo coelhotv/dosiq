@@ -32,7 +32,7 @@ Cada `.js` dentro de `api/` conta como funcao, EXCETO arquivos em diretorios pre
 
 ### Antes de Criar QUALQUER Novo Arquivo .js em api/
 
-1. Verificar budget: quantas funcoes existem? (`ls api/**/*.js | grep -v '_' | wc -l`)
+1. Verificar budget: quantas funcoes existem? (`find api -name "*.js" -not -path "*/_*" -not -path "*/.*" | wc -l`)
 2. Se >=10 funcoes: CONSOLIDAR em router existente ao inves de criar novo
 3. Utilitarios/helpers DEVEM estar em diretorios com prefixo `_`:
    - `api/gemini-reviews/_shared/` — logger, security
