@@ -99,6 +99,14 @@
   cursor: pointer;
 }
 
+/* Day number styling - garante visibilidade */
+.day-number {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
 .log-dot {
   width: 6px;
   height: 6px;

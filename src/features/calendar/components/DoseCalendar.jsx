@@ -245,7 +245,7 @@ function DoseCalendar() {
         markedDates={markedDates}
         selectedDate={selectedDate}
         onDayClick={handleDayClick}
-        enableLazyLoad={true}
+        enableLazyLoad={false}
         onLoadMonth={handleLoadMonth}
         enableSwipe={true}
         enableMonthPicker={true}

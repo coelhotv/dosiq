@@ -194,13 +194,14 @@ export default function Calendar({
       dayDate.getDate() === selectedDate.getDate()
 
     // Verificar se ha doses registradas neste dia
+    // CORRECAO: Usar parsing manual de YYYY-MM-DD para evitar bugs de timezone (R-020)
+    // As datas em markedDates estao em formato YYYY-MM-DD (local Brasilia GMT-3)
     const hasLog = markedDates.some((dateStr) => {
-      const dLog = new Date(dateStr)
-      // Use UTC comparison para evitar problemas de timezone
+      const [logYear, logMonth, logDay] = dateStr.split('-').map(Number)
       return (
-        dLog.getUTCFullYear() === dayDate.getFullYear() &&
-        dLog.getUTCMonth() === dayDate.getMonth() &&
-        dLog.getUTCDate() === dayDate.getDate()
+        logYear === dayDate.getFullYear() &&
+        logMonth - 1 === dayDate.getMonth() &&  // JS month eh 0-indexed
+        logDay === dayDate.getDate()
       )
     })
 
