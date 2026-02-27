@@ -292,56 +292,44 @@ Após análise detalhada do PR #223, descobrimos o **fluxo real** de trabalho do
 
 ---
 
-## 🔧 Solução Implementada (Solução 5: Verificação de Threads Resolvidas)
+## 🔧 Tentativas de Solução (Aprendizados)
 
-### Implementação no Workflow (`.github/workflows/gemini-review.yml`)
+### ❌ Tentativa 1: REST API `listReviewThreads`
 
-```yaml
-# No job 'parse', step 'Fetch Gemini Comments':
+**Erro:** `github.rest.pulls.listReviewThreads is not a function`
 
-# 🆕 Buscar review threads para verificar status de resolução
-const { data: reviewThreads } = await github.rest.pulls.listReviewThreads({
-  owner: context.repo.owner,
-  repo: context.repo.repo,
-  pull_number: prNumber
-});
+A REST API do GitHub não expõe endpoint para listar review threads.
 
-// Criar set de IDs de comentários em threads resolvidas
-const resolvedCommentIds = new Set();
-reviewThreads.forEach(thread => {
-  if (thread.resolved) {
-    thread.comments.forEach(comment => {
-      resolvedCommentIds.add(comment.id);
-    });
-  }
-});
+### ❌ Tentativa 2: GraphQL com campo `resolved`
 
-console.log(`🔍 Encontradas ${resolvedCommentIds.size} threads resolvidas`);
+**Erro:** `Field 'resolved' doesn't exist on type 'PullRequestReviewThread'`
 
-// 🆕 Filtrar comentários resolvidos
-const geminiReviewComments = reviewComments.filter(c => {
-  const isGemini = c.user.login === 'gemini-code-assist[bot]';
-  const isResolved = resolvedCommentIds.has(c.id);
-  if (isGemini && isResolved) {
-    console.log(`✅ Ignorando comentário resolvido: ${c.path}:${c.line}`);
-  }
-  return isGemini && !isResolved;
-});
-```
+O campo `resolved` não está disponível no schema GraphQL público do GitHub.
 
-### Como Funciona
+### ⚠️ Conclusão
 
-1. **Busca Threads:** Usa `github.rest.pulls.listReviewThreads()` para buscar todas as threads do PR
-2. **Identifica Resolvidas:** Para cada thread onde `thread.resolved === true`, coleta os IDs dos comentários
-3. **Filtra Comentários:** Exclui comentários cujos IDs estão no set de resolvidos
-4. **Parseia apenas ativos:** O resto do workflow processa apenas issues não-resolvidos
+**NÃO é possível** via API pública do GitHub determinar se um comentário de review está em uma thread resolvida. O estado de resolução de threads é interno do GitHub e não exposto via API.
 
-### Vantagens
+---
 
-- ✅ **Integração natural** com fluxo de trabalho existente do mantenedor
-- ✅ **Sem necessidade de comandos manuais** (`/gemini review`)
-- ✅ **Reconhece resolução** quando mantenedor marca thread como resolved
-- ✅ **Não requer re-executar workflow** — próxima execução já vê threads resolvidas
+## ✅ Solução Documentada (Workaround)
+
+Dado que não é possível detectar automaticamente quando threads são resolvidas, o processo manual continua sendo necessário:
+
+### Fluxo Recomendado
+
+1. **Corrigir issues** CRITICAL/HIGH no código
+2. **Fazer push** dos commits de correção
+3. **Comentar no PR:** `/gemini review` para forçar re-avaliação completa
+4. **Aguardar** novo review do Gemini
+5. **Verificar** se issues foram resolvidos no novo review
+
+### Por que `/gemini review` funciona
+
+- Força o Gemini Code Assist a analisar o código novamente do zero
+- Gera novos comentários apenas para issues ainda presentes
+- O workflow re-executa e vê apenas os novos comentários
+- Issues corrigidos não aparecem no novo review
 
 ---
 
@@ -352,8 +340,8 @@ const geminiReviewComments = reviewComments.filter(c => {
 | Correções CRITICAL aplicadas | ✅ Sim (commit `013d31b`) |
 | Threads marcadas como resolvidas | ✅ Sim (3 threads) |
 | Gemini confirmou resoluções | ✅ Sim |
-| Workflow atualizado para verificar threads | ✅ Implementado |
-| Merge disponível | ⏳ Aguardando re-execução do workflow |
+| Workflow automatizado para threads resolvidas | ❌ Não possível via API |
+| Próximo passo | ⏳ Executar `/gemini review` no PR |
 
 ### Correções Aplicadas (Commit `013d31b`)
 
@@ -367,8 +355,8 @@ const geminiReviewComments = reviewComments.filter(c => {
 
 ## 📝 Próximos Passos
 
-1. **Push das alterações do workflow** — Commit com a verificação de threads resolvidas
-2. **Aguardar re-execução do workflow** — Pode ser necessário novo commit ou `/gemini review`
+1. **Comentar no PR #223:** `/gemini review` para forçar re-avaliação
+2. **Aguardar novo review** — Gemini deve postar novo review sem os issues corrigidos
 3. **Verificar desbloqueio** — Workflow deve passar `check-critical` sem issues bloqueantes
 4. **Merge com `--no-ff`** — Após aprovação completa
 5. **Validação pós-merge** — `npm run validate:full` na `main`
