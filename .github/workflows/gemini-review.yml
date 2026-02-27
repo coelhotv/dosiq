@@ -272,48 +272,12 @@ jobs:
               pull_number: prNumber
             });
             
-            // 🆕 Buscar review threads via GraphQL para verificar status de resolução
-            const query = `
-              query($owner: String!, $repo: String!, $prNumber: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $prNumber) {
-                    reviewThreads(first: 100) {
-                      nodes {
-                        id
-                        resolved
-                        comments(first: 100) {
-                          nodes {
-                            id
-                            databaseId
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            `;
+            // ⚠️ NOTA: Não é possível filtrar comentários resolvidos via REST API
+            // ou GraphQL público. O campo 'resolved' não está disponível.
+            // Quando issues CRITICAL são corrigidos, use `/gemini review` para
+            // forçar novo review completo do Gemini Code Assist.
             
-            const graphqlResult = await github.graphql(query, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              prNumber: prNumber
-            });
-            
-            // Criar set de IDs de comentários em threads resolvidas
-            const resolvedCommentIds = new Set();
-            const threads = graphqlResult?.repository?.pullRequest?.reviewThreads?.nodes || [];
-            threads.forEach(thread => {
-              if (thread.resolved) {
-                thread.comments.nodes.forEach(comment => {
-                  resolvedCommentIds.add(comment.databaseId);
-                });
-              }
-            });
-            
-            console.log(`🔍 Encontradas ${resolvedCommentIds.size} threads resolvidas`);
-            
-            // Filtrar apenas comentários do Gemini (excluindo resolvidos)
+            // Filtrar apenas comentários do Gemini
             const geminiReviews = reviews.filter(r =>
               r.user.login === 'gemini-code-assist[bot]'
             );
@@ -322,15 +286,9 @@ jobs:
               c.user.login === 'gemini-code-assist[bot]'
             );
             
-            // 🆕 Filtrar comentários resolvidos (usando databaseId que corresponde ao id da REST API)
-            const geminiReviewComments = reviewComments.filter(c => {
-              const isGemini = c.user.login === 'gemini-code-assist[bot]';
-              const isResolved = resolvedCommentIds.has(c.id);
-              if (isGemini && isResolved) {
-                console.log(`✅ Ignorando comentário resolvido: ${c.path}:${c.line}`);
-              }
-              return isGemini && !isResolved;
-            });
+            const geminiReviewComments = reviewComments.filter(c =>
+              c.user.login === 'gemini-code-assist[bot]'
+            );
             
             // Salvar para parsing
             const data = {
