@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import Auth from './views/Auth'
@@ -11,9 +11,12 @@ import Settings from './views/Settings'
 import Calendar from './views/Calendar'
 import Emergency from './views/Emergency'
 import DLQAdmin from './views/admin/DLQAdmin'
+import Loading from '@shared/components/ui/Loading'
+
+// Lazy import do Modo Consulta
+const Consultation = lazy(() => import('./views/Consultation'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
-import Loading from '@shared/components/ui/Loading'
 import Landing from './views/Landing'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
@@ -114,6 +117,12 @@ function App() {
         )
       case 'history':
         return <History />
+      case 'consultation':
+        return (
+          <Suspense fallback={<Loading text="Carregando Modo Consulta..." />}>
+            <Consultation onBack={() => setCurrentView('dashboard')} />
+          </Suspense>
+        )
       case 'settings':
         return <Settings onNavigate={setCurrentView} />
       case 'emergency':

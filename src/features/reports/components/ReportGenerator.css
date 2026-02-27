@@ -298,3 +298,114 @@
     padding: 12px 16px;
   }
 }
+
+/* Botão de compartilhamento */
+.report-generator__button--share {
+  background: var(--secondary, #3b82f6);
+  color: white;
+  border: none;
+}
+
+.report-generator__button--share:hover:not(:disabled) {
+  background: var(--secondary-dark, #2563eb);
+  transform: translateY(-1px);
+}
+
+.report-generator__button--share:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Resultado do compartilhamento */
+.report-generator__share-result {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--share-bg, rgba(59, 130, 246, 0.05));
+  border: 1px solid var(--share-border, rgba(59, 130, 246, 0.2));
+  border-radius: 12px;
+  animation: report-generator-fade-in 0.3s ease-out;
+}
+
+@keyframes report-generator-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-generator__share-url-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.report-generator__share-url-input {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  font-family: monospace;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.8));
+  color: var(--text-primary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-generator__copy-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.report-generator__copy-button--secondary {
+  background: var(--secondary, #3b82f6);
+  color: white;
+  border: none;
+}
+
+.report-generator__copy-button--secondary:hover {
+  background: var(--secondary-dark, #2563eb);
+}
+
+.report-generator__copy-button--success {
+  background: var(--success, #10b981);
+  color: white;
+  border: none;
+}
+
+.report-generator__share-expiry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+/* Dark mode adjustments for share */
+@media (prefers-color-scheme: dark) {
+  .report-generator__share-result {
+    --share-bg: rgba(59, 130, 246, 0.1);
+    --share-border: rgba(59, 130, 246, 0.3);
+  }
+
+  .report-generator__share-url-input {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #f5f5f5;
+  }
+}

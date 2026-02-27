@@ -219,6 +219,13 @@ export default function Settings({ onNavigate }) {
           <Button variant="outline" onClick={() => onNavigate('emergency')}>
             Cartão de Emergência
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => onNavigate('consultation')}
+            style={{ marginLeft: 'var(--space-2)' }}
+          >
+            Modo Consulta Médica
+          </Button>
         </div>
       </div>
 
