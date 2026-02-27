@@ -272,19 +272,41 @@ jobs:
               pull_number: prNumber
             });
             
-            // 🆕 Buscar review threads para verificar status de resolução
-            const { data: reviewThreads } = await github.rest.pulls.listReviewThreads({
+            // 🆕 Buscar review threads via GraphQL para verificar status de resolução
+            const query = `
+              query($owner: String!, $repo: String!, $prNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $prNumber) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        resolved
+                        comments(first: 100) {
+                          nodes {
+                            id
+                            databaseId
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const graphqlResult = await github.graphql(query, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: prNumber
+              prNumber: prNumber
             });
             
             // Criar set de IDs de comentários em threads resolvidas
             const resolvedCommentIds = new Set();
-            reviewThreads.forEach(thread => {
+            const threads = graphqlResult?.repository?.pullRequest?.reviewThreads?.nodes || [];
+            threads.forEach(thread => {
               if (thread.resolved) {
-                thread.comments.forEach(comment => {
-                  resolvedCommentIds.add(comment.id);
+                thread.comments.nodes.forEach(comment => {
+                  resolvedCommentIds.add(comment.databaseId);
                 });
               }
             });
@@ -300,7 +322,7 @@ jobs:
               c.user.login === 'gemini-code-assist[bot]'
             );
             
-            // 🆕 Filtrar comentários resolvidos
+            // 🆕 Filtrar comentários resolvidos (usando databaseId que corresponde ao id da REST API)
             const geminiReviewComments = reviewComments.filter(c => {
               const isGemini = c.user.login === 'gemini-code-assist[bot]';
               const isResolved = resolvedCommentIds.has(c.id);
