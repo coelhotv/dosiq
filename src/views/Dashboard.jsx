@@ -842,6 +842,29 @@ export default function Dashboard({ onNavigate }) {
         >
           + REGISTRO MANUAL
         </button>
+        <button
+          className="btn-consultation-mode"
+          onClick={() => {
+            analyticsService.track('consultation_mode_opened')
+            onNavigate?.('consultation')
+          }}
+          style={{
+            marginTop: 'var(--space-2)',
+            padding: 'var(--space-2) var(--space-4)',
+            background: 'transparent',
+            border: '1px solid var(--primary)',
+            color: 'var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            fontSize: 'var(--font-size-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)',
+          }}
+        >
+          <span>👨‍⚕️</span>
+          Modo Consulta Médica
+        </button>
       </div>
 
       <Modal

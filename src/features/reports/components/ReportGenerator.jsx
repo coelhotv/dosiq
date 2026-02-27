@@ -1,11 +1,12 @@
 /**
  * @fileoverview Componente de geração de relatórios PDF.
- * Permite ao usuário selecionar período e gerar/baixar relatórios.
+ * Permite ao usuário selecionar período e gerar/baixar/compartilhar relatórios.
  * @module features/reports/components/ReportGenerator
  */
 
 import { useState, useCallback } from 'react'
 import { generatePDF } from '../services/pdfGeneratorService.js'
+import { shareReport, shareNative, copyToClipboard } from '../services/shareService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import Button from '@shared/components/ui/Button'
 import './ReportGenerator.css'
@@ -70,6 +71,12 @@ export default function ReportGenerator({ onClose }) {
   const [error, setError] = useState(null)
   const [pdfBlob, setPdfBlob] = useState(null)
 
+  // Estados para compartilhamento
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareUrl, setShareUrl] = useState(null)
+  const [shareError, setShareError] = useState(null)
+  const [copied, setCopied] = useState(false)
+
   // 2. Handlers (R-010: States -> Memos -> Effects -> Handlers)
   /**
    * Manipula a geração do relatório PDF.
@@ -79,6 +86,8 @@ export default function ReportGenerator({ onClose }) {
     setIsGenerating(true)
     setError(null)
     setPdfBlob(null)
+    setShareUrl(null)
+    setShareError(null)
 
     try {
       const blob = await generatePDF({ period })
@@ -119,6 +128,73 @@ export default function ReportGenerator({ onClose }) {
       fileSize: pdfBlob.size,
     })
   }, [pdfBlob, period])
+
+  /**
+   * Manipula o compartilhamento do relatório.
+   * @async
+   */
+  const handleShare = useCallback(async () => {
+    if (!pdfBlob) return
+
+    setShareLoading(true)
+    setShareError(null)
+    setShareUrl(null)
+    setCopied(false)
+
+    try {
+      const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
+      const filename = `meus-remedios-relatorio-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+
+      const result = await shareReport(pdfBlob, { filename, expiresInHours: 72 })
+      setShareUrl(result.url)
+
+      // Tentar compartilhamento nativo em dispositivos móveis
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      if (isMobile) {
+        try {
+          await shareNative(result.url, 'Relatório de Medicamentos')
+        } catch {
+          // Fallback silencioso - usuário verá o link copiável
+        }
+      }
+
+      analyticsService.track('report_shared', {
+        period,
+        filename,
+        expiresInHours: 72,
+      })
+    } catch (err) {
+      console.error('Erro ao compartilhar relatório:', err)
+      setShareError(err.message || 'Erro ao compartilhar relatório. Tente novamente.')
+      analyticsService.track('report_share_error', {
+        period,
+        error: err.message,
+      })
+    } finally {
+      setShareLoading(false)
+    }
+  }, [pdfBlob, period])
+
+  /**
+   * Manipula a cópia do link para a área de transferência.
+   * @async
+   */
+  const handleCopyLink = useCallback(async () => {
+    if (!shareUrl) return
+
+    try {
+      await copyToClipboard(shareUrl)
+      setCopied(true)
+
+      analyticsService.track('report_share_link_copied', { period })
+
+      // Resetar estado de copiado após 3 segundos
+      setTimeout(() => setCopied(false), 3000)
+    } catch (err) {
+      console.error('Erro ao copiar link:', err)
+      setShareError('Não foi possível copiar o link. Copie manualmente.')
+    }
+  }, [shareUrl, period])
 
   /**
    * Manipula o fechamento do componente.
@@ -175,6 +251,13 @@ export default function ReportGenerator({ onClose }) {
         </div>
       )}
 
+      {shareError && (
+        <div className="report-generator__error" role="alert">
+          <span className="report-generator__error-icon">⚠️</span>
+          {shareError}
+        </div>
+      )}
+
       <div className="report-generator__actions">
         {!pdfBlob ? (
           <Button
@@ -211,6 +294,24 @@ export default function ReportGenerator({ onClose }) {
                 Baixar PDF
               </Button>
               <Button
+                className="report-generator__button report-generator__button--share"
+                onClick={handleShare}
+                disabled={shareLoading}
+                variant="secondary"
+              >
+                {shareLoading ? (
+                  <>
+                    <span className="report-generator__spinner" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <span className="report-generator__icon">🔗</span>
+                    Compartilhar
+                  </>
+                )}
+              </Button>
+              <Button
                 className="report-generator__button report-generator__button--regenerate"
                 onClick={handleGenerate}
                 disabled={isGenerating}
@@ -232,6 +333,43 @@ export default function ReportGenerator({ onClose }) {
           </div>
         )}
       </div>
+
+      {/* Seção de link de compartilhamento */}
+      {shareUrl && !shareLoading && (
+        <div className="report-generator__share-result">
+          <div className="report-generator__share-url-container">
+            <input
+              type="text"
+              className="report-generator__share-url-input"
+              value={shareUrl}
+              readOnly
+              aria-label="Link de compartilhamento"
+            />
+            <Button
+              className="report-generator__copy-button"
+              onClick={handleCopyLink}
+              variant={copied ? 'success' : 'secondary'}
+              size="small"
+            >
+              {copied ? (
+                <>
+                  <span className="report-generator__icon">✅</span>
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <span className="report-generator__icon">📋</span>
+                  Copiar
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="report-generator__share-expiry">
+            <span className="report-generator__icon">⏰</span>
+            Link válido por 72 horas
+          </p>
+        </div>
+      )}
 
       {isGenerating && (
         <div className="report-generator__loading">

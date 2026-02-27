@@ -1,0 +1,647 @@
+/**
+ * ConsultationView Styles - Modo Consulta Médica
+ *
+ * Design focado em:
+ * - Fontes grandes (mínimo 16px body)
+ * - Alto contraste (fundo branco, texto escuro)
+ * - Layout landscape-friendly
+ * - Sem elementos interativos exceto PDF/Share/voltar
+ */
+
+/* ============================================
+   VARIÁVEIS LOCAIS
+   ============================================ */
+.consultation-view {
+  --cv-font-base: 16px;
+  --cv-font-large: 18px;
+  --cv-font-xl: 20px;
+  --cv-font-2xl: 24px;
+  --cv-font-3xl: 28px;
+
+  --cv-color-bg: #ffffff;
+  --cv-color-text: #1f2937;
+  --cv-color-text-secondary: #4b5563;
+  --cv-color-border: #e5e7eb;
+  --cv-color-border-light: #f3f4f6;
+
+  --cv-color-success: #10b981;
+  --cv-color-warning: #f59e0b;
+  --cv-color-danger: #ef4444;
+  --cv-color-info: #3b82f6;
+
+  --cv-spacing-xs: 0.5rem;
+  --cv-spacing-sm: 0.75rem;
+  --cv-spacing-md: 1rem;
+  --cv-spacing-lg: 1.5rem;
+  --cv-spacing-xl: 2rem;
+
+  --cv-radius: 12px;
+  --cv-radius-lg: 16px;
+  --cv-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --cv-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  --cv-footer-height: 80px;
+  --cv-header-height: auto;
+}
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
+.consultation-view {
+  min-height: 100vh;
+  background: var(--cv-color-bg);
+  color: var(--cv-color-text);
+  font-size: var(--cv-font-base);
+  line-height: 1.6;
+  padding-bottom: var(--cv-footer-height);
+}
+
+/* ============================================
+   HEADER DO PACIENTE
+   ============================================ */
+.consultation-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: var(--cv-spacing-lg);
+  box-shadow: var(--cv-shadow-lg);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--cv-spacing-md);
+  flex-wrap: wrap;
+}
+
+.patient-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.patient-name {
+  font-size: var(--cv-font-3xl);
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.patient-age {
+  display: inline-block;
+  margin-top: var(--cv-spacing-xs);
+  font-size: var(--cv-font-large);
+  opacity: 0.9;
+}
+
+.generation-info {
+  text-align: right;
+  font-size: var(--cv-font-base);
+}
+
+.generation-label {
+  display: block;
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.generation-time {
+  font-weight: 500;
+  opacity: 1;
+}
+
+.back-button {
+  margin-top: var(--cv-spacing-md);
+  padding: var(--cv-spacing-sm) var(--cv-spacing-md);
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  border-radius: var(--cv-radius);
+  font-size: var(--cv-font-large);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.back-button:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   CONTEÚDO PRINCIPAL
+   ============================================ */
+.consultation-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--cv-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cv-spacing-xl);
+}
+
+/* ============================================
+   SEÇÕES
+   ============================================ */
+.consultation-section {
+  background: var(--cv-color-bg);
+  border-radius: var(--cv-radius-lg);
+  border: 2px solid var(--cv-color-border);
+  padding: var(--cv-spacing-lg);
+  box-shadow: var(--cv-shadow);
+}
+
+.section-title {
+  font-size: var(--cv-font-xl);
+  font-weight: 700;
+  color: var(--cv-color-text);
+  margin: 0 0 var(--cv-spacing-md) 0;
+  padding-bottom: var(--cv-spacing-sm);
+  border-bottom: 3px solid var(--cv-color-border-light);
+}
+
+.empty-state {
+  font-size: var(--cv-font-large);
+  color: var(--cv-color-text-secondary);
+  text-align: center;
+  padding: var(--cv-spacing-xl);
+  font-style: italic;
+}
+
+/* ============================================
+   TABELA DE MEDICAMENTOS
+   ============================================ */
+.medicines-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.medicines-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--cv-font-large);
+}
+
+.medicines-table thead {
+  background: var(--cv-color-border-light);
+}
+
+.medicines-table th {
+  padding: var(--cv-spacing-md);
+  text-align: left;
+  font-weight: 600;
+  color: var(--cv-color-text);
+  border-bottom: 3px solid var(--cv-color-border);
+}
+
+.medicines-table td {
+  padding: var(--cv-spacing-md);
+  border-bottom: 2px solid var(--cv-color-border-light);
+}
+
+.medicines-table tr:last-child td {
+  border-bottom: none;
+}
+
+.medicine-name {
+  font-weight: 600;
+  color: var(--cv-color-text);
+}
+
+/* ============================================
+   CARDS DE ADERÊNCIA
+   ============================================ */
+.adherence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--cv-spacing-lg);
+}
+
+.adherence-card {
+  background: var(--cv-color-border-light);
+  border-radius: var(--cv-radius);
+  padding: var(--cv-spacing-lg);
+  border: 2px solid var(--cv-color-border);
+}
+
+.adherence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--cv-spacing-md);
+}
+
+.adherence-period {
+  font-size: var(--cv-font-large);
+  font-weight: 600;
+  color: var(--cv-color-text-secondary);
+}
+
+.adherence-score {
+  font-size: var(--cv-font-2xl);
+  font-weight: 700;
+}
+
+.adherence-bar-container {
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: var(--cv-spacing-md);
+}
+
+.adherence-bar {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.8s ease-out;
+}
+
+.adherence-details {
+  display: flex;
+  gap: var(--cv-spacing-xl);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-value {
+  font-size: var(--cv-font-xl);
+  font-weight: 700;
+  color: var(--cv-color-text);
+}
+
+.detail-label {
+  font-size: 14px;
+  color: var(--cv-color-text-secondary);
+}
+
+/* ============================================
+   ALERTAS DE ESTOQUE
+   ============================================ */
+.stock-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cv-spacing-sm);
+}
+
+.stock-alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cv-spacing-md);
+  padding: var(--cv-spacing-md);
+  border-radius: var(--cv-radius);
+  border-left: 6px solid;
+}
+
+.stock-alert-item.critical {
+  background: #fef2f2;
+  border-left-color: var(--cv-color-danger);
+}
+
+.stock-alert-item.warning {
+  background: #fffbeb;
+  border-left-color: var(--cv-color-warning);
+}
+
+.alert-icon {
+  font-size: var(--cv-font-xl);
+  flex-shrink: 0;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-content strong {
+  font-size: var(--cv-font-large);
+  color: var(--cv-color-text);
+}
+
+.alert-message {
+  color: var(--cv-color-text-secondary);
+}
+
+.alert-days {
+  font-size: 14px;
+  color: var(--cv-color-text-secondary);
+  font-style: italic;
+}
+
+/* ============================================
+   STATUS DE PRESCRIÇÕES
+   ============================================ */
+.prescriptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cv-spacing-sm);
+}
+
+.prescription-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cv-spacing-md);
+  padding: var(--cv-spacing-md);
+  background: var(--cv-color-border-light);
+  border-radius: var(--cv-radius);
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.vigente {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.vencendo {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.vencida {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.prescription-medicine {
+  flex: 1;
+  font-size: var(--cv-font-large);
+  font-weight: 500;
+  min-width: 150px;
+}
+
+.days-remaining {
+  font-size: var(--cv-font-base);
+  color: var(--cv-color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ============================================
+   PROGRESSO DE TITULAÇÃO
+   ============================================ */
+.titrations-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cv-spacing-md);
+}
+
+.titration-card {
+  background: var(--cv-color-border-light);
+  border-radius: var(--cv-radius);
+  padding: var(--cv-spacing-lg);
+  border: 2px solid var(--cv-color-border);
+}
+
+.titration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--cv-spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--cv-spacing-sm);
+}
+
+.titration-header strong {
+  font-size: var(--cv-font-large);
+}
+
+.titration-dosage {
+  font-size: var(--cv-font-large);
+  font-weight: 600;
+  color: var(--cv-color-primary, #ec4899);
+  background: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.titration-progress {
+  margin: var(--cv-spacing-md) 0;
+}
+
+.progress-bar-container {
+  height: 20px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: var(--cv-spacing-sm);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: width 1s ease-out;
+}
+
+.progress-text {
+  font-size: var(--cv-font-base);
+  color: var(--cv-color-text-secondary);
+  font-weight: 500;
+}
+
+.titration-note {
+  font-size: var(--cv-font-base);
+  color: var(--cv-color-text-secondary);
+  font-style: italic;
+  margin: var(--cv-spacing-sm) 0;
+}
+
+.transition-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: var(--cv-spacing-sm);
+}
+
+/* ============================================
+   BARRA INFERIOR FIXA
+   ============================================ */
+.consultation-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--cv-footer-height);
+  background: white;
+  border-top: 3px solid var(--cv-color-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--cv-spacing-lg);
+  padding: 0 var(--cv-spacing-lg);
+  z-index: 100;
+}
+
+.action-button {
+  padding: var(--cv-spacing-md) var(--cv-spacing-xl);
+  font-size: var(--cv-font-large);
+  font-weight: 600;
+  border-radius: var(--cv-radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-button.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: var(--cv-shadow);
+}
+
+.action-button.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--cv-shadow-lg);
+}
+
+.action-button.secondary {
+  background: white;
+  color: var(--cv-color-text);
+  border: 2px solid var(--cv-color-border);
+}
+
+.action-button.secondary:hover:not(:disabled) {
+  background: var(--cv-color-border-light);
+  border-color: var(--cv-color-text-secondary);
+}
+
+.action-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   RESPONSIVIDADE - LANDSCAPE
+   ============================================ */
+@media (min-width: 768px) and (orientation: landscape) {
+  .consultation-view {
+    --cv-font-base: 17px;
+    --cv-font-large: 19px;
+    --cv-font-xl: 22px;
+    --cv-font-2xl: 26px;
+    --cv-font-3xl: 32px;
+  }
+
+  .consultation-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--cv-spacing-lg);
+    align-items: start;
+  }
+
+  .consultation-section:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .adherence-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .consultation-content {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .consultation-section:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .consultation-section:nth-child(2) {
+    grid-column: 1 / 2;
+  }
+
+  .adherence-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   IMPRESSÃO
+   ============================================ */
+@media print {
+  .consultation-view {
+    padding-bottom: 0;
+  }
+
+  .consultation-header {
+    background: #f3f4f6 !important;
+    color: #1f2937 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .back-button,
+  .consultation-footer {
+    display: none !important;
+  }
+
+  .consultation-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #ccc;
+    box-shadow: none;
+  }
+
+  .progress-bar,
+  .adherence-bar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ============================================
+   ACESSIBILIDADE
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .consultation-view,
+  .consultation-view * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Alto contraste */
+@media (prefers-contrast: high) {
+  .consultation-view {
+    --cv-color-border: #000;
+    --cv-color-text: #000;
+  }
+
+  .consultation-section {
+    border-width: 3px;
+  }
+
+  .status-badge,
+  .titration-dosage,
+  .transition-badge {
+    border: 2px solid currentColor;
+  }
+}

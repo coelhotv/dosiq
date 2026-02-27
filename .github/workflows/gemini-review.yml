@@ -272,18 +272,65 @@ jobs:
               pull_number: prNumber
             });
             
-            // Filtrar apenas comentários do Gemini
-            const geminiReviews = reviews.filter(r => 
+            // 🆕 Buscar review threads via GraphQL para verificar status de resolução
+            const query = `
+              query($owner: String!, $repo: String!, $prNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $prNumber) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        isResolved
+                        comments(first: 100) {
+                          nodes {
+                            id
+                            databaseId
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const graphqlResult = await github.graphql(query, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              prNumber: prNumber
+            });
+            
+            // Criar set de IDs de comentários em threads resolvidas
+            const resolvedCommentIds = new Set();
+            const threads = graphqlResult?.repository?.pullRequest?.reviewThreads?.nodes || [];
+            threads.forEach(thread => {
+              if (thread.isResolved) {
+                thread.comments.nodes.forEach(comment => {
+                  resolvedCommentIds.add(comment.databaseId);
+                });
+              }
+            });
+            
+            console.log(`🔍 Encontradas ${resolvedCommentIds.size} threads resolvidas`);
+            
+            // Filtrar apenas comentários do Gemini (excluindo resolvidos)
+            const geminiReviews = reviews.filter(r =>
               r.user.login === 'gemini-code-assist[bot]'
             );
             
-            const geminiComments = comments.filter(c => 
+            const geminiComments = comments.filter(c =>
               c.user.login === 'gemini-code-assist[bot]'
             );
             
-            const geminiReviewComments = reviewComments.filter(c => 
-              c.user.login === 'gemini-code-assist[bot]'
-            );
+            // 🆕 Filtrar comentários resolvidos (usando databaseId que corresponde ao id da REST API)
+            const geminiReviewComments = reviewComments.filter(c => {
+              const isGemini = c.user.login === 'gemini-code-assist[bot]';
+              const isResolved = resolvedCommentIds.has(c.id);
+              if (isGemini && isResolved) {
+                console.log(`✅ Ignorando comentário resolvido: ${c.path}:${c.line}`);
+              }
+              return isGemini && !isResolved;
+            });
             
             // Salvar para parsing
             const data = {
@@ -982,7 +1029,12 @@ jobs:
   # ==========================================
   # Detecta quando novos commits são pushados e
   # automaticamente solicita re-review do Gemini
-  # se as alterações forem significativas
+  # se as alterações forem significativas.
+  #
+  # ⚠️ NOTA: Quando issues CRITICAL são corrigidos, o workflow pode
+  # continuar bloqueado até que o Gemini poste novo review. Neste caso,
+  # o mantenedor deve comentar `/gemini review` no PR para forçar
+  # re-avaliação manual.
   # ==========================================
   trigger-rereview:
     name: Trigger Re-review
@@ -1011,6 +1063,13 @@ jobs:
                 github,
                 context
               );
+              
+              // 📝 NOTA: O workflow continuará com dados antigos do review.
+              // Se havia issues CRITICAL que foram corrigidos, o mantenedor
+              // deve executar `/gemini review` manualmente após o novo
+              // review ser postado pelo Gemini.
+              console.log('⚠️ IMPORTANTE: Se havia issues CRITICAL corrigidos,');
+              console.log('   comente "/gemini review" no PR após 60-90s para re-avaliação.');
             } else {
               console.log('Alterações menores, sem necessidade de re-review');
             }
