@@ -126,13 +126,13 @@ function formatStockAlertMessage(zeroStock, lowStock) {
  */
 function formatProactiveStockMessage(userName, medicines) {
   let message = `💡 *Lembrete de Reposição*\n\n`;
-  message += `Oi ${escapeMarkdownV2(userName)}! Passando para lembrar que alguns medicamentos estão chegando no fim:\n\n`;
+  message += `Oi ${escapeMarkdownV2(userName)}\! Passando para lembrar que alguns medicamentos estão chegando no fim:\n\n`;
 
   medicines.forEach(m => {
     message += `• ${escapeMarkdownV2(m.name)} — cerca de ${m.days} dias restantes\n`;
   });
 
-  message += `\nQue tal aproveitar para fazer a reposição com calma? 🛒`;
+  message += `\nQue tal aproveitar para fazer a reposição com calma\? 🛒`;
 
   return message;
 }
