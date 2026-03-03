@@ -3,6 +3,7 @@
 // NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
+import { escapeMarkdownV2 } from '../../../server/utils/formatters.js';
 
 const logger = createLogger('DLQRetry');
 
@@ -162,6 +163,20 @@ export async function handleRetry(req, res) {
 }
 
 /**
+ * Sanitiza uma mensagem garantindo escapes corretos para MarkdownV2.
+ * Função de proteção para evitar falhas em mensagens legadas.
+ * @param {string} text - Texto a ser sanitizado
+ * @returns {string} Texto seguro para MarkdownV2
+ */
+function sanitizeMessageForMarkdown(text) {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Aplicar escapeMarkdownV2 em qualquer parte dinâmica que possa conter caracteres especiais
+  // Isso garante que retries de notificações antigas não falhem
+  return escapeMarkdownV2(text);
+}
+
+/**
  * Format retry message for Telegram
  */
 function formatRetryMessage(notification, medicineName) {
@@ -173,13 +188,18 @@ function formatRetryMessage(notification, medicineName) {
   switch (type) {
     case 'dose_reminder':
       return `🔔 *Lembrete de dose* (Reenvio)\n\n` +
-             `💊 ${medicineName}\n` +
+             `💊 ${escapeMarkdownV2(medicineName)}\n` +
              `📅 Horário original: ${timestamp}\n` +
              `\n_Esta é uma nova tentativa de notificação._`;
 
     case 'stock_alert':
       return `⚠️ *Alerta de estoque* (Reenvio)\n\n` +
-             `💊 ${medicineName}\n` +
+             `💊 ${escapeMarkdownV2(medicineName)}\n` +
+             `📅 Original: ${timestamp}\n` +
+             `\n_Esta é uma nova tentativa de notificação._`;
+
+    case 'proactive_stock_alert':
+      return `💡 *Lembrete de Reposição* (Reenvio)\n\n` +
              `📅 Original: ${timestamp}\n` +
              `\n_Esta é uma nova tentativa de notificação._`;
 
@@ -205,7 +225,7 @@ async function sendTelegramMessage(token, chatId, text) {
       body: JSON.stringify({
         chat_id: chatId,
         text: text,
-        parse_mode: 'Markdown'
+        parse_mode: 'MarkdownV2'
       })
     });
 
