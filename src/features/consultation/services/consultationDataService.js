@@ -85,9 +85,10 @@ function _extractActiveMedicines(medicines, protocols) {
         (p) => p.medicine_id === medicine.id && p.active !== false
       )
 
-      // Dosagem por comprimido (do medicamento ou tenta inferir do protocolo)
-      const dosagePerPill = medicine.dosagem_por_comprimido || _inferDosagePerPill(medicineProtocols)
-      const dosageUnit = medicine.dosagem_unidade || 'mg'
+      // Dosagem por comprimido em mg (do cadastro do medicamento)
+      // NÃO tentamos inferir do protocolo - lá temos apenas quantidade de comprimidos
+      const dosagePerPill = medicine.dosage_per_pill || null
+      const dosageUnit = medicine.dosage_unit || 'mg'
 
       // Calcula dosagens baseadas nos protocolos
       const dosageInfo = _calculateDosageInfo(medicineProtocols, dosagePerPill)
@@ -105,33 +106,11 @@ function _extractActiveMedicines(medicines, protocols) {
 }
 
 /**
- * Tenta inferir a dosagem por comprimido dos protocolos
- * @private
- */
-function _inferDosagePerPill(protocols) {
-  if (!protocols || protocols.length === 0) return null
-
-  // Pega o primeiro protocolo que tenha dosage_per_intake
-  // Retorna 1 como fallback padrão (1 comprimido)
-  const protocol = protocols.find((p) => p.dosage_per_intake && p.dosage_per_intake > 0)
-  return protocol ? protocol.dosage_per_intake : 1
-}
-
-/**
  * Calcula informações de dosagem baseado nos protocolos
  * @private
  */
 function _calculateDosageInfo(protocols, dosagePerPill) {
   if (!protocols || protocols.length === 0) {
-    return {
-      dosagePerIntake: null,
-      timesPerDay: null,
-      dailyDosage: null,
-    }
-  }
-
-  // Se não temos dosagePerPill, não podemos calcular dosagens em mg
-  if (!dosagePerPill) {
     return {
       dosagePerIntake: null,
       timesPerDay: null,
@@ -146,11 +125,25 @@ function _calculateDosageInfo(protocols, dosagePerPill) {
   protocols.forEach((protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
     const pillsPerIntake = protocol.dosage_per_intake || 1
-    const dosagePerIntake = pillsPerIntake * dosagePerPill
 
-    totalDosagePerIntake += dosagePerIntake
+    // Se temos dosagePerPill (mg por comprimido), calcula dosagem em mg
+    // Senão, retorna null para dosagens
+    const dosagePerIntake = dosagePerPill ? pillsPerIntake * dosagePerPill : null
+
+    if (dosagePerIntake !== null) {
+      totalDosagePerIntake += dosagePerIntake
+    }
     totalTimesPerDay += timesPerDay
   })
+
+  // Se não conseguimos calcular nenhuma dosagem, retorna nulls
+  if (totalDosagePerIntake === 0) {
+    return {
+      dosagePerIntake: null,
+      timesPerDay: totalTimesPerDay > 0 ? totalTimesPerDay : null,
+      dailyDosage: null,
+    }
+  }
 
   // Dosagem diária total = dosagem por tomada × vezes ao dia
   const dailyDosage = totalDosagePerIntake * totalTimesPerDay

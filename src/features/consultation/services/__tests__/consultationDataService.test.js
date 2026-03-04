@@ -116,8 +116,8 @@ describe('consultationDataService', () => {
       id: 'med-1',
       name: 'Paracetamol',
       type: 'comprimido',
-      dosagem_por_comprimido: 500,
-      dosagem_unidade: 'mg',
+      dosage_per_pill: 500,
+      dosage_unit: 'mg',
       notes: 'Tomar após refeições',
       min_stock_threshold: 5,
     },
@@ -125,8 +125,8 @@ describe('consultationDataService', () => {
       id: 'med-2',
       name: 'Ibuprofeno',
       type: 'comprimido',
-      dosagem_por_comprimido: 400,
-      dosagem_unidade: 'mg',
+      dosage_per_pill: 400,
+      dosage_unit: 'mg',
       notes: null,
       min_stock_threshold: 3,
     },
@@ -278,14 +278,14 @@ describe('consultationDataService', () => {
       })
     })
 
-    it('deve usar dosage_per_intake do protocolo quando medicine não tem dosagem', () => {
+    it('deve retornar nulls para dosagens quando medicine não tem dosage_per_pill', () => {
       const medicinesWithoutDosage = [
         {
           id: 'med-3',
           name: 'Vitamina D',
           type: 'comprimido',
-          // Sem dosagem_por_comprimido - será inferido do protocolo
-          dosagem_unidade: 'UI',
+          // Sem dosage_per_pill - não podemos calcular dosagem em mg
+          dosage_unit: 'UI',
         },
       ]
 
@@ -310,13 +310,13 @@ describe('consultationDataService', () => {
       const result = getConsultationData(dashboardData)
 
       expect(result.activeMedicines).toHaveLength(1)
+      // Sem dosage_per_pill, não conseguimos calcular dosagens em mg
+      // mas ainda retornamos timesPerDay
       expect(result.activeMedicines[0]).toMatchObject({
-        // Inferido do protocolo: dosage_per_intake = 2 comprimidos
-        // Como não temos dosagem por comprimido, assumimos 1 unidade por comprimido
-        dosagePerPill: 2,
-        dosagePerIntake: 4,     // 2 comprimidos × 2 (dosagePerPill) = 4 unidades
+        dosagePerPill: null,
+        dosagePerIntake: null,
         timesPerDay: 1,
-        dailyDosage: 4,         // 4 × 1 = 4 unidades/dia
+        dailyDosage: null,
       })
     })
 
@@ -326,7 +326,7 @@ describe('consultationDataService', () => {
           id: 'med-4',
           name: 'Placebo',
           type: 'comprimido',
-          // Sem nenhuma dosagem
+          // Sem dosage_per_pill
         },
       ]
 
@@ -350,13 +350,12 @@ describe('consultationDataService', () => {
       })
       const result = getConsultationData(dashboardData)
 
-      // Quando não temos dosagem definida no medicine, inferimos do protocolo
-      // como 1 comprimido. Ainda assim conseguimos calcular.
+      // Sem dosage_per_pill, não conseguimos calcular
       expect(result.activeMedicines[0]).toMatchObject({
-        dosagePerPill: 1,       // Inferido como 1 comprimido
-        dosagePerIntake: 1,     // 1 × 1 = 1
+        dosagePerPill: null,
+        dosagePerIntake: null,
         timesPerDay: 1,
-        dailyDosage: 1,         // 1 × 1 = 1
+        dailyDosage: null,
       })
     })
 
