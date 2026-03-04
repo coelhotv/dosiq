@@ -211,6 +211,17 @@
   color: var(--cv-color-text);
 }
 
+.dosage-detail {
+  font-size: var(--cv-font-base);
+  color: var(--cv-color-text-secondary);
+  font-weight: 400;
+}
+
+.dosage-unknown {
+  color: var(--cv-color-text-secondary);
+  font-style: italic;
+}
+
 /* ============================================
    CARDS DE ADERÊNCIA
    ============================================ */

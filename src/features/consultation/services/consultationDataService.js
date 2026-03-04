@@ -65,6 +65,7 @@ export function getConsultationData(dashboardData, patientName = '', patientAge 
 
 /**
  * Extrai medicamentos que possuem protocolos ativos
+ * Inclui cálculo de dosagem real baseado nos protocolos
  * @private
  */
 function _extractActiveMedicines(medicines, protocols) {
@@ -78,14 +79,87 @@ function _extractActiveMedicines(medicines, protocols) {
 
   return medicines
     .filter((m) => activeProtocolMedicineIds.has(m.id))
-    .map((medicine) => ({
-      id: medicine.id,
-      name: medicine.name,
-      type: medicine.type || 'comprimido',
-      dosagePerPill: medicine.dosagem_por_comprimido,
-      dosageUnit: medicine.dosagem_unidade || 'mg',
-      notes: medicine.notes || null,
-    }))
+    .map((medicine) => {
+      // Busca protocolos ativos deste medicamento
+      const medicineProtocols = protocols.filter(
+        (p) => p.medicine_id === medicine.id && p.active !== false
+      )
+
+      // Dosagem por comprimido (do medicamento ou tenta inferir do protocolo)
+      const dosagePerPill = medicine.dosagem_por_comprimido || _inferDosagePerPill(medicineProtocols)
+      const dosageUnit = medicine.dosagem_unidade || 'mg'
+
+      // Calcula dosagens baseadas nos protocolos
+      const dosageInfo = _calculateDosageInfo(medicineProtocols, dosagePerPill)
+
+      return {
+        id: medicine.id,
+        name: medicine.name,
+        type: medicine.type || 'comprimido',
+        dosagePerPill,
+        dosageUnit,
+        ...dosageInfo,
+        notes: medicine.notes || null,
+      }
+    })
+}
+
+/**
+ * Tenta inferir a dosagem por comprimido dos protocolos
+ * @private
+ */
+function _inferDosagePerPill(protocols) {
+  if (!protocols || protocols.length === 0) return null
+
+  // Pega o primeiro protocolo que tenha dosage_per_intake
+  // Retorna 1 como fallback padrão (1 comprimido)
+  const protocol = protocols.find((p) => p.dosage_per_intake && p.dosage_per_intake > 0)
+  return protocol ? protocol.dosage_per_intake : 1
+}
+
+/**
+ * Calcula informações de dosagem baseado nos protocolos
+ * @private
+ */
+function _calculateDosageInfo(protocols, dosagePerPill) {
+  if (!protocols || protocols.length === 0) {
+    return {
+      dosagePerIntake: null,
+      timesPerDay: null,
+      dailyDosage: null,
+    }
+  }
+
+  // Se não temos dosagePerPill, não podemos calcular dosagens em mg
+  if (!dosagePerPill) {
+    return {
+      dosagePerIntake: null,
+      timesPerDay: null,
+      dailyDosage: null,
+    }
+  }
+
+  // Calcula totais agregando todos os protocolos do medicamento
+  let totalDosagePerIntake = 0
+  let totalTimesPerDay = 0
+
+  protocols.forEach((protocol) => {
+    const timesPerDay = protocol.time_schedule?.length || 1
+    const pillsPerIntake = protocol.dosage_per_intake || 1
+    const dosagePerIntake = pillsPerIntake * dosagePerPill
+
+    totalDosagePerIntake += dosagePerIntake
+    totalTimesPerDay += timesPerDay
+  })
+
+  // Dosagem diária total = dosagem por tomada × vezes ao dia
+  const dailyDosage = totalDosagePerIntake * totalTimesPerDay
+
+  return {
+    dosagePerIntake: totalDosagePerIntake,
+    timesPerDay: totalTimesPerDay,
+    dailyDosage,
+  }
 }
 
 /**

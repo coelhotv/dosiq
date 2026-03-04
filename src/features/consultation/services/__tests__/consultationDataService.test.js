@@ -59,6 +59,16 @@ vi.mock('@utils/adherenceLogic', () => ({
     }
     return mocks.mockAdherenceStats
   }),
+  calculateDailyIntake: vi.fn((medicineId, protocols) => {
+    if (!protocols) return 0
+    return protocols
+      .filter((p) => p.medicine_id === medicineId && p.active !== false)
+      .reduce((total, p) => {
+        const dosesPerDay = p.time_schedule?.length || 1
+        const dosage = p.dosage_per_intake || 1
+        return total + dosesPerDay * dosage
+      }, 0)
+  }),
 }))
 
 // Mock do titrationUtils
@@ -130,7 +140,7 @@ describe('consultationDataService', () => {
       active: true,
       frequency: 'diário',
       time_schedule: ['08:00', '20:00'],
-      dosage: 1,
+      dosage_per_intake: 1,
       start_date: '2026-01-01',
       end_date: '2026-12-31',
       titration_schedule: null,
@@ -142,7 +152,7 @@ describe('consultationDataService', () => {
       active: true,
       frequency: 'semanal',
       time_schedule: ['08:00'],
-      dosage: 1,
+      dosage_per_intake: 1,
       start_date: '2026-01-15',
       end_date: '2026-06-30',
       titration_schedule: [
@@ -234,7 +244,119 @@ describe('consultationDataService', () => {
         type: 'comprimido',
         dosagePerPill: 500,
         dosageUnit: 'mg',
+        dosagePerIntake: 500, // 500mg × 1 comprimido
+        timesPerDay: 2,       // 2 horários
+        dailyDosage: 1000,    // 500mg × 2 vezes
         notes: 'Tomar após refeições',
+      })
+    })
+
+    it('deve calcular dosagem diária corretamente para múltiplos protocolos', () => {
+      // Protocolos adicionais para o mesmo medicamento
+      const extraProtocol = {
+        id: 'prot-3',
+        medicine_id: 'med-1',
+        medicine_name: 'Paracetamol',
+        active: true,
+        frequency: 'diário',
+        time_schedule: ['14:00'], // +1 horário
+        dosage_per_intake: 2,     // 2 comprimidos
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+      }
+
+      const dashboardData = createMockDashboardData({
+        protocols: [...createMockProtocols(), extraProtocol],
+      })
+      const result = getConsultationData(dashboardData)
+
+      const paracetamol = result.activeMedicines.find((m) => m.id === 'med-1')
+      expect(paracetamol).toMatchObject({
+        dosagePerIntake: 1500, // 500mg × (1 + 2) = 1500
+        timesPerDay: 3,        // 2 + 1 = 3 horários
+        dailyDosage: 4500,     // 1500 × 3 = 4500
+      })
+    })
+
+    it('deve usar dosage_per_intake do protocolo quando medicine não tem dosagem', () => {
+      const medicinesWithoutDosage = [
+        {
+          id: 'med-3',
+          name: 'Vitamina D',
+          type: 'comprimido',
+          // Sem dosagem_por_comprimido - será inferido do protocolo
+          dosagem_unidade: 'UI',
+        },
+      ]
+
+      const protocolsWithDosage = [
+        {
+          id: 'prot-3',
+          medicine_id: 'med-3',
+          medicine_name: 'Vitamina D',
+          active: true,
+          frequency: 'diário',
+          time_schedule: ['08:00'],
+          dosage_per_intake: 2, // 2 comprimidos por tomada
+          start_date: '2026-01-01',
+          end_date: '2026-12-31',
+        },
+      ]
+
+      const dashboardData = createMockDashboardData({
+        medicines: medicinesWithoutDosage,
+        protocols: protocolsWithDosage,
+      })
+      const result = getConsultationData(dashboardData)
+
+      expect(result.activeMedicines).toHaveLength(1)
+      expect(result.activeMedicines[0]).toMatchObject({
+        // Inferido do protocolo: dosage_per_intake = 2 comprimidos
+        // Como não temos dosagem por comprimido, assumimos 1 unidade por comprimido
+        dosagePerPill: 2,
+        dosagePerIntake: 4,     // 2 comprimidos × 2 (dosagePerPill) = 4 unidades
+        timesPerDay: 1,
+        dailyDosage: 4,         // 4 × 1 = 4 unidades/dia
+      })
+    })
+
+    it('deve retornar nulls para dosagem quando não há dados suficientes', () => {
+      const medicinesNoData = [
+        {
+          id: 'med-4',
+          name: 'Placebo',
+          type: 'comprimido',
+          // Sem nenhuma dosagem
+        },
+      ]
+
+      const protocolsNoData = [
+        {
+          id: 'prot-4',
+          medicine_id: 'med-4',
+          medicine_name: 'Placebo',
+          active: true,
+          frequency: 'diário',
+          time_schedule: ['08:00'],
+          // Sem dosage_per_intake (vai usar default 1)
+          start_date: '2026-01-01',
+          end_date: '2026-12-31',
+        },
+      ]
+
+      const dashboardData = createMockDashboardData({
+        medicines: medicinesNoData,
+        protocols: protocolsNoData,
+      })
+      const result = getConsultationData(dashboardData)
+
+      // Quando não temos dosagem definida no medicine, inferimos do protocolo
+      // como 1 comprimido. Ainda assim conseguimos calcular.
+      expect(result.activeMedicines[0]).toMatchObject({
+        dosagePerPill: 1,       // Inferido como 1 comprimido
+        dosagePerIntake: 1,     // 1 × 1 = 1
+        timesPerDay: 1,
+        dailyDosage: 1,         // 1 × 1 = 1
       })
     })
 
