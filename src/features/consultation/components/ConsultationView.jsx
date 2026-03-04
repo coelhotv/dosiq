@@ -127,8 +127,27 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
                     <tr key={medicine.id}>
                       <td className="medicine-name">{medicine.name}</td>
                       <td>
-                        {medicine.dosagePerPill}
-                        {medicine.dosageUnit}
+                        {medicine.dosagePerIntake && medicine.timesPerDay ? (
+                          <span>
+                            {medicine.dosagePerIntake}
+                            {medicine.dosageUnit}
+                            <span className="dosage-detail">
+                              {' '}
+                              ({medicine.timesPerDay}x ao dia
+                              {medicine.dailyDosage
+                                ? `, ${medicine.dailyDosage}${medicine.dosageUnit}/dia`
+                                : ''}
+                              )
+                            </span>
+                          </span>
+                        ) : medicine.dosagePerPill ? (
+                          <span>
+                            {medicine.dosagePerPill}
+                            {medicine.dosageUnit}
+                          </span>
+                        ) : (
+                          <span className="dosage-unknown">Não informado</span>
+                        )}
                       </td>
                       <td>{medicine.type}</td>
                     </tr>
