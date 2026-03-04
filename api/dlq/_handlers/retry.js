@@ -163,20 +163,6 @@ export async function handleRetry(req, res) {
 }
 
 /**
- * Sanitiza uma mensagem garantindo escapes corretos para MarkdownV2.
- * Função de proteção para evitar falhas em mensagens legadas.
- * @param {string} text - Texto a ser sanitizado
- * @returns {string} Texto seguro para MarkdownV2
- */
-function sanitizeMessageForMarkdown(text) {
-  if (!text || typeof text !== 'string') return '';
-  
-  // Aplicar escapeMarkdownV2 em qualquer parte dinâmica que possa conter caracteres especiais
-  // Isso garante que retries de notificações antigas não falhem
-  return escapeMarkdownV2(text);
-}
-
-/**
  * Format retry message for Telegram
  */
 function formatRetryMessage(notification, medicineName) {
