@@ -1,9 +1,9 @@
 # PRD Fase 5: Valor Clínico e Portabilidade - STATUS DE IMPLEMENTAÇÃO
 
-**Versão:** 2.0-STATUS  
-**Status:** EM PROGRESSO  
+**Versão:** 2.1-STATUS  
+**Status:** EM PROGRESSO (90% Completa)  
 **Data:** 05/03/2026  
-**Baseline:** v3.0.0 — Análise de implementação  
+**Baseline:** v3.1.0 — F5.8 e F5.9 Mergeados  
 **Princípio:** Custo operacional R$ 0
 
 ---
@@ -13,10 +13,10 @@
 | Métrica | Valor |
 |---------|-------|
 | Total de Features | 10 |
-| Implementadas ✅ | 7 |
-| Parcialmente Implementadas ⚠️ | 2 |
+| Implementadas ✅ | 9 |
+| Parcialmente Implementadas ⚠️ | 0 |
 | Pendentes ❌ | 1 |
-| Story Points Entregues | ~53/68 (78%) |
+| Story Points Entregues | ~61/68 (90%) |
 
 ### Legenda
 - ✅ **Implementado** - Feature completa, testada e em produção
@@ -150,17 +150,19 @@
 
 ---
 
-### F5.8 Cartão de Emergência (offline) ⚠️ PARCIALMENTE IMPLEMENTADO
+### F5.8 Cartão de Emergência (offline) ✅ IMPLEMENTADO
 
 **Localização:**
 - `src/features/emergency/components/EmergencyCardForm.jsx`
 - `src/features/emergency/components/EmergencyCardView.jsx`
 - `src/features/emergency/components/EmergencyCard.css`
+- `src/features/emergency/components/EmergencyQRCode.jsx` ✅ NOVO
+- `src/features/emergency/components/EmergencyQRCode.css` ✅ NOVO
 - `src/features/emergency/services/emergencyCardService.js`
 - `src/views/Emergency.jsx`
 - Schema: `src/schemas/emergencyCardSchema.js` (validado)
 
-**Status:** ⚠️ PARCIAL - QR Code Pendente
+**Status:** ✅ COMPLETO
 
 **Implementado ✅:**
 - [x] Formulário de edição (contatos, alergias, tipo sanguíneo)
@@ -171,23 +173,31 @@
 - [x] CSS @media print otimizado
 - [x] Integrado ao App.jsx (rota 'emergency')
 - [x] Testes implementados
+- [x] **QR code com dados em base64** ✅ Implementado
+- [x] **Opção de salvar imagem do QR** ✅ Implementado
+- [x] **Testes unitários do EmergencyQRCode** ✅ Implementado
 
-**Pendente ❌:**
-- [ ] **QR code com dados em base64** - Não implementado
-- [ ] Opção de salvar como imagem para tela de bloqueio
+**Detalhes do QR Code:**
+- Biblioteca: `qrcode` (~15KB)
+- Payload JSON: nome, tipo sanguíneo, alergias, medicamentos
+- Configuração: 256x256px, error correction level "M"
+- Funcionalidades: download PNG, compartilhamento nativo
+- Dica de uso: salvar como tela de bloqueio do celular
 
-**Observação:** O cartão funcional está completo para visualização e impressão, mas o QR code para leitura rápida por médicos em emergência não foi implementado. Verificado em `EmergencyCardView.jsx` - não há referência a QR code.
+**Merge:** PR #234 - Mergeado em 05/03/2026
 
 ---
 
-### F5.9 Rastreador de Prescrições ⚠️ PARCIALMENTE IMPLEMENTADO
+### F5.9 Rastreador de Prescrições ✅ IMPLEMENTADO
 
 **Localização:**
 - `src/features/prescriptions/services/prescriptionService.js`
 - `src/views/Dashboard.jsx` (integração SmartAlerts)
+- `server/bot/tasks.js` ✅ NOVO - `checkPrescriptionAlerts()`
+- `server/bot/scheduler.js` ✅ NOVO - Job diário às 8h
 - Schema: `src/schemas/protocolSchema.js` (campo `end_date`)
 
-**Status:** ⚠️ PARCIAL - In-App OK, Bot Pendente
+**Status:** ✅ COMPLETO
 
 **Implementado ✅:**
 - [x] Campo `end_date` no protocolSchema
@@ -196,13 +206,25 @@
 - [x] Integração ao SmartAlerts (Dashboard)
 - [x] Alertas visuais com severidade (warning/critical)
 - [x] Testes implementados
+- [x] **Cron job para alertas via bot Telegram** ✅ Implementado
+- [x] **Alertas em 30, 7 e 1 dia(s) antes** ✅ Implementado
+- [x] **Inline button "Ver Protocolo" no bot** ✅ Implementado
+- [x] **Deep link para #/protocolos/:id** ✅ Implementado
+- [x] **Deduplication para evitar spam** ✅ Implementado
+- [x] **DLQ integration para retry** ✅ Implementado
 
-**Pendente ❌:**
-- [ ] Cron job para alertas via bot Telegram (30, 7, 1 dia antes)
-- [ ] Push notification em 7 dias antes
-- [ ] Inline button "Ver Protocolo" no bot
+**Detalhes do Bot:**
+- Função: `formatPrescriptionAlertMessage()` - mensagens MarkdownV2
+- Função: `checkUserPrescriptionAlerts()` - verificação por usuário
+- Função: `checkPrescriptionAlerts()` - verificação global
+- Schedule: Diariamente às 8h via `startPrescriptionAlerts()`
+- Mensagens personalizadas por severidade (30d/7d/1d)
 
-**Observação:** A lógica in-app está completa. Falta apenas a integração com o bot para alertas proativos.
+**Correções aplicadas:**
+- Tratamento de datas com `+ 'T00:00:00'` (R-020) para evitar off-by-one day
+- Logger estruturado em vez de console.log (consistência do projeto)
+
+**Merge:** PR #234 - Mergeado em 05/03/2026
 
 ---
 
