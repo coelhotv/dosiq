@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { motion, useMotionValue, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion'
 import PulseEffect from '@shared/components/ui/animations/PulseEffect'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import './SwipeRegisterItem.css'
@@ -90,6 +90,25 @@ export default function SwipeRegisterItem({
           <span>→</span>
         </div>
       </motion.div>
+
+      {/* Check bounce ao confirmar swipe */}
+      <AnimatePresence>
+        {isSuccess && (
+          <motion.div
+            className="swipe-item__check"
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1.3, 1] }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{
+              duration: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 0.4,
+              ease: 'easeOut',
+            }}
+            aria-hidden="true"
+          >
+            ✓
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <PulseEffect trigger={showPulse} onComplete={() => setShowPulse(false)} />
     </div>
