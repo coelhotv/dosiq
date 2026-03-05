@@ -70,5 +70,20 @@
 
 ---
 
-*Last updated: 2026-02-24*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11*
+---
+
+## UI Component Anti-Patterns (Wave 1 UX Evolution — 2026-03-05)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-W01 | Edit a file referenced in spec without verifying the actual path first | Edit goes to wrong file; bug remains; spec can have stale paths | Always `find src -name "*File*" -type f` before editing any spec-referenced file | R-092 |
+| AP-W02 | Use `_prefix` aliasing to silence unused variable ESLint errors (e.g., `trend: _trend`) | ESLint still reports the error; `varsIgnorePattern` in this project doesn't cover destructuring aliases | Remove unused props from destructuring entirely; add them back when actually used | R-093 |
+| AP-W03 | Use `screen.getByText('X%')` when the same text appears in multiple elements | `"Found multiple elements with text…"` test failure | Use `container.querySelector('.specific-class').textContent` for non-unique text | R-094 |
+| AP-W04 | Import context (`useDashboardContext`, `DashboardProvider`) in a Wave 1 component | Violates Wave 1 purity guardrail; couples component to context, breaking reuse | Wave 1 = props only. Context integration belongs in Onda 2 (parent passes data as props) | R-095 |
+| AP-W05 | Set `strokeDashoffset` only in Framer Motion `initial`/`animate` without `style` | Flash of full/empty ring before animation starts (browser renders default value) | Set `strokeDashoffset` in both `style` (static) and `initial`/`animate` (animated) | R-096 |
+| AP-W06 | Use `color-mix()` CSS without `@supports` fallback | Silent failure on Safari < 16.2; no background color applied | Always add `@supports not (background: color-mix(...))` with a border fallback | R-097 |
+
+---
+
+*Last updated: 2026-03-05*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W06*

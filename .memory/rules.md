@@ -595,5 +595,84 @@ find api -name "*.js" -not -path "*/_*" -not -path "*/.*" -not -name "CLAUDE.md"
 
 ---
 
-*Last updated: 2026-02-24*
-*Rules: R-001 to R-091*
+---
+
+## UI Component Patterns (Wave 1 UX Evolution — 2026-03-05)
+
+### R-092: Spec Path Verification Before Edit [HIGH]
+**Rule:** Before editing any file referenced in a spec/task, always verify the actual path with `find`. Specs often reference canonical paths that differ from where the file actually lives.
+**Source:** journal/2026-W10 (L-01) — W1-04 spec said `src/shared/components/log/SwipeRegisterItem.jsx`, actual file was `src/features/dashboard/components/SwipeRegisterItem.jsx`.
+```bash
+find src -name "*TargetFile*" -type f
+# Then trace imports before editing
+grep -r "from.*TargetFile" src/ | head -10
+```
+
+### R-093: ESLint Unused Vars — Remove, Don't Alias [HIGH]
+**Rule:** When a destructured prop/variable is unused, remove it from destructuring entirely. Do NOT rely on `_prefix` aliasing (e.g., `trend: _trend`) to silence ESLint — `varsIgnorePattern` in this project does not reliably cover aliased destructuring.
+**Source:** journal/2026-W10 (L-02) — `trend: _trend = 'neutral'` still failed ESLint in RingGauge.
+```jsx
+// CORRECT — remove from destructuring (add back when actually used in Onda 2)
+const { score, streak, size, onClick } = props
+
+// WRONG — _alias doesn't silence ESLint for destructuring aliases
+const { score, trend: _trend, streak } = props  // _trend still flagged
+```
+
+### R-094: CSS Selector Over getByText for Non-Unique Text [HIGH]
+**Rule:** When asserting on text that may appear in multiple DOM elements (e.g., "80%" in stats badge AND tooltip labels), use `container.querySelector('.specific-class').textContent` instead of `screen.getByText()`. Using `getByText()` on non-unique text throws "Found multiple elements matching…".
+**Source:** journal/2026-W10 (L-03) — SparklineAdesao "80%" appeared in tooltip + stats badge.
+```javascript
+// CORRECT — target the specific element
+expect(container.querySelector('.sparkline-average').textContent).toBe('80%')
+
+// WRONG — fails if text appears in multiple elements
+expect(screen.getByText('80%')).toBeInTheDocument() // throws: found 2 elements
+```
+
+### R-095: Wave 1 Component Purity — No Context Imports [CRITICAL for Onda 1]
+**Rule:** All components created in Wave 1 (Onda 1) must receive data ONLY via props. Never import `useDashboardContext`, `DashboardProvider`, or any feature context. Integration with context happens in Onda 2 (the parent component fetches from context and passes as props).
+**Source:** journal/2026-W10 (L-07) — guardrail defined in spec, confirmed as critical.
+
+### R-096: Framer Motion SVG — Set strokeDashoffset in Both style and initial [MEDIUM]
+**Rule:** For SVG `motion.circle` with `strokeDashoffset` animation, set the value in BOTH `style` (static CSS) and `initial`/`animate` (Framer Motion). Without `style`, the browser renders the default `strokeDashoffset: 0` (full ring) before Framer Motion takes control → visible flash on load.
+**Source:** journal/2026-W10 (L-06) — RingGauge ring showed full circle flash before animating.
+```jsx
+// CORRECT — style prevents flash; initial/animate handle animation
+<motion.circle
+  style={{ strokeDashoffset: circumference - (score / 100) * circumference }}
+  initial={{ strokeDashoffset: circumference }}
+  animate={{ strokeDashoffset: circumference - (score / 100) * circumference }}
+/>
+
+// WRONG — flash: browser renders default 0 before Framer Motion overrides
+<motion.circle
+  initial={{ strokeDashoffset: circumference }}
+  animate={{ strokeDashoffset: circumference - (score / 100) * circumference }}
+/>
+```
+
+### R-097: CSS color-mix() Progressive Enhancement [MEDIUM]
+**Rule:** When using `color-mix()` for background or border colors (e.g., heat map transparency), wrap in `@supports` with a graceful fallback. Safari < 16.2 does not support `color-mix()`.
+**Source:** journal/2026-W10 (L-05) — Calendar heat map needed `@supports not` fallback.
+```css
+/* CORRECT — fallback for Safari < 16.2 */
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+  .calendar-day.has-adherence {
+    border: 1px solid var(--heat-color);
+  }
+}
+.calendar-day.has-adherence {
+  background: color-mix(in srgb, var(--heat-color) 25%, transparent);
+}
+
+/* WRONG — fails silently on older Safari */
+.calendar-day.has-adherence {
+  background: color-mix(in srgb, var(--heat-color) 25%, transparent);
+}
+```
+
+---
+
+*Last updated: 2026-03-05*
+*Rules: R-001 to R-097*
