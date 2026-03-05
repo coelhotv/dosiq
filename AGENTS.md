@@ -34,6 +34,7 @@
 | **Use services API** | [`docs/reference/SERVICES.md`](docs/reference/SERVICES.md) |
 | **Use hooks** | [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) |
 | **Use Zod schemas** | [`docs/reference/SCHEMAS.md`](docs/reference/SCHEMAS.md) ✅ |
+| **Execute UX specs** | [`plans/EXEC_SPEC_UX_EVOLUTION.md`](plans/EXEC_SPEC_UX_EVOLUTION.md) + `plans/specs/` |
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
 | **Telegram bot** | [`docs/architecture/TELEGRAM_BOT.md`](docs/architecture/TELEGRAM_BOT.md) ✅ |
@@ -384,6 +385,7 @@ For specialized tasks, switch to appropriate mode:
 | **❓ Ask** | Need explanations | Understanding, recommendations |
 | **🪲 Debug** | Troubleshooting issues | Error investigation, diagnosis |
 | **🪃 Orchestrator** | Complex multi-step projects | Coordination, workflow management |
+| **🎨 UX Builder** | Implementing UX evolution specs | Follow atomic specs from `plans/specs/` |
 
 ---
 
@@ -668,6 +670,91 @@ npm run test:coverage
 
 ---
 
+## 🎨 UX Evolution — Specs de Interface
+
+### Contexto
+
+O projeto esta passando por uma evolucao de UX (navegacao por entidade -> navegacao por atividade). O trabalho esta organizado em 3 ondas com specs atomicas detalhadas que agentes de codigo executam.
+
+### Documentacao UX
+
+| Documento | Proposito | Quando ler |
+|-----------|-----------|------------|
+| [`plans/EXEC_SPEC_UX_EVOLUTION.md`](plans/EXEC_SPEC_UX_EVOLUTION.md) | Master doc: ondas, inventario, progresso, regras | **SEMPRE** antes de qualquer task UX |
+| [`plans/UX_VISION_EXPERIENCIA_PACIENTE.md`](plans/UX_VISION_EXPERIENCIA_PACIENTE.md) | Visao de experiencia, wireframes, filosofia | Para entender o "porque" |
+| [`plans/specs/wave-1-visual-components.md`](plans/specs/wave-1-visual-components.md) | Specs atomicas Onda 1 (componentes visuais) | Ao executar tasks W1-XX |
+| [`plans/specs/wave-2-logic-hooks.md`](plans/specs/wave-2-logic-hooks.md) | Specs atomicas Onda 2 (hooks e logica) | Ao executar tasks W2-XX |
+| [`plans/specs/wave-3-navigation.md`](plans/specs/wave-3-navigation.md) | Specs atomicas Onda 3 (navegacao) | Ao executar tasks W3-XX |
+| [`SKILLS/ui-design-brain/SKILL.md`](SKILLS/ui-design-brain/SKILL.md) | Referencia de design (60+ patterns) | Para decisoes visuais |
+
+### Workflow para Tasks UX
+
+```
+1. LER master doc (EXEC_SPEC_UX_EVOLUTION.md)
+   - Verificar qual onda esta ativa
+   - Confirmar que quality gates anteriores passaram
+   - Ler regras para agentes executores (secao 5)
+
+2. ABRIR spec atomica da task (plans/specs/wave-X-*.md)
+   - Localizar a task pelo ID (ex: W1-01)
+   - Ler TODA a spec (props, data flow, animacoes, CSS, testes)
+   - Se nao esta na spec, NAO implementar
+
+3. VERIFICAR dependencias
+   - Checar coluna "Deps" no inventario de tasks
+   - Se depende de outra task, confirmar que ela esta concluida
+
+4. IMPLEMENTAR seguindo a spec
+   - Arquivo: usar o caminho EXATO da spec
+   - Props: usar os tipos e nomes EXATOS da spec
+   - CSS: usar tokens do design system (nunca hardcode)
+   - Animacoes: Framer Motion com prefers-reduced-motion
+   - Acessibilidade: aria-label, role, tabindex
+
+5. TESTAR
+   - Criar testes no caminho indicado na spec
+   - Seguir os describes/its listados
+   - Rodar: npm run validate:agent
+
+6. VALIDAR criterios de aceite
+   - Marcar cada checkbox da spec
+   - Se algum falhar, nao prosseguir
+```
+
+### Guardrails por Onda
+
+| Onda | Regra principal | Risco de violar |
+|------|----------------|-----------------|
+| **Onda 1** | Componentes recebem dados por **props**. NUNCA importar DashboardProvider/useDashboardContext | Acoplamento prematuro |
+| **Onda 2** | Hooks podem usar context. Edits em Dashboard.jsx devem ser **minimos** (import + JSX) | Reescrever 932 linhas |
+| **Onda 3** | Mudancas em App.jsx/BottomNav em edits **atomicos**. Testar cada tab individualmente | Quebrar navegacao |
+
+### Quality Gates
+
+Cada onda deve passar seu quality gate ANTES de iniciar a proxima:
+
+```
+Quality Gate 1 (apos Onda 1):
+  [ ] Todos os componentes renderizam com dados mock
+  [ ] npm run validate:agent passa
+  [ ] npm run build passa
+  [ ] Sem regressao visual no Dashboard atual
+
+Quality Gate 2 (apos Onda 2):
+  [ ] Hooks retornam dados corretos
+  [ ] Toggle hora/plano funciona
+  [ ] Integracao com DashboardProvider validada
+  [ ] Testes cobrem edge cases temporais
+
+Quality Gate 3 (apos Onda 3):
+  [ ] Navegacao 4 tabs funcional
+  [ ] Todas as views acessiveis
+  [ ] Wizard substitui window.confirm chain
+  [ ] Nenhuma funcionalidade perdida
+```
+
+---
+
 ## 📞 Resources
 
 ### Documentation
@@ -684,6 +771,6 @@ npm run test:coverage
 
 ---
 
-*Última atualização: 2026-02-21*
+*Última atualização: 2026-03-04*
 *Versão do projeto: 3.0.0*
 *Formato: Routing Table (Wave 9 — Legacy Cleanup concluído)*
