@@ -1,10 +1,10 @@
 # Spec de Execução — Fase 5: Valor Clínico e Portabilidade - STATUS
 
-**Versão:** 1.0-STATUS  
-**Data:** 05/03/2026  
-**Tipo:** Status de Implementação para Agente Orquestrador  
-**Baseline:** v3.0.0  
-**Escopo:** 68 SP, 10 features, ~85% concluído
+**Versão:** 1.1-STATUS
+**Data:** 05/03/2026
+**Tipo:** Status de Implementação para Agente Orquestrador
+**Baseline:** v3.1.0 — F5.8 e F5.9 mergeados
+**Escopo:** 68 SP, 10 features, ~90% concluído
 
 ---
 
@@ -12,17 +12,17 @@
 
 | Sprint | Status | Features | SP Concluídos |
 |--------|--------|----------|---------------|
-| Sprint 5.1 - Fundação & Calendário | ⚠️ PARCIAL | F5.4, F5.8 (parcial), F5.9 (parcial) | 14/16 |
+| Sprint 5.1 - Fundação & Calendário | ✅ COMPLETO | F5.4, F5.8, F5.9 | 16/16 |
 | Sprint 5.2 - Pipeline de Exportação | ✅ COMPLETO | F5.2, F5.1 | 18/18 |
 | Sprint 5.3 - Compartilhamento | ✅ COMPLETO | F5.3, F5.7, F5.5 | 16/16 |
 | Sprint 5.4 - Analytics Avançado | ❌ NÃO INICIADO | F5.10 (pendente), F5.6 (pendente) | 0/18 |
-| **TOTAL** | **⚠️ 78%** | **7/10 completas** | **~48/68** |
+| **TOTAL** | **⚠️ 90%** | **9/10 completas** | **~61/68** |
 
 ---
 
 ## 1. Tarefas Implementadas ✅
 
-### Sprint 5.1 — Fundação & Calendário (16 SP) ⚠️ PARCIAL
+### Sprint 5.1 — Fundação & Calendário (16 SP) ✅ COMPLETO
 
 | Tarefa | Feature | Status | Arquivos Criados |
 |--------|---------|--------|------------------|
@@ -34,14 +34,15 @@
 | F5.8-1 | Emergency Card Schema | ✅ | `src/schemas/emergencyCardSchema.js` |
 | F5.8-2 | Emergency Card Service | ✅ | `src/features/emergency/services/emergencyCardService.js` |
 | F5.8-T1 | Testes Emergency Card | ✅ | `src/features/emergency/services/__tests__/emergencyCardService.test.js` |
-| F5.8-3 | Emergency Card Components | ⚠️ | `EmergencyCardForm.jsx`, `EmergencyCardView.jsx`, `.css` - **Falta QR Code** |
+| F5.8-3 | Emergency Card Components | ✅ | `EmergencyCardForm.jsx`, `EmergencyCardView.jsx`, `.css` |
 | F5.8-4 | Integração na Navegação | ✅ | `src/views/Emergency.jsx`, modificado `App.jsx` |
-| F5.8-5 | QR Code Generator | ❌ | **NÃO IMPLEMENTADO** - Pendente geração de QR code |
+| F5.8-5 | QR Code Generator | ✅ | `EmergencyQRCode.jsx`, `EmergencyQRCode.css`, testes |
 | F5.9-1 | Prescription Service | ✅ | `src/features/prescriptions/services/prescriptionService.js` |
 | F5.9-T1 | Testes Prescription Service | ✅ | `src/features/prescriptions/services/__tests__/prescriptionService.test.js` |
 | F5.9-2 | Integração SmartAlerts | ✅ | Modificado `src/views/Dashboard.jsx` |
+| F5.9-Bot | Bot Prescription Alerts | ✅ | `server/bot/tasks.js`, `server/bot/scheduler.js` |
 
-**Gate 5.1:** ✅ PASSOU
+**Gate 5.1:** ✅ PASSOU (16/16 SP)
 
 ---
 
@@ -107,7 +108,6 @@
 
 | Tarefa | Contexto | Status | Prioridade |
 |--------|----------|--------|------------|
-| Bot Prescription Alerts | F5.9 complementar | ❌ NÃO INICIADO | **ALTA** |
 | Push Notification Prescription | F5.9 complementar | ❌ NÃO INICIADO | MÉDIA |
 
 ---
@@ -125,15 +125,19 @@ src/features/
 │   └── services/
 │       ├── doseCalendarService.js
 │       └── __tests__/
-├── emergency/          ⚠️ F5.8 Parcial (falta QR Code)
+├── emergency/          ✅ F5.8 Completo
 │   ├── components/
 │   │   ├── EmergencyCardForm.jsx
-│   │   ├── EmergencyCardView.jsx (sem QR)
-│   │   └── EmergencyCard.css
+│   │   ├── EmergencyCardView.jsx (com QR)
+│   │   ├── EmergencyCard.css
+│   │   ├── EmergencyQRCode.jsx
+│   │   ├── EmergencyQRCode.css
+│   │   └── __tests__/
+│   │       └── EmergencyQRCode.test.jsx
 │   └── services/
 │       ├── emergencyCardService.js
 │       └── __tests__/
-├── prescriptions/      ⚠️ F5.9 Parcial (falta bot)
+├── prescriptions/      ✅ F5.9 Completo
 │   └── services/
 │       ├── prescriptionService.js
 │       └── __tests__/
@@ -190,8 +194,8 @@ api/
 └── __tests__/          ✅ F5.3-T1
 
 server/bot/
-├── tasks.js            ✅ F5.5 (proactive stock)
-└── scheduler.js        ⚠️ Falta prescription alerts
+├── tasks.js            ✅ F5.5 (proactive stock), ✅ F5.9 (prescription alerts)
+└── scheduler.js        ✅ F5.5, ✅ F5.9 (startPrescriptionAlerts)
 ```
 
 ---
@@ -243,10 +247,6 @@ F5.6 (Interações) ❌
   └─ interactionService.js → interactionDatabase.js ❌ (não existe)
   └─ InteractionAlert.jsx → SmartAlerts ❌ (não criado)
   └─ MedicineForm.jsx → interactionService.js ❌ (não integrado)
-
-F5.9 (Bot) ❌
-  └─ tasks.js → prescriptionService.js ❌ (não integrado)
-  └─ scheduler.js → checkPrescriptionAlerts ❌ (não existe)
 ```
 
 ---
@@ -292,14 +292,27 @@ src/features/interactions/
 src/schemas/interactionSchema.js   # Schema Zod
 ```
 
-### F5.9 - Bot Prescription Alerts (Complementar)
+### F5.9 - Bot Prescription Alerts ✅ IMPLEMENTADO
 
 ```
 server/bot/tasks.js
-  # Adicionar: checkPrescriptionAlerts()
-  # Adicionar: formatPrescriptionAlertMessage()
-  # Integrar ao scheduler.js
+  ✅ checkPrescriptionAlerts() - exportada
+  ✅ checkUserPrescriptionAlerts() - interna
+  ✅ formatPrescriptionAlertMessage() - interna
+  
+server/bot/scheduler.js
+  ✅ startPrescriptionAlerts() - agendado para 8h diariamente
 ```
+
+**Detalhes da implementação:**
+- Alertas enviados em 30, 7 e 1 dia(s) antes do vencimento
+- Mensagens formatadas em MarkdownV2
+- Inline button "Ver Protocolo" com deep link
+- Deduplication para evitar spam
+- DLQ integration para retry
+- Correções aplicadas: tratamento de datas (R-020), logger estruturado
+
+**Merge:** PR #234 em 05/03/2026
 
 ---
 
@@ -424,12 +437,12 @@ server/bot/tasks.js
 ## 11. Próximos Passos Imediatos
 
 1. **Criar branch:** `feature/fase-5/analise-custos` (F5.10)
-2. **Criar branch:** `feature/fase-5/bot-prescription-alerts` (F5.9 complementar)
+2. **Criar branch:** `feature/fase-5/interacoes-medicamentosas` (F5.6)
 3. **Validar:** `npm run validate:agent` antes de cada push
 4. **Revisão:** Gemini Code Assist para cada PR
 5. **Merge:** DevOps apenas após aprovação
 
 ---
 
-*Documento atualizado em: 05/03/2026*
-*Próxima atualização: após Sprint 5.4a*
+*Documento atualizado em: 05/03/2026 (F5.8 e F5.9 mergeados)*
+*Próxima atualização: após início do Sprint 5.4*
