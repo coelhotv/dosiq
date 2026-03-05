@@ -1,0 +1,119 @@
+/**
+ * PrescriptionTimeline — Barra visual de vigência de prescrição (W1-07)
+ */
+
+.prescription-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  transition: background 0.15s ease;
+}
+
+.prescription-timeline[role='button'] {
+  cursor: pointer;
+}
+
+.prescription-timeline[role='button']:hover {
+  background: var(--bg-tertiary);
+}
+
+.prescription-timeline[role='button']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Cabeçalho */
+.prescription-timeline__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.prescription-timeline__name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.prescription-timeline__badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Vencida: badge em negrito */
+.prescription-timeline--expired .prescription-timeline__badge {
+  font-weight: var(--font-weight-bold);
+}
+
+/* Trilha */
+.prescription-timeline__track {
+  position: relative;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: visible;
+  margin-top: var(--space-1);
+}
+
+/* Preenchimento animado (passado → hoje) */
+.prescription-timeline__fill {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  background: var(--timeline-color);
+  border-radius: var(--radius-full);
+}
+
+/* Segmento futuro (outline) */
+.prescription-timeline__future {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  border: 1.5px solid var(--timeline-color);
+  background: transparent;
+  opacity: 0.35;
+  box-sizing: border-box;
+}
+
+/* Marcador "hoje" */
+.prescription-timeline__today-marker {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: calc(100% + 8px);
+  background: var(--text-secondary);
+  border-radius: var(--radius-full);
+  transform: translateX(-50%);
+  opacity: 0.6;
+}
+
+/* Labels de data */
+.prescription-timeline__dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+}
+
+.prescription-timeline__date {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .prescription-timeline {
+    transition: none;
+  }
+}
