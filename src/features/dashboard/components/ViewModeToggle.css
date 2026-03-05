@@ -1,0 +1,41 @@
+/**
+ * ViewModeToggle — Segmented control Hora/Plano (W2-04)
+ */
+
+.view-mode-toggle {
+  display: inline-flex;
+  background: var(--bg-surface, var(--bg-secondary));
+  border-radius: var(--radius-md);
+  padding: 2px;
+  border: 1px solid var(--border-color, var(--color-border));
+  align-self: flex-start;
+}
+
+.view-mode-toggle__btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.4;
+}
+
+.view-mode-toggle__btn--active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.view-mode-toggle__btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-mode-toggle__btn {
+    transition: none;
+  }
+}

@@ -1,0 +1,40 @@
+/**
+ * PlanBadge — Badge visual de plano de tratamento (W2-05)
+ */
+
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+
+  /* Cor de fundo com transparência via color-mix */
+  @supports (background: color-mix(in srgb, red 15%, transparent)) {
+    background: color-mix(in srgb, var(--badge-color) 15%, transparent);
+  }
+}
+
+/* Fallback para Safari < 16.2 */
+@supports not (background: color-mix(in srgb, red 15%, transparent)) {
+  .plan-badge {
+    background: transparent;
+    border: 1px solid var(--badge-color);
+  }
+}
+
+.plan-badge[role='button'] {
+  cursor: pointer;
+}
+
+.plan-badge--sm {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}
+
+.plan-badge--md {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
