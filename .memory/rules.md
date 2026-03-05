@@ -674,5 +674,36 @@ expect(screen.getByText('80%')).toBeInTheDocument() // throws: found 2 elements
 
 ---
 
+### R-098: DoseZoneList Adapter Pattern (D-01) — Interface Mismatch [HIGH]
+**Rule:** When a new component (DoseZoneList) has a different callback interface than the existing Dashboard handlers, create thin adapter functions. Do NOT refactor existing handlers to match.
+**Source:** Wave 2 implementation (W2-10)
+**Adapters created:**
+- `handleRegisterFromZone(protocolId, dosagePerIntake)` → calls `handleRegisterDose(medicine_id, protocolId, dosagePerIntake)`
+- `handleBatchRegisterDoses(doseItems[])` → calls `logService.createBulk()`
+- `handleToggleDoseSelection(protocolId, scheduledTime)` → updates `selectedDoseKeys` Set
+**Why not refactor:** Dashboard.jsx is 932+ lines; refactoring handleRegisterDose would risk breaking SmartAlerts and LogForm interactions.
+
+### R-099: selectedMedicines useState Position (D-02) — Known Tech Debt [MEDIUM]
+**Rule:** The `selectedMedicines` useState in Dashboard.jsx is at line ~535 (after handlers), violating States-first order. Do NOT move it in Wave 2 or 3 without a dedicated refactor PR.
+**Source:** Wave 2 analysis (D-02 architectural decision)
+**Note:** Wave 3+ should create a separate PR to fix hook order in Dashboard.jsx before adding more complexity.
+
+### R-100: Multiple useDashboard() Calls are Safe (D-03) [INFO]
+**Rule:** Multiple components (Dashboard, useComplexityMode, useDoseZones) calling `useDashboard()` is safe and correct. React Context consumers always receive the same object reference — no performance penalty.
+**Source:** Wave 2 analysis (D-03 architectural decision)
+
+### R-101: DoseZoneList Internal Sub-components [HIGH]
+**Rule:** DoseCard and ZoneSection are internal sub-components of DoseZoneList, NOT exported. This is intentional — they have no use outside DoseZoneList and exporting them prematurely increases API surface.
+**Source:** Wave 2 W2-03 implementation
+
+### R-102: SwipeRegisterItem onRegister vs onRegisterDose Mismatch [HIGH]
+**Rule:** SwipeRegisterItem calls `onRegister(medicineId, dosagePerIntake)`. DoseZoneList needs `onRegisterDose(protocolId, dosagePerIntake)`. Use a closure wrapper:
+```jsx
+onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}
+```
+**Source:** Wave 2 W2-03 (plan mode integration)
+
+---
+
 *Last updated: 2026-03-05*
-*Rules: R-001 to R-097*
+*Rules: R-001 to R-102*
