@@ -410,7 +410,7 @@ export function SparklineAdesao({
             key={d.date}
             cx={d.x}
             cy={d.y}
-            r={onDayClick ? (size === 'small' ? 2.5 : 3) : size === 'small' ? 1 : 1.5}
+            r={size === 'small' ? 2.5 : 3}
             fill={getAdherenceColor(d.adherence)}
             className="sparkline-dot sparkline-dot--clickable"
             initial={{ scale: 0 }}
