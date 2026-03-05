@@ -180,3 +180,34 @@
   touch-action: pan-y;
   user-select: none;
 }
+
+/* ============================================
+   Heat Map de Adesão
+   Aplicado via CSS custom property --heat-color
+   ============================================ */
+.calendar-day.has-adherence {
+  background: color-mix(in srgb, var(--heat-color) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--heat-color) 60%, transparent);
+}
+
+.calendar-day.has-adherence .day-number {
+  font-weight: 700;
+}
+
+.calendar-day.has-adherence:not(.empty):hover {
+  background: color-mix(in srgb, var(--heat-color) 40%, transparent);
+}
+
+/* Fallback para navegadores sem color-mix (Safari < 16.2) */
+@supports not (background: color-mix(in srgb, red 50%, blue)) {
+  .calendar-day.has-adherence {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--heat-color);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-day.has-adherence {
+    transition: none;
+  }
+}

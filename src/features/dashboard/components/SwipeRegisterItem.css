@@ -116,3 +116,29 @@
 .swipe-item-card--success {
   pointer-events: none;
 }
+
+/* Check bounce — feedback visual ao confirmar swipe */
+.swipe-item__check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  background: var(--color-success, #10b981);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  color: #fff;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-item__check {
+    animation: none;
+  }
+}

@@ -1,0 +1,25 @@
+/**
+ * Animações Utilitárias Globais
+ *
+ * Classes reutilizáveis para feedback visual de criticidade.
+ * Usadas em: StockBars (critical), SmartAlerts (critical), PrescriptionTimeline (vencidas).
+ */
+
+/* ============================================
+   PULSE CRÍTICO — Itens que precisam de atenção imediata
+   ============================================ */
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.pulse-critical {
+  animation: pulse-critical 2s ease-in-out infinite;
+}
+
+/* Respeita preferência do sistema por movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-critical {
+    animation: none;
+  }
+}

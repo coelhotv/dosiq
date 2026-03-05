@@ -1,0 +1,115 @@
+/* ============================================
+   RingGauge — Ring gauge circular de adesão
+   ============================================ */
+
+.ring-gauge {
+  display: flex;
+  align-items: center;
+}
+
+.ring-gauge--clickable {
+  cursor: pointer;
+}
+
+.ring-gauge--clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+/* --- SIZE: large (hero, modo simples ≤3 meds) --- */
+.ring-gauge--large {
+  padding: var(--space-6);
+  gap: var(--space-4);
+}
+
+.ring-gauge--large .ring-gauge__ring-wrapper {
+  flex-shrink: 0;
+}
+
+.ring-gauge--large .ring-gauge__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --- SIZE: medium (moderado, 4–6 meds) --- */
+.ring-gauge--medium {
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+
+.ring-gauge--medium .ring-gauge__medium-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.ring-gauge--medium .ring-gauge__medium-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- SIZE: compact (complexo, 7+ meds) --- */
+.ring-gauge--compact {
+  padding: var(--space-2);
+  gap: var(--space-2);
+}
+
+/* --- SVG --- */
+.ring-gauge__svg {
+  display: block;
+  overflow: visible;
+}
+
+.ring-gauge__score {
+  font-size: 28px;
+  font-weight: 900;
+  fill: var(--text-primary);
+  font-family: var(--font-primary);
+}
+
+.ring-gauge__label {
+  font-size: 11px;
+  fill: var(--text-secondary);
+  font-family: var(--font-primary);
+}
+
+/* --- Texto de score fora do SVG (medium/compact) --- */
+.ring-gauge__score-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Mensagem de incentivo (large) --- */
+.ring-gauge__motivation {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* --- Streak badge --- */
+.ring-gauge__streak {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ring-gauge__streak-icon {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.ring-gauge__streak-value {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Sparkline wrapper (large) --- */
+.ring-gauge__sparkline {
+  margin-top: var(--space-1);
+}
