@@ -1,0 +1,90 @@
+/* ============================================
+   StockBars — Barras horizontais de estoque
+   ============================================ */
+
+.stock-bars {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stock-bars--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.stock-bars__empty-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* --- Item --- */
+.stock-bars__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  cursor: default;
+}
+
+.stock-bars__item[role='button'] {
+  cursor: pointer;
+}
+
+.stock-bars__item[role='button']:hover .stock-bars__name {
+  color: var(--text-primary);
+}
+
+.stock-bars__item[role='button']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Nome do medicamento --- */
+.stock-bars__name {
+  flex: 0 0 70px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+/* --- Track (fundo da barra) --- */
+.stock-bars__track {
+  flex: 1;
+  height: 8px;
+  background: var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+/* --- Fill (progresso da barra) --- */
+.stock-bars__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  min-width: 2px;
+}
+
+/* --- Dias restantes --- */
+.stock-bars__days {
+  flex: 0 0 36px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Indicador de status --- */
+.stock-bars__indicator {
+  flex: 0 0 20px;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  line-height: 1;
+}
