@@ -135,8 +135,8 @@ Cada onda tem suas specs atomicas em arquivo dedicado dentro de `plans/specs/`. 
 | Onda | Arquivo | Tasks | Status |
 |------|---------|-------|--------|
 | **Onda 1** — Componentes Visuais | [`plans/specs/wave-1-visual-components.md`](specs/wave-1-visual-components.md) | W1-01 a W1-08 | Specs prontas |
-| **Onda 2** — Logica e Hooks | [`plans/specs/wave-2-logic-hooks.md`](specs/wave-2-logic-hooks.md) | W2-01 a W2-10 | Specs pendentes |
-| **Onda 3** — Navegacao | [`plans/specs/wave-3-navigation.md`](specs/wave-3-navigation.md) | W3-01 a W3-07 | Specs pendentes |
+| **Onda 2** — Logica e Hooks | [`plans/specs/wave-2-logic-hooks.md`](specs/wave-2-logic-hooks.md) | W2-01 a W2-10 | Specs prontas |
+| **Onda 3** — Navegacao | [`plans/specs/wave-3-navigation.md`](specs/wave-3-navigation.md) | W3-01 a W3-07 | Specs prontas |
 
 ### Como usar os arquivos de spec
 
@@ -203,26 +203,26 @@ DEPOIS de implementar:
 
 ### Onda 2 — Lógica e Hooks
 
-- [ ] **W2-01** useDoseZones() — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-02** useComplexityMode() — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-03** DoseZoneList — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-04** ViewModeToggle — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-05** PlanBadge — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-06** BatchRegisterButton — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-07** AdaptiveLayout — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-08** Integrar RingGauge — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-09** Integrar StockBars — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-10** Integrar DoseZoneList — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-01** useDoseZones() — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-02** useComplexityMode() — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-03** DoseZoneList — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-04** ViewModeToggle — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-05** PlanBadge — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-06** BatchRegisterButton — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-07** AdaptiveLayout — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-08** Integrar RingGauge — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-09** Integrar StockBars — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W2-10** Integrar DoseZoneList — spec ✅ | código ⬜ | teste ⬜ | review ⬜
 
 ### Onda 3 — Navegação
 
-- [ ] **W3-01** BottomNav 5→4 — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-02** Tab Tratamento — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-03** Tab Perfil — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-04** Sub-view Minha Saúde — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-05** Wizard Cadastro — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-06** Migrar History→Saúde — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-07** Cross-navigation — spec ⬜ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-01** BottomNav 5→4 — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-02** Tab Tratamento — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-03** Tab Perfil — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-04** Sub-view Minha Saúde — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-05** Wizard Cadastro — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-06** Migrar History→Saúde — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [ ] **W3-07** Cross-navigation — spec ✅ | código ⬜ | teste ⬜ | review ⬜
 
 ---
 
@@ -295,5 +295,5 @@ W3-07 Cross-nav ←── W3-01..03 ───┘   │
 
 ---
 
-*Última atualização: 04/03/2026*
-*Próximo passo: Specs atômicas W2-01 a W2-10 (Opus)*
+*Última atualização: 05/03/2026*
+*Todas as specs produzidas (25 tasks). Próximo passo: iniciar execução da Onda 1.*
