@@ -221,7 +221,9 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 5. PUSH BRANCH
 6. CREATE PR
 7. WAIT FOR GEMINI CODE ASSIST REVIEW
-8. MERGE & CLEANUP (--no-ff, deletar branch)
+8. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
+9. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
+10. MERGE & CLEANUP (--no-ff, deletar branch)
 ```
 
 **REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs.
