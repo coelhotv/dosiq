@@ -1286,7 +1286,7 @@ async function checkUserPrescriptionAlerts(bot, userId, chatId) {
     if (!protocols || protocols.length === 0) return;
 
     for (const protocol of protocols) {
-      const endDate = new Date(protocol.end_date);
+      const endDate = new Date(protocol.end_date + 'T00:00:00');
       const diffTime = endDate.getTime() - todayDate.getTime();
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -1400,13 +1400,12 @@ export async function checkPrescriptionAlerts(bot, options = {}) {
   
   const users = await getAllUsersWithTelegram();
   
-  console.log(`[Tasks] Verificando alertas de prescrição para ${users.length} usuário(s)`);
+  logger.info(`Verificando alertas de prescrição para ${users.length} usuário(s)`);
   
   for (const user of users) {
-    console.log(`[Tasks] Verificando prescrições para usuário: ${user.user_id}`);
+    logger.debug(`Verificando prescrições para usuário: ${user.user_id}`);
     await checkUserPrescriptionAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Alertas de prescrição concluídos', { correlationId });
-  console.log('[Tasks] Alertas de prescrição concluídos');
 }
