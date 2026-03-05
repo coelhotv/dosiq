@@ -44,17 +44,19 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 
 ## 2. Ondas de Execução
 
-### Onda 1 — Componentes Visuais (Risco: BAIXO)
+### Onda 1 — Componentes Visuais (Risco: BAIXO) ✅ CONCLUÍDA
 
 **Objetivo:** Criar componentes visuais isolados que não dependem de mudanças estruturais. Cada componente é independente e testável.
 
 **Pré-requisitos:** Nenhum (não mexe em routing, navigation, ou data flow existente).
 
+**Entrega:** PR #237 mergeado em 05/03/2026. 8/8 tasks, 81 testes, lint 0 erros.
+
 **Quality Gate para Onda 2:**
-- [ ] Todos os componentes renderizam com dados mock
-- [ ] Testes passam (`npm run validate:agent`)
-- [ ] Sem regressão visual no Dashboard atual
-- [ ] Build produção passa (`npm run build`)
+- [x] Todos os componentes renderizam com dados mock
+- [x] Testes passam (`npm run validate:agent`) — 376/376 ✅
+- [x] Sem regressão visual no Dashboard atual
+- [x] Build produção passa (`npm run build`)
 
 ### Onda 2 — Lógica e Hooks (Risco: MÉDIO)
 
@@ -86,18 +88,18 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 
 ## 3. Inventário de Tasks Atômicas
 
-### Onda 1 — Componentes Visuais
+### Onda 1 — Componentes Visuais ✅ CONCLUÍDA (PR #237 — 05/03/2026)
 
 | ID | Task | Componente | Prioridade | Deps | Status |
 |----|------|-----------|------------|------|--------|
-| W1-01 | Ring Gauge de Health Score | `RingGauge.jsx` | P0 | — | ⬜ TODO |
-| W1-02 | Barras de Estoque com Projeção | `StockBars.jsx` | P0 | — | ⬜ TODO |
-| W1-03 | Sparkline Interativa (evolução) | `SparklineAdesao.jsx` | P1 | — | ⬜ TODO |
-| W1-04 | Micro-animações de Dose | `SwipeRegisterItem.jsx` | P1 | — | ⬜ TODO |
-| W1-05 | Custo Mini-Chart | `CostChart.jsx` | P2 | — | ⬜ TODO |
-| W1-06 | Pulse em Itens Críticos | `PulseCritical.css` | P2 | — | ⬜ TODO |
-| W1-07 | Prescrições Timeline Visual | `PrescriptionTimeline.jsx` | P2 | — | ⬜ TODO |
-| W1-08 | Calendário Heat Map (evolução) | `Calendar.jsx` | P1 | — | ⬜ TODO |
+| W1-01 | Ring Gauge de Health Score | `RingGauge.jsx` | P0 | — | ✅ DONE |
+| W1-02 | Barras de Estoque com Projeção | `StockBars.jsx` | P0 | — | ✅ DONE |
+| W1-03 | Sparkline Interativa (evolução) | `SparklineAdesao.jsx` | P1 | — | ✅ DONE |
+| W1-04 | Micro-animações de Dose | `SwipeRegisterItem.jsx` | P1 | — | ✅ DONE |
+| W1-05 | Custo Mini-Chart | `CostChart.jsx` | P2 | — | ✅ DONE |
+| W1-06 | Pulse em Itens Críticos | `animations.css` | P2 | — | ✅ DONE |
+| W1-07 | Prescrições Timeline Visual | `PrescriptionTimeline.jsx` | P2 | F5.9 ✅ | ✅ DONE |
+| W1-08 | Calendário Heat Map (evolução) | `Calendar.jsx` | P1 | — | ✅ DONE |
 
 ### Onda 2 — Lógica e Hooks
 
@@ -190,16 +192,16 @@ DEPOIS de implementar:
 
 ## 6. Progresso (TODO List)
 
-### Onda 1 — Componentes Visuais
+### Onda 1 — Componentes Visuais ✅ CONCLUÍDA
 
-- [x] **W1-01** Ring Gauge de Health Score — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-02** Barras de Estoque — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-03** Sparkline Interativa — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-04** Micro-animações Dose — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-05** Custo Mini-Chart — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-06** Pulse Críticos — spec ✅ | código ✅ | teste N/A | review ⬜
-- [x] **W1-07** Prescrições Timeline — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W1-08** Calendar Heat Map — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-01** Ring Gauge de Health Score — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-02** Barras de Estoque — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-03** Sparkline Interativa — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-04** Micro-animações Dose — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-05** Custo Mini-Chart — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-06** Pulse Críticos — spec ✅ | código ✅ | teste N/A | review ✅
+- [x] **W1-07** Prescrições Timeline — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W1-08** Calendar Heat Map — spec ✅ | código ✅ | teste ✅ | review ✅
 
 ### Onda 2 — Lógica e Hooks
 
@@ -248,7 +250,7 @@ W1-03 Sparkline (edit) ──────────────┤
 W1-04 Micro-anims (edit) ────────────┤  Onda 1
 W1-05 CostChart ─────────────────────┤  (independentes)
 W1-06 Pulse CSS ─────────────────────┤
-W1-07 PrescTimeline (BLOCKED F5.9) ──┤
+W1-07 PrescTimeline ─────────────────┤
 W1-08 Calendar HeatMap (edit) ───────┘
                                       │
                                ═══════╪═══════ Quality Gate 1
@@ -279,21 +281,25 @@ W3-07 Cross-nav ←── W3-01..03 ───┘   │
 
 ## Apêndice B — Componentes Existentes Referenciados
 
-| Componente | Path | Linhas | Ação |
-|-----------|------|--------|------|
-| HealthScoreCard | `src/features/dashboard/components/HealthScoreCard.jsx` | 97 | Substituir por RingGauge (Onda 2) |
-| SparklineAdesao | `src/features/dashboard/components/SparklineAdesao.jsx` | 417 | Evoluir (W1-03) |
-| SwipeRegisterItem | `src/shared/components/log/SwipeRegisterItem.jsx` | 97 | Editar (W1-04) |
-| StockAlertsWidget | `src/features/dashboard/components/StockAlertsWidget.jsx` | 77 | Complementar com StockBars (W1-02) |
-| Calendar | `src/shared/components/ui/Calendar.jsx` | 296 | Evoluir heat map (W1-08) |
-| BottomNav | `src/shared/components/ui/BottomNav.jsx` | 59 | Reestruturar (W3-01) |
-| Dashboard | `src/views/Dashboard.jsx` | 932 | Edits mínimos (W2-08,09,10) |
-| TreatmentAccordion | `src/features/dashboard/components/TreatmentAccordion.jsx` | 86 | Manter, integrar com zonas (W2-10) |
-| SmartAlerts | `src/features/dashboard/components/SmartAlerts.jsx` | 39 | Manter, adicionar pulse (W1-06) |
-| InsightCard | `src/features/dashboard/components/InsightCard.jsx` | 63 | Migrar para Saúde (W3-04) |
-| DashboardWidgets | `src/features/dashboard/components/DashboardWidgets.jsx` | 123 | Avaliar se mantém ou absorve |
+| Componente | Path | Status Onda 1 | Próxima ação |
+|-----------|------|---------------|--------------|
+| HealthScoreCard | `src/features/dashboard/components/HealthScoreCard.jsx` | — | Substituir por RingGauge (W2-08) |
+| SparklineAdesao | `src/features/dashboard/components/SparklineAdesao.jsx` | ✅ Evoluído (W1-03) | Integrar inline no RingGauge (W2-08) |
+| SwipeRegisterItem | `src/features/dashboard/components/SwipeRegisterItem.jsx` | ✅ Editado (W1-04) | — |
+| StockAlertsWidget | `src/features/dashboard/components/StockAlertsWidget.jsx` | — | Complementar com StockBars (W2-09) |
+| Calendar | `src/shared/components/ui/Calendar.jsx` | ✅ Evoluído (W1-08) | Conectar adherenceData real (W2-08) |
+| BottomNav | `src/shared/components/ui/BottomNav.jsx` | — | Reestruturar 5→4 tabs (W3-01) |
+| Dashboard | `src/views/Dashboard.jsx` | — | Edits mínimos: import + JSX (W2-08,09,10) |
+| TreatmentAccordion | `src/features/dashboard/components/TreatmentAccordion.jsx` | — | Integrar com DoseZoneList (W2-10) |
+| SmartAlerts | `src/features/dashboard/components/SmartAlerts.jsx` | — | Adicionar pulse-critical (W2-10) |
+| InsightCard | `src/features/dashboard/components/InsightCard.jsx` | — | Migrar para Minha Saúde (W3-04) |
+| DashboardWidgets | `src/features/dashboard/components/DashboardWidgets.jsx` | — | Avaliar absorção ou manutenção (W2) |
+| PrescriptionTimeline | `src/features/stock/components/PrescriptionTimeline.jsx` | ✅ Criado (W1-07) | Exibir na tab Estoque (W3-02) |
+| CostChart | `src/features/stock/components/CostChart.jsx` | ✅ Criado (W1-05) | Conectar dados reais de estoque (W2) |
+| StockBars | `src/features/dashboard/components/StockBars.jsx` | ✅ Criado (W1-02) | Integrar no Dashboard (W2-09) |
+| RingGauge | `src/features/dashboard/components/RingGauge.jsx` | ✅ Criado (W1-01) | Integrar no Dashboard (W2-08) |
 
 ---
 
 *Última atualização: 05/03/2026*
-*Todas as specs produzidas (25 tasks). Próximo passo: iniciar execução da Onda 1.*
+*Onda 1 concluída (PR #237). Próximo passo: iniciar execução da Onda 2 — Lógica e Hooks.*
