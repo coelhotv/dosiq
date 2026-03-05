@@ -185,6 +185,9 @@ DEPOIS de implementar:
 **Onda 1:** Componentes recebem dados por props. NUNCA importar DashboardProvider/useDashboardContext diretamente. São componentes puros.
 
 **Onda 2:** Hooks podem usar useDashboardContext. Integração com Dashboard.jsx deve ser feita em edits mínimos (adicionar import + JSX, não reescrever o componente).
+- **Princípio 2 da visão (crítico):** O TreatmentAccordion funciona — PRESERVAR. No DoseZoneList modo Plano, o TreatmentAccordion é renderizado DENTRO de cada zona temporal. Não remover accordion do projeto.
+- **Toggle hora/plano em modo simple:** `hasTreatmentPlans={treatmentPlans.length > 0 && complexityMode !== 'simple'}` — esconder toggle para pacientes com ≤3 meds.
+- **PlanBadge no modo Hora:** cada DoseCard deve mostrar `PlanBadge` (W2-05) ao lado do nome do medicamento quando o protocolo pertence a um plano de tratamento. Contexto clínico sempre visível.
 
 **Onda 3:** Mudanças em App.jsx e BottomNav devem ser feitas em edits atômicos. Testar cada tab individualmente antes de integrar.
 
