@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { createLogger } from './logger.js';
-import { checkReminders, runDailyDigest } from './tasks.js';
+import { checkReminders, runDailyDigest, checkPrescriptionAlerts } from './tasks.js';
 
 const logger = createLogger('Scheduler');
 
@@ -34,5 +34,8 @@ export function startDailyDigest(bot) {
   console.log('✅ Resumo diário configurado (diariamente às 23h)');
 }
 
-// Re-export for compatibility if needed elsewhere
-export { checkReminders, runDailyDigest };
+export function startPrescriptionAlerts(bot) {
+  // Run once daily at 8h to check for prescription alerts
+  scheduleTask('checkPrescriptionAlerts', '0 8 * * *', () => checkPrescriptionAlerts(bot));
+  console.log('✅ Alertas de prescrição configurados (diariamente às 8h)');
+}
