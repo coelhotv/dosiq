@@ -34,8 +34,6 @@ function getStreakIcon(streak) {
  *
  * @param {number} score - 0–100, porcentagem de adesão
  * @param {number} streak - Dias consecutivos
- * @param {'up'|'down'|'neutral'} [trend] - Direção da tendência
- * @param {number} [trendPercentage] - Variação percentual
  * @param {'compact'|'medium'|'large'} [size] - Default: 'medium'
  * @param {Function} [onClick] - Click handler (abre HealthScoreDetails)
  * @param {Array} [sparklineData] - 7 pontos {date, adherence} para sparkline inline
