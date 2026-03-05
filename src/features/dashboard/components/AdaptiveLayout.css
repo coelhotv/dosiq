@@ -1,0 +1,32 @@
+/**
+ * AdaptiveLayout — Wrapper de layout adaptativo por complexidade (W2-07)
+ */
+
+/* Base (moderate — padrão) */
+.adaptive-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Simple: mais espaço, cards maiores */
+.adaptive-layout--simple {
+  gap: var(--space-4);
+}
+
+.adaptive-layout--simple .dose-card {
+  padding: var(--space-4);
+}
+
+/* Complex: compacto, menos espaço */
+.adaptive-layout--complex {
+  gap: var(--space-1);
+}
+
+.adaptive-layout--complex .dose-card {
+  padding: var(--space-2);
+}
+
+.adaptive-layout--complex .zone-header {
+  padding: var(--space-2);
+}

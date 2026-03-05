@@ -1,0 +1,42 @@
+/**
+ * BatchRegisterButton — Botão de registro em lote (W2-06)
+ */
+
+.batch-btn {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-button, var(--radius-md));
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border: none;
+  transition: opacity var(--transition-fast);
+}
+
+.batch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.batch-btn--primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.batch-btn--outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+.batch-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .batch-btn {
+    transition: none;
+  }
+}
