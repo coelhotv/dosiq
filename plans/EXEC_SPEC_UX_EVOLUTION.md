@@ -105,16 +105,16 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 
 | ID | Task | Arquivo | Prioridade | Deps | Status |
 |----|------|---------|------------|------|--------|
-| W2-01 | Hook useDoseZones() | `useDoseZones.js` | P0 | — | ⬜ TODO |
-| W2-02 | Hook useComplexityMode() | `useComplexityMode.js` | P0 | — | ⬜ TODO |
-| W2-03 | Componente DoseZoneList | `DoseZoneList.jsx` | P0 | W2-01 | ⬜ TODO |
-| W2-04 | Toggle Hora/Plano | `ViewModeToggle.jsx` | P1 | W2-01 | ⬜ TODO |
-| W2-05 | Badge de Plano (emoji+cor) | `PlanBadge.jsx` | P1 | — | ⬜ TODO |
-| W2-06 | Lote inteligente (hora + plano) | `BatchRegisterButton.jsx` | P1 | W2-04 | ⬜ TODO |
-| W2-07 | Progressive Disclosure wrapper | `AdaptiveLayout.jsx` | P1 | W2-02 | ⬜ TODO |
-| W2-08 | Integrar RingGauge no Dashboard | `Dashboard.jsx` | P0 | W1-01, W2-02 | ⬜ TODO |
-| W2-09 | Integrar StockBars no Dashboard | `Dashboard.jsx` | P1 | W1-02 | ⬜ TODO |
-| W2-10 | Integrar DoseZoneList no Dashboard | `Dashboard.jsx` | P0 | W2-03, W2-07 | ⬜ TODO |
+| W2-01 | Hook useDoseZones() | `useDoseZones.js` | P0 | — | ✅ ENTREGUE (PR em review) |
+| W2-02 | Hook useComplexityMode() | `useComplexityMode.js` | P0 | — | ✅ ENTREGUE (PR em review) |
+| W2-03 | Componente DoseZoneList | `DoseZoneList.jsx` | P0 | W2-01 | ✅ ENTREGUE (PR em review) |
+| W2-04 | Toggle Hora/Plano | `ViewModeToggle.jsx` | P1 | W2-01 | ✅ ENTREGUE (PR em review) |
+| W2-05 | Badge de Plano (emoji+cor) | `PlanBadge.jsx` | P1 | — | ✅ ENTREGUE (PR em review) |
+| W2-06 | Lote inteligente (hora + plano) | `BatchRegisterButton.jsx` | P1 | W2-04 | ✅ ENTREGUE (PR em review) |
+| W2-07 | Progressive Disclosure wrapper | `AdaptiveLayout.jsx` | P1 | W2-02 | ✅ ENTREGUE (PR em review) |
+| W2-08 | Integrar RingGauge no Dashboard | `Dashboard.jsx` | P0 | W1-01, W2-02 | ✅ ENTREGUE (PR em review) |
+| W2-09 | Integrar StockBars no Dashboard | `Dashboard.jsx` | P1 | W1-02 | ✅ ENTREGUE (PR em review) |
+| W2-10 | Integrar DoseZoneList no Dashboard | `Dashboard.jsx` | P0 | W2-03, W2-07 | ✅ ENTREGUE (PR em review) |
 
 ### Onda 3 — Navegação
 
@@ -208,16 +208,23 @@ DEPOIS de implementar:
 
 ### Onda 2 — Lógica e Hooks
 
-- [ ] **W2-01** useDoseZones() — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-02** useComplexityMode() — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-03** DoseZoneList — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-04** ViewModeToggle — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-05** PlanBadge — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-06** BatchRegisterButton — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-07** AdaptiveLayout — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-08** Integrar RingGauge — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-09** Integrar StockBars — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W2-10** Integrar DoseZoneList — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [x] **W2-01** useDoseZones() — spec ✅ | código ✅ | teste ✅ (21 testes) | review ⬜
+- [x] **W2-02** useComplexityMode() — spec ✅ | código ✅ | teste ✅ (12 testes) | review ⬜
+- [x] **W2-03** DoseZoneList — spec ✅ | código ✅ | teste ✅ (10 testes) | review ⬜
+- [x] **W2-04** ViewModeToggle — spec ✅ | código ✅ | teste ✅ (5 testes) | review ⬜
+- [x] **W2-05** PlanBadge — spec ✅ | código ✅ | teste ✅ (6 testes) | review ⬜
+- [x] **W2-06** BatchRegisterButton — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W2-07** AdaptiveLayout — spec ✅ | código ✅ | teste ✅ (4 testes) | review ⬜
+- [x] **W2-08** Integrar RingGauge — spec ✅ | código ✅ | build ✅ | review ⬜
+- [x] **W2-09** Integrar StockBars — spec ✅ | código ✅ | build ✅ | review ⬜
+- [x] **W2-10** Integrar DoseZoneList — spec ✅ | código ✅ | build ✅ | review ⬜
+
+**Onda 2 concluída em 2026-03-05 — validate:agent: 387/387 testes | build: ✅**
+
+Decisões arquiteturais documentadas:
+- D-01: Adapters em Dashboard.jsx (handleRegisterFromZone, handleBatchRegisterDoses, handleToggleDoseSelection) — ver R-098
+- D-02: selectedMedicines hook em posição irregular (line ~535) — NÃO movido em Wave 2, pendente Wave 3 — ver R-099
+- D-03: Múltiplas chamadas useDashboard() aceitas — ver R-100
 
 ### Onda 3 — Navegação
 
