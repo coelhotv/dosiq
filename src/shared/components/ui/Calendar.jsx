@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react'
 import './Calendar.css'
 
 /**
+ * Retorna cor de fundo para o dia baseado na adesão (heat map).
+ * @param {{adherence: number, taken: number, expected: number}|undefined} data
+ * @returns {string} Cor CSS ou 'transparent'
+ */
+function getDayColor(data) {
+  if (!data) return 'transparent'
+  if (data.expected === 0) return 'transparent'
+  if (data.adherence === 100) return 'var(--color-success)'
+  if (data.adherence > 0) return 'var(--color-warning)'
+  return 'var(--color-error)'
+}
+
+/**
  * Calendar - Componente de calendario reutilizavel com features opcionais
  *
  * @typedef {Object} CalendarProps
@@ -13,6 +26,8 @@ import './Calendar.css'
  * @property {boolean} [enableSwipe=false] - Habilitar navegacao por swipe
  * @property {boolean} [enableMonthPicker=false] - Habilitar seletor de mes
  * @property {Object} [monthPickerRange] - Range do seletor {start, end} em meses
+ * @property {Object<string, {adherence: number, taken: number, expected: number}>} [adherenceData={}]
+ *   Dados de adesão por dia (YYYY-MM-DD → dados). Quando presente, sobrescreve as cores dos dias.
  */
 export default function Calendar({
   markedDates = [],
@@ -23,6 +38,7 @@ export default function Calendar({
   enableSwipe = false,
   enableMonthPicker = false,
   monthPickerRange = { start: -12, end: 3 },
+  adherenceData = {},
 }) {
   const [viewDate, setViewDate] = useState(new Date())
   const [isLoading, setIsLoading] = useState(false)
@@ -205,14 +221,21 @@ export default function Calendar({
       )
     })
 
+    // Heat map de adesão: aplica cor quando adherenceData tem dados para o dia
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const adherenceDayData = adherenceData[dateKey]
+    const heatColor = getDayColor(adherenceDayData)
+    const hasHeatColor = heatColor !== 'transparent'
+
     days.push(
       <div
         key={d}
-        className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasLog ? 'has-log' : ''}`}
+        className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasLog ? 'has-log' : ''} ${hasHeatColor ? 'has-adherence' : ''}`}
+        style={hasHeatColor ? { '--heat-color': heatColor } : undefined}
         onClick={() => onDayClick && onDayClick(dayDate)}
       >
         <span className="day-number">{d}</span>
-        {hasLog && <div className="log-dot"></div>}
+        {hasLog && !hasHeatColor && <div className="log-dot"></div>}
       </div>
     )
   }

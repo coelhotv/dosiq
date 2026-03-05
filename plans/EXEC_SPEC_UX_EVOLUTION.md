@@ -192,14 +192,14 @@ DEPOIS de implementar:
 
 ### Onda 1 — Componentes Visuais
 
-- [ ] **W1-01** Ring Gauge de Health Score — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-02** Barras de Estoque — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-03** Sparkline Interativa — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-04** Micro-animações Dose — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-05** Custo Mini-Chart — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-06** Pulse Críticos — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W1-07** Prescrições Timeline — spec ✅ | código ⬜ | teste ⬜ | review ⬜ *(BLOQUEADA: F5.9)*
-- [ ] **W1-08** Calendar Heat Map — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [x] **W1-01** Ring Gauge de Health Score — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-02** Barras de Estoque — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-03** Sparkline Interativa — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-04** Micro-animações Dose — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-05** Custo Mini-Chart — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-06** Pulse Críticos — spec ✅ | código ✅ | teste N/A | review ⬜
+- [x] **W1-07** Prescrições Timeline — spec ✅ | código ✅ | teste ✅ | review ⬜
+- [x] **W1-08** Calendar Heat Map — spec ✅ | código ✅ | teste ✅ | review ⬜
 
 ### Onda 2 — Lógica e Hooks
 

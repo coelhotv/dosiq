@@ -211,19 +211,44 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 ---
 
+## Learning Loops (Memoria de Longo Prazo)
+
+**Obrigatorio:** Ao final de qualquer sessao de desenvolvimento, antes de commitar, perguntar:
+> *"Cometi algum erro que um proximo agente repetiria? Aprendi algum padrao novo?"*
+
+### Quando registrar
+| Situacao | Acao |
+|----------|------|
+| Corrigi um bug causado por um padrao errado | Adicionar anti-pattern em `.memory/anti-patterns.md` |
+| Descobri que uma abordagem X falha neste projeto | Adicionar regra preventiva em `.memory/rules.md` |
+| A spec tinha caminho de arquivo errado | Anotar no journal + regra de processo |
+| Usei tecnica nova que funcionou bem | Regra positiva em `rules.md` |
+| Entregai feature/fase completa | Entrada no `.memory/journal/YYYY-WWW.md` |
+
+### Onde registrar
+- **Regras novas** → `.memory/rules.md` (proximo numero R-NNN disponivel)
+- **Anti-patterns novos** → `.memory/anti-patterns.md` (proximo AP-NNN disponivel)
+- **Sessao/entrega** → `.memory/journal/YYYY-WWW.md` (criar arquivo se nao existir)
+
+### Regra de ouro
+Nao espere pelo final da sprint. Registre **imediatamente apos corrigir um erro nao-trivial**, enquanto o contexto esta fresco. Erros esquecidos se repetem.
+
+---
+
 ## Git Workflow
 
 ```
 1. CREATE BRANCH (feature/wave-X/nome ou feature/fase-N/nome)
 2. MAKE CHANGES (seguir padroes de codigo)
 3. VALIDATE LOCALLY (npm run validate:agent)
-4. COMMIT (semantico, portugues)
-5. PUSH BRANCH
-6. CREATE PR
-7. WAIT FOR GEMINI CODE ASSIST REVIEW
-8. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
-9. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
-10. MERGE & CLEANUP (--no-ff, deletar branch)
+4. UPDATE MEMORY — registrar licoes aprendidas em .memory/ (obrigatorio)
+5. COMMIT (semantico, portugues)
+6. PUSH BRANCH
+7. CREATE PR
+8. WAIT FOR GEMINI CODE ASSIST REVIEW
+9. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
+10. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
+11. MERGE & CLEANUP (--no-ff, deletar branch)
 ```
 
 **REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs.
@@ -332,8 +357,8 @@ Navegacao via `setCurrentView()` + `BottomNav` component.
 - `docs/reference/SCHEMAS.md` — schemas Zod
 - `docs/standards/GEMINI_INTEGRATION.md` — code review automatico
 - `docs/architecture/TELEGRAM_BOT.md` — bot + notificacoes
-- `.memory/rules.md` — 89 regras (R-001 a R-089)
-- `.memory/anti-patterns.md` — 32 anti-patterns
+- `.memory/rules.md` — 97 regras (R-001 a R-097)
+- `.memory/anti-patterns.md` — 50 anti-patterns (AP-001..023, AP-T01..T10, AP-S01..S11, AP-W01..W06)
 - `.memory/knowledge.md` — domain facts, APIs, schemas
 - `.roo/rules-code/rules.md` — regras de codigo consolidadas
 - `plans/EXEC_SPEC_FASE_5.md` — spec de execucao da Fase 5
@@ -349,3 +374,10 @@ Navegacao via `setCurrentView()` + `BottomNav` component.
 - [ ] Sei qual view/feature estou modificando
 - [ ] Vou usar `parseLocalDate()` para datas
 - [ ] Vou rodar `npm run validate:agent` antes de push
+
+## Checklist Pos-Codigo (antes do commit)
+
+- [ ] Corrigi algum erro nao-trivial? → registrar em `.memory/anti-patterns.md`
+- [ ] Descobri padrao novo ou pegadinha do projeto? → registrar em `.memory/rules.md`
+- [ ] Esta e uma entrega significativa? → adicionar entrada em `.memory/journal/YYYY-WWW.md`
+- [ ] Atualizei as contagens na secao Documentacao acima (R-NNN, AP count)?

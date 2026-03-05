@@ -182,6 +182,41 @@
   outline-offset: 2px;
 }
 
+/* ============================================
+   Tooltip interativo (SVG overlay — tap no ponto)
+   ============================================ */
+.sparkline-tooltip-date {
+  font-size: 9px;
+  fill: var(--text-secondary);
+  font-family: var(--font-primary, system-ui);
+}
+
+.sparkline-tooltip-value {
+  font-size: 8px;
+  fill: var(--text-primary);
+  font-family: var(--font-primary, system-ui);
+  font-weight: 600;
+}
+
+/* ============================================
+   Size inline — minimalista para RingGauge
+   ============================================ */
+.sparkline-adhesion--inline {
+  gap: 0;
+}
+
+.sparkline-adhesion--inline .sparkline-svg {
+  min-height: 20px;
+  height: 20px;
+}
+
+/* ============================================
+   Size expanded — 30 pontos (Minha Saúde)
+   ============================================ */
+.sparkline-adhesion--expanded .sparkline-tooltip-container {
+  display: none; /* Legendas omitidas no expanded (muitos pontos) */
+}
+
 /* High contrast mode */
 @media (prefers-contrast: high) {
   .sparkline-dot--clickable {
