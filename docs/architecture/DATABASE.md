@@ -2,7 +2,7 @@
 
 O banco de dados do **Meus Remédios** é hospedado no Supabase (PostgreSQL) e utiliza Row-Level Security (RLS) para garantir a privacidade dos dados de cada usuário.
 
-> **Última atualização**: 2026-02-15  
+> **Última atualização**: 2026-03-05
 > **Fonte**: Exportação real do Supabase (produção)
 
 ## Diagrama de Tabelas
@@ -17,20 +17,26 @@ erDiagram
     users ||--|| user_settings : "define"
     users ||--o{ notification_log : "recebe"
     users ||--o{ failed_notification_queue : "falhas"
+    users ||--o{ gemini_reviews : "revisões"
+    users ||--o{ push_subscriptions : "assinaturas"
+    users ||--o{ push_notification_logs : "logs push"
+    users ||--o{ bot_sessions : "sessões bot"
 
     medicines ||--o{ protocols : "usado em"
     medicines ||--o{ stock : "tem estoque"
     medicines ||--o{ medicine_logs : "logado como"
-    
+
     treatment_plans ||--o{ protocols : "agrupa"
     protocols ||--o{ medicine_logs : "gera logs"
     protocols ||--o{ notification_log : "gera notificações"
     protocols ||--o{ failed_notification_queue : "falhas de notificação"
+
+    push_subscriptions ||--o{ push_notification_logs : "gera logs"
 ```
 
 ---
 
-## Tabelas do Sistema de Notificações (NOVO - v3.0.0)
+## Tabelas do Sistema de Notificações (v3.0.0)
 
 ### `notification_log`
 
@@ -47,6 +53,11 @@ Tabela principal para rastrear todas as notificações enviadas.
 | `status` | varchar | Status: 'pendente', 'enviada', 'falhou', 'entregue' |
 | `telegram_message_id` | bigint | ID da mensagem no Telegram |
 | `mensagem_erro` | text | Mensagem de erro (se falhou) |
+
+**Check Constraint:**
+```sql
+CHECK (status::text = ANY (ARRAY['pendente'::character varying, 'enviada'::character varying, 'falhou'::character varying, 'entregue'::character varying]::text[]))
+```
 
 **Índices:**
 - `idx_notif_log_user`: Para buscas por usuário
@@ -70,14 +81,19 @@ Tabela para notificações que falharam após todas as tentativas de retry.
 | `notification_payload` | jsonb | Dados completos da notificação |
 | `error_code` | varchar(50) | Código do erro |
 | `error_message` | text | Mensagem de erro |
-| `error_category` | varchar(50) | Categoria: 'network_error', 'rate_limit', 'invalid_chat', 'telegram_api_error', etc. |
-| `retry_count` | integer | Tentativas realizadas |
+| `error_category` | varchar(50) | Categoria: 'network_error', 'rate_limit', 'invalid_chat', 'telegram_api_error', 'unknown' (default) |
+| `retry_count` | integer | Tentativas realizadas (default: 0) |
 | `max_retries` | integer | Máximo de tentativas (default: 3) |
-| `status` | varchar(20) | Status: 'failed', 'pending', 'retrying', 'resolved', 'discarded' |
+| `status` | varchar(20) | Status: 'failed' (default), 'pending', 'retrying', 'resolved', 'discarded' |
 | `resolution_notes` | text | Notas de resolução (quando resolvido) |
 | `created_at` | timestamptz | Data de criação |
 | `updated_at` | timestamptz | Data de atualização |
 | `resolved_at` | timestamptz | Data de resolução |
+
+**Check Constraint:**
+```sql
+CHECK (status::text = ANY (ARRAY['failed'::character varying, 'pending'::character varying, 'retrying'::character varying, 'resolved'::character varying, 'discarded'::character varying]::text[]))
+```
 
 **Índices:**
 - `idx_failed_notif_user`: Por usuário
@@ -89,6 +105,65 @@ Tabela para notificações que falharam após todas as tentativas de retry.
 **Políticas RLS:**
 - Usuários veem apenas suas próprias notificações falhas
 - Service role pode gerenciar tudo
+
+---
+
+### `push_subscriptions`
+
+Assinaturas de notificações push para o PWA.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único |
+| `user_id` | uuid (FK) | Usuário |
+| `endpoint` | text (NOT NULL) | Endpoint do serviço push |
+| `keys_p256dh` | text (NOT NULL) | Chave pública |
+| `keys_auth` | text (NOT NULL) | Chave de autenticação |
+| `device_info` | jsonb (default: '{}') | Informações do dispositivo |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Data de atualização |
+
+---
+
+### `push_notification_logs`
+
+Logs de notificações push enviadas.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único |
+| `user_id` | uuid (FK) | Usuário destinatário |
+| `subscription_id` | uuid (FK) | Assinatura push |
+| `notification_type` | text (NOT NULL) | Tipo da notificação |
+| `title` | text (NOT NULL) | Título da notificação |
+| `body` | text (NOT NULL) | Corpo da notificação |
+| `sent_at` | timestamptz (default: now()) | Data de envio |
+| `delivered` | boolean (default: false) | Se foi entregue |
+| `error_message` | text | Mensagem de erro |
+
+---
+
+### `bot_sessions`
+
+Sessões conversacionais do bot Telegram com TTL (Time To Live).
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único da sessão |
+| `user_id` | uuid (FK) | Referência ao usuário |
+| `chat_id` | bigint (Unique, NOT NULL) | ID do chat do Telegram |
+| `context` | jsonb (default: '{}') | Estado da conversa |
+| `expires_at` | timestamptz (NOT NULL) | Timestamp de expiração |
+| `created_at` | timestamptz (default: now()) | Data de criação |
+| `updated_at` | timestamptz (default: now()) | Data da última atualização |
+
+**Índices:**
+- `idx_sessions_chat`: Índice em `chat_id` para buscas rápidas
+- `idx_sessions_expires`: Índice em `expires_at` para cleanup eficiente
+- `idx_sessions_user`: Índice em `user_id` para consultas por usuário
+
+**Cleanup:**
+Sessões expiradas são removidas automaticamente via função `cleanup_expired_bot_sessions()`.
 
 ---
 
@@ -107,13 +182,13 @@ Configurações globais e integração com o Telegram.
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `id` | uuid (PK) | ID único da configuração |
-| `user_id` | uuid (FK, Unique) | Referência ao usuário |
+| `user_id` | uuid (FK, Unique, NOT NULL) | Referência ao usuário |
 | `telegram_chat_id` | text | ID do chat do Telegram |
 | `verification_token` | text | Token temporário para vinculação |
-| `timezone` | text | Fuso horário (default: 'America/Sao_Paulo') |
-| `onboarding_completed` | boolean | Se o onboarding foi concluído (default: false) |
-| `created_at` | timestamptz | Data de criação |
-| `updated_at` | timestamptz | Data da última atualização |
+| `timezone` | text (default: 'America/Sao_Paulo') | Fuso horário |
+| `onboarding_completed` | boolean (default: false) | Se o onboarding foi concluído |
+| `created_at` | timestamptz (default: now()) | Data de criação |
+| `updated_at` | timestamptz (default: now()) | Data da última atualização |
 
 ---
 
@@ -124,17 +199,20 @@ Cadastro básico de medicamentos e suplementos.
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Dono do registro |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
 | `name` | text (NOT NULL) | Nome comercial |
 | `laboratory` | text | Laboratório/Marca |
 | `active_ingredient` | text | Princípio ativo |
 | `dosage_per_pill` | numeric | Dosagem por unidade (ex: 50.0) |
 | `price_paid` | numeric | Preço pago |
 | `dosage_unit` | text (default: 'mg') | Unidade (mg, mcg, ml, etc) |
-| `type` | text (default: 'medicine') | 'medicine' ou 'supplement' |
-| `created_at` | timestamptz | Data de criação |
+| `type` | text (default: 'medicine') | 'medicamento' ou 'suplemento' |
+| `created_at` | timestamptz (default: now()) | Data de criação |
 
-**Check Constraint**: `type = ANY (ARRAY['medicine', 'supplement'])`
+**Check Constraint:**
+```sql
+CHECK (type = ANY (ARRAY['medicamento'::text, 'suplemento'::text]))
+```
 
 ---
 
@@ -144,18 +222,18 @@ Agrupadores de protocolos (ex: "Protocolo Anti-Inflamatório").
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `id` | uuid (PK) | ID único |
+| `id` | uuid (PK, default: uuid_generate_v4()) | ID único |
 | `name` | text (NOT NULL) | Nome do plano |
 | `description` | text | Descrição detalhada |
 | `objective` | text | Objetivo do tratamento |
-| `user_id` | uuid (FK) | Dono do registro |
-| `created_at` | timestamptz | Data de criação |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
+| `created_at` | timestamptz (default: now()) | Data de criação |
 
 ---
 
 ### `protocols`
 
-Dita como o medicamento deve ser tomado. **Atualizado com campos de notificação e datas de vigência (v3.0.0)**.
+Dita como o medicamento deve ser tomado.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -163,7 +241,7 @@ Dita como o medicamento deve ser tomado. **Atualizado com campos de notificaçã
 | `medicine_id` | uuid (FK) | Referência ao medicamento |
 | `treatment_plan_id` | uuid (FK) | Referência ao plano de tratamento |
 | `name` | text (NOT NULL) | Nome do protocolo |
-| `frequency` | text | 'daily', 'alternate', 'weekly', 'custom', 'as_needed' |
+| `frequency` | text | 'diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário' |
 | `time_schedule` | jsonb | Array de horários (ex: `["08:00", "20:00"]`) |
 | `dosage_per_intake` | numeric | Quantidade por tomada |
 | `target_dosage` | numeric | Dosagem alvo (para titulação) |
@@ -171,19 +249,24 @@ Dita como o medicamento deve ser tomado. **Atualizado com campos de notificaçã
 | `titration_schedule` | jsonb (default: '[]') | Estágios da titulação |
 | `current_stage_index` | integer (default: 0) | Índice do estágio atual |
 | `stage_started_at` | timestamptz | Data de início do estágio |
-| `start_date` | date (NOT NULL) | **Data de início do protocolo (NOVO)** - Usado para cálculo de adesão |
-| `end_date` | date (NULL) | **Data de término do protocolo (NOVO)** - NULL se ativo indefinidamente |
+| `start_date` | date (NOT NULL) | Data de início do protocolo - Usado para cálculo de adesão |
+| `end_date` | date | Data de término do protocolo - NULL se ativo indefinidamente |
 | `last_notified_at` | timestamptz | Última notificação enviada |
 | `last_soft_reminder_at` | timestamptz | Último lembrete suave |
 | `status_ultima_notificacao` | varchar | Status da última notificação: 'pendente', 'enviada', 'falhou', 'tentando_novamente' |
 | `active` | boolean (default: true) | Se o protocolo está ativo |
 | `notes` | text | Observações gerais |
-| `user_id` | uuid (FK) | Dono do registro |
-| `created_at` | timestamptz | Data de criação |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+| `created_at` | timestamptz (default: now()) | Data de criação |
 
 **Check Constraints:**
-- `frequency = ANY (ARRAY['diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário'])`
-- `status_ultima_notificacao = ANY (ARRAY['pendente', 'enviada', 'falhou', 'tentando_novamente'])`
+```sql
+CHECK (frequency = ANY (ARRAY['diário'::text, 'dias_alternados'::text, 'semanal'::text, 'personalizado'::text, 'quando_necessário'::text]))
+```
+
+```sql
+CHECK (status_ultima_notificacao::text = ANY (ARRAY['pendente'::character varying, 'enviada'::character varying, 'falhou'::character varying, 'tentando_novamente'::character varying]::text[]))
+```
 
 ---
 
@@ -200,8 +283,8 @@ Controle de inventário.
 | `expiration_date` | date | Data de validade |
 | `unit_price` | numeric (default: 0) | Preço por unidade |
 | `notes` | text | Observações |
-| `user_id` | uuid (FK) | Dono do registro |
-| `created_at` | timestamptz | Data de criação |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+| `created_at` | timestamptz (default: now()) | Data de criação |
 
 ---
 
@@ -217,70 +300,63 @@ Histórico de doses tomadas.
 | `taken_at` | timestamptz (default: now()) | Data/hora real da tomada |
 | `quantity_taken` | numeric (NOT NULL) | Quantidade tomada |
 | `notes` | text | Observações |
-| `user_id` | uuid (FK) | Dono do registro (default: sistema) |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+
+---
+
+## Tabelas do Sistema Gemini Reviews (v3.0.0)
+
+### `gemini_reviews`
+
+Tabela para armazenar revisões de código geradas pela integração com Gemini Code Assist.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único da revisão |
+| `pr_number` | integer (NOT NULL) | Número do Pull Request |
+| `commit_sha` | text (NOT NULL) | SHA do commit |
+| `file_path` | text (NOT NULL) | Caminho do arquivo revisado |
+| `line_start` | integer | Linha inicial do problema |
+| `line_end` | integer | Linha final do problema |
+| `issue_hash` | text (NOT NULL) | Hash único do problema (para deduplicação) |
+| `title` | text | Título do problema |
+| `description` | text | Descrição detalhada |
+| `suggestion` | text | Sugestão de correção |
+| `created_at` | timestamptz (default: now()) | Data de criação |
+| `updated_at` | timestamptz (default: now()) | Data da última atualização |
+| `resolved_at` | timestamptz | Data de resolução |
+| `resolved_by` | uuid (FK) | Usuário que resolveu |
+| `user_id` | uuid (FK) | Usuário que criou |
+| `status` | text | Status: 'detected', 'reported', 'assigned', 'resolved', 'partial', 'wontfix', 'duplicate', 'pendente', 'em_progresso', 'corrigido', 'descartado' |
+| `priority` | text | Prioridade: 'critica', 'alta', 'media', 'baixa' |
+| `category` | text | Categoria: 'estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade' |
+| `github_issue_number` | integer | Número da issue no GitHub |
+| `resolution_type` | text | Tipo de resolução aplicada |
+
+**Check Constraints:**
+```sql
+CHECK (status = ANY (ARRAY['detected'::text, 'reported'::text, 'assigned'::text, 'resolved'::text, 'partial'::text, 'wontfix'::text, 'duplicate'::text, 'pendente'::text, 'em_progresso'::text, 'corrigido'::text, 'descartado'::text]))
+```
+
+```sql
+CHECK (priority IS NULL OR (priority = ANY (ARRAY['critica'::text, 'alta'::text, 'media'::text, 'baixa'::text])))
+```
+
+```sql
+CHECK (category IS NULL OR (category = ANY (ARRAY['estilo'::text, 'bug'::text, 'seguranca'::text, 'performance'::text, 'manutenibilidade'::text])))
+```
 
 **Foreign Keys:**
-- `protocol_id` → `protocols(id)`
-- `medicine_id` → `medicines(id)`
+- `resolved_by` → `auth.users(id)`
+- `user_id` → `auth.users(id)`
 
 ---
 
-### `bot_sessions`
+### `gemini_reviews_backup_20260222`
 
-Sessões conversacionais do bot Telegram com TTL (Time To Live).
+Tabela de backup da `gemini_reviews` (criada em 2026-02-22).
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único da sessão |
-| `user_id` | uuid (FK) | Referência ao usuário |
-| `chat_id` | bigint (Unique) | ID do chat do Telegram |
-| `context` | jsonb (default: '{}') | Estado da conversa |
-| `expires_at` | timestamptz | Timestamp de expiração (TTL 30 min) |
-| `created_at` | timestamptz | Data de criação |
-| `updated_at` | timestamptz | Data da última atualização |
-
-**Índices:**
-- `idx_sessions_chat`: Índice em `chat_id` para buscas rápidas
-- `idx_sessions_expires`: Índice em `expires_at` para cleanup eficiente
-- `idx_sessions_user`: Índice em `user_id` para consultas por usuário
-
-**Cleanup:**
-Sessões expiradas são removidas automaticamente via função `cleanup_expired_bot_sessions()`.
-
----
-
-### `push_notification_logs` (Tabela de Logs)
-
-Logs de notificações push (para futuro uso).
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Usuário destinatário |
-| `subscription_id` | uuid (FK) | Assinatura push |
-| `notification_type` | text | Tipo da notificação |
-| `title` | text | Título da notificação |
-| `body` | text | Corpo da notificação |
-| `sent_at` | timestamptz | Data de envio |
-| `delivered` | boolean | Se foi entregue |
-| `error_message` | text | Mensagem de erro |
-
----
-
-### `push_subscriptions` (Tabela de Assinaturas)
-
-Assinaturas de notificações push (para futuro uso).
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Usuário |
-| `endpoint` | text | Endpoint do serviço push |
-| `keys_p256dh` | text | Chave pública |
-| `keys_auth` | text | Chave de autenticação |
-| `device_info` | jsonb | Informações do dispositivo |
-| `created_at` | timestamptz | Data de criação |
-| `updated_at` | timestamptz | Data de atualização |
+> **Nota**: Esta é uma tabela de backup histórico e não possui constraints. Usada apenas para referência e recuperação de dados.
 
 ---
 
@@ -320,17 +396,17 @@ SELECT * FROM get_dlq_stats();
 │                      (PK: id)                                │
 └────────────────────────┬────────────────────────────────────┘
                          │
-        ┌────────────────┼────────────────┐
-        │                │                │
-        ▼                ▼                ▼
-┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│  user_settings │ │   medicines   │ │   protocols   │
-│   (FK: user)  │ │   (FK: user) │ │   (FK: user) │
-└───────────────┘ └───────────────┘ └───────┬───────┘
+         ┌───────────────┼────────────────┬────────────────┐
+         │               │                │                │
+         ▼               ▼                ▼                ▼
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│  user_settings │ │   medicines   │ │   protocols   │ │ gemini_reviews │
+│   (FK: user)  │ │   (FK: user) │ │   (FK: user) │ │   (FK: user)  │
+└───────────────┘ └───────────────┘ └───────┬───────┘ └───────────────┘
                                             │
-        ┌───────────────────────────────────┼───────────────┐
-        │                                   │               │
-        ▼                                   ▼               ▼
+         ┌──────────────────────────────────┼───────────────┐
+         │                                  │               │
+         ▼                                  ▼               ▼
 ┌───────────────┐               ┌───────────────┐ ┌───────────────┐
 │ medicine_logs │               │     stock     │ │notification_log│
 │ (FK: protocol)│               │  (FK: med)    │ │(FK: user,prot)│
@@ -352,12 +428,13 @@ Para garantir a consistência entre o banco de dados e a aplicação, consulte t
 - [`src/schemas/medicineSchema.js`](../src/schemas/medicineSchema.js)
 - [`src/schemas/protocolSchema.js`](../src/schemas/protocolSchema.js)
 - [`src/schemas/stockSchema.js`](../src/schemas/stockSchema.js)
+- [`src/schemas/geminiReviewSchema.js`](../src/schemas/geminiReviewSchema.js) *(se existir)*
 
 > ⚠️ **Nota**: Sempre que alterar o schema do banco, atualize os schemas Zod correspondentes e esta documentação.
 
 ---
 
-##Migrações
+## Migrações
 
 ### Migrações de Notificações (v3.0.0)
 
@@ -370,6 +447,13 @@ Para garantir a consistência entre o banco de dados e a aplicação, consulte t
    - Adiciona índices e políticas RLS
    - Cria função `get_dlq_stats()` para estatísticas
 
+### Migrações Gemini Integration (v3.0.0)
+
+3. **`.migrations/add_gemini_reviews.sql`**
+   - Cria tabela `gemini_reviews`
+   - Adiciona CHECK constraints para status, priority e category
+   - Adiciona Foreign Keys para `resolved_by` e `user_id`
+
 ---
 
 ## Considerações de Performance
@@ -378,18 +462,26 @@ Para garantir a consistência entre o banco de dados e a aplicação, consulte t
 
 ```sql
 -- Para busca de protocolos por horário
-CREATE INDEX idx_protocols_active_user 
-  ON protocols(active, user_id) 
+CREATE INDEX idx_protocols_active_user
+  ON protocols(active, user_id)
   WHERE active = true;
 
 -- Para logs de notificações recentes
-CREATE INDEX idx_notif_log_sent_user 
+CREATE INDEX idx_notif_log_sent_user
   ON notification_logs(sent_at DESC, user_id);
 
 -- Para DLQ com filtros
-CREATE INDEX idx_dlq_status_user 
-  ON failed_notification_queue(status, user_id) 
+CREATE INDEX idx_dlq_status_user
+  ON failed_notification_queue(status, user_id)
   WHERE status IN ('failed', 'pending');
+
+-- Para Gemini Reviews por PR
+CREATE INDEX idx_gemini_reviews_pr
+  ON gemini_reviews(pr_number, file_path);
+
+-- Para Gemini Reviews por status
+CREATE INDEX idx_gemini_reviews_status
+  ON gemini_reviews(status, created_at DESC);
 ```
 
 ### Exemplo de Query Otimizada
@@ -403,4 +495,39 @@ WHERE p.active = true
   AND p.user_id = 'usuario-uuid-aqui'
   AND p.time_schedule::text LIKE '%20:30%'
   AND p.last_notified_at < CURRENT_DATE;
+
+-- Buscar revisões pendentes do Gemini por arquivo
+SELECT *
+FROM gemini_reviews
+WHERE file_path = 'src/components/Button.jsx'
+  AND status IN ('pendente', 'detected', 'reported')
+ORDER BY priority DESC, created_at DESC;
 ```
+
+---
+
+## Schema SQL Completo (Referência)
+
+> **Aviso**: O SQL abaixo é para referência e contexto. A ordem das tabelas e constraints pode não ser válida para execução direta.
+
+```sql
+-- Tabelas principais
+CREATE TABLE public.medicines (...);
+CREATE TABLE public.treatment_plans (...);
+CREATE TABLE public.protocols (...);
+CREATE TABLE public.stock (...);
+CREATE TABLE public.medicine_logs (...);
+CREATE TABLE public.user_settings (...);
+
+-- Tabelas de notificação
+CREATE TABLE public.notification_log (...);
+CREATE TABLE public.failed_notification_queue (...);
+CREATE TABLE public.push_subscriptions (...);
+CREATE TABLE public.push_notification_logs (...);
+CREATE TABLE public.bot_sessions (...);
+
+-- Tabelas do sistema Gemini
+CREATE TABLE public.gemini_reviews (...);
+```
+
+*Consulte o arquivo de exportação completo do Supabase para o schema exato com todas as constraints, índices e políticas RLS.*
