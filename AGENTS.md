@@ -596,6 +596,7 @@ git checkout -b feature/wave-X/new-feature
 # See: docs/standards/TESTING.md
 
 # 5. Validate
+npm run lint
 npm run validate
 
 # 6. Create PR
@@ -621,6 +622,7 @@ grep -r "from.*TargetFile" src/
 # 5. Fix the bug (in the CORRECT file)
 
 # 6. Ensure test passes
+npm run lint
 npm run test:changed
 
 # 7. Validate and PR
@@ -662,6 +664,7 @@ grep -r "from.*ComponentName" src/
 # See: docs/standards/TESTING.md
 
 # 3. Run tests
+npm run lint
 npm run test:changed
 
 # 4. Check coverage
