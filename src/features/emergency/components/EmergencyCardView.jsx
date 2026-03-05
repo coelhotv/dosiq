@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
+import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
 
 /**
@@ -226,6 +227,16 @@ export default function EmergencyCardView({ data, onEdit }) {
           <p className="notes-content">{cardData.notes}</p>
         </section>
       )}
+
+      {/* QR Code para Emergências */}
+      <section className="emergency-section qr-section">
+        <h2 className="section-label">📱 QR Code de Emergência</h2>
+        <EmergencyQRCode
+          cardData={cardData}
+          medications={activeMedications}
+          lastUpdated={cardData.last_updated}
+        />
+      </section>
 
       {/* Rodapé */}
       <footer className="emergency-card-footer">

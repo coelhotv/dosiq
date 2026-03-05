@@ -520,6 +520,22 @@
   white-space: pre-wrap;
 }
 
+/* QR Code Section */
+.qr-section {
+  border-left: 4px solid var(--emergency-accent);
+  background: var(--emergency-card-bg);
+}
+
+.qr-section .section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qr-section .section-label::before {
+  content: '📱';
+}
+
 /* No Data */
 .no-data {
   font-size: 1rem;
