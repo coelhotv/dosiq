@@ -1,0 +1,243 @@
+/**
+ * Estilos para o componente EmergencyQRCode
+ * Mobile-first, responsivo e otimizado para acessibilidade
+ */
+
+/* Container principal */
+.emergency-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface-color, #ffffff);
+  border-radius: 12px;
+  border: 2px solid var(--border-color, #e5e7eb);
+}
+
+/* Estados de loading e erro */
+.emergency-qr-code.loading,
+.emergency-qr-code.error,
+.emergency-qr-code.empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* Spinner de loading */
+.qr-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color, #e5e7eb);
+  border-top-color: var(--primary-color, #3b82f6);
+  border-radius: 50%;
+  animation: qr-spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes qr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ícone de erro */
+.qr-error-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Container da imagem QR */
+.qr-code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Imagem do QR code */
+.qr-code-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 8px;
+}
+
+@media (min-width: 640px) {
+  .qr-code-image {
+    width: 256px;
+    height: 256px;
+  }
+}
+
+/* Hint abaixo do QR */
+.qr-hint {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6b7280);
+  text-align: center;
+  margin: 0;
+  max-width: 280px;
+}
+
+/* Botões de ação */
+.qr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+@media (min-width: 480px) {
+  .qr-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.qr-actions .btn {
+  flex: 1;
+  min-height: 44px; /* Touch target mínimo */
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.qr-actions .btn-primary {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  border: none;
+}
+
+.qr-actions .btn-primary:hover {
+  background: var(--primary-color-hover, #2563eb);
+  transform: translateY(-1px);
+}
+
+.qr-actions .btn-primary:active {
+  transform: translateY(0);
+}
+
+.qr-actions .btn-secondary {
+  background: var(--surface-color, #ffffff);
+  color: var(--text-primary, #1f2937);
+  border: 2px solid var(--border-color, #e5e7eb);
+}
+
+.qr-actions .btn-secondary:hover {
+  background: var(--surface-color-hover, #f9fafb);
+  border-color: var(--border-color-hover, #d1d5db);
+}
+
+/* Info section */
+.qr-info {
+  background: var(--info-bg, #eff6ff);
+  border: 1px solid var(--info-border, #bfdbfe);
+  border-radius: 8px;
+  padding: 1rem;
+  max-width: 320px;
+}
+
+.qr-info-text {
+  font-size: 0.875rem;
+  color: var(--info-text, #1e40af);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Modo escuro (dark mode) */
+@media (prefers-color-scheme: dark) {
+  .emergency-qr-code {
+    background: var(--surface-color-dark, #1f2937);
+    border-color: var(--border-color-dark, #374151);
+  }
+
+  .qr-hint {
+    color: var(--text-secondary-dark, #9ca3af);
+  }
+
+  .qr-actions .btn-secondary {
+    background: var(--surface-color-dark, #1f2937);
+    color: var(--text-primary-dark, #f9fafb);
+    border-color: var(--border-color-dark, #374151);
+  }
+
+  .qr-actions .btn-secondary:hover {
+    background: var(--surface-color-dark-hover, #374151);
+  }
+
+  .qr-info {
+    background: var(--info-bg-dark, #1e3a5f);
+    border-color: var(--info-border-dark, #3b82f6);
+  }
+
+  .qr-info-text {
+    color: var(--info-text-dark, #93c5fd);
+  }
+}
+
+/* Print styles - oculta botões quando imprimir */
+@media print {
+  .qr-actions {
+    display: none;
+  }
+
+  .qr-info {
+    display: none;
+  }
+
+  .emergency-qr-code {
+    border: 2px solid #000;
+    page-break-inside: avoid;
+  }
+
+  .qr-code-image {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+/* Animações suaves */
+.emergency-qr-code {
+  animation: qr-fade-in 0.3s ease-out;
+}
+
+@keyframes qr-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Acessibilidade - reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .qr-loading-spinner {
+    animation: none;
+  }
+
+  .emergency-qr-code {
+    animation: none;
+  }
+
+  .qr-actions .btn {
+    transition: none;
+  }
+}
+
+/* Focus styles para acessibilidade */
+.qr-actions .btn:focus-visible {
+  outline: 2px solid var(--primary-color, #3b82f6);
+  outline-offset: 2px;
+}

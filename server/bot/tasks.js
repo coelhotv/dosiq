@@ -1214,3 +1214,198 @@ function formatDLQDigestMessage(notifications) {
   
   return header + items + footer;
 }
+
+// --- Prescription Alert Functions (F5.9) ---
+
+/**
+ * Format prescription alert message
+ * @param {object} protocol - Protocol data
+ * @param {number} daysRemaining - Days until prescription expires
+ * @returns {string} Formatted message
+ */
+function formatPrescriptionAlertMessage(protocol, daysRemaining) {
+  const medicine = protocol.medicine || {};
+  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
+  const endDate = protocol.end_date 
+    ? new Date(protocol.end_date).toLocaleDateString('pt-BR')
+    : 'Data não definida';
+
+  let message = '';
+  
+  if (daysRemaining === 1) {
+    // eslint-disable-next-line no-useless-escape
+    message = `⚠️ *Prescrição vence amanhã\!*\n\n`;
+  } else if (daysRemaining === 7) {
+    message = `⚠️ *Prescrição vencendo em 7 dias*\n\n`;
+  } else if (daysRemaining === 30) {
+    message = `📋 *Renovação de Prescrição*\n\n`;
+  } else {
+    message = `⚠️ *Prescrição próxima do vencimento*\n\n`;
+  }
+
+  message += `Protocolo: **${name}**\n`;
+  message += `Vencimento: ${escapeMarkdownV2(endDate)}\n\n`;
+
+  if (daysRemaining <= 1) {
+    // eslint-disable-next-line no-useless-escape
+    message += `🚨 *Atenção\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\.`;
+  } else if (daysRemaining <= 7) {
+    // eslint-disable-next-line no-useless-escape
+    message += `📅 Agende sua consulta para renovar a prescrição\.`;
+  } else {
+    // eslint-disable-next-line no-useless-escape
+    message += `💡 É um bom momento para agendar sua consulta de acompanhamento\.`;
+  }
+
+  return message;
+}
+
+/**
+ * Check prescription alerts for a specific user
+ */
+async function checkUserPrescriptionAlerts(bot, userId, chatId) {
+  try {
+    const settings = await getUserSettings(userId, true);
+    if (!settings) return;
+
+    const timezone = settings.timezone || 'America/Sao_Paulo';
+    const today = getCurrentDateInTimezone(timezone);
+    const todayDate = new Date(today + 'T00:00:00');
+
+    // Get active protocols with end_date set
+    const { data: protocols } = await supabase
+      .from('protocols')
+      .select(`
+        *,
+        medicine:medicines(name, dosage_unit)
+      `)
+      .eq('user_id', userId)
+      .eq('active', true)
+      .not('end_date', 'is', null);
+
+    if (!protocols || protocols.length === 0) return;
+
+    for (const protocol of protocols) {
+      const endDate = new Date(protocol.end_date + 'T00:00:00');
+      const diffTime = endDate.getTime() - todayDate.getTime();
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      // Only alert at 30, 7, and 1 day(s) before expiration
+      const alertDays = [30, 7, 1];
+      if (!alertDays.includes(daysRemaining)) {
+        continue;
+      }
+
+      // Determine notification type based on days remaining
+      const notificationType = `prescription_alert_${daysRemaining}d`;
+
+      // Check deduplication
+      const shouldSend = await shouldSendNotification(userId, protocol.id, notificationType);
+      if (!shouldSend) {
+        logger.debug(`Prescription alert suppressed by deduplication`, {
+          userId,
+          protocolId: protocol.id,
+          medicine: protocol.medicine?.name,
+          daysRemaining
+        });
+        continue;
+      }
+
+      const message = formatPrescriptionAlertMessage(protocol, daysRemaining);
+
+      // Create inline keyboard with deep link to protocol
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { 
+              text: '📋 Ver Protocolo', 
+              url: `https://meusremedios.app/#/protocolos/${protocol.id}` 
+            }
+          ]
+        ]
+      };
+
+      const result = await bot.sendMessage(chatId, message, { 
+        parse_mode: 'MarkdownV2',
+        reply_markup: keyboard
+      });
+      
+      if (!result.success) {
+        logger.error(`Falha ao enviar alerta de prescrição`, {
+          userId,
+          medicine: protocol.medicine?.name,
+          protocolId: protocol.id,
+          chatId,
+          daysRemaining,
+          error: result.error
+        });
+
+        // Enviar para DLQ para retry
+        const correlationId = result.correlationId || getCurrentCorrelationId();
+        await enqueue(
+          {
+            userId,
+            protocolId: protocol.id,
+            type: notificationType,
+            chatId,
+            payload: {
+              medicineName: protocol.medicine?.name,
+              daysRemaining
+            }
+          },
+          result.error,
+          result.attempts || 1,
+          correlationId
+        );
+        continue;
+      }
+      
+      logger.info(`Alerta de prescrição enviado com sucesso`, {
+        userId,
+        medicine: protocol.medicine?.name,
+        protocolId: protocol.id,
+        chatId,
+        daysRemaining,
+        messageId: result.messageId
+      });
+      
+      const logged = await logSuccessfulNotification(userId, protocol.id, notificationType, { 
+        messageId: result.messageId,
+        daysRemaining
+      });
+      
+      if (!logged) {
+        logger.warn('Falha ao registrar log de alerta de prescrição.', { 
+          userId, 
+          protocolId: protocol.id, 
+          messageId: result.messageId 
+        });
+      }
+    }
+
+  } catch (err) {
+    logger.error(`Error checking prescription alerts`, err, { userId });
+  }
+}
+
+/**
+ * Check prescription alerts for ALL users
+ * @param {object} bot - Bot adapter
+ * @param {object} options - Opções adicionais (correlationId, etc)
+ */
+export async function checkPrescriptionAlerts(bot, options = {}) {
+  const correlationId = options.correlationId || getCurrentCorrelationId();
+  
+  logger.info('Iniciando alertas de prescrição para todos os usuários', { correlationId });
+  
+  const users = await getAllUsersWithTelegram();
+  
+  logger.info(`Verificando alertas de prescrição para ${users.length} usuário(s)`);
+  
+  for (const user of users) {
+    logger.debug(`Verificando prescrições para usuário: ${user.user_id}`);
+    await checkUserPrescriptionAlerts(bot, user.user_id, user.telegram_chat_id);
+  }
+
+  logger.info('Alertas de prescrição concluídos', { correlationId });
+}
