@@ -1,0 +1,218 @@
+/* ================================================================
+   DoseZoneList — Zonas temporais de doses do dia
+   ================================================================ */
+
+.dose-zone-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ─── Zone Section ─────────────────────────────────────────────── */
+
+.dose-zone-section {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ─── Zone Header ──────────────────────────────────────────────── */
+
+.zone-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: opacity var(--transition-fast, 150ms ease);
+  user-select: none;
+}
+
+.zone-header:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Zona ATRASADAS — laranja/aviso */
+.zone-header--late {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+  .zone-header--late {
+    background: rgba(245, 158, 11, 0.1);
+  }
+}
+
+/* Zona AGORA — verde/sucesso */
+.zone-header--now {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+  .zone-header--now {
+    background: rgba(34, 197, 94, 0.1);
+  }
+}
+
+/* Zona PRÓXIMAS — superfície neutra */
+.zone-header--upcoming {
+  background: var(--bg-surface);
+}
+
+/* Zona MAIS TARDE — superfície com opacidade reduzida */
+.zone-header--later {
+  background: var(--bg-surface);
+  opacity: 0.7;
+}
+
+/* Zona REGISTRADAS — verde muito suave */
+.zone-header--done {
+  background: color-mix(in srgb, var(--color-success) 5%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, red 5%, transparent)) {
+  .zone-header--done {
+    background: rgba(34, 197, 94, 0.05);
+  }
+}
+
+.zone-header__icon {
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.zone-header__label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.zone-header__count {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.zone-header__chevron {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  transition: transform var(--transition-fast, 150ms ease);
+  flex-shrink: 0;
+}
+
+.zone-header__chevron--expanded {
+  transform: rotate(180deg);
+}
+
+/* ─── Zone Content ─────────────────────────────────────────────── */
+
+.zone-content {
+  overflow: hidden;
+}
+
+.zone-content__items {
+  padding: var(--space-1) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* ─── DoseCard (time mode) ─────────────────────────────────────── */
+
+.dose-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  min-height: 48px;
+}
+
+.dose-card--done {
+  opacity: 0.6;
+}
+
+.dose-card--selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--bg-surface));
+}
+
+@supports not (background: color-mix(in srgb, red 5%, transparent)) {
+  .dose-card--selected {
+    border-color: var(--color-primary);
+    background: var(--bg-surface);
+  }
+}
+
+.dose-card__time {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 42px;
+  flex-shrink: 0;
+}
+
+.dose-card__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.dose-card__name {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dose-card__dosage {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dose-card__register-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-fast, 150ms ease);
+}
+
+.dose-card__register-btn:hover {
+  opacity: 0.85;
+}
+
+.dose-card__register-btn:active {
+  opacity: 0.7;
+}
+
+.dose-card__done-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-success);
+  font-size: var(--font-size-md);
+  flex-shrink: 0;
+}
