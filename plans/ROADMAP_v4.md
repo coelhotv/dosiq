@@ -70,7 +70,12 @@
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
 | Fase 5 — Valor Clinico (90%) | v3.1.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual |
 
-**Pendentes da Fase 5:** F5.10 Analise de Custo, Spike ANVISA (pesquisa de viabilidade).
+**Pendentes da Fase 5 (Sprint 5.A + 5.B):**
+- F5.10 Analise de Custo (5 SP) — service + CostChart + integracao na tab Estoque
+- ETL-1 Script process-anvisa.js — gerar `medicineDatabase.json` a partir do CSV ja baixado
+- F5.6 Autocomplete ANVISA (13 SP) — Cenario A confirmado. CSV disponivel. 4 campos auto (name, active_ingredient, laboratory, type), dosagem permanece manual
+
+**Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`.
 
 ---
 
@@ -92,18 +97,21 @@
 
 ## 4. Panorama de Fases
 
-### Fase 5: Valor Clinico — FECHAR (v3.2.0, ~21 SP restantes, R$0)
+### Fase 5: Valor Clinico — FECHAR (v3.2.0, ~18 SP restantes, R$0)
 
-**Objetivo:** Completar as 2-3 features restantes e fechar a fase.
+**Objetivo:** Completar as features restantes e fechar a fase.
 
-| ID | Feature | SP |
-|----|---------|-----|
-| F5.10 | Analise de Custo + EV-06 Cost Chart | 5 |
-| Spike | ANVISA: pesquisa de viabilidade de integracao com base de medicamentos | 2-3 |
-| F5.6 | Base ANVISA medicamentos (se spike viavel) | ~13 |
+| ID | Feature | SP | Status |
+|----|---------|-----|--------|
+| F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | Pendente |
+| ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | Pendente (CSV ja disponivel) |
+| F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | Pendente (Cenario A confirmado) |
 
-A Fase 5 esta 90% completa. Os itens restantes sao incrementais e nao requerem spec separado.
-Status detalhado nos PRDs arquivados.
+**Spike ANVISA concluido:** CSV `public/medicamentos-ativos-anvisa.csv` baixado (10.206 registros).
+Autocomplete preenche 4 campos automaticamente; dosagem permanece manual (nao esta no CSV ANVISA).
+`CLASSE_TERAPEUTICA` incluida no JSON para habilitar F8.2 sem nova fonte de dados.
+
+**Spec:** `plans/EXEC_SPEC_FASE_5_FINAL.md` | **Analise ANVISA:** `plans/ANALISE_CSV_ANVISA.md`
 
 ---
 
@@ -307,6 +315,9 @@ gantt
 | Documento | Caminho |
 |-----------|---------|
 | Visao UX e Experiencia do Paciente | `plans/UX_VISION_EXPERIENCIA_PACIENTE.md` |
+| Exec Spec Fase 5 (fechamento) | `plans/EXEC_SPEC_FASE_5_FINAL.md` |
+| Analise CSV ANVISA (spike concluido) | `plans/ANALISE_CSV_ANVISA.md` |
+| Exec Spec Fase 6 | `plans/EXEC_SPEC_FASE_6.md` |
 | Spec Fase 6 — Inteligencia & Insights | `plans/PHASE_6_SPEC.md` |
 | Spec Fase 7 — Crescimento & Alcance | `plans/PHASE_7_SPEC.md` |
 | Spec Fase 8 — Experiencia Inteligente | `plans/PHASE_8_SPEC.md` |
