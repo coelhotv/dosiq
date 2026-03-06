@@ -8,7 +8,8 @@
 Stack: React 19 + Vite 7 + Supabase (Postgres + Auth + RLS) + Zod 4 + Framer Motion 12 + Vitest 4.
 Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 0.
 
-**Versao atual:** v3.0.0 (Fases 1-4 entregues + melhorias pos-Fase 4)
+**Versao atual:** v3.1.0 (Fases 1-4 + Evolucao UX completa: Ondas 1+2+3)
+**Evolucao UX:** 3 ondas concluidas — componentes visuais, hooks de logica, reestruturacao de navegacao (PRs #237, #240, #248)
 **Proxima fase:** 5 — Valor Clinico e Portabilidade (spec em `plans/EXEC_SPEC_FASE_5.md`)
 
 ---
