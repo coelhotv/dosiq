@@ -64,7 +64,7 @@ export default function Dashboard({ onNavigate }) {
 
   // Dados de adesão para Sparkline
   const [dailyAdherence, setDailyAdherence] = useState([])
-  const [isAdherenceLoading, setIsAdherenceLoading] = useState(true)
+  const [, setIsAdherenceLoading] = useState(true)
 
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
 
@@ -177,20 +177,6 @@ export default function Dashboard({ onNavigate }) {
     }
   )
 
-  // Handler para click em um dia do sparkline
-  const handleDayClick = useMemo(
-    () => (dayData) => {
-      setSelectedDate(dayData.date)
-      setIsDrillDownModalOpen(true)
-      analyticsService.track('sparkline_drilldown_opened', {
-        date: dayData.date,
-        adherence: dayData.adherence,
-        taken: dayData.taken,
-        expected: dayData.expected,
-      })
-    },
-    []
-  )
 
   // Handler para fechar o modal de drill-down
   const handleCloseDrillDown = () => {

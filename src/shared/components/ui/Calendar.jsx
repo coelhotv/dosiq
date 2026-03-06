@@ -56,6 +56,7 @@ export default function Calendar({
 
     // Setar loading sincronamente evita race condition com microtasks
     // (rAF anterior causava: finally() rodava antes do rAF → stuck loading)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true)
 
     onLoadMonth(year, month)
