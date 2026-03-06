@@ -85,5 +85,21 @@
 
 ---
 
-*Last updated: 2026-03-05*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W06*
+## UI Component Anti-Patterns (Wave 2 UX Evolution — 2026-03-05)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-W07 | Write test expecting UTC timestamp as "tomorrow" when timezone is BRT (UTC-3) | Test fails: `2026-03-06T02:00:00Z` = 23:00 BRT = still "today" | Use `T04:00:00Z` (01:00 BRT) for reliable "next day" test data | R-020 |
+| AP-W08 | Use `onRegister(medicineId, dosage)` interface from SwipeRegisterItem as if it were `onRegisterDose(protocolId, dosage)` | Wrong ID passed to logService.create(); log references wrong protocol | Always wrap: `onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}` | R-102 |
+| AP-W09 | Refactor Dashboard.jsx handlers when a new component has incompatible interface | High risk of breaking SmartAlerts, LogForm integrations in 932-line file | Create thin adapter functions (D-01 pattern); never refactor existing handlers for new components | R-098 |
+| AP-W10 | Export internal sub-components (DoseCard, ZoneSection) from a parent component file | Increases API surface; creates unintended dependencies | Keep internal sub-components unexported; only export the public API | R-101 |
+| AP-W11 | Pass a prop to an internal sub-component JSX but omit it from the function signature | Prop silently ignored; feature broken with no error or warning in runtime or tests | List ALL interaction props in destructuring; add click/interaction test for each callback | R-103 |
+| AP-W12 | Use `\|\|` as fallback for numeric props that can legitimately be `0` | `dosage_per_intake = 0` becomes `1`; incorrect dose recorded | Use `??` (nullish coalescing) for numeric defaults; `\|\|` only for non-zero defaults | R-104 |
+| AP-W13 | Leave dead code (old states, memos, handlers) after replacing a JSX section | CI lint failure; confuses future agents about what is active | Run `grep -n "NomeVarAntiga"` post-replacement; `npm run lint` before commit | R-105 |
+| AP-W14 | Use `new Date('YYYY-MM-DDTHH:MM:00.000Z')` as reference in tests involving `setHours` | Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local hours | Use `const now = new Date(); now.setHours(h, m, 0, 0)` for timezone-agnostic dates | R-106 |
+| AP-W15 | Initialize state with `useState(() => derivedHook())` assuming it will stay reactive | State is stale if derived value changes after mount (e.g., `defaultViewMode` after complexity change) | Add `useEffect(() => { if (!savedPref) setState(derived) }, [derived])` | R-107 |
+
+---
+
+*Last updated: 2026-03-06*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W15*
