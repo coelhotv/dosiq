@@ -33,17 +33,18 @@ afterEach(() => {
 // 1. classifyDose (pura — sem mocks)
 // ─────────────────────────────────────────────
 describe('classifyDose', () => {
-  // "agora" fixo: 09:30
-  const now = new Date('2026-03-05T12:30:00.000Z') // UTC = 09:30 BRT
+  // "agora" fixo: 09:30 LOCAL — usar setHours para ser timezone-agnostic
+  // (new Date(utcString) + setHours depende do timezone local, quebrando em UTC/CI)
+  const now = new Date()
+  now.setHours(9, 30, 0, 0)
 
   it('classifica dose registrada como done', () => {
     expect(classifyDose('09:00', now, 120, 60, 240, true)).toBe('done')
   })
 
   it('classifica dose 1h atrás como late', () => {
-    // 08:30 = 60 min atrás de 09:30
-    const ref = new Date('2026-03-05T12:30:00.000Z')
-    expect(classifyDose('08:30', ref, 120, 60, 240, false)).toBe('late')
+    // 08:30 = 60 min atrás de 09:30 local
+    expect(classifyDose('08:30', now, 120, 60, 240, false)).toBe('late')
   })
 
   it('classifica dose 3h atrás como null (fora da janela)', () => {

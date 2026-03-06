@@ -723,7 +723,36 @@ onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}
 3. `npm run lint` localmente antes do commit
 **Source:** Wave 2 PR #240 — 8 lint errors de dead code não removido (trend, percentage, magnitude, standaloneProtocols, fallbackProtocols, selectedMedicines, toggleMedicineSelection, handleBatchRegister).
 
+### R-106: Testes com Date Devem Usar setHours (não UTC Hardcoded) [HIGH]
+**Rule:** Ao criar datas de referência em testes que envolvem horas locais (como `classifyDose` que usa `setHours` internamente), NUNCA usar timestamps UTC fixos. Esses timestamps produzem horas locais diferentes por timezone.
+**Correto:**
+```js
+const now = new Date()
+now.setHours(9, 30, 0, 0) // 09:30 LOCAL, funciona em qualquer timezone
+```
+**Errado:**
+```js
+const now = new Date('2026-03-05T12:30:00.000Z') // = 09:30 BRT, = 12:30 UTC → falha no CI
+```
+**Atenção com bail:1:** vitest.critical.config.js usa `bail: 1` — o PRIMEIRO teste que falha encerra a suíte. Isso mascara outras falhas timezone-dependentes no mesmo arquivo. Rodar `test:critical` sem bail localmente revela todas as falhas.
+**Source:** Wave 2 PR #240 — CI falhou com `classifyDose > classifica dose 1h atrás como late`.
+
+### R-107: useState não Reage a Mudanças de Prop Derivada — Usar useEffect [MEDIUM]
+**Rule:** `useState(() => derivedValue)` usa o initializer APENAS na montagem. Se `derivedValue` pode mudar depois, adicionar `useEffect` para sincronizar quando não há preferência do usuário salva.
+**Padrão:**
+```js
+const [viewMode, setViewMode] = useState(() => localStorage.getItem('mr_view_mode') || defaultViewMode)
+useEffect(() => {
+  if (!localStorage.getItem('mr_view_mode')) setViewMode(defaultViewMode)
+}, [defaultViewMode])
+```
+**Source:** Wave 2 PR #240 — Gemini HIGH: viewMode não reagia a mudanças de complexidade.
+
+### R-108: Page Visibility API para Pausar Intervals em Abas Inativas [LOW]
+**Rule:** `setInterval` continua em abas não visíveis. Para operações de UI, usar `visibilitychange` para pausar/retomar. Ao voltar à aba, atualizar o estado imediatamente.
+**Source:** Wave 2 PR #240 — Gemini MEDIUM.
+
 ---
 
 *Last updated: 2026-03-06*
-*Rules: R-001 to R-105*
+*Rules: R-001 to R-108*

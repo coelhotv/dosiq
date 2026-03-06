@@ -169,14 +169,38 @@ export function useDoseZones({
 } = {}) {
   const { protocols, logs, isLoading, refresh } = useDashboard()
 
-  // Estado de "agora" — recalcula a cada 60 segundos
+  // Estado de "agora" — recalcula a cada 60 segundos (pausado quando aba não está visível)
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date())
-    }, 60_000)
-    return () => clearInterval(interval)
+    let intervalId = null
+
+    const startInterval = () => {
+      if (intervalId) return
+      intervalId = setInterval(() => setNow(new Date()), 60_000)
+    }
+
+    const stopInterval = () => {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopInterval()
+      } else {
+        setNow(new Date()) // atualizar imediatamente ao retornar
+        startInterval()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    startInterval()
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      stopInterval()
+    }
   }, [])
 
   // Filtrar logs de hoje

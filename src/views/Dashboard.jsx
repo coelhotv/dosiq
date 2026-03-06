@@ -237,6 +237,13 @@ export default function Dashboard({ onNavigate }) {
     loadInitialData()
   }, [])
 
+  // Sincronizar viewMode com defaultViewMode quando não há preferência salva pelo usuário
+  useEffect(() => {
+    if (!localStorage.getItem('mr_view_mode')) {
+      setViewMode(defaultViewMode)
+    }
+  }, [defaultViewMode])
+
   // Carregar dados de adesão para Sparkline
   useEffect(() => {
     async function loadAdherence() {
