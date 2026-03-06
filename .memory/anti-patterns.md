@@ -98,8 +98,10 @@
 | AP-W13 | Leave dead code (old states, memos, handlers) after replacing a JSX section | CI lint failure; confuses future agents about what is active | Run `grep -n "NomeVarAntiga"` post-replacement; `npm run lint` before commit | R-105 |
 | AP-W14 | Use `new Date('YYYY-MM-DDTHH:MM:00.000Z')` as reference in tests involving `setHours` | Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local hours | Use `const now = new Date(); now.setHours(h, m, 0, 0)` for timezone-agnostic dates | R-106 |
 | AP-W15 | Initialize state with `useState(() => derivedHook())` assuming it will stay reactive | State is stale if derived value changes after mount (e.g., `defaultViewMode` after complexity change) | Add `useEffect(() => { if (!savedPref) setState(derived) }, [derived])` | R-107 |
+| AP-W16 | `bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo | CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo ficam ocultos, gerando múltiplos ciclos de fix | Rodar `test:critical` sem bail localmente (ou temporariamente) para revelar TODAS as falhas no arquivo antes de commitar | R-106 |
+| AP-W17 | Componente com estado interno inicializado de uma prop (`complexityMode`) não reinicializa quando a prop muda | Defaults de expansão de seções ficam presos no valor do primeiro render; UX inconsistente ao mudar complexidade | Usar `key={controllingProp}` no componente para forçar remount completo quando o prop que define os defaults muda | R-109 |
 
 ---
 
-*Last updated: 2026-03-06*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W15*
+*Last updated: 2026-03-05*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17*
