@@ -438,8 +438,8 @@ export function SparklineAdesao({
           />
         ))}
 
-        {/* Tooltip interativo ao tap num ponto */}
-        {activePoint !== null && dataPoints[activePoint] && (() => {
+        {/* Tooltip interativo ao tap num ponto — só em sizes médios ou maiores */}
+        {activePoint !== null && dataPoints[activePoint] && size !== 'small' && (() => {
           const pt = dataPoints[activePoint]
           const tooltipW = 80
           const tooltipH = 36

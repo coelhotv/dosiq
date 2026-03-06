@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { logService } from '@shared/services'
+import { cachedLogService as logService } from '@shared/services'
+import { formatLocalDate } from '@utils/dateUtils'
 import { adherenceService } from '@services/api/adherenceService'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
@@ -10,6 +11,8 @@ import LogEntry from '@shared/components/log/LogEntry'
 import CalendarWithMonthCache from '@shared/components/ui/CalendarWithMonthCache'
 import SparklineAdesao from '@dashboard/components/SparklineAdesao'
 import './HealthHistory.css'
+
+const TIMELINE_PAGE_SIZE = 30
 
 export default function HealthHistory({ onNavigate }) {
   // States
@@ -23,6 +26,11 @@ export default function HealthHistory({ onNavigate }) {
   const [totalLogs, setTotalLogs] = useState(0)
   const [adherenceSummary, setAdherenceSummary] = useState(null)
   const [dailyAdherence, setDailyAdherence] = useState([])
+  // Timeline: lista plana das últimas doses, paginadas por offset
+  const [timelineLogs, setTimelineLogs] = useState([])
+  const [timelineHasMore, setTimelineHasMore] = useState(false)
+  const [timelineOffset, setTimelineOffset] = useState(0)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   // Context
   const { protocols, stats, refresh } = useDashboard()
@@ -37,25 +45,6 @@ export default function HealthHistory({ onNavigate }) {
     })
     return Array.from(planMap.keys())
   }, [protocols])
-
-  const groupedLogs = useMemo(() => {
-    const grouped = {}
-    currentMonthLogs.forEach(log => {
-      const date = new Date(log.taken_at).toLocaleDateString('pt-BR')
-      if (!grouped[date]) grouped[date] = []
-      grouped[date].push(log)
-    })
-    return grouped
-  }, [currentMonthLogs])
-
-  const sortedDates = useMemo(() =>
-    Object.keys(groupedLogs).sort((a, b) => {
-      const [dA, mA, yA] = a.split('/')
-      const [dB, mB, yB] = b.split('/')
-      return new Date(yB, mB - 1, dB) - new Date(yA, mA - 1, dA)
-    }),
-    [groupedLogs]
-  )
 
   const dayLogs = useMemo(() => {
     const d = selectedCalendarDate || new Date()
@@ -74,23 +63,34 @@ export default function HealthHistory({ onNavigate }) {
       setError(null)
       const now = new Date()
 
-      const [logsResult, summary, daily] = await Promise.all([
+      // Calendário: logs do mês atual
+      const [logsResult, timelineResult] = await Promise.all([
         logService.getByMonth(now.getFullYear(), now.getMonth()),
-        adherenceService.getAdherenceSummary('30d').catch(() => null),
-        adherenceService.getDailyAdherence(30).catch(() => []),
+        logService.getAllPaginated(TIMELINE_PAGE_SIZE, 0),
       ])
 
       setCurrentMonthLogs(logsResult.data || [])
       setTotalLogs(logsResult.total || 0)
-      setAdherenceSummary(summary)
-      setDailyAdherence(daily)
+      setTimelineLogs(timelineResult.data || [])
+      setTimelineHasMore(timelineResult.hasMore || false)
+      setTimelineOffset(TIMELINE_PAGE_SIZE)
 
       if (logsResult.data?.length > 0) {
         setSelectedCalendarDate(new Date(logsResult.data[0].taken_at))
       }
+
+      // Loading finaliza — dados de adesão em background
+      setIsLoading(false)
+
+      const [summary, daily] = await Promise.all([
+        adherenceService.getAdherenceSummary('30d').catch(() => null),
+        adherenceService.getDailyAdherence(30).catch(() => []),
+      ])
+
+      setAdherenceSummary(summary)
+      setDailyAdherence(daily)
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
-    } finally {
       setIsLoading(false)
     }
   }, [])
@@ -143,6 +143,7 @@ export default function HealthHistory({ onNavigate }) {
       await logService.delete(id)
       showSuccess('Registro removido!')
       setCurrentMonthLogs(prev => prev.filter(log => log.id !== id))
+      setTimelineLogs(prev => prev.filter(log => log.id !== id))
       setTotalLogs(prev => Math.max(0, prev - 1))
       refresh()
     } catch (err) {
@@ -155,6 +156,21 @@ export default function HealthHistory({ onNavigate }) {
     setIsModalOpen(true)
   }
 
+  const handleLoadMoreTimeline = async () => {
+    if (isLoadingMore || !timelineHasMore) return
+    setIsLoadingMore(true)
+    try {
+      const result = await logService.getAllPaginated(TIMELINE_PAGE_SIZE, timelineOffset)
+      setTimelineLogs(prev => [...prev, ...(result.data || [])])
+      setTimelineHasMore(result.hasMore || false)
+      setTimelineOffset(o => o + TIMELINE_PAGE_SIZE)
+    } catch (err) {
+      console.error('Erro ao carregar mais doses:', err)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
   const showSuccess = (msg) => {
     setSuccessMessage(msg)
     setTimeout(() => setSuccessMessage(''), 3000)
@@ -162,10 +178,15 @@ export default function HealthHistory({ onNavigate }) {
 
   if (isLoading) return <Loading text="Carregando saúde..." />
 
-  const score = stats?.adherenceScore ?? 0
+  // Score do dashboard context (weighted health score)
+  const score = stats?.score ?? 0
   const streak = stats?.currentStreak ?? 0
-  const bestStreak = stats?.bestStreak ?? 0
+  // Best streak vem do adherence summary (calculado em background)
+  const bestStreak = adherenceSummary?.longestStreak ?? streak
   const pillsThisMonth = currentMonthLogs.reduce((sum, log) => sum + log.quantity_taken, 0)
+  const daysThisMonth = new Set(currentMonthLogs.map(log =>
+    new Date(log.taken_at).toLocaleDateString('pt-BR')
+  )).size
 
   return (
     <div className="health-history-view">
@@ -176,8 +197,8 @@ export default function HealthHistory({ onNavigate }) {
         </button>
       </div>
 
-      {successMessage && <div className="health-history-banner health-history-banner--success">✅ {successMessage}</div>}
-      {error && <div className="health-history-banner health-history-banner--error">❌ {error}</div>}
+      {successMessage && <div className="health-history-banner health-history-banner--success">{successMessage}</div>}
+      {error && <div className="health-history-banner health-history-banner--error">{error}</div>}
 
       {/* Adherence summary */}
       <div className="health-history-summary glass-card">
@@ -186,9 +207,9 @@ export default function HealthHistory({ onNavigate }) {
             <span className="health-history-summary__label">Adesão 30d</span>
             <span className="health-history-summary__score">{score}%</span>
           </div>
-          {adherenceSummary?.trend && (
-            <span className={`health-history-summary__trend health-history-summary__trend--${adherenceSummary.trend}`}>
-              {adherenceSummary.trend === 'up' ? '↑' : adherenceSummary.trend === 'down' ? '↓' : '→'}
+          {adherenceSummary && (
+            <span className="health-history-summary__detail">
+              {adherenceSummary.overallTaken}/{adherenceSummary.overallExpected} doses
             </span>
           )}
         </div>
@@ -204,7 +225,7 @@ export default function HealthHistory({ onNavigate }) {
       <div className="health-history-calendar glass-card">
         <CalendarWithMonthCache
           onLoadMonth={handleCalendarLoadMonth}
-          markedDates={currentMonthLogs.map(log => log.taken_at)}
+          markedDates={currentMonthLogs.map(log => formatLocalDate(new Date(log.taken_at)))}
           selectedDate={selectedCalendarDate}
           onDayClick={setSelectedCalendarDate}
         />
@@ -232,35 +253,8 @@ export default function HealthHistory({ onNavigate }) {
       {/* Sparkline 30d */}
       {dailyAdherence.length > 0 && (
         <div className="health-history-sparkline glass-card">
-          <h3 className="health-history-section-title">Sparkline 30 dias</h3>
-          <SparklineAdesao data={dailyAdherence} size="expanded" />
-        </div>
-      )}
-
-      {/* Timeline */}
-      {sortedDates.length > 0 && (
-        <div className="health-history-timeline">
-          <h3 className="health-history-section-title">Timeline de Doses</h3>
-          {sortedDates.slice(0, 10).map(date => (
-            <div key={date} className="health-history-timeline__day">
-              <div className="health-history-timeline__header">
-                <span>{date}</span>
-                <span className="health-history-timeline__count">
-                  {groupedLogs[date].length} {groupedLogs[date].length === 1 ? 'dose' : 'doses'}
-                </span>
-              </div>
-              <div className="health-history-timeline__logs">
-                {groupedLogs[date].map(log => (
-                  <LogEntry
-                    key={log.id}
-                    log={log}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteLog}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+          <h3 className="health-history-section-title">Adesão 30 dias</h3>
+          <SparklineAdesao adherenceByDay={dailyAdherence} size="expanded" />
         </div>
       )}
 
@@ -273,7 +267,7 @@ export default function HealthHistory({ onNavigate }) {
             <span className="health-history-stat__label">Doses</span>
           </div>
           <div className="health-history-stat">
-            <span className="health-history-stat__value">{sortedDates.length}</span>
+            <span className="health-history-stat__value">{daysThisMonth}</span>
             <span className="health-history-stat__label">Dias</span>
           </div>
           <div className="health-history-stat">
@@ -283,10 +277,34 @@ export default function HealthHistory({ onNavigate }) {
         </div>
       </div>
 
+      {/* Timeline — últimas doses, paginadas */}
+      {timelineLogs.length > 0 && (
+        <div className="health-history-timeline">
+          <h3 className="health-history-section-title">Últimas Doses</h3>
+          {timelineLogs.map(log => (
+            <LogEntry
+              key={log.id}
+              log={log}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteLog}
+            />
+          ))}
+          {timelineHasMore && (
+            <button
+              className="health-history-timeline__more"
+              onClick={handleLoadMoreTimeline}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? 'Carregando...' : `Ver mais ${TIMELINE_PAGE_SIZE} doses`}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Register dose CTA */}
       <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
         <Button variant="primary" onClick={() => { setEditingLog(null); setIsModalOpen(true) }}>
-          ✅ Registrar Dose
+          Registrar Dose
         </Button>
       </div>
 

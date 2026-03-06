@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { medicineService, protocolService, stockService } from '@shared/services'
+import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import Button from '@shared/components/ui/Button'
@@ -28,6 +29,10 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  // Modo do passo 1: 'new' cria novo, 'existing' usa medicamento já cadastrado
+  const [medicineMode, setMedicineMode] = useState('new')
+  // Medicamento existente selecionado (quando mode === 'existing')
+  const [selectedExistingMedicine, setSelectedExistingMedicine] = useState(preselectedMedicine || null)
 
   const [medicineData, setMedicineData] = useState({
     name: preselectedMedicine?.name || '',
@@ -50,7 +55,20 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     expiration_date: '',
   })
 
-  const { refresh } = useDashboard()
+  // Seleção de plano de tratamento
+  const [availablePlans, setAvailablePlans] = useState([])
+  const [planMode, setPlanMode] = useState(treatmentPlanId ? 'existing' : 'none')
+  const [selectedPlanId, setSelectedPlanId] = useState(treatmentPlanId || '')
+  const [newPlanName, setNewPlanName] = useState('')
+  const [newPlanEmoji, setNewPlanEmoji] = useState('📋')
+
+  const { refresh, medicines } = useDashboard()
+
+  useEffect(() => {
+    treatmentPlanService.getAll()
+      .then(plans => setAvailablePlans(plans || []))
+      .catch(() => setAvailablePlans([]))
+  }, [])
 
   // Navigation
   const goNext = useCallback(() => {
@@ -104,12 +122,24 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     setIsSubmitting(true)
     setError(null)
     try {
-      const medicine = preselectedMedicine || await medicineService.create({
+      const medicine = selectedExistingMedicine || await medicineService.create({
         name: medicineData.name,
         type: medicineData.type,
         dosage_per_pill: Number(medicineData.dosage_per_pill),
         dosage_unit: medicineData.dosage_unit,
       })
+
+      // Resolver plan ID: pode vir de prop, seleção ou criação
+      let resolvedPlanId = null
+      if (planMode === 'existing' && selectedPlanId) {
+        resolvedPlanId = selectedPlanId
+      } else if (planMode === 'new' && newPlanName.trim()) {
+        const newPlan = await treatmentPlanService.create({
+          name: newPlanName.trim(),
+          emoji: newPlanEmoji || '📋',
+        })
+        resolvedPlanId = newPlan.id
+      }
 
       let protocol = null
       if (step >= 3 || (step === 2 && !skipStock)) {
@@ -120,7 +150,7 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
           time_schedule: protocolData.time_schedule,
           dosage_per_intake: Number(protocolData.dosage_per_intake),
           start_date: protocolData.start_date,
-          treatment_plan_id: treatmentPlanId || null,
+          treatment_plan_id: resolvedPlanId,
         })
       }
 
@@ -143,10 +173,12 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     } finally {
       setIsSubmitting(false)
     }
-  }, [medicineData, protocolData, stockData, preselectedMedicine, treatmentPlanId, refresh, step])
+  }, [medicineData, protocolData, stockData, selectedExistingMedicine, planMode, selectedPlanId, newPlanName, newPlanEmoji, refresh, step])
 
   // Validation
-  const isMedicineValid = medicineData.name.length >= 2 && medicineData.dosage_per_pill > 0
+  const isMedicineValid = medicineMode === 'existing'
+    ? !!selectedExistingMedicine
+    : medicineData.name.length >= 2 && medicineData.dosage_per_pill > 0
   const isProtocolValid = protocolData.time_schedule.length > 0 && protocolData.dosage_per_intake > 0
 
   return (
@@ -180,56 +212,99 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
             <div className="wizard__step">
               <h3 className="wizard__title">Medicamento</h3>
 
-              <label className="wizard__label">
-                Nome *
-                <input
-                  type="text"
-                  className="wizard__input"
-                  value={medicineData.name}
-                  onChange={(e) => updateMedicine('name', e.target.value)}
-                  placeholder="Ex: Losartana"
-                  autoFocus
-                />
-              </label>
+              {/* Toggle: novo vs existente */}
+              {medicines.length > 0 && (
+                <div className="wizard__mode-toggle">
+                  <button
+                    type="button"
+                    className={`wizard__mode-btn${medicineMode === 'existing' ? ' wizard__mode-btn--active' : ''}`}
+                    onClick={() => { setMedicineMode('existing'); setSelectedExistingMedicine(null) }}
+                  >
+                    Já cadastrado
+                  </button>
+                  <button
+                    type="button"
+                    className={`wizard__mode-btn${medicineMode === 'new' ? ' wizard__mode-btn--active' : ''}`}
+                    onClick={() => { setMedicineMode('new'); setSelectedExistingMedicine(null) }}
+                  >
+                    Novo medicamento
+                  </button>
+                </div>
+              )}
 
-              <label className="wizard__label">
-                Tipo
-                <select
-                  className="wizard__select"
-                  value={medicineData.type}
-                  onChange={(e) => updateMedicine('type', e.target.value)}
-                >
-                  <option value="medicamento">Medicamento</option>
-                  <option value="suplemento">Suplemento</option>
-                </select>
-              </label>
-
-              <div className="wizard__row">
-                <label className="wizard__label" style={{ flex: 1 }}>
-                  Dosagem *
-                  <input
-                    type="number"
-                    className="wizard__input"
-                    value={medicineData.dosage_per_pill}
-                    onChange={(e) => updateMedicine('dosage_per_pill', e.target.value)}
-                    placeholder="50"
-                    min="0"
-                    step="any"
-                  />
-                </label>
-                <label className="wizard__label" style={{ width: 100 }}>
-                  Unidade
+              {medicineMode === 'existing' ? (
+                <label className="wizard__label">
+                  Selecionar medicamento
                   <select
                     className="wizard__select"
-                    value={medicineData.dosage_unit}
-                    onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
+                    value={selectedExistingMedicine?.id || ''}
+                    onChange={(e) => {
+                      const med = medicines.find(m => m.id === e.target.value)
+                      setSelectedExistingMedicine(med || null)
+                    }}
                   >
-                    {DOSAGE_UNITS.map(u => (
-                      <option key={u} value={u}>{u}</option>
+                    <option value="">-- Escolha um medicamento --</option>
+                    {medicines.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}{m.dosage_per_pill ? ` ${m.dosage_per_pill}${m.dosage_unit}` : ''}
+                      </option>
                     ))}
                   </select>
                 </label>
-              </div>
+              ) : (
+                <>
+                  <label className="wizard__label">
+                    Nome *
+                    <input
+                      type="text"
+                      className="wizard__input"
+                      value={medicineData.name}
+                      onChange={(e) => updateMedicine('name', e.target.value)}
+                      placeholder="Ex: Losartana"
+                      autoFocus
+                    />
+                  </label>
+
+                  <label className="wizard__label">
+                    Tipo
+                    <select
+                      className="wizard__select"
+                      value={medicineData.type}
+                      onChange={(e) => updateMedicine('type', e.target.value)}
+                    >
+                      <option value="medicamento">Medicamento</option>
+                      <option value="suplemento">Suplemento</option>
+                    </select>
+                  </label>
+
+                  <div className="wizard__row">
+                    <label className="wizard__label" style={{ flex: 1 }}>
+                      Dosagem *
+                      <input
+                        type="number"
+                        className="wizard__input"
+                        value={medicineData.dosage_per_pill}
+                        onChange={(e) => updateMedicine('dosage_per_pill', e.target.value)}
+                        placeholder="50"
+                        min="0"
+                        step="any"
+                      />
+                    </label>
+                    <label className="wizard__label" style={{ width: 100 }}>
+                      Unidade
+                      <select
+                        className="wizard__select"
+                        value={medicineData.dosage_unit}
+                        onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
+                      >
+                        {DOSAGE_UNITS.map(u => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </>
+              )}
 
               <div className="wizard__actions">
                 <Button variant="ghost" onClick={onCancel}>Cancelar</Button>
@@ -296,6 +371,74 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                   onChange={(e) => updateProtocol('start_date', e.target.value)}
                 />
               </label>
+
+              {/* Plano de tratamento */}
+              <div className="wizard__label">
+                Plano de tratamento (opcional)
+                <div className="wizard__mode-toggle" style={{ marginTop: 6 }}>
+                  <button
+                    type="button"
+                    className={`wizard__mode-btn${planMode === 'none' ? ' wizard__mode-btn--active' : ''}`}
+                    onClick={() => setPlanMode('none')}
+                  >
+                    Nenhum
+                  </button>
+                  {availablePlans.length > 0 && (
+                    <button
+                      type="button"
+                      className={`wizard__mode-btn${planMode === 'existing' ? ' wizard__mode-btn--active' : ''}`}
+                      onClick={() => setPlanMode('existing')}
+                    >
+                      Plano existente
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`wizard__mode-btn${planMode === 'new' ? ' wizard__mode-btn--active' : ''}`}
+                    onClick={() => setPlanMode('new')}
+                  >
+                    + Criar plano
+                  </button>
+                </div>
+
+                {planMode === 'existing' && (
+                  <select
+                    className="wizard__select"
+                    style={{ marginTop: 8 }}
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                  >
+                    <option value="">-- Escolha um plano --</option>
+                    {availablePlans.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.emoji || '📋'} {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {planMode === 'new' && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      className="wizard__input"
+                      style={{ flex: '0 0 48px', textAlign: 'center' }}
+                      value={newPlanEmoji}
+                      onChange={(e) => setNewPlanEmoji(e.target.value)}
+                      placeholder="📋"
+                      maxLength={2}
+                    />
+                    <input
+                      type="text"
+                      className="wizard__input"
+                      style={{ flex: 1 }}
+                      value={newPlanName}
+                      onChange={(e) => setNewPlanName(e.target.value)}
+                      placeholder="Nome do plano (ex: Hipertensão)"
+                    />
+                  </div>
+                )}
+              </div>
 
               <div className="wizard__actions">
                 <Button variant="ghost" onClick={goBack}>← Voltar</Button>

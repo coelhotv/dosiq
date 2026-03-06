@@ -125,7 +125,9 @@ export function expandProtocolsToDoses(protocols, todayLogs) {
         dosagePerIntake: protocol.dosage_per_intake ?? 1,
         treatmentPlanId: protocol.treatment_plan_id || null,
         treatmentPlanName: protocol.treatment_plan?.name || null,
-        planBadge: protocol.treatment_plan?.badge || null,
+        planBadge: protocol.treatment_plan
+          ? { emoji: protocol.treatment_plan.emoji || '📋', color: protocol.treatment_plan.color || '#6366f1' }
+          : null,
         isRegistered: !!registrationTime,
         registeredAt: registrationTime,
       })
