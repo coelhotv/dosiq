@@ -18,13 +18,6 @@ import { createHash } from 'crypto'
 
 const ENDPOINT = 'share'
 
-// Validação de variáveis de ambiente no startup (R-088, AP-S07)
-const REQUIRED_ENV_VARS = [
-  'BLOB_READ_WRITE_TOKEN',
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-]
-
 // Fallback para variáveis de ambiente (R-083, AP-S03)
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -81,14 +74,12 @@ function log(level, message, data = {}) {
     ...data,
   }
 
-  const formattedMessage = `[${ENDPOINT}] ${message}`
-
   if (level === LOG_LEVELS.ERROR) {
-    console.error(formattedMessage, JSON.stringify(logEntry))
+    console.error(JSON.stringify(logEntry))
   } else if (level === LOG_LEVELS.WARN) {
-    console.warn(formattedMessage, JSON.stringify(logEntry))
+    console.warn(JSON.stringify(logEntry))
   } else {
-    console.log(formattedMessage, JSON.stringify(logEntry))
+    console.log(JSON.stringify(logEntry))
   }
 }
 
@@ -242,9 +233,11 @@ async function verifyAuth(token) {
  *
  * @param {Buffer} buffer - Buffer do arquivo
  * @param {string} filename - Nome do arquivo
- * @param {number} expiresInHours - Tempo de expiração em horas
+ * @param {number} expiresInHours - TTL do cache em horas (via x-vercel-cache-max-age)
  * @param {string} userId - ID do usuário (para namespace do path)
- * @returns {Promise<Object>} Resultado com { url, expiresAt }
+ * @returns {Promise<Object>} Resultado com { url, cacheExpiresAt }
+ *   - url: URL pública compartilhável
+ *   - cacheExpiresAt: Data de expiração do cache CDN (não data de deleção do arquivo)
  * @throws {Error} Se o upload falhar
  */
 async function uploadToBlob(buffer, filename, expiresInHours, userId) {
@@ -256,8 +249,8 @@ async function uploadToBlob(buffer, filename, expiresInHours, userId) {
   const safeFilename = filename.replace(/[^\w\-.]/g, '_')
   const path = `reports/${userId}/${timestamp}-${fileHash}-${safeFilename}`
 
-  // Calcular data de expiração
-  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)
+  // Calcular data de expiração do cache (usa x-vercel-cache-max-age header)
+  const cacheExpiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)
 
   // Preparar upload usando a API do Vercel Blob
   // Ref: https://vercel.com/docs/storage/vercel-blob/using-blob-sdk
@@ -286,12 +279,12 @@ async function uploadToBlob(buffer, filename, expiresInHours, userId) {
 
     logInfo('Upload para Blob concluído', {
       url: publicUrl.split('?')[0],
-      expiresAt: expiresAt.toISOString(),
+      cacheExpiresAt: cacheExpiresAt.toISOString(),
     })
 
     return {
       url: publicUrl,
-      expiresAt: expiresAt.toISOString(),
+      cacheExpiresAt: cacheExpiresAt.toISOString(),
     }
   } catch (error) {
     logError('Falha no upload para Blob', error)
@@ -388,7 +381,7 @@ export default async function handler(req, res) {
     }
 
     // Fazer upload para Vercel Blob (R-084, AP-S04)
-    const { url, expiresAt } = await uploadToBlob(buffer, filename, expiresInHours, userId)
+    const { url, cacheExpiresAt } = await uploadToBlob(buffer, filename, expiresInHours, userId)
 
     // Retornar sucesso (R-086, AP-S05)
     logInfo('Operação concluída com sucesso', { url: url.split('?')[0] })
@@ -397,7 +390,7 @@ export default async function handler(req, res) {
       success: true,
       data: {
         url,
-        expiresAt,
+        cacheExpiresAt,
       },
     })
   } catch (error) {
