@@ -64,7 +64,7 @@ export default function Emergency({ onNavigate }) {
   const handleCancel = useCallback(() => {
     // Se não há dados, volta para Settings
     if (!cardData) {
-      onNavigate?.('settings')
+      onNavigate?.('profile')
     } else {
       setIsEditing(false)
     }
@@ -81,7 +81,7 @@ export default function Emergency({ onNavigate }) {
    * Volta para a tela de Settings.
    */
   const handleBack = useCallback(() => {
-    onNavigate?.('settings')
+    onNavigate?.('profile')
   }, [onNavigate])
 
   // ===== RENDER =====

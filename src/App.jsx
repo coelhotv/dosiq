@@ -10,6 +10,9 @@ import History from './views/History'
 import Settings from './views/Settings'
 import Calendar from './views/Calendar'
 import Emergency from './views/Emergency'
+import Treatment from './views/Treatment'
+import Profile from './views/Profile'
+import HealthHistory from './views/HealthHistory'
 import DLQAdmin from './views/admin/DLQAdmin'
 import Loading from '@shared/components/ui/Loading'
 
@@ -115,8 +118,24 @@ function App() {
             onNavigateToStock={navigateToStock}
           />
         )
+      case 'treatment':
+        return (
+          <Treatment
+            onNavigate={(view, params) => {
+              if (view === 'protocols' && params?.medicineId) {
+                setInitialProtocolParams({ medicineId: params.medicineId })
+              }
+              setCurrentView(view)
+            }}
+          />
+        )
+      case 'profile':
+        return <Profile onNavigate={setCurrentView} />
+      case 'health-history':
+        return <HealthHistory onNavigate={setCurrentView} />
       case 'history':
-        return <History />
+        // W3-06: historico agora vive em HealthHistory
+        return <HealthHistory onNavigate={setCurrentView} />
       case 'consultation':
         return (
           <Suspense fallback={<Loading text="Carregando Modo Consulta..." />}>

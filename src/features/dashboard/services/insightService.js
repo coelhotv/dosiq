@@ -176,7 +176,7 @@ function createBestTimeInsight(onNavigate) {
     actionLabel: 'Configurar Lembretes',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'best_time' })
-      onNavigate?.('settings')
+      onNavigate?.('profile')
     },
   }
 }
@@ -231,7 +231,7 @@ function createWeakDayInsight(onNavigate) {
       actionLabel: 'Configurar Lembretes',
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'weak_day' })
-        onNavigate?.('settings')
+        onNavigate?.('profile')
       },
     }
   }
