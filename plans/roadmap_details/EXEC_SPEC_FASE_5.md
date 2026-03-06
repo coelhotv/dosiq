@@ -5,7 +5,7 @@
 **Tipo:** Especificação de Execução para Agente Orquestrador
 **Baseline:** v3.0.0 (Fase 4 + pós-Fase 4 concluídas)
 **Escopo:** 68 SP, 10 features, 4 sprints, ~49 tarefas atômicas
-**Referências:** `plans/PRD_FASE_5_ROADMAP_2026.md`, `.memory/rules.md`, `.memory/anti-patterns.md`
+**Referências:** `PRD_FASE_5_ROADMAP_2026.md`, `.memory/rules.md`, `.memory/anti-patterns.md`
 
 ---
 
