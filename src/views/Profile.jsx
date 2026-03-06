@@ -80,7 +80,7 @@ export default function Profile({ onNavigate }) {
   }
 
   const generateTelegramToken = async () => {
-    const token = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const token = window.crypto.randomUUID().split('-')[0].toUpperCase()
     try {
       const { error } = await supabase.from('user_settings').upsert(
         { user_id: user.id, verification_token: token, updated_at: new Date() },
@@ -243,8 +243,10 @@ export default function Profile({ onNavigate }) {
           )}
         </div>
 
-        {/* Admin DLQ */}
-        <ProfileLink icon="🛠️" label="Admin DLQ" onClick={() => onNavigate('admin-dlq')} />
+        {/* Admin DLQ — visível apenas para admins */}
+        {user?.user_metadata?.role === 'admin' && (
+          <ProfileLink icon="🛠️" label="Admin DLQ" onClick={() => onNavigate('admin-dlq')} />
+        )}
       </ProfileSection>
 
       {/* Logout */}

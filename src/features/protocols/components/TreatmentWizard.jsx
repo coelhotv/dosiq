@@ -5,6 +5,7 @@ import { medicineService, protocolService, stockService } from '@shared/services
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
+import { formatLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
 import './TreatmentWizard.css'
 
@@ -45,12 +46,12 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     frequency: 'diario',
     time_schedule: ['08:00'],
     dosage_per_intake: 1,
-    start_date: new Date().toISOString().split('T')[0],
+    start_date: formatLocalDate(new Date()),
   })
 
   const [stockData, setStockData] = useState({
     quantity: '',
-    purchase_date: new Date().toISOString().split('T')[0],
+    purchase_date: formatLocalDate(new Date()),
     unit_price: '',
     expiration_date: '',
   })
@@ -533,8 +534,8 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                   setStep(1)
                   setResult(null)
                   setMedicineData({ name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg' })
-                  setProtocolData({ frequency: 'diario', time_schedule: ['08:00'], dosage_per_intake: 1, start_date: new Date().toISOString().split('T')[0] })
-                  setStockData({ quantity: '', purchase_date: new Date().toISOString().split('T')[0], unit_price: '', expiration_date: '' })
+                  setProtocolData({ frequency: 'diario', time_schedule: ['08:00'], dosage_per_intake: 1, start_date: formatLocalDate(new Date()) })
+                  setStockData({ quantity: '', purchase_date: formatLocalDate(new Date()), unit_price: '', expiration_date: '' })
                 }}>
                   Cadastrar outro
                 </Button>
