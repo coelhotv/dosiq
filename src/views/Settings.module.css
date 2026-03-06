@@ -1,0 +1,15 @@
+/**
+ * Settings CSS Module
+ *
+ * Estilos scoped para o componente Settings.
+ */
+
+.emergencyButtonGroup {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.consultationButton {
+  margin-left: var(--space-2);
+}
