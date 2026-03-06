@@ -42,12 +42,12 @@ Sprint 5.A — Analise de Custo (5 SP)
   F5.10-3: Integracao na tab Estoque
   F5.10-4: Testes
 
-Sprint 5.B — Spike ANVISA + Integracao Base (2-3 + 13 SP condicional)
-  SPIKE-1: Pesquisa de fontes de dados ANVISA
-  SPIKE-2: Prototipo de viabilidade
-  F5.6-1: Base de medicamentos (se viavel)
-  F5.6-2: Autocomplete no formulario (se viavel)
-  F5.6-3: Testes
+Sprint 5.B — Integracao Base ANVISA (13 SP — Cenario A confirmado)
+  SPIKE-1: [CONCLUIDO] Pesquisa de fontes de dados ANVISA
+  ETL-1:   Script process-anvisa.js (substitui SPIKE-2)
+  F5.6-1:  Base de medicamentos JSON + medicineDatabaseService
+  F5.6-2:  Autocomplete no formulario (4 campos auto, 2 manuais)
+  F5.6-3:  Testes
 ```
 
 ---
@@ -280,114 +280,54 @@ Testes do service ja detalhados em F5.10-1. Alem disso:
 
 ---
 
-## 5. Sprint 5.B — Spike ANVISA + Integracao (2-3 SP spike + 13 SP condicional)
+## 5. Sprint 5.B — Integracao Base ANVISA (13 SP)
+
+### Status dos Spikes (Atualizado 06/03/2026)
+
+> **SPIKE-1 CONCLUIDO.** Resultado completo em `plans/ANALISE_CSV_ANVISA.md`.
+> CSV disponivel em `public/medicamentos-ativos-anvisa.csv` (10.206 registros, 1.1 MB).
+> **Cenario A confirmado** — JSON local via ETL script. Ver analise completa para detalhes.
+>
+> **Ajuste critico vs spec original:** O CSV ANVISA nao contem dosagem nem forma farmaceutica.
+> O autocomplete preenche: `name`, `active_ingredient`, `laboratory`, `type` (4 campos).
+> Os campos `dosage_per_pill` e `dosage_unit` permanecem **manuais** — sao especificos da prescricao.
 
 ### Objetivo
-Pesquisar viabilidade de integrar com bases de dados ANVISA para auto-complete de medicamentos e, se viavel, implementar a integracao.
+Implementar base de medicamentos ANVISA com autocomplete no formulario de cadastro.
+Cenario A confirmado: JSON estatico lazy-loaded, zero custo operacional, zero latencia.
 
-### SPIKE-1: Pesquisa de Fontes de Dados ANVISA
-
-| Campo | Valor |
-|-------|-------|
-| **Agente** | Researcher (ou Coder com foco em pesquisa) |
-| **Output** | Documento `plans/SPIKE_ANVISA_RESULTADO.md` |
-| **Tempo maximo** | 4 horas de pesquisa |
-| **Dependencias** | Nenhuma |
-
-**O que pesquisar:**
-
-1. **dados.gov.br** — Portal de dados abertos do governo brasileiro
-   - Buscar datasets relacionados a medicamentos, ANVISA, bulario
-   - URL base: `https://dados.gov.br/dados/conjuntos-dados`
-   - Verificar: formato (CSV, JSON, XML), tamanho, frequencia de atualizacao, licenca
-
-2. **Bulario Eletronico ANVISA**
-   - URL: `https://consultas.anvisa.gov.br/#/bulario/`
-   - Verificar se ha API publica ou export de dados
-   - Verificar estrutura dos dados (nome comercial, principio ativo, dosagem, forma farmaceutica)
-
-3. **API de Consulta de Registros ANVISA**
-   - URL: `https://consultas.anvisa.gov.br/#/medicamentos/`
-   - Investigar se ha API REST por tras da interface web
-   - Verificar rate limits, autenticacao, termos de uso
-
-4. **Bases alternativas abertas**
-   - CMED (Camara de Regulacao do Mercado de Medicamentos) — tabela de precos
-   - Lista RENAME (Relacao Nacional de Medicamentos Essenciais)
-   - OpenFDA (referencia de formato, nao de dados BR)
-   - Repositorios GitHub com dados de medicamentos brasileiros
-
-5. **Web scraping**
-   - Viabilidade legal (termos de uso ANVISA)
-   - Complexidade tecnica (SPA? Captcha? Rate limit?)
-   - Frequencia necessaria de atualizacao
-
-**Template do documento de resultado:**
-
-```markdown
-# Resultado do Spike ANVISA
-
-## Fontes Avaliadas
-
-### Fonte 1: [Nome]
-- URL: ...
-- Formato: CSV / JSON / API / HTML
-- Campos disponiveis: nome, principio_ativo, dosagem, forma_farmaceutica, laboratorio
-- Tamanho: N registros
-- Licenca: aberta / restrita / desconhecida
-- Atualizacao: diaria / mensal / anual / desconhecida
-- Viabilidade: ALTA / MEDIA / BAIXA
-- Notas: ...
-
-### Fonte 2: ...
-
-## Recomendacao
-
-### Cenario A: Viavel com custo zero
-- Fonte recomendada: ...
-- Formato de integracao: JSON estatico / API call / download periodico
-- Tamanho estimado do dataset: N registros, ~X KB
-- Plano: importar para JSON local, servir como autocomplete
-
-### Cenario B: Parcialmente viavel
-- Base seed manual de ~500 medicamentos mais comuns
-- Fonte para enriquecimento futuro: ...
-
-### Cenario C: Inviavel
-- Motivos: ...
-- Alternativa: manter cadastro manual, mover F5.6 para Fase 8
-```
-
-**Criterios de aceite do spike:**
-1. Documento criado com pelo menos 3 fontes avaliadas
-2. Recomendacao clara (cenario A, B ou C)
-3. Se cenario A: prototipo minimo de download/parse dos dados
-4. Decisao documentada para prosseguir ou nao com F5.6
-
-### SPIKE-2: Prototipo de Viabilidade (se cenario A ou B)
+### SPIKE-1: [CONCLUIDO] Pesquisa de Fontes de Dados ANVISA
 
 | Campo | Valor |
 |-------|-------|
-| **Agente** | Coder |
-| **Output** | Script de prova de conceito (nao precisa ser produtizavel) |
-| **Tempo maximo** | 2 horas |
+| **Status** | CONCLUIDO — Cenario A confirmado |
+| **Pesquisa** | `plans/spike-1-anvisa.md` |
+| **Resultado** | `plans/ANALISE_CSV_ANVISA.md` |
+| **CSV** | `public/medicamentos-ativos-anvisa.csv` (10.206 registros, 1.1 MB) |
+| **Decisao** | JSON local via ETL script. Ver `plans/ANALISE_CSV_ANVISA.md` secao 3. |
 
-**O que fazer:**
-1. Baixar/parsear amostra dos dados da fonte recomendada
-2. Extrair campos: `nome_comercial`, `principio_ativo`, `dosagem`, `forma_farmaceutica`, `laboratorio`
-3. Gerar JSON com formato alvo:
-```json
-[
-  {
-    "name": "Losartana Potassica",
-    "activeIngredient": "losartana potassica",
-    "dosages": ["25mg", "50mg", "100mg"],
-    "form": "comprimido",
-    "laboratory": "EMS"
-  }
-]
-```
-4. Verificar: quantos registros? Tamanho do JSON? Qualidade dos dados?
+### ETL-1: Script de Processamento do CSV (substitui SPIKE-2)
+
+| Campo | Valor |
+|-------|-------|
+| **Criar** | `scripts/process-anvisa.js` |
+| **Input** | `public/medicamentos-ativos-anvisa.csv` |
+| **Output** | `src/features/medications/data/medicineDatabase.json` |
+
+**O que o script faz:**
+1. Parseia CSV com separador `;` e encoding UTF-8
+2. Deduplica por `NOME_PRODUTO + PRINCIPIO_ATIVO` (remove entradas de fabricantes repetidos)
+3. Normaliza: trim em todos os campos, lowercase em `activeIngredient`
+4. Mapeia colunas para formato alvo (ver F5.6-1)
+5. Grava JSON final em `src/features/medications/data/medicineDatabase.json`
+
+**Resultado esperado:** ~2.000-4.000 entradas unicas, arquivo ~200-400 KB.
+
+**Criterios de aceite do ETL:**
+1. Script roda com `node scripts/process-anvisa.js` sem erro
+2. JSON gerado tem < 500 KB
+3. Deduplicacao correta (Ibuprofeno aparece 1x, nao 20x)
+4. Campos normalizados (sem espacos extras, encoding correto)
 
 ### F5.6-1: Base de Medicamentos (13 SP — condicional)
 
@@ -466,24 +406,29 @@ function normalizeText(text) {
 ```
 
 **Estrutura do JSON (`medicineDatabase.json`):**
+
+Gerado pelo ETL-1. Campos disponiveis no CSV ANVISA:
+
 ```json
 [
   {
-    "name": "Losartana Potassica 50mg",
+    "name": "Losartana Potassica",
     "activeIngredient": "losartana potassica",
-    "dosagePerPill": 50,
-    "dosageUnit": "mg",
-    "form": "comprimido",
     "laboratory": "EMS",
-    "type": "medicamento"
+    "therapeuticClass": "ANTI-HIPERTENSIVOS",
+    "category": "Generico"
   }
 ]
 ```
 
+**NOTA:** `dosagePerPill`, `dosageUnit` e `form` NAO estao no CSV ANVISA e portanto
+NAO sao incluidos no JSON. O campo `therapeuticClass` e incluido para habilitar
+F8.2 (interacoes medicamentosas, Fase 8) sem necessidade de nova fonte de dados.
+
 **Criterios de aceite:**
 1. JSON lazy-loaded (nao impacta bundle inicial)
 2. Busca funciona com acentos e sem acentos ("losartana" = "Losartana")
-3. Busca por nome comercial E por principio ativo
+3. Busca por `name` E por `activeIngredient`
 4. Minimo 3 caracteres para buscar (evitar queries muito amplas)
 5. Maximo 10 resultados por default
 6. Testes: busca com acento, sem acento, parcial, sem resultado, limite
@@ -507,14 +452,16 @@ function normalizeText(text) {
 
 2. Integrar no `MedicineForm`:
    - Substituir input de nome por `MedicineAutocomplete`
-   - Ao selecionar medicamento da base:
-     - Preenche `name` com `med.name`
-     - Preenche `active_ingredient` com `med.activeIngredient`
-     - Preenche `dosage_per_pill` com `med.dosagePerPill`
-     - Preenche `dosage_unit` com `med.dosageUnit`
-     - Preenche `type` com `med.type`
+   - Ao selecionar medicamento da base, preencher automaticamente:
+     - `name` com `med.name`
+     - `active_ingredient` com `med.activeIngredient`
+     - `laboratory` com `med.laboratory`
+     - `type` inferido de `med.category` ("Generico"/"Similar" → "medicamento", "Biologico" → "medicamento")
+   - NAO preencher automaticamente (nao disponivel no CSV ANVISA):
+     - `dosage_per_pill` — exibir label "Dosagem especifica da prescricao — preencha manualmente"
+     - `dosage_unit` — idem
    - Manter edicao manual de todos os campos (autocomplete e sugestao, nao imposicao)
-   - Mostrar label "Fonte: Base ANVISA" quando preenchido automaticamente
+   - Mostrar badge "Fonte: Base ANVISA" nos campos auto-preenchidos
 
 **Padrao do componente:**
 ```jsx
@@ -638,15 +585,26 @@ describe('medicineDatabaseService', () => {
 })
 ```
 
+### Oportunidades Futuras Identificadas na Analise
+
+O CSV ANVISA contem `CLASSE_TERAPEUTICA` e `PRINCIPIO_ATIVO` que habilitam usos alem do autocomplete.
+Registrar aqui para nao perder o contexto. Ver `plans/ANALISE_CSV_ANVISA.md` secao 4.
+
+| Oportunidade | Dado usado | Fase ideal | Valor |
+|-------------|-----------|-----------|-------|
+| **F8.2 Interacoes medicamentosas** | `therapeuticClass` (ja no JSON) | 8 | Alto — basta `interactions.json` com pares de classes |
+| **Deteccao de duplicatas por principio ativo** | `activeIngredient` | 5 ou 6 | Alto — "Voce ja tem Losartana. Confirmar?" |
+| **Emergency Card com principio ativo** | `activeIngredient` | 5 ou 6 | Medio — nome generico para medicos |
+| **Busca por classe no bot WhatsApp** | `therapeuticClass` | 7/8 | Medio — "Quais meus remedios pra pressao?" |
+
 ### Quality Gate Sprint 5.B
 
-- [ ] Spike ANVISA concluido com documento de resultado
-- [ ] Decisao documentada (cenario A, B, ou C)
-- [ ] Se cenario A/B: base JSON criada, service implementado, autocomplete funcionando
-- [ ] Se cenario C: decisao de mover F5.6 para Fase 8 documentada no ROADMAP_v4
+- [ ] ETL-1: `node scripts/process-anvisa.js` gera JSON sem erro (< 500 KB)
+- [ ] `medicineDatabaseService.js` criado com testes >= 90% cobertura
+- [ ] `MedicineAutocomplete.jsx` preenche 4 campos automaticamente (name, active_ingredient, laboratory, type)
+- [ ] Campos dosage_per_pill e dosage_unit exibem label explicativa (nao sao auto-preenchidos)
 - [ ] `npm run validate:agent` passa
-- [ ] Testes com cobertura >= 90% para services novos
-- [ ] Bundle size aumento maximo: +200KB (JSON da base)
+- [ ] Bundle size aumento maximo: +500 KB (JSON da base, estimativa pos-ETL)
 - [ ] Commit semantico: `feat(medications): add ANVISA medicine database and autocomplete (#F5.6)`
 - [ ] PR criado, aguardar review
 
@@ -657,7 +615,7 @@ describe('medicineDatabaseService', () => {
 Apos ambos sprints concluidos:
 
 1. **Atualizar ROADMAP_v4.md** — marcar Fase 5 como 100% completa
-2. **Atualizar CLAUDE.md** — seção "Versao atual" para v3.2.0
+2. **Atualizar CLAUDE.md e AGENTS.md** — seção "Versao atual" para v3.2.0
 3. **Atualizar package.json** — version para "3.2.0"
 4. **Registrar em `.memory/journal/`** — entrada de fechamento da Fase 5
 5. **Atualizar contadores em `.memory/rules.md`** — se novas regras foram descobertas
@@ -672,11 +630,12 @@ Apos ambos sprints concluidos:
 ```
 src/features/stock/services/costAnalysisService.js                     (F5.10)
 src/features/stock/services/__tests__/costAnalysisService.test.js      (F5.10)
-src/features/medications/data/medicineDatabase.json                    (F5.6, condicional)
-src/features/medications/services/medicineDatabaseService.js           (F5.6, condicional)
-src/features/medications/services/__tests__/medicineDatabaseService.test.js (F5.6, condicional)
-src/features/medications/components/MedicineAutocomplete.jsx           (F5.6, condicional)
-plans/SPIKE_ANVISA_RESULTADO.md                                        (Spike)
+scripts/process-anvisa.js                                              (ETL-1 — NOVO, nao vai para bundle)
+src/features/medications/data/medicineDatabase.json                    (F5.6 — gerado pelo ETL-1)
+src/features/medications/services/medicineDatabaseService.js           (F5.6)
+src/features/medications/services/__tests__/medicineDatabaseService.test.js (F5.6)
+src/features/medications/components/MedicineAutocomplete.jsx           (F5.6)
+plans/ANALISE_CSV_ANVISA.md                                            (Spike concluido)
 ```
 
 ### Modificados
@@ -696,7 +655,7 @@ package.json                                         (versao)
 ```
 1. git checkout -b feature/fase-5/cost-analysis     (Sprint 5.A)
 2. Implementar F5.10-1 a F5.10-4
-3. npm run validate:agent
+3. npm run lint && npm run validate:agent
 4. git commit -m "feat(stock): add cost analysis service and chart (#F5.10)"
 5. git push origin feature/fase-5/cost-analysis
 6. Criar PR → aguardar Gemini review → merge
@@ -705,7 +664,7 @@ package.json                                         (versao)
 8. Executar SPIKE-1 e SPIKE-2
 9. git commit -m "docs: ANVISA integration spike results"
 10. Se viavel: implementar F5.6-1 a F5.6-3
-11. npm run validate:agent
+11. npm run lint && npm run validate:agent
 12. git commit -m "feat(medications): add ANVISA medicine database (#F5.6)"
 13. git push → PR → review → merge
 
