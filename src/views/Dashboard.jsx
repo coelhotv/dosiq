@@ -550,8 +550,8 @@ export default function Dashboard({ onNavigate }) {
           <div className={styles.userInfo}>
             <button
               className={styles.userName}
-              onClick={() => onNavigate?.('settings')}
-              title="Configurações"
+              onClick={() => onNavigate?.('profile')}
+              title="Perfil"
             >
               {userName}
               <span className={styles.dot}>.</span>
