@@ -64,7 +64,7 @@ export default function Dashboard({ onNavigate }) {
 
   // Dados de adesão para Sparkline
   const [dailyAdherence, setDailyAdherence] = useState([])
-  const [isAdherenceLoading, setIsAdherenceLoading] = useState(true)
+  const [, setIsAdherenceLoading] = useState(true)
 
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
 
@@ -97,6 +97,7 @@ export default function Dashboard({ onNavigate }) {
   const { mode: complexityMode, defaultViewMode, ringGaugeSize } = useComplexityMode()
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('mr_view_mode') || defaultViewMode)
   const [selectedDoseKeys, setSelectedDoseKeys] = useState(new Set())
+  const [isStockCollapsed, setIsStockCollapsed] = useState(() => complexityMode === 'complex')
 
   // Dados de insight
   const { insight, loading: insightLoading } = useInsights({
@@ -176,20 +177,6 @@ export default function Dashboard({ onNavigate }) {
     }
   )
 
-  // Handler para click em um dia do sparkline
-  const handleDayClick = useMemo(
-    () => (dayData) => {
-      setSelectedDate(dayData.date)
-      setIsDrillDownModalOpen(true)
-      analyticsService.track('sparkline_drilldown_opened', {
-        date: dayData.date,
-        adherence: dayData.adherence,
-        taken: dayData.taken,
-        expected: dayData.expected,
-      })
-    },
-    []
-  )
 
   // Handler para fechar o modal de drill-down
   const handleCloseDrillDown = () => {
@@ -321,14 +308,16 @@ export default function Dashboard({ onNavigate }) {
   // StockBars items — mapeia stockSummary para formato do componente (W2-09)
   const stockBarsItems = useMemo(
     () =>
-      (stockSummary || []).map((s) => ({
-        medicineId: s.medicine?.id,
-        name: s.medicine?.name || 'Desconhecido',
-        currentStock: s.total || 0,
-        dailyConsumption: s.dailyIntake || 0,
-        daysRemaining: s.daysRemaining || 0,
-        level: s.isZero ? 'critical' : s.isLow ? 'low' : s.daysRemaining >= 30 ? 'high' : 'normal',
-      })),
+      (stockSummary || [])
+        .map((s) => ({
+          medicineId: s.medicine?.id,
+          name: s.medicine?.name || 'Desconhecido',
+          currentStock: s.total || 0,
+          dailyConsumption: s.dailyIntake || 0,
+          daysRemaining: s.daysRemaining || 0,
+          level: s.isZero ? 'critical' : s.isLow ? 'low' : s.daysRemaining >= 30 ? 'high' : 'normal',
+        }))
+        .sort((a, b) => a.daysRemaining - b.daysRemaining),
     [stockSummary]
   )
 
@@ -519,7 +508,8 @@ export default function Dashboard({ onNavigate }) {
         notes: '[Lote DoseZoneList]',
       }))
       await logService.createBulk(logsToSave)
-      refresh()
+      setSelectedDoseKeys(new Set())
+      await refresh()
     } catch (err) {
       console.error('Erro no registro em lote:', err)
       alert('Erro ao registrar lote. Tente novamente.')
@@ -550,8 +540,8 @@ export default function Dashboard({ onNavigate }) {
           <div className={styles.userInfo}>
             <button
               className={styles.userName}
-              onClick={() => onNavigate?.('settings')}
-              title="Configurações"
+              onClick={() => onNavigate?.('profile')}
+              title="Perfil"
             >
               {userName}
               <span className={styles.dot}>.</span>
@@ -576,24 +566,6 @@ export default function Dashboard({ onNavigate }) {
         />
       </header>
 
-      {/* Sparkline de Adesão Semanal */}
-      {!isAdherenceLoading && dailyAdherence.length > 0 && (
-        <div className={styles.sparklineContainer}>
-          <SparklineAdesao
-            adherenceByDay={dailyAdherence}
-            size="medium"
-            showAxis={false}
-            onDayClick={handleDayClick}
-          />
-          <button
-            className={styles.viewAllLink}
-            onClick={() => onNavigate?.('calendar')}
-            aria-label="Ver calendário completo"
-          >
-            Ver calendário →
-          </button>
-        </div>
-      )}
 
       {/* Insight Card - Dinâmico baseado em dados do usuário */}
       {!insightLoading && insight && (
@@ -705,12 +677,23 @@ export default function Dashboard({ onNavigate }) {
 
       {/* StockBars — projeção visual de estoque por medicamento (Wave 2, W2-09) */}
       {stockBarsItems.length > 0 && (
-        <StockBars
-          items={stockBarsItems}
-          showOnlyCritical={complexityMode === 'complex'}
-          maxItems={complexityMode === 'complex' ? 3 : undefined}
-          onItemClick={(medicineId) => onNavigate('stock', { medicineId })}
-        />
+        <section className={styles.section}>
+          <button
+            className={styles.sectionHeader}
+            style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+            onClick={() => setIsStockCollapsed((v) => !v)}
+            aria-expanded={!isStockCollapsed}
+          >
+            <h2 className={styles.sectionTitle}>ESTOQUE</h2>
+            <span style={{ marginLeft: 'auto' }}>{isStockCollapsed ? '▼' : '▲'}</span>
+          </button>
+          {!isStockCollapsed && (
+            <StockBars
+              items={stockBarsItems}
+              onItemClick={(medicineId) => onNavigate('stock', { medicineId })}
+            />
+          )}
+        </section>
       )}
 
       {/* 4. Last Doses Widget */}

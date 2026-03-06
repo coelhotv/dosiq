@@ -54,10 +54,10 @@ export default function Calendar({
 
     let isCancelled = false
 
-    // Usar requestAnimationFrame para evitar setState sincrono no effect
-    const frameId = requestAnimationFrame(() => {
-      setIsLoading(true)
-    })
+    // Setar loading sincronamente evita race condition com microtasks
+    // (rAF anterior causava: finally() rodava antes do rAF → stuck loading)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(true)
 
     onLoadMonth(year, month)
       .catch((err) => {
@@ -73,7 +73,6 @@ export default function Calendar({
 
     return () => {
       isCancelled = true
-      cancelAnimationFrame(frameId)
     }
   }, [viewDate, enableLazyLoad, onLoadMonth])
 

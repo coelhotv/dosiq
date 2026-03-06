@@ -20,13 +20,10 @@ const ZONE_ORDER = ['late', 'now', 'upcoming', 'later', 'done']
 /**
  * Determina se uma zona deve iniciar expandida com base na complexidade.
  */
-function getDefaultExpanded(zone, itemCount, complexityMode) {
+function getDefaultExpanded(zone) {
   if (zone === 'late') return true
   if (zone === 'now') return true
-  if (zone === 'upcoming') {
-    if (complexityMode === 'complex') return false
-    return itemCount <= 4
-  }
+  if (zone === 'upcoming') return true // ação principal quando não há late/now
   return false // later e done: sempre colapsadas
 }
 
@@ -194,7 +191,6 @@ function makeSyntheticProtocol(group, zoneKey) {
 export default function DoseZoneList({
   zones,
   viewMode,
-  complexityMode,
   onRegisterDose,
   onBatchRegister,
   onToggleSelection,
@@ -204,8 +200,7 @@ export default function DoseZoneList({
   const [expandedZones, setExpandedZones] = useState(() => {
     const expanded = new Set()
     for (const zoneKey of ZONE_ORDER) {
-      const count = zones[zoneKey]?.length ?? 0
-      if (getDefaultExpanded(zoneKey, count, complexityMode)) {
+      if (getDefaultExpanded(zoneKey)) {
         expanded.add(zoneKey)
       }
     }

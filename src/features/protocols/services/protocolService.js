@@ -38,7 +38,8 @@ export const protocolService = {
       .select(
         `
         *,
-        medicine:medicines(*)
+        medicine:medicines(*),
+        treatment_plan:treatment_plans(id, name, emoji, color)
       `
       )
       .eq('user_id', await getUserId())
