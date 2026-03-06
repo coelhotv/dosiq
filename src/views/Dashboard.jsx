@@ -26,7 +26,6 @@ import ReportGenerator from '@features/reports/components/ReportGenerator'
 import { checkNewMilestones } from '@dashboard/services/milestoneService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { getCurrentUser } from '@shared/utils/supabase'
-import { useAdherenceTrend } from '@adherence/hooks/useAdherenceTrend'
 import { useInsights } from '@dashboard/hooks/useInsights'
 import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 import RingGauge from '@dashboard/components/RingGauge'
@@ -92,9 +91,6 @@ export default function Dashboard({ onNavigate }) {
       return new Map()
     }
   })
-
-  // Dados de tendência de adesão
-  const { trend, percentage, magnitude } = useAdherenceTrend()
 
   // Wave 2 — zonas temporais de doses e complexidade progressiva (W2-01, W2-02, W2-10)
   const { zones, totals } = useDoseZones()
@@ -304,58 +300,6 @@ export default function Dashboard({ onNavigate }) {
     }
   }, [stats])
 
-  // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
-  const standaloneProtocols = useMemo(() => {
-    const now = new Date()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
-    const toleranceWindowMinutes = 2 * 60 // 2 horas de tolerância
-
-    return rawProtocols
-      .filter((p) => !p.treatment_plan_id && p.active)
-      .sort((a, b) => {
-        // Converter next_dose para minutos
-        const getMinutes = (time) => {
-          if (!time || time === '--:--') return Infinity
-          const [h, m] = time.split(':').map(Number)
-          return h * 60 + m
-        }
-
-        const aMinutes = getMinutes(a.next_dose)
-        const bMinutes = getMinutes(b.next_dose)
-
-        // Verificar se está dentro da janela de tolerância (2h após o horário)
-        const aIsInToleranceWindow =
-          a.is_in_tolerance_window ||
-          (aMinutes >= currentMinutes - toleranceWindowMinutes && aMinutes < currentMinutes)
-        const bIsInToleranceWindow =
-          b.is_in_tolerance_window ||
-          (bMinutes >= currentMinutes - toleranceWindowMinutes && bMinutes < currentMinutes)
-
-        // Verificar se é dose futura (ainda não passou)
-        const aIsFuture = aMinutes >= currentMinutes
-        const bIsFuture = bMinutes >= currentMinutes
-
-        // Prioridade: 1. Dentro da janela de tolerância (urgente), 2. Futuro, 3. Passado
-        if (aIsInToleranceWindow && !bIsInToleranceWindow) return -1
-        if (!aIsInToleranceWindow && bIsInToleranceWindow) return 1
-
-        // Ambos dentro ou ambos fora da janela - ordenar por futuro vs passado
-        if (aIsFuture && !bIsFuture) return -1
-        if (!aIsFuture && bIsFuture) return 1
-
-        // Mesmo grupo
-        if (aIsFuture && bIsFuture) {
-          // Ambos futuros - ordenar cronologicamente (mais cedo primeiro)
-          return aMinutes - bMinutes
-        }
-
-        // Ambos passados (doses de amanhã) - ordenar por proximidade com o horário atual
-        // (mais próximo de "agora" primeiro, ou seja, decrescente)
-        return bMinutes - aMinutes
-      })
-      .slice(0, 5)
-  }, [rawProtocols])
-
   // 2. Injetar dados de próxima dose nos planos de tratamento
   const treatmentPlans = useMemo(() => {
     return rawTreatmentPlans.map((plan) => ({
@@ -366,14 +310,6 @@ export default function Dashboard({ onNavigate }) {
       }),
     }))
   }, [rawTreatmentPlans, rawProtocols])
-
-  // Fallback: protocolos do primeiro plano se não houver avulsos
-  const fallbackProtocols = useMemo(() => {
-    if (standaloneProtocols.length > 0) return []
-    if (treatmentPlans.length === 0) return []
-
-    return treatmentPlans[0].protocols?.filter((p) => p.active).slice(0, 5) || []
-  }, [standaloneProtocols, treatmentPlans])
 
   // StockBars items — mapeia stockSummary para formato do componente (W2-09)
   const stockBarsItems = useMemo(
@@ -556,57 +492,6 @@ export default function Dashboard({ onNavigate }) {
     } catch (err) {
       console.error(err)
       alert('Erro ao registrar dose. Tente novamente.')
-    }
-  }
-
-  const [selectedMedicines, setSelectedMedicines] = useState({})
-
-  const toggleMedicineSelection = (planId, protocolId) => {
-    setSelectedMedicines((prev) => {
-      const planSelections = prev[planId] || []
-      const isSelected = planSelections.includes(protocolId)
-
-      const newSelections = isSelected
-        ? planSelections.filter((id) => id !== protocolId)
-        : [...planSelections, protocolId]
-
-      return {
-        ...prev,
-        [planId]: newSelections,
-      }
-    })
-  }
-
-  const handleBatchRegister = async (plan, selectedProtocolIds) => {
-    try {
-      // Se nada selecionado, registra todos por padrão
-      const protocolsToLog =
-        selectedProtocolIds && selectedProtocolIds.length > 0
-          ? plan.protocols.filter((p) => selectedProtocolIds.includes(p.id))
-          : plan.protocols.filter((p) => p.active)
-
-      if (protocolsToLog.length === 0) return
-
-      const logsToSave = protocolsToLog.map((p) => ({
-        protocol_id: p.id,
-        medicine_id: p.medicine_id,
-        quantity_taken: p.dosage_per_intake || 1,
-        taken_at: new Date().toISOString(),
-        notes: `[Lote Dashboard] Plano: ${plan.name}`,
-      }))
-
-      await logService.createBulk(logsToSave)
-
-      // Limpar seleção do plano após sucesso
-      setSelectedMedicines((prev) => ({
-        ...prev,
-        [plan.id]: [],
-      }))
-
-      refresh()
-    } catch (err) {
-      console.error('Erro no registro em lote:', err)
-      alert('Erro ao registrar lote. Tente novamente.')
     }
   }
 

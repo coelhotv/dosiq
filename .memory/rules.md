@@ -703,7 +703,27 @@ onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}
 ```
 **Source:** Wave 2 W2-03 (plan mode integration)
 
+### R-103: Props Passadas mas não Declaradas na Assinatura São Silenciosas [HIGH]
+**Rule:** Em componentes internos (sub-componentes não exportados), uma prop passada no JSX mas ausente na função de destructuring não causa erro — ela é silenciosamente ignorada. Isso quebra funcionalidades sem nenhum aviso em runtime ou em testes que não cobrem o fluxo específico.
+**Exemplo:** `DoseCard` recebia `onToggleSelection` no JSX (linha 251) mas não estava no `function DoseCard({ ... })` — o card nunca ativava seleção.
+**Prevention:** Ao criar componentes internos com props de interação, listar TODAS as props no destructuring da assinatura e adicionar ao menos um teste de click/interaction que verifique o callback.
+**Source:** Wave 2 PR #240 — Gemini HIGH review comment.
+
+### R-104: `||` vs `??` para Valores Numericos com Zero Válido [MEDIUM]
+**Rule:** Ao usar `||` como fallback para valores numéricos (e.g., `dosage_per_intake || 1`), o valor `0` é tratado como falsy e substituído pelo fallback — resultado incorreto. Use `??` (nullish coalescing) quando `0` é um valor legítimo.
+**Rule:** `x || default` → substitui `0`, `''`, `false` por `default` (falsy check)
+**Rule:** `x ?? default` → substitui apenas `null` e `undefined` por `default` (nullish check)
+**Source:** Wave 2 PR #240 — Gemini MEDIUM review comment, `expandProtocolsToDoses`.
+
+### R-105: Remover Dead Code Imediatamente ao Substituir Seções [HIGH]
+**Rule:** Ao substituir uma seção de JSX por um novo componente (e.g., HealthScoreCard → RingGauge, TRATAMENTO section → DoseZoneList), remover simultaneamente: (1) as props/variáveis que alimentavam a seção antiga, (2) os useMemos/states relacionados, (3) os imports não mais utilizados. Dead code esquecido causa lint failures no CI e confunde agentes futuros.
+**Checklist pós-substituição:**
+1. `grep -n "NomeVarAntiga"` no arquivo — se só aparece na definição, remover
+2. Verificar se o import do hook ainda é necessário
+3. `npm run lint` localmente antes do commit
+**Source:** Wave 2 PR #240 — 8 lint errors de dead code não removido (trend, percentage, magnitude, standaloneProtocols, fallbackProtocols, selectedMedicines, toggleMedicineSelection, handleBatchRegister).
+
 ---
 
-*Last updated: 2026-03-05*
-*Rules: R-001 to R-102*
+*Last updated: 2026-03-06*
+*Rules: R-001 to R-105*
