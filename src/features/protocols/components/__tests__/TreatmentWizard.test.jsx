@@ -44,7 +44,6 @@ vi.mock('framer-motion', () => ({
 }))
 
 import TreatmentWizard from '../TreatmentWizard'
-import { medicineService, protocolService } from '@shared/services'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 
 describe('TreatmentWizard', () => {

@@ -191,7 +191,6 @@ function makeSyntheticProtocol(group, zoneKey) {
 export default function DoseZoneList({
   zones,
   viewMode,
-  complexityMode,
   onRegisterDose,
   onBatchRegister,
   onToggleSelection,
@@ -201,7 +200,6 @@ export default function DoseZoneList({
   const [expandedZones, setExpandedZones] = useState(() => {
     const expanded = new Set()
     for (const zoneKey of ZONE_ORDER) {
-      const count = zones[zoneKey]?.length ?? 0
       if (getDefaultExpanded(zoneKey)) {
         expanded.add(zoneKey)
       }
