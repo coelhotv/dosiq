@@ -674,5 +674,85 @@ expect(screen.getByText('80%')).toBeInTheDocument() // throws: found 2 elements
 
 ---
 
-*Last updated: 2026-03-05*
-*Rules: R-001 to R-097*
+### R-098: DoseZoneList Adapter Pattern (D-01) — Interface Mismatch [HIGH]
+**Rule:** When a new component (DoseZoneList) has a different callback interface than the existing Dashboard handlers, create thin adapter functions. Do NOT refactor existing handlers to match.
+**Source:** Wave 2 implementation (W2-10)
+**Adapters created:**
+- `handleRegisterFromZone(protocolId, dosagePerIntake)` → calls `handleRegisterDose(medicine_id, protocolId, dosagePerIntake)`
+- `handleBatchRegisterDoses(doseItems[])` → calls `logService.createBulk()`
+- `handleToggleDoseSelection(protocolId, scheduledTime)` → updates `selectedDoseKeys` Set
+**Why not refactor:** Dashboard.jsx is 932+ lines; refactoring handleRegisterDose would risk breaking SmartAlerts and LogForm interactions.
+
+### R-099: selectedMedicines useState Position (D-02) — Known Tech Debt [MEDIUM]
+**Rule:** The `selectedMedicines` useState in Dashboard.jsx is at line ~535 (after handlers), violating States-first order. Do NOT move it in Wave 2 or 3 without a dedicated refactor PR.
+**Source:** Wave 2 analysis (D-02 architectural decision)
+**Note:** Wave 3+ should create a separate PR to fix hook order in Dashboard.jsx before adding more complexity.
+
+### R-100: Multiple useDashboard() Calls are Safe (D-03) [INFO]
+**Rule:** Multiple components (Dashboard, useComplexityMode, useDoseZones) calling `useDashboard()` is safe and correct. React Context consumers always receive the same object reference — no performance penalty.
+**Source:** Wave 2 analysis (D-03 architectural decision)
+
+### R-101: DoseZoneList Internal Sub-components [HIGH]
+**Rule:** DoseCard and ZoneSection are internal sub-components of DoseZoneList, NOT exported. This is intentional — they have no use outside DoseZoneList and exporting them prematurely increases API surface.
+**Source:** Wave 2 W2-03 implementation
+
+### R-102: SwipeRegisterItem onRegister vs onRegisterDose Mismatch [HIGH]
+**Rule:** SwipeRegisterItem calls `onRegister(medicineId, dosagePerIntake)`. DoseZoneList needs `onRegisterDose(protocolId, dosagePerIntake)`. Use a closure wrapper:
+```jsx
+onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}
+```
+**Source:** Wave 2 W2-03 (plan mode integration)
+
+### R-103: Props Passadas mas não Declaradas na Assinatura São Silenciosas [HIGH]
+**Rule:** Em componentes internos (sub-componentes não exportados), uma prop passada no JSX mas ausente na função de destructuring não causa erro — ela é silenciosamente ignorada. Isso quebra funcionalidades sem nenhum aviso em runtime ou em testes que não cobrem o fluxo específico.
+**Exemplo:** `DoseCard` recebia `onToggleSelection` no JSX (linha 251) mas não estava no `function DoseCard({ ... })` — o card nunca ativava seleção.
+**Prevention:** Ao criar componentes internos com props de interação, listar TODAS as props no destructuring da assinatura e adicionar ao menos um teste de click/interaction que verifique o callback.
+**Source:** Wave 2 PR #240 — Gemini HIGH review comment.
+
+### R-104: `||` vs `??` para Valores Numericos com Zero Válido [MEDIUM]
+**Rule:** Ao usar `||` como fallback para valores numéricos (e.g., `dosage_per_intake || 1`), o valor `0` é tratado como falsy e substituído pelo fallback — resultado incorreto. Use `??` (nullish coalescing) quando `0` é um valor legítimo.
+**Rule:** `x || default` → substitui `0`, `''`, `false` por `default` (falsy check)
+**Rule:** `x ?? default` → substitui apenas `null` e `undefined` por `default` (nullish check)
+**Source:** Wave 2 PR #240 — Gemini MEDIUM review comment, `expandProtocolsToDoses`.
+
+### R-105: Remover Dead Code Imediatamente ao Substituir Seções [HIGH]
+**Rule:** Ao substituir uma seção de JSX por um novo componente (e.g., HealthScoreCard → RingGauge, TRATAMENTO section → DoseZoneList), remover simultaneamente: (1) as props/variáveis que alimentavam a seção antiga, (2) os useMemos/states relacionados, (3) os imports não mais utilizados. Dead code esquecido causa lint failures no CI e confunde agentes futuros.
+**Checklist pós-substituição:**
+1. `grep -n "NomeVarAntiga"` no arquivo — se só aparece na definição, remover
+2. Verificar se o import do hook ainda é necessário
+3. `npm run lint` localmente antes do commit
+**Source:** Wave 2 PR #240 — 8 lint errors de dead code não removido (trend, percentage, magnitude, standaloneProtocols, fallbackProtocols, selectedMedicines, toggleMedicineSelection, handleBatchRegister).
+
+### R-106: Testes com Date Devem Usar setHours (não UTC Hardcoded) [HIGH]
+**Rule:** Ao criar datas de referência em testes que envolvem horas locais (como `classifyDose` que usa `setHours` internamente), NUNCA usar timestamps UTC fixos. Esses timestamps produzem horas locais diferentes por timezone.
+**Correto:**
+```js
+const now = new Date()
+now.setHours(9, 30, 0, 0) // 09:30 LOCAL, funciona em qualquer timezone
+```
+**Errado:**
+```js
+const now = new Date('2026-03-05T12:30:00.000Z') // = 09:30 BRT, = 12:30 UTC → falha no CI
+```
+**Atenção com bail:1:** vitest.critical.config.js usa `bail: 1` — o PRIMEIRO teste que falha encerra a suíte. Isso mascara outras falhas timezone-dependentes no mesmo arquivo. Rodar `test:critical` sem bail localmente revela todas as falhas.
+**Source:** Wave 2 PR #240 — CI falhou com `classifyDose > classifica dose 1h atrás como late`.
+
+### R-107: useState não Reage a Mudanças de Prop Derivada — Usar useEffect [MEDIUM]
+**Rule:** `useState(() => derivedValue)` usa o initializer APENAS na montagem. Se `derivedValue` pode mudar depois, adicionar `useEffect` para sincronizar quando não há preferência do usuário salva.
+**Padrão:**
+```js
+const [viewMode, setViewMode] = useState(() => localStorage.getItem('mr_view_mode') || defaultViewMode)
+useEffect(() => {
+  if (!localStorage.getItem('mr_view_mode')) setViewMode(defaultViewMode)
+}, [defaultViewMode])
+```
+**Source:** Wave 2 PR #240 — Gemini HIGH: viewMode não reagia a mudanças de complexidade.
+
+### R-108: Page Visibility API para Pausar Intervals em Abas Inativas [LOW]
+**Rule:** `setInterval` continua em abas não visíveis. Para operações de UI, usar `visibilitychange` para pausar/retomar. Ao voltar à aba, atualizar o estado imediatamente.
+**Source:** Wave 2 PR #240 — Gemini MEDIUM.
+
+---
+
+*Last updated: 2026-03-06*
+*Rules: R-001 to R-108*

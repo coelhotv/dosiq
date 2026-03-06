@@ -26,9 +26,15 @@ import ReportGenerator from '@features/reports/components/ReportGenerator'
 import { checkNewMilestones } from '@dashboard/services/milestoneService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { getCurrentUser } from '@shared/utils/supabase'
-import { useAdherenceTrend } from '@adherence/hooks/useAdherenceTrend'
 import { useInsights } from '@dashboard/hooks/useInsights'
 import { useCachedQuery } from '@shared/hooks/useCachedQuery'
+import RingGauge from '@dashboard/components/RingGauge'
+import StockBars from '@dashboard/components/StockBars'
+import DoseZoneList from '@dashboard/components/DoseZoneList'
+import AdaptiveLayout from '@dashboard/components/AdaptiveLayout'
+import ViewModeToggle from '@dashboard/components/ViewModeToggle'
+import { useDoseZones } from '@dashboard/hooks/useDoseZones'
+import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import styles from './Dashboard.module.css'
 
 // Constante para chave de armazenamento de alertas snoozed
@@ -86,8 +92,11 @@ export default function Dashboard({ onNavigate }) {
     }
   })
 
-  // Dados de tendência de adesão
-  const { trend, percentage, magnitude } = useAdherenceTrend()
+  // Wave 2 — zonas temporais de doses e complexidade progressiva (W2-01, W2-02, W2-10)
+  const { zones, totals } = useDoseZones()
+  const { mode: complexityMode, defaultViewMode, ringGaugeSize } = useComplexityMode()
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('mr_view_mode') || defaultViewMode)
+  const [selectedDoseKeys, setSelectedDoseKeys] = useState(new Set())
 
   // Dados de insight
   const { insight, loading: insightLoading } = useInsights({
@@ -228,6 +237,13 @@ export default function Dashboard({ onNavigate }) {
     loadInitialData()
   }, [])
 
+  // Sincronizar viewMode com defaultViewMode quando não há preferência salva pelo usuário
+  useEffect(() => {
+    if (!localStorage.getItem('mr_view_mode')) {
+      setViewMode(defaultViewMode)
+    }
+  }, [defaultViewMode])
+
   // Carregar dados de adesão para Sparkline
   useEffect(() => {
     async function loadAdherence() {
@@ -291,58 +307,6 @@ export default function Dashboard({ onNavigate }) {
     }
   }, [stats])
 
-  // 4. Protocolos Avulsos - Próximos 5 ordenados cronologicamente
-  const standaloneProtocols = useMemo(() => {
-    const now = new Date()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
-    const toleranceWindowMinutes = 2 * 60 // 2 horas de tolerância
-
-    return rawProtocols
-      .filter((p) => !p.treatment_plan_id && p.active)
-      .sort((a, b) => {
-        // Converter next_dose para minutos
-        const getMinutes = (time) => {
-          if (!time || time === '--:--') return Infinity
-          const [h, m] = time.split(':').map(Number)
-          return h * 60 + m
-        }
-
-        const aMinutes = getMinutes(a.next_dose)
-        const bMinutes = getMinutes(b.next_dose)
-
-        // Verificar se está dentro da janela de tolerância (2h após o horário)
-        const aIsInToleranceWindow =
-          a.is_in_tolerance_window ||
-          (aMinutes >= currentMinutes - toleranceWindowMinutes && aMinutes < currentMinutes)
-        const bIsInToleranceWindow =
-          b.is_in_tolerance_window ||
-          (bMinutes >= currentMinutes - toleranceWindowMinutes && bMinutes < currentMinutes)
-
-        // Verificar se é dose futura (ainda não passou)
-        const aIsFuture = aMinutes >= currentMinutes
-        const bIsFuture = bMinutes >= currentMinutes
-
-        // Prioridade: 1. Dentro da janela de tolerância (urgente), 2. Futuro, 3. Passado
-        if (aIsInToleranceWindow && !bIsInToleranceWindow) return -1
-        if (!aIsInToleranceWindow && bIsInToleranceWindow) return 1
-
-        // Ambos dentro ou ambos fora da janela - ordenar por futuro vs passado
-        if (aIsFuture && !bIsFuture) return -1
-        if (!aIsFuture && bIsFuture) return 1
-
-        // Mesmo grupo
-        if (aIsFuture && bIsFuture) {
-          // Ambos futuros - ordenar cronologicamente (mais cedo primeiro)
-          return aMinutes - bMinutes
-        }
-
-        // Ambos passados (doses de amanhã) - ordenar por proximidade com o horário atual
-        // (mais próximo de "agora" primeiro, ou seja, decrescente)
-        return bMinutes - aMinutes
-      })
-      .slice(0, 5)
-  }, [rawProtocols])
-
   // 2. Injetar dados de próxima dose nos planos de tratamento
   const treatmentPlans = useMemo(() => {
     return rawTreatmentPlans.map((plan) => ({
@@ -354,13 +318,19 @@ export default function Dashboard({ onNavigate }) {
     }))
   }, [rawTreatmentPlans, rawProtocols])
 
-  // Fallback: protocolos do primeiro plano se não houver avulsos
-  const fallbackProtocols = useMemo(() => {
-    if (standaloneProtocols.length > 0) return []
-    if (treatmentPlans.length === 0) return []
-
-    return treatmentPlans[0].protocols?.filter((p) => p.active).slice(0, 5) || []
-  }, [standaloneProtocols, treatmentPlans])
+  // StockBars items — mapeia stockSummary para formato do componente (W2-09)
+  const stockBarsItems = useMemo(
+    () =>
+      (stockSummary || []).map((s) => ({
+        medicineId: s.medicine?.id,
+        name: s.medicine?.name || 'Desconhecido',
+        currentStock: s.total || 0,
+        dailyConsumption: s.dailyIntake || 0,
+        daysRemaining: s.daysRemaining || 0,
+        level: s.isZero ? 'critical' : s.isLow ? 'low' : s.daysRemaining >= 30 ? 'high' : 'normal',
+      })),
+    [stockSummary]
+  )
 
   // 2. Saudação Dinâmica baseada no horário
   const getGreeting = () => {
@@ -532,55 +502,41 @@ export default function Dashboard({ onNavigate }) {
     }
   }
 
-  const [selectedMedicines, setSelectedMedicines] = useState({})
-
-  const toggleMedicineSelection = (planId, protocolId) => {
-    setSelectedMedicines((prev) => {
-      const planSelections = prev[planId] || []
-      const isSelected = planSelections.includes(protocolId)
-
-      const newSelections = isSelected
-        ? planSelections.filter((id) => id !== protocolId)
-        : [...planSelections, protocolId]
-
-      return {
-        ...prev,
-        [planId]: newSelections,
-      }
-    })
+  // Adapters Wave 2 (D-01): bridge entre interface DoseZoneList e handlers existentes
+  const handleRegisterFromZone = async (protocolId, dosagePerIntake) => {
+    const protocol = rawProtocols.find((p) => p.id === protocolId)
+    if (!protocol) return
+    return handleRegisterDose(protocol.medicine_id, protocolId, dosagePerIntake)
   }
 
-  const handleBatchRegister = async (plan, selectedProtocolIds) => {
+  const handleBatchRegisterDoses = async (doseItems) => {
     try {
-      // Se nada selecionado, registra todos por padrão
-      const protocolsToLog =
-        selectedProtocolIds && selectedProtocolIds.length > 0
-          ? plan.protocols.filter((p) => selectedProtocolIds.includes(p.id))
-          : plan.protocols.filter((p) => p.active)
-
-      if (protocolsToLog.length === 0) return
-
-      const logsToSave = protocolsToLog.map((p) => ({
-        protocol_id: p.id,
-        medicine_id: p.medicine_id,
-        quantity_taken: p.dosage_per_intake || 1,
+      const logsToSave = doseItems.map((item) => ({
+        protocol_id: item.protocolId,
+        medicine_id: item.medicineId,
+        quantity_taken: item.dosagePerIntake,
         taken_at: new Date().toISOString(),
-        notes: `[Lote Dashboard] Plano: ${plan.name}`,
+        notes: '[Lote DoseZoneList]',
       }))
-
       await logService.createBulk(logsToSave)
-
-      // Limpar seleção do plano após sucesso
-      setSelectedMedicines((prev) => ({
-        ...prev,
-        [plan.id]: [],
-      }))
-
       refresh()
     } catch (err) {
       console.error('Erro no registro em lote:', err)
       alert('Erro ao registrar lote. Tente novamente.')
     }
+  }
+
+  const handleToggleDoseSelection = (protocolId, scheduledTime) => {
+    const key = `${protocolId}:${scheduledTime}`
+    setSelectedDoseKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
   }
 
   if (isLoading || contextLoading) return <Loading text="Sincronizando Command Center..." />
@@ -611,12 +567,11 @@ export default function Dashboard({ onNavigate }) {
             <ThemeToggle size="sm" position="inline" />
           </div>
         </div>
-        <HealthScoreCard
+        <RingGauge
           score={stats.score}
           streak={stats.currentStreak}
-          trend={trend}
-          trendPercentage={percentage}
-          magnitude={magnitude}
+          size={ringGaugeSize}
+          sparklineData={dailyAdherence}
           onClick={() => setIsHealthDetailsOpen(true)}
         />
       </header>
@@ -721,104 +676,42 @@ export default function Dashboard({ onNavigate }) {
         />
       </section>
 
-      {/* 3. Tratamento - Parte Superior: Planos Completos */}
+      {/* 3. Tratamento — zonas temporais de doses (Wave 2, W2-10) */}
+      {/* Substitui: "TRATAMENTO" (TreatmentAccordion loop) + "PRÓXIMAS DOSES" (SwipeRegisterItem loop) */}
+      {/* Modo plan reutiliza TreatmentAccordion internamente (Princípio 2 da visão UX) */}
       <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>TRATAMENTO</h2>
-          <span className={styles.sectionSubtitle}>
-            {treatmentPlans.length} {treatmentPlans.length === 1 ? 'Plano' : 'Planos'}
-          </span>
-        </div>
-
-        <div className={styles.plansList}>
-          {treatmentPlans.map((plan) => (
-            <TreatmentAccordion
-              key={plan.id}
-              protocol={{
-                id: plan.id,
-                name: plan.name,
-                medicines_count: plan.protocols?.length || 0,
-                next_dose: plan.protocols?.[0]?.next_dose || '--:--',
-              }}
-              selectedMedicines={selectedMedicines[plan.id] || []}
-              onBatchRegister={(p, selectedIds) => handleBatchRegister(plan, selectedIds)}
-            >
-              {plan.protocols
-                ?.filter((p) => p.active)
-                .map((p) => (
-                  <SwipeRegisterItem
-                    key={p.id}
-                    medicine={p.medicine}
-                    dosagePerIntake={p.dosage_per_intake}
-                    time={p.next_dose || '--:--'}
-                    isSelected={(selectedMedicines[plan.id] || []).includes(p.id)}
-                    onToggleSelection={() => toggleMedicineSelection(plan.id, p.id)}
-                    onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
-                  />
-                ))}
-            </TreatmentAccordion>
-          ))}
-        </div>
+        <ViewModeToggle
+          mode={viewMode}
+          onChange={(m) => {
+            setViewMode(m)
+            localStorage.setItem('mr_view_mode', m)
+          }}
+          hasTreatmentPlans={treatmentPlans.length > 0 && complexityMode !== 'simple'}
+        />
+        <AdaptiveLayout mode={complexityMode}>
+          <DoseZoneList
+            key={complexityMode}
+            zones={zones}
+            totals={totals}
+            viewMode={viewMode}
+            complexityMode={complexityMode}
+            onRegisterDose={handleRegisterFromZone}
+            onBatchRegister={handleBatchRegisterDoses}
+            onToggleSelection={handleToggleDoseSelection}
+            selectedDoses={selectedDoseKeys}
+          />
+        </AdaptiveLayout>
       </section>
 
-      {/* 3. Tratamento - Parte Inferior: Protocolos Avulsos */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>PRÓXIMAS DOSES</h2>
-        </div>
-
-        <div className={styles.standaloneList}>
-          {standaloneProtocols.length > 0 ? (
-            <>
-              {standaloneProtocols.map((p) => (
-                <SwipeRegisterItem
-                  key={p.id}
-                  medicine={p.medicine}
-                  dosagePerIntake={p.dosage_per_intake}
-                  time={p.next_dose || '--:--'}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
-                />
-              ))}
-
-              {/* Link Ver todos para standaloneProtocols */}
-              {standaloneProtocols.length > 0 && (
-                <button className={styles.viewAllLink} onClick={() => onNavigate?.('protocols')}>
-                  Ver todos →
-                </button>
-              )}
-            </>
-          ) : fallbackProtocols.length > 0 ? (
-            <>
-              {fallbackProtocols.map((p) => (
-                <SwipeRegisterItem
-                  key={p.id}
-                  medicine={p.medicine}
-                  dosagePerIntake={p.dosage_per_intake}
-                  time={p.next_dose || '--:--'}
-                  onRegister={() => handleRegisterDose(p.medicine_id, p.id, p.dosage_per_intake)}
-                />
-              ))}
-
-              {/* Link Ver todos para fallback */}
-              {fallbackProtocols.length > 0 && (
-                <button className={styles.viewAllLink} onClick={() => onNavigate?.('protocols')}>
-                  Ver todos →
-                </button>
-              )}
-            </>
-          ) : (
-            <div className={styles.emptyState}>
-              <EmptyState
-                illustration="protocols"
-                title="Nenhum protocolo ativo"
-                description="Cadastre seu primeiro protocolo para começar a acompanhar seu tratamento"
-                ctaLabel="Cadastrar Protocolo"
-                onCtaClick={() => onNavigate?.('protocols/new')}
-              />
-            </div>
-          )}
-        </div>
-      </section>
+      {/* StockBars — projeção visual de estoque por medicamento (Wave 2, W2-09) */}
+      {stockBarsItems.length > 0 && (
+        <StockBars
+          items={stockBarsItems}
+          showOnlyCritical={complexityMode === 'complex'}
+          maxItems={complexityMode === 'complex' ? 3 : undefined}
+          onItemClick={(medicineId) => onNavigate('stock', { medicineId })}
+        />
+      )}
 
       {/* 4. Last Doses Widget */}
       <section className={styles.section} aria-label="Últimas doses tomadas">
