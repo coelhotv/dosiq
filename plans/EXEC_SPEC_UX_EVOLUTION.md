@@ -73,18 +73,20 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 - [x] Integração com DashboardProvider validada
 - [x] Testes unitários cobrem edge cases temporais
 
-### Onda 3 — Navegação (Risco: ALTO)
+### Onda 3 — Navegação (Risco: ALTO) ✅ CONCLUÍDA
 
 **Objetivo:** Reestruturar a navegação de 5→4 tabs, criar tab Tratamento (fusão), evoluir Settings→Perfil, criar wizard de cadastro.
 
 **Pré-requisitos:** Ondas 1+2 concluídas. Componentes e hooks prontos.
 
+**Entrega:** PR #248 mergeado em 06/03/2026. 7/7 tasks, 387 testes, lint 0 erros.
+
 **Quality Gate final:**
-- [ ] Navegação 4 tabs funcional sem dead-ends
-- [ ] Todas as views existentes acessíveis pelo novo layout
-- [ ] Wizard cadastro substitui window.confirm chain
-- [ ] Nenhuma funcionalidade perdida na reorganização
-- [ ] Testes E2E passam (se existirem)
+- [x] Navegação 4 tabs funcional sem dead-ends (Hoje / Tratamento / Saúde / Perfil)
+- [x] Todas as views existentes acessíveis pelo novo layout
+- [x] Wizard cadastro (TreatmentWizard) com suporte a planos de tratamento inline
+- [x] Nenhuma funcionalidade perdida na reorganização
+- [x] validate:agent: 387/387 testes ✅ | lint: 0 erros ✅ | build: ✅
 
 ---
 
@@ -118,17 +120,17 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 | W2-09 | Integrar StockBars no Dashboard | `Dashboard.jsx` | P1 | W1-02 | ✅ DONE |
 | W2-10 | Integrar DoseZoneList no Dashboard | `Dashboard.jsx` | P0 | W2-03, W2-07 | ✅ DONE |
 
-### Onda 3 — Navegação
+### Onda 3 — Navegação ✅ CONCLUÍDA (PR #248 — 06/03/2026)
 
 | ID | Task | Arquivo | Prioridade | Deps | Status |
 |----|------|---------|------------|------|--------|
-| W3-01 | BottomNav 5→4 tabs | `BottomNav.jsx` + `App.jsx` | P0 | — | ⬜ TODO |
-| W3-02 | Tab "Tratamento" (fusão Meds+Prots) | `Treatment.jsx` (view) | P0 | W3-01 | ⬜ TODO |
-| W3-03 | Tab "Perfil" (evolução Settings) | `Profile.jsx` (view) | P0 | W3-01 | ⬜ TODO |
-| W3-04 | Sub-view "Minha Saúde" | `HealthHistory.jsx` | P1 | W3-03, W1-08, W1-03 | ⬜ TODO |
-| W3-05 | Wizard de Cadastro Unificado | `TreatmentWizard.jsx` | P1 | W3-02 | ⬜ TODO |
-| W3-06 | Migrar History→Saúde | `HealthHistory.jsx` | P1 | W3-04 | ⬜ TODO |
-| W3-07 | Cross-navigation (alertas→telas) | Múltiplos | P2 | W3-01..03 | ⬜ TODO |
+| W3-01 | BottomNav 5→4 tabs | `BottomNav.jsx` + `App.jsx` | P0 | — | ✅ DONE |
+| W3-02 | Tab "Tratamento" (fusão Meds+Prots) | `Treatment.jsx` (view) | P0 | W3-01 | ✅ DONE |
+| W3-03 | Tab "Perfil" (evolução Settings) | `Profile.jsx` (view) | P0 | W3-01 | ✅ DONE |
+| W3-04 | Sub-view "Minha Saúde" | `HealthHistory.jsx` | P1 | W3-03, W1-08, W1-03 | ✅ DONE |
+| W3-05 | Wizard de Cadastro Unificado | `TreatmentWizard.jsx` | P1 | W3-02 | ✅ DONE |
+| W3-06 | Migrar History→Saúde | `HealthHistory.jsx` | P1 | W3-04 | ✅ DONE |
+| W3-07 | Cross-navigation (alertas→telas) | Múltiplos | P2 | W3-01..03 | ✅ DONE |
 
 ---
 
@@ -229,15 +231,25 @@ Decisões arquiteturais documentadas:
 - D-02: selectedMedicines hook em posição irregular (line ~535) — NÃO movido em Wave 2, pendente Wave 3 — ver R-099
 - D-03: Múltiplas chamadas useDashboard() aceitas — ver R-100
 
-### Onda 3 — Navegação
+### Onda 3 — Navegação ✅ CONCLUÍDA
 
-- [ ] **W3-01** BottomNav 5→4 — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-02** Tab Tratamento — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-03** Tab Perfil — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-04** Sub-view Minha Saúde — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-05** Wizard Cadastro — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-06** Migrar History→Saúde — spec ✅ | código ⬜ | teste ⬜ | review ⬜
-- [ ] **W3-07** Cross-navigation — spec ✅ | código ⬜ | teste ⬜ | review ⬜
+- [x] **W3-01** BottomNav 5→4 — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W3-02** Tab Tratamento — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W3-03** Tab Perfil — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W3-04** Sub-view Minha Saúde (HealthHistory) — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W3-05** TreatmentWizard (com suporte a planos inline) — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W3-06** Migrar History→Saúde — spec ✅ | código ✅ | build ✅ | review ✅
+- [x] **W3-07** Cross-navigation (alertas→telas) — spec ✅ | código ✅ | build ✅ | review ✅
+
+**Onda 3 concluída em 2026-03-06 — PR #248 mergeado — validate:agent: 387/387 testes | build: ✅**
+**Revisão Gemini: aprovado. Bugs pós-entrega corrigidos no mesmo PR (2 commits).**
+
+Decisões arquiteturais documentadas:
+- D-04: `useCachedQuery` assinatura posicional (não objeto) — ver armadilhas em MEMORY.md
+- D-05: Calendar `setIsLoading` síncrono no effect (eslint-disable justificado) — evita race condition com microtasks
+- D-06: DoseZoneList não recebe `complexityMode` como prop — modo de densidade não afeta quais zonas abrem por padrão
+
+**Evolução UX — Todas as 3 ondas concluídas. 25 tasks | 30 arquivos criados/editados | 387 testes.**
 
 ---
 
@@ -314,5 +326,6 @@ W3-07 Cross-nav ←── W3-01..03 ───┘   │
 
 ---
 
-*Última atualização: 05/03/2026*
-*Onda 1 concluída (PR #237). Próximo passo: iniciar execução da Onda 2 — Lógica e Hooks.*
+*Última atualização: 06/03/2026*
+*Todas as 3 ondas concluídas. PR #237 (Onda 1) + PR #240 (Onda 2) + PR #248 (Onda 3) mergeados em main.*
+*Próximo passo: Fase 5 — Valor Clínico e Portabilidade (spec em `plans/EXEC_SPEC_FASE_5.md`).*
