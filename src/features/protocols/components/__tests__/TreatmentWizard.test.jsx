@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   useDashboard: vi.fn(() => ({
     refresh: vi.fn(),
+    medicines: [],
   })),
 }))
 
@@ -44,6 +45,7 @@ vi.mock('framer-motion', () => ({
 
 import TreatmentWizard from '../TreatmentWizard'
 import { medicineService, protocolService } from '@shared/services'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 
 describe('TreatmentWizard', () => {
   beforeEach(() => {
@@ -122,6 +124,30 @@ describe('TreatmentWizard', () => {
 
     fireEvent.click(removeButtons[0])
     expect(screen.queryAllByText('✕').length).toBe(0)
+  })
+
+  it('mostra toggle e select quando ha medicamentos cadastrados', () => {
+    useDashboard.mockReturnValue({
+      refresh: vi.fn(),
+      medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
+    })
+
+    render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
+
+    expect(screen.getByText('Já cadastrado')).toBeInTheDocument()
+    expect(screen.getByText('Novo medicamento')).toBeInTheDocument()
+  })
+
+  it('modo existente mostra select de medicamentos', () => {
+    useDashboard.mockReturnValue({
+      refresh: vi.fn(),
+      medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
+    })
+
+    render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('Já cadastrado'))
+    expect(screen.getByText('Losartana 50mg')).toBeInTheDocument()
   })
 
   it('submete com Pular no step 2 (skip stock)', async () => {

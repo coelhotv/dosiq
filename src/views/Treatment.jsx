@@ -4,45 +4,57 @@ import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { protocolService } from '@shared/services'
 import Button from '@shared/components/ui/Button'
+import Modal from '@shared/components/ui/Modal'
 import TreatmentPlanCard from './treatment/TreatmentPlanCard'
 import ProtocolListItem from './treatment/ProtocolListItem'
 import MedicineOrphanCard from './treatment/MedicineOrphanCard'
+import TreatmentWizard from '@protocols/components/TreatmentWizard'
 import './treatment/Treatment.css'
+
+const FREQUENCY_LABELS = {
+  diario: 'Diário',
+  dias_alternados: 'Dias alternados',
+  semanal: 'Semanal',
+  personalizado: 'Personalizado',
+  quando_necessario: 'Quando necessário',
+}
 
 export default function Treatment({ onNavigate }) {
   const [showInactive, setShowInactive] = useState(false)
+  const [isWizardOpen, setIsWizardOpen] = useState(false)
 
   const { medicines, protocols, refresh } = useDashboard()
 
-  const { data: treatmentPlans } = useCachedQuery({
-    key: 'treatmentPlans:all',
-    fetcher: () => treatmentPlanService.getAll(),
-  })
+  const { data: treatmentPlans } = useCachedQuery(
+    'treatmentPlans:all',
+    () => treatmentPlanService.getAll()
+  )
 
-  // Planos com protocolos ativos
-  const plans = useMemo(() =>
-    (treatmentPlans || [])
+  // Planos de tratamento com protocolos ativos embarcados
+  const plans = useMemo(() => {
+    if (!treatmentPlans || treatmentPlans.length === 0) return []
+
+    return treatmentPlans
       .map(plan => ({
         ...plan,
         activeProtocols: (plan.protocols || []).filter(p => p.active),
       }))
-      .filter(plan => plan.activeProtocols.length > 0),
-    [treatmentPlans]
-  )
+      .filter(plan => plan.activeProtocols.length > 0)
+  }, [treatmentPlans])
 
-  // Protocolos avulsos (ativos, sem plano)
+  // Medicamentos avulsos (ativos, sem plano)
   const standaloneProtocols = useMemo(() =>
     protocols.filter(p => p.active && !p.treatment_plan_id),
     [protocols]
   )
 
-  // Medicamentos sem protocolo
+  // Medicamentos sem tratamento
   const medicinesWithoutProtocol = useMemo(() => {
     const medsWithProtocol = new Set(protocols.map(p => p.medicine_id))
     return medicines.filter(m => !medsWithProtocol.has(m.id))
   }, [medicines, protocols])
 
-  // Protocolos inativos
+  // Tratamentos inativos
   const inactiveProtocols = useMemo(() =>
     protocols.filter(p => !p.active),
     [protocols]
@@ -74,9 +86,10 @@ export default function Treatment({ onNavigate }) {
     onNavigate('protocols', { medicineId: medicine.id })
   }, [onNavigate])
 
-  const handleNewTreatment = useCallback(() => {
-    onNavigate('medicines')
-  }, [onNavigate])
+  const handleWizardComplete = useCallback(() => {
+    setIsWizardOpen(false)
+    refresh()
+  }, [refresh])
 
   const isEmpty = plans.length === 0
     && standaloneProtocols.length === 0
@@ -86,7 +99,7 @@ export default function Treatment({ onNavigate }) {
     <div className="treatment-view">
       <div className="treatment-header">
         <h2 className="treatment-header__title">Meu Tratamento</h2>
-        <Button variant="primary" onClick={handleNewTreatment}>
+        <Button variant="primary" onClick={() => setIsWizardOpen(true)}>
           + Novo
         </Button>
       </div>
@@ -96,19 +109,19 @@ export default function Treatment({ onNavigate }) {
           <div className="treatment-empty__icon">💊</div>
           <div className="treatment-empty__title">Nenhum tratamento cadastrado</div>
           <p className="treatment-empty__desc">
-            Comece cadastrando seus medicamentos e protocolos para gerenciar seu tratamento
+            Comece cadastrando seus medicamentos para gerenciar seu tratamento
           </p>
-          <Button variant="primary" onClick={handleNewTreatment}>
+          <Button variant="primary" onClick={() => setIsWizardOpen(true)}>
             Cadastrar primeiro medicamento
           </Button>
         </div>
       ) : (
         <>
-          {/* Planos de Tratamento */}
+          {/* Planos de Tratamento (tratamentos complexos) */}
           {plans.length > 0 && (
             <div className="treatment-section">
               <div className="treatment-section__header">
-                📁 Planos de Tratamento
+                📁 Tratamentos
               </div>
               {plans.map(plan => (
                 <TreatmentPlanCard key={plan.id} plan={plan}>
@@ -125,11 +138,11 @@ export default function Treatment({ onNavigate }) {
             </div>
           )}
 
-          {/* Protocolos Avulsos */}
+          {/* Medicamentos Avulsos (tratamentos simples) */}
           {standaloneProtocols.length > 0 && (
             <div className="treatment-section">
               <div className="treatment-section__header">
-                📋 Protocolos Avulsos
+                💊 Medicamentos Avulsos
               </div>
               <div className="treatment-plan-card">
                 <div className="treatment-plan-card__body" style={{ paddingTop: 'var(--space-4)' }}>
@@ -146,11 +159,11 @@ export default function Treatment({ onNavigate }) {
             </div>
           )}
 
-          {/* Medicamentos sem Protocolo */}
+          {/* Medicamentos sem Tratamento */}
           {medicinesWithoutProtocol.length > 0 && (
             <div className="treatment-section">
               <div className="treatment-section__header">
-                💊 Sem Protocolo
+                🔸 Sem Tratamento
               </div>
               {medicinesWithoutProtocol.map(medicine => (
                 <MedicineOrphanCard
@@ -178,10 +191,10 @@ export default function Treatment({ onNavigate }) {
                     <div key={protocol.id} className="medicine-orphan-card">
                       <div className="medicine-orphan-card__info">
                         <span className="medicine-orphan-card__name">
-                          {protocol.medicine?.name || protocol.name || 'Protocolo'}
+                          {protocol.medicine?.name || protocol.name || 'Medicamento'}
                         </span>
                         <span className="medicine-orphan-card__detail">
-                          Inativo
+                          {FREQUENCY_LABELS[protocol.frequency] || protocol.frequency} · Inativo
                         </span>
                       </div>
                       <button
@@ -198,6 +211,17 @@ export default function Treatment({ onNavigate }) {
           )}
         </>
       )}
+
+      {/* Wizard modal */}
+      <Modal
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+      >
+        <TreatmentWizard
+          onComplete={handleWizardComplete}
+          onCancel={() => setIsWizardOpen(false)}
+        />
+      </Modal>
     </div>
   )
 }

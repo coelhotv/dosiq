@@ -4,14 +4,15 @@ import { render, screen, waitFor } from '@testing-library/react'
 vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   useDashboard: vi.fn(() => ({
     protocols: [],
-    stats: { adherenceScore: 85, currentStreak: 5, bestStreak: 12 },
+    stats: { score: 85, currentStreak: 5 },
     refresh: vi.fn(),
   })),
 }))
 
 vi.mock('@shared/services', () => ({
-  logService: {
+  cachedLogService: {
     getByMonth: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
+    getAllPaginated: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
     create: vi.fn(),
     update: vi.fn(),
     createBulk: vi.fn(),
@@ -21,7 +22,11 @@ vi.mock('@shared/services', () => ({
 
 vi.mock('@services/api/adherenceService', () => ({
   adherenceService: {
-    getAdherenceSummary: vi.fn(() => Promise.resolve({ trend: 'up' })),
+    getAdherenceSummary: vi.fn(() => Promise.resolve({
+      overallTaken: 42,
+      overallExpected: 50,
+      longestStreak: 12,
+    })),
     getDailyAdherence: vi.fn(() => Promise.resolve([])),
   },
 }))
@@ -66,7 +71,7 @@ describe('HealthHistory', () => {
     expect(screen.getByTestId('loading')).toBeInTheDocument()
   })
 
-  it('renderiza resumo de adesao apos carregar', async () => {
+  it('renderiza score de adesao do dashboard context', async () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
 
     await waitFor(() => {
@@ -74,12 +79,11 @@ describe('HealthHistory', () => {
     })
   })
 
-  it('renderiza streak e melhor streak', async () => {
+  it('renderiza streak atual', async () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText(/5d streak/)).toBeInTheDocument()
-      expect(screen.getByText(/Melhor: 12d/)).toBeInTheDocument()
     })
   })
 

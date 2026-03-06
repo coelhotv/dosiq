@@ -226,6 +226,8 @@ Agrupadores de protocolos (ex: "Protocolo Anti-Inflamatório").
 | `name` | text (NOT NULL) | Nome do plano |
 | `description` | text | Descrição detalhada |
 | `objective` | text | Objetivo do tratamento |
+| `emoji` | text (default: '💊') | Emoji visual do plano (Wave 3) |
+| `color` | text (default: '#6366f1') | Cor hex do badge do plano (Wave 3) |
 | `user_id` | uuid (FK, NOT NULL) | Dono do registro |
 | `created_at` | timestamptz (default: now()) | Data de criação |
 

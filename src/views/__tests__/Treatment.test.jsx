@@ -21,6 +21,18 @@ vi.mock('@protocols/services/treatmentPlanService', () => ({
   treatmentPlanService: { getAll: vi.fn() },
 }))
 
+vi.mock('@shared/components/ui/Modal', () => ({
+  default: ({ children, isOpen }) => isOpen ? <div data-testid="modal">{children}</div> : null,
+}))
+
+vi.mock('@protocols/components/TreatmentWizard', () => ({
+  default: ({ onCancel }) => (
+    <div data-testid="treatment-wizard">
+      <button onClick={onCancel}>Cancelar</button>
+    </div>
+  ),
+}))
+
 import Treatment from '../Treatment'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useCachedQuery } from '@shared/hooks/useCachedQuery'
@@ -48,15 +60,14 @@ describe('Treatment', () => {
     expect(screen.getByText('Cadastrar primeiro medicamento')).toBeInTheDocument()
   })
 
-  it('navega para medicines ao clicar Novo', () => {
-    const onNavigate = vi.fn()
-    render(<Treatment onNavigate={onNavigate} />)
+  it('abre wizard ao clicar Novo', () => {
+    render(<Treatment onNavigate={vi.fn()} />)
 
     fireEvent.click(screen.getByText('+ Novo'))
-    expect(onNavigate).toHaveBeenCalledWith('medicines')
+    expect(screen.getByTestId('treatment-wizard')).toBeInTheDocument()
   })
 
-  it('renderiza protocolos avulsos', () => {
+  it('renderiza medicamentos avulsos', () => {
     useDashboard.mockReturnValue({
       medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
       protocols: [{
@@ -75,9 +86,10 @@ describe('Treatment', () => {
     render(<Treatment onNavigate={vi.fn()} />)
 
     expect(screen.getByText('Losartana')).toBeInTheDocument()
+    expect(screen.getByText(/Medicamentos Avulsos/)).toBeInTheDocument()
   })
 
-  it('renderiza medicamentos sem protocolo com CTA', () => {
+  it('renderiza medicamentos sem tratamento com CTA', () => {
     useDashboard.mockReturnValue({
       medicines: [{ id: 'm1', name: 'Vitamina D', dosage_per_pill: 1000, dosage_unit: 'ui', type: 'suplemento' }],
       protocols: [],
@@ -87,9 +99,10 @@ describe('Treatment', () => {
     render(<Treatment onNavigate={vi.fn()} />)
 
     expect(screen.getByText('Vitamina D')).toBeInTheDocument()
+    expect(screen.getByText(/Sem Tratamento/)).toBeInTheDocument()
   })
 
-  it('renderiza planos de tratamento com protocolos ativos', () => {
+  it('renderiza planos de tratamento', () => {
     useDashboard.mockReturnValue({
       medicines: [{ id: 'm1', name: 'Losartana' }],
       protocols: [{
@@ -110,19 +123,12 @@ describe('Treatment', () => {
         id: 'tp1',
         name: 'Hipertensao',
         emoji: '❤️',
-        protocols: [{
-          id: 'p1',
-          active: true,
-          medicine: { name: 'Losartana' },
-          frequency: 'diario',
-          time_schedule: ['08:00'],
-          dosage_per_intake: 1,
-        }],
       }],
     })
 
     render(<Treatment onNavigate={vi.fn()} />)
 
     expect(screen.getByText('Hipertensao')).toBeInTheDocument()
+    expect(screen.getByText('Losartana')).toBeInTheDocument()
   })
 })
