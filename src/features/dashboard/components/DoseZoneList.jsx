@@ -34,12 +34,17 @@ function getDefaultExpanded(zone, itemCount, complexityMode) {
  * DoseCard — Card de dose para modo hora (time mode).
  * Mostra horário, nome do medicamento, PlanBadge e botão de registro.
  */
-function DoseCard({ dose, onRegisterDose, selectedDoses, done = false }) {
+function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done = false }) {
   const isSelected = selectedDoses?.has(`${dose.protocolId}:${dose.scheduledTime}`) ?? false
 
   const displayTime = done && dose.registeredAt
     ? new Date(dose.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : dose.scheduledTime
+
+  const handleCardClick = (e) => {
+    if (done || !onToggleSelection || e.target.closest('.dose-card__register-btn')) return
+    onToggleSelection(dose.protocolId, dose.scheduledTime)
+  }
 
   return (
     <motion.div
@@ -48,6 +53,8 @@ function DoseCard({ dose, onRegisterDose, selectedDoses, done = false }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
+      style={!done && onToggleSelection ? { cursor: 'pointer' } : undefined}
     >
       <div className="dose-card__time">{displayTime}</div>
       <div className="dose-card__info">
@@ -186,7 +193,6 @@ function makeSyntheticProtocol(group, zoneKey) {
  */
 export default function DoseZoneList({
   zones,
-  totals,
   viewMode,
   complexityMode,
   onRegisterDose,

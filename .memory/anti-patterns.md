@@ -93,8 +93,11 @@
 | AP-W08 | Use `onRegister(medicineId, dosage)` interface from SwipeRegisterItem as if it were `onRegisterDose(protocolId, dosage)` | Wrong ID passed to logService.create(); log references wrong protocol | Always wrap: `onRegister={(_medicineId, dosage) => onRegisterDose(dose.protocolId, dosage)}` | R-102 |
 | AP-W09 | Refactor Dashboard.jsx handlers when a new component has incompatible interface | High risk of breaking SmartAlerts, LogForm integrations in 932-line file | Create thin adapter functions (D-01 pattern); never refactor existing handlers for new components | R-098 |
 | AP-W10 | Export internal sub-components (DoseCard, ZoneSection) from a parent component file | Increases API surface; creates unintended dependencies | Keep internal sub-components unexported; only export the public API | R-101 |
+| AP-W11 | Pass a prop to an internal sub-component JSX but omit it from the function signature | Prop silently ignored; feature broken with no error or warning in runtime or tests | List ALL interaction props in destructuring; add click/interaction test for each callback | R-103 |
+| AP-W12 | Use `\|\|` as fallback for numeric props that can legitimately be `0` | `dosage_per_intake = 0` becomes `1`; incorrect dose recorded | Use `??` (nullish coalescing) for numeric defaults; `\|\|` only for non-zero defaults | R-104 |
+| AP-W13 | Leave dead code (old states, memos, handlers) after replacing a JSX section | CI lint failure; confuses future agents about what is active | Run `grep -n "NomeVarAntiga"` post-replacement; `npm run lint` before commit | R-105 |
 
 ---
 
-*Last updated: 2026-03-05*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W10*
+*Last updated: 2026-03-06*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W13*
