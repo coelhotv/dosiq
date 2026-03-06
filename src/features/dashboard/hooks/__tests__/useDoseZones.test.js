@@ -77,13 +77,15 @@ describe('classifyDose', () => {
 // 2. isDoseRegistered
 // ─────────────────────────────────────────────
 describe('isDoseRegistered', () => {
+  // Criar taken_at em 08:05 LOCAL — timezone-agnostic (setHours usa tempo local)
+  const takenAt0805 = new Date()
+  takenAt0805.setHours(8, 5, 0, 0)
   const todayLogs = [
-    // log às 08:05 para p1
-    { protocol_id: 'p1', taken_at: '2026-03-05T11:05:00.000Z' }, // BRT 08:05
+    { protocol_id: 'p1', taken_at: takenAt0805.toISOString() },
   ]
 
   it('retorna true quando log existe dentro da tolerância de 30min', () => {
-    // dose às 08:00 → log às 08:05 → diferença = 5min → dentro do limite
+    // dose às 08:00 → log às 08:05 local → diferença = 5min → dentro do limite
     expect(isDoseRegistered('p1', '08:00', todayLogs)).toBe(true)
   })
 
@@ -176,7 +178,10 @@ describe('filterTodayLogs', () => {
 describe('useDoseZones — hook behavior', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-03-05T12:30:00.000Z')) // 09:30 BRT
+    // Definir "agora" como 09:30 LOCAL — timezone-agnostic
+    const fakeNow = new Date()
+    fakeNow.setHours(9, 30, 0, 0)
+    vi.setSystemTime(fakeNow)
   })
 
   afterEach(() => {
