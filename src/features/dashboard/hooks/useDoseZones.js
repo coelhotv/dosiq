@@ -116,18 +116,18 @@ export function expandProtocolsToDoses(protocols, todayLogs) {
     if (protocol.frequency === 'quando_necessario') continue
     const times = protocol.time_schedule || []
     for (const time of times) {
-      const registered = isDoseRegistered(protocol.id, time, todayLogs)
+      const registrationTime = findRegistrationTime(protocol.id, time, todayLogs)
       doses.push({
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         medicineName: protocol.medicine?.name || 'Desconhecido',
         scheduledTime: time,
-        dosagePerIntake: protocol.dosage_per_intake || 1,
+        dosagePerIntake: protocol.dosage_per_intake ?? 1,
         treatmentPlanId: protocol.treatment_plan_id || null,
         treatmentPlanName: protocol.treatment_plan?.name || null,
         planBadge: protocol.treatment_plan?.badge || null,
-        isRegistered: registered,
-        registeredAt: registered ? findRegistrationTime(protocol.id, time, todayLogs) : null,
+        isRegistered: !!registrationTime,
+        registeredAt: registrationTime,
       })
     }
   }
