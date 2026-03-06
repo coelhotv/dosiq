@@ -524,29 +524,23 @@ async function checkUserReminders(bot, userId, chatId) {
 export async function checkReminders(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   
-  logger.info('Iniciando verificação de lembretes para todos os usuários', {
-    correlationId
-  });
-  
   const users = await getAllUsersWithTelegram();
-  
+
   if (users.length === 0) {
     logger.warn('Nenhum usuário com Telegram encontrado');
     return;
   }
 
-  logger.info(`Encontrados ${users.length} usuários com Telegram configurado`, {
+  logger.info(`Encontrados ${users.length} usuários com Telegram. Iniciando envio de lembretes.`, {
     correlationId
   });
-  console.log(`[Tasks] Enviando lembretes para ${users.length} usuário(s)`);
 
   for (const user of users) {
-    console.log(`[Tasks] Processando usuário: ${user.user_id}`);
+    logger.debug(`Processando usuário: ${user.user_id}`, { correlationId });
     await checkUserReminders(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Verificação de lembretes concluída', { correlationId });
-  console.log('[Tasks] Verificação de lembretes concluída');
 }
 
 /**
@@ -631,18 +625,17 @@ export async function runDailyDigest(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   
   logger.info('Iniciando resumo diário para todos os usuários', { correlationId });
-  
+
   const users = await getAllUsersWithTelegram();
-  
-  console.log(`[Tasks] Enviando resumo diário para ${users.length} usuário(s)`);
-  
+
+  logger.info(`Enviando resumo diário para ${users.length} usuário(s)`, { correlationId });
+
   for (const user of users) {
-    console.log(`[Tasks] Enviando resumo diário para usuário: ${user.user_id}`);
+    logger.debug(`Enviando resumo diário para usuário: ${user.user_id}`, { correlationId });
     await runUserDailyDigest(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Resumo diário concluído', { correlationId });
-  console.log('[Tasks] Resumo diário concluído');
 }
 
 /**
@@ -807,18 +800,17 @@ export async function checkStockAlerts(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   
   logger.info('Iniciando alertas de estoque para todos os usuários', { correlationId });
-  
+
   const users = await getAllUsersWithTelegram();
-  
-  console.log(`[Tasks] Verificando alertas de estoque para ${users.length} usuário(s)`);
-  
+
+  logger.info(`Verificando alertas de estoque para ${users.length} usuário(s)`, { correlationId });
+
   for (const user of users) {
-    console.log(`[Tasks] Verificando estoque para usuário: ${user.user_id}`);
+    logger.debug(`Verificando estoque para usuário: ${user.user_id}`, { correlationId });
     await checkUserStockAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Alertas de estoque concluídos', { correlationId });
-  console.log('[Tasks] Alertas de estoque concluídos');
 }
 
 /**
@@ -833,23 +825,20 @@ export async function checkAdherenceReports(bot, options = {}) {
 
   try {
     const users = await getAllUsersWithTelegram();
-    console.log(`[Tasks] Enviando relatórios semanais para ${users.length} usuário(s)`);
+    logger.info(`Enviando relatórios semanais para ${users.length} usuário(s)`, { correlationId });
 
     for (const user of users) {
       try {
-        console.log(`[Tasks] Enviando relatório semanal para usuário: ${user.user_id}`);
+        logger.debug(`Enviando relatório semanal para usuário: ${user.user_id}`, { correlationId });
         await runUserWeeklyAdherenceReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
         logger.error(`Erro ao enviar relatório de adesão`, err, { userId: user.user_id, correlationId });
-        console.error(`[Tasks] Erro ao enviar relatório para usuário ${user.user_id}:`, err.message);
       }
     }
 
     logger.info('Relatórios de adesão concluídos', { correlationId });
-    console.log('[Tasks] Relatórios de adesão concluídos');
   } catch (err) {
     logger.error('Falha ao executar relatórios de adesão', err, { correlationId });
-    console.error('[Tasks] Falha geral nos relatórios de adesão:', err.message);
     throw err;
   }
 }
@@ -1004,15 +993,14 @@ export async function checkTitrationAlerts(bot, options = {}) {
 
   const users = await getAllUsersWithTelegram();
 
-  console.log(`[Tasks] Verificando alertas de titulação para ${users.length} usuário(s)`);
+  logger.info(`Verificando alertas de titulação para ${users.length} usuário(s)`, { correlationId });
 
   for (const user of users) {
-    console.log(`[Tasks] Verificando titulações para usuário: ${user.user_id}`);
+    logger.debug(`Verificando titulações para usuário: ${user.user_id}`, { correlationId });
     await checkUserTitrationAlerts(bot, user.user_id, user.telegram_chat_id);
   }
 
   logger.info('Alertas de titulação concluídos', { correlationId });
-  console.log('[Tasks] Alertas de titulação concluídos');
 }
 
 /**
@@ -1027,23 +1015,20 @@ export async function checkMonthlyReport(bot, options = {}) {
 
   try {
     const users = await getAllUsersWithTelegram();
-    console.log(`[Tasks] Enviando relatórios mensais para ${users.length} usuário(s)`);
+    logger.info(`Enviando relatórios mensais para ${users.length} usuário(s)`, { correlationId });
 
     for (const user of users) {
       try {
-        console.log(`[Tasks] Enviando relatório mensal para usuário: ${user.user_id}`);
+        logger.debug(`Enviando relatório mensal para usuário: ${user.user_id}`, { correlationId });
         await runUserMonthlyReport(bot, user.user_id, user.telegram_chat_id);
       } catch (err) {
         logger.error(`Erro ao enviar relatório mensal`, err, { userId: user.user_id, correlationId });
-        console.error(`[Tasks] Erro ao enviar relatório mensal para usuário ${user.user_id}:`, err.message);
       }
     }
 
     logger.info('Relatórios mensais concluídos', { correlationId });
-    console.log('[Tasks] Relatórios mensais concluídos');
   } catch (err) {
     logger.error('Falha ao executar relatórios mensais', err, { correlationId });
-    console.error('[Tasks] Falha geral nos relatórios mensais:', err.message);
     throw err;
   }
 }
