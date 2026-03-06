@@ -204,6 +204,29 @@
   gap: var(--space-1);
 }
 
+.health-history-timeline__more {
+  width: 100%;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  background: var(--glass-bg-light);
+  border: 1px dashed var(--glass-border-light);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.health-history-timeline__more:hover {
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.08);
+  border-color: var(--color-primary);
+}
+
+.health-history-summary__detail {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
 /* Stats */
 .health-history-stats {
   padding: var(--space-4);
