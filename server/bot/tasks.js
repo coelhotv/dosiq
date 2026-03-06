@@ -34,6 +34,74 @@ function wrapSendMessageResult(result, correlationId) {
   };
 }
 
+/**
+ * Função genérica para enviar alertas de estoque
+ * Consolida lógica compartilhada: deduplicação, envio, logging e enfileiramento em DLQ
+ *
+ * @param {object} params - Parâmetros da função
+ * @param {string} params.userId - ID do usuário
+ * @param {string} params.chatId - ID do chat Telegram
+ * @param {string} params.notificationType - Tipo de notificação ('stock_alert', 'proactive_stock_alert')
+ * @param {function} params.formatMessage - Função que retorna a mensagem formatada
+ * @param {object} params.bot - Instância do bot Telegram
+ * @param {object} params.dlqPayload - Dados para enfileiramento em DLQ em caso de erro
+ * @param {object} params.logContext - Contexto adicional para logging
+ */
+async function sendStockNotificationAlert({
+  userId,
+  chatId,
+  notificationType,
+  formatMessage,
+  bot,
+  dlqPayload,
+  logContext = {}
+}) {
+  // Verificar deduplicação
+  const shouldSend = await shouldSendNotification(userId, null, notificationType);
+  if (!shouldSend) {
+    logger.debug(`Notificação de estoque suprimida por deduplicação`, { userId, notificationType });
+    return;
+  }
+
+  // Formatar e enviar mensagem
+  const message = formatMessage();
+  const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+
+  if (result.success) {
+    logger.info(`Alerta de estoque enviado com sucesso`, {
+      userId,
+      notificationType,
+      chatId,
+      messageId: result.messageId,
+      ...logContext
+    });
+    await logSuccessfulNotification(userId, null, notificationType, { messageId: result.messageId });
+  } else {
+    logger.error(`Falha ao enviar alerta de estoque`, {
+      userId,
+      notificationType,
+      chatId,
+      error: result.error,
+      ...logContext
+    });
+
+    // Enfileirar para retry via DLQ
+    const correlationId = result.correlationId || getOrGenerateCorrelationId();
+    await enqueue(
+      {
+        userId,
+        protocolId: null,
+        type: notificationType,
+        chatId,
+        payload: dlqPayload
+      },
+      result.error,
+      result.attempts || 1,
+      correlationId
+    );
+  }
+}
+
 // --- Rich Message Formatting Functions ---
 
 /**
@@ -694,96 +762,38 @@ async function checkUserStockAlerts(bot, userId, chatId) {
 
     // Priority 1: Critical alerts (0-7 days)
     if (lowStockMedicines.length > 0 || zeroStockMedicines.length > 0) {
-      // Check deduplication for critical alerts (only send once per day)
-      const shouldSend = await shouldSendNotification(userId, null, 'stock_alert');
-      if (shouldSend) {
-        const message = formatStockAlertMessage(zeroStockMedicines, lowStockMedicines);
-
-        const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-        
-        if (result.success) {
-          logger.info(`Alerta de estoque crítico enviado com sucesso`, {
-            userId,
-            low: lowStockMedicines.length,
-            zero: zeroStockMedicines.length,
-            chatId,
-            messageId: result.messageId
-          });
-          await logSuccessfulNotification(userId, null, 'stock_alert', { messageId: result.messageId });
-        } else {
-          logger.error(`Falha ao enviar alerta de estoque crítico`, {
-            userId,
-            chatId,
-            error: result.error
-          });
-          
-          // Enviar para DLQ para retry
-          const correlationId = result.correlationId || getCurrentCorrelationId();
-          await enqueue(
-            {
-              userId,
-              protocolId: null,
-              type: 'stock_alert',
-              chatId,
-              payload: {
-                lowStockCount: lowStockMedicines.length,
-                zeroStockCount: zeroStockMedicines.length
-              }
-            },
-            result.error,
-            result.attempts || 1,
-            correlationId
-          );
+      await sendStockNotificationAlert({
+        userId,
+        chatId,
+        notificationType: 'stock_alert',
+        formatMessage: () => formatStockAlertMessage(zeroStockMedicines, lowStockMedicines),
+        bot,
+        dlqPayload: {
+          lowStockCount: lowStockMedicines.length,
+          zeroStockCount: zeroStockMedicines.length
+        },
+        logContext: {
+          low: lowStockMedicines.length,
+          zero: zeroStockMedicines.length
         }
-      } else {
-        logger.debug(`Alerta de estoque crítico suprimido por deduplicação`, { userId });
-      }
+      });
     }
 
     // Priority 2: Proactive alerts (8-14 days) - only if no critical alerts sent
     if (proactiveStockMedicines.length > 0 && lowStockMedicines.length === 0 && zeroStockMedicines.length === 0) {
-      // Check deduplication for proactive alerts (separate from critical)
-      const shouldSendProactive = await shouldSendNotification(userId, null, 'proactive_stock_alert');
-      if (shouldSendProactive) {
-        const message = formatProactiveStockMessage(userName, proactiveStockMedicines);
-
-        const result = await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-        
-        if (result.success) {
-          logger.info(`Alerta de estoque proativo enviado com sucesso`, {
-            userId,
-            medicines: proactiveStockMedicines.length,
-            chatId,
-            messageId: result.messageId
-          });
-          await logSuccessfulNotification(userId, null, 'proactive_stock_alert', { messageId: result.messageId });
-        } else {
-          logger.error(`Falha ao enviar alerta de estoque proativo`, {
-            userId,
-            chatId,
-            error: result.error
-          });
-          
-          // Enviar para DLQ para retry
-          const correlationId = result.correlationId || getCurrentCorrelationId();
-          await enqueue(
-            {
-              userId,
-              protocolId: null,
-              type: 'proactive_stock_alert',
-              chatId,
-              payload: {
-                medicineCount: proactiveStockMedicines.length
-              }
-            },
-            result.error,
-            result.attempts || 1,
-            correlationId
-          );
+      await sendStockNotificationAlert({
+        userId,
+        chatId,
+        notificationType: 'proactive_stock_alert',
+        formatMessage: () => formatProactiveStockMessage(userName, proactiveStockMedicines),
+        bot,
+        dlqPayload: {
+          medicineCount: proactiveStockMedicines.length
+        },
+        logContext: {
+          medicines: proactiveStockMedicines.length
         }
-      } else {
-        logger.debug(`Alerta de estoque proativo suprimido por deduplicação`, { userId });
-      }
+      });
     }
 
   } catch (err) {
