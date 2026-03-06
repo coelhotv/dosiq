@@ -690,6 +690,7 @@ export default function Dashboard({ onNavigate }) {
         />
         <AdaptiveLayout mode={complexityMode}>
           <DoseZoneList
+            key={complexityMode}
             zones={zones}
             totals={totals}
             viewMode={viewMode}
