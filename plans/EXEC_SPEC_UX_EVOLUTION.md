@@ -58,18 +58,20 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 - [x] Sem regressão visual no Dashboard atual
 - [x] Build produção passa (`npm run build`)
 
-### Onda 2 — Lógica e Hooks (Risco: MÉDIO)
+### Onda 2 — Lógica e Hooks (Risco: MÉDIO) ✅ CONCLUÍDA
 
 **Objetivo:** Criar hooks e lógica que processam dados para os componentes da Onda 1 e preparam a estrutura para as zonas deslizantes.
 
 **Pré-requisitos:** Onda 1 concluída (componentes visuais disponíveis).
 
+**Entrega:** PR #240 mergeado em 05/03/2026. 10/10 tasks, 387 testes, lint 0 erros.
+
 **Quality Gate para Onda 3:**
-- [ ] Hook `useDoseZones()` retorna zonas corretas para diferentes horários
-- [ ] Hook `useComplexityMode()` retorna modo correto por quantidade de meds
-- [ ] Toggle hora/plano funciona com dados reais
-- [ ] Integração com DashboardProvider validada
-- [ ] Testes unitários cobrem edge cases temporais
+- [x] Hook `useDoseZones()` retorna zonas corretas para diferentes horários
+- [x] Hook `useComplexityMode()` retorna modo correto por quantidade de meds
+- [x] Toggle hora/plano funciona com dados reais
+- [x] Integração com DashboardProvider validada
+- [x] Testes unitários cobrem edge cases temporais
 
 ### Onda 3 — Navegação (Risco: ALTO)
 
@@ -101,20 +103,20 @@ Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Prot
 | W1-07 | Prescrições Timeline Visual | `PrescriptionTimeline.jsx` | P2 | F5.9 ✅ | ✅ DONE |
 | W1-08 | Calendário Heat Map (evolução) | `Calendar.jsx` | P1 | — | ✅ DONE |
 
-### Onda 2 — Lógica e Hooks
+### Onda 2 — Lógica e Hooks ✅ CONCLUÍDA (PR #240 — 05/03/2026)
 
 | ID | Task | Arquivo | Prioridade | Deps | Status |
 |----|------|---------|------------|------|--------|
-| W2-01 | Hook useDoseZones() | `useDoseZones.js` | P0 | — | ✅ ENTREGUE (PR em review) |
-| W2-02 | Hook useComplexityMode() | `useComplexityMode.js` | P0 | — | ✅ ENTREGUE (PR em review) |
-| W2-03 | Componente DoseZoneList | `DoseZoneList.jsx` | P0 | W2-01 | ✅ ENTREGUE (PR em review) |
-| W2-04 | Toggle Hora/Plano | `ViewModeToggle.jsx` | P1 | W2-01 | ✅ ENTREGUE (PR em review) |
-| W2-05 | Badge de Plano (emoji+cor) | `PlanBadge.jsx` | P1 | — | ✅ ENTREGUE (PR em review) |
-| W2-06 | Lote inteligente (hora + plano) | `BatchRegisterButton.jsx` | P1 | W2-04 | ✅ ENTREGUE (PR em review) |
-| W2-07 | Progressive Disclosure wrapper | `AdaptiveLayout.jsx` | P1 | W2-02 | ✅ ENTREGUE (PR em review) |
-| W2-08 | Integrar RingGauge no Dashboard | `Dashboard.jsx` | P0 | W1-01, W2-02 | ✅ ENTREGUE (PR em review) |
-| W2-09 | Integrar StockBars no Dashboard | `Dashboard.jsx` | P1 | W1-02 | ✅ ENTREGUE (PR em review) |
-| W2-10 | Integrar DoseZoneList no Dashboard | `Dashboard.jsx` | P0 | W2-03, W2-07 | ✅ ENTREGUE (PR em review) |
+| W2-01 | Hook useDoseZones() | `useDoseZones.js` | P0 | — | ✅ DONE |
+| W2-02 | Hook useComplexityMode() | `useComplexityMode.js` | P0 | — | ✅ DONE |
+| W2-03 | Componente DoseZoneList | `DoseZoneList.jsx` | P0 | W2-01 | ✅ DONE |
+| W2-04 | Toggle Hora/Plano | `ViewModeToggle.jsx` | P1 | W2-01 | ✅ DONE |
+| W2-05 | Badge de Plano (emoji+cor) | `PlanBadge.jsx` | P1 | — | ✅ DONE |
+| W2-06 | Lote inteligente (hora + plano) | `BatchRegisterButton.jsx` | P1 | W2-04 | ✅ DONE |
+| W2-07 | Progressive Disclosure wrapper | `AdaptiveLayout.jsx` | P1 | W2-02 | ✅ DONE |
+| W2-08 | Integrar RingGauge no Dashboard | `Dashboard.jsx` | P0 | W1-01, W2-02 | ✅ DONE |
+| W2-09 | Integrar StockBars no Dashboard | `Dashboard.jsx` | P1 | W1-02 | ✅ DONE |
+| W2-10 | Integrar DoseZoneList no Dashboard | `Dashboard.jsx` | P0 | W2-03, W2-07 | ✅ DONE |
 
 ### Onda 3 — Navegação
 
@@ -206,20 +208,21 @@ DEPOIS de implementar:
 - [x] **W1-07** Prescrições Timeline — spec ✅ | código ✅ | teste ✅ | review ✅
 - [x] **W1-08** Calendar Heat Map — spec ✅ | código ✅ | teste ✅ | review ✅
 
-### Onda 2 — Lógica e Hooks
+### Onda 2 — Lógica e Hooks ✅ CONCLUÍDA
 
-- [x] **W2-01** useDoseZones() — spec ✅ | código ✅ | teste ✅ (21 testes) | review ⬜
-- [x] **W2-02** useComplexityMode() — spec ✅ | código ✅ | teste ✅ (12 testes) | review ⬜
-- [x] **W2-03** DoseZoneList — spec ✅ | código ✅ | teste ✅ (10 testes) | review ⬜
-- [x] **W2-04** ViewModeToggle — spec ✅ | código ✅ | teste ✅ (5 testes) | review ⬜
-- [x] **W2-05** PlanBadge — spec ✅ | código ✅ | teste ✅ (6 testes) | review ⬜
-- [x] **W2-06** BatchRegisterButton — spec ✅ | código ✅ | teste ✅ | review ⬜
-- [x] **W2-07** AdaptiveLayout — spec ✅ | código ✅ | teste ✅ (4 testes) | review ⬜
-- [x] **W2-08** Integrar RingGauge — spec ✅ | código ✅ | build ✅ | review ⬜
-- [x] **W2-09** Integrar StockBars — spec ✅ | código ✅ | build ✅ | review ⬜
-- [x] **W2-10** Integrar DoseZoneList — spec ✅ | código ✅ | build ✅ | review ⬜
+- [x] **W2-01** useDoseZones() — spec ✅ | código ✅ | teste ✅ (21 testes) | review ✅
+- [x] **W2-02** useComplexityMode() — spec ✅ | código ✅ | teste ✅ (12 testes) | review ✅
+- [x] **W2-03** DoseZoneList — spec ✅ | código ✅ | teste ✅ (10 testes) | review ✅
+- [x] **W2-04** ViewModeToggle — spec ✅ | código ✅ | teste ✅ (5 testes) | review ✅
+- [x] **W2-05** PlanBadge — spec ✅ | código ✅ | teste ✅ (6 testes) | review ✅
+- [x] **W2-06** BatchRegisterButton — spec ✅ | código ✅ | teste ✅ | review ✅
+- [x] **W2-07** AdaptiveLayout — spec ✅ | código ✅ | teste ✅ (4 testes) | review ✅
+- [x] **W2-08** Integrar RingGauge — spec ✅ | código ✅ | build ✅ | review ✅
+- [x] **W2-09** Integrar StockBars — spec ✅ | código ✅ | build ✅ | review ✅
+- [x] **W2-10** Integrar DoseZoneList — spec ✅ | código ✅ | build ✅ | review ✅
 
-**Onda 2 concluída em 2026-03-05 — validate:agent: 387/387 testes | build: ✅**
+**Onda 2 concluída em 2026-03-05 — PR #240 mergeado — validate:agent: 387/387 testes | build: ✅**
+**Revisão Gemini: 5 HIGH + 3 MEDIUM endereçados (4 ciclos de review)**
 
 Decisões arquiteturais documentadas:
 - D-01: Adapters em Dashboard.jsx (handleRegisterFromZone, handleBatchRegisterDoses, handleToggleDoseSelection) — ver R-098

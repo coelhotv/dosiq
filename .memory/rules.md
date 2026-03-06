@@ -752,7 +752,20 @@ useEffect(() => {
 **Rule:** `setInterval` continua em abas não visíveis. Para operações de UI, usar `visibilitychange` para pausar/retomar. Ao voltar à aba, atualizar o estado imediatamente.
 **Source:** Wave 2 PR #240 — Gemini MEDIUM.
 
+### R-109: `key={controllingProp}` para Reinicializar Estado Interno [HIGH]
+**Rule:** Quando um componente tem estado interno inicializado com base em uma prop (ex: `expandedZones` baseado em `complexityMode`), e esse estado DEVE reinicializar quando a prop muda, usar `key={controllingProp}` no JSX para forçar remount. Sem o `key`, o `useState` initializer roda apenas uma vez — na montagem.
+**Quando usar:** O prop define os DEFAULTS do estado (não controla o estado diretamente). Se mudança de prop → defaults devem resetar → use `key`.
+**Quando NÃO usar:** Se o estado deve persistir entre mudanças de prop (ex: seleção de usuário que sobrevive a filtros), não use `key`.
+```jsx
+// CORRETO — remonta DoseZoneList e reinicializa expandedZones quando complexityMode muda
+<DoseZoneList key={complexityMode} complexityMode={complexityMode} ... />
+
+// ERRADO — expandedZones fica com os defaults do primeiro render mesmo após mudança de modo
+<DoseZoneList complexityMode={complexityMode} ... />
+```
+**Source:** Wave 2 PR #240 — Gemini HIGH review comment (discussion_r2893125120).
+
 ---
 
-*Last updated: 2026-03-06*
-*Rules: R-001 to R-108*
+*Last updated: 2026-03-05*
+*Rules: R-001 to R-109*
