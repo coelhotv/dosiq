@@ -5,19 +5,19 @@ export default function WelcomeStep() {
     <div className="welcome-step">
       <div className="welcome-illustration">
         <div className="illustration-icon">
-          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="64" height="64" rx="16" fill="#3b82f6" fillOpacity="0.1" />
-            <path
-              d="M32 16C23.163 16 16 23.163 16 32s7.163 16 16 16 16-7.163 16-16S40.837 16 32 16zm0 28c-6.627 0-12-5.373-12-12s5.373-12 12-12 12 5.373 12 12-5.373 12-12 12z"
-              fill="#3b82f6"
-            />
-            <circle cx="32" cy="28" r="4" fill="#3b82f6" />
-            <path d="M32 34c-3.5 0-6.5 2-8 5h16c-1.5-3-4.5-5-8-5z" fill="#3b82f6" />
-            <path
-              d="M48 24h4M48 32h4M48 40h4"
-              stroke="#3b82f6"
-              strokeWidth="2"
+          <svg viewBox="0 0 64 64" className="welcome-ring">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--color-primary-light)" strokeWidth="6" />
+            <circle
+              cx="32"
+              cy="32"
+              r="26"
+              fill="none"
+              stroke="var(--color-primary)"
+              strokeWidth="6"
+              strokeDasharray="0 163"
               strokeLinecap="round"
+              transform="rotate(-90 32 32)"
+              className="ring-arc"
             />
           </svg>
         </div>
@@ -33,58 +33,70 @@ export default function WelcomeStep() {
         <div className="benefit-item">
           <div className="benefit-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
             </svg>
           </div>
           <div className="benefit-content">
-            <h4>Controle de Medicação</h4>
-            <p>Cadastre seus medicamentos e acompanhe seus horários de forma organizada</p>
+            <h4>Health Score em tempo real</h4>
+            <p>Acompanhe sua adesão com score visual, streak e evolução semanal</p>
           </div>
         </div>
 
         <div className="benefit-item">
           <div className="benefit-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
           <div className="benefit-content">
-            <h4>Protocolos Personalizados</h4>
-            <p>Crie rotinas de medicação com frequência e horários customizados</p>
+            <h4>Doses organizadas por prioridade</h4>
+            <p>Atrasadas, Agora, Próximas — sem precisar interpretar horários</p>
           </div>
         </div>
 
         <div className="benefit-item">
           <div className="benefit-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a2 2 0 012-2h6a2 2 0 012 2v4" />
             </svg>
           </div>
           <div className="benefit-content">
-            <h4>Lembretes Inteligentes</h4>
-            <p>Receba notificações no Telegram e nunca esqueça sua medicação</p>
+            <h4>Estoque visual com alertas inteligentes</h4>
+            <p>Saiba de relance quando repor, com críticas em destaque</p>
           </div>
         </div>
 
         <div className="benefit-item">
           <div className="benefit-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
             </svg>
           </div>
           <div className="benefit-content">
-            <h4>Controle de Estoque</h4>
-            <p>Monitore seu estoque e saiba quando é hora de repor seus medicamentos</p>
+            <h4>Base de 10.000+ medicamentos brasileiros</h4>
+            <p>Autocomplete com dados ANVISA — nome, princípio ativo e laboratório</p>
+          </div>
+        </div>
+
+        <div className="benefit-item">
+          <div className="benefit-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 2.2" />
+            </svg>
+          </div>
+          <div className="benefit-content">
+            <h4>Lembretes proativos no Telegram</h4>
+            <p>Digests diários, alertas de estoque e registro de doses sem abrir o app</p>
           </div>
         </div>
       </div>
 
       <div className="welcome-note">
-        <p>
-          <strong>🚀 Vamos começar?</strong>
-          <br />
-          Em poucos passos você terá seu primeiro medicamento cadastrado.
-        </p>
+        <p>100% gratuito. Seus dados ficam no seu perfil, protegidos.</p>
       </div>
     </div>
   )
