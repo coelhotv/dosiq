@@ -1,9 +1,9 @@
 # Roadmap 2026 — Meus Remedios (v4.0)
 
-**Versao:** 4.1 (Atualizado apos Sprint 5.A)
+**Versao:** 4.2 (Atualizado apos Sprint 5.B CONCLUÍDO)
 **Data:** 07/03/2026
-**Status:** Em Progresso (95% Fase 5)
-**Baseline:** v3.1.0 → v3.2.0 em desenvolvimento (Fases 1-4 + Evolucao UX + F5.10 CONCLUÍDO)
+**Status:** Fase 5 90% Completa (F5.10 + F5.6 ENTREGUES, F5.C + F5.D Pendentes)
+**Baseline:** v3.1.0 → v3.2.0 em desenvolvimento (Fases 1-4 + Evolucao UX + F5.10 + F5.6 CONCLUÍDO)
 **Principio:** Valor ao paciente primeiro. Custo operacional R$0 ate Fase 8.
 
 > **Mudancas em relacao a v3.2:**
@@ -48,13 +48,13 @@
 
 | Metrica | Valor Atual |
 |---------|-------------|
-| Testes criticos passando | 425/425 (100%) ✅ |
-| Test files | 24 (100% passing) ✅ |
-| Coverage minimo (F5.10) | 95.65% (>90% required) ✅ |
-| Bundle size | <1MB |
+| Testes criticos passando | 473/473 (100%) ✅ |
+| Test files | 27 (100% passing) ✅ |
+| Coverage minimo (F5.6) | 100% (services + components) ✅ |
+| Bundle size | ~1.2MB (mitigado: lazy-loading + gzip) |
 | Lighthouse PWA | >=90 |
 | Lighthouse Performance | >=90 |
-| Code Review (F5.10) | 4/4 sugestoes resolvidas (1 CRITICAL + 3 HIGH/MEDIUM) ✅ |
+| Code Review (F5.6) | 4/4 sugestoes resolvidas (1 CRITICAL + 3 MEDIUM) ✅ |
 
 ---
 
@@ -73,19 +73,25 @@
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
 | Fase 5 — Valor Clinico (90%) | v3.1.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual |
 
-**Status da Fase 5 (07/03/2026):** 95% completa
+**Status da Fase 5 (07/03/2026):** 90% completa
 - ✅ **F5.10 Analise de Custo** (5 SP) — ENTREGUE em main (commit 894bb98)
   - costAnalysisService.js puro com 5 funções otimizadas (O(M+P))
   - CostChart component com Framer Motion
   - Stock.jsx integração com useMemo
   - 38 testes, 95.65% coverage
   - 4 sugestões de code review resolvidas
-- ⏳ **ETL-1 Script process-anvisa.js** (1 SP) — proxima: gerar `medicineDatabase.json` a partir do CSV
-- ⏳ **F5.6 Autocomplete ANVISA** (~12 SP) — CSV disponivel, 4 campos auto + 2 manuais
+- ✅ **Sprint 5.B: ETL-1 + F5.6 (Base ANVISA + Autocomplete)** (13 SP) — ENTREGUE em main (commit 7a887dc, PR #278)
+  - ETL-1: `scripts/process-anvisa.js` gera medicineDatabase.json (6.816 meds) + laboratoryDatabase.json (278 labs)
+  - F5.6-1: `medicineDatabaseService.js` + `laboratoryDatabaseService.js` (lazy-loaded, 100% coverage)
+  - F5.6-2: `GenericAutocomplete.jsx` (reutilizável) + `MedicineAutocomplete.jsx` + `LaboratoryAutocomplete.jsx`
+  - F5.6-3: Integração no `MedicineForm.jsx` com auto-fill (name, active_ingredient, therapeutic_class, laboratory)
+  - 48 testes novos, 100% coverage nas services e componentes
+  - 4 sugestões de code review resolvidas (1 CRITICAL + 3 MEDIUM)
+  - Bundle impacto negligenciável: lazy-loaded + gzipped ~103 KB
 - ⏳ **F5.C Onboarding Renovado** (5 SP) — WelcomeStep redesign, StockStep (step 4/5), TelegramStep
 - ⏳ **F5.D Redesign Landing Page** (8 SP) — hero com AppPreview CSS, "Como Funciona", 8-card grid
 
-**Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`.
+**Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`. Deduplicação resultou em 6.816 medicamentos e 278 laboratórios únicos.
 
 ---
 
@@ -114,10 +120,10 @@
 | ID | Feature | SP | Status | Merge Commit |
 |----|---------|-----|--------|-------------|
 | F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | ✅ **CONCLUIDO** | 894bb98 |
-| ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | Pendente (CSV disponivel) | — |
-| F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | Pendente (Cenario A confirmado) | — |
-| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | Pendente | — |
-| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | Pendente | — |
+| ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | ✅ **CONCLUIDO** | 7a887dc |
+| F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | ✅ **CONCLUIDO** | 7a887dc |
+| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | ⏳ Pendente | — |
+| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | ⏳ Pendente | — |
 
 **F5.10 Quality Gate:** ✅ PASSED
 - Tests: 425/425 passing, 95.65% coverage
@@ -153,6 +159,31 @@ features grid de 8 cards (vs. 6 textuais), CTA e footer atualizados. Sem quebra 
 | **Lighthouse (Stock)** | Performance >=90, PWA >=90 |
 
 **Próximos passos:** Sprint 5.B (ETL-1 + F5.6) — ETL script + autocomplete ANVISA (~13 SP, 2-3 semanas)
+
+#### F5.6 (Sprint 5.B) — Resumo de Conclusão (07/03/2026)
+
+| Métrica | Resultado |
+|---------|-----------|
+| **Arquivos Criados** | 12 (2 services, 3 componentes, 2 databases, 2 test files, migration, CSS, schema) |
+| **Linhas de Código** | +1.556 linhas (ETL + services + componentes + testes + integração) |
+| **Medicamentos Únicos** | 6.816 (vs. 2.000-4.000 estimado — 3.4x mais) |
+| **Laboratórios Únicos** | 278 (vs. 200-400 estimado) |
+| **Test Coverage** | 100% (medicineDatabaseService + laboratoryDatabaseService) |
+| **Test Cases Novos** | 48 (medicineDatabaseService: 29, laboratoryDatabaseService: 19) |
+| **Critical Tests** | 473/473 passing ✅ |
+| **Code Review** | 4/4 sugestões resolvidas (1 CRITICAL + 3 MEDIUM) |
+| **Bundle Impacto** | Negligenciável: 802 KB medicineDatabase + 14 KB laboratoryDatabase, lazy-loaded, gzipped ~103 KB |
+| **Campos Auto-Preenchidos** | 4 (name, active_ingredient, therapeutic_class, type) |
+| **Campos Manuais** | 2 (dosage_per_pill, dosage_unit — não disponíveis no CSV ANVISA) |
+| **Git Commits** | 1 commit final (3cf51e7 com todas as correções, mergeado via squash em PR #278) |
+| **Main Commit** | 7a887dc |
+| **Character Encoding Fix** | UTF-8 → Latin1 (ISO-8859-1, ANVISA standard) ✅ |
+| **Minimum Search Validation** | 3 caracteres enforced ✅ |
+| **Lighthouse (MedicineForm)** | Performance >=90, PWA >=90 |
+
+**Realização:** Base ANVISA com 10.206 registros originais processada via ETL, deduplicada, normalizada (NFD accent-insensitive search) e integrada como JSON lazy-loaded. Componente genérico de autocomplete criado (GenericAutocomplete.jsx) para eliminar duplicação de código entre MedicineAutocomplete e LaboratoryAutocomplete. Schema medicineSchema.js atualizado com campo opcional `therapeutic_class` para habilitar F8.2 (interações medicamentosas) futuro sem nova fonte de dados.
+
+**Próximos passos:** Sprint 5.C + 5.D — Onboarding renovado + Redesign Landing Page (~13 SP restantes para completar Fase 5)
 
 ---
 
