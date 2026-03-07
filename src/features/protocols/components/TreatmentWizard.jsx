@@ -7,6 +7,8 @@ import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import { formatLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
+import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
+import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import './TreatmentWizard.css'
 
 const FREQUENCY_LABELS = {
@@ -40,6 +42,9 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     type: preselectedMedicine?.type || 'medicamento',
     dosage_per_pill: preselectedMedicine?.dosage_per_pill || '',
     dosage_unit: preselectedMedicine?.dosage_unit || 'mg',
+    laboratory: preselectedMedicine?.laboratory || '',
+    active_ingredient: preselectedMedicine?.active_ingredient || '',
+    therapeutic_class: preselectedMedicine?.therapeutic_class || null,
   })
 
   const [protocolData, setProtocolData] = useState({
@@ -118,6 +123,23 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
     setStockData(prev => ({ ...prev, [field]: value }))
   }, [])
 
+  // Autocomplete handlers for ANVISA database
+  const handleMedicineSelect = useCallback((medicine) => {
+    setMedicineData(prev => ({
+      ...prev,
+      name: medicine.name,
+      active_ingredient: medicine.activeIngredient || '',
+      therapeutic_class: medicine.therapeuticClass || null,
+    }))
+  }, [])
+
+  const handleLaboratorySelect = useCallback((laboratory) => {
+    setMedicineData(prev => ({
+      ...prev,
+      laboratory: laboratory.laboratory || '',
+    }))
+  }, [])
+
   // Submit
   const handleComplete = useCallback(async (skipStock) => {
     setIsSubmitting(true)
@@ -128,6 +150,9 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
         type: medicineData.type,
         dosage_per_pill: Number(medicineData.dosage_per_pill),
         dosage_unit: medicineData.dosage_unit,
+        laboratory: medicineData.laboratory || null,
+        active_ingredient: medicineData.active_ingredient || null,
+        therapeutic_class: medicineData.therapeutic_class || null,
       })
 
       // Resolver plan ID: pode vir de prop, seleção ou criação
@@ -256,13 +281,11 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                 <>
                   <label className="wizard__label">
                     Nome *
-                    <input
-                      type="text"
-                      className="wizard__input"
+                    <MedicineAutocomplete
                       value={medicineData.name}
-                      onChange={(e) => updateMedicine('name', e.target.value)}
-                      placeholder="Ex: Losartana"
-                      autoFocus
+                      onChange={(value) => updateMedicine('name', value)}
+                      onSelect={handleMedicineSelect}
+                      placeholder="Ex: Losartana ou busque na base ANVISA..."
                     />
                   </label>
 
@@ -277,6 +300,31 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                       <option value="suplemento">Suplemento</option>
                     </select>
                   </label>
+
+                  <label className="wizard__label">
+                    Marca / Laboratório
+                    <LaboratoryAutocomplete
+                      value={medicineData.laboratory}
+                      onChange={(value) => updateMedicine('laboratory', value)}
+                      onSelect={handleLaboratorySelect}
+                      placeholder="Ex: EMS, Medley..."
+                    />
+                  </label>
+
+                  {medicineData.active_ingredient && (
+                    <label className="wizard__label">
+                      Princípio Ativo
+                      <input
+                        type="text"
+                        className="wizard__input"
+                        value={medicineData.active_ingredient}
+                        readOnly
+                      />
+                      <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                        Preenchido automaticamente via ANVISA
+                      </small>
+                    </label>
+                  )}
 
                   <div className="wizard__row">
                     <label className="wizard__label" style={{ flex: 1 }}>
@@ -533,7 +581,7 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                 <Button variant="ghost" onClick={() => {
                   setStep(1)
                   setResult(null)
-                  setMedicineData({ name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg' })
+                  setMedicineData({ name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg', laboratory: '', active_ingredient: '', therapeutic_class: null })
                   setProtocolData({ frequency: 'diario', time_schedule: ['08:00'], dosage_per_intake: 1, start_date: formatLocalDate(new Date()) })
                   setStockData({ quantity: '', purchase_date: formatLocalDate(new Date()), unit_price: '', expiration_date: '' })
                 }}>
