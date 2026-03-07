@@ -256,6 +256,62 @@ async function postAlertComment(github, context, prNumber, blockingIssues) {
 }
 
 /**
+ * Encontra e Remove/Atualiza o comentário de bloqueio quando issues são resolvidas
+ * @param {Object} github - Cliente GitHub Actions
+ * @param {Object} context - Contexto do GitHub Actions
+ * @param {number} prNumber - Número do PR
+ * @returns {Promise<boolean>} True se removeu/atualizou o comentário
+ */
+async function clearBlockingComment(github, context, prNumber) {
+  try {
+    const alertMarker = '🛑 Workflow Bloqueado';
+
+    // Buscar todos os comentários do PR
+    const comments = await github.paginate(github.rest.issues.listComments, {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: prNumber,
+      per_page: 100
+    });
+
+    // Encontrar o comentário de bloqueio
+    const blockingComment = comments.find(comment =>
+      comment.body?.includes(alertMarker) &&
+      comment.user.login === 'github-actions[bot]'
+    );
+
+    if (!blockingComment) {
+      logInfo('Nenhum comentário de bloqueio encontrado para remover', { prNumber });
+      return false;
+    }
+
+    // Atualizar o comentário para indicar resolução
+    const resolutionBody = `## ✅ Issues Resolvidas - PR Aprovado pelo Gemini
+
+O Gemini Code Assist revisou as correções aplicadas e **não foram encontradas mais issues bloqueantes**. O PR está aprovado para merge.
+
+---
+*Este comentário foi automaticamente atualizado. O resumo de review está disponível abaixo.*`;
+
+    await github.rest.issues.updateComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      comment_id: blockingComment.id,
+      body: resolutionBody
+    });
+
+    logInfo('Comentário de bloqueio atualizado para resolução', { prNumber, commentId: blockingComment.id });
+    return true;
+  } catch (error) {
+    logError('Erro ao remover/atualizar comentário de bloqueio', {
+      prNumber,
+      error: error.message
+    });
+    return false;
+  }
+}
+
+/**
  * Define os outputs para o GitHub Actions
  * @param {Object} core - Objeto core do GitHub Actions
  * @param {Object} result - Resultado da verificação
@@ -364,6 +420,12 @@ async function checkCriticalIssues(options = {}) {
     process.exitCode = 1;
   } else {
     logInfo('✅ Nenhum issue bloqueante encontrado - Workflow pode continuar');
+
+    // Se temos acesso à API, verificar e remover comentário de bloqueio antigo
+    if (github && context && (prNumber || reviewData.pr_number)) {
+      await clearBlockingComment(github, context, prNumber || reviewData.pr_number);
+    }
+
     process.exitCode = 0;
   }
 
@@ -379,6 +441,7 @@ module.exports = {
   isBlockingIssue,
   extractBlockingIssues,
   generateAlertComment,
+  clearBlockingComment,
   BLOCKING_PRIORITIES,
   BLOCKING_CATEGORIES
 };
