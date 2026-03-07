@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
+import MedicineAutocomplete from './MedicineAutocomplete'
+import LaboratoryAutocomplete from './LaboratoryAutocomplete'
 import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@schemas/medicineSchema'
 import './MedicineForm.css'
 
@@ -35,6 +37,7 @@ export default function MedicineForm({
     dosage_per_pill: medicine?.dosage_per_pill || '',
     type: medicine?.type || 'medicamento',
     dosage_unit: medicine?.dosage_unit || 'mg',
+    therapeutic_class: medicine?.therapeutic_class || null,
   })
 
   const [errors, setErrors] = useState({})
@@ -53,6 +56,30 @@ export default function MedicineForm({
     if (saveSuccess) {
       setSaveSuccess(false)
     }
+  }
+
+  /**
+   * Ao selecionar medicamento do autocomplete ANVISA
+   */
+  const handleMedicineSelect = (medicine) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: medicine.name,
+      active_ingredient: medicine.activeIngredient,
+      therapeutic_class: medicine.therapeuticClass || null,
+    }))
+    if (saveSuccess) setSaveSuccess(false)
+  }
+
+  /**
+   * Ao selecionar laboratório do autocomplete ANVISA
+   */
+  const handleLaboratorySelect = (laboratory) => {
+    setFormData((prev) => ({
+      ...prev,
+      laboratory: laboratory.laboratory,
+    }))
+    if (saveSuccess) setSaveSuccess(false)
   }
 
   const validate = () => {
@@ -97,6 +124,7 @@ export default function MedicineForm({
         dosage_per_pill: formData.dosage_per_pill ? parseFloat(formData.dosage_per_pill) : null,
         type: formData.type,
         dosage_unit: formData.dosage_unit,
+        therapeutic_class: formData.therapeutic_class || null,
       }
 
       const savedMedicine = await onSave(dataToSave)
@@ -156,17 +184,22 @@ export default function MedicineForm({
         <label htmlFor="name">
           Nome {formData.type === 'suplemento' ? '(Comercial)' : 'do Remédio'}{' '}
           <span className="required">*</span>
+          {formData.name && !medicine?.name && (
+            <span className="autocomplete-badge" title="Preenchido via Base ANVISA">
+              Fonte: ANVISA
+            </span>
+          )}
         </label>
         <ShakeEffect trigger={shakeFields.name}>
-          <input
-            type="text"
-            id="name"
-            name="name"
+          <MedicineAutocomplete
             value={formData.name}
-            onChange={handleChange}
-            className={errors.name ? 'error' : ''}
-            placeholder="Ex: Paracetamol"
-            autoFocus
+            onChange={(value) => {
+              setFormData((prev) => ({ ...prev, name: value }))
+              if (errors.name) setErrors((prev) => ({ ...prev, name: '' }))
+              if (saveSuccess) setSaveSuccess(false)
+            }}
+            onSelect={handleMedicineSelect}
+            placeholder="Ex: Paracetamol ou digite para buscar..."
             disabled={isSubmitting}
           />
         </ShakeEffect>
@@ -174,7 +207,14 @@ export default function MedicineForm({
       </div>
 
       <div className="form-group">
-        <label htmlFor="active_ingredient">Princípio Ativo</label>
+        <label htmlFor="active_ingredient">
+          Princípio Ativo
+          {formData.active_ingredient && !medicine?.active_ingredient && (
+            <span className="autocomplete-badge" title="Preenchido via Base ANVISA">
+              Fonte: ANVISA
+            </span>
+          )}
+        </label>
         <input
           type="text"
           id="active_ingredient"
@@ -183,24 +223,30 @@ export default function MedicineForm({
           onChange={handleChange}
           placeholder="Ex: Paracetamol"
           disabled={isSubmitting}
+          readOnly={formData.active_ingredient && !medicine?.active_ingredient}
         />
+        <small className="field-hint">Preenchido automaticamente ao selecionar medicamento</small>
       </div>
 
       <div className="form-group">
         <label htmlFor="laboratory">Marca / Laboratório</label>
-        <input
-          type="text"
-          id="laboratory"
-          name="laboratory"
+        <LaboratoryAutocomplete
           value={formData.laboratory}
-          onChange={handleChange}
-          placeholder="Ex: EMS, Medley, etc."
+          onChange={(value) => {
+            setFormData((prev) => ({ ...prev, laboratory: value }))
+            if (saveSuccess) setSaveSuccess(false)
+          }}
+          onSelect={handleLaboratorySelect}
+          placeholder="Ex: EMS, Medley ou digite para buscar..."
           disabled={isSubmitting}
         />
+        <small className="field-hint">Opcional. Base ANVISA com 278 laboratórios registrados</small>
       </div>
 
       <div className="form-group">
-        <label htmlFor="dosage_per_pill">Dosagem</label>
+        <label htmlFor="dosage_per_pill">
+          Dosagem <strong>(Específica da sua prescrição)</strong>
+        </label>
         <div
           className="dosage-input-group"
           style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}
@@ -231,6 +277,7 @@ export default function MedicineForm({
             ))}
           </select>
         </div>
+        <small className="field-hint">Preencha com a dosagem prescrita pelo seu médico</small>
         {errors.dosage_per_pill && <span className="error-message">{errors.dosage_per_pill}</span>}
       </div>
 
