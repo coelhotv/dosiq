@@ -19,10 +19,32 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .form-group .required {
   color: var(--accent-error);
+}
+
+.autocomplete-badge {
+  display: inline-block;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin-top: -4px;
+  font-style: italic;
 }
 
 .form-group input,
@@ -48,6 +70,12 @@
 
 .form-group input.error {
   border-color: var(--accent-error);
+}
+
+.form-group input:read-only {
+  background-color: #f5f5f5;
+  color: var(--text-secondary);
+  cursor: default;
 }
 
 .form-group input::placeholder {

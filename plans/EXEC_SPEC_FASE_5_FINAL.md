@@ -47,10 +47,10 @@ Sprint 5.A — Analise de Custo (5 SP) ✅ CONCLUIDO
 
 Sprint 5.B — Integracao Base ANVISA (13 SP — Cenario A confirmado)
   SPIKE-1: [CONCLUIDO] Pesquisa de fontes de dados ANVISA
-  ETL-1:   Script process-anvisa.js (substitui SPIKE-2)
-  F5.6-1:  Base de medicamentos JSON + medicineDatabaseService
-  F5.6-2:  Autocomplete no formulario (4 campos auto, 2 manuais)
-  F5.6-3:  Testes
+  ETL-1:   Script process-anvisa.js (gera medicineDatabase.json + laboratoryDatabase.json)
+  F5.6-1:  Services + testes (medicineDatabaseService, laboratoryDatabaseService)
+  F5.6-2:  Dois componentes autocomplete (MedicineAutocomplete, LaboratoryAutocomplete)
+  F5.6-3:  Integracao no MedicineForm.jsx
 
 Sprint 5.C — Onboarding Renovado (5 SP)
   F5.C-1:  WelcomeStep redesign (value props v3.2)
@@ -331,22 +331,28 @@ Cenario A confirmado: JSON estatico lazy-loaded, zero custo operacional, zero la
 |-------|-------|
 | **Criar** | `scripts/process-anvisa.js` |
 | **Input** | `public/medicamentos-ativos-anvisa.csv` |
-| **Output** | `src/features/medications/data/medicineDatabase.json` |
+| **Output 1** | `src/features/medications/data/medicineDatabase.json` |
+| **Output 2** | `src/features/medications/data/laboratoryDatabase.json` |
 
 **O que o script faz:**
 1. Parseia CSV com separador `;` e encoding UTF-8
-2. Deduplica por `NOME_PRODUTO + PRINCIPIO_ATIVO` (remove entradas de fabricantes repetidos)
+2. Deduplica em dois Maps:
+   - **medicines**: por `NOME_PRODUTO + PRINCIPIO_ATIVO` (normalizado)
+   - **laboratories**: por `EMPRESA_DETENTORA_REGISTRO` (normalizado)
 3. Normaliza: trim em todos os campos, lowercase em `activeIngredient`
-4. Mapeia colunas para formato alvo (ver F5.6-1)
-5. Grava JSON final em `src/features/medications/data/medicineDatabase.json`
+4. Mapeia CATEGORIA_REGULATORIA → "medicamento" (todos os registros ANVISA mapeiam para este tipo)
+5. Grava dois JSONs: `medicineDatabase.json` (~2.000-4.000 entradas) e `laboratoryDatabase.json` (~200-400 entradas)
 
-**Resultado esperado:** ~2.000-4.000 entradas unicas, arquivo ~200-400 KB.
+**Resultado esperado:**
+- `medicineDatabase.json`: ~2.000-4.000 medicamentos unicos, ~200-400 KB
+- `laboratoryDatabase.json`: ~200-400 laboratorios unicos, ~50 KB
 
 **Criterios de aceite do ETL:**
 1. Script roda com `node scripts/process-anvisa.js` sem erro
-2. JSON gerado tem < 500 KB
-3. Deduplicacao correta (Ibuprofeno aparece 1x, nao 20x)
+2. Ambos JSONs gerados com tamanho total < 500 KB
+3. Deduplicacao correta (Ibuprofeno aparece 1x em medicineDatabase, laboratorios em laboratoryDatabase)
 4. Campos normalizados (sem espacos extras, encoding correto)
+5. `category` em medicineDatabase.json sempre "medicamento" (inferido de CATEGORIA_REGULATORIA)
 
 ### F5.6-1: Base de Medicamentos (13 SP — condicional)
 
@@ -355,9 +361,12 @@ Cenario A confirmado: JSON estatico lazy-loaded, zero custo operacional, zero la
 | Campo | Valor |
 |-------|-------|
 | **Agente** | Coder |
-| **Criar** | `src/features/medications/data/medicineDatabase.json` |
+| **Gerar (ETL-1)** | `src/features/medications/data/medicineDatabase.json` |
+| **Gerar (ETL-1)** | `src/features/medications/data/laboratoryDatabase.json` |
 | **Criar** | `src/features/medications/services/medicineDatabaseService.js` |
+| **Criar** | `src/features/medications/services/laboratoryDatabaseService.js` |
 | **Testar** | `src/features/medications/services/__tests__/medicineDatabaseService.test.js` |
+| **Testar** | `src/features/medications/services/__tests__/laboratoryDatabaseService.test.js` |
 
 **Implementacao do service:**
 
@@ -433,9 +442,23 @@ Gerado pelo ETL-1. Campos disponiveis no CSV ANVISA:
   {
     "name": "Losartana Potassica",
     "activeIngredient": "losartana potassica",
-    "laboratory": "EMS",
     "therapeuticClass": "ANTI-HIPERTENSIVOS",
-    "category": "Generico"
+    "category": "medicamento"
+  }
+]
+```
+
+**Estrutura do JSON (`laboratoryDatabase.json`):**
+
+Gerado pelo ETL-1. Lista de laboratorios unicos (deduplica razoes sociais):
+
+```json
+[
+  {
+    "laboratory": "EMS"
+  },
+  {
+    "laboratory": "LEGRAND PHARMA"
   }
 ]
 ```
@@ -443,6 +466,8 @@ Gerado pelo ETL-1. Campos disponiveis no CSV ANVISA:
 **NOTA:** `dosagePerPill`, `dosageUnit` e `form` NAO estao no CSV ANVISA e portanto
 NAO sao incluidos no JSON. O campo `therapeuticClass` e incluido para habilitar
 F8.2 (interacoes medicamentosas, Fase 8) sem necessidade de nova fonte de dados.
+O campo `laboratory` foi removido de `medicineDatabase.json` — usar `laboratoryDatabaseService`
+para autocomplete de laboratorio, permitindo comparador de precos (CMED) futuro.
 
 **Criterios de aceite:**
 1. JSON lazy-loaded (nao impacta bundle inicial)
@@ -459,6 +484,7 @@ F8.2 (interacoes medicamentosas, Fase 8) sem necessidade de nova fonte de dados.
 | **Agente** | Coder |
 | **Modificar** | `src/features/medications/components/MedicineForm.jsx` |
 | **Criar** | `src/features/medications/components/MedicineAutocomplete.jsx` |
+| **Criar** | `src/features/medications/components/LaboratoryAutocomplete.jsx` |
 
 **O que fazer:**
 
@@ -466,21 +492,27 @@ F8.2 (interacoes medicamentosas, Fase 8) sem necessidade de nova fonte de dados.
    - Recebe `onSelect(medicine)` como prop
    - Exibe input de texto com debounce de 300ms
    - Chama `searchMedicines(query)` apos debounce
-   - Mostra dropdown com resultados
+   - Mostra dropdown com resultados (nome + principio ativo)
    - Ao selecionar, preenche campos do formulario automaticamente
 
-2. Integrar no `MedicineForm`:
+2. Criar componente `LaboratoryAutocomplete` que:
+   - Similar a `MedicineAutocomplete` mas para laboratorios
+   - Usa `laboratoryDatabaseService.searchLaboratories(query)`
+   - Debounce de 300ms
+
+3. Integrar no `MedicineForm`:
    - Substituir input de nome por `MedicineAutocomplete`
+   - Substituir input de laboratorio por `LaboratoryAutocomplete`
    - Ao selecionar medicamento da base, preencher automaticamente:
      - `name` com `med.name`
      - `active_ingredient` com `med.activeIngredient`
-     - `laboratory` com `med.laboratory`
-     - `type` inferido de `med.category` ("Generico"/"Similar" → "medicamento", "Biologico" → "medicamento")
+     - Mostrar badge "Fonte: Base ANVISA" nos campos `name` e `active_ingredient`
+   - Ao selecionar laboratorio, preencher:
+     - `laboratory` com o nome selecionado
    - NAO preencher automaticamente (nao disponivel no CSV ANVISA):
-     - `dosage_per_pill` — exibir label "Dosagem especifica da prescricao — preencha manualmente"
+     - `dosage_per_pill` — exibir label abaixo: "**Dosagem especifica da sua prescricao — preencha manualmente**"
      - `dosage_unit` — idem
    - Manter edicao manual de todos os campos (autocomplete e sugestao, nao imposicao)
-   - Mostrar badge "Fonte: Base ANVISA" nos campos auto-preenchidos
 
 **Padrao do componente:**
 ```jsx
@@ -618,13 +650,17 @@ Registrar aqui para nao perder o contexto. Ver `plans/ANALISE_CSV_ANVISA.md` sec
 
 ### Quality Gate Sprint 5.B
 
-- [ ] ETL-1: `node scripts/process-anvisa.js` gera JSON sem erro (< 500 KB)
+- [ ] ETL-1: `node scripts/process-anvisa.js` gera ambos JSONs sem erro (< 500 KB total)
+  - [ ] `medicineDatabase.json` gerado (~2.000-4.000 medicamentos)
+  - [ ] `laboratoryDatabase.json` gerado (~200-400 laboratorios)
 - [ ] `medicineDatabaseService.js` criado com testes >= 90% cobertura
-- [ ] `MedicineAutocomplete.jsx` preenche 4 campos automaticamente (name, active_ingredient, laboratory, type)
-- [ ] Campos dosage_per_pill e dosage_unit exibem label explicativa (nao sao auto-preenchidos)
+- [ ] `laboratoryDatabaseService.js` criado com testes >= 90% cobertura
+- [ ] `MedicineAutocomplete.jsx` preenche 3 campos automaticamente (name, active_ingredient, therapeuticClass)
+- [ ] `LaboratoryAutocomplete.jsx` preenche 1 campo (laboratory)
+- [ ] Campos dosage_per_pill e dosage_unit exibem label explicativa "Dosagem especifica da sua prescricao — preencha manualmente"
 - [ ] `npm run validate:agent` passa
-- [ ] Bundle size aumento maximo: +500 KB (JSON da base, estimativa pos-ETL)
-- [ ] Commit semantico: `feat(medications): add ANVISA medicine database and autocomplete (#F5.6)`
+- [ ] Bundle size aumento maximo: +500 KB (JSONs da base, estimativa pos-ETL)
+- [ ] Commit semantico: `feat(medications): add ANVISA medicine & laboratory databases with autocomplete (#F5.6)`
 - [ ] PR criado, aguardar review
 
 ---

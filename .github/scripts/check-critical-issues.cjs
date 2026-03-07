@@ -21,6 +21,155 @@ const BLOCKING_PRIORITIES = ['CRITICAL', 'HIGH'];
 const BLOCKING_CATEGORIES = ['security', 'performance'];
 
 // ============================================================================
+// FUNÇÕES DE RESOLUÇÃO DE THREADS
+// ============================================================================
+
+/**
+ * Busca threads de review resolvidas no GitHub
+ * Usa GraphQL para verificar o status de resolução das threads
+ * @param {Object} github - Cliente GitHub Actions
+ * @param {Object} context - Contexto do GitHub Actions
+ * @param {number} prNumber - Número do PR
+ * @returns {Promise<Set<string>>} Set de identificadores de threads resolvidas
+ */
+async function fetchResolvedThreads(github, context, prNumber) {
+  const resolvedThreads = new Set();
+
+  try {
+    // Usar GraphQL para buscar review threads e seu status de resolução
+    const query = `
+      query($owner: String!, $repo: String!, $pr: Int!) {
+        repository(owner: $owner, name: $repo) {
+          pullRequest(number: $pr) {
+            reviewThreads(first: 100) {
+              nodes {
+                isResolved
+                path
+                startLine
+                line
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      pr: prNumber
+    };
+
+    const response = await github.graphql(query, variables);
+
+    if (response?.repository?.pullRequest?.reviewThreads?.nodes) {
+      for (const thread of response.repository.pullRequest.reviewThreads.nodes) {
+        if (thread.isResolved) {
+          // Criar chave única para a thread: path:line
+          const threadKey = `${thread.path}:${thread.line || thread.startLine || ''}`;
+          resolvedThreads.add(threadKey);
+        }
+      }
+    }
+
+    logInfo('Threads resolvidas verificadas via GraphQL', {
+      prNumber,
+      resolvedCount: resolvedThreads.size
+    });
+
+    // Também verificar se há review aprovado
+    const { data: reviews } = await github.rest.pulls.listReviews({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      pull_number: prNumber
+    });
+
+    const hasApprovedReview = reviews?.some(r => r.state === 'APPROVED');
+
+    if (hasApprovedReview) {
+      logInfo('PR tem review aprovado, todas as issues desbloqueadas', {
+        prNumber,
+        approvedBy: reviews.filter(r => r.state === 'APPROVED').map(r => r.user.login)
+      });
+      // Retornar Set especial para indicar aprovação
+      resolvedThreads.add('__APPROVED__');
+    }
+
+  } catch (error) {
+    logWarn('Erro ao buscar threads resolvidas, continuando sem filtro', {
+      prNumber,
+      error: error.message
+    });
+  }
+
+  return resolvedThreads;
+}
+
+/**
+ * Filtra issues considerando threads resolvidas
+ * Se o PR foi aprovado ou todas as threads estão resolvidas, retorna array vazio
+ * @param {Array<Object>} issues - Lista de issues
+ * @param {Set<string>} resolvedThreads - Set de chaves de threads resolvidas (path:line)
+ * @returns {Array<Object>} Issues que ainda bloqueiam
+ */
+function filterResolvedIssues(issues, resolvedThreads) {
+  try {
+    // Se há review aprovado, não bloqueia
+    if (resolvedThreads.has('__APPROVED__')) {
+      logInfo('PR aprovado - não bloqueando workflow');
+      return [];
+    }
+
+    if (resolvedThreads.size === 0) {
+      return issues;
+    }
+
+    // Agora temos as threads resolvidas diretamente do GraphQL (path:line)
+    // Filtrar issues que estão em threads resolvidas
+    const blockingIssues = [];
+    for (const issue of issues) {
+      // Normalizar o path do issue
+      const issuePath = issue.file;
+      const issueLine = issue.line;
+
+      // Verificar se há alguma thread resolvida que corresponde a este issue
+      let isResolved = false;
+      for (const resolvedKey of resolvedThreads) {
+        if (resolvedKey === '__APPROVED__') continue;
+
+        const [resolvedPath, resolvedLine] = resolvedKey.split(':');
+
+        // Verificar se o path corresponde (pode ter prefixos diferentes)
+        if (resolvedPath?.endsWith(issuePath) || issuePath.endsWith(resolvedPath)) {
+          // Verificar se a linha corresponde
+          if (String(resolvedLine) === String(issueLine) || !resolvedLine || !issueLine) {
+            isResolved = true;
+            logInfo('Issue removida por estar em thread resolvida', {
+              file: issue.file,
+              line: issue.line,
+              severity: issue.severity,
+              resolvedKey
+            });
+            break;
+          }
+        }
+      }
+
+      if (!isResolved) {
+        blockingIssues.push(issue);
+      }
+    }
+
+    return blockingIssues;
+  } catch (error) {
+    logWarn('Erro ao filtrar issues resolvidas, mantendo todas', {
+      error: error.message
+    });
+    return issues;
+  }
+}
+
+// ============================================================================
 // FUNÇÕES DE LOG
 // ============================================================================
 
@@ -385,12 +534,29 @@ async function checkCriticalIssues(options = {}) {
 
   // Extrair issues bloqueantes
   const blockingIssues = extractBlockingIssues(reviewData);
-  const hasBlockingIssues = blockingIssues.length > 0;
+
+  // Filtrar issues resolvidas no GitHub (se temos acesso à API)
+  let filteredBlockingIssues = blockingIssues;
+  if (github && context && (prNumber || reviewData.pr_number)) {
+    const targetPr = prNumber || reviewData.pr_number;
+    try {
+      const resolvedIds = await fetchResolvedThreads(github, context, targetPr);
+      // filterResolvedIssues agora é síncrono
+      filteredBlockingIssues = filterResolvedIssues(blockingIssues, resolvedIds);
+    } catch (err) {
+      logWarn('Erro ao filtrar issues resolvidas, usando todas', {
+        error: err.message
+      });
+    }
+  }
+
+  const hasBlockingIssues = filteredBlockingIssues.length > 0;
 
   // Preparar resultado
   const result = {
     hasBlockingIssues,
-    blockingIssues,
+    blockingIssues: filteredBlockingIssues,
+    totalBlockingIssues: blockingIssues.length,
     reviewData
   };
 
@@ -442,6 +608,8 @@ module.exports = {
   extractBlockingIssues,
   generateAlertComment,
   clearBlockingComment,
+  fetchResolvedThreads,
+  filterResolvedIssues,
   BLOCKING_PRIORITIES,
   BLOCKING_CATEGORIES
 };

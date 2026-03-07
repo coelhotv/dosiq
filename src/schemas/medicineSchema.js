@@ -68,6 +68,13 @@ export const medicineSchema = z.object({
       errorMap: () => ({ message: 'Tipo inválido. Opções: medicamento, suplemento' }),
     })
     .default('medicamento'),
+
+  therapeutic_class: z
+    .string()
+    .max(100, 'Classe terapêutica não pode ter mais de 100 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
 })
 
 /**

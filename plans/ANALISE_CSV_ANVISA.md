@@ -50,8 +50,9 @@ IBUPROFENO | Generico | ANALGESICOS NAO NARCOTICOS | IBUPROFENO | ALTHAIA S.A.
 ```
 
 Apos deduplicacao por `NOME_PRODUTO + PRINCIPIO_ATIVO`:
-- Estimativa: ~2.000-4.000 registros unicos
-- JSON gerado: ~200-400 KB
+- **Real:** 6.816 medicamentos unicos
+- **Real:** 278 laboratorios unicos
+- **JSON gerado:** 816 KB (uncompressed), ~103 KB (gzipped via lazy-load)
 
 ---
 
@@ -100,28 +101,44 @@ duas pessoas com o mesmo medicamento podem tomar doses diferentes.
 | Principio do projeto | Zero calls extras ao Supabase | Viola principio |
 | Complexidade | Baixa | Alta (RLS, indices, migracoes) |
 
-### Implementacao do ETL
+### Implementacao do ETL — Dois arquivos separados
 
 Criar `scripts/process-anvisa.js`:
 
 1. Le `public/medicamentos-ativos-anvisa.csv`
-2. Deduplica por `NOME_PRODUTO + PRINCIPIO_ATIVO` (remove duplicatas de fabricante)
+2. Cria dois Maps de deduplicacao:
+   - `medicines`: deduplica por `NOME_PRODUTO + PRINCIPIO_ATIVO` (remove duplicatas de fabricante)
+   - `laboratories`: deduplica por `EMPRESA_DETENTORA_REGISTRO`
 3. Normaliza (trim, lowercase onde necessario, fix encoding)
-4. Gera `src/features/medications/data/medicineDatabase.json`
+4. Gera dois arquivos JSON separados
 
-**Formato de saida:**
+**Formato de saida (medicineDatabase.json):**
 
 ```json
 [
-  {
-    "name": "Losartana Potassica",
-    "activeIngredient": "losartana potassica",
-    "laboratory": "EMS",
-    "therapeuticClass": "ANTI-HIPERTENSIVOS",
-    "category": "Generico"
-  }
+  {"name":"Losartana Potassica","activeIngredient":"losartana potassica","therapeuticClass":"ANTI-HIPERTENSIVOS"},
+  {"name":"Epysqli","activeIngredient":"eculizumabe","therapeuticClass":"AGENTE IMUNOSUPRESSOR"}
 ]
 ```
+
+**Real:** 6.816 entradas unicas, 802 KB (uncompressed), ~103 KB (gzipped)
+
+**Formato de saida (laboratoryDatabase.json):**
+
+```json
+[
+  {"laboratory":"EMS"},
+  {"laboratory":"LEGRAND PHARMA"}
+]
+```
+
+**Real:** 278 entradas unicas, 14 KB
+
+**Vantagens da deduplicacao em dois arquivos:**
+- Autocomplete de medicamento sem duplicacao de nomes
+- Autocomplete de laboratorio separado (futuro: comparador de precos)
+- Base ANVISA normalizada no source (menos processamento em runtime)
+- Integracoes futuras com CMED (preco por laboratorio) ficam mais simples
 
 Nota: `therapeuticClass` nao estava na spec original, mas e incluido porque habilita
 F8.2 (interacoes medicamentosas na Fase 8) sem necessidade de fonte de dados adicional.
@@ -211,15 +228,19 @@ Recomendacao: incluir na F5.6. Justificativa:
 
 | Aspecto | Resposta |
 |---------|----------|
-| CSV serve para F5.6? | Sim, com ajuste: dosagem e manual |
-| Arquitetura ideal | JSON local via ETL script (zero custo, zero latencia) |
-| Campos auto-preenchidos | name, active_ingredient, laboratory, type (4 de 6) |
-| Campos ainda manuais | dosage_per_pill, dosage_unit (especificos da prescricao) |
+| CSV serve para F5.6? | ✅ Sim, com ajuste: dosagem é manual |
+| Arquitetura ideal | JSON local via ETL (duas databases) |
+| Medicamentos unicos encontrados | 6.816 (não 2.000-4.000 estimado) |
+| Laboratorios unicos encontrados | 278 (não 200-400 estimado) |
+| Campos auto-preenchidos | name, active_ingredient, therapeutic_class (3 de 6) |
+| Campos ainda manuais | dosage_per_pill, dosage_unit, laboratory (todos preenchidos separadamente) |
 | Dado extra de alto valor | CLASSE_TERAPEUTICA → habilita F8.2 sem nova fonte |
-| Tamanho estimado do JSON | 200-400 KB apos deduplicacao |
-| Maior oportunidade nao planejada | Deteccao de duplicatas por principio ativo (custo baixo, valor alto) |
+| Tamanho medicineDatabase.json | 802 KB (uncompressed), ~103 KB (gzipped) |
+| Tamanho laboratoryDatabase.json | 14 KB |
+| Total gerado | 816 KB (mitigado: lazy-loaded + gzipped) |
+| Maior oportunidade nao planejada | Deteccao de duplicatas por principio ativo |
 | Campo de schema a adicionar | `therapeutic_class` opcional — melhor fazer agora |
 
 ---
 
-*Analise realizada em 06/03/2026 com base no CSV baixado da ANVISA (medicamentos ativos).*
+*Analise realizada em 07/03/2026 com base no CSV baixado da ANVISA (10.206 registros). ETL executado com sucesso.*
