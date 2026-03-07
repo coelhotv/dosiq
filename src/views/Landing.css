@@ -834,11 +834,33 @@
   height: 100%;
   background: linear-gradient(90deg, var(--color-success), var(--neon-cyan));
   border-radius: var(--radius-full);
-  transition: width 0.5s ease;
 }
 
 .stock-bar.critical .fill {
   background: var(--color-error);
+  animation: fillBar10 2s ease-out forwards;
+}
+
+.stock-bar:not(.critical) .fill {
+  animation: fillBar80 2s ease-out forwards;
+}
+
+@keyframes fillBar10 {
+  from {
+    width: 0;
+  }
+  to {
+    width: 10%;
+  }
+}
+
+@keyframes fillBar80 {
+  from {
+    width: 0;
+  }
+  to {
+    width: 80%;
+  }
 }
 
 .days {
@@ -895,7 +917,6 @@
 
 .step-icon {
   font-size: 2.5rem;
-  display: inline-block;
   width: 60px;
   height: 60px;
   display: flex;
@@ -926,26 +947,8 @@
   margin: 0 auto;
 }
 
-@media (min-width: 1024px) {
-  .features-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .feature-icon {
-  font-size: 2rem !important;
+  font-size: 2rem;
 }
 
 /* ========== FOOTER ========== */
