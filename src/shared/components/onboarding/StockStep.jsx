@@ -10,11 +10,7 @@ const stockFormSchema = z.object({
   quantity: z.coerce
     .number({ invalid_type_error: 'Quantidade é obrigatória.' })
     .positive('Quantidade deve ser maior que 0.'),
-  unitPrice: z.coerce
-    .number()
-    .nonnegative('Preço não pode ser negativo.')
-    .optional()
-    .nullable(),
+  unitPrice: z.coerce.number().nonnegative('Preço não pode ser negativo.').optional().nullable(),
 })
 
 // Referência para o cálculo de duração do estoque (ex: 2 meses se 1 comprimido/dia)
@@ -74,7 +70,9 @@ export default function StockStep() {
     <div className="stock-step">
       <div className="stock-header">
         <h2>Adicionar Estoque Inicial</h2>
-        <p>Quanto do medicamento <strong>{medicine.name}</strong> você tem agora?</p>
+        <p>
+          Quanto do medicamento <strong>{medicine.name}</strong> você tem agora?
+        </p>
       </div>
 
       <div className="stock-form">
@@ -136,11 +134,7 @@ export default function StockStep() {
         >
           {isLoading ? 'Salvando...' : 'Salvar Estoque'}
         </Button>
-        <button
-          onClick={handleSkip}
-          disabled={isLoading}
-          className="btn-skip-stock"
-        >
+        <button onClick={handleSkip} disabled={isLoading} className="btn-skip-stock">
           Pular esta etapa
         </button>
       </div>

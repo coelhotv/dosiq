@@ -4,7 +4,10 @@ import {
   cachedTreatmentPlanService as treatmentPlanService,
   adherenceService,
 } from '@shared/services'
-import { getExpiringPrescriptions, PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
+import {
+  getExpiringPrescriptions,
+  PRESCRIPTION_STATUS,
+} from '@features/prescriptions/services/prescriptionService'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
@@ -95,7 +98,9 @@ export default function Dashboard({ onNavigate }) {
   // Wave 2 — zonas temporais de doses e complexidade progressiva (W2-01, W2-02, W2-10)
   const { zones, totals } = useDoseZones()
   const { mode: complexityMode, defaultViewMode, ringGaugeSize } = useComplexityMode()
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('mr_view_mode') || defaultViewMode)
+  const [viewMode, setViewMode] = useState(
+    () => localStorage.getItem('mr_view_mode') || defaultViewMode
+  )
   const [selectedDoseKeys, setSelectedDoseKeys] = useState(new Set())
   const [isStockCollapsed, setIsStockCollapsed] = useState(() => complexityMode === 'complex')
 
@@ -176,7 +181,6 @@ export default function Dashboard({ onNavigate }) {
       },
     }
   )
-
 
   // Handler para fechar o modal de drill-down
   const handleCloseDrillDown = () => {
@@ -315,7 +319,13 @@ export default function Dashboard({ onNavigate }) {
           currentStock: s.total || 0,
           dailyConsumption: s.dailyIntake || 0,
           daysRemaining: s.daysRemaining || 0,
-          level: s.isZero ? 'critical' : s.isLow ? 'low' : s.daysRemaining >= 30 ? 'high' : 'normal',
+          level: s.isZero
+            ? 'critical'
+            : s.isLow
+              ? 'low'
+              : s.daysRemaining >= 30
+                ? 'high'
+                : 'normal',
         }))
         .sort((a, b) => a.daysRemaining - b.daysRemaining),
     [stockSummary]
@@ -459,9 +469,7 @@ export default function Dashboard({ onNavigate }) {
         type: 'prescription',
         protocol_id: protocol.id,
         scheduled_time: null,
-        actions: [
-          { label: 'RENOVAR', type: 'primary' },
-        ],
+        actions: [{ label: 'RENOVAR', type: 'primary' }],
       })
     })
 
@@ -565,7 +573,6 @@ export default function Dashboard({ onNavigate }) {
           onClick={() => setIsHealthDetailsOpen(true)}
         />
       </header>
-
 
       {/* Insight Card - Dinâmico baseado em dados do usuário */}
       {!insightLoading && insight && (
@@ -783,10 +790,7 @@ export default function Dashboard({ onNavigate }) {
       />
 
       {/* Modal de Geração de Relatórios */}
-      <Modal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      >
+      <Modal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
         <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
       </Modal>
     </div>

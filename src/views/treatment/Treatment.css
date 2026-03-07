@@ -163,7 +163,9 @@
   padding: var(--space-1);
   font-size: var(--font-size-base);
   opacity: 0.6;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
 }
 
 .protocol-list-item__btn:hover {

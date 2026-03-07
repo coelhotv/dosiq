@@ -99,7 +99,9 @@ describe('EmergencyQRCode', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Escaneie para ver informações médicas em emergências/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/Escaneie para ver informações médicas em emergências/i)
+      ).toBeInTheDocument()
     })
   })
 })

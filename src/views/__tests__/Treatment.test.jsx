@@ -22,7 +22,7 @@ vi.mock('@protocols/services/treatmentPlanService', () => ({
 }))
 
 vi.mock('@shared/components/ui/Modal', () => ({
-  default: ({ children, isOpen }) => isOpen ? <div data-testid="modal">{children}</div> : null,
+  default: ({ children, isOpen }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
 }))
 
 vi.mock('@protocols/components/TreatmentWizard', () => ({
@@ -70,16 +70,18 @@ describe('Treatment', () => {
   it('renderiza medicamentos avulsos', () => {
     useDashboard.mockReturnValue({
       medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
-      protocols: [{
-        id: 'p1',
-        active: true,
-        treatment_plan_id: null,
-        medicine_id: 'm1',
-        medicine: { name: 'Losartana' },
-        frequency: 'diario',
-        time_schedule: ['08:00'],
-        dosage_per_intake: 1,
-      }],
+      protocols: [
+        {
+          id: 'p1',
+          active: true,
+          treatment_plan_id: null,
+          medicine_id: 'm1',
+          medicine: { name: 'Losartana' },
+          frequency: 'diario',
+          time_schedule: ['08:00'],
+          dosage_per_intake: 1,
+        },
+      ],
       refresh: vi.fn(),
     })
 
@@ -91,7 +93,15 @@ describe('Treatment', () => {
 
   it('renderiza medicamentos sem tratamento com CTA', () => {
     useDashboard.mockReturnValue({
-      medicines: [{ id: 'm1', name: 'Vitamina D', dosage_per_pill: 1000, dosage_unit: 'ui', type: 'suplemento' }],
+      medicines: [
+        {
+          id: 'm1',
+          name: 'Vitamina D',
+          dosage_per_pill: 1000,
+          dosage_unit: 'ui',
+          type: 'suplemento',
+        },
+      ],
       protocols: [],
       refresh: vi.fn(),
     })
@@ -105,25 +115,29 @@ describe('Treatment', () => {
   it('renderiza planos de tratamento', () => {
     useDashboard.mockReturnValue({
       medicines: [{ id: 'm1', name: 'Losartana' }],
-      protocols: [{
-        id: 'p1',
-        active: true,
-        treatment_plan_id: 'tp1',
-        medicine_id: 'm1',
-        medicine: { name: 'Losartana' },
-        frequency: 'diario',
-        time_schedule: ['08:00'],
-        dosage_per_intake: 1,
-      }],
+      protocols: [
+        {
+          id: 'p1',
+          active: true,
+          treatment_plan_id: 'tp1',
+          medicine_id: 'm1',
+          medicine: { name: 'Losartana' },
+          frequency: 'diario',
+          time_schedule: ['08:00'],
+          dosage_per_intake: 1,
+        },
+      ],
       refresh: vi.fn(),
     })
 
     useCachedQuery.mockReturnValue({
-      data: [{
-        id: 'tp1',
-        name: 'Hipertensao',
-        emoji: '❤️',
-      }],
+      data: [
+        {
+          id: 'tp1',
+          name: 'Hipertensao',
+          emoji: '❤️',
+        },
+      ],
     })
 
     render(<Treatment onNavigate={vi.fn()} />)

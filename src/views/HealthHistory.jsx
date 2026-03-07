@@ -38,7 +38,7 @@ export default function HealthHistory({ onNavigate }) {
   // Memos
   const treatmentPlans = useMemo(() => {
     const planMap = new Map()
-    protocols.forEach(p => {
+    protocols.forEach((p) => {
       if (p.treatment_plan_id) {
         planMap.set(p.treatment_plan_id, true)
       }
@@ -48,11 +48,13 @@ export default function HealthHistory({ onNavigate }) {
 
   const dayLogs = useMemo(() => {
     const d = selectedCalendarDate || new Date()
-    return currentMonthLogs.filter(log => {
+    return currentMonthLogs.filter((log) => {
       const logDate = new Date(log.taken_at)
-      return logDate.getFullYear() === d.getFullYear()
-        && logDate.getMonth() === d.getMonth()
-        && logDate.getDate() === d.getDate()
+      return (
+        logDate.getFullYear() === d.getFullYear() &&
+        logDate.getMonth() === d.getMonth() &&
+        logDate.getDate() === d.getDate()
+      )
     })
   }, [currentMonthLogs, selectedCalendarDate])
 
@@ -142,9 +144,9 @@ export default function HealthHistory({ onNavigate }) {
     try {
       await logService.delete(id)
       showSuccess('Registro removido!')
-      setCurrentMonthLogs(prev => prev.filter(log => log.id !== id))
-      setTimelineLogs(prev => prev.filter(log => log.id !== id))
-      setTotalLogs(prev => Math.max(0, prev - 1))
+      setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
+      setTimelineLogs((prev) => prev.filter((log) => log.id !== id))
+      setTotalLogs((prev) => Math.max(0, prev - 1))
       refresh()
     } catch (err) {
       setError('Erro ao remover: ' + err.message)
@@ -161,9 +163,9 @@ export default function HealthHistory({ onNavigate }) {
     setIsLoadingMore(true)
     try {
       const result = await logService.getAllPaginated(TIMELINE_PAGE_SIZE, timelineOffset)
-      setTimelineLogs(prev => [...prev, ...(result.data || [])])
+      setTimelineLogs((prev) => [...prev, ...(result.data || [])])
       setTimelineHasMore(result.hasMore || false)
-      setTimelineOffset(o => o + TIMELINE_PAGE_SIZE)
+      setTimelineOffset((o) => o + TIMELINE_PAGE_SIZE)
     } catch (err) {
       console.error('Erro ao carregar mais doses:', err)
     } finally {
@@ -184,9 +186,9 @@ export default function HealthHistory({ onNavigate }) {
   // Best streak vem do adherence summary (calculado em background)
   const bestStreak = adherenceSummary?.longestStreak ?? streak
   const pillsThisMonth = currentMonthLogs.reduce((sum, log) => sum + log.quantity_taken, 0)
-  const daysThisMonth = new Set(currentMonthLogs.map(log =>
-    new Date(log.taken_at).toLocaleDateString('pt-BR')
-  )).size
+  const daysThisMonth = new Set(
+    currentMonthLogs.map((log) => new Date(log.taken_at).toLocaleDateString('pt-BR'))
+  ).size
 
   return (
     <div className="health-history-view">
@@ -197,7 +199,9 @@ export default function HealthHistory({ onNavigate }) {
         </button>
       </div>
 
-      {successMessage && <div className="health-history-banner health-history-banner--success">{successMessage}</div>}
+      {successMessage && (
+        <div className="health-history-banner health-history-banner--success">{successMessage}</div>
+      )}
       {error && <div className="health-history-banner health-history-banner--error">{error}</div>}
 
       {/* Adherence summary */}
@@ -214,7 +218,10 @@ export default function HealthHistory({ onNavigate }) {
           )}
         </div>
         <div className="health-history-summary__bar">
-          <div className="health-history-summary__fill" style={{ width: `${Math.min(score, 100)}%` }} />
+          <div
+            className="health-history-summary__fill"
+            style={{ width: `${Math.min(score, 100)}%` }}
+          />
         </div>
         <div className="health-history-summary__streak">
           🔥 {streak}d streak · Melhor: {bestStreak}d
@@ -225,7 +232,7 @@ export default function HealthHistory({ onNavigate }) {
       <div className="health-history-calendar glass-card">
         <CalendarWithMonthCache
           onLoadMonth={handleCalendarLoadMonth}
-          markedDates={currentMonthLogs.map(log => formatLocalDate(new Date(log.taken_at)))}
+          markedDates={currentMonthLogs.map((log) => formatLocalDate(new Date(log.taken_at)))}
           selectedDate={selectedCalendarDate}
           onDayClick={setSelectedCalendarDate}
         />
@@ -234,7 +241,7 @@ export default function HealthHistory({ onNavigate }) {
             <h4 className="health-history-day-detail__title">
               Doses de {selectedCalendarDate?.toLocaleDateString('pt-BR')}
             </h4>
-            {dayLogs.map(log => (
+            {dayLogs.map((log) => (
               <div
                 key={log.id}
                 className="health-history-day-log"
@@ -242,7 +249,10 @@ export default function HealthHistory({ onNavigate }) {
               >
                 <span className="health-history-day-log__name">{log.medicine?.name}</span>
                 <span className="health-history-day-log__time">
-                  {new Date(log.taken_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(log.taken_at).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
               </div>
             ))}
@@ -281,13 +291,8 @@ export default function HealthHistory({ onNavigate }) {
       {timelineLogs.length > 0 && (
         <div className="health-history-timeline">
           <h3 className="health-history-section-title">Últimas Doses</h3>
-          {timelineLogs.map(log => (
-            <LogEntry
-              key={log.id}
-              log={log}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteLog}
-            />
+          {timelineLogs.map((log) => (
+            <LogEntry key={log.id} log={log} onEdit={handleEditClick} onDelete={handleDeleteLog} />
           ))}
           {timelineHasMore && (
             <button
@@ -303,7 +308,13 @@ export default function HealthHistory({ onNavigate }) {
 
       {/* Register dose CTA */}
       <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
-        <Button variant="primary" onClick={() => { setEditingLog(null); setIsModalOpen(true) }}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setEditingLog(null)
+            setIsModalOpen(true)
+          }}
+        >
           Registrar Dose
         </Button>
       </div>
@@ -311,14 +322,20 @@ export default function HealthHistory({ onNavigate }) {
       {/* Log modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingLog(null) }}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingLog(null)
+        }}
       >
         <LogForm
           protocols={protocols}
           treatmentPlans={treatmentPlans}
           initialValues={editingLog}
           onSave={handleLogMedicine}
-          onCancel={() => { setIsModalOpen(false); setEditingLog(null) }}
+          onCancel={() => {
+            setIsModalOpen(false)
+            setEditingLog(null)
+          }}
         />
       </Modal>
     </div>

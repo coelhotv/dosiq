@@ -41,7 +41,7 @@ describe('laboratoryDatabaseService', () => {
     it('retorna laboratórios por busca parcial', async () => {
       const results = await searchLaboratories('pharma')
       expect(results.length).toBeGreaterThan(0)
-      expect(results.some(r => r.laboratory.toUpperCase().includes('PHARMA'))).toBe(true)
+      expect(results.some((r) => r.laboratory.toUpperCase().includes('PHARMA'))).toBe(true)
     })
 
     it('retorna vazio para query vazia', async () => {
@@ -125,7 +125,7 @@ describe('laboratoryDatabaseService', () => {
 
     it('retorna nomes em maiúscula', async () => {
       const results = await getAllLaboratories()
-      expect(results.every(lab => typeof lab.laboratory === 'string')).toBe(true)
+      expect(results.every((lab) => typeof lab.laboratory === 'string')).toBe(true)
     })
   })
 

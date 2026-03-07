@@ -191,7 +191,7 @@ describe('medicineDatabaseService', () => {
 
     it('exclui medicamento especificado na busca', async () => {
       const duplicates = await findDuplicatesByIngredient('ibuprofeno', 'Ibuprofeno')
-      const names = duplicates.map(m => m.name)
+      const names = duplicates.map((m) => m.name)
       expect(names).not.toContain('Ibuprofeno')
     })
 
@@ -202,7 +202,7 @@ describe('medicineDatabaseService', () => {
 
     it('mantém exclude case-insensitive', async () => {
       const duplicates = await findDuplicatesByIngredient('ibuprofeno', 'ibuprofeno')
-      const names = duplicates.map(m => m.name.toLowerCase())
+      const names = duplicates.map((m) => m.name.toLowerCase())
       expect(names).not.toContain('ibuprofeno')
     })
   })

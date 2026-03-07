@@ -76,9 +76,7 @@ describe('SparklineAdesao — size expanded (30 pontos)', () => {
   })
 
   it('oculta tooltip container no size expanded', () => {
-    render(
-      <SparklineAdesao adherenceByDay={makeData(30)} size="expanded" showTooltip={false} />
-    )
+    render(<SparklineAdesao adherenceByDay={makeData(30)} size="expanded" showTooltip={false} />)
     expect(document.querySelector('.sparkline-tooltip-container')).toBeNull()
   })
 })
@@ -96,7 +94,9 @@ describe('SparklineAdesao — tooltip interativo', () => {
 
   it('fecha tooltip ao clicar fora', () => {
     const data = makeData(7, 85)
-    const { container } = render(<SparklineAdesao adherenceByDay={data} size="medium" showTooltip />)
+    const { container } = render(
+      <SparklineAdesao adherenceByDay={data} size="medium" showTooltip />
+    )
     const firstDot = document.querySelector('[data-testid^="sparkline-dot-"]')
     fireEvent.click(firstDot)
     expect(document.querySelector('.sparkline-tooltip-overlay')).toBeInTheDocument()

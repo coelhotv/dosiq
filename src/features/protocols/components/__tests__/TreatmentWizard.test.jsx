@@ -32,7 +32,7 @@ vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => {
       const filteredProps = {}
-      Object.keys(props).forEach(key => {
+      Object.keys(props).forEach((key) => {
         if (!['custom', 'variants', 'initial', 'animate', 'exit', 'transition'].includes(key)) {
           filteredProps[key] = props[key]
         }
@@ -63,7 +63,13 @@ describe('TreatmentWizard', () => {
   })
 
   it('renderiza step 2 quando preselectedMedicine fornecido', () => {
-    const med = { id: 'm1', name: 'Losartana', type: 'medicamento', dosage_per_pill: 50, dosage_unit: 'mg' }
+    const med = {
+      id: 'm1',
+      name: 'Losartana',
+      type: 'medicamento',
+      dosage_per_pill: 50,
+      dosage_unit: 'mg',
+    }
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
 
     expect(screen.getByText('Como Tomar')).toBeInTheDocument()
@@ -72,27 +78,31 @@ describe('TreatmentWizard', () => {
   it('valida campos obrigatorios no step 1', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
-    const nextBtn = screen.getAllByRole('button').find(b => b.textContent.includes('Próximo'))
+    const nextBtn = screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo'))
     expect(nextBtn).toBeDisabled()
   })
 
   it('habilita Proximo quando campos preenchidos', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
-    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), { target: { value: 'Losartana' } })
+    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), {
+      target: { value: 'Losartana' },
+    })
     fireEvent.change(screen.getByPlaceholderText('50'), { target: { value: '50' } })
 
-    const nextBtn = screen.getAllByRole('button').find(b => b.textContent.includes('Próximo'))
+    const nextBtn = screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo'))
     expect(nextBtn).not.toBeDisabled()
   })
 
   it('avanca para step 2 ao clicar Proximo', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
-    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), { target: { value: 'Losartana' } })
+    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), {
+      target: { value: 'Losartana' },
+    })
     fireEvent.change(screen.getByPlaceholderText('50'), { target: { value: '50' } })
 
-    const nextBtn = screen.getAllByRole('button').find(b => b.textContent.includes('Próximo'))
+    const nextBtn = screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo'))
     fireEvent.click(nextBtn)
 
     expect(screen.getByText('Como Tomar')).toBeInTheDocument()
@@ -113,7 +123,13 @@ describe('TreatmentWizard', () => {
   })
 
   it('permite adicionar e remover horarios no step 2', () => {
-    const med = { id: 'm1', name: 'Test', type: 'medicamento', dosage_per_pill: 50, dosage_unit: 'mg' }
+    const med = {
+      id: 'm1',
+      name: 'Test',
+      type: 'medicamento',
+      dosage_per_pill: 50,
+      dosage_unit: 'mg',
+    }
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
 
     fireEvent.click(screen.getByText('+ Adicionar horário'))
@@ -151,7 +167,13 @@ describe('TreatmentWizard', () => {
 
   it('submete com Pular no step 2 (skip stock)', async () => {
     const onComplete = vi.fn()
-    const med = { id: 'm1', name: 'Test', type: 'medicamento', dosage_per_pill: 50, dosage_unit: 'mg' }
+    const med = {
+      id: 'm1',
+      name: 'Test',
+      type: 'medicamento',
+      dosage_per_pill: 50,
+      dosage_unit: 'mg',
+    }
     render(<TreatmentWizard onComplete={onComplete} onCancel={vi.fn()} preselectedMedicine={med} />)
 
     fireEvent.click(screen.getByText('Pular'))

@@ -6,7 +6,14 @@ export default function WelcomeStep() {
       <div className="welcome-illustration">
         <div className="illustration-icon">
           <svg viewBox="0 0 64 64" className="welcome-ring">
-            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--color-primary-light)" strokeWidth="6" />
+            <circle
+              cx="32"
+              cy="32"
+              r="26"
+              fill="none"
+              stroke="var(--color-primary-light)"
+              strokeWidth="6"
+            />
             <circle
               cx="32"
               cy="32"

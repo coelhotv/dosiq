@@ -126,7 +126,10 @@ export function expandProtocolsToDoses(protocols, todayLogs) {
         treatmentPlanId: protocol.treatment_plan_id || null,
         treatmentPlanName: protocol.treatment_plan?.name || null,
         planBadge: protocol.treatment_plan
-          ? { emoji: protocol.treatment_plan.emoji || '📋', color: protocol.treatment_plan.color || '#6366f1' }
+          ? {
+              emoji: protocol.treatment_plan.emoji || '📋',
+              color: protocol.treatment_plan.color || '#6366f1',
+            }
           : null,
         isRegistered: !!registrationTime,
         registeredAt: registrationTime,
@@ -246,7 +249,8 @@ export function useDoseZones({
   // Totais
   const totals = useMemo(() => {
     const taken = zones.done.length
-    const pending = zones.late.length + zones.now.length + zones.upcoming.length + zones.later.length
+    const pending =
+      zones.late.length + zones.now.length + zones.upcoming.length + zones.later.length
     const expected = taken + pending
     return { expected, taken, pending }
   }, [zones])

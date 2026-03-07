@@ -22,13 +22,7 @@ export default function Consultation({ onBack }) {
   const [error, setError] = useState(null)
 
   // Obtém dados do contexto do Dashboard
-  const {
-    medicines,
-    protocols,
-    logs,
-    stockSummary,
-    stats,
-  } = useDashboard()
+  const { medicines, protocols, logs, stockSummary, stats } = useDashboard()
 
   // Agrega dados para o Modo Consulta
   useEffect(() => {
@@ -126,7 +120,9 @@ export default function Consultation({ onBack }) {
       }
 
       // Fallback: upload e gera link
-      const { url: shareUrl } = await shareService.shareReport(pdfBlob, { filename: 'consulta-medica.pdf' })
+      const { url: shareUrl } = await shareService.shareReport(pdfBlob, {
+        filename: 'consulta-medica.pdf',
+      })
 
       // Copia link para clipboard
       await navigator.clipboard.writeText(shareUrl)
@@ -153,11 +149,14 @@ export default function Consultation({ onBack }) {
   }, [onBack])
 
   // Memoiza handlers para evitar re-renderizações desnecessárias
-  const handlers = useMemo(() => ({
-    onGeneratePDF: handleGeneratePDF,
-    onShare: handleShare,
-    onBack: handleBack,
-  }), [handleGeneratePDF, handleShare, handleBack])
+  const handlers = useMemo(
+    () => ({
+      onGeneratePDF: handleGeneratePDF,
+      onShare: handleShare,
+      onBack: handleBack,
+    }),
+    [handleGeneratePDF, handleShare, handleBack]
+  )
 
   if (isLoading) {
     return (
@@ -190,9 +189,7 @@ export default function Consultation({ onBack }) {
       >
         <div style={{ fontSize: '3rem', marginBottom: 'var(--space-4)' }}>⚠️</div>
         <h2 style={{ marginBottom: 'var(--space-2)' }}>Erro ao carregar</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
-          {error}
-        </p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>{error}</p>
         <button
           onClick={handleBack}
           style={{
@@ -245,10 +242,5 @@ export default function Consultation({ onBack }) {
     )
   }
 
-  return (
-    <ConsultationView
-      data={consultationData}
-      {...handlers}
-    />
-  )
+  return <ConsultationView data={consultationData} {...handlers} />
 }

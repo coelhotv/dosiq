@@ -245,8 +245,8 @@ describe('consultationDataService', () => {
         dosagePerPill: 500,
         dosageUnit: 'mg',
         dosagePerIntake: 500, // 500mg × 1 comprimido
-        timesPerDay: 2,       // 2 horários
-        dailyDosage: 1000,    // 500mg × 2 vezes
+        timesPerDay: 2, // 2 horários
+        dailyDosage: 1000, // 500mg × 2 vezes
         notes: 'Tomar após refeições',
       })
     })
@@ -260,7 +260,7 @@ describe('consultationDataService', () => {
         active: true,
         frequency: 'diário',
         time_schedule: ['14:00'], // +1 horário
-        dosage_per_intake: 2,     // 2 comprimidos
+        dosage_per_intake: 2, // 2 comprimidos
         start_date: '2026-01-01',
         end_date: '2026-12-31',
       }
@@ -273,8 +273,8 @@ describe('consultationDataService', () => {
       const paracetamol = result.activeMedicines.find((m) => m.id === 'med-1')
       expect(paracetamol).toMatchObject({
         dosagePerIntake: 1500, // 500mg × (1 + 2) = 1500
-        timesPerDay: 3,        // 2 + 1 = 3 horários
-        dailyDosage: 4500,     // 1500 × 3 = 4500
+        timesPerDay: 3, // 2 + 1 = 3 horários
+        dailyDosage: 4500, // 1500 × 3 = 4500
       })
     })
 

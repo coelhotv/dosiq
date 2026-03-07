@@ -363,7 +363,7 @@ export function clearCache() {
   cache.clear()
   accessCount.clear()
   pendingRequests.clear()
-  accessCounter = 0  // Reseta counter para LRU funcionar corretamente em runs longos
+  accessCounter = 0 // Reseta counter para LRU funcionar corretamente em runs longos
 
   if (typeof window !== 'undefined' && window.localStorage && process.env.NODE_ENV !== 'test') {
     try {

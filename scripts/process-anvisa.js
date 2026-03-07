@@ -15,6 +15,7 @@ import fs from 'fs'
 import path from 'path'
 import readline from 'readline'
 import { fileURLToPath } from 'url'
+import iconv from 'iconv-lite'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -46,9 +47,10 @@ async function processCSV() {
   let medicineDuplicates = 0
   let laboratoryDuplicates = 0
 
-  const fileStream = fs.createReadStream(CSV_INPUT, 'latin1')
+  const fileStream = fs.createReadStream(CSV_INPUT)
+  const decodedStream = fileStream.pipe(iconv.decodeStream('mac_roman'))
   const rl = readline.createInterface({
-    input: fileStream,
+    input: decodedStream,
     crlfDelay: Infinity,
   })
 

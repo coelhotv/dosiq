@@ -56,16 +56,13 @@ export default function RingGauge({
 
   // Testa se o usuário prefere movimento reduzido
   const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const ringTransition = prefersReducedMotion
     ? { duration: 0 }
     : { type: 'spring', stiffness: 60, damping: 15 }
 
-  const streakTransition = prefersReducedMotion
-    ? { duration: 0 }
-    : { delay: 0.3, duration: 0.4 }
+  const streakTransition = prefersReducedMotion ? { duration: 0 } : { delay: 0.3, duration: 0.4 }
 
   const ringElement = (
     <svg

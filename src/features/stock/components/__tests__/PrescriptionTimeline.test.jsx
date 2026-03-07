@@ -106,9 +106,9 @@ describe('PrescriptionTimeline — estados visuais', () => {
 
   it('não aplica pulse-critical quando vigente', () => {
     const { container } = render(<PrescriptionTimeline {...vigente} />)
-    expect(container.querySelector('[data-testid="prescription-timeline"]').className).not.toContain(
-      'pulse-critical'
-    )
+    expect(
+      container.querySelector('[data-testid="prescription-timeline"]').className
+    ).not.toContain('pulse-critical')
   })
 
   it('exibe marcador "hoje" quando prescrição está em andamento', () => {
@@ -159,9 +159,9 @@ describe('PrescriptionTimeline — interatividade', () => {
 
   it('aceita className personalizado', () => {
     const { container } = render(<PrescriptionTimeline {...vigente} className="minha-classe" />)
-    expect(
-      container.querySelector('[data-testid="prescription-timeline"]').className
-    ).toContain('minha-classe')
+    expect(container.querySelector('[data-testid="prescription-timeline"]').className).toContain(
+      'minha-classe'
+    )
   })
 })
 

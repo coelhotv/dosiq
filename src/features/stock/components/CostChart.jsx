@@ -42,9 +42,7 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
   if (!hasData) {
     return (
       <div className="cost-chart cost-chart--empty">
-        <p className="cost-chart__empty-text">
-          Adicione preços no estoque para ver custos
-        </p>
+        <p className="cost-chart__empty-text">Adicione preços no estoque para ver custos</p>
         {onExpand && (
           <button className="cost-chart__link" onClick={onExpand} type="button">
             Ir para Estoque →
@@ -76,11 +74,7 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
                 {item.name}
               </span>
               <div className="cost-chart__track">
-                <motion.div
-                  className="cost-chart__fill"
-                  variants={barVariants}
-                  custom={percent}
-                />
+                <motion.div className="cost-chart__fill" variants={barVariants} custom={percent} />
               </div>
               <span className="cost-chart__item-value">{formatBRL(item.monthlyCost)}</span>
             </motion.div>

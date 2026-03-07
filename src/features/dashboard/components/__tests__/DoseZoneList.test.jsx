@@ -5,14 +5,8 @@ import DoseZoneList from '../DoseZoneList'
 // Mocks de componentes pesados — isolam a lógica do DoseZoneList
 vi.mock('../TreatmentAccordion', () => ({
   default: ({ protocol, children, onBatchRegister }) => (
-    <div
-      data-testid="treatment-accordion"
-      data-protocol-name={protocol.name}
-    >
-      <button
-        data-testid="accordion-batch-btn"
-        onClick={onBatchRegister}
-      >
+    <div data-testid="treatment-accordion" data-protocol-name={protocol.name}>
+      <button data-testid="accordion-batch-btn" onClick={onBatchRegister}>
         LOTE
       </button>
       {children}
@@ -22,11 +16,7 @@ vi.mock('../TreatmentAccordion', () => ({
 
 vi.mock('../SwipeRegisterItem', () => ({
   default: ({ medicine, time, onRegister }) => (
-    <div
-      data-testid="swipe-register-item"
-      data-medicine={medicine.name}
-      data-time={time}
-    >
+    <div data-testid="swipe-register-item" data-medicine={medicine.name} data-time={time}>
       <button
         data-testid={`swipe-register-${medicine.id}`}
         onClick={() => onRegister(medicine.id, 1)}
@@ -159,8 +149,19 @@ describe('DoseZoneList', () => {
     const zones = {
       ...emptyZones,
       now: [
-        makeDose({ protocolId: 'p1', medicineName: 'Aspirina', treatmentPlanId: 'plan-1', treatmentPlanName: 'Cardio' }),
-        makeDose({ protocolId: 'p2', medicineName: 'Metoprolol', scheduledTime: '08:30', treatmentPlanId: 'plan-1', treatmentPlanName: 'Cardio' }),
+        makeDose({
+          protocolId: 'p1',
+          medicineName: 'Aspirina',
+          treatmentPlanId: 'plan-1',
+          treatmentPlanName: 'Cardio',
+        }),
+        makeDose({
+          protocolId: 'p2',
+          medicineName: 'Metoprolol',
+          scheduledTime: '08:30',
+          treatmentPlanId: 'plan-1',
+          treatmentPlanName: 'Cardio',
+        }),
         makeDose({ protocolId: 'p3', medicineName: 'Vitamina D', scheduledTime: '09:00' }), // avulso
       ],
     }

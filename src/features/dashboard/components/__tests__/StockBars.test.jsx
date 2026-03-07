@@ -7,11 +7,46 @@ afterEach(() => {
 })
 
 const mockItems = [
-  { medicineId: '1', name: 'Losartana', currentStock: 8, dailyConsumption: 2, daysRemaining: 4, level: 'critical' },
-  { medicineId: '2', name: 'Metformina', currentStock: 60, dailyConsumption: 2, daysRemaining: 30, level: 'normal' },
-  { medicineId: '3', name: 'Omeprazol', currentStock: 0, dailyConsumption: 1, daysRemaining: 0, level: 'critical' },
-  { medicineId: '4', name: 'Vitamina D com nome longo', currentStock: 180, dailyConsumption: 2, daysRemaining: 90, level: 'high' },
-  { medicineId: '5', name: 'Atorvastatina', currentStock: 20, dailyConsumption: 2, daysRemaining: 10, level: 'low' },
+  {
+    medicineId: '1',
+    name: 'Losartana',
+    currentStock: 8,
+    dailyConsumption: 2,
+    daysRemaining: 4,
+    level: 'critical',
+  },
+  {
+    medicineId: '2',
+    name: 'Metformina',
+    currentStock: 60,
+    dailyConsumption: 2,
+    daysRemaining: 30,
+    level: 'normal',
+  },
+  {
+    medicineId: '3',
+    name: 'Omeprazol',
+    currentStock: 0,
+    dailyConsumption: 1,
+    daysRemaining: 0,
+    level: 'critical',
+  },
+  {
+    medicineId: '4',
+    name: 'Vitamina D com nome longo',
+    currentStock: 180,
+    dailyConsumption: 2,
+    daysRemaining: 90,
+    level: 'high',
+  },
+  {
+    medicineId: '5',
+    name: 'Atorvastatina',
+    currentStock: 20,
+    dailyConsumption: 2,
+    daysRemaining: 10,
+    level: 'low',
+  },
 ]
 
 describe('StockBars', () => {
@@ -58,7 +93,16 @@ describe('StockBars', () => {
   })
 
   it('não mostra pulse em barras não-críticas', () => {
-    const normalItem = [{ medicineId: '2', name: 'Metformina', currentStock: 60, dailyConsumption: 2, daysRemaining: 30, level: 'normal' }]
+    const normalItem = [
+      {
+        medicineId: '2',
+        name: 'Metformina',
+        currentStock: 60,
+        dailyConsumption: 2,
+        daysRemaining: 30,
+        level: 'normal',
+      },
+    ]
     const { container } = render(<StockBars items={normalItem} />)
     expect(container.querySelector('.pulse-critical')).toBeNull()
   })

@@ -13,17 +13,13 @@ export default function TreatmentPlanCard({ plan, onEdit, children }) {
         aria-expanded={expanded}
       >
         <div className="treatment-plan-card__title">
-          <span className="treatment-plan-card__icon">
-            {plan.emoji || '📁'}
-          </span>
+          <span className="treatment-plan-card__icon">{plan.emoji || '📁'}</span>
           <span className="treatment-plan-card__name">{plan.name}</span>
           <span className="treatment-plan-card__count">
             {activeCount} {activeCount === 1 ? 'med' : 'meds'}
           </span>
         </div>
-        <span className={`treatment-plan-card__chevron ${expanded ? 'expanded' : ''}`}>
-          ›
-        </span>
+        <span className={`treatment-plan-card__chevron ${expanded ? 'expanded' : ''}`}>›</span>
       </button>
 
       {expanded && (
@@ -31,10 +27,7 @@ export default function TreatmentPlanCard({ plan, onEdit, children }) {
           {children}
           {onEdit && (
             <div className="treatment-plan-card__footer">
-              <button
-                className="treatment-plan-card__edit-btn"
-                onClick={() => onEdit(plan)}
-              >
+              <button className="treatment-plan-card__edit-btn" onClick={() => onEdit(plan)}>
                 Editar plano
               </button>
             </div>

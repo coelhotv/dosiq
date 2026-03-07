@@ -4,15 +4,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 vi.mock('@shared/utils/supabase', () => ({
   supabase: {
     auth: {
-      getUser: vi.fn(() => Promise.resolve({
-        data: {
-          user: {
-            id: 'user-1',
-            email: 'joao@email.com',
-            user_metadata: { name: 'Joao Silva' },
+      getUser: vi.fn(() =>
+        Promise.resolve({
+          data: {
+            user: {
+              id: 'user-1',
+              email: 'joao@email.com',
+              user_metadata: { name: 'Joao Silva' },
+            },
           },
-        },
-      })),
+        })
+      ),
     },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -31,11 +33,11 @@ vi.mock('@shared/components/ui/Loading', () => ({
 }))
 
 vi.mock('@shared/components/ui/Modal', () => ({
-  default: ({ children, isOpen }) => isOpen ? <div data-testid="modal">{children}</div> : null,
+  default: ({ children, isOpen }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
 }))
 
 vi.mock('@features/export/components/ExportDialog', () => ({
-  default: ({ isOpen }) => isOpen ? <div data-testid="export-dialog" /> : null,
+  default: ({ isOpen }) => (isOpen ? <div data-testid="export-dialog" /> : null),
 }))
 
 vi.mock('@features/reports/components/ReportGenerator', () => ({

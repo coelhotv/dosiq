@@ -34,7 +34,9 @@ export default function Profile({ onNavigate }) {
   // Handlers
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       setUser(user)
 
       const { data, error } = await supabase
@@ -82,10 +84,12 @@ export default function Profile({ onNavigate }) {
   const generateTelegramToken = async () => {
     const token = window.crypto.randomUUID().split('-')[0].toUpperCase()
     try {
-      const { error } = await supabase.from('user_settings').upsert(
-        { user_id: user.id, verification_token: token, updated_at: new Date() },
-        { onConflict: 'user_id' }
-      )
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          { user_id: user.id, verification_token: token, updated_at: new Date() },
+          { onConflict: 'user_id' }
+        )
       if (error) throw error
       setTelegramToken(token)
     } catch (err) {
@@ -95,14 +99,15 @@ export default function Profile({ onNavigate }) {
   }
 
   const handleDisconnectTelegram = async () => {
-    if (!window.confirm('Deseja desconectar o Telegram? Você parará de receber notificações.')) return
+    if (!window.confirm('Deseja desconectar o Telegram? Você parará de receber notificações.'))
+      return
     try {
       const { error } = await supabase
         .from('user_settings')
         .update({ telegram_chat_id: null, verification_token: null, updated_at: new Date() })
         .eq('user_id', user.id)
       if (error) throw error
-      setSettings(prev => ({ ...prev, telegram_chat_id: null }))
+      setSettings((prev) => ({ ...prev, telegram_chat_id: null }))
       setTelegramToken(null)
       showMessage('Telegram desconectado!')
     } catch (err) {
@@ -132,10 +137,7 @@ export default function Profile({ onNavigate }) {
 
   return (
     <div className="profile-view">
-      <ProfileHeader
-        name={user?.user_metadata?.name}
-        email={user?.email}
-      />
+      <ProfileHeader name={user?.user_metadata?.name} email={user?.email} />
 
       {message && <div className="profile-message profile-message--success">✅ {message}</div>}
       {error && <div className="profile-message profile-message--error">❌ {error}</div>}
@@ -143,7 +145,11 @@ export default function Profile({ onNavigate }) {
       {/* Saúde & Histórico */}
       <ProfileSection title="Saúde & Histórico">
         <ProfileLink icon="📊" label="Minha Saúde" onClick={() => onNavigate('health-history')} />
-        <ProfileLink icon="🆘" label="Cartão de Emergência" onClick={() => onNavigate('emergency')} />
+        <ProfileLink
+          icon="🆘"
+          label="Cartão de Emergência"
+          onClick={() => onNavigate('emergency')}
+        />
         <ProfileLink icon="👨‍⚕️" label="Modo Consulta" onClick={() => onNavigate('consultation')} />
       </ProfileSection>
 
@@ -160,7 +166,9 @@ export default function Profile({ onNavigate }) {
           <div className="profile-telegram__row">
             <span className="profile-telegram__icon">🤖</span>
             <span className="profile-telegram__label">Telegram</span>
-            <span className={`profile-telegram__badge profile-telegram__badge--${isTelegramConnected ? 'connected' : 'disconnected'}`}>
+            <span
+              className={`profile-telegram__badge profile-telegram__badge--${isTelegramConnected ? 'connected' : 'disconnected'}`}
+            >
               {isTelegramConnected ? 'Conectado' : 'Desconectado'}
             </span>
           </div>
@@ -182,7 +190,9 @@ export default function Profile({ onNavigate }) {
                 </button>
               ) : (
                 <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-                  <p style={{ margin: '0 0 4px' }}>Envie ao bot: <code>/start {telegramToken}</code></p>
+                  <p style={{ margin: '0 0 4px' }}>
+                    Envie ao bot: <code>/start {telegramToken}</code>
+                  </p>
                   <a
                     href={`https://t.me/meus_remedios_bot?start=${telegramToken}`}
                     target="_blank"

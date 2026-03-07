@@ -232,7 +232,9 @@ export default function Settings({ onNavigate }) {
 
       <div className="settings-section glass-card">
         <h3>Exportar Dados</h3>
-        <p className="section-desc">Exporte seus dados em formato CSV ou JSON para backup ou análise.</p>
+        <p className="section-desc">
+          Exporte seus dados em formato CSV ou JSON para backup ou análise.
+        </p>
 
         <div className="export-actions">
           <Button variant="outline" onClick={() => setIsExportDialogOpen(true)}>
@@ -243,7 +245,9 @@ export default function Settings({ onNavigate }) {
 
       <div className="settings-section glass-card">
         <h3>Relatórios</h3>
-        <p className="section-desc">Gere relatórios em PDF com seu histórico de medicamentos e adesão.</p>
+        <p className="section-desc">
+          Gere relatórios em PDF com seu histórico de medicamentos e adesão.
+        </p>
 
         <div className="report-actions">
           <Button variant="outline" onClick={() => setIsReportModalOpen(true)}>
@@ -275,10 +279,7 @@ export default function Settings({ onNavigate }) {
       <ExportDialog isOpen={isExportDialogOpen} onClose={() => setIsExportDialogOpen(false)} />
 
       {/* Modal de Geração de Relatórios */}
-      <Modal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      >
+      <Modal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
         <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
       </Modal>
     </div>

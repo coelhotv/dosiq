@@ -80,9 +80,7 @@ describe('isDoseRegistered', () => {
   // Criar taken_at em 08:05 LOCAL — timezone-agnostic (setHours usa tempo local)
   const takenAt0805 = new Date()
   takenAt0805.setHours(8, 5, 0, 0)
-  const todayLogs = [
-    { protocol_id: 'p1', taken_at: takenAt0805.toISOString() },
-  ]
+  const todayLogs = [{ protocol_id: 'p1', taken_at: takenAt0805.toISOString() }]
 
   it('retorna true quando log existe dentro da tolerância de 30min', () => {
     // dose às 08:00 → log às 08:05 local → diferença = 5min → dentro do limite
