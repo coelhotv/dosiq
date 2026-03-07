@@ -11,11 +11,12 @@
 
 ## 1. Contexto
 
-**STATUS ATUALIZADO (07/03/2026 — FASE 5.B CONCLUÍDA):**
+**STATUS ATUALIZADO (07/03/2026 — FASE 5.C CONCLUÍDA):**
 - ✅ **Sprint 5.A** — F5.10 Analise de Custo entregue e mergeado (commit 894bb98)
 - ✅ **Sprint 5.B** — ETL-1 + F5.6 (Base ANVISA + Autocomplete) entregue e mergeado (commit 7a887dc, PR #278)
+- ✅ **Sprint 5.C** — Onboarding Renovado (WelcomeStep + StockStep + TelegramIntegrationStep) entregue e mergeado (commit 17371b48fc8cd76ab1d59567996c2c926f6613e1, PR #283)
 
-A Fase 5 esta agora 90% completa. Restam 2 features (F5.C Onboarding + F5.D Landing redesign) para completar e tagar v3.2.0.
+A Fase 5 esta agora 95% completa. Resta 1 feature (F5.D Landing redesign) para completar e tagar v3.2.0.
 Este documento detalha EXATAMENTE o que fazer, como fazer, como testar e qual processo seguir.
 
 ---
@@ -56,10 +57,11 @@ Sprint 5.B — Integracao Base ANVISA (13 SP — Cenario A confirmado) ✅ CONCL
   F5.6-3:  Integracao no MedicineForm.jsx ✅ Merged
   Quality Gate: Full test suite + code review + all checks PASSED ✅ PASSED
 
-Sprint 5.C — Onboarding Renovado (5 SP)
-  F5.C-1:  WelcomeStep redesign (value props v3.2)
-  F5.C-2:  StockStep novo (step 4/5 — entrada de estoque inicial)
-  F5.C-3:  TelegramIntegrationStep atualizado (bot proativo)
+Sprint 5.C — Onboarding Renovado (5 SP) ✅ CONCLUÍDO
+  F5.C-1:  WelcomeStep redesign (value props v3.2) ✅ Merged
+  F5.C-2:  StockStep novo (step 4/5 — entrada de estoque inicial) ✅ Merged
+  F5.C-3:  TelegramIntegrationStep atualizado (bot proativo) ✅ Merged
+  Quality Gate: Full test suite (473/473) + code review + lint ✅ PASSED
 
 Sprint 5.D — Redesign da Landing Page (8 SP)
   F5.D-1:  Hero redesign (headline + visual ring gauge)
