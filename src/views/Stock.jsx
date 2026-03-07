@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { medicineService, stockService, protocolService } from '@shared/services'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
@@ -6,10 +6,14 @@ import Modal from '@shared/components/ui/Modal'
 import EmptyState from '@shared/components/ui/EmptyState'
 import StockForm from '@stock/components/StockForm'
 import StockCard from '@stock/components/StockCard'
+import CostChart from '@stock/components/CostChart'
+import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
 import './Stock.css'
 
 export default function Stock({ initialParams, onClearParams }) {
+  // 1. States
   const [medicines, setMedicines] = useState([])
+  const [protocols, setProtocols] = useState([])
   const [stockData, setStockData] = useState({}) // { medicineId: { entries: [], total: 0, ...status } }
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -17,21 +21,43 @@ export default function Stock({ initialParams, onClearParams }) {
   const [selectedMedicineId, setSelectedMedicineId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
 
+  // 2. Memos
+  // Calcular custos mensais (F5.10)
+  // Prepara medicines com stock embarcado para o serviço de análise
+  const costData = useMemo(() => {
+    if (medicines.length === 0 || protocols.length === 0) {
+      return { items: [], totalMonthly: 0, projection3m: 0 }
+    }
+
+    // Preparar medicines com stock embarcado
+    const medicinesWithStock = medicines.map((medicine) => ({
+      ...medicine,
+      stock: stockData[medicine.id]?.entries || [],
+    }))
+
+    // Calcular custos
+    return calculateMonthlyCosts(medicinesWithStock, protocols)
+  }, [medicines, protocols, stockData])
+
+  // 3. Effects
   const loadData = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const [medicinesData, protocols] = await Promise.all([
+      const [medicinesData, protocolsData] = await Promise.all([
         medicineService.getAll(),
         protocolService.getActive(),
       ])
 
+      // Salvar protocols para useMemo calcular custos
+      setProtocols(protocolsData)
+
       // Calcular consumo diário por medicamento
       const dailyIntakeMap = {}
-      const activeMedicineIds = new Set(protocols.map((p) => p.medicine_id))
+      const activeMedicineIds = new Set(protocolsData.map((p) => p.medicine_id))
 
-      protocols.forEach((p) => {
+      protocolsData.forEach((p) => {
         if (p.active) {
           const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
           dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
@@ -94,6 +120,7 @@ export default function Stock({ initialParams, onClearParams }) {
     }
   }, [initialParams, medicines])
 
+  // 4. Handlers
   const handleAddStock = (medicineId = null) => {
     if (medicines.length === 0) {
       setError('Cadastre um medicamento antes de adicionar estoque')
@@ -252,6 +279,22 @@ export default function Stock({ initialParams, onClearParams }) {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Custo Mensal — F5.10 */}
+          {medicines.length > 0 && (
+            <div className="stock-section fade-in">
+              <h3 className="section-title">
+                💰 Custo Mensal
+                <span className="section-subtitle">Análise de gastos com medicamentos</span>
+              </h3>
+              <CostChart
+                items={costData.items}
+                totalMonthly={costData.totalMonthly}
+                projection3m={costData.projection3m}
+                onExpand={null}
+              />
             </div>
           )}
         </div>
