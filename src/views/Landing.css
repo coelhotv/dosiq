@@ -151,58 +151,6 @@
   display: none;
 }
 
-.floating-card {
-  position: absolute;
-  background: var(--bg-glass);
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  animation: float 3s ease-in-out infinite;
-}
-
-.card-icon {
-  font-size: 3rem;
-}
-
-.card-text {
-  font-weight: 600;
-  text-align: center;
-}
-
-.card-1 {
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.card-2 {
-  top: 50%;
-  right: 15%;
-  animation-delay: 0.5s;
-}
-
-.card-3 {
-  bottom: 20%;
-  left: 25%;
-  animation-delay: 1s;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
 /* ========== FEATURES SECTION ========== */
 
 .features-section {

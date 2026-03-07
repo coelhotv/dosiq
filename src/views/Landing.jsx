@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import AppPreview from './components/AppPreview'
+import React, { useRef, useEffect } from 'react'
+import AppPreview from '@shared/components/AppPreview'
+import { useTheme } from '@shared/hooks/useTheme'
 import './Landing.css'
 
 export default function Landing({
@@ -7,17 +8,29 @@ export default function Landing({
   onOpenAuth = () => {},
   onContinue = () => {},
 }) {
-  const [scrollY, setScrollY] = useState(0)
+  const heroSectionRef = useRef(null)
+  const { isDark, toggleTheme } = useTheme()
+
+  // Garante que Landing carrega em tema escuro
+  useEffect(() => {
+    if (!isDark) {
+      toggleTheme()
+    }
+  }, [isDark, toggleTheme])
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY)
+    const handleScroll = () => {
+      if (heroSectionRef.current) {
+        heroSectionRef.current.style.transform = `translateY(${window.scrollY * 0.5}px)`
+      }
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   return (
     <div className="landing-container">
-      <section className="hero-section" style={{ transform: `translateY(${scrollY * 0.5}px)` }}>
+      <section className="hero-section" ref={heroSectionRef}>
         <div className="hero-content">
           <h1 className="hero-title">Seu tratamento, sempre sob controle</h1>
 
