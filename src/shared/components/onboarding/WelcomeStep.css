@@ -152,6 +152,25 @@
   }
 }
 
+/* Ring Gauge Animation */
+.welcome-ring {
+  width: 80px;
+  height: 80px;
+}
+
+.ring-arc {
+  animation: ring-draw 1.2s ease-out forwards;
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dasharray: 0 163;
+  }
+  to {
+    stroke-dasharray: 130 163;
+  }
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .benefit-item {

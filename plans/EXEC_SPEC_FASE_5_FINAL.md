@@ -800,7 +800,7 @@ export default function StockStep() {
     }
     setIsSubmitting(true)
     try {
-      await cachedStockService.create({
+      await cachedStockService.add({
         medicine_id: medicine.id,
         quantity: Number(quantity),
         unit_price: unitPrice ? Number(unitPrice) : 0,
@@ -894,7 +894,8 @@ O `OnboardingWizard` ja tem botao "Pular tour" generico. Para o StockStep especi
 3. Preview da barra de estoque aparece ao digitar quantidade
 4. "Pular esta etapa" avanca para o proximo step sem criar registro
 5. Erro de API exibido inline (nao alert/confirm)
-6. `cachedStockService.create()` chamado com `purchase_date` via `formatLocalDate(new Date())` (R-020)
+6. `cachedStockService.add()` chamado com `purchase_date` via `formatLocalDate(new Date())` (R-020)
+   - **Nota:** O metodo correto é `.add()` (conforme `src/shared/services/cachedServices.js:170`). NÃO usar `.create()` — esse metodo NAO existe no cachedStockService
 
 ### F5.C-3: TelegramIntegrationStep Atualizado
 
