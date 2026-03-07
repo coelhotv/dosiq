@@ -70,10 +70,12 @@
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
 | Fase 5 — Valor Clinico (90%) | v3.1.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual |
 
-**Pendentes da Fase 5 (Sprint 5.A + 5.B):**
+**Pendentes da Fase 5 (Sprints 5.A + 5.B + 5.C + 5.D):**
 - F5.10 Analise de Custo (5 SP) — service + CostChart + integracao na tab Estoque
 - ETL-1 Script process-anvisa.js — gerar `medicineDatabase.json` a partir do CSV ja baixado
-- F5.6 Autocomplete ANVISA (13 SP) — Cenario A confirmado. CSV disponivel. 4 campos auto (name, active_ingredient, laboratory, type), dosagem permanece manual
+- F5.6 Autocomplete ANVISA (~12 SP) — Cenario A confirmado. CSV disponivel. 4 campos auto (name, active_ingredient, laboratory, type), dosagem permanece manual
+- F5.C Onboarding Renovado (5 SP) — WelcomeStep redesign, StockStep novo (step 4/5), TelegramStep atualizado
+- F5.D Redesign Landing Page (8 SP) — hero com AppPreview CSS, "Como Funciona", 8-card features grid, CTA atualizado
 
 **Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`.
 
@@ -97,19 +99,27 @@
 
 ## 4. Panorama de Fases
 
-### Fase 5: Valor Clinico — FECHAR (v3.2.0, ~18 SP restantes, R$0)
+### Fase 5: Valor Clinico — FECHAR (v3.2.0, ~31 SP restantes, R$0)
 
-**Objetivo:** Completar as features restantes e fechar a fase.
+**Objetivo:** Completar as features restantes, renovar onboarding e redesenhar a landing para fechar a fase.
 
 | ID | Feature | SP | Status |
 |----|---------|-----|--------|
 | F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | Pendente |
 | ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | Pendente (CSV ja disponivel) |
 | F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | Pendente (Cenario A confirmado) |
+| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | Pendente |
+| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | Pendente |
 
 **Spike ANVISA concluido:** CSV `public/medicamentos-ativos-anvisa.csv` baixado (10.206 registros).
 Autocomplete preenche 4 campos automaticamente; dosagem permanece manual (nao esta no CSV ANVISA).
 `CLASSE_TERAPEUTICA` incluida no JSON para habilitar F8.2 sem nova fonte de dados.
+
+**Onboarding (F5.C):** Wizard passa de 4 para 5 steps (adiciona StockStep). WelcomeStep redesignado
+com os 5 value props da UX v3.2. TelegramStep atualizado com capacidades do bot proativo.
+
+**Landing (F5.D):** Redesign completo — hero com AppPreview em CSS, secao "Como Funciona" (3 passos),
+features grid de 8 cards (vs. 6 textuais), CTA e footer atualizados. Sem quebra de identidade visual.
 
 **Spec:** `plans/EXEC_SPEC_FASE_5_FINAL.md` | **Analise ANVISA:** `plans/ANALISE_CSV_ANVISA.md`
 

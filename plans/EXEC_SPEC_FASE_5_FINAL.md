@@ -48,6 +48,17 @@ Sprint 5.B — Integracao Base ANVISA (13 SP — Cenario A confirmado)
   F5.6-1:  Base de medicamentos JSON + medicineDatabaseService
   F5.6-2:  Autocomplete no formulario (4 campos auto, 2 manuais)
   F5.6-3:  Testes
+
+Sprint 5.C — Onboarding Renovado (5 SP)
+  F5.C-1:  WelcomeStep redesign (value props v3.2)
+  F5.C-2:  StockStep novo (step 4/5 — entrada de estoque inicial)
+  F5.C-3:  TelegramIntegrationStep atualizado (bot proativo)
+
+Sprint 5.D — Redesign da Landing Page (8 SP)
+  F5.D-1:  Hero redesign (headline + visual ring gauge)
+  F5.D-2:  Secao "Como Funciona" (3 passos ilustrados)
+  F5.D-3:  Features grid atualizado (8 cards — features v3.2)
+  F5.D-4:  CTA final + footer atualizados
 ```
 
 ---
@@ -610,7 +621,468 @@ Registrar aqui para nao perder o contexto. Ver `plans/ANALISE_CSV_ANVISA.md` sec
 
 ---
 
-## 6. Fechamento da Fase 5
+## 6. Sprint 5.C — Onboarding Renovado (5 SP)
+
+### Contexto
+
+O wizard de onboarding atual (`OnboardingWizard.jsx`) tem 4 passos lineares:
+**Boas-vindas → Medicamento → Protocolo → Telegram**
+
+O app evoluiu significativamente desde a criacao do wizard (v2.4):
+- Evolucao UX Ondas 1+2+3: ring gauge, barras de estoque, dose zones, progressive disclosure
+- Novas features entregues: Emergency Card, PDF Reports, Prescricoes, Bot Proativo, Cost Analysis
+- Sprint 5.B: autocomplete ANVISA no `MedicineForm` (4 campos auto-preenchidos)
+- Navegacao reestruturada: 4 tabs (Hoje / Tratamento / Estoque / Perfil)
+
+O onboarding precisa refletir essa nova realidade e preparar o usuario para a UX que vai encontrar.
+Alem disso, o wizard nao coleta estoque inicial — o usuario termina o cadastro sem estoque,
+o widget "Estoque Rapido" fica vazio e a UX parece quebrada.
+
+### F5.C-1: WelcomeStep Redesign
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/shared/components/onboarding/WelcomeStep.jsx` + `WelcomeStep.css` |
+| **Agente** | Coder |
+
+**Estado atual do WelcomeStep:**
+- Ilustracao SVG generica (icone de usuario)
+- Titulo generico: "Bem-vindo ao Meus Remedios!"
+- 4 beneficios textuais sem visuais: Controle, Protocolos, Lembretes, Estoque
+- Nenhuma referencia as features modernas da plataforma
+
+**O que fazer — conteudo:**
+
+Substituir os 4 beneficios genericos por 5 cards visuais alinhados com a UX atual:
+
+```
+Beneficio 1: Health Score em tempo real
+  Icone: anel/gauge (SVG circular)
+  Descricao: "Acompanhe sua adesao com score visual, streak e evolucao semanal"
+
+Beneficio 2: Doses organizadas por prioridade
+  Icone: relogio com zonas
+  Descricao: "Atrasadas, Agora, Proximas — sem precisar interpretar horarios"
+
+Beneficio 3: Estoque visual com alertas inteligentes
+  Icone: barra horizontal com cor
+  Descricao: "Saiba de relance quando repor, com criticas em destaque"
+
+Beneficio 4: Base de 10.000+ medicamentos brasileiros
+  Icone: lupa/base de dados
+  Descricao: "Autocomplete com dados ANVISA — nome, principio ativo e laboratorio"
+
+Beneficio 5: Lembretes proativos no Telegram
+  Icone: Telegram logo (SVG simples)
+  Descricao: "Digests diarios, alertas de estoque e registro de doses sem abrir o app"
+```
+
+**O que fazer — visual:**
+- Substituir ilustracao SVG por hero mais moderno: ring gauge desenhado em SVG puro com stroke-dasharray
+  (nao importar Framer Motion aqui — onboarding carrega antes do app)
+- Cada beneficio: icone SVG inline (24x24) + titulo + descricao curta (1 linha)
+- Remover `.welcome-note` generico ("Vamos comecar?")
+- Adicionar nota final: `"100% gratuito. Seus dados ficam no seu perfil, protegidos."`
+
+**Criterios de aceite:**
+1. WelcomeStep renderiza sem imports externos alem dos ja existentes (sem Framer Motion)
+2. Ring gauge SVG animado com CSS `stroke-dasharray` (keyframe simples)
+3. 5 beneficios atualizados com icones SVG inline
+4. Texto final atualizado
+5. CSS responsivo (funciona em 360px+)
+
+### F5.C-2: StockStep — Novo Step de Estoque Inicial
+
+| Campo | Valor |
+|-------|-------|
+| **Criar** | `src/shared/components/onboarding/StockStep.jsx` + `StockStep.css` |
+| **Modificar** | `src/shared/components/onboarding/OnboardingWizard.jsx` |
+| **Agente** | Coder |
+
+**Motivacao:**
+O usuario termina o onboarding sem estoque. O widget "Estoque Rapido" na tab Hoje fica vazio.
+A primeira impressao da UX e degradada — o usuario nao ve as barras de estoque que fazem o app parecer "inteligente".
+Um step opcional de estoque inicial resolve isso sem friction (skippable).
+
+**Posicao no wizard:** Step 4 de 5 (apos FirstProtocolStep, antes de TelegramIntegrationStep)
+
+**Novo array de steps em `OnboardingWizard.jsx`:**
+```javascript
+const steps = [
+  { id: 0, name: 'Boas-vindas', component: WelcomeStep },
+  { id: 1, name: 'Medicamento', component: FirstMedicineStep },
+  { id: 2, name: 'Protocolo', component: FirstProtocolStep },
+  { id: 3, name: 'Estoque', component: StockStep },       // NOVO
+  { id: 4, name: 'Telegram', component: TelegramIntegrationStep },
+]
+```
+
+**Implementacao do StockStep:**
+
+```jsx
+// src/shared/components/onboarding/StockStep.jsx
+import { useState } from 'react'
+import { useOnboarding } from './useOnboarding'
+import { cachedStockService } from '@shared/services/cachedServices'
+import { formatLocalDate } from '@utils/dateUtils'
+import './StockStep.css'
+
+export default function StockStep() {
+  const { onboardingData, nextStep } = useOnboarding()
+  const medicine = onboardingData.medicine
+
+  const [quantity, setQuantity] = useState('')
+  const [unitPrice, setUnitPrice] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSave = async () => {
+    if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      setError('Informe uma quantidade valida')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      await cachedStockService.create({
+        medicine_id: medicine.id,
+        quantity: Number(quantity),
+        unit_price: unitPrice ? Number(unitPrice) : 0,
+        purchase_date: formatLocalDate(new Date()),
+      })
+      nextStep()
+    } catch (err) {
+      setError('Erro ao salvar estoque. Tente novamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSkip = () => nextStep()
+
+  if (!medicine) return null
+
+  return (
+    <div className="stock-step">
+      <div className="step-header">
+        {/* Icone de caixa/estoque SVG */}
+        <h3 className="step-title">Quanto voce tem de {medicine.name}?</h3>
+        <p className="step-description">
+          Opcional — ajuda a calcular quando vence seu estoque e ativa os alertas visuais.
+        </p>
+      </div>
+
+      <div className="stock-form">
+        <div className="form-group">
+          <label htmlFor="quantity">Quantidade atual (comprimidos / unidades)</label>
+          <input
+            id="quantity"
+            type="number"
+            min="1"
+            max="9999"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="Ex: 30"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="unitPrice">Preco unitario (opcional)</label>
+          <input
+            id="unitPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(e.target.value)}
+            placeholder="Ex: 1.50"
+          />
+          <small>Usado para calculo de custo mensal</small>
+        </div>
+
+        {error && <p className="form-error">{error}</p>}
+      </div>
+
+      <div className="stock-preview">
+        {/* Preview visual da barra de estoque */}
+        {quantity && (
+          <div className="preview-bar">
+            <span className="preview-label">{medicine.name}</span>
+            <div className="bar-container">
+              <div
+                className="bar-fill"
+                style={{ width: '60%', backgroundColor: 'var(--color-success)' }}
+              />
+            </div>
+            <span className="preview-days">
+              ~{Math.floor(Number(quantity) / 2)} dias
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+**Botoes de navegacao:**
+O `OnboardingWizard` ja tem botao "Pular tour" generico. Para o StockStep especificamente:
+- Botao primario: "Salvar Estoque" (chama handleSave)
+- Botao secundario visivel: "Pular esta etapa" (chama handleSkip)
+- A logica de navegacao do Wizard padrao (Proximo/Concluir) deve ser substituida por botoes proprios do step para este caso.
+- Solucao: passar prop `customNavigation` ao Wizard e StockStep renderiza seus proprios botoes no slot de navegacao.
+
+**Criterios de aceite:**
+1. StockStep renderiza sem crasha se `medicine` for null (guard clause)
+2. Quantidade obrigatoria para salvar; preco unitario e opcional
+3. Preview da barra de estoque aparece ao digitar quantidade
+4. "Pular esta etapa" avanca para o proximo step sem criar registro
+5. Erro de API exibido inline (nao alert/confirm)
+6. `cachedStockService.create()` chamado com `purchase_date` via `formatLocalDate(new Date())` (R-020)
+
+### F5.C-3: TelegramIntegrationStep Atualizado
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/shared/components/onboarding/TelegramIntegrationStep.jsx` |
+| **Agente** | Coder |
+
+O step atual menciona apenas "lembretes de doses". O bot proativo (F5.5, ja entregue) faz muito mais.
+
+**O que atualizar:**
+1. Lista de capacidades do bot: adicionar "Digests diarios", "Alertas de estoque critico", "Resumo semanal de adesao"
+2. Remover frases de "em breve" que nao se aplicam mais
+3. Atualizar instrucao de configuracao para refletir o path atual: `Perfil > Telegram [Conectar]`
+   (antes era `Configuracoes > Telegram` — Onda 3 moveu para Perfil)
+
+**Criterios de aceite:**
+1. Lista de funcionalidades do bot atualizada (min 5 itens)
+2. Path de configuracao correto: "Perfil > Telegram"
+3. Step nao quebra se usuario pular
+
+### Quality Gate Sprint 5.C
+
+- [ ] `WelcomeStep.jsx` atualizado com 5 beneficios v3.2 e ring gauge SVG
+- [ ] `StockStep.jsx` criado, funcional com skip e save
+- [ ] `OnboardingWizard.jsx` com 5 steps (Boas-vindas/Medicamento/Protocolo/Estoque/Telegram)
+- [ ] `TelegramIntegrationStep.jsx` com capacidades do bot atualizadas
+- [ ] `npm run validate:agent` passa
+- [ ] Testado em mobile 360px
+- [ ] Commit: `feat(onboarding): update wizard to v3.2 UX — add stock step (#F5.C)`
+
+---
+
+## 7. Sprint 5.D — Redesign da Landing Page (8 SP)
+
+### Contexto
+
+A Landing Page atual (`src/views/Landing.jsx`) foi criada na v2.4 e nao reflete o app atual:
+- Hero generico sem preview real da UX
+- Features grid com 6 cards textuais sem visuals (Doses, Estoque, Protocolos, Relatorios, Telegram, Seguranca)
+- Nenhuma mencao a features entregues desde v2.4: ring gauge, dose zones, Emergency Card, ANVISA, Cost Analysis, Prescricoes
+- Footer com ano 2025
+
+**Objetivo:** Redesign completo que converta novos usuarios mostrando o valor real do app.
+**Restricao:** Manter o glassmorphism/gradiente do design atual (nao mudar identidade visual).
+**SP estimado:** 8 SP (4 novas secoes + hero + CTA)
+
+### F5.D-1: Hero Redesign
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/views/Landing.jsx` — secao `<section className="hero-section">` |
+| **Modificar** | `src/views/Landing.css` — estilos do hero |
+| **Agente** | Coder |
+
+**Headline atual:** "Gerencie Seus Remedios / Sem Stress e Conquiste Mais Saude"
+**Nova headline:** "Seu tratamento, sempre sob controle"
+**Novo subtitulo:** "Medicamentos, horarios, estoque e adesao — tudo em um app gratuito feito para o Brasil."
+
+**Stats atuais:** "100% Sincronizado | ∞ Dispositivos | 24/7 Disponivel"
+**Novos stats:**
+```
+10.000+ medicamentos    Base ANVISA integrada
+85%+ adesao media       De usuarios com streaks ativos
+100% gratuito           Sem planos, sem cartao
+```
+
+**Hero visual — substituir FloatingCard por AppPreview:**
+
+Substituir os 3 FloatingCards por uma representacao mockup do app (pure CSS/SVG, sem imagem):
+
+```jsx
+// Componente AppPreview — simula a tab "Hoje" da UX atual
+function AppPreview() {
+  return (
+    <div className="app-preview">
+      <div className="preview-header">
+        <span className="preview-score">85%</span>
+        <div className="preview-ring">
+          {/* SVG ring gauge simplificado */}
+          <svg viewBox="0 0 60 60" className="ring-svg">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="var(--preview-track)" strokeWidth="6" />
+            <circle
+              cx="30" cy="30" r="24"
+              fill="none" stroke="var(--color-success)" strokeWidth="6"
+              strokeDasharray="128 151"
+              strokeLinecap="round"
+              transform="rotate(-90 30 30)"
+              className="ring-fill"
+            />
+          </svg>
+          <span className="ring-streak">🔥 12d</span>
+        </div>
+      </div>
+      <div className="preview-zones">
+        <div className="zone zone-now">
+          <span className="zone-label">AGORA</span>
+          <div className="zone-item">Losartana 08:00 <span className="swipe-hint">→ deslize</span></div>
+          <div className="zone-item">Metformina 08:00 <span className="check">✓</span></div>
+        </div>
+        <div className="zone zone-upcoming">
+          <span className="zone-label">PROXIMAS</span>
+          <div className="zone-item muted">Omeprazol 22:00</div>
+        </div>
+      </div>
+      <div className="preview-stock">
+        <div className="stock-bar critical">
+          <span>Omeprazol</span>
+          <div className="bar"><div className="fill" style={{width: '10%'}} /></div>
+          <span className="days">2d 🔴</span>
+        </div>
+        <div className="stock-bar ok">
+          <span>Metformina</span>
+          <div className="bar"><div className="fill" style={{width: '80%'}} /></div>
+          <span className="days">24d 🟢</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+**Criterios de aceite F5.D-1:**
+1. Novo headline e subtitulo implementados
+2. Novos stats (3 items com valor + label)
+3. `AppPreview` renderizado ao lado do hero text (ou abaixo em mobile)
+4. Ring gauge animado com CSS `@keyframes` (sem Framer Motion no bundle da landing)
+5. Hero responsivo: coluna unica em mobile, duas colunas em desktop (>768px)
+
+### F5.D-2: Secao "Como Funciona"
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/views/Landing.jsx` — adicionar secao apos hero |
+| **Modificar** | `src/views/Landing.css` |
+| **Agente** | Coder |
+
+Adicionar secao `<section className="how-it-works-section">` imediatamente apos o hero:
+
+```
+Como Funciona
+
+PASSO 1: Cadastre seus medicamentos
+  Icone: 💊
+  Texto: "Use o autocomplete com base ANVISA (10.000+ medicamentos) e preencha nome,
+           principio ativo e laboratorio em segundos."
+
+PASSO 2: Defina seus protocolos
+  Icone: 📅
+  Texto: "Configure frequencia, horarios e doses. O app organiza tudo nas zonas
+           Atrasadas / Agora / Proximas automaticamente."
+
+PASSO 3: Acompanhe sua adesao
+  Icone: 📊
+  Texto: "Health Score, streaks, historico visual e alertas de estoque. Compartilhe
+           com seu medico com um clique."
+```
+
+Layout: 3 cards horizontais (desktop) / coluna unica (mobile).
+Cada card: numero grande (1/2/3), icone, titulo, descricao 2 linhas max.
+
+**Criterios de aceite:**
+1. Secao renderizada entre hero e features
+2. 3 passos com numero, icone, titulo, descricao
+3. Responsivo (coluna em mobile, linha em desktop)
+4. Icones SVG inline (nao emoji — exceto se design pedir)
+
+### F5.D-3: Features Grid Atualizado
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/views/Landing.jsx` — substituir `<section className="features-section">` |
+| **Modificar** | `src/views/Landing.css` |
+| **Agente** | Coder |
+
+**Estado atual:** 6 cards textuais (Doses, Estoque, Protocolos, Relatorios, Telegram, Seguranca)
+
+**Novo grid — 8 cards alinhados com features v3.2:**
+
+| # | Titulo | Icone | Descricao |
+|---|--------|-------|-----------|
+| 1 | Health Score + Streaks | anel SVG | "Score de adesao em tempo real, streak de dias consecutivos e tendencia semanal" |
+| 2 | Doses por Zona | relogio | "Atrasadas, Agora e Proximas — organizadas automaticamente pelo horario atual" |
+| 3 | Estoque Visual | barra | "Barras de criticidade mostram de relance quem vai acabar. Alertas com 7 dias de antecedencia" |
+| 4 | Base ANVISA | base/busca | "10.000+ medicamentos brasileiros. Autocomplete preenche nome, principio ativo e laboratorio" |
+| 5 | Emergency Card | cartao | "Cartao de emergencia exportavel com todos os seus medicamentos, doses e contatos" |
+| 6 | Analise de Custo | grafico | "Custo mensal por medicamento e projecao 3 meses. Ajuda a planejar reposicoes" |
+| 7 | Relatorios PDF | pdf | "Relatorio de adesao exportavel para compartilhar com seu medico ou guardar" |
+| 8 | Bot Telegram | telegram | "Lembretes de doses, alertas de estoque e digest semanal direto no Telegram" |
+
+**Layout:** grid 4x2 (desktop) → 2x4 (tablet) → 1x8 (mobile)
+
+**Criterios de aceite:**
+1. 8 cards implementados com icone SVG, titulo e descricao
+2. Grid responsivo (4 colunas desktop, 2 tablet, 1 mobile)
+3. Remover secao `<section className="benefits-section">` existente (conteudo absorvido pelos novos cards)
+4. Manter a secao Telegram existente (`<section className="telegram-section">`) — ainda relevante
+
+### F5.D-4: CTA Final + Footer Atualizados
+
+| Campo | Valor |
+|-------|-------|
+| **Modificar** | `src/views/Landing.jsx` — `<section className="final-cta-section">` e `<footer>` |
+| **Agente** | Coder |
+
+**CTA — texto atual:** "Transforme Sua Rotina de Medicamentos Agora!"
+**CTA — novo texto:** "Comece hoje. E gratuito, sempre."
+
+**Novo copy do CTA:**
+```
+Comece hoje. E gratuito, sempre.
+
+Cadastre seus medicamentos em minutos, configure seus horarios e deixe o app
+cuidar dos lembretes. Sem cartao de credito. Sem planos pagos.
+
+[Criar Conta Gratis →]    [Acessar Minha Conta]
+
+Mais de 100 usuarios controlando sua adesao com Meus Remedios.
+```
+
+**Footer:**
+- Atualizar ano: 2025 → 2026
+- Adicionar link de "Relatar problema" (GitHub Issues) na linha do footer
+
+**Criterios de aceite:**
+1. CTA com novo headline e copy
+2. Footer com ano 2026
+3. Link de feedback no footer (texto "Relatar um problema" → URL fornecida pelo usuario ou comentario TODO)
+4. Botoes CTA manteem `onOpenAuth` / `onContinue` props existentes
+
+### Quality Gate Sprint 5.D
+
+- [ ] Hero redesignado com nova headline, stats e AppPreview
+- [ ] Secao "Como Funciona" (3 passos) inserida apos hero
+- [ ] Features grid atualizado: 8 cards v3.2
+- [ ] Secao `benefits-section` removida (conteudo absorvido)
+- [ ] CTA final e footer atualizados (ano 2026)
+- [ ] `npm run validate:agent` passa
+- [ ] Lighthouse Performance >= 90 (landing e pagina publica — critico para SEO)
+- [ ] Testado em 360px (mobile) e 1280px (desktop)
+- [ ] Commit: `feat(landing): redesign landing page to showcase v3.2 UX (#F5.D)`
+
+---
+
+## 8. Fechamento da Fase 5
 
 Apos ambos sprints concluidos:
 
@@ -624,7 +1096,7 @@ Apos ambos sprints concluidos:
 
 ---
 
-## 7. Mapa de Arquivos
+## 9. Mapa de Arquivos
 
 ### Novos
 ```
@@ -636,21 +1108,29 @@ src/features/medications/services/medicineDatabaseService.js           (F5.6)
 src/features/medications/services/__tests__/medicineDatabaseService.test.js (F5.6)
 src/features/medications/components/MedicineAutocomplete.jsx           (F5.6)
 plans/ANALISE_CSV_ANVISA.md                                            (Spike concluido)
+src/shared/components/onboarding/StockStep.jsx                         (F5.C-2 — step de estoque inicial)
+src/shared/components/onboarding/StockStep.css                         (F5.C-2)
 ```
 
 ### Modificados
 ```
-src/features/stock/components/CostChart.jsx         (F5.10 — evolucao)
-src/views/Stock.jsx                                  (F5.10 — integracao CostChart)
-src/features/medications/components/MedicineForm.jsx (F5.6 — autocomplete)
-plans/ROADMAP_v4.md                                  (fechamento)
-CLAUDE.md                                            (versao)
-package.json                                         (versao)
+src/features/stock/components/CostChart.jsx                            (F5.10 — evolucao)
+src/views/Stock.jsx                                                    (F5.10 — integracao CostChart)
+src/features/medications/components/MedicineForm.jsx                   (F5.6 — autocomplete)
+src/shared/components/onboarding/WelcomeStep.jsx                       (F5.C-1 — redesign)
+src/shared/components/onboarding/WelcomeStep.css                       (F5.C-1)
+src/shared/components/onboarding/OnboardingWizard.jsx                  (F5.C-2 — 5 steps)
+src/shared/components/onboarding/TelegramIntegrationStep.jsx           (F5.C-3 — bot features)
+src/views/Landing.jsx                                                  (F5.D — redesign completo)
+src/views/Landing.css                                                  (F5.D)
+plans/ROADMAP_v4.md                                                    (fechamento)
+CLAUDE.md                                                              (versao)
+package.json                                                           (versao)
 ```
 
 ---
 
-## 8. Processo Git
+## 10. Processo Git
 
 ```
 1. git checkout -b feature/fase-5/cost-analysis     (Sprint 5.A)
@@ -661,18 +1141,30 @@ package.json                                         (versao)
 6. Criar PR → aguardar Gemini review → merge
 
 7. git checkout -b feature/fase-5/anvisa-spike       (Sprint 5.B)
-8. Executar SPIKE-1 e SPIKE-2
-9. git commit -m "docs: ANVISA integration spike results"
-10. Se viavel: implementar F5.6-1 a F5.6-3
-11. npm run lint && npm run validate:agent
-12. git commit -m "feat(medications): add ANVISA medicine database (#F5.6)"
-13. git push → PR → review → merge
+8. Executar ETL-1 (node scripts/process-anvisa.js)
+9. Implementar F5.6-1 a F5.6-3
+10. npm run lint && npm run validate:agent
+11. git commit -m "feat(medications): add ANVISA medicine database and autocomplete (#F5.6)"
+12. git push → PR → review → merge
 
-14. git checkout -b chore/fase-5-closing
-15. Atualizar version, docs, memory
-16. git commit -m "docs: close phase 5 — tag v3.2.0"
-17. git tag v3.2.0
-18. git push → PR → review → merge
+13. git checkout -b feature/fase-5/onboarding        (Sprint 5.C)
+14. Implementar F5.C-1 (WelcomeStep), F5.C-2 (StockStep), F5.C-3 (TelegramStep)
+15. npm run lint && npm run validate:agent
+16. git commit -m "feat(onboarding): update wizard to v3.2 UX — add stock step (#F5.C)"
+17. git push → PR → review → merge
+
+18. git checkout -b feature/fase-5/landing-redesign  (Sprint 5.D)
+19. Implementar F5.D-1 a F5.D-4
+20. npm run lint && npm run validate:agent
+21. Verificar Lighthouse Performance >= 90 (landing e pagina publica)
+22. git commit -m "feat(landing): redesign landing page to showcase v3.2 UX (#F5.D)"
+23. git push → PR → review → merge
+
+24. git checkout -b chore/fase-5-closing
+25. Atualizar version, docs, memory
+26. git commit -m "docs: close phase 5 — tag v3.2.0"
+27. git tag v3.2.0
+28. git push → PR → review → merge
 ```
 
 ---
