@@ -107,10 +107,21 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
 
   const { medicines: validatedMedicines, protocols: validatedProtocols } = validation.data
 
-  // Refatorado com map + filter (vs forEach) — mais funcional, <30 linhas
+  // OTIMIZAÇÃO: Pré-calcula consumo diário para todos os medicamentos de uma só vez.
+  // Reduz complexidade de O(M*P) para O(M+P) (medicamentos * protocolos → medicamentos + protocolos)
+  const dailyIntakeMap = validatedProtocols
+    .filter((p) => p.active && p.medicine_id)
+    .reduce((map, protocol) => {
+      const intakesPerDay = protocol.time_schedule?.length || 0
+      const dosagePerIntake = protocol.dosage_per_intake || 0
+      const protocolDailyIntake = dosagePerIntake * intakesPerDay
+      map[protocol.medicine_id] = (map[protocol.medicine_id] || 0) + protocolDailyIntake
+      return map
+    }, {})
+
   const items = validatedMedicines
     .map((medicine) => {
-      const dailyIntake = calculateDailyIntake(medicine.id, validatedProtocols)
+      const dailyIntake = dailyIntakeMap[medicine.id] || 0
       if (dailyIntake === 0) return null
 
       const avgUnitPrice = calculateAvgUnitPrice(medicine.stock)
