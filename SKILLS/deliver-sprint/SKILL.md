@@ -21,6 +21,8 @@ description: >
 - This is a one-liner fix or trivial change
 - You don't have a finalized spec
 
+For the full reference, consult **[references/INDEX.md](references/INDEX.md)** to find real examples, guides and advices — load only what you need.
+
 ---
 
 ## The 7 Phases (Complete Workflow)
@@ -297,6 +299,7 @@ EOF
 - Automated bot analyzes PR (5–15 min)
 - Posts suggestions if found (usually 0–5 per sprint)
 - Creates GitHub issues for CRITICAL/HIGH
+- Complete guide on [references/gh-code-review-guide.md](references/gh-code-review-guide.md)
 
 #### 5.3 Evaluate & Apply Suggestions
 ```bash
