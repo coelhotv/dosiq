@@ -64,18 +64,24 @@ export default function ExportDialog({ isOpen, onClose }) {
     setExportError(null)
   }, [])
 
-  const handleDateChange = useCallback((field) => (e) => {
-    setDateRange((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }))
-    setExportError(null)
-  }, [])
+  const handleDateChange = useCallback(
+    (field) => (e) => {
+      setDateRange((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }))
+      setExportError(null)
+    },
+    []
+  )
 
-  const handleCheckboxChange = useCallback((setter) => (e) => {
-    setter(e.target.checked)
-    setExportError(null)
-  }, [])
+  const handleCheckboxChange = useCallback(
+    (setter) => (e) => {
+      setter(e.target.checked)
+      setExportError(null)
+    },
+    []
+  )
 
   const handleExport = useCallback(async () => {
     if (isExportDisabled) return
@@ -150,7 +156,10 @@ export default function ExportDialog({ isOpen, onClose }) {
           <label className="export-label">Formato</label>
           <div className="format-selector">
             {FORMAT_OPTIONS.map((option) => (
-              <label key={option.value} className={`format-option ${format === option.value ? 'selected' : ''}`}>
+              <label
+                key={option.value}
+                className={`format-option ${format === option.value ? 'selected' : ''}`}
+              >
                 <input
                   type="radio"
                   name="format"

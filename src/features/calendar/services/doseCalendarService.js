@@ -58,11 +58,7 @@ function shouldExpectDosesOnDate(protocol, dateStr) {
   const frequency = (protocol.frequency || 'diário').toLowerCase()
 
   // "Quando necessário" não gera doses esperadas
-  if (
-    frequency === 'quando_necessário' ||
-    frequency === 'when_needed' ||
-    frequency === 'prn'
-  ) {
+  if (frequency === 'quando_necessário' || frequency === 'when_needed' || frequency === 'prn') {
     return false
   }
 

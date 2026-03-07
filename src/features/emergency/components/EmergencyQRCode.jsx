@@ -60,13 +60,16 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
     const payload = {
       v: '1',
       n: cardData.name || 'Paciente',
-      m: medications?.map((med) => ({
-        n: med.name,
-        d: med.dosage ? `${med.dosage}${med.unit ? ` ${med.unit}` : ''}` : '',
-        f: med.frequency || '',
-      })) || [],
+      m:
+        medications?.map((med) => ({
+          n: med.name,
+          d: med.dosage ? `${med.dosage}${med.unit ? ` ${med.unit}` : ''}` : '',
+          f: med.frequency || '',
+        })) || [],
       a: cardData.allergies || [],
-      dt: lastUpdated ? new Date(lastUpdated).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      dt: lastUpdated
+        ? new Date(lastUpdated).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
     }
 
     // Adiciona tipo sanguíneo apenas se não for desconhecido
@@ -108,7 +111,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsGenerating(true)
-     
+
     setError(null)
 
     /**
@@ -236,9 +239,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
           width={256}
           height={256}
         />
-        <p className="qr-hint">
-          📱 Escaneie para ver informações médicas em emergências
-        </p>
+        <p className="qr-hint">📱 Escaneie para ver informações médicas em emergências</p>
       </div>
 
       <div className="qr-actions">
@@ -252,8 +253,8 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
 
       <div className="qr-info">
         <p className="qr-info-text">
-          <strong>Dica:</strong> Salve esta imagem como tela de bloqueio do seu celular
-          para acesso rápido em emergências.
+          <strong>Dica:</strong> Salve esta imagem como tela de bloqueio do seu celular para acesso
+          rápido em emergências.
         </p>
       </div>
     </div>

@@ -348,11 +348,7 @@ export function SparklineAdesao({
         handleSparklineTap(chartData[chartData.length - 1])
       }}
     >
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="sparkline-svg"
-        preserveAspectRatio="none"
-      >
+      <svg viewBox={`0 0 ${width} ${height}`} className="sparkline-svg" preserveAspectRatio="none">
         <defs>
           <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="var(--color-primary, #ec4899)" stopOpacity="0.3" />
@@ -439,41 +435,54 @@ export function SparklineAdesao({
         ))}
 
         {/* Tooltip interativo ao tap num ponto — só em sizes médios ou maiores */}
-        {activePoint !== null && dataPoints[activePoint] && size !== 'small' && (() => {
-          const pt = dataPoints[activePoint]
-          const tooltipW = 80
-          const tooltipH = 36
-          const tooltipPad = 4
+        {activePoint !== null &&
+          dataPoints[activePoint] &&
+          size !== 'small' &&
+          (() => {
+            const pt = dataPoints[activePoint]
+            const tooltipW = 80
+            const tooltipH = 36
+            const tooltipPad = 4
 
-          // Clamp horizontal para não sair do SVG
-          let tx = pt.x - tooltipW / 2
-          if (tx < tooltipPad) tx = tooltipPad
-          if (tx + tooltipW > width - tooltipPad) tx = width - tooltipPad - tooltipW
+            // Clamp horizontal para não sair do SVG
+            let tx = pt.x - tooltipW / 2
+            if (tx < tooltipPad) tx = tooltipPad
+            if (tx + tooltipW > width - tooltipPad) tx = width - tooltipPad - tooltipW
 
-          // Posicionar acima do ponto
-          const ty = pt.y - tooltipH - 6 < tooltipPad ? pt.y + 8 : pt.y - tooltipH - 6
+            // Posicionar acima do ponto
+            const ty = pt.y - tooltipH - 6 < tooltipPad ? pt.y + 8 : pt.y - tooltipH - 6
 
-          return (
-            <g className="sparkline-tooltip-overlay" aria-hidden="true">
-              <rect
-                x={tx}
-                y={ty}
-                width={tooltipW}
-                height={tooltipH}
-                rx="4"
-                fill="var(--bg-secondary, #1f2937)"
-                stroke="var(--color-border, #374151)"
-                strokeWidth="1"
-              />
-              <text x={tx + tooltipW / 2} y={ty + 13} textAnchor="middle" className="sparkline-tooltip-date">
-                {formatDate(pt.date)}
-              </text>
-              <text x={tx + tooltipW / 2} y={ty + 27} textAnchor="middle" className="sparkline-tooltip-value">
-                {pt.adherence}% · {pt.taken}/{pt.expected} doses
-              </text>
-            </g>
-          )
-        })()}
+            return (
+              <g className="sparkline-tooltip-overlay" aria-hidden="true">
+                <rect
+                  x={tx}
+                  y={ty}
+                  width={tooltipW}
+                  height={tooltipH}
+                  rx="4"
+                  fill="var(--bg-secondary, #1f2937)"
+                  stroke="var(--color-border, #374151)"
+                  strokeWidth="1"
+                />
+                <text
+                  x={tx + tooltipW / 2}
+                  y={ty + 13}
+                  textAnchor="middle"
+                  className="sparkline-tooltip-date"
+                >
+                  {formatDate(pt.date)}
+                </text>
+                <text
+                  x={tx + tooltipW / 2}
+                  y={ty + 27}
+                  textAnchor="middle"
+                  className="sparkline-tooltip-value"
+                >
+                  {pt.adherence}% · {pt.taken}/{pt.expected} doses
+                </text>
+              </g>
+            )
+          })()}
       </svg>
 
       {/* Tooltips de dias (legenda) */}

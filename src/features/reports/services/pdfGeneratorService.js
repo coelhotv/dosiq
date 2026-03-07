@@ -437,9 +437,7 @@ function prepareStockChartData(protocols, stockSummaries) {
   return protocols
     .filter((protocol) => protocol.active && protocol.medicine)
     .map((protocol) => {
-      const stock = stockSummaries.find(
-        (s) => s.medicine_id === protocol.medicine_id
-      )
+      const stock = stockSummaries.find((s) => s.medicine_id === protocol.medicine_id)
       return {
         name: protocol.medicine?.name || protocol.name,
         daysRemaining: stock ? calculateDaysRemaining(stock, protocol) : 0,
@@ -519,9 +517,7 @@ export async function generatePDF(options = {}) {
     let stockSummaries = []
     if (includeStock && protocols.length > 0) {
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id).filter(Boolean))]
-      stockSummaries = await Promise.all(
-        medicineIds.map((id) => stockService.getStockSummary(id))
-      )
+      stockSummaries = await Promise.all(medicineIds.map((id) => stockService.getStockSummary(id)))
     }
 
     // Cria documento PDF

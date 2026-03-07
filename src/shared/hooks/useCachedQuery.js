@@ -202,7 +202,7 @@ export function useCachedQueries(queries) {
       isMounted.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queriesKey])  // Estável: só muda quando as query keys mudam
+  }, [queriesKey]) // Estável: só muda quando as query keys mudam
 
   // Estados combinados
   const isLoading = results.some((r) => r.isLoading)
@@ -235,7 +235,7 @@ export function useCachedQueries(queries) {
         return next
       })
     }
-  }, [])  // Sem dependências: sempre usa queriesRef.current (stale-safe)
+  }, []) // Sem dependências: sempre usa queriesRef.current (stale-safe)
 
   return {
     results,

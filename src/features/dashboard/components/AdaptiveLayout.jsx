@@ -16,10 +16,7 @@ import './AdaptiveLayout.css'
  */
 export default function AdaptiveLayout({ mode = 'moderate', children }) {
   return (
-    <div
-      className={`adaptive-layout adaptive-layout--${mode}`}
-      data-testid="adaptive-layout"
-    >
+    <div className={`adaptive-layout adaptive-layout--${mode}`} data-testid="adaptive-layout">
       {children}
     </div>
   )

@@ -36,7 +36,12 @@ function sanitizeCSVValue(value) {
   const strValue = String(value)
 
   // Previne injeção de fórmulas Excel prefixando com tab
-  if (strValue.startsWith('=') || strValue.startsWith('+') || strValue.startsWith('-') || strValue.startsWith('@')) {
+  if (
+    strValue.startsWith('=') ||
+    strValue.startsWith('+') ||
+    strValue.startsWith('-') ||
+    strValue.startsWith('@')
+  ) {
     return '\t' + strValue
   }
 
@@ -58,7 +63,12 @@ function escapeCSVField(value) {
   const strValue = String(sanitized)
 
   // Se contém ponto e vírgula, aspas ou quebra de linha, envolve em aspas
-  if (strValue.includes(';') || strValue.includes('"') || strValue.includes('\n') || strValue.includes('\r')) {
+  if (
+    strValue.includes(';') ||
+    strValue.includes('"') ||
+    strValue.includes('\n') ||
+    strValue.includes('\r')
+  ) {
     return '"' + strValue.replace(/"/g, '""') + '"'
   }
 
@@ -192,10 +202,18 @@ function exportMedicinesCSV(medicines) {
 function exportProtocolsCSV(protocols) {
   const headers = [
     { key: 'id', label: 'ID' },
-    { key: 'medicine_name', label: 'Medicamento', transform: (_, item) => item.medicine?.name || '' },
+    {
+      key: 'medicine_name',
+      label: 'Medicamento',
+      transform: (_, item) => item.medicine?.name || '',
+    },
     { key: 'dosage_per_intake', label: 'Dosagem por Intake' },
     { key: 'frequency', label: 'Frequência' },
-    { key: 'times', label: 'Horários', transform: (val) => (Array.isArray(val) ? val.join(', ') : '') },
+    {
+      key: 'times',
+      label: 'Horários',
+      transform: (val) => (Array.isArray(val) ? val.join(', ') : ''),
+    },
     { key: 'start_date', label: 'Data de Início', transform: formatDateOnly },
     { key: 'end_date', label: 'Data de Término', transform: formatDateOnly },
     { key: 'active', label: 'Ativo', transform: (val) => (val ? 'Sim' : 'Não') },
@@ -215,7 +233,11 @@ function exportProtocolsCSV(protocols) {
 function exportLogsCSV(logs) {
   const headers = [
     { key: 'id', label: 'ID' },
-    { key: 'medicine_name', label: 'Medicamento', transform: (_, item) => item.medicine?.name || '' },
+    {
+      key: 'medicine_name',
+      label: 'Medicamento',
+      transform: (_, item) => item.medicine?.name || '',
+    },
     { key: 'quantity_taken', label: 'Quantidade Tomada' },
     { key: 'taken_at', label: 'Data/Hora', transform: formatDateTime },
     { key: 'notes', label: 'Observações' },
@@ -250,7 +272,11 @@ function exportStockCSV(stockData, medicines) {
     { key: 'medicine_name', label: 'Medicamento' },
     { key: 'quantity', label: 'Quantidade' },
     { key: 'purchase_date', label: 'Data de Compra', transform: formatDateOnly },
-    { key: 'unit_price', label: 'Preço Unitário (R$)', transform: (val) => (val ? val.toFixed(2) : '0,00') },
+    {
+      key: 'unit_price',
+      label: 'Preço Unitário (R$)',
+      transform: (val) => (val ? val.toFixed(2) : '0,00'),
+    },
     { key: 'notes', label: 'Observações' },
     { key: 'created_at', label: 'Data de Registro', transform: formatDateTime },
   ]
@@ -270,7 +296,13 @@ function exportStockCSV(stockData, medicines) {
  * @returns {Promise<void>} Faz download do arquivo JSON
  */
 export async function exportAsJSON(options = {}) {
-  const { dateRange, includeProtocols = true, includeLogs = true, includeStock = true, includeMedicines = true } = options
+  const {
+    dateRange,
+    includeProtocols = true,
+    includeLogs = true,
+    includeStock = true,
+    includeMedicines = true,
+  } = options
 
   const exportData = {
     metadata: {
@@ -324,7 +356,12 @@ export async function exportAsJSON(options = {}) {
   if (includeLogs) {
     let logs = []
     if (dateRange) {
-      const result = await logService.getByDateRange(formatLocalDate(dateRange.start), formatLocalDate(dateRange.end), 10000, 0)
+      const result = await logService.getByDateRange(
+        formatLocalDate(dateRange.start),
+        formatLocalDate(dateRange.end),
+        10000,
+        0
+      )
       logs = result.data
     } else {
       logs = await logService.getAll(10000)
@@ -361,7 +398,11 @@ export async function exportAsJSON(options = {}) {
   const jsonContent = JSON.stringify(exportData, null, 2)
 
   // Download
-  downloadFile(jsonContent, generateFilename('meus_remedios_export', 'json'), 'application/json;charset=utf-8')
+  downloadFile(
+    jsonContent,
+    generateFilename('meus_remedios_export', 'json'),
+    'application/json;charset=utf-8'
+  )
 }
 
 /**
@@ -376,7 +417,13 @@ export async function exportAsJSON(options = {}) {
  * @returns {Promise<void>} Faz download do arquivo CSV
  */
 export async function exportAsCSV(options = {}) {
-  const { dateRange, includeProtocols = true, includeLogs = true, includeStock = true, includeMedicines = true } = options
+  const {
+    dateRange,
+    includeProtocols = true,
+    includeLogs = true,
+    includeStock = true,
+    includeMedicines = true,
+  } = options
 
   const csvSections = []
 
@@ -405,7 +452,12 @@ export async function exportAsCSV(options = {}) {
   if (includeLogs) {
     let logs = []
     if (dateRange) {
-      const result = await logService.getByDateRange(formatLocalDate(dateRange.start), formatLocalDate(dateRange.end), 10000, 0)
+      const result = await logService.getByDateRange(
+        formatLocalDate(dateRange.start),
+        formatLocalDate(dateRange.end),
+        10000,
+        0
+      )
       logs = result.data
     } else {
       logs = await logService.getAll(10000)
@@ -427,7 +479,9 @@ export async function exportAsCSV(options = {}) {
     '=== METADADOS ===',
     `Data de Exportação;${formatDateTime(new Date().toISOString())}`,
     `Versão do Formato;${EXPORT_VERSION}`,
-    dateRange ? `Período;${formatDateOnly(formatLocalDate(dateRange.start))} a ${formatDateOnly(formatLocalDate(dateRange.end))}` : 'Período;Todos os dados',
+    dateRange
+      ? `Período;${formatDateOnly(formatLocalDate(dateRange.start))} a ${formatDateOnly(formatLocalDate(dateRange.end))}`
+      : 'Período;Todos os dados',
     '',
   ]
 
@@ -435,7 +489,11 @@ export async function exportAsCSV(options = {}) {
   const csvContent = UTF8_BOM + [...metadataSection, ...csvSections].join('\n')
 
   // Download
-  downloadFile(csvContent, generateFilename('meus_remedios_export', 'csv'), 'text/csv;charset=utf-8')
+  downloadFile(
+    csvContent,
+    generateFilename('meus_remedios_export', 'csv'),
+    'text/csv;charset=utf-8'
+  )
 }
 
 /**

@@ -53,7 +53,7 @@ export async function searchLaboratories(query, limit = 10) {
   const normalizedQuery = normalizeText(query)
 
   const results = db
-    .filter(lab => normalizeText(lab.laboratory).includes(normalizedQuery))
+    .filter((lab) => normalizeText(lab.laboratory).includes(normalizedQuery))
     .slice(0, limit)
 
   return results
@@ -71,7 +71,7 @@ export async function getLaboratoryByName(name) {
   const db = await loadDatabase()
   const normalizedName = normalizeText(name)
 
-  return db.find(lab => normalizeText(lab.laboratory) === normalizedName) || null
+  return db.find((lab) => normalizeText(lab.laboratory) === normalizedName) || null
 }
 
 /**

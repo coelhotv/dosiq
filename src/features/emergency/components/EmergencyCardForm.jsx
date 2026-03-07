@@ -1,11 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import Button from '@shared/components/ui/Button'
 import Card from '@shared/components/ui/Card'
-import {
-  BLOOD_TYPES,
-  BLOOD_TYPE_LABELS,
-  validateEmergencyCard,
-} from '@schemas/emergencyCardSchema'
+import { BLOOD_TYPES, BLOOD_TYPE_LABELS, validateEmergencyCard } from '@schemas/emergencyCardSchema'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import './EmergencyCard.css'
 
@@ -67,19 +63,22 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
    * @param {string} field - Campo a ser atualizado (name, phone, relationship)
    * @param {string} value - Novo valor
    */
-  const handleContactChange = useCallback((index, field, value) => {
-    setContacts((prev) =>
-      prev.map((contact, i) => (i === index ? { ...contact, [field]: value } : contact))
-    )
-    // Limpa erro do campo específico
-    if (errors[`emergency_contacts.${index}.${field}`]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[`emergency_contacts.${index}.${field}`]
-        return newErrors
-      })
-    }
-  }, [errors])
+  const handleContactChange = useCallback(
+    (index, field, value) => {
+      setContacts((prev) =>
+        prev.map((contact, i) => (i === index ? { ...contact, [field]: value } : contact))
+      )
+      // Limpa erro do campo específico
+      if (errors[`emergency_contacts.${index}.${field}`]) {
+        setErrors((prev) => {
+          const newErrors = { ...prev }
+          delete newErrors[`emergency_contacts.${index}.${field}`]
+          return newErrors
+        })
+      }
+    },
+    [errors]
+  )
 
   /**
    * Adiciona uma alergia à lista.
@@ -208,9 +207,7 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
                 className={errors[`emergency_contacts.${index}.name`] ? 'input-error' : ''}
               />
               {errors[`emergency_contacts.${index}.name`] && (
-                <span className="error-message">
-                  {errors[`emergency_contacts.${index}.name`]}
-                </span>
+                <span className="error-message">{errors[`emergency_contacts.${index}.name`]}</span>
               )}
             </div>
 
@@ -226,9 +223,7 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
                 className={errors[`emergency_contacts.${index}.phone`] ? 'input-error' : ''}
               />
               {errors[`emergency_contacts.${index}.phone`] && (
-                <span className="error-message">
-                  {errors[`emergency_contacts.${index}.phone`]}
-                </span>
+                <span className="error-message">{errors[`emergency_contacts.${index}.phone`]}</span>
               )}
             </div>
 
@@ -309,9 +304,7 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
           </div>
         )}
 
-        {allergies.length === 0 && (
-          <p className="empty-state">Nenhuma alergia cadastrada</p>
-        )}
+        {allergies.length === 0 && <p className="empty-state">Nenhuma alergia cadastrada</p>}
       </Card>
 
       {/* Tipo Sanguíneo */}
@@ -342,7 +335,8 @@ export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
       <Card className="emergency-card-section" hover={false}>
         <h3 className="section-title">📝 Observações</h3>
         <p className="section-description">
-          Informações adicionais importantes (condições médicas, medicamentos em uso contínuo, etc.).
+          Informações adicionais importantes (condições médicas, medicamentos em uso contínuo,
+          etc.).
         </p>
 
         <div className="form-group">

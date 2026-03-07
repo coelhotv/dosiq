@@ -191,14 +191,11 @@ function DoseCalendar() {
    * @param {number} month - Mês (0-indexed)
    * @returns {Promise<void>}
    */
-  const handleLoadMonth = useCallback(
-    async (year, month) => {
-      // Atualiza viewDate para disparar recálculo do doseMap
-      setViewDate(new Date(year, month, 1))
-      return Promise.resolve()
-    },
-    []
-  )
+  const handleLoadMonth = useCallback(async (year, month) => {
+    // Atualiza viewDate para disparar recálculo do doseMap
+    setViewDate(new Date(year, month, 1))
+    return Promise.resolve()
+  }, [])
 
   /**
    * Formata data para exibição no painel.

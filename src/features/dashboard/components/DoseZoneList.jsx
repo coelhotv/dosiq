@@ -34,9 +34,13 @@ function getDefaultExpanded(zone) {
 function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done = false }) {
   const isSelected = selectedDoses?.has(`${dose.protocolId}:${dose.scheduledTime}`) ?? false
 
-  const displayTime = done && dose.registeredAt
-    ? new Date(dose.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    : dose.scheduledTime
+  const displayTime =
+    done && dose.registeredAt
+      ? new Date(dose.registeredAt).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : dose.scheduledTime
 
   const handleCardClick = (e) => {
     if (done || !onToggleSelection || e.target.closest('.dose-card__register-btn')) return
@@ -63,12 +67,12 @@ function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done
             planName={dose.treatmentPlanName}
           />
         )}
-        <span className="dose-card__dosage">
-          {dose.dosagePerIntake} cp
-        </span>
+        <span className="dose-card__dosage">{dose.dosagePerIntake} cp</span>
       </div>
       {done ? (
-        <span className="dose-card__done-icon" aria-label="Registrada">✓</span>
+        <span className="dose-card__done-icon" aria-label="Registrada">
+          ✓
+        </span>
       ) : (
         <button
           className="dose-card__register-btn"
@@ -97,12 +101,20 @@ function ZoneSection({ zoneKey, doses, expanded, onToggle, config, children }) {
         role="button"
         aria-expanded={expanded}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle() }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') onToggle()
+        }}
       >
-        <span className="zone-header__icon" aria-hidden="true">{config.icon}</span>
+        <span className="zone-header__icon" aria-hidden="true">
+          {config.icon}
+        </span>
         <span className="zone-header__label">{config.label}</span>
         <span className="zone-header__count">{doses.length}</span>
-        <span className={`zone-header__chevron${expanded ? ' zone-header__chevron--expanded' : ''}`}>▾</span>
+        <span
+          className={`zone-header__chevron${expanded ? ' zone-header__chevron--expanded' : ''}`}
+        >
+          ▾
+        </span>
       </div>
 
       <AnimatePresence>
@@ -283,7 +295,14 @@ export default function DoseZoneList({
  * PlanModeZone — Renderização em modo plano, com TreatmentAccordion por grupo.
  * Extraído para reduzir complexidade do componente principal.
  */
-function PlanModeZone({ doses, zoneKey, selectedDoses, onRegisterDose, onBatchRegister, onToggleSelection }) {
+function PlanModeZone({
+  doses,
+  zoneKey,
+  selectedDoses,
+  onRegisterDose,
+  onBatchRegister,
+  onToggleSelection,
+}) {
   const { planGroups, avulsos } = useMemo(() => groupDosesByPlan(doses), [doses])
 
   return (

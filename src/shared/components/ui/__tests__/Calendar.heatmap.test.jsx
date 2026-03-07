@@ -72,9 +72,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
 
   it('markedDates continua funcionando quando adherenceData está vazio', () => {
     const today = dateKey(0)
-    const { container } = render(
-      <Calendar markedDates={[today]} adherenceData={{}} />
-    )
+    const { container } = render(<Calendar markedDates={[today]} adherenceData={{}} />)
     const logDays = container.querySelectorAll('.calendar-day.has-log')
     expect(logDays.length).toBeGreaterThan(0)
   })
@@ -84,9 +82,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
     const adherenceData = {
       [today]: { adherence: 100, taken: 4, expected: 4 },
     }
-    const { container } = render(
-      <Calendar markedDates={[today]} adherenceData={adherenceData} />
-    )
+    const { container } = render(<Calendar markedDates={[today]} adherenceData={adherenceData} />)
     // has-adherence dias não renderizam log-dot (CSS visual, mas verificamos pela ausência no DOM)
     const heatDay = container.querySelector('.calendar-day.has-adherence')
     expect(heatDay).toBeTruthy()

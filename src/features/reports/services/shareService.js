@@ -74,9 +74,10 @@ function logInfo(message, data = {}) {
  * @param {Object} additionalData - Dados adicionais de contexto
  */
 function logError(message, error, additionalData = {}) {
-  const errorDetails = error instanceof Error
-    ? { name: error.name, message: error.message, stack: error.stack }
-    : { error: String(error) }
+  const errorDetails =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { error: String(error) }
 
   log(LOG_LEVELS.ERROR, message, { ...errorDetails, ...additionalData })
 }
@@ -100,7 +101,9 @@ function logWarn(message, data = {}) {
  */
 async function getAuthToken() {
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     return session?.access_token || null
   } catch (error) {
     logError('Erro ao obter token de autenticação', error)
@@ -171,7 +174,7 @@ export async function shareReport(blob, options) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         blob: base64Data,

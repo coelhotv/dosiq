@@ -111,12 +111,12 @@ export default function GenericAutocomplete({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
-        setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev))
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev))
         break
 
       case 'ArrowUp':
         e.preventDefault()
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1))
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1))
         break
 
       case 'Enter':

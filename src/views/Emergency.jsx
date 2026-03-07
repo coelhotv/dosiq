@@ -24,7 +24,7 @@ export default function Emergency({ onNavigate }) {
   // ===== EFFECTS (R-010: Hook Order) =====
   useEffect(() => {
     let mounted = true
-    
+
     async function fetchCardData() {
       setIsLoading(true)
       const result = await emergencyCardService.load()
@@ -39,9 +39,9 @@ export default function Emergency({ onNavigate }) {
         setIsLoading(false)
       }
     }
-    
+
     fetchCardData()
-    
+
     return () => {
       mounted = false
     }
@@ -110,11 +110,7 @@ export default function Emergency({ onNavigate }) {
       {/* Conteúdo */}
       <div className="emergency-content">
         {isEditing ? (
-          <EmergencyCardForm
-            initialData={cardData}
-            onSave={handleSave}
-            onCancel={handleCancel}
-          />
+          <EmergencyCardForm initialData={cardData} onSave={handleSave} onCancel={handleCancel} />
         ) : (
           <EmergencyCardView data={cardData} onEdit={handleEdit} />
         )}

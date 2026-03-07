@@ -22,11 +22,13 @@ vi.mock('@shared/services', () => ({
 
 vi.mock('@services/api/adherenceService', () => ({
   adherenceService: {
-    getAdherenceSummary: vi.fn(() => Promise.resolve({
-      overallTaken: 42,
-      overallExpected: 50,
-      longestStreak: 12,
-    })),
+    getAdherenceSummary: vi.fn(() =>
+      Promise.resolve({
+        overallTaken: 42,
+        overallExpected: 50,
+        longestStreak: 12,
+      })
+    ),
     getDailyAdherence: vi.fn(() => Promise.resolve([])),
   },
 }))
@@ -36,7 +38,7 @@ vi.mock('@shared/components/ui/Loading', () => ({
 }))
 
 vi.mock('@shared/components/ui/Modal', () => ({
-  default: ({ children, isOpen }) => isOpen ? <div data-testid="modal">{children}</div> : null,
+  default: ({ children, isOpen }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
 }))
 
 vi.mock('@shared/components/log/LogForm', () => ({

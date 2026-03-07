@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Create a mutable reference that the mock factory will close over
 const mockState = {
   calculateDaysRemaining: vi.fn(),
-  shouldSendNotification: vi.fn()
+  shouldSendNotification: vi.fn(),
 }
 
 // Mock all dependencies at module level - use mutable reference
@@ -12,9 +12,9 @@ vi.mock('../../../../server/services/supabase.js', () => ({
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null })
-    }))
-  }
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    })),
+  },
 }))
 
 vi.mock('../../../../server/bot/logger.js', () => ({
@@ -22,31 +22,33 @@ vi.mock('../../../../server/bot/logger.js', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
-  }))
+    debug: vi.fn(),
+  })),
 }))
 
 vi.mock('../../../../server/services/protocolCache.js', () => ({
   getAllUsersWithTelegram: vi.fn(),
   getUserSettings: vi.fn().mockResolvedValue({ timezone: 'America/Sao_Paulo' }),
-  getActiveProtocols: vi.fn().mockResolvedValue([])
+  getActiveProtocols: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('../../../../server/utils/formatters.js', () => ({
   // Use the mutable reference
   calculateDaysRemaining: (...args) => mockState.calculateDaysRemaining(...args),
-  escapeMarkdownV2: vi.fn((text) => text?.toString().replace?.(/([_*[\]()~`>#+=|{}.!-])/g, '\\$1') || String(text))
+  escapeMarkdownV2: vi.fn(
+    (text) => text?.toString().replace?.(/([_*[\]()~`>#+=|{}.!-])/g, '\\$1') || String(text)
+  ),
 }))
 
 vi.mock('../../../../server/services/notificationDeduplicator.js', () => ({
   // Use the mutable reference
   shouldSendNotification: (...args) => mockState.shouldSendNotification(...args),
-  logSuccessfulNotification: vi.fn().mockResolvedValue(true)
+  logSuccessfulNotification: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('../../../../server/bot/correlationLogger.js', () => ({
   getCurrentCorrelationId: vi.fn(() => 'test-correlation-id'),
-  getOrGenerateCorrelationId: vi.fn(() => 'test-correlation-id')
+  getOrGenerateCorrelationId: vi.fn(() => 'test-correlation-id'),
 }))
 
 describe('Proactive Stock Alerts (F5.5-T1)', () => {
@@ -61,10 +63,11 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     vi.clearAllMocks()
 
     // Import the mocked modules
-    const { getAllUsersWithTelegram: mockGetUsers } = await import('../../../../server/services/protocolCache.js')
+    const { getAllUsersWithTelegram: mockGetUsers } =
+      await import('../../../../server/services/protocolCache.js')
     getAllUsersWithTelegram = mockGetUsers
     getAllUsersWithTelegram.mockResolvedValue([
-      { user_id: 'user-test-1', telegram_chat_id: 'chat-test-1' }
+      { user_id: 'user-test-1', telegram_chat_id: 'chat-test-1' },
     ])
 
     const { supabase: mockSupabase } = await import('../../../../server/services/supabase.js')
@@ -82,7 +85,10 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
   const createMockMedicine = (name, stockQuantity = 100, protocols = null) => ({
     name,
     stock: [{ quantity: stockQuantity }],
-    protocols: protocols !== null ? protocols : [{ active: true, time_schedule: ['08:00'], dosage_per_intake: 1 }]
+    protocols:
+      protocols !== null
+        ? protocols
+        : [{ active: true, time_schedule: ['08:00'], dosage_per_intake: 1 }],
   })
 
   const setupSupabaseMock = (firstName, medicines) => {
@@ -93,8 +99,8 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({
             data: { first_name: firstName },
-            error: null
-          })
+            error: null,
+          }),
         }
       }
       if (table === 'medicines') {
@@ -102,21 +108,23 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockResolvedValue({
             data: medicines,
-            error: null
-          })
+            error: null,
+          }),
         }
       }
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
     })
   }
 
   describe('Cenário 1: 14 dias dispara alerta proativo', () => {
     it('deve enviar alerta proativo quando medicamento tem 14 dias restantes', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(14)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('João', [createMockMedicine('Paracetamol', 140)])
@@ -129,7 +137,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     })
 
     it('deve enviar alerta proativo quando medicamento tem 8 dias restantes (limite inferior)', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(8)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Maria', [createMockMedicine('Ibuprofeno', 80)])
@@ -142,7 +152,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
 
   describe('Cenário 2: 7 dias dispara alerta crítico (não proativo)', () => {
     it('deve enviar alerta crítico quando medicamento tem 7 dias restantes', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(7)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Pedro', [createMockMedicine('Amoxicilina', 70)])
@@ -158,7 +170,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
 
   describe('Cenário 3: 0 dias dispara crítico', () => {
     it('deve enviar alerta crítico quando medicamento tem 0 dias restantes (estoque zerado)', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(0)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Ana', [createMockMedicine('Omeprazol', 0)])
@@ -171,7 +185,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     })
 
     it('deve enviar alerta crítico quando medicamento tem dias negativos', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(-2)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Carlos', [createMockMedicine('Dipirona', -2)])
@@ -184,7 +200,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
 
   describe('Cenário 4: Deduplicação funciona separadamente para proativo vs crítico', () => {
     it('deve verificar deduplicação com tipo "proactive_stock_alert" para alertas proativos', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(14)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Lucas', [createMockMedicine('Vitamina D', 140)])
@@ -192,14 +210,16 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
       await checkStockAlerts(mockBot)
 
       const proactiveCall = mockState.shouldSendNotification.mock.calls.find(
-        call => call[2] === 'proactive_stock_alert'
+        (call) => call[2] === 'proactive_stock_alert'
       )
       expect(proactiveCall).toBeDefined()
       expect(proactiveCall[2]).toBe('proactive_stock_alert')
     })
 
     it('deve verificar deduplicação com tipo "stock_alert" para alertas críticos', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(5)
       mockState.shouldSendNotification.mockResolvedValue(true)
       setupSupabaseMock('Fernanda', [createMockMedicine('Losartana', 50)])
@@ -207,7 +227,7 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
       await checkStockAlerts(mockBot)
 
       const criticalCall = mockState.shouldSendNotification.mock.calls.find(
-        call => call[2] === 'stock_alert'
+        (call) => call[2] === 'stock_alert'
       )
       expect(criticalCall).toBeDefined()
       expect(criticalCall[2]).toBe('stock_alert')
@@ -216,7 +236,7 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     it('deve permitir ambos os tipos de alerta para usuários diferentes', async () => {
       getAllUsersWithTelegram.mockResolvedValue([
         { user_id: 'user-1', telegram_chat_id: 'chat-1' },
-        { user_id: 'user-2', telegram_chat_id: 'chat-2' }
+        { user_id: 'user-2', telegram_chat_id: 'chat-2' },
       ])
 
       let userCallCount = 0
@@ -236,8 +256,8 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
             eq: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({
               data: { first_name: profileCallCount === 1 ? 'Usuário1' : 'Usuário2' },
-              error: null
-            })
+              error: null,
+            }),
           }
         }
         if (table === 'medicines') {
@@ -245,27 +265,29 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockResolvedValue({
               data: [createMockMedicine('Med1', 100)],
-              error: null
-            })
+              error: null,
+            }),
           }
         }
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
         }
       })
 
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       await checkStockAlerts(mockBot)
 
       expect(mockBot.sendMessage).toHaveBeenCalledTimes(2)
 
       const proactiveCalls = mockState.shouldSendNotification.mock.calls.filter(
-        call => call[2] === 'proactive_stock_alert'
+        (call) => call[2] === 'proactive_stock_alert'
       )
       const criticalCalls = mockState.shouldSendNotification.mock.calls.filter(
-        call => call[2] === 'stock_alert'
+        (call) => call[2] === 'stock_alert'
       )
 
       expect(proactiveCalls.length).toBeGreaterThanOrEqual(1)
@@ -273,7 +295,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     })
 
     it('não deve enviar alerta proativo quando deduplicação retorna false', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(14)
       mockState.shouldSendNotification.mockResolvedValue(false)
       setupSupabaseMock('Bloqueado', [createMockMedicine('Aspirina', 140)])
@@ -284,7 +308,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
     })
 
     it('não deve enviar alerta crítico quando deduplicação retorna false', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       mockState.calculateDaysRemaining.mockReturnValue(3)
       mockState.shouldSendNotification.mockResolvedValue(false)
       setupSupabaseMock('Bloqueado', [createMockMedicine('Novalgina', 30)])
@@ -297,7 +323,9 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
 
   describe('Regra de prioridade: Crítico bloqueia proativo', () => {
     it('deve enviar apenas alerta crítico quando ambos os níveis estão presentes', async () => {
-      const mockBot = { sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }) }
+      const mockBot = {
+        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
+      }
       let medCallCount = 0
       mockState.calculateDaysRemaining.mockImplementation(() => {
         medCallCount++
@@ -310,7 +338,7 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
       setupSupabaseMock('Misto', [
         createMockMedicine('MedCritico', 30),
         createMockMedicine('MedProativo', 120),
-        createMockMedicine('MedNormal', 150)
+        createMockMedicine('MedNormal', 150),
       ])
 
       await checkStockAlerts(mockBot)

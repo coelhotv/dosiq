@@ -54,9 +54,10 @@ export async function searchMedicines(query, limit = 10) {
 
   // Filtrar por nome ou princípio ativo
   const results = db
-    .filter(med =>
-      normalizeText(med.name).includes(normalizedQuery) ||
-      normalizeText(med.activeIngredient).includes(normalizedQuery)
+    .filter(
+      (med) =>
+        normalizeText(med.name).includes(normalizedQuery) ||
+        normalizeText(med.activeIngredient).includes(normalizedQuery)
     )
     .slice(0, limit)
 
@@ -76,11 +77,11 @@ export async function getMedicineDetails(name) {
   const normalizedName = normalizeText(name)
 
   // Buscar por match exato (normalizado) primeiro
-  let medicine = db.find(med => normalizeText(med.name) === normalizedName)
+  let medicine = db.find((med) => normalizeText(med.name) === normalizedName)
 
   // Se não encontrar exato, buscar por match parcial
   if (!medicine) {
-    medicine = db.find(med => normalizeText(med.name).includes(normalizedName))
+    medicine = db.find((med) => normalizeText(med.name).includes(normalizedName))
   }
 
   return medicine || null
@@ -98,7 +99,7 @@ export async function searchByActiveIngredient(activeIngredient) {
   const db = await loadDatabase()
   const normalizedIngredient = normalizeText(activeIngredient)
 
-  return db.filter(med => normalizeText(med.activeIngredient) === normalizedIngredient)
+  return db.filter((med) => normalizeText(med.activeIngredient) === normalizedIngredient)
 }
 
 /**
@@ -123,7 +124,7 @@ export async function findDuplicatesByIngredient(activeIngredient, excludeName =
   const medicines = await searchByActiveIngredient(activeIngredient)
 
   if (excludeName) {
-    return medicines.filter(med => normalizeText(med.name) !== normalizeText(excludeName))
+    return medicines.filter((med) => normalizeText(med.name) !== normalizeText(excludeName))
   }
 
   return medicines

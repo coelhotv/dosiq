@@ -6,17 +6,7 @@ import { z } from 'zod'
  */
 
 // Tipos sanguíneos válidos
-export const BLOOD_TYPES = [
-  'A+',
-  'A-',
-  'B+',
-  'B-',
-  'AB+',
-  'AB-',
-  'O+',
-  'O-',
-  'desconhecido',
-]
+export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'desconhecido']
 
 // Labels dos tipos sanguíneos para exibição
 export const BLOOD_TYPE_LABELS = {
@@ -50,7 +40,10 @@ export const emergencyContactSchema = z.object({
     .string()
     .min(8, 'Telefone deve ter pelo menos 8 dígitos')
     .max(20, 'Telefone não pode ter mais de 20 caracteres')
-    .regex(BRAZILIAN_PHONE_REGEX, 'Formato de telefone inválido. Use: (XX) XXXXX-XXXX ou +55 XX XXXXX-XXXX'),
+    .regex(
+      BRAZILIAN_PHONE_REGEX,
+      'Formato de telefone inválido. Use: (XX) XXXXX-XXXX ou +55 XX XXXXX-XXXX'
+    ),
 
   relationship: z
     .string()
@@ -81,8 +74,7 @@ export const emergencyCardSchema = z.object({
 
   blood_type: z.enum(BLOOD_TYPES, {
     errorMap: () => ({
-      message:
-        'Tipo sanguíneo inválido. Opções: A+, A-, B+, B-, AB+, AB-, O+, O-, desconhecido',
+      message: 'Tipo sanguíneo inválido. Opções: A+, A-, B+, B-, AB+, AB-, O+, O-, desconhecido',
     }),
   }),
 

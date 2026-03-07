@@ -52,7 +52,8 @@ export function useComplexityMode() {
 
   // Medicamentos com ao menos 1 protocolo ativo
   const activeMedicines = useMemo(
-    () => medicines.filter((m) => protocols.some((p) => p.medicine_id === m.id && p.active !== false)),
+    () =>
+      medicines.filter((m) => protocols.some((p) => p.medicine_id === m.id && p.active !== false)),
     [medicines, protocols]
   )
 

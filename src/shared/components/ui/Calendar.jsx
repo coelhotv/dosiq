@@ -215,7 +215,7 @@ export default function Calendar({
       const [logYear, logMonth, logDay] = dateStr.split('-').map(Number)
       return (
         logYear === dayDate.getFullYear() &&
-        logMonth - 1 === dayDate.getMonth() &&  // JS month eh 0-indexed
+        logMonth - 1 === dayDate.getMonth() && // JS month eh 0-indexed
         logDay === dayDate.getDate()
       )
     })

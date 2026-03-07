@@ -240,9 +240,7 @@ export default function EmergencyCardView({ data, onEdit }) {
 
       {/* Rodapé */}
       <footer className="emergency-card-footer">
-        <p className="last-updated">
-          Última atualização: {formattedLastUpdated}
-        </p>
+        <p className="last-updated">Última atualização: {formattedLastUpdated}</p>
         <div className="footer-actions">
           <button className="btn btn-secondary btn-sm" onClick={handlePrint}>
             🖨️ Imprimir

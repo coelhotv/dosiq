@@ -7,6 +7,8 @@ import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import { formatLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
+import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
+import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import './TreatmentWizard.css'
 
 const FREQUENCY_LABELS = {
@@ -23,7 +25,12 @@ const slideVariants = {
   exit: (direction) => ({ x: direction > 0 ? -300 : 300, opacity: 0 }),
 }
 
-export default function TreatmentWizard({ onComplete, onCancel, preselectedMedicine, treatmentPlanId }) {
+export default function TreatmentWizard({
+  onComplete,
+  onCancel,
+  preselectedMedicine,
+  treatmentPlanId,
+}) {
   // States
   const [step, setStep] = useState(preselectedMedicine ? 2 : 1)
   const [direction, setDirection] = useState(1)
@@ -33,13 +40,18 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
   // Modo do passo 1: 'new' cria novo, 'existing' usa medicamento já cadastrado
   const [medicineMode, setMedicineMode] = useState('new')
   // Medicamento existente selecionado (quando mode === 'existing')
-  const [selectedExistingMedicine, setSelectedExistingMedicine] = useState(preselectedMedicine || null)
+  const [selectedExistingMedicine, setSelectedExistingMedicine] = useState(
+    preselectedMedicine || null
+  )
 
   const [medicineData, setMedicineData] = useState({
     name: preselectedMedicine?.name || '',
     type: preselectedMedicine?.type || 'medicamento',
     dosage_per_pill: preselectedMedicine?.dosage_per_pill || '',
     dosage_unit: preselectedMedicine?.dosage_unit || 'mg',
+    laboratory: preselectedMedicine?.laboratory || '',
+    active_ingredient: preselectedMedicine?.active_ingredient || '',
+    therapeutic_class: preselectedMedicine?.therapeutic_class || null,
   })
 
   const [protocolData, setProtocolData] = useState({
@@ -66,132 +78,168 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
   const { refresh, medicines } = useDashboard()
 
   useEffect(() => {
-    treatmentPlanService.getAll()
-      .then(plans => setAvailablePlans(plans || []))
+    treatmentPlanService
+      .getAll()
+      .then((plans) => setAvailablePlans(plans || []))
       .catch(() => setAvailablePlans([]))
   }, [])
 
   // Navigation
   const goNext = useCallback(() => {
     setDirection(1)
-    setStep(s => s + 1)
+    setStep((s) => s + 1)
   }, [])
 
   const goBack = useCallback(() => {
     setDirection(-1)
-    setStep(s => s - 1)
+    setStep((s) => s - 1)
   }, [])
 
   // Medicine field handler
   const updateMedicine = useCallback((field, value) => {
-    setMedicineData(prev => ({ ...prev, [field]: value }))
+    setMedicineData((prev) => ({ ...prev, [field]: value }))
   }, [])
 
   // Protocol field handler
   const updateProtocol = useCallback((field, value) => {
-    setProtocolData(prev => ({ ...prev, [field]: value }))
+    setProtocolData((prev) => ({ ...prev, [field]: value }))
   }, [])
 
   const addTime = useCallback(() => {
-    setProtocolData(prev => ({
+    setProtocolData((prev) => ({
       ...prev,
       time_schedule: [...prev.time_schedule, '12:00'],
     }))
   }, [])
 
   const removeTime = useCallback((index) => {
-    setProtocolData(prev => ({
+    setProtocolData((prev) => ({
       ...prev,
       time_schedule: prev.time_schedule.filter((_, i) => i !== index),
     }))
   }, [])
 
   const updateTime = useCallback((index, value) => {
-    setProtocolData(prev => ({
+    setProtocolData((prev) => ({
       ...prev,
-      time_schedule: prev.time_schedule.map((t, i) => i === index ? value : t),
+      time_schedule: prev.time_schedule.map((t, i) => (i === index ? value : t)),
     }))
   }, [])
 
   // Stock field handler
   const updateStock = useCallback((field, value) => {
-    setStockData(prev => ({ ...prev, [field]: value }))
+    setStockData((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  // Autocomplete handlers for ANVISA database
+  const handleMedicineSelect = useCallback((medicine) => {
+    setMedicineData((prev) => ({
+      ...prev,
+      name: medicine.name,
+      active_ingredient: medicine.activeIngredient || '',
+      therapeutic_class: medicine.therapeuticClass || null,
+    }))
+  }, [])
+
+  const handleLaboratorySelect = useCallback((laboratory) => {
+    setMedicineData((prev) => ({
+      ...prev,
+      laboratory: laboratory.laboratory || '',
+    }))
   }, [])
 
   // Submit
-  const handleComplete = useCallback(async (skipStock) => {
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      const medicine = selectedExistingMedicine || await medicineService.create({
-        name: medicineData.name,
-        type: medicineData.type,
-        dosage_per_pill: Number(medicineData.dosage_per_pill),
-        dosage_unit: medicineData.dosage_unit,
-      })
+  const handleComplete = useCallback(
+    async (skipStock) => {
+      setIsSubmitting(true)
+      setError(null)
+      try {
+        const medicine =
+          selectedExistingMedicine ||
+          (await medicineService.create({
+            name: medicineData.name,
+            type: medicineData.type,
+            dosage_per_pill: Number(medicineData.dosage_per_pill),
+            dosage_unit: medicineData.dosage_unit,
+            laboratory: medicineData.laboratory || null,
+            active_ingredient: medicineData.active_ingredient || null,
+            therapeutic_class: medicineData.therapeutic_class || null,
+          }))
 
-      // Resolver plan ID: pode vir de prop, seleção ou criação
-      let resolvedPlanId = null
-      if (planMode === 'existing' && selectedPlanId) {
-        resolvedPlanId = selectedPlanId
-      } else if (planMode === 'new' && newPlanName.trim()) {
-        const newPlan = await treatmentPlanService.create({
-          name: newPlanName.trim(),
-          emoji: newPlanEmoji || '📋',
-        })
-        resolvedPlanId = newPlan.id
+        // Resolver plan ID: pode vir de prop, seleção ou criação
+        let resolvedPlanId = null
+        if (planMode === 'existing' && selectedPlanId) {
+          resolvedPlanId = selectedPlanId
+        } else if (planMode === 'new' && newPlanName.trim()) {
+          const newPlan = await treatmentPlanService.create({
+            name: newPlanName.trim(),
+            emoji: newPlanEmoji || '📋',
+          })
+          resolvedPlanId = newPlan.id
+        }
+
+        let protocol = null
+        if (step >= 3 || (step === 2 && !skipStock)) {
+          protocol = await protocolService.create({
+            medicine_id: medicine.id,
+            name: `${medicine.name} - ${FREQUENCY_LABELS[protocolData.frequency]}`,
+            frequency: protocolData.frequency,
+            time_schedule: protocolData.time_schedule,
+            dosage_per_intake: Number(protocolData.dosage_per_intake),
+            start_date: protocolData.start_date,
+            treatment_plan_id: resolvedPlanId,
+          })
+        }
+
+        if (!skipStock && stockData.quantity) {
+          await stockService.create({
+            medicine_id: medicine.id,
+            quantity: Number(stockData.quantity),
+            purchase_date: stockData.purchase_date,
+            unit_price: Number(stockData.unit_price) || 0,
+            expiration_date: stockData.expiration_date || null,
+          })
+        }
+
+        refresh()
+        setResult({ medicine, protocol })
+        setDirection(1)
+        setStep(4)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setIsSubmitting(false)
       }
-
-      let protocol = null
-      if (step >= 3 || (step === 2 && !skipStock)) {
-        protocol = await protocolService.create({
-          medicine_id: medicine.id,
-          name: `${medicine.name} - ${FREQUENCY_LABELS[protocolData.frequency]}`,
-          frequency: protocolData.frequency,
-          time_schedule: protocolData.time_schedule,
-          dosage_per_intake: Number(protocolData.dosage_per_intake),
-          start_date: protocolData.start_date,
-          treatment_plan_id: resolvedPlanId,
-        })
-      }
-
-      if (!skipStock && stockData.quantity) {
-        await stockService.create({
-          medicine_id: medicine.id,
-          quantity: Number(stockData.quantity),
-          purchase_date: stockData.purchase_date,
-          unit_price: Number(stockData.unit_price) || 0,
-          expiration_date: stockData.expiration_date || null,
-        })
-      }
-
-      refresh()
-      setResult({ medicine, protocol })
-      setDirection(1)
-      setStep(4)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [medicineData, protocolData, stockData, selectedExistingMedicine, planMode, selectedPlanId, newPlanName, newPlanEmoji, refresh, step])
+    },
+    [
+      medicineData,
+      protocolData,
+      stockData,
+      selectedExistingMedicine,
+      planMode,
+      selectedPlanId,
+      newPlanName,
+      newPlanEmoji,
+      refresh,
+      step,
+    ]
+  )
 
   // Validation
-  const isMedicineValid = medicineMode === 'existing'
-    ? !!selectedExistingMedicine
-    : medicineData.name.length >= 2 && medicineData.dosage_per_pill > 0
-  const isProtocolValid = protocolData.time_schedule.length > 0 && protocolData.dosage_per_intake > 0
+  const isMedicineValid =
+    medicineMode === 'existing'
+      ? !!selectedExistingMedicine
+      : medicineData.name.length >= 2 && medicineData.dosage_per_pill > 0
+  const isProtocolValid =
+    protocolData.time_schedule.length > 0 && protocolData.dosage_per_intake > 0
 
   return (
     <div className="wizard">
       {/* Progress dots */}
       {step < 4 && (
         <div className="wizard__progress">
-          {[1, 2, 3].map(s => (
-            <div
-              key={s}
-              className={`wizard__dot ${s <= step ? 'wizard__dot--active' : ''}`}
-            />
+          {[1, 2, 3].map((s) => (
+            <div key={s} className={`wizard__dot ${s <= step ? 'wizard__dot--active' : ''}`} />
           ))}
           <span className="wizard__step-label">{step}/3</span>
         </div>
@@ -219,14 +267,20 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                   <button
                     type="button"
                     className={`wizard__mode-btn${medicineMode === 'existing' ? ' wizard__mode-btn--active' : ''}`}
-                    onClick={() => { setMedicineMode('existing'); setSelectedExistingMedicine(null) }}
+                    onClick={() => {
+                      setMedicineMode('existing')
+                      setSelectedExistingMedicine(null)
+                    }}
                   >
                     Já cadastrado
                   </button>
                   <button
                     type="button"
                     className={`wizard__mode-btn${medicineMode === 'new' ? ' wizard__mode-btn--active' : ''}`}
-                    onClick={() => { setMedicineMode('new'); setSelectedExistingMedicine(null) }}
+                    onClick={() => {
+                      setMedicineMode('new')
+                      setSelectedExistingMedicine(null)
+                    }}
                   >
                     Novo medicamento
                   </button>
@@ -240,14 +294,15 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                     className="wizard__select"
                     value={selectedExistingMedicine?.id || ''}
                     onChange={(e) => {
-                      const med = medicines.find(m => m.id === e.target.value)
+                      const med = medicines.find((m) => m.id === e.target.value)
                       setSelectedExistingMedicine(med || null)
                     }}
                   >
                     <option value="">-- Escolha um medicamento --</option>
-                    {medicines.map(m => (
+                    {medicines.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}{m.dosage_per_pill ? ` ${m.dosage_per_pill}${m.dosage_unit}` : ''}
+                        {m.name}
+                        {m.dosage_per_pill ? ` ${m.dosage_per_pill}${m.dosage_unit}` : ''}
                       </option>
                     ))}
                   </select>
@@ -256,13 +311,11 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                 <>
                   <label className="wizard__label">
                     Nome *
-                    <input
-                      type="text"
-                      className="wizard__input"
+                    <MedicineAutocomplete
                       value={medicineData.name}
-                      onChange={(e) => updateMedicine('name', e.target.value)}
-                      placeholder="Ex: Losartana"
-                      autoFocus
+                      onChange={(value) => updateMedicine('name', value)}
+                      onSelect={handleMedicineSelect}
+                      placeholder="Ex: Losartana ou busque na base ANVISA..."
                     />
                   </label>
 
@@ -277,6 +330,31 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                       <option value="suplemento">Suplemento</option>
                     </select>
                   </label>
+
+                  <label className="wizard__label">
+                    Marca / Laboratório
+                    <LaboratoryAutocomplete
+                      value={medicineData.laboratory}
+                      onChange={(value) => updateMedicine('laboratory', value)}
+                      onSelect={handleLaboratorySelect}
+                      placeholder="Ex: EMS, Medley..."
+                    />
+                  </label>
+
+                  {medicineData.active_ingredient && (
+                    <label className="wizard__label">
+                      Princípio Ativo
+                      <input
+                        type="text"
+                        className="wizard__input"
+                        value={medicineData.active_ingredient}
+                        readOnly
+                      />
+                      <small className="wizard__label-note">
+                        Preenchido automaticamente via ANVISA
+                      </small>
+                    </label>
+                  )}
 
                   <div className="wizard__row">
                     <label className="wizard__label" style={{ flex: 1 }}>
@@ -298,8 +376,10 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                         value={medicineData.dosage_unit}
                         onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
                       >
-                        {DOSAGE_UNITS.map(u => (
-                          <option key={u} value={u}>{u}</option>
+                        {DOSAGE_UNITS.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
                         ))}
                       </select>
                     </label>
@@ -308,7 +388,9 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
               )}
 
               <div className="wizard__actions">
-                <Button variant="ghost" onClick={onCancel}>Cancelar</Button>
+                <Button variant="ghost" onClick={onCancel}>
+                  Cancelar
+                </Button>
                 <Button variant="primary" onClick={goNext} disabled={!isMedicineValid}>
                   Próximo →
                 </Button>
@@ -327,8 +409,10 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                   value={protocolData.frequency}
                   onChange={(e) => updateProtocol('frequency', e.target.value)}
                 >
-                  {FREQUENCIES.map(f => (
-                    <option key={f} value={f}>{FREQUENCY_LABELS[f] || f}</option>
+                  {FREQUENCIES.map((f) => (
+                    <option key={f} value={f}>
+                      {FREQUENCY_LABELS[f] || f}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -344,11 +428,15 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                       onChange={(e) => updateTime(i, e.target.value)}
                     />
                     {protocolData.time_schedule.length > 1 && (
-                      <button className="wizard__remove-time" onClick={() => removeTime(i)}>✕</button>
+                      <button className="wizard__remove-time" onClick={() => removeTime(i)}>
+                        ✕
+                      </button>
                     )}
                   </div>
                 ))}
-                <button className="wizard__add-time" onClick={addTime}>+ Adicionar horário</button>
+                <button className="wizard__add-time" onClick={addTime}>
+                  + Adicionar horário
+                </button>
               </div>
 
               <label className="wizard__label">
@@ -401,7 +489,6 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                     + Criar plano
                   </button>
                 </div>
-
                 {planMode === 'existing' && (
                   <select
                     className="wizard__select"
@@ -410,14 +497,13 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
                     onChange={(e) => setSelectedPlanId(e.target.value)}
                   >
                     <option value="">-- Escolha um plano --</option>
-                    {availablePlans.map(p => (
+                    {availablePlans.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.emoji || '📋'} {p.name}
                       </option>
                     ))}
                   </select>
                 )}
-
                 {planMode === 'new' && (
                   <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                     <input
@@ -442,10 +528,17 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
               </div>
 
               <div className="wizard__actions">
-                <Button variant="ghost" onClick={goBack}>← Voltar</Button>
-                <Button variant="ghost" onClick={() => {
-                  handleComplete(true)
-                }}>Pular</Button>
+                <Button variant="ghost" onClick={goBack}>
+                  ← Voltar
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    handleComplete(true)
+                  }}
+                >
+                  Pular
+                </Button>
                 <Button variant="primary" onClick={goNext} disabled={!isProtocolValid}>
                   Próximo →
                 </Button>
@@ -505,11 +598,21 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
               {error && <div className="wizard__error">{error}</div>}
 
               <div className="wizard__actions">
-                <Button variant="ghost" onClick={goBack}>← Voltar</Button>
-                <Button variant="ghost" onClick={() => handleComplete(true)} disabled={isSubmitting}>
+                <Button variant="ghost" onClick={goBack}>
+                  ← Voltar
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleComplete(true)}
+                  disabled={isSubmitting}
+                >
                   Pular
                 </Button>
-                <Button variant="primary" onClick={() => handleComplete(false)} disabled={isSubmitting}>
+                <Button
+                  variant="primary"
+                  onClick={() => handleComplete(false)}
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? 'Salvando...' : 'Concluir'}
                 </Button>
               </div>
@@ -523,20 +626,40 @@ export default function TreatmentWizard({ onComplete, onCancel, preselectedMedic
               <p className="wizard__complete-summary">
                 <strong>{result.medicine?.name || medicineData.name}</strong> cadastrado
                 {result.protocol && ` com protocolo ${FREQUENCY_LABELS[protocolData.frequency]}`}
-                {stockData.quantity && ` e ${stockData.quantity} comprimidos em estoque`}
-                .
+                {stockData.quantity && ` e ${stockData.quantity} comprimidos em estoque`}.
               </p>
               <div className="wizard__actions wizard__actions--center">
                 <Button variant="primary" onClick={() => onComplete(result)}>
                   Ir para Hoje
                 </Button>
-                <Button variant="ghost" onClick={() => {
-                  setStep(1)
-                  setResult(null)
-                  setMedicineData({ name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg' })
-                  setProtocolData({ frequency: 'diario', time_schedule: ['08:00'], dosage_per_intake: 1, start_date: formatLocalDate(new Date()) })
-                  setStockData({ quantity: '', purchase_date: formatLocalDate(new Date()), unit_price: '', expiration_date: '' })
-                }}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setStep(1)
+                    setResult(null)
+                    setMedicineData({
+                      name: '',
+                      type: 'medicamento',
+                      dosage_per_pill: '',
+                      dosage_unit: 'mg',
+                      laboratory: '',
+                      active_ingredient: '',
+                      therapeutic_class: null,
+                    })
+                    setProtocolData({
+                      frequency: 'diario',
+                      time_schedule: ['08:00'],
+                      dosage_per_intake: 1,
+                      start_date: formatLocalDate(new Date()),
+                    })
+                    setStockData({
+                      quantity: '',
+                      purchase_date: formatLocalDate(new Date()),
+                      unit_price: '',
+                      expiration_date: '',
+                    })
+                  }}
+                >
                   Cadastrar outro
                 </Button>
               </div>

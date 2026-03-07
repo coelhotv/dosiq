@@ -25,9 +25,8 @@ export default function Treatment({ onNavigate }) {
 
   const { medicines, protocols, refresh } = useDashboard()
 
-  const { data: treatmentPlans } = useCachedQuery(
-    'treatmentPlans:all',
-    () => treatmentPlanService.getAll()
+  const { data: treatmentPlans } = useCachedQuery('treatmentPlans:all', () =>
+    treatmentPlanService.getAll()
   )
 
   // Planos de tratamento com protocolos ativos embarcados
@@ -35,65 +34,73 @@ export default function Treatment({ onNavigate }) {
     if (!treatmentPlans || treatmentPlans.length === 0) return []
 
     return treatmentPlans
-      .map(plan => ({
+      .map((plan) => ({
         ...plan,
-        activeProtocols: (plan.protocols || []).filter(p => p.active),
+        activeProtocols: (plan.protocols || []).filter((p) => p.active),
       }))
-      .filter(plan => plan.activeProtocols.length > 0)
+      .filter((plan) => plan.activeProtocols.length > 0)
   }, [treatmentPlans])
 
   // Medicamentos avulsos (ativos, sem plano)
-  const standaloneProtocols = useMemo(() =>
-    protocols.filter(p => p.active && !p.treatment_plan_id),
+  const standaloneProtocols = useMemo(
+    () => protocols.filter((p) => p.active && !p.treatment_plan_id),
     [protocols]
   )
 
   // Medicamentos sem tratamento
   const medicinesWithoutProtocol = useMemo(() => {
-    const medsWithProtocol = new Set(protocols.map(p => p.medicine_id))
-    return medicines.filter(m => !medsWithProtocol.has(m.id))
+    const medsWithProtocol = new Set(protocols.map((p) => p.medicine_id))
+    return medicines.filter((m) => !medsWithProtocol.has(m.id))
   }, [medicines, protocols])
 
   // Tratamentos inativos
-  const inactiveProtocols = useMemo(() =>
-    protocols.filter(p => !p.active),
-    [protocols]
+  const inactiveProtocols = useMemo(() => protocols.filter((p) => !p.active), [protocols])
+
+  const handleEditProtocol = useCallback(
+    (protocol) => {
+      onNavigate('protocols', { editId: protocol.id })
+    },
+    [onNavigate]
   )
 
-  const handleEditProtocol = useCallback((protocol) => {
-    onNavigate('protocols', { editId: protocol.id })
-  }, [onNavigate])
+  const handlePauseProtocol = useCallback(
+    async (protocolId) => {
+      try {
+        await protocolService.update(protocolId, { active: false })
+        refresh()
+      } catch (err) {
+        console.error('Erro ao pausar protocolo:', err)
+      }
+    },
+    [refresh]
+  )
 
-  const handlePauseProtocol = useCallback(async (protocolId) => {
-    try {
-      await protocolService.update(protocolId, { active: false })
-      refresh()
-    } catch (err) {
-      console.error('Erro ao pausar protocolo:', err)
-    }
-  }, [refresh])
+  const handleReactivateProtocol = useCallback(
+    async (protocolId) => {
+      try {
+        await protocolService.update(protocolId, { active: true })
+        refresh()
+      } catch (err) {
+        console.error('Erro ao reativar protocolo:', err)
+      }
+    },
+    [refresh]
+  )
 
-  const handleReactivateProtocol = useCallback(async (protocolId) => {
-    try {
-      await protocolService.update(protocolId, { active: true })
-      refresh()
-    } catch (err) {
-      console.error('Erro ao reativar protocolo:', err)
-    }
-  }, [refresh])
-
-  const handleCreateProtocol = useCallback((medicine) => {
-    onNavigate('protocols', { medicineId: medicine.id })
-  }, [onNavigate])
+  const handleCreateProtocol = useCallback(
+    (medicine) => {
+      onNavigate('protocols', { medicineId: medicine.id })
+    },
+    [onNavigate]
+  )
 
   const handleWizardComplete = useCallback(() => {
     setIsWizardOpen(false)
     refresh()
   }, [refresh])
 
-  const isEmpty = plans.length === 0
-    && standaloneProtocols.length === 0
-    && medicinesWithoutProtocol.length === 0
+  const isEmpty =
+    plans.length === 0 && standaloneProtocols.length === 0 && medicinesWithoutProtocol.length === 0
 
   return (
     <div className="treatment-view">
@@ -120,12 +127,10 @@ export default function Treatment({ onNavigate }) {
           {/* Planos de Tratamento (tratamentos complexos) */}
           {plans.length > 0 && (
             <div className="treatment-section">
-              <div className="treatment-section__header">
-                📁 Tratamentos
-              </div>
-              {plans.map(plan => (
+              <div className="treatment-section__header">📁 Tratamentos</div>
+              {plans.map((plan) => (
                 <TreatmentPlanCard key={plan.id} plan={plan}>
-                  {plan.activeProtocols.map(protocol => (
+                  {plan.activeProtocols.map((protocol) => (
                     <ProtocolListItem
                       key={protocol.id}
                       protocol={protocol}
@@ -141,12 +146,10 @@ export default function Treatment({ onNavigate }) {
           {/* Medicamentos Avulsos (tratamentos simples) */}
           {standaloneProtocols.length > 0 && (
             <div className="treatment-section">
-              <div className="treatment-section__header">
-                💊 Medicamentos Avulsos
-              </div>
+              <div className="treatment-section__header">💊 Medicamentos Avulsos</div>
               <div className="treatment-plan-card">
                 <div className="treatment-plan-card__body" style={{ paddingTop: 'var(--space-4)' }}>
-                  {standaloneProtocols.map(protocol => (
+                  {standaloneProtocols.map((protocol) => (
                     <ProtocolListItem
                       key={protocol.id}
                       protocol={protocol}
@@ -162,10 +165,8 @@ export default function Treatment({ onNavigate }) {
           {/* Medicamentos sem Tratamento */}
           {medicinesWithoutProtocol.length > 0 && (
             <div className="treatment-section">
-              <div className="treatment-section__header">
-                🔸 Sem Tratamento
-              </div>
-              {medicinesWithoutProtocol.map(medicine => (
+              <div className="treatment-section__header">🔸 Sem Tratamento</div>
+              {medicinesWithoutProtocol.map((medicine) => (
                 <MedicineOrphanCard
                   key={medicine.id}
                   medicine={medicine}
@@ -187,7 +188,7 @@ export default function Treatment({ onNavigate }) {
               </button>
               {showInactive && (
                 <div className="treatment-inactive-list">
-                  {inactiveProtocols.map(protocol => (
+                  {inactiveProtocols.map((protocol) => (
                     <div key={protocol.id} className="medicine-orphan-card">
                       <div className="medicine-orphan-card__info">
                         <span className="medicine-orphan-card__name">
@@ -213,10 +214,7 @@ export default function Treatment({ onNavigate }) {
       )}
 
       {/* Wizard modal */}
-      <Modal
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-      >
+      <Modal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)}>
         <TreatmentWizard
           onComplete={handleWizardComplete}
           onCancel={() => setIsWizardOpen(false)}

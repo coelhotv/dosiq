@@ -215,7 +215,7 @@ describe('useCachedQuery', () => {
 
       // Wait longer than the fetcher to ensure it completes
       // Using a small delay to prevent hanging (safer than real timers in CI)
-      await new Promise(resolve => setTimeout(resolve, 5))
+      await new Promise((resolve) => setTimeout(resolve, 5))
 
       // Should not throw error after unmount
       expect(result.current.data).toBe(undefined)

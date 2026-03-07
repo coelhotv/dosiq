@@ -18,11 +18,7 @@ export const StockEntrySchema = z.object({
 export const MedicineWithStockSchema = z.object({
   id: z.string().min(1, 'id é obrigatório'),
   name: z.string().min(1, 'name é obrigatório'),
-  stock: z
-    .array(StockEntrySchema)
-    .optional()
-    .default([])
-    .describe('Array de entradas de estoque'),
+  stock: z.array(StockEntrySchema).optional().default([]).describe('Array de entradas de estoque'),
 })
 
 // Schema para protocolo
@@ -48,26 +44,16 @@ export const CalculateMonthlyCostsInputSchema = z.object({
     .min(0, 'medicines deve ser um array')
     .optional()
     .default([]),
-  protocols: z
-    .array(ProtocolSchema)
-    .min(0, 'protocols deve ser um array')
-    .optional()
-    .default([]),
+  protocols: z.array(ProtocolSchema).min(0, 'protocols deve ser um array').optional().default([]),
 })
 
 // Schema para entrada de calculateDailyIntake
 export const CalculateDailyIntakeInputSchema = z.object({
   medicineId: z.string().min(1, 'medicineId é obrigatório'),
-  protocols: z
-    .array(ProtocolSchema)
-    .optional()
-    .default([]),
+  protocols: z.array(ProtocolSchema).optional().default([]),
 })
 
 // Schema para entrada de calculateAvgUnitPrice
 export const CalculateAvgUnitPriceInputSchema = z.object({
-  stockEntries: z
-    .array(StockEntrySchema)
-    .optional()
-    .default([]),
+  stockEntries: z.array(StockEntrySchema).optional().default([]),
 })

@@ -149,7 +149,9 @@ export default function ReportGenerator({ onClose }) {
       setShareUrl(result.url)
 
       // Tentar compartilhamento nativo em dispositivos móveis
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
       if (isMobile) {
         try {
           await shareNative(result.url, 'Relatório de Medicamentos')
@@ -376,9 +378,7 @@ export default function ReportGenerator({ onClose }) {
           <div className="report-generator__loading-bar">
             <div className="report-generator__loading-progress" />
           </div>
-          <p className="report-generator__loading-text">
-            Preparando seu relatório, aguarde...
-          </p>
+          <p className="report-generator__loading-text">Preparando seu relatório, aguarde...</p>
         </div>
       )}
     </div>

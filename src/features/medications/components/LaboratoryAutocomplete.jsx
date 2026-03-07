@@ -11,7 +11,13 @@ import GenericAutocomplete from './GenericAutocomplete'
  * - placeholder: string (default: "Digite o nome do laboratório...")
  * - disabled: boolean (default: false)
  */
-export default function LaboratoryAutocomplete({ value = '', onChange, onSelect, placeholder, disabled = false }) {
+export default function LaboratoryAutocomplete({
+  value = '',
+  onChange,
+  onSelect,
+  placeholder,
+  disabled = false,
+}) {
   const renderSuggestion = (laboratory) => (
     <div className="autocomplete-item-name">{laboratory.laboratory}</div>
   )

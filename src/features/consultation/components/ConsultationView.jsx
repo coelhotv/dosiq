@@ -89,12 +89,8 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
       <motion.header className="consultation-header" variants={itemVariants}>
         <div className="header-content">
           <div className="patient-info">
-            <h1 className="patient-name">
-              {patientInfo?.name || 'Paciente'}
-            </h1>
-            {patientInfo?.age && (
-              <span className="patient-age">{patientInfo.age} anos</span>
-            )}
+            <h1 className="patient-name">{patientInfo?.name || 'Paciente'}</h1>
+            {patientInfo?.age && <span className="patient-age">{patientInfo.age} anos</span>}
           </div>
           <div className="generation-info">
             <span className="generation-label">Gerado em:</span>
@@ -164,14 +160,8 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
         <motion.section className="consultation-section" variants={itemVariants}>
           <h2 className="section-title">📊 Aderência ao Tratamento</h2>
           <div className="adherence-grid">
-            <AdherenceCard
-              period="30 dias"
-              data={adherenceSummary?.last30d}
-            />
-            <AdherenceCard
-              period="90 dias"
-              data={adherenceSummary?.last90d}
-            />
+            <AdherenceCard period="30 dias" data={adherenceSummary?.last30d} />
+            <AdherenceCard period="90 dias" data={adherenceSummary?.last90d} />
           </div>
         </motion.section>
 
@@ -181,20 +171,13 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
           {stockAlerts?.length > 0 ? (
             <div className="stock-alerts-list">
               {stockAlerts.map((alert) => (
-                <div
-                  key={alert.medicineId}
-                  className={`stock-alert-item ${alert.severity}`}
-                >
-                  <span className="alert-icon">
-                    {alert.severity === 'critical' ? '⚠️' : '⚡'}
-                  </span>
+                <div key={alert.medicineId} className={`stock-alert-item ${alert.severity}`}>
+                  <span className="alert-icon">{alert.severity === 'critical' ? '⚠️' : '⚡'}</span>
                   <div className="alert-content">
                     <strong>{alert.medicineName}</strong>
                     <span className="alert-message">{alert.message}</span>
                     {alert.daysRemaining > 0 && (
-                      <span className="alert-days">
-                        ~{alert.daysRemaining} dias restantes
-                      </span>
+                      <span className="alert-days">~{alert.daysRemaining} dias restantes</span>
                     )}
                   </div>
                 </div>
@@ -215,18 +198,13 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
                   key={prescription.protocolId}
                   className={`prescription-item ${prescription.status}`}
                 >
-                  <span
-                    className={`status-badge ${prescription.status}`}
-                  >
+                  <span className={`status-badge ${prescription.status}`}>
                     {prescription.status === 'vencida' && '❌'}
                     {prescription.status === 'vencendo' && '⚠️'}
-                    {prescription.status === 'vigente' && '✅'}
-                    {' '}
+                    {prescription.status === 'vigente' && '✅'}{' '}
                     {getPrescriptionStatusLabel(prescription.status)}
                   </span>
-                  <span className="prescription-medicine">
-                    {prescription.medicineName}
-                  </span>
+                  <span className="prescription-medicine">{prescription.medicineName}</span>
                   {prescription.daysRemaining !== undefined && (
                     <span className="days-remaining">
                       {prescription.daysRemaining > 0
@@ -266,20 +244,13 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
                       />
                     </div>
                     <span className="progress-text">
-                      {titration.progressPercent}% — Etapa
-                      {' '}
-                      {titration.currentStep}
-                      /
+                      {titration.progressPercent}% — Etapa {titration.currentStep}/
                       {titration.totalSteps}
                     </span>
                   </div>
-                  {titration.stageNote && (
-                    <p className="titration-note">{titration.stageNote}</p>
-                  )}
+                  {titration.stageNote && <p className="titration-note">{titration.stageNote}</p>}
                   {titration.isTransitionDue && (
-                    <span className="transition-badge">
-                      🔔 Transição pendente
-                    </span>
+                    <span className="transition-badge">🔔 Transição pendente</span>
                   )}
                 </div>
               ))}
@@ -339,10 +310,7 @@ function AdherenceCard({ period, data }) {
     <div className="adherence-card">
       <div className="adherence-header">
         <span className="adherence-period">Últimos {period}</span>
-        <span
-          className="adherence-score"
-          style={{ color: getScoreColor() }}
-        >
+        <span className="adherence-score" style={{ color: getScoreColor() }}>
           {score}%
         </span>
       </div>
@@ -359,7 +327,9 @@ function AdherenceCard({ period, data }) {
 
       <div className="adherence-details">
         <div className="detail-item">
-          <span className="detail-value">{taken}/{expected}</span>
+          <span className="detail-value">
+            {taken}/{expected}
+          </span>
           <span className="detail-label">doses tomadas</span>
         </div>
         {punctuality > 0 && (
