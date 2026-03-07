@@ -85,6 +85,11 @@
   color: var(--text-secondary);
 }
 
+.wizard__label-note {
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.8rem;
+}
+
 .wizard__input {
   width: 100%;
   padding: 10px 12px;

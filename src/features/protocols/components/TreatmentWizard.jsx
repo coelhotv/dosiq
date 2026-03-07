@@ -350,7 +350,7 @@ export default function TreatmentWizard({
                         value={medicineData.active_ingredient}
                         readOnly
                       />
-                      <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                      <small className="wizard__label-note">
                         Preenchido automaticamente via ANVISA
                       </small>
                     </label>
