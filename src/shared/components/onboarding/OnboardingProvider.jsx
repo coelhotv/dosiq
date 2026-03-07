@@ -9,10 +9,11 @@ export function OnboardingProvider({ children }) {
   const [onboardingData, setOnboardingData] = useState({
     medicine: null,
     protocol: null,
+    stock: null,
     telegramConnected: false,
   })
 
-  const TOTAL_STEPS = 4
+  const TOTAL_STEPS = 5
 
   // Verifica se o onboarding já foi completado
   useEffect(() => {
