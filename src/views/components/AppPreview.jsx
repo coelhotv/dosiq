@@ -9,7 +9,14 @@ export default function AppPreview() {
       <div className="preview-header">
         <div className="preview-score">
           <svg viewBox="0 0 60 60" className="ring-svg">
-            <circle cx="30" cy="30" r="24" fill="none" stroke="var(--color-border)" strokeWidth="6" />
+            <circle
+              cx="30"
+              cy="30"
+              r="24"
+              fill="none"
+              stroke="var(--color-border)"
+              strokeWidth="6"
+            />
             <circle
               cx="30"
               cy="30"
