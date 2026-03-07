@@ -46,7 +46,7 @@ async function processCSV() {
   let medicineDuplicates = 0
   let laboratoryDuplicates = 0
 
-  const fileStream = fs.createReadStream(CSV_INPUT, 'utf8')
+  const fileStream = fs.createReadStream(CSV_INPUT, 'latin1')
   const rl = readline.createInterface({
     input: fileStream,
     crlfDelay: Infinity,

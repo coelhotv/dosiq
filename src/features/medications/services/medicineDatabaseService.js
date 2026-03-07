@@ -47,7 +47,7 @@ function normalizeText(text) {
  * @returns {Promise<Array<{name, activeIngredient, therapeuticClass}>>}
  */
 export async function searchMedicines(query, limit = 10) {
-  if (!query || query.trim().length === 0) return []
+  if (!query || query.trim().length < 3) return []
 
   const db = await loadDatabase()
   const normalizedQuery = normalizeText(query)
