@@ -765,7 +765,29 @@ useEffect(() => {
 ```
 **Source:** Wave 2 PR #240 — Gemini HIGH review comment (discussion_r2893125120).
 
+### R-110: Guard Clauses AFTER All Hooks [CRITICAL]
+**Rule:** Early returns with guard clauses MUST come AFTER all hook declarations (States → Memos → Effects → Handlers), never before. Placing guard clause before hooks causes "React Hook called conditionally" error.
+**Why:** React Hooks must run in the exact same order on every render. Any conditional hook call violates this rule.
+```jsx
+// ❌ WRONG — guard clause before hooks
+export default function Component({ item }) {
+  if (!item) return null  // TOO EARLY!
+  const [state, setState] = useState() // Hook called conditionally
+}
+
+// ✅ CORRECT — guard clause after all hooks
+export default function Component({ item }) {
+  const [state, setState] = useState()
+  useEffect(() => { ... }, [])
+  const handleClick = () => { ... }
+
+  if (!item) return null  // After all hooks
+}
+```
+**Source:** Sprint 5.C StockStep component (2026-03-07) — guard clause `if (!medicine) return null` initially placed before `useCallback` hooks, caught during code review and moved to after all hook declarations.
+**Impact:** CRITICAL — React development will fail with confusing error messages if violated.
+
 ---
 
-*Last updated: 2026-03-05*
-*Rules: R-001 to R-109*
+*Last updated: 2026-03-07*
+*Rules: R-001 to R-110*
