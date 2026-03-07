@@ -11,6 +11,7 @@ import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
 import './Stock.css'
 
 export default function Stock({ initialParams, onClearParams }) {
+  // 1. States
   const [medicines, setMedicines] = useState([])
   const [protocols, setProtocols] = useState([])
   const [stockData, setStockData] = useState({}) // { medicineId: { entries: [], total: 0, ...status } }
@@ -20,6 +21,25 @@ export default function Stock({ initialParams, onClearParams }) {
   const [selectedMedicineId, setSelectedMedicineId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
 
+  // 2. Memos
+  // Calcular custos mensais (F5.10)
+  // Prepara medicines com stock embarcado para o serviço de análise
+  const costData = useMemo(() => {
+    if (medicines.length === 0 || protocols.length === 0) {
+      return { items: [], totalMonthly: 0, projection3m: 0 }
+    }
+
+    // Preparar medicines com stock embarcado
+    const medicinesWithStock = medicines.map((medicine) => ({
+      ...medicine,
+      stock: stockData[medicine.id]?.entries || [],
+    }))
+
+    // Calcular custos
+    return calculateMonthlyCosts(medicinesWithStock, protocols)
+  }, [medicines, protocols, stockData])
+
+  // 3. Effects
   const loadData = async () => {
     try {
       setIsLoading(true)
@@ -100,6 +120,7 @@ export default function Stock({ initialParams, onClearParams }) {
     }
   }, [initialParams, medicines])
 
+  // 4. Handlers
   const handleAddStock = (medicineId = null) => {
     if (medicines.length === 0) {
       setError('Cadastre um medicamento antes de adicionar estoque')
@@ -128,23 +149,6 @@ export default function Stock({ initialParams, onClearParams }) {
     setSuccessMessage(message)
     setTimeout(() => setSuccessMessage(''), 3000)
   }
-
-  // Calcular custos mensais (F5.10)
-  // Prepara medicines com stock embarcado para o serviço de análise
-  const costData = useMemo(() => {
-    if (medicines.length === 0 || protocols.length === 0) {
-      return { items: [], totalMonthly: 0, projection3m: 0 }
-    }
-
-    // Preparar medicines com stock embarcado
-    const medicinesWithStock = medicines.map((medicine) => ({
-      ...medicine,
-      stock: stockData[medicine.id]?.entries || [],
-    }))
-
-    // Calcular custos
-    return calculateMonthlyCosts(medicinesWithStock, protocols)
-  }, [medicines, protocols, stockData])
 
   // Filtrar medicamentos que têm estoque ou foram cadastrados
   const medicinesWithStock = medicines.map((medicine) => ({
