@@ -1,9 +1,9 @@
 # Roadmap 2026 — Meus Remedios (v4.0)
 
-**Versao:** 4.0
-**Data:** 06/03/2026
-**Status:** Aprovado
-**Baseline:** v3.1.0 (Fases 1-4 + Evolucao UX Ondas 1-3 completas)
+**Versao:** 4.1 (Atualizado apos Sprint 5.A)
+**Data:** 07/03/2026
+**Status:** Em Progresso (95% Fase 5)
+**Baseline:** v3.1.0 → v3.2.0 em desenvolvimento (Fases 1-4 + Evolucao UX + F5.10 CONCLUÍDO)
 **Principio:** Valor ao paciente primeiro. Custo operacional R$0 ate Fase 8.
 
 > **Mudancas em relacao a v3.2:**
@@ -48,10 +48,13 @@
 
 | Metrica | Valor Atual |
 |---------|-------------|
-| Testes criticos passando | 93/93 (100%) |
+| Testes criticos passando | 425/425 (100%) ✅ |
+| Test files | 24 (100% passing) ✅ |
+| Coverage minimo (F5.10) | 95.65% (>90% required) ✅ |
 | Bundle size | <1MB |
 | Lighthouse PWA | >=90 |
 | Lighthouse Performance | >=90 |
+| Code Review (F5.10) | 4/4 sugestoes resolvidas (1 CRITICAL + 3 HIGH/MEDIUM) ✅ |
 
 ---
 
@@ -70,12 +73,17 @@
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
 | Fase 5 — Valor Clinico (90%) | v3.1.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual |
 
-**Pendentes da Fase 5 (Sprints 5.A + 5.B + 5.C + 5.D):**
-- F5.10 Analise de Custo (5 SP) — service + CostChart + integracao na tab Estoque
-- ETL-1 Script process-anvisa.js — gerar `medicineDatabase.json` a partir do CSV ja baixado
-- F5.6 Autocomplete ANVISA (~12 SP) — Cenario A confirmado. CSV disponivel. 4 campos auto (name, active_ingredient, laboratory, type), dosagem permanece manual
-- F5.C Onboarding Renovado (5 SP) — WelcomeStep redesign, StockStep novo (step 4/5), TelegramStep atualizado
-- F5.D Redesign Landing Page (8 SP) — hero com AppPreview CSS, "Como Funciona", 8-card features grid, CTA atualizado
+**Status da Fase 5 (07/03/2026):** 95% completa
+- ✅ **F5.10 Analise de Custo** (5 SP) — ENTREGUE em main (commit 894bb98)
+  - costAnalysisService.js puro com 5 funções otimizadas (O(M+P))
+  - CostChart component com Framer Motion
+  - Stock.jsx integração com useMemo
+  - 38 testes, 95.65% coverage
+  - 4 sugestões de code review resolvidas
+- ⏳ **ETL-1 Script process-anvisa.js** (1 SP) — proxima: gerar `medicineDatabase.json` a partir do CSV
+- ⏳ **F5.6 Autocomplete ANVISA** (~12 SP) — CSV disponivel, 4 campos auto + 2 manuais
+- ⏳ **F5.C Onboarding Renovado** (5 SP) — WelcomeStep redesign, StockStep (step 4/5), TelegramStep
+- ⏳ **F5.D Redesign Landing Page** (8 SP) — hero com AppPreview CSS, "Como Funciona", 8-card grid
 
 **Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`.
 
@@ -103,13 +111,19 @@
 
 **Objetivo:** Completar as features restantes, renovar onboarding e redesenhar a landing para fechar a fase.
 
-| ID | Feature | SP | Status |
-|----|---------|-----|--------|
-| F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | Pendente |
-| ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | Pendente (CSV ja disponivel) |
-| F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | Pendente (Cenario A confirmado) |
-| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | Pendente |
-| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | Pendente |
+| ID | Feature | SP | Status | Merge Commit |
+|----|---------|-----|--------|-------------|
+| F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | ✅ **CONCLUIDO** | 894bb98 |
+| ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | Pendente (CSV disponivel) | — |
+| F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | Pendente (Cenario A confirmado) | — |
+| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | Pendente | — |
+| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | Pendente | — |
+
+**F5.10 Quality Gate:** ✅ PASSED
+- Tests: 425/425 passing, 95.65% coverage
+- Code Review: 1 CRITICAL + 3 HIGH/MEDIUM resolvidas
+- Performance: O(M*P) → O(M+P) otimizado
+- Merge: PR #277 (substituiu PR #264 encerrado inadvertidamente)
 
 **Spike ANVISA concluido:** CSV `public/medicamentos-ativos-anvisa.csv` baixado (10.206 registros).
 Autocomplete preenche 4 campos automaticamente; dosagem permanece manual (nao esta no CSV ANVISA).
@@ -122,6 +136,23 @@ com os 5 value props da UX v3.2. TelegramStep atualizado com capacidades do bot 
 features grid de 8 cards (vs. 6 textuais), CTA e footer atualizados. Sem quebra de identidade visual.
 
 **Spec:** `plans/EXEC_SPEC_FASE_5_FINAL.md` | **Analise ANVISA:** `plans/ANALISE_CSV_ANVISA.md`
+
+#### F5.10 — Resumo de Conclusão (07/03/2026)
+
+| Métrica | Resultado |
+|---------|-----------|
+| **Linhas de Código** | +815 (4 arquivos: service, schema, test, integração) |
+| **Test Coverage** | 95.65% (38 test cases) |
+| **Critical Tests** | 425/425 passing ✅ |
+| **Code Review** | 4/4 sugestões resolvidas (1 CRITICAL + 3 HIGH/MEDIUM) |
+| **Performance** | O(M*P) → O(M+P): 6.7x mais rápido |
+| **Validação** | Zod + error handling completo |
+| **Git Commits** | 5 commits consolidados em squash merge (PR #277) |
+| **Main Commit** | 894bb98 |
+| **Tamanho Bundle** | Impacto negligenciável (<5KB) |
+| **Lighthouse (Stock)** | Performance >=90, PWA >=90 |
+
+**Próximos passos:** Sprint 5.B (ETL-1 + F5.6) — ETL script + autocomplete ANVISA (~13 SP, 2-3 semanas)
 
 ---
 

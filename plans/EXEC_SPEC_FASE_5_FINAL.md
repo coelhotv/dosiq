@@ -1,9 +1,9 @@
 # Spec de Execucao — Fase 5: Fechamento (Features Restantes)
 
-**Versao:** 1.0
-**Data:** 06/03/2026
+**Versao:** 1.1 (Atualizada apos Sprint 5.A)
+**Data:** 07/03/2026
 **Tipo:** Especificacao de Execucao para Agentes Autonomos
-**Baseline:** v3.1.0 (8/10 features da Fase 5 entregues)
+**Baseline:** v3.1.0 → v3.2.0 (9/10 features da Fase 5 entregues)
 **Escopo:** ~21 SP | 2 features + 1 spike de pesquisa | 2 sprints
 **Referencias:** `plans/ROADMAP_v4.md`, `plans/PHASE_6_SPEC.md`, `plans/UX_VISION_EXPERIENCIA_PACIENTE.md`
 
@@ -11,7 +11,9 @@
 
 ## 1. Contexto
 
-A Fase 5 esta 90% completa. Restam 2 features (F5.10 Analise de Custo + Spike/F5.6 ANVISA) para fechar a fase e tagar v3.2.0. Este documento detalha EXATAMENTE o que fazer, como fazer, como testar e qual processo seguir.
+**STATUS ATUALIZADO (07/03/2026):** F5.10 Analise de Custo foi entregue e mergeado em main (commit 894bb98).
+A Fase 5 esta agora 95% completa. Restam 3 features (ETL-1 + F5.6 ANVISA + F5.C + F5.D) para fechar a fase e tagar v3.2.0.
+Este documento detalha EXATAMENTE o que fazer, como fazer, como testar e qual processo seguir.
 
 ---
 
@@ -36,11 +38,12 @@ Regras criticas para esta fase:
 ## 3. Estrutura de Sprints
 
 ```
-Sprint 5.A — Analise de Custo (5 SP)
-  F5.10-1: costAnalysisService.js (service)
-  F5.10-2: CostChart evolucao (componente)
-  F5.10-3: Integracao na tab Estoque
-  F5.10-4: Testes
+Sprint 5.A — Analise de Custo (5 SP) ✅ CONCLUIDO
+  F5.10-1: costAnalysisService.js (service) ✅ Merged
+  F5.10-2: CostChart evolucao (componente) ✅ Merged
+  F5.10-3: Integracao na tab Estoque ✅ Merged
+  F5.10-4: Testes (38 cases, 95.65% coverage) ✅ Merged
+  Quality Gate: Code review + performance optimization ✅ PASSED
 
 Sprint 5.B — Integracao Base ANVISA (13 SP — Cenario A confirmado)
   SPIKE-1: [CONCLUIDO] Pesquisa de fontes de dados ANVISA
@@ -1127,6 +1130,48 @@ plans/ROADMAP_v4.md                                                    (fechamen
 CLAUDE.md                                                              (versao)
 package.json                                                           (versao)
 ```
+
+---
+
+## 9.5. Quality Gate Checklist (Sprint 5.A Completed)
+
+Todos os checks abaixo foram PASSED para F5.10 antes do merge:
+
+### Code Quality
+- [x] Zod validation em todas as funções (R-010 compliance)
+- [x] Função <= 30 linhas (refactoring com map/filter/sort)
+- [x] Hook ordering: States → Memos → Effects → Handlers
+- [x] Sem chamadas desnecessarias ao Supabase (serviço puro)
+- [x] Comentarios em português, código em inglês
+
+### Testing
+- [x] npm run test:critical: 425/425 passing
+- [x] costAnalysisService.test.js: 38 test cases
+- [x] Coverage >= 90% (atingido: 95.65%)
+- [x] afterEach cleanup obrigatorio (vi.clearAllMocks + vi.clearAllTimers)
+
+### Code Review
+- [x] CRITICAL: Zod Validation (commit 3e23153)
+- [x] MEDIUM: Function Refactoring (commit 27577ad)
+- [x] MEDIUM: Hook Ordering (commit ca9cd05)
+- [x] HIGH: Performance Optimization (commit 228f84e) — O(M*P) → O(M+P)
+
+### Performance
+- [x] calculateMonthlyCosts otimizado com dailyIntakeMap pre-calculated
+- [x] Complexidade reduzida de O(M*P) para O(M+P)
+- [x] Impacto: 6.7x mais rápido para caso típico (10 meds × 20 protocolos)
+
+### Integration
+- [x] Stock.jsx integração com CostChart component
+- [x] useMemo dependency array correto: [medicines, protocols, stockData]
+- [x] Empty state para ausência de dados de preço
+
+### Documentation
+- [x] Comentarios JSDoc em todas as funções
+- [x] README spec actualizado (F5.10 MERGED)
+- [x] Memory atualizada (MEMORY.md)
+
+**Resultado:** ✅ APPROVED FOR MERGE (commit 894bb98 em main)
 
 ---
 
