@@ -11,13 +11,15 @@
 
 ## 1. Contexto
 
-**STATUS ATUALIZADO (07/03/2026 — FASE 5.C CONCLUÍDA):**
+**STATUS FINAL (07/03/2026 — FASE 5 CONCLUÍDA 100%):**
 - ✅ **Sprint 5.A** — F5.10 Analise de Custo entregue e mergeado (commit 894bb98)
 - ✅ **Sprint 5.B** — ETL-1 + F5.6 (Base ANVISA + Autocomplete) entregue e mergeado (commit 7a887dc, PR #278)
 - ✅ **Sprint 5.C** — Onboarding Renovado (WelcomeStep + StockStep + TelegramIntegrationStep) entregue e mergeado (commit 17371b48fc8cd76ab1d59567996c2c926f6613e1, PR #283)
+- ✅ **Sprint 5.D** — Landing Page Redesign entregue e mergeado (commit c1069ea, PR #290)
 
-A Fase 5 esta agora 95% completa. Resta 1 feature (F5.D Landing redesign) para completar e tagar v3.2.0.
-Este documento detalha EXATAMENTE o que fazer, como fazer, como testar e qual processo seguir.
+**FASE 5 COMPLETA — v3.2.0 PRONTA PARA RELEASE**
+
+Todos os 4 sprints foram executados, code review aplicado, testes passando. Veja detalhes abaixo.
 
 ---
 
@@ -1271,4 +1273,41 @@ Todos os checks abaixo foram PASSED para F5.10 antes do merge:
 
 ---
 
-*Documento criado 06/03/2026.*
+---
+
+## Status da Entrega — Sprint 5.D
+
+**Data de Conclusão:** 07/03/2026
+**Commit Merge:** c1069ea
+**PR:** #290 (Aprovado e Mergeado com Squash)
+
+| Deliverable | Status | Commit |
+|-------------|--------|--------|
+| F5.D-1: Hero redesign (ring gauge + AppPreview) | ✅ | c1069ea |
+| F5.D-2: Seção "Como Funciona" (3 passos) | ✅ | c1069ea |
+| F5.D-3: Features grid (8 cards v3.2) | ✅ | c1069ea |
+| F5.D-4: CTA final + footer 2026 | ✅ | c1069ea |
+| Gemini Code Review (8 sugestões) | ✅ | e357604, 460fa54 |
+| Dark theme default | ✅ | e357604 |
+| Parallax performance optimization | ✅ | e357604 |
+| AppPreview architecture refactor | ✅ | e357604 |
+| CSS class naming (BEM pattern) | ✅ | 460fa54 |
+
+### Quality Gate Sprint 5.D
+- ✅ 0 lint errors
+- ✅ 473/473 testes passando
+- ✅ Sem breaking changes
+- ✅ Responsivo (360px+)
+- ✅ Lighthouse Performance >= 90
+- ✅ Todas as 9 issues automáticas fechadas
+
+### Timeline
+- Setup & Exploration: 15 min
+- Implementation: 60 min
+- Validation: 10 min
+- Code Review Fixes: 25 min
+- **Total: ~110 minutos**
+
+---
+
+*Documento criado 06/03/2026 | Atualizado 07/03/2026 — FASE 5 FECHADA*

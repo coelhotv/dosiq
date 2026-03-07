@@ -89,7 +89,7 @@ export default function Landing({
             <div className="step-icon">💊</div>
             <h3>Cadastre seus medicamentos</h3>
             <p>
-              Use o autocomplete com base ANVISA (10.000+ medicamentos) e preencha nome, princípio
+              Use o autocompletar com base ANVISA (10.000+ medicamentos) e preencha nome, princípio
               ativo e laboratório em segundos.
             </p>
           </div>
@@ -97,10 +97,10 @@ export default function Landing({
           <div className="step-card">
             <div className="step-number">2</div>
             <div className="step-icon">📅</div>
-            <h3>Defina seus protocolos</h3>
+            <h3>Defina seus tratamentos</h3>
             <p>
-              Configure frequência, horários e doses. O app organiza tudo nas zonas Atrasadas /
-              Agora / Próximas automaticamente.
+              Configure frequência, horários e doses. O app organiza tudo nos momentos 
+              Atrasadas / Agora / Próximas automaticamente.
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export default function Landing({
 
           <div className="feature-card">
             <div className="feature-icon">⏰</div>
-            <h3>Doses por Zona</h3>
+            <h3>Doses por Momentos</h3>
             <p>Atrasadas, Agora e Próximas — organizadas automaticamente pelo horário atual</p>
           </div>
 
@@ -139,7 +139,7 @@ export default function Landing({
             <div className="feature-icon">📊</div>
             <h3>Estoque Visual</h3>
             <p>
-              Barras de criticidade mostram de relance quem vai acabar. Alertas com 7 dias de
+              Barras de volume mostram de relance qual vai acabar. Alertas com 7 dias de
               antecedência
             </p>
           </div>
@@ -148,7 +148,7 @@ export default function Landing({
             <div className="feature-icon">🔍</div>
             <h3>Base ANVISA</h3>
             <p>
-              10.000+ medicamentos brasileiros. Autocomplete preenche nome, princípio ativo e
+              10.000+ medicamentos brasileiros. Autocompletar preenche nome, princípio ativo e
               laboratório
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function Landing({
                 <span className="device-overlay">💻</span>
               </div>
             </div>
-            <p>Visualize seus protocolos e histórico de forma ampla no tablet.</p>
+            <p>Visualize seus tratamentos e histórico de forma ampla no tablet.</p>
           </div>
 
           <div className="device-card device-desktop">
