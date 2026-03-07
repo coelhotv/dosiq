@@ -289,7 +289,6 @@ gh pr create \
 2. Step 2
 3. Step 3
 
-🤖 Generated with Claude Code
 EOF
 )"
 ```
