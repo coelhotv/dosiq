@@ -1,3 +1,9 @@
+import {
+  CalculateMonthlyCostsInputSchema,
+  CalculateDailyIntakeInputSchema,
+  CalculateAvgUnitPriceInputSchema,
+} from '@schemas/costAnalysisSchema'
+
 /**
  * Serviço de análise de custo de tratamento.
  *
@@ -5,6 +11,7 @@
  * e consumo diário dos protocolos ativos.
  *
  * PRINCÍPIO: Zero chamadas ao Supabase — recebe dados já carregados.
+ * VALIDAÇÃO: Todas as funções validam entrada com Zod (conforme R-010).
  */
 
 /**
@@ -17,9 +24,18 @@
  * @returns {number} Preço médio ou 0 se sem dados de preço
  */
 export function calculateAvgUnitPrice(stockEntries = []) {
-  if (!stockEntries || stockEntries.length === 0) return 0
+  // Validar entrada
+  const validation = CalculateAvgUnitPriceInputSchema.safeParse({ stockEntries })
+  if (!validation.success) {
+    console.error('Erro de validação em calculateAvgUnitPrice:', validation.error.format())
+    return 0
+  }
 
-  const activeEntries = stockEntries.filter((s) => s.quantity > 0 && s.unit_price > 0)
+  const { stockEntries: validatedEntries } = validation.data
+
+  if (!validatedEntries || validatedEntries.length === 0) return 0
+
+  const activeEntries = validatedEntries.filter((s) => s.quantity > 0 && s.unit_price > 0)
 
   if (activeEntries.length === 0) return 0
 
@@ -40,8 +56,17 @@ export function calculateAvgUnitPrice(stockEntries = []) {
  * @returns {number} Comprimidos por dia (ou 0 se sem protocolo ativo)
  */
 export function calculateDailyIntake(medicineId, protocols = []) {
-  return protocols
-    .filter((p) => p.medicine_id === medicineId && p.active)
+  // Validar entrada
+  const validation = CalculateDailyIntakeInputSchema.safeParse({ medicineId, protocols })
+  if (!validation.success) {
+    console.error('Erro de validação em calculateDailyIntake:', validation.error.format())
+    return 0
+  }
+
+  const { medicineId: validatedId, protocols: validatedProtocols } = validation.data
+
+  return validatedProtocols
+    .filter((p) => p.medicine_id === validatedId && p.active)
     .reduce((sum, protocol) => {
       const intakesPerDay = protocol.time_schedule?.length || 0
       const dosagePerIntake = protocol.dosage_per_intake || 0
@@ -73,48 +98,41 @@ export function calculateDailyIntake(medicineId, protocols = []) {
  * @returns {object} Custos calculados
  */
 export function calculateMonthlyCosts(medicines = [], protocols = []) {
-  const items = []
+  // Validar entrada
+  const validation = CalculateMonthlyCostsInputSchema.safeParse({ medicines, protocols })
+  if (!validation.success) {
+    console.error('Erro de validação em calculateMonthlyCosts:', validation.error.format())
+    return { items: [], totalMonthly: 0, projection3m: 0 }
+  }
 
-  // Processar cada medicamento
-  medicines.forEach((medicine) => {
-    // 1. Calcular daily intake (comprimidos/dia)
-    const dailyIntake = calculateDailyIntake(medicine.id, protocols)
+  const { medicines: validatedMedicines, protocols: validatedProtocols } = validation.data
 
-    // Se medicamento não tem protocolo ativo, excluir
-    if (dailyIntake === 0) return
+  // Refatorado com map + filter (vs forEach) — mais funcional, <30 linhas
+  const items = validatedMedicines
+    .map((medicine) => {
+      const dailyIntake = calculateDailyIntake(medicine.id, validatedProtocols)
+      if (dailyIntake === 0) return null
 
-    // 2. Calcular average unit price
-    const avgUnitPrice = calculateAvgUnitPrice(medicine.stock)
+      const avgUnitPrice = calculateAvgUnitPrice(medicine.stock)
+      const monthlyCost = dailyIntake * avgUnitPrice * 30
+      const hasPriceData = avgUnitPrice > 0
 
-    // 3. Calcular monthly cost
-    const monthlyCost = dailyIntake * avgUnitPrice * 30
-
-    // 4. Determinar se tem dados de preço
-    const hasPriceData = avgUnitPrice > 0
-
-    // 5. Adicionar ao array
-    items.push({
-      medicineId: medicine.id,
-      name: medicine.name,
-      dailyIntake,
-      avgUnitPrice,
-      monthlyCost,
-      hasPriceData,
+      return {
+        medicineId: medicine.id,
+        name: medicine.name,
+        dailyIntake,
+        avgUnitPrice,
+        monthlyCost,
+        hasPriceData,
+      }
     })
-  })
+    .filter(Boolean)
+    .sort((a, b) => b.monthlyCost - a.monthlyCost)
 
-  // Ordenar DESC por monthlyCost
-  items.sort((a, b) => b.monthlyCost - a.monthlyCost)
-
-  // Calcular totais
   const totalMonthly = items.reduce((sum, item) => sum + item.monthlyCost, 0)
   const projection3m = calculateProjection(totalMonthly, 3)
 
-  return {
-    items,
-    totalMonthly,
-    projection3m,
-  }
+  return { items, totalMonthly, projection3m }
 }
 
 /**
@@ -130,8 +148,6 @@ export function calculateProjection(monthlyCost, months = 3) {
 
 /**
  * Formata valor em BRL com locale pt-BR.
- *
- * Exemplo: formatBRL(187.5) → "R$ 187,50" (ou "R$ 187,50" com espaço não-quebrável)
  *
  * @param {number} value - Valor em reais
  * @returns {string} Valor formatado
