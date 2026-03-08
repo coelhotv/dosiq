@@ -2,6 +2,7 @@ import {
   CalculateMonthlyCostsInputSchema,
   CalculateDailyIntakeInputSchema,
   CalculateAvgUnitPriceInputSchema,
+  CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
 import { formatLocalDate } from '@utils/dateUtils'
 
@@ -175,18 +176,22 @@ export function calculateProjection(monthlyCost, months = 3) {
  * }}
  */
 export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }) {
-  // Validar entrada básica
-  if (!Array.isArray(medicines) || !Array.isArray(protocols) || !Array.isArray(logs)) {
+  // Validar entrada
+  const validation = CalculateRealCostsInputSchema.safeParse({ medicines, protocols, logs })
+  if (!validation.success) {
+    console.error('Erro de validação em calculateRealCosts:', validation.error.format())
     return { items: [], totalMonthly: 0, projection3m: 0, projection6m: 0, isRealData: false }
   }
+
+  const { medicines: validatedMedicines, protocols: validatedProtocols, logs: validatedLogs } = validation.data
 
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const items = medicines
-    .filter(med => protocols.some(p => p.medicine_id === med.id && p.active))
+  const items = validatedMedicines
+    .filter(med => validatedProtocols.some(p => p.medicine_id === med.id && p.active))
     .map(med => {
-      const medLogs = logs.filter(l => l.medicine_id === med.id)
+      const medLogs = validatedLogs.filter(l => l.medicine_id === med.id)
       const avgUnitPrice = calculateAvgUnitPrice(med.stock || [])
 
       // Consumo real vs teórico
@@ -205,7 +210,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
         isRealData = true
       } else {
         // Fallback: consumo teórico baseado no protocolo
-        dailyConsumption = calculateDailyIntake(med.id, protocols)
+        dailyConsumption = calculateDailyIntake(med.id, validatedProtocols)
         isRealData = false
       }
 

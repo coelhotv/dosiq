@@ -57,3 +57,23 @@ export const CalculateDailyIntakeInputSchema = z.object({
 export const CalculateAvgUnitPriceInputSchema = z.object({
   stockEntries: z.array(StockEntrySchema).optional().default([]),
 })
+
+// Schema para entrada de calculateRealCosts
+export const CalculateRealCostsInputSchema = z.object({
+  medicines: z
+    .array(MedicineWithStockSchema)
+    .min(0, 'medicines deve ser um array')
+    .optional()
+    .default([]),
+  protocols: z.array(ProtocolSchema).min(0, 'protocols deve ser um array').optional().default([]),
+  logs: z
+    .array(
+      z.object({
+        medicine_id: z.string().min(1, 'medicine_id é obrigatório'),
+        taken_at: z.string().or(z.date()),
+        quantity_taken: z.number().nonnegative('quantity_taken deve ser >= 0').optional().default(0),
+      })
+    )
+    .optional()
+    .default([]),
+})

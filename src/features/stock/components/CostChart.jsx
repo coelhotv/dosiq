@@ -59,11 +59,9 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
       <div className="cost-chart__header">
         <div className="cost-chart__header-left">
           <span className="cost-chart__header-label">$ CUSTO MENSAL</span>
-          {isRealData !== undefined && (
-            <span className={`cost-chart__badge cost-chart__badge--${isRealData ? 'real' : 'estimate'}`}>
-              {isRealData ? 'Consumo real' : 'Estimativa'}
-            </span>
-          )}
+          <span className={`cost-chart__badge cost-chart__badge--${isRealData ? 'real' : 'estimate'}`}>
+            {isRealData ? 'Consumo real' : 'Estimativa'}
+          </span>
         </div>
         <span className="cost-chart__header-total">{formatBRL(totalMonthly)}</span>
       </div>
