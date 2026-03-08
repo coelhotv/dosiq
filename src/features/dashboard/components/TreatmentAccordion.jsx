@@ -9,12 +9,18 @@ import './TreatmentAccordion.css'
  * @param {Object} props.protocol - Dados do protocolo
  * @param {React.ReactNode} props.children - Itens de medicamento (SwipeRegisterItem)
  * @param {Function} props.onBatchRegister - Callback para registro em lote
+ * @param {string} [props.riskLevel] - Nível de risco ('stable'|'attention'|'critical')
+ * @param {string} [props.riskColor] - Cor CSS para badge de risco
+ * @param {string} [props.riskLabel] - Label a exibir no título do protocolo
  */
 export default function TreatmentAccordion({
   protocol,
   children,
   onBatchRegister,
   selectedMedicines = [],
+  riskLevel,
+  riskColor,
+  riskLabel,
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -44,7 +50,17 @@ export default function TreatmentAccordion({
     >
       <div className="treatment-accordion__header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="treatment-accordion__info">
-          <h3 className="treatment-accordion__title">{protocol.name}</h3>
+          <div className="treatment-accordion__title-row">
+            <h3 className="treatment-accordion__title">{protocol.name}</h3>
+            {riskLevel && (
+              <span
+                className="treatment-accordion__risk-badge"
+                style={{ backgroundColor: riskColor }}
+                title={riskLabel || riskLevel}
+                aria-label={`Risco: ${riskLabel || riskLevel}`}
+              />
+            )}
+          </div>
           <span className="treatment-accordion__meta">
             {protocol.medicines_count || 0} medicamentos • {formatNextDose()}
           </span>
