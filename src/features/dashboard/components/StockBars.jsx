@@ -54,6 +54,8 @@ const barVariants = {
  * Componente puro: dados exclusivamente por props.
  *
  * @param {Array<StockBarItem>} items - Lista de medicamentos com dados de estoque
+ *   - medicineId, name, daysRemaining, level, ...
+ *   - Opcionalmente: predictedStockoutDate (YYYY-MM-DD) para tooltip aprimorado
  * @param {number} [maxItems=Infinity] - Limita quantidade exibida
  * @param {boolean} [showOnlyCritical=false] - Filtra só CRITICAL+LOW
  * @param {Function} [onItemClick] - Click handler (medicineId) → navega para Estoque
@@ -105,7 +107,16 @@ export default function StockBars({
             onKeyDown={
               onItemClick ? (e) => e.key === 'Enter' && onItemClick(item.medicineId) : undefined
             }
-            aria-label={`${item.name}: ${formatDays(item.daysRemaining)} restantes`}
+            aria-label={
+              item.predictedStockoutDate
+                ? `${item.name}: ${formatDays(item.daysRemaining)} restantes, previsão de esgotamento ${item.predictedStockoutDate}`
+                : `${item.name}: ${formatDays(item.daysRemaining)} restantes`
+            }
+            title={
+              item.predictedStockoutDate
+                ? `Esgotamento previsto: ${item.predictedStockoutDate}`
+                : undefined
+            }
           >
             <span className="stock-bars__name" title={item.name}>
               {item.name}

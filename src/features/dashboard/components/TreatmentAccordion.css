@@ -66,11 +66,25 @@
   gap: var(--space-1);
 }
 
+.treatment-accordion__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .treatment-accordion__title {
   margin: 0;
   font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.treatment-accordion__risk-badge {
+  display: inline-flex;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .treatment-accordion__meta {
