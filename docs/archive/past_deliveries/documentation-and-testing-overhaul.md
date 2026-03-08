@@ -131,7 +131,7 @@ docs/
 
   # --- LAYER 3: Development Standards ---
   standards/
-    CODE_PATTERNS.md               # Coding standards (consolidate PADROES_CODIGO + .roo/rules-code)
+    PADROES_CODIGO.md              # Coding standards (consolidated)
     GIT_WORKFLOW.md                # Git workflow extracted to its own file
     TESTING.md                     # THE authoritative testing guide (NEW - replaces 2 files)
     PULL_REQUEST_TEMPLATE.md       # PR template (move from docs root)
@@ -158,18 +158,18 @@ docs/
   rules/
     memory.md                      # Keep as-is (agent memory)
   rules-code/
-    rules.md                       # BECOMES a slim pointer to docs/standards/CODE_PATTERNS.md
+    rules.md                       # BECOMES a slim pointer to docs/PADROES_CODIGO.md
   rules-architecture/
-    rules.md                       # BECOMES a slim pointer to docs/architecture/OVERVIEW.md
+    rules.md                       # BECOMES a slim pointer to docs/ARQUITETURA.md
 ```
 
 ### 2.3 Files to Delete / Merge
 
 | Current File | Action | Target |
 |-------------|--------|--------|
-| `docs/ARQUITETURA.md` | Merge into | `docs/architecture/OVERVIEW.md` |
-| `docs/ARQUITETURA_FRAMEWORK.md` | Merge into | `docs/architecture/OVERVIEW.md` |
-| `docs/PADROES_CODIGO.md` | Merge into | `docs/standards/CODE_PATTERNS.md` + `docs/standards/GIT_WORKFLOW.md` |
+| `docs/ARQUITETURA.md` | Merge into | `docs/ARQUITETURA.md` (already consolidated) |
+| `docs/ARQUITETURA_FRAMEWORK.md` | Merge into | `docs/ARQUITETURA.md` (already consolidated) |
+| `docs/PADROES_CODIGO.md` | Merge into | `docs/PADROES_CODIGO.md` (already consolidated) |
 | `docs/QUICKSTART.md` | Merge into | `docs/getting-started/SETUP.md` |
 | `docs/TESTING_GUIDE.md` | Replace with | `docs/standards/TESTING.md` |
 | `docs/OTIMIZACAO_TESTES_ESTRATEGIA.md` | Archive to | `docs/archive/` |
@@ -567,7 +567,7 @@ The current `AGENTS.md` is ~1200 lines and tries to be everything: setup guide, 
 
 ## 7. Code Style Quick Reference (20 lines)
    - Naming table, import order, language rules
-   - Link to docs/standards/CODE_PATTERNS.md
+   - Link to docs/PADROES_CODIGO.md
 
 ## 8. Security (10 lines)
    - RLS, env vars, Zod validation
@@ -580,14 +580,14 @@ The current `AGENTS.md` is ~1200 lines and tries to be everything: setup guide, 
 
 | Section | Moved To |
 |---------|----------|
-| Full architecture diagram | `docs/architecture/OVERVIEW.md` |
-| Full technology stack table | `docs/architecture/OVERVIEW.md` |
-| Full project structure tree | `docs/architecture/OVERVIEW.md` |
+| Full architecture diagram | `docs/ARQUITETURA.md` |
+| Full technology stack table | `docs/ARQUITETURA.md` |
+| Full project structure tree | `docs/ARQUITETURA.md` |
 | Detailed Git workflow steps | `docs/standards/GIT_WORKFLOW.md` |
-| Full code style guidelines | `docs/standards/CODE_PATTERNS.md` |
+| Full code style guidelines | `docs/PADROES_CODIGO.md` |
 | Full testing commands matrix | `docs/standards/TESTING.md` |
 | Gemini Code Reviewer section | `docs/standards/GIT_WORKFLOW.md` |
-| Full onboarding flow | `docs/architecture/OVERVIEW.md` |
+| Full onboarding flow | `docs/ARQUITETURA.md` |
 | SWR cache details | `docs/reference/HOOKS.md` |
 | Common issues section | `docs/standards/TESTING.md` + relevant docs |
 | All memory entries | `.roo/rules/memory.md` (already there) |
@@ -596,7 +596,7 @@ The current `AGENTS.md` is ~1200 lines and tries to be everything: setup guide, 
 
 Both `.roo/rules-code/rules.md` and `.roo/rules-architecture/rules.md` will be slimmed down to:
 1. A brief summary of the 5 most critical rules for that mode
-2. A clear pointer: "For complete standards, see `docs/standards/CODE_PATTERNS.md`"
+2. A clear pointer: "For complete standards, see `docs/PADROES_CODIGO.md`"
 
 This prevents the current problem where rules files duplicate 700+ lines from docs.
 
@@ -625,11 +625,11 @@ This prevents the current problem where rules files duplicate 700+ lines from do
 |---|------|----------|------------|
 | 2.1 | Create directory structure: `docs/getting-started/`, `docs/architecture/`, `docs/standards/`, `docs/reference/`, `docs/features/`, `docs/archive/` | P0 | - |
 | 2.2 | Create `docs/INDEX.md` master documentation index | P0 | 2.1 |
-| 2.3 | Consolidate `ARQUITETURA.md` + `ARQUITETURA_FRAMEWORK.md` into `docs/architecture/OVERVIEW.md` | P0 | 2.1 |
+| 2.3 | Consolidate `ARQUITETURA.md` + `ARQUITETURA_FRAMEWORK.md` into `docs/ARQUITETURA.md` (already consolidated) | P0 | 2.1 |
 | 2.4 | Move and update `DATABASE_SCHEMAS.md` to `docs/architecture/DATABASE.md` | P1 | 2.1 |
 | 2.5 | Move and update `CSS_ARCHITECTURE.md` to `docs/architecture/CSS.md` | P1 | 2.1 |
 | 2.6 | Consolidate `TELEGRAM_BOT_NOTIFICATION_SYSTEM.md` + server docs into `docs/architecture/TELEGRAM_BOT.md` | P1 | 2.1 |
-| 2.7 | Consolidate `PADROES_CODIGO.md` into `docs/standards/CODE_PATTERNS.md` (deduplicate with .roo rules) | P0 | 2.1 |
+| 2.7 | Consolidate `PADROES_CODIGO.md` into `docs/PADROES_CODIGO.md` (already consolidated) | P0 | 2.1 |
 | 2.8 | Extract Git workflow into `docs/standards/GIT_WORKFLOW.md` | P0 | 2.1 |
 | 2.9 | Move `PULL_REQUEST_TEMPLATE.md` to `docs/standards/` | P1 | 2.1 |
 | 2.10 | Move `API_SERVICES.md` to `docs/reference/SERVICES.md`, update internal links | P1 | 2.1 |
@@ -647,8 +647,8 @@ This prevents the current problem where rules files duplicate 700+ lines from do
 | # | Task | Priority | Depends On |
 |---|------|----------|------------|
 | 3.1 | Rewrite `AGENTS.md` as concise routing table (~300-400 lines, see Section 4.2) | P0 | Phase 2 |
-| 3.2 | Slim down `.roo/rules-code/rules.md` to critical rules + pointer to `docs/standards/CODE_PATTERNS.md` | P0 | 2.7 |
-| 3.3 | Slim down `.roo/rules-architecture/rules.md` to critical rules + pointer to `docs/architecture/OVERVIEW.md` | P0 | 2.3 |
+| 3.2 | Slim down `.roo/rules-code/rules.md` to critical rules + pointer to `docs/PADROES_CODIGO.md` | P0 | 2.7 |
+| 3.3 | Slim down `.roo/rules-architecture/rules.md` to critical rules + pointer to `docs/ARQUITETURA.md` | P0 | 2.3 |
 | 3.4 | Update `.roo/rules/memory.md` with this overhaul as a memory entry | P1 | Phase 3 |
 
 ### Phase 4: Validation & Gap Filling

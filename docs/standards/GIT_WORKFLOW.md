@@ -62,8 +62,8 @@ git checkout -b feature/wave-X/nome-descritivo
 ### 2. MAKE CHANGES
 
 - Edit files following:
-  - [`docs/standards/CODE_PATTERNS.md`](./CODE_PATTERNS.md) - Coding standards
-  - [`docs/architecture/OVERVIEW.md`](../architecture/OVERVIEW.md) - Architecture
+  - [`PADROES_CODIGO.md`](../PADROES_CODIGO.md) - Coding standards
+  - [`ARQUITETURA.md`](../ARQUITETURA.md) - Architecture
 - Keep changes focused and atomic
 - One logical change per commit
 
@@ -351,8 +351,8 @@ git branch -m new-name
 ## 📚 Referências
 
 - [Conventional Commits](https://www.conventionalcommits.org/)
-- [`docs/standards/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md) - Template de PR
-- [`docs/standards/CODE_PATTERNS.md`](./CODE_PATTERNS.md) - Padrões de código
+- [`standards/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md) - Template de PR
+- [`PADROES_CODIGO.md`](../PADROES_CODIGO.md) - Padrões de código
 - [`docs/standards/TESTING.md`](./TESTING.md) - Guia de testes
 
 ---

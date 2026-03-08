@@ -5,7 +5,7 @@ Convenções e melhores práticas para manter consistência no projeto.
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
 > - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
 > - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
-> - **[`ARQUITETURA.md`](ARQUITETURA.md:1)** - Framework arquitetural completo
+> - **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Framework arquitetural completo
 
 ## 📚 Referências Rápidas
 
@@ -158,7 +158,7 @@ gh pr create --title "feat: descrição resumida" \
 1. Go to: https://github.com/coelhotv/meus-remedios/pulls
 2. Click "New Pull Request"
 3. Select: `main` ← `feature/wave-X/nome-descritivo`
-4. **USE TEMPLATE:** Copy from [`docs/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md:1)
+4. **USE TEMPLATE:** Copy from [`docs/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)
 5. Fill ALL sections:
    - **Summary:** What this PR does
    - **Tasks:** Checklist of completed items
@@ -1025,14 +1025,14 @@ Execute `npm run lint` antes de commitar.
 
 ### Documentação de Governança
 
-- **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural e governança técnica completa
-- **[`LINT_COVERAGE.md`](LINT_COVERAGE.md:1)** - Configurações ESLint e boas práticas
-- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](OTIMIZACAO_TESTES_ESTRATEGIA.md:1)** - Estratégia completa de testes
-- **[`ARQUITETURA.md`](ARQUITETURA.md:1)** - Visão arquitetural técnica
+- **[`ARQUITETURA_FRAMEWORK.md`](./archive/ARQUITETURA_FRAMEWORK.md)** - Framework arquitetural e governança técnica completa
+- **[`LINT_COVERAGE.md`](./archive/LINT_COVERAGE.md)** - Configurações ESLint e boas práticas
+- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md)** - Estratégia completa de testes
+- **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Visão arquitetural técnica
 
 ### Templates
 
-- **[`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md:1)** - Template para PRs
+- **[`PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)** - Template para PRs
 
 ---
 
@@ -1500,15 +1500,15 @@ async function handleLogMedicine(logData) {
 
 - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código (agentes)
 - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural (agentes)
-- **[`ARQUITETURA_FRAMEWORK.md`](ARQUITETURA_FRAMEWORK.md:1)** - Framework arquitetural completo
-- **[`LINT_COVERAGE.md`](LINT_COVERAGE.md:1)** - Configurações ESLint e boas práticas
-- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](OTIMIZACAO_TESTES_ESTRATEGIA.md:1)** - Estratégia completa de testes
-- **[`ARQUITETURA.md`](ARQUITETURA.md:1)** - Visão arquitetural técnica
+- **[`ARQUITETURA_FRAMEWORK.md`](./archive/ARQUITETURA_FRAMEWORK.md)** - Framework arquitetural completo
+- **[`LINT_COVERAGE.md`](./archive/LINT_COVERAGE.md)** - Configurações ESLint e boas práticas
+- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md)** - Estratégia completa de testes
+- **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Visão arquitetural técnica
 - **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
 
 ### Templates
 
-- **[`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md:1)** - Template obrigatório para PRs
+- **[`PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)** - Template obrigatório para PRs
 
 ---
 

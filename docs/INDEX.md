@@ -60,7 +60,7 @@
 2. [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) - Regras de código
 3. [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) - Regras arquiteturais
 4. [`standards/TESTING.md`](standards/TESTING.md) - Padrões de testes
-5. [`.roo/rules/memory.md`](../.roo/rules/memory.md) - Memória de longo prazo
+5. [`.memory/rules.md`](../.memory/rules.md) - Memória de longo prazo
 
 ---
 
@@ -70,8 +70,8 @@
 
 ```
 1. getting-started/SETUP.md          [30 min] - Setup do ambiente
-2. architecture/OVERVIEW.md          [45 min] - Entender arquitetura
-3. standards/CODE_PATTERNS.md        [45 min] - Aprender convenções
+2. ARQUITETURA.md                   [45 min] - Entender arquitetura
+3. PADROES_CODIGO.md               [45 min] - Aprender convenções
 4. standards/TESTING.md              [30 min] - Como escrever testes
 5. reference/SERVICES.md             [20 min] - API de services
 6. standards/GIT_WORKFLOW.md         [15 min] - Workflow obrigatório
@@ -80,7 +80,7 @@
 ### Quick Reference (Desenvolvedores Experientes)
 
 ```
-- Padrões de código:     standards/CODE_PATTERNS.md
+- Padrões de código:     PADROES_CODIGO.md
 - Criar testes:          standards/TESTING.md
 - API de services:       reference/SERVICES.md
 - Hooks customizados:    reference/HOOKS.md
@@ -95,7 +95,7 @@
 | Esquemas do banco de dados | [`architecture/DATABASE.md`](architecture/DATABASE.md) |
 | Sistema CSS e tokens | [`architecture/CSS.md`](architecture/CSS.md) |
 | Bot do Telegram | [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) |
-| Como nomear variáveis/funções | [`standards/CODE_PATTERNS.md`](PADROES_CODIGO.md) |
+| Como nomear variáveis/funções | [`PADROES_CODIGO.md`](PADROES_CODIGO.md) |
 | Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
 | Como criar PR | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) |
 | Gemini Code Assist | [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) |
@@ -111,8 +111,8 @@ Documentação mais antiga ou relatórios históricos foram arquivados em:
 
 - [`archive/past_deliveries/`](archive/past_deliveries/) - Relatórios de entregas passadas
 - [`archive/tech-specs/`](archive/tech-specs/) - Especificações técnicas antigas
-- [`archive/LINT_COVERAGE.md`](LINT_COVERAGE.md) - Relatório histórico de lint *(para migrar)*
-- [`archive/OTIMIZACAO_TESTES_ESTRATEGIA.md`](OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia antiga de testes *(para migrar)*
+- [`archive/LINT_COVERAGE.md`](archive/LINT_COVERAGE.md) - Relatório histórico de lint *(para migrar)*
+- [`archive/OTIMIZACAO_TESTES_ESTRATEGIA.md`](archive/OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia antiga de testes *(para migrar)*
 
 ---
 
@@ -142,7 +142,7 @@ Este índice faz parte da **Phase 2: Documentation Restructure** do plano de ove
 
 1. **Para correções pequenas**: Edite diretamente e faça PR
 2. **Para novos documentos**: Siga a estrutura de diretórios acima
-3. **Para reestruturações grandes**: Consulte [`plans/documentation-and-testing-overhaul.md`](../plans/documentation-and-testing-overhaul.md)
+3. **Para reestruturações grandes**: Consulte [`documentation-and-testing-overhaul.md`](./archive/documentation-and-testing-overhaul.md)
 
 ### Padrões de Documentação
 

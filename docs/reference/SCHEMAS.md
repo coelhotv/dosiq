@@ -266,7 +266,7 @@ z.string().min(2, 'Name must be at least 2 characters')
 ## Referências
 
 - [Zod Documentation](https://zod.dev/)
-- [`docs/standards/CODE_PATTERNS.md`](../standards/CODE_PATTERNS.md) - Padrões de código *(em migração)*
+- [`PADROES_CODIGO.md`](../PADROES_CODIGO.md) - Padrões de código
 - [`docs/reference/SERVICES.md`](./SERVICES.md) - API de services
 - [`.roo/rules-code/rules.md`](../../.roo/rules-code/rules.md) - Regras consolidadas
 
