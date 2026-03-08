@@ -1,11 +1,11 @@
-# Spec de Execucao — Fase 6: Inteligencia & Insights
+# Spec de Execucao — Fase 6: Inteligencia & Insights (SSOT)
 
-**Versao:** 1.0
-**Data:** 06/03/2026
-**Tipo:** Especificacao de Execucao para Agentes Autonomos
-**Baseline:** v3.2.0 (Fase 5 completa)
-**Escopo:** 39 SP | 8 features | 5 sprints
-**Referencias:** `plans/PHASE_6_SPEC.md`, `plans/ROADMAP_v4.md`
+**Versao:** 2.0 (Consolidada)
+**Data:** 08/03/2026
+**Status:** SINGLE SOURCE OF TRUTH para agentes autonomos
+**Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0
+**Escopo:** 39 SP | 8 features | 5 sprints sequenciais com paralelizacao parcial
+**Referências:** `PHASE_6_SPEC.md` (overview), `ROADMAP_v4.md` (timeline), `UX_VISION_EXPERIENCIA_PACIENTE.md` (contexto UX)
 
 ---
 
@@ -15,23 +15,93 @@ A Fase 6 transforma dados ja acumulados no app (doses, estoque, protocolos) em p
 
 ---
 
-## 2. Regras Obrigatorias
+## 2. Regras Criticas para Fase 6 (suplementar a skill `deliver-sprint`)
 
-Antes de qualquer codigo, o agente DEVE ler:
-- `CLAUDE.md` (raiz do projeto)
-- `.memory/rules.md` (R-001 a R-109)
-- `.memory/anti-patterns.md`
+**Antes de começar, agente DEVE invocar:**
+```
+/deliver-sprint plans/EXEC_SPEC_FASE_6.md
+```
 
-Regras criticas para esta fase:
-- **R-020:** `parseLocalDate()` para datas, NUNCA `new Date('YYYY-MM-DD')`
-- **R-021:** Enums Zod em portugues
-- **R-010:** Hook order: States -> Memos -> Effects -> Handlers
-- **R-074:** `npm run validate:agent` antes de push
-- **R-060:** Agentes NUNCA mergeiam PRs
-- **R-078:** `afterEach` cleanup obrigatorio
-- **R-079:** Test file <= 300 linhas
-- **NOVO para Fase 6:** Zero chamadas novas ao Supabase. Tudo sobre cache SWR.
-- **NOVO para Fase 6:** Zero dependencias npm novas.
+Isso executará as 7 fases automaticamente. Este documento complementa com **gaps específicos de Fase 6**:
+
+**Regras críticas adicionais:**
+- **Zero Supabase novo:** Services são puras (recebem dados, retornam resultado)
+- **Zero npm novo:** Apenas lógica: média, tendência, arredondamento
+- **Feature Flag obrigatória:** `if (!hasEnoughData) return null` em cada insight
+- **localStorage apenas para state:** Dismissals, preferências. NUNCA dados médicos
+- **Pattern A-C (Padrões):** Ver seção 3.5 — reutilizar em todos os sprints
+
+---
+
+## 3. Grafo de Dependências (Feature → Feature)
+
+```
+Sprint 6.1 ┐
+  I01 (Refill) ──→ INT-02 (Bot alerts) ← Sprint 6.3
+  I04 (Risk) ──→ INT-01 (PDF) ← Sprint 6.3
+              └→ insightService (PROTOCOL_RISK alerts)
+
+Sprint 6.2
+  I05 (Real Costs) — INDEPENDENTE (evolui F5.10)
+
+Sprint 6.3
+  INT-01, INT-02 — dependem de I01 + I04
+
+Sprint 6.4
+  I03 (Reminder Optimizer) — INDEPENDENTE
+
+Sprint 6.5
+  I02 (Heatmap), EV-07 (Timeline) — INDEPENDENTES
+
+PARALELIZACAO SEGURA: 6.1 | 6.2 | 6.4 | 6.5 podem rodar em paralelo
+                      ├─→ 6.3 (depende de 6.1)
+Ordem sugerida: 1 → 2,4,5 paralelo → 3
+```
+
+---
+
+## 3.5. Padrões Reutilizáveis (para agentes não repetirem)
+
+### Pattern A: Integração Service → Component
+```javascript
+// 1. Service retorna resultado puro
+export function calculateXYZ(params) {
+  return { resultado }
+}
+
+// 2. Hook chamador recupera dados + chama service
+const { data: medicines } = useCachedQuery('medicines', ...)
+const { data: logs } = useCachedQuery('logs', ...)
+const prediction = useMemo(
+  () => calculateXYZ({ medicines, logs }),
+  [medicines, logs]
+)
+
+// 3. Componente renderiza resultado
+return prediction ? <Result data={prediction} /> : <EmptyState />
+```
+
+### Pattern B: Feature Flag (dados suficientes)
+```javascript
+// Sempre verificar minimo de dados ANTES de calcular/renderizar
+const hasEnoughData = logs.length >= 14  // ou 21, ou outro threshold
+const insight = hasEnoughData ? calculateInsight(...) : null
+
+return insight ? <InsightUI data={insight} /> : null
+```
+
+### Pattern C: localStorage para Persistencia
+```javascript
+// APENAS para estado do usuario (dismissals, preferencias)
+// NUNCA para dados medicos sensíveis
+const KEY = 'optimizer_dismissed_${protocolId}'
+const isSuggestionDismissed = () => {
+  const stored = localStorage.getItem(KEY)
+  if (!stored) return false
+  const { timestamp, permanent } = JSON.parse(stored)
+  return permanent || (Date.now() - timestamp < 30*24*60*60*1000)
+}
+```
 
 ---
 
@@ -45,33 +115,102 @@ SUPABASE --[fetch na mount]--> useCachedQuery --[cache SWR]--> Service Puro --[r
                                                             ZERO NETWORK CALLS
 ```
 
-Todos os services desta fase recebem dados como parametros. Nao fazem fetch. Nao importam supabase. Sao funcoes puras testáveis sem mocks de rede.
+**Fluxo obrigatorio:**
+1. Componente/hook recupera dados via `useCachedQuery` (ex: medicines, logs, protocols)
+2. Service PURO recebe dados como parametros, calcula, retorna resultado
+3. Componente renderiza resultado ou null (se dados insuficientes)
+4. Service NUNCA importa Supabase client, NUNCA faz fetch
 
 ---
 
-## 4. Estrutura de Sprints
+## 3.1. Como Usar a Skill `deliver-sprint` com Este Doc
+
+**A skill `deliver-sprint` executa 7 fases automaticamente:**
+1. Setup & Exploration (agente lê spec, explora codebase)
+2. Implementation (agente escreve código: Schemas → Services → Components → Views → Tests → Styles)
+3. Validation Local (agente roda `npm run validate:agent`)
+4. Git & Docs (agente atualiza .memory/)
+5. Push & Code Review (agente cria PR, aguarda Gemini)
+6. Merge & Cleanup (agente faz merge)
+7. Final Documentation (agente atualiza spec + journal)
+
+**Este EXEC_SPEC é COMPLEMENTAR à skill. Agente DEVE:**
+1. Invocar `/deliver-sprint plans/EXEC_SPEC_FASE_6.md` (começa Phase 1 automaticamente)
+2. Usar seções deste doc para **decisões de design/dependências específicas de Fase 6**
+3. Usar `CLAUDE.md` + `.memory/` para **padrões gerais do projeto**
+4. Usar skill `deliver-sprint` para **workflow de 7 fases**
+
+**Não duplicar info: skill cobre fases genéricas, EXEC_SPEC cobre specificidades de Fase 6.**
+
+---
+
+## 4. Checklist Pre-Codigo (Phase 1 da skill deliver-sprint)
+
+**Skill `deliver-sprint` ja cobre setup — este doc complementa com verificacoes de Fase 6:**
+
+**Arquivos que SEMPRE existem (ler antes de cada sprint):**
+- ✅ `src/utils/dateUtils.js` — `parseLocalDate()`, `formatLocalDate()`, `daysDifference()`
+- ✅ `src/utils/adherenceLogic.js` — `calculateDailyIntake()` (referencia para I01 + I04)
+- ✅ `src/shared/hooks/useCachedQuery.js` — Assinatura: `(key, fetcher) → { data, loading, error }`
+- ✅ `src/features/dashboard/services/insightService.js` — Como gerar alerts
+
+**Verificacoes por sprint (Phase 1 da skill — Explore Codebase):**
+
+### Sprint 6.1 (I01 + I04)
+- [ ] Arquivo `src/utils/adherenceLogic.js` existe e exporta `calculateDailyIntake()`?
+- [ ] Qual é a assinatura exata? Params e return type?
+- [ ] `src/shared/hooks/useCachedQuery.js` — qual é o seu retorno? `{ data, loading, error }`?
+
+### Sprint 6.2 (I05)
+- [ ] Arquivo `src/features/stock/services/costAnalysisService.js` já existe (F5.10)?
+- [ ] Qual é a função atual? Qual precisa ser adicionada?
+- [ ] CostChart.jsx já existe? Em qual caminho?
+
+### Sprint 6.3 (INT-01 + INT-02)
+- [ ] Qual é o arquivo/funcao que gera PDF? (buscar com `grep -r "jsPDF\|jspdf"`)
+- [ ] `server/bot/tasks.js` — qual é a funcao de alerta de estoque?
+- [ ] Pattern de mensagem atual no bot?
+
+### Sprint 6.4 (I03)
+- [ ] localStorage é usado em outros serviços do projeto? Qual padrão?
+- [ ] Dashboard.jsx — onde renderizar ReminderSuggestion? Modal? Toast? Inline?
+
+### Sprint 6.5 (I02 + EV-07)
+- [ ] PrescriptionTimeline.jsx já existe? (buscar com `find src -name "*PrescriptionTimeline*"`)
+- [ ] Tab "Perfil > Minha Saude" já existe? Qual é o caminho do arquivo?
+
+---
+
+## 5. Sequencialidade & Paralelizacao (Essencial para agentes)
+
+**ORDEM OBRIGATÓRIA (dependências):**
 
 ```
-Sprint 6.1 — Previsao de Reposicao + Score de Risco (10 SP)
-  I01: refillPredictionService.js
-  I04: protocolRiskService.js
-  Testes para ambos
+┌─ Sprint 6.1: I01 + I04 (10 SP) ────────────────────────┐
+│ Refill Prediction Service (I01)     → usado por INT-02 │
+│ Protocol Risk Service (I04)         → usado por INT-01 │
+│ Integracao leve UI (StockBars badge, Accordion badge) │
+└────────────────────────────────────────────────────────┘
+         ↓
+    ┌────────────────────────────────────────────────────┐
+    │ Sprints 6.2, 6.4, 6.5 = PARALELIZÁVEIS           │
+    │ (nenhuma dependência entre elas)                  │
+    │                                                    │
+    │  6.2: I05 Cost Analysis (5 SP) — Evolui F5.10    │
+    │  6.4: I03 Reminder Optimizer (8 SP) — UI toast   │
+    │  6.5: I02 Heatmap + EV-07 Timeline (11 SP)       │
+    └────────────────────────────────────────────────────┘
+         ↓ (após 6.1 + qualquer um de 6.2/4/5)
+┌─ Sprint 6.3: INT-01 + INT-02 (5 SP) ──────────────────┐
+│ INT-01: Risk Score no PDF (precisa I04 de 6.1)       │
+│ INT-02: Refill Alerts no Bot (precisa I01 de 6.1)    │
+└────────────────────────────────────────────────────────┘
 
-Sprint 6.2 — Analise de Custo Avancada (5 SP)
-  I05: Evolucao do costAnalysisService.js (F5.10)
-  Integracao com consumo real
-
-Sprint 6.3 — Integracoes Cross-Cutting (5 SP)
-  INT-01: Risk Score no PDF Reports
-  INT-02: Refill Prediction nos alertas do bot
-
-Sprint 6.4 — Otimizador de Horario (8 SP)
-  I03: reminderOptimizerService.js
-  UI de sugestao in-app
-
-Sprint 6.5 — Heatmap + Timeline (11 SP)
-  I02: AdherenceHeatmap.jsx
-  EV-07: PrescriptionTimeline.jsx (evolucao)
+TIMELINE COM PARALELIZACAO:
+- Sprint 6.1: 3-4 horas (1 agente, services claros)
+- Sprints 6.2+4+5 em paralelo: 3-4 horas cada (3 agentes idealmente)
+- Sprint 6.3: 2-3 horas (após 6.1 pronto, pode fazer paralelo com tail de 6.2/4/5)
+- **Total: ~1 semana útil (4h + 4h paralelo + 2h integração)**
 ```
 
 ---
@@ -976,6 +1115,134 @@ export default function PrescriptionTimeline({ protocols, onProtocolClick }) {
 - [ ] Mobile responsivo (grid → lista em < 380px)
 - [ ] Testes >= 90% para services
 - [ ] Branch: `feature/fase-6/sprint-5-heatmap-timeline`
+
+---
+
+## 9.5. Wireframes & Especificações Visuais por Feature
+
+### I02 — AdherenceHeatmap
+**Localizacao:** Tab Perfil > Minha Saúde, abaixo do calendário
+**Layout padrão (tela >= 380px):**
+```
+┌────────────────────────────┐
+│ PADRÕES DE ADESÃO          │
+├────────────────────────────┤
+│ Dia    │ Madrugada│Manha │Tarde│Noite │
+│────────┼───────┼──────┼──────┼──────│
+│Domingo │  🟢  │ 🟡  │ 🔴  │ 🟢  │
+│Segunda │  🟢  │ 🟢  │ 🟢  │ 🟡  │
+│...     │  ... │ ... │ ... │ ... │
+└────────────────────────────┘
+💡 Seu pior horário é Quarta Tarde
+```
+**Layout mobile (tela < 380px):**
+```
+Cards empilhados — cada dia como card separado
+Dia │ [Madrugada] [Manha] [Tarde] [Noite]
+```
+**Cores:**
+- 🟢 100% = cor primária, opacity 1.0
+- 🟡 50% = cor primária, opacity 0.5
+- 🔴 0% = cor primária, opacity 0.1
+**Interacao:** Tap em celula → tooltip "Quarta Tarde: 60% (3/5 doses)"
+**Acessibilidade:** `aria-label="Heatmap de adesão. Quarta Tarde: 60%"`
+
+### I03 — ReminderSuggestion
+**Localizacao:** Dashboard, abaixo do RingGauge (max 1 sugestão por vez)
+**Renderização:** Toast/Alert colorido com 3 botões
+```
+┌────────────────────────────────┐
+│ 💡 Sugestão de Horário         │
+├────────────────────────────────┤
+│ Você costuma tomar Losartana   │
+│ por volta das 08:45.            │
+│ Quer ajustar o lembrete         │
+│ de 08:00 para 08:45?            │
+│                                 │
+│ [Ajustar] [Manter] [Nunca]      │
+└────────────────────────────────┘
+```
+**Comportamento:**
+- Exibir max 1 sugestão por dia
+- Reaparecer a cada 30 dias se "Manter" foi clicado
+- Se "Nunca" → nunca mais exibir para este protocolo
+**Acessibilidade:** `role="alert"` + `aria-live="polite"`
+
+### EV-07 — PrescriptionTimeline
+**Localizacao:** Tab Estoque, secao "Prescrições" (acima StockBars)
+**Renderização:**
+```
+┌────────────────────────────────┐
+│ PRESCRIÇÕES                    │
+├────────────────────────────────┤
+│ Losart. ████████░░░ 22d  🟡   │
+│         start   hoje    fim     │
+│         ↑            ↑          │
+│                                 │
+│ Metfor. ──── contínuo ────── │
+│                                 │
+│ Omepra. ██████████ 12d    🟢   │
+└────────────────────────────────┘
+```
+**Cores por status:**
+- Verde: >30d restantes
+- Amarelo: 7-30d restantes
+- Vermelho: vencida (end_date < hoje)
+**Labels:**
+- "Xd restantes" se finita
+- "contínuo" se end_date = null
+- "Vencida há Xd" se passada
+**Interacao:** Tap → navega para protocolo via `setCurrentView('protocols')`
+**Acessibilidade:** `aria-label="Prescrição de Losartana. 22 dias restantes"`
+
+---
+
+## 9.6. Requisitos de Acessibilidade (WCAG 2.1 AA)
+
+Aplicável a TODOS os componentes visuais (I02, I03, EV-07):
+
+- [ ] `aria-label` descritivo em SVGs, grids, timelines
+- [ ] Contraste >=4.5:1 em texto sobre cores
+- [ ] `role="alert"` em notificações (ReminderSuggestion)
+- [ ] Navegacao por teclado: Tab → Focus visível
+- [ ] Screen reader: nomes e valores comunicados
+- [ ] Mobile touch targets >= 44x44px
+
+**Teste:** `npm run test:a11y` (se existir) ou verificar manualmente com Lighthouse
+
+---
+
+## 9.7. Considerações de Performance
+
+| Componente | Cenário Crítico | Solução |
+|------------|-----------------|---------|
+| refillPredictionService | 100+ medicamentos | Filtro eficiente de logs, usar Set para dias únicos |
+| protocolRiskService | 1000+ logs | Filtro por range de datas (14d), não carregar tudo |
+| AdherenceHeatmap | Render com 100k logs | `useMemo` nas computações, não recalcular na cada render |
+| PrescriptionTimeline | 20+ protocolos | Sort uma vez, renderizar lista flat (não arvore) |
+
+**Alvo Geral:**
+- Dashboard render: <50ms
+- Service calc: <100ms
+- Component mount: <500ms
+- Lighthouse Performance: >=90 (verificar em cada sprint)
+
+---
+
+## 9.8. Rollout Plan (Fase 6)
+
+**Usuarios afetados:** Todos (features visuais, sem breaking changes)
+
+**Estrategia:**
+1. Deploy para produção com feature (sem feature flag)
+2. Insights aparecem naturalmente quando dados forem suficientes (>= 14d)
+3. Usuarios sem 14d de dados: nada muda (UI adaptativa, `if (!hasEnoughData) return null`)
+4. Usuarios com 14d+: novos insights aparecem ao atualizar
+
+**Monitoramento:**
+- Após 1 semana: % de usuários com insights visíveis (analytics)
+- Após 2 semanas: feedback em issue de sugestões/problemas
+- Se regressão de performance: desabilitar insights com feature flag `ENABLE_PHASE_6_INSIGHTS`
 
 ---
 

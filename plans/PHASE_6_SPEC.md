@@ -1,15 +1,35 @@
-# Fase 6: Inteligencia & Insights — Spec de Execucao
+# Fase 6: Inteligencia & Insights — Overview
 
 > **Versao:** 1.0 | **Data:** 06/03/2026
-> **Baseline:** v3.2.0 (Fase 5 completa)
+> **Tipo:** Overview/Resumo (para contexto de produto)
+> **SSOT (Single Source of Truth):** `plans/EXEC_SPEC_FASE_6.md` ← **LEIA ESTE PARA IMPLEMENTACAO**
+> **Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0
 > **Custo operacional:** R$ 0
-> **Esforco total:** 39 SP
+> **Esforco total:** 39 SP em 5 sprints
 
 ---
 
-## Objetivo
+## ⚠️ IMPORTANTE PARA AGENTES
 
-Transformar dados acumulados em predicoes acionaveis que tornam o app indispensavel para gestao diaria de medicamentos.
+**Para IMPLEMENTAR esta fase, use:**
+```
+/deliver-sprint plans/EXEC_SPEC_FASE_6.md
+```
+
+**Este documento (PHASE_6_SPEC.md) é apenas OVERVIEW.**
+**O SSOT (Single Source of Truth) é `EXEC_SPEC_FASE_6.md`** com:
+- ✅ Sequencialidade clara + paralelização permitida
+- ✅ Dependências entre features (grafo)
+- ✅ Padrões de integração (Pattern A, B, C)
+- ✅ Wireframes + acessibilidade
+- ✅ Checklist por sprint
+- ✅ Instruções de qual arquivo ler primeiro
+
+---
+
+## Objetivo (Visão de Produto)
+
+Transformar dados acumulados em predicoes acionaveis que tornam o app indispensavel para gestao diaria de medicamentos. **100% client-side, zero chamadas novas ao Supabase, zero dependências npm.**
 
 ---
 
