@@ -3,6 +3,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { protocolService } from '@shared/services'
+import { medicineService } from '@medications/services/medicineService'
 import Button from '@shared/components/ui/Button'
 import Modal from '@shared/components/ui/Modal'
 import TreatmentPlanCard from './treatment/TreatmentPlanCard'
@@ -22,6 +23,10 @@ const FREQUENCY_LABELS = {
 export default function Treatment({ onNavigate }) {
   const [showInactive, setShowInactive] = useState(false)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [medicineToDelete, setMedicineToDelete] = useState(null)
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   const { medicines, protocols, refresh } = useDashboard()
 
@@ -55,6 +60,39 @@ export default function Treatment({ onNavigate }) {
 
   // Tratamentos inativos
   const inactiveProtocols = useMemo(() => protocols.filter((p) => !p.active), [protocols])
+
+  const handleDeleteMedicineClick = useCallback((medicine) => {
+    setMedicineToDelete(medicine)
+    setDeleteConfirmed(false)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirmed) {
+      setDeleteConfirmed(true)
+      setDeleteError(null)
+      return
+    }
+
+    try {
+      setIsDeleting(true)
+      setDeleteError(null)
+      await medicineService.delete(medicineToDelete.id)
+      setMedicineToDelete(null)
+      setDeleteConfirmed(false)
+      refresh()
+    } catch (err) {
+      console.error('Erro ao deletar medicamento:', err)
+      setDeleteError(err.message || 'Erro ao deletar medicamento')
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [medicineToDelete, deleteConfirmed, refresh])
+
+  const handleCancelDelete = useCallback(() => {
+    setMedicineToDelete(null)
+    setDeleteConfirmed(false)
+    setDeleteError(null)
+  }, [])
 
   const handleEditProtocol = useCallback(
     (protocol) => {
@@ -171,6 +209,7 @@ export default function Treatment({ onNavigate }) {
                   key={medicine.id}
                   medicine={medicine}
                   onCreateProtocol={handleCreateProtocol}
+                  onDeleteMedicine={handleDeleteMedicineClick}
                 />
               ))}
             </div>
@@ -212,6 +251,52 @@ export default function Treatment({ onNavigate }) {
           )}
         </>
       )}
+
+      {/* Modal de confirmação dupla para deletar medicamento */}
+      <Modal isOpen={!!medicineToDelete} onClose={handleCancelDelete}>
+        <div className="delete-confirmation-modal">
+          <h3 className="delete-confirmation-modal__title">
+            {!deleteConfirmed
+              ? 'Deletar medicamento?'
+              : 'Tem certeza? Esta ação não pode ser desfeita.'}
+          </h3>
+          <p className="delete-confirmation-modal__message">
+            {medicineToDelete && (
+              <>
+                <strong>{medicineToDelete.name}</strong>
+                {!deleteConfirmed
+                  ? ' será removido do banco de dados.'
+                  : ' será deletado permanentemente.'}
+              </>
+            )}
+          </p>
+          {deleteError && (
+            <p className="delete-confirmation-modal__error">
+              ⚠️ {deleteError}
+            </p>
+          )}
+          <div className="delete-confirmation-modal__actions">
+            <Button
+              variant="secondary"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting
+                ? 'Deletando...'
+                : deleteConfirmed
+                  ? 'Confirmar Deletar'
+                  : 'Deletar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Wizard modal */}
       <Modal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)}>
