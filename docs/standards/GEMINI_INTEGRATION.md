@@ -618,7 +618,7 @@ notify:
 - [Gemini Code Assist Documentation](https://cloud.google.com/gemini/docs/codeassist)
 - [GitHub Pull Request Review Events](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request_review)
 - [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
-- [Plano de Refatoração Original](../../plans/PLANO_REFATORACAO_GEMINI_INTEGRATION.md)
+- [Plano de Refatoração Original](../../plans/archive_old/gemini_integration/PLANO_REFATORACAO_GEMINI_INTEGRATION.md)
 
 ---
 

@@ -22,7 +22,7 @@ Documentação completa das APIs internas dos services com exemplos de uso.
 
 ## Medicine Service
 
-Local: [`src/services/api/medicineService.js`](../src/services/api/medicineService.js)
+Local: [`src/features/medications/services/medicineService.js`](../../src/features/medications/services/medicineService.js)
 
 ### `getAll()`
 
@@ -133,7 +133,7 @@ await medicineService.delete('uuid-do-medicamento')
 
 ## Protocol Service
 
-Local: [`src/services/api/protocolService.js`](../src/services/api/protocolService.js)
+Local: [`src/features/protocols/services/protocolService.js`](../../src/features/protocols/services/protocolService.js)
 
 ### `getAll()`
 
@@ -276,7 +276,7 @@ const result = await protocolService.advanceTitration('uuid')
 
 ## Stock Service
 
-Local: [`src/services/api/stockService.js`](../src/services/api/stockService.js)
+Local: [`src/features/stock/services/stockService.js`](../../src/features/stock/services/stockService.js)
 
 ### `getByMedicineId(medicineId)`
 
@@ -397,7 +397,7 @@ await stockService.delete('uuid-estoque')
 
 ## Log Service
 
-Local: [`src/services/api/logService.js`](../src/services/api/logService.js)
+Local: [`src/features/adherence/services/logService.js`](../../src/features/adherence/services/logService.js)
 
 ### `getAll(options)`
 
@@ -510,7 +510,7 @@ await logService.delete('uuid-log')
 
 ## Treatment Plan Service
 
-Local: [`src/services/api/treatmentPlanService.js`](../src/services/api/treatmentPlanService.js)
+Local: [`src/features/protocols/services/treatmentPlanService.js`](../../src/features/protocols/services/treatmentPlanService.js)
 
 ### `getAll()`
 
@@ -594,7 +594,7 @@ await treatmentPlanService.delete('uuid')
 
 ## Cached Services
 
-Local: [`src/services/api/cachedServices.js`](../src/services/api/cachedServices.js)
+Local: [`src/shared/services/cachedServices.js`](../../src/shared/services/cachedServices.js)
 
 Versões cacheadas dos services para **leituras**. Usar em componentes React.
 
@@ -998,6 +998,6 @@ O analytics service foi projetado para conformidade com LGPD/GDPR:
 ## 📚 Veja Também
 
 - [ARQUITETURA.md](./ARQUITETURA.md) - Visão geral da arquitetura
-- [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Documentação completa dos schemas Zod
+- [SCHEMAS_VALIDACAO.md](../archive/past_deliveries/SCHEMAS_VALIDACAO.md) - Documentação completa dos schemas Zod
 - [HOOKS.md](./HOOKS.md) - Hooks customizados
 - [CHANGELOG.md](../CHANGELOG.md) - Histórico de versões

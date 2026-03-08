@@ -665,11 +665,11 @@ See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`]
 
 ### Documentação Técnica
 
-- [ARQUITETURA_FRAMEWORK.md](./ARQUITETURA_FRAMEWORK.md) - Framework arquitetural completo
-- [API_SERVICES.md](./API_SERVICES.md) - Documentação das APIs
-- [LINT_COVERAGE.md](./LINT_COVERAGE.md) - Configurações ESLint e boas práticas
-- [OTIMIZACAO_TESTES_ESTRATEGIA.md](./OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia completa de testes
-- [HOOKS.md](./HOOKS.md) - Hooks customizados
+- [ARQUITETURA_FRAMEWORK.md](./archive/ARQUITETURA_FRAMEWORK.md) - Framework arquitetural completo
+- [SERVICES.md](./reference/SERVICES.md) - Documentação das APIs
+- [LINT_COVERAGE.md](./archive/LINT_COVERAGE.md) - Configurações ESLint e boas práticas
+- [OTIMIZACAO_TESTES_ESTRATEGIA.md](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia completa de testes
+- [HOOKS.md](./reference/HOOKS.md) - Hooks customizados
 
 ### Templates
 
@@ -677,10 +677,10 @@ See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`]
 
 ### Documentação Histórica
 
-- [DECISOES_TECNICAS.md](./past_deliveries/DECISOES_TECNICAS.md) - Por que escolhemos cada tech
-- [SCHEMAS_VALIDACAO.md](./past_deliveries/SCHEMAS_VALIDACAO.md) - Validação Zod
-- [CONSOLIDACAO_COMPONENTES_FINAL.md](./past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md) - Documentação técnica da consolidação de componentes
-- [CONSOLIDACAO_COMPONENTES_PLANO.md](../plans/CONSOLIDACAO_COMPONENTES_PLANO.md) - Blueprint da consolidação
+- [DECISOES_TECNICAS.md](./archive/past_deliveries/DECISOES_TECNICAS_ONDA_1.md) - Por que escolhemos cada tech
+- [SCHEMAS_VALIDACAO.md](./archive/past_deliveries/SCHEMAS_VALIDACAO.md) - Validação Zod
+- [CONSOLIDACAO_COMPONENTES_FINAL.md](./archive/past_deliveries/CONSOLIDACAO_COMPONENTES_FINAL.md) - Documentação técnica da consolidação de componentes
+- [CONSOLIDACAO_COMPONENTES_PLANO.md](../plans/archive_old/roadmap_v3/CONSOLIDACAO_COMPONENTES_PLANO.md) - Blueprint da consolidação
 
 ---
 
