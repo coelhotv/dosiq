@@ -101,7 +101,16 @@
 | AP-W16 | `bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo | CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo ficam ocultos, gerando múltiplos ciclos de fix | Rodar `test:critical` sem bail localmente (ou temporariamente) para revelar TODAS as falhas no arquivo antes de commitar | R-106 |
 | AP-W17 | Componente com estado interno inicializado de uma prop (`complexityMode`) não reinicializa quando a prop muda | Defaults de expansão de seções ficam presos no valor do primeiro render; UX inconsistente ao mudar complexidade | Usar `key={controllingProp}` no componente para forçar remount completo quando o prop que define os defaults muda | R-109 |
 
+## Adherence & Consumption Anti-Patterns (Sprint 6.1 — 2026-03-08)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-A01 | Use `calculateDailyIntake()` instead of `calculateExpectedDoses()` when frequency matters | Non-daily protocols (semanal, dias_alternados) receive inflated consumption (7x for weekly), causing false refill urgency | Always use `calculateExpectedDoses(protocols, days)` which respects DOSE_RATE_MAP and frequency | R-111 |
+| AP-A02 | Count logs (`.length`) instead of summing `quantity_taken` for adherence | Patient taking 2 pills/dose with 1 log per day = 50% adherence calculated, 100% actual. Adherence underestimated. | Use `.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0) / expected * 100` | R-112 |
+| AP-A03 | Filter logs with `medicine_id` in addition to `protocol_id` | When 2+ protocols exist for same medicine, logs bleed between them. Protocol A's adherence = Protocol A's logs + Protocol B's logs. | Use ONLY `log.protocol_id === protocolId`, remove any `\|\| medicine_id` condition | R-113 |
+| AP-A04 | Compare local `new Date()` with ISO timestamps without zeroing hours | ±1 day boundary errors when local time ≠ UTC (GMT-3 offset). Log taken at 2026-03-08T09:00-03:00 may be filtered out of "14 days ago" window. | Always call `.setHours(0, 0, 0, 0)` on date boundaries for consistent timezone-agnostic comparison | R-114 |
+
 ---
 
-*Last updated: 2026-03-05*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17*
+*Last updated: 2026-03-08*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04*
