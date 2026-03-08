@@ -1,9 +1,9 @@
 # Roadmap 2026 — Meus Remedios (v4.0)
 
-**Versao:** 4.2 (Atualizado apos Sprint 5.B CONCLUÍDO)
+**Versao:** 4.3 (Atualizado apos Sprint 5.D CONCLUÍDO — Fase 5 100% COMPLETA)
 **Data:** 07/03/2026
-**Status:** Fase 5 90% Completa (F5.10 + F5.6 ENTREGUES, F5.C + F5.D Pendentes)
-**Baseline:** v3.1.0 → v3.2.0 em desenvolvimento (Fases 1-4 + Evolucao UX + F5.10 + F5.6 CONCLUÍDO)
+**Status:** Fase 5 100% Completa ✅ (F5.10 + F5.6 + F5.C + F5.D ENTREGUES)
+**Baseline:** v3.1.0 → v3.2.0 RELEASED (Fases 1-5 COMPLETAS)
 **Principio:** Valor ao paciente primeiro. Custo operacional R$0 ate Fase 8.
 
 > **Mudancas em relacao a v3.2:**
@@ -36,7 +36,7 @@
 
 | Dimensao | Valor |
 |----------|-------|
-| Versao do app | v3.1.0 |
+| Versao do app | v3.2.0 ✅ |
 | Stack frontend | React 19 + Vite 7 + Framer Motion 12 |
 | Stack backend | Supabase (Postgres + Auth + RLS) + Zod 4 |
 | Testes | Vitest 4 |
@@ -53,8 +53,10 @@
 | Coverage minimo (F5.6) | 100% (services + components) ✅ |
 | Bundle size | ~1.2MB (mitigado: lazy-loading + gzip) |
 | Lighthouse PWA | >=90 |
-| Lighthouse Performance | >=90 |
-| Code Review (F5.6) | 4/4 sugestoes resolvidas (1 CRITICAL + 3 MEDIUM) ✅ |
+| Lighthouse Performance | >=90 ✅ |
+| Code Review (F5.D) | 8/8 sugestoes resolvidas (todas aplicadas) ✅ |
+| Landing Page Dark Theme | Default + respects user preference ✅ |
+| Parallax Performance | useRef (no re-renders on scroll) ✅ |
 
 ---
 
@@ -71,9 +73,9 @@
 | Evolucao UX — Onda 1 | v3.0.0 | Componentes visuais: RingGauge, StockBars, Sparkline, DoseTimeline |
 | Evolucao UX — Onda 2 | v3.0.0 | Hooks de logica: useDoseZones, useComplexityMode, ViewModeToggle, BatchRegister |
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
-| Fase 5 — Valor Clinico (90%) | v3.1.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual |
+| Fase 5 — Valor Clinico (100%) ✅ | v3.2.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual, Analise Custo, Base ANVISA, Onboarding v3.2, Landing Redesign |
 
-**Status da Fase 5 (07/03/2026):** 90% completa
+**Status da Fase 5 (07/03/2026):** 100% COMPLETA ✅
 - ✅ **F5.10 Analise de Custo** (5 SP) — ENTREGUE em main (commit 894bb98)
   - costAnalysisService.js puro com 5 funções otimizadas (O(M+P))
   - CostChart component com Framer Motion
@@ -88,10 +90,26 @@
   - 48 testes novos, 100% coverage nas services e componentes
   - 4 sugestões de code review resolvidas (1 CRITICAL + 3 MEDIUM)
   - Bundle impacto negligenciável: lazy-loaded + gzipped ~103 KB
-- ⏳ **F5.C Onboarding Renovado** (5 SP) — WelcomeStep redesign, StockStep (step 4/5), TelegramStep
-- ⏳ **F5.D Redesign Landing Page** (8 SP) — hero com AppPreview CSS, "Como Funciona", 8-card grid
+- ✅ **F5.C Onboarding Renovado** (5 SP) — ENTREGUE em main (commit 17371b4, PR #283)
+  - WelcomeStep redesign com 5 value props v3.2 e ring gauge SVG animado
+  - StockStep novo (step 4/5) com validação Zod e preview de estoque
+  - TelegramIntegrationStep atualizado com 6 capacidades do bot proativo
+  - 3 sugestões Gemini resolvidas (magic numbers, hook ordering, validation)
+  - 473/473 testes passando, 0 lint errors
+- ✅ **F5.D Redesign Landing Page** (8 SP) — ENTREGUE em main (commit c1069ea, PR #290)
+  - Hero com AppPreview component (SVG + CSS animations, reusável)
+  - Seção "Como Funciona" com 3 passos ilustrados
+  - Features grid expandido: 6 → 8 cards v3.2
+  - CTA final + footer atualizado (ano 2026)
+  - Dark theme por padrão + respira preferência do usuário
+  - Parallax otimizado: useState → useRef (sem re-renders)
+  - 8 sugestões Gemini aplicadas (commits e357604, 460fa54, c1069ea)
+  - 9 issues auto-geradas e auto-fechadas (#291–#299)
+  - 473/473 testes passando, 0 lint errors, Lighthouse >=90
 
 **Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`. Deduplicação resultou em 6.816 medicamentos e 278 laboratórios únicos.
+
+**Versão v3.2.0 Released** — Tag criada, documentação atualizada, pronta para release.
 
 ---
 
@@ -122,8 +140,8 @@
 | F5.10 | Analise de Custo + EV-06 Cost Chart | 5 | ✅ **CONCLUIDO** | 894bb98 |
 | ETL-1 | Script process-anvisa.js (CSV → JSON deduplicado) | 1 | ✅ **CONCLUIDO** | 7a887dc |
 | F5.6 | Base ANVISA + autocomplete no formulario de medicamento | ~12 | ✅ **CONCLUIDO** | 7a887dc |
-| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | ⏳ Pendente | — |
-| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | ⏳ Pendente | — |
+| F5.C | Onboarding Wizard renovado (v3.2 benefits + StockStep) | 5 | ✅ **CONCLUIDO** | 17371b4 |
+| F5.D | Redesign Landing Page (showcase UX v3.2 + features Fase 5) | 8 | ✅ **CONCLUIDO** | c1069ea |
 
 **F5.10 Quality Gate:** ✅ PASSED
 - Tests: 425/425 passing, 95.65% coverage
