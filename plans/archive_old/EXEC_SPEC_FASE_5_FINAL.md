@@ -65,11 +65,12 @@ Sprint 5.C — Onboarding Renovado (5 SP) ✅ CONCLUÍDO
   F5.C-3:  TelegramIntegrationStep atualizado (bot proativo) ✅ Merged
   Quality Gate: Full test suite (473/473) + code review + lint ✅ PASSED
 
-Sprint 5.D — Redesign da Landing Page (8 SP)
-  F5.D-1:  Hero redesign (headline + visual ring gauge)
-  F5.D-2:  Secao "Como Funciona" (3 passos ilustrados)
-  F5.D-3:  Features grid atualizado (8 cards — features v3.2)
-  F5.D-4:  CTA final + footer atualizados
+Sprint 5.D — Redesign da Landing Page (8 SP) ✅ CONCLUÍDO
+  F5.D-1:  Hero redesign (headline + visual ring gauge) ✅ Merged
+  F5.D-2:  Secao "Como Funciona" (3 passos ilustrados) ✅ Merged
+  F5.D-3:  Features grid atualizado (8 cards — features v3.2) ✅ Merged
+  F5.D-4:  CTA final + footer atualizados ✅ Merged
+  Quality Gate: Code review (8 sugestões) + tests (473/473) + lint ✅ PASSED
 ```
 
 ---
@@ -1130,17 +1131,23 @@ Mais de 100 usuarios controlando sua adesao com Meus Remedios.
 3. Link de feedback no footer (texto "Relatar um problema" → URL fornecida pelo usuario ou comentario TODO)
 4. Botoes CTA manteem `onOpenAuth` / `onContinue` props existentes
 
-### Quality Gate Sprint 5.D
+### Quality Gate Sprint 5.D ✅ PASSED
 
-- [ ] Hero redesignado com nova headline, stats e AppPreview
-- [ ] Secao "Como Funciona" (3 passos) inserida apos hero
-- [ ] Features grid atualizado: 8 cards v3.2
-- [ ] Secao `benefits-section` removida (conteudo absorvido)
-- [ ] CTA final e footer atualizados (ano 2026)
-- [ ] `npm run validate:agent` passa
-- [ ] Lighthouse Performance >= 90 (landing e pagina publica — critico para SEO)
-- [ ] Testado em 360px (mobile) e 1280px (desktop)
-- [ ] Commit: `feat(landing): redesign landing page to showcase v3.2 UX (#F5.D)`
+- [x] Hero redesignado com nova headline, stats e AppPreview (commit c1069ea)
+- [x] Secao "Como Funciona" (3 passos) inserida apos hero (commit c1069ea)
+- [x] Features grid atualizado: 8 cards v3.2 (commit c1069ea)
+- [x] Secao `benefits-section` removida (conteudo absorvido) (commit c1069ea)
+- [x] CTA final e footer atualizados (ano 2026) (commit c1069ea)
+- [x] `npm run validate:agent` passa (0 lint errors, 473/473 tests)
+- [x] Lighthouse Performance >= 90 (landing e pagina publica) (commit c1069ea)
+- [x] Testado em 360px (mobile) e 1280px (desktop) (commit c1069ea)
+- [x] AppPreview extraction (>50 lines → @shared/components) (commit e357604)
+- [x] Parallax optimization (useState → useRef) (commit e357604)
+- [x] CSS class naming (BEM pattern: `.stock-bar__label`) (commit 460fa54)
+- [x] Code Review: 8/8 Gemini suggestions applied (commits e357604, 460fa54, c1069ea)
+- [x] Dark theme default on Landing (commit e357604)
+- [x] PR created, reviewed, merged (PR #290, commit c1069ea)
+- [x] 9 auto-generated issues closed (#291–#299) (commit 460fa54)
 
 ---
 
