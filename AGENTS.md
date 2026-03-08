@@ -41,19 +41,19 @@
 | **Gemini/AI code review** | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) ✅ |
 
 **Agent-specific rules:**
-- **Code mode**: [`.roo/rules-code/rules.md`](.roo/rules-code/rules.md)
-- **Architecture mode**: [`.roo/rules-architecture/rules.md`](.roo/rules-architecture/rules.md)
 - **Long-term memory**: [`.memory/`](.memory/) (rules, knowledge, anti-patterns, journal)
 
 ---
 
-## 🚨 Critical Constraints (Top 5 Quick Reference)
+## 🚨 Critical Constraints (Top 8 Quick Reference)
 
 > Complete rules with examples: [`.memory/rules.md`](.memory/rules.md)
 > Anti-patterns table: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
 
 | # | Constraint | Rule | Ref |
 |---|-----------|------|-----|
+| **0** | **NO SELF-MERGE** | Agent codes → Gemini reviews → Agent fixes → **USER APPROVES → USER MERGES** | R-060 ⚠️ |
+| **0** | **QUALITY > SPEED** | One solid PR > 3 rushed PRs. Approval delays are CORRECT, not bottlenecks | R-062 ⚠️ |
 | 1 | **Duplicate Files** | Check `find src -name "*File*"` before modifying ANY file | R-001 |
 | 2 | **Hook Order** | States -> Memos -> Effects -> Handlers (prevents TDZ) | R-010 |
 | 3 | **Timezone** | Always `parseLocalDate()`, never bare `new Date('YYYY-MM-DD')` | R-020 |
@@ -127,6 +127,27 @@ npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 
 ---
 
+## 📋 Sprint Delivery Workflow
+
+**Use the `/deliver-sprint` skill** for structured, zero-defect sprint delivery:
+
+```bash
+/deliver-sprint
+```
+
+**This skill provides a 7-phase workflow:**
+1. **Setup & Exploration** (10–15 min) — Read spec, explore codebase, verify patterns
+2. **Implementation** (45–60 min) — Code following project standards (Schemas → Services → Components → Tests → CSS)
+3. **Validation Local** (5–10 min) — `npm run validate:agent` must pass
+4. **Git & Documentation** (5 min) — Update memory, semantic commits
+5. **Push & Code Review** (5–30 min) — Push, create PR, **WAIT FOR GEMINI REVIEW**
+6. **Merge & Cleanup** (5 min) — **ONLY AFTER EXPLICIT USER APPROVAL** (R-060)
+7. **Final Documentation** (5–10 min) — Update spec, journal, MEMORY.md
+
+**⚠️ CRITICAL**: Agent role ends at Phase 5.3 (all Gemini suggestions applied). Agent MUST WAIT for explicit user approval before Phase 6 (merge).
+
+---
+
 ## 🧪 Testing Rules
 
 ### Where to Put Tests
@@ -163,24 +184,67 @@ src/features/medications/services/
 
 ## 🔄 Git Workflow Summary
 
+### Core Principles
+
+**R-060 (CRITICAL — Non-Negotiable):** Code agents NEVER merge their own PRs without explicit user (Product Owner) approval.
+```
+Correct Flow:
+Agent codes → Gemini reviews → Agent applies fixes → USER APPROVES → USER MERGES → Agent documents
+
+Agent role ends at: "PR created + all Gemini suggestions applied + awaiting your approval"
+```
+
+**R-062 (CRITICAL — Quality Over Speed):** One well-reviewed PR > 3 rushed PRs. Each phase of `/deliver-sprint` has purpose.
+```
+Wrong:  Rush implementation → skip validation → force merge = production bugs
+Right:  Thorough implementation → wait for review → await approval → merge = quality delivery
+
+Approval delays are NORMAL and CORRECT. They represent:
+  ✓ Code review completeness
+  ✓ Quality assurance
+  ✓ Knowledge transfer
+```
+
+### Workflow Steps
+
 ```
 1. CREATE BRANCH:    git checkout -b feature/wave-X/nome
 2. MAKE CHANGES:     Follow coding standards
-3. VALIDATE:         npm run validate (MUST PASS)
-4. COMMIT:           git commit -m "feat(scope): descrição"
+3. VALIDATE:         npm run validate:agent (MUST PASS — 10min timeout)
+4. COMMIT:           git commit -m "feat(scope): descrição" (semantic)
 5. PUSH:             git push origin feature/wave-X/nome
-6. CREATE PR:        Use template, fill all sections
-7. WAIT FOR REVIEW:  Address all comments
-8. MERGE & CLEANUP:  Merge with --no-ff, delete branch
+6. CREATE PR:        Use template, fill all sections, await Gemini review
+7. APPLY FIXES:      Address all Gemini suggestions (Phase 5.3)
+8. WAIT FOR USER:    **BLOCKING STEP** — Agent MUST STOP here (R-060)
+9. USER MERGES:      User reviews and merges (Phase 6 — user only)
+10. DOCUMENT:        Agent updates spec, journal, MEMORY.md (Phase 7)
 ```
 
 **⚠️ NEVER:**
-- Commit directly to `main`
-- Skip validation
-- Use `--no-verify`
-- Merge without review
+- Commit directly to `main` (R-060)
+- Skip validation (R-062)
+- Use `--no-verify` (defeats pre-commit hooks)
+- Merge without explicit user approval (R-060)
+- Rush phases to finish faster (R-062)
 
 **📖 Complete guide**: [`docs/standards/GIT_WORKFLOW.md`](docs/standards/GIT_WORKFLOW.md)
+
+### Quality Gates Between Phases
+
+**Before proceeding to the next phase, validate:**
+
+| Phase | Gate | Validation | Command |
+|-------|------|------------|---------|
+| **Implementation** | Code Complete | Lint passes | `npm run lint` |
+| **Implementation** | Tests Pass | Critical tests pass | `npm run test:critical` |
+| **Validation** | Build Success | Production build works | `npm run build` |
+| **Git** | No Duplicates | No duplicate files | `find src -name "*File*" -type f` |
+| **Push** | Code Review | Gemini analysis complete | Wait for bot comment |
+| **Push** | Fixes Applied | All suggestions addressed | New commits pushed |
+| **Push → Merge** | **USER APPROVAL** | Explicit user message | **BLOCKING — Agent waits** |
+| **Merge** | Documentation | Spec + journal updated | Phase 7 complete |
+
+**⚠️ Phase 5.4 is BLOCKING:** Agent MUST STOP and await explicit user approval before Phase 6 (merge). This is not a bottleneck — it's quality assurance.
 
 ---
 
@@ -348,6 +412,28 @@ api/                   # Serverless Functions (Vercel) — MAX 12 funcoes no Hob
 
 ---
 
+## ⏱️ The Cost of Rushing (R-062 Rationale)
+
+Why each phase of `/deliver-sprint` cannot be compressed:
+
+| Phase | If Rushed | Cost | Time Saved |
+|-------|-----------|------|------------|
+| **Phase 1: Setup** | Skip exploration → wrong files modified | Production bug + rework | 5 min |
+| **Phase 2: Implementation** | Copy-paste patterns → untested code | Runtime errors + debugging | 20 min |
+| **Phase 3: Validation** | Skip tests → regressions slip through | User-facing bugs | 10 min |
+| **Phase 4: Git & Docs** | No memory update → same error repeats | Technical debt accumulates | 5 min |
+| **Phase 5: Review** | Ignore Gemini suggestions → architectural debt | Maintainability suffers | 15 min |
+| **Phase 6: Merge** | Self-merge without approval → bypasses QA | Unknown issues reach production | 5 min |
+| **Phase 7: Documentation** | Skip journal → future agents repeat mistakes | Knowledge loss = slower future sprints | 10 min |
+
+**Result of rushing all 7 phases:** Save 70 minutes, but create 5+ hours of debugging/rework later.
+
+**Result of completing all 7 phases thoroughly:** Takes 2 hours total, prevents 90% of recurring bugs, enables future agents to deliver faster.
+
+**R-062: One solid PR (2h) > 3 rushed PRs (90 min + 5h debugging) = 40% faster delivery long-term.**
+
+---
+
 ## ✅ Pre-Commit Checklist
 
 Before committing, verify:
@@ -385,7 +471,7 @@ For specialized tasks, switch to appropriate mode:
 | **❓ Ask** | Need explanations | Understanding, recommendations |
 | **🪲 Debug** | Troubleshooting issues | Error investigation, diagnosis |
 | **🪃 Orchestrator** | Complex multi-step projects | Coordination, workflow management |
-| **🎨 UX Builder** | Implementing UX evolution specs | Follow atomic specs from `plans/specs/` |
+| **🎨 UX Builder** | Implementing UX evolution specs | Follow atomic UI/UX specs |
 
 ---
 
@@ -454,10 +540,12 @@ After each significant task completion, the agent MUST:
    - Add entry to `.memory/journal/[current-week].md`
    - Follow the format in [`.memory/README.md`](.memory/README.md)
 
-3. **Report to Orchestrator**:
-   - Use `attempt_completion` with comprehensive summary
-   - Include specific file paths and line numbers for changes
-   - List any issues that need follow-up
+3. **Report to Orchestrator** (with strict R-060 compliance):
+   - Use comprehensive summary with specific file paths and line numbers
+   - Include all issues encountered and how they were resolved
+   - **CRITICAL**: State clearly: "PR created, awaiting your approval before merge" (R-060)
+   - Do NOT self-merge (R-060 violation = learning opportunity for future prevention)
+   - Do NOT rush to Phase 6/7 without explicit user approval message
 
 ### Continuous Improvement Cycle
 
@@ -677,84 +765,14 @@ npm run test:coverage
 
 ### Contexto
 
-O projeto esta passando por uma evolucao de UX (navegacao por entidade -> navegacao por atividade). O trabalho esta organizado em 3 ondas com specs atomicas detalhadas que agentes de codigo executam.
+O projeto passou por uma evolucao de UX (navegacao por entidade -> navegacao por atividade). O trabalho foi organizado em 3 ondas com specs atomicas detalhadas que agentes de codigo executaram.
 
 ### Documentacao UX
 
 | Documento | Proposito | Quando ler |
 |-----------|-----------|------------|
-| [`plans/EXEC_SPEC_UX_EVOLUTION.md`](plans/EXEC_SPEC_UX_EVOLUTION.md) | Master doc: ondas, inventario, progresso, regras | **SEMPRE** antes de qualquer task UX |
-| [`plans/UX_VISION_EXPERIENCIA_PACIENTE.md`](plans/UX_VISION_EXPERIENCIA_PACIENTE.md) | Visao de experiencia, wireframes, filosofia | Para entender o "porque" |
-| [`plans/specs/wave-1-visual-components.md`](plans/specs/wave-1-visual-components.md) | Specs atomicas Onda 1 (componentes visuais) | Ao executar tasks W1-XX |
-| [`plans/specs/wave-2-logic-hooks.md`](plans/specs/wave-2-logic-hooks.md) | Specs atomicas Onda 2 (hooks e logica) | Ao executar tasks W2-XX |
-| [`plans/specs/wave-3-navigation.md`](plans/specs/wave-3-navigation.md) | Specs atomicas Onda 3 (navegacao) | Ao executar tasks W3-XX |
-| [`SKILLS/ui-design-brain/SKILL.md`](SKILLS/ui-design-brain/SKILL.md) | Referencia de design (60+ patterns) | Para decisoes visuais |
-
-### Workflow para Tasks UX
-
-```
-1. LER master doc (EXEC_SPEC_UX_EVOLUTION.md)
-   - Verificar qual onda esta ativa
-   - Confirmar que quality gates anteriores passaram
-   - Ler regras para agentes executores (secao 5)
-
-2. ABRIR spec atomica da task (plans/specs/wave-X-*.md)
-   - Localizar a task pelo ID (ex: W1-01)
-   - Ler TODA a spec (props, data flow, animacoes, CSS, testes)
-   - Se nao esta na spec, NAO implementar
-
-3. VERIFICAR dependencias
-   - Checar coluna "Deps" no inventario de tasks
-   - Se depende de outra task, confirmar que ela esta concluida
-
-4. IMPLEMENTAR seguindo a spec
-   - Arquivo: usar o caminho EXATO da spec
-   - Props: usar os tipos e nomes EXATOS da spec
-   - CSS: usar tokens do design system (nunca hardcode)
-   - Animacoes: Framer Motion com prefers-reduced-motion
-   - Acessibilidade: aria-label, role, tabindex
-
-5. TESTAR
-   - Criar testes no caminho indicado na spec
-   - Seguir os describes/its listados
-   - Rodar: npm run validate:agent
-
-6. VALIDAR criterios de aceite
-   - Marcar cada checkbox da spec
-   - Se algum falhar, nao prosseguir
-```
-
-### Guardrails por Onda
-
-| Onda | Regra principal | Risco de violar |
-|------|----------------|-----------------|
-| **Onda 1** | Componentes recebem dados por **props**. NUNCA importar DashboardProvider/useDashboardContext | Acoplamento prematuro |
-| **Onda 2** | Hooks podem usar context. Edits em Dashboard.jsx devem ser **minimos** (import + JSX) | Reescrever 932 linhas |
-| **Onda 3** | Mudancas em App.jsx/BottomNav em edits **atomicos**. Testar cada tab individualmente | Quebrar navegacao |
-
-### Quality Gates
-
-Cada onda deve passar seu quality gate ANTES de iniciar a proxima:
-
-```
-Quality Gate 1 (apos Onda 1):
-  [ ] Todos os componentes renderizam com dados mock
-  [ ] npm run validate:agent passa
-  [ ] npm run build passa
-  [ ] Sem regressao visual no Dashboard atual
-
-Quality Gate 2 (apos Onda 2):
-  [ ] Hooks retornam dados corretos
-  [ ] Toggle hora/plano funciona
-  [ ] Integracao com DashboardProvider validada
-  [ ] Testes cobrem edge cases temporais
-
-Quality Gate 3 (apos Onda 3):
-  [ ] Navegacao 4 tabs funcional
-  [ ] Todas as views acessiveis
-  [ ] Wizard substitui window.confirm chain
-  [ ] Nenhuma funcionalidade perdida
-```
+| [`plans/UX_VISION_EXPERIENCIA_PACIENTE.md`](plans/UX_VISION_EXPERIENCIA_PACIENTE.md) | Visao de experiencia, wireframes, filosofia | Para entender o "o que" e o "porque" |
+| [`.claude/skills/ui-design-brain/SKILL.md`](.claude/skills/ui-design-brain/SKILL.md) | Referencia de design (60+ patterns) | Para decisoes visuais |
 
 ---
 
