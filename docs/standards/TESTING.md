@@ -904,9 +904,9 @@ afterEach(() => {
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Testing Library React](https://testing-library.com/docs/react-testing-library/intro/)
-- [`docs/architecture/OVERVIEW.md`](../architecture/OVERVIEW.md) - Arquitetura do sistema
-- [`docs/standards/CODE_PATTERNS.md`](./CODE_PATTERNS.md) - Padrões de código
-- [`.roo/rules/memory.md`](../../.roo/rules/memory.md) - Lições aprendidas
+- [`ARQUITETURA.md`](../ARQUITETURA.md) - Arquitetura do sistema
+- [`PADROES_CODIGO.md`](../PADROES_CODIGO.md) - Padrões de código
+- [`.memory/rules.md`](../../.memory/rules.md) - Lições aprendidas
 
 ---
 
