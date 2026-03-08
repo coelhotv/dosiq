@@ -71,7 +71,7 @@ export const CalculateRealCostsInputSchema = z.object({
       z.object({
         medicine_id: z.string().min(1, 'medicine_id é obrigatório'),
         taken_at: z.string().or(z.date()),
-        quantity_taken: z.number().nonnegative('quantity_taken deve ser >= 0').optional().default(0),
+        quantity_taken: z.number().nonnegative('quantity_taken deve ser >= 0').max(100, 'quantity_taken não pode ser maior que 100').optional().default(0),
       })
     )
     .optional()

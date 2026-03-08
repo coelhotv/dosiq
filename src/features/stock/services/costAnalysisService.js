@@ -188,16 +188,40 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+  // OTIMIZAÇÃO: Pré-processar dados para evitar O(M*P + M*L) → O(M + P + L)
+  // Mapa de protocolos ativos por medicamento
+  const activeMedicineIds = new Set()
+  const protocolsByMedicine = {}
+  validatedProtocols.forEach(p => {
+    if (p.active && p.medicine_id) {
+      activeMedicineIds.add(p.medicine_id)
+      if (!protocolsByMedicine[p.medicine_id]) {
+        protocolsByMedicine[p.medicine_id] = []
+      }
+      protocolsByMedicine[p.medicine_id].push(p)
+    }
+  })
+
+  // Mapa de logs por medicamento (com pré-filtro de data)
+  const logsByMedicine = {}
+  validatedLogs.forEach(l => {
+    if (l.medicine_id && new Date(l.taken_at) >= thirtyDaysAgo) {
+      if (!logsByMedicine[l.medicine_id]) {
+        logsByMedicine[l.medicine_id] = []
+      }
+      logsByMedicine[l.medicine_id].push(l)
+    }
+  })
+
   const items = validatedMedicines
-    .filter(med => validatedProtocols.some(p => p.medicine_id === med.id && p.active))
+    .filter(med => activeMedicineIds.has(med.id))
     .map(med => {
-      const medLogs = validatedLogs.filter(l => l.medicine_id === med.id)
+      const medLogs = logsByMedicine[med.id] || []
       const avgUnitPrice = calculateAvgUnitPrice(med.stock || [])
 
       // Consumo real vs teórico
-      const recentLogs = medLogs.filter(l => new Date(l.taken_at) >= thirtyDaysAgo)
       const daysWithData = new Set(
-        recentLogs.map(l => formatLocalDate(new Date(l.taken_at)))
+        medLogs.map(l => formatLocalDate(new Date(l.taken_at)))
       ).size
 
       let dailyConsumption
@@ -205,7 +229,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
 
       if (daysWithData >= 14) {
         // Consumo real: total de comprimidos consumidos / dias com dados
-        const totalConsumed = recentLogs.reduce((sum, l) => sum + (l.quantity_taken || 0), 0)
+        const totalConsumed = medLogs.reduce((sum, l) => sum + (l.quantity_taken || 0), 0)
         dailyConsumption = daysWithData > 0 ? totalConsumed / daysWithData : 0
         isRealData = true
       } else {
