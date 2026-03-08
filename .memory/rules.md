@@ -789,5 +789,79 @@ export default function Component({ item }) {
 
 ---
 
-*Last updated: 2026-03-07*
-*Rules: R-001 to R-110*
+## Adherence & Consumption Logic (Sprint 6.1 — 2026-03-08)
+
+### R-111: Use `calculateExpectedDoses()` for Protocol Consumption [CRITICAL]
+**Rule:** Always use `calculateExpectedDoses(protocols, days)` from `@utils/adherenceLogic` instead of `calculateDailyIntake()`. The latter ignores protocol frequency (semanal, dias_alternados) and only counts `time_schedule.length`, causing inflated consumption estimates for non-daily protocols.
+
+**Why it matters:** Refill predictions for weekly or alternate-day protocols must account for frequency. Using `calculateDailyIntake()` returns daily consumption (7x too high for weekly), causing incorrect stockout predictions.
+
+```javascript
+// ❌ WRONG — ignores frequency, always assumes daily
+const expectedDaily = calculateDailyIntake(protocols) // uses time_schedule.length only
+
+// ✅ CORRECT — respects frequency via getDailyDoseRate()
+const expectedDaily = calculateExpectedDoses(protocols, 1) // 1 day
+// Internally: getDailyDoseRate() checks DOSE_RATE_MAP for frequency
+```
+
+**Source:** Sprint 6.1 Gemini review #300 (CRITICAL issue #1) — protocolRiskService + refillPredictionService both had this bug.
+
+### R-112: Adherence Must Sum `quantity_taken`, Not Count Logs [CRITICAL]
+**Rule:** Calculate adherence as `sum(log.quantity_taken) / expected_doses * 100`, NOT `count(logs) / expected_doses * 100`. A patient taking 2 pills per dose should not have 50% adherence when they take 1 log per day (2 pills/log).
+
+**Example:**
+```javascript
+// ❌ WRONG — counts log entries
+const adherence = (logs.length / expectedDoses) * 100
+// Patient: 14 doses expected, 7 logs with 2 pills each = 14 pills = 100% adherence
+// Calculation: 7 / 14 = 50% ❌
+
+// ✅ CORRECT — sums actual quantity
+const totalTaken = logs.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0)
+const adherence = (totalTaken / expectedDoses) * 100
+// Calculation: 14 / 14 = 100% ✅
+```
+
+**Source:** Sprint 6.1 Gemini review #300 (HIGH issue #2) — protocolRiskService.
+
+### R-113: Filter Logs by `protocol_id` Only, Never by `medicine_id` [CRITICAL]
+**Rule:** When filtering logs for a specific protocol, use ONLY `log.protocol_id === protocolId`. Never add an OR condition with `medicine_id`. A patient may have 2+ protocols for the same medicine (e.g., Losartana 50mg morning, Losartana 100mg evening), and filtering by `medicine_id` causes logs to bleed between protocols.
+
+```javascript
+// ❌ WRONG — collidion when 2 protocols share same medicine
+const protocolLogs = logs.filter(log =>
+  log.protocol_id === protocolId ||
+  log.medicine_id === protocol.medicine_id  // THIS CAUSES CROSS-PROTOCOL CONTAMINATION
+)
+
+// ✅ CORRECT — filters by protocol ID only
+const protocolLogs = logs.filter(log => log.protocol_id === protocolId)
+```
+
+**Impact:** Adherence and trend calculations become unreliable. One protocol's compliance history pollutes another's.
+
+**Source:** Sprint 6.1 Gemini review #300 (HIGH issue #5) — protocolRiskService.
+
+### R-114: Zero Hours on Date Boundaries for Timezone Consistency [HIGH]
+**Rule:** When setting date boundaries for filtering logs (e.g., "14 days ago"), explicitly call `.setHours(0, 0, 0, 0)` to zero the time. This prevents off-by-one errors when comparing local `new Date()` with ISO-string timestamps parsed as UTC.
+
+**Why it matters:** `new Date()` creates a local time, but `new Date(log.taken_at)` with ISO string creates UTC time. Without zeroing hours, comparisons can treat "2026-03-08T08:00:00-03:00" (local) differently than "2026-03-08T12:00:00Z" (UTC), causing ±1 day boundary errors.
+
+```javascript
+// ❌ RISKY — hours not zeroed, may have ±1 boundary errors
+const thirtyDaysAgo = new Date()
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+// ✅ SAFE — zeroed hours for consistent local comparison
+const thirtyDaysAgo = new Date()
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+thirtyDaysAgo.setHours(0, 0, 0, 0)  // Always zero for boundaries
+```
+
+**Source:** Sprint 6.1 Gemini review #300 (HIGH issue #2-#4) — both refillPredictionService and protocolRiskService.
+
+---
+
+*Last updated: 2026-03-08*
+*Rules: R-001 to R-114*
