@@ -533,28 +533,17 @@ export default function Dashboard({ onNavigate }) {
 
   const handleReminderSuggestionAccept = async (newTime) => {
     try {
-      // Obter protocolo atual para preservar todos os horários
       const protocol = rawProtocols.find(p => p.id === suggestionProtocolId)
       if (!protocol || !protocol.time_schedule) {
-        throw new Error('Protocolo não encontrado ou sem horários')
+        throw new Error('Protocolo ou horários não encontrados para a sugestão.')
       }
 
-      // Encontrar índice do horário sugerido no array atual
-      const currentScheduledTime = reminderSuggestion?.currentTime
-      const scheduleIndex = protocol.time_schedule.indexOf(currentScheduledTime)
+      // Substituir apenas o horário antigo pelo novo, preservando demais
+      const newTimeSchedule = protocol.time_schedule.map(time =>
+        time === reminderSuggestion.currentTime ? newTime : time
+      )
 
-      // Se o horário não estiver no array (edge case), adicionar o novo
-      let updatedSchedule
-      if (scheduleIndex >= 0) {
-        // Substituir apenas o horário específico
-        updatedSchedule = [...protocol.time_schedule]
-        updatedSchedule[scheduleIndex] = newTime
-      } else {
-        // Fallback: manter array original se horário não encontrado
-        updatedSchedule = protocol.time_schedule
-      }
-
-      await protocolService.update(suggestionProtocolId, { time_schedule: updatedSchedule })
+      await protocolService.update(suggestionProtocolId, { time_schedule: newTimeSchedule })
       setReminderSuggestion(null)
       setSuggestionProtocolId(null)
       refresh()

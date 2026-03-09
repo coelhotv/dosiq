@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import './AdherenceHeatmap.css'
 
 /**
@@ -25,13 +25,23 @@ export default function AdherenceHeatmap({ pattern }) {
   // States
   const [hoveredCell, setHoveredCell] = useState(null)
   const [touchedCell, setTouchedCell] = useState(null)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 380 : false
+  )
 
-  // Memos
-  const isMobile = useMemo(() => {
-    if (typeof window === 'undefined') return false
-    return window.innerWidth < 380
+  // Effects
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 380)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Memos
   const displayMode = useMemo(() => (isMobile ? 'stacked' : 'grid'), [isMobile])
 
   // Guard clause: dados insuficientes

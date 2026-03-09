@@ -48,11 +48,10 @@ export function analyzeReminderTiming({ protocol, logs }) {
 
     // Filtrar logs relevantes para este horário (dentro de 4h window)
     const relevantLogs = validLogs.filter(log => {
-      // Verificar se pertence a este protocolo/medicamento
-      const isRelevantMedicine = log.medicine_id === validProtocol.medicine_id
-      const isRelevantProtocol = log.protocol_id === validProtocol.id
+      // Apenas logs que correspondem ao ID do protocolo, ou que não têm ID de protocolo mas correspondem ao ID do medicamento.
+      const isMatch = log.protocol_id === validProtocol.id || (log.protocol_id == null && log.medicine_id === validProtocol.medicine_id)
 
-      if (!isRelevantMedicine && !isRelevantProtocol) {
+      if (!isMatch) {
         return false
       }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { medicineService, stockService, protocolService } from '@shared/services'
+import { parseLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
@@ -54,8 +55,8 @@ export default function Stock({ initialParams, onClearParams }) {
         let daysRemaining = null
 
         if (!isContinuous) {
-          const today = new Date()
-          const end = new Date(endDate + 'T00:00:00')
+          const today = parseLocalDate(new Date().toISOString().slice(0, 10))
+          const end = parseLocalDate(endDate)
           const diffTime = end - today
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
           daysRemaining = diffDays

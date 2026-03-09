@@ -67,7 +67,7 @@ function preprocessProtocolsExpected(protocols) {
       return
     }
 
-    const daysOfWeek = getDaysOfWeekForProtocol(protocol.frequency, protocol.start_date)
+    const daysOfWeek = getDaysOfWeekForProtocol(protocol.frequency)
 
     daysOfWeek.forEach((dayIndex) => {
       protocol.time_schedule.forEach((timeStr) => {
@@ -84,40 +84,16 @@ function preprocessProtocolsExpected(protocols) {
 /**
  * Retorna dias da semana esperados para um protocolo baseado em frequência
  * @param {string} frequency - Frequência do protocolo
- * @param {string} startDate - Data de início (YYYY-MM-DD) para calcular dias alternados
  * @returns {Array<number>} Array de índices de dias (0-6)
  */
-function getDaysOfWeekForProtocol(frequency, startDate = null) {
+function getDaysOfWeekForProtocol(frequency) {
   switch (frequency) {
     case 'diário':
       return [0, 1, 2, 3, 4, 5, 6] // Todos os dias
-    case 'dias_alternados': {
-      // Calcular padrão baseado em start_date
-      let startDayIndex = 0 // Padrão: começando domingo
-      if (startDate) {
-        try {
-          const startDateObj = new Date(startDate + 'T00:00:00Z')
-          startDayIndex = startDateObj.getUTCDay()
-        } catch {
-          // Fallback em caso de erro de parsing
-          startDayIndex = 0
-        }
-      }
-      // Retornar dias alternados começando de startDayIndex
-      return [startDayIndex, (startDayIndex + 2) % 7, (startDayIndex + 4) % 7, (startDayIndex + 6) % 7]
-    }
-    case 'semanal': {
-      // Dia da semana da start_date (padrão: domingo)
-      if (startDate) {
-        try {
-          const startDateObj = new Date(startDate + 'T00:00:00Z')
-          return [startDateObj.getUTCDay()]
-        } catch {
-          return [0]
-        }
-      }
-      return [0]
-    }
+    case 'dias_alternados':
+      return [0, 2, 4, 6] // Padrão: dias pares
+    case 'semanal':
+      return [0] // Uma vez por semana (domingo)
     case 'quando_necessário':
     case 'personalizado':
       return [] // Não contar doses esperadas para esses casos
@@ -151,7 +127,7 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
     Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: 0 }))
   )
 
-  // Pré-processar protocolos para obter doses esperadas
+  // Pré-processar protocolos para obter doses esperadas (por dia da semana)
   const expectedMap = preprocessProtocolsExpected(protocols)
 
   // Contar doses tomadas por célula
@@ -164,19 +140,39 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
     grid[dayIndex][periodIndex].taken += log.quantity_taken
   })
 
-  // Preencher expected e calcular adherence
+  // Contar quantas vezes cada dia da semana ocorre nos logs
+  const dayOccurrences = [0, 0, 0, 0, 0, 0, 0]
+  const uniqueDates = new Set()
+  logs.forEach((log) => {
+    const logDate = new Date(log.taken_at)
+    const dateStr = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}-${String(logDate.getDate()).padStart(2, '0')}`
+    if (!uniqueDates.has(dateStr)) {
+      uniqueDates.add(dateStr)
+      const dayIndex = logDate.getDay()
+      dayOccurrences[dayIndex] += 1
+    }
+  })
+
+  // Preencher expected e calcular adherence (normalizado)
   for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
     for (let periodIndex = 0; periodIndex < 4; periodIndex++) {
-      const expected = expectedMap[dayIndex][periodIndex]
+      const expectedPerDay = expectedMap[dayIndex][periodIndex]
+      const occurrences = dayOccurrences[dayIndex]
+      const totalExpected = expectedPerDay * occurrences
       const taken = grid[dayIndex][periodIndex].taken
 
-      grid[dayIndex][periodIndex].expected = expected
+      // Armazenar expected (por dia) no grid
+      grid[dayIndex][periodIndex].expected = expectedPerDay
 
-      if (expected > 0) {
-        grid[dayIndex][periodIndex].adherence = Math.min(100, Math.round((taken / expected) * 100))
-      } else {
+      if (totalExpected > 0) {
+        // Calcular adherence normalizando: (taken / totalExpected) * 100
+        grid[dayIndex][periodIndex].adherence = Math.min(100, Math.round((taken / totalExpected) * 100))
+      } else if (expectedPerDay === 0) {
         // Se não há doses esperadas neste período, considerar como 100%
         grid[dayIndex][periodIndex].adherence = 100
+      } else if (occurrences === 0) {
+        // Se o dia não ocorre nos logs, não calcular adherence
+        grid[dayIndex][periodIndex].adherence = null
       }
     }
   }
