@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { medicineService, stockService, protocolService } from '@shared/services'
+import { parseLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
@@ -7,7 +8,9 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import StockForm from '@stock/components/StockForm'
 import StockCard from '@stock/components/StockCard'
 import CostChart from '@stock/components/CostChart'
+import PrescriptionTimeline from '@features/stock/components/PrescriptionTimeline'
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
+import { PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
 import './Stock.css'
 
 export default function Stock({ initialParams, onClearParams }) {
@@ -38,6 +41,55 @@ export default function Stock({ initialParams, onClearParams }) {
     // Calcular custos
     return calculateMonthlyCosts(medicinesWithStock, protocols)
   }, [medicines, protocols, stockData])
+
+  // Processar protocolos para PrescriptionTimeline (EV-07)
+  const prescriptionTimelineData = useMemo(() => {
+    if (protocols.length === 0) return []
+
+    return protocols
+      .filter((p) => p.active)
+      .map((p) => {
+        const endDate = p.end_date
+        const isContinuous = !endDate
+        let status = PRESCRIPTION_STATUS.VIGENTE
+        let daysRemaining = null
+
+        if (!isContinuous) {
+          const today = parseLocalDate(new Date().toISOString().slice(0, 10))
+          const end = parseLocalDate(endDate)
+          const diffTime = end - today
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          daysRemaining = diffDays
+
+          if (diffDays < 0) {
+            status = PRESCRIPTION_STATUS.VENCIDA
+          } else if (diffDays <= 30) {
+            status = PRESCRIPTION_STATUS.VENCENDO
+          }
+        }
+
+        return {
+          id: p.id,
+          name: p.name,
+          startDate: p.start_date,
+          endDate: p.end_date,
+          status,
+          daysRemaining,
+        }
+      })
+      .sort((a, b) => {
+        // Ordenar: vencidas, vencendo, depois vigentes (com deadline antes)
+        const statusOrder = { vencida: 0, vencendo: 1, vigente: 2 }
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status]
+        }
+        // Se mesmo status, ordenar por daysRemaining (menor primeiro)
+        if (a.daysRemaining !== null && b.daysRemaining !== null) {
+          return a.daysRemaining - b.daysRemaining
+        }
+        return 0
+      })
+  }, [protocols])
 
   // 3. Effects
   const loadData = async () => {
@@ -276,6 +328,28 @@ export default function Stock({ initialParams, onClearParams }) {
                     daysRemaining={stock.daysRemaining}
                     isLow={false}
                     dailyIntake={stock.dailyIntake}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prescrições — EV-07 */}
+          {prescriptionTimelineData.length > 0 && (
+            <div className="stock-section fade-in">
+              <h3 className="section-title">
+                📋 Prescrições
+                <span className="section-subtitle">Status de validade dos protocolos</span>
+              </h3>
+              <div className="stock-prescriptions">
+                {prescriptionTimelineData.map((p) => (
+                  <PrescriptionTimeline
+                    key={p.id}
+                    name={p.name}
+                    startDate={p.startDate}
+                    endDate={p.endDate}
+                    status={p.status}
+                    daysRemaining={p.daysRemaining}
                   />
                 ))}
               </div>
