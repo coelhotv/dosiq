@@ -6,6 +6,7 @@ import { protocolService } from '@shared/services'
 import { medicineService } from '@medications/services/medicineService'
 import Button from '@shared/components/ui/Button'
 import Modal from '@shared/components/ui/Modal'
+import ProtocolForm from '@protocols/components/ProtocolForm'
 import TreatmentPlanCard from './treatment/TreatmentPlanCard'
 import ProtocolListItem from './treatment/ProtocolListItem'
 import MedicineOrphanCard from './treatment/MedicineOrphanCard'
@@ -27,6 +28,7 @@ export default function Treatment({ onNavigate }) {
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  const [protocolToEdit, setProtocolToEdit] = useState(null)
 
   const { medicines, protocols, refresh } = useDashboard()
 
@@ -96,9 +98,9 @@ export default function Treatment({ onNavigate }) {
 
   const handleEditProtocol = useCallback(
     (protocol) => {
-      onNavigate('protocols', { editId: protocol.id })
+      setProtocolToEdit(protocol)
     },
-    [onNavigate]
+    []
   )
 
   const handlePauseProtocol = useCallback(
@@ -304,6 +306,20 @@ export default function Treatment({ onNavigate }) {
           onComplete={handleWizardComplete}
           onCancel={() => setIsWizardOpen(false)}
         />
+      </Modal>
+
+      {/* Modal de edição de protocolo */}
+      <Modal isOpen={!!protocolToEdit} onClose={() => setProtocolToEdit(null)}>
+        {protocolToEdit && (
+          <ProtocolForm
+            initialProtocol={protocolToEdit}
+            onComplete={() => {
+              setProtocolToEdit(null)
+              refresh()
+            }}
+            onCancel={() => setProtocolToEdit(null)}
+          />
+        )}
       </Modal>
     </div>
   )
