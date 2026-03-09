@@ -289,13 +289,13 @@ export const logService = {
    * and 23:59:59 Brazil = 02:59:59 UTC next day.
    */
   getByDateRange: async (startDate, endDate, limit = 50, offset = 0) => {
-    // Convert Brazil dates to UTC timestamps
+    // Convert Brazil dates to UTC timestamps (ISO 8601 format with Z)
     // startDate 00:00:00 Brazil = startDate 03:00:00 UTC
-    const startUtc = `${startDate}T03:00:00`
+    const startUtc = `${startDate}T03:00:00Z`
     // endDate 23:59:59 Brazil = (endDate + 1 day) 02:59:59 UTC
     const endDateObj = new Date(endDate + 'T00:00:00')
     endDateObj.setDate(endDateObj.getDate() + 1)
-    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59'
+    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59Z'
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
