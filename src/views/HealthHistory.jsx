@@ -3,6 +3,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
 import { adherenceService } from '@services/api/adherenceService'
+import { analyzeAdherencePatterns } from '@adherence/services/adherencePatternService'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
@@ -10,6 +11,7 @@ import LogForm from '@shared/components/log/LogForm'
 import LogEntry from '@shared/components/log/LogEntry'
 import CalendarWithMonthCache from '@shared/components/ui/CalendarWithMonthCache'
 import SparklineAdesao from '@dashboard/components/SparklineAdesao'
+import AdherenceHeatmap from '@adherence/components/AdherenceHeatmap'
 import './HealthHistory.css'
 
 const TIMELINE_PAGE_SIZE = 30
@@ -26,6 +28,7 @@ export default function HealthHistory({ onNavigate }) {
   const [totalLogs, setTotalLogs] = useState(0)
   const [adherenceSummary, setAdherenceSummary] = useState(null)
   const [dailyAdherence, setDailyAdherence] = useState([])
+  const [adherencePattern, setAdherencePattern] = useState(null)
   // Timeline: lista plana das últimas doses, paginadas por offset
   const [timelineLogs, setTimelineLogs] = useState([])
   const [timelineHasMore, setTimelineHasMore] = useState(false)
@@ -57,6 +60,22 @@ export default function HealthHistory({ onNavigate }) {
       )
     })
   }, [currentMonthLogs, selectedCalendarDate])
+
+  const adherencePatternData = useMemo(() => {
+    try {
+      if (timelineLogs.length > 0 && protocols.length > 0) {
+        const pattern = analyzeAdherencePatterns({
+          logs: timelineLogs,
+          protocols: protocols.filter((p) => p.active),
+        })
+        return pattern
+      }
+      return null
+    } catch (err) {
+      console.error('Erro ao analisar padrões de adesão:', err)
+      return null
+    }
+  }, [timelineLogs, protocols])
 
   // Effects
   const loadData = useCallback(async () => {
@@ -100,6 +119,10 @@ export default function HealthHistory({ onNavigate }) {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  useEffect(() => {
+    setAdherencePattern(adherencePatternData)
+  }, [adherencePatternData])
 
   // Handlers
   const handleCalendarLoadMonth = useCallback(async (year, month) => {
@@ -259,6 +282,14 @@ export default function HealthHistory({ onNavigate }) {
           </div>
         )}
       </div>
+
+      {/* Heatmap de Adesão */}
+      {adherencePattern && (
+        <div className="health-history-heatmap glass-card">
+          <h3 className="health-history-section-title">Padrões de Adesão</h3>
+          <AdherenceHeatmap pattern={adherencePattern} />
+        </div>
+      )}
 
       {/* Sparkline 30d */}
       {dailyAdherence.length > 0 && (
