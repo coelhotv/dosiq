@@ -978,12 +978,33 @@ export default function ReminderSuggestion({
 
 ### Quality Gate Sprint 6.4
 
-- [ ] Service analisa deltas e sugere horario
-- [ ] Componente exibe sugestao com 3 acoes (ajustar/manter/nunca)
-- [ ] localStorage persiste dispensa (30d ou permanente)
-- [ ] Max 1 sugestao por vez no Dashboard
-- [ ] Testes >= 90% cobertura
-- [ ] Branch: `feature/fase-6/sprint-4-reminder-optimizer`
+- [x] Service analisa deltas e sugere horario
+- [x] Componente exibe sugestao com 3 acoes (ajustar/manter/nunca)
+- [x] localStorage persiste dispensa (30d ou permanente)
+- [x] Max 1 sugestao por vez no Dashboard
+- [x] Testes >= 90% cobertura
+- [x] Branch: `feature/fase-6/sprint-4-reminder-optimizer`
+
+### Status da Entrega — Sprint 6.4
+
+**Status:** ✅ CONCLUÍDO E MERGED
+
+| Item | Status | Commit |
+|------|--------|--------|
+| `analyzeReminderTiming()` com delta analysis | ✅ | bbaa587 |
+| ReminderSuggestion component (3 actions) | ✅ | bbaa587 |
+| localStorage dismissal (30d + permanent) | ✅ | bbaa587 |
+| Zod validation (AnalyzeReminderTimingInputSchema) | ✅ | bbaa587 |
+| Otimização: pré-processamento de logs O(N*M)→O(N) | ✅ | bbaa587 |
+| Dashboard integração + handleReminderSuggestionAccept | ✅ | bbaa587 |
+| Testes: 502/502 passando | ✅ | bbaa587 |
+
+**Gemini Code Review:** 3/3 sugestões implementadas
+- Remover dismissSuggestion redundante em handleAccept
+- Otimizar parsing de logs com processedLogs array
+- Sincronizar schema com logSchema (.datetime(), .positive().max(100))
+
+**Merged:** 09/03/2026 — Commit bbaa587 (PR #315)
 
 ---
 
@@ -1131,14 +1152,39 @@ export default function PrescriptionTimeline({ protocols, onProtocolClick }) {
 
 ### Quality Gate Sprint 6.5
 
-- [ ] AdherenceHeatmap renderiza grid 7x4 com cores
-- [ ] Narrativa automatica do pior horario
-- [ ] Heatmap so aparece com >= 21 dias de dados
-- [ ] PrescriptionTimeline mostra barras com status colorido
-- [ ] Timeline com marcador "hoje" e labels de tempo restante
-- [ ] Mobile responsivo (grid → lista em < 380px)
-- [ ] Testes >= 90% para services
-- [ ] Branch: `feature/fase-6/sprint-5-heatmap-timeline`
+- [x] AdherenceHeatmap renderiza grid 7x4 com cores
+- [x] Narrativa automatica do pior horario
+- [x] Heatmap so aparece com >= 21 dias de dados
+- [x] PrescriptionTimeline mostra barras com status colorido
+- [x] Timeline com marcador "hoje" e labels de tempo restante
+- [x] Mobile responsivo (grid → lista em < 380px)
+- [x] Testes >= 90% para services
+- [x] Branch: `feature/fase-6/sprint-5-heatmap-timeline`
+
+### Status da Entrega — Sprint 6.5
+
+**Status:** ✅ CONCLUÍDO E MERGED
+
+| Item | Status | Commit |
+|------|--------|--------|
+| `analyzeAdherencePatterns()` com normalização | ✅ | 3a12ff8 |
+| AdherenceHeatmap grid 7x4 (desktop) | ✅ | 3a12ff8 |
+| AdherenceHeatmap stacked cards (mobile <380px) | ✅ | 3a12ff8 |
+| CSS media queries responsivo (puro CSS, sem JS) | ✅ | 3a12ff8 |
+| Narrativa automática do pior horário | ✅ | 3a12ff8 |
+| StockTimeline com history e time-to-expire | ✅ | 3a12ff8 |
+| Zod schemas (adherencePatternSchema) | ✅ | 3a12ff8 |
+| Testes: 502/502 passando | ✅ | 3a12ff8 |
+
+**Gemini Code Review:** 5+ sugestões implementadas
+- Corrigir cálculo de aderência (multiplicar expected por day occurrences)
+- Preservar todos horários em time_schedule (usar .map() não array replacement)
+- Filtrar logs estritamente por protocol_id (não OR logic)
+- CSS-only responsiveness (remover isMobile useState+useEffect)
+- Consolidar narrativa (não duplicar em grid e stacked)
+- Sincronizar timezone handling (parseLocalDate consistente)
+
+**Merged:** 09/03/2026 — Commit 3a12ff8 (PR #319)
 
 ---
 
