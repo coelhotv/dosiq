@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import './AdherenceHeatmap.css'
 
 /**
@@ -146,7 +146,6 @@ export default function AdherenceHeatmap({ pattern }) {
             💡 {pattern.narrative}
           </div>
         )}
-      </div>
       </div>
 
       {/* Stacked: Mobile (<380px) */}
