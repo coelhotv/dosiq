@@ -22,13 +22,14 @@ describe('adherencePatternService', () => {
       taken_at: `${dateStr}T${String(hour).padStart(2, '0')}:00:00Z`,
     })
 
-    const createProtocol = (id, medicineId, frequency = 'diário', timeSchedule = ['09:00', '21:00']) => ({
+    const createProtocol = (id, medicineId, frequency = 'diário', timeSchedule = ['09:00', '21:00'], startDate = '2026-02-22') => ({
       id,
       medicine_id: medicineId,
       name: `Medicamento ${id}`,
       frequency,
       time_schedule: timeSchedule,
       dosage_per_intake: 1,
+      start_date: startDate,
     })
 
     it('retorna hasEnoughData=false com < 21 dias de dados', () => {

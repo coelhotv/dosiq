@@ -67,7 +67,7 @@ function preprocessProtocolsExpected(protocols) {
       return
     }
 
-    const daysOfWeek = getDaysOfWeekForProtocol(protocol.frequency)
+    const daysOfWeek = getDaysOfWeekForProtocol(protocol.frequency, protocol.start_date)
 
     daysOfWeek.forEach((dayIndex) => {
       protocol.time_schedule.forEach((timeStr) => {
@@ -84,16 +84,40 @@ function preprocessProtocolsExpected(protocols) {
 /**
  * Retorna dias da semana esperados para um protocolo baseado em frequência
  * @param {string} frequency - Frequência do protocolo
+ * @param {string} startDate - Data de início (YYYY-MM-DD) para calcular dias alternados
  * @returns {Array<number>} Array de índices de dias (0-6)
  */
-function getDaysOfWeekForProtocol(frequency) {
+function getDaysOfWeekForProtocol(frequency, startDate = null) {
   switch (frequency) {
     case 'diário':
       return [0, 1, 2, 3, 4, 5, 6] // Todos os dias
-    case 'dias_alternados':
-      return [0, 2, 4, 6] // Padrão: dias pares
-    case 'semanal':
-      return [0] // Uma vez por semana (domingo)
+    case 'dias_alternados': {
+      // Calcular padrão baseado em start_date
+      let startDayIndex = 0 // Padrão: começando domingo
+      if (startDate) {
+        try {
+          const startDateObj = new Date(startDate + 'T00:00:00Z')
+          startDayIndex = startDateObj.getUTCDay()
+        } catch {
+          // Fallback em caso de erro de parsing
+          startDayIndex = 0
+        }
+      }
+      // Retornar dias alternados começando de startDayIndex
+      return [startDayIndex, (startDayIndex + 2) % 7, (startDayIndex + 4) % 7, (startDayIndex + 6) % 7]
+    }
+    case 'semanal': {
+      // Dia da semana da start_date (padrão: domingo)
+      if (startDate) {
+        try {
+          const startDateObj = new Date(startDate + 'T00:00:00Z')
+          return [startDateObj.getUTCDay()]
+        } catch {
+          return [0]
+        }
+      }
+      return [0]
+    }
     case 'quando_necessário':
     case 'personalizado':
       return [] // Não contar doses esperadas para esses casos
