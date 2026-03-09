@@ -24,7 +24,24 @@ export function analyzeReminderTiming({ protocol, logs }) {
   })
 
   if (!validationResult.success) {
-    console.error('[reminderOptimizerService] Validation error:', validationResult.error.issues)
+    // R-087: Structured Logging para debugging
+    const issues = validationResult.error.issues
+    const fieldErrors = issues.reduce((acc, issue) => {
+      const path = issue.path.join('.')
+      if (!acc[path]) acc[path] = []
+      acc[path].push({ code: issue.code, message: issue.message })
+      return acc
+    }, {})
+
+    console.error('[reminderOptimizerService] Validation failed:', {
+      timestamp: new Date().toISOString(),
+      context: 'analyzeReminderTiming',
+      protocol_id: protocol?.id,
+      logs_count: logs?.length,
+      error_by_field: fieldErrors,
+      first_log_sample: logs?.[0],
+      first_issue_details: issues[0]
+    })
     return null
   }
 
