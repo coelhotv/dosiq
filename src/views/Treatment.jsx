@@ -103,6 +103,14 @@ export default function Treatment({ onNavigate }) {
     []
   )
 
+  const handleSaveEditedProtocol = useCallback(
+    async (dataToSave) => {
+      const updated = await protocolService.update(protocolToEdit.id, dataToSave)
+      return updated
+    },
+    [protocolToEdit?.id]
+  )
+
   const handlePauseProtocol = useCallback(
     async (protocolId) => {
       try {
@@ -312,12 +320,19 @@ export default function Treatment({ onNavigate }) {
       <Modal isOpen={!!protocolToEdit} onClose={() => setProtocolToEdit(null)}>
         {protocolToEdit && (
           <ProtocolForm
-            initialProtocol={protocolToEdit}
-            onComplete={() => {
+            medicines={medicines || []}
+            treatmentPlans={treatmentPlans || []}
+            protocol={protocolToEdit}
+            onSave={async (dataToSave) => {
+              const updated = await handleSaveEditedProtocol(dataToSave)
               setProtocolToEdit(null)
               refresh()
+              return updated
             }}
             onCancel={() => setProtocolToEdit(null)}
+            mode="full"
+            showTitration={true}
+            showTreatmentPlan={true}
           />
         )}
       </Modal>
