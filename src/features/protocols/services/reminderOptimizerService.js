@@ -164,15 +164,31 @@ export function isSuggestionDismissed(protocolId) {
 export function dismissSuggestion(protocolId, permanent = false) {
   // Guard clause: ambiente não-browser
   if (typeof window === 'undefined') {
+    console.warn('[reminderOptimizerService] dismissSuggestion called in non-browser environment')
     return
   }
 
   const key = `optimizer_dismissed_${protocolId}`
-  localStorage.setItem(
-    key,
-    JSON.stringify({
-      timestamp: Date.now(),
+  const value = JSON.stringify({
+    timestamp: Date.now(),
+    permanent,
+  })
+
+  try {
+    localStorage.setItem(key, value)
+    console.log('[reminderOptimizerService] Suggestion dismissed:', {
+      protocolId,
+      key,
       permanent,
+      timestamp: new Date().toISOString(),
+      storageSize: Object.keys(localStorage).length,
     })
-  )
+  } catch (error) {
+    console.error('[reminderOptimizerService] Failed to dismiss suggestion:', {
+      protocolId,
+      key,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    })
+  }
 }
