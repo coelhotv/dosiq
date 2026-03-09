@@ -5,6 +5,16 @@
   padding: var(--space-3);
 }
 
+/* Desktop layout (visible by default) */
+.adherence-heatmap__grid-container {
+  display: block;
+}
+
+/* Mobile layout (hidden by default) */
+.adherence-heatmap__stacked-wrapper {
+  display: none;
+}
+
 .adherence-heatmap__container {
   display: table;
   width: 100%;
@@ -244,14 +254,14 @@
   }
 }
 
-/* Mobile < 380px — forçar layout stacked */
+/* Mobile < 380px — switch to stacked layout */
 @media (max-width: 379px) {
-  .adherence-heatmap__container {
+  .adherence-heatmap__grid-container {
     display: none;
   }
 
-  .adherence-heatmap--stacked .adherence-heatmap__stacked-container {
-    display: flex;
+  .adherence-heatmap__stacked-wrapper {
+    display: block;
   }
 }
 

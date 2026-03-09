@@ -139,49 +139,42 @@ export default function AdherenceHeatmap({ pattern }) {
             </div>
           )}
         </div>
-
-        {/* Narrativa (Grid) */}
-        {pattern.narrative && (
-          <div className="adherence-heatmap__narrative" role="status">
-            💡 {pattern.narrative}
-          </div>
-        )}
       </div>
 
       {/* Stacked: Mobile (<380px) */}
       <div className="adherence-heatmap__stacked-wrapper">
-      <div className="adherence-heatmap__stacked-container">
-        {pattern.grid.map((row, dayIndex) => (
-          <div key={dayIndex} className="adherence-heatmap__day-card">
-            <h4 className="adherence-heatmap__day-card-title">{DAY_NAMES[dayIndex]}</h4>
-            <div className="adherence-heatmap__day-card-periods">
-              {row.map((cell, periodIndex) => (
-                <div key={periodIndex} className="adherence-heatmap__period-bar">
-                  <span className="adherence-heatmap__period-name">{PERIOD_NAMES[periodIndex]}</span>
-                  <div className="adherence-heatmap__period-fill-bg">
-                    <div
-                      className="adherence-heatmap__period-fill"
-                      style={{
-                        width: `${cell.adherence}%`,
-                        backgroundColor: getCellColor(cell.adherence),
-                      }}
-                    />
+        <div className="adherence-heatmap__stacked-container">
+          {pattern.grid.map((row, dayIndex) => (
+            <div key={dayIndex} className="adherence-heatmap__day-card">
+              <h4 className="adherence-heatmap__day-card-title">{DAY_NAMES[dayIndex]}</h4>
+              <div className="adherence-heatmap__day-card-periods">
+                {row.map((cell, periodIndex) => (
+                  <div key={periodIndex} className="adherence-heatmap__period-bar">
+                    <span className="adherence-heatmap__period-name">{PERIOD_NAMES[periodIndex]}</span>
+                    <div className="adherence-heatmap__period-fill-bg">
+                      <div
+                        className="adherence-heatmap__period-fill"
+                        style={{
+                          width: `${cell.adherence}%`,
+                          backgroundColor: getCellColor(cell.adherence),
+                        }}
+                      />
+                    </div>
+                    <span className="adherence-heatmap__period-percent">{cell.adherence}%</span>
                   </div>
-                  <span className="adherence-heatmap__period-percent">{cell.adherence}%</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-        {/* Narrativa (Stacked) */}
-        {pattern.narrative && (
-          <div className="adherence-heatmap__narrative" role="status">
-            💡 {pattern.narrative}
-          </div>
-        )}
-      </div>
+      {/* Narrativa (única para ambos os layouts) */}
+      {pattern.narrative && (
+        <div className="adherence-heatmap__narrative" role="status">
+          💡 {pattern.narrative}
+        </div>
+      )}
     </div>
   )
 }
