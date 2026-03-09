@@ -693,12 +693,34 @@ export function calculateRealCosts({ medicines, protocols, logs }) {
 - Atualizar CostChart para mostrar badge "Baseado no consumo real" ou "Estimativa" conforme `isRealData`
 - Adicionar projecao 6 meses alem de 3
 
+### Status da Entrega — Sprint 6.2
+
+**Status:** ✅ CONCLUÍDO E MERGED
+
+| Item | Status | Commit |
+|------|--------|--------|
+| `calculateRealCosts()` implementado | ✅ | dd89448 |
+| Zod validation (`CalculateRealCostsInputSchema`) | ✅ | dd89448 |
+| Pré-processamento O(M+P+L) performance | ✅ | dd89448 |
+| `theoreticalDailyIntakeMap` pre-calc | ✅ | dd89448 |
+| CostChart: badge real/estimativa | ✅ | dd89448 |
+| CostChart: projeção 6m | ✅ | dd89448 |
+| Schema: `.nullable().optional()` e `??` operator | ✅ | dd89448 |
+| Testes: 502/502 passando | ✅ | dd89448 |
+
+**Gemini Code Review:** 3/3 sugestões implementadas
+- #312: Performance optimization (theoreticalDailyIntakeMap)
+- #313: Schema nullability (.nullable().optional())
+- #313: Null coalescing operator (??)
+
+**Merged:** 08/03/2026 — Commit dd89448f913db50594c268130e51769591f5b68c
+
 ### Quality Gate Sprint 6.2
 
-- [ ] `calculateRealCosts` implementado e testado
-- [ ] CostChart atualizado com indicador real/estimativa
-- [ ] Testes >= 90% cobertura
-- [ ] Branch: `feature/fase-6/sprint-2-cost-enhanced`
+- [x] `calculateRealCosts` implementado e testado
+- [x] CostChart atualizado com indicador real/estimativa
+- [x] Testes >= 90% cobertura
+- [x] Branch: `feature/fase-6/sprint-2-cost-enhanced` → merged to main
 
 ---
 
