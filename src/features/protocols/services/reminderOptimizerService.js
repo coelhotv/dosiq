@@ -1,0 +1,157 @@
+import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
+
+/**
+ * Analisa delta entre horário programado e horário real de tomada.
+ * Se o paciente consistentemente toma em horário diferente, sugere ajuste.
+ *
+ * @param {Object} params
+ * @param {Object} params.protocol - Protocolo com time_schedule
+ * @param {Array} params.logs - Logs de dose para este protocolo
+ * @returns {{
+ *   shouldSuggest: boolean,
+ *   currentTime: string,       // HH:MM programado
+ *   suggestedTime: string,     // HH:MM sugerido
+ *   avgDeltaMinutes: number,   // Delta médio em minutos
+ *   sampleCount: number,       // Quantas amostras usadas
+ *   direction: 'later'|'earlier'
+ * } | null}
+ */
+export function analyzeReminderTiming({ protocol, logs }) {
+  // Validação obrigatória com Zod
+  const validationResult = AnalyzeReminderTimingInputSchema.safeParse({
+    protocol,
+    logs,
+  })
+
+  if (!validationResult.success) {
+    console.error('[reminderOptimizerService] Validation error:', validationResult.error.issues)
+    return null
+  }
+
+  const { protocol: validProtocol, logs: validLogs } = validationResult.data
+
+  // Guardar clauses: sem time_schedule ou frequency inválida
+  if (!validProtocol.time_schedule || validProtocol.time_schedule.length === 0) {
+    return null
+  }
+
+  if (validProtocol.frequency === 'quando_necessario') {
+    return null
+  }
+
+  const suggestions = []
+
+  // Analisar cada horário programado
+  for (const scheduledTime of validProtocol.time_schedule) {
+    const [scheduledH, scheduledM] = scheduledTime.split(':').map(Number)
+    const scheduledMinutes = scheduledH * 60 + scheduledM
+
+    // Filtrar logs relevantes para este horário (dentro de 4h window)
+    const relevantLogs = validLogs.filter(log => {
+      // Apenas logs que correspondem ao ID do protocolo, ou que não têm ID de protocolo mas correspondem ao ID do medicamento.
+      const isMatch = log.protocol_id === validProtocol.id || (log.protocol_id == null && log.medicine_id === validProtocol.medicine_id)
+
+      if (!isMatch) {
+        return false
+      }
+
+      // Verificar se está dentro da janela de 4 horas
+      const logDate = new Date(log.taken_at)
+      const logMinutes = logDate.getHours() * 60 + logDate.getMinutes()
+      const delta = Math.abs(logMinutes - scheduledMinutes)
+
+      return delta < 240 // Dentro de 4h do horário programado
+    })
+
+    // Amostras insuficientes (< 10)
+    if (relevantLogs.length < 10) {
+      continue
+    }
+
+    // Calcular delta médio
+    const deltas = relevantLogs.map(log => {
+      const logDate = new Date(log.taken_at)
+      const logMinutes = logDate.getHours() * 60 + logDate.getMinutes()
+      return logMinutes - scheduledMinutes
+    })
+
+    const avgDelta = deltas.reduce((sum, d) => sum + d, 0) / deltas.length
+
+    // Sugerir apenas se |avgDelta| > 30 minutos
+    if (Math.abs(avgDelta) <= 30) {
+      continue
+    }
+
+    // Arredondar para 15 minutos
+    const suggestedMinutes = scheduledMinutes + Math.round(avgDelta / 15) * 15
+    const suggestedH = Math.floor(suggestedMinutes / 60) % 24
+    const suggestedM = suggestedMinutes % 60
+    const suggestedTime = `${String(suggestedH).padStart(2, '0')}:${String(suggestedM).padStart(2, '0')}`
+
+    suggestions.push({
+      shouldSuggest: true,
+      currentTime: scheduledTime,
+      suggestedTime,
+      avgDeltaMinutes: Math.round(avgDelta),
+      sampleCount: relevantLogs.length,
+      direction: avgDelta > 0 ? 'later' : 'earlier',
+    })
+  }
+
+  return suggestions.length > 0 ? suggestions[0] : null // Uma sugestão por vez
+}
+
+/**
+ * Verifica se a sugestão já foi dispensada pelo usuário.
+ * @param {string} protocolId
+ * @returns {boolean}
+ */
+export function isSuggestionDismissed(protocolId) {
+  // Guard clause: ambiente não-browser
+  if (typeof window === 'undefined') {
+    return true
+  }
+
+  const key = `optimizer_dismissed_${protocolId}`
+  const dismissed = localStorage.getItem(key)
+
+  if (!dismissed) {
+    return false
+  }
+
+  try {
+    const { timestamp, permanent } = JSON.parse(dismissed)
+
+    if (permanent) {
+      return true
+    }
+
+    // Dispensado por 30 dias
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+    return Date.now() - timestamp < thirtyDaysMs
+  } catch (error) {
+    console.error('[reminderOptimizerService] Error parsing dismissed suggestion:', error)
+    return true
+  }
+}
+
+/**
+ * Registra dispensa da sugestão.
+ * @param {string} protocolId
+ * @param {boolean} permanent - Se true, nunca mais sugerir
+ */
+export function dismissSuggestion(protocolId, permanent = false) {
+  // Guard clause: ambiente não-browser
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const key = `optimizer_dismissed_${protocolId}`
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      timestamp: Date.now(),
+      permanent,
+    })
+  )
+}

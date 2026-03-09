@@ -1,0 +1,155 @@
+.reminder-suggestion {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.reminder-suggestion__content {
+  margin-bottom: 12px;
+}
+
+.reminder-suggestion__text {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.reminder-suggestion__text strong {
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.reminder-suggestion__sample {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #6b7280);
+  font-style: italic;
+}
+
+.reminder-suggestion__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reminder-suggestion__button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 90px;
+}
+
+.reminder-suggestion__button--primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.reminder-suggestion__button--primary:hover {
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.reminder-suggestion__button--primary:active {
+  transform: translateY(0);
+}
+
+.reminder-suggestion__button--secondary {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-text-primary, #1f2937);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.reminder-suggestion__button--secondary:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.reminder-suggestion__button--tertiary {
+  background: transparent;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.85rem;
+  padding: 8px 8px;
+}
+
+.reminder-suggestion__button--tertiary:hover {
+  color: var(--color-text-primary, #1f2937);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Dark theme */
+[data-theme='dark'] .reminder-suggestion {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+[data-theme='dark'] .reminder-suggestion__text {
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .reminder-suggestion__text strong {
+  color: #f3f4f6;
+}
+
+[data-theme='dark'] .reminder-suggestion__sample {
+  color: #9ca3af;
+}
+
+[data-theme='dark'] .reminder-suggestion__button--secondary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #e5e7eb;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme='dark'] .reminder-suggestion__button--secondary:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+[data-theme='dark'] .reminder-suggestion__button--tertiary {
+  color: #9ca3af;
+}
+
+[data-theme='dark'] .reminder-suggestion__button--tertiary:hover {
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .reminder-suggestion {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .reminder-suggestion__text {
+    font-size: 0.9rem;
+  }
+
+  .reminder-suggestion__button {
+    padding: 7px 10px;
+    font-size: 0.85rem;
+  }
+
+  .reminder-suggestion__actions {
+    gap: 6px;
+  }
+}

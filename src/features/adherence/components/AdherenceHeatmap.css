@@ -1,0 +1,303 @@
+/* AdherenceHeatmap - Padrões de adesão por dia e período */
+
+.adherence-heatmap {
+  width: 100%;
+  padding: var(--space-3);
+}
+
+/* Desktop layout (visible by default) */
+.adherence-heatmap__grid-container {
+  display: block;
+}
+
+/* Mobile layout (hidden by default) */
+.adherence-heatmap__stacked-wrapper {
+  display: none;
+}
+
+.adherence-heatmap__container {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+/* Cabeçalho com nomes de períodos */
+.adherence-heatmap__header {
+  display: table-row;
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.adherence-heatmap__corner {
+  display: table-cell;
+  padding: var(--space-2);
+  width: 80px;
+  text-align: left;
+}
+
+.adherence-heatmap__period-header {
+  display: table-cell;
+  padding: var(--space-2);
+  text-align: center;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
+.adherence-heatmap__period-header:last-child {
+  border-right: none;
+}
+
+/* Linhas da grid */
+.adherence-heatmap__row {
+  display: table-row;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.adherence-heatmap__row:last-child {
+  border-bottom: none;
+}
+
+/* Labels de dias */
+.adherence-heatmap__day-label {
+  display: table-cell;
+  padding: var(--space-2);
+  width: 80px;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border-right: 1px solid var(--border-color);
+}
+
+/* Células da grid */
+.adherence-heatmap__cell {
+  display: table-cell;
+  padding: var(--space-2);
+  text-align: center;
+  cursor: pointer;
+  border-right: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  position: relative;
+  min-width: 60px;
+  min-height: 50px;
+}
+
+.adherence-heatmap__cell:last-child {
+  border-right: none;
+}
+
+.adherence-heatmap__cell:hover,
+.adherence-heatmap__cell:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  z-index: 10;
+}
+
+.adherence-heatmap__cell--active {
+  outline: 2px solid var(--color-primary);
+}
+
+.adherence-heatmap__cell-text {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-inverse);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Tooltip para desktop (hover) */
+.adherence-heatmap__tooltip {
+  position: fixed;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  transform: translate(-50%, -120%);
+}
+
+/* Tooltip para mobile (persistente) */
+.adherence-heatmap__tooltip--mobile {
+  position: static;
+  display: block;
+  margin-top: var(--space-2);
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Narrativa */
+.adherence-heatmap__narrative {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Estado vazio */
+.adherence-heatmap--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.adherence-heatmap__empty-message {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--space-4);
+}
+
+/* ===== STACKED LAYOUT (mobile < 380px) ===== */
+
+.adherence-heatmap--stacked .adherence-heatmap__stacked-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adherence-heatmap__day-card {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-color);
+}
+
+.adherence-heatmap__day-card-title {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.adherence-heatmap__day-card-periods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adherence-heatmap__period-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.adherence-heatmap__period-name {
+  flex: 0 0 70px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.adherence-heatmap__period-fill-bg {
+  flex: 1;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.adherence-heatmap__period-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.adherence-heatmap__period-percent {
+  flex: 0 0 35px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
+/* Tablets e laptops */
+@media (max-width: 768px) {
+  .adherence-heatmap__cell {
+    padding: var(--space-1);
+    min-width: 50px;
+  }
+
+  .adherence-heatmap__cell-text {
+    font-size: 10px;
+  }
+
+  .adherence-heatmap__day-label {
+    width: 70px;
+    font-size: 12px;
+    padding: var(--space-1);
+  }
+
+  .adherence-heatmap__period-header {
+    font-size: 11px;
+    padding: var(--space-1);
+  }
+
+  .adherence-heatmap__corner {
+    width: 70px;
+    padding: var(--space-1);
+  }
+}
+
+/* Mobile < 380px — switch to stacked layout */
+@media (max-width: 379px) {
+  .adherence-heatmap__grid-container {
+    display: none;
+  }
+
+  .adherence-heatmap__stacked-wrapper {
+    display: block;
+  }
+}
+
+/* Animação de entrada */
+@keyframes heatmapFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.adherence-heatmap {
+  animation: heatmapFadeIn 0.3s ease-out;
+}
+
+/* Touch targets (acessibilidade) */
+.adherence-heatmap__cell {
+  min-height: 44px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .adherence-heatmap__tooltip {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+}
+
+/* Print styles */
+@media print {
+  .adherence-heatmap__tooltip,
+  .adherence-heatmap__tooltip--mobile {
+    display: none;
+  }
+}

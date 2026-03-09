@@ -38,6 +38,12 @@ import AdaptiveLayout from '@dashboard/components/AdaptiveLayout'
 import ViewModeToggle from '@dashboard/components/ViewModeToggle'
 import { useDoseZones } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
+import ReminderSuggestion from '@features/protocols/components/ReminderSuggestion'
+import {
+  analyzeReminderTiming,
+  isSuggestionDismissed,
+} from '@features/protocols/services/reminderOptimizerService'
+import { cachedProtocolService as protocolService } from '@shared/services'
 import styles from './Dashboard.module.css'
 
 // Constante para chave de armazenamento de alertas snoozed
@@ -70,6 +76,9 @@ export default function Dashboard({ onNavigate }) {
   const [, setIsAdherenceLoading] = useState(true)
 
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
+  const [reminderSuggestion, setReminderSuggestion] = useState(null)
+  const [suggestionProtocolId, setSuggestionProtocolId] = useState(null)
+  const [suggestionProtocolName, setSuggestionProtocolName] = useState('')
 
   // Rastreamentos de alertas silenciados (snoozed) pelo usuário - declarado antes do useMemo que o utiliza
   // Estrutura: Map<alertId, { snoozedAt: timestamp, expiresAt: timestamp, scheduledTime: string }>
@@ -483,6 +492,72 @@ export default function Dashboard({ onNavigate }) {
       .sort((a) => (a.severity === 'critical' ? -1 : 1))
   }, [rawProtocols, logs, stockSummary, isDoseInToleranceWindow, snoozedAlerts])
 
+  // 4. Reminder Suggestion — Otimizador de Horários (Sprint 6.4 I03)
+  // Analisa deltas entre horário programado e real, sugere ajuste se |avgDelta| > 30 min
+  const computedReminder = useMemo(() => {
+    if (!rawProtocols || rawProtocols.length === 0 || !logs || logs.length === 0) {
+      return null
+    }
+
+    // Encontrar primeiro protocolo com sugestão válida (que não foi dispensada)
+    for (const protocol of rawProtocols) {
+      if (isSuggestionDismissed(protocol.id)) {
+        continue
+      }
+
+      const suggestion = analyzeReminderTiming({
+        protocol,
+        logs,
+      })
+
+      if (suggestion) {
+        return { suggestion, protocolId: protocol.id, protocolName: protocol.name }
+      }
+    }
+
+    return null
+  }, [rawProtocols, logs])
+
+  // Atualizar estado de reminder sugestão quando computado mudar
+  useEffect(() => {
+    if (computedReminder) {
+      setReminderSuggestion(computedReminder.suggestion)
+      setSuggestionProtocolId(computedReminder.protocolId)
+      setSuggestionProtocolName(computedReminder.protocolName)
+    } else {
+      setReminderSuggestion(null)
+      setSuggestionProtocolId(null)
+      setSuggestionProtocolName('')
+    }
+  }, [computedReminder])
+
+  const handleReminderSuggestionAccept = async (newTime) => {
+    try {
+      const protocol = rawProtocols.find(p => p.id === suggestionProtocolId)
+      if (!protocol || !protocol.time_schedule) {
+        throw new Error('Protocolo ou horários não encontrados para a sugestão.')
+      }
+
+      // Substituir apenas o horário antigo pelo novo, preservando demais
+      const newTimeSchedule = protocol.time_schedule.map(time =>
+        time === reminderSuggestion.currentTime ? newTime : time
+      )
+
+      await protocolService.update(suggestionProtocolId, { time_schedule: newTimeSchedule })
+      setReminderSuggestion(null)
+      setSuggestionProtocolId(null)
+      refresh()
+    } catch (err) {
+      console.error('[Dashboard] Erro ao atualizar horário do protocolo:', err)
+      alert('Erro ao atualizar horário. Tente novamente.')
+    }
+  }
+
+  const handleReminderSuggestionDismiss = () => {
+    setReminderSuggestion(null)
+    setSuggestionProtocolId(null)
+  }
+
   const handleRegisterDose = async (medicineId, protocolId, quantityTaken = 1) => {
     try {
       await logService.create({
@@ -572,6 +647,17 @@ export default function Dashboard({ onNavigate }) {
           sparklineData={dailyAdherence}
           onClick={() => setIsHealthDetailsOpen(true)}
         />
+
+        {/* Reminder Suggestion — Otimizador de Horários (Sprint 6.4 I03) */}
+        {reminderSuggestion && suggestionProtocolId && (
+          <ReminderSuggestion
+            suggestion={reminderSuggestion}
+            protocolId={suggestionProtocolId}
+            protocolName={suggestionProtocolName}
+            onAccept={handleReminderSuggestionAccept}
+            onDismiss={handleReminderSuggestionDismiss}
+          />
+        )}
       </header>
 
       {/* Insight Card - Dinâmico baseado em dados do usuário */}
