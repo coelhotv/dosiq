@@ -123,9 +123,15 @@ git checkout -b feature/fase-N/descriptive-name
 
 **Goal**: Production-ready code following project patterns.
 
+⚠️ **CRITICAL: If implementing services, Zod validation is NON-NEGOTIABLE**
+- Every service function that accepts parameters MUST use Zod `.safeParse()`
+- Define schema in `src/schemas/{serviceName}Schema.js` FIRST
+- Import and validate in service function (never manual validation)
+- Code review will flag any `Array.isArray()` or `typeof` checks as violations
+
 #### 2.1 Order of Changes
-1. **Schemas first** (`src/schemas/`) — define contracts
-2. **Services** (`src/features/*/services/`) — reusable logic
+1. **Schemas first** (`src/schemas/`) — define contracts (REQUIRED for services)
+2. **Services** (`src/features/*/services/`) — reusable logic (with Zod validation)
 3. **Components** (`src/features/*/components/`) — UI
 4. **Views** (`src/views/`) — orchestration
 5. **Tests** (`__tests__/`) — coverage
@@ -154,17 +160,35 @@ if (!data) return null
 return <div>...</div>
 ```
 
-**Zod Schemas**:
+**Zod Schemas & Service Validation** (REQUIRED for all services):
 ```javascript
+// 1. Define schema in src/schemas/{service}Schema.js
+export const CalculateXyzInputSchema = z.object({
+  param1: z.string().min(1, 'param1 obrigatório'),
+  param2: z.array(SomeSchema).optional().default([]),
+})
+
+// 2. ALWAYS use .safeParse() in service function (NEVER manual validation)
+export function calculateXyz(params) {
+  const validation = CalculateXyzInputSchema.safeParse(params)
+  if (!validation.success) {
+    console.error('Erro de validação em calculateXyz:', validation.error.format())
+    return { error: true, data: null } // or sensible default
+  }
+
+  // 3. Use validated data (renamed for clarity)
+  const { param1, param2 } = validation.data
+  // ... implementation using validated params
+}
+
+// ❌ NEVER do this (manual validation):
+// if (!Array.isArray(items) || !items.length) return null
+
 // Enums in PORTUGUESE
 export const FREQUENCIES = ['diário', 'semanal', 'quando_necessário']
 
 // Nullable fields: .nullable().optional() (never just .optional())
 field: z.string().nullable().optional()
-
-// Non-blocking validation
-const result = schema.safeParse(data)
-if (!result.success) { /* handle errors */ }
 ```
 
 **Semantic Commits**:
@@ -185,12 +209,14 @@ test(scope): test-only
 - [ ] Create `__tests__/{Component}.test.js`
 - [ ] Mock Supabase if using service
 
-**✓ New Service**:
-- [ ] Create `{name}Service.js`
-- [ ] Export object with public methods
-- [ ] Use `.safeParse()` for validation
+**✓ New Service** (REQUIRED Zod validation):
+- [ ] Create `{name}Schema.js` in `src/schemas/` FIRST (define input contract)
+- [ ] Create `{name}Service.js` in `src/features/*/services/`
+- [ ] **Import schema and use `schema.safeParse()` in EVERY public function** (non-negotiable)
+- [ ] Export service object with public methods
 - [ ] Add test file (100% happy path coverage)
-- [ ] Document return types
+- [ ] Document return types in JSDoc
+- [ ] Verify no manual validation (❌ `Array.isArray()`, `typeof x === 'string'`) exists
 
 **✓ Modify Existing**:
 - [ ] **Read file BEFORE Edit** (preserve indentation)
@@ -206,15 +232,18 @@ test(scope): test-only
 
 #### 2.4 Anti-Patterns to Avoid
 
-| Anti-Pattern | Fix |
-|-------------|-----|
-| `new Date('YYYY-MM-DD')` | Use `parseLocalDate('YYYY-MM-DD')` |
-| `.optional()` for nullable | Use `.nullable().optional()` |
-| Inline styles `style={{}}` | Extract to CSS class |
-| Guard clause before hooks | Move after all hooks |
-| `setTimeout` in `act()` | Use `waitFor(() => expect(...))` |
-| Mocks after imports | Place mocks at TOP of test file |
-| localStorage in tests | Check `NODE_ENV === 'test'` |
+| Anti-Pattern | Fix | Why |
+|-------------|-----|-----|
+| `new Date('YYYY-MM-DD')` | Use `parseLocalDate('YYYY-MM-DD')` | Timezone bugs |
+| `.optional()` for nullable | Use `.nullable().optional()` | Fails on null values |
+| Inline styles `style={{}}` | Extract to CSS class | Breaks consistency |
+| Guard clause before hooks | Move after all hooks | React rules violation |
+| `setTimeout` in `act()` | Use `waitFor(() => expect(...))` | Race conditions |
+| Mocks after imports | Place mocks at TOP of test file | Import interception fails |
+| localStorage in tests | Check `NODE_ENV === 'test'` | Data pollution |
+| **Manual validation in services** | **Always use Zod `.safeParse()`** | **Inconsistent, fragile, violates project pattern** |
+| `Array.isArray()` for validation | Define schema + import in service | Code review finds gaps |
+| `typeof x === 'string'` checks | Use Zod `.string()` in schema | Misses edge cases |
 
 ---
 

@@ -2,7 +2,9 @@ import {
   CalculateMonthlyCostsInputSchema,
   CalculateDailyIntakeInputSchema,
   CalculateAvgUnitPriceInputSchema,
+  CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
+import { formatLocalDate } from '@utils/dateUtils'
 
 /**
  * Serviço de análise de custo de tratamento.
@@ -155,6 +157,124 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
  */
 export function calculateProjection(monthlyCost, months = 3) {
   return monthlyCost * months
+}
+
+/**
+ * Calcula custos usando consumo REAL (logs de doses).
+ * Fallback para consumo teórico se dados insuficientes (<14 dias).
+ *
+ * @param {Object} params
+ * @param {Array} params.medicines - Medicamentos com stock[] embarcado
+ * @param {Array} params.protocols - Protocolos ativos
+ * @param {Array} params.logs - Logs de doses (últimos 30 dias)
+ * @returns {{
+ *   items: Array<{medicineId, name, dailyConsumption, avgUnitPrice, monthlyCost, isRealData, hasPriceData}>,
+ *   totalMonthly: number,
+ *   projection3m: number,
+ *   projection6m: number,
+ *   isRealData: boolean
+ * }}
+ */
+export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }) {
+  // Validar entrada
+  const validation = CalculateRealCostsInputSchema.safeParse({ medicines, protocols, logs })
+  if (!validation.success) {
+    console.error('Erro de validação em calculateRealCosts:', validation.error.format())
+    return { items: [], totalMonthly: 0, projection3m: 0, projection6m: 0, isRealData: false }
+  }
+
+  const { medicines: validatedMedicines, protocols: validatedProtocols, logs: validatedLogs } = validation.data
+
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  // OTIMIZAÇÃO: Pré-processar dados para evitar O(M*P + M*L) → O(M + P + L)
+  // Mapa de protocolos ativos por medicamento
+  const activeMedicineIds = new Set()
+  const protocolsByMedicine = {}
+  validatedProtocols.forEach(p => {
+    if (p.active && p.medicine_id) {
+      activeMedicineIds.add(p.medicine_id)
+      if (!protocolsByMedicine[p.medicine_id]) {
+        protocolsByMedicine[p.medicine_id] = []
+      }
+      protocolsByMedicine[p.medicine_id].push(p)
+    }
+  })
+
+  // Mapa de logs por medicamento (com pré-filtro de data)
+  const logsByMedicine = {}
+  validatedLogs.forEach(l => {
+    if (l.medicine_id && new Date(l.taken_at) >= thirtyDaysAgo) {
+      if (!logsByMedicine[l.medicine_id]) {
+        logsByMedicine[l.medicine_id] = []
+      }
+      logsByMedicine[l.medicine_id].push(l)
+    }
+  })
+
+  // Mapa pré-calculado de consumo teórico diário por medicamento
+  // Evita O(M*P) dentro do loop: calcular consumo diário para cada med em O(P) uma única vez
+  const theoreticalDailyIntakeMap = {}
+  validatedProtocols.forEach(p => {
+    if (p.active && p.medicine_id) {
+      const intakesPerDay = p.time_schedule?.length || 0
+      const dosagePerIntake = p.dosage_per_intake || 0
+      const protocolDailyIntake = dosagePerIntake * intakesPerDay
+      theoreticalDailyIntakeMap[p.medicine_id] = (theoreticalDailyIntakeMap[p.medicine_id] || 0) + protocolDailyIntake
+    }
+  })
+
+  const items = validatedMedicines
+    .filter(med => activeMedicineIds.has(med.id))
+    .map(med => {
+      const medLogs = logsByMedicine[med.id] || []
+      const avgUnitPrice = calculateAvgUnitPrice(med.stock || [])
+
+      // Consumo real vs teórico
+      const daysWithData = new Set(
+        medLogs.map(l => formatLocalDate(new Date(l.taken_at)))
+      ).size
+
+      let dailyConsumption
+      let isRealData
+
+      if (daysWithData >= 14) {
+        // Consumo real: total de comprimidos consumidos / dias com dados
+        const totalConsumed = medLogs.reduce((sum, l) => sum + (l.quantity_taken ?? 0), 0)
+        dailyConsumption = daysWithData > 0 ? totalConsumed / daysWithData : 0
+        isRealData = true
+      } else {
+        // Fallback: consumo teórico baseado no mapa pré-calculado
+        dailyConsumption = theoreticalDailyIntakeMap[med.id] || 0
+        isRealData = false
+      }
+
+      const monthlyCost = dailyConsumption * avgUnitPrice * 30
+
+      return {
+        medicineId: med.id,
+        name: med.name,
+        dailyConsumption: Math.round(dailyConsumption * 100) / 100,
+        avgUnitPrice,
+        monthlyCost: Math.round(monthlyCost * 100) / 100,
+        isRealData,
+        hasPriceData: avgUnitPrice > 0,
+      }
+    })
+    .filter(item => item.monthlyCost > 0 || !item.hasPriceData)
+    .sort((a, b) => b.monthlyCost - a.monthlyCost)
+
+  const totalMonthly = items.reduce((sum, item) => sum + item.monthlyCost, 0)
+  const isRealData = items.some(i => i.isRealData)
+
+  return {
+    items,
+    totalMonthly: Math.round(totalMonthly * 100) / 100,
+    projection3m: calculateProjection(totalMonthly, 3),
+    projection6m: calculateProjection(totalMonthly, 6),
+    isRealData,
+  }
 }
 
 /**

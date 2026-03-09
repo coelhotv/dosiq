@@ -34,9 +34,11 @@ const barVariants = {
  * @param {Array<{name: string, monthlyCost: number}>} items - Custo mensal por med
  * @param {number} totalMonthly - Total mensal (soma)
  * @param {number} [projection3m] - Projeção 3 meses
+ * @param {number} [projection6m] - Projeção 6 meses
+ * @param {boolean} [isRealData] - Se baseado em consumo real (true) ou estimativa (false)
  * @param {Function} [onExpand] - Expandir para detalhes
  */
-export default function CostChart({ items = [], totalMonthly = 0, projection3m, onExpand }) {
+export default function CostChart({ items = [], totalMonthly = 0, projection3m, projection6m, isRealData = false, onExpand }) {
   const hasData = items.length > 0 && totalMonthly > 0
 
   if (!hasData) {
@@ -55,7 +57,12 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
   return (
     <div className="cost-chart">
       <div className="cost-chart__header">
-        <span className="cost-chart__header-label">$ CUSTO MENSAL</span>
+        <div className="cost-chart__header-left">
+          <span className="cost-chart__header-label">$ CUSTO MENSAL</span>
+          <span className={`cost-chart__badge cost-chart__badge--${isRealData ? 'real' : 'estimate'}`}>
+            {isRealData ? 'Consumo real' : 'Estimativa'}
+          </span>
+        </div>
         <span className="cost-chart__header-total">{formatBRL(totalMonthly)}</span>
       </div>
 
@@ -82,10 +89,20 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
         })}
       </motion.div>
 
-      {projection3m != null && (
-        <div className="cost-chart__projection">
-          <span className="cost-chart__projection-label">Projeção 3m:</span>
-          <span className="cost-chart__projection-value">{formatBRL(projection3m)}</span>
+      {(projection3m != null || projection6m != null) && (
+        <div className="cost-chart__projections">
+          {projection3m != null && (
+            <div className="cost-chart__projection">
+              <span className="cost-chart__projection-label">Projeção 3m:</span>
+              <span className="cost-chart__projection-value">{formatBRL(projection3m)}</span>
+            </div>
+          )}
+          {projection6m != null && (
+            <div className="cost-chart__projection">
+              <span className="cost-chart__projection-label">Projeção 6m:</span>
+              <span className="cost-chart__projection-value">{formatBRL(projection6m)}</span>
+            </div>
+          )}
         </div>
       )}
 
