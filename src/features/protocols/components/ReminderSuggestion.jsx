@@ -25,7 +25,6 @@ export default function ReminderSuggestion({
 
   const handleAccept = () => {
     onAccept(suggestion.suggestedTime)
-    dismissSuggestion(protocolId, false)
   }
 
   const handleKeep = () => {
