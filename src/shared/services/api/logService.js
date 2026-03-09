@@ -3,12 +3,27 @@ import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
 
 /**
+ * Normaliza timestamps Supabase para formato Zod-compatível
+ * Converte '+00:00' para 'Z' para passar validação z.string().datetime()
+ */
+function normalizeTimestamps(logs) {
+  if (!logs) return logs
+  if (!Array.isArray(logs)) return logs
+
+  return logs.map((log) => ({
+    ...log,
+    taken_at: log.taken_at ? log.taken_at.replace(/\+00:00$/, 'Z') : log.taken_at,
+  }))
+}
+
+/**
  * Log Service - Medicine intake logging
  *
  * VALIDAÇÃO ZOD:
  * - Todos os dados de entrada são validados antes de enviar ao Supabase
  * - Erros de validação retornam mensagens em português
  * - Nenhum payload inválido é enviado ao backend
+ * - Timestamps Supabase são normalizados de '+00:00' para 'Z' (R-120)
  */
 export const logService = {
   /**
@@ -29,7 +44,7 @@ export const logService = {
       .limit(limit)
 
     if (error) throw error
-    return data
+    return normalizeTimestamps(data)
   },
 
   /**
@@ -51,7 +66,7 @@ export const logService = {
       .limit(limit)
 
     if (error) throw error
-    return data
+    return normalizeTimestamps(data)
   },
 
   /**
@@ -96,7 +111,7 @@ export const logService = {
       throw new Error('Remédio registrado, mas erro ao atualizar estoque: ' + stockError.message)
     }
 
-    return data
+    return normalizeTimestamps([data])[0]
   },
 
   /**
@@ -211,7 +226,7 @@ export const logService = {
 
     if (error) throw error
 
-    return data
+    return normalizeTimestamps([data])[0]
   },
 
   /**
@@ -272,7 +287,7 @@ export const logService = {
     if (error) throw error
 
     return {
-      data: data || [],
+      data: normalizeTimestamps(data) || [],
       total: count || 0,
       hasMore: offset + limit < (count || 0),
     }
@@ -316,7 +331,7 @@ export const logService = {
     if (error) throw error
 
     return {
-      data: data || [],
+      data: normalizeTimestamps(data) || [],
       total: count || 0,
       hasMore: offset + limit < (count || 0),
     }
@@ -352,7 +367,7 @@ export const logService = {
     if (error) throw error
 
     return {
-      data: data || [],
+      data: normalizeTimestamps(data) || [],
       total: count || 0,
     }
   },

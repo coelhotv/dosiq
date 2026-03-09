@@ -38,6 +38,9 @@ export default function HealthHistory({ onNavigate }) {
   // Context
   const { protocols, stats, refresh } = useDashboard()
 
+  // Estados adicionais para análise de padrões
+  const [allLogsForAnalysis, setAllLogsForAnalysis] = useState([])
+
   // Memos
   const treatmentPlans = useMemo(() => {
     const planMap = new Map()
@@ -63,9 +66,11 @@ export default function HealthHistory({ onNavigate }) {
 
   const adherencePatternData = useMemo(() => {
     try {
-      if (timelineLogs.length > 0 && protocols.length > 0) {
+      // Usar TODOS os logs históricos para análise de padrões (não apenas os últimos 30 da timeline)
+      // Isso garante que o AdherenceHeatmap possa detectar padrões ao longo de >21 dias
+      if (allLogsForAnalysis.length > 0 && protocols.length > 0) {
         const pattern = analyzeAdherencePatterns({
-          logs: timelineLogs,
+          logs: allLogsForAnalysis,
           protocols: protocols.filter((p) => p.active),
         })
         return pattern
@@ -75,7 +80,7 @@ export default function HealthHistory({ onNavigate }) {
       console.error('Erro ao analisar padrões de adesão:', err)
       return null
     }
-  }, [timelineLogs, protocols])
+  }, [allLogsForAnalysis, protocols])
 
   // Effects
   const loadData = useCallback(async () => {
@@ -84,10 +89,11 @@ export default function HealthHistory({ onNavigate }) {
       setError(null)
       const now = new Date()
 
-      // Calendário: logs do mês atual
-      const [logsResult, timelineResult] = await Promise.all([
+      // Calendário: logs do mês atual + Timeline: últimos 30 logs + Análise: TODOS os logs históricos
+      const [logsResult, timelineResult, allLogsResult] = await Promise.all([
         logService.getByMonth(now.getFullYear(), now.getMonth()),
         logService.getAllPaginated(TIMELINE_PAGE_SIZE, 0),
+        logService.getAll(5000), // Buscar até 5000 logs para análise de padrões históricos
       ])
 
       setCurrentMonthLogs(logsResult.data || [])
@@ -95,6 +101,7 @@ export default function HealthHistory({ onNavigate }) {
       setTimelineLogs(timelineResult.data || [])
       setTimelineHasMore(timelineResult.hasMore || false)
       setTimelineOffset(TIMELINE_PAGE_SIZE)
+      setAllLogsForAnalysis(allLogsResult || [])
 
       if (logsResult.data?.length > 0) {
         setSelectedCalendarDate(new Date(logsResult.data[0].taken_at))
