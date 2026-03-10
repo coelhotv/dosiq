@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useMemo } from 'react'
+import React, { createContext, useContext, useMemo, useEffect, useState } from 'react'
 import { useCachedQueries } from '@shared/hooks/useCachedQuery'
+import { invalidateCache } from '@shared/utils/queryCache'
+import { getUserId } from '@shared/utils/supabase'
 import {
   calculateAdherenceStats,
   getNextDoseTime,
@@ -22,6 +24,9 @@ const DashboardContext = createContext(null)
  * garantir consistência de dados e "custo zero" de queries extras.
  */
 export function DashboardProvider({ children }) {
+  // Monitora mudanças de autenticação para invalidar cache após login
+  const [lastUserId, setLastUserId] = useState(null)
+
   const thirtyDaysAgo = useMemo(() => {
     const date = new Date()
     date.setDate(date.getDate() - 30)
@@ -55,6 +60,27 @@ export function DashboardProvider({ children }) {
   )
 
   const { results, isLoading, isFetching, hasError, refetchAll } = useCachedQueries(queries)
+
+  // Detecta mudanças de autenticação e invalida cache para refetch automático
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUserId = await getUserId()
+        if (lastUserId !== null && lastUserId !== currentUserId) {
+          // Usuário mudou (login/logout) — invalida todo o cache
+          invalidateCache('medicines:list')
+          invalidateCache('protocols:active')
+          invalidateCache('logs:last30d')
+          refetchAll({ force: true })
+        }
+        setLastUserId(currentUserId)
+      } catch (err) {
+        // Silencioso: erro ao obter UserId
+      }
+    }
+
+    checkAuth()
+  }, [lastUserId, refetchAll])
 
   const [medicinesResult, protocolsResult, logsResult] = results
 
