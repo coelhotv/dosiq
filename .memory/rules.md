@@ -861,7 +861,48 @@ thirtyDaysAgo.setHours(0, 0, 0, 0)  // Always zero for boundaries
 
 **Source:** Sprint 6.1 Gemini review #300 (HIGH issue #2-#4) — both refillPredictionService and protocolRiskService.
 
+### R-115: React Virtuoso for Long Lists on Mobile [HIGH]
+**Rule:** Lists with 30+ items destined for mobile should use `react-virtuoso` instead of `.map()`. Always configure: `useWindowScroll`, `overscan={300}`, `endReached` callback for pagination. Wrap items with `React.memo` using custom comparison for log.id + critical fields.
+
+```javascript
+// ❌ WRONG — renders all N items even if only 10 visible
+{logs.map((log) => (
+  <LogEntry key={log.id} log={log} onEdit={onEdit} onDelete={onDelete} />
+))}
+
+// ✅ CORRECT — renders only visible + overscan, lazy-loads on endReached
+<Virtuoso
+  useWindowScroll
+  data={logs}
+  endReached={handleLoadMore}
+  overscan={300}
+  itemContent={(_index, log) => (
+    <LogEntry log={log} onEdit={onEdit} onDelete={onDelete} />
+  )}
+  components={{
+    Footer: () => isLoading ? <div>Carregando...</div> : null,
+  }}
+/>
+
+// Wrap component with React.memo + custom comparison
+const areEqual = (prev, next) =>
+  prev.log.id === next.log.id &&
+  prev.log.status === next.log.status &&
+  prev.log.quantity_taken === next.log.quantity_taken
+
+export default memo(LogEntry, areEqual)
+```
+
+**Impact:**
+- FPS during scroll: < 50fps → ≥ 55fps (CPU 4x throttle)
+- DOM nodes: N → ~10 (only visible + overscan)
+- Heap memory: significant reduction for long histories
+
+**Dependencies:** Handlers (`onEdit`, `onDelete`) MUST be wrapped in `useCallback` so Virtuoso doesn't re-render on parent updates.
+
+**Source:** Sprint M1 (mobile performance tuning, HealthHistory.jsx timeline).
+
 ---
 
-*Last updated: 2026-03-08*
-*Rules: R-001 to R-114*
+*Last updated: 2026-03-10*
+*Rules: R-001 to R-115*
