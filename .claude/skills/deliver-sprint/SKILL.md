@@ -468,6 +468,9 @@ Progress: 80% → 95% (or 100% if final)
 ```
 
 #### 7.2 Create/Update Journal
+
+Long-term project memories and journals are stored in the `/.memory/` directory. Does not create any memory outside of this specific project folder.
+
 ```bash
 # .memory/journal/YYYY-WWW.md (YYYY=year, WWW=ISO week 01-53)
 
