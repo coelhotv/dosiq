@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-08 | **Version:** v3.2.0+ | **Fase:** 6 (Portabilidade, Performance, Monetização)
+**Last Updated:** 2026-03-10 | **Version:** v3.2.0+ | **Fase:** 6 (Portabilidade, Performance, Monetização)
 
 ---
 
@@ -88,6 +88,17 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 - **New Anti-Patterns:** AP-A01 to AP-A04 (corresponding preventions)
 - **Timeline:** 190 min (setup + analysis + implementation + validation + docs)
 - **Journal:** 2026-W10.md (comprehensive sprint analysis, errors learned, challenges resolved)
+
+#### **Sprint M0 — Mobile Performance: Emergency Fixes (HealthHistory Freezes)** ✅ DELIVERED
+- **Status:** MERGED (commit `6f4be85`, PR #339)
+- **Quality:** 539/539 tests ✅ | 0 lint errors ✅ | Gemini #340, #341 applied + closed
+- **Freeze Diagnosis:** 4 cascading freezes (parse/compile, eager IntersectionObserver, Sparkline paint, sync O(n))
+- **Solutions:** `lazy()` + `<Suspense>`, `startTransition()`, `useMemo` for inline calcs, sentinel repositioning
+- **New Anti-Patterns:** AP-P01 to AP-P03 (Mobile performance patterns)
+- **New Rules:** R-115 to R-117 (lazy imports, IntersectionObserver positioning, startTransition)
+- **Gemini Suggestions:** #340 (formatLocalDate), #341 (logging in catch)
+- **Timeline:** 110 min (setup + 7 corrections + Gemini fixes + validation + merge)
+- **Journal:** 2026-W11-m0-sprint.md (detailed impact analysis + metrics)
 
 ---
 

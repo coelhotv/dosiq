@@ -112,5 +112,15 @@
 
 ---
 
-*Last updated: 2026-03-08*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04*
+## Mobile Performance Anti-Patterns (Sprint M0 — 2026-03-10)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-P01 | IntersectionObserver sentinel positioned before fold + rootMargin high | `rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becomes eager load | Position sentinel **AFTER all visible content** (end of JSX); reduce `rootMargin` to `<= 50px` | R-115 |
+| AP-P02 | Synchronous import of component >200 lines in mobile-critical view | Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g., `SparklineAdesao` 518 ln) | Use `React.lazy()` + `<Suspense fallback>` for components >200 lines in view-level JSX | R-116 |
+| AP-P03 | O(n) synchronous computation in useMemo with n>100 | `analyzeAdherencePatterns` + Zod validation on 500 objects in useMemo = Main Thread freeze, UI unresponsive 200-400ms | Wrap in `startTransition(() => { setState(heavyComputation()) })` to allow React to pause between frames | R-117 |
+
+---
+
+*Last updated: 2026-03-10*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P03*
