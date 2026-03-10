@@ -414,9 +414,7 @@ git commit -m "fix(saude): eliminar freezes de abertura da view Health History
 - Remover useEffect redundante que copiava memo para state
 
 Resolve freezes #0 (parse/compile), #1 (IntersectionObserver imediato),
-#2 (SparklineAdesao paint), #3 (analyzeAdherencePatterns síncrono).
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+#2 (SparklineAdesao paint), #3 (analyzeAdherencePatterns síncrono)."
 ```
 
 ---
@@ -464,6 +462,8 @@ A view "Saúde" trava ao ser aberta no iPhone 13 (Safari e Chrome) devido a 3 fr
 Aguardar Gemini Code Assist review. Resolver **todos** os issues CRITICAL e HIGH antes do merge (R-062, AP-021).
 
 Se Gemini questionar o uso de `useTransition` para `setDailyAdherence` (argumento que o dado é "urgente"): o tradeoff é intencional — o SparklineAdesao tem 518 linhas e causa freeze mensurável. A percepção do usuário de "dado demorou 1 frame extra" é melhor que "UI travou 300ms".
+
+**Merge somente após aprovação EXPLÍCITA do usuário/ profissional de produto!**
 
 ---
 
@@ -672,9 +672,7 @@ git commit -m "feat(saude): virtualizar timeline de doses com react-virtuoso
 - Substituir .map() por Virtuoso com useWindowScroll para performance mobile
 - Carregamento automático ao final (endReached) substitui botão 'Ver mais'
 - Envolver LogEntry com React.memo e comparação customizada (id+status+quantity)
-- overscan=300 para pré-renderização suave sem jank
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+- overscan=300 para pré-renderização suave sem jank"
 ```
 
 ---
@@ -876,9 +874,7 @@ git commit -m "feat(app): code splitting por view com lazy() e manualChunks
 - Views pesadas (HealthHistory, Stock, Protocols, AdminDlq, Landing) via lazy()
 - Dashboard mantido como eager (view padrão do cold start)
 - ViewSkeleton como fallback de Suspense durante carregamento de chunk
-- manualChunks no vite: vendor-framer, vendor-supabase, vendor-virtuoso, feature-history
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+- manualChunks no vite: vendor-framer, vendor-supabase, vendor-virtuoso, feature-history"
 ```
 
 ---
@@ -1034,9 +1030,7 @@ git commit -m "chore(db): índices compostos e view de adesão para performance 
 - v_daily_adherence: view de aggregação server-side para futura migração do getDailyAdherence
 - Constraint chk_medication_logs_status: previne status inválidos
 
-EXPLAIN ANALYZE: Index Scan confirmado, <10ms com 10k logs.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+EXPLAIN ANALYZE: Index Scan confirmado, <10ms com 10k logs."
 ```
 
 ---
@@ -1192,9 +1186,7 @@ git commit -m "feat(pwa): banner de status offline para conexões instáveis
 - CSS com contain: layout style para evitar layout thrash
 
 Contexto: conexões 4G instáveis são frequentes no Brasil em trânsito.
-Usuário recebe feedback imediato ao invés de spinner eterno.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+Usuário recebe feedback imediato ao invés de spinner eterno."
 ```
 
 ---
