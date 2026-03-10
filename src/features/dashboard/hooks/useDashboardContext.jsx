@@ -74,7 +74,7 @@ export function DashboardProvider({ children }) {
           refetchAll({ force: true })
         }
         setLastUserId(currentUserId)
-      } catch (err) {
+      } catch {
         // Silencioso: erro ao obter UserId
       }
     }
