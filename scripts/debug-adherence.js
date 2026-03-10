@@ -34,118 +34,11 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false }
 })
 
-/**
- * Copia da função analyzeAdherencePatterns para debug standalone
- */
+// Importar função do serviço para evitar duplicação de código
+import { analyzeAdherencePatterns } from '../src/features/adherence/services/adherencePatternService.js'
+
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
-
-const PERIOD_HOURS = [
-  { start: 0, end: 6 },   // Madrugada
-  { start: 6, end: 12 },  // Manhã
-  { start: 12, end: 18 }, // Tarde
-  { start: 18, end: 24 }, // Noite
-]
-
-function getPeriodIndex(hour) {
-  if (hour < 6) return 0
-  if (hour < 12) return 1
-  if (hour < 18) return 2
-  return 3
-}
-
-function getDaysOfWeekForProtocol(frequency) {
-  switch (frequency) {
-    case 'diário':
-      return [0, 1, 2, 3, 4, 5, 6]
-    case 'dias_alternados':
-      return [0, 2, 4, 6]
-    case 'semanal':
-      return [0]
-    case 'quando_necessário':
-    case 'personalizado':
-      return []
-    default:
-      return []
-  }
-}
-
-function preprocessProtocolsExpected(protocols) {
-  const expectedMap = {}
-  for (let day = 0; day < 7; day++) {
-    expectedMap[day] = { 0: 0, 1: 0, 2: 0, 3: 0 }
-  }
-
-  protocols.forEach((protocol) => {
-    if (!protocol.time_schedule || protocol.time_schedule.length === 0) {
-      return
-    }
-
-    const daysOfWeek = getDaysOfWeekForProtocol(protocol.frequency)
-    daysOfWeek.forEach((dayIndex) => {
-      protocol.time_schedule.forEach((timeStr) => {
-        const [hour] = timeStr.split(':').map(Number)
-        const periodIndex = getPeriodIndex(hour)
-        expectedMap[dayIndex][periodIndex] += 1
-      })
-    })
-  })
-
-  return expectedMap
-}
-
-function analyzeAdherencePatterns({ logs, protocols }) {
-  const grid = Array.from({ length: 7 }, () =>
-    Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: 0 }))
-  )
-
-  const expectedMap = preprocessProtocolsExpected(protocols)
-
-  // Contar doses tomadas (CONTAR REGISTROS, NÃO COMPRIMIDOS)
-  // Cada registro = 1 dose tomada (independente de quantity_taken)
-  logs.forEach((log) => {
-    const logDate = new Date(log.taken_at)
-    const dayIndex = logDate.getDay()
-    const hour = logDate.getHours()
-    const periodIndex = getPeriodIndex(hour)
-    grid[dayIndex][periodIndex].taken += 1  // Incrementar 1 por dose, não quantity_taken
-  })
-
-  // Contar ocorrências de dias
-  const dayOccurrences = [0, 0, 0, 0, 0, 0, 0]
-  const uniqueDates = new Set()
-  logs.forEach((log) => {
-    const logDate = new Date(log.taken_at)
-    const dateStr = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}-${String(logDate.getDate()).padStart(2, '0')}`
-    if (!uniqueDates.has(dateStr)) {
-      uniqueDates.add(dateStr)
-      const dayIndex = logDate.getDay()
-      dayOccurrences[dayIndex] += 1
-    }
-  })
-
-  // Calcular adherence
-  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-    for (let periodIndex = 0; periodIndex < 4; periodIndex++) {
-      const expectedPerDay = expectedMap[dayIndex][periodIndex]
-      const occurrences = dayOccurrences[dayIndex]
-      const totalExpected = expectedPerDay * occurrences
-      const taken = grid[dayIndex][periodIndex].taken
-
-      grid[dayIndex][periodIndex].expected = expectedPerDay
-
-      if (totalExpected > 0) {
-        grid[dayIndex][periodIndex].adherence = Math.min(100, Math.round((taken / totalExpected) * 100))
-      } else if (expectedPerDay === 0) {
-        grid[dayIndex][periodIndex].adherence = null
-      } else if (occurrences === 0) {
-        grid[dayIndex][periodIndex].adherence = null
-      }
-    }
-  }
-
-  return { grid, expectedMap, dayOccurrences }
-}
 
 async function main() {
   const userIdArg = process.argv[2]
@@ -236,26 +129,26 @@ async function main() {
     )
     console.log(JSON.stringify(hourQuantities, null, 2))
 
-    // Análise por período
+    // Análise por período (otimizada para 1 iteração em vez de 4 filter calls)
     console.log('\n📊 LOGS POR PERÍODO\n')
     const logsByPeriod = {
-      'Madrugada (00-05h)': logs.filter(l => {
-        const h = new Date(l.taken_at).getHours()
-        return h < 6
-      }).length,
-      'Manhã (06-11h)': logs.filter(l => {
-        const h = new Date(l.taken_at).getHours()
-        return h >= 6 && h < 12
-      }).length,
-      'Tarde (12-17h)': logs.filter(l => {
-        const h = new Date(l.taken_at).getHours()
-        return h >= 12 && h < 18
-      }).length,
-      'Noite (18-23h)': logs.filter(l => {
-        const h = new Date(l.taken_at).getHours()
-        return h >= 18 && h < 24
-      }).length,
+      'Madrugada (00-05h)': 0,
+      'Manhã (06-11h)': 0,
+      'Tarde (12-17h)': 0,
+      'Noite (18-23h)': 0,
     }
+    logs.forEach(l => {
+      const h = new Date(l.taken_at).getHours()
+      if (h < 6) {
+        logsByPeriod['Madrugada (00-05h)']++
+      } else if (h < 12) {
+        logsByPeriod['Manhã (06-11h)']++
+      } else if (h < 18) {
+        logsByPeriod['Tarde (12-17h)']++
+      } else {
+        logsByPeriod['Noite (18-23h)']++
+      }
+    })
     console.log(JSON.stringify(logsByPeriod, null, 2))
 
     // Calcular padrão

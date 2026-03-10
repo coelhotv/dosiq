@@ -134,8 +134,8 @@ export default function HealthHistory({ onNavigate }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Evitar múltiplas requisições: só disparar quando não estamos carregando
-        if (entry.isIntersecting && !isLoadingPatterns) {
+        // Evitar múltiplas requisições: só disparar quando não estamos carregando E dados ainda não foram carregados
+        if (entry.isIntersecting && !isLoadingPatterns && !adherencePattern) {
           setIsLoadingPatterns(true)
           logService
             .getAll(500)
@@ -150,21 +150,22 @@ export default function HealthHistory({ onNavigate }) {
                     protocols: activeProtocols,
                   })
                   setAdherencePattern(pattern)
+                  // Desconectar observer após sucesso para evitar requisições redundantes
+                  observer.disconnect()
                 }
               } catch (err) {
-                // Log apenas em dev para diagnosticar erros de cálculo (sem exposição de PHI)
-                if (process.env.NODE_ENV === 'development') {
-                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message)
-                }
+                // Log erros em produção para diagnóstico, sem exposição de PHI
+                console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message, err)
               }
             })
             .catch((err) => {
-              if (process.env.NODE_ENV === 'development') {
-                console.error('[HealthHistory] Falha ao buscar logs:', err.message)
-              }
+              // Log erros em produção para diagnóstico
+              console.error('[HealthHistory] Falha ao buscar logs:', err.message, err)
             })
             .finally(() => {
-              console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
+              }
               setIsLoadingPatterns(false)
             })
         }
@@ -179,7 +180,7 @@ export default function HealthHistory({ onNavigate }) {
       observer.disconnect()
       observerRef.current = null
     }
-  }, [protocols, isLoadingPatterns])
+  }, [protocols, isLoadingPatterns, adherencePattern])
 
   // Handlers
   const showSuccess = useCallback((msg) => {
