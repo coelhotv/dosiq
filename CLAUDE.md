@@ -49,7 +49,12 @@ server/bot/          # Telegram bot
   utils/             # Helpers
 plans/               # PRDs, specs de execucao, roadmap
 docs/                # Documentacao do projeto
-.memory/             # Memoria do projeto (regras, anti-patterns, knowledge)
+.memory/             # Memoria de longo prazo do projeto (CANONICA — arquivos persistem entre sessoes)
+  rules.md           #   - Regras positivas (R-NNN) — padroes que funcionam neste projeto
+  anti-patterns.md   #   - Anti-patterns (AP-NNN) — erros a evitar, licoes aprendidas
+  knowledge.md       #   - Domain facts (APIs, schemas, arquitetura)
+  journal/           #   - Entregas e sprints (YYYY-WWW.md, uma entrada por semana)
+    MEMORY.md        #   - Index de longo prazo (max 200 linhas, resumido)
 ```
 
 ---
@@ -214,25 +219,50 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 ## Learning Loops (Memoria de Longo Prazo)
 
+**CRITICO:** Memoria de longo prazo vive em `/.memory/` **DENTRO DO PROJETO**, nao em structs externas (/.claude/projects/...).
+
 **Obrigatorio:** Ao final de qualquer sessao de desenvolvimento, antes de commitar, perguntar:
 > *"Cometi algum erro que um proximo agente repetiria? Aprendi algum padrao novo?"*
 
+### Estrutura de Memoria (CANONICA)
+
+```
+.memory/
+  rules.md                    # Regras positivas: R-001, R-002, ... R-NNN
+  anti-patterns.md            # Armadilhas: AP-001, AP-T01, AP-S01, AP-P01, etc.
+  knowledge.md                # Domain facts (APIs, schemas, arquitetura, integracoes)
+  journal/
+    2026-W11.md              # Sprint W11 (YYYY-WWW.md = year-week)
+    2026-W12.md
+  MEMORY.md                   # Auto-memory resumido (max 200 linhas, index only)
+```
+
 ### Quando registrar
-| Situacao | Acao |
-|----------|------|
-| Corrigi um bug causado por um padrao errado | Adicionar anti-pattern em `.memory/anti-patterns.md` |
-| Descobri que uma abordagem X falha neste projeto | Adicionar regra preventiva em `.memory/rules.md` |
-| A spec tinha caminho de arquivo errado | Anotar no journal + regra de processo |
-| Usei tecnica nova que funcionou bem | Regra positiva em `rules.md` |
-| Entregai feature/fase completa | Entrada no `.memory/journal/YYYY-WWW.md` |
+| Situacao | Acao | Arquivo |
+|----------|------|---------|
+| Corrigi bug causado por padrao errado | Adicionar novo item | `anti-patterns.md` |
+| Descobri abordagem X que falha | Regra preventiva | `rules.md` |
+| Entreguei feature/sprint/fase | Journal entry (YYYY-WWW.md) | `journal/` |
+| Aprendi tecnica/pattern novo | Regra positiva | `rules.md` |
+| Domain fact novo (API, schema) | Documentar | `knowledge.md` |
 
-### Onde registrar
-- **Regras novas** → `.memory/rules.md` (proximo numero R-NNN disponivel)
-- **Anti-patterns novos** → `.memory/anti-patterns.md` (proximo AP-NNN disponivel)
-- **Sessao/entrega** → `.memory/journal/YYYY-WWW.md` (criar arquivo se nao existir)
+### Regra de Ouro
+- **SEMPRE ler** `.memory/rules.md` + `.memory/anti-patterns.md` antes de codificar (R-065)
+- **Registre IMEDIATAMENTE** apos corrigir erro nao-trivial (contexto fresco = memoria precisa)
+- **Nao espere fim da sprint** para documentar (erros esquecidos se repetem)
+- **Verifique duplicatas** em memoria antes de criar novo R-NNN ou AP-NNN
 
-### Regra de ouro
-Nao espere pelo final da sprint. Registre **imediatamente apos corrigir um erro nao-trivial**, enquanto o contexto esta fresco. Erros esquecidos se repetem.
+### Como Localizar Memoria
+```bash
+# Dentro do projeto (CANONICA)
+cat .memory/rules.md
+cat .memory/anti-patterns.md
+cat .memory/knowledge.md
+cat .memory/journal/2026-W11.md
+
+# NUNCA usar estruturas externas (/.claude/projects/...) para memoria do projeto
+# Aquelas sao para configuracoes do Claude Code, nao project memory
+```
 
 ---
 
@@ -354,27 +384,35 @@ Navegacao via `setCurrentView()` + `BottomNav` component.
 
 ## Documentacao
 
+### Projeto (em `src/`, `docs/`, `plans/`)
 - `docs/INDEX.md` — indice mestre
 - `docs/reference/SCHEMAS.md` — schemas Zod
 - `docs/standards/GEMINI_INTEGRATION.md` — code review automatico
 - `docs/architecture/TELEGRAM_BOT.md` — bot + notificacoes
-- `.memory/rules.md` — 97 regras (R-001 a R-097)
-- `.memory/anti-patterns.md` — 50 anti-patterns (AP-001..023, AP-T01..T10, AP-S01..S11, AP-W01..W06)
-- `.memory/knowledge.md` — domain facts, APIs, schemas
-- `.roo/rules-code/rules.md` — regras de codigo consolidadas
 - `plans/EXEC_SPEC_FASE_5.md` — spec de execucao da Fase 5
+- `plans/ROADMAP_v4.md` — roadmap futuro
+
+### Memoria de Longo Prazo (em `/.memory/` — DENTRO DO PROJETO)
+**IMPORTANTE:** Estes arquivos persistem entre sessoes e devem ser consultados/atualizados regularmente.
+- `.memory/rules.md` — Regras positivas (R-NNN), padroes que funcionam neste projeto
+- `.memory/anti-patterns.md` — Anti-patterns (AP-NNN), armadilhas e licoes aprendidas
+- `.memory/knowledge.md` — Domain facts (APIs, schemas, arquitetura, integracoes, hacks conhecidos)
+- `.memory/journal/YYYY-WWW.md` — Entregas por semana (ex: `2026-W11.md` = semana 11 de 2026)
+- `.memory/MEMORY.md` — Auto-memory resumido (ate 200 linhas, index + contexto sessao passada)
 
 ---
 
 ## Checklist Pre-Codigo
 
-- [ ] Li CLAUDE.md (este arquivo)
-- [ ] Li `.memory/rules.md` e `.memory/anti-patterns.md`
-- [ ] Verifiquei duplicatas do arquivo alvo
-- [ ] Confirmei path aliases
-- [ ] Sei qual view/feature estou modificando
-- [ ] Vou usar `parseLocalDate()` para datas
-- [ ] Vou rodar `npm run validate:agent` antes de push
+- [ ] Li CLAUDE.md inteiro (este arquivo)
+- [ ] Li `.memory/rules.md` e `.memory/anti-patterns.md` (R-065 — OBRIGATORIO)
+  - Localizacao: PROJECT_ROOT/.memory/ (dentro do projeto, nao external)
+- [ ] Verifiquei duplicatas do arquivo alvo (`find src -name "*File*" -type f`)
+- [ ] Confirmei path aliases em vite.config.js
+- [ ] Sei qual view/feature/service estou modificando
+- [ ] Vou usar `parseLocalDate()` para datas, NUNCA `new Date('YYYY-MM-DD')`
+- [ ] Vou rodar `npm run validate:agent` (10-min kill switch) antes de push
+- [ ] Criei schemas Zod com validacao se novo service (schema-first approach)
 
 ## Checklist Pos-Codigo (antes do commit)
 
