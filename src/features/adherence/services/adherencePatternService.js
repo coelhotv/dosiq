@@ -130,14 +130,16 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   // Pré-processar protocolos para obter doses esperadas (por dia da semana)
   const expectedMap = preprocessProtocolsExpected(protocols)
 
-  // Contar doses tomadas por célula
+  // Contar doses tomadas por célula (CONTAR REGISTROS, NÃO COMPRIMIDOS)
+  // Cada registro = 1 dose tomada (independente de quantity_taken)
   logs.forEach((log) => {
     const logDate = new Date(log.taken_at)
     const dayIndex = logDate.getDay() // 0-6 (domingo-sábado)
     const hour = logDate.getHours()
     const periodIndex = getPeriodIndex(hour)
 
-    grid[dayIndex][periodIndex].taken += log.quantity_taken
+    // Incrementar 1 para cada dose registrada (não usar quantity_taken que mistura comprimidos com doses)
+    grid[dayIndex][periodIndex].taken += 1
   })
 
   // Contar quantas vezes cada dia da semana ocorre nos logs

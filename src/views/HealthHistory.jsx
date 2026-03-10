@@ -154,32 +154,16 @@ export default function HealthHistory({ onNavigate }) {
                   numProtocols: activeProtocols.length,
                   hasData: logs.length > 0 && activeProtocols.length > 0,
                 })
-                // [DIAGNÓSTICO ITEM 4] Log detalhado de protocolos
-                console.log('[HealthHistory] Protocolos detalhados:', activeProtocols.map((p) => ({
-                  id: p.id?.slice(0, 8),
-                  name: p.name,
-                  frequency: p.frequency,
-                  scheduleCount: p.time_schedule?.length ?? 'NULL',
-                  schedule: p.time_schedule,
-                })))
-
+                // [DIAGNÓSTICO ITEM 4] Log detalhado de protocolos - EXPANDIDO
+                console.log('[HealthHistory] Protocolos detalhados (com time_schedule):')
+                activeProtocols.forEach((p) => {
+                  console.log(`  - ${p.name} (${p.frequency}): time_schedule =`, p.time_schedule)
+                })
                 if (logs.length > 0 && activeProtocols.length > 0) {
                   const pattern = analyzeAdherencePatterns({
                     logs,
                     protocols: activeProtocols,
                   })
-                  console.log('[HealthHistory] Padrões calculados:', {
-                    hasEnoughData: pattern.hasEnoughData,
-                    worstCell: pattern.worstCell,
-                    daysInGrid: pattern.grid.length,
-                  })
-                  // [DIAGNÓSTICO ITEM 4] Log detalhado do período Noite (índice 3)
-                  console.log('[HealthHistory] Noite (período 3) - Todos os dias:', pattern.grid.map((day, dayIdx) => ({
-                    dia: dayIdx,
-                    adherence: day[3].adherence,
-                    taken: day[3].taken,
-                    expected: day[3].expected,
-                  })))
                   setAdherencePattern(pattern)
                 } else {
                   console.warn('[HealthHistory] Dados insuficientes para análise:', {
