@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, useTransition } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
 import { adherenceService } from '@services/api/adherenceService'
 import { analyzeAdherencePatterns } from '@adherence/services/adherencePatternService'
-import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
 import LogEntry from '@shared/components/log/LogEntry'
 import CalendarWithMonthCache from '@shared/components/ui/CalendarWithMonthCache'
+import FloatingActionButton from '@shared/components/ui/FloatingActionButton'
 import './HealthHistory.css'
 
 const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao'))
@@ -37,16 +37,12 @@ export default function HealthHistory({ onNavigate }) {
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  // Transitions
-  const [, startTransition] = useTransition()
-
   // Context
   const { protocols, stats, refresh } = useDashboard()
 
-  // Estados adicionais para análise de padrões (lazy — só carrega quando visível)
-  const [allLogsForAnalysis, setAllLogsForAnalysis] = useState([])
+  // Estado para análise de padrões (lazy — só carrega quando visível)
   const [isLoadingPatterns, setIsLoadingPatterns] = useState(false)
-  const heatmapSentinelRef = useRef(null)
+  const observerRef = useRef(null) // observer instance
 
   // Memos
   const treatmentPlans = useMemo(() => {
@@ -116,9 +112,7 @@ export default function HealthHistory({ onNavigate }) {
       ])
 
       setAdherenceSummary(summary)
-      startTransition(() => {
-        setDailyAdherence(daily)
-      })
+      setDailyAdherence(daily)
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
       setIsLoading(false)
@@ -129,64 +123,92 @@ export default function HealthHistory({ onNavigate }) {
     loadData()
   }, [loadData])
 
-  // IntersectionObserver: carrega logs históricos só quando heatmap entra no viewport
-  useEffect(() => {
-    const sentinel = heatmapSentinelRef.current
+  // Ref callback: chamado quando o sentinel DIV é montado no DOM
+  const setSentinelElement = useCallback((sentinel) => {
     if (!sentinel) return
+
+    // Disconnect o observer anterior se existir
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && allLogsForAnalysis.length === 0 && !isLoadingPatterns) {
+        console.log('[HealthHistory] Sentinel intersection:', {
+          isIntersecting: entry.isIntersecting,
+          isLoadingPatterns,
+          conditionMet: entry.isIntersecting && !isLoadingPatterns,
+        })
+        if (entry.isIntersecting && !isLoadingPatterns) {
+          console.log('[HealthHistory] 🚀 Disparando carregamento do heatmap!')
           setIsLoadingPatterns(true)
           logService
             .getAll(500)
             .then((result) => {
               const logs = result || []
-              setAllLogsForAnalysis(logs)
 
-              // startTransition: React pode pausar entre frames — não trava a UI
-              startTransition(() => {
-                try {
-                  const activeProtocols = protocols.filter((p) => p.active)
-                  console.log('[HealthHistory] Analisando padrões:', {
-                    numLogs: logs.length,
-                    numProtocols: activeProtocols.length,
-                    hasData: logs.length > 0 && activeProtocols.length > 0,
+              try {
+                const activeProtocols = protocols.filter((p) => p.active)
+                console.log('[HealthHistory] Analisando padrões:', {
+                  numLogs: logs.length,
+                  numProtocols: activeProtocols.length,
+                  hasData: logs.length > 0 && activeProtocols.length > 0,
+                })
+                // [DIAGNÓSTICO ITEM 4] Log detalhado de protocolos
+                console.log('[HealthHistory] Protocolos detalhados:', activeProtocols.map((p) => ({
+                  id: p.id?.slice(0, 8),
+                  name: p.name,
+                  frequency: p.frequency,
+                  scheduleCount: p.time_schedule?.length ?? 'NULL',
+                  schedule: p.time_schedule,
+                })))
+
+                if (logs.length > 0 && activeProtocols.length > 0) {
+                  const pattern = analyzeAdherencePatterns({
+                    logs,
+                    protocols: activeProtocols,
                   })
-
-                  if (logs.length > 0 && activeProtocols.length > 0) {
-                    const pattern = analyzeAdherencePatterns({
-                      logs,
-                      protocols: activeProtocols,
-                    })
-                    console.log('[HealthHistory] Padrões calculados:', {
-                      hasEnoughData: pattern.hasEnoughData,
-                      worstCell: pattern.worstCell,
-                      daysInGrid: pattern.grid.length,
-                    })
-                    setAdherencePattern(pattern)
-                  } else {
-                    console.warn('[HealthHistory] Dados insuficientes para análise:', {
-                      logsCount: logs.length,
-                      protocolsCount: activeProtocols.length,
-                    })
-                  }
-                } catch (err) {
-                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message, err)
+                  console.log('[HealthHistory] Padrões calculados:', {
+                    hasEnoughData: pattern.hasEnoughData,
+                    worstCell: pattern.worstCell,
+                    daysInGrid: pattern.grid.length,
+                  })
+                  // [DIAGNÓSTICO ITEM 4] Log detalhado do período Noite (índice 3)
+                  console.log('[HealthHistory] Noite (período 3) - Todos os dias:', pattern.grid.map((day, dayIdx) => ({
+                    dia: dayIdx,
+                    adherence: day[3].adherence,
+                    taken: day[3].taken,
+                    expected: day[3].expected,
+                  })))
+                  setAdherencePattern(pattern)
+                } else {
+                  console.warn('[HealthHistory] Dados insuficientes para análise:', {
+                    logsCount: logs.length,
+                    protocolsCount: activeProtocols.length,
+                  })
                 }
-              })
+              } catch (err) {
+                console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message, err)
+              }
             })
             .catch((err) => console.error('[HealthHistory] Falha ao buscar logs para análise:', err))
-            .finally(() => setIsLoadingPatterns(false))
-          observer.disconnect()
+            .finally(() => {
+              console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
+              setIsLoadingPatterns(false)
+            })
         }
       },
       { rootMargin: '50px' } // pré-carrega 50px antes de entrar na tela
     )
 
     observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [allLogsForAnalysis.length, isLoadingPatterns, protocols])
+    observerRef.current = observer
+
+    return () => {
+      observer.disconnect()
+      observerRef.current = null
+    }
+  }, [protocols, isLoadingPatterns])
 
   // Handlers
   const showSuccess = useCallback((msg) => {
@@ -388,6 +410,9 @@ export default function HealthHistory({ onNavigate }) {
         </div>
       </div>
 
+      {/* Sentinel: dispara carregamento do heatmap quando usuário chega ao final dos Stats */}
+      <div ref={setSentinelElement} />
+
       {/* Timeline — últimas doses, paginadas */}
       {timelineLogs.length > 0 && (
         <div className="health-history-timeline">
@@ -412,21 +437,15 @@ export default function HealthHistory({ onNavigate }) {
         </div>
       )}
 
-      {/* Sentinel: dispara carregamento do heatmap quando usuário chega ao final */}
-      <div ref={heatmapSentinelRef} />
-
-      {/* Register dose CTA */}
-      <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setEditingLog(null)
-            setIsModalOpen(true)
-          }}
-        >
-          Registrar Dose
-        </Button>
-      </div>
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onClick={() => {
+          setEditingLog(null)
+          setIsModalOpen(true)
+        }}
+      >
+        + Registrar Dose
+      </FloatingActionButton>
 
       {/* Log modal */}
       <Modal

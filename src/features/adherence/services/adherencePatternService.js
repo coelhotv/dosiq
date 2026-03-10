@@ -168,8 +168,8 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
         // Calcular adherence normalizando: (taken / totalExpected) * 100
         grid[dayIndex][periodIndex].adherence = Math.min(100, Math.round((taken / totalExpected) * 100))
       } else if (expectedPerDay === 0) {
-        // Se não há doses esperadas neste período, considerar como 100%
-        grid[dayIndex][periodIndex].adherence = 100
+        // Se não há doses esperadas neste período, marcar como N/D
+        grid[dayIndex][periodIndex].adherence = null
       } else if (occurrences === 0) {
         // Se o dia não ocorre nos logs, não calcular adherence
         grid[dayIndex][periodIndex].adherence = null

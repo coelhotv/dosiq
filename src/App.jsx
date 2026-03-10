@@ -132,10 +132,10 @@ function App() {
       case 'profile':
         return <Profile onNavigate={setCurrentView} />
       case 'health-history':
-        return <HealthHistory onNavigate={setCurrentView} />
+        return <HealthHistory key="health-history" onNavigate={setCurrentView} />
       case 'history':
         // W3-06: historico agora vive em HealthHistory
-        return <HealthHistory onNavigate={setCurrentView} />
+        return <HealthHistory key="history" onNavigate={setCurrentView} />
       case 'consultation':
         return (
           <Suspense fallback={<Loading text="Carregando Modo Consulta..." />}>
