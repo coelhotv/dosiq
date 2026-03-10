@@ -147,15 +147,32 @@ export default function HealthHistory({ onNavigate }) {
               // startTransition: React pode pausar entre frames — não trava a UI
               startTransition(() => {
                 try {
-                  if (logs.length > 0 && protocols.length > 0) {
+                  const activeProtocols = protocols.filter((p) => p.active)
+                  console.log('[HealthHistory] Analisando padrões:', {
+                    numLogs: logs.length,
+                    numProtocols: activeProtocols.length,
+                    hasData: logs.length > 0 && activeProtocols.length > 0,
+                  })
+
+                  if (logs.length > 0 && activeProtocols.length > 0) {
                     const pattern = analyzeAdherencePatterns({
                       logs,
-                      protocols: protocols.filter((p) => p.active),
+                      protocols: activeProtocols,
+                    })
+                    console.log('[HealthHistory] Padrões calculados:', {
+                      hasEnoughData: pattern.hasEnoughData,
+                      worstCell: pattern.worstCell,
+                      daysInGrid: pattern.grid.length,
                     })
                     setAdherencePattern(pattern)
+                  } else {
+                    console.warn('[HealthHistory] Dados insuficientes para análise:', {
+                      logsCount: logs.length,
+                      protocolsCount: activeProtocols.length,
+                    })
                   }
                 } catch (err) {
-                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err)
+                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message, err)
                 }
               })
             })
