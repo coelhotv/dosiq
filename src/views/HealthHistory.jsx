@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, useTransition } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
@@ -10,9 +10,10 @@ import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
 import LogEntry from '@shared/components/log/LogEntry'
 import CalendarWithMonthCache from '@shared/components/ui/CalendarWithMonthCache'
-import SparklineAdesao from '@dashboard/components/SparklineAdesao'
-import AdherenceHeatmap from '@adherence/components/AdherenceHeatmap'
 import './HealthHistory.css'
+
+const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao'))
+const AdherenceHeatmap = lazy(() => import('@adherence/components/AdherenceHeatmap'))
 
 const TIMELINE_PAGE_SIZE = 30
 
@@ -34,6 +35,9 @@ export default function HealthHistory({ onNavigate }) {
   const [timelineHasMore, setTimelineHasMore] = useState(false)
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Transitions
+  const [, startTransition] = useTransition()
 
   // Context
   const { protocols, stats, refresh } = useDashboard()
@@ -66,23 +70,18 @@ export default function HealthHistory({ onNavigate }) {
     })
   }, [currentMonthLogs, selectedCalendarDate])
 
-  const adherencePatternData = useMemo(() => {
-    try {
-      // Usar TODOS os logs históricos para análise de padrões (não apenas os últimos 30 da timeline)
-      // Isso garante que o AdherenceHeatmap possa detectar padrões ao longo de >21 dias
-      if (allLogsForAnalysis.length > 0 && protocols.length > 0) {
-        const pattern = analyzeAdherencePatterns({
-          logs: allLogsForAnalysis,
-          protocols: protocols.filter((p) => p.active),
-        })
-        return pattern
-      }
-      return null
-    } catch (err) {
-      console.error('Erro ao analisar padrões de adesão:', err)
-      return null
-    }
-  }, [allLogsForAnalysis, protocols])
+  const pillsThisMonth = useMemo(
+    () => currentMonthLogs.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0),
+    [currentMonthLogs]
+  )
+
+  const daysThisMonth = useMemo(
+    () =>
+      new Set(
+        currentMonthLogs.map((log) => formatLocalDate(new Date(log.taken_at)))
+      ).size,
+    [currentMonthLogs]
+  )
 
   // Effects
   const loadData = useCallback(async () => {
@@ -116,7 +115,9 @@ export default function HealthHistory({ onNavigate }) {
       ])
 
       setAdherenceSummary(summary)
-      setDailyAdherence(daily)
+      startTransition(() => {
+        setDailyAdherence(daily)
+      })
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
       setIsLoading(false)
@@ -138,22 +139,36 @@ export default function HealthHistory({ onNavigate }) {
           setIsLoadingPatterns(true)
           logService
             .getAll(500)
-            .then((result) => setAllLogsForAnalysis(result || []))
-            .catch(() => {})
+            .then((result) => {
+              const logs = result || []
+              setAllLogsForAnalysis(logs)
+
+              // startTransition: React pode pausar entre frames — não trava a UI
+              startTransition(() => {
+                try {
+                  if (logs.length > 0 && protocols.length > 0) {
+                    const pattern = analyzeAdherencePatterns({
+                      logs,
+                      protocols: protocols.filter((p) => p.active),
+                    })
+                    setAdherencePattern(pattern)
+                  }
+                } catch (err) {
+                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err)
+                }
+              })
+            })
+            .catch((err) => console.error('[HealthHistory] Falha ao buscar logs para análise:', err))
             .finally(() => setIsLoadingPatterns(false))
           observer.disconnect()
         }
       },
-      { rootMargin: '200px' } // pré-carrega 200px antes de entrar na tela
+      { rootMargin: '50px' } // pré-carrega 50px antes de entrar na tela
     )
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [allLogsForAnalysis.length, isLoadingPatterns])
-
-  useEffect(() => {
-    setAdherencePattern(adherencePatternData)
-  }, [adherencePatternData])
+  }, [allLogsForAnalysis.length, isLoadingPatterns, protocols])
 
   // Handlers
   const handleCalendarLoadMonth = useCallback(async (year, month) => {
@@ -239,10 +254,6 @@ export default function HealthHistory({ onNavigate }) {
   const streak = stats?.currentStreak ?? 0
   // Best streak vem do adherence summary (calculado em background)
   const bestStreak = adherenceSummary?.longestStreak ?? streak
-  const pillsThisMonth = currentMonthLogs.reduce((sum, log) => sum + log.quantity_taken, 0)
-  const daysThisMonth = new Set(
-    currentMonthLogs.map((log) => new Date(log.taken_at).toLocaleDateString('pt-BR'))
-  ).size
 
   return (
     <div className="health-history-view">
@@ -314,9 +325,6 @@ export default function HealthHistory({ onNavigate }) {
         )}
       </div>
 
-      {/* Sentinel: dispara carregamento do heatmap quando visível */}
-      <div ref={heatmapSentinelRef} />
-
       {/* Heatmap de Adesão — carrega lazy via IntersectionObserver */}
       {isLoadingPatterns && (
         <div className="health-history-heatmap glass-card">
@@ -327,7 +335,9 @@ export default function HealthHistory({ onNavigate }) {
       {adherencePattern && !isLoadingPatterns && (
         <div className="health-history-heatmap glass-card">
           <h3 className="health-history-section-title">Padrões de Adesão</h3>
-          <AdherenceHeatmap pattern={adherencePattern} />
+          <Suspense fallback={<div className="health-history-heatmap-skeleton" aria-busy="true" style={{ height: 120 }} />}>
+            <AdherenceHeatmap pattern={adherencePattern} />
+          </Suspense>
         </div>
       )}
 
@@ -335,7 +345,9 @@ export default function HealthHistory({ onNavigate }) {
       {dailyAdherence.length > 0 && (
         <div className="health-history-sparkline glass-card">
           <h3 className="health-history-section-title">Adesão 30 dias</h3>
-          <SparklineAdesao adherenceByDay={dailyAdherence} size="expanded" />
+          <Suspense fallback={<div className="health-history-sparkline-skeleton" aria-busy="true" />}>
+            <SparklineAdesao adherenceByDay={dailyAdherence} size="expanded" />
+          </Suspense>
         </div>
       )}
 
@@ -376,6 +388,9 @@ export default function HealthHistory({ onNavigate }) {
           )}
         </div>
       )}
+
+      {/* Sentinel: dispara carregamento do heatmap quando usuário chega ao final */}
+      <div ref={heatmapSentinelRef} />
 
       {/* Register dose CTA */}
       <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
