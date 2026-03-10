@@ -172,6 +172,11 @@ export default function HealthHistory({ onNavigate }) {
   }, [allLogsForAnalysis.length, isLoadingPatterns, protocols])
 
   // Handlers
+  const showSuccess = useCallback((msg) => {
+    setSuccessMessage(msg)
+    setTimeout(() => setSuccessMessage(''), 3000)
+  }, [])
+
   const handleCalendarLoadMonth = useCallback(async (year, month) => {
     try {
       const result = await logService.getByMonth(year, month)
@@ -242,11 +247,6 @@ export default function HealthHistory({ onNavigate }) {
       setIsLoadingMore(false)
     }
   }
-
-  const showSuccess = useCallback((msg) => {
-    setSuccessMessage(msg)
-    setTimeout(() => setSuccessMessage(''), 3000)
-  }, [])
 
   if (isLoading) return <Loading text="Carregando saúde..." />
 
