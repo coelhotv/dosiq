@@ -6,7 +6,9 @@ vi.mock('@shared/utils/supabase', () => ({
   supabase: { from: vi.fn() },
   getUserId: vi.fn(() => Promise.resolve('test-user-id')),
   getCurrentUser: vi.fn(() => Promise.resolve(null)),
-  onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+  onAuthStateChange: vi.fn(() => ({
+    data: { subscription: { unsubscribe: vi.fn() } },
+  })),
 }))
 
 // Mock all service dependencies so DashboardProvider never hits Supabase
