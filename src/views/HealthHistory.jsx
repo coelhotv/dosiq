@@ -163,9 +163,7 @@ export default function HealthHistory({ onNavigate }) {
               console.error('[HealthHistory] Falha ao buscar logs:', err.message, err)
             })
             .finally(() => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
-              }
+              console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
               setIsLoadingPatterns(false)
             })
         }
