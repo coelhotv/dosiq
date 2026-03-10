@@ -89,11 +89,10 @@ export default function HealthHistory({ onNavigate }) {
       setError(null)
       const now = new Date()
 
-      // Calendário: logs do mês atual + Timeline: últimos 30 logs + Análise: TODOS os logs históricos
-      const [logsResult, timelineResult, allLogsResult] = await Promise.all([
+      // Calendário + Timeline: carregamento crítico — UI fica pronta rápido
+      const [logsResult, timelineResult] = await Promise.all([
         logService.getByMonth(now.getFullYear(), now.getMonth()),
         logService.getAllPaginated(TIMELINE_PAGE_SIZE, 0),
-        logService.getAll(5000), // Buscar até 5000 logs para análise de padrões históricos
       ])
 
       setCurrentMonthLogs(logsResult.data || [])
@@ -101,14 +100,21 @@ export default function HealthHistory({ onNavigate }) {
       setTimelineLogs(timelineResult.data || [])
       setTimelineHasMore(timelineResult.hasMore || false)
       setTimelineOffset(TIMELINE_PAGE_SIZE)
-      setAllLogsForAnalysis(allLogsResult || [])
 
       if (logsResult.data?.length > 0) {
         setSelectedCalendarDate(new Date(logsResult.data[0].taken_at))
       }
 
-      // Loading finaliza — dados de adesão em background
+      // UI visível primeiro — análise de padrões carrega em background
       setIsLoading(false)
+
+      // Histórico para AdherenceHeatmap: máx 500 logs (≈90 dias com múltiplos protocolos)
+      // Feito em background para não bloquear a renderização inicial no mobile
+      logService.getAll(500).then((allLogsResult) => {
+        setAllLogsForAnalysis(allLogsResult || [])
+      }).catch(() => {
+        // Silencioso: heatmap simplesmente não renderiza se falhar
+      })
 
       const [summary, daily] = await Promise.all([
         adherenceService.getAdherenceSummary('30d').catch(() => null),
