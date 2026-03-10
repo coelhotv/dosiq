@@ -102,9 +102,9 @@ export default function OnboardingWizard() {
             </div>
 
             <div className="nav-center">
-              <button onClick={handleSkip} className="btn-skip">
+              <Button variant="ghost" onClick={handleSkip} className="btn-skip">
                 Pular tour
-              </button>
+              </Button>
             </div>
 
             <div className="nav-right">
