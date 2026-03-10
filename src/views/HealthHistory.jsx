@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, useTransition } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
@@ -188,7 +189,7 @@ export default function HealthHistory({ onNavigate }) {
     }
   }, [])
 
-  const handleLogMedicine = async (logData) => {
+  const handleLogMedicine = useCallback(async (logData) => {
     try {
       if (logData.id) {
         await logService.update(logData.id, logData)
@@ -207,9 +208,9 @@ export default function HealthHistory({ onNavigate }) {
     } catch (err) {
       throw new Error(err.message)
     }
-  }
+  }, [showSuccess, loadData, refresh])
 
-  const handleDeleteLog = async (id) => {
+  const handleDeleteLog = useCallback(async (id) => {
     try {
       await logService.delete(id)
       showSuccess('Registro removido!')
@@ -220,12 +221,12 @@ export default function HealthHistory({ onNavigate }) {
     } catch (err) {
       setError('Erro ao remover: ' + err.message)
     }
-  }
+  }, [showSuccess, refresh])
 
-  const handleEditClick = (log) => {
+  const handleEditClick = useCallback((log) => {
     setEditingLog(log)
     setIsModalOpen(true)
-  }
+  }, [])
 
   const handleLoadMoreTimeline = async () => {
     if (isLoadingMore || !timelineHasMore) return
@@ -242,10 +243,10 @@ export default function HealthHistory({ onNavigate }) {
     }
   }
 
-  const showSuccess = (msg) => {
+  const showSuccess = useCallback((msg) => {
     setSuccessMessage(msg)
     setTimeout(() => setSuccessMessage(''), 3000)
-  }
+  }, [])
 
   if (isLoading) return <Loading text="Carregando saúde..." />
 
@@ -374,18 +375,23 @@ export default function HealthHistory({ onNavigate }) {
       {timelineLogs.length > 0 && (
         <div className="health-history-timeline">
           <h3 className="health-history-section-title">Últimas Doses</h3>
-          {timelineLogs.map((log) => (
-            <LogEntry key={log.id} log={log} onEdit={handleEditClick} onDelete={handleDeleteLog} />
-          ))}
-          {timelineHasMore && (
-            <button
-              className="health-history-timeline__more"
-              onClick={handleLoadMoreTimeline}
-              disabled={isLoadingMore}
-            >
-              {isLoadingMore ? 'Carregando...' : `Ver mais ${TIMELINE_PAGE_SIZE} doses`}
-            </button>
-          )}
+          <Virtuoso
+            useWindowScroll
+            data={timelineLogs}
+            endReached={handleLoadMoreTimeline}
+            overscan={300}
+            itemContent={(_index, log) => (
+              <LogEntry log={log} onEdit={handleEditClick} onDelete={handleDeleteLog} />
+            )}
+            components={{
+              Footer: () =>
+                isLoadingMore ? (
+                  <div className="health-history-timeline__loading">Carregando...</div>
+                ) : !timelineHasMore ? (
+                  <div className="health-history-timeline__end">Histórico completo</div>
+                ) : null,
+            }}
+          />
         </div>
       )}
 

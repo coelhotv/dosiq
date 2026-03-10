@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import './LogEntry.css'
 
-export default function LogEntry({ log, onEdit, onDelete }) {
+function LogEntry({ log, onEdit, onDelete }) {
   const formatDateTime = (dateString) => {
     const date = new Date(dateString)
     return {
@@ -62,3 +63,11 @@ export default function LogEntry({ log, onEdit, onDelete }) {
     </div>
   )
 }
+
+/** Compara apenas campos que afetam a renderização visual */
+const areLogEntriesEqual = (prev, next) =>
+  prev.log.id === next.log.id &&
+  prev.log.status === next.log.status &&
+  prev.log.quantity_taken === next.log.quantity_taken
+
+export default memo(LogEntry, areLogEntriesEqual)
