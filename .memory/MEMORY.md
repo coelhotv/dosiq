@@ -100,6 +100,21 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 - **Timeline:** 110 min (setup + 7 corrections + Gemini fixes + validation + merge)
 - **Journal:** 2026-W11-m0-sprint.md (detailed impact analysis + metrics)
 
+#### **Sprint M1 — Timeline Virtualization (react-virtuoso)** ✅ DELIVERED
+- **Status:** MERGED (commit `f7153cb`, PR #342)
+- **Quality:** 539/539 tests ✅ | 0 lint errors ✅ | 1 squash commit + docs update
+- **Goal:** Replace `.map()` timeline with Virtuoso for mobile FPS optimization
+- **Changes:**
+  - Virtuoso + useWindowScroll, overscan=300, endReached pagination
+  - LogEntry wrapped with React.memo + custom comparison (id+status+quantity)
+  - Handlers (handleEditClick, handleDeleteLog, showSuccess, handleLogMedicine) in useCallback
+  - Dead code removed: .map() loop + "Ver mais" button
+- **Performance Impact:** FPS < 50 → ≥ 55 (CPU 4x throttle), DOM nodes N → ~10
+- **Dependencies:** react-virtuoso@^4.18.3
+- **New Rules:** R-115 (Virtuoso for long mobile lists, handler + memo pair)
+- **Timeline:** 75 min (setup + impl + validation + git + push + merge + docs)
+- **Journal:** 2026-W11.md (full entry with timeline breakdown)
+
 ---
 
 ## 🧠 Knowledge Base

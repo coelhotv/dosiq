@@ -14,7 +14,7 @@
 | Sprint | Status | Commit | Data | Quality Gates |
 |--------|--------|--------|------|----------------|
 | **M0** | ✅ MERGED | `6f4be85` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 2 commits, ✅ Gemini suggestions |
-| M1 | 🔜 Pendente | — | — | — |
+| **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
 | M2 | 🔜 Pendente | — | — | — |
 | M3 | 🔜 Pendente | — | — | — |
 | M4 | 🔜 Pendente | — | — | — |
@@ -28,6 +28,17 @@
 - [x] **Commits:** 2 semânticos (principal + Gemini suggestions)
 - [x] **Code Review:** Gemini #340, #341 aplicadas e fechadas
 - [x] **Merge:** Squash + delete branch automático (via gh CLI)
+
+### Sprint M1 — Quality Gates Checklist
+
+- [x] **Lint:** 0 erros em HealthHistory.jsx e LogEntry.jsx
+- [x] **Testes:** 539/539 passando (30 test files, sem regressões)
+- [x] **Build:** npm run build sem erros
+- [x] **Dead Code:** .map() removido, botão "Ver mais" removido (0 referências)
+- [x] **Commits:** 1 semântico squash (feat + docs consolidados)
+- [x] **Code Review:** PR #342 revisado e aprovado
+- [x] **Merge:** Squash + delete branch automático (commit f7153cb)
+- [x] **Performance:** Virtuoso com overscan=300, handlers em useCallback, LogEntry em memo
 
 ---
 
