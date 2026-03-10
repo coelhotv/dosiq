@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { useDashboard, DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
+
+// Mock Supabase ANTES de importar useDashboardContext
+vi.mock('@shared/utils/supabase', () => ({
+  supabase: { from: vi.fn() },
+  getUserId: vi.fn(() => Promise.resolve('test-user-id')),
+  getCurrentUser: vi.fn(() => Promise.resolve(null)),
+  onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+}))
 
 // Mock all service dependencies so DashboardProvider never hits Supabase
 vi.mock('@medications/services/medicineService', () => ({
@@ -20,6 +27,12 @@ vi.mock('@shared/services/api/logService', () => ({
     getByDateRange: vi.fn().mockResolvedValue({ data: [] }),
   },
 }))
+
+vi.mock('@shared/utils/queryCache', () => ({
+  invalidateCache: vi.fn(),
+}))
+
+import { useDashboard, DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 
 describe('useDashboard', () => {
   beforeEach(() => {
