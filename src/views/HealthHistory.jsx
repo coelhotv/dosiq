@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
@@ -38,8 +38,10 @@ export default function HealthHistory({ onNavigate }) {
   // Context
   const { protocols, stats, refresh } = useDashboard()
 
-  // Estados adicionais para análise de padrões
+  // Estados adicionais para análise de padrões (lazy — só carrega quando visível)
   const [allLogsForAnalysis, setAllLogsForAnalysis] = useState([])
+  const [isLoadingPatterns, setIsLoadingPatterns] = useState(false)
+  const heatmapSentinelRef = useRef(null)
 
   // Memos
   const treatmentPlans = useMemo(() => {
@@ -105,16 +107,8 @@ export default function HealthHistory({ onNavigate }) {
         setSelectedCalendarDate(new Date(logsResult.data[0].taken_at))
       }
 
-      // UI visível primeiro — análise de padrões carrega em background
+      // UI visível primeiro — heatmap carrega via IntersectionObserver quando usuário rolar
       setIsLoading(false)
-
-      // Histórico para AdherenceHeatmap: máx 500 logs (≈90 dias com múltiplos protocolos)
-      // Feito em background para não bloquear a renderização inicial no mobile
-      logService.getAll(500).then((allLogsResult) => {
-        setAllLogsForAnalysis(allLogsResult || [])
-      }).catch(() => {
-        // Silencioso: heatmap simplesmente não renderiza se falhar
-      })
 
       const [summary, daily] = await Promise.all([
         adherenceService.getAdherenceSummary('30d').catch(() => null),
@@ -132,6 +126,30 @@ export default function HealthHistory({ onNavigate }) {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // IntersectionObserver: carrega logs históricos só quando heatmap entra no viewport
+  useEffect(() => {
+    const sentinel = heatmapSentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && allLogsForAnalysis.length === 0 && !isLoadingPatterns) {
+          setIsLoadingPatterns(true)
+          logService
+            .getAll(500)
+            .then((result) => setAllLogsForAnalysis(result || []))
+            .catch(() => {})
+            .finally(() => setIsLoadingPatterns(false))
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px' } // pré-carrega 200px antes de entrar na tela
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [allLogsForAnalysis.length, isLoadingPatterns])
 
   useEffect(() => {
     setAdherencePattern(adherencePatternData)
@@ -296,8 +314,17 @@ export default function HealthHistory({ onNavigate }) {
         )}
       </div>
 
-      {/* Heatmap de Adesão */}
-      {adherencePattern && (
+      {/* Sentinel: dispara carregamento do heatmap quando visível */}
+      <div ref={heatmapSentinelRef} />
+
+      {/* Heatmap de Adesão — carrega lazy via IntersectionObserver */}
+      {isLoadingPatterns && (
+        <div className="health-history-heatmap glass-card">
+          <h3 className="health-history-section-title">Padrões de Adesão</h3>
+          <div className="health-history-heatmap-skeleton" aria-busy="true" aria-label="Carregando padrões..." />
+        </div>
+      )}
+      {adherencePattern && !isLoadingPatterns && (
         <div className="health-history-heatmap glass-card">
           <h3 className="health-history-section-title">Padrões de Adesão</h3>
           <AdherenceHeatmap pattern={adherencePattern} />
