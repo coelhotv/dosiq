@@ -224,6 +224,7 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
 
   return {
     grid,
+    dayOccurrences,
     worstCell: hasEnoughData ? worstCell : null,
     narrative,
     hasEnoughData,

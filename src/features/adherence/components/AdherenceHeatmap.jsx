@@ -65,19 +65,28 @@ export default function AdherenceHeatmap({ pattern }) {
   }
 
   /**
-   * Handler para tooltip ao tocar/passar mouse
+   * Constrói o texto do tooltip com informações corretas de adesão
    */
-  const handleCellInteraction = (dayIndex, periodIndex) => {
+  const buildTooltip = (dayIndex, periodIndex) => {
     const cell = pattern.grid[dayIndex][periodIndex]
     const adherenceText = cell.adherence === null ? 'N/D' : `${cell.adherence}%`
-    const tooltip = `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${adherenceText} (${cell.taken}/${cell.expected} doses)`
-    setHoveredCell(tooltip)
+    // totalExpected = doses esperadas por dia × quantas vezes esse dia ocorre nos logs
+    const totalExpected = cell.expected * (pattern.dayOccurrences?.[dayIndex] || 1)
+    return `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${adherenceText} (${cell.taken}/${totalExpected} doses)`
   }
 
+  /**
+   * Handler para tooltip ao passar mouse
+   */
+  const handleCellInteraction = (dayIndex, periodIndex) => {
+    setHoveredCell(buildTooltip(dayIndex, periodIndex))
+  }
+
+  /**
+   * Handler para tooltip ao tocar em mobile
+   */
   const handleCellTouchEnd = (dayIndex, periodIndex) => {
-    const cell = pattern.grid[dayIndex][periodIndex]
-    const adherenceText = cell.adherence === null ? 'N/D' : `${cell.adherence}%`
-    const tooltip = `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${adherenceText} (${cell.taken}/${cell.expected} doses)`
+    const tooltip = buildTooltip(dayIndex, periodIndex)
     setTouchedCell(tooltip === touchedCell ? null : tooltip)
   }
 

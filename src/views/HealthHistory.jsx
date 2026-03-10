@@ -134,13 +134,8 @@ export default function HealthHistory({ onNavigate }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        console.log('[HealthHistory] Sentinel intersection:', {
-          isIntersecting: entry.isIntersecting,
-          isLoadingPatterns,
-          conditionMet: entry.isIntersecting && !isLoadingPatterns,
-        })
+        // Evitar múltiplas requisições: só disparar quando não estamos carregando
         if (entry.isIntersecting && !isLoadingPatterns) {
-          console.log('[HealthHistory] 🚀 Disparando carregamento do heatmap!')
           setIsLoadingPatterns(true)
           logService
             .getAll(500)
@@ -149,33 +144,25 @@ export default function HealthHistory({ onNavigate }) {
 
               try {
                 const activeProtocols = protocols.filter((p) => p.active)
-                console.log('[HealthHistory] Analisando padrões:', {
-                  numLogs: logs.length,
-                  numProtocols: activeProtocols.length,
-                  hasData: logs.length > 0 && activeProtocols.length > 0,
-                })
-                // [DIAGNÓSTICO ITEM 4] Log detalhado de protocolos - EXPANDIDO
-                console.log('[HealthHistory] Protocolos detalhados (com time_schedule):')
-                activeProtocols.forEach((p) => {
-                  console.log(`  - ${p.name} (${p.frequency}): time_schedule =`, p.time_schedule)
-                })
                 if (logs.length > 0 && activeProtocols.length > 0) {
                   const pattern = analyzeAdherencePatterns({
                     logs,
                     protocols: activeProtocols,
                   })
                   setAdherencePattern(pattern)
-                } else {
-                  console.warn('[HealthHistory] Dados insuficientes para análise:', {
-                    logsCount: logs.length,
-                    protocolsCount: activeProtocols.length,
-                  })
                 }
               } catch (err) {
-                console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message, err)
+                // Log apenas em dev para diagnosticar erros de cálculo (sem exposição de PHI)
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('[HealthHistory] Erro ao analisar padrões de adesão:', err.message)
+                }
               }
             })
-            .catch((err) => console.error('[HealthHistory] Falha ao buscar logs para análise:', err))
+            .catch((err) => {
+              if (process.env.NODE_ENV === 'development') {
+                console.error('[HealthHistory] Falha ao buscar logs:', err.message)
+              }
+            })
             .finally(() => {
               console.log('[HealthHistory] ✅ Chamando setIsLoadingPatterns(false)')
               setIsLoadingPatterns(false)
