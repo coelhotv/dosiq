@@ -168,7 +168,7 @@ describe('adherencePatternService', () => {
       }
     })
 
-    it('não penaliza períodos sem doses esperadas (adherência = 100%)', () => {
+    it('marca períodos sem doses esperadas como N/D (adherência = null)', () => {
       const medicineId = randomUUID()
       const protocolId = randomUUID()
       const logs = []
@@ -186,11 +186,11 @@ describe('adherencePatternService', () => {
       const result = analyzeAdherencePatterns({ logs, protocols })
 
       // Períodos madrugada, tarde, noite não têm doses esperadas
-      // Devem ter adherência = 100%
+      // Devem ter adherência = null (N/D)
       expect(result.grid[1][0].expected).toBe(0) // Madrugada
-      expect(result.grid[1][0].adherence).toBe(100)
+      expect(result.grid[1][0].adherence).toBe(null)
       expect(result.grid[1][3].expected).toBe(0) // Noite
-      expect(result.grid[1][3].adherence).toBe(100)
+      expect(result.grid[1][3].adherence).toBe(null)
     })
 
     it('cap adherência em 100% se há mais doses que esperado', () => {
