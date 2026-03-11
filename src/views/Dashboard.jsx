@@ -11,6 +11,7 @@ import {
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
+import FloatingActionButton from '@shared/components/ui/FloatingActionButton'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import HealthScoreCard from '@dashboard/components/HealthScoreCard'
 import HealthScoreDetails from '@dashboard/components/HealthScoreDetails'
@@ -805,17 +806,14 @@ export default function Dashboard({ onNavigate }) {
       </section>
 
       {/* 5. Floating Action Button */}
-      <div className={styles.fab}>
-        <button
-          className="btn-add-manual"
-          onClick={() => {
-            setPrefillData(null)
-            setIsModalOpen(true)
-          }}
-        >
-          + REGISTRO MANUAL
-        </button>
-      </div>
+      <FloatingActionButton
+        onClick={() => {
+          setPrefillData(null)
+          setIsModalOpen(true)
+        }}
+      >
+        + Registrar Dose
+      </FloatingActionButton>
 
       <Modal
         isOpen={isModalOpen}

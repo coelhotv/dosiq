@@ -43,8 +43,10 @@ export default function AdherenceHeatmap({ pattern }) {
    * 100% = 1.0 (verde opaco)
    * 50% = 0.5 (verde translúcido)
    * 0% = 0.1 (verde bem transparente)
+   * null = N/D (cinza neutro)
    */
   const getOpacity = (adherence) => {
+    if (adherence === null) return 1.0
     if (adherence >= 90) return 1.0
     if (adherence >= 75) return 0.8
     if (adherence >= 50) return 0.5
@@ -54,24 +56,37 @@ export default function AdherenceHeatmap({ pattern }) {
 
   /**
    * Retorna cor CSS com opacidade adequada
+   * null = cinza neutro (sem protocolo)
    */
   const getCellColor = (adherence) => {
+    if (adherence === null) return 'rgba(120, 120, 140, 0.15)' // cinza neutro para N/D
     const opacity = getOpacity(adherence)
     return `rgba(34, 197, 94, ${opacity})` // green-500 com opacidade variável
   }
 
   /**
-   * Handler para tooltip ao tocar/passar mouse
+   * Constrói o texto do tooltip com informações corretas de adesão
    */
-  const handleCellInteraction = (dayIndex, periodIndex) => {
+  const buildTooltip = (dayIndex, periodIndex) => {
     const cell = pattern.grid[dayIndex][periodIndex]
-    const tooltip = `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${cell.adherence}% (${cell.taken}/${cell.expected} doses)`
-    setHoveredCell(tooltip)
+    const adherenceText = cell.adherence === null ? 'N/D' : `${cell.adherence}%`
+    // totalExpected = doses esperadas por dia × quantas vezes esse dia ocorre nos logs
+    const totalExpected = cell.expected * (pattern.dayOccurrences?.[dayIndex] || 1)
+    return `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${adherenceText} (${cell.taken}/${totalExpected} doses)`
   }
 
+  /**
+   * Handler para tooltip ao passar mouse
+   */
+  const handleCellInteraction = (dayIndex, periodIndex) => {
+    setHoveredCell(buildTooltip(dayIndex, periodIndex))
+  }
+
+  /**
+   * Handler para tooltip ao tocar em mobile
+   */
   const handleCellTouchEnd = (dayIndex, periodIndex) => {
-    const cell = pattern.grid[dayIndex][periodIndex]
-    const tooltip = `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${cell.adherence}% (${cell.taken}/${cell.expected} doses)`
+    const tooltip = buildTooltip(dayIndex, periodIndex)
     setTouchedCell(tooltip === touchedCell ? null : tooltip)
   }
 
@@ -109,16 +124,16 @@ export default function AdherenceHeatmap({ pattern }) {
                 return (
                   <div
                     key={cellKey}
-                    className={`adherence-heatmap__cell ${isActive ? 'adherence-heatmap__cell--active' : ''}`}
+                    className={`adherence-heatmap__cell ${isActive ? 'adherence-heatmap__cell--active' : ''} ${cell.adherence === null ? 'adherence-heatmap__cell--na' : ''}`}
                     style={{ backgroundColor: getCellColor(cell.adherence) }}
                     onMouseEnter={() => handleCellInteraction(dayIndex, periodIndex)}
                     onMouseLeave={handleCellMouseLeave}
                     onTouchEnd={() => handleCellTouchEnd(dayIndex, periodIndex)}
                     role="gridcell"
-                    aria-label={`${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${cell.adherence}%`}
+                    aria-label={`${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${cell.adherence === null ? 'N/D' : `${cell.adherence}%`}`}
                     tabIndex={0}
                   >
-                    <span className="adherence-heatmap__cell-text">{cell.adherence}%</span>
+                    <span className="adherence-heatmap__cell-text">{cell.adherence === null ? '—' : `${cell.adherence}%`}</span>
                   </div>
                 )
               })}
@@ -149,18 +164,18 @@ export default function AdherenceHeatmap({ pattern }) {
               <h4 className="adherence-heatmap__day-card-title">{DAY_NAMES[dayIndex]}</h4>
               <div className="adherence-heatmap__day-card-periods">
                 {row.map((cell, periodIndex) => (
-                  <div key={periodIndex} className="adherence-heatmap__period-bar">
+                  <div key={periodIndex} className={`adherence-heatmap__period-bar ${cell.adherence === null ? 'adherence-heatmap__period-bar--na' : ''}`}>
                     <span className="adherence-heatmap__period-name">{PERIOD_NAMES[periodIndex]}</span>
                     <div className="adherence-heatmap__period-fill-bg">
                       <div
                         className="adherence-heatmap__period-fill"
                         style={{
-                          width: `${cell.adherence}%`,
+                          width: `${cell.adherence === null ? 0 : cell.adherence}%`,
                           backgroundColor: getCellColor(cell.adherence),
                         }}
                       />
                     </div>
-                    <span className="adherence-heatmap__period-percent">{cell.adherence}%</span>
+                    <span className="adherence-heatmap__period-percent">{cell.adherence === null ? '—' : `${cell.adherence}%`}</span>
                   </div>
                 ))}
               </div>

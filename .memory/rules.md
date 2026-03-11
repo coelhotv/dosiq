@@ -902,7 +902,39 @@ export default memo(LogEntry, areEqual)
 
 **Source:** Sprint M1 (mobile performance tuning, HealthHistory.jsx timeline).
 
+### R-116: Console Logs for Development Debugging [HIGH]
+**Rule:** Manter logs detalhados em desenvolvimento é obrigatório. Cada operação crítica (carregamento de dados, análise, validação, async callbacks) deve ter `console.log()` ou `console.error()` com contexto detalhado.
+
+**Benefícios:**
+- Debug rápido sem debugger/breakpoints
+- Entendimento visual do fluxo da app
+- Rastreamento de bugs em produção (via console do usuário)
+- Facilita onboarding de novos devs
+
+**Padrão de Log:**
+```javascript
+// ✅ BOM — contexto claro, dados relevantes
+console.log('[ComponentName] Ação:', { param1, param2, computed: result })
+console.warn('[ComponentName] Dados insuficientes:', { count, required: 21 })
+console.error('[ComponentName] Erro ao processar:', err.message, err)
+
+// ❌ RUIM — vago, sem contexto
+console.log('ok')
+console.log(data) // sem prefixo, difícil rastrear origem
+```
+
+**Quando Logar:**
+- Data loading (inicio/fim, quantidade de registros)
+- Validação (sucesso/falha, motivo)
+- Callbacks assíncronos (IntersectionObserver, Promise.then/.catch)
+- Erros (sempre incluir erro completo, não só `catch (err)`)
+- Transições de estado importantes
+
+**Não remover logs ao mergear** — eles são parte do código de produção. Remova apenas se forem muito verbose ou afetem performance.
+
+**Source:** Sprint M1 hotfix (heatmap diagnosis, 2026-03-10).
+
 ---
 
 *Last updated: 2026-03-10*
-*Rules: R-001 to R-115*
+*Rules: R-001 to R-116*
