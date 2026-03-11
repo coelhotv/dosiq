@@ -18,6 +18,7 @@
 .adherence-heatmap__container {
   display: table;
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background: var(--bg-secondary);
   border-radius: var(--border-radius-md);
@@ -42,6 +43,7 @@
 
 .adherence-heatmap__period-header {
   display: table-cell;
+  width: 25%;
   padding: var(--space-2);
   text-align: center;
   color: var(--text-secondary);
@@ -101,6 +103,17 @@
 
 .adherence-heatmap__cell--active {
   outline: 2px solid var(--color-primary);
+}
+
+.adherence-heatmap__cell--na {
+  cursor: default;
+}
+
+.adherence-heatmap__cell--na .adherence-heatmap__cell-text {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  text-shadow: none;
 }
 
 .adherence-heatmap__cell-text {
@@ -196,6 +209,10 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--font-size-xs);
+}
+
+.adherence-heatmap__period-bar--na .adherence-heatmap__period-percent {
+  color: var(--text-tertiary);
 }
 
 .adherence-heatmap__period-name {

@@ -38,7 +38,7 @@ export const AnalyzeAdherencePatternsInputSchema = z.object({
 const gridCellSchema = z.object({
   taken: z.number().int().min(0),
   expected: z.number().int().min(0),
-  adherence: z.number().min(0).max(100),
+  adherence: z.number().min(0).max(100).nullable(),
 })
 
 /**

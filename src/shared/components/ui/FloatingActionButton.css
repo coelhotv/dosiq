@@ -1,0 +1,67 @@
+/* FloatingActionButton - FAB compartilhado para Dashboard e HealthHistory */
+
+.fab-container {
+  position: fixed;
+  bottom: calc(var(--space-20) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-fab);
+}
+
+/* Botão com estilo magenta translúcido (glass effect) */
+.fab-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6); /* 12px 24px */
+  min-height: 48px;
+  min-width: 200px;
+  background: rgba(236, 72, 153, 0.2); /* Magenta semi-transparente */
+  border: var(--border-width-thin) solid rgba(236, 72, 153, 0.5); /* Borda translúcida */
+  border-radius: var(--radius-button);
+  color: #fff; /* Texto branco */
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: var(--transition-hover);
+  box-shadow:
+    0 4px 16px rgba(236, 72, 153, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px); /* Efeito glass */
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.fab-button:hover {
+  background: rgba(236, 72, 153, 0.35); /* Mais opaco no hover */
+  border-color: rgba(236, 72, 153, 0.7);
+  box-shadow:
+    0 6px 20px rgba(236, 72, 153, 0.35),
+    0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.fab-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.fab-button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Print styles */
+@media print {
+  .fab-container {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .fab-button {
+    transition: none;
+  }
+}
