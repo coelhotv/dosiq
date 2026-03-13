@@ -11,6 +11,27 @@ const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 
 /**
+ * Inicializa e preenche o grid de adesão 7×4 com os dados fornecidos
+ * @param {Array} data - Dados brutos da view de heatmap
+ * @returns {Array<Array<Object>>} O grid de adesão 7×4
+ */
+function buildAdherenceGrid(data) {
+  const grid = Array.from({ length: 7 }, () =>
+    Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: null }))
+  )
+
+  ;(data || []).forEach((row) => {
+    grid[row.day_of_week][row.period_index] = {
+      taken: row.taken_doses,
+      expected: row.expected_doses,
+      adherence: row.adherence_percentage,
+    }
+  })
+
+  return grid
+}
+
+/**
  * Encontra pior célula e gera narrativa para heatmap
  * @param {Array} data - Dados do heatmap
  * @param {boolean} hasEnoughData - Se tem dados suficientes
@@ -415,8 +436,6 @@ export const adherenceService = {
    * @returns {Promise<{grid: Array, worstCell: Object|null, narrative: string, hasEnoughData: boolean, dayOccurrences: Array}>}
    */
   async getAdherencePatternFromView() {
-    console.log('[adherenceService] getAdherencePatternFromView: iniciando')
-
     const { data, error } = await supabase
       .from('v_adherence_heatmap')
       .select('day_of_week, period_index, expected_doses, taken_doses, adherence_percentage')
@@ -428,19 +447,8 @@ export const adherenceService = {
       throw error
     }
 
-    // Inicializar grid 7×4
-    const grid = Array.from({ length: 7 }, () =>
-      Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: null }))
-    )
-
-    // Preencher grid com dados da view
-    ;(data || []).forEach((row) => {
-      grid[row.day_of_week][row.period_index] = {
-        taken: row.taken_doses,
-        expected: row.expected_doses,
-        adherence: row.adherence_percentage,
-      }
-    })
+    // Inicializar e preencher grid de adesão 7×4
+    const grid = buildAdherenceGrid(data)
 
     // Calcular hasEnoughData: pelo menos 7 células com expected_doses > 0
     // (1 período por dia × 7 dias da semana — usuários com só manhã+noite têm 14 células max)
