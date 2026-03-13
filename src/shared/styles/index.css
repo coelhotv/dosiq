@@ -45,6 +45,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -119,6 +120,33 @@ a:hover {
 :focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
+}
+
+/* ============================================
+   MOBILE TOUCH & UX
+   ============================================ */
+
+/* Remove 300ms tap delay on iOS Safari and remove flash on tap */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+label[for] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* Prevent rubber-band scroll bouncing in internal scroll containers */
+.overflow-scroll,
+.overflow-y-auto,
+[data-scroll-container] {
+  overscroll-behavior: contain;
+}
+
+/* Allow native pull-to-refresh on body */
+body {
+  overscroll-behavior-y: auto;
 }
 
 /* ============================================
