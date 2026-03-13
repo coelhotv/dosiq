@@ -43,6 +43,7 @@ export default function HealthHistory({ onNavigate }) {
   const [isLoadingPatterns, setIsLoadingPatterns] = useState(false)
   const observerRef = useRef(null) // observer instance
   const patternLoadedRef = useRef(false) // M3: previne múltiplas requisições
+  const isLoadingPatternsRef = useRef(false) // M8: evita closure stale no observer callback
 
   // Memos
   const treatmentPlans = useMemo(() => {
@@ -132,18 +133,24 @@ export default function HealthHistory({ onNavigate }) {
 
   // Ref callback: chamado quando o sentinel DIV é montado no DOM
   // M3 — Carrega padrões de adesão diretamente da view (zero processamento client)
+  // M8 — Deps [] para evitar recreação desnecessária; isLoadingPatternsRef para closure estável
   const setSentinelElement = useCallback((sentinel) => {
-    if (!sentinel) return
-
-    // Disconnect o observer anterior se existir
-    if (observerRef.current) {
-      observerRef.current.disconnect()
+    // Null-path: React chama com null antes de montar com novo elemento
+    // Desconectar observer antigo para evitar chamadas duplas
+    if (!sentinel) {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+      return
     }
+
+    // Garantir que qualquer observer anterior está desconectado
+    observerRef.current?.disconnect()
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Evitar múltiplas requisições: usar ref ao invés de state para prevenir AbortError
-        if (entry.isIntersecting && !isLoadingPatterns && !patternLoadedRef.current) {
+        // isLoadingPatternsRef evita duplo disparo sem fechar sobre state stale
+        if (entry.isIntersecting && !patternLoadedRef.current && !isLoadingPatternsRef.current) {
+          isLoadingPatternsRef.current = true
           setIsLoadingPatterns(true)
           // M3: Chamar view ao invés de processar 500 logs no client (O(N) → O(1))
           adherenceService
@@ -160,6 +167,7 @@ export default function HealthHistory({ onNavigate }) {
               patternLoadedRef.current = false // Permitir retry
             })
             .finally(() => {
+              isLoadingPatternsRef.current = false
               setIsLoadingPatterns(false)
             })
         }
@@ -169,12 +177,7 @@ export default function HealthHistory({ onNavigate }) {
 
     observer.observe(sentinel)
     observerRef.current = observer
-
-    return () => {
-      observer.disconnect()
-      observerRef.current = null
-    }
-  }, [isLoadingPatterns])
+  }, [])
 
   // Handlers
   const showSuccess = useCallback((msg) => {
