@@ -15,7 +15,7 @@ New feature: monthly medication cost analysis service with performance optimizat
 
 ### Detailed Timeline
 
-#### Phase 1: Setup (10 min)
+#### Step 1: Setup (10 min)
 ```bash
 # 1. Read spec
 cat plans/EXEC_SPEC_FASE_5.md
@@ -35,7 +35,7 @@ cat src/features/medications/services/medicineService.js
 git checkout -b feature/fase-5/cost-analysis
 ```
 
-#### Phase 2: Implementation (60 min)
+#### Step 2: Implementation (60 min)
 ```javascript
 // 1. SCHEMA FIRST (15 min)
 // File: src/schemas/costAnalysisSchema.js (73 lines)
@@ -89,7 +89,7 @@ export const costAnalysisService = {
 // 524 lines: happy path, edge cases, performance verification
 ```
 
-#### Phase 3: Validation (10 min)
+#### Step 3: Validation (10 min)
 ```bash
 npm run validate:agent
 # ✅ 425/425 tests passing (some unrelated tests increased from 473)
@@ -98,7 +98,7 @@ npm run validate:agent
 # ✅ Build OK
 ```
 
-#### Phase 4: Git & Docs (5 min)
+#### Step 4: Git & Docs (5 min)
 ```bash
 # Discovered 1 new rule about performance optimization
 cat >> .memory/rules.md <<'EOF'
@@ -128,7 +128,7 @@ git add src/features/stock/services/__tests__/costAnalysisService.test.js
 git commit -m "test(stock): add 524-line comprehensive cost analysis test suite"
 ```
 
-#### Phase 5: Push & Review (30 min)
+#### Step 5: Push & Review (30 min)
 ```bash
 git push -u origin feature/fase-5/cost-analysis
 
@@ -186,14 +186,14 @@ git push
 # Gemini re-reviews: ✅ All critical/high resolved
 ```
 
-#### Phase 6: Merge (5 min)
+#### Step 6: Merge (5 min)
 ```bash
 gh pr merge PR_275 --squash --delete-branch
 # ✅ Branch deleted
 # ✅ Commit: 894bb98 on main
 ```
 
-#### Phase 7: Documentation (10 min)
+#### Step 7: Documentation (10 min)
 ```bash
 # Update spec
 cat > plans/EXEC_SPEC_FASE_5.md <<'EOF'
@@ -270,37 +270,37 @@ Hotfix: two bugs found after Sprint 5.A delivery:
 
 ### Quick Timeline
 ```
-PHASE 1 (Setup): 10 min
+STEP 1 (Setup): 10 min
   ✓ Identified: process-anvisa.js encoding bug
   ✓ Identified: MedicineAutocomplete missing from TreatmentWizard
   ✓ Created: fix/5b/encoding-and-autocomplete
 
-PHASE 2 (Implementation): 45 min
+STEP 2 (Implementation): 45 min
   ✓ Added iconv-lite to package.json
   ✓ Changed ETL: fs.stream → iconv.decodeStream('mac_roman')
   ✓ Integrated: MedicineAutocomplete + LaboratoryAutocomplete into TreatmentWizard
   ✓ Added: handleMedicineSelect + handleLaboratorySelect handlers
   ✓ Added: .wizard__label-note CSS class
 
-PHASE 3 (Validation): 10 min
+STEP 3 (Validation): 10 min
   ✓ npm run validate:agent → 473/473 ✅
 
-PHASE 4 (Git & Docs): 5 min
+STEP 4 (Git & Docs): 5 min
   ✓ Updated .memory/rules.md → R-111 (Mac Roman encoding)
   ✓ Committed: "fix(medications): correct Mac Roman encoding"
   ✓ Committed: "feat(protocols): add ANVISA autocomplete to TreatmentWizard"
 
-PHASE 5 (Push & Review): 20 min
+STEP 5 (Push & Review): 20 min
   ✓ gh pr create (PR #287)
   ✓ Gemini: 1 suggestion (remove inline styles)
   ✓ Applied: "style(protocols): remove inline styles for CSS class"
   ✓ Re-reviewed: ✅ OK
 
-PHASE 6 (Merge): 5 min
+STEP 6 (Merge): 5 min
   ✓ gh pr merge --squash
   ✓ Commit: 2f021b2
 
-PHASE 7 (Docs): 10 min
+STEP 7 (Docs): 10 min
   ✓ Updated EXEC_SPEC_FASE_5.md → 95% progress
   ✓ Created 2026-W11.md journal
   ✓ Closed issues #288 #289 (Gemini auto-created)
@@ -401,7 +401,7 @@ Average per sprint:
 ✅ Consistent workflow across different sprint types (feature, hotfix, renovation)
 ✅ 473/473+ tests passing is baseline (non-negotiable)
 ✅ Code review cycle (5–15 min Gemini + 10–15 min apply) is always included
-✅ Documentation step (Phase 7) takes 10 min but worth 100x
+✅ Documentation step (Step 7) takes 10 min but worth 100x
 ✅ Total time < 2 hours from start to production merge
 
 ---
