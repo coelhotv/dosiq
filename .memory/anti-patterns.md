@@ -120,6 +120,9 @@
 | AP-P01 | IntersectionObserver sentinel positioned before fold + rootMargin high | `rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becomes eager load | Position sentinel **AFTER all visible content** (end of JSX); reduce `rootMargin` to `<= 50px` | R-115 |
 | AP-P02 | Synchronous import of component >200 lines in mobile-critical view | Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g., `SparklineAdesao` 518 ln) | Use `React.lazy()` + `<Suspense fallback>` for components >200 lines in view-level JSX | R-116 |
 | AP-P03 | O(n) synchronous computation in useMemo with n>100 | `analyzeAdherencePatterns` + Zod validation on 500 objects in useMemo = Main Thread freeze, UI unresponsive 200-400ms | Wrap in `startTransition(() => { setState(heavyComputation()) })` to allow React to pause between frames | R-117 |
+| AP-P09 | N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))` | N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100ms+ blocking (safari trace M7). With `select('*')` each = ~500 bytes × 10 = 5KB waste per call | **Batch query:** 1 `SELECT key` for all items, then `Map.set(key, count)` client-side O(M) grouping. Eliminates round-trip amplification | R-118 |
+| AP-P10 | `select('*')` when only need count | All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows × ~500 bytes/row = 1.35MB waste per query | Use `select('*', { count: 'exact', head: true })` — HEAD request, zero data bytes, server returns only count | R-119 |
+| AP-P11 | `useCallback` with state in deps of a ref callback | Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` with new observer. 16ms window with two observers. Leads to duplicate event fires or race conditions | Ref callbacks **ALWAYS deps `[]`**. Use `useRef` for stateful flags that would need closure. Return value of ref callback is ignored (only useEffect cleanup runs) | R-120 |
 
 ## Database & Aggregation Anti-Patterns (Sprint M3 — 2026-03-13)
 
@@ -132,4 +135,4 @@
 ---
 
 *Last updated: 2026-03-13*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P03 + AP-D01 to AP-D03*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P11 + AP-D01 to AP-D03*
