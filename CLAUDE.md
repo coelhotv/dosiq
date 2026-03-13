@@ -8,9 +8,10 @@
 Stack: React 19 + Vite 7 + Supabase (Postgres + Auth + RLS) + Zod 4 + Framer Motion 12 + Vitest 4.
 Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 0.
 
-**Versao atual:** v3.2.0 (Fases 1-5 COMPLETAS ✅)
+**Versao atual:** v3.2.0 (Fases 1-5 COMPLETAS ✅) + **Mobile Performance Initiative M0-M2 COMPLETO** ✅
 **Fase 5 Entregas:** Cost Analysis (F5.10) + ANVISA Base (F5.6) + Onboarding v3.2 (F5.C) + Landing Redesign (F5.D) — todos mergeados
-**Proxima:** Fase 6 — Portabilidade, Performance e Monetizacao (roadmap em `plans/ROADMAP_v4.md`)
+**Mobile Perf M2:** Lazy loading de 13 views + Vite manualChunks (8 vendor/feature chunks) + ViewSkeleton pattern — Bundle: 989KB → 102.47kB gzip (89% reduction) ✅
+**Proxima:** Fase 6 — Portabilidade, Performance e Monetizacao (roadmap em `plans/ROADMAP_v4.md`) | Mobile Perf M3-M6 (DB indexes, offline UX, CSS/assets, touch UX)
 
 ---
 
@@ -152,6 +153,16 @@ Ordem obrigatoria: Validar -> Registrar -> Decrementar estoque
 
 ### LogForm
 Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.isArray()`
+
+### Mobile Performance — Lazy Loading Pattern (R-117, M2 ✅)
+- **OBRIGATORIO:** Todas as views (exceto Dashboard) DEVEM ser lazy-loaded com `React.lazy()` + `Suspense`
+- **Suspense fallback DEVE SER ViewSkeleton** — nunca `null` ou spinner generico
+- **Vite manualChunks:** 8 chunks (vendor + feature) para evitar loading desnecessario
+  - Vendors: framer, supabase, virtuoso, pdf (este ultimo dinamico via import() em handlers)
+  - Features: medicines-db, history, stock, landing
+- **Resultado:** 89% reducao de bundle (989KB → 102.47kB gzip), FCP ~500ms mais rapido no mobile
+- **Proximos sprints M3-M6:** DB indexes (M3), Offline UX (M4), CSS/Assets (M5), Touch UX (M6)
+- Ver: `docs/standards/MOBILE_PERFORMANCE.md` + `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md`
 
 ---
 
@@ -347,13 +358,38 @@ cat .memory/journal/2026-W11.md
 
 ---
 
-## Navegacao (App.jsx)
+## Navegacao (App.jsx) — Lazy Loading com Suspense (R-117)
 
 Sistema view-based (nao React Router). Views atuais:
 - `dashboard` (default), `medicines`, `stock`, `protocols`, `history`, `settings`, `admin-dlq`, `landing`
 
+**CRITICO:** Todas as views DEVEM ser lazy-loaded com Suspense + ViewSkeleton para mobile performance (M2 ✅):
+
+```jsx
+// ✅ CORRETO — cada view eh lazy-loaded
+const Landing = lazy(() => import('./views/Landing'))
+const Medicines = lazy(() => import('./views/Medicines'))
+
+// Renderizar com Suspense + fallback
+<Suspense fallback={<ViewSkeleton />}>
+  <Landing {...props} />
+</Suspense>
+```
+
+**ViewSkeleton component:** Skeleton loading screen (src/App.jsx, lines 23-35) que exibe placeholder durante carregamento de chunks grandes (jsPDF, medicineDatabase, etc). Resultado: FCP melhorado ~500ms no mobile.
+
 Navegacao via `setCurrentView()` + `BottomNav` component.
 `DashboardProvider` wrapa toda a app (context compartilhado).
+
+**Vite manualChunks (M2 ✅):** 8 chunks separados para evitar loading desnecessario:
+- `vendor-pdf` (jsPDF + html2canvas, 174KB) — carrega apenas em handlers de exportacao
+- `vendor-framer` (Framer Motion)
+- `vendor-supabase` (Supabase libs)
+- `vendor-virtuoso` (Virtual scroll lists)
+- `feature-medicines-db` (ANVISA database, 105KB) — carrega apenas em Medicines view
+- `feature-history`, `feature-stock`, `feature-landing` — sob demanda
+
+Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 
 ---
 
@@ -388,8 +424,10 @@ Navegacao via `setCurrentView()` + `BottomNav` component.
 - `docs/INDEX.md` — indice mestre
 - `docs/reference/SCHEMAS.md` — schemas Zod
 - `docs/standards/GEMINI_INTEGRATION.md` — code review automatico
+- `docs/standards/MOBILE_PERFORMANCE.md` — **NOVO** — Standards de performance mobile (lazy loading, code splitting, CSS animations, assets, touch UX)
 - `docs/architecture/TELEGRAM_BOT.md` — bot + notificacoes
 - `plans/EXEC_SPEC_FASE_5.md` — spec de execucao da Fase 5
+- `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` — **NOVO** — Roadmap M0-M6 para otimizacao mobile (M2 concluido ✅)
 - `plans/ROADMAP_v4.md` — roadmap futuro
 
 ### Memoria de Longo Prazo (em `/.memory/` — DENTRO DO PROJETO)

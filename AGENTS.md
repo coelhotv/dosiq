@@ -1,7 +1,7 @@
 # Meus Remédios - AI Agent Guide
 
-> **Aplicativo de gerenciamento de medicamentos em português brasileiro**  
-> **Versão:** 3.0.0 | React 19 + Vite + Supabase
+> **Aplicativo de gerenciamento de medicamentos em português brasileiro**
+> **Versão:** 3.2.0 (Fase 5 ✅ + Mobile Performance M0-M2 ✅) | React 19 + Vite + Supabase
 
 ---
 
@@ -34,6 +34,8 @@
 | **Use services API** | [`docs/reference/SERVICES.md`](docs/reference/SERVICES.md) |
 | **Use hooks** | [`docs/reference/HOOKS.md`](docs/reference/HOOKS.md) |
 | **Use Zod schemas** | [`docs/reference/SCHEMAS.md`](docs/reference/SCHEMAS.md) ✅ |
+| **Mobile performance** | [`docs/standards/MOBILE_PERFORMANCE.md`](docs/standards/MOBILE_PERFORMANCE.md) ✅ — Lazy loading, code splitting, CSS, assets, touch UX |
+| **Mobile perf roadmap** | [`plans/EXEC_SPEC_MOBILE_PERFORMANCE.md`](plans/EXEC_SPEC_MOBILE_PERFORMANCE.md) — M0-M6 execution spec (M2 ✅) |
 | **Execute UX specs** | [`plans/EXEC_SPEC_UX_EVOLUTION.md`](plans/EXEC_SPEC_UX_EVOLUTION.md) + `plans/specs/` |
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
@@ -60,6 +62,65 @@
 | 4 | **Zod Enums** | Portuguese only: `['diario', 'semanal']` | R-021 |
 | 5 | **Dosage Units** | Pills (not mg), `quantity_taken` within Zod limit of 100 | R-022 |
 | 6 | **Serverless Limit** | Vercel Hobby max 12 functions. Check budget before adding `.js` to `api/`. Utilities in `_`-prefixed dirs | R-090 |
+| 7 | **Mobile Performance** | All views lazy-loaded + Suspense + ViewSkeleton; Vite manualChunks (8 chunks); R-117 | M2 ✅ |
+
+---
+
+## 🚀 Mobile Performance Initiative (M0-M6, M2 ✅)
+
+**Status:** Sprint M2 (Code Splitting & Lazy Routes) **MERGED** on 2026-03-13 (commit ddd3fbe)
+
+| Sprint | Focus | Status | Impact |
+|--------|-------|--------|--------|
+| **M0** | Lazy imports + startTransition + Virtuoso | ✅ | -400ms TTI |
+| **M1** | Virtuoso list optimization | ✅ | -600ms LCP (HealthHistory) |
+| **M2** | Lazy views + manualChunks + ViewSkeleton | ✅ MERGED | 989KB → 102kB gzip (89% reduction) |
+| **M3** | DB indexes + query optimization | 🔜 | -5sec initial load |
+| **M4** | Offline UX + Service Worker | 🔜 | Offline-first UI |
+| **M5** | CSS/Assets fixes + favicon compression | 🔜 | -50ms FCP |
+| **M6** | Touch UX (tap, scroll, overscroll) | 🔜 | Better mobile feel |
+
+**Key Deliverables (M2):**
+- ✅ 13 views converted to `React.lazy()` + Suspense
+- ✅ ViewSkeleton component (skeleton loading fallback)
+- ✅ Vite manualChunks: 8 vendor/feature chunks
+- ✅ Critical bug fix: Landing without Suspense (would crash for unauth users)
+- ✅ `docs/standards/MOBILE_PERFORMANCE.md` created (Sections 1-2, incremental expansion M3-M6)
+- ✅ `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` execution spec
+
+**Performance Gains:**
+- Main bundle: **102.47 kB gzip** (down from 989KB)
+- jsPDF + html2canvas: 174KB (lazy, on export handler trigger)
+- medicineDatabase: 105KB (lazy, on medicines view)
+- FCP improvement: ~500ms faster on mid-tier devices
+- Tests: ✅ 539/539 passing, 0 lint errors
+
+**When to Use ViewSkeleton:**
+```jsx
+const Medicines = lazy(() => import('./views/Medicines'))
+
+// ✅ CORRECT
+<Suspense fallback={<ViewSkeleton />}>
+  <Medicines {...props} />
+</Suspense>
+
+// ❌ WRONG
+<Medicines {...props} />  // Will crash at lazy boundary
+<Suspense fallback={<Spinner />}>  // ViewSkeleton is standard
+  <Medicines {...props} />
+</Suspense>
+```
+
+**Rule R-117:** All non-critical views (non-Dashboard) MUST be lazy-loaded. Suspension fallback MUST be ViewSkeleton. Never lazy-load Dashboard (critical path).
+
+**Documentation:**
+- [`docs/standards/MOBILE_PERFORMANCE.md`](docs/standards/MOBILE_PERFORMANCE.md) — Living standards (Sections 1-2: principles, lazy loading)
+- [`plans/EXEC_SPEC_MOBILE_PERFORMANCE.md`](plans/EXEC_SPEC_MOBILE_PERFORMANCE.md) — Roadmap with all 6 sprints + gap analysis
+- [`CLAUDE.md`](CLAUDE.md) — R-117 rule reference
+
+**Next:** M3 focuses on database indexes + query optimization (adherence heatmap large data loads).
+
+---
 
 **Canonical File Locations (Wave 9 — estrutura final):**
 | Domain | Canonical Location | Obs |
@@ -380,7 +441,7 @@ src/
 │   └── api/           # adherenceService.js, dlqService.js — APENAS ESTES 2
 ├── schemas/           # Zod schemas globais (ÚNICO local — use @schemas/)
 ├── utils/             # Utilitários globais (dateUtils, adherenceLogic, titrationUtils)
-└── views/             # Page components
+└── views/             # Page components — **TODAS lazy-loaded com Suspense + ViewSkeleton (R-117, M2 ✅)**
 
 server/                # Telegram Bot (Node.js separado — server/package.json)
 ├── bot/
@@ -792,6 +853,7 @@ O projeto passou por uma evolucao de UX (navegacao por entidade -> navegacao por
 
 ---
 
-*Última atualização: 2026-03-04*
-*Versão do projeto: 3.0.0*
-*Formato: Routing Table (Wave 9 — Legacy Cleanup concluído)*
+*Última atualização: 2026-03-13*
+*Versão do projeto: 3.2.0*
+*Status: Fase 5 ✅ + Mobile Performance M0-M2 ✅*
+*Formato: Routing Table (Wave 9 — Legacy Cleanup concluído) + Mobile Performance Initiative*
