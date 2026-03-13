@@ -21,7 +21,7 @@
 | **M5** | ✅ MERGED | `4822296` | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ CSS animations, favicon, font sizes |
 | **M6** | ✅ MERGED | — | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ touch UX, overscroll, universal checklist |
 | **M7** | ✅ MERGED | `8e52ca9` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ N+1 (15→6 queries), ✅ Gemini suggestions aplicadas |
-| **M8** | 🆕 Pendente | — | — | Sentinel observer bug fix + select('*') HEAD request |
+| **M8** | ✅ MERGED | `c2b316f` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ race condition fix, ✅ ref callback pattern |
 
 ### Sprint M0 — Quality Gates Checklist
 
