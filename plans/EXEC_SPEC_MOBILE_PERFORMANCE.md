@@ -1,5 +1,5 @@
 # EXEC SPEC — Meus Remédios: Performance Mobile
-**Versão:** 1.0 | **Data:** 2026-03-09
+**Versão:** 2.0 | **Data:** 2026-03-12
 **Plano-base:** `plans/PLAN_MOBILE_PERFORMANCE_v2.md`
 **Skill de entrega:** `/deliver-sprint`
 
@@ -18,6 +18,8 @@
 | M2 | 🔜 Pendente | — | — | — |
 | M3 | 🔜 Pendente | — | — | — |
 | M4 | 🔜 Pendente | — | — | — |
+| M5 | 🔜 Pendente | — | — | — |
+| M6 | 🔜 Pendente | — | — | — |
 
 ### Sprint M0 — Quality Gates Checklist
 
@@ -782,27 +784,40 @@ npm run build 2>&1 | grep -E "\.js|kB|gzip"
 
 ### M2.1 — Lazy Loading por View no App.jsx
 
-Localizar o arquivo que renderiza as views condicionalmente (provavelmente `src/App.jsx` ou `src/views/`). Identificar onde `HealthHistory`, `Stock`, `Protocols`, etc. são importados.
+**Por que:** Na análise pós-M1, apenas `Consultation` estava como lazy. As 12 views restantes eram síncronas, inflando o bundle inicial com código de views que o usuário pode nunca visitar naquela sessão.
+
+Localizar `src/App.jsx`. Identificar todos os imports de views no topo do arquivo e converter para lazy:
 
 ```jsx
 // Adicionar ao import existente do React:
 import { lazy, Suspense } from 'react'
 
-// REMOVER imports síncronos das views pesadas:
+// REMOVER imports síncronos de TODAS as views não-críticas:
 // import HealthHistory from './views/HealthHistory'
 // import Stock from './views/Stock'
 // import Protocols from './views/Protocols'
 // import AdminDlq from './views/AdminDlq'
 // import Landing from './views/Landing'
+// import Medicines from './views/Medicines'
+// import Settings from './views/Settings'
+// import Calendar from './views/Calendar'
+// import Emergency from './views/Emergency'
+// import Profile from './views/Profile'
+// (Consultation já era lazy — manter)
 
-// SUBSTITUIR por lazy imports:
+// SUBSTITUIR por lazy imports (todos, exceto Dashboard):
 const HealthHistory = lazy(() => import('./views/HealthHistory'))
 const Stock         = lazy(() => import('./views/Stock'))
 const Protocols     = lazy(() => import('./views/Protocols'))
 const AdminDlq      = lazy(() => import('./views/AdminDlq'))
 const Landing       = lazy(() => import('./views/Landing'))
+const Medicines     = lazy(() => import('./views/Medicines'))
+const Settings      = lazy(() => import('./views/Settings'))
+const Calendar      = lazy(() => import('./views/Calendar'))
+const Emergency     = lazy(() => import('./views/Emergency'))
+const Profile       = lazy(() => import('./views/Profile'))
 
-// MANTER síncrono (view padrão, carregada sempre):
+// MANTER síncrono (view padrão do cold start — precisa renderizar imediatamente):
 import Dashboard from './views/Dashboard'
 ```
 
@@ -831,18 +846,67 @@ function ViewSkeleton() {
 
 Envolver o render condicional das views com `<Suspense>`:
 ```jsx
-// Localizar o switch/condicional de views e envolver:
+// Localizar o switch/condicional de views e envolver com Suspense único:
 <Suspense fallback={<ViewSkeleton />}>
   {currentView === 'history' && <HealthHistory onNavigate={setCurrentView} />}
   {currentView === 'stock' && <Stock ... />}
   {currentView === 'protocols' && <Protocols ... />}
-  {/* ... outras views lazy ... */}
+  {currentView === 'medicines' && <Medicines ... />}
+  {currentView === 'settings' && <Settings ... />}
+  {currentView === 'calendar' && <Calendar ... />}
+  {currentView === 'emergency' && <Emergency ... />}
+  {currentView === 'profile' && <Profile ... />}
+  {currentView === 'landing' && <Landing ... />}
+  {/* ... demais views lazy ... */}
 </Suspense>
+```
+
+**Verificação pós-implementação:**
+```bash
+# Confirmar que nenhum import síncrono de view pesada permanece
+grep -n "^import.*views/" src/App.jsx
+# Esperado: apenas Dashboard (e Auth se existir)
 ```
 
 ---
 
-### M2.2 — Chunks Manuais no vite.config.js
+### M2.2 — Lazy loading de jsPDF no trigger de exportação
+
+**Por que:** jsPDF + html2canvas somam ~587KB no bundle atual. São carregados para TODOS os usuários mesmo que nunca exportem PDF.
+
+Localizar o handler que dispara a exportação de PDF (provavelmente em `Stock.jsx` ou `ReportGenerator.jsx`). Substituir o import estático por dynamic import dentro do handler:
+
+```jsx
+// ANTES (import estático no topo do arquivo):
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+
+// DEPOIS (dynamic import no momento do uso):
+const handleExportPDF = async () => {
+  setIsExporting(true)
+  try {
+    // jsPDF só carrega quando o usuário clica em "Exportar PDF"
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas'),
+    ])
+    // ... lógica de exportação inalterada usando jsPDF e html2canvas
+  } finally {
+    setIsExporting(false)
+  }
+}
+```
+
+**Verificar impacto no build:**
+```bash
+npm run build 2>&1 | grep -E "jspdf|html2canvas"
+# Esperado: chunks separados com nomes contendo "jspdf" e "html2canvas"
+# NÃO devem aparecer no chunk index principal
+```
+
+---
+
+### M2.3 — Chunks Manuais no vite.config.js
 
 Localizar a seção `build` em `vite.config.js`. Adicionar `manualChunks` dentro de `rollupOptions.output`:
 
@@ -852,13 +916,13 @@ build: {
   rollupOptions: {
     output: {
       manualChunks: {
-        // Isolar Framer Motion (~150KB) — carregado em múltiplas views
-        'vendor-framer': ['framer-motion'],
-        // Isolar Supabase client
-        'vendor-supabase': ['@supabase/supabase-js'],
-        // Isolar react-virtuoso (instalado no M1)
-        'vendor-virtuoso': ['react-virtuoso'],
-        // Feature chunks (carregados apenas quando a view é acessada)
+        // Vendors grandes — isolados para cache duradouro
+        'vendor-framer': ['framer-motion'],           // ~150KB, usado em múltiplas views
+        'vendor-supabase': ['@supabase/supabase-js'], // client auth/db
+        'vendor-virtuoso': ['react-virtuoso'],         // lista virtualizada (M1)
+        'vendor-pdf': ['jspdf', 'html2canvas'],        // ~587KB — só ao exportar
+
+        // Feature chunks — carregados apenas quando a view é acessada
         'feature-history': [
           './src/views/HealthHistory.jsx',
           './src/features/adherence/components/AdherenceHeatmap.jsx',
@@ -866,13 +930,52 @@ build: {
         ],
         'feature-stock': ['./src/views/Stock.jsx'],
         'feature-landing': ['./src/views/Landing.jsx'],
+
+        // Base ANVISA — 819KB, carregada apenas em Medicines/autocomplete
+        'feature-medicines-db': [
+          './src/features/medications/data/medicineDatabase.json',
+        ],
       },
     },
   },
+  // Source maps hidden: gerados mas não expostos no bundle (para debugging em produção)
+  sourcemap: 'hidden',
 },
 ```
 
-**Atenção:** Se algum dos caminhos em `manualChunks` não existir, o build falhará com erro claro. Verificar com `find src -name "HealthHistory.jsx"` antes.
+**Atenção:** Se algum dos caminhos em `manualChunks` não existir, o build falhará com erro claro. Verificar antes:
+```bash
+find src -name "medicineDatabase.json" -type f
+find src -name "AdherenceHeatmap.jsx" -type f
+```
+
+---
+
+### M2.4 — Preload hint no index.html
+
+**Por que:** O browser descobre o bundle principal apenas ao parsear o HTML, causando atraso na cadeia de carregamento. `modulepreload` instrui o browser a buscar o chunk imediatamente.
+
+Localizar `index.html` na raiz do projeto. Adicionar preload:
+
+```html
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meus Remédios</title>
+    <!-- Preload: instrui browser a buscar o chunk principal antes do parser chegar ao <script> -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+```
+
+**Nota:** O Vite em modo build substitui `/src/main.jsx` pelo hash real do chunk. O preload é inserido automaticamente pelo Vite para chunks detectados como críticos — verificar no output do build se `modulepreload` aparece no HTML gerado. Se sim, este passo é redundante e pode ser omitido.
 
 ---
 
@@ -881,9 +984,13 @@ build: {
 ```bash
 # Gate 1: Build com análise de chunks
 npm run build
-# Verificar no output:
-# - Deve aparecer "feature-history", "vendor-framer", "vendor-supabase"
-# - Bundle do index principal deve ser menor que antes (comparar com baseline do Setup)
+# Verificar no output (chunks obrigatórios):
+# - "feature-history" — view Saúde + AdherenceHeatmap
+# - "vendor-framer" — Framer Motion isolado
+# - "vendor-supabase" — Supabase client isolado
+# - "vendor-pdf" — jsPDF + html2canvas NÃO no bundle principal
+# - "feature-medicines-db" — base ANVISA isolada
+# - Bundle do index principal MENOR que baseline do Setup
 
 # Gate 2: Lint
 npm run lint
@@ -893,7 +1000,12 @@ npm run validate:agent
 
 # Gate 4: Medir tamanho do bundle principal
 npm run build 2>&1 | grep "index.*\.js" | grep -o "[0-9.]* kB (gzip.*)"
-# Meta: < 250KB gzipped
+# Meta: < 200KB gzipped (baseline pré-M2 era ~989KB não-gzipped)
+
+# Gate 5: Confirmar que jsPDF não está no chunk inicial
+# Abrir Chrome DevTools > Network > recarregar app
+# Filtrar por "jspdf" — NÃO deve aparecer no carregamento inicial
+# Deve aparecer apenas quando "Exportar PDF" for clicado
 ```
 
 ---
@@ -901,13 +1013,94 @@ npm run build 2>&1 | grep "index.*\.js" | grep -o "[0-9.]* kB (gzip.*)"
 ## FASE 4 — Git
 
 ```bash
-git add src/App.jsx vite.config.js
-git commit -m "feat(app): code splitting por view com lazy() e manualChunks
+git add src/App.jsx vite.config.js index.html
+git commit -m "feat(app): code splitting completo — lazy views + jsPDF dinâmico + manualChunks
 
-- Views pesadas (HealthHistory, Stock, Protocols, AdminDlq, Landing) via lazy()
-- Dashboard mantido como eager (view padrão do cold start)
+- Todas as views não-críticas via lazy() (Dashboard único eager)
+- jsPDF + html2canvas: dynamic import no handler de exportação (-587KB do bundle inicial)
 - ViewSkeleton como fallback de Suspense durante carregamento de chunk
-- manualChunks no vite: vendor-framer, vendor-supabase, vendor-virtuoso, feature-history"
+- manualChunks: vendor-framer, vendor-supabase, vendor-virtuoso, vendor-pdf,
+  feature-history, feature-stock, feature-landing, feature-medicines-db
+- sourcemap: 'hidden' para debugging em produção sem expor no bundle
+- index.html: lang='pt-BR' corrigido"
+```
+
+---
+
+## FASE 7 — Learning Loop + Documentação
+
+Após merge, **iniciar** `docs/standards/MOBILE_PERFORMANCE.md` com as seções 1 e 2:
+
+```markdown
+# Guia de Performance Mobile — Meus Remédios
+
+> Documento vivo. Construído incrementalmente nos sprints M2–M6.
+> Leia ANTES de adicionar qualquer view, componente pesado ou biblioteca.
+
+## 1. Princípios Gerais (Dispositivos Mid-Low Tier)
+
+**Contexto:** O usuário-alvo usa iPhone 8 / Android mid-range em redes 4G instáveis.
+Limites práticos:
+- JS parse + compile: budget de 50ms na main thread por interação
+- Bundle inicial: < 200KB gzipped para TTI < 3s em 4G
+- Heap memory: manter < 50MB para evitar OOM em dispositivos com 2GB RAM
+
+**Regras base:**
+- `Dashboard` é a única view eager. Todas as outras: `lazy()`
+- Bibliotecas > 100KB NUNCA no bundle inicial: isolá-las em vendor chunks
+- Dados pesados (bases JSON, PDFs): sempre dynamic import no ponto de uso
+
+## 2. JavaScript: Lazy Loading & Code Splitting
+
+### 2.1 Views com `React.lazy()`
+
+```jsx
+// ✅ CORRETO — view carrega só quando acessada
+const HealthHistory = lazy(() => import('./views/HealthHistory'))
+
+// ❌ ERRADO — vai para o bundle inicial mesmo sem o usuário abrir a view
+import HealthHistory from './views/HealthHistory'
+```
+
+**Quando usar eager (import estático):** apenas a view padrão do cold start (Dashboard).
+
+### 2.2 Bibliotecas pesadas: dynamic import no handler
+
+```jsx
+// ✅ CORRETO — jsPDF só baixa quando usuário clica "Exportar"
+const handleExport = async () => {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ])
+  // usar jsPDF e html2canvas normalmente
+}
+
+// ❌ ERRADO — 587KB no bundle inicial, impacta todos os usuários
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+```
+
+### 2.3 manualChunks obrigatórios no vite.config.js
+
+```js
+manualChunks: {
+  'vendor-framer': ['framer-motion'],           // ~150KB
+  'vendor-supabase': ['@supabase/supabase-js'],
+  'vendor-virtuoso': ['react-virtuoso'],
+  'vendor-pdf': ['jspdf', 'html2canvas'],       // só carrega ao exportar
+  'feature-medicines-db': ['./src/features/medications/data/medicineDatabase.json'], // 819KB
+}
+```
+
+### 2.4 Verificação pós-build
+
+```bash
+npm run build 2>&1 | grep -E "vendor-pdf|feature-medicines-db"
+# Esperado: chunks aparecem SEPARADOS do index principal
+```
+
+**Source:** Sprint M2 — code splitting completo
 ```
 
 ---
@@ -1068,6 +1261,58 @@ EXPLAIN ANALYZE: Index Scan confirmado, <10ms com 10k logs."
 
 ---
 
+## FASE 5 — Learning Loop + Documentação
+
+Após merge, **adicionar Seção 6** a `docs/standards/MOBILE_PERFORMANCE.md`:
+
+```markdown
+## 6. Banco de Dados: Índices e Views para Performance Mobile
+
+### 6.1 Princípio: pré-calcular no servidor, não no cliente
+
+Calcular adesão diária, streaks ou agregações em JavaScript com N logs é O(N) na main thread do mobile. O PostgreSQL faz o mesmo em <10ms com índice adequado.
+
+**Regra:** Qualquer agregação que processa > 100 rows deve ter uma view ou função no banco.
+
+### 6.2 Índices compostos para paginação
+
+```sql
+-- Padrão: (partition_key, sort_key DESC)
+-- Suporta WHERE user_id = X ORDER BY taken_at DESC LIMIT N
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_user_taken_at_desc
+ON medication_logs (user_id, taken_at DESC);
+```
+
+**Por que `CONCURRENTLY`:** Não bloqueia leituras durante a criação. Obrigatório em produção.
+**Por que `IF NOT EXISTS`:** Idempotente — safe para re-executar.
+
+### 6.3 Views de agregação server-side
+
+```sql
+-- Padrão: VIEW substitui processamento client-side
+CREATE OR REPLACE VIEW v_daily_adherence AS
+SELECT
+    user_id,
+    (taken_at AT TIME ZONE 'UTC')::date AS log_date,
+    COUNT(*) FILTER (WHERE status = 'taken') * 100.0 / NULLIF(COUNT(*), 0) AS adherence_pct
+FROM medication_logs
+GROUP BY user_id, (taken_at AT TIME ZONE 'UTC')::date;
+```
+
+### 6.4 Check constraints para consistência
+
+```sql
+-- Previne status inválidos que quebram processamento no cliente
+ALTER TABLE medication_logs
+ADD CONSTRAINT chk_medication_logs_status
+CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
+```
+
+**Source:** Sprint M3 — DB indexes e views
+```
+
+---
+
 ---
 
 # SPRINT M4 — SERVICE WORKER E OFFLINE FIRST
@@ -1224,6 +1469,810 @@ Usuário recebe feedback imediato ao invés de spinner eterno."
 
 ---
 
+## FASE 5 — Learning Loop + Documentação
+
+Após merge, **adicionar Seção 7 (parcial)** a `docs/standards/MOBILE_PERFORMANCE.md`:
+
+```markdown
+## 7. Touch, UX Mobile e Feedback de Conectividade
+
+### 7.1 Feedback de conectividade (OfflineBanner pattern)
+```
+```jsx
+// ✅ PADRÃO: OfflineBanner acima do BottomNav, aria-live para screen readers
+export function OfflineBanner() {
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
+  useEffect(() => {
+    const on  = () => setIsOffline(false)
+    const off = () => setIsOffline(true)
+    window.addEventListener('online',  on)
+    window.addEventListener('offline', off)
+    return () => {
+      window.removeEventListener('online',  on)
+      window.removeEventListener('offline', off)
+    }
+  }, [])
+
+  if (!isOffline) return null
+  return <div className="offline-banner" role="alert" aria-live="polite">...</div>
+}
+```
+```markdown
+**CSS obrigatório:**
+```
+```css
+.offline-banner {
+  position: fixed;
+  bottom: 64px; /* acima do BottomNav */
+  contain: layout style; /* evita layout thrash no toggle */
+  z-index: 100;
+}
+```
+```markdown
+**Regra:** NUNCA exibir spinner eterno em mobile. Dar feedback claro de estado offline com dados em cache.
+
+> ⚠️ Seção 7 será completada no Sprint M6.
+
+**Source:** Sprint M4 — offline banner
+```
+
+---
+
+# SPRINT M5 — ASSETS, CSS E FONT SIZES
+
+**Branch:** `fix/mobile-perf-m5-assets-css`
+**Dependência:** M4 merged em main
+**Duração estimada:** 1 dia
+**Arquivos:**
+- `src/shared/components/ui/animations/Animations.css`
+- `public/favicon.svg` (novo) / `public/favicon.png` (comprimido)
+- `index.html` (referência ao favicon)
+- `src/features/dashboard/components/SparklineAdesao.css`
+- `src/features/stock/components/StockAlertsWidget.css`
+- `src/views/Landing.css`
+
+---
+
+## FASE 1 — Setup
+
+```bash
+git checkout main && git pull origin main
+git checkout -b fix/mobile-perf-m5-assets-css
+
+# Verificar arquivos-alvo (sem duplicatas)
+find src -name "Animations.css" -type f
+find src -name "SparklineAdesao.css" -type f
+find src -name "StockAlertsWidget.css" -type f
+find src -name "Landing.css" -type f
+find public -name "favicon*" -type f
+```
+
+---
+
+## FASE 2 — Implementação
+
+### M5.1 — Remover @import incorreto de JS em Animations.css
+
+**Por que:** `Animations.css` contém:
+```css
+@import url('https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js');
+```
+Isso é um `@import` CSS apontando para um arquivo JavaScript. O browser tenta baixar um JS via CSS pipeline — requisição na critical chain que não serve para nada. O confetti real do projeto é implementado com CSS keyframes próprios (`confetti-fall`, `confetti-burst`) e não usa a lib canvas-confetti. **Remover esta linha.**
+
+**Localização:** `src/shared/components/ui/animations/Animations.css` — linha ~12
+
+```bash
+# Confirmar a linha antes de remover
+grep -n "confetti.browser.min.js" src/shared/components/ui/animations/Animations.css
+# Esperado: 1 resultado
+
+# Confirmar que canvas-confetti NÃO é chamada em nenhum .js/.jsx
+grep -r "confetti(" src/ --include="*.jsx" --include="*.js"
+# Se zero resultados → a lib não é usada → remoção é segura
+```
+
+Remover a linha `@import url('...')` do arquivo.
+
+---
+
+### M5.2 — Comprimir favicon
+
+**Por que:** `public/favicon.png` tem 192KB — extremamente grande para um favicon. O browser baixa o favicon antes do primeiro render (impacta LCP). Meta: < 10KB.
+
+**Abordagem preferida: SVG (vector, < 1KB)**
+
+Verificar se o favicon tem forma simples (logo/ícone geométrico):
+```bash
+file public/favicon.png
+# Analisar visualmente — se for ícone de comprimido/remédio, pode ser recriado em SVG
+```
+
+Criar `public/favicon.svg` como ícone SVG mínimo representando o app (pílula estilizada). Exemplo de estrutura SVG:
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- ícone simplificado do app -->
+</svg>
+```
+
+Atualizar `index.html`:
+```html
+<!-- ANTES: -->
+<link rel="icon" type="image/png" href="/favicon.png" />
+
+<!-- DEPOIS: -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<!-- Fallback para browsers que não suportam SVG favicon: -->
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+```
+
+**Se SVG não for viável** (favicon complexo/fotográfico), comprimir `favicon.png` com:
+```bash
+# Instalar pngquant se não disponível
+which pngquant || brew install pngquant
+
+# Comprimir: 192KB → alvo < 10KB
+pngquant --quality=65-80 --output public/favicon-optimized.png public/favicon.png
+ls -lh public/favicon-optimized.png
+# Se < 15KB: renomear para favicon.png
+```
+
+**Verificação:**
+```bash
+ls -lh public/favicon.svg  # ou favicon.png
+# Esperado: < 10KB
+```
+
+---
+
+### M5.3 — Corrigir font sizes < 12px
+
+**Por que:** Chrome Lighthouse flagra texto < 12px como ilegível em mobile. Os tamanhos encontrados (8px, 9px) tornam rótulos invisíveis em telas de baixa resolução.
+
+**Contexto:** SparklineAdesao e StockAlertsWidget são componentes SVG com espaço limitado. Os valores não podem ser simplesmente dobrados — o aumento deve ser proporcional ao espaço disponível.
+
+**SparklineAdesao.css** — localizar as linhas com `font-size: 9px` e `font-size: 8px`:
+
+```bash
+grep -n "font-size.*[89]px" src/features/dashboard/components/SparklineAdesao.css
+```
+
+Elevar para o mínimo prático dentro de componentes SVG:
+```css
+/* ANTES (ilegível em mobile): */
+font-size: 9px;  /* → */  font-size: 11px;
+font-size: 8px;  /* → */  font-size: 10px;
+```
+
+**StockAlertsWidget.css** — mesma abordagem:
+```bash
+grep -n "font-size.*[89]px" src/features/stock/components/StockAlertsWidget.css
+```
+
+```css
+/* ANTES: */
+font-size: 9px;  /* → */  font-size: 11px;
+font-size: 8px;  /* → */  font-size: 10px;
+```
+
+**Verificação visual (obrigatória):** Após ajuste, abrir o app em viewport 375px (iPhone SE) e confirmar que os rótulos do Sparkline e StockAlerts são legíveis.
+
+---
+
+### M5.4 — Converter animações width para transform: scaleX()
+
+**Por que:** `@keyframes` que animam `width` causam **layout reflow por frame** — o browser recalcula o layout completo a cada passo da animação. `transform: scaleX()` é GPU-accelerated e não causa reflow.
+
+**Localização:** `src/views/Landing.css` — keyframes `fillBar10` e `fillBar80`
+
+Localizar os keyframes:
+```bash
+grep -n "fillBar\|width: 0\|width: 10%\|width: 80%" src/views/Landing.css
+```
+
+Substituir:
+```css
+/* ANTES (causa reflow): */
+@keyframes fillBar10 {
+  from { width: 0; }
+  to   { width: 10%; }
+}
+
+@keyframes fillBar80 {
+  from { width: 0; }
+  to   { width: 80%; }
+}
+
+/* DEPOIS (GPU-accelerated, zero reflow): */
+@keyframes fillBar10 {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(0.1); }
+}
+
+@keyframes fillBar80 {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(0.8); }
+}
+```
+
+**Obrigatório:** Adicionar `transform-origin: left` e `will-change: transform` nos elementos que usam estes keyframes:
+```css
+/* Localizar seletores .fill / .stock-bar .fill em Landing.css e adicionar: */
+.stock-bar .fill {
+  transform-origin: left center;
+  will-change: transform;
+}
+```
+
+**Verificação:**
+```bash
+# Confirmar zero animações de width restantes nos keyframes
+grep -A3 "@keyframes fill" src/views/Landing.css
+# Esperado: apenas "transform: scaleX()" — sem "width:"
+```
+
+---
+
+## FASE 3 — Validação
+
+```bash
+# Gate 1: Lint
+npm run lint
+
+# Gate 2: Validação completa
+npm run validate:agent
+# Confirmar: sem regressões em testes relacionados a Landing, Sparkline, StockAlerts
+
+# Gate 3: Build
+npm run build
+# Confirmar: sem erros de módulo
+
+# Gate 4: Lighthouse (opcional mas recomendado)
+# Rodar Lighthouse antes e depois — comparar LCP e TBT
+# Esperado: FCP melhora (favicon menor) + TBT melhora (sem @import JS)
+```
+
+**Verificação manual em mobile (375px viewport):**
+1. Abrir app → verificar que favicon carrega rápido (< 1s visible no Network)
+2. Abrir view Saúde → SparklineAdesao: rótulos legíveis em iPhone SE (375px)
+3. Abrir view Estoque → StockAlertsWidget: badges e labels legíveis
+4. Abrir Landing → animações das barras de estoque suaves (sem jank)
+
+---
+
+## FASE 4 — Git
+
+```bash
+git add \
+  src/shared/components/ui/animations/Animations.css \
+  public/favicon.svg \
+  index.html \
+  src/features/dashboard/components/SparklineAdesao.css \
+  src/features/stock/components/StockAlertsWidget.css \
+  src/views/Landing.css
+
+git commit -m "fix(perf): assets e CSS para performance e legibilidade mobile
+
+- Remover @import incorreto de JS (confetti.browser.min.js) em Animations.css
+- Comprimir favicon: 192KB → SVG <1KB (reduz LCP)
+- Font sizes mínimos: SparklineAdesao e StockAlertsWidget (8px/9px → 10px/11px)
+- Animações fillBar: width → transform:scaleX() (GPU-accelerated, zero reflow)
+
+Lighthouse: FCP deve melhorar ~200ms, TBT melhora com remoção da requisição JS na critical chain."
+```
+
+---
+
+## FASE 5 — Push e PR
+
+```bash
+git push -u origin fix/mobile-perf-m5-assets-css
+```
+
+**PR Body:**
+```markdown
+## O que muda
+Correções de assets e CSS para performance e legibilidade no mobile.
+
+## Problemas corrigidos
+
+### 1. @import de JS em Animations.css (critical chain)
+`@import url('...confetti.browser.min.js')` era CSS importando um arquivo JS.
+O browser fazia uma requisição desnecessária na critical rendering chain.
+A lib canvas-confetti nunca era chamada — confetti é implementado com keyframes próprios.
+**Fix:** linha removida.
+
+### 2. favicon.png 192KB → SVG <1KB
+Favicon grande impacta LCP — browser baixa favicon antes do primeiro render.
+**Fix:** favicon.svg criado, index.html atualizado com fallback PNG.
+
+### 3. Font sizes 8-9px ilegíveis em mobile
+SparklineAdesao e StockAlertsWidget tinham text de 8-9px — invisível em telas mid-low.
+**Fix:** elevado para 10-11px (mínimo prático para componentes SVG com espaço limitado).
+
+### 4. Animações width → transform:scaleX() (Landing.css)
+fillBar10 e fillBar80 animavam `width` → layout reflow por frame.
+**Fix:** `transform: scaleX()` + `transform-origin: left` (GPU-accelerated).
+
+## Quality Gates
+- [x] `npm run validate:agent` — sem regressões
+- [x] `npm run build` — sem erros
+- [x] `npm run lint` — 0 erros
+- [x] Verificação visual em 375px: rótulos legíveis
+```
+
+---
+
+## FASE 6 — Gemini Review
+
+Aguardar Gemini Code Assist. Resolver todos CRITICAL/HIGH antes do merge.
+
+Se Gemini questionar os valores de font-size escolhidos (10-11px ao invés de 12px): o tradeoff é intencional — componentes SVG têm espaço fixo de renderização. 10-11px é o mínimo que preserva o layout visual sem quebrar o componente. 12px poderia sobrepor elementos em telas pequenas.
+
+---
+
+## FASE 7 — Learning Loop + Documentação
+
+Após merge, **adicionar Seções 3 e 4** a `docs/standards/MOBILE_PERFORMANCE.md`:
+
+```markdown
+## 3. CSS: Animações, Critical Path e Armadilhas
+
+### 3.1 Animações compositas vs. não-compositas
+
+**Regra:** Animar apenas `transform` e `opacity`. NUNCA animar propriedades que causam reflow.
+```
+```css
+/* ✅ GPU-accelerated — zero layout reflow */
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ❌ Causa layout reflow por frame — janky em mobile */
+@keyframes expandWidth {
+  from { width: 0;   }
+  to   { width: 80%; }
+}
+
+/* ✅ Equivalente correto para barras de progresso */
+@keyframes expandWidth {
+  from { transform: scaleX(0);   }
+  to   { transform: scaleX(0.8); }
+}
+/* Elemento pai: transform-origin: left center; */
+```
+```markdown
+**Propriedades seguras:** `transform`, `opacity`, `filter`
+**Propriedades proibidas em keyframes:** `width`, `height`, `top`, `left`, `margin`, `padding`
+
+### 3.2 @import em CSS: cuidados
+```
+```css
+/* ✅ OK: importar outro arquivo CSS */
+@import url('./tokens.css');
+
+/* ❌ NUNCA: importar arquivo .js via @import CSS */
+@import url('https://cdn.example.com/lib.min.js');
+/* O browser tenta baixar como CSS → requisição na critical chain → sem serventia */
+```
+```markdown
+### 3.3 Font sizes mínimos para legibilidade mobile
+
+| Contexto | Mínimo recomendado | Mínimo absoluto |
+|----------|-------------------|-----------------|
+| Texto de corpo | 16px | 14px |
+| Labels UI | 12px | 11px |
+| Labels em SVG (espaço restrito) | 11px | 10px |
+
+Abaixo de 10px: invisível em telas mid-low tier. Lighthouse flagra < 12px como reprovação.
+
+## 4. Assets: Imagens, Favicons e Otimização
+
+### 4.1 Favicon
+```
+```html
+<!-- ✅ SVG preferido: vector, < 1KB, escala perfeita -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<!-- Fallback para browsers sem suporte a SVG favicon -->
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+
+<!-- ❌ PNG sem compressão: pode ter centenas de KB, impacta LCP -->
+<link rel="icon" type="image/png" href="/favicon.png" />
+```
+```markdown
+**Budget:** favicon < 10KB. Acima de 50KB: DEVE ser otimizado.
+
+### 4.2 Imagens gerais
+```
+```html
+<!-- ✅ lazy loading para imagens fora da viewport inicial -->
+<img src="..." loading="lazy" decoding="async" />
+
+<!-- ✅ Dimensões explícitas previnem CLS -->
+<img src="..." width="300" height="200" loading="lazy" />
+```
+```markdown
+**Source:** Sprint M5 — assets e CSS fixes
+```
+
+---
+
+---
+
+# SPRINT M6 — MOBILE TOUCH E UX
+
+**Branch:** `fix/mobile-perf-m6-touch-ux`
+**Dependência:** M5 merged em main
+**Duração estimada:** 0.5 dia
+**Arquivos:**
+- `src/shared/styles/index.css`
+- `vite.config.js`
+
+---
+
+## FASE 1 — Setup
+
+```bash
+git checkout main && git pull origin main
+git checkout -b fix/mobile-perf-m6-touch-ux
+
+# Verificar arquivos-alvo
+find src/shared/styles -name "index.css" -type f
+# Esperado: apenas src/shared/styles/index.css
+```
+
+---
+
+## FASE 2 — Implementação
+
+### M6.1 — Remover tap highlight (flash em toque)
+
+**Por que:** iOS Safari e Chrome Android mostram um flash azul/cinza ao tocar elementos clicáveis. Isso torna o app parecido com um site web genérico, não um PWA nativo.
+
+**Localização:** `src/shared/styles/index.css` — seção de reset global (próxima ao `body { ... }`)
+
+```css
+/* Adicionar na seção de reset global — após body {} ou junto com * {} */
+
+/* Remove o flash de highlight ao tocar em elementos no mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+```
+
+**Atenção:** Isso remove o feedback visual de foco para todos os elementos. **Obrigatório** manter `:focus-visible` para acessibilidade de teclado:
+
+```css
+/* Garantir que :focus-visible ainda funciona (já deve estar em index.css) */
+:focus-visible {
+  outline: 2px solid var(--color-focus, #00e5ff);
+  outline-offset: 2px;
+}
+```
+
+Verificar se `:focus-visible` já existe:
+```bash
+grep -n "focus-visible" src/shared/styles/index.css
+# Se zero resultados → adicionar junto com M6.1
+```
+
+---
+
+### M6.2 — touch-action: manipulation em botões
+
+**Por que:** iOS Safari tem delay de 300ms antes de disparar `click` em elementos sem `touch-action: manipulation`. Este delay foi introduído para detectar double-tap zoom. Com `manipulation`, o browser dispara `click` imediatamente ao detectar o tap.
+
+**Localização:** `src/shared/styles/index.css` — junto ao reset de `button, a, [role="button"]`
+
+```css
+/* Remove delay de 300ms do tap em iOS Safari */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+label[for] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+```
+
+**Verificação:**
+```bash
+grep -n "touch-action" src/shared/styles/index.css
+# Esperado: 1 resultado (o que acabamos de adicionar)
+```
+
+---
+
+### M6.3 — overscroll-behavior nos containers de scroll
+
+**Por que:** Sem `overscroll-behavior`, o scroll de um modal ou lista pode propagar para o body e causar o efeito de "rubber-band" (bouncing) do iOS no container pai. Isso é especialmente ruim na timeline de doses — quando o usuário chega ao final da lista, o app inteiro oscila.
+
+**Localização:** `src/shared/styles/index.css` — adicionar regras globais
+
+```css
+/* Previne rubber-band indesejado em containers de scroll internos */
+.overflow-scroll,
+.overflow-y-auto,
+[data-scroll-container] {
+  overscroll-behavior: contain;
+}
+
+/* Para o body: allow-page pull-to-refresh nativo do browser */
+body {
+  overscroll-behavior-y: auto; /* mantém pull-to-refresh do browser */
+}
+```
+
+**Containers que precisam de `overscroll-behavior: contain` identificados:**
+- Modal de dose (`.modal-content`)
+- Timeline de logs (`.health-history-timeline`)
+- Lista de estoque (`.stock-list`)
+
+Verificar os seletores reais antes de aplicar:
+```bash
+grep -n "overflow-y.*auto\|overflow.*scroll" src/shared/styles/index.css
+```
+
+Adicionar `overscroll-behavior: contain` nos seletores de scroll já existentes, ao invés de criar classes novas.
+
+---
+
+### M6.4 — Source maps hidden no vite.config.js
+
+**Por que:** Source maps ausentes dificultam debugging de erros em produção (Sentry, DevTools remotos). `'hidden'` gera os arquivos `.map` sem incluir o `//# sourceMappingURL` no bundle — disponíveis para ferramentas de debugging mas não expostos para usuários finais.
+
+**Localização:** `vite.config.js` — seção `build`
+
+```js
+// Dentro de defineConfig
+build: {
+  sourcemap: 'hidden', // gera .map files sem expor no bundle
+  rollupOptions: {
+    // ... manualChunks (adicionado no M2) ...
+  },
+},
+```
+
+**Verificar no build:**
+```bash
+npm run build
+ls dist/assets/*.js.map
+# Esperado: arquivos .map gerados para cada chunk
+# O HTML gerado NÃO deve conter referências a .map
+```
+
+---
+
+## FASE 3 — Validação
+
+```bash
+# Gate 1: Lint
+npm run lint
+
+# Gate 2: Validação completa
+npm run validate:agent
+
+# Gate 3: Build + source maps
+npm run build
+ls dist/assets/*.js.map  # deve existir
+grep "sourceMappingURL" dist/assets/index*.js  # deve estar vazio (hidden)
+
+# Gate 4: Verificação manual de touch (dispositivo físico ou emulação)
+# Chrome DevTools > Toggle Device Toolbar > iPhone SE (375px)
+# 1. Tap em botões → sem flash azul/cinza
+# 2. Tap em botão → resposta imediata (sem delay de 300ms)
+# 3. Scroll da timeline até o final → sem rubber-band no container pai
+```
+
+---
+
+## FASE 4 — Git
+
+```bash
+git add src/shared/styles/index.css vite.config.js
+
+git commit -m "fix(ux): touch experience e source maps para debugging mobile
+
+- tap-highlight-color: transparent — remove flash azul/cinza em iOS/Android
+- touch-action: manipulation em buttons/links — remove delay 300ms do tap (iOS Safari)
+- overscroll-behavior: contain nos containers de scroll — previne rubber-band no pai
+- :focus-visible mantido para acessibilidade de teclado
+- build.sourcemap: 'hidden' — .map files gerados para debugging em produção"
+```
+
+---
+
+## FASE 5 — Push e PR
+
+```bash
+git push -u origin fix/mobile-perf-m6-touch-ux
+```
+
+**PR Body:**
+```markdown
+## O que muda
+Correções de UX táctil e configuração de source maps.
+
+## Problemas corrigidos
+
+### Flash de highlight no tap (iOS/Android)
+Botões e links mostravam flash azul/cinza ao ser tocados — visual de site antigo.
+`-webkit-tap-highlight-color: transparent` remove o flash em todos os elementos.
+`:focus-visible` mantido para acessibilidade de teclado.
+
+### Delay de 300ms no tap (iOS Safari)
+`touch-action: manipulation` em buttons/links remove o delay de double-tap detection.
+Resultado: resposta tátil imediata ao invés de espera de 300ms.
+
+### Rubber-band indesejado em scroll interno
+Scroll da timeline propagava para o body → app inteiro oscilava ao chegar no final.
+`overscroll-behavior: contain` isola o scroll nos containers internos.
+
+### Source maps para debugging em produção
+`build.sourcemap: 'hidden'` gera arquivos .map sem expor no bundle.
+Permite debugging de stack traces reais em Sentry/DevTools remotos.
+
+## Quality Gates
+- [x] `npm run validate:agent` — sem regressões
+- [x] `npm run build` — dist/assets/*.js.map gerados
+- [x] Verificação manual em emulação iOS 375px
+```
+
+---
+
+## FASE 6 — Gemini Review
+
+Aguardar Gemini Code Assist. Resolver todos CRITICAL/HIGH antes do merge.
+
+---
+
+## FASE 7 — Learning Loop + Documentação Final
+
+Após merge, **completar Seção 7 e adicionar Seção 5 e 8** a `docs/standards/MOBILE_PERFORMANCE.md`:
+
+```markdown
+## 5. React: Patterns de Performance Mobile
+
+### 5.1 Lazy + Suspense (M0, M2)
+Ver Seção 2 — aplicar para componentes pesados DENTRO de views também (não só views).
+
+### 5.2 startTransition para cálculos pesados (M0)
+```
+```jsx
+// ✅ React pode pausar entre frames — não trava a UI
+const [, startTransition] = useTransition()
+
+startTransition(() => {
+  const pattern = analyzeAdherencePatterns({ logs, protocols })
+  setAdherencePattern(pattern)
+})
+
+// ❌ Bloqueia main thread — freeze visível em mobile
+const pattern = analyzeAdherencePatterns({ logs, protocols })
+setAdherencePattern(pattern)
+```
+```markdown
+**Usar quando:** cálculo leva > 16ms (1 frame) e o dado não é urgente para o LCP.
+
+### 5.3 React.memo com comparação customizada (M1)
+```
+```jsx
+// ✅ Compara apenas campos que afetam o render
+const areEqual = (prev, next) =>
+  prev.log.id === next.log.id &&
+  prev.log.status === next.log.status
+
+export default memo(LogEntry, areEqual)
+```
+```markdown
+**Usar quando:** componente renderizado em lista longa (>30 itens).
+
+### 5.4 react-virtuoso para listas longas (M1)
+```
+```jsx
+// ✅ Apenas ~10 itens no DOM — independe do tamanho total da lista
+<Virtuoso
+  useWindowScroll
+  data={items}
+  endReached={loadMore}
+  overscan={300}
+  itemContent={(_i, item) => <Item item={item} />}
+/>
+
+// ❌ Todos os N itens no DOM — memory + render proporcional a N
+{items.map(item => <Item key={item.id} item={item} />)}
+```
+```markdown
+**Configuração padrão:** `overscan={300}`, `useWindowScroll` (não height fixo).
+
+### 5.5 IntersectionObserver para lazy loading de seções (M0)
+```
+```jsx
+// ✅ Carrega dados pesados só quando usuário rola até o elemento
+const sentinelRef = useCallback((node) => {
+  if (!node) return
+  const observer = new IntersectionObserver(
+    ([entry]) => { if (entry.isIntersecting) loadHeavyData() },
+    { rootMargin: '50px' }  // ≤ 50px — não disparar ao abrir a view
+  )
+  observer.observe(node)
+}, [loadHeavyData])
+
+// Sentinel posicionado DEPOIS de todo conteúdo visível
+<div ref={sentinelRef} />
+```
+```markdown
+**Armadilha:** `rootMargin > 100px` + sentinel no topo = carrega ao abrir = eager load.
+
+## 7. Touch, UX Mobile e Feedback de Conectividade (completo)
+
+### 7.2 Touch highlights e delays (M6)
+```
+```css
+/* Remove flash de highlight ao tocar */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Remove delay de 300ms do tap em iOS Safari */
+button, a, [role="button"] { touch-action: manipulation; }
+
+/* Manter foco visível para acessibilidade de teclado */
+:focus-visible { outline: 2px solid var(--color-focus); }
+```
+```markdown
+### 7.3 Overscroll em containers de scroll (M6)
+```
+```css
+/* Isola rubber-band dentro do container — não propaga para o body */
+.timeline-container,
+.modal-content,
+.stock-list {
+  overscroll-behavior: contain;
+}
+```
+```markdown
+## 8. Checklist Universal (Pré-PR)
+
+Execute antes de criar qualquer PR que modifique views, componentes ou configuração de build:
+
+### JavaScript & Bundle
+- [ ] Novas views adicionadas com `lazy()` em App.jsx (nunca sync)
+- [ ] Bibliotecas > 100KB: dynamic import no ponto de uso
+- [ ] `npm run build` → chunk do index principal < 200KB gzipped
+- [ ] `npm run build` → nova lib NÃO aparece no chunk index
+
+### CSS
+- [ ] Nenhum `@keyframes` animando `width`, `height`, `top`, `left`, `margin`, `padding`
+- [ ] Nenhum `@import url('*.js')` em arquivos CSS
+- [ ] Font sizes: mínimo 10px em SVG restrito, 12px em texto de UI normal
+- [ ] Novos containers de scroll: `overscroll-behavior: contain` adicionado
+
+### Assets
+- [ ] Novas imagens: `loading="lazy"` + `width`/`height` explícitos
+- [ ] Favicon: < 10KB (SVG preferido)
+
+### React
+- [ ] Cálculos > 16ms em setState: envolvidos em `startTransition`
+- [ ] Listas com potencial > 30 itens: `react-virtuoso` com `useWindowScroll`
+- [ ] Componentes em lista longa: `React.memo` com comparação customizada
+- [ ] IntersectionObserver: `rootMargin ≤ 50px`, sentinel DEPOIS do conteúdo visível
+
+### Banco de Dados
+- [ ] Nova query com ORDER BY: índice composto `(partition_key, sort_key DESC)` existe?
+- [ ] Agregação client-side com > 100 rows: criar VIEW no banco
+
+### UX Mobile
+- [ ] Testado em emulação 375px (iPhone SE) no Chrome DevTools
+- [ ] Tap em botões: sem flash, resposta imediata
+- [ ] Scroll de listas: sem rubber-band no container pai
+
+**Source:** Sprints M0–M6 — Performance Mobile Meus Remédios
+```
+
+---
+
 ---
 
 # Apêndice: Quality Gates Globais
@@ -1269,6 +2318,11 @@ Antes de criar o PR, verificar:
 | AP-020 | Auto-mergear o próprio PR |
 | AP-021 | Ignorar issues CRITICAL/HIGH do Gemini Code Assist |
 | AP-W13 | Deixar variáveis/states/memos órfãos após refatoração |
+| AP-P04 | Adicionar nova view com import síncrono em App.jsx |
+| AP-P05 | Importar biblioteca > 100KB no topo do arquivo (deve ser dynamic import) |
+| AP-P06 | Animar `width`/`height` em @keyframes (usar `transform: scaleX/scaleY`) |
+| AP-P07 | CSS `@import` de arquivo `.js` (requisição desnecessária na critical chain) |
+| AP-P08 | Font-size < 10px em qualquer elemento — ilegível em mobile mid-low |
 
 ---
 
@@ -1276,6 +2330,8 @@ Antes de criar o PR, verificar:
 
 - [PLAN_MOBILE_PERFORMANCE_v2.md](plans/PLAN_MOBILE_PERFORMANCE_v2.md) — diagnóstico e decisões arquiteturais
 - [HealthHistory.jsx](src/views/HealthHistory.jsx) — arquivo central dos sprints M0 e M1
+- [MOBILE_PERFORMANCE.md](docs/standards/MOBILE_PERFORMANCE.md) — **guia de performance mobile** (construído incrementalmente nos sprints M2–M6)
+- [performance_improvements_lighthouse.md](plans/performance_improvements_lighthouse.md) — melhorias apontadas pelo Chrome Lighthouse
 - [.memory/rules.md](.memory/rules.md) — R-001 a R-120
 - [.memory/anti-patterns.md](.memory/anti-patterns.md) — AP-001 a AP-A04
 - [CLAUDE.md](CLAUDE.md) — convenções completas do projeto
