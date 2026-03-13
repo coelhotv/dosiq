@@ -134,6 +134,7 @@ function formatDate(dateStr) {
 export function SparklineAdesao({
   adherenceByDay = [],
   size = 'medium',
+  days = null,
   showAxis = false,
   showTooltip = true,
   className = '',
@@ -174,17 +175,23 @@ export function SparklineAdesao({
 
   const { width, height, padding } = sizes[size] || sizes.medium
 
-  // Quantos dias processar: 30 para expanded, 7 para os demais
-  const daysCount = size === 'expanded' ? 30 : 7
+  // Quantos dias processar: prop days > expanded (30) > outros (7)
+  const daysCount = days ?? (size === 'expanded' ? 30 : 7)
 
   // Processar dados — últimos N dias (filtrando dias futuros no horário do Brasil)
   const chartData = useMemo(() => {
-    if (!adherenceByDay || adherenceByDay.length === 0) return []
+    if (!adherenceByDay || adherenceByDay.length === 0) {
+      console.log('[SparklineAdesao] Sem dados:', { adherenceByDay })
+      return []
+    }
+
+    console.log('[SparklineAdesao] Processando', adherenceByDay.length, 'registros')
 
     const today = new Date()
     const data = []
 
-    for (let i = daysCount - 1; i >= 0; i--) {
+    // Itera de d-daysCount até d-1 (exclui hoje — adesão de hoje é sempre parcial)
+    for (let i = daysCount; i >= 1; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
       const dateKey = date.toISOString().split('T')[0]
@@ -203,15 +210,30 @@ export function SparklineAdesao({
       })
     }
 
+    console.log('[SparklineAdesao] chartData final:', data.length, 'dias')
+    if (data.length > 0) {
+      console.log('[SparklineAdesao] Amostra de valores:', {
+        primeiro: data[0],
+        ultimo: data[data.length - 1],
+        todosAdherencia: data.map((d) => d.adherence),
+      })
+    }
     return data
   }, [adherenceByDay, daysCount])
 
   // Calcular estatísticas
   const stats = useMemo(() => {
-    if (chartData.length === 0) return { average: 0, trend: 'stable' }
+    if (chartData.length === 0) {
+      console.log('[SparklineAdesao] chartData vazio')
+      return { average: 0, trend: 'stable' }
+    }
 
     const validData = chartData.filter((d) => d.adherence > 0)
-    if (validData.length === 0) return { average: 0, trend: 'stable' }
+    console.log('[SparklineAdesao] Stats:', { totalDays: chartData.length, validDays: validData.length, adherenceValues: chartData.map((d) => d.adherence) })
+    if (validData.length === 0) {
+      console.log('[SparklineAdesao] AVISO: Nenhum dia com adherence > 0!')
+      return { average: 0, trend: 'stable' }
+    }
 
     const average = Math.round(
       validData.reduce((sum, d) => sum + d.adherence, 0) / validData.length

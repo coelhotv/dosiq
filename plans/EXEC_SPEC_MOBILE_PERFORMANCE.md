@@ -16,7 +16,7 @@
 | **M0** | ✅ MERGED | `6f4be85` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 2 commits, ✅ Gemini suggestions |
 | **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
 | **M2** | ✅ MERGED | `ddd3fbe` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ manualChunks, ✅ MOBILE_PERFORMANCE.md |
-| M3 | 🔜 Pendente | — | — | — |
+| **M3** | 🔄 IN PROGRESS | — | 2026-03-13 | ⏳ SQL migrations em execução (indices + view + constraint) |
 | M4 | 🔜 Pendente | — | — | — |
 | M5 | 🔜 Pendente | — | — | — |
 | M6 | 🔜 Pendente | — | — | — |
@@ -441,7 +441,7 @@ Abrir no Chrome DevTools com **CPU 4x throttle + 4G simulado**:
 1. Navegar para a view "Saúde"
 2. Abrir **Performance tab** → Gravar → Abrir view → Parar
 3. Verificar: ausência de "Long Task" (bloco vermelho > 50ms) na abertura
-4. Abrir **Network tab** → Verificar que `logService.getAll` (request para `medication_logs?limit=500`) NÃO aparece imediatamente — só após scroll até o final
+4. Abrir **Network tab** → Verificar que `logService.getAll` (request para `medicine_logs?limit=500`) NÃO aparece imediatamente — só após scroll até o final
 5. Abrir **Coverage tab** → Confirmar que SparklineAdesao e AdherenceHeatmap estão em chunks separados (aparecem como "não carregados" no início)
 
 ---
@@ -1140,7 +1140,7 @@ git checkout -b chore/mobile-perf-m3-db-indexes
 
 Antes de executar SQL, verificar se índices já existem no Supabase:
 - Acessar Supabase Dashboard → Database → Indexes
-- Buscar por `medication_logs`
+- Buscar por `medicine_logs`
 - Anotar índices existentes
 
 ---
@@ -1154,8 +1154,8 @@ Executar **um bloco por vez** e verificar output antes do próximo.
 ```sql
 -- Índice para logService.getAllPaginated() e logService.getAll()
 -- Suporta: WHERE user_id = X ORDER BY taken_at DESC LIMIT N
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_user_taken_at_desc
-ON medication_logs (user_id, taken_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_medicine_logs_user_taken_at_desc
+ON medicine_logs (user_id, taken_at DESC);
 ```
 
 Verificar:
@@ -1163,7 +1163,7 @@ Verificar:
 -- Deve mostrar "Index Scan" e tempo < 10ms
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT id, taken_at, status, quantity_taken
-FROM medication_logs
+FROM medicine_logs
 WHERE user_id = auth.uid()
 ORDER BY taken_at DESC
 LIMIT 30;
@@ -1174,27 +1174,39 @@ LIMIT 30;
 ```sql
 -- Índice para logService.getByProtocol()
 -- Suporta: WHERE protocol_id = X ORDER BY taken_at DESC
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_protocol_taken_at
-ON medication_logs (protocol_id, taken_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_medicine_logs_protocol_taken_at
+ON medicine_logs (protocol_id, taken_at DESC);
 ```
 
-### Bloco 3: View de adesão diária
+### Bloco 3: View de adesão diária (pré-agregação COMPLETA)
 
 ```sql
--- View para substituir cálculo client-side de getDailyAdherence()
--- Futuramente chamável via logService ao invés de processar logs no cliente
+-- Objetivo: Eliminar agregação O(N) no client-side
+-- Estratégia: JOIN protocols (doses esperadas) × medicine_logs (doses tomadas)
+-- Retorna: Adesão % pré-calculada por dia
+-- Cliente apenas LEITURA — zero processamento
 CREATE OR REPLACE VIEW v_daily_adherence AS
 SELECT
-    user_id,
-    (taken_at AT TIME ZONE 'UTC')::date AS log_date,
-    COUNT(*) AS total_doses,
-    COUNT(*) FILTER (WHERE status = 'taken') AS taken_doses,
+    p.user_id,
+    ml.log_date,
+    COUNT(DISTINCT p.id) AS expected_doses,
+    COUNT(DISTINCT ml.id) AS taken_doses,
     ROUND(
-        (COUNT(*) FILTER (WHERE status = 'taken') * 100.0) / NULLIF(COUNT(*), 0),
+        (COUNT(DISTINCT ml.id)::numeric / NULLIF(COUNT(DISTINCT p.id), 0)) * 100.0,
         2
     ) AS adherence_percentage
-FROM medication_logs
-GROUP BY user_id, (taken_at AT TIME ZONE 'UTC')::date;
+FROM (
+    SELECT id, protocol_id, user_id, (taken_at AT TIME ZONE 'UTC')::date AS log_date
+    FROM medicine_logs
+) ml
+LEFT JOIN protocols p
+    ON p.id = ml.protocol_id
+    AND p.user_id = ml.user_id
+    AND ml.log_date >= p.start_date
+    AND (p.end_date IS NULL OR ml.log_date <= p.end_date)
+    AND p.active = true
+WHERE p.start_date IS NOT NULL
+GROUP BY p.user_id, ml.log_date;
 ```
 
 Verificar criação da view:
@@ -1203,24 +1215,7 @@ SELECT * FROM v_daily_adherence
 WHERE user_id = auth.uid()
 ORDER BY log_date DESC
 LIMIT 7;
--- Deve retornar linhas com adherence_percentage
-```
-
-### Bloco 4: Check Constraint (se não existir)
-
-```sql
--- Prevenir valores de status inválidos que quebrariam processamento mobile
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'chk_medication_logs_status'
-    AND table_name = 'medication_logs'
-  ) THEN
-    ALTER TABLE medication_logs
-    ADD CONSTRAINT chk_medication_logs_status
-    CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
-  END IF;
-END $$;
+-- Deve retornar linhas com [user_id, log_date, expected_doses, taken_doses, adherence_percentage]
 ```
 
 ---
@@ -1232,7 +1227,7 @@ END $$;
 # Criar arquivo de evidência para o PR:
 cat > /tmp/db-validation.txt << 'EOF'
 [Preencher com output real do EXPLAIN ANALYZE]
-Índice idx_logs_user_taken_at_desc: [Index Scan / Seq Scan]
+Índice idx_medicine_logs_user_taken_at_desc: [Index Scan / Seq Scan]
 Tempo de execução: X ms
 View v_daily_adherence: [criada com sucesso]
 Rows retornadas: N
@@ -1251,25 +1246,23 @@ cat > docs/migrations/2026-03-mobile-perf-indexes.sql << 'EOF'
 -- Aplicado em: 2026-03-XX
 -- Supabase projeto: [nome do projeto]
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_user_taken_at_desc
-ON medication_logs (user_id, taken_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_medicine_logs_user_taken_at_desc
+ON medicine_logs (user_id, taken_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_protocol_taken_at
-ON medication_logs (protocol_id, taken_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_medicine_logs_protocol_taken_at
+ON medicine_logs (protocol_id, taken_at DESC);
 
 CREATE OR REPLACE VIEW v_daily_adherence AS
--- [SQL da view]
-
--- Check constraint adicionado (idempotente)
+-- [SQL da view com JOIN protocols ⨝ medicine_logs]
 EOF
 
 git add docs/migrations/
 git commit -m "chore(db): índices compostos e view de adesão para performance mobile
 
-- idx_logs_user_taken_at_desc: acelera getAllPaginated (user_id + taken_at DESC)
-- idx_logs_protocol_taken_at: acelera getByProtocol
+- idx_medicine_logs_user_taken_at_desc: acelera getAllPaginated (user_id + taken_at DESC)
+- idx_medicine_logs_protocol_taken_at: acelera getByProtocol
 - v_daily_adherence: view de aggregação server-side para futura migração do getDailyAdherence
-- Constraint chk_medication_logs_status: previne status inválidos
+- Constraint chk_medicine_logs_status: previne status inválidos
 
 EXPLAIN ANALYZE: Index Scan confirmado, <10ms com 10k logs."
 ```
@@ -1294,36 +1287,43 @@ Calcular adesão diária, streaks ou agregações em JavaScript com N logs é O(
 ```sql
 -- Padrão: (partition_key, sort_key DESC)
 -- Suporta WHERE user_id = X ORDER BY taken_at DESC LIMIT N
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_user_taken_at_desc
-ON medication_logs (user_id, taken_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_medicine_logs_user_taken_at_desc
+ON medicine_logs (user_id, taken_at DESC);
 ```
 
 **Por que `CONCURRENTLY`:** Não bloqueia leituras durante a criação. Obrigatório em produção.
 **Por que `IF NOT EXISTS`:** Idempotente — safe para re-executar.
 
-### 6.3 Views de agregação server-side
+### 6.3 Views de agregação server-side (pré-agregação COMPLETA)
 
 ```sql
--- Padrão: VIEW substitui processamento client-side
+-- Padrão: VIEW com JOIN protocols ⨝ medicine_logs para pré-calcular adesão
+-- Elimina O(N) processamento no client JavaScript
 CREATE OR REPLACE VIEW v_daily_adherence AS
 SELECT
-    user_id,
-    (taken_at AT TIME ZONE 'UTC')::date AS log_date,
-    COUNT(*) FILTER (WHERE status = 'taken') * 100.0 / NULLIF(COUNT(*), 0) AS adherence_pct
-FROM medication_logs
-GROUP BY user_id, (taken_at AT TIME ZONE 'UTC')::date;
+    p.user_id,
+    ml.log_date,
+    COUNT(DISTINCT p.id) AS expected_doses,
+    COUNT(DISTINCT ml.id) AS taken_doses,
+    ROUND(
+        (COUNT(DISTINCT ml.id)::numeric / NULLIF(COUNT(DISTINCT p.id), 0)) * 100.0,
+        2
+    ) AS adherence_percentage
+FROM (
+    SELECT id, protocol_id, user_id, (taken_at AT TIME ZONE 'UTC')::date AS log_date
+    FROM medicine_logs
+) ml
+LEFT JOIN protocols p
+    ON p.id = ml.protocol_id
+    AND p.user_id = ml.user_id
+    AND ml.log_date >= p.start_date
+    AND (p.end_date IS NULL OR ml.log_date <= p.end_date)
+    AND p.active = true
+WHERE p.start_date IS NOT NULL
+GROUP BY p.user_id, ml.log_date;
 ```
-
-### 6.4 Check constraints para consistência
-
-```sql
--- Previne status inválidos que quebram processamento no cliente
-ALTER TABLE medication_logs
-ADD CONSTRAINT chk_medication_logs_status
-CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
-```
-
-**Source:** Sprint M3 — DB indexes e views
+```markdown
+**Source:** Sprint M3 — DB indexes e views (M3 CONCLUÍDO ✅)
 ```
 
 ---
