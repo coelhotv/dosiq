@@ -27,8 +27,15 @@ export default function AdherenceHeatmap({ pattern }) {
   const [hoveredCell, setHoveredCell] = useState(null)
   const [touchedCell, setTouchedCell] = useState(null)
 
+  console.log('[AdherenceHeatmap] Pattern recebido:', pattern)
+
   // Guard clause: dados insuficientes
   if (!pattern || !pattern.hasEnoughData) {
+    console.log('[AdherenceHeatmap] Dados insuficientes:', {
+      hasPattern: !!pattern,
+      hasEnoughData: pattern?.hasEnoughData,
+      narrative: pattern?.narrative,
+    })
     return (
       <div className="adherence-heatmap adherence-heatmap--empty" role="status">
         <p className="adherence-heatmap__empty-message">
@@ -37,6 +44,8 @@ export default function AdherenceHeatmap({ pattern }) {
       </div>
     )
   }
+
+  console.log('[AdherenceHeatmap] Renderizando grid com dados suficientes')
 
   /**
    * Calcula opacidade baseada na adherência (0-100%)

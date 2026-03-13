@@ -1,5 +1,81 @@
+import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
+
+// Schema para validação de parâmetros
+const GetDailyAdherenceFromViewSchema = z.object({
+  days: z.number().int().positive().max(365, 'Máximo 365 dias').default(30),
+})
+
+const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
+
+/**
+ * Inicializa e preenche o grid de adesão 7×4 com os dados fornecidos
+ * @param {Array} data - Dados brutos da view de heatmap
+ * @returns {Array<Array<Object>>} O grid de adesão 7×4
+ */
+function buildAdherenceGrid(data) {
+  const grid = Array.from({ length: 7 }, () =>
+    Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: null }))
+  )
+
+  ;(data || []).forEach((row) => {
+    grid[row.day_of_week][row.period_index] = {
+      taken: row.taken_doses,
+      expected: row.expected_doses,
+      adherence: row.adherence_percentage,
+    }
+  })
+
+  return grid
+}
+
+/**
+ * Encontra pior célula e gera narrativa para heatmap
+ * @param {Array} data - Dados do heatmap
+ * @param {boolean} hasEnoughData - Se tem dados suficientes
+ * @returns {object} {worstCell, narrative}
+ */
+function buildHeatmapNarrative(data, hasEnoughData) {
+  let worstCell = null
+
+  if (hasEnoughData) {
+    let worstAdherence = 100
+    let worstDayIndex = null
+    let worstPeriodIndex = null
+
+    ;(data || []).forEach((row) => {
+      if (
+        row.expected_doses >= 3 &&
+        row.adherence_percentage !== null &&
+        row.adherence_percentage < worstAdherence
+      ) {
+        worstAdherence = row.adherence_percentage
+        worstDayIndex = row.day_of_week
+        worstPeriodIndex = row.period_index
+      }
+    })
+
+    if (worstDayIndex !== null && worstPeriodIndex !== null) {
+      worstCell = {
+        dayIndex: worstDayIndex,
+        periodIndex: worstPeriodIndex,
+        adherence: worstAdherence,
+        dayName: DAY_NAMES[worstDayIndex],
+        periodName: PERIOD_NAMES[worstPeriodIndex],
+      }
+    }
+  }
+
+  const narrative = hasEnoughData && worstCell
+    ? `Seu pior horário é ${worstCell.dayName} à ${worstCell.periodName.toLowerCase()}`
+    : !hasEnoughData
+    ? `Dados insuficientes. Registre pelo menos 21 dias de doses para análise completa.`
+    : 'Sua adesão está excelente em todos os períodos!'
+
+  return { worstCell, narrative }
+}
 
 /**
  * Adherence Service - Cálculo de adesão ao tratamento
@@ -224,12 +300,16 @@ export const adherenceService = {
     // Obtém userId UMA VEZ para evitar lock contention no Supabase Auth
     const userId = await getUserId()
 
-    // Passa userId para todas as funções paralelas
-    const [overall, protocols, streaks] = await Promise.all([
+    // Passa userId para todas as funções paralelas com tratamento robusto de erro
+    const results = await Promise.allSettled([
       this.calculateAdherence(period, userId),
       this.calculateAllProtocolsAdherence(period, userId),
       this.getCurrentStreak(userId),
     ])
+
+    const overall = results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
+    const protocols = results[1].status === 'fulfilled' ? results[1].value : []
+    const streaks = results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
 
     return {
       overallScore: overall.score,
@@ -306,6 +386,85 @@ export const adherenceService = {
     }
 
     return dailyData
+  },
+
+  /**
+   * Retorna dados de adesão diária DIRETAMENTE DA VIEW (M3 — sem processamento client)
+   * @param {number} days - Número de dias (padrão: 30)
+   * @returns {Promise<Array<{date: string, adherence: number, taken: number, expected: number}>>}
+   */
+  async getDailyAdherenceFromView(days = 30) {
+    // Validar input com Zod
+    const validation = GetDailyAdherenceFromViewSchema.safeParse({ days })
+    if (!validation.success) {
+      console.error('[adherenceService] Erro validação getDailyAdherenceFromView:', validation.error.format())
+      return []
+    }
+
+    const { days: validDays } = validation.data
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - validDays)
+
+    const startDateStr = formatLocalDate(startDate)
+    const endDateStr = formatLocalDate(endDate)
+
+    const { data, error } = await supabase
+      .from('v_daily_adherence')
+      .select('log_date, expected_doses, taken_doses, adherence_percentage')
+      .gte('log_date', startDateStr)
+      .lte('log_date', endDateStr)
+      .order('log_date', { ascending: true })
+
+    if (error) {
+      console.error('[adherenceService] getDailyAdherenceFromView erro:', error)
+      throw error
+    }
+
+    // Adaptar nomes das colunas para match com SparklineAdesao
+    return (data || []).map((row) => ({
+      date: row.log_date,
+      taken: row.taken_doses,
+      expected: row.expected_doses,
+      adherence: row.adherence_percentage ?? 0, // NULL → 0% se sem protocolo
+    }))
+  },
+
+  /**
+   * Retorna padrões de adesão HEATMAP DIRETAMENTE DA VIEW (M3 — sem processamento client)
+   * Transforma array de linhas (28 = 7×4) em grid 7×4
+   * @returns {Promise<{grid: Array, worstCell: Object|null, narrative: string, hasEnoughData: boolean, dayOccurrences: Array}>}
+   */
+  async getAdherencePatternFromView() {
+    const { data, error } = await supabase
+      .from('v_adherence_heatmap')
+      .select('day_of_week, period_index, expected_doses, taken_doses, adherence_percentage')
+      .order('day_of_week')
+      .order('period_index')
+
+    if (error) {
+      console.error('[adherenceService] getAdherencePatternFromView erro:', error)
+      throw error
+    }
+
+    // Inicializar e preencher grid de adesão 7×4
+    const grid = buildAdherenceGrid(data)
+
+    // Calcular hasEnoughData: pelo menos 7 células com expected_doses > 0
+    // (1 período por dia × 7 dias da semana — usuários com só manhã+noite têm 14 células max)
+    const filledCells = (data || []).filter((row) => row.expected_doses > 0).length
+    const hasEnoughData = filledCells >= 7
+
+    // Encontrar pior célula e gerar narrativa
+    const { worstCell, narrative } = buildHeatmapNarrative(data, hasEnoughData)
+
+    return {
+      grid,
+      worstCell: hasEnoughData ? worstCell : null,
+      narrative,
+      hasEnoughData,
+      dayOccurrences: [0, 0, 0, 0, 0, 0, 0], // Compatibilidade com analyzeAdherencePatterns
+    }
   },
 }
 
