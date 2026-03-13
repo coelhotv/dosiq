@@ -2,28 +2,50 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import Auth from './views/Auth'
-import Medicines from './views/Medicines'
-import Stock from './views/Stock'
-import Protocols from './views/Protocols'
 import Dashboard from './views/Dashboard'
-import History from './views/History'
-import Settings from './views/Settings'
-import Calendar from './views/Calendar'
-import Emergency from './views/Emergency'
-import Treatment from './views/Treatment'
-import Profile from './views/Profile'
-import HealthHistory from './views/HealthHistory'
-import DLQAdmin from './views/admin/DLQAdmin'
 import Loading from '@shared/components/ui/Loading'
 
-// Lazy import do Modo Consulta
+// Lazy imports — carregam apenas quando a view é acessada
+const Medicines = lazy(() => import('./views/Medicines'))
+const Stock = lazy(() => import('./views/Stock'))
+const Protocols = lazy(() => import('./views/Protocols'))
+const History = lazy(() => import('./views/History'))
+const Settings = lazy(() => import('./views/Settings'))
+const Calendar = lazy(() => import('./views/Calendar'))
+const Emergency = lazy(() => import('./views/Emergency'))
+const Treatment = lazy(() => import('./views/Treatment'))
+const Profile = lazy(() => import('./views/Profile'))
+const HealthHistory = lazy(() => import('./views/HealthHistory'))
+const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
+const Landing = lazy(() => import('./views/Landing'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
-import Landing from './views/Landing'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
+
+/**
+ * Placeholder exibido enquanto chunk de view carrega
+ */
+function ViewSkeleton() {
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--color-text-secondary)',
+        fontSize: '14px',
+      }}
+      aria-busy="true"
+      aria-label="Carregando..."
+    >
+      Carregando...
+    </div>
+  )
+}
 
 function App() {
   const [session, setSession] = useState(null)
@@ -88,68 +110,110 @@ function App() {
           }}
         />
       ) : (
-        <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
+        <Suspense fallback={<ViewSkeleton />}>
+          <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
+        </Suspense>
       )
     }
 
     switch (currentView) {
       case 'landing':
         return (
-          <Landing
-            isAuthenticated={isAuthenticated}
-            onOpenAuth={() => setShowAuth(true)}
-            onContinue={() => setCurrentView('dashboard')}
-          />
+          <Suspense fallback={<ViewSkeleton />}>
+            <Landing
+              isAuthenticated={isAuthenticated}
+              onOpenAuth={() => setShowAuth(true)}
+              onContinue={() => setCurrentView('dashboard')}
+            />
+          </Suspense>
         )
       case 'medicines':
-        return <Medicines onNavigateToProtocol={navigateToProtocol} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Medicines onNavigateToProtocol={navigateToProtocol} />
+          </Suspense>
+        )
       case 'stock':
         return (
-          <Stock
-            initialParams={initialStockParams}
-            onClearParams={() => setInitialStockParams(null)}
-          />
+          <Suspense fallback={<ViewSkeleton />}>
+            <Stock
+              initialParams={initialStockParams}
+              onClearParams={() => setInitialStockParams(null)}
+            />
+          </Suspense>
         )
       case 'protocols':
         return (
-          <Protocols
-            initialParams={initialProtocolParams}
-            onClearParams={() => setInitialProtocolParams(null)}
-            onNavigateToStock={navigateToStock}
-          />
+          <Suspense fallback={<ViewSkeleton />}>
+            <Protocols
+              initialParams={initialProtocolParams}
+              onClearParams={() => setInitialProtocolParams(null)}
+              onNavigateToStock={navigateToStock}
+            />
+          </Suspense>
         )
       case 'treatment':
         return (
-          <Treatment
-            onNavigate={(view, params) => {
-              if (view === 'protocols' && params?.medicineId) {
-                setInitialProtocolParams({ medicineId: params.medicineId })
-              }
-              setCurrentView(view)
-            }}
-          />
+          <Suspense fallback={<ViewSkeleton />}>
+            <Treatment
+              onNavigate={(view, params) => {
+                if (view === 'protocols' && params?.medicineId) {
+                  setInitialProtocolParams({ medicineId: params.medicineId })
+                }
+                setCurrentView(view)
+              }}
+            />
+          </Suspense>
         )
       case 'profile':
-        return <Profile onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Profile onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'health-history':
-        return <HealthHistory key="health-history" onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <HealthHistory key="health-history" onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'history':
         // W3-06: historico agora vive em HealthHistory
-        return <HealthHistory key="history" onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <HealthHistory key="history" onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'consultation':
         return (
-          <Suspense fallback={<Loading text="Carregando Modo Consulta..." />}>
+          <Suspense fallback={<ViewSkeleton />}>
             <Consultation onBack={() => setCurrentView('dashboard')} />
           </Suspense>
         )
       case 'settings':
-        return <Settings onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Settings onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'emergency':
-        return <Emergency onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Emergency onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'admin-dlq':
-        return <DLQAdmin />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <DLQAdmin />
+          </Suspense>
+        )
       case 'calendar':
-        return <Calendar onNavigate={setCurrentView} />
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Calendar onNavigate={setCurrentView} />
+          </Suspense>
+        )
       case 'dashboard':
       default:
         return (

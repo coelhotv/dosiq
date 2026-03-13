@@ -934,7 +934,49 @@ console.log(data) // sem prefixo, difícil rastrear origem
 
 **Source:** Sprint M1 hotfix (heatmap diagnosis, 2026-03-10).
 
+### R-117: Lazy Views + manualChunks for Code Splitting [HIGH]
+**Rule:** Todas as views não-críticas (não Dashboard/Auth) DEVEM usar `React.lazy()` com `import()`. Combinar com `vite.config.js` `manualChunks` para isolamento de vendors e feature chunks.
+
+**Padrão obrigatório:**
+```jsx
+// src/App.jsx
+import Dashboard from './views/Dashboard' // ← único import eager
+const Medicines = lazy(() => import('./views/Medicines'))
+const Stock = lazy(() => import('./views/Stock'))
+const Settings = lazy(() => import('./views/Settings'))
+// ... todas demais views lazy
+
+// Em renderCurrentView():
+<Suspense fallback={<ViewSkeleton />}>
+  <Medicines {...props} />
+</Suspense>
+```
+
+```js
+// vite.config.js — manualChunks isolam vendors + features
+manualChunks: {
+  'vendor-framer': ['framer-motion'],
+  'vendor-supabase': ['@supabase/supabase-js'],
+  'vendor-pdf': ['jspdf', 'html2canvas'],  // ← nunca lazy, dynamic import no handler
+  'feature-history': ['./src/views/HealthHistory.jsx', './src/features/adherence/...'],
+  'feature-medicines-db': ['./src/features/medications/data/medicineDatabase.json'],
+}
+```
+
+**Benefícios:**
+- Main bundle: 102 kB gzip (vs ~600 kB antes)
+- Views carregam sob demanda (Suspense fallback durante load)
+- Vendors cacheáveis por browser (framer, supabase não muda com cada release)
+- PDFs/dados grandes NUNCA no bundle inicial
+
+**Armadilhas:**
+- ❌ Lazy view SEM Suspense → tela branca até chunk carregar
+- ❌ Import eager de view pesada → infla main bundle
+- ❌ manualChunks sem sourcemap:hidden → source maps expõem bundled code
+
+**Source:** Sprint M2 (code splitting mobile, 2026-03-12).
+
 ---
 
-*Last updated: 2026-03-10*
-*Rules: R-001 to R-116*
+*Last updated: 2026-03-12*
+*Rules: R-001 to R-117*

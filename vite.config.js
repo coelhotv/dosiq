@@ -23,4 +23,32 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendors grandes — isolados para cache duradouro
+          'vendor-framer': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-virtuoso': ['react-virtuoso'],
+          'vendor-pdf': ['jspdf', 'html2canvas'],
+
+          // Feature chunks — carregados apenas quando a view é acessada
+          'feature-history': [
+            './src/views/HealthHistory.jsx',
+            './src/features/adherence/components/AdherenceHeatmap.jsx',
+            './src/features/adherence/services/adherencePatternService.js',
+          ],
+          'feature-stock': ['./src/views/Stock.jsx'],
+          'feature-landing': ['./src/views/Landing.jsx'],
+
+          // Base ANVISA — 819KB, carregada apenas em Medicines/autocomplete
+          'feature-medicines-db': [
+            './src/features/medications/data/medicineDatabase.json',
+          ],
+        },
+      },
+    },
+    sourcemap: 'hidden',
+  },
 })
