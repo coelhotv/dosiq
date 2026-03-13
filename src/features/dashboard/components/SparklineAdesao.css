@@ -186,13 +186,13 @@
    Tooltip interativo (SVG overlay — tap no ponto)
    ============================================ */
 .sparkline-tooltip-date {
-  font-size: 9px;
+  font-size: 11px;
   fill: var(--text-secondary);
   font-family: var(--font-primary, system-ui);
 }
 
 .sparkline-tooltip-value {
-  font-size: 8px;
+  font-size: 10px;
   fill: var(--text-primary);
   font-family: var(--font-primary, system-ui);
   font-weight: 600;
