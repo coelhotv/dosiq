@@ -11,6 +11,19 @@ const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 
 /**
+ * Extrai intervalo de datas baseado em um período string
+ * @param {string} period - Período: '7d', '30d', '90d'
+ * @returns {{days: number, endDate: Date, startDate: Date}}
+ */
+function _getDateRangeForPeriod(period) {
+  const days = parseInt(period)
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(endDate.getDate() - days)
+  return { startDate, endDate, days }
+}
+
+/**
  * Inicializa e preenche o grid de adesão 7×4 com os dados fornecidos
  * @param {Array} data - Dados brutos da view de heatmap
  * @returns {Array<Array<Object>>} O grid de adesão 7×4
@@ -96,10 +109,7 @@ export const adherenceService = {
    * @returns {Promise<{score: number, taken: number, expected: number, period: string}>}
    */
   async calculateAdherence(period = '30d', userId = null) {
-    const days = parseInt(period)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
 
     // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
@@ -123,8 +133,8 @@ export const adherenceService = {
 
     if (logError) throw logError
 
-    // Calcular doses esperadas
-    const expectedDoses = calculateExpectedDoses(protocols, days)
+    // Calcular doses esperadas (passar endDate para consistência)
+    const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
 
     // Contar doses registradas
     const takenDoses = count || 0
@@ -202,10 +212,7 @@ export const adherenceService = {
    * @returns {Promise<Array<{protocolId: string, name: string, score: number}>>}
    */
   async calculateAllProtocolsAdherence(period = '30d', userId = null) {
-    const days = parseInt(period)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
 
     // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
@@ -243,7 +250,7 @@ export const adherenceService = {
 
     // Calcular scores sem mais queries
     return protocols.map((protocol) => {
-      const expected = calculateExpectedDoses([protocol], days)
+      const expected = calculateExpectedDoses([protocol], days, endDate)
       const taken = takenByProtocol.get(protocol.id) || 0
       const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
       return {
