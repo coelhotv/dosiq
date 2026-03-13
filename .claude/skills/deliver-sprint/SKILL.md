@@ -1,7 +1,7 @@
 ---
 name: deliver-sprint
 description: >
-  Complete sprint delivery workflow — organizes 7 phases (setup, implementation,
+  Complete sprint delivery workflow — organizes 7 steps (setup, implementation,
   validation, git, push/review, merge, documentation) to deliver high-quality sprints
   with proper testing, code review, and documentation. Use when spec is ready and
   implementation is about to start.
@@ -47,18 +47,18 @@ For the full reference, consult **[references/INDEX.md](references/INDEX.md)** t
 
 ---
 
-## ⏰ QUALITY > SPEED — Don't Rush Through Phases
+## ⏰ QUALITY > SPEED — Don't Rush Through Steps
 
-**Anti-pattern to avoid:** Treating phases as checkboxes to complete quickly.
+**Anti-pattern to avoid:** Treating steps as checkboxes to complete quickly.
 
-- ❌ Speed-run Phase 1 (skip reading spec thoroughly)
-- ❌ Skip Phase 3 validation (assume tests will pass)
-- ❌ Merge immediately after Phase 5 (violates R-060, await user approval)
-- ❌ Skip Phase 7 documentation (lose learnings for next sprint)
+- ❌ Speed-run Step 1 (skip reading spec thoroughly)
+- ❌ Skip Step 3 validation (assume tests will pass)
+- ❌ Merge immediately after Step 5 (violates R-060, await user approval)
+- ❌ Skip Step 7 documentation (lose learnings for next sprint)
 
-**Correct mindset:** Each phase has a PURPOSE. Time estimates are MINIMUM, not targets.
+**Correct mindset:** Each step has a PURPOSE. Time estimates are MINIMUM, not targets.
 
-| Phase | Purpose | Don't Rush | Why |
+| Step | Purpose | Don't Rush | Why |
 |-------|---------|-----------|-----|
 | 1 | Understand scope | Skip reading patterns | Scope creep, rework |
 | 2 | Production code | Skip tests while coding | Bugs escape to main |
@@ -68,13 +68,13 @@ For the full reference, consult **[references/INDEX.md](references/INDEX.md)** t
 | 6 | Integrate safely | Force-push, skip tests | Conflicts, data loss |
 | 7 | Document learnings | Skip journal entry | Next agent repeats mistakes |
 
-**Your speed goal:** "Quality complete" not "all phases fast". If Phase 5 takes 2 hours awaiting review, that's CORRECT.
+**Your speed goal:** "Quality complete" not "all steps fast". If Step 5 takes 2 hours awaiting review, that's CORRECT.
 
 ---
 
-## The 7 Phases (Complete Workflow)
+## The 7 Steps (Complete Workflow)
 
-### Phase 1: Setup & Exploration (10–15 min)
+### Step 1: Setup & Exploration (10–15 min)
 
 **Goal**: Understand scope completely before writing code.
 
@@ -119,7 +119,7 @@ git checkout -b feature/fase-N/descriptive-name
 
 ---
 
-### Phase 2: Implementation (variable, 45–60 min typical)
+### Step 2: Implementation (variable, 45–60 min typical)
 
 **Goal**: Production-ready code following project patterns.
 
@@ -247,7 +247,7 @@ test(scope): test-only
 
 ---
 
-### Phase 3: Validation Local (5–10 min)
+### Step 3: Validation Local (5–10 min)
 
 **Goal**: Zero defects before push.
 
@@ -283,7 +283,7 @@ npm run test:watch -- src/features/x/
 
 ---
 
-### Phase 4: Git & Pre-Push Documentation (5 min)
+### Step 4: Git & Pre-Push Documentation (5 min)
 
 **Goal**: Clean history and updated project memory.
 
@@ -336,7 +336,7 @@ cat plans/EXEC_SPEC_FASE_N.md
 
 ---
 
-### Phase 5: Push & Code Review (5–30 min)
+### Step 5: Push & Code Review (5–30 min)
 
 **Goal**: Quality via automated (Gemini) + human review.
 
@@ -402,17 +402,17 @@ git push
 - **Re-validate tests** after any suggested changes
 - **Agent waits** until explicit approval received
 
-**Agent status after Phase 5:**
+**Agent status after Step 5:**
 - PR created and pushed ✅
 - All Gemini suggestions applied ✅
 - Tests validated ✅
-- **AWAITING EXPLICIT USER APPROVAL TO PROCEED TO PHASE 6**
+- **AWAITING EXPLICIT USER APPROVAL TO PROCEED TO STEP 6**
 
 ⚠️ **DO NOT MERGE without explicit approval.** Period.
 
 ---
 
-### Phase 6: Merge & Cleanup (5 min)
+### Step 6: Merge & Cleanup (5 min)
 
 **Goal**: Integrate to main, clean branch. **Only after explicit user approval.**
 
@@ -445,7 +445,7 @@ git pull origin main  # confirm sync
 
 ---
 
-### Phase 7: Final Documentation (5–10 min)
+### Step 7: Final Documentation (5–10 min)
 
 **Goal**: Formal record of delivery.
 
@@ -524,36 +524,36 @@ gh issue close ISSUE_NUM \
 ## Example: Sprint 5.B Real Timeline
 
 ```
-PHASE 1 (Setup): 10 min
+STEP 1 (Setup): 10 min
   ✓ Read EXEC_SPEC_FASE_5.md
   ✓ Explore process-anvisa.js, TreatmentWizard.jsx
   ✓ git checkout -b fix/5b/encoding-and-autocomplete
 
-PHASE 2 (Implementation): 45 min
+STEP 2 (Implementation): 45 min
   ✓ Add iconv-lite to package.json
   ✓ Modify ETL to use mac_roman encoding
   ✓ Integrate MedicineAutocomplete + LaboratoryAutocomplete
   ✓ Add handlers + CSS class
 
-PHASE 3 (Validation): 10 min
+STEP 3 (Validation): 10 min
   ✓ npm run validate:agent → 473/473 OK
   ✓ 0 lint errors
 
-PHASE 4 (Git & Docs): 5 min
+STEP 4 (Git & Docs): 5 min
   ✓ Update .memory/rules.md → R-111
   ✓ git commit -m "fix(medications): correct encoding"
 
-PHASE 5 (Push & Review): 20 min
+STEP 5 (Push & Review): 20 min
   ✓ git push → gh pr create
   ✓ Gemini: 3 suggestions
   ✓ Apply style suggestion → new commit
   ✓ /gemini review → OK
 
-PHASE 6 (Merge): 5 min
+STEP 6 (Merge): 5 min
   ✓ gh pr merge --squash
   ✓ Commit 2f021b2 on main
 
-PHASE 7 (Docs): 10 min
+STEP 7 (Docs): 10 min
   ✓ Update EXEC_SPEC_FASE_5.md
   ✓ Create 2026-W11.md journal
   ✓ Close issues #288 #289
@@ -595,7 +595,7 @@ TOTAL: 110 minutes (spec → production merge)
 
 ## Benchmarks (Real Data: 5.A, 5.B, 5.C)
 
-| Phase | Time |
+| Step | Time |
 |-------|------|
 | Setup | 10 min |
 | Implementation | 45–60 min |
@@ -612,15 +612,15 @@ TOTAL: 110 minutes (spec → production merge)
 
 | Pattern | Why Bad | Fix |
 |---------|---------|-----|
-| **Self-merge PR without approval** (R-060 violation) | **Unreviewed code in main. Quality gate bypassed. Conflicts of interest.** | **ALWAYS wait for explicit user approval before Phase 6. User ONLY merges.** |
-| Skipping Phase 1 (exploration) | Scope creep, rework | Always spend 10 min reading spec + codebase |
+| **Self-merge PR without approval** (R-060 violation) | **Unreviewed code in main. Quality gate bypassed. Conflicts of interest.** | **ALWAYS wait for explicit user approval before Step 6. User ONLY merges.** |
+| Skipping Step 1 (exploration) | Scope creep, rework | Always spend 10 min reading spec + codebase |
 | No tests for new functions | False confidence, production bugs | 100% happy path coverage minimum |
 | Pushing without `validate:agent` | Lint errors, test failures in PR | Always run before push |
 | Inline styles in UI | Breaks consistency, unmaintainable | Extract to `.css` with semantic class names |
 | Guard clauses before hooks | React rules violation, TDZ errors | Always after all hooks |
 | `.optional()` for nullable fields | Silent fail on null values | Use `.nullable().optional()` |
-| Rushing phases (speed > quality) | Incomplete work, skipped checks, broken builds | Each phase has a PURPOSE. Complete thoroughly. Approval takes time = CORRECT. |
-| Skipping Phase 7 (docs) | Future agents lost context | 10 min to document = 100x ROI |
+| Rushing steps (speed > quality) | Incomplete work, skipped checks, broken builds | Each step has a PURPOSE. Complete thoroughly. Approval takes time = CORRECT. |
+| Skipping Step 7 (docs) | Future agents lost context | 10 min to document = 100x ROI |
 
 ---
 
@@ -668,7 +668,7 @@ TOTAL: 110 minutes (spec → production merge)
 **Never again:**
 - Agent MUST wait for explicit user message: "approved" or "OK to merge" or equivalent
 - Agent MUST document status: "PR #XXX awaiting your approval to merge"
-- Agent MUST NOT run Phase 6 commands without explicit approval
+- Agent MUST NOT run Step 6 commands without explicit approval
 - Speed does NOT override approval requirement
 
 This rule (R-060) is **non-negotiable** and **no-exception**.

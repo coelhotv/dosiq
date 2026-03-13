@@ -4,7 +4,7 @@
 
 ---
 
-## Phase 1: Setup & Exploration (10–15 min)
+## Step 1: Setup & Exploration (10–15 min)
 
 - [ ] Read `plans/EXEC_SPEC_FASE_N.md` completely
 - [ ] Extracted: deliverables, target files, success criteria
@@ -16,7 +16,7 @@
 
 ---
 
-## Phase 2: Implementation (45–60 min)
+## Step 2: Implementation (45–60 min)
 
 **Order of changes:**
 - [ ] Schemas first (`src/schemas/`)
@@ -37,7 +37,7 @@
 
 ---
 
-## Phase 3: Validation (10 min)
+## Step 3: Validation (10 min)
 
 - [ ] Ran: `npm run validate:agent` (10 min timeout)
 - [ ] Result: ✅ All tests passing (473+ critical)
@@ -51,7 +51,7 @@
 
 ---
 
-## Phase 4: Git & Documentation (5 min)
+## Step 4: Git & Documentation (5 min)
 
 - [ ] Checked for new learning: `echo "Did I discover a pattern or anti-pattern?"`
 - [ ] Updated `.memory/rules.md` if new pattern (added R-NNN entry)
@@ -65,7 +65,7 @@
 
 ---
 
-## Phase 5: Push & Code Review (20–30 min)
+## Step 5: Push & Code Review (20–30 min)
 
 - [ ] Ran: `git push -u origin feature/fase-N/...`
 - [ ] Created PR via: `gh pr create --title "..." --body "..."`
@@ -81,17 +81,17 @@
 
 ---
 
-## Phase 6: Merge (5 min)
+## Step 6: Merge (5 min)
 
 - [ ] Approved by user (human review done)
 - [ ] Ran: `gh pr merge PR_NUMBER --squash --delete-branch`
-  - OR did manual merge (see SKILL.md Phase 6)
+  - OR did manual merge (see SKILL.md Step 6)
 - [ ] Verified: `git log --oneline -5` shows squashed commit on main
 - [ ] Verified: `git pull origin main` (main in sync)
 
 ---
 
-## Phase 7: Final Documentation (10 min)
+## Step 7: Final Documentation (10 min)
 
 - [ ] Updated `plans/EXEC_SPEC_FASE_N.md`:
   - [ ] Marked deliverables as ✅
@@ -124,7 +124,7 @@
 
 ## Timeline Benchmark
 
-| Phase | Time |
+| Step | Time |
 |-------|------|
 | 1. Setup | 10–15 min |
 | 2. Implementation | 45–60 min |
