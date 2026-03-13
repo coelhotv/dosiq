@@ -149,6 +149,148 @@ npm run build 2>&1 | grep -E "vendor-pdf|feature-medicines-db"
 
 ---
 
+## 5. Services: N+1 Query Patterns e Estratégias de Batching
+
+> **Origem:** Sprint M7 — trace Safari 2026-03-13 revelou 15 queries simultâneas com 10 protocolos,
+> causando evento `message` de 100ms na main thread do iPhone.
+
+### 5.1 O Problema N+1 em Services React
+
+**Padrão perigoso:** qualquer `.map()` com `async` que faz query dentro.
+
+```javascript
+// ❌ N+1 — dispara N queries Supabase simultâneas
+// Com 10 protocolos = 10 round-trips, cada um bloqueando main thread com JSON parse
+const adherencePromises = protocols.map(async (protocol) =>
+  supabase.from('medicine_logs').select('*').eq('protocol_id', protocol.id)
+)
+const results = await Promise.all(adherencePromises)
+
+// ✅ CORRETO — 1 query batch, agrupamento O(M) client-side
+const { data: allLogs } = await supabase
+  .from('medicine_logs')
+  .select('protocol_id')        // só o campo para agrupar
+  .eq('user_id', userId)
+  .gte('taken_at', startDate.toISOString())
+  .lte('taken_at', endDate.toISOString())
+
+// Agrupar uma vez: O(M) em vez de O(M) × N
+const countByProtocol = new Map()
+allLogs.forEach((log) => {
+  if (log.protocol_id) {
+    countByProtocol.set(log.protocol_id, (countByProtocol.get(log.protocol_id) || 0) + 1)
+  }
+})
+
+// Calcular scores sem mais queries
+return protocols.map((p) => ({ ...p, taken: countByProtocol.get(p.id) || 0 }))
+```
+
+**Impacto medido:**
+
+| Cenário | Queries | Dados transferidos | Evento message |
+|---------|---------|-------------------|----------------|
+| N+1 com 10 protocolos | 15 | ~2700 linhas × select('*') | **100ms** blocking |
+| Batch refatorado | 6 | protocol_id only + 1 HEAD | < 20ms |
+
+---
+
+### 5.2 select('*') quando só precisa de count
+
+```javascript
+// ❌ Transfere TODAS as colunas — desnecessário quando só usa .length
+const { data: logs } = await supabase.from('medicine_logs').select('*')
+const count = logs?.length || 0
+
+// ✅ HEAD request — zero dados transferidos, só o count
+const { count } = await supabase
+  .from('medicine_logs')
+  .select('*', { count: 'exact', head: true })
+// count é o número de linhas — sem payload
+
+// ✅ Se precisa de dados mas não de todas as colunas — select específico
+const { data: logs } = await supabase
+  .from('medicine_logs')
+  .select('protocol_id')   // só o campo necessário
+```
+
+**Regra:** Antes de `select('*')`, perguntar:
+- Preciso dos dados ou só do count? → `head: true`
+- Preciso de todos os campos? → `select('campo1, campo2')`
+- Preciso de todos os campos (join, render)? → `select('*')` é OK
+
+---
+
+### 5.3 Cascata de Queries Paralelas (Promise.allSettled)
+
+`getAdherenceSummary` dispara 3 funções em `Promise.allSettled`:
+
+```javascript
+// ❌ ANTES — 3 funções que internamente disparam 5+N queries simultâneas
+const results = await Promise.allSettled([
+  this.calculateAdherence(period, userId),          // 2 queries
+  this.calculateAllProtocolsAdherence(period, userId), // 1 + N queries (N+1!)
+  this.getCurrentStreak(userId),                    // 2 queries
+])
+// Total com 10 protocolos: 15 queries simultâneas
+```
+
+**Impacto em mobile:** 15 conexões HTTPS simultâneas competindo por banda + 15 JSON parse events
+na main thread. Safari no iPhone não tem paralelismo real — processa sequencialmente
+na main thread, empilhando 100ms+ de blocking.
+
+**Estratégia de mitigação:**
+1. Batch queries dentro de cada função (M7.1)
+2. HEAD request para contagens (M7.2)
+3. Mover cálculos complexos para views server-side (M3 pattern)
+
+---
+
+### 5.4 Ref Callbacks vs useEffect: cleanup correto
+
+```javascript
+// ❌ ERRO: return value de ref callback é IGNORADO pelo React
+const myRef = useCallback((element) => {
+  if (!element) return  // ← não desconecta observer!
+  const observer = new IntersectionObserver(...)
+  observer.observe(element)
+
+  return () => observer.disconnect()  // ← React IGNORA isso em ref callbacks
+}, [someState])  // ← deps recreiam o callback desnecessariamente
+
+// ✅ CORRETO: null-path desconecta, deps [], useRef para flags
+const flagRef = useRef(false)
+
+const myRef = useCallback((element) => {
+  if (!element) {
+    observerRef.current?.disconnect()  // ← desconecta no null-path
+    observerRef.current = null
+    return
+  }
+
+  observerRef.current?.disconnect()   // ← garante cleanup antes de criar novo
+
+  const observer = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting && !flagRef.current) {  // ← ref, não state
+      flagRef.current = true
+      // ...
+    }
+  })
+
+  observer.observe(element)
+  observerRef.current = observer
+}, [])  // ← deps vazias: callback estável, sem recreação
+```
+
+**Regra:** Ref callbacks SEMPRE com `deps []`. Flags que precisariam de state no closure
+devem usar `useRef`. Cleanup deve estar no **null-path** (`if (!element)`), não no return.
+
+---
+
+**Source:** Sprint M7 + M8 — N+1 trace analysis (2026-03-13)
+
+---
+
 ## 6. Banco de Dados: Índices e Views para Performance Mobile
 
 ### 6.1 Princípio: Pré-calcular no Servidor, Não no Cliente
@@ -456,7 +598,12 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 - [ ] Componentes em lista longa: `React.memo` com comparação customizada
 - [ ] IntersectionObserver: `rootMargin ≤ 50px`, sentinel DEPOIS do conteúdo visível
 
-### 8.5 Banco de Dados
+### 8.5 Services
+- [ ] Nenhum `.map()` com `async` que dispara query dentro — usar batch query + `Map` client-side
+- [ ] `select('*')` revisado: se só precisa do count, usar `{ count: 'exact', head: true }`
+- [ ] Ref callbacks (`ref={fn}`): deps `[]`, null-path desconecta, flags via `useRef` (não state)
+
+### 8.6 Banco de Dados
 - [ ] Nova query com ORDER BY: índice composto `(partition_key, sort_key DESC)` existe?
 - [ ] Agregação client-side com > 100 rows: criar VIEW no banco
 
@@ -478,9 +625,12 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 | M4 | 🔜 Pendente | 7 (parcial) | Offline UX, OfflineBanner Pattern | — |
 | M5 ✅ | MERGED | 3–4 | CSS Animações, Assets, Favicons | 2026-03-13 |
 | M6 ✅ | MERGED | 7–8 | Touch UX, Source Maps, Universal Checklist | 2026-03-13 |
+| M7 | 🆕 Pendente | 5 | N+1 em getAdherenceSummary → batch + HEAD request | — |
+| M8 | 🆕 Pendente | 5 | Sentinel observer race condition (ref callback fix) | — |
 
 ---
 
-**Source:** Sprints M0–M6 — Mobile Performance Initiative (5 of 6 complete ✅)
-**Last Updated:** 2026-03-13 (M5 + M6 CSS/Touch UX/Checklist — COMPLETE)
+**Source:** Sprints M0–M8 — Mobile Performance Initiative
+**Last Updated:** 2026-03-13 (M7 + M8 identificados via trace Safari com 10 protocolos)
 **M4 Status:** Blocked (service-worker complexity) — refatorar para próxima sprint se necessário
+**M7/M8 Status:** Pendentes — são os fixes críticos para o freeze residual confirmado em produção
