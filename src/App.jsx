@@ -110,7 +110,9 @@ function App() {
           }}
         />
       ) : (
-        <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
+        <Suspense fallback={<ViewSkeleton />}>
+          <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
+        </Suspense>
       )
     }
 
