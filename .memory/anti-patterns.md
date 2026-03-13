@@ -18,6 +18,7 @@
 | AP-011 | Missing rewrite in `vercel.json` for API route | 405 error, catch-all serves HTML | Add explicit rewrite before catch-all | R-040 |
 | AP-012 | Skip `npm run validate` before commit | Broken build, lint errors, failing tests | Run `validate:quick` during dev, `validate` before PR | R-051 |
 | AP-013 | Commit directly to `main` | Unreviewed code in production | Always create feature branch + PR | — |
+| **AP-A01** | **Make ANY code change without creating a feature branch FIRST** | **Code ends up on `main` without review, history/audit trail lost, violates deliver-sprint workflow Step 1** | **MANDATORY: `git checkout -b branch-name` BEFORE touching any files. This is non-negotiable Step 1.** | **R-065** |
 | AP-014 | Use `--no-verify` to skip hooks | Bypass quality gates | Fix errors properly instead | — |
 | AP-015 | Call `logNotification()` after `shouldSendNotification()` | Duplicate notification logs | `shouldSendNotification()` already logs internally | R-032 |
 | AP-016 | Endpoint with `service_role` key without auth | Unauthenticated access bypasses RLS | Add Supabase Auth + admin check | R-042 |

@@ -356,19 +356,131 @@ CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
 
 ---
 
-## Roadmap — Mobile Performance M0–M6
+## 7. Touch, UX Mobile e Feedback de Conectividade (M4–M6 Complete)
 
-| Sprint | Status | Seção | Tópicos |
-|--------|--------|-------|---------|
-| M0 ✅ | MERGED | HealthHistory freezes | lazy(), Suspense, startTransition |
-| M1 ✅ | MERGED | Timeline virtualization | react-virtuoso, handlers em useCallback |
-| M2 ✅ | MERGED | 1–2 | Lazy Loading, Code Splitting, manualChunks |
-| M3 ✅ | MERGED | 6 | DB: Índices + Views de Agregação ✅ 2026-03-13 |
-| M4 | 🔜 Pendente | 7 (parcial) | Offline UX, OfflineBanner Pattern |
-| M5 | 🔜 Pendente | 3–4 | CSS Animações, Assets, Favicons |
-| M6 | 🔜 Pendente | 7 (completo), 8 | Touch UX, Universal Checklist |
+### 7.1 Feedback de Conectividade (OfflineBanner pattern — M4)
+
+```jsx
+// ✅ PADRÃO: OfflineBanner acima do BottomNav, aria-live para screen readers
+export function OfflineBanner() {
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
+  useEffect(() => {
+    const on  = () => setIsOffline(false)
+    const off = () => setIsOffline(true)
+    window.addEventListener('online',  on)
+    window.addEventListener('offline', off)
+    return () => {
+      window.removeEventListener('online',  on)
+      window.removeEventListener('offline', off)
+    }
+  }, [])
+
+  if (!isOffline) return null
+  return <div className="offline-banner" role="alert" aria-live="polite">Sem conexão — exibindo dados salvos</div>
+}
+```
+
+**CSS obrigatório:**
+```css
+.offline-banner {
+  position: fixed;
+  bottom: 64px; /* acima do BottomNav */
+  left: 0;
+  right: 0;
+  background: var(--color-warning, #f59e0b);
+  contain: layout style; /* evita layout thrash no toggle */
+  z-index: 100;
+}
+```
+
+### 7.2 Touch Highlights e Delays (M6)
+
+```css
+/* Remove flash de highlight ao tocar */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Remove delay de 300ms do tap em iOS Safari */
+button, a, [role="button"] { touch-action: manipulation; }
+
+/* Manter foco visível para acessibilidade de teclado */
+:focus-visible { outline: 2px solid var(--color-focus); }
+```
+
+### 7.3 Overscroll em Containers de Scroll (M6)
+
+```css
+/* Isola rubber-band dentro do container — não propaga para o body */
+.overflow-scroll,
+.overflow-y-auto,
+[data-scroll-container] {
+  overscroll-behavior: contain;
+}
+
+/* Allow page pull-to-refresh nativo do browser */
+body {
+  overscroll-behavior-y: auto;
+}
+```
+
+**Containers que precisam:**
+- Modal de dose (`.modal-content`)
+- Timeline de logs (`.health-history-timeline`)
+- Lista de estoque (`.stock-list`)
 
 ---
 
-**Source:** Sprints M0–M3 — Mobile Performance Initiative
-**Last Updated:** 2026-03-13 (M3 database optimization + indices + views — COMPLETE)
+## 8. Checklist Universal (Pré-PR — M6)
+
+Execute antes de criar qualquer PR que modifique views, componentes ou configuração de build:
+
+### 8.1 JavaScript & Bundle
+- [ ] Novas views adicionadas com `lazy()` em App.jsx (nunca sync)
+- [ ] Bibliotecas > 100KB: dynamic import no ponto de uso
+- [ ] `npm run build` → chunk do index principal < 200KB gzipped
+- [ ] `npm run build` → nova lib NÃO aparece no chunk index
+
+### 8.2 CSS
+- [ ] Nenhum `@keyframes` animando `width`, `height`, `top`, `left`, `margin`, `padding`
+- [ ] Nenhum `@import url('*.js')` em arquivos CSS
+- [ ] Font sizes: mínimo 10px em SVG restrito, 12px em texto de UI normal
+- [ ] Novos containers de scroll: `overscroll-behavior: contain` adicionado
+
+### 8.3 Assets
+- [ ] Novas imagens: `loading="lazy"` + `width`/`height` explícitos
+- [ ] Favicon: < 10KB (SVG preferido)
+
+### 8.4 React
+- [ ] Cálculos > 16ms em setState: envolvidos em `startTransition`
+- [ ] Listas com potencial > 30 itens: `react-virtuoso` com `useWindowScroll`
+- [ ] Componentes em lista longa: `React.memo` com comparação customizada
+- [ ] IntersectionObserver: `rootMargin ≤ 50px`, sentinel DEPOIS do conteúdo visível
+
+### 8.5 Banco de Dados
+- [ ] Nova query com ORDER BY: índice composto `(partition_key, sort_key DESC)` existe?
+- [ ] Agregação client-side com > 100 rows: criar VIEW no banco
+
+### 8.6 UX Mobile
+- [ ] Testado em emulação 375px (iPhone SE) no Chrome DevTools
+- [ ] Tap em botões: sem flash, resposta imediata
+- [ ] Scroll de listas: sem rubber-band no container pai
+
+---
+
+## Roadmap — Mobile Performance M0–M6
+
+| Sprint | Status | Seção | Tópicos | Merge |
+|--------|--------|-------|---------|-------|
+| M0 ✅ | MERGED | HealthHistory freezes | lazy(), Suspense, startTransition | 2026-03-10 |
+| M1 ✅ | MERGED | Timeline virtualization | react-virtuoso, handlers em useCallback | 2026-03-10 |
+| M2 ✅ | MERGED | 1–2 | Lazy Loading, Code Splitting, manualChunks | 2026-03-13 |
+| M3 ✅ | MERGED | 6 | DB: Índices + Views de Agregação | 2026-03-13 |
+| M4 | 🔜 Pendente | 7 (parcial) | Offline UX, OfflineBanner Pattern | — |
+| M5 ✅ | MERGED | 3–4 | CSS Animações, Assets, Favicons | 2026-03-13 |
+| M6 ✅ | MERGED | 7–8 | Touch UX, Source Maps, Universal Checklist | 2026-03-13 |
+
+---
+
+**Source:** Sprints M0–M6 — Mobile Performance Initiative (5 of 6 complete ✅)
+**Last Updated:** 2026-03-13 (M5 + M6 CSS/Touch UX/Checklist — COMPLETE)
+**M4 Status:** Blocked (service-worker complexity) — refatorar para próxima sprint se necessário

@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-13 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M3:** ✅ MERGED
+**Last Updated:** 2026-03-13 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M0–M6:** ✅ M0–M5 MERGED, M6 DOCUMENTED (M4 DEFERRED)
 
 ---
 
@@ -53,11 +53,12 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | Hardcode `new Date('YYYY-MM-DD')` | UTC midnight = wrong day in GMT-3 | Use `parseLocalDate()` |
 | Guard clause before hooks | React Rules violation | Place after ALL hooks |
 | setTimeout in act() blocks | Timing-dependent, flaky | Use `waitFor()` or `vi.useFakeTimers()` |
+| **Modify code WITHOUT creating branch FIRST** | **Code ends up on main without review (AP-A01)** | **MANDATORY: `git checkout -b ...` BEFORE any change** |
 | `calculateDailyIntake()` for non-daily | Ignores frequency (semanal, dias_alternados) | Use `calculateExpectedDoses()` |
 | Count logs instead of summing quantity_taken | Multi-pill doses underestimated | Sum `.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0)` |
 | Filter logs with `protocol_id \|\| medicine_id` | Cross-protocol contamination | Use protocol_id ONLY |
 
-→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-A04)
+→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-A01, 50+ entries)
 
 ---
 
@@ -115,6 +116,19 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 - **Timeline:** 75 min (setup + impl + validation + git + push + merge + docs)
 - **Journal:** 2026-W11.md (full entry with timeline breakdown)
 
+#### **Sprint M2 — Code Splitting & Lazy Routes** ✅ DELIVERED
+- **Status:** MERGED (commit `ddd3fbe`, PR #391)
+- **Quality:** 539/539 tests ✅ | 0 lint errors ✅ | Gemini suggestions applied
+- **Bundle Optimization:**
+  - All 12 views converted to `lazy()` (except Dashboard)
+  - jsPDF + html2canvas: dynamic import on export trigger (-587KB from initial)
+  - 8 manualChunks: vendor-framer, vendor-supabase, vendor-virtuoso, vendor-pdf, feature-history, feature-stock, feature-landing, feature-medicines-db (819KB)
+  - **Result:** 989KB → 102.47kB gzip (89% reduction 🎉)
+- **ViewSkeleton:** New component for Suspense fallback during chunk loading
+- **New Rules:** R-115 (lazy views), R-116 (manualChunks patterns), R-117 (mobile lazy loading)
+- **Timeline:** 90 min (setup + impl + validation + git + merge + docs)
+- **Journal:** Included in 2026-W11.md
+
 #### **Sprint M3 — Database Optimization (Views + Indexes)** ✅ DELIVERED
 - **Status:** MERGED (commit `e578820`, PR #393)
 - **Quality:** 473/473 tests ✅ | 0 lint errors ✅ | 7 Gemini suggestions applied
@@ -128,6 +142,35 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 - **Performance:** Sparkline 3-4× faster, Heatmap 10× faster, mobile main-thread unblocked
 - **Timeline:** 250 min (setup + impl + 7 code review fixes + validation + docs + merge)
 - **Journal:** 2026-W11-M3.md (detailed learnings, 4 bugs explained, performance metrics)
+
+#### **Sprint M5 — Assets, CSS, Font Sizes** ✅ DELIVERED
+- **Status:** MERGED (commit `4822296`, PR #394)
+- **Quality:** 539/539 tests ✅ | 0 lint errors ✅ | No Gemini issues
+- **Changes:**
+  - Removed `@import url('*.js')` from Animations.css (critical chain fix)
+  - favicon.png 192KB → SVG <1KB (LCP improvement)
+  - Font sizes: 8-9px → 10-11px in SparklineAdesao, StockAlertsWidget (mobile legibility)
+  - Animations: width → transform:scaleX() (zero reflow, GPU-accelerated)
+- **New Rules:** R-123 (animations, scaleX), R-124 (favicon optimization)
+- **Performance:** LCP ~200ms faster, TBT improvement
+- **Timeline:** 60 min (setup + impl + validation + merge + docs)
+- **Journal:** 2026-W11-M5.md
+
+#### **Sprint M6 — Mobile Touch & UX (Tap, Overscroll, Source Maps)** ✅ DOCUMENTED
+- **Status:** Changes in main (commit 5e593fb), full docs + anti-pattern added
+- **Quality:** 539/539 tests ✅ | 0 lint errors ✅ | CSS valid
+- **Changes:**
+  - M6.1: `-webkit-tap-highlight-color: transparent` (remove tap flash)
+  - M6.2: `touch-action: manipulation` (remove 300ms iOS delay)
+  - M6.3: `overscroll-behavior: contain` (prevent rubber-band scroll)
+  - M6.4: `sourcemap: 'hidden'` (already in vite.config.js from M2)
+- **New Anti-Pattern:** AP-A01 (mandatory branch creation before ANY code change)
+- **Skill Improvements:** deliver-sprint SKILL.md refactored with explicit Step 1.0 (branch FIRST)
+- **Documentation:** docs/standards/MOBILE_PERFORMANCE.md sections 7-8 completed
+- **Timeline:** 50 min (impl + validation + docs) + 15 min (AP-A01 + skill improvements)
+- **Journal:** 2026-W11-M6.md (critical learning about workflow discipline)
+
+**M4 STATUS:** Deferred (Service Worker complexity) — refactor for future sprint if needed
 
 ---
 

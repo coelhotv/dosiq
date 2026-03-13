@@ -25,6 +25,29 @@ For the full reference, consult **[references/INDEX.md](references/INDEX.md)** t
 
 ---
 
+## 🔴 **CRITICAL: STEP 1.0 MUST HAPPEN FIRST (AP-A01)**
+
+**BEFORE you do ANYTHING else:**
+```bash
+git checkout main && git pull origin main
+git checkout -b feature/fase-N/descriptive-name
+```
+
+**If you read spec → explore code → THEN create branch = YOU VIOLATED THE WORKFLOW**
+
+The sequence is MANDATORY:
+1. **Create branch FIRST** (Step 1.0 — this section)
+2. Read spec (1.1)
+3. Explore code (1.2)
+4. Analyze patterns (1.3)
+5. THEN proceed to Step 2 (Implementation)
+
+**Why:** Any code change without a branch = unreviewed code on `main`. This is non-negotiable.
+
+Failure to follow Step 1.0 first is **AP-A01 violation** and will be flagged in code review.
+
+---
+
 ## ⚠️ CRITICAL RULE: R-060 (No Self-Merge) — NON-NEGOTIABLE
 
 **Rule:** Code agents NEVER merge their own PRs. Period. No exceptions.
@@ -78,6 +101,32 @@ For the full reference, consult **[references/INDEX.md](references/INDEX.md)** t
 
 **Goal**: Understand scope completely before writing code.
 
+#### ⚠️ **MANDATORY FIRST ACTION: Create Feature Branch BEFORE Any Code Change**
+
+**🚨 NON-NEGOTIABLE RULE (AP-A01):**
+- **You MUST create a feature branch FIRST, before reading anything or exploring code**
+- **NOT after reading the spec** → Reorder IMMEDIATELY
+- **NOT after Step 1.1/1.2** → Do this FIRST
+- **Any code change WITHOUT a branch = Code goes to `main` without review, audit trail lost, violates workflow**
+
+**Correct sequence (MANDATORY):**
+```bash
+# STEP 1.0: CREATE BRANCH IMMEDIATELY (before any other Step 1 action)
+git checkout main && git pull origin main  # Sync first
+git checkout -b feature/fase-N/descriptive-name
+# or: git checkout -b fix/NN/descriptive-name for hotfixes
+
+# NOW you can do 1.1, 1.2, 1.3 safely on your branch
+```
+
+**Why this order is non-negotiable:**
+1. **Audit trail:** Every code change should be traceable to a specific branch/PR
+2. **Isolation:** Prevents accidental commits to `main` (git state is "on branch" = safer)
+3. **Review process:** Changes MUST go through PR + Gemini review + user approval
+4. **If you skip this:** Code ends up on `main` → violates R-060/AP-A01 → unreviewed code in production
+
+---
+
 #### 1.1 Read Specification
 ```bash
 # Check existence and completeness
@@ -111,11 +160,10 @@ find src -path "*__tests__*" -name "*.test.js"
 - If modifying schema: check Supabase CHECK constraints
 - **Use Explore agent** if scope > 5 files
 
-#### 1.4 Create Branch
-```bash
-git checkout -b feature/fase-N/descriptive-name
-# or: fix/NN/descriptive-name for hotfixes
-```
+#### ✅ 1.4 Branch Already Created (Step 1.0)
+- ✅ You are now on `feature/fase-N/descriptive-name`
+- ✅ `git status` should show: `On branch feature/fase-N/...`
+- ✅ Ready to proceed to Step 2 safely
 
 ---
 
