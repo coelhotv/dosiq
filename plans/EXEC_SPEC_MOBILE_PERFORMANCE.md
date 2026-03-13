@@ -15,7 +15,7 @@
 |--------|--------|--------|------|----------------|
 | **M0** | ✅ MERGED | `6f4be85` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 2 commits, ✅ Gemini suggestions |
 | **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
-| M2 | 🔜 Pendente | — | — | — |
+| **M2** | ✅ MERGED | `ddd3fbe` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ manualChunks, ✅ MOBILE_PERFORMANCE.md |
 | M3 | 🔜 Pendente | — | — | — |
 | M4 | 🔜 Pendente | — | — | — |
 | M5 | 🔜 Pendente | — | — | — |
@@ -41,6 +41,21 @@
 - [x] **Code Review:** PR #342 revisado e aprovado
 - [x] **Merge:** Squash + delete branch automático (commit f7153cb)
 - [x] **Performance:** Virtuoso com overscan=300, handlers em useCallback, LogEntry em memo
+
+### Sprint M2 — Quality Gates Checklist
+
+- [x] **Lint:** 0 erros em App.jsx, vite.config.js, index.html
+- [x] **Testes:** 539/539 passando (30 test files, sem regressões)
+- [x] **Build:** npm run build sem erros
+- [x] **Bundle Analysis:** Main bundle 102.47 kB gzip (target <200kB ✓)
+- [x] **Chunks Isolation:** vendor-pdf (174.37 kB), feature-medicines-db (105.30 kB), feature-history (12.47 kB) — corretamente separados
+- [x] **Lazy Views:** 13 views convertidas para lazy(), Suspense fallback implementado
+- [x] **Breaking Bug Fix:** Landing sem Suspense corrigido (linha 113)
+- [x] **Documentation:** MOBILE_PERFORMANCE.md iniciado (Sections 1 & 2)
+- [x] **Memory:** R-117 documentado em .memory/rules.md
+- [x] **Code Review:** PR #391 revisado, Gemini suggestions aplicadas
+- [x] **Merge:** Squash + delete branch (commit ddd3fbe)
+- [x] **Tech Debt:** Issue #392 criada (refactor renderCurrentView)
 
 ---
 
