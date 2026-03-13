@@ -1551,7 +1551,7 @@ export function OfflineBanner() {
 # SPRINT M5 — ASSETS, CSS E FONT SIZES
 
 **Branch:** `fix/mobile-perf-m5-assets-css`
-**Dependência:** M4 merged em main
+**Dependência:** Nenhuma
 **Duração estimada:** 1 dia
 **Arquivos:**
 - `src/shared/components/ui/animations/Animations.css`
