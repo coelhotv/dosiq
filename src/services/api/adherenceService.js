@@ -11,6 +11,19 @@ const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 
 /**
+ * Extrai intervalo de datas baseado em um período string
+ * @param {string} period - Período: '7d', '30d', '90d'
+ * @returns {{days: number, endDate: Date, startDate: Date}}
+ */
+function _getDateRangeForPeriod(period) {
+  const days = parseInt(period)
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(endDate.getDate() - days)
+  return { startDate, endDate, days }
+}
+
+/**
  * Inicializa e preenche o grid de adesão 7×4 com os dados fornecidos
  * @param {Array} data - Dados brutos da view de heatmap
  * @returns {Array<Array<Object>>} O grid de adesão 7×4
@@ -96,10 +109,7 @@ export const adherenceService = {
    * @returns {Promise<{score: number, taken: number, expected: number, period: string}>}
    */
   async calculateAdherence(period = '30d', userId = null) {
-    const days = parseInt(period)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
 
     // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
@@ -113,21 +123,21 @@ export const adherenceService = {
 
     if (protocolError) throw protocolError
 
-    // Buscar logs no período
-    const { data: logs, error: logError } = await supabase
+    // M7.2: HEAD request — apenas count, sem dados (zero bytes transferidos)
+    const { count, error: logError } = await supabase
       .from('medicine_logs')
-      .select('*')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', resolvedUserId)
       .gte('taken_at', startDate.toISOString())
       .lte('taken_at', endDate.toISOString())
 
     if (logError) throw logError
 
-    // Calcular doses esperadas
-    const expectedDoses = calculateExpectedDoses(protocols, days)
+    // Calcular doses esperadas (passar endDate para consistência)
+    const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
 
     // Contar doses registradas
-    const takenDoses = logs?.length || 0
+    const takenDoses = count || 0
 
     // Calcular score (0-100)
     const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
@@ -202,10 +212,12 @@ export const adherenceService = {
    * @returns {Promise<Array<{protocolId: string, name: string, score: number}>>}
    */
   async calculateAllProtocolsAdherence(period = '30d', userId = null) {
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
+
     // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
 
-    // Buscar todos os protocolos ativos
+    // Query 1: Buscar todos os protocolos ativos
     const { data: protocols, error } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(*)')
@@ -214,25 +226,43 @@ export const adherenceService = {
 
     if (error) throw error
 
-    // Calcular adesão para cada protocolo (passa userId para evitar lock contention)
-    const adherencePromises = protocols.map(async (protocol) => {
-      try {
-        return await this.calculateProtocolAdherence(protocol.id, period, resolvedUserId)
-      } catch (err) {
-        console.error(`Erro ao calcular adesão para protocolo ${protocol.id}:`, err)
-        return {
-          protocolId: protocol.id,
-          name: protocol.name,
-          medicineName: protocol.medicine?.name,
-          score: 0,
-          taken: 0,
-          expected: 0,
-          error: true,
-        }
+    if (!protocols || protocols.length === 0) return []
+
+    // M7.1: Query 2 (batch): Buscar APENAS protocol_id — não select('*')
+    // Transfere ~50 bytes por log ao invés de ~500 bytes (select '*')
+    const { data: allLogs, error: logError } = await supabase
+      .from('medicine_logs')
+      .select('protocol_id')
+      .eq('user_id', resolvedUserId)
+      .gte('taken_at', startDate.toISOString())
+      .lte('taken_at', endDate.toISOString())
+
+    if (logError) throw logError
+
+    // M7.1: Agrupar por protocol_id client-side — O(M) uma vez
+    // Em vez de O(M) × N separado (N = número de protocolos)
+    const takenByProtocol = new Map()
+    ;(allLogs || []).forEach((log) => {
+      if (log.protocol_id) {
+        takenByProtocol.set(log.protocol_id, (takenByProtocol.get(log.protocol_id) || 0) + 1)
       }
     })
 
-    return Promise.all(adherencePromises)
+    // Calcular scores sem mais queries
+    return protocols.map((protocol) => {
+      const expected = calculateExpectedDoses([protocol], days, endDate)
+      const taken = takenByProtocol.get(protocol.id) || 0
+      const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
+      return {
+        protocolId: protocol.id,
+        name: protocol.name,
+        medicineName: protocol.medicine?.name,
+        score,
+        taken,
+        expected,
+        error: false,
+      }
+    })
   },
 
   /**
