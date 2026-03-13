@@ -978,5 +978,66 @@ manualChunks: {
 
 ---
 
-*Last updated: 2026-03-12*
-*Rules: R-001 to R-117*
+## Database & Services
+
+### R-121: Zod Validation for Service Parameters [HIGH]
+**Rule:** ALL service functions accepting input parameters MUST validate with Zod `safeParse()` + schema. Never use manual `typeof`/`Array.isArray()` checks.
+**Why:** Documents input contract, prevents silent failures, catches edge cases at boundary.
+**Example:**
+```javascript
+// CORRECT
+const GetDailyAdherenceFromViewSchema = z.object({
+  days: z.number().int().positive().max(365, 'Max 365 dias').default(30),
+})
+
+async getDailyAdherenceFromView(days = 30) {
+  const validation = GetDailyAdherenceFromViewSchema.safeParse({ days })
+  if (!validation.success) {
+    console.error('[adherenceService] Validation error:', validation.error.format())
+    return []
+  }
+  const { days: validDays } = validation.data
+  // Use validDays only
+}
+
+// WRONG
+async getDailyAdherenceFromView(days = 30) {
+  if (typeof days !== 'number' || days < 1) return [] // no schema documentation
+}
+```
+**Source:** Sprint M3 (Gemini code review suggestion, applied successfully).
+
+### R-122: Extract Functions at 30-Line Threshold [MEDIUM]
+**Rule:** If a function exceeds 30 lines, extract pure helpers to reduce cognitive load and improve testability.
+**Why:** Functions >30 lines are harder to test, understand, and reuse. Extract orthogonal concerns.
+**Example:**
+```javascript
+// CORRECT — Two focused functions
+function buildAdherenceGrid(data) {  // 8 lines
+  const grid = Array.from({ length: 7 }, () =>
+    Array.from({ length: 4 }, () => ({ taken: 0, expected: 0, adherence: null }))
+  )
+  ;(data || []).forEach((row) => {
+    grid[row.day_of_week][row.period_index] = { taken: row.taken_doses, ... }
+  })
+  return grid
+}
+
+function getAdherencePatternFromView() {  // 15 lines after extraction
+  const grid = buildAdherenceGrid(data)  // delegates complexity
+  // rest of logic
+}
+
+// WRONG — Single 44-line function
+async getAdherencePatternFromView() {
+  const grid = Array.from({ length: 7 }, () => Array.from(...)) // 10 lines inline
+  ;(data || []).forEach((row) => { grid[...] = ... })
+  // rest of logic — hard to test grid construction in isolation
+}
+```
+**Source:** Sprint M3 (Gemini code review refinement, 44 lines → 30 after extraction).
+
+---
+
+*Last updated: 2026-03-13*
+*Rules: R-001 to R-122*

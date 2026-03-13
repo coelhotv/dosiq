@@ -120,7 +120,15 @@
 | AP-P02 | Synchronous import of component >200 lines in mobile-critical view | Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g., `SparklineAdesao` 518 ln) | Use `React.lazy()` + `<Suspense fallback>` for components >200 lines in view-level JSX | R-116 |
 | AP-P03 | O(n) synchronous computation in useMemo with n>100 | `analyzeAdherencePatterns` + Zod validation on 500 objects in useMemo = Main Thread freeze, UI unresponsive 200-400ms | Wrap in `startTransition(() => { setState(heavyComputation()) })` to allow React to pause between frames | R-117 |
 
+## Database & Aggregation Anti-Patterns (Sprint M3 — 2026-03-13)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-D01 | Count DISTINCT protocols when you need to count doses (`COUNT(DISTINCT protocol_id)` instead of `SUM(jsonb_array_length(time_schedule))`) | Protocol A with ["08:00", "20:00"] = 2 doses expected. `COUNT(DISTINCT)` returns 1 (protocol), not 2 (doses). Adherence: 12 logs / 10 protocols = 120% instead of 12/12 = 100% | Use `jsonb_array_length(time_schedule)` to count actual dose slots per protocol; `SUM()` not `COUNT()` in aggregation | R-121 |
+| AP-D02 | Cartesian product in LEFT JOIN logs ⨝ expected_doses without pre-aggregation | 12 logs × 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates (10×12=120 instead of 12). | **Pre-aggregate expected_doses BEFORE joining logs.** Create intermediate CTE that groups expected_doses by date; then LEFT JOIN logs to that CTE | R-122 |
+| AP-D03 | Using `COUNT(*)` to count expected dose opportunities in heatmap when `COUNT(DISTINCT protocol_id)` is semantically needed | After CROSS JOIN LATERAL jsonb_array_elements_text (expands doses), `COUNT(*)` correctly counts all dose opportunities. But switching to `COUNT(DISTINCT p.id)` "optimizes" and breaks count—back to counting protocols, not doses | Document reason for aggregation method in SQL comment. If you ever switch aggregation, re-validate output against known test data (e.g., 10 protocols, 12 doses/day) | R-121 |
+
 ---
 
-*Last updated: 2026-03-10*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P03*
+*Last updated: 2026-03-13*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P03 + AP-D01 to AP-D03*
