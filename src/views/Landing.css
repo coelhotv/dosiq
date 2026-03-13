@@ -782,6 +782,8 @@
   height: 100%;
   background: linear-gradient(90deg, var(--color-success), var(--neon-cyan));
   border-radius: var(--radius-full);
+  transform-origin: left center;
+  will-change: transform;
 }
 
 .stock-bar.critical .fill {
@@ -795,19 +797,19 @@
 
 @keyframes fillBar10 {
   from {
-    width: 0;
+    transform: scaleX(0);
   }
   to {
-    width: 10%;
+    transform: scaleX(0.1);
   }
 }
 
 @keyframes fillBar80 {
   from {
-    width: 0;
+    transform: scaleX(0);
   }
   to {
-    width: 80%;
+    transform: scaleX(0.8);
   }
 }
 

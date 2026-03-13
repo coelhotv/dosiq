@@ -126,7 +126,7 @@
 }
 
 .stock-alerts__status-badge {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   padding: 3px 6px;
   border-radius: 4px;
@@ -265,7 +265,7 @@
   }
 
   .stock-alerts__status-badge {
-    font-size: 8px;
+    font-size: 10px;
     padding: 2px 5px;
   }
 }
