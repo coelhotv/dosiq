@@ -53,7 +53,7 @@ A view "Saúde" (`HealthHistory.jsx`) trava ao ser aberta no iPhone 13 (Safari e
 ### Sequência obrigatória dos sprints
 
 ```
-M0 → M1 → M2 → M3 (paralelo ou sequencial após M2) → M4
+M0 → M1 → M2 → M3 (paralelo ou sequencial após M2) → M4 → M5 → M6
 ```
 
 **Não pular M0.** Os sprints M1-M4 não eliminam os freezes de abertura — só M0 resolve isso.
@@ -103,7 +103,7 @@ Então ler:
 
 ---
 
-## FASE 1 — Setup (deliver-sprint Phase 1)
+## PASSO 1 — Setup (deliver-sprint Step 1)
 
 ```bash
 git checkout main && git pull origin main
@@ -122,7 +122,7 @@ head -20 src/views/HealthHistory.jsx
 
 ---
 
-## FASE 2 — Implementação (deliver-sprint Phase 2)
+## PASSO 2 — Implementação (deliver-sprint Step 2)
 
 Executar as 5 correções **na ordem abaixo** para manter a consistência do hook order (R-010).
 
@@ -399,7 +399,7 @@ grep -n "pillsThisMonth\|daysThisMonth" src/views/HealthHistory.jsx
 
 ---
 
-## FASE 3 — Validação (deliver-sprint Phase 3)
+## PASSO 3 — Validação (deliver-sprint Step 3)
 
 ### Quality Gates do M0
 
@@ -431,7 +431,7 @@ Abrir no Chrome DevTools com **CPU 4x throttle + 4G simulado**:
 
 ---
 
-## FASE 4 — Git (deliver-sprint Phase 4)
+## PASSO 4 — Git (deliver-sprint Step 4)
 
 ```bash
 git add src/views/HealthHistory.jsx
@@ -454,7 +454,7 @@ Resolve freezes #0 (parse/compile), #1 (IntersectionObserver imediato),
 
 ---
 
-## FASE 5 — Push e PR (deliver-sprint Phase 5)
+## PASSO 5 — Push e PR (deliver-sprint Step 5)
 
 ```bash
 git push -u origin fix/mobile-perf-m0-health-history-freezes
@@ -492,7 +492,7 @@ A view "Saúde" trava ao ser aberta no iPhone 13 (Safari e Chrome) devido a 3 fr
 
 ---
 
-## FASE 6 — Gemini Review (deliver-sprint Phase 6)
+## PASSO 6 — Gemini Review (deliver-sprint Step 6)
 
 Aguardar Gemini Code Assist review. Resolver **todos** os issues CRITICAL e HIGH antes do merge (R-062, AP-021).
 
@@ -502,7 +502,7 @@ Se Gemini questionar o uso de `useTransition` para `setDailyAdherence` (argument
 
 ---
 
-## FASE 7 — Learning Loop (deliver-sprint Phase 7)
+## PASSO 7 — Learning Loop (deliver-sprint Step 7)
 
 Após merge, registrar em `.memory/anti-patterns.md`:
 
@@ -527,7 +527,7 @@ Após merge, registrar em `.memory/anti-patterns.md`:
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -548,7 +548,7 @@ grep "react-virtuoso" package.json
 
 ---
 
-## FASE 2 — Implementação
+## PASSO 2 — Implementação
 
 ### M1.1 — Substituir .map() por Virtuoso na Timeline
 
@@ -672,7 +672,7 @@ grep -n "timelineLogs.map" src/views/HealthHistory.jsx
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Gate 1: Lint
@@ -698,7 +698,7 @@ npm run validate:agent
 
 ---
 
-## FASE 4 — Git
+## PASSO 4 — Git
 
 ```bash
 git add src/views/HealthHistory.jsx src/shared/components/log/LogEntry.jsx package.json package-lock.json
@@ -712,7 +712,7 @@ git commit -m "feat(saude): virtualizar timeline de doses com react-virtuoso
 
 ---
 
-## FASE 5 — Push e PR
+## PASSO 5 — Push e PR
 
 ```bash
 git push -u origin feat/mobile-perf-m1-timeline-virtualization
@@ -738,7 +738,7 @@ Com `.map()`, todos os LogEntry ficam no DOM simultâneamente. Com Virtuoso, ape
 
 ---
 
-## FASE 7 — Learning Loop
+## PASSO 7 — Learning Loop
 
 Registrar em `.memory/rules.md`:
 ```markdown
@@ -764,7 +764,7 @@ Registrar em `.memory/rules.md`:
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -780,7 +780,7 @@ npm run build 2>&1 | grep -E "\.js|kB|gzip"
 
 ---
 
-## FASE 2 — Implementação
+## PASSO 2 — Implementação
 
 ### M2.1 — Lazy Loading por View no App.jsx
 
@@ -979,7 +979,7 @@ Localizar `index.html` na raiz do projeto. Adicionar preload:
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Gate 1: Build com análise de chunks
@@ -1010,7 +1010,7 @@ npm run build 2>&1 | grep "index.*\.js" | grep -o "[0-9.]* kB (gzip.*)"
 
 ---
 
-## FASE 4 — Git
+## PASSO 4 — Git
 
 ```bash
 git add src/App.jsx vite.config.js index.html
@@ -1027,7 +1027,7 @@ git commit -m "feat(app): code splitting completo — lazy views + jsPDF dinâmi
 
 ---
 
-## FASE 7 — Learning Loop + Documentação
+## PASSO 7 — Learning Loop + Documentação
 
 Após merge, **iniciar** `docs/standards/MOBILE_PERFORMANCE.md` com as seções 1 e 2:
 
@@ -1116,7 +1116,7 @@ npm run build 2>&1 | grep -E "vendor-pdf|feature-medicines-db"
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -1130,7 +1130,7 @@ Antes de executar SQL, verificar se índices já existem no Supabase:
 
 ---
 
-## FASE 2 — Execução SQL (Supabase SQL Editor)
+## PASSO 2 — Execução SQL (Supabase SQL Editor)
 
 Executar **um bloco por vez** e verificar output antes do próximo.
 
@@ -1210,7 +1210,7 @@ END $$;
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Não há código para validar — documentar resultados do EXPLAIN ANALYZE
@@ -1226,7 +1226,7 @@ EOF
 
 ---
 
-## FASE 4 — Git (documentar migrações)
+## PASSO 4 — Git (documentar migrações)
 
 Criar arquivo de documentação da migração:
 ```bash
@@ -1261,7 +1261,7 @@ EXPLAIN ANALYZE: Index Scan confirmado, <10ms com 10k logs."
 
 ---
 
-## FASE 5 — Learning Loop + Documentação
+## PASSO 5 — Learning Loop + Documentação
 
 Após merge, **adicionar Seção 6** a `docs/standards/MOBILE_PERFORMANCE.md`:
 
@@ -1328,7 +1328,7 @@ CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -1346,7 +1346,7 @@ find . -name "service-worker*" -not -path "*/node_modules/*"
 
 ---
 
-## FASE 2 — Implementação
+## PASSO 2 — Implementação
 
 ### M4.1 — OfflineBanner Component
 
@@ -1433,7 +1433,7 @@ Se existir `sw.js` em `public/` ou configuração `vite-plugin-pwa`:
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Gate 1: Lint
@@ -1450,7 +1450,7 @@ npm run validate:agent
 
 ---
 
-## FASE 4 — Git
+## PASSO 4 — Git
 
 ```bash
 git add src/shared/components/ui/OfflineBanner.jsx \
@@ -1469,7 +1469,7 @@ Usuário recebe feedback imediato ao invés de spinner eterno."
 
 ---
 
-## FASE 5 — Learning Loop + Documentação
+## PASSO 5 — Learning Loop + Documentação
 
 Após merge, **adicionar Seção 7 (parcial)** a `docs/standards/MOBILE_PERFORMANCE.md`:
 
@@ -1534,7 +1534,7 @@ export function OfflineBanner() {
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -1550,7 +1550,7 @@ find public -name "favicon*" -type f
 
 ---
 
-## FASE 2 — Implementação
+## PASSO 2 — Implementação
 
 ### M5.1 — Remover @import incorreto de JS em Animations.css
 
@@ -1713,7 +1713,7 @@ grep -A3 "@keyframes fill" src/views/Landing.css
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Gate 1: Lint
@@ -1740,7 +1740,7 @@ npm run build
 
 ---
 
-## FASE 4 — Git
+## PASSO 4 — Git
 
 ```bash
 git add \
@@ -1763,7 +1763,7 @@ Lighthouse: FCP deve melhorar ~200ms, TBT melhora com remoção da requisição 
 
 ---
 
-## FASE 5 — Push e PR
+## PASSO 5 — Push e PR
 
 ```bash
 git push -u origin fix/mobile-perf-m5-assets-css
@@ -1803,7 +1803,7 @@ fillBar10 e fillBar80 animavam `width` → layout reflow por frame.
 
 ---
 
-## FASE 6 — Gemini Review
+## PASSO 6 — Gemini Review
 
 Aguardar Gemini Code Assist. Resolver todos CRITICAL/HIGH antes do merge.
 
@@ -1811,7 +1811,7 @@ Se Gemini questionar os valores de font-size escolhidos (10-11px ao invés de 12
 
 ---
 
-## FASE 7 — Learning Loop + Documentação
+## PASSO 7 — Learning Loop + Documentação
 
 Após merge, **adicionar Seções 3 e 4** a `docs/standards/MOBILE_PERFORMANCE.md`:
 
@@ -1911,7 +1911,7 @@ Abaixo de 10px: invisível em telas mid-low tier. Lighthouse flagra < 12px como 
 
 ---
 
-## FASE 1 — Setup
+## PASSO 1 — Setup
 
 ```bash
 git checkout main && git pull origin main
@@ -1924,7 +1924,7 @@ find src/shared/styles -name "index.css" -type f
 
 ---
 
-## FASE 2 — Implementação
+## PASSO 2 — Implementação
 
 ### M6.1 — Remover tap highlight (flash em toque)
 
@@ -2046,7 +2046,7 @@ ls dist/assets/*.js.map
 
 ---
 
-## FASE 3 — Validação
+## PASSO 3 — Validação
 
 ```bash
 # Gate 1: Lint
@@ -2069,7 +2069,7 @@ grep "sourceMappingURL" dist/assets/index*.js  # deve estar vazio (hidden)
 
 ---
 
-## FASE 4 — Git
+## PASSO 4 — Git
 
 ```bash
 git add src/shared/styles/index.css vite.config.js
@@ -2085,7 +2085,7 @@ git commit -m "fix(ux): touch experience e source maps para debugging mobile
 
 ---
 
-## FASE 5 — Push e PR
+## PASSO 5 — Push e PR
 
 ```bash
 git push -u origin fix/mobile-perf-m6-touch-ux
@@ -2123,13 +2123,13 @@ Permite debugging de stack traces reais em Sentry/DevTools remotos.
 
 ---
 
-## FASE 6 — Gemini Review
+## PASSO 6 — Gemini Review
 
 Aguardar Gemini Code Assist. Resolver todos CRITICAL/HIGH antes do merge.
 
 ---
 
-## FASE 7 — Learning Loop + Documentação Final
+## PASSO 7 — Learning Loop + Documentação Final
 
 Após merge, **completar Seção 7 e adicionar Seção 5 e 8** a `docs/standards/MOBILE_PERFORMANCE.md`:
 

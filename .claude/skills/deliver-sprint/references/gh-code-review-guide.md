@@ -80,7 +80,7 @@ gh pr view PR_NUMBER --json \
 
 ---
 
-## Phase 5 Workflow: From PR Creation to Merge
+## Step 5 Workflow: From PR Creation to Merge
 
 ### 1️⃣ Create PR and Wait for Gemini
 
@@ -389,7 +389,7 @@ fi
 
 ## Reference for Next Agent
 
-When using deliver-sprint skill, Phase 5 (Push & Code Review):
+When using deliver-sprint skill, Step 5 (Push & Code Review):
 
 1. **After PR creation**: Wait 10 min, then `gh pr comments PR_NUMBER` to see if Gemini has posted
 2. **To read suggestions clearly**: Use `gh api repos/.../pulls/PR_NUMBER/comments --jq` for structured output
