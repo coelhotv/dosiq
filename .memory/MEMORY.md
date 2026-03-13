@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-10 | **Version:** v3.2.0+ | **Fase:** 6 (Portabilidade, Performance, Monetização)
+**Last Updated:** 2026-03-13 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M3:** ✅ MERGED
 
 ---
 
@@ -114,6 +114,20 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 - **New Rules:** R-115 (Virtuoso for long mobile lists, handler + memo pair)
 - **Timeline:** 75 min (setup + impl + validation + git + push + merge + docs)
 - **Journal:** 2026-W11.md (full entry with timeline breakdown)
+
+#### **Sprint M3 — Database Optimization (Views + Indexes)** ✅ DELIVERED
+- **Status:** MERGED (commit `e578820`, PR #393)
+- **Quality:** 473/473 tests ✅ | 0 lint errors ✅ | 7 Gemini suggestions applied
+- **Bugs Fixed:** 4 critical adherence bugs (120%, 900%, hasEnoughData, 30-day cap)
+- **DB Optimizations:**
+  - 2 CONCURRENT indexes (timeline/protocol queries: 200ms → <10ms)
+  - 2 pre-aggregated views (v_daily_adherence, v_adherence_heatmap)
+  - Zod validation for parameters (getDailyAdherenceFromView)
+- **Extracted Helpers:** buildHeatmapNarrative, buildAdherenceGrid (30-line limit enforced)
+- **New Rules:** R-121 (Zod params), R-122 (30-line extraction), AP-121/122 (dose/protocol confusion, Cartesian products)
+- **Performance:** Sparkline 3-4× faster, Heatmap 10× faster, mobile main-thread unblocked
+- **Timeline:** 250 min (setup + impl + 7 code review fixes + validation + docs + merge)
+- **Journal:** 2026-W11-M3.md (detailed learnings, 4 bugs explained, performance metrics)
 
 ---
 
