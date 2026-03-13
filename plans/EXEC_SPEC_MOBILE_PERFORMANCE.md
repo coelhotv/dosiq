@@ -17,9 +17,11 @@
 | **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
 | **M2** | ✅ MERGED | `ddd3fbe` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ manualChunks, ✅ MOBILE_PERFORMANCE.md |
 | **M3** | ✅ MERGED | `e578820` | 2026-03-13 | ✅ 473/473 testes, ✅ 0 lint, ✅ 7 Gemini suggestions, ✅ DB views + indexes |
-| M4 | 🔜 Pendente | — | — | — |
-| M5 | 🔜 Pendente | — | — | — |
-| M6 | 🔜 Pendente | — | — | — |
+| **M4** | 🔜 Pendente | — | — | — |
+| **M5** | ✅ MERGED | `4822296` | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ CSS animations, favicon, font sizes |
+| **M6** | ✅ MERGED | — | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ touch UX, overscroll, universal checklist |
+| **M7** | 🆕 Pendente | — | — | N+1 elimination: 15 → ≤6 queries em getAdherenceSummary |
+| **M8** | 🆕 Pendente | — | — | Sentinel observer bug fix + select('*') HEAD request |
 
 ### Sprint M0 — Quality Gates Checklist
 
@@ -2305,6 +2307,493 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 
 ---
 
+---
+
+# SPRINT M7 — ELIMINAR N+1 EM getAdherenceSummary
+
+**Branch:** `fix/mobile-perf-m7-n1-adherence-summary`
+**Dependência:** Nenhuma — pode rodar em paralelo com M8
+**Duração estimada:** 0.5 dia
+**Arquivo principal:** `src/services/api/adherenceService.js`
+
+**Contexto:** Trace Safari (2026-03-13) revelou que `getAdherenceSummary('90d')` dispara
+15 queries simultâneas com 10 protocolos. Raiz: `calculateAllProtocolsAdherence` usa
+`Promise.all(protocols.map(calculateProtocolAdherence))` — padrão N+1 clássico.
+Cada `calculateProtocolAdherence` faz `select('*')` em 90 dias de logs = ~270 linhas × 10 = ~2700 linhas
+transferidas desnecessariamente, bloqueando a main thread com JSON parse por 100ms+.
+
+---
+
+## PASSO 1 — Setup
+
+```bash
+git checkout main && git pull origin main
+git checkout -b fix/mobile-perf-m7-n1-adherence-summary
+
+# Verificar arquivo correto
+find src -name "adherenceService*" -type f
+# Esperado: src/services/api/adherenceService.js (único)
+
+# Confirmar linha exata das funções a modificar
+grep -n "async calculateAdherence\|async calculateAllProtocols\|async getCurrentStreak\|select('\*')" \
+  src/services/api/adherenceService.js
+```
+
+Então ler `.memory/rules.md` e `.memory/anti-patterns.md` (R-065).
+
+---
+
+## PASSO 2 — Implementação
+
+### M7.1 — Refatorar calculateAllProtocolsAdherence (N+1 → 2 queries)
+
+**Localização:** `adherenceService.js` — função `calculateAllProtocolsAdherence` (linha ~204)
+
+Substituir o bloco completo da função:
+
+```javascript
+// REMOVER: o Promise.all com map que dispara N queries
+const adherencePromises = protocols.map(async (protocol) => {
+  try {
+    return await this.calculateProtocolAdherence(protocol.id, period, resolvedUserId)
+  } catch (err) { ... }
+})
+return Promise.all(adherencePromises)
+```
+
+Por:
+
+```javascript
+// SUBSTITUIR: 1 query batch + agrupamento O(M) client-side
+// Query 2 de 2: todos os logs do período — apenas protocol_id (não select('*'))
+const { data: allLogs, error: logError } = await supabase
+  .from('medicine_logs')
+  .select('protocol_id')
+  .eq('user_id', resolvedUserId)
+  .gte('taken_at', startDate.toISOString())
+  .lte('taken_at', endDate.toISOString())
+if (logError) throw logError
+
+// Agrupar por protocol_id client-side: O(M) uma vez, em vez de O(M) × N separado
+const takenByProtocol = new Map()
+;(allLogs || []).forEach((log) => {
+  if (log.protocol_id) {
+    takenByProtocol.set(log.protocol_id, (takenByProtocol.get(log.protocol_id) || 0) + 1)
+  }
+})
+
+// Calcular scores sem mais queries
+return protocols.map((protocol) => {
+  const expected = calculateExpectedDoses([protocol], days)
+  const taken = takenByProtocol.get(protocol.id) || 0
+  const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
+  return {
+    protocolId: protocol.id,
+    name: protocol.name,
+    medicineName: protocol.medicine?.name,
+    score,
+    taken,
+    expected,
+    error: false,
+  }
+})
+```
+
+**Verificar que as variáveis de data já estão no escopo:** `startDate`, `endDate`, `days` devem
+ser declarados no início da função (junto com `resolvedUserId`). Se não estiverem, adicionar:
+
+```javascript
+const days = parseInt(period)
+const endDate = new Date()
+const startDate = new Date()
+startDate.setDate(startDate.getDate() - days)
+```
+
+---
+
+### M7.2 — Fix select('*') em calculateAdherence (HEAD request)
+
+**Localização:** `adherenceService.js` — função `calculateAdherence` (linha ~98)
+
+```javascript
+// ANTES (transfere todas as colunas — ~centenas de linhas de dados)
+const { data: logs, error: logError } = await supabase
+  .from('medicine_logs')
+  .select('*')
+  .eq('user_id', resolvedUserId)
+  .gte('taken_at', startDate.toISOString())
+  .lte('taken_at', endDate.toISOString())
+if (logError) throw logError
+const takenDoses = logs?.length || 0
+
+// DEPOIS (HEAD request — zero transferência de dados, só o count)
+const { count, error: logError } = await supabase
+  .from('medicine_logs')
+  .select('*', { count: 'exact', head: true })
+  .eq('user_id', resolvedUserId)
+  .gte('taken_at', startDate.toISOString())
+  .lte('taken_at', endDate.toISOString())
+if (logError) throw logError
+const takenDoses = count || 0
+```
+
+**Atenção:** Remover a variável `logs` que não é mais usada após a mudança.
+
+---
+
+### M7.3 — Verificar getCurrentStreak
+
+```bash
+# Confirmar que getCurrentStreak já usa select('taken_at') — não select('*')
+grep -n "from.*medicine_logs\|\.select(" src/services/api/adherenceService.js | grep -A1 "getCurrentStreak"
+```
+
+Se usar `select('taken_at')` → sem alteração necessária.
+Se usar `select('*')` → alterar para `select('taken_at')`.
+
+---
+
+### M7.4 — Verificar dead code (AP-W13)
+
+```bash
+# Confirmar que não há referência a `logs` (variável removida em M7.2)
+grep -n "const takenDoses = logs" src/services/api/adherenceService.js
+# Esperado: 0 resultados
+
+# Confirmar que calculateProtocolAdherence ainda existe (pode ser chamada externamente)
+grep -r "calculateProtocolAdherence" src/
+# Se usado externamente: manter a função — só não chamá-la em Promise.all
+```
+
+---
+
+## PASSO 3 — Validação
+
+```bash
+# Gate 1: Lint
+npm run lint
+# Esperado: 0 erros
+
+# Gate 2: Testes críticos
+npm run test:critical
+# Confirmar: aderenceService tests passando (services suite)
+
+# Gate 3: Validação completa
+npm run validate:agent
+# Esperado: todos passando, sem regressões
+
+# Gate 4: Verificação manual no browser
+# Abrir HealthHistory → Network tab
+# Contar requests para medicine_logs — deve ser ≤ 6 (não 15)
+# Checar que nenhum request tem ?select=* retornando centenas de linhas
+```
+
+---
+
+## PASSO 4 — Git
+
+```bash
+git add src/services/api/adherenceService.js
+git status
+# Confirmar: APENAS adherenceService.js modificado
+
+git commit -m "fix(adesao): eliminar N+1 em getAdherenceSummary (15 → 6 queries)
+
+- calculateAllProtocolsAdherence: Promise.all(N queries) → 2 queries fixas
+  Batch: SELECT protocol_id (não select('*')) + agrupamento Map client-side
+  Com 10 protocolos: 11 queries → 2 (protocol_id apenas)
+- calculateAdherence: select('*') → HEAD request (count only, zero dados)
+  Elimina transferência de ~270 linhas por chamada
+- Resultado: 15 queries simultâneas → 6 fixas, evento message 100ms → <20ms
+
+Root cause: trace Safari 2026-03-13 confirmou 100ms blocking message event
+com 10 protocolos ativos (2700 linhas de medicine_logs desnecessárias)."
+```
+
+---
+
+## PASSO 5 — Push e PR
+
+```bash
+git push -u origin fix/mobile-perf-m7-n1-adherence-summary
+```
+
+**PR Body:**
+```markdown
+## Problema
+Com 10 protocolos ativos, `getAdherenceSummary('90d')` disparava **15 queries Supabase
+simultâneas** — confirmado por trace Safari (100ms blocking message event, 21/107 jank frames).
+
+## Causa Raiz
+`calculateAllProtocolsAdherence` usava `Promise.all(protocols.map(calculateProtocolAdherence))`:
+N queries paralelas, cada uma com `select('*')` em 90 dias de logs ≈ 2700 linhas transferidas.
+
+## Solução
+- `calculateAllProtocolsAdherence`: 1 query batch (`SELECT protocol_id`) + `Map` client-side
+- `calculateAdherence`: `select('*')` → HEAD request (`count: 'exact', head: true`)
+- **Resultado:** 15 queries → 6 (fixo, independente do nº de protocolos)
+
+## Quality Gates
+- [ ] `npm run validate:agent` — sem regressões
+- [ ] DevTools Network: ≤ 6 requests medicine_logs ao abrir HealthHistory
+- [ ] Safari DevTools Timeline: nenhum frame > 50ms após setIsLoading(false)
+```
+
+---
+
+## PASSO 6 — Gemini Review
+
+Aguardar Gemini Code Assist. Resolver CRITICAL/HIGH antes do merge.
+
+Se Gemini questionar o agrupamento client-side vs. server-side:
+- O agrupamento `Map` é O(M) onde M = logs no período — muito mais barato que N round-trips HTTP
+- Mover para SQL seria ideal a longo prazo mas requer nova view (sprint separado)
+- Este fix já reduz o problema 70%+ sem risco de regressão
+
+---
+
+## PASSO 7 — Learning Loop
+
+Registrar em `.memory/anti-patterns.md`:
+
+```markdown
+### AP-P09: N+1 Query Pattern em Service Layer [CRITICAL]
+**Problema:** `Promise.all(items.map(async item => supabase.from('table').select()))` dispara
+N queries Supabase simultâneas. Com 10 itens → 10 round-trips, cada um bloqueando main thread.
+**Quando acontece:** Qualquer `.map()` com `async` que faz query dentro.
+**Fix:** 1 query batch → `SELECT chave_agrupamento` + `Map.set(key, count)` client-side.
+**Fonte:** Sprint M7 — trace Safari 2026-03-13 (100ms blocking, 15 queries com 10 protocolos)
+
+### AP-P10: select('*') quando só precisa de count [HIGH]
+**Problema:** `select('*')` transfere TODAS as colunas mesmo quando só se usa `.length`.
+Com 90 dias de logs de 10 protocolos = ~2700 linhas desnecessárias no payload.
+**Fix:** `select('*', { count: 'exact', head: true })` — HEAD request, zero dados transferidos.
+**Fonte:** Sprint M7 — calculateAdherence fix
+```
+
+---
+
+---
+
+# SPRINT M8 — SENTINEL OBSERVER BUG FIX
+
+**Branch:** `fix/mobile-perf-m8-sentinel-observer`
+**Dependência:** Pode rodar em paralelo com M7 (arquivo diferente)
+**Duração estimada:** 0.5 dia
+**Arquivo principal:** `src/views/HealthHistory.jsx`
+
+**Contexto:** `setSentinelElement` é `useCallback` com `isLoadingPatterns` nas deps.
+Quando o state muda, React recria o callback → chama `old(null)` (retorna cedo sem desconectar)
+→ chama `new(element)` (cria novo observer). Janela de ~16ms com observer antigo vivo.
+O `return () => { observer.disconnect() }` é ignorado — ret value de ref callback não é cleanup.
+Fix: deps `[]`, null-path desconecta, `useRef` para flag de loading.
+
+---
+
+## PASSO 1 — Setup
+
+```bash
+git checkout main && git pull origin main
+git checkout -b fix/mobile-perf-m8-sentinel-observer
+
+find src -name "HealthHistory*" -type f
+# Esperado: src/views/HealthHistory.jsx (único)
+
+grep -n "setSentinelElement\|isLoadingPatterns\|observerRef\|patternLoadedRef" \
+  src/views/HealthHistory.jsx
+```
+
+---
+
+## PASSO 2 — Implementação
+
+### M8.1 — Adicionar isLoadingPatternsRef na seção de States
+
+**Localização:** Seção de States, após os `useRef` existentes (`observerRef`, `patternLoadedRef`)
+
+```jsx
+// Adicionar junto com observerRef e patternLoadedRef (seção de States):
+const isLoadingPatternsRef = useRef(false) // M8: evita closure stale no observer callback
+```
+
+### M8.2 — Refatorar setSentinelElement
+
+**Localização:** Buscar por `setSentinelElement` no arquivo — é um `useCallback`
+
+Substituir o bloco completo:
+
+```jsx
+// ANTES
+const setSentinelElement = useCallback((sentinel) => {
+  if (!sentinel) return  // ← não desconecta
+
+  if (observerRef.current) {
+    observerRef.current.disconnect()
+  }
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting && !isLoadingPatterns && !patternLoadedRef.current) {
+        setIsLoadingPatterns(true)
+        adherenceService
+          .getAdherencePatternFromView()
+          .then((pattern) => {
+            patternLoadedRef.current = true
+            setAdherencePattern(pattern)
+            observer.disconnect()
+          })
+          .catch((err) => {
+            console.error('[HealthHistory] Falha ao buscar padrões de adesão:', err.message, err)
+            patternLoadedRef.current = false
+          })
+          .finally(() => {
+            setIsLoadingPatterns(false)
+          })
+      }
+    },
+    { rootMargin: '50px' }
+  )
+
+  observer.observe(sentinel)
+  observerRef.current = observer
+
+  return () => {         // ← IGNORADO em ref callback
+    observer.disconnect()
+    observerRef.current = null
+  }
+}, [isLoadingPatterns])  // ← deps causam recreação
+```
+
+```jsx
+// DEPOIS
+const setSentinelElement = useCallback((sentinel) => {
+  // Null-path: React chama com null antes de montar com novo elemento
+  // Desconectar observer antigo para evitar chamadas duplas
+  if (!sentinel) {
+    observerRef.current?.disconnect()
+    observerRef.current = null
+    return
+  }
+
+  // Garantir que qualquer observer anterior está desconectado
+  observerRef.current?.disconnect()
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      // isLoadingPatternsRef evita duplo disparo sem fechar sobre state stale
+      if (entry.isIntersecting && !patternLoadedRef.current && !isLoadingPatternsRef.current) {
+        isLoadingPatternsRef.current = true
+        setIsLoadingPatterns(true)
+        adherenceService
+          .getAdherencePatternFromView()
+          .then((pattern) => {
+            patternLoadedRef.current = true
+            setAdherencePattern(pattern)
+            observer.disconnect()
+          })
+          .catch((err) => {
+            console.error('[HealthHistory] Falha ao buscar padrões de adesão:', err.message, err)
+            patternLoadedRef.current = false // permitir retry
+          })
+          .finally(() => {
+            isLoadingPatternsRef.current = false
+            setIsLoadingPatterns(false)
+          })
+      }
+    },
+    { rootMargin: '50px' }
+  )
+
+  observer.observe(sentinel)
+  observerRef.current = observer
+}, [])  // ← deps vazias: callback estável, sem recreação desnecessária
+```
+
+### M8.3 — Verificar hook order (R-010)
+
+Confirmar que `isLoadingPatternsRef` foi adicionado na seção de States, ANTES dos useMemos:
+
+```bash
+grep -n "isLoadingPatternsRef\|const \[isLoading\|patternLoadedRef\|observerRef" \
+  src/views/HealthHistory.jsx | head -10
+# isLoadingPatternsRef deve aparecer junto com observerRef e patternLoadedRef
+# Todos devem estar ANTES do primeiro useMemo
+```
+
+### M8.4 — Verificar dead code (AP-W13)
+
+```bash
+# isLoadingPatterns state ainda é necessário para o JSX ({isLoadingPatterns && ...})
+# Verificar que continua sendo usado no render
+grep -n "isLoadingPatterns" src/views/HealthHistory.jsx
+# Esperado: useState declaration + JSX usage + setIsLoadingPatterns calls
+# NÃO deve aparecer mais nas deps do useCallback do sentinel
+```
+
+---
+
+## PASSO 3 — Validação
+
+```bash
+npm run lint
+npm run validate:agent
+
+# Validação manual:
+# 1. Abrir HealthHistory → scroll até final → verificar Network:
+#    getAdherencePatternFromView chamado 1× (não 2×)
+# 2. Reabrir HealthHistory (sem reload) → scroll novamente:
+#    patternLoadedRef.current = true → zero chamadas adicionais
+# 3. React DevTools Profiler: setSentinelElement não aparece como re-rendered
+#    quando isLoadingPatterns muda de false → true → false
+```
+
+---
+
+## PASSO 4 — Git
+
+```bash
+git add src/views/HealthHistory.jsx
+
+git commit -m "fix(saude): corrigir race condition no sentinel observer do heatmap
+
+- setSentinelElement: deps [] (era [isLoadingPatterns]) — elimina recreação
+- null-path: desconecta observer antigo (era return early sem desconectar)
+- return () de ref callback era ignorado pelo React — removido
+- isLoadingPatternsRef: useRef substitui closure sobre state stale
+- Resultado: observer não recria a cada mudança de isLoadingPatterns
+  e garante exatamente 1 chamada a getAdherencePatternFromView
+
+Bug: quando isLoadingPatterns mudava (false→true), React recriava o callback,
+chamava old(null) sem desconectar o observer, depois new(element) com novo observer.
+Janela de ~16ms com dois observers simultâneos."
+```
+
+---
+
+## PASSO 5 — Push e PR
+
+```bash
+git push -u origin fix/mobile-perf-m8-sentinel-observer
+```
+
+---
+
+## PASSO 7 — Learning Loop
+
+Registrar em `.memory/anti-patterns.md`:
+
+```markdown
+### AP-P11: useCallback com state nas deps de um ref callback [HIGH]
+**Problema:** Ref callbacks (passados para `ref={fn}`) recriados quando deps mudam.
+React chama `old(null)` (sem cleanup) + `new(element)` — janela com dois observers vivos.
+O `return () => {}` no final de ref callback é IGNORADO (só funciona em useEffect).
+**Fix:** Deps `[]` + `useRef` para flags que precisariam estar no closure.
+**Regra:** Ref callbacks SEMPRE com deps `[]`. Lógica stateful via refs.
+**Fonte:** Sprint M8 — HealthHistory sentinel observer race condition
+```
+
+---
+
 # Apêndice: Quality Gates Globais
 
 ## Comandos de Validação por Escopo
@@ -2353,6 +2842,9 @@ Antes de criar o PR, verificar:
 | AP-P06 | Animar `width`/`height` em @keyframes (usar `transform: scaleX/scaleY`) |
 | AP-P07 | CSS `@import` de arquivo `.js` (requisição desnecessária na critical chain) |
 | AP-P08 | Font-size < 10px em qualquer elemento — ilegível em mobile mid-low |
+| AP-P09 | `Promise.all(array.map(async item => queryPorItem()))` — N+1 query pattern; usar batch query + agrupamento client-side |
+| AP-P10 | `select('*')` quando só precisa contar — usar `select('*', { count: 'exact', head: true })` (HEAD request, zero dados) |
+| AP-P11 | `useCallback` com state nas deps de um ref callback — ref callbacks não têm cleanup; estado stale no closure; usar `useRef` para flags |
 
 ---
 
