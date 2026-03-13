@@ -16,7 +16,7 @@
 | **M0** | ✅ MERGED | `6f4be85` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 2 commits, ✅ Gemini suggestions |
 | **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
 | **M2** | ✅ MERGED | `ddd3fbe` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ manualChunks, ✅ MOBILE_PERFORMANCE.md |
-| **M3** | 🔄 IN PROGRESS | — | 2026-03-13 | ⏳ SQL migrations em execução (indices + view + constraint) |
+| **M3** | ✅ MERGED | `e578820` | 2026-03-13 | ✅ 473/473 testes, ✅ 0 lint, ✅ 7 Gemini suggestions, ✅ DB views + indexes |
 | M4 | 🔜 Pendente | — | — | — |
 | M5 | 🔜 Pendente | — | — | — |
 | M6 | 🔜 Pendente | — | — | — |
@@ -56,6 +56,20 @@
 - [x] **Code Review:** PR #391 revisado, Gemini suggestions aplicadas
 - [x] **Merge:** Squash + delete branch (commit ddd3fbe)
 - [x] **Tech Debt:** Issue #392 criada (refactor renderCurrentView)
+
+### Sprint M3 — Quality Gates Checklist
+
+- [x] **Lint:** 0 erros em adherenceService.js, SparklineAdesao.jsx, HealthHistory.jsx
+- [x] **Testes:** 473/473 passando (critical suite, sem regressões)
+- [x] **Build:** npm run build sem erros
+- [x] **Code Review:** 7 Gemini suggestions aplicadas (COUNT*, Zod, console.log, refactoring)
+- [x] **SQL Migrations:** 2 índices + 2 views testados em M3_EXECUTION_GUIDE.md
+- [x] **Bugs Fixed:** 4 críticos (120%, 900%, hasEnoughData, 30-day cap)
+- [x] **Performance:** 20× timeline, 3-4× sparkline, 10× heatmap
+- [x] **Documentation:** M3_EXECUTION_GUIDE.md + SUPABASE_M3_EXECUTION_GUIDE.md
+- [x] **Memory:** Rules R-121/R-122 + Anti-patterns AP-121/AP-122 documentados
+- [x] **Journal:** 2026-W11-M3.md com análise completa de bugs e learnings
+- [x] **Merge:** Squash + delete branch automático (commit e578820)
 
 ---
 

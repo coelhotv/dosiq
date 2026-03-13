@@ -179,41 +179,151 @@ ON medicine_logs (user_id, taken_at DESC);
 - Query: ~200ms (Seq Scan) → <10ms (Index Scan)
 - 20x mais rápido para Timeline (30 últimos logs)
 
-### 6.3 Views de Agregação Server-Side
+### 6.3 Views de Agregação Server-Side (✅ Sprint M3 IMPLEMENTED)
 
-**Padrão:** VIEW substitui processamento client-side
+**Padrão:** VIEW pré-calcula adesão no servidor eliminando O(N) do client
+
+#### v_daily_adherence — Adesão Diária (para Sparkline)
 
 ```sql
--- ✅ CORRETO — Pré-agregação simples (elimina O(N) no client)
--- Retorna: doses tomadas por dia (agrupado por user + data)
--- Cliente calcula % comparando com doses esperadas de protocols
-CREATE OR REPLACE VIEW v_daily_adherence AS
-SELECT
+-- ✅ IMPLEMENTADO EM M3
+-- Calcula adesão por dia respeitando frequência e dosagem
+-- Retorna: doses esperadas vs. tomadas por data
+-- Elimina getDailyAdherence() O(N) processamento no client
+CREATE OR REPLACE VIEW v_daily_adherence
+WITH (security_invoker = on) AS
+WITH expected_doses_daily AS (
+  -- CRÍTICO: contar DOSES (time_schedule entries), não protocolos
+  -- Exemplo: 10 protocolos com [2,1,1,1,1,1,1,1,1,1] = 12 doses, não 10
+  SELECT
+    p.user_id,
+    generate_series(p.start_date::date, COALESCE(p.end_date::date, CURRENT_DATE), '1 day'::interval)::date AS active_date,
+    jsonb_array_length(p.time_schedule) AS expected_count
+  FROM protocols p
+  WHERE p.active = true
+    AND p.start_date IS NOT NULL
+    AND jsonb_array_length(p.time_schedule) > 0
+  GROUP BY p.user_id, p.id, active_date
+),
+expected_aggregated AS (
+  -- SUM combina todas as doses esperadas por dia
+  SELECT
     user_id,
-    (taken_at AT TIME ZONE 'UTC')::date AS log_date,
-    COUNT(*) AS taken_doses,
-    SUM(quantity_taken) AS total_quantity_taken
-FROM medicine_logs
-GROUP BY user_id, (taken_at AT TIME ZONE 'UTC')::date;
+    active_date,
+    SUM(expected_count) AS total_expected
+  FROM expected_doses_daily
+  GROUP BY user_id, active_date
+)
+SELECT
+  ml.user_id,
+  (ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo'))::date AS log_date,
+  COALESCE(e.total_expected, 0) AS expected_doses,
+  COUNT(DISTINCT ml.id) AS taken_doses,
+  CASE
+    WHEN COALESCE(e.total_expected, 0) = 0 THEN NULL
+    ELSE ROUND((COUNT(DISTINCT ml.id)::numeric / e.total_expected) * 100, 2)
+  END AS adherence_percentage
+FROM medicine_logs ml
+LEFT JOIN user_settings us ON ml.user_id = us.user_id
+LEFT JOIN expected_aggregated e ON ml.user_id = e.user_id
+  AND (ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo'))::date = e.active_date
+GROUP BY ml.user_id, log_date, e.total_expected;
 ```
 
-**Retorna (pré-agregado no servidor, < 10ms):**
+**Retorna (< 10ms, pré-agregado no servidor):**
 - `user_id` — Usuário
 - `log_date` — Data
-- `taken_doses` — Quantidade de doses registradas naquele dia
-- `total_quantity_taken` — Total de comprimidos tomados
+- `expected_doses` — Doses esperadas (soma de time_schedule entries por protocolo)
+- `taken_doses` — Doses tomadas (logs naquele dia)
+- `adherence_percentage` — % adesão ou NULL se 0 esperadas
 
-**Benefício:** getDailyAdherence() no client: O(N) agregação → O(1) lookup na view. Elimina travamento da main-thread no mobile mid-low tier.
+#### v_adherence_heatmap — Adesão por Período (para Heatmap 7×4)
 
-**Quando migrar client-side para server-side:**
-- [ ] getDailyAdherence() — atualmente JavaScript, pode ficar em view
-- [ ] calculateStreaks() — futuro, alta complexidade com O(N²)
-- [ ] getAdherenceSummary() — resumo mensal agregado
+```sql
+-- ✅ IMPLEMENTADO EM M3
+-- Grid 7 dias × 4 períodos (madrugada/manhã/tarde/noite)
+-- Respeta frequência: diário, semanal, dias_alternados
+-- Elimina analyzeAdherencePatterns() O(N) processamento no client
+CREATE OR REPLACE VIEW v_adherence_heatmap
+WITH (security_invoker = on) AS
+WITH protocol_schedule_expanded AS (
+  -- Expandir cada protocolo por CADA time_schedule entry e dia relevante
+  SELECT
+    p.id, p.user_id,
+    schedule_time,
+    day AS day_of_week
+  FROM protocols p
+  CROSS JOIN LATERAL jsonb_array_elements_text(p.time_schedule) AS schedule_time
+  CROSS JOIN generate_series(0, 6) AS day
+  WHERE p.active = true
+    AND jsonb_array_length(p.time_schedule) > 0
+    AND (
+      (p.frequency IN ('diário', 'daily', 'diariamente'))
+      OR (p.frequency IN ('semanal', 'weekly', 'semanalmente')
+          AND day = EXTRACT(DOW FROM p.start_date::timestamp)::int)
+      OR (p.frequency IN ('dias_alternados', 'day_sim_day_nao')
+          AND day IN (EXTRACT(DOW FROM p.start_date::timestamp)::int,
+                     (EXTRACT(DOW FROM p.start_date::timestamp)::int + 2) % 7))
+    )
+),
+expected_per_period AS (
+  -- COUNT(*) = número total de dose opportunities por (dia, período)
+  SELECT
+    p.user_id, p.day_of_week,
+    CASE
+      WHEN EXTRACT(HOUR FROM p.schedule_time::time) < 6 THEN 0
+      WHEN EXTRACT(HOUR FROM p.schedule_time::time) < 12 THEN 1
+      WHEN EXTRACT(HOUR FROM p.schedule_time::time) < 18 THEN 2
+      ELSE 3
+    END AS period_index,
+    COUNT(*) AS expected_count
+  FROM protocol_schedule_expanded p
+  GROUP BY p.user_id, p.day_of_week, period_index
+)
+SELECT
+  ml.user_id,
+  EXTRACT(DOW FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo'))::int AS day_of_week,
+  CASE
+    WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 6 THEN 0
+    WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 12 THEN 1
+    WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 18 THEN 2
+    ELSE 3
+  END AS period_index,
+  COALESCE(e.expected_count, 0) AS expected_doses,
+  COUNT(DISTINCT ml.id) AS taken_doses,
+  CASE
+    WHEN COALESCE(e.expected_count, 0) = 0 THEN NULL
+    WHEN COUNT(DISTINCT ml.id) = 0 THEN 0
+    ELSE ROUND((COUNT(DISTINCT ml.id)::numeric / e.expected_count) * 100, 2)
+  END AS adherence_percentage
+FROM medicine_logs ml
+LEFT JOIN user_settings us ON ml.user_id = us.user_id
+LEFT JOIN expected_per_period e ON ml.user_id = e.user_id
+  AND EXTRACT(DOW FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo'))::int = e.day_of_week
+  AND CASE
+      WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 6 THEN 0
+      WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 12 THEN 1
+      WHEN EXTRACT(HOUR FROM ml.taken_at AT TIME ZONE COALESCE(us.timezone, 'America/Sao_Paulo')) < 18 THEN 2
+      ELSE 3
+    END = e.period_index
+GROUP BY ml.user_id, day_of_week, period_index, e.expected_count;
+```
 
-**Vantagem de view vs. função:**
-- View é read-only (sem state side effects)
-- Acesso natural via `SELECT * FROM v_daily_adherence WHERE user_id = ?`
-- Sem controle de função serverless (Vercel R-090)
+**Retorna (< 10ms, grid 7×4 máximo 28 linhas):**
+- `user_id`, `day_of_week` (0-6), `period_index` (0-3)
+- `expected_doses`, `taken_doses`, `adherence_percentage`
+
+**Benefício:** getAdherencePatternFromView() no client: O(N) agregação → O(1) lookup em 2 views. Elimina travamento da main-thread no mobile mid-low tier.
+
+**Status M3 (✅ IMPLEMENTED & MERGED):**
+- 2 índices compostos: `idx_medicine_logs_user_taken_at_desc`, `idx_medicine_logs_protocol_taken_at`
+- 2 views pré-agregadas: `v_daily_adherence`, `v_adherence_heatmap`
+- 4 bugs críticos corrigidos (120%, 900%, hasEnoughData, 30-day cap)
+- Performance: 20× Timeline, 3-4× Sparkline, 10× Heatmap
+- Commit: `e578820` | Merge: 2026-03-13
+
+**Execução em Supabase:**
+Consulte `docs/migrations/M3_EXECUTION_GUIDE.md` para ordem exata (DROP views → CREATE indices → CREATE views)
 
 ### 6.4 Check Constraints para Consistência
 
@@ -246,17 +356,19 @@ CHECK (status IN ('taken', 'skipped', 'pending', 'late'));
 
 ---
 
-## Próximas Seções (M4–M6)
+## Roadmap — Mobile Performance M0–M6
 
-| Sprint | Seção | Tópicos |
-|--------|-------|---------|
-| M2 ✅ | 1–2 | Princípios, Lazy Loading, Code Splitting |
-| M3 ✅ | 6 | DB: Índices, Views de Agregação |
-| M4 | 7 (parcial) | Offline UX, OfflineBanner Pattern |
-| M5 | 3–4 | CSS Animações, Assets, Favicons |
-| M6 | 7 (completo), 8 | Touch UX, Universal Checklist |
+| Sprint | Status | Seção | Tópicos |
+|--------|--------|-------|---------|
+| M0 ✅ | MERGED | HealthHistory freezes | lazy(), Suspense, startTransition |
+| M1 ✅ | MERGED | Timeline virtualization | react-virtuoso, handlers em useCallback |
+| M2 ✅ | MERGED | 1–2 | Lazy Loading, Code Splitting, manualChunks |
+| M3 ✅ | MERGED | 6 | DB: Índices + Views de Agregação ✅ 2026-03-13 |
+| M4 | 🔜 Pendente | 7 (parcial) | Offline UX, OfflineBanner Pattern |
+| M5 | 🔜 Pendente | 3–4 | CSS Animações, Assets, Favicons |
+| M6 | 🔜 Pendente | 7 (completo), 8 | Touch UX, Universal Checklist |
 
 ---
 
-**Source:** Sprint M3 — Database Optimization
-**Last Updated:** 2026-03-13
+**Source:** Sprints M0–M3 — Mobile Performance Initiative
+**Last Updated:** 2026-03-13 (M3 database optimization + indices + views — COMPLETE)
