@@ -223,3 +223,12 @@ git push -u origin feature/fase-N/descriptive-name
 - **Quick reference:** This file (updated 2026-03-08)
 
 Agents should read this file + rules + anti-patterns before coding.
+
+## Sprint M5 ✅ DELIVERED (2026-03-13)
+**Assets, CSS & Font Sizes optimization**
+- Commit: `4822296` | PR: #394
+- Favicon 192KB → SVG <1KB (FCP +200ms)
+- Font sizes 8-9px → 10-11px (accessibility)
+- Width animations → transform:scaleX() (GPU, 60 FPS)
+- @import JS removed from critical chain
+- Quality: 539/539 tests ✅, 0 lint ✅
