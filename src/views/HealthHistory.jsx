@@ -110,24 +110,23 @@ export default function HealthHistory({ onNavigate }) {
       // Safari não suporta requestIdleCallback — fallback para setTimeout(100ms).
       const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 100))
 
-      scheduleIdle(() => {
+      scheduleIdle(async () => {
         // Sparkline: 1 query leve (v_daily_adherence view, ~30 rows)
-        adherenceService
-          .getDailyAdherenceFromView(90)
-          .then((daily) => setDailyAdherence(daily))
-          .catch((err) =>
-            console.error('[HealthHistory] ERRO ao carregar daily adherence:', err.message)
-          )
-          .then(() => {
-            // Summary completo — APÓS sparkline resolver
-            // Serializado para nunca ter >1 query ativa do HealthHistory
-            adherenceService
-              .getAdherenceSummary('90d')
-              .then((summary) => setAdherenceSummary(summary))
-              .catch((err) =>
-                console.error('[HealthHistory] ERRO ao carregar summary:', err.message)
-              )
-          })
+        try {
+          const daily = await adherenceService.getDailyAdherenceFromView(90)
+          setDailyAdherence(daily)
+        } catch (err) {
+          console.error('[HealthHistory] ERRO ao carregar daily adherence:', err.message)
+        }
+
+        // Summary completo — APÓS sparkline resolver
+        // Serializado para nunca ter >1 query ativa do HealthHistory
+        try {
+          const summary = await adherenceService.getAdherenceSummary('90d')
+          setAdherenceSummary(summary)
+        } catch (err) {
+          console.error('[HealthHistory] ERRO ao carregar summary:', err.message)
+        }
       })
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
