@@ -150,7 +150,11 @@ export default function Profile({ onNavigate }) {
           label="Cartão de Emergência"
           onClick={() => onNavigate('emergency')}
         />
-        <ProfileLink icon="👨‍⚕️" label="Modo Consulta Médica" onClick={() => onNavigate('consultation')} />
+        <ProfileLink
+          icon="👨‍⚕️"
+          label="Modo Consulta Médica"
+          onClick={() => onNavigate('consultation')}
+        />
       </ProfileSection>
 
       {/* Relatórios & Dados */}

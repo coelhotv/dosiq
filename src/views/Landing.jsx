@@ -99,8 +99,8 @@ export default function Landing({
             <div className="step-icon">📅</div>
             <h3>Defina seus tratamentos</h3>
             <p>
-              Configure frequência, horários e doses. O app organiza tudo nos momentos 
-              Atrasadas / Agora / Próximas automaticamente.
+              Configure frequência, horários e doses. O app organiza tudo nos momentos Atrasadas /
+              Agora / Próximas automaticamente.
             </p>
           </div>
 
