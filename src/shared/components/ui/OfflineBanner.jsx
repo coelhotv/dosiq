@@ -1,5 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import './OfflineBanner.css'
+
+/**
+ * Inscreve nos eventos de rede do browser para useSyncExternalStore.
+ * @param {Function} callback - Função chamada quando o estado de rede muda
+ * @returns {Function} Função de cleanup para remover os listeners
+ */
+function subscribe(callback) {
+  window.addEventListener('online', callback)
+  window.addEventListener('offline', callback)
+  return () => {
+    window.removeEventListener('online', callback)
+    window.removeEventListener('offline', callback)
+  }
+}
+
+const getClientSnapshot = () => navigator.onLine
+const getServerSnapshot = () => true // assume online no servidor (SSR-safe)
 
 /**
  * Banner fixo exibido quando o usuário perde conexão com a internet.
@@ -7,22 +24,9 @@ import './OfflineBanner.css'
  * Posicionado acima do BottomNav para não ser coberto.
  */
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const isOnline = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
 
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false)
-    const handleOffline = () => setIsOffline(true)
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
-
-  if (!isOffline) return null
+  if (isOnline) return null
 
   return (
     <div className="offline-banner" role="alert" aria-live="polite">
