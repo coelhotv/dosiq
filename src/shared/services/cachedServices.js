@@ -16,6 +16,7 @@ import { protocolService } from '@protocols/services/protocolService'
 import { stockService } from '@stock/services/stockService'
 import { logService } from '@shared/services/api/logService'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
+import { adherenceService } from '@services/api/adherenceService'
 
 // Cache keys namespace
 export const CACHE_KEYS = {
@@ -34,6 +35,9 @@ export const CACHE_KEYS = {
   LOGS_PAGINATED: 'logs:paginated',
   TREATMENT_PLANS: 'treatmentPlans',
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
+  ADHERENCE_SUMMARY: 'adherence:summary',
+  ADHERENCE_DAILY: 'adherence:daily',
+  ADHERENCE_PATTERN: 'adherence:pattern',
 }
 
 /**
@@ -263,6 +267,10 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
     invalidateCache('logs:dateRange*')
+    // Invalida dados de adesão (logs afetam métricas de adesão)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_DAILY}*`)
+    invalidateCache(CACHE_KEYS.ADHERENCE_PATTERN)
     // Invalida estoque (foi decrementado)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
@@ -279,6 +287,10 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
     invalidateCache('logs:dateRange*')
+    // Invalida dados de adesão (logs afetam métricas de adesão)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_DAILY}*`)
+    invalidateCache(CACHE_KEYS.ADHERENCE_PATTERN)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -294,6 +306,10 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
     invalidateCache('logs:dateRange*')
+    // Invalida dados de adesão (logs afetam métricas de adesão)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_DAILY}*`)
+    invalidateCache(CACHE_KEYS.ADHERENCE_PATTERN)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -308,6 +324,10 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
     invalidateCache('logs:dateRange*')
+    // Invalida dados de adesão (logs afetam métricas de adesão)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_DAILY}*`)
+    invalidateCache(CACHE_KEYS.ADHERENCE_PATTERN)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -353,6 +373,28 @@ export const cachedTreatmentPlanService = {
   },
 }
 
+/**
+ * Adherence Service com Cache
+ * Queries de adesão são read-only — invalidação acontece via cachedLogService mutations.
+ */
+export const cachedAdherenceService = {
+  async getAdherenceSummary(period = '30d') {
+    const key = generateCacheKey(CACHE_KEYS.ADHERENCE_SUMMARY, { period })
+    return cachedQuery(key, () => adherenceService.getAdherenceSummary(period))
+  },
+
+  async getDailyAdherenceFromView(days = 30) {
+    const key = generateCacheKey(CACHE_KEYS.ADHERENCE_DAILY, { days })
+    return cachedQuery(key, () => adherenceService.getDailyAdherenceFromView(days))
+  },
+
+  async getAdherencePatternFromView() {
+    return cachedQuery(CACHE_KEYS.ADHERENCE_PATTERN, () =>
+      adherenceService.getAdherencePatternFromView()
+    )
+  },
+}
+
 // Exporta todas as chaves de cache para uso externo
 export { generateCacheKey, invalidateCache }
 
@@ -363,4 +405,5 @@ export const cachedServices = {
   stockService: cachedStockService,
   logService: cachedLogService,
   treatmentPlanService: cachedTreatmentPlanService,
+  adherenceService: cachedAdherenceService,
 }

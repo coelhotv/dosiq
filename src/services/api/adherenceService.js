@@ -328,28 +328,38 @@ export const adherenceService = {
    * @returns {Promise<Object>}
    */
   async getAdherenceSummary(period = '30d') {
-    // Obtém userId UMA VEZ para evitar lock contention no Supabase Auth
     const userId = await getUserId()
 
-    // Passa userId para todas as funções paralelas com tratamento robusto de erro
+    // Buscar protocols UMA VEZ — evita 3 queries idênticas nas sub-funções
+    const { data: protocols, error: protocolError } = await supabase
+      .from('protocols')
+      .select('*, medicine:medicines(*)')
+      .eq('user_id', userId)
+      .eq('active', true)
+
+    if (protocolError) throw protocolError
+
+    // Passa protocols pré-carregados para todas as sub-funções
     const results = await Promise.allSettled([
-      this.calculateAdherence(period, userId),
-      this.calculateAllProtocolsAdherence(period, userId),
-      this.getCurrentStreak(userId),
+      this._calculateAdherenceWithProtocols(period, userId, protocols),
+      this._calculateAllProtocolsAdherenceWithProtocols(period, userId, protocols),
+      this._getCurrentStreakWithProtocols(userId, protocols),
     ])
 
     const overall =
       results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
-    const protocols = results[1].status === 'fulfilled' ? results[1].value : []
+    const protocolScores = results[1].status === 'fulfilled' ? results[1].value : []
     const streaks =
-      results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
+      results[2].status === 'fulfilled'
+        ? results[2].value
+        : { currentStreak: 0, longestStreak: 0 }
 
     return {
       overallScore: overall.score,
       overallTaken: overall.taken,
       overallExpected: overall.expected,
       period,
-      protocolScores: protocols,
+      protocolScores,
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
     }
@@ -501,6 +511,110 @@ export const adherenceService = {
       hasEnoughData,
       dayOccurrences: [0, 0, 0, 0, 0, 0, 0], // Compatibilidade com analyzeAdherencePatterns
     }
+  },
+
+  /**
+   * @private Variante de calculateAdherence que recebe protocols pré-carregados
+   */
+  async _calculateAdherenceWithProtocols(period, userId, protocols) {
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
+
+    // HEAD request — apenas count, zero dados transferidos
+    const { count, error: logError } = await supabase
+      .from('medicine_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('taken_at', startDate.toISOString())
+      .lte('taken_at', endDate.toISOString())
+
+    if (logError) throw logError
+
+    const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
+    const takenDoses = count || 0
+    const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
+
+    return {
+      score: Math.min(score, 100),
+      taken: takenDoses,
+      expected: expectedDoses,
+      period,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    }
+  },
+
+  /**
+   * @private Variante de calculateAllProtocolsAdherence que recebe protocols pré-carregados
+   */
+  async _calculateAllProtocolsAdherenceWithProtocols(period, userId, protocols) {
+    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
+
+    if (!protocols || protocols.length === 0) return []
+
+    // Batch: APENAS protocol_id — ~50 bytes por log ao invés de ~500
+    const { data: allLogs, error: logError } = await supabase
+      .from('medicine_logs')
+      .select('protocol_id')
+      .eq('user_id', userId)
+      .gte('taken_at', startDate.toISOString())
+      .lte('taken_at', endDate.toISOString())
+
+    if (logError) throw logError
+
+    // Agrupar por protocol_id client-side: O(M) uma vez
+    const takenByProtocol = new Map()
+    ;(allLogs || []).forEach((log) => {
+      if (log.protocol_id) {
+        takenByProtocol.set(log.protocol_id, (takenByProtocol.get(log.protocol_id) || 0) + 1)
+      }
+    })
+
+    return protocols.map((protocol) => {
+      const expected = calculateExpectedDoses([protocol], days, endDate)
+      const taken = takenByProtocol.get(protocol.id) || 0
+      const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
+      return {
+        protocolId: protocol.id,
+        name: protocol.name,
+        medicineName: protocol.medicine?.name,
+        score,
+        taken,
+        expected,
+        error: false,
+      }
+    })
+  },
+
+  /**
+   * @private Variante de getCurrentStreak que recebe protocols pré-carregados
+   */
+  async _getCurrentStreakWithProtocols(userId, protocols) {
+    if (!protocols || protocols.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 }
+    }
+
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 90)
+
+    const { data: logs, error } = await supabase
+      .from('medicine_logs')
+      .select('taken_at')
+      .eq('user_id', userId)
+      .gte('taken_at', startDate.toISOString())
+      .lte('taken_at', endDate.toISOString())
+      .order('taken_at', { ascending: false })
+
+    if (error) throw error
+
+    if (!logs || logs.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 }
+    }
+
+    const logsByDay = groupLogsByDay(logs)
+    const { currentStreak, longestStreak } = calculateStreaks(logsByDay, protocols)
+
+    return { currentStreak, longestStreak }
   },
 }
 
