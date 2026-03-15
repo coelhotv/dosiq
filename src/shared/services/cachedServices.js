@@ -33,6 +33,7 @@ export const CACHE_KEYS = {
   LOGS_BY_PROTOCOL: 'logs:protocol',
   LOGS_BY_MONTH: 'logs:month',
   LOGS_PAGINATED: 'logs:paginated',
+  LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
   TREATMENT_PLANS: 'treatmentPlans',
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
   ADHERENCE_SUMMARY: 'adherence:summary',
@@ -263,6 +264,11 @@ export const cachedLogService = {
     return cachedQuery(key, () => logService.getAllPaginated(limit, offset))
   },
 
+  async getAllPaginatedSlim(limit, offset) {
+    const key = generateCacheKey(CACHE_KEYS.LOGS_PAGINATED_SLIM, { limit, offset })
+    return cachedQuery(key, () => logService.getAllPaginatedSlim(limit, offset))
+  },
+
   async getByDateRange(startDate, endDate, limit = 50, offset = 0) {
     const key = generateCacheKey('logs:dateRange', { startDate, endDate, limit, offset })
     return cachedQuery(key, () => logService.getByDateRange(startDate, endDate, limit, offset))
@@ -276,6 +282,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
     invalidateCache('logs:dateRange*')
     _invalidateAdherenceCache()
     // Invalida estoque (foi decrementado)
@@ -293,6 +300,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
     invalidateCache('logs:dateRange*')
     _invalidateAdherenceCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
@@ -309,6 +317,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
     invalidateCache('logs:dateRange*')
     _invalidateAdherenceCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
@@ -324,6 +333,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
     invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
     invalidateCache('logs:dateRange*')
     _invalidateAdherenceCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
