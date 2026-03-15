@@ -24,10 +24,18 @@ vi.mock('@shared/services', () => ({
   cachedLogService: {
     getByMonth: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
     getAllPaginated: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
+    getAllPaginatedSlim: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
     create: vi.fn(),
     update: vi.fn(),
     createBulk: vi.fn(),
     delete: vi.fn(),
+  },
+  cachedAdherenceService: {
+    getAdherenceSummary: vi.fn(() =>
+      Promise.resolve({ overallTaken: 42, overallExpected: 50, longestStreak: 12 })
+    ),
+    getDailyAdherenceFromView: vi.fn(() => Promise.resolve([])),
+    getAdherencePatternFromView: vi.fn(() => Promise.resolve(null)),
   },
 }))
 

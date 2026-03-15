@@ -294,6 +294,39 @@ export const logService = {
   },
 
   /**
+   * Timeline: dados mínimos para renderização (sem relações completas)
+   * LogEntry usa: id, taken_at, quantity_taken, notes, status, medicine.name, protocol.name
+   * LogForm (edição) usa: id, protocol_id, treatment_plan_id, taken_at, quantity_taken, notes
+   * ~120 bytes/log (vs ~500 bytes com select('*') + full relations)
+   * @param {number} limit - Items per page
+   * @param {number} offset - Starting position
+   * @returns {Promise} { data: [], total, hasMore }
+   */
+  getAllPaginatedSlim: async (limit = 50, offset = 0) => {
+    const { data, error, count } = await supabase
+      .from('medicine_logs')
+      .select(
+        `
+        id, taken_at, quantity_taken, notes, status, medicine_id, protocol_id, treatment_plan_id,
+        protocol:protocols(id, name),
+        medicine:medicines(id, name)
+      `,
+        { count: 'exact' }
+      )
+      .eq('user_id', await getUserId())
+      .order('taken_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw error
+
+    return {
+      data: normalizeTimestamps(data) || [],
+      total: count || 0,
+      hasMore: offset + limit < (count || 0),
+    }
+  },
+
+  /**
    * Get logs by date range
    * @param {string} startDate - ISO format YYYY-MM-DD (Brazil local date)
    * @param {string} endDate - ISO format YYYY-MM-DD (Brazil local date)

@@ -33,6 +33,7 @@ export const CACHE_KEYS = {
   LOGS_BY_PROTOCOL: 'logs:protocol',
   LOGS_BY_MONTH: 'logs:month',
   LOGS_PAGINATED: 'logs:paginated',
+  LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
   TREATMENT_PLANS: 'treatmentPlans',
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
   ADHERENCE_SUMMARY: 'adherence:summary',
@@ -239,6 +240,20 @@ const _invalidateAdherenceCache = () => {
 }
 
 /**
+ * Invalida todas as chaves de cache relacionadas a logs.
+ * Centraliza a lógica para evitar duplicação nos 4 métodos de mutação do cachedLogService.
+ */
+const _invalidateAllLogsCache = () => {
+  invalidateCache(`${CACHE_KEYS.LOGS}*`)
+  invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
+  invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
+  invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
+  invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
+  invalidateCache('logs:dateRange*')
+  _invalidateAdherenceCache()
+}
+
+/**
  * Log Service com Cache
  */
 export const cachedLogService = {
@@ -263,6 +278,11 @@ export const cachedLogService = {
     return cachedQuery(key, () => logService.getAllPaginated(limit, offset))
   },
 
+  async getAllPaginatedSlim(limit, offset) {
+    const key = generateCacheKey(CACHE_KEYS.LOGS_PAGINATED_SLIM, { limit, offset })
+    return cachedQuery(key, () => logService.getAllPaginatedSlim(limit, offset))
+  },
+
   async getByDateRange(startDate, endDate, limit = 50, offset = 0) {
     const key = generateCacheKey('logs:dateRange', { startDate, endDate, limit, offset })
     return cachedQuery(key, () => logService.getByDateRange(startDate, endDate, limit, offset))
@@ -271,13 +291,7 @@ export const cachedLogService = {
   // Métodos de escrita (com invalidação de cache)
   async create(log) {
     const result = await logService.create(log)
-    // Invalida todas as queries de logs
-    invalidateCache(`${CACHE_KEYS.LOGS}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
-    invalidateCache('logs:dateRange*')
-    _invalidateAdherenceCache()
+    _invalidateAllLogsCache()
     // Invalida estoque (foi decrementado)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
@@ -289,12 +303,7 @@ export const cachedLogService = {
 
   async createBulk(logs) {
     const result = await logService.createBulk(logs)
-    invalidateCache(`${CACHE_KEYS.LOGS}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
-    invalidateCache('logs:dateRange*')
-    _invalidateAdherenceCache()
+    _invalidateAllLogsCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -305,12 +314,7 @@ export const cachedLogService = {
 
   async update(id, updates) {
     const result = await logService.update(id, updates)
-    invalidateCache(`${CACHE_KEYS.LOGS}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
-    invalidateCache('logs:dateRange*')
-    _invalidateAdherenceCache()
+    _invalidateAllLogsCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -320,12 +324,7 @@ export const cachedLogService = {
 
   async delete(id) {
     await logService.delete(id)
-    invalidateCache(`${CACHE_KEYS.LOGS}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
-    invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
-    invalidateCache('logs:dateRange*')
-    _invalidateAdherenceCache()
+    _invalidateAllLogsCache()
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)

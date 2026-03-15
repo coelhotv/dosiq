@@ -89,7 +89,7 @@ export default function HealthHistory({ onNavigate }) {
       // Máximo 2 requests simultâneos. Cache SWR resolve em <5ms se fresh.
       const [logsResult, timelineResult] = await Promise.all([
         logService.getByMonth(now.getFullYear(), now.getMonth()),
-        logService.getAllPaginated(TIMELINE_PAGE_SIZE, 0),
+        logService.getAllPaginatedSlim(TIMELINE_PAGE_SIZE, 0),
       ])
 
       setCurrentMonthLogs(logsResult.data || [])
@@ -258,7 +258,7 @@ export default function HealthHistory({ onNavigate }) {
     if (isLoadingMore || !timelineHasMore) return
     setIsLoadingMore(true)
     try {
-      const result = await logService.getAllPaginated(TIMELINE_PAGE_SIZE, timelineOffset)
+      const result = await logService.getAllPaginatedSlim(TIMELINE_PAGE_SIZE, timelineOffset)
       setTimelineLogs((prev) => [...prev, ...(result.data || [])])
       setTimelineHasMore(result.hasMore || false)
       setTimelineOffset((o) => o + TIMELINE_PAGE_SIZE)
