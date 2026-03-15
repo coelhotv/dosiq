@@ -14,7 +14,7 @@
 
 | Sprint | Status | Commit | Data | Quality Gates |
 |--------|--------|--------|------|---------------|
-| **P1** | 🔲 PENDENTE | — | — | — |
+| **P1** | ✅ CONCLUÍDO | dcfccb0 | 2026-03-15 | lint ✅ build ✅ tests ✅ |
 | **P2** | 🔲 PENDENTE | — | — | — |
 | **P3** | 🔲 PENDENTE | — | — | — |
 
