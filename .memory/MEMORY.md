@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-13 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M0–M8:** ✅ M0–M3, M5–M8 MERGED (M4 DEFERRED)
+**Last Updated:** 2026-03-15 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M0–M8:** ✅ M0–M8 TODOS MERGED
 
 ---
 

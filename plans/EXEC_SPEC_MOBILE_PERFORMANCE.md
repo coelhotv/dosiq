@@ -17,7 +17,7 @@
 | **M1** | ✅ MERGED | `f7153cb` | 2026-03-10 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ react-virtuoso |
 | **M2** | ✅ MERGED | `ddd3fbe` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ 1 commit (squash), ✅ manualChunks, ✅ MOBILE_PERFORMANCE.md |
 | **M3** | ✅ MERGED | `e578820` | 2026-03-13 | ✅ 473/473 testes, ✅ 0 lint, ✅ 7 Gemini suggestions, ✅ DB views + indexes |
-| **M4** | 🔜 Pendente | — | — | — |
+| **M4** | ✅ MERGED | `4b00d6e` | 2026-03-15 | ✅ 0 lint, ✅ build ok, ✅ 3 Gemini suggestions, ✅ OfflineBanner, ✅ useSyncExternalStore |
 | **M5** | ✅ MERGED | `4822296` | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ CSS animations, favicon, font sizes |
 | **M6** | ✅ MERGED | — | 2026-03-13 | ✅ testes, ✅ 0 lint, ✅ touch UX, overscroll, universal checklist |
 | **M7** | ✅ MERGED | `8e52ca9` | 2026-03-13 | ✅ 539/539 testes, ✅ 0 lint, ✅ N+1 (15→6 queries), ✅ Gemini suggestions aplicadas |
