@@ -134,5 +134,17 @@
 
 ---
 
-*Last updated: 2026-03-13*
+*Last updated: 2026-03-15*
 *Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P11 + AP-D01 to AP-D03*
+
+## Mobile Performance Anti-Patterns — HTTP/2 Saturation (Sprint P1–P3 — 2026-03-15)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-P12 | Mesma query Supabase chamada N vezes em sub-funções paralelas | `getAdherenceSummary` chamava 3 sub-funções que cada uma buscava `protocols` independentemente = 3 queries idênticas em `Promise.allSettled` | Buscar dados compartilhados UMA VEZ na função orquestradora e passar como parâmetro para as sub-funções | R-125 |
+| AP-P13 | Disparar queries de background imediatamente após `setIsLoading(false)` | `setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack frame competem com o paint por HTTP/2 connection slots. Safari mobile pool: 4-6 slots. Com 12+ requests → main thread bloqueia → browser trava completamente | Usar `requestIdleCallback` (ou `setTimeout(100ms)` no Safari) para deferir queries não urgentes APÓS o browser completar o paint | R-126 |
+
+---
+
+*Last updated: 2026-03-15*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03*

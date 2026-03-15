@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-15 | **Version:** v3.2.0 | **Fase:** 6 | **Mobile Perf M0–M8:** ✅ M0–M8 TODOS MERGED
+**Last Updated:** 2026-03-15 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf M0–M8 + P1–P3:** ✅ TODOS MERGED
 
 ---
 
@@ -267,13 +267,13 @@ git push -u origin feature/fase-N/descriptive-name
 
 Agents should read this file + rules + anti-patterns before coding.
 
-## Sprint P2 ✅ DELIVERED (2026-03-15)
-**HealthHistory: Serializar queries para desbloquear render mobile**
-- Commit: `af8185a` | PR: #399
-- `loadData` em fases: Phase 1 (2 paralelos) → Phase 2 (requestIdleCallback) → Phase 3 (lazy)
-- Import trocado para `cachedAdherenceService` (cache SWR 30s)
-- Max concurrent requests: 12+ → 2
-- Quality: 0 lint ✅, build ✅
+## HealthHistory HTTP/2 Freeze Fix ✅ COMPLETO (2026-03-15) — v3.3.0
+**P1+P2+P3: Browser freeze mobile eliminado + performance otimizada**
+- **P1** `dcfccb0` PR#398 — `cachedAdherenceService` SWR + `getAdherenceSummary` protocols 1× (era 3×)
+- **P2** `af8185a` PR#399 — `loadData` faseado (requestIdleCallback), max concurrent: 12+ → 2
+- **P3** `fe26176` PR#400 — slim select timeline: ~500 → ~120 bytes/log (76% redução)
+- R-125 (cache adherence) + R-126 (serialize mobile queries) + R-127 (slim select) registradas
+- AP-P12 (repeated sub-queries) + AP-P13 (queries after setIsLoading) registradas
 
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**
