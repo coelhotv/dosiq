@@ -29,7 +29,9 @@ const protocolWithTimeScheduleSchema = z.object({
  */
 export const AnalyzeAdherencePatternsInputSchema = z.object({
   logs: z.array(logSchema).describe('Logs de doses do usuário (mínimo 21 dias recomendado)'),
-  protocols: z.array(protocolWithTimeScheduleSchema).describe('Protocolos ativos com time_schedule'),
+  protocols: z
+    .array(protocolWithTimeScheduleSchema)
+    .describe('Protocolos ativos com time_schedule'),
 })
 
 /**
@@ -57,7 +59,9 @@ const worstCellSchema = z.object({
  */
 export const AnalyzeAdherencePatternsOutputSchema = z.object({
   grid: z.array(z.array(gridCellSchema)).describe('Grid 7x4 de adherência'),
-  worstCell: worstCellSchema.nullable().describe('Célula com pior adherência (null se dados insuficientes)'),
+  worstCell: worstCellSchema
+    .nullable()
+    .describe('Célula com pior adherência (null se dados insuficientes)'),
   narrative: z.string().describe('Narrativa em português sobre o pior horário'),
   hasEnoughData: z.boolean().describe('true se >= 21 dias de dados'),
 })

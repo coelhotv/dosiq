@@ -81,11 +81,12 @@ function buildHeatmapNarrative(data, hasEnoughData) {
     }
   }
 
-  const narrative = hasEnoughData && worstCell
-    ? `Seu pior horário é ${worstCell.dayName} à ${worstCell.periodName.toLowerCase()}`
-    : !hasEnoughData
-    ? `Dados insuficientes. Registre pelo menos 21 dias de doses para análise completa.`
-    : 'Sua adesão está excelente em todos os períodos!'
+  const narrative =
+    hasEnoughData && worstCell
+      ? `Seu pior horário é ${worstCell.dayName} à ${worstCell.periodName.toLowerCase()}`
+      : !hasEnoughData
+        ? `Dados insuficientes. Registre pelo menos 21 dias de doses para análise completa.`
+        : 'Sua adesão está excelente em todos os períodos!'
 
   return { worstCell, narrative }
 }
@@ -337,9 +338,11 @@ export const adherenceService = {
       this.getCurrentStreak(userId),
     ])
 
-    const overall = results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
+    const overall =
+      results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
     const protocols = results[1].status === 'fulfilled' ? results[1].value : []
-    const streaks = results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
+    const streaks =
+      results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
 
     return {
       overallScore: overall.score,
@@ -427,7 +430,10 @@ export const adherenceService = {
     // Validar input com Zod
     const validation = GetDailyAdherenceFromViewSchema.safeParse({ days })
     if (!validation.success) {
-      console.error('[adherenceService] Erro validação getDailyAdherenceFromView:', validation.error.format())
+      console.error(
+        '[adherenceService] Erro validação getDailyAdherenceFromView:',
+        validation.error.format()
+      )
       return []
     }
 

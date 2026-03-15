@@ -25,11 +25,13 @@ export const AnalyzeReminderTimingInputSchema = z.object({
 /**
  * Schema para resultado de analyzeReminderTiming.
  */
-export const ReminderSuggestionSchema = z.object({
-  shouldSuggest: z.boolean(),
-  currentTime: z.string(), // HH:MM
-  suggestedTime: z.string(), // HH:MM
-  avgDeltaMinutes: z.number(),
-  sampleCount: z.number(),
-  direction: z.enum(['later', 'earlier']),
-}).nullable()
+export const ReminderSuggestionSchema = z
+  .object({
+    shouldSuggest: z.boolean(),
+    currentTime: z.string(), // HH:MM
+    suggestedTime: z.string(), // HH:MM
+    avgDeltaMinutes: z.number(),
+    sampleCount: z.number(),
+    direction: z.enum(['later', 'earlier']),
+  })
+  .nullable()
