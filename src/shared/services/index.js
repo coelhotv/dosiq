@@ -29,6 +29,7 @@ export {
   cachedStockService,
   cachedLogService,
   cachedTreatmentPlanService,
+  cachedAdherenceService,
   cachedServices,
   CACHE_KEYS,
 } from '@shared/services/cachedServices'
