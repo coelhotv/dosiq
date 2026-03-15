@@ -3,7 +3,7 @@ import { Virtuoso } from 'react-virtuoso'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { cachedLogService as logService } from '@shared/services'
 import { formatLocalDate } from '@utils/dateUtils'
-import { adherenceService } from '@services/api/adherenceService'
+import { cachedAdherenceService as adherenceService } from '@shared/services'
 import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
@@ -85,7 +85,8 @@ export default function HealthHistory({ onNavigate }) {
       setError(null)
       const now = new Date()
 
-      // Calendário + Timeline: carregamento crítico — UI fica pronta rápido
+      // ── Phase 1: UI-critical (calendário + timeline) ──
+      // Máximo 2 requests simultâneos. Cache SWR resolve em <5ms se fresh.
       const [logsResult, timelineResult] = await Promise.all([
         logService.getByMonth(now.getFullYear(), now.getMonth()),
         logService.getAllPaginated(TIMELINE_PAGE_SIZE, 0),
@@ -101,23 +102,33 @@ export default function HealthHistory({ onNavigate }) {
         setSelectedCalendarDate(new Date(logsResult.data[0].taken_at))
       }
 
-      // UI visível primeiro — sparkline + heatmap carregam via views (M3)
+      // UI fica interativa AQUI — browser pode pintar calendário + timeline
       setIsLoading(false)
 
-      const [summary, daily] = await Promise.all([
-        adherenceService.getAdherenceSummary('90d').catch((err) => {
-          console.error('[HealthHistory] ERRO ao carregar summary:', err.message, err)
-          return null
-        }),
-        // M3: Chamar view ao invés de processar no client (getDailyAdherence → getDailyAdherenceFromView)
-        adherenceService.getDailyAdherenceFromView(90).catch((err) => {
-          console.error('[HealthHistory] ERRO ao carregar daily adherence:', err.message, err)
-          return []
-        }),
-      ])
+      // ── Phase 2: Deferido — sparkline + summary após paint ──
+      // requestIdleCallback permite ao browser completar o paint antes de disparar queries.
+      // Safari não suporta requestIdleCallback — fallback para setTimeout(100ms).
+      const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 100))
 
-      setAdherenceSummary(summary)
-      setDailyAdherence(daily)
+      scheduleIdle(() => {
+        // Sparkline: 1 query leve (v_daily_adherence view, ~30 rows)
+        adherenceService
+          .getDailyAdherenceFromView(90)
+          .then((daily) => setDailyAdherence(daily))
+          .catch((err) =>
+            console.error('[HealthHistory] ERRO ao carregar daily adherence:', err.message)
+          )
+          .then(() => {
+            // Summary completo — APÓS sparkline resolver
+            // Serializado para nunca ter >1 query ativa do HealthHistory
+            adherenceService
+              .getAdherenceSummary('90d')
+              .then((summary) => setAdherenceSummary(summary))
+              .catch((err) =>
+                console.error('[HealthHistory] ERRO ao carregar summary:', err.message)
+              )
+          })
+      })
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message)
       setIsLoading(false)
@@ -266,6 +277,9 @@ export default function HealthHistory({ onNavigate }) {
   const streak = stats?.currentStreak ?? 0
   // Best streak vem do adherence summary (calculado em background)
   const bestStreak = adherenceSummary?.longestStreak ?? streak
+  // Doses taken/expected: usa adherenceSummary quando disponível, stats como fallback imediato
+  const overallTaken = adherenceSummary?.overallTaken ?? stats?.taken ?? 0
+  const overallExpected = adherenceSummary?.overallExpected ?? stats?.expected ?? 0
 
   return (
     <div className="health-history-view">
@@ -288,9 +302,9 @@ export default function HealthHistory({ onNavigate }) {
             <span className="health-history-summary__label">Adesão 30d</span>
             <span className="health-history-summary__score">{score}%</span>
           </div>
-          {adherenceSummary && (
+          {overallExpected > 0 && (
             <span className="health-history-summary__detail">
-              {adherenceSummary.overallTaken}/{adherenceSummary.overallExpected} doses
+              {overallTaken}/{overallExpected} doses
             </span>
           )}
         </div>
