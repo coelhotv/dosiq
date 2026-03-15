@@ -1039,5 +1039,34 @@ async getAdherencePatternFromView() {
 
 ---
 
-*Last updated: 2026-03-13*
+*Last updated: 2026-03-15*
 *Rules: R-001 to R-122*
+
+## Cache & Performance Patterns (Sprint HealthHistory Fix P1–P3 — 2026-03-15)
+
+### R-125: Cache SWR para queries de adesão [HIGH]
+**Regra:** Queries de leitura do adherenceService DEVEM usar `cachedAdherenceService`.
+**Cache keys:** `adherence:summary:{period}`, `adherence:daily:{days}`, `adherence:pattern`
+**Invalidação:** Automática via `cachedLogService` mutations (via `_invalidateAdherenceCache`).
+**Source:** Sprint P1 — fix HealthHistory mobile freeze
+
+### R-126: Serializar queries Supabase em views mobile [CRITICAL]
+**Regra:** Views mobile-critical NUNCA devem disparar >4 requests Supabase simultâneos.
+**Padrão:**
+- Phase 1 (UI-blocking, max 2 paralelos) → `setIsLoading(false)`
+- Phase 2 (deferido via `requestIdleCallback`) → queries não urgentes
+- Phase 3 (lazy via `IntersectionObserver`) → conteúdo below-the-fold
+**Safari:** Não suporta `requestIdleCallback` — usar fallback `setTimeout(100ms)`.
+**Source:** Sprint P2 — fix HealthHistory mobile freeze (12 → 2 concurrent requests)
+
+### R-127: Select mínimo em queries Supabase para listas [HIGH]
+**Regra:** Queries para listas/timelines DEVEM selecionar apenas colunas usadas no render.
+**Padrão:** `select('id, campo1, relation:table(id, name)')` ao invés de `select('*, relation:table(*)')`.
+**Exceção:** Queries que alimentam formulários de edição precisam de full select OU incluir todos os campos que o form usa.
+**Resultado:** ~76-80% redução de payload em timelines de logs (~500 bytes → ~120 bytes/row).
+**Source:** Sprint P3 — slim timeline select
+
+---
+
+*Last updated: 2026-03-15*
+*Rules: R-001 to R-127*
