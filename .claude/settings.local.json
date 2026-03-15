@@ -99,7 +99,10 @@
       "Bash(echo \"Issue #$issue fechada\")",
       "Bash(gh api:*)",
       "Bash(head -c 2000 \"/Users/accoelho/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/bug_logs/meus-remedios.vercel.app-recording.json\")",
-      "Bash(/usr/bin/jq '.recording.records | length' \"/Users/accoelho/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/bug_logs/meus-remedios.vercel.app-recording.json\")"
+      "Bash(/usr/bin/jq '.recording.records | length' \"/Users/accoelho/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/bug_logs/meus-remedios.vercel.app-recording.json\")",
+      "Bash(\"/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/.memory/rules.md\":*)",
+      "Bash(\"/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/.memory/journal/2026-W11.md\":*)",
+      "Bash(gh release:*)"
     ],
     "additionalDirectories": [
       "/tmp",
