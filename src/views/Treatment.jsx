@@ -96,12 +96,9 @@ export default function Treatment({ onNavigate }) {
     setDeleteError(null)
   }, [])
 
-  const handleEditProtocol = useCallback(
-    (protocol) => {
-      setProtocolToEdit(protocol)
-    },
-    []
-  )
+  const handleEditProtocol = useCallback((protocol) => {
+    setProtocolToEdit(protocol)
+  }, [])
 
   const handleSaveEditedProtocol = useCallback(
     async (dataToSave) => {
@@ -280,29 +277,13 @@ export default function Treatment({ onNavigate }) {
               </>
             )}
           </p>
-          {deleteError && (
-            <p className="delete-confirmation-modal__error">
-              ⚠️ {deleteError}
-            </p>
-          )}
+          {deleteError && <p className="delete-confirmation-modal__error">⚠️ {deleteError}</p>}
           <div className="delete-confirmation-modal__actions">
-            <Button
-              variant="secondary"
-              onClick={handleCancelDelete}
-              disabled={isDeleting}
-            >
+            <Button variant="secondary" onClick={handleCancelDelete} disabled={isDeleting}>
               Cancelar
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting
-                ? 'Deletando...'
-                : deleteConfirmed
-                  ? 'Confirmar Deletar'
-                  : 'Deletar'}
+            <Button variant="danger" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deletando...' : deleteConfirmed ? 'Confirmar Deletar' : 'Deletar'}
             </Button>
           </div>
         </div>

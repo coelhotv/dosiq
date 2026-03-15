@@ -229,7 +229,11 @@ export function SparklineAdesao({
     }
 
     const validData = chartData.filter((d) => d.adherence > 0)
-    console.log('[SparklineAdesao] Stats:', { totalDays: chartData.length, validDays: validData.length, adherenceValues: chartData.map((d) => d.adherence) })
+    console.log('[SparklineAdesao] Stats:', {
+      totalDays: chartData.length,
+      validDays: validData.length,
+      adherenceValues: chartData.map((d) => d.adherence),
+    })
     if (validData.length === 0) {
       console.log('[SparklineAdesao] AVISO: Nenhum dia com adherence > 0!')
       return { average: 0, trend: 'stable' }

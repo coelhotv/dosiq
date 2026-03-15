@@ -40,7 +40,7 @@ export function analyzeReminderTiming({ protocol, logs }) {
       logs_count: logs?.length,
       error_by_field: fieldErrors,
       first_log_sample: logs?.[0],
-      first_issue_details: issues[0]
+      first_issue_details: issues[0],
     })
     return null
   }
@@ -58,7 +58,7 @@ export function analyzeReminderTiming({ protocol, logs }) {
 
   // Otimização: Pré-processa os logs uma única vez para evitar parsing repetido
   const processedLogs = validLogs
-    .map(log => {
+    .map((log) => {
       const logDate = new Date(log.taken_at)
       if (isNaN(logDate.getTime())) return null // Ignora datas inválidas
       return {
@@ -76,9 +76,11 @@ export function analyzeReminderTiming({ protocol, logs }) {
     const scheduledMinutes = scheduledH * 60 + scheduledM
 
     // Filtrar logs relevantes para este horário (dentro de 4h window)
-    const relevantLogs = processedLogs.filter(log => {
+    const relevantLogs = processedLogs.filter((log) => {
       // Apenas logs que correspondem ao ID do protocolo, ou que não têm ID de protocolo mas correspondem ao ID do medicamento.
-      const isMatch = log.protocol_id === validProtocol.id || (log.protocol_id == null && log.medicine_id === validProtocol.medicine_id)
+      const isMatch =
+        log.protocol_id === validProtocol.id ||
+        (log.protocol_id == null && log.medicine_id === validProtocol.medicine_id)
 
       if (!isMatch) {
         return false
@@ -94,7 +96,7 @@ export function analyzeReminderTiming({ protocol, logs }) {
     }
 
     // Calcular delta médio
-    const deltas = relevantLogs.map(log => log.logMinutes - scheduledMinutes)
+    const deltas = relevantLogs.map((log) => log.logMinutes - scheduledMinutes)
 
     const avgDelta = deltas.reduce((sum, d) => sum + d, 0) / deltas.length
 

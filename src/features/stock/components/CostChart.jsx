@@ -38,7 +38,14 @@ const barVariants = {
  * @param {boolean} [isRealData] - Se baseado em consumo real (true) ou estimativa (false)
  * @param {Function} [onExpand] - Expandir para detalhes
  */
-export default function CostChart({ items = [], totalMonthly = 0, projection3m, projection6m, isRealData = false, onExpand }) {
+export default function CostChart({
+  items = [],
+  totalMonthly = 0,
+  projection3m,
+  projection6m,
+  isRealData = false,
+  onExpand,
+}) {
   const hasData = items.length > 0 && totalMonthly > 0
 
   if (!hasData) {
@@ -59,7 +66,9 @@ export default function CostChart({ items = [], totalMonthly = 0, projection3m, 
       <div className="cost-chart__header">
         <div className="cost-chart__header-left">
           <span className="cost-chart__header-label">$ CUSTO MENSAL</span>
-          <span className={`cost-chart__badge cost-chart__badge--${isRealData ? 'real' : 'estimate'}`}>
+          <span
+            className={`cost-chart__badge cost-chart__badge--${isRealData ? 'real' : 'estimate'}`}
+          >
             {isRealData ? 'Consumo real' : 'Estimativa'}
           </span>
         </div>

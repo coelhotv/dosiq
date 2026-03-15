@@ -44,30 +44,20 @@ describe('reminderOptimizerService', () => {
 
     it('retorna null quando frequency é "quando_necessario"', () => {
       const protocol = { ...mockProtocol, frequency: 'quando_necessario' }
-      const logs = [
-        createMockLog(7, 45),
-        createMockLog(8, 15),
-        createMockLog(8, 10),
-      ]
+      const logs = [createMockLog(7, 45), createMockLog(8, 15), createMockLog(8, 10)]
       const result = analyzeReminderTiming({ protocol, logs })
       expect(result).toBeNull()
     })
 
     it('retorna null quando logs insuficientes (<10 amostras)', () => {
-      const logs = [
-        createMockLog(8, 5),
-        createMockLog(8, 10),
-        createMockLog(8, 0),
-      ]
+      const logs = [createMockLog(8, 5), createMockLog(8, 10), createMockLog(8, 0)]
       const result = analyzeReminderTiming({ protocol: mockProtocol, logs })
       expect(result).toBeNull()
     })
 
     it('retorna null quando delta é <= 30 minutos', () => {
       // Protocolo: 08:00, logs: 08:15 (delta = 15 min < 30)
-      const logs = Array.from({ length: 10 }, (_, i) =>
-        createMockLog(8, 15 + (i % 5))
-      )
+      const logs = Array.from({ length: 10 }, (_, i) => createMockLog(8, 15 + (i % 5)))
       const result = analyzeReminderTiming({ protocol: mockProtocol, logs })
       expect(result).toBeNull()
     })

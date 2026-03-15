@@ -14,8 +14,8 @@ const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
  * Períodos do dia em horas (0-6, 6-12, 12-18, 18-24)
  */
 const PERIOD_HOURS = [
-  { start: 0, end: 6 },   // 0: Madrugada
-  { start: 6, end: 12 },  // 1: Manhã
+  { start: 0, end: 6 }, // 0: Madrugada
+  { start: 6, end: 12 }, // 1: Manhã
   { start: 12, end: 18 }, // 2: Tarde
   { start: 18, end: 24 }, // 3: Noite
 ]
@@ -26,10 +26,10 @@ const PERIOD_HOURS = [
  * @returns {number} Índice do período (0-3)
  */
 function getPeriodIndex(hour) {
-  if (hour < 6) return 0  // Madrugada
+  if (hour < 6) return 0 // Madrugada
   if (hour < 12) return 1 // Manhã
   if (hour < 18) return 2 // Tarde
-  return 3                 // Noite
+  return 3 // Noite
 }
 
 /**
@@ -168,7 +168,10 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
 
       if (totalExpected > 0) {
         // Calcular adherence normalizando: (taken / totalExpected) * 100
-        grid[dayIndex][periodIndex].adherence = Math.min(100, Math.round((taken / totalExpected) * 100))
+        grid[dayIndex][periodIndex].adherence = Math.min(
+          100,
+          Math.round((taken / totalExpected) * 100)
+        )
       } else if (expectedPerDay === 0) {
         // Se não há doses esperadas neste período, marcar como N/D
         grid[dayIndex][periodIndex].adherence = null

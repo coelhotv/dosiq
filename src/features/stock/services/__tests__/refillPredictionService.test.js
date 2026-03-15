@@ -21,7 +21,7 @@ describe('refillPredictionService', () => {
       // 30 logs em 15 dias, quantity_taken=1 cada, currentStock=30
       // dailyConsumption = 30/15 = 2, daysRemaining = 30/2 = 15
       // isRealData=true, confidence='medium' (15 dias)
-      
+
       const now = new Date()
       const logs = []
       // Create 30 logs over 15 days (2 logs per day)
@@ -57,13 +57,15 @@ describe('refillPredictionService', () => {
         logs.push({ medicine_id: 'med-1', taken_at: date.toISOString(), quantity_taken: 1 })
       }
 
-      const protocols = [{
-        id: 'proto-1',
-        medicine_id: 'med-1',
-        frequency: 'diário',
-        time_schedule: ['08:00', '20:00'],
-        active: true,
-      }]
+      const protocols = [
+        {
+          id: 'proto-1',
+          medicine_id: 'med-1',
+          frequency: 'diário',
+          time_schedule: ['08:00', '20:00'],
+          active: true,
+        },
+      ]
 
       const result = predictRefill({
         medicineId: 'med-1',
@@ -80,7 +82,7 @@ describe('refillPredictionService', () => {
     it('retorna confidence high com >=21 dias', () => {
       // 42 logs em 21 dias
       // confidence='high'
-      
+
       const now = new Date()
       const logs = []
       for (let i = 0; i < 21; i++) {
@@ -103,7 +105,7 @@ describe('refillPredictionService', () => {
     it('retorna Infinity quando dailyConsumption e 0', () => {
       // Med sem protocolo, sem logs
       // daysRemaining = Infinity, predictedStockoutDate = null
-      
+
       const result = predictRefill({
         medicineId: 'med-1',
         currentStock: 30,
@@ -118,7 +120,7 @@ describe('refillPredictionService', () => {
     it('calcula data de stockout corretamente', () => {
       // currentStock=10, dailyConsumption=2
       // daysRemaining=5, predictedStockoutDate = hoje + 5 dias
-      
+
       const now = new Date()
       const logs = []
       // 14+ days of data
@@ -142,7 +144,7 @@ describe('refillPredictionService', () => {
     it('lida com estoque zero', () => {
       // currentStock=0
       // daysRemaining=0
-      
+
       const result = predictRefill({
         medicineId: 'med-1',
         currentStock: 0,
@@ -166,10 +168,10 @@ describe('refillPredictionService', () => {
         { medicine_id: 'med-2', quantity: 10 },
         { medicine_id: 'med-3', quantity: 20 },
       ]
-      
+
       const now = new Date()
       const logs = []
-      
+
       // med-1: 15 days of data -> 30/2 = 15 days
       for (let i = 0; i < 15; i++) {
         const date = new Date(now)
@@ -177,7 +179,7 @@ describe('refillPredictionService', () => {
         logs.push({ medicine_id: 'med-1', taken_at: date.toISOString(), quantity_taken: 1 })
         logs.push({ medicine_id: 'med-1', taken_at: date.toISOString(), quantity_taken: 1 })
       }
-      
+
       // med-2: 14 days of data -> 10/2 = 5 days
       for (let i = 0; i < 14; i++) {
         const date = new Date(now)
@@ -185,7 +187,7 @@ describe('refillPredictionService', () => {
         logs.push({ medicine_id: 'med-2', taken_at: date.toISOString(), quantity_taken: 1 })
         logs.push({ medicine_id: 'med-2', taken_at: date.toISOString(), quantity_taken: 1 })
       }
-      
+
       // med-3: 21 days of data -> 20/1 = 20 days
       for (let i = 0; i < 21; i++) {
         const date = new Date(now)
@@ -217,12 +219,8 @@ describe('refillPredictionService', () => {
     })
 
     it('retorna array vazio quando nao ha estoque', () => {
-      const medicines = [
-        { id: 'med-1', name: 'Medicine A' },
-      ]
-      const stocks = [
-        { medicine_id: 'med-1', quantity: 0 },
-      ]
+      const medicines = [{ id: 'med-1', name: 'Medicine A' }]
+      const stocks = [{ medicine_id: 'med-1', quantity: 0 }]
 
       const result = predictAllRefills({ medicines, stocks, logs: [], protocols: [] })
 

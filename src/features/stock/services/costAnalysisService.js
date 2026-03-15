@@ -183,7 +183,11 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
     return { items: [], totalMonthly: 0, projection3m: 0, projection6m: 0, isRealData: false }
   }
 
-  const { medicines: validatedMedicines, protocols: validatedProtocols, logs: validatedLogs } = validation.data
+  const {
+    medicines: validatedMedicines,
+    protocols: validatedProtocols,
+    logs: validatedLogs,
+  } = validation.data
 
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -192,7 +196,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   // Mapa de protocolos ativos por medicamento
   const activeMedicineIds = new Set()
   const protocolsByMedicine = {}
-  validatedProtocols.forEach(p => {
+  validatedProtocols.forEach((p) => {
     if (p.active && p.medicine_id) {
       activeMedicineIds.add(p.medicine_id)
       if (!protocolsByMedicine[p.medicine_id]) {
@@ -204,7 +208,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
 
   // Mapa de logs por medicamento (com pré-filtro de data)
   const logsByMedicine = {}
-  validatedLogs.forEach(l => {
+  validatedLogs.forEach((l) => {
     if (l.medicine_id && new Date(l.taken_at) >= thirtyDaysAgo) {
       if (!logsByMedicine[l.medicine_id]) {
         logsByMedicine[l.medicine_id] = []
@@ -216,25 +220,24 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   // Mapa pré-calculado de consumo teórico diário por medicamento
   // Evita O(M*P) dentro do loop: calcular consumo diário para cada med em O(P) uma única vez
   const theoreticalDailyIntakeMap = {}
-  validatedProtocols.forEach(p => {
+  validatedProtocols.forEach((p) => {
     if (p.active && p.medicine_id) {
       const intakesPerDay = p.time_schedule?.length || 0
       const dosagePerIntake = p.dosage_per_intake || 0
       const protocolDailyIntake = dosagePerIntake * intakesPerDay
-      theoreticalDailyIntakeMap[p.medicine_id] = (theoreticalDailyIntakeMap[p.medicine_id] || 0) + protocolDailyIntake
+      theoreticalDailyIntakeMap[p.medicine_id] =
+        (theoreticalDailyIntakeMap[p.medicine_id] || 0) + protocolDailyIntake
     }
   })
 
   const items = validatedMedicines
-    .filter(med => activeMedicineIds.has(med.id))
-    .map(med => {
+    .filter((med) => activeMedicineIds.has(med.id))
+    .map((med) => {
       const medLogs = logsByMedicine[med.id] || []
       const avgUnitPrice = calculateAvgUnitPrice(med.stock || [])
 
       // Consumo real vs teórico
-      const daysWithData = new Set(
-        medLogs.map(l => formatLocalDate(new Date(l.taken_at)))
-      ).size
+      const daysWithData = new Set(medLogs.map((l) => formatLocalDate(new Date(l.taken_at)))).size
 
       let dailyConsumption
       let isRealData
@@ -262,11 +265,11 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
         hasPriceData: avgUnitPrice > 0,
       }
     })
-    .filter(item => item.monthlyCost > 0 || !item.hasPriceData)
+    .filter((item) => item.monthlyCost > 0 || !item.hasPriceData)
     .sort((a, b) => b.monthlyCost - a.monthlyCost)
 
   const totalMonthly = items.reduce((sum, item) => sum + item.monthlyCost, 0)
-  const isRealData = items.some(i => i.isRealData)
+  const isRealData = items.some((i) => i.isRealData)
 
   return {
     items,

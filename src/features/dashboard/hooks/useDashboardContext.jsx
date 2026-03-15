@@ -60,7 +60,9 @@ export function DashboardProvider({ children }) {
 
   // Assina eventos de autenticação — invalida cache imediatamente no SIGNED_IN/SIGNED_OUT
   useEffect(() => {
-    const { data: { subscription } } = onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         invalidateCache('medicines:list')
         invalidateCache('protocols:active')

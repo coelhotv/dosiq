@@ -22,7 +22,13 @@ describe('adherencePatternService', () => {
       taken_at: `${dateStr}T${String(hour).padStart(2, '0')}:00:00Z`,
     })
 
-    const createProtocol = (id, medicineId, frequency = 'diário', timeSchedule = ['09:00', '21:00'], startDate = '2026-02-22') => ({
+    const createProtocol = (
+      id,
+      medicineId,
+      frequency = 'diário',
+      timeSchedule = ['09:00', '21:00'],
+      startDate = '2026-02-22'
+    ) => ({
       id,
       medicine_id: medicineId,
       name: `Medicamento ${id}`,
@@ -120,7 +126,9 @@ describe('adherencePatternService', () => {
       }
 
       // Protocolo: diário, 3 vezes à noite (para expected >= 3)
-      const protocols = [createProtocol(protocolId, medicineId, 'diário', ['21:00', '21:30', '22:00'])]
+      const protocols = [
+        createProtocol(protocolId, medicineId, 'diário', ['21:00', '21:30', '22:00']),
+      ]
 
       const result = analyzeAdherencePatterns({ logs, protocols })
 
@@ -146,7 +154,8 @@ describe('adherencePatternService', () => {
 
         // Tomar tarde (15:00) apenas se quarta-feira (dias 26, 5, 12, 19)
         const dayOfWeek = date.getDay()
-        if (dayOfWeek === 3) { // Quarta = 3
+        if (dayOfWeek === 3) {
+          // Quarta = 3
           // Não tomar à tarde em quarta
         } else {
           logs.push(createLog(medicineId, protocolId, 1, dateStr, 15))
@@ -154,7 +163,9 @@ describe('adherencePatternService', () => {
       }
 
       // Protocolo: diário, 3 vezes à tarde (expected >= 3 para worst cell detection)
-      const protocols = [createProtocol(protocolId, medicineId, 'diário', ['15:00', '15:30', '16:00'])]
+      const protocols = [
+        createProtocol(protocolId, medicineId, 'diário', ['15:00', '15:30', '16:00']),
+      ]
 
       const result = analyzeAdherencePatterns({ logs, protocols })
 
@@ -331,15 +342,17 @@ describe('adherencePatternService', () => {
           const date = new Date(2026, 1, 24 + i)
           const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
           return [
-            createLog(medicineId, protocolId, 1, dateStr, 3),  // Madrugada (0-6)
-            createLog(medicineId, protocolId, 1, dateStr, 9),  // Manhã (6-12)
+            createLog(medicineId, protocolId, 1, dateStr, 3), // Madrugada (0-6)
+            createLog(medicineId, protocolId, 1, dateStr, 9), // Manhã (6-12)
             createLog(medicineId, protocolId, 1, dateStr, 15), // Tarde (12-18)
             createLog(medicineId, protocolId, 1, dateStr, 21), // Noite (18-24)
           ]
         }).flat(),
       ]
 
-      const protocols = [createProtocol(protocolId, medicineId, 'diário', ['03:00', '09:00', '15:00', '21:00'])]
+      const protocols = [
+        createProtocol(protocolId, medicineId, 'diário', ['03:00', '09:00', '15:00', '21:00']),
+      ]
 
       const result = analyzeAdherencePatterns({ logs, protocols })
 

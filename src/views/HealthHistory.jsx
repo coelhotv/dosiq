@@ -74,10 +74,7 @@ export default function HealthHistory({ onNavigate }) {
   )
 
   const daysThisMonth = useMemo(
-    () =>
-      new Set(
-        currentMonthLogs.map((log) => formatLocalDate(new Date(log.taken_at)))
-      ).size,
+    () => new Set(currentMonthLogs.map((log) => formatLocalDate(new Date(log.taken_at)))).size,
     [currentMonthLogs]
   )
 
@@ -202,39 +199,45 @@ export default function HealthHistory({ onNavigate }) {
     }
   }, [])
 
-  const handleLogMedicine = useCallback(async (logData) => {
-    try {
-      if (logData.id) {
-        await logService.update(logData.id, logData)
-        showSuccess('Registro atualizado!')
-      } else if (Array.isArray(logData)) {
-        await logService.createBulk(logData)
-        showSuccess('Plano registrado!')
-      } else {
-        await logService.create(logData)
-        showSuccess('Dose registrada!')
+  const handleLogMedicine = useCallback(
+    async (logData) => {
+      try {
+        if (logData.id) {
+          await logService.update(logData.id, logData)
+          showSuccess('Registro atualizado!')
+        } else if (Array.isArray(logData)) {
+          await logService.createBulk(logData)
+          showSuccess('Plano registrado!')
+        } else {
+          await logService.create(logData)
+          showSuccess('Dose registrada!')
+        }
+        setIsModalOpen(false)
+        setEditingLog(null)
+        await loadData()
+        refresh()
+      } catch (err) {
+        throw new Error(err.message)
       }
-      setIsModalOpen(false)
-      setEditingLog(null)
-      await loadData()
-      refresh()
-    } catch (err) {
-      throw new Error(err.message)
-    }
-  }, [showSuccess, loadData, refresh])
+    },
+    [showSuccess, loadData, refresh]
+  )
 
-  const handleDeleteLog = useCallback(async (id) => {
-    try {
-      await logService.delete(id)
-      showSuccess('Registro removido!')
-      setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
-      setTimelineLogs((prev) => prev.filter((log) => log.id !== id))
-      setTotalLogs((prev) => Math.max(0, prev - 1))
-      refresh()
-    } catch (err) {
-      setError('Erro ao remover: ' + err.message)
-    }
-  }, [showSuccess, refresh])
+  const handleDeleteLog = useCallback(
+    async (id) => {
+      try {
+        await logService.delete(id)
+        showSuccess('Registro removido!')
+        setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
+        setTimelineLogs((prev) => prev.filter((log) => log.id !== id))
+        setTotalLogs((prev) => Math.max(0, prev - 1))
+        refresh()
+      } catch (err) {
+        setError('Erro ao remover: ' + err.message)
+      }
+    },
+    [showSuccess, refresh]
+  )
 
   const handleEditClick = useCallback((log) => {
     setEditingLog(log)
@@ -338,13 +341,25 @@ export default function HealthHistory({ onNavigate }) {
       {isLoadingPatterns && (
         <div className="health-history-heatmap glass-card">
           <h3 className="health-history-section-title">Padrões de Adesão</h3>
-          <div className="health-history-heatmap-skeleton" aria-busy="true" aria-label="Carregando padrões..." />
+          <div
+            className="health-history-heatmap-skeleton"
+            aria-busy="true"
+            aria-label="Carregando padrões..."
+          />
         </div>
       )}
       {adherencePattern && !isLoadingPatterns && (
         <div className="health-history-heatmap glass-card">
           <h3 className="health-history-section-title">Padrões de Adesão</h3>
-          <Suspense fallback={<div className="health-history-heatmap-skeleton" aria-busy="true" style={{ height: 120 }} />}>
+          <Suspense
+            fallback={
+              <div
+                className="health-history-heatmap-skeleton"
+                aria-busy="true"
+                style={{ height: 120 }}
+              />
+            }
+          >
             <AdherenceHeatmap pattern={adherencePattern} />
           </Suspense>
         </div>
@@ -354,7 +369,9 @@ export default function HealthHistory({ onNavigate }) {
       {dailyAdherence.length > 0 && (
         <div className="health-history-sparkline glass-card">
           <h3 className="health-history-section-title">Adesão 30 dias</h3>
-          <Suspense fallback={<div className="health-history-sparkline-skeleton" aria-busy="true" />}>
+          <Suspense
+            fallback={<div className="health-history-sparkline-skeleton" aria-busy="true" />}
+          >
             <SparklineAdesao adherenceByDay={dailyAdherence} size="expanded" />
           </Suspense>
         </div>

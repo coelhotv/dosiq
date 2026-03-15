@@ -26,9 +26,8 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   thirtyDaysAgo.setHours(0, 0, 0, 0) // Zerar horas para comparacao consistente
 
-  const recentLogs = logs.filter(log =>
-    log.medicine_id === medicineId &&
-    new Date(log.taken_at) >= thirtyDaysAgo
+  const recentLogs = logs.filter(
+    (log) => log.medicine_id === medicineId && new Date(log.taken_at) >= thirtyDaysAgo
   )
 
   const daysWithData = getDaysWithData(recentLogs)
@@ -46,10 +45,11 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
   } else {
     // Fallback: consumo teorico baseado no protocolo
     // Usa calculateExpectedDoses que considera frequencia corretamente (getDailyDoseRate)
-    const activeProtocols = protocols.filter(p => p.active === true)
-    const expectedDaily = activeProtocols.length > 0
-      ? calculateExpectedDoses(activeProtocols, 1) // 1 dia
-      : 0
+    const activeProtocols = protocols.filter((p) => p.active === true)
+    const expectedDaily =
+      activeProtocols.length > 0
+        ? calculateExpectedDoses(activeProtocols, 1) // 1 dia
+        : 0
     dailyConsumption = expectedDaily
     isRealData = false
     confidence = 'low'
@@ -109,7 +109,7 @@ export function predictAllRefills({ medicines, stocks, logs, protocols }) {
   }, {})
 
   return medicines
-    .map(med => {
+    .map((med) => {
       const currentStock = stockByMedId[med.id] || 0
       if (currentStock === 0) return null
 
@@ -140,8 +140,6 @@ export function predictAllRefills({ medicines, stocks, logs, protocols }) {
  * Conta dias unicos com pelo menos 1 log.
  */
 function getDaysWithData(logs) {
-  const uniqueDays = new Set(
-    logs.map(log => formatLocalDate(new Date(log.taken_at)))
-  )
+  const uniqueDays = new Set(logs.map((log) => formatLocalDate(new Date(log.taken_at))))
   return uniqueDays.size
 }
