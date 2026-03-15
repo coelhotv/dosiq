@@ -15,7 +15,7 @@
 | Sprint | Status | Commit | Data | Quality Gates |
 |--------|--------|--------|------|---------------|
 | **P1** | ✅ CONCLUÍDO | dcfccb0 | 2026-03-15 | lint ✅ build ✅ tests ✅ |
-| **P2** | 🔲 PENDENTE | — | — | — |
+| **P2** | ✅ CONCLUÍDO | af8185a | 2026-03-15 | lint ✅ build ✅ tests ✅ |
 | **P3** | 🔲 PENDENTE | — | — | — |
 
 ---

@@ -267,6 +267,14 @@ git push -u origin feature/fase-N/descriptive-name
 
 Agents should read this file + rules + anti-patterns before coding.
 
+## Sprint P2 ✅ DELIVERED (2026-03-15)
+**HealthHistory: Serializar queries para desbloquear render mobile**
+- Commit: `af8185a` | PR: #399
+- `loadData` em fases: Phase 1 (2 paralelos) → Phase 2 (requestIdleCallback) → Phase 3 (lazy)
+- Import trocado para `cachedAdherenceService` (cache SWR 30s)
+- Max concurrent requests: 12+ → 2
+- Quality: 0 lint ✅, build ✅
+
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**
 - Commit: `4822296` | PR: #394
