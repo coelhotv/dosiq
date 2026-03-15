@@ -1,7 +1,11 @@
 // src/features/adherence/services/__tests__/protocolRiskService.test.js
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { calculateProtocolRisk, calculateAllProtocolRisks, RISK_LEVELS } from '../protocolRiskService'
+import {
+  calculateProtocolRisk,
+  calculateAllProtocolRisks,
+  RISK_LEVELS,
+} from '../protocolRiskService'
 
 describe('protocolRiskService', () => {
   beforeEach(() => {
@@ -266,8 +270,20 @@ describe('protocolRiskService', () => {
   describe('calculateAllProtocolRisks', () => {
     it('filtra protocolos inativos', () => {
       const protocols = [
-        { id: 'proto-1', medicine_id: 'med-1', frequency: 'diário', time_schedule: ['08:00'], active: true },
-        { id: 'proto-2', medicine_id: 'med-2', frequency: 'diário', time_schedule: ['08:00'], active: false },
+        {
+          id: 'proto-1',
+          medicine_id: 'med-1',
+          frequency: 'diário',
+          time_schedule: ['08:00'],
+          active: true,
+        },
+        {
+          id: 'proto-2',
+          medicine_id: 'med-2',
+          frequency: 'diário',
+          time_schedule: ['08:00'],
+          active: false,
+        },
       ]
       const logs = []
 

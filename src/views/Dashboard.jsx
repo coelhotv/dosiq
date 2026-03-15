@@ -534,13 +534,13 @@ export default function Dashboard({ onNavigate }) {
 
   const handleReminderSuggestionAccept = async (newTime) => {
     try {
-      const protocol = rawProtocols.find(p => p.id === suggestionProtocolId)
+      const protocol = rawProtocols.find((p) => p.id === suggestionProtocolId)
       if (!protocol || !protocol.time_schedule) {
         throw new Error('Protocolo ou horários não encontrados para a sugestão.')
       }
 
       // Substituir apenas o horário antigo pelo novo, preservando demais
-      const newTimeSchedule = protocol.time_schedule.map(time =>
+      const newTimeSchedule = protocol.time_schedule.map((time) =>
         time === reminderSuggestion.currentTime ? newTime : time
       )
 

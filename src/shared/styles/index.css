@@ -129,9 +129,9 @@ a:hover {
 /* Remove 300ms tap delay on iOS Safari and remove flash on tap */
 button,
 a,
-[role="button"],
-input[type="submit"],
-input[type="button"],
+[role='button'],
+input[type='submit'],
+input[type='button'],
 label[for] {
   touch-action: manipulation;
   cursor: pointer;

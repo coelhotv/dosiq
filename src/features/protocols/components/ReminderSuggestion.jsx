@@ -47,9 +47,7 @@ export default function ReminderSuggestion({
           <strong>{suggestion.suggestedTime}</strong>. Quer ajustar o lembrete de{' '}
           {suggestion.currentTime} para {suggestion.suggestedTime}?
         </p>
-        <p className="reminder-suggestion__sample">
-          (baseado em {suggestion.sampleCount} doses)
-        </p>
+        <p className="reminder-suggestion__sample">(baseado em {suggestion.sampleCount} doses)</p>
       </div>
 
       <div className="reminder-suggestion__actions">
