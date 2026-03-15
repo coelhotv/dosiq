@@ -24,6 +24,7 @@ import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
+import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 
 /**
  * Placeholder exibido enquanto chunk de view carrega
@@ -262,6 +263,8 @@ function App() {
     */}{' '}
             </footer>
           </main>
+
+          <OfflineBanner />
 
           {isAuthenticated && (
             <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
