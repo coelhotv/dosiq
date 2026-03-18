@@ -296,7 +296,7 @@ export const logService = {
   /**
    * Timeline: dados mínimos para renderização (sem relações completas)
    * LogEntry usa: id, taken_at, quantity_taken, notes, medicine.name, protocol.name
-   * LogForm (edição) usa: id, protocol_id, treatment_plan_id, taken_at, quantity_taken, notes
+   * LogForm (edição) usa: id, protocol_id, taken_at, quantity_taken, notes
    * ~120 bytes/log (vs ~500 bytes com select('*') + full relations)
    * @param {number} limit - Items per page
    * @param {number} offset - Starting position
@@ -307,7 +307,7 @@ export const logService = {
       .from('medicine_logs')
       .select(
         `
-        id, taken_at, quantity_taken, notes, medicine_id, protocol_id, treatment_plan_id,
+        id, taken_at, quantity_taken, notes, medicine_id, protocol_id,
         protocol:protocols(id, name),
         medicine:medicines(id, name)
       `,
