@@ -2,7 +2,7 @@
 
 O banco de dados do **Meus Remédios** é hospedado no Supabase (PostgreSQL) e utiliza Row-Level Security (RLS) para garantir a privacidade dos dados de cada usuário.
 
-> **Última atualização**: 2026-03-05
+> **Última atualização**: 2026-03-18
 > **Fonte**: Exportação real do Supabase (produção)
 
 ## Diagrama de Tabelas
@@ -50,7 +50,7 @@ Tabela principal para rastrear todas as notificações enviadas.
 | `notification_type` | text | Tipo: 'dose_reminder', 'soft_reminder', 'stock_alert', 'daily_digest', etc. |
 | `sent_at` | timestamptz | Data/hora do envio |
 | `created_at` | timestamptz | Data de criação do registro |
-| `status` | varchar | Status: 'pendente', 'enviada', 'falhou', 'entregue' |
+| `status` | varchar (default: 'enviada') | Status: 'pendente', 'enviada', 'falhou', 'entregue' |
 | `telegram_message_id` | bigint | ID da mensagem no Telegram |
 | `mensagem_erro` | text | Mensagem de erro (se falhou) |
 
@@ -207,12 +207,15 @@ Cadastro básico de medicamentos e suplementos.
 | `price_paid` | numeric | Preço pago |
 | `dosage_unit` | text (default: 'mg') | Unidade (mg, mcg, ml, etc) |
 | `type` | text (default: 'medicine') | 'medicamento' ou 'suplemento' |
+| `therapeutic_class` | text | Classe terapêutica (ex: 'Antidepressivo', 'Anti-inflamatório') |
 | `created_at` | timestamptz (default: now()) | Data de criação |
 
 **Check Constraint:**
 ```sql
 CHECK (type = ANY (ARRAY['medicamento'::text, 'suplemento'::text]))
 ```
+
+> ⚠️ **Inconsistência no DB**: `type` tem `DEFAULT 'medicine'` no banco, mas o CHECK exige `'medicamento'` ou `'suplemento'`. O default nunca é acionado porque o Zod schema (com `.default('medicamento')`) sempre envia o valor. Não corrigir no banco sem migração.
 
 ---
 
@@ -247,7 +250,7 @@ Dita como o medicamento deve ser tomado.
 | `time_schedule` | jsonb | Array de horários (ex: `["08:00", "20:00"]`) |
 | `dosage_per_intake` | numeric | Quantidade por tomada |
 | `target_dosage` | numeric | Dosagem alvo (para titulação) |
-| `titration_status` | text (default: 'estável') | 'estável', 'titulando', 'alvo_atingido' |
+| `titration_status` | text (default: 'estável') | 'estável', 'titulando', 'alvo_atingido' — sem CHECK constraint no banco; validado via Zod |
 | `titration_schedule` | jsonb (default: '[]') | Estágios da titulação |
 | `current_stage_index` | integer (default: 0) | Índice do estágio atual |
 | `stage_started_at` | timestamptz | Data de início do estágio |
@@ -303,6 +306,8 @@ Histórico de doses tomadas.
 | `quantity_taken` | numeric (NOT NULL) | Quantidade tomada |
 | `notes` | text | Observações |
 | `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+
+> ⚠️ **Colunas que NÃO existem em `medicine_logs`**: `status`, `treatment_plan_id`. Não inclua estas colunas em queries SELECT — causam HTTP 400. O `treatment_plan_id` é uma coluna de `protocols`, não de `medicine_logs`.
 
 ---
 

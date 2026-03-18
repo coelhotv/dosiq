@@ -146,5 +146,14 @@
 
 ---
 
-*Last updated: 2026-03-15*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S06 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03*
+## Build & Infra Anti-Patterns (2026-03-18)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-B01 | Adicionar `<link rel="modulepreload" href="/src/main.jsx" />` manual em `index.html` no Vite 7 | Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. Browser rejeita com MIME type error. O Vite já gera modulepreload hints corretos para todos os chunks automaticamente. | Nunca adicionar hints manuais de modulepreload apontando para arquivos fonte. Deixar o Vite gerar os hints automaticamente. | — |
+| AP-B02 | Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`) | HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afetada. UI mostra "Erro ao carregar dados". | Manter JSDoc do service sincronizado com o schema real da tabela. Verificar schema antes de adicionar colunas ao select. | AP-S08 |
+
+---
+
+*Last updated: 2026-03-18*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03 + AP-B01 to AP-B02*
