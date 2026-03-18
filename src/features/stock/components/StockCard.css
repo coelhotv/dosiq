@@ -193,6 +193,78 @@
   justify-content: flex-end;
 }
 
+/* Lotes consumidos (quantity === 0) — muted */
+.entry-item.consumed {
+  opacity: 0.45;
+}
+
+.entry-item.consumed .entry-quantity {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Ajustes automáticos do sistema (Dose excluída / Ajuste de dose) */
+.entry-item.system-adjustment {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.entry-item.system-adjustment .entry-quantity {
+  color: var(--text-secondary);
+}
+
+.system-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+  max-width: 60%;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botão de expandir histórico */
+.history-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  padding: var(--space-1) 0;
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.history-toggle:hover {
+  color: var(--color-primary);
+}
+
+/* Seção de histórico expandida */
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--glass-border-light);
+}
+
+.history-section-title {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Mensagem quando não há lotes ativos */
+.no-active-entries {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  font-style: italic;
+  padding: var(--space-2) 0;
+}
+
 .expiration-badge {
   font-size: var(--font-size-xs);
   padding: var(--space-1) var(--space-3);
