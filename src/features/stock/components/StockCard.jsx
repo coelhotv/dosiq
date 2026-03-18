@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import Card from '@shared/components/ui/Card'
 import StockIndicator from './StockIndicator'
+import { parseLocalDate } from '@utils/dateUtils'
 import './StockCard.css'
 
-// Ajustes automáticos gerados pelo sistema (deleção/edição de dose)
+// Prefixos de notas geradas automaticamente pelo sistema (deleção/edição de dose)
+const SYSTEM_NOTE_PREFIXES = ['Dose excluída', 'Ajuste de dose']
+
+// Ajustes automáticos gerados pelo sistema
 const isSystemAdjustment = (entry) =>
-  entry.notes?.startsWith('Dose excluída') || entry.notes?.startsWith('Ajuste de dose')
+  SYSTEM_NOTE_PREFIXES.some((prefix) => entry.notes?.startsWith(prefix))
 
 export default function StockCard({
   medicine,
@@ -22,14 +26,13 @@ export default function StockCard({
 
   const formatDate = (dateString) => {
     if (!dateString) return '-'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR')
+    return parseLocalDate(dateString).toLocaleDateString('pt-BR')
   }
 
   const isExpiringSoon = (expirationDate) => {
     if (!expirationDate) return false
     const today = new Date()
-    const expDate = new Date(expirationDate)
+    const expDate = parseLocalDate(expirationDate)
     const daysUntilExpiration = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
     return daysUntilExpiration <= 30 && daysUntilExpiration > 0
   }
@@ -37,14 +40,24 @@ export default function StockCard({
   const isExpired = (expirationDate) => {
     if (!expirationDate) return false
     const today = new Date()
-    const expDate = new Date(expirationDate)
-    return expDate < today
+    return parseLocalDate(expirationDate) < today
   }
 
-  // Classificar entradas por tipo
-  const activeEntries = stockEntries.filter((e) => e.quantity > 0 && !isSystemAdjustment(e))
-  const consumedEntries = stockEntries.filter((e) => e.quantity === 0 && !isSystemAdjustment(e))
-  const systemEntries = stockEntries.filter(isSystemAdjustment)
+  // Classificar entradas em uma única passagem
+  const { activeEntries, consumedEntries, systemEntries } = stockEntries.reduce(
+    (acc, entry) => {
+      if (isSystemAdjustment(entry)) {
+        acc.systemEntries.push(entry)
+      } else if (entry.quantity > 0) {
+        acc.activeEntries.push(entry)
+      } else {
+        acc.consumedEntries.push(entry)
+      }
+      return acc
+    },
+    { activeEntries: [], consumedEntries: [], systemEntries: [] }
+  )
+
   const hiddenCount = consumedEntries.length + systemEntries.length
 
   const renderEntryItem = (entry, className = '') => (
