@@ -1,8 +1,8 @@
 # Arquitetura — Chatbot IA Multi-Canal (F8.1)
 
 > **Primeira integração de IA no projeto Meus Remédios**
-> **Status:** ✅ Entregue Sprint 8.3 + Bugfix 8.3.1
-> **Versão:** 1.0 | **Data:** 2026-03-20
+> **Status:** ✅ Entregue Sprint 8.3 + Bugfix 8.3.1 + Sprint 8.4 (History Persistence)
+> **Versão:** 1.2 | **Data:** 2026-03-20
 > **Modelo:** Groq `llama-3.3-70b-versatile` → `groq/compound` (seleção inteligente)
 
 ---
@@ -323,6 +323,78 @@ vi.stubGlobal('localStorage', mockLocalStorage)
 
 ---
 
+## 💾 Persistência de Histórico (Sprint 8.3.3)
+
+### Visão Geral
+
+O usuário pode agora recuperar o histórico de conversas anteriores ao fechar e reabrir o painel do chatbot. As conversas são persistidas no `localStorage` com timestamps relativos para contexto temporal.
+
+### Armazenamento
+
+**Chave localStorage:** `mr_chat_history`
+
+**Estrutura:**
+```javascript
+[
+  {
+    role: 'user' | 'assistant',
+    content: string,
+    timestamp: number  // unix ms
+  },
+  // ... max 20 mensagens (10 turnos)
+]
+```
+
+### Componentes Novos / Modificados
+
+**chatbotConfig.js:**
+```javascript
+export const CHATBOT_HISTORY_STORAGE_KEY = 'mr_chat_history'
+export const CHATBOT_HISTORY_MAX_DISPLAY = 20
+export function createWelcomeMessage() // → mensagem inicial reutilizável
+```
+
+**chatbotService.js:**
+```javascript
+export function loadPersistedHistory()         // → carrega do localStorage
+export function savePersistedHistory(messages) // → salva com limite
+export function clearPersistedHistory()        // → limpa ao usuario pedir
+```
+
+**ChatWindow.jsx:**
+- Lazy init: `useState(() => loadPersistedHistory() || [createWelcomeMessage()])`
+- Helper `addMessage()` — encapsula duplicação de save + setState
+- Funções puras movidas para fora do componente (performance):
+  - `formatMessageTime(timestamp)` — "às 14:30", "Ontem às 09:15"
+  - `shouldShowDateSeparator(msgs, idx)` — compara `toDateString()`
+  - `formatDaySeparator(timestamp)` — "Hoje", "Ontem", "15/03"
+- Fix DST: `yesterday.setDate(now.getDate() - 1)` (não `now - 86400000`)
+- Botão "Limpar conversa" (🗑️) com confirmação
+
+**ChatWindow.module.css:**
+```css
+.messageTime       /* timestamp abaixo da bolha */
+.dateSeparator     /* separador com linhas decorativas */
+.headerActions     /* flex container para botões */
+.clearButton       /* trash icon com hover */
+```
+
+### UX Improvements
+
+| Antes | Depois |
+|-------|--------|
+| Chat sempre começa vazio | Histórico recuperado |
+| Sem informação de tempo | Timestamps relativos + separadores de data |
+| Sem forma de limpar | Botão "Limpar conversa" com confirmação |
+| Funções recreadas a cada render | Funções puras fora do componente |
+
+### Backward Compatibility
+
+- Histórico antigo sem timestamps é graciosamente descartado
+- Primeiro load com histórico vazio = mensagem de boas-vindas
+
+---
+
 ## 🔌 Extensões Futuras
 
 ### 1. **Integração com Telegram Bot** ✅ Sprint 8.3.2
@@ -422,5 +494,5 @@ Telegram msg (texto)
 ---
 
 *Última atualização: 2026-03-20*
-*Versão: 1.1 (Sprint 8.3.2 — Telegram Integration)*
-*Status: ✅ Production Ready (Web + Telegram)*
+*Versão: 1.2 (Sprint 8.4 — Chat History Persistence)*
+*Status: ✅ Production Ready (Web + Telegram + History)*
