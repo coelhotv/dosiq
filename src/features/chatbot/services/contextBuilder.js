@@ -28,6 +28,8 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
 
     return {
       nome: med.name,
+      principioAtivo: med.active_ingredient || null,
+      classeTerapeutica: med.therapeutic_class || null,
       dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
       frequencia: protocol?.frequency ?? 'sem protocolo',
       horarios: protocol?.time_schedule ?? [],
@@ -51,9 +53,11 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   return [
     `Data: ${todayStr}`,
     `Medicamentos ativos: ${medsContext.length}`,
-    ...medsContext.map(m =>
-      `- ${m.nome} (${m.dosagem}): ${m.frequencia}, horarios ${m.horarios.join(', ') || 'nao definidos'}, estoque ${m.estoque} un.`
-    ),
+    ...medsContext.map(m => {
+      const infos = [m.principioAtivo, m.classeTerapeutica].filter(Boolean).join(', ')
+      const detalhe = infos ? ` [${infos}]` : ''
+      return `- ${m.nome}${detalhe} (${m.dosagem}): ${m.frequencia}, horarios ${m.horarios.join(', ') || 'nao definidos'}, estoque ${m.estoque} un.`
+    }),
     `Doses registradas hoje: ${todayLogs.length}`,
     adherence7d != null ? `Adesao ultimos 7 dias: ${adherence7d}%` : '',
   ].filter(Boolean).join('\n')

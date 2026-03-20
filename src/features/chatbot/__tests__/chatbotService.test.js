@@ -4,10 +4,22 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+// Mock localStorage via vi.stubGlobal (AP-T03)
+const mockLocalStorage = (() => {
+  let store = {}
+  return {
+    getItem: (key) => store[key] ?? null,
+    setItem: (key, value) => { store[key] = String(value) },
+    removeItem: (key) => { delete store[key] },
+    clear: () => { store = {} },
+  }
+})()
+vi.stubGlobal('localStorage', mockLocalStorage)
+
 import { sendChatMessage } from '../services/chatbotService'
 
 const mockPatientData = {
-  medicines: [{ id: '1', name: 'Metformina', dosage_per_pill: 500, dosage_unit: 'mg', stock: [] }],
+  medicines: [{ id: '1', name: 'Metformina', active_ingredient: null, dosage_per_pill: 500, dosage_unit: 'mg', stock: [] }],
   protocols: [],
   logs: [],
   stockSummary: [],
@@ -15,10 +27,7 @@ const mockPatientData = {
 }
 
 beforeEach(() => {
-  // Limpar rate limit entre testes
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('mr_chat_rate')
-  }
+  mockLocalStorage.removeItem('mr_chat_rate')
   mockFetch.mockReset()
 })
 
@@ -126,12 +135,10 @@ describe('sendChatMessage', () => {
 
   it('retorna rateLimited=true apos 30 mensagens na hora', async () => {
     // Simular 30 mensagens ja enviadas na janela atual
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(
-        'mr_chat_rate',
-        JSON.stringify({ windowStart: Date.now(), count: 30 })
-      )
-    }
+    mockLocalStorage.setItem(
+      'mr_chat_rate',
+      JSON.stringify({ windowStart: Date.now(), count: 30 })
+    )
 
     const result = await sendChatMessage({
       message: 'ola',

@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     // Montar mensagens para Groq
     const messages = [
-      { role: 'system', content: systemPrompt || 'Voce e um assistente de medicamentos.' },
+      { role: 'system', content: systemPrompt || 'Voce é um assistente de medicamentos.' },
       ...history.slice(-10).map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.content,
@@ -54,12 +54,12 @@ export default async function handler(req, res) {
       model: MODEL,
       messages,
       max_tokens: MAX_TOKENS,
-      temperature: 0.7,
-      top_p: 0.9,
+      temperature: 0.2,
+      top_p: 1.0,
     })
 
     const response =
-      completion.choices[0]?.message?.content || 'Desculpe, nao consegui responder.'
+      completion.choices[0]?.message?.content || 'Desculpe, não consegui responder.'
 
     return res.status(200).json({
       response,
