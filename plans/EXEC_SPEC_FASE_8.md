@@ -2,7 +2,7 @@
 
 **Versao:** 1.1
 **Data:** 20/03/2026 (atualizado 2026-03-20)
-**Status:** 1/4 sprints entregues ✅ | 13/44 SP | Sprint 8.3 complete + bugfix
+**Status:** 1/4 sprints entregues ✅ | 13/44 SP | Sprint 8.3 complete + 8.3.1 bugfix + 8.3.2 Telegram
 **Baseline:** v3.4.0 (Fase 6 completa) → v4.1.0 (Fase 8 completa)
 **Pendente:** 3 sprints (8.1, 8.2, 8.4)
 **Escopo:** 44 SP | 4 features | 4 sprints sequenciais com paralelizacao parcial
@@ -1690,6 +1690,41 @@ top_p: 1.0,          // 0.9 → 1.0 (desativar nucleus sampling)
 1. **Alucinação = falta de grounding + parâmetros altos:** restricoes no prompt sozinhas não impedem o LLM de inventar. Precisa de contexto factual + temperatura conservadora.
 2. **Dados já existiam no BD:** `active_ingredient` + `therapeutic_class` estavam nas medicines — só não estavam sendo enviados ao LLM.
 3. **Temperature é crítico em medical chatbots:** 0.2 vs 0.7 muda drasticamente a disposição do modelo em "arriscar" respostas.
+
+---
+
+## 7.10. Sprint 8.3.2 — Chatbot IA no Telegram
+
+**Data:** 2026-03-20
+**PR:** #409 | **Commit:** `bc59836`
+**Motivação:** Validado em produção (web) no mesmo dia → estender para Telegram (sugestão 7.7)
+
+### O que foi implementado
+
+#### server/bot/services/chatbotServerService.js (NOVO)
+- `fetchPatientData(userId)` — Supabase: medicines + protocols + logs (filtro timezone) + stock
+- `buildServerContext()` — mesmo formato do web (com `active_ingredient` + `therapeutic_class`)
+- `validateServerMessage()` — safetyGuard patterns (5 regex)
+- `addServerDisclaimer()` — disclaimer médico condicional
+- Rate limiting em memória (Map): 30 msg/hora/userId
+- Histórico por userId (Map): máx 10 mensagens
+- Groq SDK direto: `temperature: 0.2, top_p: 1.0` (anti-alucinação)
+
+#### server/bot/commands/chatbot.js (NOVO)
+- `handleChatbotMessage(bot, msg)` para `bot.on('message')`
+- Graceful degradation: sem GROQ_API_KEY, usuário não vinculado, erros Groq
+
+#### server/index.js (MODIFICADO)
+- `bot.on('message', (msg) => handleChatbotMessage(bot, msg))`
+
+#### server/package.json (MODIFICADO)
+- `groq-sdk ^1.1.1`
+
+### Quality Gates
+- ✅ 539/539 testes passando
+- ✅ Lint: zero erros
+- ✅ Graceful degradation em todos os caminhos
+- ✅ Contexto idêntico ao canal web (anti-alucinação garantido)
 
 ---
 
