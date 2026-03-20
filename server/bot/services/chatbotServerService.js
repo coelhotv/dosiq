@@ -476,11 +476,11 @@ export async function sendTelegramChatMessage({ message, userId }) {
     logger.info('✅ Groq respondeu com sucesso', {
       userId,
       rawResponseLen: rawResponse.length,
-      usagePromptTokens: promptTokens,
-      usageCachedTokens: cachedTokens,
+      promptTokens,
+      cachedTokens,
       cacheHitRate: `${cacheHitRate}%`,
       estimatedTokenSavings: estimatedSavings,
-      usageCompletionTokens: completion.usage?.completion_tokens,
+      completionTokens: completion.usage?.completion_tokens,
       totalTokens: completion.usage?.total_tokens,
     })
 
