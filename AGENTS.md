@@ -1,7 +1,7 @@
 # Meus Remédios - AI Agent Guide
 
 > **Aplicativo de gerenciamento de medicamentos em português brasileiro**
-> **Versão:** 3.2.0 (Fase 5 ✅ + Mobile Performance M0-M2 ✅) | React 19 + Vite + Supabase
+> **Versão:** 3.3.0 (Fase 5 ✅ + Mobile Perf M0-M8 ✅ + HealthHistory P1-P4 ✅) | React 19 + Vite + Supabase
 
 ---
 
@@ -66,19 +66,23 @@
 
 ---
 
-## 🚀 Mobile Performance Initiative (M0-M6, M2 ✅)
+## 🚀 Mobile Performance Initiative (M0-M8 + P1-P4 ✅)
 
-**Status:** Sprint M2 (Code Splitting & Lazy Routes) **MERGED** on 2026-03-13 (commit ddd3fbe)
+**Status:** Todos sprints M0-M8 + P1-P4 **MERGED** (último: PR #403, 2026-03-20)
 
 | Sprint | Focus | Status | Impact |
 |--------|-------|--------|--------|
 | **M0** | Lazy imports + startTransition + Virtuoso | ✅ | -400ms TTI |
 | **M1** | Virtuoso list optimization | ✅ | -600ms LCP (HealthHistory) |
-| **M2** | Lazy views + manualChunks + ViewSkeleton | ✅ MERGED | 989KB → 102kB gzip (89% reduction) |
-| **M3** | DB indexes + query optimization | 🔜 | -5sec initial load |
-| **M4** | Offline UX + Service Worker | 🔜 | Offline-first UI |
-| **M5** | CSS/Assets fixes + favicon compression | 🔜 | -50ms FCP |
-| **M6** | Touch UX (tap, scroll, overscroll) | 🔜 | Better mobile feel |
+| **M2** | Lazy views + manualChunks + ViewSkeleton | ✅ | 989KB → 102kB gzip (89% reduction) |
+| **M3** | DB indexes + query optimization | ✅ | -5sec initial load |
+| **M5** | CSS/Assets fixes + favicon compression | ✅ | -50ms FCP |
+| **M6** | Touch UX (tap, scroll, overscroll) | ✅ | Better mobile feel |
+| **P1** | cachedAdherenceService SWR + protocols 1× | ✅ | -3 duplicate queries |
+| **P2** | loadData faseado (requestIdleCallback) | ✅ | 12+ → 2 concurrent requests |
+| **P3** | Slim select timeline | ✅ | 76% payload reduction |
+| **P4** | Slim Dashboard + getUserId cache + streaks | ✅ | 13 → 1 auth roundtrip, Zod read validation |
+| **D1-D6** | Dashboard first load optimization | 🔜 | Target: 25 → ≤12 queries, <5s 4G |
 
 **Key Deliverables (M2):**
 - ✅ 13 views converted to `React.lazy()` + Suspense
@@ -118,7 +122,7 @@ const Medicines = lazy(() => import('./views/Medicines'))
 - [`plans/EXEC_SPEC_MOBILE_PERFORMANCE.md`](plans/EXEC_SPEC_MOBILE_PERFORMANCE.md) — Roadmap with all 6 sprints + gap analysis
 - [`CLAUDE.md`](CLAUDE.md) — R-117 rule reference
 
-**Next:** M3 focuses on database indexes + query optimization (adherence heatmap large data loads).
+**Next:** D1-D6 — Dashboard first load optimization (spec: `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md`).
 
 ---
 
@@ -517,7 +521,7 @@ Before committing, verify:
 
 ## 🚫 Anti-Patterns
 
-> Complete table with 16 anti-patterns: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
+> Complete table with 60+ anti-patterns: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
 
 ---
 
@@ -853,7 +857,7 @@ O projeto passou por uma evolucao de UX (navegacao por entidade -> navegacao por
 
 ---
 
-*Última atualização: 2026-03-13*
-*Versão do projeto: 3.2.0*
-*Status: Fase 5 ✅ + Mobile Performance M0-M2 ✅*
+*Última atualização: 2026-03-20*
+*Versão do projeto: 3.3.0*
+*Status: Fase 5 ✅ + Mobile Perf M0-M8 ✅ + HealthHistory P1-P4 ✅*
 *Formato: Routing Table (Wave 9 — Legacy Cleanup concluído) + Mobile Performance Initiative*
