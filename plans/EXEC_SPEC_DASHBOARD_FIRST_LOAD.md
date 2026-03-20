@@ -1,8 +1,8 @@
 # EXEC SPEC — Dashboard First Load Performance
 
-**Versão:** 1.0 | **Data:** 2026-03-20
+**Versão:** 2.0 | **Data:** 2026-03-20
 **Skill de entrega:** `/deliver-sprint`
-**Evidência:** `bug-logs/first-load.har` + `bug-logs/trace-localhost-dashboard.gz`
+**Evidência:** `bug-logs/first-load_production.har` + `bug-logs/trace-production.gz`
 **Pré-requisito:** PR #403 mergeado (P4: slim selects, getUserId cache, calculateStreaks fix)
 
 > Documento de execução autônoma para agentes IA coder.
@@ -13,178 +13,157 @@
 
 ## Problema
 
-O primeiro carregamento do Dashboard (cache vazio) em dispositivo móvel mid-tier com 4G instável (cenário Brasil real) é excessivamente lento. Análise do HAR (`first-load.har`) revela:
+O primeiro carregamento do Dashboard (cache vazio) em produção carrega **757KB de JavaScript desnecessário** e faz **queries Supabase evitáveis**. Análise do HAR de produção (`first-load_production.har`) revela:
 
-| Métrica | Valor | Impacto |
-|---------|-------|---------|
-| Waterfall total | 44.7s | App inutilizável por quase 1 minuto |
-| Requests Supabase | 50 (25 GET + 25 OPTIONS/CORS) | Saturação de conexões |
-| Auth roundtrips | 13x `GET auth/user` × ~620ms | **~8s só em auth** (corrigido no PR #403) |
-| Queries duplicadas | protocols 3x, treatment_plans 2x, user_settings 2x | ~4s de RTT desperdiçado |
-| Cascata de effects | 4 useEffects independentes no Dashboard.jsx | Serializa requests desnecessariamente |
+| Métrica | Valor (produção) | Impacto |
+|---------|-------------------|---------|
+| JS total carregado | 1435KB (8 chunks) | **757KB são de chunks que deveriam ser lazy** |
+| Chunks eager indevidos | 4 (vendor-pdf, feature-stock, feature-history, feature-landing) | ~1.7s de download em 4G |
+| Requests Supabase | 21 (7 GET + 7 OPTIONS + 3 auth GET + 3 auth OPTIONS + 1 misc) | Otimizável para 5 GET |
+| Auth roundtrips | 3x `GET auth/user` × ~230ms | ~690ms em auth (PR #403 reduziu de 13→3, não 1) |
+| Waterfall span | 1.9s | Razoável, mas comprimível |
 
-### Breakdown das 50 requisições Supabase
+### Correção de baseline: localhost vs produção
+
+A versão 1.0 deste plano usava HAR de **localhost** (44.7s, 206 requests, 50 Supabase). Dados de **produção** mostram cenário radicalmente diferente:
+
+| Métrica | localhost (v1.0) | produção (v2.0) | Causa da diferença |
+|---------|------------------|------------------|--------------------|
+| Total requests | 206 | 39 | StrictMode dobra effects em dev |
+| Supabase total | 50 | 21 | StrictMode + HMR artifacts |
+| Auth GET | 13 | 3 | PR #403 + StrictMode |
+| Waterfall | 44.7s | 1.9s | Latência local + dev overhead |
+| treatment_plans | 2x | **1x** | Duplicata era StrictMode |
+| user_settings | 2x | **1x** | Duplicata era StrictMode |
+
+### Breakdown das 21 requisições Supabase (produção)
 
 ```
-13x GET auth/user              (~8s RTT) ← CORRIGIDO PR #403 (getUserId cache)
-13x OPTIONS auth/user           (CORS preflight)
- 3x GET protocols               (duplicadas)
- 3x OPTIONS protocols
- 3x GET medicine_logs           (1 falhou com 400, 2 ok)
- 3x OPTIONS medicine_logs
- 2x GET treatment_plans         (duplicadas)
- 2x OPTIONS treatment_plans
- 2x GET user_settings           (duplicadas)
- 2x OPTIONS user_settings
+ 3x GET auth/user              (~690ms RTT total)
+ 3x OPTIONS auth/user           (CORS preflight)
+ 2x GET protocols               (queries DIFERENTES — ver análise abaixo)
+ 2x OPTIONS protocols
+ 2x GET medicine_logs           (slim 30d + dailyAdherence 7d)
+ 2x OPTIONS medicine_logs
+ 1x GET treatment_plans         (ok — não duplicada)
+ 1x OPTIONS treatment_plans
  1x GET medicines               (ok)
  1x OPTIONS medicines
+ 1x GET user_settings           (ok — não duplicada)
+ 1x OPTIONS user_settings
 ```
 
-### Fontes de duplicação identificadas (HAR + grep)
+### Análise das 2 queries de protocols (NÃO são duplicatas simples)
 
-| Tabela | Fonte 1 | Fonte 2 | Fonte 3 |
-|--------|---------|---------|---------|
-| `protocols` | `DashboardProvider` → `protocolService.getActive()` | `Dashboard.jsx:252` → `adherenceService.getDailyAdherence(7)` (refetch interno) | `adherenceService.getAdherenceSummary` (via HealthHistory) |
-| `treatment_plans` | `Dashboard.jsx:224` → `treatmentPlanService.getAll()` | Cache key mismatch: Treatment.jsx usa `'treatmentPlans:all'` vs cachedService usa `'treatmentPlans'` | — |
-| `user_settings` | `OnboardingProvider.jsx:30` → `select('onboarding_completed')` | `Settings.jsx:35` / `Profile.jsx:44` → `select('*')` | — |
-| `medicine_logs` | `DashboardProvider` → `logService.getByDateRangeSlim()` | `Dashboard.jsx:252` → `adherenceService.getDailyAdherence(7)` (query independente) | `adherenceService` internals |
+```
+GET protocols?select=*&active=eq.true                                          → 6.8KB
+GET protocols?select=*,medicine:medicines(*),treatment_plan:(id,name,emoji,color)&active=eq.true → 11.6KB
+```
+
+A 1ª é `protocolService.getActive()` (DashboardProvider — select simples).
+A 2ª é uma query com **joins de medicines + treatment_plans** — usada pelo adherenceService ou componentes que precisam dos dados enriquecidos. Para unificar, o DashboardProvider precisa passar a fazer a query com joins desde o início.
+
+### Root cause do lazy loading quebrado
+
+```
+Dashboard.jsx (eager — main bundle)
+  ↓ import (line 29)
+ReportGenerator.jsx
+  ↓ import (line 8)
+pdfGeneratorService.js
+  ↓ import (line 10)
+stockService.js ← PUXA feature-stock para o main bundle
+  ↓ transitive deps
+vendor-pdf, feature-stock, feature-history, feature-landing
+```
+
+O `ReportGenerator` é importado **estaticamente** no Dashboard. Internamente, `pdfGeneratorService.js` importa `stockService`, `adherenceService`, `protocolService` e `chartRenderer` no top-level. Isso cria uma cadeia de dependências que puxa todos os chunks para o main bundle.
+
+O Vite detecta essas dependências transitivas e gera `<link rel="modulepreload">` no `dist/index.html`, forçando o browser a baixar tudo imediatamente:
+
+```html
+<link rel="modulepreload" href="/assets/vendor-pdf-BNED_fl3.js">     <!-- 589KB! -->
+<link rel="modulepreload" href="/assets/feature-stock-iTFS-CAb.js">  <!-- 139KB -->
+<link rel="modulepreload" href="/assets/feature-history-BkKC8STs.js">
+<link rel="modulepreload" href="/assets/feature-landing-BJH_M0j3.js">
+```
 
 ---
 
 ## Metas
 
-| Meta | Baseline (HAR) | Target | Métrica |
-|------|----------------|--------|---------|
-| Requests Supabase (GET) | 25 | ≤12 | `-52%` |
-| Auth roundtrips | 13 | 1 | **Já corrigido** (PR #403) |
-| Queries protocols | 3 | 1 | `-67%` |
-| Queries treatment_plans | 2 | 1 | `-50%` |
-| Time-to-interactive (estimado) | ~15s (4G) | <5s (4G) | `-67%` |
+| Meta | Baseline (produção) | Target | Métrica |
+|------|----------------------|--------|---------|
+| JS carregado no first load | 1435KB | ≤678KB | `-53%` |
+| Chunks eager indevidos | 4 | 0 | `-100%` |
+| Requests Supabase (GET) | 7 | ≤5 | `-29%` |
+| Auth roundtrips | 3 | 1 | `-67%` |
+| Time-to-interactive (4G estimado) | ~3.5s | <2s | `-43%` |
 
 ---
 
 ## Sprints
 
-### D1 — Eliminar queries duplicadas de protocols (Alto Impacto)
+### D0 — Corrigir lazy loading quebrado (PRIORIDADE MÁXIMA)
 
-**Problema:** `adherenceService.getDailyAdherence(7)` e `adherenceService.getAdherenceSummary('90d')` fazem seus próprios `from('protocols').select('*').eq('active', true)` internamente, duplicando a query que o DashboardProvider já faz via `protocolService.getActive()`.
+**Problema:** `Dashboard.jsx` importa `ReportGenerator` estaticamente (line 29). `ReportGenerator` importa `pdfGeneratorService.js`, que por sua vez importa `stockService`, `chartRenderer`, `adherenceService` e `protocolService` no top-level. Isso cria uma cadeia de dependências transitivas que puxa `vendor-pdf` (589KB), `feature-stock` (139KB), `feature-history` (35KB) e `feature-landing` (12KB) para o main bundle — **757KB desperdiçados**.
 
-**Solução:** Modificar os métodos do adherenceService para aceitar `protocols` pré-carregados como parâmetro opcional. Quem já possui os protocolos (Dashboard via context) passa direto; quem não possui (bot, API) continua buscando.
+**Solução:** Converter o import de `ReportGenerator` em `Dashboard.jsx` para `React.lazy()`, e converter os imports de services pesados dentro de `pdfGeneratorService.js` para `import()` dinâmico nos handlers (já que PDF só é gerado sob ação do usuário).
 
 **Arquivos a modificar:**
 
-1. **`src/services/api/adherenceService.js`**
-   - `getDailyAdherence(days, userId, protocols)` — se `protocols` passado, skip query
-   - `getAdherenceSummary(period)` já faz 1 query de protocols e repassa via `_calculateAdherenceWithProtocols`, `_calculateAllProtocolsAdherenceWithProtocols`, `_getCurrentStreakWithProtocols` — está OK internamente, mas o `getDailyAdherence` (chamado separadamente pelo Dashboard) refaz a query
+1. **`src/views/Dashboard.jsx`** — Line 29
+   - DE: `import ReportGenerator from '@features/reports/components/ReportGenerator'`
+   - PARA: `const ReportGenerator = lazy(() => import('@features/reports/components/ReportGenerator'))`
+   - Envolver uso do `<ReportGenerator>` em `<Suspense fallback={null}>` (componente só aparece ao clicar "Gerar Relatório", não precisa de skeleton)
 
-2. **`src/views/Dashboard.jsx`** — Line 250-261
-   - Passar `protocols` do context para `adherenceService.getDailyAdherence(7, null, protocols)`
+2. **`src/features/reports/services/pdfGeneratorService.js`** — Lines 7-11
+   - Converter imports estáticos de services pesados para `import()` dinâmico dentro das funções que os usam:
+   ```js
+   // ANTES (top-level — puxa tudo para o main bundle)
+   import { renderAdherenceChart, renderStockChart } from './chartRenderer.js'
+   import { stockService } from '@features/stock/services/stockService.js'
 
-**Impacto:** -2 queries protocols (3 → 1)
+   // DEPOIS (dinâmico — carrega sob demanda quando o usuário gera PDF)
+   // Dentro de cada função que precisa:
+   const { renderAdherenceChart, renderStockChart } = await import('./chartRenderer.js')
+   const { stockService } = await import('@features/stock/services/stockService.js')
+   ```
+   - **NOTA:** `adherenceService` e `protocolService` podem continuar estáticos se não forem os que puxam chunks pesados. Verificar com `npm run build` após mudança.
+
+3. **Verificação pós-build:**
+   - Rodar `npm run build` e conferir que `dist/index.html` **NÃO** tem `<link rel="modulepreload">` para `vendor-pdf`, `feature-stock`, `feature-history`, `feature-landing`
+   - Confirmar que main bundle (`index-*.js`) diminuiu significativamente
+
+**Impacto:** -757KB no first load (~53% redução), -1.7s estimado em 4G
 
 **Testes:**
-- Adaptar mocks em testes existentes do adherenceService
-- Verificar que `getDailyAdherence` funciona com E sem protocols passados
+- Verificar que geração de PDF ainda funciona (o import dinâmico carrega os módulos sob demanda)
+- Verificar que Dashboard renderiza sem delay (ReportGenerator carrega lazy ao abrir)
+- `npm run build` — confirmar chunks não são mais preloaded
 
 **Quality gates:**
 - [ ] `npm run validate:agent` passa (10-min kill switch)
 - [ ] 0 erros de lint
-- [ ] Dashboard.jsx não faz mais query de protocols própria
+- [ ] `dist/index.html` sem modulepreload de vendor-pdf, feature-stock, feature-history, feature-landing
+- [ ] Main bundle ≤ 110kB gzip (era 102kB, pode variar com mudanças de import)
 
 ---
 
-### D2 — Eliminar query duplicada de treatment_plans (Médio Impacto)
-
-**Problema:** `Dashboard.jsx:224` chama `treatmentPlanService.getAll()` direto em um useEffect. Isso duplica a chamada quando o cache key não bate.
-
-**Solução:** Consolidar treatment_plans no DashboardProvider (ou usar cache consistente).
-
-**Opção A (recomendada):** Adicionar `treatmentPlans` ao DashboardProvider
-
-O DashboardProvider já centraliza medicines, protocols e logs. Treatment plans são usados no Dashboard (`TreatmentAccordion`) e em Treatment view. Adicionar ao provider elimina a duplicação e mantém o padrão "custo zero".
-
-**Arquivos a modificar:**
-
-1. **`src/features/dashboard/hooks/useDashboardContext.jsx`**
-   - Adicionar query `{ key: 'treatmentPlans:all', fetcher: () => treatmentPlanService.getAll() }` ao array `queries`
-   - Expor `treatmentPlans` no value do context
-
-2. **`src/views/Dashboard.jsx`**
-   - Remover `useState(rawTreatmentPlans)` + useEffect de `loadInitialData`
-   - Consumir `treatmentPlans` direto do context: `const { ..., treatmentPlans } = useDashboard()`
-   - **NOTA:** `getCurrentUser()` para userName precisa continuar no useEffect (não é query de dados compartilhados)
-
-3. **`src/features/dashboard/hooks/__tests__/useDashboardContext.test.jsx`**
-   - Adicionar mock para `treatmentPlanService.getAll`
-   - Verificar que `treatmentPlans` está no context
-
-**Opção B (alternativa simples):** Alinhar cache keys
-   - `cachedServices.js` usa `CACHE_KEYS.TREATMENT_PLANS = 'treatmentPlans'`
-   - `Treatment.jsx:35` usa `useCachedQuery('treatmentPlans:all', ...)`
-   - Alinhar para a mesma key resolve o duplicate se ambos rodam na mesma sessão
-   - **Desvantagem:** Não resolve o duplicate no Dashboard first load (Dashboard e Treatment são views diferentes)
-
-**Impacto:** -1 query treatment_plans, -1 getUserId (se removido do useEffect separado)
-
-**Quality gates:**
-- [ ] `npm run validate:agent` passa
-- [ ] 0 erros de lint
-- [ ] `TreatmentAccordion` renderiza corretamente com dados do context
-
----
-
-### D3 — Consolidar getCurrentUser no DashboardProvider (Médio Impacto)
-
-**Problema:** `Dashboard.jsx:224` faz `getCurrentUser()` no useEffect que chama `supabase.auth.getUser()` — mais um roundtrip de auth. Mesmo com o cache de `getUserId()`, `getCurrentUser()` não é cacheado.
-
-**Solução:** Cachear `getCurrentUser()` com o mesmo padrão de coalescência do `getUserId()` em `supabase.js`.
-
-**Arquivos a modificar:**
-
-1. **`src/shared/utils/supabase.js`**
-   - Cachear resultado de `getCurrentUser()` em `_cachedUser`
-   - Coalescência: `_currentUserPromise` para múltiplas chamadas simultâneas
-   - Invalidar no `onAuthStateChange` (SIGNED_IN/SIGNED_OUT)
-
-**Impacto:** -1 auth roundtrip no Dashboard first load
-
-**Quality gates:**
-- [ ] `npm run validate:agent` passa
-- [ ] Login → Dashboard carrega userName sem delay extra
-- [ ] Sign out → Sign in com outro user → userName atualiza corretamente
-
----
-
-### D4 — Deduplicar user_settings/onboarding (Baixo Impacto)
-
-**Problema:** `OnboardingProvider.jsx:30` faz `select('onboarding_completed')` enquanto `Settings.jsx:35` faz `select('*')` — duas queries para a mesma tabela.
-
-**Solução:** Criar um `UserSettingsProvider` (ou consolidar no `OnboardingProvider`) que carrega user_settings UMA VEZ e compartilha via context.
-
-**NOTA:** Este sprint tem impacto menor porque:
-- OnboardingProvider roda em TODA navegação (app-level)
-- Settings/Profile só rodam quando o usuário navega para essas views
-- A duplicação no first load pode ser artifact do React StrictMode em dev
-
-**Avaliação recomendada:** Medir em produção antes de implementar. Se a duplicação não ocorre em prod (StrictMode), baixar prioridade.
-
-**Quality gates:**
-- [ ] `npm run validate:agent` passa
-- [ ] Onboarding wizard ainda aparece para novos usuários
-- [ ] Settings carrega corretamente sem query extra
-
----
-
-### D5 — Eliminar DailyAdherence query independente no Dashboard (Alto Impacto)
+### D1 — Eliminar query de dailyAdherence no Dashboard (Alto Impacto)
 
 **Problema:** `Dashboard.jsx:250-261` faz `adherenceService.getDailyAdherence(7)` em useEffect separado. Internamente, este método:
-1. Chama `getUserId()` (1 auth roundtrip — agora cacheado)
-2. Faz `from('protocols').select('*').eq('active', true)` (query duplicada)
-3. Faz `from('medicine_logs').select('taken_at')` (query adicional)
+1. Chama `getUserId()` (1 auth roundtrip — cacheado, mas contribui para as 3x auth/user)
+2. Faz `from('medicine_logs').select('taken_at')` para 7 dias (query adicional, 4.2KB)
+
+Visível no HAR de produção como a **14ª request** (última do waterfall):
+```
+04:55:28.201 GET medicine_logs?select=taken_at&taken_at=gte.2026-03-12...  205.9ms  4161B
+```
 
 O DashboardProvider já possui `protocols` e `logs` (últimos 30 dias). A daily adherence de 7 dias pode ser **calculada client-side** a partir dos dados já disponíveis no context.
 
-**Solução:** Mover cálculo de `dailyAdherence` para o DashboardProvider como um `useMemo`, eliminando a chamada ao adherenceService e suas 2-3 queries internas.
+**Solução:** Mover cálculo de `dailyAdherence` para o DashboardProvider como um `useMemo`, eliminando a chamada ao adherenceService e suas queries internas.
 
 **Arquivos a modificar:**
 
@@ -203,83 +182,155 @@ O DashboardProvider já possui `protocols` e `logs` (últimos 30 dias). A daily 
    - Verificar que `dailyAdherence` está disponível no context
    - Verificar que é array com format `{ date, adherence, taken, expected }`
 
-**Impacto:** -2 queries (protocols + medicine_logs), -1 useEffect no Dashboard
+**Impacto:** -1 query medicine_logs (206ms), -1 auth roundtrip indireto (getUserId interno)
 
 **Quality gates:**
-- [ ] `npm run validate:agent` passa
+- [ ] `npm run validate:agent` passa (10-min kill switch)
+- [ ] 0 erros de lint
 - [ ] SparklineAdesao renderiza corretamente com dados do context
 - [ ] Cálculo client-side produz resultados equivalentes ao adherenceService
 
 ---
 
-### D6 — Reduzir CORS preflight com Supabase headers (Baixo Impacto)
+### D2 — Unificar queries de protocols no DashboardProvider (Médio Impacto)
 
-**Problema:** Cada query Supabase gera um `OPTIONS` preflight (CORS). Com 12+ queries, são 12+ roundtrips extras (~50-100ms cada em 4G).
+**Problema:** Em produção existem 2 queries GET de protocols com selects diferentes:
 
-**Solução:** O Supabase client permite configurar `headers` globais. Se o `Access-Control-Max-Age` for alto o suficiente, o browser reutiliza o preflight para requests subsequentes ao mesmo endpoint.
+```
+GET protocols?select=*&active=eq.true                                          → 6.8KB  249ms
+GET protocols?select=*,medicine:medicines(*),treatment_plan:(id,name,emoji,color)&active=eq.true → 11.6KB  233ms
+```
 
-**Investigação necessária:**
-- Verificar se o Supabase server retorna `Access-Control-Max-Age` adequado
-- Se não, verificar se é configurável no dashboard Supabase
-- Se não configurável, esta otimização é do lado servidor e sai do escopo
+A 1ª vem do `DashboardProvider` via `protocolService.getActive()` (select simples).
+A 2ª vem de outro consumer que precisa dos dados com joins (medicines + treatment_plans).
 
-**NOTA:** Este sprint pode não ser implementável do lado client. Avaliar primeiro.
+**Solução:** Modificar a query do DashboardProvider para usar o select enriquecido (com joins) desde o início. Assim, todos os consumers usam os mesmos dados e a 2ª query é eliminada.
+
+**Arquivos a modificar:**
+
+1. **`src/features/dashboard/hooks/useDashboardContext.jsx`**
+   - Alterar o fetcher de protocols para usar `protocolService.getActiveWithRelations()` (ou equivalente) que retorna protocols com joins de medicines e treatment_plans
+   - Se `getActiveWithRelations()` não existe, criar no protocolService
+
+2. **`src/features/protocols/services/protocolService.js`**
+   - Adicionar `getActiveWithRelations()` se não existir:
+     ```js
+     async getActiveWithRelations() {
+       const { data } = await supabase
+         .from('protocols')
+         .select('*, medicine:medicines(*), treatment_plan:treatment_plans(id, name, emoji, color)')
+         .eq('user_id', await getUserId())
+         .eq('active', true)
+       return data || []
+     }
+     ```
+
+3. **Consumidores da 2ª query** — Identificar quem faz a query com joins e fazê-lo consumir do context ou receber protocols como parâmetro. Provavelmente é um dos componentes do Dashboard (ProtocolCard, TreatmentAccordion) ou o adherenceService.
+
+**NOTA:** A query com joins retorna 11.6KB vs 6.8KB sem joins. O aumento de payload (4.8KB) é insignificante comparado à economia de 1 roundtrip (~233ms em 4G).
+
+**Impacto:** -1 query protocols (233ms), +4.8KB payload (trade-off favorável)
+
+**Quality gates:**
+- [ ] `npm run validate:agent` passa (10-min kill switch)
+- [ ] 0 erros de lint
+- [ ] Componentes que usam protocols com relations continuam renderizando corretamente
+- [ ] HAR pós-fix mostra apenas 1 GET protocols
 
 ---
 
-## Ordem de execução recomendada
+### D3 — Cachear getCurrentUser com coalescência (Baixo Impacto)
+
+**Problema:** `auth/user` é chamado 3x em produção (~690ms total). O PR #403 cacheou `getUserId()`, mas `getCurrentUser()` (usado no Dashboard para obter `userName`) faz sua própria chamada `supabase.auth.getUser()`.
+
+**Solução:** Cachear `getCurrentUser()` com o mesmo padrão de coalescência de promises usado em `getUserId()`.
+
+**Arquivos a modificar:**
+
+1. **`src/shared/utils/supabase.js`**
+   - Cachear resultado de `getCurrentUser()` em `_cachedUser`
+   - Coalescência: `_currentUserPromise` para múltiplas chamadas simultâneas
+   - Invalidar no `onAuthStateChange` (SIGNED_IN/SIGNED_OUT/TOKEN_REFRESHED)
+
+**Impacto:** -2 auth roundtrips (3 → 1), ~460ms economia
+
+**Quality gates:**
+- [ ] `npm run validate:agent` passa (10-min kill switch)
+- [ ] Login → Dashboard carrega userName sem delay extra
+- [ ] Sign out → Sign in com outro user → userName atualiza corretamente
+
+---
+
+## Sprints cancelados (v1.0 → v2.0)
+
+| Sprint v1.0 | Motivo do cancelamento |
+|-------------|----------------------|
+| D2 (treatment_plans dedup) | Produção mostra **1x query** — duplicata era artifact do React StrictMode em dev |
+| D4 (user_settings dedup) | Produção mostra **1x query** — duplicata era artifact do React StrictMode em dev |
+| D6 (CORS preflight) | OPTIONS já são rápidos em produção (~30-80ms). Otimização de `Access-Control-Max-Age` é server-side e fora do escopo |
+
+---
+
+## Ordem de execução
 
 ```
-D5 → D1 → D2 → D3 → D4 → D6
+D0 → D1 → D2 → D3
 ```
 
 **Justificativa:**
-- **D5 primeiro** (mais impacto: elimina 2-3 queries + 1 useEffect, dados já estão no context)
-- **D1 segundo** (elimina refetch de protocols no adherenceService)
-- **D2 terceiro** (consolida treatment_plans no provider)
-- **D3** (cache getCurrentUser — quick win)
-- **D4** (user_settings — medir antes, pode não ser necessário)
-- **D6** (CORS — investigação necessária, pode ser inviável do client)
+- **D0 primeiro** (MÁXIMO impacto: -757KB JS, ~1.7s economia — maior que todos os outros combinados)
+- **D1 segundo** (elimina query + useEffect de dailyAdherence, ~206ms)
+- **D2 terceiro** (unifica protocols, ~233ms)
+- **D3 por último** (cache auth, ~460ms — baixo risco, quick win)
 
 ---
 
 ## Impacto estimado (cumulativo)
 
-| Após Sprint | Queries GET | Auth Roundtrips | Estimativa 4G |
-|-------------|-------------|-----------------|---------------|
-| Baseline | 25 | 13 | ~15s |
-| PR #403 (getUserId cache) | 25 | 1 | ~8s |
-| + D5 (dailyAdherence client) | 22 | 1 | ~7s |
-| + D1 (protocols dedup) | 20 | 1 | ~6s |
-| + D2 (treatment_plans provider) | 19 | 1 | ~5.5s |
-| + D3 (getCurrentUser cache) | 19 | 1 | ~5s |
-| **Target** | **≤12** | **1** | **<5s** |
+| Após Sprint | JS First Load | REST GETs | Auth GETs | Economia estimada (4G) |
+|-------------|---------------|-----------|-----------|------------------------|
+| Baseline produção | 1435KB | 7 | 3 | — |
+| + D0 (fix lazy loading) | **678KB** | 7 | 3 | **~1.7s** |
+| + D1 (dailyAdherence client) | 678KB | 6 | 3 | ~206ms |
+| + D2 (protocols unificado) | 678KB | 5 | 3 | ~233ms |
+| + D3 (getCurrentUser cache) | 678KB | 5 | **1** | ~460ms |
+| **Target final** | **≤678KB (-53%)** | **5 (-29%)** | **1 (-67%)** | **~2.6s economia** |
 
 ---
 
 ## Validação final
 
-Após implementar D1-D5, regravar HAR com cache limpo e comparar:
+Após implementar D0-D3, regravar HAR de produção com cache limpo e comparar:
 
 ```bash
 # No Chrome DevTools → Network → "Disable cache" → Reload
 # Exportar como HAR
-# Comparar com bug-logs/first-load.har (baseline)
+# Comparar com bug-logs/first-load_production.har (baseline)
 ```
 
 **Métricas a comparar:**
-- Total de requests Supabase (GET)
+- JS total carregado (bytes) — target: ≤678KB
+- `dist/index.html` — zero modulepreload de chunks lazy
+- Total de requests Supabase (GET) — target: ≤5
+- Auth roundtrips — target: 1
 - Waterfall span total
-- Time-to-first-contentful-paint
-- Time-to-interactive
+
+**Validação de build (D0):**
+```bash
+npm run build
+# Verificar dist/index.html — NÃO deve ter modulepreload para:
+#   vendor-pdf, feature-stock, feature-history, feature-landing
+grep "modulepreload" dist/index.html
+```
 
 ---
 
 ## Referências
 
-- `bug-logs/first-load.har` — Baseline network (206 requests, 44.7s waterfall)
-- `bug-logs/trace-localhost-dashboard.gz` — Chrome Performance trace (dashboard)
-- `bug-logs/trace-localhost-history.gz` — Chrome Performance trace (HealthHistory)
+- `bug-logs/first-load_production.har` — Baseline produção (39 requests, 1.9s waterfall)
+- `bug-logs/trace-production.gz` — Chrome Performance trace (produção)
+- `bug-logs/first-load.har` — Baseline localhost (206 requests, 44.7s — apenas referência histórica)
+- `bug-logs/trace-localhost-dashboard.gz` — Chrome Performance trace localhost (referência histórica)
 - `plans/archive_old/mobile_performance/EXEC_SPEC_MOBILE_PERFORMANCE.md` — Sprints M0-M8
 - `.memory/rules.md` — R-117 (lazy loading), R-125-R-128 (performance patterns)
 - `.memory/anti-patterns.md` — AP-P12, AP-P13 (payload + GC)
