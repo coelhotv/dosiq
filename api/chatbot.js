@@ -3,9 +3,14 @@
 
 import Groq from 'groq-sdk'
 import { z } from 'zod'
+import {
+  CHATBOT_MAX_TOKENS,
+  CHATBOT_TEMPERATURE,
+  CHATBOT_TOP_P,
+  CHATBOT_MAX_HISTORY,
+} from '../src/features/chatbot/config/chatbotConfig.js'
 
 const MODEL = process.env.GROQ_MODEL || 'groq/compound'
-const MAX_TOKENS = 300
 
 const chatbotRequestSchema = z.object({
   message: z
@@ -43,7 +48,7 @@ export default async function handler(req, res) {
     // Montar mensagens para Groq
     const messages = [
       { role: 'system', content: systemPrompt || 'Você é um assistente de medicamentos.' },
-      ...history.slice(-10).map(h => ({
+      ...history.slice(-CHATBOT_MAX_HISTORY).map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.content,
       })),
@@ -53,9 +58,9 @@ export default async function handler(req, res) {
     const completion = await groq.chat.completions.create({
       model: MODEL,
       messages,
-      max_tokens: MAX_TOKENS,
-      temperature: 0.2,
-      top_p: 1.0,
+      max_tokens: CHATBOT_MAX_TOKENS,
+      temperature: CHATBOT_TEMPERATURE,
+      top_p: CHATBOT_TOP_P,
     })
 
     const response =

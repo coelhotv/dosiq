@@ -1,9 +1,14 @@
 import { validateUserMessage, addDisclaimerIfNeeded } from './safetyGuard'
 import { buildPatientContext, buildSystemPrompt } from './contextBuilder'
+import {
+  CHATBOT_MAX_HISTORY,
+  CHATBOT_RATE_LIMIT_WINDOW,
+  CHATBOT_RATE_LIMIT_MAX,
+} from '../config/chatbotConfig'
 
-const MAX_HISTORY = 10
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000 // 1 hora
-const RATE_LIMIT_MAX = 30
+const MAX_HISTORY = CHATBOT_MAX_HISTORY
+const RATE_LIMIT_WINDOW = CHATBOT_RATE_LIMIT_WINDOW
+const RATE_LIMIT_MAX = CHATBOT_RATE_LIMIT_MAX
 
 /**
  * Envia mensagem ao chatbot e retorna resposta.

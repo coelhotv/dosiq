@@ -325,12 +325,36 @@ vi.stubGlobal('localStorage', mockLocalStorage)
 
 ## 🔌 Extensões Futuras
 
-### 1. **Integração com Telegram Bot** (Sprint 8.4+)
-```javascript
-// server/bot/commands/chatbot.js
-const { sendChatMessage } = await import('@features/chatbot/services/chatbotService')
-// Reusar lógica client-side no bot
+### 1. **Integração com Telegram Bot** ✅ Sprint 8.3.2
+
+Implementado em `server/bot/` com arquitetura server-side:
+
 ```
+Telegram msg (texto)
+  → handleChatbotMessage (server/bot/commands/chatbot.js)
+      → getUserIdByChatId() — verifica vinculação
+      → sendTelegramChatMessage() (server/bot/services/chatbotServerService.js)
+          → validateServerMessage() — safetyGuard patterns
+          → isServerRateLimited() — 30 msg/hora via Map em memória
+          → fetchPatientData() — busca Supabase (medicines + protocols + logs + stock)
+          → buildServerContext() + buildServerSystemPrompt()
+          → Groq SDK (temperature 0.2, top_p 1.0)
+          → addServerDisclaimer()
+          → updateConversationHistory() — histórico por userId (max 10)
+      → bot.sendMessage(chatId, response)
+```
+
+**Diferenças em relação ao canal Web:**
+
+| Aspecto | Web (ChatWindow) | Telegram |
+|---------|-----------------|----------|
+| Rate limit | localStorage | Map em memória |
+| Dados paciente | DashboardContext | Supabase direto |
+| Groq call | `/api/chatbot` (Vercel) | Groq SDK direto |
+| Histórico | Estado React | Map por userId |
+| Graceful degradation | Mensagem UI | Silencioso (não vinculado) |
+
+**Env var necessária no servidor:** `GROQ_API_KEY`
 
 ### 2. **Multi-Canal** (Roadmap)
 - WhatsApp Business API
@@ -398,5 +422,5 @@ const { sendChatMessage } = await import('@features/chatbot/services/chatbotServ
 ---
 
 *Última atualização: 2026-03-20*
-*Versão: 1.0 (Stable)*
-*Status: ✅ Production Ready*
+*Versão: 1.1 (Sprint 8.3.2 — Telegram Integration)*
+*Status: ✅ Production Ready (Web + Telegram)*

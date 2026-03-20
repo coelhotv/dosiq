@@ -3,17 +3,13 @@
  * Bloqueia intencoes perigosas e adiciona disclaimer medico.
  */
 
-const BLOCKED_PATTERNS = [
-  /qual\s+(dosagem|dose)\s+(devo|posso|preciso)/i,
-  /posso\s+(parar|interromper|suspender)\s+de\s+tomar/i,
-  /substituir\s+.+\s+por/i,
-  /diagnostico|diagnosticar/i,
-  /receitar|prescrever/i,
-  /efeito\s+colateral\s+grave/i,
-]
+import {
+  CHATBOT_BLOCKED_PATTERNS,
+  CHATBOT_DISCLAIMER,
+  CHATBOT_HEALTH_KEYWORDS,
+} from '../config/chatbotConfig'
 
-export const DISCLAIMER =
-  'Não substituo orientação médica. Consulte seu médico para decisões sobre o seu tratamento.'
+export const DISCLAIMER = CHATBOT_DISCLAIMER
 
 /**
  * Valida mensagem do usuario antes de enviar ao LLM.
@@ -21,7 +17,7 @@ export const DISCLAIMER =
  * @returns {{ blocked: boolean, reason?: string }}
  */
 export function validateUserMessage(message) {
-  for (const pattern of BLOCKED_PATTERNS) {
+  for (const pattern of CHATBOT_BLOCKED_PATTERNS) {
     if (pattern.test(message)) {
       return {
         blocked: true,
@@ -47,11 +43,10 @@ export function validateUserMessage(message) {
  * @returns {string}
  */
 export function addDisclaimerIfNeeded(response) {
-  const healthKeywords = ['medicamento', 'remedio', 'dose', 'tratamento', 'saude', 'sintoma']
-  const hasHealthContent = healthKeywords.some(kw => response.toLowerCase().includes(kw))
+  const hasHealthContent = CHATBOT_HEALTH_KEYWORDS.some(kw => response.toLowerCase().includes(kw))
 
   if (hasHealthContent && !response.includes('Não substituo')) {
-    return `${response}\n\n_${DISCLAIMER}_`
+    return `${response}\n\n_${CHATBOT_DISCLAIMER}_`
   }
 
   return response
