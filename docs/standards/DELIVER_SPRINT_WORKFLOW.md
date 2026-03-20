@@ -109,7 +109,9 @@ test(scope): descrição (apenas testes)
 
 **✓ Integração com Banco**:
 - [ ] Schema Zod sincronizado com CHECK constraints Supabase
-- [ ] getUserId() chamado corretamente
+- [ ] `getUserId()` / `getCurrentUser()` de `@shared/utils/supabase` (NUNCA `supabase.auth.getUser()` direto)
+- [ ] `select()` com colunas específicas (não `select('*')` por padrão)
+- [ ] Colunas existem no schema antes de adicioná-las ao select (verificar em `docs/architecture/DATABASE.md`)
 - [ ] Tratamento de erros com `.error` object
 - [ ] RLS policies (row-level security) respeitadas
 
@@ -121,6 +123,16 @@ test(scope): descrição (apenas testes)
 - ❌ localStorage em testes → ✅ verificar `NODE_ENV === 'test'`
 - ❌ setTimeout em act() → ✅ `waitFor(() => expect(...))`
 - ❌ Mocks após imports → ✅ mocks NO TOPO do arquivo de teste
+
+**Performance Mobile (P1-P4 + D0-D3 — obrigatório):**
+- ❌ `supabase.auth.getUser()` direto → ✅ `getUserId()` / `getCurrentUser()` de `@shared/utils/supabase` (já cacheados)
+- ❌ `select('*')` genérico → ✅ listar colunas necessárias; `{ count: 'exact', head: true }` para counts
+- ❌ Import estático de componente pesado em view crítica → ✅ `React.lazy()` para componentes > 200 linhas fora do LCP
+- ❌ Import estático de service pesado no top-level → ✅ `import()` dinâmico dentro do handler que usa
+- ❌ Re-exportar services pesados em barrel (`@shared/services/index.js`) → ✅ importar direto do arquivo
+- ❌ Queries de background logo após `setIsLoading(false)` → ✅ `requestIdleCallback(() => ..., { timeout: 2000 })`
+- ❌ Animações com `width`/`height` em `@keyframes` → ✅ `transform: scaleX()` (GPU, zero reflow)
+- ❌ `new Date()` em hot loop (> 100 iterações) → ✅ string comparison `YYYY-MM-DD` (lexicograficamente ordenável)
 
 ---
 

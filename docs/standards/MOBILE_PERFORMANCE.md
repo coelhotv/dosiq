@@ -1,7 +1,8 @@
 # Guia de Performance Mobile — Meus Remédios
 
-> Documento vivo. Construído incrementalmente nos sprints M2–M6.
-> Leia ANTES de adicionar qualquer view, componente pesado ou biblioteca.
+> Documento vivo. Construído incrementalmente nos sprints M0–M8, P1–P4, D0–D3.
+> **Última atualização:** 2026-03-20 — seções 3 (CSS/Assets) e 4 (HTTP/2, Auth Cache, Barrel Exports) adicionadas.
+> Leia ANTES de adicionar qualquer view, componente pesado, biblioteca ou query ao Supabase.
 
 ---
 
@@ -146,6 +147,229 @@ npm run build 2>&1 | grep -E "vendor-pdf|feature-medicines-db"
 # Chrome DevTools > Network > recarregar app
 # Filtrar por "jspdf" — NÃO deve aparecer no carregamento inicial
 ```
+
+---
+
+## 3. CSS: Animações, Fontes e Assets (M5 ✅)
+
+### 3.1 Animações GPU-Accelerated (zero reflow)
+
+```css
+/* ❌ ERRADO — layout thrash: browser recalcula posição/tamanho em cada frame */
+@keyframes fill-bar {
+  from { width: 0%; }
+  to   { width: var(--progress); }
+}
+
+/* ✅ CORRETO — GPU-composited: browser só move pixels, não recalcula layout */
+@keyframes fill-bar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(var(--progress-ratio)); }
+}
+
+/* Usar transform-origin para crescer da esquerda */
+.progress-bar {
+  transform-origin: left center;
+}
+```
+
+**Propriedades SEGURAS (não causam reflow):** `transform`, `opacity`, `filter`
+**Propriedades PERIGOSAS (causam reflow):** `width`, `height`, `top`, `left`, `margin`, `padding`
+
+### 3.2 @import em CSS — Nunca de Arquivos JS
+
+```css
+/* ❌ CRÍTICO — puxa arquivo JS como se fosse CSS; Vite 7 quebra o critical path */
+@import url('./Animations.js')
+
+/* ✅ CORRETO — importar direto no CSS sem extensão ou usar .css */
+/* Animações devem estar em arquivos .css */
+```
+
+**Diagnóstico:** Aparece como erro de MIME type no DevTools → `@import url('*.js')` é bug silencioso que bloqueia renderização.
+
+### 3.3 Font Sizes Mínimos em Mobile
+
+```css
+/* ❌ ERRADO — ilegível em mobile mid-low (iPhone SE, Android basic) */
+.sparkline-label { font-size: 8px; }
+.stock-alert-text { font-size: 9px; }
+
+/* ✅ CORRETO — mínimo legível mesmo com zoom de acessibilidade */
+.sparkline-label { font-size: 10px; } /* SVG restrito: 10px mínimo */
+.stock-alert-text { font-size: 11px; } /* UI normal: 12px preferido */
+```
+
+**Regra:** `font-size` mínimo em UI = **12px**. Em SVG com espaço restrito = **10px**. Abaixo disso: inacessível para 60+.
+
+### 3.4 Favicon Optimization
+
+```
+❌ favicon.png (192KB) — baixa todo no critical path, atrasa LCP
+✅ favicon.svg (<1KB) — renderiza imediatamente, escala em qualquer resolução
+```
+
+```html
+<!-- ✅ CORRETO — SVG único para todos os tamanhos -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+```
+
+**Impacto medido (M5):** Favicon PNG 192KB → SVG <1KB = **LCP ~200ms mais rápido** em 4G.
+
+---
+
+## 4. Rede: HTTP/2 Saturation, Serialização e Auth Cache (P1–P4 ✅)
+
+> **Origem:** HealthHistory freeze P1-P3 (2026-03-15) + Dashboard first load P4/D0-D3 (2026-03-20)
+> O freeze completo do browser mobile (não apenas lentidão) foi causado por **12+ requests HTTP/2 simultâneos** competindo por connection slots (Safari mobile: 4-6 slots), bloqueando a main thread durante JSON parse em cascata.
+
+### 4.1 Serializar Queries Não-Urgentes com requestIdleCallback
+
+```javascript
+// ❌ ERRADO — dispara background queries logo após setIsLoading(false)
+// O React agenda um render, mas as queries competem por HTTP/2 slots com o paint
+setIsLoading(false)
+loadBackgroundData()   // 8 queries simultâneas = browser trava
+
+// ✅ CORRETO — deferir queries não-urgentes até o browser estar ocioso
+setIsLoading(false)
+requestIdleCallback(
+  () => loadBackgroundData(),
+  { timeout: 2000 }  // garante execução em até 2s mesmo em dispositivos lentos
+)
+
+// Para Safari < 14 (não suporta requestIdleCallback nativamente):
+const schedule = window.requestIdleCallback ?? ((cb) => setTimeout(cb, 100))
+schedule(() => loadBackgroundData(), { timeout: 2000 })
+```
+
+**Regra (R-126):** `setIsLoading(false)` → queries não-críticas → **sempre via `requestIdleCallback`** em views com > 3 queries de background. Máximo 2 queries simultâneas após o paint inicial.
+
+### 4.2 Query Budget por View (Máx. Simultâneas)
+
+| Momento | Max Simultâneas | Justificativa |
+|---------|-----------------|---------------|
+| Antes do paint inicial | 2-3 | Bloqueiam LCP |
+| Durante paint | 0 | Safari main thread |
+| Após paint (requestIdleCallback) | 2 | Safari HTTP/2 pool |
+
+**O número mágico:** Safari mobile tem 4-6 HTTP/2 connection slots. Com 12+ requests simultâneos → pool saturado → JSON parse events empilham na main thread → UI congela por 3-5s.
+
+### 4.3 Auth Cache com Promise Coalescence (AP-P14, R-128)
+
+`supabase.auth.getUser()` faz **sempre um HTTP roundtrip** — não tem cache client-side. Em um app com 10+ services, cada `getUserId()` na montagem = 10 roundtrips simultâneos no primeiro load.
+
+```javascript
+// ❌ ERRADO — cada chamada faz 1 HTTP request ao Supabase Auth
+export const getUserId = async () => {
+  const { data: { user } } = await supabase.auth.getUser()  // sempre HTTP!
+  return user?.id
+}
+
+// ✅ CORRETO — promise coalescence + cache em memória
+let _cachedUserId = null
+let _userIdPromise = null
+
+export const getUserId = async () => {
+  if (_cachedUserId) return _cachedUserId        // cache hit: 0ms
+
+  if (_userIdPromise) return _userIdPromise       // coalesce: reutiliza promise em voo
+
+  _userIdPromise = supabase.auth.getUser()
+    .then(({ data: { user } }) => {
+      _userIdPromise = null
+      _cachedUserId = user?.id ?? null
+      return _cachedUserId
+    })
+    .catch((err) => { _userIdPromise = null; throw err })
+
+  return _userIdPromise
+}
+
+// Invalidar no logout
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+    _cachedUserId = null
+    _userIdPromise = null
+  }
+})
+```
+
+**Impacto medido (P4):** 13 auth roundtrips → **1 roundtrip** = economia de ~8s em 4G no primeiro load.
+
+**Mesma lógica para `getCurrentUser()`** — separar `_cachedUser` e `_currentUserPromise`.
+
+> ⚠️ **NUNCA chamar `supabase.auth.getUser()` diretamente** em services ou components. Usar sempre `getUserId()` ou `getCurrentUser()` de `@shared/utils/supabase` que já têm cache.
+
+### 4.4 Slim Select — Payload Mínimo (P3, P4)
+
+```javascript
+// ❌ ERRADO — transfere TODAS as colunas; com 1000 logs = ~315KB desnecessários
+const { data: logs } = await supabase
+  .from('medicine_logs')
+  .select('*')                    // medicine join + protocol join + todas as colunas
+
+// ✅ CORRETO — select mínimo por use-case
+// Para DashboardProvider (estatísticas de adesão):
+.select('id, taken_at, protocol_id, quantity_taken, medicine_id')  // ~60 bytes/log
+
+// Para calendário HealthHistory:
+.select('id, taken_at, medicine:medicines(name)')                   // ~80 bytes/log
+
+// Para count (sem dados):
+.select('*', { count: 'exact', head: true })                       // 0 bytes de payload
+```
+
+**Impacto medido (P3):** Timeline payload ~500 → ~120 bytes/log = **76% redução**.
+
+### 4.5 Barrel Exports Quebram Code Splitting (AP-B03, AP-B04)
+
+```javascript
+// ❌ ERRADO — barrel re-exporta tudo; qualquer import deste arquivo
+//            puxa TODA a árvore de dependências para o bundle inicial
+// src/shared/services/index.js:
+export { cachedMedicineService } from './cachedServices'
+export { stockService } from '@stock/services/stockService'  // 139KB!!
+export { adherenceService } from '@services/api/adherenceService'
+
+// ❌ Consequência: mesmo que a view seja lazy(),
+//    se algum import estático usa o barrel, o Vite detecta
+//    a dependência transitiva e adiciona modulepreload:
+// <link rel="modulepreload" href="/assets/feature-stock-xxx.js">  ← eager!
+
+// ✅ CORRETO — importar direto do arquivo fonte
+import { stockService } from '@stock/services/stockService'  // só este chunk
+import { adherenceService } from '@services/api/adherenceService'
+```
+
+**Regra (R-117):** Services pesados (stock, PDF, adherence) NUNCA devem ser re-exportados em barrels compartilhados. Qualquer import `from '@shared/services'` que inclua estes services anula o lazy loading das views.
+
+**Diagnóstico:** `npm run build` → verificar `dist/index.html`. Se aparecer `<link rel="modulepreload" href="...feature-stock...">` mas a view de stock é `lazy()`, há um barrel export quebrando o split.
+
+### 4.6 String Comparison em Hot Loops de Datas (AP-P15, R-129)
+
+```javascript
+// ❌ ERRADO — cria ~2700 Date objects em hot loop (90 dias × N protocolos)
+// Chrome trace: 71.3% do CPU em parseLocalDate = 9.5s freeze mobile
+for (let i = 0; i < 90; i++) {
+  const date = parseLocalDate(dateStr)      // new Date() por iteração!
+  if (date >= startDate && date <= endDate) { ... }
+}
+
+// ✅ CORRETO — strings YYYY-MM-DD são lexicograficamente ordenáveis
+// '2026-03-01' < '2026-03-15' é CORRETO sem parsing
+for (let i = 0; i < 90; i++) {
+  if (dateStr >= startStr && dateStr <= endStr) { ... }  // zero Date objects
+}
+
+// Quando comparação relativa é necessária (hoje ± N dias):
+const today = formatLocalDate(new Date())   // 1 Date, fora do loop
+const startStr = formatLocalDate(subtractDays(new Date(), 90))  // 1 Date
+// Depois comparar strings dentro do loop
+```
+
+**Regra (R-129):** Loops com > 100 iterações que comparam datas → usar string comparison `YYYY-MM-DD`. `parseLocalDate()` é para conversão pontual, não para loops.
 
 ---
 
@@ -601,7 +825,13 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 ### 8.5 Services
 - [ ] Nenhum `.map()` com `async` que dispara query dentro — usar batch query + `Map` client-side
 - [ ] `select('*')` revisado: se só precisa do count, usar `{ count: 'exact', head: true }`
+- [ ] Select com dados: especificar apenas campos necessários (não `select('*')` genérico)
 - [ ] Ref callbacks (`ref={fn}`): deps `[]`, null-path desconecta, flags via `useRef` (não state)
+- [ ] **Auth:** nenhum `supabase.auth.getUser()` direto — usar `getUserId()` / `getCurrentUser()` cacheados
+- [ ] **Queries de background:** após `setIsLoading(false)`, queries não-críticas via `requestIdleCallback`
+- [ ] **Máximo 2-3 queries simultâneas** antes do paint; 2 no background (não saturar HTTP/2 pool)
+- [ ] **Barrel exports:** nenhum import de barrel (`@shared/services`) que puxa services pesados. Importar arquivo diretamente.
+- [ ] **Hot loops de data (> 100 iterações):** usar string comparison `YYYY-MM-DD`, não `new Date()`
 
 ### 8.6 Banco de Dados
 - [ ] Nova query com ORDER BY: índice composto `(partition_key, sort_key DESC)` existe?
@@ -614,23 +844,31 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 
 ---
 
-## Roadmap — Mobile Performance M0–M6
+## Roadmap — Mobile Performance M0–M8 + P1–P4 + D0–D3
 
 | Sprint | Status | Seção | Tópicos | Merge |
 |--------|--------|-------|---------|-------|
 | M0 ✅ | MERGED | HealthHistory freezes | lazy(), Suspense, startTransition | 2026-03-10 |
 | M1 ✅ | MERGED | Timeline virtualization | react-virtuoso, handlers em useCallback | 2026-03-10 |
-| M2 ✅ | MERGED | 1–2 | Lazy Loading, Code Splitting, manualChunks | 2026-03-13 |
-| M3 ✅ | MERGED | 6 | DB: Índices + Views de Agregação | 2026-03-13 |
-| M4 | 🔜 Pendente | 7 (parcial) | Offline UX, OfflineBanner Pattern | — |
-| M5 ✅ | MERGED | 3–4 | CSS Animações, Assets, Favicons | 2026-03-13 |
+| M2 ✅ | MERGED | 2 | Lazy Loading, Code Splitting, manualChunks (989KB→102kB gzip) | 2026-03-13 |
+| M3 ✅ | MERGED | 6 | DB: Índices + Views de Agregação (20x/10x speedup) | 2026-03-13 |
+| M4 | 🔜 Bloqueado | 7 (parcial) | Offline UX, OfflineBanner — service-worker complexity | — |
+| M5 ✅ | MERGED | 3 | CSS Animações, Assets, Favicons (LCP +200ms) | 2026-03-13 |
 | M6 ✅ | MERGED | 7–8 | Touch UX, Source Maps, Universal Checklist | 2026-03-13 |
-| M7 | 🆕 Pendente | 5 | N+1 em getAdherenceSummary → batch + HEAD request | — |
-| M8 | 🆕 Pendente | 5 | Sentinel observer race condition (ref callback fix) | — |
+| M7 ✅ | via P1 | 5 | N+1 em getAdherenceSummary → batch + SWR cache | PR #398 |
+| M8 ✅ | via P2 | 5 | Ref callback race condition + requestIdleCallback | PR #399 |
+| P1 ✅ | MERGED | 4.3 | cachedAdherenceService SWR, protocols query 3x→1x | PR #398 |
+| P2 ✅ | MERGED | 4.1 | loadData faseado (requestIdleCallback), 12+→2 concurrent | PR #399 |
+| P3 ✅ | MERGED | 4.4 | Slim select timeline (76% payload reduction) | PR #400 |
+| P4 ✅ | MERGED | 4.3/4.4 | getUserId cache (13→1 auth), calculateStreaks string comparison | PR #403 |
+| D0 ✅ | MERGED | 2/4.5 | Fix lazy loading (−757KB modulepreload, barrel exports) | PR #404 |
+| D1+D2 ✅ | MERGED | 4 | dailyAdherence client-side useMemo (−2 queries) | PR #404 |
+| D3 ✅ | MERGED | 4.3 | getCurrentUser cache (−2 auth roundtrips) | PR #404 |
 
 ---
 
-**Source:** Sprints M0–M8 — Mobile Performance Initiative
-**Last Updated:** 2026-03-13 (M7 + M8 identificados via trace Safari com 10 protocolos)
-**M4 Status:** Blocked (service-worker complexity) — refatorar para próxima sprint se necessário
-**M7/M8 Status:** Pendentes — são os fixes críticos para o freeze residual confirmado em produção
+**Source:** Sprints M0–M8 + P1–P4 + D0–D3 — Mobile Performance Initiative
+**Last Updated:** 2026-03-20 (D0-D3: Dashboard first load, barrel exports fix, auth cache)
+**M4 Status:** Bloqueado — Service Worker com conflict resolution é complexidade desproporcional. Revisitar se PWA offline for prioridade de produto.
+**Baseline pré-M0:** 989KB bundle, 44.7s (localhost) / 1.9s (produção), 13 auth roundtrips
+**Baseline pós-P4+D0-D3:** 102kB gzip bundle (-89%), 678KB first load JS (-53%), 1 auth roundtrip (-92%)
