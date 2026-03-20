@@ -79,7 +79,7 @@
 | Dashboard Perf — D0-D3 ✅ | v3.3.0 | D0: Fix lazy loading (-757KB modulepreload), D1+D2: dailyAdherence client-side (-2 queries), D3: getCurrentUser cache (-2 auth roundtrips) |
 | Fase 6 — Insights (80%) 🚧 | v3.3.0 | Sprint 6.1: Refill Prediction + Protocol Risk, Sprint 6.2: Real Cost Analysis, Sprint 6.4: Reminder Optimizer, Sprint 6.5: Adherence Heatmap + Stock Timeline |
 
-**Status da Fase 5 (07/03/2026):** 100% COMPLETA ✅ — Resumo em `plans/EXEC_SPEC_FASE_5_FINAL.md`
+**Status da Fase 5 (07/03/2026):** 100% COMPLETA ✅ — Resumo em `plans/archive_old/roadmap_v4/EXEC_SPEC_FASE_5_FINAL.md`
 
 **Versão v3.2.0 Released** — Tag criada, documentação atualizada.
 
@@ -105,7 +105,7 @@
 | D1+D2 | dailyAdherence client-side | -2 queries GET, -1 useEffect | #404 |
 | D3 | getCurrentUser cache | -2 auth roundtrips (3→1) | #404 |
 
-**Specs:** `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` (M0-M8), `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D0-D3)
+**Specs:** `plans/archive_old/mobile_performance/EXEC_SPEC_MOBILE_PERFORMANCE.md` (M0-M8), `plans/archive_old/mobile_performance/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D0-D3)
 **Standards:** `docs/standards/MOBILE_PERFORMANCE.md`
 **Testes:** 539/539 passando apos todas as otimizacoes
 
