@@ -279,11 +279,13 @@ export function buildServerContext({ medicines, protocols, logs, stockSummary, s
 }
 
 /**
- * System prompt para o LLM (mesmo do contextBuilder.js web).
- * @param {string} patientContext
+ * Constrói a PARTE ESTÁTICA do system prompt (regras, instruções).
+ * Esta seção é cacheable porque não muda entre requisições.
+ * Ref: Groq Prompt Caching docs — colocar conteúdo estático PRIMEIRO.
+ *
  * @returns {string}
  */
-export function buildServerSystemPrompt(patientContext) {
+export function buildStaticSystemRules() {
   return [
     'Você é um assistente virtual do app Meus Remedios no Telegram.',
     'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
@@ -294,6 +296,25 @@ export function buildServerSystemPrompt(patientContext) {
     '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
     '- Responda em texto simples, sem Markdown (o Telegram usa formatacao diferente).',
     '- Use os dados do paciente abaixo para contextualizar respostas.',
+  ].join('\n')
+}
+
+/**
+ * System prompt para o LLM (mesmo do contextBuilder.js web).
+ * Combina regras estáticas (cacheable) + contexto dinâmico do paciente.
+ *
+ * NOTA: Para otimizar Groq Prompt Caching:
+ * - Conteúdo estático (buildStaticSystemRules) deve vir PRIMEIRO
+ * - Conteúdo dinâmico (patientContext) vem DEPOIS
+ * - Isso permite cache hit em conversas multi-turn onde o contexto é reutilizado
+ *
+ * @param {string} patientContext
+ * @returns {string}
+ */
+export function buildServerSystemPrompt(patientContext) {
+  const staticRules = buildStaticSystemRules()
+  return [
+    staticRules,
     '',
     'DADOS DO PACIENTE:',
     patientContext,
@@ -447,11 +468,19 @@ export async function sendTelegramChatMessage({ message, userId }) {
     const rawResponse =
       completion.choices[0]?.message?.content || 'Desculpe, não consegui responder.'
 
+    const promptTokens = completion.usage?.prompt_tokens || 0
+    const cachedTokens = completion.usage?.cached_prompt_tokens || 0
+    const cacheHitRate = promptTokens > 0 ? Math.round((cachedTokens / promptTokens) * 100) : 0
+    const estimatedSavings = Math.round(cachedTokens * 0.5) // 50% desconto em cached_tokens
+
     logger.info('✅ Groq respondeu com sucesso', {
       userId,
       rawResponseLen: rawResponse.length,
-      usagePromptTokens: completion.usage?.prompt_tokens,
-      usageCompletionTokens: completion.usage?.completion_tokens,
+      promptTokens,
+      cachedTokens,
+      cacheHitRate: `${cacheHitRate}%`,
+      estimatedTokenSavings: estimatedSavings,
+      completionTokens: completion.usage?.completion_tokens,
       totalTokens: completion.usage?.total_tokens,
     })
 

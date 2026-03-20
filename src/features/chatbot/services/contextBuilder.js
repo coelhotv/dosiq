@@ -64,11 +64,13 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
 }
 
 /**
- * System prompt para o LLM.
- * @param {string} patientContext
+ * Constrói a PARTE ESTÁTICA do system prompt (regras, instruções).
+ * Esta seção é cacheable porque não muda entre requisições.
+ * Ref: Groq Prompt Caching docs — colocar conteúdo estático PRIMEIRO.
+ *
  * @returns {string}
  */
-export function buildSystemPrompt(patientContext) {
+export function buildStaticSystemRules() {
   return [
     'Você é um assistente virtual do app Meus Remedios.',
     'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
@@ -78,6 +80,25 @@ export function buildSystemPrompt(patientContext) {
     '- Se sua resposta menciona medicamentos ou saúde, SEMPRE termine com uma linha em branco seguida de: "Não substituo orientação médica."',
     '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
     '- Use os dados do paciente abaixo para contextualizar respostas.',
+  ].join('\n')
+}
+
+/**
+ * System prompt para o LLM.
+ * Combina regras estáticas (cacheable) + contexto dinâmico do paciente.
+ *
+ * NOTA: Para otimizar Groq Prompt Caching:
+ * - Conteúdo estático (buildStaticSystemRules) deve vir PRIMEIRO
+ * - Conteúdo dinâmico (patientContext) vem DEPOIS
+ * - Isso permite cache hit em conversas multi-turn onde o contexto é reutilizado
+ *
+ * @param {string} patientContext
+ * @returns {string}
+ */
+export function buildSystemPrompt(patientContext) {
+  const staticRules = buildStaticSystemRules()
+  return [
+    staticRules,
     '',
     'DADOS DO PACIENTE:',
     patientContext,
