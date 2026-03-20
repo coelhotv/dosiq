@@ -73,8 +73,9 @@ export async function handleChatbotMessage(bot, msg) {
     })
 
     logger.debug('📤 Enviando resposta ao Telegram', { chatId, respLen: result.response?.length })
-    await bot.sendMessage(chatId, result.response)
-    logger.info('✅ Mensagem enviada com sucesso', { chatId, respLen: result.response?.length })
+    const prefixedResponse = `🤖 IA: ${result.response}`
+    await bot.sendMessage(chatId, prefixedResponse)
+    logger.info('✅ Mensagem enviada com sucesso', { chatId, respLen: prefixedResponse?.length })
   } catch (error) {
     logger.error('❌ Erro no handler do chatbot', error, {
       chatId,
@@ -83,7 +84,7 @@ export async function handleChatbotMessage(bot, msg) {
       errorStatus: error.response?.statusCode,
     })
     try {
-      await bot.sendMessage(chatId, '🤖 Desculpe, tive um problema. Tente novamente.')
+      await bot.sendMessage(chatId, '🤖 IA: Desculpe, tive um problema. Tente novamente.')
     } catch (sendError) {
       logger.error('❌ Erro ao enviar mensagem de erro', sendError, {
         chatId,
