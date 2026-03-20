@@ -15,12 +15,27 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
+// Cache de userId em memória — evita 13+ roundtrips auth/user no primeiro load
+let _cachedUserId = null
+let _userIdPromise = null // Coalescência: múltiplas chamadas simultâneas compartilham a mesma promise
+
 export const getUserId = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error('Usuário não autenticado')
-  return user.id
+  if (_cachedUserId) return _cachedUserId
+
+  // Coalescência: se já há uma chamada em voo, reutiliza a mesma promise
+  if (_userIdPromise) return _userIdPromise
+
+  _userIdPromise = supabase.auth.getUser().then(({ data: { user } }) => {
+    _userIdPromise = null
+    if (!user) throw new Error('Usuário não autenticado')
+    _cachedUserId = user.id
+    return user.id
+  }).catch((err) => {
+    _userIdPromise = null
+    throw err
+  })
+
+  return _userIdPromise
 }
 
 export const getCurrentUser = async () => {
@@ -29,6 +44,18 @@ export const getCurrentUser = async () => {
   } = await supabase.auth.getUser()
   return user
 }
+
+// Invalida cache ao mudar estado de autenticação
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    _cachedUserId = null
+    _userIdPromise = null
+  } else if (event === 'SIGNED_IN') {
+    // Força re-fetch no próximo getUserId (novo usuário pode ter ID diferente)
+    _cachedUserId = null
+    _userIdPromise = null
+  }
+})
 
 export const signIn = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
