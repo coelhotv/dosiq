@@ -733,8 +733,40 @@ function groupLogsByDay(logs) {
 }
 
 /**
+ * Verifica se protocolo estava ativo numa data usando comparação de strings.
+ * Strings YYYY-MM-DD são lexicograficamente ordenáveis — sem criar Date objects.
+ * @param {string} dateStr - Data YYYY-MM-DD
+ * @param {string|null} startStr - start_date do protocolo (ou null)
+ * @param {string|null} endStr - end_date do protocolo (ou null)
+ * @returns {boolean}
+ */
+function isActiveOnDateFast(dateStr, startStr, endStr) {
+  if (startStr && dateStr < startStr) return false
+  if (endStr && dateStr > endStr) return false
+  return true
+}
+
+/**
+ * Calcula doses esperadas por dia usando dados pré-parseados (zero Date objects).
+ * @param {Array<{timesPerDay: number, startStr: string|null, endStr: string|null}>} parsed
+ * @param {string} dateStr - Data YYYY-MM-DD
+ * @returns {number}
+ */
+function dailyExpectedFast(parsed, dateStr) {
+  let total = 0
+  for (let i = 0; i < parsed.length; i++) {
+    const p = parsed[i]
+    if (isActiveOnDateFast(dateStr, p.startStr, p.endStr)) {
+      total += p.timesPerDay
+    }
+  }
+  return total
+}
+
+/**
  * Calcula streaks (atual e maior)
  * Considera start_date e end_date dos protocolos para calcular expected por dia.
+ * Otimizado: pré-parseia datas dos protocolos e usa comparação de strings (R-128).
  *
  * @param {Map} logsByDay - Logs agrupados por dia
  * @param {Array} protocols - Array de protocolos ativos
@@ -748,6 +780,13 @@ function calculateStreaks(logsByDay, protocols) {
     return { currentStreak: 0, longestStreak: 0 }
   }
 
+  // Pré-parsear protocolos UMA VEZ (evita ~2700 new Date() no loop)
+  const parsed = protocols.map((p) => ({
+    timesPerDay: p.time_schedule?.length || 1,
+    startStr: p.start_date || null,
+    endStr: p.end_date || null,
+  }))
+
   let currentStreak = 0
   let longestStreak = 0
   let tempStreak = 0
@@ -760,9 +799,9 @@ function calculateStreaks(logsByDay, protocols) {
   yesterdayDate.setDate(yesterdayDate.getDate() - 1)
   const yesterdayKey = formatLocalDate(yesterdayDate)
 
-  // Calcular expected para hoje e ontem
-  const todayExpected = calculateDailyExpectedDoses(protocols, today)
-  const yesterdayExpected = calculateDailyExpectedDoses(protocols, yesterdayKey)
+  // Calcular expected para hoje e ontem (com funções otimizadas)
+  const todayExpected = dailyExpectedFast(parsed, today)
+  const yesterdayExpected = dailyExpectedFast(parsed, yesterdayKey)
 
   // Verificar se o streak ainda está ativo
   const lastLogDate = dates[0]
@@ -780,19 +819,17 @@ function calculateStreaks(logsByDay, protocols) {
     isCurrent = false
   }
 
-  // Calcular streak atual
+  // Calcular streak: itera dia a dia para trás (max 91 iterações)
+  const MAX_ITERATIONS = 91
   let checkDate = new Date()
-  while (true) {
+  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const dateKey = formatLocalDate(checkDate)
 
-    // Calcular expected para este dia específico (filtra por start_date/end_date)
-    const dayExpected = calculateDailyExpectedDoses(protocols, dateKey)
-
+    const dayExpected = dailyExpectedFast(parsed, dateKey)
     const taken = logsByDay.get(dateKey) || 0
     const adherenceRate = dayExpected > 0 ? taken / dayExpected : 0
 
-    // Se não há doses esperadas neste dia (protocolo ainda não tinha começado ou já terminou),
-    // não conta nem quebra o streak
+    // Se não há doses esperadas neste dia, não conta nem quebra o streak
     if (dayExpected === 0) {
       // Continua para o próximo dia sem afetar o streak
     } else if (adherenceRate >= minAdherenceRate) {
@@ -801,9 +838,7 @@ function calculateStreaks(logsByDay, protocols) {
     } else {
       if (isCurrent) {
         // Verificar se é hoje (ainda pode tomar)
-        if (dateKey === today) {
-          // Não quebra o streak ainda
-        } else {
+        if (dateKey !== today) {
           isCurrent = false
         }
       }
@@ -814,11 +849,10 @@ function calculateStreaks(logsByDay, protocols) {
     // Ir para o dia anterior
     checkDate.setDate(checkDate.getDate() - 1)
 
-    // Parar se passou de 90 dias
-    if (tempStreak === 0 && !isCurrent && checkDate < new Date(Date.now() - 90 * 86400000)) {
+    // Parar se passou de 90 dias e streak quebrou
+    if (tempStreak === 0 && !isCurrent) {
       break
     }
-    if (tempStreak > 90) break // Safety limit
   }
 
   longestStreak = Math.max(longestStreak, tempStreak)
