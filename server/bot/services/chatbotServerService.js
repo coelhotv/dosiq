@@ -290,7 +290,7 @@ export function buildServerSystemPrompt(patientContext) {
     'REGRAS ABSOLUTAS:',
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
     '- NUNCA sugira parar ou alterar tratamento sem consultar o medico.',
-    '- Sempre inclua: "Não substituo orientação médica." em respostas sobre saude.',
+    '- Se sua resposta menciona medicamentos ou saúde, SEMPRE termine com uma linha em branco seguida de: "Não substituo orientação médica."',
     '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
     '- Responda em texto simples, sem Markdown (o Telegram usa formatacao diferente).',
     '- Use os dados do paciente abaixo para contextualizar respostas.',
