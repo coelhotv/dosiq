@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-20 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf M0–M8 + P1–P4:** ✅ TODOS MERGED
+**Last Updated:** 2026-03-20 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf + Chatbot + Groq Cache:** ✅ TODOS MERGED (Sprint 8.5 Complete)
 
 ---
 
@@ -254,7 +254,10 @@ git push -u origin feature/fase-N/descriptive-name
 
 ## 📚 Documentation
 
-- `.memory/rules.md` — 134 project-specific rules (R-001 to R-134, +3 from Sprint 8.5)
+- `.memory/rules.md` — 134 project-specific rules (R-001 to R-134, +3 from Sprint 8.5 Groq optimization)
+  - R-132: Logging em `api/*.js` para Visibilidade Vercel
+  - R-133: Event-Driven Router Fallback
+  - R-134: Mock/Adapter Interface Completeness
 - `.memory/anti-patterns.md` — 63+ anti-patterns to avoid (AP-001 to AP-SL03)
 - `.memory/journal/` — Sprint journals (2026-W06 through 2026-W12-P4)
 - `.memory/knowledge.md` — Domain-specific facts and APIs
