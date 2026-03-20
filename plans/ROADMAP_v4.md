@@ -1,19 +1,18 @@
 # Roadmap 2026 — Meus Remedios (v4.0)
 
-**Versao:** 4.3 (Atualizado apos Sprint 5.D CONCLUÍDO — Fase 5 100% COMPLETA)
-**Data:** 07/03/2026
-**Status:** Fase 5 100% Completa ✅ (F5.10 + F5.6 + F5.C + F5.D ENTREGUES)
-**Baseline:** v3.1.0 → v3.2.0 RELEASED (Fases 1-5 COMPLETAS)
+**Versao:** 5.0 (Atualizado apos Mobile Perf M0-M8 + P1-P4 + D0-D3 + Fase 6 sprints 1,2,4,5 CONCLUIDOS)
+**Data:** 20/03/2026
+**Status:** Fase 6 em andamento — 4/5 sprints entregues ✅ (apenas Sprint 6.3 pendente)
+**Baseline:** v3.2.0 → v3.3.0 (Fases 1-5 COMPLETAS + Mobile Perf + Fase 6 parcial)
 **Principio:** Valor ao paciente primeiro. Custo operacional R$0 ate Fase 8.
 
-> **Mudancas em relacao a v3.2:**
-> - Fases 5.5, 6 e 7 do roadmap anterior foram reorganizadas e renumeradas
-> - Fase 5.5 (Inteligencia Preditiva) promovida a Fase 6 com escopo refinado
-> - Fase 6 anterior (WhatsApp + Social + Offline) torna-se Fase 7 com foco em alcance
-> - Fase 7 anterior (Voz + IA) torna-se Fase 8 com foco em experiencia inteligente
-> - Monetizacao e expansao internacional movidos para Backlog Futuro (trigger-gated)
-> - Evolucao UX (3 ondas) registrada como entrega concluida
-> - Fase 5 atualizada para refletir 90% de conclusao
+> **Mudancas em relacao a v4.3:**
+> - Mobile Performance Initiative completa: M0-M8 + P1-P4 + D0-D3 (13 sprints)
+> - Bundle otimizado: 989KB → 102.47kB gzip (89% reducao)
+> - Dashboard first load: -757KB JS, -2 queries, -2 auth roundtrips
+> - Fase 6: Sprints 6.1, 6.2, 6.4, 6.5 ENTREGUES — apenas Sprint 6.3 (INT-01 + INT-02) pendente
+> - Testes: 473 → 539+ (100% passing)
+> - Novas regras de performance: R-111 a R-131, AP-A01 a AP-P17
 
 ---
 
@@ -36,7 +35,7 @@
 
 | Dimensao | Valor |
 |----------|-------|
-| Versao do app | v3.2.0 ✅ |
+| Versao do app | v3.3.0 ✅ |
 | Stack frontend | React 19 + Vite 7 + Framer Motion 12 |
 | Stack backend | Supabase (Postgres + Auth + RLS) + Zod 4 |
 | Testes | Vitest 4 |
@@ -48,15 +47,16 @@
 
 | Metrica | Valor Atual |
 |---------|-------------|
-| Testes criticos passando | 473/473 (100%) ✅ |
-| Test files | 27 (100% passing) ✅ |
-| Coverage minimo (F5.6) | 100% (services + components) ✅ |
-| Bundle size | ~1.2MB (mitigado: lazy-loading + gzip) |
-| Lighthouse PWA | >=90 |
+| Testes criticos passando | 539/539 (100%) ✅ |
+| Test files | 30+ (100% passing) ✅ |
+| Coverage minimo | 100% (services + components) ✅ |
+| Bundle size (gzip) | **102.47 kB** (de 989KB original, 89% reducao via M2) ✅ |
+| Main bundle first load | **678 kB** (de 1435KB, -53% via D0) ✅ |
+| Lighthouse PWA | >=90 ✅ |
 | Lighthouse Performance | >=90 ✅ |
-| Code Review (F5.D) | 8/8 sugestoes resolvidas (todas aplicadas) ✅ |
-| Landing Page Dark Theme | Default + respects user preference ✅ |
-| Parallax Performance | useRef (no re-renders on scroll) ✅ |
+| Auth roundtrips (first load) | **1** (de 13 original, via P4+D3) ✅ |
+| Supabase GETs (first load) | **5** (de 7, via D1+D2) ✅ |
+| Mobile Performance | M0-M8 + P1-P4 + D0-D3 completos ✅ |
 
 ---
 
@@ -74,42 +74,40 @@
 | Evolucao UX — Onda 2 | v3.0.0 | Hooks de logica: useDoseZones, useComplexityMode, ViewModeToggle, BatchRegister |
 | Evolucao UX — Onda 3 | v3.0.0 | Navegacao 5->4 tabs: Hoje/Tratamento/Estoque/Perfil, TreatmentWizard, HealthHistory |
 | Fase 5 — Valor Clinico (100%) ✅ | v3.2.0 | PDF Reports, CSV/JSON Export, Sharing, Modo Consulta, Cartao Emergencia, Rastreador Prescricoes, Bot Proativo, Calendario Visual, Analise Custo, Base ANVISA, Onboarding v3.2, Landing Redesign |
+| Mobile Perf — M0-M8 ✅ | v3.3.0 | M0: Emergency fixes (HealthHistory freeze), M1: Virtualization (react-virtuoso), M2: Code splitting (89% bundle reduction), M3: DB optimization (views + indexes), M5: Assets/CSS/fonts, M6: Touch UX |
+| Mobile Perf — P1-P4 ✅ | v3.3.0 | P1: cachedAdherenceService SWR, P2: loadData faseado (requestIdleCallback), P3: slim select timeline (76% payload reduction), P4: slim dashboard logs + getUserId cache (13→1 auth) + calculateStreaks optimization |
+| Dashboard Perf — D0-D3 ✅ | v3.3.0 | D0: Fix lazy loading (-757KB modulepreload), D1+D2: dailyAdherence client-side (-2 queries), D3: getCurrentUser cache (-2 auth roundtrips) |
+| Fase 6 — Insights (80%) 🚧 | v3.3.0 | Sprint 6.1: Refill Prediction + Protocol Risk, Sprint 6.2: Real Cost Analysis, Sprint 6.4: Reminder Optimizer, Sprint 6.5: Adherence Heatmap + Stock Timeline |
 
-**Status da Fase 5 (07/03/2026):** 100% COMPLETA ✅
-- ✅ **F5.10 Analise de Custo** (5 SP) — ENTREGUE em main (commit 894bb98)
-  - costAnalysisService.js puro com 5 funções otimizadas (O(M+P))
-  - CostChart component com Framer Motion
-  - Stock.jsx integração com useMemo
-  - 38 testes, 95.65% coverage
-  - 4 sugestões de code review resolvidas
-- ✅ **Sprint 5.B: ETL-1 + F5.6 (Base ANVISA + Autocomplete)** (13 SP) — ENTREGUE em main (commit 7a887dc, PR #278)
-  - ETL-1: `scripts/process-anvisa.js` gera medicineDatabase.json (6.816 meds) + laboratoryDatabase.json (278 labs)
-  - F5.6-1: `medicineDatabaseService.js` + `laboratoryDatabaseService.js` (lazy-loaded, 100% coverage)
-  - F5.6-2: `GenericAutocomplete.jsx` (reutilizável) + `MedicineAutocomplete.jsx` + `LaboratoryAutocomplete.jsx`
-  - F5.6-3: Integração no `MedicineForm.jsx` com auto-fill (name, active_ingredient, therapeutic_class, laboratory)
-  - 48 testes novos, 100% coverage nas services e componentes
-  - 4 sugestões de code review resolvidas (1 CRITICAL + 3 MEDIUM)
-  - Bundle impacto negligenciável: lazy-loaded + gzipped ~103 KB
-- ✅ **F5.C Onboarding Renovado** (5 SP) — ENTREGUE em main (commit 17371b4, PR #283)
-  - WelcomeStep redesign com 5 value props v3.2 e ring gauge SVG animado
-  - StockStep novo (step 4/5) com validação Zod e preview de estoque
-  - TelegramIntegrationStep atualizado com 6 capacidades do bot proativo
-  - 3 sugestões Gemini resolvidas (magic numbers, hook ordering, validation)
-  - 473/473 testes passando, 0 lint errors
-- ✅ **F5.D Redesign Landing Page** (8 SP) — ENTREGUE em main (commit c1069ea, PR #290)
-  - Hero com AppPreview component (SVG + CSS animations, reusável)
-  - Seção "Como Funciona" com 3 passos ilustrados
-  - Features grid expandido: 6 → 8 cards v3.2
-  - CTA final + footer atualizado (ano 2026)
-  - Dark theme por padrão + respira preferência do usuário
-  - Parallax otimizado: useState → useRef (sem re-renders)
-  - 8 sugestões Gemini aplicadas (commits e357604, 460fa54, c1069ea)
-  - 9 issues auto-geradas e auto-fechadas (#291–#299)
-  - 473/473 testes passando, 0 lint errors, Lighthouse >=90
+**Status da Fase 5 (07/03/2026):** 100% COMPLETA ✅ — Resumo em `plans/EXEC_SPEC_FASE_5_FINAL.md`
 
-**Achados do spike ANVISA:** CSV tem 10.206 registros, 1.1 MB, sem dosagem/forma farmaceutica. `CLASSE_TERAPEUTICA` disponivel e vai habilitar F8.2 (interacoes) sem nova fonte de dados. Ver `plans/ANALISE_CSV_ANVISA.md`. Deduplicação resultou em 6.816 medicamentos e 278 laboratórios únicos.
+**Versão v3.2.0 Released** — Tag criada, documentação atualizada.
 
-**Versão v3.2.0 Released** — Tag criada, documentação atualizada, pronta para release.
+---
+
+### Mobile Performance Initiative (M0-M8 + P1-P4 + D0-D3) — v3.3.0
+
+**Objetivo:** Otimizar performance mobile end-to-end: bundle, rendering, network, auth, DB queries.
+
+| Sprint | Entrega | Impacto | PR |
+|--------|---------|---------|-----|
+| M0 | Emergency fixes (HealthHistory freeze) | 4 cascading freezes eliminados | #339 |
+| M1 | Timeline virtualization (react-virtuoso) | FPS <50 → ≥55, DOM N → ~10 | #342 |
+| M2 | Code splitting + lazy routes | **989KB → 102.47kB gzip (89%)** | #391 |
+| M3 | DB optimization (views + indexes) | Sparkline 3-4x, Heatmap 10x faster | #393 |
+| M5 | Assets, CSS, font sizes | LCP ~200ms faster, favicon 192KB→<1KB | #394 |
+| M6 | Mobile touch & UX | 300ms iOS delay removed, overscroll contained | — |
+| P1 | cachedAdherenceService SWR | protocols 3x→1x query | #398 |
+| P2 | loadData faseado (requestIdleCallback) | 12+→2 concurrent requests | #399 |
+| P3 | Slim select timeline | ~500→~120 bytes/log (76% reducao) | #400 |
+| P4 | Slim dashboard + auth cache + streaks | **13→1 auth roundtrip**, CPU 71.3%→negligivel | #403 |
+| D0 | Fix lazy loading (vendor-pdf) | **-757KB modulepreload** no first load | #404 |
+| D1+D2 | dailyAdherence client-side | -2 queries GET, -1 useEffect | #404 |
+| D3 | getCurrentUser cache | -2 auth roundtrips (3→1) | #404 |
+
+**Specs:** `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` (M0-M8), `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D0-D3)
+**Standards:** `docs/standards/MOBILE_PERFORMANCE.md`
+**Testes:** 539/539 passando apos todas as otimizacoes
 
 ---
 
@@ -161,69 +159,43 @@ features grid de 8 cards (vs. 6 textuais), CTA e footer atualizados. Sem quebra 
 
 **Spec:** `plans/EXEC_SPEC_FASE_5_FINAL.md` | **Analise ANVISA:** `plans/ANALISE_CSV_ANVISA.md`
 
-#### F5.10 — Resumo de Conclusão (07/03/2026)
+#### Resumo das Entregas Fase 5 (detalhes em `plans/EXEC_SPEC_FASE_5_FINAL.md`)
 
-| Métrica | Resultado |
-|---------|-----------|
-| **Linhas de Código** | +815 (4 arquivos: service, schema, test, integração) |
-| **Test Coverage** | 95.65% (38 test cases) |
-| **Critical Tests** | 425/425 passing ✅ |
-| **Code Review** | 4/4 sugestões resolvidas (1 CRITICAL + 3 HIGH/MEDIUM) |
-| **Performance** | O(M*P) → O(M+P): 6.7x mais rápido |
-| **Validação** | Zod + error handling completo |
-| **Git Commits** | 5 commits consolidados em squash merge (PR #277) |
-| **Main Commit** | 894bb98 |
-| **Tamanho Bundle** | Impacto negligenciável (<5KB) |
-| **Lighthouse (Stock)** | Performance >=90, PWA >=90 |
-
-**Próximos passos:** Sprint 5.B (ETL-1 + F5.6) — ETL script + autocomplete ANVISA (~13 SP, 2-3 semanas)
-
-#### F5.6 (Sprint 5.B) — Resumo de Conclusão (07/03/2026)
-
-| Métrica | Resultado |
-|---------|-----------|
-| **Arquivos Criados** | 12 (2 services, 3 componentes, 2 databases, 2 test files, migration, CSS, schema) |
-| **Linhas de Código** | +1.556 linhas (ETL + services + componentes + testes + integração) |
-| **Medicamentos Únicos** | 6.816 (vs. 2.000-4.000 estimado — 3.4x mais) |
-| **Laboratórios Únicos** | 278 (vs. 200-400 estimado) |
-| **Test Coverage** | 100% (medicineDatabaseService + laboratoryDatabaseService) |
-| **Test Cases Novos** | 48 (medicineDatabaseService: 29, laboratoryDatabaseService: 19) |
-| **Critical Tests** | 473/473 passing ✅ |
-| **Code Review** | 4/4 sugestões resolvidas (1 CRITICAL + 3 MEDIUM) |
-| **Bundle Impacto** | Negligenciável: 802 KB medicineDatabase + 14 KB laboratoryDatabase, lazy-loaded, gzipped ~103 KB |
-| **Campos Auto-Preenchidos** | 4 (name, active_ingredient, therapeutic_class, type) |
-| **Campos Manuais** | 2 (dosage_per_pill, dosage_unit — não disponíveis no CSV ANVISA) |
-| **Git Commits** | 1 commit final (3cf51e7 com todas as correções, mergeado via squash em PR #278) |
-| **Main Commit** | 7a887dc |
-| **Character Encoding Fix** | UTF-8 → Latin1 (ISO-8859-1, ANVISA standard) ✅ |
-| **Minimum Search Validation** | 3 caracteres enforced ✅ |
-| **Lighthouse (MedicineForm)** | Performance >=90, PWA >=90 |
-
-**Realização:** Base ANVISA com 10.206 registros originais processada via ETL, deduplicada, normalizada (NFD accent-insensitive search) e integrada como JSON lazy-loaded. Componente genérico de autocomplete criado (GenericAutocomplete.jsx) para eliminar duplicação de código entre MedicineAutocomplete e LaboratoryAutocomplete. Schema medicineSchema.js atualizado com campo opcional `therapeutic_class` para habilitar F8.2 (interações medicamentosas) futuro sem nova fonte de dados.
-
-**Próximos passos:** Sprint 5.C + 5.D — Onboarding renovado + Redesign Landing Page (~13 SP restantes para completar Fase 5)
+- F5.10: costAnalysisService O(M+P), 38 testes, 95.65% coverage (PR #277, commit 894bb98)
+- F5.6: Base ANVISA 6.816 meds + autocomplete 4 campos, 48 testes, 100% coverage (PR #278, commit 7a887dc)
+- F5.C: Onboarding renovado 5 steps + StockStep (PR #283, commit 17371b4)
+- F5.D: Landing redesign Hero + Features grid + dark theme (PR #290, commit c1069ea)
 
 ---
 
-### Fase 6: Inteligencia & Insights (v3.3.0, 39 SP, R$0)
+### Fase 6: Inteligencia & Insights (v3.3.0, 39 SP, R$0) — 80% COMPLETA 🚧
 
 **Objetivo:** Transformar dados acumulados em predicoes acionaveis que tornam o app indispensavel.
 
-| ID | Feature | SP |
-|----|---------|-----|
-| I01 | Previsao de reposicao (consumo real 30d -> data de esgotamento) | 5 |
-| I04 | Score de risco por protocolo (adesao 14d rolling + tendencia) | 5 |
-| I05 | Analise de custo avancada (consumo real x preco unitario) | 5 |
-| I02 | Heatmap de padroes de adesao (dia-da-semana x periodo) | 8 |
-| I03 | Otimizador de horario de lembrete (delta schedule vs taken_at) | 8 |
-| EV-07 | Timeline visual de prescricoes | 3 |
-| INT-01 | Risk Score no PDF Reports | 2 |
-| INT-02 | Refill Prediction nos alertas do bot | 3 |
+| ID | Feature | SP | Status | Sprint |
+|----|---------|-----|--------|--------|
+| I01 | Previsao de reposicao (consumo real 30d -> data de esgotamento) | 5 | ✅ ENTREGUE | 6.1 |
+| I04 | Score de risco por protocolo (adesao 14d rolling + tendencia) | 5 | ✅ ENTREGUE | 6.1 |
+| I05 | Analise de custo avancada (consumo real x preco unitario) | 5 | ✅ ENTREGUE | 6.2 |
+| I03 | Otimizador de horario de lembrete (delta schedule vs taken_at) | 8 | ✅ ENTREGUE | 6.4 |
+| I02 | Heatmap de padroes de adesao (dia-da-semana x periodo) | 8 | ✅ ENTREGUE | 6.5 |
+| EV-07 | Timeline visual de prescricoes (StockTimeline) | 3 | ✅ ENTREGUE | 6.5 |
+| INT-01 | Risk Score no PDF Reports | 2 | ⬚ PENDENTE | 6.3 |
+| INT-02 | Refill Prediction nos alertas do bot | 3 | ⬚ PENDENTE | 6.3 |
+
+**Entregue:** 34/39 SP (87%) — Sprints 6.1, 6.2, 6.4, 6.5 COMPLETOS
+**Pendente:** Sprint 6.3 (INT-01 + INT-02, 5 SP) — integracoes cross-cutting (PDF + Bot)
 
 **Principio:** Zero chamadas novas ao Supabase — computacao pura sobre cache SWR existente.
 Nenhuma dependencia nova de npm. Insights so exibidos com dados suficientes (minimo 14 dias).
 
-**Spec:** `plans/PHASE_6_SPEC.md`
+**Aprendizados de performance aplicados:**
+- R-111: `calculateExpectedDoses()` (nao `calculateDailyIntake()`) para respeitar frequencia
+- R-112: Aderencia por `sum(quantity_taken)`, nao `count(logs)`
+- R-113: Filtrar logs por `protocol_id` APENAS (nao `|| medicine_id`)
+- R-114: `.setHours(0,0,0,0)` em boundaries de data
+
+**Spec:** `plans/PHASE_6_SPEC.md` | **SSOT:** `plans/EXEC_SPEC_FASE_6.md`
 
 ---
 
@@ -292,18 +264,19 @@ gantt
     section Entregue
     Fases 1-4 (v2.2.x a v2.8.0)              :done, prev, 2025-10-01, 2026-01-31
     Evolucao UX Ondas 1-3 (v3.0.0)           :done, ux, 2026-02-01, 2026-02-15
-    Fase 5 Valor Clinico 90pct (v3.1.0)       :done, f5a, 2026-02-15, 2026-03-01
+    Fase 5 Valor Clinico (v3.2.0)             :done, f5, 2026-02-15, 2026-03-07
+    Mobile Perf M0-M8 + P1-P4                 :done, mp, 2026-03-08, 2026-03-15
+    Dashboard Perf D0-D3                       :done, dp, 2026-03-18, 2026-03-20
 
-    section Fase 5 - Fechar
-    F5.10 Analise Custo + Spike ANVISA         :active, f5b, 2026-03-07, 14d
-
-    section Fase 6 - Inteligencia
-    Previsao Reposicao + Score Risco           :f6a, after f5b, 8d
-    Heatmap + Otimizador Horario               :f6b, after f6a, 12d
-    Analise Custo Avancada + Timeline          :f6c, after f6b, 10d
+    section Fase 6 - Inteligencia (80%)
+    Sprint 6.1 I01+I04 (DONE)                 :done, f6a, 2026-03-08, 2d
+    Sprint 6.2 I05 (DONE)                     :done, f6b, 2026-03-08, 1d
+    Sprint 6.4 I03 (DONE)                     :done, f6d, 2026-03-09, 1d
+    Sprint 6.5 I02+EV07 (DONE)                :done, f6e, 2026-03-09, 1d
+    Sprint 6.3 INT-01+INT-02 (PENDENTE)       :active, f6c, 2026-03-21, 3d
 
     section Fase 7 - Alcance
-    Meta Business Verificacao                  :crit, meta, after f6a, 42d
+    Meta Business Verificacao                  :crit, meta, 2026-03-21, 42d
     WhatsApp Bot + Selecao Canal               :f7a, after f6c, 14d
     Alertas Inteligentes + Parceiro            :f7b, after f7a, 10d
     Modo Cuidador                              :f7c, after f7b, 14d
@@ -320,12 +293,14 @@ gantt
 
 ### Produto
 
-| KPI | Meta |
-|-----|------|
-| Cobertura de testes | >90% |
-| Performance dashboard | <50ms |
-| Lighthouse PWA | >=95 |
-| Bundle size | <1MB |
+| KPI | Meta | Atual |
+|-----|------|-------|
+| Cobertura de testes | >90% | ✅ 100% (services + components) |
+| Performance dashboard | <50ms | ✅ (useMemo client-side) |
+| Lighthouse PWA | >=90 | ✅ >=90 |
+| Bundle size (gzip) | <150KB | ✅ 102.47kB (89% reducao) |
+| First load JS | <700KB | ✅ 678KB (-53% via D0) |
+| Auth roundtrips | 1 | ✅ 1 (de 13 original) |
 
 ### Engajamento
 
@@ -407,14 +382,17 @@ gantt
 | Visao UX e Experiencia do Paciente | `plans/UX_VISION_EXPERIENCIA_PACIENTE.md` |
 | Exec Spec Fase 5 (fechamento) | `plans/EXEC_SPEC_FASE_5_FINAL.md` |
 | Analise CSV ANVISA (spike concluido) | `plans/ANALISE_CSV_ANVISA.md` |
-| Exec Spec Fase 6 | `plans/EXEC_SPEC_FASE_6.md` |
+| Exec Spec Fase 6 (SSOT) | `plans/EXEC_SPEC_FASE_6.md` |
 | Spec Fase 6 — Inteligencia & Insights | `plans/PHASE_6_SPEC.md` |
 | Spec Fase 7 — Crescimento & Alcance | `plans/PHASE_7_SPEC.md` |
 | Spec Fase 8 — Experiencia Inteligente | `plans/PHASE_8_SPEC.md` |
+| Mobile Performance Spec (M0-M8) | `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` |
+| Dashboard First Load Spec (D0-D3) | `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` |
+| Mobile Performance Standards | `docs/standards/MOBILE_PERFORMANCE.md` |
 | Backlog Futuro | `plans/BACKLOG_FUTURO.md` |
 | Roadmaps supersedidos | `plans/archive_old/roadmap_v3/` |
 
 ---
 
-*Documento aprovado — 06/03/2026.*
-*Supersede `roadmap_2026_meus_remedios_v32.md`.*
+*Documento atualizado — 20/03/2026.*
+*Versao 5.0 — Supersede v4.3.*
