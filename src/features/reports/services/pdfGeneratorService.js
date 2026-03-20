@@ -4,7 +4,7 @@
  * @module features/reports/services/pdfGeneratorService
  */
 
-import { parseLocalDate } from '@utils/dateUtils.js'
+import { parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
 
 /**
  * Dimensões da página A4 em milímetros.
@@ -369,6 +369,93 @@ function drawStockSummary(doc, stockData, stockChartImage, startY) {
 }
 
 /**
+ * Cores RGB para nivel de risco (sem CSS vars — jsPDF usa RGB).
+ * @constant {Object}
+ */
+const RISK_RGB_COLORS = {
+  stable: [34, 197, 94], // #22c55e verde
+  attention: [245, 158, 11], // #f59e0b amarelo
+  critical: [239, 68, 68], // #ef4444 vermelho
+}
+
+/**
+ * Desenha a tabela de risco por protocolo.
+ * Só renderiza se houver protocolos com dados suficientes (hasEnoughData === true).
+ * @param {Object} doc - Instância do jsPDF.
+ * @param {Array} risks - Array retornado por calculateAllProtocolRisks.
+ * @param {Array} protocols - Lista de protocolos (para buscar nome do medicamento).
+ * @param {Function} autoTable - Função autoTable do jspdf-autotable.
+ * @param {number} startY - Posição Y inicial.
+ * @returns {number} Posição Y após a tabela.
+ * @private
+ */
+function drawRiskTable(doc, risks, protocols, autoTable, startY) {
+  const risksWithData = risks.filter((r) => r.hasEnoughData)
+  if (risksWithData.length === 0) return startY
+
+  // Verifica se precisa de nova página
+  if (startY > 220) {
+    doc.addPage()
+    startY = 20
+  }
+
+  // Título da seção
+  doc.setFontSize(12)
+  doc.setTextColor(...PDF_COLORS.text)
+  doc.text('Risco por Protocolo', PAGE_DIMENSIONS.margin, startY)
+
+  const tableData = risksWithData.map((risk) => {
+    const protocol = protocols.find((p) => p.id === risk.protocolId)
+    const name = protocol?.medicine?.name || protocol?.name || 'Protocolo'
+    const adherence = `${risk.adherence14d}%`
+    const trend = risk.trend7d > 0 ? `+${risk.trend7d}%` : `${risk.trend7d}%`
+    return [name, adherence, trend, risk.riskLabel]
+  })
+
+  autoTable(doc, {
+    startY: startY + 5,
+    head: [['Protocolo', 'Adesão 14d', 'Tendência', 'Classificação']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: {
+      fillColor: PDF_COLORS.primary,
+      textColor: PDF_COLORS.white,
+      fontSize: 10,
+      fontStyle: 'bold',
+    },
+    bodyStyles: {
+      fontSize: 9,
+      textColor: PDF_COLORS.text,
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245],
+    },
+    margin: {
+      left: PAGE_DIMENSIONS.margin,
+      right: PAGE_DIMENSIONS.margin,
+    },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 40 },
+    },
+    // Colorir células da coluna "Classificação" conforme nível de risco
+    didParseCell(data) {
+      if (data.section === 'body' && data.column.index === 3) {
+        const risk = risksWithData[data.row.index]
+        if (risk) {
+          data.cell.styles.textColor = RISK_RGB_COLORS[risk.riskLevel] || PDF_COLORS.text
+          data.cell.styles.fontStyle = 'bold'
+        }
+      }
+    },
+  })
+
+  return doc.lastAutoTable.finalY + 10
+}
+
+/**
  * Desenha o rodapé do relatório.
  * @param {Object} doc - Instância do jsPDF.
  * @private
@@ -453,6 +540,7 @@ function prepareStockChartData(protocols, stockSummaries) {
  * @param {boolean} [options.includeCharts=true] - Se deve incluir gráficos.
  * @param {boolean} [options.includeProtocols=true] - Se deve incluir tabela de protocolos.
  * @param {boolean} [options.includeStock=true] - Se deve incluir resumo de estoque.
+ * @param {boolean} [options.includeRiskTable=true] - Se deve incluir tabela de risco por protocolo.
  * @returns {Promise<Blob>} Blob do PDF gerado.
  *
  * @example
@@ -482,6 +570,7 @@ export async function generatePDF(options = {}) {
     includeCharts = true,
     includeProtocols = true,
     includeStock = true,
+    includeRiskTable = true,
   } = options
 
   logPDF('info', 'Iniciando geração do PDF', { title, period, options })
@@ -496,6 +585,8 @@ export async function generatePDF(options = {}) {
       { adherenceService },
       { protocolService },
       stockModule,
+      riskModule,
+      logModule,
     ] = await Promise.all([
       import('jspdf'),
       import('jspdf-autotable'),
@@ -503,19 +594,34 @@ export async function generatePDF(options = {}) {
       import('@services/api/adherenceService.js'),
       import('@features/protocols/services/protocolService.js'),
       includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
+      includeRiskTable
+        ? import('@adherence/services/protocolRiskService.js')
+        : Promise.resolve(null),
+      includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
     ])
 
     const stockService = stockModule?.stockService
+    const calculateAllProtocolRisks = riskModule?.calculateAllProtocolRisks
+    const logService = logModule?.logService
 
     logPDF('info', 'Módulos carregados sob demanda', { library: 'jspdf + services + charts' })
 
     // Busca dados em paralelo
     const dataFetchStart = Date.now()
-    const [adherenceSummary, dailyAdherence, protocols, lowStock] = await Promise.all([
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today)
+    thirtyDaysAgo.setDate(today.getDate() - 30)
+    const startDateStr = formatLocalDate(thirtyDaysAgo)
+    const endDateStr = formatLocalDate(today)
+
+    const [adherenceSummary, dailyAdherence, protocols, lowStock, recentLogs] = await Promise.all([
       adherenceService.getAdherenceSummary(period),
       adherenceService.getDailyAdherence(30),
       includeProtocols ? protocolService.getAll() : Promise.resolve([]),
       includeStock && stockService ? stockService.getLowStockMedicines(100) : Promise.resolve([]),
+      includeRiskTable && logService
+        ? logService.getByDateRange(startDateStr, endDateStr, 500).then((r) => r.data ?? [])
+        : Promise.resolve([]),
     ])
 
     logPDF('info', 'Dados buscados', {
@@ -556,6 +662,16 @@ export async function generatePDF(options = {}) {
     // Desenha tabela de protocolos
     if (includeProtocols) {
       currentY = drawProtocolsTable(doc, protocols, autoTable, currentY)
+    }
+
+    // Desenha tabela de risco por protocolo
+    if (includeRiskTable && calculateAllProtocolRisks && protocols.length > 0) {
+      const risks = calculateAllProtocolRisks({ protocols, logs: recentLogs })
+      currentY = drawRiskTable(doc, risks, protocols, autoTable, currentY)
+      logPDF('info', 'Tabela de risco adicionada', {
+        protocolsWithData: risks.filter((r) => r.hasEnoughData).length,
+        totalProtocols: risks.length,
+      })
     }
 
     // Desenha resumo de estoque

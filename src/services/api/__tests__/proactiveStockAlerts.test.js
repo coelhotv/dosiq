@@ -112,9 +112,18 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
           }),
         }
       }
+      if (table === 'medicine_logs') {
+        // Retorna logs vazios — testes de stock usam calculateDaysRemaining mockado
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }
+      }
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockResolvedValue({ data: [], error: null }),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
     })
@@ -272,6 +281,7 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
+          gte: vi.fn().mockResolvedValue({ data: [], error: null }),
           single: vi.fn().mockResolvedValue({ data: null, error: null }),
         }
       })

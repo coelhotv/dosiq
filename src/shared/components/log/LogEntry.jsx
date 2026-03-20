@@ -66,7 +66,6 @@ function LogEntry({ log, onEdit, onDelete }) {
 
 /** Compara apenas campos que afetam a renderização visual */
 const areLogEntriesEqual = (prev, next) =>
-  prev.log.id === next.log.id &&
-  prev.log.quantity_taken === next.log.quantity_taken
+  prev.log.id === next.log.id && prev.log.quantity_taken === next.log.quantity_taken
 
 export default memo(LogEntry, areLogEntriesEqual)
