@@ -28,8 +28,8 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
 
     return {
       nome: med.name,
-      principioAtivo: med.active_ingredient || null,
-      classeTerapeutica: med.therapeutic_class || null,
+      principioAtivo: med.active_ingredient,
+      classeTerapeutica: med.therapeutic_class,
       dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
       frequencia: protocol?.frequency ?? 'sem protocolo',
       horarios: protocol?.time_schedule ?? [],
