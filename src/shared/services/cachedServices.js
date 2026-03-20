@@ -34,6 +34,8 @@ export const CACHE_KEYS = {
   LOGS_BY_MONTH: 'logs:month',
   LOGS_PAGINATED: 'logs:paginated',
   LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
+  LOGS_DATE_RANGE_SLIM: 'logs:dateRangeSlim',
+  LOGS_BY_MONTH_SLIM: 'logs:monthSlim',
   TREATMENT_PLANS: 'treatmentPlans',
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
   ADHERENCE_SUMMARY: 'adherence:summary',
@@ -247,9 +249,11 @@ const _invalidateAllLogsCache = () => {
   invalidateCache(`${CACHE_KEYS.LOGS}*`)
   invalidateCache(`${CACHE_KEYS.LOGS_BY_PROTOCOL}*`)
   invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH}*`)
+  invalidateCache(`${CACHE_KEYS.LOGS_BY_MONTH_SLIM}*`)
   invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
   invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
   invalidateCache('logs:dateRange*')
+  invalidateCache(`${CACHE_KEYS.LOGS_DATE_RANGE_SLIM}*`)
   _invalidateAdherenceCache()
 }
 
@@ -286,6 +290,16 @@ export const cachedLogService = {
   async getByDateRange(startDate, endDate, limit = 50, offset = 0) {
     const key = generateCacheKey('logs:dateRange', { startDate, endDate, limit, offset })
     return cachedQuery(key, () => logService.getByDateRange(startDate, endDate, limit, offset))
+  },
+
+  async getByDateRangeSlim(startDate, endDate, limit = 50, offset = 0) {
+    const key = generateCacheKey(CACHE_KEYS.LOGS_DATE_RANGE_SLIM, { startDate, endDate, limit, offset })
+    return cachedQuery(key, () => logService.getByDateRangeSlim(startDate, endDate, limit, offset))
+  },
+
+  async getByMonthSlim(year, month) {
+    const key = generateCacheKey(CACHE_KEYS.LOGS_BY_MONTH_SLIM, { year, month })
+    return cachedQuery(key, () => logService.getByMonthSlim(year, month))
   },
 
   // Métodos de escrita (com invalidação de cache)
