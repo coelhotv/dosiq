@@ -468,7 +468,7 @@ export const logService = {
   /**
    * Logs por período com select mínimo (sem relações completas).
    * Consumidores: calculateAdherenceStats, LastDosesWidget, DoseCalendar, useDoseZones
-   * Campos: id, taken_at, quantity_taken, protocol_id, medicine_id, status
+   * Campos: id, taken_at, quantity_taken, protocol_id, medicine_id
    * ~60 bytes/log (vs ~315 bytes com select('*') + full relations)
    * @param {string} startDate - ISO YYYY-MM-DD (data local Brasil)
    * @param {string} endDate - ISO YYYY-MM-DD (data local Brasil)
@@ -492,7 +492,7 @@ export const logService = {
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(
-        'id, taken_at, quantity_taken, protocol_id, medicine_id, status',
+        'id, taken_at, quantity_taken, protocol_id, medicine_id',
         { count: 'exact' }
       )
       .eq('user_id', await getUserId())
