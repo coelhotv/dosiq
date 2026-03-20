@@ -40,6 +40,7 @@
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
 | **Telegram bot** | [`docs/architecture/TELEGRAM_BOT.md`](docs/architecture/TELEGRAM_BOT.md) ✅ |
+| **Chatbot IA (F8.1)** | [`docs/architecture/CHATBOT_AI.md`](docs/architecture/CHATBOT_AI.md) ✅ — contextBuilder, safetyGuard, Groq API, hallucinations |
 | **Gemini/AI code review** | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) ✅ |
 
 **Agent-specific rules:**
