@@ -33,6 +33,27 @@
   color: var(--color-text);
 }
 
+.headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.clearButton:hover {
+  opacity: 0.7;
+}
+
 .closeButton {
   background: none;
   border: none;
@@ -70,6 +91,41 @@
 .messageBubbleAssistant {
   align-self: flex-start;
   background: var(--color-surface, #1e1e1e);
+}
+
+.messageTime {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.5;
+  text-align: right;
+  margin-top: 3px;
+}
+
+.dateSeparator {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  margin: 8px 0;
+  position: relative;
+}
+
+.dateSeparator::before,
+.dateSeparator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: var(--color-border, #333);
+}
+
+.dateSeparator::before {
+  left: 0;
+}
+
+.dateSeparator::after {
+  right: 0;
 }
 
 .thinkingBubble {

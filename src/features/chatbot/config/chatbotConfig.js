@@ -72,3 +72,24 @@ export const CHATBOT_HEALTH_KEYWORDS = [
   'saude',
   'sintoma',
 ]
+
+// -- Persistência de Histórico --
+
+/** Chave do localStorage para persistir histórico de conversa. */
+export const CHATBOT_HISTORY_STORAGE_KEY = 'mr_chat_history'
+
+/** Máximo de mensagens a manter e exibir no histórico persistido (10 turnos = 20 mensagens). */
+export const CHATBOT_HISTORY_MAX_DISPLAY = 20
+
+/**
+ * Cria mensagem de boas-vindas inicial com timestamp.
+ * Reutilizável em web (ChatWindow) e server (Telegram).
+ * @returns {{role: string, content: string, timestamp: number}}
+ */
+export function createWelcomeMessage() {
+  return {
+    role: 'assistant',
+    content: `Olá! Sou seu Assistente IA de medicamentos. Como posso ajudar?\n\n_${CHATBOT_DISCLAIMER}_`,
+    timestamp: Date.now(),
+  }
+}

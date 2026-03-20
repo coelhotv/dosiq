@@ -4,6 +4,8 @@ import {
   CHATBOT_MAX_HISTORY,
   CHATBOT_RATE_LIMIT_WINDOW,
   CHATBOT_RATE_LIMIT_MAX,
+  CHATBOT_HISTORY_STORAGE_KEY,
+  CHATBOT_HISTORY_MAX_DISPLAY,
 } from '../config/chatbotConfig'
 
 const MAX_HISTORY = CHATBOT_MAX_HISTORY
@@ -112,6 +114,59 @@ function incrementRateCounter() {
         JSON.stringify({ windowStart: data.windowStart, count: (data.count || 0) + 1 })
       )
     }
+  } catch {
+    // Silently fail
+  }
+}
+
+// -- Persistência de histórico (localStorage) --
+
+/**
+ * Carrega histórico persistido de conversa do localStorage.
+ * @returns {Array<{role: string, content: string, timestamp: number}>}
+ */
+export function loadPersistedHistory() {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = JSON.parse(localStorage.getItem(CHATBOT_HISTORY_STORAGE_KEY) || '[]')
+    // Validar estrutura mínima: array de objetos com role, content, timestamp
+    if (!Array.isArray(data)) return []
+    return data.filter(
+      msg => msg.role && msg.content && typeof msg.timestamp === 'number'
+    )
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Persiste histórico de conversa no localStorage.
+ * Limita a CHATBOT_HISTORY_MAX_DISPLAY mensagens mais recentes.
+ * @param {Array<{role: string, content: string, timestamp: number}>} messages
+ */
+export function savePersistedHistory(messages) {
+  if (typeof window === 'undefined') return
+  try {
+    // Filtrar mensagem de boas-vindas (primeira mensagem do assistente sem outras mensagens)
+    const filtered = messages.filter(msg => {
+      if (msg.role === 'assistant' && messages.length === 1) return false // Mensagem inicial
+      return true
+    })
+    // Manter apenas as últimas N mensagens
+    const trimmed = filtered.slice(-CHATBOT_HISTORY_MAX_DISPLAY)
+    localStorage.setItem(CHATBOT_HISTORY_STORAGE_KEY, JSON.stringify(trimmed))
+  } catch {
+    // Silently fail
+  }
+}
+
+/**
+ * Limpa histórico persistido do localStorage.
+ */
+export function clearPersistedHistory() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(CHATBOT_HISTORY_STORAGE_KEY)
   } catch {
     // Silently fail
   }
