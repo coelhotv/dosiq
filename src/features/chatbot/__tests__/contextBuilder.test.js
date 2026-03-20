@@ -10,6 +10,8 @@ const mockMedicines = [
   {
     id: 'uuid-1',
     name: 'Metformina',
+    active_ingredient: 'Cloridrato de Metformina',
+    therapeutic_class: 'Antidiabetico',
     dosage_per_pill: 500,
     dosage_unit: 'mg',
     stock: [{ quantity: 20 }],
@@ -78,6 +80,33 @@ describe('buildPatientContext', () => {
       stats: { adherence: 0.92 },
     })
     expect(result).toContain('92%')
+  })
+
+  it('inclui principio ativo e classe terapeutica quando disponiveis', () => {
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+    })
+    expect(result).toContain('Cloridrato de Metformina')
+    expect(result).toContain('Antidiabetico')
+  })
+
+  it('omite campos ausentes sem expor null ou undefined no contexto', () => {
+    const medSemInfo = [{ ...mockMedicines[0], active_ingredient: null, therapeutic_class: null }]
+    const result = buildPatientContext({
+      medicines: medSemInfo,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+    })
+    expect(result).toContain('Metformina')
+    expect(result).not.toContain('null')
+    expect(result).not.toContain('undefined')
+    expect(result).not.toContain('[]')
   })
 
   it('nao inclui IDs ou UUIDs', () => {

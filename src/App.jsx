@@ -278,10 +278,10 @@ function App() {
             <>
               <button
                 onClick={() => setIsChatOpen(true)}
-                aria-label="Abrir assistente"
+                aria-label="Abrir assistente IA"
                 className={appStyles.chatFab}
               >
-                💬
+                🤖
               </button>
               {isChatOpen && (
                 <Suspense fallback={null}>
