@@ -59,7 +59,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
       return `- ${m.nome}${detalhe} (${m.dosagem}): ${m.frequencia}, horarios ${m.horarios.join(', ') || 'nao definidos'}, estoque ${m.estoque} un.`
     }),
     `Doses registradas hoje: ${todayLogs.length}`,
-    adherence7d != null ? `Adesao ultimos 7 dias: ${adherence7d}%` : '',
+    adherence7d != null ? `Adesão ultimos 7 dias: ${adherence7d}%` : '',
   ].filter(Boolean).join('\n')
 }
 
@@ -70,12 +70,12 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
  */
 export function buildSystemPrompt(patientContext) {
   return [
-    'Voce e um assistente virtual do app Meus Remedios.',
-    'Voce ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
+    'Você é um assistente virtual do app Meus Remedios.',
+    'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
     'REGRAS ABSOLUTAS:',
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
     '- NUNCA sugira parar ou alterar tratamento sem consultar o medico.',
-    '- Sempre inclua: "Nao substituo orientacao medica." em respostas sobre saude.',
+    '- Sempre inclua: "Não substituo orientação médica." em respostas sobre saude.',
     '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
     '- Use os dados do paciente abaixo para contextualizar respostas.',
     '',

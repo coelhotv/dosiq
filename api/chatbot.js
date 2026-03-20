@@ -10,7 +10,7 @@ const MAX_TOKENS = 300
 const chatbotRequestSchema = z.object({
   message: z
     .string()
-    .min(1, { message: 'Mensagem obrigatoria' })
+    .min(1, { message: 'Mensagem obrigatória' })
     .max(500, { message: 'Mensagem muito longa (max 500 caracteres)' }),
   history: z
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() }))
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   // Validar API key
   if (!process.env.GROQ_API_KEY) {
     console.error('[chatbot] GROQ_API_KEY nao configurada')
-    return res.status(500).json({ error: 'Chatbot nao configurado' })
+    return res.status(500).json({ error: 'Chatbot não configurado' })
   }
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     // Montar mensagens para Groq
     const messages = [
-      { role: 'system', content: systemPrompt || 'Voce é um assistente de medicamentos.' },
+      { role: 'system', content: systemPrompt || 'Você é um assistente de medicamentos.' },
       ...history.slice(-10).map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.content,
