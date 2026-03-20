@@ -3,6 +3,7 @@ import { getUserIdByChatId } from '../../services/userService.js';
 import { getSession, setSession, clearSession } from '../state.js';
 import { calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
+import { handleChatbotMessage } from '../commands/chatbot.js';
 
 const logger = createLogger('ConversationalCallbacks');
 
@@ -52,20 +53,33 @@ export async function handleConversationalCallbacks(bot) {
     }
   });
 
-  // Handle manual text input for quantities/values
+  // Handle manual text input for quantities/values OR chatbot IA
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     // Skip if message is a command
     if (msg.text?.startsWith('/')) return;
-    
+
     const session = await getSession(chatId);
-    
+
     if (session && session.waitingForInput) {
+      logger.debug('💬 Processando entrada esperada de session', {
+        chatId,
+        action: session.action,
+        step: session.step
+      });
+
       if (session.action === 'registrar_dose' && session.step === 'waiting_qty') {
         await handleManualQuantityInput(bot, msg, session);
       } else if (session.action === 'adicionar_estoque' && session.step === 'waiting_stock_qty') {
         await handleManualStockInput(bot, msg, session);
       }
+    } else {
+      // Fallback: não há session ativa → processar como chatbot IA
+      logger.info('🤖 Mensagem sem session ativa → chatbot IA', {
+        chatId,
+        textPreview: msg.text?.substring(0, 50)
+      });
+      await handleChatbotMessage(bot, msg);
     }
   });
 }
