@@ -1,11 +1,12 @@
 # Fase 6: Inteligencia & Insights — Overview
 
-> **Versao:** 1.0 | **Data:** 06/03/2026
+> **Versao:** 2.0 | **Data:** 20/03/2026
 > **Tipo:** Overview/Resumo (para contexto de produto)
 > **SSOT (Single Source of Truth):** `plans/EXEC_SPEC_FASE_6.md` ← **LEIA ESTE PARA IMPLEMENTACAO**
 > **Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0
 > **Custo operacional:** R$ 0
 > **Esforco total:** 39 SP em 5 sprints
+> **Status:** 4/5 sprints ENTREGUES ✅ — apenas Sprint 6.3 (INT-01 + INT-02, 5 SP) pendente
 
 ---
 
@@ -46,7 +47,7 @@ Transformar dados acumulados em predicoes acionaveis que tornam o app indispensa
 
 ## Features
 
-### I01 — Previsao de Reposicao (5 SP)
+### I01 — Previsao de Reposicao (5 SP) ✅ ENTREGUE (Sprint 6.1)
 
 **Service:** `src/features/stock/services/refillPredictionService.js`
 
@@ -67,7 +68,7 @@ dias_restantes = stock.quantity / (consumo_real_30d / 30)
 
 ---
 
-### I04 — Score de Risco por Protocolo (5 SP)
+### I04 — Score de Risco por Protocolo (5 SP) ✅ ENTREGUE (Sprint 6.1)
 
 **Service:** `src/features/adherence/services/protocolRiskService.js`
 
@@ -95,7 +96,7 @@ dias_restantes = stock.quantity / (consumo_real_30d / 30)
 
 ---
 
-### I05 — Analise de Custo Avancada (5 SP)
+### I05 — Analise de Custo Avancada (5 SP) ✅ ENTREGUE (Sprint 6.2)
 
 Evolui F5.10 (`costAnalysisService.js` criado na Fase 5).
 
@@ -115,7 +116,7 @@ custo_mensal = consumo_real_mensal * avg_unit_price
 
 ---
 
-### I02 — Heatmap de Padroes de Adesao (8 SP)
+### I02 — Heatmap de Padroes de Adesao (8 SP) ✅ ENTREGUE (Sprint 6.5)
 
 **Component:** `src/features/adherence/components/AdherenceHeatmap.jsx`
 
@@ -137,7 +138,7 @@ Baseado na celula com menor taxa de adesao (minimo 3 amostras na celula para con
 
 ---
 
-### I03 — Otimizador de Horario de Lembrete (8 SP)
+### I03 — Otimizador de Horario de Lembrete (8 SP) ✅ ENTREGUE (Sprint 6.4)
 
 **Service:** `src/features/protocols/services/reminderOptimizerService.js`
 
@@ -160,7 +161,7 @@ Botoes:
 
 ---
 
-### EV-07 — Timeline Visual de Prescricoes (3 SP)
+### EV-07 — Timeline Visual de Prescricoes (3 SP) ✅ ENTREGUE (Sprint 6.5)
 
 **Component:** `src/shared/components/ui/PrescriptionTimeline.jsx`
 
@@ -187,7 +188,7 @@ Botoes:
 
 ---
 
-### INT-01 — Risk Score no PDF Reports (2 SP)
+### INT-01 — Risk Score no PDF Reports (2 SP) ⬚ PENDENTE (Sprint 6.3)
 
 Integrar `protocolRiskService` com o gerador PDF existente (jsPDF).
 
@@ -206,7 +207,7 @@ Usar cores no PDF (vermelho/amarelo/verde) para a coluna classificacao.
 
 ---
 
-### INT-02 — Refill Prediction nos Alertas Bot (3 SP)
+### INT-02 — Refill Prediction nos Alertas Bot (3 SP) ⬚ PENDENTE (Sprint 6.3)
 
 Integrar `refillPredictionService` com o scheduler do bot (`server/bot/tasks.js`).
 
@@ -222,13 +223,13 @@ Integrar `refillPredictionService` com o scheduler do bot (`server/bot/tasks.js`
 
 ## Sequencia de Implementacao
 
-| Onda | Features | SP | Justificativa |
-|------|----------|----|---------------|
-| 1 | I01 + I04 | 10 | Maior valor, menor risco. Services puros, testavel isoladamente |
-| 2 | I05 | 5 | Estende F5.10 recem-construido |
-| 3 | INT-01 + INT-02 | 5 | Integracoes com PDF e bot, dependem de I01/I04 |
-| 4 | I03 | 8 | Requer dados de uso reais, construir apos I01/I04 |
-| 5 | I02 + EV-07 | 11 | Componentes visuais, podem ser paralelizados |
+| Onda | Features | SP | Status | Justificativa |
+|------|----------|----|--------|---------------|
+| 1 | I01 + I04 | 10 | ✅ Sprint 6.1 ENTREGUE | Maior valor, menor risco. Services puros, testavel isoladamente |
+| 2 | I05 | 5 | ✅ Sprint 6.2 ENTREGUE | Estende F5.10 recem-construido |
+| 4 | I03 | 8 | ✅ Sprint 6.4 ENTREGUE | Requer dados de uso reais, construir apos I01/I04 |
+| 5 | I02 + EV-07 | 11 | ✅ Sprint 6.5 ENTREGUE | Componentes visuais, podem ser paralelizados |
+| 3 | INT-01 + INT-02 | 5 | ⬚ Sprint 6.3 PENDENTE | Integracoes com PDF e bot, dependem de I01/I04 |
 
 ---
 
@@ -280,4 +281,5 @@ src/shared/components/ui/__tests__/PrescriptionTimeline.test.js
 
 ---
 
-*Documento criado 06/03/2026. Substitui PRD_FASE_5.5_ROADMAP_2026.md.*
+*Documento criado 06/03/2026. Atualizado 20/03/2026 — Sprint 6.3 unico pendente.*
+*Substitui PRD_FASE_5.5_ROADMAP_2026.md.*

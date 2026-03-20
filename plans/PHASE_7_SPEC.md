@@ -1,8 +1,8 @@
 # Spec de Execucao — Fase 7: Crescimento & Alcance
 
-**Versao:** 1.0
-**Data:** 06/03/2026
-**Baseline:** v3.3.0 (Fase 6 completa)
+**Versao:** 1.1
+**Data:** 20/03/2026 (atualizado com aprendizados de performance mobile)
+**Baseline:** v3.3.0+ (Fase 6 completa — Sprint 6.3 pendente)
 **Esforco total:** 63 SP
 **Custo operacional:** R$ 0 (Meta Cloud API: 1.000 conversas/mes gratuitas)
 
@@ -46,6 +46,8 @@ server/
 
 **Serverless:** Nova funcao `api/whatsapp.js` (webhook handler) — usa 1 dos 6 slots restantes (7/12 apos implementacao).
 
+> ⚠️ **Verificar budget serverless antes de iniciar** — rodar `find api -name "*.js" -not -path "*/_*" | wc -l`. O budget atual e 6/12 (R-090). Se chegou a 7+ por alguma consolidacao intermediaria, revisar antes de adicionar `api/whatsapp.js`.
+
 **Feature parity com Telegram:**
 - Lembretes de dose
 - Confirmacao de dose
@@ -65,6 +67,8 @@ server/
 **Refatoracao do bot existente:**
 - Extrair logica compartilhada de `tasks.js` para services agnositcos de canal
 - `INotificationChannel` define: `send(userId, message)`, `sendWithButtons(userId, message, buttons)`, `formatMessage(template, data)`
+
+> ⚠️ **Aprendizado de performance (M2 + D0):** A refatoracao de `tasks.js` nao deve adicionar imports estaticos de services client-side (como `refillPredictionService`, `protocolRiskService`) diretamente no server/bot/. O bot roda server-side em Node.js — use a logica diretamente ou extraia para `server/bot/utils/` com `import()` dinamico onde possivel. Barrel exports que re-exportam tudo (AP-B04) quebram code-splitting no client-side e devem ser evitados tambem em novos arquivos server-side.
 
 **Restricoes criticas:**
 - Meta exige verificacao Business (2-4 semanas) — INICIAR DURANTE A FASE 6
@@ -280,4 +284,21 @@ W01 (21 SP) ──> W02 (5 SP) ──> W03 (8 SP)
 
 ---
 
-*Documento criado 06/03/2026. Substitui PRD_FASE_6_ROADMAP_2026.md.*
+---
+
+## Aprendizados de Performance Aplicaveis (Fases M0-M8, P1-P4, D0-D3)
+
+Estes learnings foram formalizados antes da Fase 7 e DEVEM ser considerados na implementacao:
+
+| Aprendizado | Regra | Aplicacao em Fase 7 |
+|-------------|-------|---------------------|
+| Barrel exports quebram code-splitting | AP-B04 | `@shared/services/index.js` nao deve exportar novos services da Fase 7 — importar direto do arquivo |
+| Import estatico de componente pesado puxa chunks | AP-B03 | WhatsApp UI components devem ser `React.lazy()` se >200 linhas |
+| Auth roundtrip sem cache | AP-P14 | `getUserId()` e `getCurrentUser()` ja tem cache — NUNCA chamar `supabase.auth.getUser()` diretamente em novo codigo |
+| `select('*')` desnecessario | AP-P10 | Novos endpoints que buscam dados de `accountability_partners` ou `caregiver_links` devem usar select minimo |
+| N+1 queries em `Promise.all` | AP-P09 | Ao verificar parceiros ativos, buscar TODOS de uma vez com `.in()` nao um por um |
+
+---
+
+*Documento criado 06/03/2026. Atualizado 20/03/2026 com aprendizados de performance mobile.*
+*Substitui PRD_FASE_6_ROADMAP_2026.md.*
