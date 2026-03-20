@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-15 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf M0–M8 + P1–P3:** ✅ TODOS MERGED
+**Last Updated:** 2026-03-20 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf M0–M8 + P1–P4:** ✅ TODOS MERGED
 
 ---
 
@@ -41,7 +41,11 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **R-113** | Filter logs by protocol_id ONLY, never || medicine_id | CRITICAL (S6.1) — prevents cross-protocol contamination |
 | **R-114** | .setHours(0,0,0,0) on date boundaries | HIGH (S6.1) — timezone-agnostic comparison |
 
-→ Full rules at `.memory/rules.md` (R-001 to R-114)
+| **R-128** | Promise coalescence para auth roundtrips | CRITICAL — 13 → 1 roundtrip |
+| **R-129** | String comparison para datas em hot loops | HIGH — 71.3% CPU → negligível |
+| **R-131** | parseLocalDate em TODAS queries Supabase de data | CRITICAL — off-by-one day em GMT-3 |
+
+→ Full rules at `.memory/rules.md` (R-001 to R-131)
 
 ---
 
@@ -58,7 +62,11 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | Count logs instead of summing quantity_taken | Multi-pill doses underestimated | Sum `.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0)` |
 | Filter logs with `protocol_id \|\| medicine_id` | Cross-protocol contamination | Use protocol_id ONLY |
 
-→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-A01, 50+ entries)
+| `getUserId()` sem cache (AP-P14) | 13 auth roundtrips (~8s em 4G) | Promise coalescence + cache em memória |
+| `new Date()` em hot loop (AP-P15) | 71.3% CPU, 9.5s freeze mobile | String comparison YYYY-MM-DD |
+| UTC hardcoded em queries (AP-P16) | Off-by-one day em GMT-3 | `parseLocalDate().toISOString()` |
+
+→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P17, 60+ entries)
 
 ---
 
@@ -246,9 +254,9 @@ git push -u origin feature/fase-N/descriptive-name
 
 ## 📚 Documentation
 
-- `.memory/rules.md` — 114 project-specific rules (R-001 to R-114)
-- `.memory/anti-patterns.md` — 48 anti-patterns to avoid (AP-001 to AP-A04)
-- `.memory/journal/` — Sprint journals (2026-W06 through 2026-W10)
+- `.memory/rules.md` — 131 project-specific rules (R-001 to R-131)
+- `.memory/anti-patterns.md` — 60+ anti-patterns to avoid (AP-001 to AP-P17)
+- `.memory/journal/` — Sprint journals (2026-W06 through 2026-W12-P4)
 - `.memory/knowledge.md` — Domain-specific facts and APIs
 - `docs/INDEX.md` — Public documentation index
 - `CLAUDE.md` — Project instructions (override defaults)
@@ -274,6 +282,18 @@ Agents should read this file + rules + anti-patterns before coding.
 - **P3** `fe26176` PR#400 — slim select timeline: ~500 → ~120 bytes/log (76% redução)
 - R-125 (cache adherence) + R-126 (serialize mobile queries) + R-127 (slim select) registradas
 - AP-P12 (repeated sub-queries) + AP-P13 (queries after setIsLoading) registradas
+
+## Sprint P4 ✅ DELIVERED (2026-03-20) — Slim Dashboard Logs + Auth Cache
+**PR:** #403 | Branch: `fix/mobile-perf-p4-slim-dashboard-logs`
+- `getByDateRangeSlim` + `getByMonthSlim` (payload 76% menor)
+- Zod validation em todos 8 métodos de leitura do logService
+- `parseLocalDate()` em 4 métodos de query de data (R-020/R-131)
+- `getUserId()` cache + promise coalescence (13 → 1 auth roundtrip, ~8s economia)
+- `calculateStreaks` string comparison (CPU 71.3% → negligível)
+- Fix coluna `status` inexistente em `medicine_logs`
+- Spec criada: `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D1-D6, target ≤12 queries)
+- R-128 to R-131 + AP-P14 to AP-P17 registradas
+- Journal: `.memory/journal/2026-W12-P4.md`
 
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**
