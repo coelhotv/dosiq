@@ -254,8 +254,8 @@ git push -u origin feature/fase-N/descriptive-name
 
 ## 📚 Documentation
 
-- `.memory/rules.md` — 131 project-specific rules (R-001 to R-131)
-- `.memory/anti-patterns.md` — 60+ anti-patterns to avoid (AP-001 to AP-P17)
+- `.memory/rules.md` — 134 project-specific rules (R-001 to R-134, +3 from Sprint 8.5)
+- `.memory/anti-patterns.md` — 63+ anti-patterns to avoid (AP-001 to AP-SL03)
 - `.memory/journal/` — Sprint journals (2026-W06 through 2026-W12-P4)
 - `.memory/knowledge.md` — Domain-specific facts and APIs
 - `docs/INDEX.md` — Public documentation index
@@ -319,6 +319,25 @@ Agents should read this file + rules + anti-patterns before coding.
 - **Modelo:** Trocar para `groq/compound` (seleção inteligente)
 - **Testes:** 33/33 passando ✅ | localStorage mock corrigido (AP-T03)
 - Journal: `.memory/journal/2026-W12.md` (análise de alucinação + soluções)
+
+## Sprint 8.5 ✅ ENTREGUE (2026-03-20) — Debug & Fix: Chatbot IA no Telegram
+**Commits:** `f30a72f`, `db69312`, `12470bd` | **PR:** #412 (mergeado) | **Problema:** "Chatbot não responde" no Telegram
+- **Root Cause #1 (Observabilidade):** Logs em `server/bot/**` invisíveis em Vercel (Node context vs serverless context)
+  - **Fix:** Adicionar `createLogger` em `api/telegram.js` (entry point Vercel, onde logs SÃO capturados)
+  - **Regra:** R-132 — Logging estruturado em `api/*.js`, não em níveis inferiores
+
+- **Root Cause #2 (Lógica):** Mensagens sem sessão ativa caíam silenciosamente (router sem fallback)
+  - **Fix:** Adicionar `else { handleChatbotMessage(bot, msg) }` em `conversational.js`
+  - **Regra:** R-133 — Event-driven routers SEMPRE precisam de fallback explícito + logging
+
+- **Root Cause #3 (API Compatibility):** `bot.sendChatAction is not a function` (mock incompleto)
+  - **Fix:** Implementar method no bot adapter mock
+  - **Regra:** R-134 — Mock/adapter interfaces DEVEM ter TODOS os métodos que handlers chamam
+
+- **Quality:** 539/539 testes ✅ | 0 lint ✅ | Resposta chatbot correcta: "SeloZok = Metoprolol Succinato, betabloqueador"
+- **Anti-Patterns:** AP-SL01 (logging em contexto errado), AP-SL02 (mock incompleto), AP-SL03 (router sem fallback)
+- **Documentation:** Updated `docs/architecture/CHATBOT_AI.md` (Telegram integration + debugging journey), `.memory/rules.md` (R-132 to R-134)
+- Journal: `.memory/journal/2026-W12.md` (análise 3-layer bug, lições de integração)
 
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**

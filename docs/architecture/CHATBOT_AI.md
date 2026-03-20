@@ -397,12 +397,16 @@ export function clearPersistedHistory()        // → limpa ao usuario pedir
 
 ## 🔌 Extensões Futuras
 
-### 1. **Integração com Telegram Bot** ✅ Sprint 8.3.2
+### 1. **Integração com Telegram Bot** ✅ Sprint 8.3.2 + Sprint 8.5 (Debug Fix)
 
 Implementado em `server/bot/` com arquitetura server-side:
 
 ```
 Telegram msg (texto)
+  → webhook handler (api/telegram.js — Vercel entry point)
+      → logs estruturados AQUI (visível em Vercel prod)
+      → dispatch: command vs message vs callback_query
+      ↓ (para textos livres)
   → handleChatbotMessage (server/bot/commands/chatbot.js)
       → getUserIdByChatId() — verifica vinculação
       → sendTelegramChatMessage() (server/bot/services/chatbotServerService.js)
@@ -416,17 +420,41 @@ Telegram msg (texto)
       → bot.sendMessage(chatId, response)
 ```
 
+**Debugging Journey (Sprint 8.5):**
+
+User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix:
+
+| Camada | Problema | Root Cause | Fix | Impacto |
+|--------|----------|-----------|-----|---------|
+| **1. Observabilidade** | Logs não visíveis em Vercel | Structured logging em `server/bot/**` (Node context) invisível para Vercel | Adicionar logging em `api/telegram.js` (serverless entry point) | Logs agora visíveis em prod (R-132) |
+| **2. Lógica** | Mensagens sem sessão ignoradas silenciosamente | Router não tinha fallback para mensagens livres | Adicionar `else { handleChatbotMessage() }` em conversational.js | Textos livres agora routeados (R-133) |
+| **3. API Compatibility** | `bot.sendChatAction is not a function` | Mock bot adapter incompleto (faltava sendChatAction) | Implementar method no adapter | Typing indicator funcionando |
+
+**Lições de Integração:**
+
+1. **Logging em contextos diferentes:** Node.js server vs Vercel serverless são VMs separadas. Logs estruturados DEVEM estar no entry point Vercel (`api/telegram.js`), não em níveis inferiores.
+
+2. **Event-driven dispatch:** Quando múltiplos handlers competem (commands específicos vs fallback conversacional), SEMPRE ter fallback explícito + logging. Casos não-capturados caem silenciosamente.
+
+3. **Mock completeness:** Testar localmente que mock bot implementa TODOS os métodos que handlers chamam. Interface incompleta = erro silencioso em produção.
+
+4. **Multi-channel adaptation:** Web chatbot reutiliza contextBuilder + safetyGuard + Groq. Telegram precisa de adaptação:
+   - Dados: DashboardContext → Supabase queries direto
+   - Rate limit: localStorage → Map em memória
+   - Groq call: `/api/chatbot` endpoint → SDK direto
+
 **Diferenças em relação ao canal Web:**
 
 | Aspecto | Web (ChatWindow) | Telegram |
 |---------|-----------------|----------|
-| Rate limit | localStorage | Map em memória |
-| Dados paciente | DashboardContext | Supabase direto |
-| Groq call | `/api/chatbot` (Vercel) | Groq SDK direto |
-| Histórico | Estado React | Map por userId |
-| Graceful degradation | Mensagem UI | Silencioso (não vinculado) |
+| Rate limit | localStorage (30 msg/hora) | Map em memória (30 msg/hora) |
+| Dados paciente | DashboardContext (React context) | Supabase queries (server-side) |
+| Groq call | Vercel endpoint `/api/chatbot` | Groq SDK direto no server |
+| Histórico | Estado React (Suspense) | Map por userId (em memória) |
+| Graceful degradation | Mensagem UI "chatbot disabled" | Silencioso (não vinculado = sem resposta) |
+| Logging | Console + Vercel (ChatWindow.jsx logs) | Structured logs em `api/telegram.js` |
 
-**Env var necessária no servidor:** `GROQ_API_KEY`
+**Env vars necessárias no servidor:** `GROQ_API_KEY` (requerido), `LOG_LEVEL` (optional, default: INFO)
 
 ### 2. **Multi-Canal** (Roadmap)
 - WhatsApp Business API
@@ -480,7 +508,7 @@ Telegram msg (texto)
 
 ---
 
-## ✅ Checklist Pré-Produção
+## ✅ Checklist Pré-Produção (Web)
 
 - [x] contextBuilder: sem IDs/UUIDs, < 2000 tokens
 - [x] safetyGuard: bloqueia dosagem/diagnóstico/parar/efeito colateral
@@ -491,8 +519,18 @@ Telegram msg (texto)
 - [x] Bugfix 8.3.1: active_ingredient + therapeutic_class, temperature 0.2
 - [x] Documentação: AGENTS.md + CLAUDE.md atualizado
 
+## ✅ Checklist Telegram Integration (Sprint 8.5 — Debug & Fix)
+
+- [x] api/telegram.js: Logging estruturado no entry point Vercel (R-132)
+- [x] server/bot/callbacks/conversational.js: Fallback listener para mensagens livres (R-133)
+- [x] api/telegram.js bot adapter: Implementar `sendChatAction` (R-134)
+- [x] Verificar mock completeness: todos `bot.*` chamados existem no adapter
+- [x] Testes: 539/539 ainda passando (zero regressão)
+- [x] Logs: cadeia completa visível em Vercel (webhook → roteamento → contexto → Groq → resposta)
+- [x] Manual test: resposta correta do chatbot no Telegram
+
 ---
 
 *Última atualização: 2026-03-20*
-*Versão: 1.2 (Sprint 8.4 — Chat History Persistence)*
-*Status: ✅ Production Ready (Web + Telegram + History)*
+*Versão: 1.3 (Sprint 8.5 — Telegram Integration Debug & Fix)*
+*Status: ✅ Production Ready (Web + Telegram + History + Debugging Insights)*

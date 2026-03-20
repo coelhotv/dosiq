@@ -1116,5 +1116,61 @@ const endUtc = endLocal.toISOString()
 
 ---
 
+## Vercel Serverless & Bot Integration (Sprint 8.5 — 2026-03-20)
+
+### R-132: Logging em `api/*.js` para Visibilidade Vercel [CRITICAL]
+**Regra:** Estruturar logs no `.js` dentro do diretório `api/` (entry point Vercel), NÃO em níveis inferiores (`server/bot/**`, `src/**`). Dois contextos: Node.js server context é invisível para Vercel logging (VMs diferentes). Sem logs em `api/*.js`, debugging remoto é impossível.
+**Padrão:**
+```javascript
+// api/telegram.js (CORRETO — logs visíveis em Vercel)
+import { createLogger } from '../server/bot/logger.js'
+const logger = createLogger('TelegramWebhook')
+logger.info('📨 Webhook recebido', { method, updateType })
+```
+
+```javascript
+// server/bot/commands/chatbot.js (INSUFICIENTE — logs invisíveis em prod)
+logger.info('📨 Mensagem recebida') // Visto localmente, NOT in Vercel
+```
+
+**Contexto:** Sprint 8.5 debugged "chatbot não responde" — logs estruturados existiam em `server/bot/` mas não apareciam em Vercel prod logs. Solution: adicionar logs em `api/telegram.js` entry point.
+**Motivo:** Vercel capture logs de funções serverless, não de Node.js server context rodando paralelo. Dois processos, duas máquinas, dois sistemas de logging.
+**Source:** Sprint 8.5 — Debugging Telegram bot integration
+
+### R-133: Event-Driven Router Fallback [MEDIUM]
+**Regra:** Message routers com múltiplos `bot.on()` listeners SEMPRE precisam de `else` fallback genérico. Listeners específicos (patterns, sessão) capturam alguns casos, outros caem silenciosamente. Fallback garante feedback.
+**Padrão:**
+```javascript
+// Antes: if (condition1) { ... } else if (condition2) { ... }
+// Depois: if (condition1) { ... } else if (condition2) { ... } else {
+//   // Fallback catch-all
+//   logger.info('🤖 Mensagem não-capturada → processar com fallback handler')
+//   await fallbackHandler(msg)
+// }
+```
+
+**Contexto:** Sprint 8.5 — Mensagens sem sessão ativa eram silenciosamente ignoradas pelo router. Fix: adicionar `else` clause que routa para `handleChatbotMessage()`.
+**Motivo:** Event-driven systems com dispatch complexo precisam de safety net. "Silent failure" é pior que "handled by fallback".
+**Source:** Sprint 8.5 — Debugging Telegram bot integration
+
+### R-134: Mock/Adapter Interface Completeness [MEDIUM]
+**Regra:** Mock objects e adapters PRECISAM implementar TODOS os métodos que handlers realmente chamam. Testar localmente que interface está completa antes de deploy.
+**Validation checklist:**
+1. Listar todos `bot.*()` chamados em handlers
+2. Verificar que cada um existe no mock
+3. Se novo handler adiciona novo `bot.method()`, adicionar no mock imediatamente
+**Padrão de checklist (pré-deploy):**
+```bash
+# Localizar todos bot.* chamados em handlers
+grep -r "bot\." server/bot/commands/ server/bot/callbacks/ | grep -o "bot\.[a-zA-Z]*" | sort -u
+# Verificar que cada um existe em api/telegram.js mock
+```
+
+**Contexto:** Sprint 8.5 — Handler chamava `bot.sendChatAction()` que não existia no mock → `"is not a function"` error em Vercel.
+**Motivo:** Testar localmente com o mesmo mock não revela métodos faltantes até a função real ser invocada em produção.
+**Source:** Sprint 8.5 — Debugging Telegram bot integration (AP-SL02)
+
+---
+
 *Last updated: 2026-03-20*
-*Rules: R-001 to R-131*
+*Rules: R-001 to R-134*

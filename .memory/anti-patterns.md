@@ -166,5 +166,16 @@
 
 ---
 
+## Serverless & Bot Integration Anti-Patterns (Sprint 8.5 — 2026-03-20)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-SL01 | Logging estruturado em `server/bot/**` em vez de em `api/*.js` | Logs não aparecem em Vercel. Função Node.js server context é invisível para Vercel logging (dois processos/VMs diferentes). Debugging remoto impossível sem visibilidade | Adicionar `createLogger` import em `api/*.js` (Vercel entry point). Logar lá, não em níveis inferiores (server/bot). Logging em `server/bot` é útil para local dev, mas não chega a Vercel prod | R-130 |
+| AP-SL02 | Mock/adapter object com interface incompleta | Handler chama `bot.sendChatAction()` que não existe no mock → `"is not a function"` error em produção. Testar localmente com bot mock não revela que métodos faltam até atingir a função real | Lista de checkout: todos os `bot.*` chamados em handlers DEVEM estar implementados no mock. Testar localmente com a mesma função de mock antes de deploy | R-131 |
+| AP-SL03 | Message router sem fallback para casos não-capturados | Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras caem silenciosamente. Usuário envia texto livre → nenhum handler responde → sem feedback | Event-driven routers SEMPRE precisam de `else` catch-all. Se múltiplos `bot.on()` listeners, último deve ser fallback genérico com logging | R-132 |
+
+---
+
 *Last updated: 2026-03-20*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P17 + AP-D01 to AP-D03 + AP-B01 to AP-B04*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P17 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03*
+*Total: 63+ anti-patterns*
