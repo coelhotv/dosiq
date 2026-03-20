@@ -1066,7 +1066,55 @@ async getAdherencePatternFromView() {
 **Resultado:** ~76-80% redução de payload em timelines de logs (~500 bytes → ~120 bytes/row).
 **Source:** Sprint P3 — slim timeline select
 
+### R-128: Promise coalescence para auth roundtrips [CRITICAL]
+**Regra:** Funções que fazem HTTP roundtrip para buscar dados de sessão/auth (`getUser()`, `getSession()`) DEVEM implementar coalescência de promessas: se já há uma chamada em voo, reutilizar a mesma promise em vez de disparar outra.
+**Padrão:**
+```javascript
+let _cachedValue = null
+let _inflightPromise = null
+
+export const getValue = async () => {
+  if (_cachedValue) return _cachedValue
+  if (_inflightPromise) return _inflightPromise // coalescência
+
+  _inflightPromise = fetchValue().then(val => {
+    _inflightPromise = null
+    _cachedValue = val
+    return val
+  }).catch(err => { _inflightPromise = null; throw err })
+
+  return _inflightPromise
+}
+
+// Invalidar em auth state change
+onAuthStateChange(() => { _cachedValue = null; _inflightPromise = null })
+```
+**Impacto no projeto:** `getUserId()` fazia 13 HTTP roundtrips no primeiro load do Dashboard (~8s em 4G). Com cache + coalescência: 1 roundtrip.
+**Source:** Sprint P4 — PR #403 (getUserId cache)
+
+### R-129: String comparison para datas em hot loops [HIGH]
+**Regra:** Em loops que iteram >100 vezes sobre datas no formato YYYY-MM-DD, usar comparação de strings (`dateStr < startStr`) ao invés de `new Date()` construction. Strings YYYY-MM-DD são lexicograficamente ordenáveis — não precisam de parsing para comparação.
+**Impacto:** `calculateStreaks()` em adherenceService fazia ~2700+ `new Date()` calls (90 dias × N protocolos × 3 calls). Com string comparison: 0 Date objects no hot path. CPU time `parseLocalDate()` caiu de 71.3% para negligível.
+**Source:** Sprint P4 — PR #403 (Chrome trace analysis: 23074/32379 samples = `parseLocalDate`)
+
+### R-130: Zod validation em TODOS os métodos de leitura de services [HIGH]
+**Regra:** Não validar apenas métodos de escrita (create/update/delete). Métodos de leitura (get/list/getByRange) também DEVEM ter schemas Zod validando seus parâmetros.
+**Padrão:** `dateRangeSchema`, `monthSchema`, `paginationSchema` — schemas reutilizáveis no topo do service.
+**Motivo:** Parâmetros inválidos (ex: month=13, limit=-1) causam queries ineficientes ou erros silenciosos no Supabase. Validação na camada de service documenta o contrato e falha cedo.
+**Source:** Sprint P4 — PR #403 (review Gemini: getByDateRangeSlim + getByMonthSlim)
+
+### R-131: parseLocalDate em TODAS as queries de data ao Supabase [CRITICAL]
+**Regra:** Queries Supabase com filtros de data (`.gte('taken_at', ...)`, `.lte('taken_at', ...)`) DEVEM converter datas locais (YYYY-MM-DD) para UTC via `parseLocalDate()`. NUNCA usar templates com UTC hardcoded como `` `${date}T00:00:00.000Z` `` — isso ignora o fuso horário local e causa off-by-one day em GMT-3.
+**Padrão correto:**
+```javascript
+const startUtc = parseLocalDate(startDateStr).toISOString()
+const endLocal = parseLocalDate(endDateStr)
+endLocal.setHours(23, 59, 59, 999)
+const endUtc = endLocal.toISOString()
+```
+**Source:** Sprint P4 — PR #403 (review Gemini: getByMonth/getByMonthSlim violavam R-020)
+
 ---
 
-*Last updated: 2026-03-15*
-*Rules: R-001 to R-127*
+*Last updated: 2026-03-20*
+*Rules: R-001 to R-131*

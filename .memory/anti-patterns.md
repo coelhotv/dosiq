@@ -155,7 +155,16 @@
 | AP-B03 | Import estático de componente pesado que internamente importa services/vendors grandes | Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGeneratorService` → `stockService` + `vendor-pdf` (589KB) no modulepreload. O `manualChunks` do Vite separa os módulos em chunks, mas `<link rel="modulepreload">` carrega tudo eagerly. | Componentes que usam services pesados (PDF, charts, stock) devem ser `React.lazy()`. Services dentro deles devem usar `import()` dinâmico, não import estático. | R-117 |
 | AP-B04 | Barrel exports (`index.js`) que re-exportam todos os services incluindo os de features lazy | `@shared/services/index.js` exporta `stockService`, `adherenceService`, etc. Qualquer `import { x } from '@shared/services'` puxa TODA a árvore de dependências para o main bundle, quebrando code-splitting. | Importar services diretamente do arquivo fonte (`from '@stock/services/stockService'`) em vez de barrel exports. Ou dividir barrel em sub-barrels por feature. | — |
 
+## Performance Anti-Patterns — Auth & Hot Loop (Sprint P4 — 2026-03-20)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-P14 | `supabase.auth.getUser()` chamado em cada `getUserId()` sem cache | 13 HTTP roundtrips no primeiro load do Dashboard (~8s em 4G). Cada service que chama `getUserId()` dispara um roundtrip independente | Cache em memória + promise coalescence no módulo. Invalidar em `onAuthStateChange` (SIGNED_IN/SIGNED_OUT) | R-128 |
+| AP-P15 | `new Date()` construction em hot loop (>100 iterações) | `calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `parseLocalDate` consumia 71.3% do CPU time (23074/32379 samples), causando 9.5s de freeze no mobile | Strings YYYY-MM-DD são lexicograficamente ordenáveis — usar comparação de strings (`dateStr < startStr`) em vez de `new Date()` para comparações de range | R-129 |
+| AP-P16 | Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` `` | Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior local. Logs do dia 01 às 22:00 BRT ficam de fora | Sempre usar `parseLocalDate(dateStr).toISOString()` para converter data local → UTC corretamente | R-131 |
+| AP-P17 | `select('coluna_inexistente')` em query Supabase | HTTP 400 Bad Request silencioso. UI mostra "Erro ao carregar dados" sem mensagem clara. Ex: `status` em `medicine_logs` não existe | Manter JSDoc sincronizado com schema. Verificar colunas em `docs/architecture/DATABASE.md` antes de adicionar ao select | R-089, AP-B02 |
+
 ---
 
 *Last updated: 2026-03-20*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03 + AP-B01 to AP-B04*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P17 + AP-D01 to AP-D03 + AP-B01 to AP-B04*
