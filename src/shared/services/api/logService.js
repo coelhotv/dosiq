@@ -437,10 +437,15 @@ export const logService = {
       return { data: [], total: 0 }
     }
 
-    // Use UTC-safe date construction to avoid timezone edge cases
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    // Converte datas locais para UTC via parseLocalDate (R-020)
+    const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    const startUtc = parseLocalDate(startDateStr).toISOString()
+    const endLocal = parseLocalDate(endDateStr)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -453,8 +458,8 @@ export const logService = {
         { count: 'exact' }
       )
       .eq('user_id', await getUserId())
-      .gte('taken_at', `${startDate}T00:00:00.000Z`)
-      .lte('taken_at', `${endDate}T23:59:59.999Z`)
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
       .order('taken_at', { ascending: false })
 
     if (error) throw error
@@ -525,9 +530,15 @@ export const logService = {
       return { data: [], total: 0 }
     }
 
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    // Converte datas locais para UTC via parseLocalDate (R-020)
+    const startUtc = parseLocalDate(startDateStr).toISOString()
+    const endLocal = parseLocalDate(endDateStr)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -539,8 +550,8 @@ export const logService = {
         { count: 'exact' }
       )
       .eq('user_id', await getUserId())
-      .gte('taken_at', `${startDate}T00:00:00.000Z`)
-      .lte('taken_at', `${endDate}T23:59:59.999Z`)
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
       .order('taken_at', { ascending: false })
 
     if (error) throw error
