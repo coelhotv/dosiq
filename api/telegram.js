@@ -10,9 +10,11 @@ import { handleAdicionarEstoque, handleReporShortcut } from '../server/bot/comma
 import { handlePausar, handleRetomar } from '../server/bot/commands/protocols.js';
 import { handleCallbacks } from '../server/bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from '../server/bot/callbacks/conversational.js';
+import { createLogger } from '../server/bot/logger.js';
 
 // --- Configuration ---
 const token = process.env.TELEGRAM_BOT_TOKEN;
+const logger = createLogger('TelegramWebhook');
 // Note: Supabase client in this file was unused in previous logic except for /start linking
 // The imported commands use their own Supabase client from ../server/services/supabase.js
 // which uses dotenv. We rely on process.env being available in Vercel.
@@ -81,12 +83,18 @@ function createBotAdapter(token) {
 }
 
 export default async function handler(req, res) {
+  logger.info('📨 Webhook recebido', {
+    method: req.method,
+    updateType: req.body?.message ? 'message' : req.body?.callback_query ? 'callback_query' : 'unknown'
+  });
+
   if (req.method !== 'POST') {
+    logger.warn('❌ Método não permitido', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   if (!token) {
-    console.error('Missing TELEGRAM_BOT_TOKEN');
+    logger.error('❌ TELEGRAM_BOT_TOKEN ausente');
     return res.status(200).json({ error: 'Bot token not configured' });
   }
 
@@ -103,47 +111,109 @@ export default async function handler(req, res) {
     if (update.message?.text) {
       const msg = update.message;
       const text = msg.text;
+      const chatId = msg.chat.id;
+
+      logger.info('💬 Mensagem de texto recebida', {
+        chatId,
+        textPreview: text.substring(0, 50),
+        textLen: text.length,
+        isCommand: text.startsWith('/')
+      });
 
       // Command Routing
-      if (text.startsWith('/start')) await handleStart(bot, msg);
-      else if (text.startsWith('/status')) await handleStatus(bot, msg);
-      else if (text.startsWith('/estoque')) await handleEstoque(bot, msg);
-      else if (text.startsWith('/hoje')) await handleHoje(bot, msg);
-      else if (text.startsWith('/proxima')) await handleProxima(bot, msg);
-      else if (text.startsWith('/historico')) await handleHistorico(bot, msg);
-      else if (text.startsWith('/ajuda')) await handleAjuda(bot, msg);
-      
-      else if (text.startsWith('/registrar')) await handleRegistrar(bot, msg);
-      else if (text.startsWith('/adicionar_estoque')) await handleAdicionarEstoque(bot, msg);
-      
+      if (text.startsWith('/start')) {
+        logger.debug('🔧 Roteando: /start', { chatId });
+        await handleStart(bot, msg);
+      }
+      else if (text.startsWith('/status')) {
+        logger.debug('🔧 Roteando: /status', { chatId });
+        await handleStatus(bot, msg);
+      }
+      else if (text.startsWith('/estoque')) {
+        logger.debug('🔧 Roteando: /estoque', { chatId });
+        await handleEstoque(bot, msg);
+      }
+      else if (text.startsWith('/hoje')) {
+        logger.debug('🔧 Roteando: /hoje', { chatId });
+        await handleHoje(bot, msg);
+      }
+      else if (text.startsWith('/proxima')) {
+        logger.debug('🔧 Roteando: /proxima', { chatId });
+        await handleProxima(bot, msg);
+      }
+      else if (text.startsWith('/historico')) {
+        logger.debug('🔧 Roteando: /historico', { chatId });
+        await handleHistorico(bot, msg);
+      }
+      else if (text.startsWith('/ajuda')) {
+        logger.debug('🔧 Roteando: /ajuda', { chatId });
+        await handleAjuda(bot, msg);
+      }
+
+      else if (text.startsWith('/registrar')) {
+        logger.debug('🔧 Roteando: /registrar', { chatId });
+        await handleRegistrar(bot, msg);
+      }
+      else if (text.startsWith('/adicionar_estoque')) {
+        logger.debug('🔧 Roteando: /adicionar_estoque', { chatId });
+        await handleAdicionarEstoque(bot, msg);
+      }
+
       // Arguments regex commands
       else if (text.startsWith('/repor')) {
         const match = text.match(/\/repor\s+(.+)\s+(\d+[.,]?\d*)/);
-        if (match) await handleReporShortcut(bot, msg, match);
-        else bot.sendMessage(msg.chat.id, 'Formato inválido. Use: /repor Nome Quantidade');
+        if (match) {
+          logger.debug('🔧 Roteando: /repor', { chatId });
+          await handleReporShortcut(bot, msg, match);
+        }
+        else {
+          logger.warn('⚠️ Formato inválido /repor', { chatId, text });
+          bot.sendMessage(msg.chat.id, 'Formato inválido. Use: /repor Nome Quantidade');
+        }
       }
       else if (text.startsWith('/pausar')) {
         const match = text.match(/\/pausar(?:\s+(.+))?/);
-        await handlePausar(bot, msg, match || [text, undefined]); 
+        logger.debug('🔧 Roteando: /pausar', { chatId });
+        await handlePausar(bot, msg, match || [text, undefined]);
       }
       else if (text.startsWith('/retomar')) {
         const match = text.match(/\/retomar(?:\s+(.+))?/);
+        logger.debug('🔧 Roteando: /retomar', { chatId });
         await handleRetomar(bot, msg, match || [text, undefined]);
       }
-      
-      // Fallback: Emit 'message' event for conversational callback listeners
+
+      // Fallback: Emit 'message' event for conversational callback listeners (chatbot IA)
       else {
-         await bot._emit('message', msg);
+        logger.info('🤖 Emitindo evento "message" para listeners (chatbot IA)', {
+          chatId,
+          textPreview: text.substring(0, 50)
+        });
+        await bot._emit('message', msg);
       }
-    } 
+    }
     else if (update.callback_query) {
+      const callbackData = update.callback_query.data;
+      const chatId = update.callback_query.message?.chat?.id;
+      logger.info('🔲 Callback query recebido', {
+        chatId,
+        callbackData: callbackData.substring(0, 50),
+        callbackLen: callbackData.length
+      });
       // Dispatch to listeners registered via bot.on('callback_query', ...)
       await bot._emit('callback_query', update.callback_query);
     }
+    else {
+      logger.warn('⚠️ Update sem tipo identificado', { updateKeys: Object.keys(update) });
+    }
 
+    logger.info('✅ Webhook processado com sucesso');
     res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Webhook Error:', error);
+    logger.error('❌ Erro no webhook', error, {
+      errorMessage: error.message,
+      errorName: error.name,
+      chatId: update.message?.chat?.id || update.callback_query?.message?.chat?.id
+    });
     res.status(200).json({ error: 'Internal Error', details: error.message });
   }
 }
