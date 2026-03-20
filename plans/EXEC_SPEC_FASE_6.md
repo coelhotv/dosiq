@@ -1,9 +1,10 @@
 # Spec de Execucao — Fase 6: Inteligencia & Insights (SSOT)
 
-**Versao:** 2.0 (Consolidada)
-**Data:** 08/03/2026
-**Status:** SINGLE SOURCE OF TRUTH para agentes autonomos
-**Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0
+**Versao:** 2.1
+**Data:** 20/03/2026
+**Status:** SINGLE SOURCE OF TRUTH para agentes autonomos — Sprints 6.1, 6.2, 6.4, 6.5 ENTREGUES ✅
+**Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0 (atual)
+**Pendente:** Sprint 6.3 (INT-01 + INT-02, 5 SP)
 **Escopo:** 39 SP | 8 features | 5 sprints sequenciais com paralelizacao parcial
 **Referências:** `PHASE_6_SPEC.md` (overview), `ROADMAP_v4.md` (timeline), `UX_VISION_EXPERIENCIA_PACIENTE.md` (contexto UX)
 
@@ -225,7 +226,9 @@ TIMELINE COM PARALELIZACAO:
 | **Testar** | `src/features/stock/services/__tests__/refillPredictionService.test.js` |
 | **Dependencias** | Nenhuma nova. Usa dados de medicines, stocks, protocols, logs |
 
-**Implementacao:**
+> ⚠️ **AVISO (20/03/2026):** O código de exemplo abaixo usa `calculateDailyIntake()` no fallback — isso foi o bug CRITICAL corrigido pelo Gemini Code Review (Sprint 6.1). A função correta é `calculateExpectedDoses(protocols, days)` de `@utils/adherenceLogic`, que respeita a frequência do protocolo (semanal, dias_alternados, etc). **Leia o arquivo real** `src/features/stock/services/refillPredictionService.js` em vez de copiar este exemplo. Esta regra foi formalizada como R-111 e AP-A01 no `.memory/`.
+
+**Implementacao (referência histórica com bug — ver arquivo real):**
 
 ```javascript
 // src/features/stock/services/refillPredictionService.js
@@ -401,7 +404,14 @@ describe('refillPredictionService', () => {
 | **Testar** | `src/features/adherence/services/__tests__/protocolRiskService.test.js` |
 | **Dependencias** | Nenhuma nova. Usa dados de logs e protocols |
 
-**Implementacao:**
+> ⚠️ **AVISO (20/03/2026):** O código de exemplo abaixo contém 3 bugs que foram corrigidos durante o Sprint 6.1 via Gemini Code Review. **Leia o arquivo real** `src/features/adherence/services/protocolRiskService.js` em vez de copiar este exemplo. Bugs históricos preservados para aprendizado:
+> - Linha `log.protocol_id === protocolId || log.medicine_id === protocol.medicine_id` → viola R-113. Correto: `log.protocol_id === protocolId` apenas
+> - `logs14d.length / expected14d` → viola R-112. Correto: `logs14d.reduce((sum, l) => sum + (l.quantity_taken ?? 0), 0) / expected14d`
+> - `logs7d.length` e `logsPrev7d.length` → mesma correção R-112
+>
+> Estas regras foram formalizadas como R-112, R-113, AP-A02, AP-A03 no `.memory/`.
+
+**Implementacao (referência histórica com bugs — ver arquivo real):**
 
 ```javascript
 // src/features/adherence/services/protocolRiskService.js

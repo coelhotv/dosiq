@@ -1,7 +1,7 @@
 # Fase 8: Experiencia Inteligente & Wow Factor
 
-**Versao:** 1.0
-**Data:** 06/03/2026
+**Versao:** 1.1
+**Data:** 20/03/2026 (atualizado com aprendizados de performance mobile)
 **Objetivo:** Elevar a experiencia do paciente com IA conversacional, voz e interacoes que surpreendem — criando momentos de encantamento que tornam o app insubstituivel na rotina diaria.
 **Baseline:** v4.0.0 (Fase 7 completa)
 **Custo:** R$0-5/mes (Groq free tier suficiente para fase inicial)
@@ -48,8 +48,10 @@ server/
 **Stack tecnica:**
 - Groq API (free tier: 30 req/min, modelos Llama/Mixtral)
 - Dependencia nova: `groq-sdk` (~20KB, server-side only)
-- Nova serverless function: `api/chatbot.js` (usa 1 slot: 8/12)
+- Nova serverless function: `api/chatbot.js` (usa 1 slot: 8/12 assumindo W01 da Fase 7 ja usou 7/12)
 - System prompt inclui: medicamentos ativos, protocolos, ultimas doses, estoque, adesao 7d
+
+> ⚠️ **Verificar budget serverless antes de iniciar** — `find api -name "*.js" -not -path "*/_*" | wc -l`. Budget atual: 6/12. Apos Fase 7 (W01): 7/12. Apos F8.1: 8/12. Restam 4 slots para futuro.
 
 **Seguranca:**
 - Disclaimer em toda interacao: "Nao substitui orientacao medica"
@@ -135,9 +137,11 @@ src/features/interactions/
 ```
 
 **Base de dados:**
-- JSON estatico embeddado no bundle (sem API externa)
+- JSON estatico embeddado no bundle (sem API externa) — **DEVE ser lazy-loaded** (AP-B03)
 - Formato: `{ pair: [med_a, med_b], severity, description, recommendation, source }`
 - Seed inicial: 50-80 interacoes de alta prevalencia
+
+> ⚠️ **Lazy loading obrigatorio (AP-B03, R-117):** `interactions.json` e os components de interacao DEVEM ser `React.lazy()` + `import()` dinamico. Um import estatico de `interactions.json` (potencialmente 50-200KB) no MedicineForm ou no main bundle inviabiliza o trabalho de bundle optimization ja feito (M2: 989KB → 102kB). Seguir padrao: `const { interactionService } = await import('@features/interactions/services/interactionService.js')` dentro do handler de submit do MedicineForm.
   - Anti-hipertensivos x AINEs
   - Anticoagulantes x AINEs
   - Estatinas x fibratos
@@ -174,7 +178,7 @@ src/features/interactions/
 - Voice recognition com acuracia >85% para nomes de medicamentos em pt-BR
 - Graceful degradation: botao de voz nao aparece em browsers sem suporte
 - Interacoes medicamentosas verificadas no cadastro e na geracao de relatorios
-- Bundle size aumento maximo: +50KB (interactions.json + voice components)
+- Bundle size aumento maximo: +50KB (interactions.json + voice components — lazy-loaded, sem impacto no main bundle)
 - Lighthouse Performance mantido >=90
 
 ---
@@ -203,4 +207,19 @@ src/features/interactions/
 
 ---
 
-*Documento criado 06/03/2026. Substitui PRD_FASE_7_ROADMAP_2026.md.*
+---
+
+## Aprendizados de Performance Aplicaveis (Fases M0-M8, P1-P4, D0-D3)
+
+| Aprendizado | Regra | Aplicacao em Fase 8 |
+|-------------|-------|---------------------|
+| Import estatico de componente pesado puxa chunks para main bundle | AP-B03 | `ChatWindow`, `VoiceFAB`, `InteractionAlert` DEVEM ser `React.lazy()`. Nenhum deles e critico no first load. |
+| Barrel exports quebram code-splitting | AP-B04 | Nao re-exportar novos components/services da Fase 8 em `@shared/services/index.js` ou barrels existentes |
+| `import()` dinamico em handlers | D0 | `interactionService`, `contextBuilder`, `groqClient` devem ser importados dinamicamente dentro dos handlers — nunca no top-level de um component React |
+| Voice components: usar `React.lazy()` | R-117 | `VoiceFAB` (microfone) so aparece apos mount — lazy-load seguro |
+| Auth: usar `getCurrentUser()` em cache | R-128 | Chatbot precisa de contexto do usuario — usar `getCurrentUser()` (cacheado) nao `supabase.auth.getUser()` direto |
+
+---
+
+*Documento criado 06/03/2026. Atualizado 20/03/2026 com aprendizados de performance mobile.*
+*Substitui PRD_FASE_7_ROADMAP_2026.md.*
