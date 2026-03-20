@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
+import appStyles from './App.module.css'
 import Auth from './views/Auth'
 import Dashboard from './views/Dashboard'
 import Loading from '@shared/components/ui/Loading'
@@ -278,24 +279,7 @@ function App() {
               <button
                 onClick={() => setIsChatOpen(true)}
                 aria-label="Abrir assistente"
-                style={{
-                  position: 'fixed',
-                  bottom: '90px',
-                  right: '16px',
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'var(--color-primary, #3b82f6)',
-                  color: 'white',
-                  fontSize: '22px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  zIndex: 1000,
-                }}
+                className={appStyles.chatFab}
               >
                 💬
               </button>

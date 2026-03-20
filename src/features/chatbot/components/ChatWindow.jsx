@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { sendChatMessage } from '../services/chatbotService'
 import { DISCLAIMER } from '../services/safetyGuard'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import styles from './ChatWindow.module.css'
 
 /**
  * Drawer lateral de chat com o assistente IA.
@@ -77,13 +78,8 @@ export default function ChatWindow({ isOpen, onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className={styles.overlay}
             onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              zIndex: 1100,
-            }}
           />
 
           {/* Drawer */}
@@ -92,41 +88,14 @@ export default function ChatWindow({ isOpen, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              right: 0,
-              width: '100%',
-              maxWidth: '400px',
-              height: '100%',
-              background: 'var(--color-background, #0f0f0f)',
-              display: 'flex',
-              flexDirection: 'column',
-              zIndex: 1101,
-            }}
+            className={styles.drawer}
           >
             {/* Header */}
-            <div
-              style={{
-                padding: '16px',
-                borderBottom: '1px solid var(--color-border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ fontWeight: 'bold', color: 'var(--color-text)' }}>
-                Assistente
-              </span>
+            <div className={styles.header}>
+              <span className={styles.headerTitle}>Assistente</span>
               <button
                 onClick={onClose}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-text)',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                }}
+                className={styles.closeButton}
                 aria-label="Fechar chat"
               >
                 ✕
@@ -134,51 +103,20 @@ export default function ChatWindow({ isOpen, onClose }) {
             </div>
 
             {/* Messages */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
+            <div className={styles.messages}>
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  style={{
-                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    background:
-                      msg.role === 'user'
-                        ? 'var(--color-primary, #3b82f6)'
-                        : 'var(--color-surface, #1e1e1e)',
-                    color: 'var(--color-text, #fff)',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    maxWidth: '85%',
-                    fontSize: '14px',
-                    lineHeight: '1.4',
-                    whiteSpace: 'pre-wrap',
-                  }}
+                  className={`${styles.messageBubble} ${
+                    msg.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleAssistant
+                  }`}
                 >
                   {msg.content}
                 </div>
               ))}
 
               {isLoading && (
-                <div
-                  style={{
-                    alignSelf: 'flex-start',
-                    background: 'var(--color-surface)',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  Pensando...
-                </div>
+                <div className={styles.thinkingBubble}>Pensando...</div>
               )}
 
               <div ref={messagesEndRef} />
@@ -186,27 +124,12 @@ export default function ChatWindow({ isOpen, onClose }) {
 
             {/* Quick suggestions (quando poucas mensagens) */}
             {messages.length <= 2 && (
-              <div
-                style={{
-                  padding: '0 16px 8px',
-                  display: 'flex',
-                  gap: '8px',
-                  flexWrap: 'wrap',
-                }}
-              >
+              <div className={styles.suggestions}>
                 {quickSuggestions.map((suggestion, i) => (
                   <button
                     key={i}
                     onClick={() => setInput(suggestion)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '16px',
-                      border: '1px solid var(--color-border)',
-                      background: 'transparent',
-                      color: 'var(--color-text-secondary)',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                    }}
+                    className={styles.suggestionButton}
                   >
                     {suggestion}
                   </button>
@@ -215,43 +138,19 @@ export default function ChatWindow({ isOpen, onClose }) {
             )}
 
             {/* Input */}
-            <div
-              style={{
-                padding: '12px 16px',
-                borderTop: '1px solid var(--color-border)',
-                display: 'flex',
-                gap: '8px',
-              }}
-            >
+            <div className={styles.inputRow}>
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Digite sua pergunta..."
                 disabled={isLoading}
-                style={{
-                  flex: 1,
-                  padding: '10px 14px',
-                  borderRadius: '20px',
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-text)',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
+                className={styles.textInput}
               />
               <button
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '20px',
-                  border: 'none',
-                  background: 'var(--color-primary)',
-                  color: 'white',
-                  cursor: 'pointer',
-                  opacity: isLoading || !input.trim() ? 0.5 : 1,
-                }}
+                className={styles.sendButton}
               >
                 Enviar
               </button>
