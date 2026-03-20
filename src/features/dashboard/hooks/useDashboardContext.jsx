@@ -10,7 +10,9 @@ import {
   calculateDailyIntake,
   calculateDaysRemaining,
   isDoseInToleranceWindow,
+  isProtocolActiveOnDate,
 } from '@utils/adherenceLogic'
+import { formatLocalDate } from '@utils/dateUtils'
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
@@ -170,6 +172,52 @@ export function DashboardProvider({ children }) {
     })
   }, [protocolsResult.data])
 
+  // Cálculo client-side de dailyAdherence (últimos 7 dias)
+  // Elimina chamada a adherenceService.getDailyAdherence() e suas 2 queries internas
+  // (protocols + medicine_logs) — dados já estão disponíveis no context
+  const dailyAdherence = useMemo(() => {
+    const protocols = protocolsResult.data
+    const logs = logsResult.data
+    if (!protocols || !logs) return []
+
+    const now = new Date()
+    const days = 7
+
+    // Agrupar logs por dia (formato local YYYY-MM-DD)
+    const logsByDay = new Map()
+    logs.forEach((log) => {
+      const dayKey = formatLocalDate(new Date(log.taken_at))
+      logsByDay.set(dayKey, (logsByDay.get(dayKey) || 0) + 1)
+    })
+
+    // Gerar array de 7 dias
+    const dailyData = []
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(date.getDate() - i)
+      const dateKey = formatLocalDate(date)
+
+      // Calcular doses esperadas (filtra protocolos ativos nesta data)
+      const dayExpected = protocols.reduce((total, protocol) => {
+        if (!isProtocolActiveOnDate(protocol, dateKey)) return total
+        const timesPerDay = protocol.time_schedule?.length || 1
+        return total + timesPerDay
+      }, 0)
+
+      const taken = logsByDay.get(dateKey) || 0
+      const adherence = dayExpected > 0 ? Math.round((taken / dayExpected) * 100) : 0
+
+      dailyData.push({
+        date: dateKey,
+        taken,
+        expected: Math.round(dayExpected),
+        adherence: Math.min(adherence, 100),
+      })
+    }
+
+    return dailyData
+  }, [protocolsResult.data, logsResult.data])
+
   const value = useMemo(
     () => ({
       medicines: medicinesResult.data || [],
@@ -177,6 +225,7 @@ export function DashboardProvider({ children }) {
       logs: logsResult.data || [],
       stockSummary,
       stats,
+      dailyAdherence,
       isLoading,
       isFetching,
       hasError,
@@ -190,6 +239,7 @@ export function DashboardProvider({ children }) {
       logsResult.data,
       stockSummary,
       stats,
+      dailyAdherence,
       isLoading,
       isFetching,
       hasError,

@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import {
   cachedLogService as logService,
   cachedTreatmentPlanService as treatmentPlanService,
-  adherenceService,
 } from '@shared/services'
 import {
   getExpiringPrescriptions,
@@ -26,7 +25,7 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import ThemeToggle from '@shared/components/ui/ThemeToggle'
 import ConfettiAnimation from '@shared/components/ui/animations/ConfettiAnimation'
 import MilestoneCelebration from '@shared/components/gamification/MilestoneCelebration'
-import ReportGenerator from '@features/reports/components/ReportGenerator'
+const ReportGenerator = lazy(() => import('@features/reports/components/ReportGenerator'))
 import { checkNewMilestones } from '@dashboard/services/milestoneService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { getCurrentUser } from '@shared/utils/supabase'
@@ -61,6 +60,7 @@ export default function Dashboard({ onNavigate }) {
     protocols: rawProtocols,
     logs,
     stockSummary,
+    dailyAdherence,
     refresh,
     isDoseInToleranceWindow,
     isLoading: contextLoading,
@@ -71,10 +71,6 @@ export default function Dashboard({ onNavigate }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
   const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
-
-  // Dados de adesão para Sparkline
-  const [dailyAdherence, setDailyAdherence] = useState([])
-  const [, setIsAdherenceLoading] = useState(true)
 
   const [isHealthDetailsOpen, setIsHealthDetailsOpen] = useState(false)
   const [reminderSuggestion, setReminderSuggestion] = useState(null)
@@ -244,21 +240,6 @@ export default function Dashboard({ onNavigate }) {
       setViewMode(defaultViewMode)
     }
   }, [defaultViewMode])
-
-  // Carregar dados de adesão para Sparkline
-  useEffect(() => {
-    async function loadAdherence() {
-      try {
-        const data = await adherenceService.getDailyAdherence(7)
-        setDailyAdherence(data)
-      } catch (err) {
-        console.error('Erro ao carregar dados de adesão:', err)
-      } finally {
-        setIsAdherenceLoading(false)
-      }
-    }
-    loadAdherence()
-  }, [])
 
   // Persistir snoozedAlerts no localStorage
   useEffect(() => {
@@ -870,7 +851,9 @@ export default function Dashboard({ onNavigate }) {
 
       {/* Modal de Geração de Relatórios */}
       <Modal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
-        <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
+        <Suspense fallback={<Loading text="Carregando gerador de relatórios..." />}>
+          <ReportGenerator onClose={() => setIsReportModalOpen(false)} />
+        </Suspense>
       </Modal>
     </div>
   )
