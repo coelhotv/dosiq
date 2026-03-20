@@ -2,9 +2,9 @@
 
 **Versao:** 2.1
 **Data:** 20/03/2026
-**Status:** SINGLE SOURCE OF TRUTH para agentes autonomos — Sprints 6.1, 6.2, 6.4, 6.5 ENTREGUES ✅
-**Baseline:** v3.2.0 (Fase 5 completa) → v3.3.0 (atual)
-**Pendente:** Sprint 6.3 (INT-01 + INT-02, 5 SP)
+**Status:** FASE 6 COMPLETA ✅ — Todos os 5 sprints entregues e mergeados em main
+**Baseline:** v3.2.0 (Fase 5 completa) → v3.4.0 (Fase 6 completa)
+**Pendente:** nenhum
 **Escopo:** 39 SP | 8 features | 5 sprints sequenciais com paralelizacao parcial
 **Referências:** `PHASE_6_SPEC.md` (overview), `ROADMAP_v4.md` (timeline), `UX_VISION_EXPERIENCIA_PACIENTE.md` (contexto UX)
 
