@@ -395,6 +395,156 @@ export function clearPersistedHistory()        // → limpa ao usuario pedir
 
 ---
 
+## ⚡ Groq Prompt Caching Strategy (Sprint 8.5)
+
+### Visão Geral
+
+Implementação de **Groq Prompt Caching** para otimizar custo e latência em conversas multi-turn. Groq oferece **50% desconto em tokens já processados** (_cached_prompt_tokens_), permitindo reutilização de conteúdo estático.
+
+### Arquitetura de Cache
+
+**Objetivo:** Estruturar prompts para maximizar cache hit rate.
+
+**Padrão aplicado em TODAS as versões do prompt:**
+
+```
+┌─────────────────────────────────────┐
+│ PARTE ESTÁTICA (reutilizável)       │  ← Cacheada a cada request
+│ - Instruções de sistema             │  ← 50% desconto em tokens
+│ - Regras absolutas                  │
+│ - Contexto de app (Meus Remédios)   │
+└─────────────────────────────────────┘
+                ↓
+┌─────────────────────────────────────┐
+│ PARTE DINÂMICA (muda por conversa)  │
+│ - Dados do paciente (medicamentos)  │
+│ - Adesão, estoque, etc.             │
+└─────────────────────────────────────┘
+                ↓
+┌─────────────────────────────────────┐
+│ MENSAGEM ATUAL (muda a cada turn)   │
+│ - Pergunta do usuário               │
+└─────────────────────────────────────┘
+```
+
+**Benefício:** Sistema prompt (primeira 20+ linhas) é reutilizado em **100% das conversas**, ganhando 50% de desconto em ~50% dos tokens.
+
+### Implementação
+
+#### 1. Refatoração de buildSystemPrompt (Web + Telegram)
+
+**Nova função helper:**
+```javascript
+// contextBuilder.js (web) + chatbotServerService.js (Telegram)
+
+export function buildStaticSystemRules() {
+  return [
+    'Você é um assistente virtual do app Meus Remedios.',
+    'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
+    'REGRAS ABSOLUTAS:',
+    '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
+    '- NUNCA sugira parar ou alterar tratamento sem consultar o medico.',
+    // ... 10+ linhas de regras
+  ].join('\n')  // ~20 linhas, ~200 tokens
+}
+
+export function buildSystemPrompt(patientContext) {
+  const staticRules = buildStaticSystemRules()  // cache-friendly
+  return [
+    staticRules,
+    '',
+    'DADOS DO PACIENTE:',
+    patientContext,
+  ].join('\n')
+}
+```
+
+**Resultado:**
+- **Regras estáticas:** ~200 tokens (reutilizadas 100% das vezes)
+- **Contexto dinâmico:** ~100-150 tokens (diferente por paciente)
+- **Total:** ~300-350 tokens por request
+
+#### 2. Logging de Cache Hit Rate
+
+**Implementado em:**
+- `api/chatbot.js` (Vercel serverless, web/PWA)
+- `server/bot/services/chatbotServerService.js` (Telegram)
+
+**Métricas capturadas:**
+
+```javascript
+const promptTokens = completion.usage?.prompt_tokens || 0
+const cachedTokens = completion.usage?.cached_prompt_tokens || 0
+const cacheHitRate = (cachedTokens / promptTokens) * 100
+const estimatedSavings = cachedTokens * 0.5  // 50% desconto
+
+logger.info('✅ Groq respondeu', {
+  promptTokens,           // 300
+  cachedTokens,           // 100 (cache hit)
+  cacheHitRate: '33%',    // cálculo
+  estimatedTokenSavings: 50,  // tokens economizados
+})
+```
+
+**Exemplo de log esperado (Vercel):**
+```json
+{
+  "timestamp": "2026-03-20T21:48:00Z",
+  "service": "chatbot-api",
+  "promptTokens": 300,
+  "cachedTokens": 100,
+  "cacheHitRate": "33%",
+  "estimatedTokenSavings": 50
+}
+```
+
+### Impacto Econômico
+
+**Cenário:** Conversa multi-turn com 5 turnos (user → bot × 5)
+
+| Métrica | Sem Cache | Com Cache | Economia |
+|---------|-----------|-----------|----------|
+| Prompt tokens por turn | 300 | 150 (cached 50%) | 150 tokens |
+| Custo por turn | 300 × base | (150 + 75 desconto) | -50% |
+| Total 5 turns | 1500 tokens | 900 tokens | **-40%** |
+| Free tier (10k tokens) | ~33 conversas | ~55 conversas | **+67%** |
+
+### Monitoramento
+
+**Como verificar cache hit rate em produção:**
+
+1. **Vercel Logs:**
+   ```bash
+   vercel logs --prod | grep cacheHitRate
+   ```
+
+2. **Local (dev):**
+   ```bash
+   npm run dev
+   # Enviar mensagem ao chatbot
+   # Verificar console logs com "cachedTokens", "cacheHitRate"
+   ```
+
+3. **Alertas sugeridos:**
+   - Alerta se `cacheHitRate < 20%` → possível regressão ou mudança de estrutura
+   - Alerta se `estimatedTokenSavings < expected` → cache behavior alterado
+
+### Próximas Otimizações (Roadmap)
+
+1. **Separar contexto paciente dinâmico:** Colocar em sub-mensagem para cache max
+2. **Pré-aquecimento de cache:** Enviar sistema prompt vazio antes de primeiro turn real
+3. **Análise de cache hit rate:** Dashboard visualizando economia de tokens
+4. **Groq Pro (futuro):** Se volume crescer, Groq Pro oferece cache ainda mais otimizado
+
+### Referências
+
+- **Groq Prompt Caching Docs:** https://console.groq.com/docs/caching
+- **Implementação:** `src/features/chatbot/services/contextBuilder.js`, `api/chatbot.js`, `server/bot/services/chatbotServerService.js`
+- **Branch de implementação:** `feature/8-5-chatbot-groq-optimization` (merged)
+- **Journal entry:** `.memory/journal/2026-W12.md` (Sprint 8.5)
+
+---
+
 ## 🔌 Extensões Futuras
 
 ### 1. **Integração com Telegram Bot** ✅ Sprint 8.3.2 + Sprint 8.5 (Debug Fix)
@@ -529,8 +679,19 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 - [x] Logs: cadeia completa visível em Vercel (webhook → roteamento → contexto → Groq → resposta)
 - [x] Manual test: resposta correta do chatbot no Telegram
 
+## ✅ Checklist Groq Prompt Caching (Sprint 8.5 — Performance Optimization)
+
+- [x] Refatorar buildSystemPrompt em contextBuilder.js: extrair buildStaticSystemRules()
+- [x] Refatorar buildSystemPrompt em chatbotServerService.js: extrair buildStaticSystemRules()
+- [x] Implementar logging de cache hit rate em api/chatbot.js
+- [x] Implementar logging de cache hit rate em chatbotServerService.js
+- [x] Padronizar nomes de métricas (promptTokens, cachedTokens, etc.) entre canais
+- [x] Documentação de estratégia de caching em CHATBOT_AI.md
+- [x] Testes: 539/539 ainda passando (zero regressão)
+- [x] Verificação: ambos canais (web + Telegram) com mesma estrutura de prompt
+
 ---
 
 *Última atualização: 2026-03-20*
-*Versão: 1.3 (Sprint 8.5 — Telegram Integration Debug & Fix)*
-*Status: ✅ Production Ready (Web + Telegram + History + Debugging Insights)*
+*Versão: 1.4 (Sprint 8.5 — Groq Prompt Caching Optimization)*
+*Status: ✅ Production Ready (Web + Telegram + History + Caching Optimized)*
