@@ -2079,7 +2079,7 @@ describe('InteractionAlert', () => {
 |--------|---------|-----|--------|--------|------|---------------|
 | 8.1 | V01 — Registro por Voz | 13 | ⬚ PENDENTE | — | — | — |
 | 8.2 | V02 — Resumo por Voz | 5 | ⬚ PENDENTE | — | — | — |
-| 8.3 | F8.1 — Chatbot IA | 13 | ⬚ PENDENTE | — | — | — |
+| 8.3 | F8.1 — Chatbot IA | 13 | 🔄 EM REVISÃO | feature/fase-8/sprint-3-chatbot | 2026-03-20 | 539/539 testes ✅ |
 | 8.4 | F8.2 — Interacoes ANVISA | 13 | ⬚ PENDENTE | — | — | — |
 
 **Total:** 0/44 SP entregues (0%)

@@ -246,7 +246,7 @@ git push -u origin feature/fase-N/descriptive-name
 | **Fase** | 6 (Portabilidade, Performance, Monetização) | 🚀 In Progress |
 | **Tests** | 491+ (core) | ✅ All passing |
 | **Lint** | 0 errors | ✅ Clean |
-| **API Functions** | 12 Vercel functions (max) | ⚠️ At limit (R-090) |
+| **API Functions** | 7/12 Vercel functions (chatbot.js adicionado sprint 8.3) | ✅ Dentro do limite |
 | **Code Review** | Gemini Code Assist | ✅ Enabled |
 | **Deployment** | Vercel (Hobby, free) | ✅ Live |
 
@@ -294,6 +294,18 @@ Agents should read this file + rules + anti-patterns before coding.
 - Spec criada: `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D1-D6, target ≤12 queries)
 - R-128 to R-131 + AP-P14 to AP-P17 registradas
 - Journal: `.memory/journal/2026-W12-P4.md`
+
+## Sprint 8.3 🔄 EM REVISÃO (2026-03-20) — F8.1 Chatbot IA
+**Branch:** `feature/fase-8/sprint-3-chatbot` | Aguardando Gemini Code Assist
+- Groq API (llama-3.3-70b-versatile) via serverless `api/chatbot.js` (slot 7/12)
+- `contextBuilder.js` — contexto compacto do paciente sem IDs/UUIDs
+- `safetyGuard.js` — bloqueia dosagem/diagnóstico/parar tratamento
+- `chatbotService.js` — rate limit 30msg/hora (localStorage)
+- `ChatWindow.jsx` — drawer lateral animado, quick suggestions, useDashboard() interno
+- App.jsx: FAB 💬 + lazy-loaded ChatWindow via Suspense
+- 539/539 testes ✅ | Build: ChatWindow 3.23 kB gzip ✅
+- **Decisão:** ChatWindow chama `useDashboard()` diretamente (não prop drilling via App.jsx)
+- Journal: `.memory/journal/2026-W12.md`
 
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**

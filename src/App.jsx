@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
+import appStyles from './App.module.css'
 import Auth from './views/Auth'
 import Dashboard from './views/Dashboard'
 import Loading from '@shared/components/ui/Loading'
@@ -19,6 +20,7 @@ const HealthHistory = lazy(() => import('./views/HealthHistory'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
+const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
@@ -52,6 +54,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState('dashboard')
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
@@ -268,6 +271,24 @@ function App() {
 
           {isAuthenticated && (
             <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+          )}
+
+          {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
+          {isAuthenticated && (
+            <>
+              <button
+                onClick={() => setIsChatOpen(true)}
+                aria-label="Abrir assistente"
+                className={appStyles.chatFab}
+              >
+                💬
+              </button>
+              {isChatOpen && (
+                <Suspense fallback={null}>
+                  <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+                </Suspense>
+              )}
+            </>
           )}
 
           {/* Onboarding Wizard - apenas para usuários autenticados */}
