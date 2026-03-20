@@ -1,6 +1,34 @@
+import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
+import { parseLocalDate } from '@utils/dateUtils'
+
+// Schemas de validação para todos os métodos de leitura
+const limitSchema = z.number().int().positive().max(5000).default(50)
+const offsetSchema = z.number().int().min(0).default(0)
+
+const paginationSchema = z.object({
+  limit: limitSchema,
+  offset: offsetSchema,
+})
+
+const protocolIdSchema = z.object({
+  protocolId: z.string().uuid('protocolId deve ser UUID válido'),
+  limit: limitSchema,
+})
+
+const dateRangeSchema = z.object({
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate deve ser YYYY-MM-DD'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'endDate deve ser YYYY-MM-DD'),
+  limit: limitSchema,
+  offset: offsetSchema,
+})
+
+const monthSchema = z.object({
+  year: z.number().int().min(2020).max(2100),
+  month: z.number().int().min(0).max(11),
+})
 
 /**
  * Normaliza timestamps Supabase para formato Zod-compatível
@@ -30,6 +58,12 @@ export const logService = {
    * Get all logs
    */
   async getAll(limit = 50) {
+    const v = limitSchema.safeParse(limit)
+    if (!v.success) {
+      console.error('[logService.getAll] Validação falhou:', v.error.format())
+      return []
+    }
+
     const { data, error } = await supabase
       .from('medicine_logs')
       .select(
@@ -51,6 +85,12 @@ export const logService = {
    * Get logs for a specific protocol
    */
   async getByProtocol(protocolId, limit = 50) {
+    const v = protocolIdSchema.safeParse({ protocolId, limit })
+    if (!v.success) {
+      console.error('[logService.getByProtocol] Validação falhou:', v.error.format())
+      return []
+    }
+
     const { data, error } = await supabase
       .from('medicine_logs')
       .select(
@@ -269,7 +309,12 @@ export const logService = {
    * @returns {Promise} { data: [], total, hasMore }
    */
   getAllPaginated: async (limit = 50, offset = 0) => {
-    // 1. Get paginated data
+    const v = paginationSchema.safeParse({ limit, offset })
+    if (!v.success) {
+      console.error('[logService.getAllPaginated] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(
@@ -303,6 +348,12 @@ export const logService = {
    * @returns {Promise} { data: [], total, hasMore }
    */
   getAllPaginatedSlim: async (limit = 50, offset = 0) => {
+    const v = paginationSchema.safeParse({ limit, offset })
+    if (!v.success) {
+      console.error('[logService.getAllPaginatedSlim] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(
@@ -332,18 +383,21 @@ export const logService = {
    * @param {string} endDate - ISO format YYYY-MM-DD (Brazil local date)
    * @returns {Promise}
    *
-   * NOTE: Converts Brazil dates to UTC range for proper timezone handling.
-   * Brazil is GMT-3, so midnight Brazil = 03:00 UTC same day,
-   * and 23:59:59 Brazil = 02:59:59 UTC next day.
+   * NOTE: Usa parseLocalDate() para conversão timezone-safe (R-020, AP-005).
+   * parseLocalDate('YYYY-MM-DD') → Date local (meia-noite) → .toISOString() converte para UTC.
    */
   getByDateRange: async (startDate, endDate, limit = 50, offset = 0) => {
-    // Convert Brazil dates to UTC timestamps (ISO 8601 format with Z)
-    // startDate 00:00:00 Brazil = startDate 03:00:00 UTC
-    const startUtc = `${startDate}T03:00:00Z`
-    // endDate 23:59:59 Brazil = (endDate + 1 day) 02:59:59 UTC
-    const endDateObj = new Date(endDate + 'T00:00:00')
-    endDateObj.setDate(endDateObj.getDate() + 1)
-    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59Z'
+    const v = dateRangeSchema.safeParse({ startDate, endDate, limit, offset })
+    if (!v.success) {
+      console.error('[logService.getByDateRange] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
+    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
+    const startUtc = parseLocalDate(startDate).toISOString()
+    const endLocal = parseLocalDate(endDate)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -377,10 +431,21 @@ export const logService = {
    * @returns {Promise} { data: [], total }
    */
   getByMonth: async (year, month) => {
-    // Use UTC-safe date construction to avoid timezone edge cases
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const v = monthSchema.safeParse({ year, month })
+    if (!v.success) {
+      console.error('[logService.getByMonth] Validação falhou:', v.error.format())
+      return { data: [], total: 0 }
+    }
+
+    // Converte datas locais para UTC via parseLocalDate (R-020)
+    const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    const startUtc = parseLocalDate(startDateStr).toISOString()
+    const endLocal = parseLocalDate(endDateStr)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -393,8 +458,100 @@ export const logService = {
         { count: 'exact' }
       )
       .eq('user_id', await getUserId())
-      .gte('taken_at', `${startDate}T00:00:00.000Z`)
-      .lte('taken_at', `${endDate}T23:59:59.999Z`)
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
+      .order('taken_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      data: normalizeTimestamps(data) || [],
+      total: count || 0,
+    }
+  },
+
+  /**
+   * Logs por período com select mínimo (sem relações completas).
+   * Consumidores: calculateAdherenceStats, LastDosesWidget, DoseCalendar, useDoseZones
+   * Campos: id, taken_at, quantity_taken, protocol_id, medicine_id
+   * ~60 bytes/log (vs ~315 bytes com select('*') + full relations)
+   * @param {string} startDate - ISO YYYY-MM-DD (data local Brasil)
+   * @param {string} endDate - ISO YYYY-MM-DD (data local Brasil)
+   * @param {number} limit - Máximo de registros
+   * @param {number} offset - Posição inicial
+   * @returns {Promise} { data: [], total, hasMore }
+   */
+  getByDateRangeSlim: async (startDate, endDate, limit = 50, offset = 0) => {
+    const validation = dateRangeSchema.safeParse({ startDate, endDate, limit, offset })
+    if (!validation.success) {
+      console.error('[logService.getByDateRangeSlim] Validação falhou:', validation.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
+    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
+    const startUtc = parseLocalDate(startDate).toISOString()
+    const endLocal = parseLocalDate(endDate)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
+
+    const { data, error, count } = await supabase
+      .from('medicine_logs')
+      .select(
+        'id, taken_at, quantity_taken, protocol_id, medicine_id',
+        { count: 'exact' }
+      )
+      .eq('user_id', await getUserId())
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
+      .order('taken_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw error
+
+    return {
+      data: normalizeTimestamps(data) || [],
+      total: count || 0,
+      hasMore: offset + limit < (count || 0),
+    }
+  },
+
+  /**
+   * Logs do mês com select mínimo para calendário.
+   * Campos: id, taken_at, quantity_taken, medicine_id, medicine.name
+   * ~80 bytes/log (vs ~315 bytes com select('*') + full relations)
+   * @param {number} year - Ano (ex: 2026)
+   * @param {number} month - Mês (0-11)
+   * @returns {Promise} { data: [], total }
+   */
+  getByMonthSlim: async (year, month) => {
+    const validation = monthSchema.safeParse({ year, month })
+    if (!validation.success) {
+      console.error('[logService.getByMonthSlim] Validação falhou:', validation.error.format())
+      return { data: [], total: 0 }
+    }
+
+    const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    // Converte datas locais para UTC via parseLocalDate (R-020)
+    const startUtc = parseLocalDate(startDateStr).toISOString()
+    const endLocal = parseLocalDate(endDateStr)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
+
+    const { data, error, count } = await supabase
+      .from('medicine_logs')
+      .select(
+        `
+        id, taken_at, quantity_taken, medicine_id,
+        medicine:medicines(id, name)
+      `,
+        { count: 'exact' }
+      )
+      .eq('user_id', await getUserId())
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
       .order('taken_at', { ascending: false })
 
     if (error) throw error
