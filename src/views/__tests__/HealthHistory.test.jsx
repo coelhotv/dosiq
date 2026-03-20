@@ -23,6 +23,7 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
 vi.mock('@shared/services', () => ({
   cachedLogService: {
     getByMonth: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
+    getByMonthSlim: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
     getAllPaginated: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
     getAllPaginatedSlim: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
     create: vi.fn(),

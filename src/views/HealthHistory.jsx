@@ -88,7 +88,7 @@ export default function HealthHistory({ onNavigate }) {
       // ── Phase 1: UI-critical (calendário + timeline) ──
       // Máximo 2 requests simultâneos. Cache SWR resolve em <5ms se fresh.
       const [logsResult, timelineResult] = await Promise.all([
-        logService.getByMonth(now.getFullYear(), now.getMonth()),
+        logService.getByMonthSlim(now.getFullYear(), now.getMonth()),
         logService.getAllPaginatedSlim(TIMELINE_PAGE_SIZE, 0),
       ])
 
@@ -194,7 +194,7 @@ export default function HealthHistory({ onNavigate }) {
 
   const handleCalendarLoadMonth = useCallback(async (year, month) => {
     try {
-      const result = await logService.getByMonth(year, month)
+      const result = await logService.getByMonthSlim(year, month)
       setCurrentMonthLogs(result.data || [])
       setTotalLogs(result.total || 0)
       if (result.data?.length > 0) {

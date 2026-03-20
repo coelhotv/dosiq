@@ -43,8 +43,10 @@ export function DashboardProvider({ children }) {
       {
         key: 'logs:last30d',
         fetcher: async () => {
-          // getByDateRange usa o padrão de segurança com getUserId() e filtros RLS
-          const result = await logService.getByDateRange(
+          // Slim select: apenas id, taken_at, quantity_taken, protocol_id, medicine_id, status
+          // Sem relações completas — consumidores usam medicineMap/protocolMap separados
+          // Reduz payload de ~315KB para ~60KB (~80% redução)
+          const result = await logService.getByDateRangeSlim(
             thirtyDaysAgo.split('T')[0],
             new Date().toISOString().split('T')[0],
             1000

@@ -27,6 +27,7 @@ vi.mock('@protocols/services/protocolService', () => ({
 vi.mock('@shared/services/api/logService', () => ({
   logService: {
     getByDateRange: vi.fn().mockResolvedValue({ data: [] }),
+    getByDateRangeSlim: vi.fn().mockResolvedValue({ data: [] }),
   },
 }))
 

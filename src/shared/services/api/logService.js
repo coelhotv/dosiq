@@ -404,4 +404,77 @@ export const logService = {
       total: count || 0,
     }
   },
+
+  /**
+   * Logs por período com select mínimo (sem relações completas).
+   * Consumidores: calculateAdherenceStats, LastDosesWidget, DoseCalendar, useDoseZones
+   * Campos: id, taken_at, quantity_taken, protocol_id, medicine_id, status
+   * ~60 bytes/log (vs ~315 bytes com select('*') + full relations)
+   * @param {string} startDate - ISO YYYY-MM-DD (data local Brasil)
+   * @param {string} endDate - ISO YYYY-MM-DD (data local Brasil)
+   * @param {number} limit - Máximo de registros
+   * @param {number} offset - Posição inicial
+   * @returns {Promise} { data: [], total, hasMore }
+   */
+  getByDateRangeSlim: async (startDate, endDate, limit = 50, offset = 0) => {
+    const startUtc = `${startDate}T03:00:00Z`
+    const endDateObj = new Date(endDate + 'T00:00:00')
+    endDateObj.setDate(endDateObj.getDate() + 1)
+    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59Z'
+
+    const { data, error, count } = await supabase
+      .from('medicine_logs')
+      .select(
+        'id, taken_at, quantity_taken, protocol_id, medicine_id, status',
+        { count: 'exact' }
+      )
+      .eq('user_id', await getUserId())
+      .gte('taken_at', startUtc)
+      .lte('taken_at', endUtc)
+      .order('taken_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw error
+
+    return {
+      data: normalizeTimestamps(data) || [],
+      total: count || 0,
+      hasMore: offset + limit < (count || 0),
+    }
+  },
+
+  /**
+   * Logs do mês com select mínimo para calendário.
+   * Campos: id, taken_at, quantity_taken, medicine_id, medicine.name
+   * ~80 bytes/log (vs ~315 bytes com select('*') + full relations)
+   * @param {number} year - Ano (ex: 2026)
+   * @param {number} month - Mês (0-11)
+   * @returns {Promise} { data: [], total }
+   */
+  getByMonthSlim: async (year, month) => {
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    const { data, error, count } = await supabase
+      .from('medicine_logs')
+      .select(
+        `
+        id, taken_at, quantity_taken, medicine_id,
+        medicine:medicines(id, name)
+      `,
+        { count: 'exact' }
+      )
+      .eq('user_id', await getUserId())
+      .gte('taken_at', `${startDate}T00:00:00.000Z`)
+      .lte('taken_at', `${endDate}T23:59:59.999Z`)
+      .order('taken_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      data: normalizeTimestamps(data) || [],
+      total: count || 0,
+    }
+  },
 }
