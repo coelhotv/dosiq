@@ -4,7 +4,7 @@
  * @module features/reports/services/pdfGeneratorService
  */
 
-import { parseLocalDate } from '@utils/dateUtils.js'
+import { parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
 
 /**
  * Dimensões da página A4 em milímetros.
@@ -608,10 +608,11 @@ export async function generatePDF(options = {}) {
 
     // Busca dados em paralelo
     const dataFetchStart = Date.now()
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const startDateStr = thirtyDaysAgo.toISOString().slice(0, 10)
-    const endDateStr = new Date().toISOString().slice(0, 10)
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today)
+    thirtyDaysAgo.setDate(today.getDate() - 30)
+    const startDateStr = formatLocalDate(thirtyDaysAgo)
+    const endDateStr = formatLocalDate(today)
 
     const [adherenceSummary, dailyAdherence, protocols, lowStock, recentLogs] = await Promise.all([
       adherenceService.getAdherenceSummary(period),
