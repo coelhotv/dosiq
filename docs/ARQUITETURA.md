@@ -1,16 +1,16 @@
 # 🏗️ Arquitetura do Meus Remédios
 
-**Versão:** 2.8.0
-**Data:** 2026-02-13
-**Status:** Ativo (Phase 4: PWA + Feature Organization)
+**Versão:** 3.3.0
+**Data:** 2026-03-20
+**Status:** Ativo (v3.3.0 — Fases 1-6 + Mobile Performance Initiative M0-M8, P1-P4, D0-D3)
 
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
-> - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
-> - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
+> - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes (substitui `.roo/`)
+> - **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
+> - **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
 > - **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções de código detalhadas
-> - **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
 
 ---
 
@@ -18,14 +18,15 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 
 | Documento | Conteúdo | Público |
 |-----------|----------|---------|
-| [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) | Padrões de código, nomenclatura, React, Zod | Agentes de código |
-| [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) | Arquitetura, organização, fluxo de dados | Agentes de arquitetura |
-| [`AGENTS.md`](../AGENTS.md) | Guia completo do projeto | Todos os agentes |
+| [`CLAUDE.md`](../CLAUDE.md) | Regras canônicas do projeto, checklist pré/pós-código | Todos os agentes |
+| [`.memory/rules.md`](../.memory/rules.md) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
+| [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
 | [`PADROES_CODIGO.md`](./PADROES_CODIGO.md) | Convenções detalhadas de código | Desenvolvedores |
+| [`standards/MOBILE_PERFORMANCE.md`](./standards/MOBILE_PERFORMANCE.md) | Standards de performance mobile (lazy, code-split, auth cache) | Agentes de performance |
 
 ---
 
-## 📊 Visão Arquitetural (v2.8.0)
+## 📊 Visão Arquitetural (v3.3.0)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -87,17 +88,20 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
               └──────────────────────────────┘
 ```
 
-### Novidades da v2.8.0 (Phase 4)
+### Histórico de Entregas Principais
 
-| Feature | Componente | Descrição |
-|---------|------------|-----------|
-| **F4.1** | Hash Router | Navegação SPA com 9 rotas e deep linking |
-| **F4.2** | PWA Layer | Service Worker, manifest, install prompt |
-| **F4.3** | Push Manager | Notificações push com VAPID |
-| **F4.4** | Analytics | Tracking privacy-first em localStorage |
-| **F4.5** | Bot Standardized | Utilities com 49 testes |
+| Marco | Componente | Descrição |
+|-------|------------|-----------|
 | **F4.6** | Feature Org | `src/features/` + `src/shared/` + path aliases |
-| **F4.7** | **Bot Resilient v3.0** | Sistema de notificações com retry/DLQ/métricas |
+| **F4.7** | Bot Resilient v3.0 | Sistema de notificações com retry/DLQ/métricas |
+| **F5.6** | ANVISA Base | Database de medicamentos + busca fuzzy |
+| **F5.10** | Cost Analysis | Dashboard de custo de tratamento |
+| **F5.C** | Onboarding v3.2 | Wizard repaginado |
+| **F5.D** | Landing Redesign | Nova landing page |
+| **M2** | Bundle Split | 13 views lazy + manualChunks: **989KB → 102kB gzip** (89% redução) |
+| **P1-P4** | HealthHistory Perf | requestIdleCallback + SWR cache + slim select (76% payload reduction) |
+| **D0-D3** | Dashboard Perf | Lazy loading fixes + auth cache (13 → 1 roundtrip) + slim selects |
+| **F6.1-F6.5** | Fase 6 (4/5) | Refill Prediction, Risk Score, Dose Insights, Export PDF, Smart Alerts |
 
 ### Sistema de Notificações v3.0.0
 
@@ -505,26 +509,66 @@ server/services/
 
 ## � Performance
 
-### Estratégias
+### Métricas Atuais (v3.3.0)
+
+| Métrica | Antes | Depois | Sprint |
+|---------|-------|--------|--------|
+| Bundle size (gzip) | 989 KB | **102.47 kB** | M2 |
+| First load JS | 1435 KB | **678 KB** | D0 |
+| Auth roundtrips (Dashboard) | 13 | **1** | D3 |
+| Queries simultâneas (HealthHistory) | 12+ | **2** | P2 |
+| Timeline payload | ~40KB | **~10KB** (76% ↓) | P3 |
+| Testes unitários | 140+ | **539+** | — |
+
+### Estratégias de Performance
 
 | Estratégia | Implementação | Impacto |
 |------------|---------------|---------|
-| Cache SWR | `queryCache.js` | 95% mais rápido em re-leituras |
+| Lazy Loading Views | `React.lazy()` + `Suspense` + `ViewSkeleton` | FCP ~500ms mais rápido mobile (M2) |
+| Code Splitting | Vite `manualChunks` — 8 chunks vendor/feature | 89% bundle reduction (M2) |
+| Auth Cache | `getUserId()` com promise coalescence | 13 → 1 auth roundtrip por sessão (D3) |
+| SWR Cache | `queryCache.js` + `useCachedQuery` | 95% mais rápido em re-leituras |
+| requestIdleCallback | Serialização de queries background | Sem freeze no scroll mobile (P2) |
+| Slim Selects | Colunas específicas em todos os GETs | 76% payload reduction em timeline (P3) |
 | View Materializada | `medicine_stock_summary` | 5x mais rápido consultas estoque |
-| Deduplicação | `pendingRequests` Map | Evita requests duplicados |
-| LRU Eviction | 50 entradas máximo | Previne memory leaks |
-| React 19 | Compiler otimizado | Menos re-renders |
-| Component Consolidation | ~783 LOC removidas | Bundle menor, menos re-renders |
 
-### Métricas de Consolidação de Componentes
+### Lazy Loading Pattern (Obrigatório — M2, R-117)
 
-| Métrica | Valor |
-|---------|-------|
-| Linhas de código removidas | ~783 LOC |
-| Componentes consolidados | 6 grupos |
-| Redução de bundle | ~5KB |
-| Testes mantidos passando | 100% |
-| Breaking changes | 0 |
+```jsx
+// ✅ CORRETO — todas as views (exceto Dashboard) são lazy-loaded
+const Medicines = lazy(() => import('./views/Medicines'))
+
+// Suspense com ViewSkeleton (NUNCA null ou spinner genérico)
+<Suspense fallback={<ViewSkeleton />}>
+  <Medicines {...props} />
+</Suspense>
+```
+
+**Vite manualChunks (8 chunks):** `vendor-pdf` (jsPDF, 174KB), `vendor-framer`,
+`vendor-supabase`, `vendor-virtuoso`, `feature-medicines-db` (ANVISA, 105KB),
+`feature-history`, `feature-stock`, `feature-landing`.
+
+### Auth Cache Pattern (Obrigatório — D3, R-128)
+
+```javascript
+// ✅ CORRETO — usa cache com promise coalescence
+import { getUserId } from '@shared/utils/supabase'
+const userId = await getUserId()
+
+// ❌ ERRADO — bypassa cache, gera roundtrip extra
+const { data } = await supabase.auth.getUser()
+```
+
+### Barrel Exports — Risco de Code-Splitting (AP-B04)
+
+```javascript
+// ❌ NUNCA re-exportar services pesados em barrels
+// src/shared/services/index.js
+export { refillPredictionService } from './refillPredictionService' // puxa chunk eager
+
+// ✅ Importar diretamente do arquivo
+import { refillPredictionService } from '@shared/services/refillPredictionService'
+```
 
 ---
 
@@ -556,32 +600,30 @@ Dashboard
 
 ---
 
-## 🧪 Testes (v2.8.0)
+## 🧪 Testes (v3.3.0)
 
 ```
-Testes Unitários (Vitest)
+Testes Unitários (Vitest 4)
 ├── src/shared/lib/__tests__/        # Cache SWR
-├── src/shared/constants/__tests__/  # Validação Zod (23 testes)
+├── src/shared/constants/__tests__/  # Validação Zod
 ├── src/shared/services/__tests__/   # Services
 ├── src/features/**/__tests__/       # Feature tests
 └── src/shared/components/**/__tests__/ # Componentes
 
-Cobertura: 140+ testes
-├── 93 testes críticos
-├── 11 smoke tests
-└── 36+ component tests
+Cobertura: 539+ testes
 ```
 
 ### Test Command Matrix
 
 | Comando | Descrição | Uso |
 |---------|-----------|-----|
-| `npm run test:critical` | Testes essenciais (services, utils, schemas) | Pre-push |
-| `npm run test:smoke` | Suite mínima | Health check |
+| **`npm run validate:agent`** | **Lint + testes + build (10-min kill switch)** | **Obrigatório pré-push** |
+| `npm run test:critical` | Testes essenciais (services, utils, schemas) | Dev rápido |
+| `npm run test:fast` | 1 thread, todos os testes | Quando RAM é limitada |
 | `npm run test:changed` | Arquivos modificados desde main | CI/CD rápido |
-| `npm run test:git` | Alias para test:changed | Compatibilidade |
-| `npm run test:light` | Configuração leve (exclui componentes) | Dev rápido |
-| `npm run validate` | Lint + testes críticos | Pre-commit |
+| `npm run test:lowram` | Sequencial (8GB RAM) | Ambientes restritos |
+| `npm run validate:quick` | Lint + testes alterados | Pre-commit |
+| `npm run validate:full` | Lint + cobertura + build | CI completo |
 
 ---
 
@@ -600,7 +642,7 @@ Cobertura: 140+ testes
 ## 🔄 Git Workflow (RIGID PROCESS - MANDATORY)
 
 > **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
-> **Authoridade:** Veja também [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) e [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)
+> **Autoridade:** Veja [`CLAUDE.md`](../CLAUDE.md) (regras canônicas) e [`.memory/rules.md`](../.memory/rules.md)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -626,8 +668,8 @@ Cobertura: 140+ testes
 git checkout main && git pull origin main
 git checkout -b feature/wave-X/nome-descritivo
 
-# BEFORE COMMIT:
-npm run validate  # Lint + testes críticos
+# BEFORE COMMIT/PUSH:
+npm run validate:agent  # Lint + testes + build (10-min kill switch)
 
 # AFTER PUSH:
 # 1. Create PR using template: docs/PULL_REQUEST_TEMPLATE.md
@@ -638,7 +680,7 @@ npm run validate  # Lint + testes críticos
 
 ### Detailed Instructions
 
-See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md).
+Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 
 ### Anti-Patterns (STRICTLY PROHIBITED)
 
@@ -658,10 +700,11 @@ See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`]
 
 ### Documentação de Governança
 
-- **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código (agentes)
-- **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural (agentes)
-- **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
-- **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções detalhadas incluindo padrões de componentes consolidados
+- **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes (fonte da verdade)
+- **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
+- **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
+- **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções detalhadas de código
+- **[`standards/MOBILE_PERFORMANCE.md`](./standards/MOBILE_PERFORMANCE.md)** - Standards de performance mobile
 
 ### Documentação Técnica
 
@@ -684,4 +727,4 @@ See full workflow in [`AGENTS.md`](../AGENTS.md) or [`.roo/rules-code/rules.md`]
 
 ---
 
-*Última atualização: 13/02/2026 - Atualizado com rigid GitHub workflow e referências aos arquivos de regras consolidadas*
+*Última atualização: 20/03/2026 — v3.3.0: métricas de performance real, lazy loading pattern, auth cache, histórico de entregas. Referências .roo/ substituídas por CLAUDE.md + .memory/.*

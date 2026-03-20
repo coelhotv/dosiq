@@ -3,17 +3,19 @@
 Convenções e melhores práticas para manter consistência no projeto.
 
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
-> - **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código para agentes
-> - **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural
+> - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas do projeto (fonte da verdade para agentes)
+> - **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
+> - **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
 > - **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Framework arquitetural completo
 
 ## 📚 Referências Rápidas
 
 | Documento | Conteúdo | Público |
 |-----------|----------|---------|
-| [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) | Padrões de código, nomenclatura, React, Zod | Agentes de código |
-| [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) | Arquitetura, organização, fluxo de dados | Agentes de arquitetura |
-| [`AGENTS.md`](../AGENTS.md) | Guia completo do projeto | Todos os agentes |
+| [`CLAUDE.md`](../CLAUDE.md) | Regras canônicas, checklist pré/pós-código | Todos os agentes |
+| [`.memory/rules.md`](../.memory/rules.md) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
+| [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
+| [`ARQUITETURA.md`](./ARQUITETURA.md) | Framework arquitetural completo | Desenvolvedores |
 
 
 ---
@@ -38,7 +40,7 @@ npm run build
 ### 2. Git Workflow Obrigatório (RIGID PROCESS)
 
 > **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
-> **Authoridade:** Veja também [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) e [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)
+> **Autoridade:** Veja [`CLAUDE.md`](../CLAUDE.md) (regras canônicas) e [`.memory/rules.md`](../.memory/rules.md)
 
 **⚠️ NUNCA commitar diretamente na `main`**
 
@@ -84,21 +86,21 @@ git checkout -b feature/wave-X/nome-descritivo
 #### Step 2: MAKE CHANGES
 
 - Edit files following:
-  - [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) (coding standards)
-  - [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) (architecture)
+  - [`CLAUDE.md`](../CLAUDE.md) (coding standards + checklist)
+  - [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) (patterns to avoid)
 - Keep changes focused and atomic
 - One logical change per commit
 
 #### Step 3: VALIDATE LOCALLY (MANDATORY - ALL MUST PASS)
 
 ```bash
-# Run ALL three validations:
-npm run lint          # Must have 0 errors
-npm run test:critical # Testes essenciais
-npm run build         # Production build must succeed
+# Comando principal (obrigatório pré-push):
+npm run validate:agent  # Lint + testes + build (10-min kill switch)
 
-# Or use the combined command:
-npm run validate      # Runs lint + test:critical
+# Alternativas para dev rápido:
+npm run lint            # Somente lint
+npm run test:critical   # Testes essenciais (services, utils, schemas)
+npm run validate:quick  # Lint + testes alterados
 ```
 
 **If any validation fails:**
@@ -239,8 +241,8 @@ git push origin --delete feature/wave-X/nome-descritivo
 │  BEFORE ANY CODE CHANGE:                    │
 │  1. git checkout -b feature/wave-X/name     │
 │                                             │
-│  BEFORE COMMIT:                             │
-│  2. npm run validate                        │
+│  BEFORE PUSH:                               │
+│  2. npm run validate:agent                  │
 │                                             │
 │  AFTER PUSH:                                │
 │  3. Create PR with template                 │
@@ -317,10 +319,13 @@ import { Button } from '../../../shared/components/ui/Button'
 
 | Quando | Comando | Propósito |
 |--------|---------|-----------|
-| Pre-commit | `npm run lint` | Qualidade de código |
-| Pre-push | `npm run test:critical` | Testes essenciais |
-| Pre-merge | `npm run test:full` | Suite completa |
-| Diagnóstico | `npm run test:smoke` | Verificação rápida |
+| **Pre-push (obrigatório)** | **`npm run validate:agent`** | **Lint + testes + build, kill switch 10min** |
+| Pre-commit | `npm run validate:quick` | Lint + testes alterados |
+| Dev rápido | `npm run test:critical` | Testes essenciais (services, utils, schemas) |
+| Dev rápido | `npm run test:fast` | 1 thread, todos os testes |
+| Low-RAM | `npm run test:lowram` | Sequencial ~20min |
+| CI completo | `npm run validate:full` | Lint + coverage + build |
+| Diagnóstico | `npm run test:smoke` | Suite mínima de smoke tests |
 
 ---
 
@@ -550,68 +555,58 @@ describe('MedicineCard', () => {
 
 | Cenário | Comando | Tempo Estimado | Quando Usar |
 |---------|---------|----------------|-------------|
-| Desenvolvimento rápido | `npm run test:critical` | 1-3min | Alterações locais |
-| Pre-commit | `npm run test:changed` | 1-3min | Antes de commit |
-| Pre-push | `npm run test:critical` | 2-3min | Antes de push |
-| CI/CD Completo | `npm run test` | 5-10min | Pull requests |
+| **Agente / Pre-push** | **`npm run validate:agent`** | **~10min max** | **Obrigatório antes de push** |
+| Desenvolvimento rápido | `npm run test:fast` | ~6.5min | Alterações locais |
+| Testes críticos | `npm run test:critical` | 2-3min | Services/utils/schemas |
+| Testes alterados | `npm run test:changed` | 1-3min | Antes de commit |
+| Low-RAM (8GB) | `npm run test:lowram` | ~20min | Ambientes restritos |
 | Smoke test | `npm run test:smoke` | 10-30s | Verificação rápida |
-| Validação completa | `npm run validate` | 3-5min | Antes de release |
-
-> **⚠️ NOTA:** O comando `test:related` pode não estar disponível em todas as versões do Vitest.
-> Use `test:critical` ou `test:changed` como alternativas garantidas.
+| CI completo | `npm run validate:full` | 5-10min | Pull requests |
 
 ### Matriz de Decisão
 
 | Tipo de Arquivo | Comando Recomendado |
 |-----------------|---------------------|
-| Componente UI isolado | `test:related` |
+| Componente UI isolado | `test:changed` |
 | Service/API | `test:critical` |
 | Schema/Validação | `test:critical` |
 | Hook reutilizável | `test:critical` |
 | CSS/SVG/Assets | `test:smoke` ou nenhum |
 | Configuração (vite, eslint) | `test:smoke` |
-| Arquivos de teste | `test:related` |
 
 ### Pipeline de Validação
 
 ```bash
 # Durante desenvolvimento (a cada alteração)
-npm run lint          # ESLint rápido
-npm run test:related  # Testes de impacto
+npm run lint            # ESLint rápido
+npm run test:changed    # Testes dos arquivos modificados
 
 # Antes de commit
-npm run validate:quick # Lint + testes relacionados
+npm run validate:quick  # Lint + testes alterados
 
-# Antes de push/PR
-npm run validate       # Lint + testes críticos
+# Antes de push/PR (OBRIGATÓRIO)
+npm run validate:agent  # Lint + testes + build (kill switch 10min)
 
 # Verificação rápida de health check
-npm run test:smoke     # Suite mínima de testes
+npm run test:smoke      # Suite mínima de testes
 ```
 
 ### Scripts Disponíveis
 
 ```bash
-# --- Testes Base ---
-npm run test           # Todos os testes (CI/CD)
-npm run test:watch     # Modo watch para desenvolvimento
+# --- Validação (use estes) ---
+npm run validate:agent  # PRINCIPAL: lint + testes + build (10-min kill switch)
+npm run validate:quick  # Lint + testes alterados
+npm run validate:full   # Lint + cobertura + build (CI)
 
-# --- Otimizações Fase 1 ---
-npm run test:changed   # Apenas testes de arquivos modificados
-npm run test:related   # Testes relacionados aos arquivos staged
-npm run test:critical  # Testes de services, utils, schemas, hooks
-npm run test:unit      # Exclui testes de integração
-npm run test:quick     # Saída resumida (30 primeiras linhas)
-
-# --- Fase 2: Seleção Inteligente ---
-npm run test:smart     # Script customizado baseado em git diff
-npm run test:git       # Alias para test:changed
-npm run test:affected  # Alias para test:related
-npm run test:smoke     # Suite mínima de smoke tests
-
-# --- Validação Rápida ---
-npm run validate       # Lint + testes críticos
-npm run validate:quick # Lint + testes relacionados
+# --- Testes ---
+npm run test            # Todos os testes
+npm run test:watch      # Modo watch para desenvolvimento
+npm run test:changed    # Apenas testes de arquivos modificados
+npm run test:critical   # Services, utils, schemas, hooks
+npm run test:fast       # 1 thread, ~6.5min
+npm run test:lowram     # Sequencial (8GB RAM)
+npm run test:smoke      # Suite mínima de smoke tests
 ```
 
 ### Configurações de Teste
@@ -1494,17 +1489,37 @@ async function handleLogMedicine(logData) {
 
 ---
 
+---
+
+## ⚡ Anti-Patterns de Performance (Mobile — M2, P1-P4, D0-D3)
+
+Estes erros foram identificados e corrigidos nas iniciativas de performance mobile. Evite-os em código novo.
+
+| Anti-Pattern | Código Errado | Código Correto | Regra |
+|-------------|--------------|----------------|-------|
+| Auth bypass do cache | `supabase.auth.getUser()` direto | `getUserId()` / `getCurrentUser()` | AP-P14, R-128 |
+| Select desnecessário | `.select('*')` | `.select('id, name, quantity')` | AP-P10 |
+| Import estático de chunk pesado | `import InteractionAlert from './InteractionAlert'` | `React.lazy(() => import('./InteractionAlert'))` | AP-B03, R-117 |
+| Barrel export quebrando split | `export { refillPredictionService } from './index'` | Importar direto do arquivo | AP-B04 |
+| N+1 queries | `for (id of ids) await fetch(id)` | `.in('id', ids)` em batch | AP-P09 |
+| requestIdleCallback ausente | queries paralelas em background scroll | `requestIdleCallback(() => fetchNext())` | R-126 |
+| CSS layout thrash | `width: X%` animado | `transform: scaleX(X)` animado | AP-CSS1 |
+| Comparação de datas em loop | `new Date(a) > new Date(b)` | `a > b` (string YYYY-MM-DD) | AP-P15, R-129 |
+| `import()` top-level em component | `const svc = await import('...')` no module | Dentro do handler/callback | D0 |
+
+> **Referência completa:** [`.memory/anti-patterns.md`](../.memory/anti-patterns.md)
+
+---
+
 ## 📚 Referências
 
 ### Documentação de Governança
 
-- **[`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md)** - Regras consolidadas de código (agentes)
-- **[`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md)** - Governança arquitetural (agentes)
-- **[`ARQUITETURA_FRAMEWORK.md`](./archive/ARQUITETURA_FRAMEWORK.md)** - Framework arquitetural completo
-- **[`LINT_COVERAGE.md`](./archive/LINT_COVERAGE.md)** - Configurações ESLint e boas práticas
-- **[`OTIMIZACAO_TESTES_ESTRATEGIA.md`](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md)** - Estratégia completa de testes
+- **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes (fonte da verdade)
+- **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
+- **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
 - **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Visão arquitetural técnica
-- **[`AGENTS.md`](../AGENTS.md)** - Guia completo para agentes
+- **[`standards/MOBILE_PERFORMANCE.md`](./standards/MOBILE_PERFORMANCE.md)** - Standards de performance mobile
 
 ### Templates
 
@@ -1512,4 +1527,4 @@ async function handleLogMedicine(logData) {
 
 ---
 
-*Última atualização: 13/02/2026 - Atualizado com rigid GitHub workflow e referências aos arquivos de regras consolidadas*
+*Última atualização: 20/03/2026 — v3.3.0: comandos de teste atualizados (validate:agent), anti-patterns de performance adicionados, referências .roo/ substituídas por CLAUDE.md + .memory/.*
