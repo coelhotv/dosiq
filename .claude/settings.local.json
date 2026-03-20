@@ -106,7 +106,8 @@
       "Bash(COMMIT=\"6dc2bd8\")",
       "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/**)",
       "Bash(gh issue:*)",
-      "Bash(git -C \"/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios\" log --oneline -5)"
+      "Bash(git -C \"/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios\" log --oneline -5)",
+      "WebSearch"
     ],
     "additionalDirectories": [
       "/tmp",
