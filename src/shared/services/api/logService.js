@@ -1,6 +1,33 @@
+import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
+
+// Schemas de validação para todos os métodos de leitura
+const limitSchema = z.number().int().positive().max(5000).default(50)
+const offsetSchema = z.number().int().min(0).default(0)
+
+const paginationSchema = z.object({
+  limit: limitSchema,
+  offset: offsetSchema,
+})
+
+const protocolIdSchema = z.object({
+  protocolId: z.string().uuid('protocolId deve ser UUID válido'),
+  limit: limitSchema,
+})
+
+const dateRangeSchema = z.object({
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate deve ser YYYY-MM-DD'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'endDate deve ser YYYY-MM-DD'),
+  limit: limitSchema,
+  offset: offsetSchema,
+})
+
+const monthSchema = z.object({
+  year: z.number().int().min(2020).max(2100),
+  month: z.number().int().min(0).max(11),
+})
 
 /**
  * Normaliza timestamps Supabase para formato Zod-compatível
@@ -30,6 +57,12 @@ export const logService = {
    * Get all logs
    */
   async getAll(limit = 50) {
+    const v = limitSchema.safeParse(limit)
+    if (!v.success) {
+      console.error('[logService.getAll] Validação falhou:', v.error.format())
+      return []
+    }
+
     const { data, error } = await supabase
       .from('medicine_logs')
       .select(
@@ -51,6 +84,12 @@ export const logService = {
    * Get logs for a specific protocol
    */
   async getByProtocol(protocolId, limit = 50) {
+    const v = protocolIdSchema.safeParse({ protocolId, limit })
+    if (!v.success) {
+      console.error('[logService.getByProtocol] Validação falhou:', v.error.format())
+      return []
+    }
+
     const { data, error } = await supabase
       .from('medicine_logs')
       .select(
@@ -269,7 +308,12 @@ export const logService = {
    * @returns {Promise} { data: [], total, hasMore }
    */
   getAllPaginated: async (limit = 50, offset = 0) => {
-    // 1. Get paginated data
+    const v = paginationSchema.safeParse({ limit, offset })
+    if (!v.success) {
+      console.error('[logService.getAllPaginated] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(
@@ -303,6 +347,12 @@ export const logService = {
    * @returns {Promise} { data: [], total, hasMore }
    */
   getAllPaginatedSlim: async (limit = 50, offset = 0) => {
+    const v = paginationSchema.safeParse({ limit, offset })
+    if (!v.success) {
+      console.error('[logService.getAllPaginatedSlim] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     const { data, error, count } = await supabase
       .from('medicine_logs')
       .select(
@@ -337,6 +387,12 @@ export const logService = {
    * and 23:59:59 Brazil = 02:59:59 UTC next day.
    */
   getByDateRange: async (startDate, endDate, limit = 50, offset = 0) => {
+    const v = dateRangeSchema.safeParse({ startDate, endDate, limit, offset })
+    if (!v.success) {
+      console.error('[logService.getByDateRange] Validação falhou:', v.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     // Convert Brazil dates to UTC timestamps (ISO 8601 format with Z)
     // startDate 00:00:00 Brazil = startDate 03:00:00 UTC
     const startUtc = `${startDate}T03:00:00Z`
@@ -377,6 +433,12 @@ export const logService = {
    * @returns {Promise} { data: [], total }
    */
   getByMonth: async (year, month) => {
+    const v = monthSchema.safeParse({ year, month })
+    if (!v.success) {
+      console.error('[logService.getByMonth] Validação falhou:', v.error.format())
+      return { data: [], total: 0 }
+    }
+
     // Use UTC-safe date construction to avoid timezone edge cases
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
@@ -417,6 +479,12 @@ export const logService = {
    * @returns {Promise} { data: [], total, hasMore }
    */
   getByDateRangeSlim: async (startDate, endDate, limit = 50, offset = 0) => {
+    const validation = dateRangeSchema.safeParse({ startDate, endDate, limit, offset })
+    if (!validation.success) {
+      console.error('[logService.getByDateRangeSlim] Validação falhou:', validation.error.format())
+      return { data: [], total: 0, hasMore: false }
+    }
+
     const startUtc = `${startDate}T03:00:00Z`
     const endDateObj = new Date(endDate + 'T00:00:00')
     endDateObj.setDate(endDateObj.getDate() + 1)
@@ -452,6 +520,12 @@ export const logService = {
    * @returns {Promise} { data: [], total }
    */
   getByMonthSlim: async (year, month) => {
+    const validation = monthSchema.safeParse({ year, month })
+    if (!validation.success) {
+      console.error('[logService.getByMonthSlim] Validação falhou:', validation.error.format())
+      return { data: [], total: 0 }
+    }
+
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
     const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
