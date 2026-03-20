@@ -4,10 +4,6 @@
  * @module features/reports/services/pdfGeneratorService
  */
 
-import { renderAdherenceChart, renderStockChart } from './chartRenderer.js'
-import { adherenceService } from '@services/api/adherenceService.js'
-import { protocolService } from '@features/protocols/services/protocolService.js'
-import { stockService } from '@features/stock/services/stockService.js'
 import { parseLocalDate } from '@utils/dateUtils.js'
 
 /**
@@ -491,11 +487,27 @@ export async function generatePDF(options = {}) {
   logPDF('info', 'Iniciando geração do PDF', { title, period, options })
 
   try {
-    // Lazy load jsPDF e jspdf-autotable (não impacta bundle inicial)
-    const { jsPDF } = await import('jspdf')
-    const autoTable = (await import('jspdf-autotable')).default
+    // Lazy load TODOS os módulos pesados (jsPDF, services, chartRenderer)
+    // Isso evita que o main bundle inclua vendor-pdf (589KB), feature-stock (139KB), etc.
+    const [
+      { jsPDF },
+      { default: autoTable },
+      { renderAdherenceChart, renderStockChart },
+      { adherenceService },
+      { protocolService },
+      stockModule,
+    ] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+      import('./chartRenderer.js'),
+      import('@services/api/adherenceService.js'),
+      import('@features/protocols/services/protocolService.js'),
+      includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
+    ])
 
-    logPDF('info', 'Bibliotecas carregadas', { library: 'jspdf + jspdf-autotable' })
+    const stockService = stockModule?.stockService
+
+    logPDF('info', 'Módulos carregados sob demanda', { library: 'jspdf + services + charts' })
 
     // Busca dados em paralelo
     const dataFetchStart = Date.now()
@@ -503,7 +515,7 @@ export async function generatePDF(options = {}) {
       adherenceService.getAdherenceSummary(period),
       adherenceService.getDailyAdherence(30),
       includeProtocols ? protocolService.getAll() : Promise.resolve([]),
-      includeStock ? stockService.getLowStockMedicines(100) : Promise.resolve([]),
+      includeStock && stockService ? stockService.getLowStockMedicines(100) : Promise.resolve([]),
     ])
 
     logPDF('info', 'Dados buscados', {
@@ -515,7 +527,7 @@ export async function generatePDF(options = {}) {
 
     // Busca resumos de estoque para cada medicamento
     let stockSummaries = []
-    if (includeStock && protocols.length > 0) {
+    if (includeStock && stockService && protocols.length > 0) {
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id).filter(Boolean))]
       stockSummaries = await Promise.all(medicineIds.map((id) => stockService.getStockSummary(id)))
     }

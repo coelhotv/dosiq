@@ -152,8 +152,10 @@
 |----|-------------|-------------|------------|----------|
 | AP-B01 | Adicionar `<link rel="modulepreload" href="/src/main.jsx" />` manual em `index.html` no Vite 7 | Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. Browser rejeita com MIME type error. O Vite já gera modulepreload hints corretos para todos os chunks automaticamente. | Nunca adicionar hints manuais de modulepreload apontando para arquivos fonte. Deixar o Vite gerar os hints automaticamente. | — |
 | AP-B02 | Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`) | HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afetada. UI mostra "Erro ao carregar dados". | Manter JSDoc do service sincronizado com o schema real da tabela. Verificar schema antes de adicionar colunas ao select. | AP-S08 |
+| AP-B03 | Import estático de componente pesado que internamente importa services/vendors grandes | Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGeneratorService` → `stockService` + `vendor-pdf` (589KB) no modulepreload. O `manualChunks` do Vite separa os módulos em chunks, mas `<link rel="modulepreload">` carrega tudo eagerly. | Componentes que usam services pesados (PDF, charts, stock) devem ser `React.lazy()`. Services dentro deles devem usar `import()` dinâmico, não import estático. | R-117 |
+| AP-B04 | Barrel exports (`index.js`) que re-exportam todos os services incluindo os de features lazy | `@shared/services/index.js` exporta `stockService`, `adherenceService`, etc. Qualquer `import { x } from '@shared/services'` puxa TODA a árvore de dependências para o main bundle, quebrando code-splitting. | Importar services diretamente do arquivo fonte (`from '@stock/services/stockService'`) em vez de barrel exports. Ou dividir barrel em sub-barrels por feature. | — |
 
 ---
 
-*Last updated: 2026-03-18*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03 + AP-B01 to AP-B02*
+*Last updated: 2026-03-20*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P13 + AP-D01 to AP-D03 + AP-B01 to AP-B04*
