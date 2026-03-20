@@ -92,7 +92,7 @@ export default function ChatWindow({ isOpen, onClose }) {
           >
             {/* Header */}
             <div className={styles.header}>
-              <span className={styles.headerTitle}>Assistente</span>
+              <span className={styles.headerTitle}>Assistente IA</span>
               <button
                 onClick={onClose}
                 className={styles.closeButton}
