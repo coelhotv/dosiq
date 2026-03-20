@@ -496,10 +496,7 @@ export const logService = {
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
-      .select(
-        'id, taken_at, quantity_taken, protocol_id, medicine_id',
-        { count: 'exact' }
-      )
+      .select('id, taken_at, quantity_taken, protocol_id, medicine_id', { count: 'exact' })
       .eq('user_id', await getUserId())
       .gte('taken_at', startUtc)
       .lte('taken_at', endUtc)

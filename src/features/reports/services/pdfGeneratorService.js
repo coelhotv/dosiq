@@ -373,9 +373,9 @@ function drawStockSummary(doc, stockData, stockChartImage, startY) {
  * @constant {Object}
  */
 const RISK_RGB_COLORS = {
-  stable: [34, 197, 94],      // #22c55e verde
-  attention: [245, 158, 11],  // #f59e0b amarelo
-  critical: [239, 68, 68],    // #ef4444 vermelho
+  stable: [34, 197, 94], // #22c55e verde
+  attention: [245, 158, 11], // #f59e0b amarelo
+  critical: [239, 68, 68], // #ef4444 vermelho
 }
 
 /**
@@ -408,8 +408,7 @@ function drawRiskTable(doc, risks, protocols, autoTable, startY) {
     const protocol = protocols.find((p) => p.id === risk.protocolId)
     const name = protocol?.medicine?.name || protocol?.name || 'Protocolo'
     const adherence = `${risk.adherence14d}%`
-    const trend =
-      risk.trend7d > 0 ? `+${risk.trend7d}%` : `${risk.trend7d}%`
+    const trend = risk.trend7d > 0 ? `+${risk.trend7d}%` : `${risk.trend7d}%`
     return [name, adherence, trend, risk.riskLabel]
   })
 
@@ -598,9 +597,7 @@ export async function generatePDF(options = {}) {
       includeRiskTable
         ? import('@adherence/services/protocolRiskService.js')
         : Promise.resolve(null),
-      includeRiskTable
-        ? import('@shared/services/api/logService.js')
-        : Promise.resolve(null),
+      includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
     ])
 
     const stockService = stockModule?.stockService

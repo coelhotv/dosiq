@@ -27,15 +27,18 @@ export const getUserId = async () => {
   // Coalescência: se já há uma chamada em voo, reutiliza a mesma promise
   if (_userIdPromise) return _userIdPromise
 
-  _userIdPromise = supabase.auth.getUser().then(({ data: { user } }) => {
-    _userIdPromise = null
-    if (!user) throw new Error('Usuário não autenticado')
-    _cachedUserId = user.id
-    return user.id
-  }).catch((err) => {
-    _userIdPromise = null
-    throw err
-  })
+  _userIdPromise = supabase.auth
+    .getUser()
+    .then(({ data: { user } }) => {
+      _userIdPromise = null
+      if (!user) throw new Error('Usuário não autenticado')
+      _cachedUserId = user.id
+      return user.id
+    })
+    .catch((err) => {
+      _userIdPromise = null
+      throw err
+    })
 
   return _userIdPromise
 }
@@ -46,16 +49,19 @@ export const getCurrentUser = async () => {
   // Coalescência: múltiplas chamadas simultâneas compartilham a mesma promise
   if (_currentUserPromise) return _currentUserPromise
 
-  _currentUserPromise = supabase.auth.getUser().then(({ data: { user } }) => {
-    _currentUserPromise = null
-    _cachedUser = user
-    // Aproveita para cachear userId também (evita roundtrip duplicado)
-    if (user) _cachedUserId = user.id
-    return user
-  }).catch((err) => {
-    _currentUserPromise = null
-    throw err
-  })
+  _currentUserPromise = supabase.auth
+    .getUser()
+    .then(({ data: { user } }) => {
+      _currentUserPromise = null
+      _cachedUser = user
+      // Aproveita para cachear userId também (evita roundtrip duplicado)
+      if (user) _cachedUserId = user.id
+      return user
+    })
+    .catch((err) => {
+      _currentUserPromise = null
+      throw err
+    })
 
   return _currentUserPromise
 }

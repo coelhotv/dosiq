@@ -350,9 +350,7 @@ export const adherenceService = {
       results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
     const protocolScores = results[1].status === 'fulfilled' ? results[1].value : []
     const streaks =
-      results[2].status === 'fulfilled'
-        ? results[2].value
-        : { currentStreak: 0, longestStreak: 0 }
+      results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
 
     return {
       overallScore: overall.score,
@@ -531,7 +529,8 @@ export const adherenceService = {
 
     const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
     const takenDoses = count || 0
-    const score = expectedDoses > 0 ? Math.min(Math.round((takenDoses / expectedDoses) * 100), 100) : 0
+    const score =
+      expectedDoses > 0 ? Math.min(Math.round((takenDoses / expectedDoses) * 100), 100) : 0
 
     return {
       score,

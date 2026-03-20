@@ -293,7 +293,12 @@ export const cachedLogService = {
   },
 
   async getByDateRangeSlim(startDate, endDate, limit = 50, offset = 0) {
-    const key = generateCacheKey(CACHE_KEYS.LOGS_DATE_RANGE_SLIM, { startDate, endDate, limit, offset })
+    const key = generateCacheKey(CACHE_KEYS.LOGS_DATE_RANGE_SLIM, {
+      startDate,
+      endDate,
+      limit,
+      offset,
+    })
     return cachedQuery(key, () => logService.getByDateRangeSlim(startDate, endDate, limit, offset))
   },
 

@@ -169,7 +169,11 @@ export function isSuggestionDismissed(protocolId) {
  */
 export function dismissSuggestion(protocolId, permanent = false) {
   // Guard clause: ambiente não-browser ou localStorage indisponivel (AP-T03)
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') {
+  if (
+    typeof window === 'undefined' ||
+    typeof localStorage === 'undefined' ||
+    typeof localStorage.setItem !== 'function'
+  ) {
     console.warn('[reminderOptimizerService] dismissSuggestion called in non-browser environment')
     return
   }
