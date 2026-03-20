@@ -156,9 +156,52 @@ function formatSoftReminderMessage(protocol) {
 }
 
 /**
+ * Calcula consumo diario real baseado em logs de doses (ultimos 30 dias).
+ * Duplica logica do refillPredictionService para uso server-side (Option A da spec INT-02).
+ *
+ * @param {string} medicineId
+ * @param {Array} allLogs - Logs de doses do usuario (ultimos 30 dias)
+ * @param {number} fallbackDailyUsage - Consumo teorico (fallback)
+ * @returns {{ dailyConsumption: number, isRealData: boolean }}
+ */
+function calcBotRealDailyConsumption(medicineId, allLogs, fallbackDailyUsage) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+  const recentLogs = allLogs.filter(
+    l => l.medicine_id === medicineId && new Date(l.taken_at) >= thirtyDaysAgo
+  );
+
+  const uniqueDays = new Set(
+    recentLogs.map(l => new Date(l.taken_at).toISOString().slice(0, 10))
+  );
+
+  if (uniqueDays.size >= 14) {
+    const totalConsumed = recentLogs.reduce((sum, l) => sum + (l.quantity_taken ?? 0), 0);
+    return { dailyConsumption: totalConsumed / uniqueDays.size, isRealData: true };
+  }
+
+  return { dailyConsumption: fallbackDailyUsage, isRealData: false };
+}
+
+/**
+ * Formata data de stockout prevista como "DD/MM" para exibicao no bot.
+ * @param {number} daysRemaining
+ * @returns {string} Data no formato "DD/MM"
+ */
+function formatStockoutDate(daysRemaining) {
+  const date = new Date();
+  date.setDate(date.getDate() + Math.max(0, Math.round(daysRemaining)));
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}`;
+}
+
+/**
  * Format stock alert message
  * @param {Array} zeroStock - Medicines with zero stock
- * @param {Array} lowStock - Medicines with low stock
+ * @param {Array} lowStock - Medicines with low stock (cada item pode ter predictedStockoutDate)
  * @returns {string} Formatted message
  */
 function formatStockAlertMessage(zeroStock, lowStock) {
@@ -178,7 +221,10 @@ function formatStockAlertMessage(zeroStock, lowStock) {
     message += 'Atenção aos seguintes medicamentos:\n\n';
     lowStock.forEach(m => {
       const days = m.days <= 0 ? 'estoque zerado' : escapeMarkdownV2(`~${m.days} dia(s) restante(s)`);
-      message += `📦 **${escapeMarkdownV2(m.name)}**\n   └ ${days}\n`;
+      const dateHint = m.predictedStockoutDate
+        ? ` ${escapeMarkdownV2(`(previsto: ${m.predictedStockoutDate})`)}`
+        : '';
+      message += `📦 **${escapeMarkdownV2(m.name)}**\n   └ ${days}${dateHint}\n`;
     });
     message += '\n💡 Considere repor o estoque em breve\\.';
   }
@@ -189,7 +235,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
 /**
  * Format proactive stock reminder message (8-14 days remaining)
  * @param {string} userName - User's first name
- * @param {Array} medicines - Medicines with proactive stock status
+ * @param {Array} medicines - Medicines with proactive stock status (cada item pode ter predictedStockoutDate)
  * @returns {string} Formatted message
  */
 function formatProactiveStockMessage(userName, medicines) {
@@ -198,7 +244,10 @@ function formatProactiveStockMessage(userName, medicines) {
   message += `Oi ${escapeMarkdownV2(userName)}\! Passando para lembrar que alguns medicamentos estão chegando no fim:\n\n`;
 
   medicines.forEach(m => {
-    message += `• ${escapeMarkdownV2(m.name)} — cerca de ${m.days} dias restantes\n`;
+    const dateHint = m.predictedStockoutDate
+      ? ` ${escapeMarkdownV2(`(previsto: ${m.predictedStockoutDate})`)}`
+      : '';
+    message += `• ${escapeMarkdownV2(m.name)} — cerca de ${m.days} dias restantes${dateHint}\n`;
   });
 
   // eslint-disable-next-line no-useless-escape
@@ -722,17 +771,30 @@ async function checkUserStockAlerts(bot, userId, chatId) {
       .single();
     const userName = userData?.first_name || userData?.name || 'aí';
 
-    const { data: medicines } = await supabase
-      .from('medicines')
-      .select(`
-        *,
-        stock(*),
-        protocols!protocols_medicine_id_fkey(*)
-      `)
-      .eq('user_id', userId);
+    // Fetch medicines (with stock and protocols) and recent logs in parallel
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const [{ data: medicines }, { data: recentLogs }] = await Promise.all([
+      supabase
+        .from('medicines')
+        .select(`
+          *,
+          stock(*),
+          protocols!protocols_medicine_id_fkey(*)
+        `)
+        .eq('user_id', userId),
+      supabase
+        .from('medicine_logs')
+        .select('medicine_id, quantity_taken, taken_at')
+        .eq('user_id', userId)
+        .gte('taken_at', thirtyDaysAgo.toISOString()),
+    ]);
 
     if (!medicines || medicines.length === 0) return;
 
+    const logs = recentLogs || [];
     const lowStockMedicines = [];      // 1-7 days (critical)
     const zeroStockMedicines = [];     // 0 days (out of stock)
     const proactiveStockMedicines = []; // 8-14 days (proactive reminder)
@@ -742,21 +804,33 @@ async function checkUserStockAlerts(bot, userId, chatId) {
       if (activeProtocols.length === 0) continue;
 
       const totalQuantity = (medicine.stock || []).reduce((sum, s) => sum + s.quantity, 0);
-      const dailyUsage = activeProtocols.reduce((sum, p) => {
+      const theoreticalDailyUsage = activeProtocols.reduce((sum, p) => {
         const timesPerDay = p.time_schedule?.length || 0;
         const dosagePerIntake = p.dosage_per_intake || 0;
         return sum + (timesPerDay * dosagePerIntake);
       }, 0);
 
-      const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
+      // Usar consumo real se disponivel, caso contrario teorico (INT-02, Option A)
+      const { dailyConsumption, isRealData } = calcBotRealDailyConsumption(
+        medicine.id,
+        logs,
+        theoreticalDailyUsage
+      );
+
+      const daysRemaining = calculateDaysRemaining(totalQuantity, dailyConsumption);
+      const predictedStockoutDate = daysRemaining !== null && daysRemaining > 0
+        ? formatStockoutDate(daysRemaining)
+        : null;
+
+      logger.debug(`Estoque ${medicine.name}: ${daysRemaining} dias (${isRealData ? 'real' : 'teorico'})`, { userId });
 
       if (daysRemaining !== null && daysRemaining <= 0) {
         zeroStockMedicines.push({ name: medicine.name, days: daysRemaining });
       } else if (daysRemaining !== null && daysRemaining <= 7) {
-        lowStockMedicines.push({ name: medicine.name, days: daysRemaining });
+        lowStockMedicines.push({ name: medicine.name, days: daysRemaining, predictedStockoutDate });
       } else if (daysRemaining !== null && daysRemaining <= 14) {
         // Proactive tier: 8-14 days
-        proactiveStockMedicines.push({ name: medicine.name, days: Math.round(daysRemaining) });
+        proactiveStockMedicines.push({ name: medicine.name, days: Math.round(daysRemaining), predictedStockoutDate });
       }
     }
 

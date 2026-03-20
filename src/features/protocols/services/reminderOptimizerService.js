@@ -130,9 +130,13 @@ export function analyzeReminderTiming({ protocol, logs }) {
  * @returns {boolean}
  */
 export function isSuggestionDismissed(protocolId) {
-  // Guard clause: ambiente não-browser
+  // Guard clause: ambiente server-side sem window (AP-T03)
   if (typeof window === 'undefined') {
     return true
+  }
+  // Guard clause: localStorage indisponivel em ambiente de teste/SSR (AP-T03)
+  if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
+    return false
   }
 
   const key = `optimizer_dismissed_${protocolId}`
@@ -164,8 +168,8 @@ export function isSuggestionDismissed(protocolId) {
  * @param {boolean} permanent - Se true, nunca mais sugerir
  */
 export function dismissSuggestion(protocolId, permanent = false) {
-  // Guard clause: ambiente não-browser
-  if (typeof window === 'undefined') {
+  // Guard clause: ambiente não-browser ou localStorage indisponivel (AP-T03)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') {
     console.warn('[reminderOptimizerService] dismissSuggestion called in non-browser environment')
     return
   }
