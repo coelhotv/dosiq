@@ -8,11 +8,12 @@
 Stack: React 19 + Vite 7 + Supabase (Postgres + Auth + RLS) + Zod 4 + Framer Motion 12 + Vitest 4.
 Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 0.
 
-**Versao atual:** v3.3.0 (Fases 1-5 COMPLETAS ✅) + **Mobile Performance Initiative M0-M8 + HealthHistory Fix P1-P4 COMPLETOS** ✅
+**Versao atual:** v3.3.0 (Fases 1-5 COMPLETAS ✅) + **Mobile Performance Initiative M0-M8 + HealthHistory Fix P1-P4 + Chatbot IA F8.1 COMPLETOS** ✅
 **Fase 5 Entregas:** Cost Analysis (F5.10) + ANVISA Base (F5.6) + Onboarding v3.2 (F5.C) + Landing Redesign (F5.D) — todos mergeados
 **Mobile Perf M2:** Lazy loading de 13 views + Vite manualChunks (8 vendor/feature chunks) + ViewSkeleton pattern — Bundle: 989KB → 102.47kB gzip (89% reduction) ✅
 **HealthHistory Fix P1-P3 (v3.3.0):** Browser freeze mobile eliminado (12+ → 2 requests simultâneos) + cache SWR adherence + slim select timeline (76% payload reduction) ✅
 **Dashboard Perf P4:** Slim select DashboardProvider + getUserId cache com promise coalescence (13 → 1 auth roundtrip) + calculateStreaks otimizado + Zod validation em todos read methods ✅
+**Chatbot IA F8.1 (Sprint 8.3 + 8.3.1):** Groq API + contextBuilder + safetyGuard + Framer Motion UI + hallucination fixes (active_ingredient grounding, temperature 0.2) ✅
 **Proxima:** Fase 6 — Portabilidade, Performance e Monetizacao (roadmap em `plans/ROADMAP_v4.md`)
 
 ---
@@ -428,6 +429,7 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 - `docs/standards/GEMINI_INTEGRATION.md` — code review automatico
 - `docs/standards/MOBILE_PERFORMANCE.md` — **NOVO** — Standards de performance mobile (lazy loading, code splitting, CSS animations, assets, touch UX)
 - `docs/architecture/TELEGRAM_BOT.md` — bot + notificacoes
+- `docs/architecture/CHATBOT_AI.md` — **NOVO** — Arquitetura do Chatbot IA Multi-Canal (F8.1): contextBuilder, safetyGuard, Groq API, bugfixes hallucination
 - `plans/EXEC_SPEC_FASE_5.md` — spec de execucao da Fase 5
 - `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` — Roadmap M0-M6 para otimizacao mobile (M2 concluido ✅)
 - `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` — **NOVO** — Sprints D1-D6 para otimizar first load do Dashboard (target: 25 → ≤12 queries, ~15s → <5s em 4G)

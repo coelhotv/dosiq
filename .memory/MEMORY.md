@@ -309,6 +309,17 @@ Agents should read this file + rules + anti-patterns before coding.
 - **Decisão:** ChatWindow chama `useDashboard()` diretamente (não prop drilling via App.jsx)
 - Journal: `.memory/journal/2026-W12.md` (review + lições aprendidas)
 
+## Sprint 8.3.1 ✅ ENTREGUE (2026-03-20) — Bugfix Hallucinations
+**Commit:** `1e47cfb` | **PR:** #408 (mergeado) | **Problema:** "Selozok = Sertralina" (LLM alucinava)
+- **Opção E (Grounding):** Incluir `active_ingredient` + `therapeutic_class` no contexto
+  - Antes: `- SeloZok (50mg): diario, ...`
+  - Depois: `- SeloZok [Succinato de Metoprolol, Betabloqueador] (50mg): diario, ...`
+  - Garantir `null` não expõe "null" no contexto (usar `filter(Boolean)`)
+- **Ajustes parametros:** `temperature: 0.7 → 0.2`, `top_p: 0.9 → 1.0` (respostas factuais)
+- **Modelo:** Trocar para `groq/compound` (seleção inteligente)
+- **Testes:** 33/33 passando ✅ | localStorage mock corrigido (AP-T03)
+- Journal: `.memory/journal/2026-W12.md` (análise de alucinação + soluções)
+
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**
 - Commit: `4822296` | PR: #394

@@ -108,7 +108,9 @@
       "Bash(gh issue:*)",
       "Bash(git -C \"/Users/coelhotv/git-cloud/meus-remedios\" log --oneline -5)",
       "WebSearch",
-      "WebFetch(domain:ddinter2.scbdd.com)"
+      "WebFetch(domain:ddinter2.scbdd.com)",
+      "Read(//Users/coelhotv/git-icloud/meus-remedios/plans/**)",
+      "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/plans/**)"
     ],
     "additionalDirectories": [
       "/tmp",

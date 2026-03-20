@@ -1,10 +1,10 @@
 # Spec de Execucao — Fase 8: Experiencia Inteligente & Wow Factor
 
-**Versao:** 1.0
-**Data:** 20/03/2026
-**Status:** PENDENTE — 0/4 sprints entregues
+**Versao:** 1.1
+**Data:** 20/03/2026 (atualizado 2026-03-20)
+**Status:** 1/4 sprints entregues ✅ | 13/44 SP | Sprint 8.3 complete + bugfix
 **Baseline:** v3.4.0 (Fase 6 completa) → v4.1.0 (Fase 8 completa)
-**Pendente:** 4 sprints (8.1, 8.2, 8.3, 8.4)
+**Pendente:** 3 sprints (8.1, 8.2, 8.4)
 **Escopo:** 44 SP | 4 features | 4 sprints sequenciais com paralelizacao parcial
 **Referencias:** `PHASE_8_SPEC.md` (overview), `ROADMAP_v4.md` (timeline), `CLAUDE.md` (convencoes)
 
@@ -1650,6 +1650,49 @@ describe('chatbotService', () => {
 
 ---
 
+## 7.9. Post-Delivery Bugfix: Hallucinations (Sprint 8.3.1)
+
+**Data:** 2026-03-20 (mesmo dia da entrega)
+**PR:** #408 | **Commit:** `1e47cfb`
+**Problema:** LLM alucinava respostas farmacológicas (ex: "Selozok = Sertralina" em vez de "Metoprolol")
+
+### Soluções Aplicadas
+
+#### 1. Grounding com Contexto Farmacológico (Opção E)
+- Adicionar `active_ingredient` + `therapeutic_class` ao contexto enviado ao LLM
+- **Antes:** `- SeloZok (50mg): diario, ...`
+- **Depois:** `- SeloZok [Succinato de Metoprolol, Betabloqueador] (50mg): diario, ...`
+- Garantir `null` não expõe texto "null" no contexto (usar `filter(Boolean)`)
+
+#### 2. Ajuste de Parâmetros (Temperature + Top_p)
+```javascript
+// api/chatbot.js linhas 57-58
+temperature: 0.2,    // 0.7 → 0.2 (respostas factuais, menos aleatoriedade)
+top_p: 1.0,          // 0.9 → 1.0 (desativar nucleus sampling)
+```
+
+#### 3. Modelo Inteligente
+- Trocar para `groq/compound` (seleção automática de modelo conforme pedido)
+
+### Files Modificados
+- `api/chatbot.js` — parâmetros ajustados (linhas 57-58)
+- `src/features/chatbot/services/contextBuilder.js` — incluir `principioAtivo` + `classeTerapeutica`
+- `src/features/chatbot/__tests__/contextBuilder.test.js` — testes para campos novos
+- `src/features/chatbot/__tests__/chatbotService.test.js` — corrigir localStorage mock (AP-T03)
+
+### Quality Gates
+- ✅ 33/33 testes passando
+- ✅ Nenhum `null` ou `undefined` exposto no contexto
+- ✅ localStorage mock corrigido
+- ✅ Sem impacto em UX — mudanças internas
+
+### Aprendizados
+1. **Alucinação = falta de grounding + parâmetros altos:** restricoes no prompt sozinhas não impedem o LLM de inventar. Precisa de contexto factual + temperatura conservadora.
+2. **Dados já existiam no BD:** `active_ingredient` + `therapeutic_class` estavam nas medicines — só não estavam sendo enviados ao LLM.
+3. **Temperature é crítico em medical chatbots:** 0.2 vs 0.7 muda drasticamente a disposição do modelo em "arriscar" respostas.
+
+---
+
 ## 8. Sprint 8.4 — Base ANVISA Interacoes Medicamentosas (13 SP)
 
 ### F8.2: JSON Seed + Interaction Service + UI Alerts
@@ -2080,9 +2123,10 @@ describe('InteractionAlert', () => {
 | 8.1 | V01 — Registro por Voz | 13 | ⬚ PENDENTE | — | — | — |
 | 8.2 | V02 — Resumo por Voz | 5 | ⬚ PENDENTE | — | — | — |
 | 8.3 | F8.1 — Chatbot IA | 13 | ✅ ENTREGUE | 5a708ad (#407) | 2026-03-20 | 539/539 testes ✅ |
+| 8.3.1 | Bugfix: Hallucinations (Contexto Farmacológico) | — | ✅ MERGED | 1e47cfb (#408) | 2026-03-20 | 33/33 testes ✅ |
 | 8.4 | F8.2 — Interacoes ANVISA | 13 | ⬚ PENDENTE | — | — | — |
 
-**Total:** 13/44 SP entregues (30%)
+**Total:** 13/44 SP entregues (30%) + bugfix hallucinations
 
 ---
 
