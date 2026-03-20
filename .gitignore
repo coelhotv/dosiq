@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-bug_logs/
+bug-logs/
 
 # Dependencies
 node_modules/

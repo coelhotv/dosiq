@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
+import { parseLocalDate } from '@utils/dateUtils'
 
 // Schemas de validação para todos os métodos de leitura
 const limitSchema = z.number().int().positive().max(5000).default(50)
@@ -382,9 +383,8 @@ export const logService = {
    * @param {string} endDate - ISO format YYYY-MM-DD (Brazil local date)
    * @returns {Promise}
    *
-   * NOTE: Converts Brazil dates to UTC range for proper timezone handling.
-   * Brazil is GMT-3, so midnight Brazil = 03:00 UTC same day,
-   * and 23:59:59 Brazil = 02:59:59 UTC next day.
+   * NOTE: Usa parseLocalDate() para conversão timezone-safe (R-020, AP-005).
+   * parseLocalDate('YYYY-MM-DD') → Date local (meia-noite) → .toISOString() converte para UTC.
    */
   getByDateRange: async (startDate, endDate, limit = 50, offset = 0) => {
     const v = dateRangeSchema.safeParse({ startDate, endDate, limit, offset })
@@ -393,13 +393,11 @@ export const logService = {
       return { data: [], total: 0, hasMore: false }
     }
 
-    // Convert Brazil dates to UTC timestamps (ISO 8601 format with Z)
-    // startDate 00:00:00 Brazil = startDate 03:00:00 UTC
-    const startUtc = `${startDate}T03:00:00Z`
-    // endDate 23:59:59 Brazil = (endDate + 1 day) 02:59:59 UTC
-    const endDateObj = new Date(endDate + 'T00:00:00')
-    endDateObj.setDate(endDateObj.getDate() + 1)
-    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59Z'
+    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
+    const startUtc = parseLocalDate(startDate).toISOString()
+    const endLocal = parseLocalDate(endDate)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -485,10 +483,11 @@ export const logService = {
       return { data: [], total: 0, hasMore: false }
     }
 
-    const startUtc = `${startDate}T03:00:00Z`
-    const endDateObj = new Date(endDate + 'T00:00:00')
-    endDateObj.setDate(endDateObj.getDate() + 1)
-    const endUtc = endDateObj.toISOString().split('T')[0] + 'T02:59:59Z'
+    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
+    const startUtc = parseLocalDate(startDate).toISOString()
+    const endLocal = parseLocalDate(endDate)
+    endLocal.setHours(23, 59, 59, 999)
+    const endUtc = endLocal.toISOString()
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
