@@ -295,17 +295,19 @@ Agents should read this file + rules + anti-patterns before coding.
 - R-128 to R-131 + AP-P14 to AP-P17 registradas
 - Journal: `.memory/journal/2026-W12-P4.md`
 
-## Sprint 8.3 🔄 EM REVISÃO (2026-03-20) — F8.1 Chatbot IA
-**Branch:** `feature/fase-8/sprint-3-chatbot` | Aguardando Gemini Code Assist
+## Sprint 8.3 ✅ ENTREGUE (2026-03-20) — F8.1 Chatbot IA
+**Commit:** `5a708ad` | **PR:** #407 (mergeado) | **Próxima versão:** v4.0.0-RC1
 - Groq API (llama-3.3-70b-versatile) via serverless `api/chatbot.js` (slot 7/12)
 - `contextBuilder.js` — contexto compacto do paciente sem IDs/UUIDs
 - `safetyGuard.js` — bloqueia dosagem/diagnóstico/parar tratamento
 - `chatbotService.js` — rate limit 30msg/hora (localStorage)
-- `ChatWindow.jsx` — drawer lateral animado, quick suggestions, useDashboard() interno
+- `ChatWindow.jsx` + `ChatWindow.module.css` — drawer animado, CSS Modules (separation of concerns)
+- `App.module.css` — FAB styles extraídos para reutilização
 - App.jsx: FAB 💬 + lazy-loaded ChatWindow via Suspense
-- 539/539 testes ✅ | Build: ChatWindow 3.23 kB gzip ✅
+- **Quality:** 539/539 testes ✅ | Build: ChatWindow 3.23 kB gzip ✅ | Budget: 7/12 ✅
+- **Gemini Review:** 5 fixes aplicados (2 HIGH + 3 MEDIUM) → 0 novos comentários → Aprovado
 - **Decisão:** ChatWindow chama `useDashboard()` diretamente (não prop drilling via App.jsx)
-- Journal: `.memory/journal/2026-W12.md`
+- Journal: `.memory/journal/2026-W12.md` (review + lições aprendidas)
 
 ## Sprint M5 ✅ DELIVERED (2026-03-13)
 **Assets, CSS & Font Sizes optimization**
