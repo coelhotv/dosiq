@@ -104,7 +104,8 @@
       "Bash(\"/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/.memory/journal/2026-W11.md\":*)",
       "Bash(gh release:*)",
       "Bash(COMMIT=\"6dc2bd8\")",
-      "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/**)"
+      "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/**)",
+      "Bash(gh issue:*)"
     ],
     "additionalDirectories": [
       "/tmp",
