@@ -17,6 +17,7 @@ import { handleAjuda } from './bot/commands/ajuda.js';
 import { handleRegistrar } from './bot/commands/registrar.js';
 import { handleAdicionarEstoque, handleReporShortcut } from './bot/commands/adicionar_estoque.js';
 import { handlePausar, handleRetomar } from './bot/commands/protocols.js';
+import { handleChatbotMessage } from './bot/commands/chatbot.js';
 import { handleCallbacks } from './bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from './bot/callbacks/conversational.js';
 import { handleInlineQueries } from './bot/inlineQuery.js';
@@ -79,6 +80,9 @@ handleConversationalCallbacks(bot);
 
 // Register inline query handler (Phase 2.2)
 handleInlineQueries(bot);
+
+// Chatbot IA: mensagens de texto não-comando encaminhadas para Groq (Sprint 8.3.2)
+bot.on('message', (msg) => handleChatbotMessage(bot, msg));
 
 // Start scheduler
 startScheduler(bot);
