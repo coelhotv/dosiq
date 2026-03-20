@@ -4,7 +4,7 @@
 import Groq from 'groq-sdk'
 import { z } from 'zod'
 
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+const MODEL = process.env.GROQ_MODEL || 'groq/compound'
 const MAX_TOKENS = 300
 
 const chatbotRequestSchema = z.object({
