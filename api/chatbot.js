@@ -66,6 +66,26 @@ export default async function handler(req, res) {
     const response =
       completion.choices[0]?.message?.content || 'Desculpe, não consegui responder.'
 
+    // Log cache hit metrics (Groq Prompt Caching)
+    const promptTokens = completion.usage?.prompt_tokens || 0
+    const cachedTokens = completion.usage?.cached_prompt_tokens || 0
+    const cacheHitRate = promptTokens > 0 ? Math.round((cachedTokens / promptTokens) * 100) : 0
+    const estimatedSavings = Math.round(cachedTokens * 0.5) // 50% desconto em cached_tokens
+
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      service: 'chatbot-api',
+      level: 'info',
+      message: 'Groq response received',
+      model: MODEL,
+      promptTokens,
+      cachedTokens,
+      cacheHitRate: `${cacheHitRate}%`,
+      estimatedTokenSavings: estimatedSavings,
+      completionTokens: completion.usage?.completion_tokens,
+      totalTokens: completion.usage?.total_tokens,
+    }))
+
     return res.status(200).json({
       response,
       model: MODEL,
