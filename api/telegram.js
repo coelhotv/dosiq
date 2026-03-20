@@ -49,10 +49,13 @@ function createBotAdapter(token) {
     sendMessage: async (chatId, text, options = {}) => {
       return telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
     },
+    sendChatAction: async (chatId, action) => {
+      return telegramFetch('sendChatAction', { chat_id: chatId, action });
+    },
     editMessageText: async (text, options = {}) => {
-      // Handle overload: (text, options) vs (msgId, text, options) - library has quirks, 
+      // Handle overload: (text, options) vs (msgId, text, options) - library has quirks,
       // but our code seems to usage object options with chat_id and message_id inside.
-      // Let's check usages. 
+      // Let's check usages.
       // Usage 1: bot.editMessageText(newText, { chat_id, message_id, ... })
       return telegramFetch('editMessageText', { text, ...options });
     },
