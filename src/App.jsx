@@ -19,6 +19,7 @@ const HealthHistory = lazy(() => import('./views/HealthHistory'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
+const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
@@ -52,6 +53,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState('dashboard')
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
@@ -268,6 +270,41 @@ function App() {
 
           {isAuthenticated && (
             <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+          )}
+
+          {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
+          {isAuthenticated && (
+            <>
+              <button
+                onClick={() => setIsChatOpen(true)}
+                aria-label="Abrir assistente"
+                style={{
+                  position: 'fixed',
+                  bottom: '90px',
+                  right: '16px',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: 'var(--color-primary, #3b82f6)',
+                  color: 'white',
+                  fontSize: '22px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  zIndex: 1000,
+                }}
+              >
+                💬
+              </button>
+              {isChatOpen && (
+                <Suspense fallback={null}>
+                  <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+                </Suspense>
+              )}
+            </>
           )}
 
           {/* Onboarding Wizard - apenas para usuários autenticados */}

@@ -34,6 +34,7 @@
     "@vercel/blob": "^2.3.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.33.0",
+    "groq-sdk": "^1.1.1",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",

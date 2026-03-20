@@ -38,6 +38,10 @@
       "destination": "/api/share.js"
     },
     {
+      "source": "/api/chatbot",
+      "destination": "/api/chatbot.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
