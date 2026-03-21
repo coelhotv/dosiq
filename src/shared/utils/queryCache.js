@@ -11,6 +11,8 @@
  * @module queryCache
  */
 
+import { debugLog } from '@shared/utils/logger'
+
 const CACHE_CONFIG = {
   STALE_TIME: 30 * 1000, // 30 segundos
   MAX_ENTRIES: 200, // Limite elevado para suportar volumetria do Dashboard
@@ -63,7 +65,6 @@ function hydrateCache() {
       entries.forEach(([key, value]) => {
         cache.set(key, { ...value, isRevalidating: false })
       })
-      console.log(`[QueryCache] Hidratadas ${cache.size} entradas do LocalStorage`)
     }
   } catch (error) {
     console.warn('[QueryCache] Erro ao hidratar cache:', error)
@@ -120,7 +121,7 @@ function garbageCollect() {
   }
 
   if (removedByTTL > 0) {
-    console.log(`[QueryCache] GC TTL: removidas ${removedByTTL} entradas expiradas`)
+    debugLog('QueryCache', `GC TTL: removidas ${removedByTTL} entradas expiradas`)
   }
 
   // Fase 2: LRU eviction se ainda exceder MAX_ENTRIES
@@ -135,8 +136,9 @@ function garbageCollect() {
     pendingRequests.delete(key)
   })
 
-  console.log(
-    `[QueryCache] GC LRU: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`
+  debugLog(
+    'QueryCache',
+    `GC LRU: removidas ${entriesToRemove.length} entradas. Cache size: ${cache.size}`
   )
   persistCache()
 }
@@ -180,20 +182,20 @@ export async function cachedQuery(key, fetcher, options = {}) {
 
   // Deduplicação: se já tem um request em andamento para esta chave, reutiliza
   if (dedupe && pendingRequests.has(key)) {
-    console.log(`[QueryCache] Deduplicando request: ${key}`)
+    debugLog('QueryCache', `Deduplicando request: ${key}`)
     return pendingRequests.get(key)
   }
 
   // Se tem cache válido (não stale), retorna imediatamente
   if (cached && !isStale(cached.timestamp)) {
     updateAccess(key)
-    console.log(`[QueryCache] Cache HIT (fresh): ${key}`)
+    debugLog('QueryCache', `Cache HIT (fresh): ${key}`)
     return cached.data
   }
 
   // Se tem cache stale, retorna stale + revalida em background
   if (cached) {
-    console.log(`[QueryCache] Cache HIT (stale): ${key}, revalidando...`)
+    debugLog('QueryCache', `Cache HIT (stale): ${key}, revalidando...`)
 
     // Revalidação em background (não espera)
     // Captura a geração atual antes do await para evitar escrever após clearCache()
@@ -207,7 +209,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
           updateAccess(key)
           garbageCollect()
           persistCache()
-          console.log(`[QueryCache] Revalidação OK: ${key}`)
+          debugLog('QueryCache', `Revalidação OK: ${key}`)
         }
         return data
       } catch (error) {
@@ -229,7 +231,7 @@ export async function cachedQuery(key, fetcher, options = {}) {
   }
 
   // Cache MISS: executa fetcher
-  console.log(`[QueryCache] Cache MISS: ${key}`)
+  debugLog('QueryCache', `Cache MISS: ${key}`)
 
   // Captura a geração atual antes do await para evitar escrever após clearCache()
   const capturedGen = cacheGeneration
@@ -303,9 +305,9 @@ export function invalidateCache(pattern) {
 
   if (invalidatedCount > 0) {
     persistCache()
+    debugLog('QueryCache', `Invalidadas ${invalidatedCount} entradas para pattern: ${pattern}`)
   }
 
-  console.log(`[QueryCache] Invalidadas ${invalidatedCount} entradas para pattern: ${pattern}`)
   return invalidatedCount
 }
 
@@ -320,7 +322,7 @@ export function prefetchCache(key, data) {
   updateAccess(key)
   garbageCollect()
   persistCache()
-  console.log(`[QueryCache] Prefetch: ${key}`)
+  debugLog('QueryCache', `Prefetch: ${key}`)
 }
 
 /**
@@ -372,7 +374,7 @@ export function clearCache() {
       // Silently ignore errors
     }
   }
-  console.log(`[QueryCache] Cache limpo. ${size} entradas removidas.`)
+  debugLog('QueryCache', `Cache limpo. ${size} entradas removidas.`)
 }
 
 // Garbage collection periódico

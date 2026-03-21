@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { debugLog } from '@shared/utils/logger'
 import './AdherenceHeatmap.css'
 
 /**
@@ -27,11 +28,11 @@ export default function AdherenceHeatmap({ pattern }) {
   const [hoveredCell, setHoveredCell] = useState(null)
   const [touchedCell, setTouchedCell] = useState(null)
 
-  console.log('[AdherenceHeatmap] Pattern recebido:', pattern)
+  debugLog('AdherenceHeatmap', 'Pattern recebido:', pattern)
 
   // Guard clause: dados insuficientes
   if (!pattern || !pattern.hasEnoughData) {
-    console.log('[AdherenceHeatmap] Dados insuficientes:', {
+    debugLog('AdherenceHeatmap', 'Dados insuficientes:', {
       hasPattern: !!pattern,
       hasEnoughData: pattern?.hasEnoughData,
       narrative: pattern?.narrative,
@@ -44,8 +45,6 @@ export default function AdherenceHeatmap({ pattern }) {
       </div>
     )
   }
-
-  console.log('[AdherenceHeatmap] Renderizando grid com dados suficientes')
 
   /**
    * Calcula opacidade baseada na adherência (0-100%)

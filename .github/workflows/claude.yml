@@ -1,6 +1,8 @@
-name: Claude Code
+name: Claude Code PR Review
 
 on:
+  pull_request:
+    types: [opened, synchronize]
   issue_comment:
     types: [created, edited]
   pull_request_review_comment:
@@ -12,8 +14,24 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
+  actions: read
 
 jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          direct_prompt: |
+            Analise as mudanças deste PR focando em:
+            - Bugs e problemas de corretude
+            - Vulnerabilidades de segurança
+            - Impacto em performance
+            Se houver issues críticos, liste em bullets concisos.
+            Se não houver, aprove com ✅.
   claude:
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||

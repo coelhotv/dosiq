@@ -176,6 +176,14 @@
 
 ---
 
+## Console Logging Anti-Patterns (Sprint 8.6 — 2026-03-20)
+
+| ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
+|----|-------------|-------------|------------|----------|
+| AP-LOG-001 | Unfiltered `console.log()` statements in production UI code | 50+ debug logs on Dashboard load polluteDevTools, confuse users, create noise that hides real errors. Makes troubleshooting harder (signal-to-noise ratio 1:50). Logs like "Processando 7 registros" add zero value | Always use `debugLog()` helper that checks `process.env.NODE_ENV === 'development'`. Remove logs that are "obvious" (e.g., "rendering component"). Keep only logs that help diagnose real issues. Log should provide actionable info | R-145 |
+
+---
+
 *Last updated: 2026-03-20*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P17 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03*
-*Total: 63+ anti-patterns*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P17 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
+*Total: 64+ anti-patterns*
