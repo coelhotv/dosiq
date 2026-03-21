@@ -19,6 +19,7 @@
 import { useMemo, useCallback, useState } from 'react'
 import { motion } from 'framer-motion'
 import { analyticsService } from '@dashboard/services/analyticsService'
+import { debugLog } from '@shared/utils/logger'
 import './SparklineAdesao.css'
 
 /**
@@ -181,11 +182,8 @@ export function SparklineAdesao({
   // Processar dados — últimos N dias (filtrando dias futuros no horário do Brasil)
   const chartData = useMemo(() => {
     if (!adherenceByDay || adherenceByDay.length === 0) {
-      console.log('[SparklineAdesao] Sem dados:', { adherenceByDay })
       return []
     }
-
-    console.log('[SparklineAdesao] Processando', adherenceByDay.length, 'registros')
 
     const today = new Date()
     const data = []
@@ -210,9 +208,9 @@ export function SparklineAdesao({
       })
     }
 
-    console.log('[SparklineAdesao] chartData final:', data.length, 'dias')
+    debugLog('SparklineAdesao', `chartData final: ${data.length} dias`)
     if (data.length > 0) {
-      console.log('[SparklineAdesao] Amostra de valores:', {
+      debugLog('SparklineAdesao', 'Amostra de valores:', {
         primeiro: data[0],
         ultimo: data[data.length - 1],
         todosAdherencia: data.map((d) => d.adherence),
@@ -224,18 +222,17 @@ export function SparklineAdesao({
   // Calcular estatísticas
   const stats = useMemo(() => {
     if (chartData.length === 0) {
-      console.log('[SparklineAdesao] chartData vazio')
       return { average: 0, trend: 'stable' }
     }
 
     const validData = chartData.filter((d) => d.adherence > 0)
-    console.log('[SparklineAdesao] Stats:', {
+    debugLog('SparklineAdesao', 'Stats:', {
       totalDays: chartData.length,
       validDays: validData.length,
       adherenceValues: chartData.map((d) => d.adherence),
     })
     if (validData.length === 0) {
-      console.log('[SparklineAdesao] AVISO: Nenhum dia com adherence > 0!')
+      debugLog('SparklineAdesao', 'AVISO: Nenhum dia com adherence > 0!')
       return { average: 0, trend: 'stable' }
     }
 

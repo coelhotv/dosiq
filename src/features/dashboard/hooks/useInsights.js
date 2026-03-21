@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { selectBestInsight } from '@dashboard/services/insightService'
+import { debugLog } from '@shared/utils/logger'
 
 /**
  * Hook para obter insights contextuais para o usuário
@@ -24,15 +25,6 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
       try {
         setLoading(true)
 
-        // DEBUG: Log context data being passed
-        console.log('[useInsights] Context data:', {
-          stats,
-          dailyAdherence: dailyAdherence?.length || 0,
-          stockSummary: stockSummary?.length || 0,
-          logs: logs?.length || 0,
-          hasOnNavigate: !!onNavigate,
-        })
-
         const selectedInsight = selectBestInsight({
           stats,
           dailyAdherence,
@@ -41,8 +33,7 @@ export function useInsights({ stats, dailyAdherence, stockSummary, logs, onNavig
           onNavigate,
         })
 
-        // DEBUG: Log selected insight
-        console.log('[useInsights] Selected insight:', selectedInsight)
+        debugLog('useInsights', 'Selected insight:', selectedInsight)
 
         if (isMounted) {
           setInsight(selectedInsight)

@@ -119,16 +119,6 @@ export default function Dashboard({ onNavigate }) {
     onNavigate,
   })
 
-  // DEBUG: Log insight data received from hook
-  console.log('[Dashboard] Insight data received:', {
-    insight,
-    insightLoading,
-    stats,
-    dailyAdherence: dailyAdherence?.length || 0,
-    stockSummary: stockSummary?.length || 0,
-    logs: logs?.length || 0,
-  })
-
   // Estado para controle de animação de confete
   const [showConfetti, setShowConfetti] = useState(false)
 
