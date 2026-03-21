@@ -4,6 +4,7 @@ import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import MedicineAutocomplete from './MedicineAutocomplete'
 import LaboratoryAutocomplete from './LaboratoryAutocomplete'
 import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@schemas/medicineSchema'
+import { toSentenceCase } from '@utils/stringUtils'
 import './MedicineForm.css'
 
 /**
@@ -65,8 +66,8 @@ export default function MedicineForm({
     setFormData((prev) => ({
       ...prev,
       name: medicine.name,
-      active_ingredient: medicine.activeIngredient,
-      therapeutic_class: medicine.therapeuticClass || null,
+      active_ingredient: toSentenceCase(medicine.activeIngredient),
+      therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
     }))
     if (saveSuccess) setSaveSuccess(false)
   }
@@ -226,6 +227,27 @@ export default function MedicineForm({
           readOnly={formData.active_ingredient && !medicine?.active_ingredient}
         />
         <small className="field-hint">Preenchido automaticamente ao selecionar medicamento</small>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="therapeutic_class">
+          Classe Terapêutica
+          {formData.therapeutic_class && !medicine?.therapeutic_class && (
+            <span className="autocomplete-badge" title="Preenchido via Base ANVISA">
+              Fonte: ANVISA
+            </span>
+          )}
+        </label>
+        <input
+          type="text"
+          id="therapeutic_class"
+          name="therapeutic_class"
+          value={formData.therapeutic_class || ''}
+          onChange={handleChange}
+          placeholder="Ex: Analgésicos não narcóticos"
+          disabled={isSubmitting}
+          maxLength={100}
+        />
       </div>
 
       <div className="form-group">

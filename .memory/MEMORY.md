@@ -350,3 +350,26 @@ Agents should read this file + rules + anti-patterns before coding.
 - Width animations → transform:scaleX() (GPU, 60 FPS)
 - @import JS removed from critical chain
 - Quality: 539/539 tests ✅, 0 lint ✅
+
+## Form Feature ✅ DELIVERED (2026-03-21)
+**Add therapeutic_class field to medicine forms with ANVISA Title Case normalization**
+- **Commit:** `6f138b6` | **PR:** #415
+- **Scope:** MedicineForm.jsx + TreatmentWizard.jsx (+ OnboardingWizard via inheritance)
+- **Changes:**
+  - Add read/write `therapeutic_class` field to MedicineForm (appears always, editável)
+  - Add read/write `therapeutic_class` field to TreatmentWizard step 1 (appears when populated)
+  - Implement `toTitleCase()` helper (primeira letra maiúscula, resto minúscula)
+  - Normalize autocomplete data: `activeIngredient` + `therapeuticClass` via `toTitleCase()`
+    - activeIngredient: "toxina botulínica a" → "Toxina botulínica a"
+    - therapeuticClass: "AGENTE PARALISANTE NEUROMUSCULAR" → "Agente paralisante neuromuscular"
+  - Show "Fonte: ANVISA" badge when preenchido via autocomplete em criação
+  - Field optional, maxLength 100 (aligns with Zod schema)
+- **Quality:** 539/539 testes ✅ | 0 lint ✅ | No Gemini issues expected
+- **Schema:** No changes needed (already `.string().max(100).optional().nullable()`)
+- **Data Flow:** JSON ANVISA → autocomplete → toTitleCase → form state → Supabase
+- **Test Plan:**
+  1. New medicine: field appears, autocomplete populates with Title Case ✅
+  2. Edit medicine: field shows current value ✅
+  3. Treatment wizard: field appears after autocomplete selection ✅
+  4. Onboarding: field appears via FirstMedicineStep ✅
+- **Notes:** Service layer already saves therapeutic_class, no backend changes needed

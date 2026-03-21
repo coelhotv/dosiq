@@ -6,6 +6,7 @@ import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import { formatLocalDate } from '@utils/dateUtils'
+import { toSentenceCase } from '@utils/stringUtils'
 import Button from '@shared/components/ui/Button'
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
@@ -136,8 +137,8 @@ export default function TreatmentWizard({
     setMedicineData((prev) => ({
       ...prev,
       name: medicine.name,
-      active_ingredient: medicine.activeIngredient || '',
-      therapeutic_class: medicine.therapeuticClass || null,
+      active_ingredient: toSentenceCase(medicine.activeIngredient) || '',
+      therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
     }))
   }, [])
 
@@ -349,6 +350,22 @@ export default function TreatmentWizard({
                         className="wizard__input"
                         value={medicineData.active_ingredient}
                         readOnly
+                      />
+                      <small className="wizard__label-note">
+                        Preenchido automaticamente via ANVISA
+                      </small>
+                    </label>
+                  )}
+
+                  {medicineData.therapeutic_class && (
+                    <label className="wizard__label">
+                      Classe Terapêutica
+                      <input
+                        type="text"
+                        className="wizard__input"
+                        value={medicineData.therapeutic_class}
+                        onChange={(e) => updateMedicine('therapeutic_class', e.target.value)}
+                        maxLength={100}
                       />
                       <small className="wizard__label-note">
                         Preenchido automaticamente via ANVISA
