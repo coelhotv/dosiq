@@ -8,7 +8,7 @@ const DEV_VARIANT_PARAM = 'landingVariant'
 const NEW_VARIANT_VALUES = new Set(['new', 'v2', 'b', 'prototype'])
 
 function resolveLandingVariant() {
-  if (!import.meta.env.DEV || typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return 'control'
   }
 
