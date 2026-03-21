@@ -1,4 +1,4 @@
-# Design System: Editorial Clinical Sanctuary
+# Design System: Clinical adhesion booster
 
 This design system serves as the foundational framework for a high-end Brazilian health PWA. Moving away from the sterile, rigid layouts of traditional medical software, this system adopts a "Therapeutic Sanctuary" approach—blending editorial sophistication with extreme legibility. It is designed to feel like a high-end health journal: breathable, layered, and intuitively accessible for an aging demographic.
 
