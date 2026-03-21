@@ -1,0 +1,27 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="44"
+  height="46"
+  viewBox="0 0 44 46"
+  fill="none"
+  role="img"
+  aria-label="Logo variante Meus Remédios"
+>
+  <rect x="1" y="0" width="42" height="42" rx="13" fill="#2563EB" />
+  <g transform="translate(-4.1 -2.6) scale(1.18)">
+    <path
+      d="M12.8333 17.3636C12.8333 14.3594 15.2148 11.9231 18.1515 11.9231C19.7434 11.9231 21.1718 12.6393 22.1667 13.7717C23.1615 12.6393 24.5899 11.9231 26.1818 11.9231C29.1186 11.9231 31.5 14.3594 31.5 17.3636C31.5 18.8659 30.9419 20.2504 30.0109 21.2642C29.7692 21.5275 29.503 21.776 29.2145 22.0078L22.1667 28L15.1188 22.0078C14.8303 21.776 14.5641 21.5275 14.3224 21.2642C13.3914 20.2504 12.8333 18.8659 12.8333 17.3636Z"
+      stroke="white"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M15.5 19.25H19.0833L20.1667 17L22.3333 22L24.5 14.5L26.125 18.75H28.8333"
+      stroke="white"
+      stroke-width="1.1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>
