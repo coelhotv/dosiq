@@ -23,7 +23,33 @@ Two distinct user journeys share one design language:
 | **Dona Maria** | Elderly, 1–3 medications, low tech literacy | **Simple** | Legibility, 1-tap actions, no overwhelm |
 | **Carlos** | Complex conditions, multiple protocols, health-literate | **Complex** | Data density, protocol grouping, analytics |
 
-**Design rule:** Simple view is the default. Complex features must not increase cognitive load for simple users — gate them behind protocol/titration flows.
+**Design rule:** Simple view is the default. Complex features must not increase cognitive load for simple users. The system must gracefully guide users from the Simple to the Complex view based on their evolving needs.
+
+---
+
+## Progressive Disclosure & The User Journey
+
+The transition from a simple treatment plan to a complex one is a critical moment in the user experience. The UI must not abruptly change; it must guide the user, teaching them about new capabilities as they become relevant. This is the principle of Progressive Disclosure.
+
+### Triggers for Increased Complexity
+
+The UI should remain in "Simple Mode" by default. It transitions to "Complex Mode" or introduces new elements based on specific, non-ambiguous triggers. These include, but are not limited to:
+- A user adds more than 3 active medications.
+- A user's treatment includes at least one medication with a titration schedule (varying doses over time).
+- A user manually enables an "advanced" or "detailed" view in the application settings.
+- A user adds a medication that requires frequent monitoring (e.g., blood glucose).
+
+### The Escalation Path: Guiding, Not Overwhelming
+
+When a trigger is met, the UI follows a clear path to introduce complexity.
+
+| Path Level | State | UI Pattern | Example Scenario |
+| :--- | :--- | :--- | :--- |
+| **Level 1** | **Default Simple** | The clean, "Dona Maria" interface. Minimal data, large touch targets, single-action focus. | A user is managing 1-2 medications with fixed daily doses. |
+| **Level 2** | **Introductory** | When a complexity trigger is met, the app introduces **one** new UI element at a time using a dismissible tooltip, a spotlight overlay, or a simple, one-time modal. The copy must be encouraging and explain the benefit. | User adds a medication with a titration schedule. The next time they visit the "Tratamentos" screen, a tooltip points to the new titration chart: *"Novo! Adicionamos um gráfico para ajudar você a acompanhar suas doses variáveis."* |
+| **Level 3** | **Opt-In Complex** | After introduction, the new element remains. The user is now implicitly in "Complex Mode" for that screen. The system may offer a way to hide the element again via a "Ver menos detalhes" (See less detail) toggle. | The titration chart is now a permanent part of the user's "Tratamentos" screen. Other complex elements may appear as more triggers are met. |
+
+This gradual escalation ensures that users like Dona Maria are not overwhelmed. They only see new complexity when their own actions require it, and they are taught what it means in context.
 
 ---
 
@@ -222,6 +248,24 @@ Never use `sm` or `xs`. Minimum radius = `md` (0.75rem).
 ---
 
 ## Component Specifications
+
+### Component Evolution: Simple to Complex
+
+Components must be designed to adapt to the user's complexity level. They should not be static. This evolution is key to the Progressive Disclosure strategy.
+
+- **List Items:**
+    - **Simple:** A simple row with medication name, dosage, and a "take" button. Large, clear, and focused.
+    - **Complex:** The same row can expand to include adherence trend micro-charts, stock status, or the name of the protocol it belongs to. This additional data is only shown when a complexity trigger is met.
+
+- **Dashboard (`Hoje` screen):**
+    - **Simple:** A single, large `RingGauge` for overall daily adherence.
+    - **Complex:** The single ring may be replaced by multiple smaller rings, one for each protocol, allowing the "Carlos" persona to track adherence across different treatments simultaneously.
+
+- **Cards (`Sanctuary Style`):**
+    - **Simple:** Cards are used sparingly, perhaps only for critical alerts.
+    - **Complex:** Cards become the primary container for grouping complex data, such as a "Protocol Card" that contains multiple medications, charts, and notes related to a single treatment plan.
+
+This adaptability ensures that the UI density and functionality scale with the user's needs, not before.
 
 ### RingGauge (Adherence Visualization)
 
