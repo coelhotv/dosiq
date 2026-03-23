@@ -1,35 +1,40 @@
 # Plano de Redesign: Neon/Glass → Santuário Terapêutico
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 2026-03-23
 **Status:** Aprovado para execução
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 > **Norte criativo:** "Um santuário terapêutico brasileiro: calmo, editorial e legível. Um espaço em camadas e respirável onde dados clínicos sensíveis são apresentados com contraste suave, hierarquia clara e calor humano suficiente para reduzir ansiedade sem parecer infantil."
 
+> **Princípio UX central:** O redesign não é apenas cosmético. Cada tela deve reforçar a pergunta central do paciente: **"O que preciso fazer agora?"**. Reduzir ruído cognitivo, adaptar a densidade da informação automaticamente e consolidar um design system coeso, executável e testável. Se uma decisão de design não ajuda o paciente a responder essa pergunta, ela não pertence à tela.
+
 ---
 
 ## Índice
 
 1. [Resumo Executivo](#1-resumo-executivo)
-2. [Gap Analysis: Estado Atual vs. Futuro](#2-gap-analysis)
-3. [Dependências e Pré-requisitos](#3-dependências-e-pré-requisitos)
-4. [Wave 0 — Foundation: Design Tokens](#4-wave-0--foundation-design-tokens)
-5. [Wave 1 — Typography & Icon System](#5-wave-1--typography--icon-system)
-6. [Wave 2 — Surface & Layout System](#6-wave-2--surface--layout-system)
-7. [Wave 3 — Component Library: Primitives](#7-wave-3--component-library-primitives)
-8. [Wave 4 — Navigation: BottomNav + Sidebar](#8-wave-4--navigation-bottomnav--sidebar)
-9. [Wave 5 — Motion Language](#9-wave-5--motion-language)
-10. [Wave 6 — Dashboard (Hoje) Redesign](#10-wave-6--dashboard-hoje-redesign)
-11. [Wave 7 — Tratamentos Redesign](#11-wave-7--tratamentos-redesign)
-12. [Wave 8 — Estoque Redesign](#12-wave-8--estoque-redesign)
-13. [Wave 9 — Perfil & Saúde Redesign](#13-wave-9--perfil--saúde-redesign)
-14. [Wave 10 — Progressive Disclosure System](#14-wave-10--progressive-disclosure-system)
-15. [Wave 11 — Accessibility & Polish](#15-wave-11--accessibility--polish)
-16. [Wave 12 — Landing, Auth & Onboarding](#16-wave-12--landing-auth--onboarding)
-17. [Checklist de Validação por Wave](#17-checklist-de-validação-por-wave)
-18. [Mapeamento de Arquivos](#18-mapeamento-de-arquivos)
-19. [Riscos e Mitigações](#19-riscos-e-mitigações)
+2. [Visão de Arquitetura de UI Alvo](#2-visão-de-arquitetura-de-ui-alvo)
+3. [Gap Analysis: Estado Atual vs. Futuro](#3-gap-analysis)
+4. [Dependências e Pré-requisitos](#4-dependências-e-pré-requisitos)
+5. [Wave 0 — Foundation: Design Tokens](#5-wave-0--foundation-design-tokens)
+6. [Wave 1 — Typography & Icon System](#6-wave-1--typography--icon-system)
+7. [Wave 2 — Surface & Layout System](#7-wave-2--surface--layout-system)
+8. [Wave 3 — Component Library: Primitives](#8-wave-3--component-library-primitives)
+9. [Wave 4 — Navigation: BottomNav + Sidebar](#9-wave-4--navigation-bottomnav--sidebar)
+10. [Wave 5 — Motion Language](#10-wave-5--motion-language)
+11. [Wave 6 — Dashboard (Hoje) Redesign](#11-wave-6--dashboard-hoje-redesign)
+12. [Wave 7 — Tratamentos Redesign](#12-wave-7--tratamentos-redesign)
+13. [Wave 8 — Estoque Redesign](#13-wave-8--estoque-redesign)
+14. [Wave 9 — Perfil & Saúde Redesign](#14-wave-9--perfil--saúde-redesign)
+15. [Wave 10 — Progressive Disclosure System](#15-wave-10--progressive-disclosure-system)
+16. [Wave 11 — Accessibility & Polish](#16-wave-11--accessibility--polish)
+17. [Wave 12 — Landing, Auth & Onboarding](#17-wave-12--landing-auth--onboarding)
+18. [Checklist de Validação por Wave](#18-checklist-de-validação-por-wave)
+19. [Mapeamento de Arquivos](#19-mapeamento-de-arquivos)
+20. [Riscos e Mitigações](#20-riscos-e-mitigações)
+21. [Definição de Sucesso](#21-definição-de-sucesso)
+- [Referências](#referências)
 
 ---
 
@@ -73,7 +78,63 @@
 
 ---
 
-## 2. Gap Analysis
+## 2. Visão de Arquitetura de UI Alvo
+
+Para alcançar a coesão desejada, a aplicação será implementada como uma **shell de experiência** composta por 6 camadas arquiteturais explícitas. Cada camada tem uma responsabilidade clara — agentes devem respeitar as fronteiras entre elas.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. AppShell                                             │
+│     Contêiner global da experiência autenticada.         │
+│     Controla safe areas, fundo tonal (--color-surface),  │
+│     espaçamentos globais e transições entre views.       │
+│     Arquivo: src/App.jsx                                 │
+├─────────────────────────────────────────────────────────┤
+│  2. ExperienceLayout                                     │
+│     Decide a composição mobile vs. desktop.              │
+│     Controla largura máxima (max-w-7xl), grids por tela, │
+│     e o offset do sidebar (margin-left: 256px desktop).  │
+│     Arquivo: src/App.jsx + src/shared/styles/layout.css  │
+├─────────────────────────────────────────────────────────┤
+│  3. Navigation System                                    │
+│     BottomNav (mobile) + Sidebar (desktop), operando     │
+│     de forma coesa via setCurrentView().                  │
+│     Arquivos: Sidebar.jsx + BottomNav.jsx                │
+├─────────────────────────────────────────────────────────┤
+│  4. Complexity System                                    │
+│     Camada explícita que lê a complexidade do tratamento │
+│     e injeta variantes visuais e de densidade.           │
+│     Hook: useComplexityMode() — simples/moderado/complexo│
+│     Triggers: nº meds, titulação, override manual.       │
+├─────────────────────────────────────────────────────────┤
+│  5. Motion System                                        │
+│     Coreografia de animações: Cascade Reveal, Living     │
+│     Fill, Soft Handoff, Tactile Press.                   │
+│     Hook: useMotion() — respeita prefers-reduced-motion. │
+│     Arquivo: motionConstants.js + useMotion.js           │
+├─────────────────────────────────────────────────────────┤
+│  6. Clinical Components Layer                            │
+│     Biblioteca de componentes canônicos para adesão,     │
+│     dose, estoque, protocolo, titulação, etc.            │
+│     Responde à Complexity System para ajustar densidade. │
+│     Arquivos: @features/*/components/*.jsx               │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Princípios Arquiteturais
+
+1. **Cada camada tem owner claro** — não misturar responsabilidades. O AppShell não decide densidade; o Complexity System não anima.
+2. **Protótipos são referência, não blueprint** — Os protótipos em `public/new_designs/` usam Tailwind + React Router + TypeScript como veículo de prototipagem. A app real usa CSS custom properties + view-based navigation + JavaScript. **Usar os protótipos para composição e layout, mas sempre partir da lógica e arquitetura da aplicação real.**
+3. **Progressive enhancement** — Simple mode é o default. Complexidade só aparece quando o tratamento do paciente exige. A UI escala com o paciente, não antes.
+4. **Tela responde uma pergunta** — Cada view tem um "job":
+   - **Hoje:** "O que preciso fazer agora?"
+   - **Tratamentos:** "Como estão meus tratamentos?"
+   - **Estoque:** "Preciso comprar algo?"
+   - **Perfil:** "Como configurar minha experiência?"
+
+---
+
+## 3. Gap Analysis: Estado Atual vs. Futuro
 
 ### 2.1 Design Tokens — Delta Completo
 
@@ -159,7 +220,7 @@ ADICIONAR:
 
 ---
 
-## 3. Dependências e Pré-requisitos
+## 4. Dependências e Pré-requisitos
 
 ### 3.1 Pacotes NPM a Adicionar
 
@@ -192,7 +253,7 @@ Adicionar no `index.html` (preload para performance):
 
 ---
 
-## 4. Wave 0 — Foundation: Design Tokens
+## 5. Wave 0 — Foundation: Design Tokens
 
 **Objetivo:** Substituir TODOS os design tokens de cor, sombra e gradiente de uma vez. Esta é a foundation sobre a qual todo o resto será construído.
 
@@ -538,7 +599,7 @@ Alterações chave:
 
 ---
 
-## 5. Wave 1 — Typography & Icon System
+## 6. Wave 1 — Typography & Icon System
 
 ### Sprint 1.1 — Tipografia
 
@@ -706,7 +767,7 @@ import { Calendar, Pill, Package, User } from 'lucide-react'
 
 ---
 
-## 6. Wave 2 — Surface & Layout System
+## 7. Wave 2 — Surface & Layout System
 
 ### Sprint 2.1 — Surface Utilities
 
@@ -839,7 +900,7 @@ Adicionar classes de superfície para o Material 3 tonal architecture:
 
 ---
 
-## 7. Wave 3 — Component Library: Primitives
+## 8. Wave 3 — Component Library: Primitives
 
 ### Sprint 3.1 — Button
 
@@ -1024,7 +1085,7 @@ Padrão de lista sem divisores — separação por espaço ou alternância tonal
 
 ---
 
-## 8. Wave 4 — Navigation: BottomNav + Sidebar
+## 9. Wave 4 — Navigation: BottomNav + Sidebar
 
 ### Sprint 4.1 — BottomNav Redesign
 
@@ -1265,7 +1326,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 ---
 
-## 9. Wave 5 — Motion Language
+## 10. Wave 5 — Motion Language
 
 ### Sprint 5.1 — Motion Constants File
 
@@ -1422,7 +1483,7 @@ export function useMotion() {
 
 ---
 
-## 10. Wave 6 — Dashboard (Hoje) Redesign
+## 11. Wave 6 — Dashboard (Hoje) Redesign
 
 Esta é a wave mais complexa. O Dashboard é o coração do app.
 
@@ -1605,7 +1666,7 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 
 ---
 
-## 11. Wave 7 — Tratamentos Redesign
+## 12. Wave 7 — Tratamentos Redesign
 
 ### Sprint 7.1 — Treatment Layout
 
@@ -1713,7 +1774,7 @@ No desktop, mostrar widget fixo no canto inferior direito (como no mockup comple
 
 ---
 
-## 12. Wave 8 — Estoque Redesign
+## 13. Wave 8 — Estoque Redesign
 
 ### Sprint 8.1 — Stock Layout
 
@@ -1816,7 +1877,7 @@ Seção colapsável com últimas compras/ajustes:
 
 ---
 
-## 13. Wave 9 — Perfil & Saúde Redesign
+## 14. Wave 9 — Perfil & Saúde Redesign
 
 ### Sprint 9.1 — Profile View
 
@@ -1871,7 +1932,7 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
 ---
 
-## 14. Wave 10 — Progressive Disclosure System
+## 15. Wave 10 — Progressive Disclosure System
 
 ### Sprint 10.1 — useComplexityMode Evolution
 
@@ -1924,7 +1985,7 @@ Implementar 3 levels:
 
 ---
 
-## 15. Wave 11 — Accessibility & Polish
+## 16. Wave 11 — Accessibility & Polish
 
 ### Sprint 11.1 — Semantic HTML
 
@@ -1982,7 +2043,7 @@ Verificar WCAG AA compliance:
 
 ---
 
-## 16. Wave 12 — Landing, Auth & Onboarding
+## 17. Wave 12 — Landing, Auth & Onboarding
 
 ### Sprint 12.1 — Landing Page Redesign
 
@@ -2021,7 +2082,7 @@ Verificar WCAG AA compliance:
 
 ---
 
-## 17. Checklist de Validação por Wave
+## 18. Checklist de Validação por Wave
 
 Cada wave DEVE passar nestes checks antes de merge:
 
@@ -2065,7 +2126,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ---
 
-## 18. Mapeamento de Arquivos
+## 19. Mapeamento de Arquivos
 
 ### Arquivos a REESCREVER (breaking change controlado)
 
@@ -2140,7 +2201,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ---
 
-## 19. Riscos e Mitigações
+## 20. Riscos e Mitigações
 
 | Risco | Impacto | Mitigação |
 |-------|---------|-----------|
@@ -2152,6 +2213,9 @@ Cada wave DEVE passar nestes checks antes de merge:
 | Sidebar layout quebra em tablets (768-1024px) | Médio | Sidebar colapsável ou hidden em tablets; testar breakpoints |
 | CSS custom properties têm cascade issues | Médio | Backward compat aliases em tokens; migrar progressivamente |
 | Existing tests podem quebrar com mudanças visuais | Baixo | Testes focam em lógica, não visual; snapshot tests precisam update |
+| **Cópia literal dos protótipos** | **Médio** | **Os protótipos usam Tailwind + React Router + TypeScript — NÃO copiar código diretamente. Usar como referência de COMPOSIÇÃO e LAYOUT, mas sempre partir da lógica e arquitetura da app real (CSS custom properties, setCurrentView, JSX). Agentes: se um componente do protótipo faz X, implementar o equivalente usando os patterns existentes do projeto, não portando o código Tailwind.** |
+| FOUC (Flash of Unstyled Content) com Google Fonts | Médio | `font-display: swap` + `<link rel="preload">` + system font fallback stack |
+| Regressão visual parcial entre waves | Alto | Waves 0-3 como bloco atômico. Migrar por domínio completo. Não deixar waves pela metade |
 
 ### Ordem de Execução Recomendada
 
@@ -2206,6 +2270,56 @@ Wave 12 (Landing/Auth — final touch)
 | Current CSS Tokens | `src/shared/styles/tokens/` | Current design system |
 | Current Dashboard | `src/views/Dashboard.jsx` | Current implementation |
 | Mobile Performance Spec | `docs/standards/MOBILE_PERFORMANCE.md` | Perf constraints |
+| Master Spec (consolidada) | `plans/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` | Visão arquitetural e critérios de sucesso |
+
+---
+
+## 21. Definição de Sucesso
+
+O sucesso desta iniciativa será medido em 3 dimensões:
+
+### Experiência do Paciente (Qualitativo)
+
+| Persona | Critério de Sucesso | Como Validar |
+|---------|-------------------|--------------|
+| **Dona Maria** (simples, 1-3 meds, baixa literacia tech) | Sente que o app está **mais simples e mais claro**. Consegue tomar suas doses com 1-2 toques. Não se sente confusa com informação excessiva. | Litmus check: "A prioridade da tela é visível nos primeiros 3 segundos?" |
+| **Carlos** (complexo, múltiplos protocolos, health-literate) | Sente que o app está **mais poderoso e melhor organizado**. Consegue acompanhar titulação, adesão por protocolo e estoque em uma única sessão. | Litmus check: "A versão complexa continua serena mesmo com mais informação?" |
+| **Ambos** | A marca parece mais **premium, clínica e humana**. A experiência deixa de parecer um conjunto de telas e passa a parecer um **produto desenhado com intenção**. | Litmus check: "O produto parece cuidado de saúde confiável, e não software administrativo?" |
+
+### Qualidade Técnica (Quantitativo)
+
+| Métrica | Target | Baseline Atual |
+|---------|--------|----------------|
+| Lighthouse Accessibility | ≥ 95 | A medir |
+| WCAG AA compliance | 100% text combinations | Parcial |
+| Touch targets ≥ 56px | 100% interactive elements | Variável |
+| Bundle size (gzip) | ≤ 110 kB (< 8% aumento) | 102.47 kB |
+| FCP mobile 4G | < 2.5s | ~1.5s |
+| Animations 60fps | 100% on real mobile | A medir |
+| `npm run validate:agent` | Pass | Pass |
+
+### Coesão de Design (Qualitativo — Peer Review)
+
+Uma tela só está **pronta** quando:
+1. Está visualmente alinhada aos artefatos de referência (mocks .png + protótipos).
+2. Respeita o novo design system (tokens, tipografia, motion language).
+3. Adapta-se ao modo de complexidade do usuário (Progressive Disclosure).
+4. **Não reintroduz a estética neon/glass legada** — nenhum `--neon-*`, `--glow-*`, rosa `#ec4899` ou cyan `#06b6d4`.
+5. Funciona bem em mobile (320px) e desktop (1280px+).
+6. Possui um CTA principal claro e inequívoco.
+7. Passa nos 7 Litmus Checks da PRODUCT_STRATEGY.
+8. Respeita `prefers-reduced-motion`.
+9. `npm run validate:agent` passa sem erros.
+
+### Anti-sucesso (quando NÃO declarar sucesso)
+
+- O app parece "genérico" — perdeu personalidade sem ganhar calma.
+- A versão simples parece "simplória" ou "infantilizada".
+- A versão complexa parece "SaaS dashboard" com grade genérica de cards.
+- Ícones aparecem sem labels de texto.
+- Bordas 1px voltaram como estrutura dominante.
+- Cores neon/glass residuais no codebase.
+- Dark mode está quebrado (deve estar desabilitado, mas não crashar).
 
 ---
 
