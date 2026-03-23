@@ -374,12 +374,23 @@ From the Iconografia guide (mandatory reference):
 
 ### Product Language Examples
 
-| Em vez de: | Use: |
+### Tone by Context
+
+| Context | Tone | Example |
+| :--- | :--- | :--- |
+| Greeting | Warm, personal | "Olá, Dona Maria 👋" |
+| Adherence success | Positive reinforcement | "Você está indo bem — 85% essa semana" |
+| Critical alert | Urgent but calm | "Reposição Crítica: Metformina termina em 3 dias" |
+| Empty state | Encouraging | "Nenhum medicamento registrado ainda. Comece aqui." |
+| Action buttons | Direct imperative | "Registrar Dose", "Comprar Agora", "Ver Histórico" |
+
+| Instead of | Use this |
 | :--- | :--- |
 | "Otimização terapêutica" | "Seu tratamento em dia" |
 | "Solução inovadora de adesão" | "Registre suas doses sem esquecer" |
 | "Gestão farmacológica avançada" | "Controle seus medicamentos" |
 | "Experiência premium de saúde" | "Mais clareza para cuidar da sua saúde" |
+
 
 ### Forbidden Words/Phrases
 - ❌ “disruptivo”, “revolucionário”, “next-gen”, “plataforma”
