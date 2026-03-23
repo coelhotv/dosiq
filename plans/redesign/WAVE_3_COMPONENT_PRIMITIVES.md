@@ -1,12 +1,44 @@
 # Wave 3 — Component Library: Primitives
 
 **Status:** Pronto para execucao
-**Dependencias:** Waves 0, 1 e 2 DEVEM estar completas (tokens, typography, layout)
-**Branch:** `feature/redesign/wave-3-component-primitives`
+**Dependencias:** Waves 0, 1 e 2 DEVEM estar completas (tokens scoped, typography scoped, layout.redesign.css)
+**Branch:** `claude/gradual-redesign-rollout-VBlvB`
 **Estimativa:** 6 sprints sequenciais
-**Risco:** ALTO — estes componentes (Button, Card) sao usados em TODA a aplicacao. Qualquer mudanca de API (props) quebra multiplas views. A estrategia e: **mudar APENAS o visual (CSS), NUNCA a API (props/JSX)**.
+**Risco:** BAIXO (com abordagem scoped) — CSS de redesign vai em arquivo separado, sem tocar Button.css ou Card.css.
 
-> **IMPORTANTE para o agente executor:** Esta wave redesenha os componentes UI primitivos (Button, Card, inputs, badges, progress bars, listas) para o estilo "Santuario Terapeutico". A regra cardinal e: **MANTER a mesma API de props**. Os componentes devem aceitar exatamente os mesmos props que aceitam hoje. Apenas o CSS e a aparencia mudam. Se voce alterar a assinatura de um componente, DEZENAS de arquivos vao quebrar.
+---
+
+## 🚩 ABORDAGEM DE ROLLOUT GRADUAL (LEIA ANTES DE EXECUTAR)
+
+> **Esta wave NAO modifica `Button.css`, `Card.css` nem qualquer outro CSS de componente existente.**
+> Todos os estilos de redesign vao para `src/shared/styles/components.redesign.css`, scoped com `[data-redesign="true"] .btn { }`.
+> Ver estrategia completa em `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md`.
+
+**Motivo:** Com a abordagem scoped, quando o flag estiver desativado, os componentes mostram o visual atual. Quando ativado (`?redesign=1`), as regras scoped em `components.redesign.css` tem especificidade maior que as regras de `Button.css` e sobrescrevem o visual — sem duplicar o componente JSX.
+
+**Arquivo a criar:**
+```
+src/shared/styles/components.redesign.css
+```
+
+Estrutura das regras:
+```css
+/* CORRETO — scoped */
+[data-redesign="true"] .btn { ... }
+[data-redesign="true"] .btn-primary { ... }
+[data-redesign="true"] .card { ... }
+
+/* ERRADO — nao fazer */
+.btn { ... }  /* global, afeta todos os usuarios */
+```
+
+**Importar** em `src/shared/styles/index.css` apos o `layout.redesign.css`.
+
+**Regra cardinal (imutavel):** A API de props dos componentes JSX **NUNCA muda**. Se voce alterar a assinatura de `Button.jsx` ou `Card.jsx`, DEZENAS de arquivos vao quebrar. Apenas o CSS e a aparencia mudam.
+
+---
+
+> **IMPORTANTE para o agente executor:** Esta wave redesenha os componentes UI primitivos (Button, Card, inputs, badges, progress bars, listas) para o estilo "Santuario Terapeutico". O arquivo alvo de TODOS os sprints e `components.redesign.css` — nao os arquivos CSS dos componentes. A regra cardinal: **API de props identica, apenas CSS muda, e somente quando o flag esta ativo**.
 
 ---
 
@@ -40,56 +72,55 @@
 
 ---
 
-## Sprint 3.1 — Button redesign
+## Sprint 3.1 — Button redesign (scoped em components.redesign.css)
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Reescrever Button.css para o estilo Santuario Terapeutico. NAO alterar Button.jsx.
+**Escopo:** Adicionar estilos de Button do Santuario em `components.redesign.css`, scoped com `[data-redesign="true"]`. NAO alterar `Button.css` nem `Button.jsx`.
 
 ### Arquivos alvo
-1. `src/shared/components/ui/Button.css` — REESCREVER completamente
-2. `src/shared/components/ui/Button.jsx` — **NAO ALTERAR** (manter API identica)
+1. **CRIAR** `src/shared/styles/components.redesign.css` — arquivo novo com estilos scoped
+2. **EDITAR** `src/shared/styles/index.css` — adicionar import do novo arquivo
+3. `src/shared/components/ui/Button.css` — **NAO ALTERAR** (estilos atuais preservados)
+4. `src/shared/components/ui/Button.jsx` — **NAO ALTERAR** (API identica)
 
 ### O que o agente DEVE fazer
 
-1. **Ler** `src/shared/components/ui/Button.jsx` (23 linhas) para confirmar a API:
+1. **Ler** `src/shared/components/ui/Button.jsx` para confirmar a API:
    - Props: `children`, `variant` (default 'primary'), `size` (default 'md'), `onClick`, `disabled`, `type`, `className`
    - Classes geradas: `btn btn-{variant} btn-{size} {className}`
-   - Variantes usadas no codebase: `primary`, `secondary`, `outline`, `ghost`, `danger`
-   - Tamanhos usados: `sm`, `md`, `lg`
+   - Variantes: `primary`, `secondary`, `outline`, `ghost`, `danger`
+   - Tamanhos: `sm`, `md`, `lg`
 
-2. **Ler** `src/shared/components/ui/Button.css` (142 linhas) para entender o CSS atual.
+2. **Ler** `src/shared/components/ui/Button.css` para entender o CSS atual (context — nao modificar).
 
-3. **Buscar** TODOS os usos de Button no codebase para garantir compatibilidade:
+3. **Buscar** os usos de Button no codebase para garantir que nenhuma variante esta faltando:
    ```bash
    grep -rn "variant=" src/ --include="*.jsx" | grep -i "button\|btn" | head -30
    ```
-   Variantes encontradas no codebase: `primary`, `secondary`, `outline`, `ghost`, `danger`
 
-4. **REESCREVER** `Button.css` com o conteudo EXATO abaixo. **NAO ALTERAR** `Button.jsx`.
+4. **Criar** `src/shared/styles/components.redesign.css` com o conteudo abaixo.
+5. **Editar** `src/shared/styles/index.css` para adicionar `@import './components.redesign.css';` apos o layout.redesign.
 
-### Conteudo EXATO do novo `Button.css`
+### Conteudo EXATO de `components.redesign.css` (Sprint 3.1 — apenas Button)
 
 ```css
 /* ============================================
-   BUTTON — Santuario Terapeutico
+   COMPONENTS REDESIGN — Santuario Terapeutico
+   SCOPE: [data-redesign="true"] — sem impacto em usuarios sem o flag
 
-   Principios:
+   Principios de Button:
    - Touch targets minimo 56px (acessibilidade motora)
    - Primary e gradient verde 135° com shadow ambient
    - Hover: scale(1.02) sutil. Active: scale(0.98) — "Tactile Press"
    - NUNCA glow neon. Shadow e ambient/primary apenas.
    - Font: Lexend (--font-body) bold
    - Radius: xl (1.25rem)
-
-   API de props (Button.jsx — NAO ALTERAR):
-   - variant: primary | secondary | outline | ghost | danger
-   - size: sm | md | lg
    ============================================ */
 
 /* ============================================
-   BASE — todos os botoes
+   BUTTON BASE — todos os botoes
    ============================================ */
-.btn {
+[data-redesign="true"] .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -106,35 +137,34 @@
   line-height: 1;
 }
 
-.btn:disabled {
+[data-redesign="true"] .btn:disabled {
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
 
-.btn:focus-visible {
+[data-redesign="true"] .btn:focus-visible {
   outline: var(--focus-ring-width) solid var(--color-primary);
   outline-offset: var(--focus-ring-offset);
 }
 
 /* ============================================
    SIZES — Touch-first scale
-   Min 56px para acessibilidade, primary actions 64px
    ============================================ */
-.btn-sm {
+[data-redesign="true"] .btn-sm {
   padding: 0.5rem 1rem;
   font-size: var(--text-title-sm);
   min-height: 40px;
 }
 
-.btn-md {
+[data-redesign="true"] .btn-md {
   padding: 0.75rem 1.5rem;
   font-size: var(--text-body-lg);
   min-height: 48px;
 }
 
-.btn-lg {
+[data-redesign="true"] .btn-lg {
   padding: 1rem 2rem;
   font-size: var(--text-title-lg);
   min-height: 56px;
@@ -143,9 +173,8 @@
 
 /* ============================================
    VARIANT: PRIMARY — Gradient verde, CTA principal
-   O botao mais importante da tela. 64px height.
    ============================================ */
-.btn-primary {
+[data-redesign="true"] .btn-primary {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   font-weight: var(--font-weight-bold);
@@ -153,100 +182,86 @@
   min-height: 56px;
 }
 
-/* Primary Large (usado em CTAs hero como "Tomar Agora") */
-.btn-primary.btn-lg {
+[data-redesign="true"] .btn-primary.btn-lg {
   min-height: 64px;
   font-size: var(--text-title-lg);
   padding: 1rem 2rem;
 }
 
-.btn-primary:hover:not(:disabled) {
+[data-redesign="true"] .btn-primary:hover:not(:disabled) {
   transform: scale(1.02);
 }
 
-.btn-primary:active:not(:disabled) {
+[data-redesign="true"] .btn-primary:active:not(:disabled) {
   transform: scale(0.98);
 }
 
 /* ============================================
    VARIANT: SECONDARY — Outlined, acao secundaria
-   Borda sutil, sem preenchimento.
    ============================================ */
-.btn-secondary {
+[data-redesign="true"] .btn-secondary {
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-outline-variant);
   font-weight: var(--font-weight-semibold);
 }
 
-.btn-secondary:hover:not(:disabled) {
+[data-redesign="true"] .btn-secondary:hover:not(:disabled) {
   background: var(--state-hover);
   border-color: var(--color-primary);
 }
 
-.btn-secondary:active:not(:disabled) {
+[data-redesign="true"] .btn-secondary:active:not(:disabled) {
   background: var(--state-active);
   transform: scale(0.98);
 }
 
-/* ============================================
-   VARIANT: OUTLINE — Igual a secondary (backward compat)
-   Alguns componentes usam "outline" ao inves de "secondary".
-   ============================================ */
-.btn-outline {
+[data-redesign="true"] .btn-outline {
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-outline-variant);
   font-weight: var(--font-weight-semibold);
 }
 
-.btn-outline:hover:not(:disabled) {
+[data-redesign="true"] .btn-outline:hover:not(:disabled) {
   background: var(--state-hover);
   border-color: var(--color-primary);
 }
 
-.btn-outline:active:not(:disabled) {
+[data-redesign="true"] .btn-outline:active:not(:disabled) {
   background: var(--state-active);
   transform: scale(0.98);
 }
 
-/* ============================================
-   VARIANT: GHOST — Transparente, acao terciaria
-   Sem borda, sem background. Hover mostra tonal.
-   ============================================ */
-.btn-ghost {
+[data-redesign="true"] .btn-ghost {
   background: transparent;
   color: var(--color-on-surface-variant);
   font-weight: var(--font-weight-medium);
 }
 
-.btn-ghost:hover:not(:disabled) {
+[data-redesign="true"] .btn-ghost:hover:not(:disabled) {
   background: var(--state-hover);
   color: var(--color-on-surface);
 }
 
-.btn-ghost:active:not(:disabled) {
+[data-redesign="true"] .btn-ghost:active:not(:disabled) {
   background: var(--state-active);
   transform: scale(0.98);
 }
 
-/* ============================================
-   VARIANT: DANGER — Acao destrutiva/critica
-   Gradiente vermelho, shadow error.
-   ============================================ */
-.btn-danger {
+[data-redesign="true"] .btn-danger {
   background: var(--color-error);
   color: #ffffff;
   font-weight: var(--font-weight-bold);
   box-shadow: var(--shadow-error);
 }
 
-.btn-danger:hover:not(:disabled) {
+[data-redesign="true"] .btn-danger:hover:not(:disabled) {
   background: #a51515;
   transform: scale(1.02);
 }
 
-.btn-danger:active:not(:disabled) {
+[data-redesign="true"] .btn-danger:active:not(:disabled) {
   transform: scale(0.98);
 }
 ```
@@ -258,46 +273,47 @@
 git diff src/shared/components/ui/Button.jsx
 # Resultado esperado: nenhuma mudanca
 
-# 2. Verificar que nao ha referencia neon no Button.css
-grep -c "neon\|glow\|cyan\|magenta\|#ff00\|#00e5\|#00f0" src/shared/components/ui/Button.css
-# Resultado esperado: 0
+# 2. Verificar que Button.css NAO foi alterado
+git diff src/shared/components/ui/Button.css
+# Resultado esperado: nenhuma mudanca
 
-# 3. Verificar que gradient-primary esta sendo usado
-grep "gradient-primary" src/shared/components/ui/Button.css
+# 3. Verificar que components.redesign.css foi criado com estilos scoped
+grep "\[data-redesign.*btn-primary" src/shared/styles/components.redesign.css
 # Resultado esperado: pelo menos 1 match
 
-# 4. Verificar que min-height >= 40px para todos os sizes
-grep "min-height" src/shared/components/ui/Button.css
-# Resultado esperado: 40px, 48px, 56px, 64px
+# 4. Verificar que components.redesign.css esta importado em index.css
+grep "components.redesign" src/shared/styles/index.css
+# Resultado esperado: 1 match
 
 # 5. App compila sem erros
 npm run dev
 
-# 6. Abrir no browser: botao primary deve ser gradiente verde com sombra
+# 6. Smoke test: sem flag → botao primary tem visual atual (rosa/cyan)
+# Com ?redesign=1 → botao primary tem gradiente verde com sombra ambient
 ```
 
 ### Commit
 ```
-feat(Button): redesenhar para Santuario Terapeutico
+feat(Button): adicionar estilos Santuario em components.redesign.css (scoped)
 
-- Primary: gradiente verde 135° com shadow ambient
-- Touch targets: min 40px (sm) a 64px (primary lg)
-- Hover: scale(1.02), Active: scale(0.98) — Tactile Press
-- Remover todos os glows neon e gradientes cyan/magenta
-- Manter API identica (props nao mudam)
-- Focus-visible: outline verde ao inves de cyan
+- [data-redesign="true"] .btn-primary: gradiente verde 135° com shadow ambient
+- Touch targets: min 40px (sm) a 64px (primary lg) scoped
+- Hover/Active: Tactile Press scoped
+- Button.css e Button.jsx intactos (sem alteracao)
+- Criar components.redesign.css e importar em index.css
 ```
 
 ---
 
-## Sprint 3.2 — Card redesign
+## Sprint 3.2 — Card redesign (scoped em components.redesign.css)
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Reescrever Card.css para estilo Sanctuary. Atualizar minimamente Card.jsx para suportar variante.
+**Escopo:** Adicionar estilos de Card do Santuario em `components.redesign.css` (scoped). Atualizar `Card.jsx` minimamente para suportar prop `variant` (backward compat — prop opcional com default).
 
 ### Arquivos alvo
-1. `src/shared/components/ui/Card.css` — REESCREVER completamente
-2. `src/shared/components/ui/Card.jsx` — ATUALIZAR minimamente (adicionar prop `variant`)
+1. `src/shared/styles/components.redesign.css` — ADICIONAR estilos de Card scoped
+2. `src/shared/components/ui/Card.jsx` — ATUALIZAR minimamente (adicionar prop `variant` opcional)
+3. `src/shared/components/ui/Card.css` — **NAO ALTERAR** (estilos atuais preservados)
 
 ### O que o agente DEVE fazer
 
@@ -314,9 +330,9 @@ feat(Button): redesenhar para Santuario Terapeutico
    grep -rn "<Card" src/ --include="*.jsx" | head -30
    ```
 
-4. **Atualizar** `Card.jsx` para aceitar prop `variant` (com backward compat total).
+4. **Atualizar** `Card.jsx` para aceitar prop `variant` (backward compat — prop opcional, default `'default'`).
 
-5. **REESCREVER** `Card.css` com o conteudo abaixo.
+5. **Adicionar** estilos de Card scoped em `components.redesign.css` (NAO reescrever `Card.css`).
 
 ### Conteudo ATUALIZADO do `Card.jsx`
 
@@ -337,32 +353,15 @@ export default function Card({ children, className = '', onClick, hover = true, 
 
 **NOTA:** A unica mudanca e adicionar `variant = 'default'` e `card-${variant}` na className. Todos os usos existentes continuam funcionando porque o default e `'default'`.
 
-### Conteudo EXATO do novo `Card.css`
+### Conteudo a ADICIONAR em `components.redesign.css` (Card — scoped)
 
 ```css
 /* ============================================
-   CARD — Santuario Terapeutico
-
-   Principios:
-   - NO-LINE RULE: Sem borders. Profundidade via tonal shift + shadow.
-   - Background: surface-container-lowest (#ffffff) sobre surface (#f8fafb)
-   - Shadow: ambient (sutil, luz natural)
-   - Radius: 2rem (32px) — generoso, "acolhedor"
-   - Padding: 2rem (desktop), 1.25rem (mobile)
-   - Hover: shadow editorial (sutil elevacao, nao translateY agressivo)
-
-   Variantes:
-   - default: card padrao (branco, shadow ambient)
-   - section: card interno (surface-container-low, sem shadow)
-   - gradient: card CTA (gradient verde, texto branco)
-   - alert-critical: card de alerta critico (bg error, borda esquerda)
-   - alert-warning: card de alerta aviso (bg warning, borda esquerda)
+   CARD — Santuario Terapeutico (scoped)
+   Principios: NO-LINE RULE, tonal shift, ambient shadow.
    ============================================ */
 
-/* ============================================
-   BASE — todos os cards
-   ============================================ */
-.card {
+[data-redesign="true"] .card {
   border-radius: var(--radius-card);
   padding: 1.25rem;
   border: none; /* NO-LINE RULE */
@@ -370,139 +369,103 @@ export default function Card({ children, className = '', onClick, hover = true, 
 }
 
 @media (min-width: 768px) {
-  .card {
+  [data-redesign="true"] .card {
     padding: 2rem;
   }
 }
 
-/* ============================================
-   VARIANT: DEFAULT — Card padrao Sanctuary
-   ============================================ */
-.card-default {
+[data-redesign="true"] .card-default {
   background-color: var(--color-surface-container-lowest);
   box-shadow: var(--shadow-ambient);
 }
 
-/* Hover — elevacao sutil, NAO translateY agressivo */
-.card-default.card-hover:hover {
+[data-redesign="true"] .card-default.card-hover:hover {
   box-shadow: var(--shadow-editorial);
 }
 
-/* ============================================
-   VARIANT: SECTION — Card interno sem shadow
-   Para secoes dentro de outros containers.
-   ============================================ */
-.card-section {
-  background-color: var(--color-surface-container-low);
-  box-shadow: none;
-  border-radius: var(--radius-card-sm);
-}
-
-/* ============================================
-   VARIANT: GRADIENT — Card CTA hero
-   ============================================ */
-.card-gradient {
+[data-redesign="true"] .card-gradient {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
 }
 
-.card-gradient.card-hover:hover {
+[data-redesign="true"] .card-gradient.card-hover:hover {
   transform: scale(1.01);
 }
 
-/* ============================================
-   VARIANT: ALERT-CRITICAL — Alerta critico
-   ============================================ */
-.card-alert-critical {
+[data-redesign="true"] .card-alert-critical {
   background-color: var(--color-error-bg);
   border-left: 4px solid var(--color-error);
   border-radius: var(--radius-card-sm);
 }
 
-/* ============================================
-   VARIANT: ALERT-WARNING — Alerta aviso
-   ============================================ */
-.card-alert-warning {
+[data-redesign="true"] .card-alert-warning {
   background-color: var(--color-warning-bg);
   border-left: 4px solid var(--color-warning);
   border-radius: var(--radius-card-sm);
-}
-
-/* ============================================
-   CLICKABLE CARD — cursor pointer quando tem onClick
-   ============================================ */
-.card[onclick],
-.card[role="button"] {
-  cursor: pointer;
 }
 ```
 
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que Card.jsx tem a prop variant
+# 1. Verificar que Card.jsx tem a prop variant (backward compat)
 grep "variant" src/shared/components/ui/Card.jsx
 # Resultado esperado: pelo menos 2 matches (prop + className)
 
-# 2. Verificar que Card.css NAO tem border: 1px solid
-grep "border: 1px" src/shared/components/ui/Card.css
-# Resultado esperado: 0 matches
+# 2. Verificar que Card.css NAO foi alterado
+git diff src/shared/components/ui/Card.css
+# Resultado esperado: nenhuma mudanca
 
-# 3. Verificar que NAO tem glassmorphism (backdrop-filter)
-grep "backdrop-filter\|blur(" src/shared/components/ui/Card.css
-# Resultado esperado: 0 matches
-
-# 4. Verificar que radius-card esta sendo usado
-grep "radius-card" src/shared/components/ui/Card.css
+# 3. Verificar que card-default esta em components.redesign.css (scoped)
+grep "\[data-redesign.*card-default" src/shared/styles/components.redesign.css
 # Resultado esperado: pelo menos 1 match
 
-# 5. App compila sem erros
+# 4. App compila sem erros
 npm run dev
 
-# 6. Executar testes se existirem
-npm run test:changed 2>/dev/null || echo "Sem testes alterados"
+# 5. Smoke test: sem flag → cards com visual atual
+# Com ?redesign=1 → cards sem borders, shadow ambient, radius 2rem
 ```
 
 ### Commit
 ```
-feat(Card): redesenhar para Sanctuary style sem borders
+feat(Card): adicionar estilos Sanctuary em components.redesign.css (scoped)
 
-- No-Line Rule: remover todas as borders
-- Background: surface-container-lowest (#ffffff)
-- Shadow: ambient (sutil, luz natural)
-- Radius: 2rem (32px) — acolhedor
-- Remover glassmorphism (backdrop-filter) — era heavy demais
-- Adicionar variantes: section, gradient, alert-critical, alert-warning
-- Hover: shadow editorial (sutil) ao inves de translateY(-4px)
+- [data-redesign="true"] .card: no borders, radius 2rem, ambient shadow
+- Variantes scoped: default, gradient, alert-critical, alert-warning
+- Card.jsx: adicionar prop variant opcional (backward compat)
+- Card.css intacto (sem alteracao)
 ```
 
 ---
 
-## Sprint 3.3 — Inputs e Form Elements
+## Sprint 3.3 — Inputs e Form Elements (scoped em components.redesign.css)
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Criar/atualizar estilos globais para inputs, selects e textareas.
+**Escopo:** Adicionar estilos de input/form scoped em `components.redesign.css`. NAO modificar `index.css` com estilos globais.
 
 ### Arquivo alvo
-`src/shared/styles/index.css`
+`src/shared/styles/components.redesign.css` ← ADICIONAR estilos de form scoped
+
+> **NAO ALTERAR:** `src/shared/styles/index.css`
 
 ### O que o agente DEVE fazer
 
-1. **Buscar** onde inputs sao estilizados atualmente:
+1. **Buscar** onde inputs sao estilizados atualmente (context):
    ```bash
    grep -rn "input\[type\|textarea\|select" src/shared/styles/ --include="*.css"
    grep -rn "\.form-input\|\.form-group\|\.input-" src/ --include="*.css" -l
    ```
 
-2. **Buscar** estilos inline de input em componentes:
+2. **Buscar** estilos inline de input em componentes (context):
    ```bash
    grep -rn "className.*input\|style.*input" src/ --include="*.jsx" | head -20
    ```
 
-3. **Adicionar** no `src/shared/styles/index.css` os estilos globais de input (no final do arquivo, na secao de utility classes):
+3. **Adicionar** em `components.redesign.css` os estilos de input scoped:
 
-### CSS a ADICIONAR no `index.css`
+### CSS a ADICIONAR em `components.redesign.css`
 
 ```css
 /* ============================================
@@ -618,26 +581,31 @@ select.input-error {
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que os estilos de input existem
-grep "input\[type" src/shared/styles/index.css | head -5
+# 1. Verificar que os estilos de input existem no arquivo correto
+grep "input\[type" src/shared/styles/components.redesign.css | head -5
 # Resultado esperado: pelo menos 5 matches
 
 # 2. Verificar min-height de 56px
-grep "min-height: 56px" src/shared/styles/index.css
+grep "min-height: 56px" src/shared/styles/components.redesign.css
 # Resultado esperado: pelo menos 1 match
 
 # 3. Verificar que radius-input esta sendo usado
-grep "radius-input" src/shared/styles/index.css
+grep "radius-input" src/shared/styles/components.redesign.css
 # Resultado esperado: pelo menos 1 match
 
-# 4. App compila sem erros
+# 4. Verificar que index.css NAO foi modificado (integridade)
+git diff src/shared/styles/index.css
+# Resultado esperado: nenhuma mudanca (apenas o @import de components.redesign.css que foi adicionado no sprint 3.1)
+
+# 5. App compila sem erros
 npm run dev
 ```
 
 ### Commit
 ```
-feat(forms): estilizar inputs globais para Santuario Terapeutico
+feat(forms): adicionar estilos de input ao components.redesign.css
 
+- Scoped sob [data-redesign="true"] — index.css intocado
 - Background tonal (surface-container-low) ao inves de branco
 - Sem border em estado normal, focus: 2px solid verde
 - Min-height 56px para acessibilidade de toque
@@ -653,9 +621,15 @@ feat(forms): estilizar inputs globais para Santuario Terapeutico
 **Skill:** `/deliver-sprint`
 **Escopo:** Criar novo componente Badge para status labels.
 
+> 🚩 **Rollout:** Badge é componente NOVO — não existe na UI atual. Mesmo sendo novo, o CSS vai em
+> `components.redesign.css` (já criado no Sprint 3.1) com seletores `[data-redesign="true"] .badge {}`.
+> Assim, mesmo que Badge seja importado em algum arquivo genérico no futuro, não renderizará estilos
+> do redesign sem o flag ativo. `Badge.css` é omitido para evitar duplicação — os estilos vêm de
+> `components.redesign.css` carregado globalmente.
+
 ### Arquivos alvo
-1. **CRIAR** `src/shared/components/ui/Badge.jsx` (arquivo NOVO)
-2. **CRIAR** `src/shared/components/ui/Badge.css` (arquivo NOVO)
+1. **CRIAR** `src/shared/components/ui/Badge.jsx` (arquivo NOVO — sem import CSS próprio)
+2. **ADICIONAR** estilos Badge ao final de `src/shared/styles/components.redesign.css` (já existe desde Sprint 3.1)
 
 ### O que o agente DEVE fazer
 
@@ -667,8 +641,6 @@ feat(forms): estilizar inputs globais para Santuario Terapeutico
 2. **Criar** `src/shared/components/ui/Badge.jsx`:
 
 ```jsx
-import './Badge.css'
-
 /**
  * Badge — indicador de status com dot colorido + label.
  *
@@ -677,6 +649,9 @@ import './Badge.css'
  *
  * Referencia visual: plans/redesign/references/complex-estoque-desktop.png
  * — badges "URGENTE", "ATENCAO", "SEGURO" nos cards de estoque.
+ *
+ * NOTA: estilos em src/shared/styles/components.redesign.css
+ * sob [data-redesign="true"] .badge {}
  */
 export default function Badge({ children, variant = 'neutral', className = '' }) {
   return (
@@ -688,11 +663,12 @@ export default function Badge({ children, variant = 'neutral', className = '' })
 }
 ```
 
-3. **Criar** `src/shared/components/ui/Badge.css`:
+3. **Adicionar** ao final de `src/shared/styles/components.redesign.css` (NUNCA criar `Badge.css`):
 
 ```css
 /* ============================================
    BADGE — Santuario Terapeutico
+   Scoped sob [data-redesign="true"]
 
    Formato: [dot] LABEL — dot colorido + texto uppercase
    Uso: status de estoque, protocolo, alertas inline
@@ -705,7 +681,7 @@ export default function Badge({ children, variant = 'neutral', className = '' })
    - neutral: padrao, sem enfase
    ============================================ */
 
-.badge {
+[data-redesign="true"] .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
@@ -720,7 +696,7 @@ export default function Badge({ children, variant = 'neutral', className = '' })
   white-space: nowrap;
 }
 
-.badge-dot {
+[data-redesign="true"] .badge-dot {
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
@@ -728,52 +704,52 @@ export default function Badge({ children, variant = 'neutral', className = '' })
 }
 
 /* Critical — erro, urgente */
-.badge-critical {
+[data-redesign="true"] .badge-critical {
   background-color: rgba(186, 26, 26, 0.10);
   color: var(--color-error);
 }
 
-.badge-critical .badge-dot {
+[data-redesign="true"] .badge-critical .badge-dot {
   background-color: var(--color-error);
 }
 
 /* Warning — aviso, atencao */
-.badge-warning {
+[data-redesign="true"] .badge-warning {
   background-color: rgba(123, 87, 0, 0.10);
   color: var(--color-tertiary);
 }
 
-.badge-warning .badge-dot {
+[data-redesign="true"] .badge-warning .badge-dot {
   background-color: var(--color-tertiary);
 }
 
 /* Success — ok, seguro, continuo */
-.badge-success {
+[data-redesign="true"] .badge-success {
   background-color: rgba(0, 106, 94, 0.10);
   color: var(--color-primary);
 }
 
-.badge-success .badge-dot {
+[data-redesign="true"] .badge-success .badge-dot {
   background-color: var(--color-primary);
 }
 
 /* Info — informativo */
-.badge-info {
+[data-redesign="true"] .badge-info {
   background-color: rgba(0, 93, 182, 0.10);
   color: var(--color-secondary);
 }
 
-.badge-info .badge-dot {
+[data-redesign="true"] .badge-info .badge-dot {
   background-color: var(--color-secondary);
 }
 
 /* Neutral — padrao */
-.badge-neutral {
+[data-redesign="true"] .badge-neutral {
   background-color: var(--color-surface-container);
   color: var(--color-outline);
 }
 
-.badge-neutral .badge-dot {
+[data-redesign="true"] .badge-neutral .badge-dot {
   background-color: var(--color-outline);
 }
 ```
@@ -781,19 +757,25 @@ export default function Badge({ children, variant = 'neutral', className = '' })
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que Badge existe
-ls src/shared/components/ui/Badge.jsx src/shared/components/ui/Badge.css
-# Resultado esperado: ambos existem
+# 1. Verificar que Badge.jsx existe (sem Badge.css — estilos em components.redesign.css)
+ls src/shared/components/ui/Badge.jsx
+# Resultado esperado: arquivo existe
+ls src/shared/components/ui/Badge.css 2>/dev/null && echo "ERRO: Badge.css nao deveria existir"
+# Resultado esperado: nenhuma saida (arquivo NAO deve existir)
 
 # 2. Verificar que exporta default
 grep "export default" src/shared/components/ui/Badge.jsx
 # Resultado esperado: 1 match
 
-# 3. Verificar variantes no CSS
-grep "badge-critical\|badge-warning\|badge-success\|badge-info\|badge-neutral" src/shared/components/ui/Badge.css | wc -l
-# Resultado esperado: >= 5
+# 3. Verificar que Badge NAO importa CSS proprio
+grep "import.*Badge.css\|import.*\.css" src/shared/components/ui/Badge.jsx
+# Resultado esperado: 0 matches
 
-# 4. App compila sem erros
+# 4. Verificar variantes no components.redesign.css com scoping correto
+grep "\[data-redesign=\"true\"\].*badge" src/shared/styles/components.redesign.css | wc -l
+# Resultado esperado: >= 10
+
+# 5. App compila sem erros
 npm run dev
 ```
 
@@ -801,6 +783,8 @@ npm run dev
 ```
 feat(Badge): criar componente Badge para status indicators
 
+- CSS scoped em components.redesign.css sob [data-redesign="true"]
+- Badge.jsx sem import CSS proprio — estilos vem do arquivo global de redesign
 - Formato: dot colorido + label uppercase
 - Variantes: critical, warning, success, info, neutral
 - Referencia: badges de estoque (URGENTE, ATENCAO, SEGURO)
@@ -812,10 +796,13 @@ feat(Badge): criar componente Badge para status indicators
 ## Sprint 3.5 — Progress Bar
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Adicionar estilos globais para barras de progresso (estoque, adesao).
+**Escopo:** Adicionar estilos para barras de progresso (estoque, adesao).
+
+> 🚩 **Rollout:** Estilos de progress bar vão em `components.redesign.css` (já criado no Sprint 3.1)
+> com seletores `[data-redesign="true"] .progress-bar {}`. `index.css` **NÃO é modificado**.
 
 ### Arquivo alvo
-`src/shared/styles/index.css`
+`src/shared/styles/components.redesign.css` (ADICIONAR ao final — arquivo já existe desde Sprint 3.1)
 
 ### O que o agente DEVE fazer
 
@@ -824,13 +811,14 @@ feat(Badge): criar componente Badge para status indicators
    grep -rn "progress\|stock.*bar\|fill" src/ --include="*.css" | grep -v node_modules | head -20
    ```
 
-2. **Adicionar** ao final do `src/shared/styles/index.css`:
+2. **Adicionar** ao final do `src/shared/styles/components.redesign.css`:
 
 ### CSS a ADICIONAR
 
 ```css
 /* ============================================
    PROGRESS BAR — Santuario Terapeutico
+   Scoped sob [data-redesign="true"]
 
    Visual: 8px altura, full radius, cores semanticas.
    Transicao: width animada em 1000ms (Living Fill).
@@ -843,7 +831,7 @@ feat(Badge): criar componente Badge para status indicators
    - <20%: error (vermelho) — "urgencia psicologica imediata"
    ============================================ */
 
-.progress-bar {
+[data-redesign="true"] .progress-bar {
   height: 8px;
   border-radius: var(--radius-full);
   background: var(--color-surface-container-highest);
@@ -851,7 +839,7 @@ feat(Badge): criar componente Badge para status indicators
   width: 100%;
 }
 
-.progress-bar-fill {
+[data-redesign="true"] .progress-bar-fill {
   height: 100%;
   border-radius: var(--radius-full);
   transition: width 1000ms ease-out;
@@ -859,25 +847,25 @@ feat(Badge): criar componente Badge para status indicators
 }
 
 /* Cores semanticas para o fill */
-.progress-fill-primary { background-color: var(--color-primary); }
-.progress-fill-secondary { background-color: var(--color-secondary); }
-.progress-fill-success { background-color: var(--color-success); }
-.progress-fill-warning { background-color: var(--color-warning); }
-.progress-fill-error { background-color: var(--color-error); }
-.progress-fill-info { background-color: var(--color-info); }
+[data-redesign="true"] .progress-fill-primary { background-color: var(--color-primary); }
+[data-redesign="true"] .progress-fill-secondary { background-color: var(--color-secondary); }
+[data-redesign="true"] .progress-fill-success { background-color: var(--color-success); }
+[data-redesign="true"] .progress-fill-warning { background-color: var(--color-warning); }
+[data-redesign="true"] .progress-fill-error { background-color: var(--color-error); }
+[data-redesign="true"] .progress-fill-info { background-color: var(--color-info); }
 
 /* Progress bar com label ao lado */
-.progress-with-label {
+[data-redesign="true"] .progress-with-label {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.progress-with-label .progress-bar {
+[data-redesign="true"] .progress-with-label .progress-bar {
   flex: 1;
 }
 
-.progress-label {
+[data-redesign="true"] .progress-label {
   font-family: var(--font-body);
   font-size: var(--text-title-sm);
   font-weight: var(--font-weight-semibold);
@@ -890,22 +878,27 @@ feat(Badge): criar componente Badge para status indicators
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que progress-bar existe
-grep "progress-bar" src/shared/styles/index.css | head -3
+# 1. Verificar que progress-bar existe no arquivo correto (scoped)
+grep "progress-bar" src/shared/styles/components.redesign.css | head -3
 # Resultado esperado: pelo menos 3 matches
 
-# 2. Verificar cores semanticas
-grep "progress-fill-" src/shared/styles/index.css | wc -l
-# Resultado esperado: >= 6
+# 2. Verificar que seletores sao scoped
+grep "\[data-redesign=\"true\"\].*progress" src/shared/styles/components.redesign.css | wc -l
+# Resultado esperado: >= 8
 
-# 3. App compila sem erros
+# 3. Verificar que index.css NAO foi modificado
+git diff src/shared/styles/index.css
+# Resultado esperado: nenhuma mudanca
+
+# 4. App compila sem erros
 npm run dev
 ```
 
 ### Commit
 ```
-feat(styles): adicionar progress bar system para estoque e adesao
+feat(progress): adicionar progress bar system ao components.redesign.css
 
+- Scoped sob [data-redesign="true"] — index.css intocado
 - Barras 8px full radius com cores semanticas
 - Transicao animada 1000ms (Living Fill pattern)
 - Progress-with-label layout para % inline
@@ -917,10 +910,13 @@ feat(styles): adicionar progress bar system para estoque e adesao
 ## Sprint 3.6 — List Items (No Dividers)
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Adicionar estilos globais para listas sem divisores (separacao por espaco + tonal).
+**Escopo:** Adicionar estilos para listas sem divisores (separacao por espaco + tonal).
+
+> 🚩 **Rollout:** Estilos de list item vão em `components.redesign.css` (já criado no Sprint 3.1)
+> com seletores `[data-redesign="true"] .list-item {}`. `index.css` **NÃO é modificado**.
 
 ### Arquivo alvo
-`src/shared/styles/index.css`
+`src/shared/styles/components.redesign.css` (ADICIONAR ao final — arquivo já existe desde Sprint 3.1)
 
 ### O que o agente DEVE fazer
 
@@ -929,13 +925,14 @@ feat(styles): adicionar progress bar system para estoque e adesao
    grep -rn "list-item\|list-group\|divider" src/ --include="*.css" | head -15
    ```
 
-2. **Adicionar** ao final do `src/shared/styles/index.css`:
+2. **Adicionar** ao final do `src/shared/styles/components.redesign.css`:
 
 ### CSS a ADICIONAR
 
 ```css
 /* ============================================
    LIST ITEMS — Santuario Terapeutico (No Dividers)
+   Scoped sob [data-redesign="true"]
 
    Principio: PROIBIDO usar hr, border-bottom, ou linhas divisoras.
    Separacao visual por:
@@ -948,7 +945,7 @@ feat(styles): adicionar progress bar system para estoque e adesao
    - plans/redesign/references/complex-tratamentos-mobile.png: lista de medicamentos
    ============================================ */
 
-.list-item {
+[data-redesign="true"] .list-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -958,17 +955,17 @@ feat(styles): adicionar progress bar system para estoque e adesao
   border: none; /* NO-LINE RULE */
 }
 
-.list-item:hover {
+[data-redesign="true"] .list-item:hover {
   background: var(--color-surface-container-low);
 }
 
 /* Active/selected state */
-.list-item.active {
+[data-redesign="true"] .list-item.active {
   background: var(--color-surface-container-low);
 }
 
 /* Leading icon container (circulo colorido) */
-.list-item-icon {
+[data-redesign="true"] .list-item-icon {
   width: 3rem;      /* 48px */
   height: 3rem;
   border-radius: var(--radius-full);
@@ -980,7 +977,7 @@ feat(styles): adicionar progress bar system para estoque e adesao
   flex-shrink: 0;
 }
 
-.list-item-icon-sm {
+[data-redesign="true"] .list-item-icon-sm {
   width: 2.5rem;    /* 40px */
   height: 2.5rem;
   border-radius: var(--radius-full);
@@ -993,12 +990,12 @@ feat(styles): adicionar progress bar system para estoque e adesao
 }
 
 /* Content area (ocupa espaco restante) */
-.list-item-content {
+[data-redesign="true"] .list-item-content {
   flex: 1;
   min-width: 0; /* permite text-overflow funcionar */
 }
 
-.list-item-title {
+[data-redesign="true"] .list-item-title {
   font-family: var(--font-body);
   font-size: var(--text-title-lg);
   font-weight: var(--font-weight-semibold);
@@ -1006,7 +1003,7 @@ feat(styles): adicionar progress bar system para estoque e adesao
   line-height: var(--line-height-snug);
 }
 
-.list-item-subtitle {
+[data-redesign="true"] .list-item-subtitle {
   font-family: var(--font-body);
   font-size: var(--text-title-sm);
   font-weight: var(--font-weight-regular);
@@ -1015,7 +1012,7 @@ feat(styles): adicionar progress bar system para estoque e adesao
 }
 
 /* Trailing content (hora, chevron, status) */
-.list-item-trailing {
+[data-redesign="true"] .list-item-trailing {
   font-family: var(--font-body);
   font-size: var(--text-title-sm);
   font-weight: var(--font-weight-medium);
@@ -1027,27 +1024,27 @@ feat(styles): adicionar progress bar system para estoque e adesao
 }
 
 /* Dose status indicators na lista */
-.list-item-done {
+[data-redesign="true"] .list-item-done {
   opacity: 0.6;
 }
 
-.list-item-done .list-item-icon {
+[data-redesign="true"] .list-item-done .list-item-icon {
   background: var(--color-surface-container);
   color: var(--color-success);
 }
 
 /* Dose pending (nao tomado ainda) */
-.list-item-pending .list-item-icon {
+[data-redesign="true"] .list-item-pending .list-item-icon {
   background: var(--color-surface-container);
   color: var(--color-outline);
 }
 
 /* Dose current (proxima dose) */
-.list-item-current {
+[data-redesign="true"] .list-item-current {
   background: var(--color-surface-container-low);
 }
 
-.list-item-current .list-item-icon {
+[data-redesign="true"] .list-item-current .list-item-icon {
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
@@ -1056,12 +1053,16 @@ feat(styles): adicionar progress bar system para estoque e adesao
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que list-item existe
-grep "list-item" src/shared/styles/index.css | head -5
+# 1. Verificar que list-item existe no arquivo correto (scoped)
+grep "list-item" src/shared/styles/components.redesign.css | head -5
 # Resultado esperado: pelo menos 5 matches
 
-# 2. Verificar que NAO tem border-bottom ou hr nas novas classes
-grep "border-bottom\|<hr" src/shared/styles/index.css | grep "list-item"
+# 2. Verificar que seletores sao scoped
+grep "\[data-redesign=\"true\"\].*list-item" src/shared/styles/components.redesign.css | wc -l
+# Resultado esperado: >= 10
+
+# 3. Verificar que NAO tem border-bottom ou hr nas novas classes
+grep "border-bottom\|<hr" src/shared/styles/components.redesign.css | grep "list-item"
 # Resultado esperado: 0 matches
 
 # 3. App compila sem erros
@@ -1073,13 +1074,13 @@ npm run build
 
 ### Commit
 ```
-feat(styles): adicionar list item system sem divisores
+feat(list): adicionar list item system ao components.redesign.css
 
+- Scoped sob [data-redesign="true"] — index.css intocado
 - No-Dividers: separacao por espacamento e tonal shift
 - Leading icon em circulo colorido (secondary-fixed)
 - Estados: done (opaco), pending, current (highlight)
 - Trailing content para hora/status/chevron
-- Responsive: padding ajusta automaticamente
 ```
 
 ---
@@ -1088,6 +1089,7 @@ feat(styles): adicionar list item system sem divisores
 
 Apos os 6 sprints, validar:
 
+### Funcionalidade com flag ATIVO (`?redesign=1`)
 - [ ] Button primary e gradiente verde com min-height 56-64px
 - [ ] Button NAO tem glow neon em nenhum estado (hover, focus, active)
 - [ ] Cards usam sanctuary style (NO borders, radius 2rem, ambient shadow)
@@ -1097,23 +1099,33 @@ Apos os 6 sprints, validar:
 - [ ] Progress bars tem 8px height, full radius, cores semanticas
 - [ ] Listas NAO tem dividers (separacao por espaco + tonal)
 - [ ] Todos os touch targets >= 40px (sm) ou 56px (default)
+
+### Rollout e integridade
+- [ ] App com flag INATIVO (sem `?redesign=1`) esta 100% identico ao estado anterior (smoke test)
+- [ ] `Button.css` e `Button.jsx` nao foram modificados (apenas `components.redesign.css`)
+- [ ] `Card.css` nao foi modificado (Card.jsx so ganhou prop `variant` opcional)
+- [ ] `index.css` so ganhou `@import` de `components.redesign.css` — nenhuma outra mudanca
+- [ ] `Badge.css` NAO existe — estilos de Badge estao em `components.redesign.css`
+- [ ] Todos os seletores de redesign em `components.redesign.css` comecam com `[data-redesign="true"]`
+
+### Build
 - [ ] `npm run build` passa sem erros
 - [ ] `npm run dev` roda sem warnings de CSS
 
 ## Ordem de Execucao
 
 ```
-Sprint 3.1 (Button.css)
+Sprint 3.1 (CRIAR components.redesign.css — Button scoped)
   ↓
-Sprint 3.2 (Card.jsx + Card.css)
+Sprint 3.2 (ADICIONAR card styles em components.redesign.css)
   ↓
-Sprint 3.3 (Input styles no index.css)
+Sprint 3.3 (ADICIONAR input styles em components.redesign.css)
   ↓
-Sprint 3.4 (Badge.jsx + Badge.css — NOVO)
+Sprint 3.4 (CRIAR Badge.jsx + ADICIONAR badge styles em components.redesign.css)
   ↓
-Sprint 3.5 (Progress bar no index.css)
+Sprint 3.5 (ADICIONAR progress bar styles em components.redesign.css)
   ↓
-Sprint 3.6 (List items no index.css)
+Sprint 3.6 (ADICIONAR list item styles em components.redesign.css)
 ```
 
 **TODOS os sprints sao sequenciais** — Badge e novo mas depende dos tokens de cores (Wave 0).
@@ -1122,6 +1134,7 @@ Sprint 3.6 (List items no index.css)
 
 1. **NUNCA alterar a assinatura/props de Button.jsx** — dezenas de arquivos dependem da API atual.
 2. **Card.jsx tem uma unica alteracao**: adicionar `variant` prop com default `'default'`. NADA MAIS.
-3. **Badge.jsx e novo** — verificar que o path de import esta correto: `@shared/components/ui/Badge`
-4. **Testar que inputs existentes nao quebram** — os estilos globais de input podem conflitar com estilos de componentes especificos. Se encontrar conflitos, usar especificidade mais alta (`.form-input` ao inves de `input[type="text"]`).
+3. **Badge.jsx e novo** — verificar que o path de import esta correto: `@shared/components/ui/Badge`. NAO criar Badge.css.
+4. **Testar que inputs existentes nao quebram** — os estilos de input em `components.redesign.css` sao scoped sob `[data-redesign="true"]`, entao nao afetam inputs sem o flag. Mas ao testar COM o flag ativo, verificar que inputs de formularios existentes (LogForm, MedicineForm, etc.) ainda funcionam.
 5. **Se houver erros de variavel CSS indefinida**, verificar que Waves 0-2 foram executadas corretamente. As variaveis usadas aqui (--gradient-primary, --shadow-primary, --radius-card, --font-body, etc.) SAO definidas nas waves anteriores.
+6. **Arquivo central desta wave**: `src/shared/styles/components.redesign.css` — todos os 6 sprints contribuem para este unico arquivo (exceto Badge.jsx que e JSX puro).

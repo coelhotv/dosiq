@@ -1,12 +1,50 @@
 # Wave 0 — Foundation: Design Tokens
 
 **Status:** Pronto para execucao
-**Dependencias:** Nenhuma (esta e a primeira wave)
-**Branch:** `feature/redesign/wave-0-design-tokens`
+**Dependencias:** Infraestrutura de rollout gradual (RedesignContext + tokens.redesign.css) DEVE existir
+**Branch:** `claude/gradual-redesign-rollout-VBlvB`
 **Estimativa:** 5 sprints sequenciais
-**Risco:** ALTO — esta wave muda a base visual de TODA a aplicacao. Componentes ficarao visualmente "quebrados" ate Waves 2-3.
+**Risco:** BAIXO — tokens novos ficam isolados em arquivo scoped. App atual nao e afetada.
 
-> **IMPORTANTE para o agente executor:** Esta wave substitui TODOS os design tokens de cor, sombra, borda e gradiente do projeto. O objetivo e trocar a fundacao visual de "Neon/Glass Cyberpunk" para "Santuario Terapeutico". Apos esta wave, a app vai compilar e rodar sem erros, mas componentes existentes podem ter cores estranhas — isso e ESPERADO e sera corrigido nas waves seguintes.
+---
+
+## 🚩 ABORDAGEM DE ROLLOUT GRADUAL (LEIA ANTES DE EXECUTAR)
+
+> **Esta wave NAO modifica os arquivos de tokens existentes** (`colors.css`, `shadows.css`, `borders.css`, `themes/`).
+> Todos os tokens novos vao para `src/shared/styles/tokens.redesign.css`, scoped sob `[data-redesign="true"]`.
+> Ver estrategia completa em `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md`.
+
+**Motivo:** O redesign e desenvolvido e validado por tras de um feature flag antes do lancamento para todos os usuarios. Com o scoping CSS, somente usuarios com `?redesign=1` na URL (ou toggle ativado em Configuracoes) verao os tokens novos. Usuarios regulares continuam vendo o design atual, sem nenhuma alteracao.
+
+**Estrutura do arquivo alvo:**
+
+```css
+/* src/shared/styles/tokens.redesign.css */
+
+[data-redesign="true"] {
+  /* Sprint 0.1: tokens de cor */
+  --color-primary: #006a5e;
+  /* ... */
+
+  /* Sprint 0.2: tokens de sombra */
+  --shadow-ambient: 0 24px 24px rgba(25, 28, 29, 0.04);
+  /* ... */
+
+  /* Sprint 0.3: tokens de borda/radius */
+  --radius-card: var(--radius-2xl);
+  /* ... */
+}
+
+/* Sprint 0.4: classes utilitarias scoped */
+[data-redesign="true"] .card-sanctuary { ... }
+[data-redesign="true"] .surface { ... }
+```
+
+**Pre-requisito:** O arquivo `tokens.redesign.css` ja deve existir e ja deve estar importado em `index.css` (criado pela infraestrutura de rollout gradual). Se nao existir, criar um arquivo vazio com o comentario de cabecalho e o bloco `[data-redesign="true"] {}` antes de comecar os sprints.
+
+---
+
+> **IMPORTANTE para o agente executor:** Esta wave adiciona tokens do Santuario Terapeutico ao arquivo scoped `tokens.redesign.css`. O objetivo e que, ao ativar `?redesign=1`, toda a paleta visual mude para o novo design system — sem impacto para usuarios sem o flag. Os arquivos de tokens atuais (`colors.css`, `shadows.css`, `borders.css`, `themes/light.css`, `themes/dark.css`) **NAO devem ser modificados nesta wave**.
 
 ---
 
@@ -26,27 +64,28 @@ O redesign migra para "Santuario Terapeutico":
 
 ---
 
-## Sprint 0.1 — Reescrever tokens de cores
+## Sprint 0.1 — Adicionar tokens de cores ao bloco scoped
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Reescrever completamente o arquivo de tokens de cores.
+**Escopo:** Adicionar todos os tokens de cor do Santuario Terapeutico em `tokens.redesign.css`, scoped em `[data-redesign="true"]`.
 
 ### Arquivo alvo
-`src/shared/styles/tokens/colors.css`
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR ao bloco `[data-redesign="true"]`
+
+> **NAO ALTERAR:** `src/shared/styles/tokens/colors.css` (arquivo atual intacto)
 
 ### O que o agente DEVE fazer
 
-1. **Ler o arquivo atual** `src/shared/styles/tokens/colors.css` por completo para entender todas as variaveis CSS existentes.
-2. **Ler o arquivo** `src/shared/styles/themes/light.css` para entender quais variaveis sao referenciadas no tema claro.
-3. **Ler o arquivo** `src/shared/styles/themes/dark.css` para entender quais variaveis sao referenciadas no tema escuro.
-4. **Buscar no codebase** todas as referencias a variaveis `--neon-*`, `--glow-*`, `--glass-*` para mapear o impacto:
+1. **Ler o arquivo atual** `src/shared/styles/tokens/colors.css` por completo para entender todas as variaveis CSS existentes (context apenas — nao modificar).
+2. **Ler** `src/shared/styles/tokens.redesign.css` para ver o estado atual do arquivo scoped.
+3. **Buscar no codebase** todas as referencias a variaveis `--neon-*`, `--glow-*`, `--glass-*` para entender o impacto futuro (context apenas):
    ```bash
    grep -r "\-\-neon-\|--glow-\|--glass-" src/ --include="*.css" --include="*.jsx" -l
    ```
-5. **Reescrever** `src/shared/styles/tokens/colors.css` com o conteudo EXATO abaixo.
-6. **NAO alterar** nenhum outro arquivo neste sprint.
+4. **Adicionar** o conteudo abaixo DENTRO do bloco `[data-redesign="true"] { }` em `tokens.redesign.css`.
+5. **NAO alterar** nenhum outro arquivo neste sprint.
 
-### Conteudo EXATO do novo `colors.css`
+### Conteudo a ADICIONAR dentro de `[data-redesign="true"] { }` em `tokens.redesign.css`
 
 ```css
 /* ============================================
@@ -54,6 +93,7 @@ O redesign migra para "Santuario Terapeutico":
    Sistema: Santuario Terapeutico
    Paleta: Verde Saude (Primary) + Azul Clinico (Secondary)
    Baseado em Material 3 Tonal Architecture
+   SCOPE: [data-redesign="true"] — nao afeta usuarios sem o flag
    ============================================ */
 
 /* ============================================
@@ -304,52 +344,52 @@ As seguintes variaveis existem no arquivo atual e NAO devem estar no novo arquiv
 npm run dev
 # (verificar que nao ha erros no console)
 
-# 2. Verificar que nao restam variaveis neon no arquivo
-grep -c "neon\|glow" src/shared/styles/tokens/colors.css
-# Resultado esperado: 0
-
-# 3. Verificar que a nova primary esta definida
-grep "#006a5e" src/shared/styles/tokens/colors.css
+# 2. Verificar que os tokens novos estao em tokens.redesign.css (scoped)
+grep "#006a5e" src/shared/styles/tokens.redesign.css
 # Resultado esperado: pelo menos 1 match
 
-# 4. Verificar que a rosa antiga nao existe
+# 3. Verificar que o arquivo atual NAO foi alterado (rosa antiga deve ainda existir la)
 grep "#ec4899" src/shared/styles/tokens/colors.css
-# Resultado esperado: 0
+# Resultado esperado: pelo menos 1 match (o arquivo atual permanece intacto)
+
+# 4. Smoke test: com ?redesign=1, primary deve ser #006a5e; sem o flag, deve ser #ec4899
+# (verificar via DevTools → Computed → --color-primary)
 ```
 
 ### Commit
 ```
-feat(tokens): substituir paleta neon/glass por Santuario Terapeutico
+feat(tokens): adicionar paleta Santuario Terapeutico em tokens.redesign.css (scoped)
 
-- Primary: #ec4899 (rosa) → #006a5e (verde saude)
-- Secondary: #06b6d4 (cyan) → #005db6 (azul clinico)
-- Remover todas as variaveis --neon-* e --glow-*
-- Adicionar surface hierarchy Material 3
-- Adicionar backward compat aliases
-- Dark theme como placeholder para Phase 6
+- Tokens de cor em [data-redesign="true"] — sem impacto em usuarios atuais
+- Primary: #006a5e (verde saude), Secondary: #005db6 (azul clinico)
+- Surface hierarchy Material 3 (surface, surface-container-low/lowest)
+- Backward compat aliases (brand-primary, text-primary, etc.)
+- colors.css atual intacto (nao modificado)
 ```
 
 ---
 
-## Sprint 0.2 — Reescrever tokens de sombras
+## Sprint 0.2 — Adicionar tokens de sombras ao bloco scoped
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Substituir sistema de 5 camadas de sombra + glows por ambient shadow system.
+**Escopo:** Adicionar ambient shadow system ao bloco `[data-redesign="true"]` em `tokens.redesign.css`.
 
 ### Arquivo alvo
-`src/shared/styles/tokens/shadows.css`
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR ao bloco `[data-redesign="true"]`
+
+> **NAO ALTERAR:** `src/shared/styles/tokens/shadows.css` (arquivo atual intacto)
 
 ### O que o agente DEVE fazer
 
-1. **Ler o arquivo atual** `src/shared/styles/tokens/shadows.css` para entender todas as sombras existentes.
-2. **Buscar no codebase** referencias a `--shadow-layer-`, `--glow-`, `--shadow-neon` para mapear impacto:
+1. **Ler o arquivo atual** `src/shared/styles/tokens/shadows.css` para entender as sombras existentes (context apenas — nao modificar).
+2. **Buscar no codebase** referencias a `--shadow-layer-`, `--glow-`, `--shadow-neon` para entender impacto futuro (context):
    ```bash
    grep -r "\-\-shadow-layer\|--glow-\|--shadow-neon" src/ --include="*.css" --include="*.jsx" -l
    ```
-3. **Reescrever** `src/shared/styles/tokens/shadows.css` com o conteudo EXATO abaixo.
+3. **Adicionar** o conteudo abaixo ao bloco `[data-redesign="true"] { }` em `tokens.redesign.css`, apos os tokens de cor (Sprint 0.1).
 4. **NAO alterar** nenhum outro arquivo neste sprint.
 
-### Conteudo EXATO do novo `shadows.css`
+### Conteudo a ADICIONAR dentro de `[data-redesign="true"] { }` em `tokens.redesign.css`
 
 ```css
 /* ============================================
@@ -396,13 +436,13 @@ feat(tokens): substituir paleta neon/glass por Santuario Terapeutico
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que glows foram removidos
-grep -c "glow\|neon\|layer" src/shared/styles/tokens/shadows.css
-# Resultado esperado: 0
-
-# 2. Verificar que ambient shadow esta definida
-grep "shadow-ambient" src/shared/styles/tokens/shadows.css
+# 1. Verificar que shadow-ambient foi adicionado ao arquivo scoped
+grep "shadow-ambient" src/shared/styles/tokens.redesign.css
 # Resultado esperado: pelo menos 1 match
+
+# 2. Verificar que shadows.css atual NAO foi modificado
+grep "shadow-layer-1" src/shared/styles/tokens/shadows.css
+# Resultado esperado: ainda existe (arquivo intacto)
 
 # 3. App compila sem erros
 npm run dev
@@ -410,46 +450,43 @@ npm run dev
 
 ### Commit
 ```
-feat(tokens): substituir sombras neon por ambient shadow system
+feat(tokens): adicionar ambient shadow system em tokens.redesign.css (scoped)
 
-- Remover shadow-layer-1 ate shadow-layer-5
-- Remover todos os glows (cyan, pink, magenta, etc.)
-- Adicionar: ambient, editorial, primary, error, floating
-- Manter backward compat aliases (shadow-sm/md/lg/xl)
+- shadow-ambient, shadow-editorial, shadow-primary, shadow-floating em [data-redesign="true"]
+- Backward compat aliases (shadow-sm/md/lg/xl) tambem scoped
+- shadows.css atual intacto (nao modificado)
 ```
 
 ---
 
-## Sprint 0.3 — Atualizar tokens de borders
+## Sprint 0.3 — Adicionar tokens de borders ao bloco scoped
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Atualizar border-radius para minimo 0.75rem. Remover radii xs/sm para componentes UI.
+**Escopo:** Adicionar border-radius do Santuario (minimo 0.75rem) ao bloco `[data-redesign="true"]` em `tokens.redesign.css`.
 
 ### Arquivo alvo
-`src/shared/styles/tokens/borders.css`
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR ao bloco `[data-redesign="true"]`
+
+> **NAO ALTERAR:** `src/shared/styles/tokens/borders.css` (arquivo atual intacto)
 
 ### O que o agente DEVE fazer
 
-1. **Ler o arquivo atual** `src/shared/styles/tokens/borders.css` por completo.
-2. **Buscar** no codebase quais componentes usam `--radius-sm`, `--radius-xs`, `--radius-card`, `--radius-button`:
+1. **Ler o arquivo atual** `src/shared/styles/tokens/borders.css` por completo (context apenas — nao modificar).
+2. **Buscar** no codebase quais componentes usam `--radius-sm`, `--radius-xs`, `--radius-card`, `--radius-button` (para entender impacto futuro):
    ```bash
    grep -r "\-\-radius-" src/ --include="*.css" -l
    ```
-3. **Editar** `src/shared/styles/tokens/borders.css` — NAO reescrever do zero, apenas ATUALIZAR as variaveis de radius.
-4. **Manter** as variaveis de border-width e focus-ring inalteradas.
-5. **NAO alterar** nenhum outro arquivo neste sprint.
+3. **Adicionar** o conteudo abaixo ao bloco `[data-redesign="true"] { }` em `tokens.redesign.css`, apos os tokens de sombra (Sprint 0.2).
+4. **NAO alterar** nenhum outro arquivo neste sprint.
 
-### Alteracoes EXATAS no `borders.css`
+### Conteudo a ADICIONAR dentro de `[data-redesign="true"] { }` em `tokens.redesign.css`
 
-**REMOVER** (se existirem):
-- `--radius-xs` (era ~0.125rem)
-- `--radius-sm` (era ~0.25rem) — redirecionar para `--radius-md`
-
-**ATUALIZAR** as seguintes variaveis (buscar cada uma e trocar o valor):
+Os tokens abaixo sobrescrevem os valores do `borders.css` atual apenas quando o flag esta ativo.
+**Minimo 0.75rem** para todos os componentes UI (legibilidade para idosos + Santuario visual).
 
 ```css
-/* Border Radius — Minimo 0.75rem para UI components */
---radius-none: 0;
+  /* Border Radius — Minimo 0.75rem para UI components */
+  --radius-none: 0;
 --radius-sm: 0.75rem;        /* ERA ~0.25rem, agora mesmo valor que md (backward compat) */
 --radius-md: 0.75rem;        /* 12px — MINIMO para UI */
 --radius-lg: 1rem;           /* 16px — Standard cards */
@@ -459,35 +496,30 @@ feat(tokens): substituir sombras neon por ambient shadow system
 --radius-full: 9999px;       /* Circular */
 ```
 
-**ADICIONAR** (se nao existirem) as variaveis component-specific:
-
-```css
-/* Component-specific radius */
---radius-card: var(--radius-2xl);         /* 2rem / 32px */
+  /* Component-specific radius */
+  --radius-card: var(--radius-2xl);         /* 2rem / 32px */
 --radius-card-sm: var(--radius-lg);       /* 1rem / 16px */
 --radius-button: var(--radius-xl);        /* 1.25rem / 20px */
 --radius-input: var(--radius-xl);         /* 1.25rem / 20px */
 --radius-badge: var(--radius-full);       /* circular */
 --radius-progress: var(--radius-full);    /* circular */
 --radius-icon-container: var(--radius-full); /* circular */
---radius-nav-item: var(--radius-lg);      /* 1rem / 16px */
-```
+  --radius-nav-item: var(--radius-lg);      /* 1rem / 16px */
 
-**MANTER** (nao alterar):
-- `--focus-ring-width: 2px;`
-- `--focus-ring-offset: 2px;`
-- **Atualizar** `--focus-ring-color` para `var(--color-primary)` se estiver hardcoded com a cor rosa antiga.
+  /* Focus ring — atualizado para verde primary */
+  --focus-ring-color: var(--color-primary);
+```
 
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que nao ha radius abaixo de 0.75rem para UI
-grep "0.25rem\|0.125rem\|0.375rem\|0.5rem" src/shared/styles/tokens/borders.css
-# Resultado esperado: 0 (exceto --radius-none que e 0)
+# 1. Verificar que radius-card foi adicionado ao arquivo scoped
+grep "radius-card" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 1 match
 
-# 2. Verificar que radius-card existe
+# 2. Verificar que borders.css atual NAO foi modificado
 grep "radius-card" src/shared/styles/tokens/borders.css
-# Resultado esperado: pelo menos 2 matches (definicao + uso)
+# Resultado esperado: 0 (nao existia la antes)
 
 # 3. App compila sem erros
 npm run dev
@@ -495,47 +527,42 @@ npm run dev
 
 ### Commit
 ```
-feat(tokens): atualizar border-radius para minimo 0.75rem
+feat(tokens): adicionar border-radius Santuario em tokens.redesign.css (scoped)
 
-- Minimo 0.75rem para todos os componentes UI
-- radius-card: 2rem (Sanctuary cards)
-- radius-button/input: 1.25rem
-- Adicionar component-specific radius tokens
-- Manter backward compat (--radius-sm agora aponta para 0.75rem)
+- Radius minimo 0.75rem para UI components em [data-redesign="true"]
+- radius-card: 2rem, radius-button/input: 1.25rem
+- Component-specific tokens (card, button, input, badge, nav-item)
+- borders.css atual intacto (nao modificado)
 ```
 
 ---
 
-## Sprint 0.4 — Atualizar index.css (classes utilitarias)
+## Sprint 0.4 — Adicionar classes utilitarias scoped em tokens.redesign.css
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Remover classes neon/glow, adicionar classes sanctuary, atualizar background global.
+**Escopo:** Adicionar classes sanctuary (card-sanctuary, surface utilities, glass) em `tokens.redesign.css`, scoped em `[data-redesign="true"]`. NAO remover classes existentes do `index.css`.
 
 ### Arquivo alvo
-`src/shared/styles/index.css`
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR secao de classes utilitarias scoped
+
+> **NAO ALTERAR:** `src/shared/styles/index.css` (arquivo atual intacto — classes neon/glow permanecem para usuarios sem o flag)
 
 ### O que o agente DEVE fazer
 
-1. **Ler o arquivo atual** `src/shared/styles/index.css` por completo para entender todas as classes utilitarias.
-2. **Buscar** no codebase quais componentes usam classes `.glow-*`, `.gradient-text`, `.glass-card`:
+1. **Ler o arquivo atual** `src/shared/styles/index.css` por completo (context apenas — nao modificar).
+2. **Buscar** no codebase quais componentes usam classes `.glow-*`, `.gradient-text`, `.glass-card` (para entender o impacto futuro):
    ```bash
    grep -rn "glow-\|gradient-text\|glass-card\|neon-" src/ --include="*.jsx" --include="*.css" -l
    ```
-3. **Editar** `src/shared/styles/index.css` fazendo as seguintes alteracoes:
+3. **Adicionar** ao final de `tokens.redesign.css` (FORA do bloco `[data-redesign="true"] { }`, como regras CSS separadas com seletor proprio) o conteudo abaixo:
 
-### Alteracoes EXATAS
+### Classes a ADICIONAR em `tokens.redesign.css` (scoped por seletor, nao por variavel)
 
-**A) REMOVER** as seguintes classes (buscar e deletar o bloco CSS inteiro):
-- `.glow-cyan` e qualquer variante `.glow-*`
-- `.gradient-text` (era gradiente neon pink→cyan)
-- `.neon-*` classes (todas)
-- Qualquer classe que use `--neon-*` ou `--glow-*` como valor
-
-**B) ATUALIZAR** a classe `.glass-card` (se existir) para usar novos tokens:
+**A) Glass card atualizado — apenas para elementos flutuantes:**
 
 ```css
-/* Glassmorphism — SOMENTE para elementos flutuantes */
-.glass-card {
+```css
+[data-redesign="true"] .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -544,31 +571,32 @@ feat(tokens): atualizar border-radius para minimo 0.75rem
 }
 ```
 
-**C) ATUALIZAR** o seletor `body` (se definido neste arquivo) para usar o novo background:
+**B) Background global scoped:**
 
 ```css
-body {
+[data-redesign="true"] body {
   background-color: var(--color-surface);  /* #f8fafb off-white, nao #ffffff */
   color: var(--color-on-surface);          /* #191c1d, nunca #000000 */
 }
 ```
 
-**D) ADICIONAR** as seguintes novas classes utilitarias ao FINAL do arquivo:
+**C) Novas classes utilitarias scoped:**
 
+```css
 ```css
 /* ============================================
    SURFACE TONAL SYSTEM — "No-Line Rule"
-   Profundidade por tom de background, NAO por bordas.
+   Scoped: apenas usuarios com data-redesign="true" veem estas classes ativas.
    ============================================ */
 
-.surface { background-color: var(--color-surface); }
-.surface-container { background-color: var(--color-surface-container); }
-.surface-container-low { background-color: var(--color-surface-container-low); }
-.surface-container-lowest { background-color: var(--color-surface-container-lowest); }
-.surface-container-high { background-color: var(--color-surface-container-high); }
+[data-redesign="true"] .surface { background-color: var(--color-surface); }
+[data-redesign="true"] .surface-container { background-color: var(--color-surface-container); }
+[data-redesign="true"] .surface-container-low { background-color: var(--color-surface-container-low); }
+[data-redesign="true"] .surface-container-lowest { background-color: var(--color-surface-container-lowest); }
+[data-redesign="true"] .surface-container-high { background-color: var(--color-surface-container-high); }
 
 /* Sanctuary Card — container principal do redesign */
-.card-sanctuary {
+[data-redesign="true"] .card-sanctuary {
   background-color: var(--color-surface-container-lowest);
   border-radius: var(--radius-card);
   padding: 2rem;
@@ -577,19 +605,19 @@ body {
   transition: all 300ms ease-out;
 }
 
-.card-sanctuary:hover {
+[data-redesign="true"] .card-sanctuary:hover {
   box-shadow: var(--shadow-editorial);
 }
 
 /* Glassmorphism atualizado — floating elements only */
-.glass {
+[data-redesign="true"] .glass {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
 
 /* Primary gradient button utility */
-.btn-primary-gradient {
+[data-redesign="true"] .btn-primary-gradient {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   box-shadow: var(--gradient-primary-shadow);
@@ -604,11 +632,11 @@ body {
   transition: all 200ms ease-out;
 }
 
-.btn-primary-gradient:hover {
+[data-redesign="true"] .btn-primary-gradient:hover {
   transform: scale(1.02);
 }
 
-.btn-primary-gradient:active {
+[data-redesign="true"] .btn-primary-gradient:active {
   transform: scale(0.98);
 }
 ```
@@ -616,17 +644,17 @@ body {
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que nao restam classes glow/neon
-grep -c "glow-\|neon-\|gradient-text" src/shared/styles/index.css
-# Resultado esperado: 0
+# 1. Verificar que card-sanctuary existe em tokens.redesign.css (scoped)
+grep "card-sanctuary" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 2 matches (com [data-redesign="true"])
 
-# 2. Verificar que card-sanctuary existe
-grep "card-sanctuary" src/shared/styles/index.css
-# Resultado esperado: pelo menos 2 matches
+# 2. Verificar que index.css NAO foi modificado (classes neon ainda la)
+grep "glow-\|neon-" src/shared/styles/index.css
+# Resultado esperado: ainda existem (arquivo intacto)
 
-# 3. Verificar que surface utilities existem
-grep "surface-container" src/shared/styles/index.css
-# Resultado esperado: pelo menos 5 matches
+# 3. Verificar que as classes utilitarias estao scoped
+grep "\[data-redesign" src/shared/styles/tokens.redesign.css
+# Resultado esperado: varios matches (todas as classes scoped corretamente)
 
 # 4. App compila sem erros
 npm run dev
@@ -634,145 +662,79 @@ npm run dev
 
 ### Commit
 ```
-feat(styles): remover classes neon e adicionar sistema tonal sanctuary
+feat(styles): adicionar classes utilitarias sanctuary em tokens.redesign.css (scoped)
 
-- Remover todas as classes .glow-* e .neon-*
-- Remover .gradient-text (neon)
-- Adicionar .surface-container-* utilities (Material 3)
-- Adicionar .card-sanctuary e .btn-primary-gradient
-- Atualizar .glass-card para novos tokens
-- Body background: #f8fafb (off-white)
+- .surface-container-* utilities em [data-redesign="true"]
+- .card-sanctuary e .btn-primary-gradient scoped
+- body background scoped: #f8fafb (off-white) apenas com flag ativo
+- index.css atual intacto (classes neon preservadas para usuarios sem flag)
 ```
 
 ---
 
-## Sprint 0.5 — Limpar arquivos de tema
+## Sprint 0.5 — Validar integracao e smoke test do flag
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Atualizar light.css e dark.css para refletir novo token system. Limpar tokens.css.
+**Escopo:** Verificar que todos os tokens scoped funcionam corretamente quando o flag e ativado. NAO modificar nenhum arquivo de tema (light.css, dark.css permanecem intactos).
 
 ### Arquivos alvo
-1. `src/shared/styles/themes/light.css`
-2. `src/shared/styles/themes/dark.css`
-3. `src/shared/styles/tokens.css` (se existir — contem overrides de dark theme)
+Apenas leitura/verificacao — nenhum arquivo e modificado neste sprint.
 
 ### O que o agente DEVE fazer
 
-1. **Ler** `src/shared/styles/themes/light.css` por completo.
-2. **Ler** `src/shared/styles/themes/dark.css` por completo.
-3. **Ler** `src/shared/styles/tokens.css` por completo.
-4. **Buscar** no codebase por `data-theme` para entender como o toggle funciona:
+1. **Ler** `src/shared/styles/tokens.redesign.css` por completo para verificar a estrutura.
+2. **Verificar** que o arquivo esta importado em `index.css`:
+   ```bash
+   grep "tokens.redesign" src/shared/styles/index.css
+   # Resultado esperado: pelo menos 1 match
+   ```
+3. **Verificar** que o bloco scoped esta correto:
+   ```bash
+   grep "\[data-redesign" src/shared/styles/tokens.redesign.css | wc -l
+   # Resultado esperado: todos os tokens e classes estao scoped
+   ```
+4. **Verificar** que os arquivos de tema NAO foram alterados:
+   ```bash
+   grep "#ec4899\|#006a5e" src/shared/styles/themes/light.css
+   # Resultado esperado: nao encontrado (light.css continua com tokens originais)
+   ```
+5. **Executar build** para confirmar ausencia de erros:
+   ```bash
+   npm run build
+   ```
+6. **Buscar** no codebase por `data-theme` para confirmar que o toggle de tema existente nao conflita com o novo `data-redesign`:
    ```bash
    grep -rn "data-theme" src/ --include="*.jsx" --include="*.css" -l
    ```
-
-### Alteracoes para `themes/light.css`
-
-Atualizar para que as variaveis do tema claro apontem para os novos tokens:
-
-```css
-/* ============================================
-   LIGHT THEME — Santuario Terapeutico (Default)
-   Este e o tema padrao. As variaveis canonicas estao em tokens/colors.css.
-   Este arquivo existe para overrides especificos do tema claro.
-   ============================================ */
-:root {
-  /* Backgrounds */
-  --bg-primary: var(--color-surface);                    /* #f8fafb */
-  --bg-secondary: var(--color-surface-container-low);    /* #f2f4f5 */
-  --bg-tertiary: var(--color-surface-container);         /* #eceeef */
-  --bg-card: var(--color-surface-container-lowest);      /* #ffffff */
-
-  /* Text */
-  --text-primary: var(--color-on-surface);               /* #191c1d */
-  --text-secondary: var(--color-on-surface-variant);     /* #3e4946 */
-  --text-tertiary: var(--color-outline);                 /* #6d7a76 */
-
-  /* Borders */
-  --border-light: var(--color-surface-container-low);
-  --border-default: var(--color-outline-variant);
-  --border-dark: var(--color-outline);
-}
-```
-
-### Alteracoes para `themes/dark.css`
-
-Simplificar para placeholder (o dark mode NAO e funcional nesta fase):
-
-```css
-/* ============================================
-   DARK THEME — PLACEHOLDER (Phase 6 Roadmap)
-
-   O dark mode sera redesenhado na Phase 6.
-   Este arquivo mantem a estrutura para nao quebrar o ThemeToggle,
-   mas os valores sao minimais.
-
-   TODO Phase 6:
-   - Redesenhar surface tiers para fundo escuro
-   - Primary pode precisar de ajuste de luminosidade para AA contrast
-   - Glass: inverter para rgba(15,17,23,0.80)
-   ============================================ */
-[data-theme='dark'] {
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1d24;
-  --bg-tertiary: #252830;
-  --bg-card: #1a1d24;
-  --bg-glass: rgba(15, 17, 23, 0.80);
-  --bg-overlay: rgba(0, 0, 0, 0.7);
-
-  --text-primary: #f0f2f4;
-  --text-secondary: #a0a4ab;
-  --text-tertiary: #6b7280;
-  --text-inverse: #191c1d;
-  --text-link: var(--color-primary-fixed);
-
-  --border-light: #252830;
-  --border-default: #374151;
-  --border-dark: #4b5563;
-
-  --color-surface: #0f1117;
-  --color-surface-container-low: #1a1d24;
-  --color-surface-container-lowest: #252830;
-  --color-surface-container: #1a1d24;
-  --color-surface-container-high: #303340;
-  --color-surface-container-highest: #3a3d4a;
-
-  --color-on-surface: #f0f2f4;
-  --color-on-surface-variant: #a0a4ab;
-}
-```
-
-### Alteracoes para `tokens.css`
-
-Se este arquivo contiver overrides de dark theme com variaveis neon (como `--neon-cyan`, cores vibrantes de neon), **remover** essas variaveis neon e manter apenas as variaveis de background/text/border do dark theme. Se o conteudo for redundante com `themes/dark.css`, considerar esvaziar o arquivo e manter apenas um comentario de redirecionamento.
+   Se encontrar conflito (ex: um componente que aplica `data-theme` no mesmo elemento que `data-redesign`), documentar o conflito como comentario no topo de `tokens.redesign.css` para resolucao futura.
 
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que nao ha referencia neon nos temas
-grep -c "neon\|glow\|ec4899\|06b6d4" src/shared/styles/themes/light.css src/shared/styles/themes/dark.css
-# Resultado esperado: 0 para ambos
+# 1. Build passa sem erros
+npm run build
 
-# 2. Verificar que data-theme='dark' ainda existe (nao quebrar toggle)
-grep "data-theme" src/shared/styles/themes/dark.css
-# Resultado esperado: pelo menos 1 match
+# 2. tokens.redesign.css importado em index.css
+grep "tokens.redesign" src/shared/styles/index.css
+# Resultado esperado: 1 match
 
-# 3. App compila sem erros
-npm run dev
+# 3. light.css e dark.css intactos (nao modificados nesta wave)
+git diff src/shared/styles/themes/
+# Resultado esperado: nenhuma alteracao
 
-# 4. Verificacao final: NENHUMA referencia neon em QUALQUER arquivo de tokens/themes
-grep -r "neon\|glow\|ec4899\|06b6d4\|#ff006e\|#00e5ff" src/shared/styles/ --include="*.css"
-# Resultado esperado: 0 matches
+# 4. Smoke test visual:
+# - Abrir app sem flag → cores atuais (rosa #ec4899)
+# - Adicionar ?redesign=1 → verde #006a5e em elementos primarios
+# (verificar via DevTools → Computed → --color-primary)
 ```
 
 ### Commit
 ```
-feat(themes): atualizar temas para Santuario Terapeutico
+chore(tokens): validar integracao Wave 0 — smoke test flag ativo vs inativo
 
-- Light theme: apontar para novos tokens surface/text
-- Dark theme: simplificar para placeholder (Phase 6)
-- Remover todas as referencias neon dos arquivos de tema
-- Manter estrutura data-theme='dark' para nao quebrar toggle
+- Build passa sem erros
+- Tokens scoped funcionando: ?redesign=1 ativa paleta Santuario
+- Arquivos de tema (light.css, dark.css) intactos
 ```
 
 ---
@@ -781,15 +743,16 @@ feat(themes): atualizar temas para Santuario Terapeutico
 
 Apos os 5 sprints, validar:
 
-- [ ] `npm run dev` roda sem erros de CSS
-- [ ] Background da app e `#f8fafb` (off-white, NAO branco puro)
-- [ ] Textos usam `#191c1d` (nunca `#000000` preto puro)
-- [ ] Nenhuma referencia a `--neon-*` ou `--glow-*` em `src/shared/styles/`
-- [ ] Nenhuma referencia a `#ec4899` (rosa) ou `#06b6d4` (cyan) em `src/shared/styles/`
-- [ ] Variavel `--color-primary` resolve para `#006a5e` (verde saude)
-- [ ] Variavel `--color-secondary` resolve para `#005db6` (azul clinico)
-- [ ] Classes `.card-sanctuary`, `.btn-primary-gradient`, `.surface-container-*` existem
-- [ ] Componentes existentes podem estar "feios" (cores quebradas) — isso e ESPERADO
+- [ ] `npm run build` passa sem erros de CSS
+- [ ] `tokens.redesign.css` existe e esta importado em `src/shared/styles/index.css`
+- [ ] Todos os tokens estao dentro do bloco `[data-redesign="true"] { }` (nenhum em `:root` solto)
+- [ ] Classes utilitarias (`.card-sanctuary`, `.surface-container-*`) usam seletor `[data-redesign="true"] .classe`
+- [ ] Arquivos de tokens originais (`colors.css`, `shadows.css`, `borders.css`) **NAO foram modificados**
+- [ ] Arquivos de tema (`light.css`, `dark.css`) **NAO foram modificados**
+- [ ] Smoke test: **sem flag** → `--color-primary` resolve para `#ec4899` (rosa atual)
+- [ ] Smoke test: **com `?redesign=1`** → `--color-primary` resolve para `#006a5e` (verde saude)
+- [ ] Smoke test: **com `?redesign=1`** → background da app e `#f8fafb` (off-white)
+- [ ] Smoke test: **com `?redesign=1`** → textos usam `#191c1d`
 
 ## Ordem de Execucao
 

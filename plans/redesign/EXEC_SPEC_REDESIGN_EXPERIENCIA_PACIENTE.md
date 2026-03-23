@@ -38,6 +38,68 @@
 
 ---
 
+## 0. Estratégia de Rollout Gradual
+
+> **Todo o redesign é desenvolvido e validado por trás de um feature flag — sem impacto em usuários atuais até validação completa.**
+> Spec completa: `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md`
+
+### Por que rollout gradual
+
+O redesign Santuário Terapêutico é uma mudança visual completa (W0-W12). Para validá-lo com usuários reais em **sessões privadas de pesquisa qualitativa** antes do lançamento geral, toda a implementação é desenvolvida por trás de um feature flag baseado em `data-attribute` no root da app.
+
+Usuários sem o flag ativado **nunca veem o redesign** — a app permanece 100% idêntica ao estado atual.
+
+### Mecanismo: `data-redesign="true"`
+
+```
+<div class="app-container" data-redesign="true">   ← ativado pelo flag
+  ...
+</div>
+```
+
+Todas as regras CSS do redesign são scoped sob `[data-redesign="true"]`. Sem o atributo, nenhum token, estilo ou layout novo é aplicado.
+
+### Como ativar o flag
+
+| Contexto | Método |
+|----------|--------|
+| **Sessão de validação com usuário** | Compartilhar URL `?redesign=1` — persiste em localStorage durante toda a sessão |
+| **Desativar para um usuário** | `?redesign=0` na URL — limpa o localStorage |
+| **Time interno** | Toggle oculto em Configurações (visível com `mr_dev_mode=1` no localStorage) |
+| **Produção (todos os usuários)** | Quando validação completa: remover o scoping, tornar tokens globais |
+
+### Estratégia de isolamento por wave
+
+| Wave | O que muda | Estratégia de isolamento |
+|------|-----------|--------------------------|
+| **W0 — Tokens** | Cores, sombras, borders, gradients | Novos tokens em `tokens.redesign.css` scoped em `[data-redesign="true"]`. **`colors.css`, `shadows.css`, `borders.css` atuais NÃO são tocados.** |
+| **W1 — Typography** | Fontes Public Sans + Lexend, type scale | Tokens tipográficos adicionados ao mesmo bloco scoped. Fontes carregadas via CSS `@import` dentro do bloco scoped (não em `index.html` globalmente). |
+| **W2 — Surface/Layout** | Superfícies tonais, grid system | Classes utilitárias novas (`card-sanctuary`, `grid-dashboard`) em `layout.redesign.css`. Classes que afetam `body` ou elementos globais: scoped em `[data-redesign="true"]`. |
+| **W3 — Components** | Button, Card, inputs, badges | Estilos em `components.redesign.css`: `[data-redesign="true"] .btn { }`. **`Button.css` e `Card.css` NÃO são tocados.** API de props: imutável. |
+| **W4+ — Views** | Dashboard, Tratamentos, Estoque, Nav | Variantes de view em `src/views/redesign/`. `useRedesign()` hook determina qual variante renderizar. Views atuais: intactas. |
+
+### Arquivos de infraestrutura (criados antes das waves)
+
+```
+src/shared/contexts/RedesignContext.jsx     ← Provider + lógica do flag (URL param + localStorage)
+src/shared/hooks/useRedesign.js             ← Hook: { isRedesignEnabled, toggleRedesign }
+src/shared/styles/tokens.redesign.css       ← CSS scoped (W0 tokens + W1 typography)
+src/shared/styles/layout.redesign.css       ← Classes de layout/superfície (W2)
+src/shared/styles/components.redesign.css   ← Overrides de componentes (W3)
+```
+
+Todos importados em `src/shared/styles/index.css` após os arquivos atuais (ordem garante que overrides scoped ganham da cascata).
+
+### Rollout final (pós-validação)
+
+Quando o redesign for aprovado para todos:
+1. Remover o scoping `[data-redesign="true"]` dos arquivos `.redesign.css`
+2. Mesclar os tokens novos nos arquivos canônicos (`colors.css`, etc.)
+3. Remover `RedesignContext`, o flag de URL e o toggle de Settings
+4. Remover os arquivos `.redesign.css` (conteúdo já migrado)
+
+---
+
 ## 1. Resumo Executivo
 
 ### O que muda
