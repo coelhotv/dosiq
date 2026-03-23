@@ -124,7 +124,7 @@ Para alcançar a coesão desejada, a aplicação será implementada como uma **s
 ### Princípios Arquiteturais
 
 1. **Cada camada tem owner claro** — não misturar responsabilidades. O AppShell não decide densidade; o Complexity System não anima.
-2. **Protótipos são referência, não blueprint** — Os protótipos em `public/new_designs/` usam Tailwind + React Router + TypeScript como veículo de prototipagem. A app real usa CSS custom properties + view-based navigation + JavaScript. **Usar os protótipos para composição e layout, mas sempre partir da lógica e arquitetura da aplicação real.**
+2. **Protótipos são referência, não blueprint** — Os protótipos em `plans/redesign/references/` usam Tailwind + React Router + TypeScript como veículo de prototipagem. A app real usa CSS custom properties + view-based navigation + JavaScript. **Usar os protótipos para composição e layout, mas sempre partir da lógica e arquitetura da aplicação real.**
 3. **Progressive enhancement** — Simple mode é o default. Complexidade só aparece quando o tratamento do paciente exige. A UI escala com o paciente, não antes.
 4. **Tela responde uma pergunta** — Cada view tem um "job":
    - **Hoje:** "O que preciso fazer agora?"
@@ -230,7 +230,7 @@ npm install lucide-react
 # Fonts: Google Fonts via CSS @import (Public Sans + Lexend)
 ```
 
-**Nota:** O projeto NÃO usa Tailwind CSS. Todo styling é feito via CSS custom properties e CSS modules. O redesign DEVE manter essa abordagem — os protótipos em `/public/new_designs/` usam Tailwind apenas como referência visual, NÃO como indicação de stack.
+**Nota:** O projeto NÃO usa Tailwind CSS. Todo styling é feito via CSS custom properties e CSS modules. O redesign DEVE manter essa abordagem — os protótipos em `/plans/redesign/references/` usam Tailwind apenas como referência visual, NÃO como indicação de stack.
 
 ### 3.2 Fonts — Carregamento
 
@@ -2247,30 +2247,29 @@ Wave 12 (Landing/Auth — final touch)
 
 | Documento | Path | Propósito |
 |-----------|------|-----------|
-| Product Strategy Consolidated | `public/new_designs/PRODUCT_STRATEGY_CONSOLIDATED.md` | SSOT visual/narrative/motion |
-| Design System Spec | `public/new_designs/DESIGN-SYSTEM.md` | Component philosophy |
-| Feature Reference | `public/new_designs/REFERENCE.md` | Feature list + personas |
-| Iconografia Guide | `public/new_designs/iconografia_meus_remedios.png` | Icon system reference |
-| Design System Visual | `public/new_designs/design-system.png` | Color/type/component visual ref |
-| Simple Dashboard (mobile) | `public/new_designs/simple-hoje-mobile.png` | Target: Dona Maria dashboard |
-| Simple Dashboard (desktop) | `public/new_designs/simple-hoje-desktop.png` | Target: Dona Maria desktop |
-| Complex Dashboard (mobile) | `public/new_designs/complex-hoje-mobile.png` | Target: Carlos dashboard |
-| Complex Dashboard (desktop) | `public/new_designs/complex-hoje-desktop.png` | Target: Carlos desktop |
-| Simple Treatments (mobile) | `public/new_designs/simple-tratamentos-mobile.png` | Target: simple treatments |
-| Simple Treatments (desktop) | `public/new_designs/simple-tratamentos-desktop.png` | Target: simple treatments desktop |
-| Complex Treatments (mobile) | `public/new_designs/complex-tratamentos-mobile.png` | Target: complex treatments |
-| Complex Treatments (desktop) | `public/new_designs/complex-tratamentos-desktop.png` | Target: complex treatments desktop |
-| Simple Stock (mobile) | `public/new_designs/simple-estoque-mobile.png` | Target: simple stock |
-| Simple Stock (desktop) | `public/new_designs/simple-estoque-desktop.png` | Target: simple stock desktop |
-| Complex Stock (mobile) | `public/new_designs/complex-estoque-mobile.png` | Target: complex stock |
-| Complex Stock (desktop) | `public/new_designs/complex-estoque-desktop.png` | Target: complex stock desktop |
-| Simple Prototype (React) | `public/new_designs/meus-remédios---simple-treatments/` | Code reference: Dona Maria UI |
-| Complex Prototype (React) | `public/new_designs/meus-remédios---complex-treatments/` | Code reference: Carlos UI |
+| Product Strategy Consolidated | `plans/redesign/references/PRODUCT_STRATEGY_CONSOLIDATED.md` | SSOT visual/narrative/motion |
+| Design System Spec | `plans/redesign/references/DESIGN-SYSTEM.md` | Component philosophy |
+| Feature Reference | `plans/redesign/references/REFERENCE.md` | Feature list + personas |
+| Iconografia Guide | `plans/redesign/references/iconografia_meus_remedios.png` | Icon system reference |
+| Design System Visual | `plans/redesign/references/design-system.png` | Color/type/component visual ref |
+| Simple Dashboard (mobile) | `plans/redesign/references/simple-hoje-mobile.png` | Target: Dona Maria dashboard |
+| Simple Dashboard (desktop) | `plans/redesign/references/simple-hoje-desktop.png` | Target: Dona Maria desktop |
+| Complex Dashboard (mobile) | `plans/redesign/references/complex-hoje-mobile.png` | Target: Carlos dashboard |
+| Complex Dashboard (desktop) | `plans/redesign/references/complex-hoje-desktop.png` | Target: Carlos desktop |
+| Simple Treatments (mobile) | `plans/redesign/references/simple-tratamentos-mobile.png` | Target: simple treatments |
+| Simple Treatments (desktop) | `plans/redesign/references/simple-tratamentos-desktop.png` | Target: simple treatments desktop |
+| Complex Treatments (mobile) | `plans/redesign/references/complex-tratamentos-mobile.png` | Target: complex treatments |
+| Complex Treatments (desktop) | `plans/redesign/references/complex-tratamentos-desktop.png` | Target: complex treatments desktop |
+| Simple Stock (mobile) | `plans/redesign/references/simple-estoque-mobile.png` | Target: simple stock |
+| Simple Stock (desktop) | `plans/redesign/references/simple-estoque-desktop.png` | Target: simple stock desktop |
+| Complex Stock (mobile) | `plans/redesign/references/complex-estoque-mobile.png` | Target: complex stock |
+| Complex Stock (desktop) | `plans/redesign/references/complex-estoque-desktop.png` | Target: complex stock desktop |
+| Simple Prototype (React) | `plans/redesign/references/meus-remédios---simple-treatments/` | Code reference: Dona Maria UI |
+| Complex Prototype (React) | `plans/redesign/references/meus-remédios---complex-treatments/` | Code reference: Carlos UI |
 | UX Vision (current) | `plans/UX_VISION_EXPERIENCIA_PACIENTE.md` | Current UX patterns |
 | Current CSS Tokens | `src/shared/styles/tokens/` | Current design system |
 | Current Dashboard | `src/views/Dashboard.jsx` | Current implementation |
 | Mobile Performance Spec | `docs/standards/MOBILE_PERFORMANCE.md` | Perf constraints |
-| Master Spec (consolidada) | `plans/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` | Visão arquitetural e critérios de sucesso |
 
 ---
 
