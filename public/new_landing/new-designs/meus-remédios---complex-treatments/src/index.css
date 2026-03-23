@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;700;800;900&family=Lexend:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Public Sans", sans-serif;
+  --font-body: "Lexend", sans-serif;
+  --font-label: "Lexend", sans-serif;
+
+  --color-primary: #006a5e;
+  --color-primary-container: #008577;
+  --color-primary-fixed: #90f4e3;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed-variant: #005047;
+  
+  --color-secondary: #005db6;
+  --color-secondary-container: #63a1ff;
+  --color-secondary-fixed: #d6e3ff;
+  --color-on-secondary-fixed: #001b3d;
+
+  --color-tertiary: #7b5700;
+  --color-tertiary-container: #9b6e00;
+  --color-tertiary-fixed: #ffdea8;
+  --color-on-tertiary-fixed: #271900;
+
+  --color-surface: #f8fafb;
+  --color-surface-container: #eceeef;
+  --color-surface-container-low: #f2f4f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #e6e8e9;
+  --color-surface-container-highest: #e1e3e4;
+  
+  --color-outline: #6d7a76;
+  --color-outline-variant: #bdc9c5;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #3e4946;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-body;
+  }
+}
+
+.editorial-shadow {
+  box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);
+}
+
+.mask-image-radial {
+  mask-image: radial-gradient(circle, black 50%, transparent 100%);
+}
