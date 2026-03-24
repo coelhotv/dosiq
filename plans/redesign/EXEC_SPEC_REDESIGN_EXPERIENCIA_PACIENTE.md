@@ -1052,8 +1052,8 @@ Antes:                          Depois:
 │  border 1px  │               │  Shadow ambient          │
 │  radius sm   │               │  Radius xl (1.25rem)     │
 └──────────────┘               │  Hover: scale(1.02)      │
-                                │  Active: scale(0.98)     │
-                                ╰──────────────────────────╯
+                               │  Active: scale(0.98)     │
+                               ╰──────────────────────────╯
 ```
 
 **Variantes:**
@@ -1251,10 +1251,10 @@ Padrão de lista sem divisores — separação por espaço ou alternância tonal
 
 **Design futuro (mobile):**
 ```
-╭──────────────────────────────────────╮
+╭───────────────────────────────────────╮
 │  📅         💊         📦         👤  │
 │ Hoje    Tratamento  Estoque    Perfil │
-╰──────────────────────────────────────╯
+╰───────────────────────────────────────╯
   ↑ Glass: bg-surface/80 backdrop-blur-12px
   ↑ Fixed bottom, z-50
   ↑ Hidden on md+ screens (sidebar takes over)
@@ -1680,24 +1680,24 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 **Layout futuro (mobile):**
 ```
 ┌──────────────────────────────────────┐
-│  Meus Remédios            🔔   👤   │  ← TopBar (mobile only)
+│  Meus Remédios            🔔   👤    │  ← TopBar (mobile only)
 ├──────────────────────────────────────┤
 │                                      │
 │     ADESÃO DIÁRIA                    │
 │     ╭────────╮                       │
 │     │  75%   │                       │
-│     │Concluído│                       │
+│     │Concluído│                      │
 │     ╰────────╯                       │
 │                                      │
-│  Olá, Dona Maria 👋                 │
-│  Faltam apenas 3 doses hoje!        │
+│  Olá, Dona Maria 👋                  │
+│  Faltam apenas 3 doses hoje!         │
 │                                      │
 ├──────────────────────────────────────┤
-│  ⚠ ESTOQUE CRÍTICO                  │
-│  Metformina termina em 3 dias       │
-│  ████░░░ 15%  [Repor Estoque]       │
+│  ⚠ ESTOQUE CRÍTICO                   │
+│  Metformina termina em 3 dias        │
+│  ████░░░ 15%  [Repor Estoque]        │
 ├──────────────────────────────────────┤
-│  PRÓXIMA DOSE • AGORA               │
+│  PRÓXIMA DOSE • AGORA                │
 │ ┌──────────────────────────────────┐ │
 │ │ 💊 Losartana Potássica           │ │
 │ │    50mg • 1 comprimido           │ │
@@ -1707,10 +1707,10 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 │ └──────────────────────────────────┘ │
 ├──────────────────────────────────────┤
 │  CRONOGRAMA DE HOJE                  │
-│  ✅ 07:00  Omeprazol 20mg           │
-│  ● 08:00  Losartana Potássica 50mg  │
-│  ○ 13:00  Metformina 850mg          │
-│  ○ 21:00  Sinvastatina 20mg         │
+│  ✅ 07:00  Omeprazol 20mg            │
+│  ● 08:00  Losartana Potássica 50mg   │
+│  ○ 13:00  Metformina 850mg           │
+│  ○ 21:00  Sinvastatina 20mg          │
 ├──────────────────────────────────────┤
 │  ✅ DOSES CONCLUÍDAS                 │
 │  ▼ (colapsado)                       │
@@ -1719,32 +1719,32 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 
 **Layout futuro (desktop):**
 ```
-┌─────────────────┬────────────────────────────────────────────┐
+┌─────────────────┬─────────────────────────────────────────────┐
 │                 │  Painel de Controle                    🔔👤 │
-│   Sidebar       ├──────────────────────┬─────────────────────┤
-│                 │                      │                     │
-│                 │   ADESÃO DIÁRIA      │  Cronograma Compacto│
-│                 │   ╭────────╮         │  Sex, 24 de Maio    │
-│                 │   │  85%   │         │                     │
-│                 │   │Concluído│        │  ☀ MANHÃ            │
-│                 │   ╰────────╯         │  ┌─────┐ ┌─────┐   │
-│                 │                      │  │Met. │ │Enal.│   │
-│                 │  Excelente progresso!│  │TOMAR│ │TOMAR│   │
-│                 │  6 de 8 doses       │  └─────┘ └─────┘   │
-│                 │                      │                     │
-│                 │  ┌─PRIORIDADE MAX──┐ │  ☀ TARDE            │
-│                 │  │  08:00          │ │  ┌─────────────┐   │
-│                 │  │  Em 15 min      │ │  │Espirono.    │   │
-│                 │  │  • Losartana    │ │  └─────────────┘   │
-│                 │  │  • Omeprazol    │ │                     │
-│                 │  │ [Confirmar]     │ │  🌙 NOITE           │
-│                 │  └─────────────────┘ │  ┌─────┐ ┌─────┐   │
-│                 │                      │  │Sinv.│ │Atorv│   │
-│                 │                      │  └─────┘ └─────┘   │
-│                 │                      │                     │
-│                 │                      │  ⚠ Estoque Crítico  │
-│  [+ Med]        │                      │  Metformina: 4 doses│
-└─────────────────┴──────────────────────┴─────────────────────┘
+│   Sidebar       ├──────────────────────┬──────────────────────┤
+│                 │                      │                      │
+│                 │   ADESÃO DIÁRIA      │  Cronograma Compacto │
+│                 │   ╭────────╮         │  Sex, 24 de Maio     │
+│                 │   │  85%   │         │                      │
+│                 │   │Concluído│        │  ☀ MANHÃ             │
+│                 │   ╰────────╯         │  ┌─────┐ ┌─────┐     │
+│                 │                      │  │Met. │ │Enal.│     │
+│                 │  Excelente progresso!│  │TOMAR│ │TOMAR│     │
+│                 │  6 de 8 doses        │  └─────┘ └─────┘     │
+│                 │                      │                      │
+│                 │  ┌─PRIORIDADE MAX──┐ │  ☀ TARDE             │
+│                 │  │  08:00          │ │  ┌─────────────┐     │
+│                 │  │  Em 15 min      │ │  │Espirono.    │     │
+│                 │  │  • Losartana    │ │  └─────────────┘     │
+│                 │  │  • Omeprazol    │ │                      │
+│                 │  │ [Confirmar]     │ │  🌙 NOITE            │
+│                 │  └─────────────────┘ │  ┌─────┐ ┌─────┐     │
+│                 │                      │  │Sinv.│ │Atorv│     │
+│                 │                      │  └─────┘ └─────┘     │
+│                 │                      │                      │
+│                 │                      │  ⚠ Estoque Crítico   │
+│  [+ Med]        │                      │  Metformina: 4 doses │
+└─────────────────┴──────────────────────┴──────────────────────┘
 ```
 
 **Componentes do Dashboard redesenhado:**
@@ -1802,12 +1802,12 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 No dashboard, StockBars se torna um **alert inline** (não mais widget separado):
 
 ```
-┌─ ⚠ ──────────────────────────────────────┐
-│  Estoque Crítico: Metformina              │
-│  4 doses restantes                        │
-│  ████░░░░░░░ 15%                          │
+┌─ ⚠ ────────────────────────────────────────┐
+│  Estoque Crítico: Metformina               │
+│  4 doses restantes                         │
+│  ████░░░░░░░ 15%                           │
 │                        [Solicitar Refil →] │
-└───────────────────────────────────────────┘
+└────────────────────────────────────────────┘
 ```
 
 - Background: `--color-error-container` at 20% opacity
@@ -1864,26 +1864,26 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 ```
 ┌──────────────────────────────────────┐
 │  Meus Tratamentos                    │
-│  Acompanhamento de 8 medicações     │
+│  Acompanhamento de 8 medicações      │
 │                                      │
-│  🔍 Buscar medicamento...           │
+│  🔍 Buscar medicamento...            │
 │  [Ativos] [Pausados] [Finalizados]   │
 ├──────────────────────────────────────┤
 │  ● CARDIOVASCULAR                 3x │
 │  ┌──────────────────────────────────┐│
-│  │ Losartana                       ││
-│  │ 50mg • 2x ao dia          20:00 ││
-│  │ ▮▮▮▮▮ ▮▮  86%                   ││
+│  │ Losartana                        ││
+│  │ 50mg • 2x ao dia          20:00  ││
+│  │ ▮▮▮▮▮ ▮▮  86%                    ││
 │  ├──────────────────────────────────┤│
-│  │ Atenolol                        ││
-│  │ 25mg • 1x ao dia               ││
+│  │ Atenolol                         ││
+│  │ 25mg • 1x ao dia                 ││
 │  └──────────────────────────────────┘│
 ├──────────────────────────────────────┤
 │  ● DIABETES                       2x │
 │  ┌──────────────────────────────────┐│
-│  │ Metformina   ⚠ TITULAÇÃO       ││
-│  │ 850mg → 1000mg                  ││
-│  │ Fase 2 de 4  [Acabando (21)]    ││
+│  │ Metformina   ⚠ TITULAÇÃO         ││
+│  │ 850mg → 1000mg                   ││
+│  │ Fase 2 de 4  [Acabando (21)]     ││
 │  └──────────────────────────────────┘│
 ├──────────────────────────────────────┤
 │  ● SUPLEMENTAÇÃO                     │
@@ -1899,18 +1899,18 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 ├─────────────┬──────────┬────────┬──────────┬────────┬────────┤
 │  Nome       │ Posologia│ Freq.  │ Adesão   │ Estoque│        │
 ├─────────────┼──────────┼────────┼──────────┼────────┼────────┤
-│ ● CARDIOVASCULAR                                              │
+│ ● CARDIOVASCULAR                                             │
 ├─────────────┼──────────┼────────┼──────────┼────────┼────────┤
-│ Losartana   │ 50mg     │ 1x/dia │ ▮▮▮▮▮ 86%│ ████  │  >     │
-│ Anlodipino  │ 5mg      │ 1x/dia │ ▮▮▮▮▮100%│ ▮░░░  │  >     │
+│ Losartana   │ 50mg     │ 1x/dia │ ▮▮▮▮▮ 86%│ ████   │  >     │
+│ Anlodipino  │ 5mg      │ 1x/dia │ ▮▮▮▮▮100%│ ▮░░░   │  >     │
 │ ...         │          │        │          │        │        │
 ├─────────────┴──────────┴────────┴──────────┴────────┴────────┤
-│ ● ANTI-INFLAMATÓRIO                                           │
+│ ● ANTI-INFLAMATÓRIO                                          │
 ├─────────────┬──────────┬────────┬──────────┬────────┬────────┤
-│ Prednisona  │ 20mg→10mg│ 1x/dia │ ▮▮▮▮▮100%│ ▮▮░░░ │  >     │
-│  └─ TITULAÇÃO                                                 │
+│ Prednisona  │ 20mg→10mg│ 1x/dia │ ▮▮▮▮▮100%│ ▮▮░░░  │  >     │
+│  └─ TITULAÇÃO                                                │
 │     Semana 1: 20mg ✅  Semana 2: 10mg (Atual) Semana 3: 5mg  │
-│     "Atenção: Não interromper..."                             │
+│     "Atenção: Não interromper..."                            │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -1978,56 +1978,56 @@ No desktop, mostrar widget fixo no canto inferior direito (como no mockup comple
 │  Controle de Estoque                 │
 │  Prioridade de Reabastecimento       │
 ├──────────────────────────────────────┤
-│  ⚠ CRÍTICO                          │
+│  ⚠ CRÍTICO                           │
 │  ┌──────────────────────────────────┐│
 │  │ Losartana Potássica              ││
-│  │ 50mg • 3 comprimidos            ││
-│  │ ████░░░░ Restam 3 dias          ││
-│  │ ╭──────────────────────────╮    ││
-│  │ │    Reabastecer Agora     │    ││
-│  │ ╰──────────────────────────╯    ││
+│  │ 50mg • 3 comprimidos             ││
+│  │ ████░░░░ Restam 3 dias           ││
+│  │ ╭──────────────────────────╮     ││
+│  │ │    Reabastecer Agora     │     ││
+│  │ ╰──────────────────────────╯     ││
 │  └──────────────────────────────────┘│
 ├──────────────────────────────────────┤
-│  ⚠ ATENÇÃO                          │
+│  ⚠ ATENÇÃO                           │
 │  ┌──────────────────────────────────┐│
-│  │ Atorvastatina 20mg              ││
-│  │ 4 comprimidos • Restam 6 dias   ││
-│  │ [Registrar Compra]              ││
+│  │ Atorvastatina 20mg               ││
+│  │ 4 comprimidos • Restam 6 dias    ││
+│  │ [Registrar Compra]               ││
 │  └──────────────────────────────────┘│
 ├──────────────────────────────────────┤
-│  TODOS OS ITENS          Tudo 📦    │
+│  TODOS OS ITENS          Tudo 📦     │
 │  ┌──────────────────────────────────┐│
-│  │ Metformina 850mg      45 un     ││
-│  │ Vitamina D3            8 cáps   ││
+│  │ Metformina 850mg      45 un      ││
+│  │ Vitamina D3            8 cáps    ││
 │  └──────────────────────────────────┘│
 ├──────────────────────────────────────┤
-│  HISTÓRICO DE ENTRADAS    Ver Tudo  │
-│  • Compra Realizada  +30un  14/03   │
-│  • Ajuste Manual     -2un   12/03   │
+│  HISTÓRICO DE ENTRADAS    Ver Tudo   │
+│  • Compra Realizada  +30un  14/03    │
+│  • Ajuste Manual     -2un   12/03    │
 └──────────────────────────────────────┘
 ```
 
 **Design futuro (desktop):**
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Estoque de Medicamentos           Relatórios | Farmácias   │
+│  Estoque de Medicamentos           Relatórios | Farmácias    │
 ├──────────────────────────────────────────────────────────────┤
-│  ⚠ 3 itens precisam de reposição   [Comprar Tudo Agora]    │
+│  ⚠ 3 itens precisam de reposição   [Comprar Tudo Agora]      │
 │     imediata                                                 │
-├────────────────────┬───────────────────┬────────────────────┤
-│  ┌─ URGENTE ────┐  │ ┌─ ATENÇÃO ────┐  │ ┌─ SEGURO ─────┐ │
-│  │ Atorvast.    │  │ │ Losartana   │  │ │ Metformina   │ │
-│  │    2 DIAS    │  │ │    5 DIAS   │  │ │   24 DIAS    │ │
-│  │ ████░░ 6%   │  │ │ █████░ 15%  │  │ │ ███████ 80%  │ │
-│  │[Comprar Agora]│  │ │[Reabastecer]│  │ │[Agendar]     │ │
-│  └──────────────┘  │ └─────────────┘  │ └──────────────┘ │
-│  ┌──────────────┐  │ ┌─────────────┐  │ ┌──────────────┐ │
-│  │ Ômega 3     │  │ │ Levotirox.  │  │ │ Simeticona   │ │
-│  │    1 CÁP    │  │ │    6 DIAS   │  │ │   30+ DIAS   │ │
-│  │[Comprar Agora]│  │ │[Reabastecer]│  │ │[Agendar]     │ │
-│  └──────────────┘  │ └─────────────┘  │ └──────────────┘ │
-├────────────────────┴───────────────────┴────────────────────┤
-│  HISTÓRICO DE ENTRADAS                          Ver Tudo    │
+├─────────────────────┬────────────────────┬───────────────────┤
+│  ┌─ URGENTE ─────┐  │  ┌─ ATENÇÃO ────┐  │  ┌─ SEGURO ─────┐ │
+│  │ Atorvast.     │  │  │ Losartana    │  │  │ Metformina   │ │
+│  │    2 DIAS     │  │  │    5 DIAS    │  │  │   24 DIAS    │ │
+│  │ ████░░ 6%     │  │  │ █████░ 15%   │  │  │ ███████ 80%  │ │
+│  │[Comprar Agora]│  │  │[Reabastecer] │  │  │[Agendar]     │ │
+│  └───────────────┘  │  └──────────────┘  │  └──────────────┘ │
+│  ┌───────────────┐  │  ┌──────────────┐  │  ┌──────────────┐ │
+│  │ Ômega 3       │  │  │ Levotirox.   │  │  │ Simeticona   │ │
+│  │    1 CÁP      │  │  │    6 DIAS    │  │  │   30+ DIAS   │ │
+│  │[Comprar Agora]│  │  │[Reabastecer] │  │  │[Agendar]     │ │
+│  └───────────────┘  │  └──────────────┘  │  └──────────────┘ │
+├─────────────────────┴────────────────────┴───────────────────┤
+│  HISTÓRICO DE ENTRADAS                           Ver Tudo    │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -2087,16 +2087,16 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 ┌──────────────────────────────────────┐
 │        ╭────╮                        │
 │        │ JS │  João da Silva         │
-│        ╰────╯  Membro desde 2024    │
+│        ╰────╯  Membro desde 2024     │
 ├──────────────────────────────────────┤
-│  👤 Dados Pessoais           >      │
-│  🛡 Privacidade e Segurança  >      │
-│  🔔 Notificações             >      │
-│  ⚙ Preferências              >      │
+│  👤 Dados Pessoais           >       │
+│  🛡 Privacidade e Segurança  >       │
+│  🔔 Notificações             >       │
+│  ⚙ Preferências              >       │
 │  ❓ Ajuda e Suporte           >      │
 ├──────────────────────────────────────┤
 │  [Sair da Conta]                     │
-│  Versão 3.3.0 • Meus Remédios       │
+│  Versão 3.3.0 • Meus Remédios        │
 └──────────────────────────────────────┘
 ```
 
@@ -2154,8 +2154,8 @@ Tooltip educativo one-time que aparece quando uma feature é introduzida pela pr
 ```
 ┌──────────────────────────────────────┐
 │  ✨ Novo!                            │
-│  Adicionamos um gráfico para ajudar │
-│  você a acompanhar suas doses       │
+│  Adicionamos um gráfico para ajudar  │
+│  você a acompanhar suas doses        │
 │  variáveis.                          │
 │                     [Entendi]        │
 └──────────────────────────────────────┘
@@ -2346,7 +2346,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 ### Arquivos a REESCREVER — pós-rollout (só após validação completa e promoção global)
 
 | Arquivo | Wave origem | Ação pós-validação |
-|---------|------------|---------------------|
+|---------|-------------|--------------------|
 | `src/shared/styles/tokens/colors.css` | 0 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
 | `src/shared/styles/tokens/shadows.css` | 0 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
 | `src/shared/styles/tokens/typography.css` | 1 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
@@ -2368,7 +2368,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 ### Views a CRIAR como variantes redesenhadas (NÃO editar originais durante rollout)
 
 | Arquivo Original | Variante Redesenhada | Wave | Mudanças |
-|-----------------|---------------------|------|----------|
+|------------------|----------------------|------|----------|
 | `src/views/Dashboard.jsx` | `src/views/redesign/DashboardRedesign.jsx` | 6 | Layout + grid + greeting |
 | `src/views/Treatment.jsx` | `src/views/redesign/TreatmentRedesign.jsx` | 7 | Category grouping + search + tabs |
 | `src/views/Stock.jsx` | `src/views/redesign/StockRedesign.jsx` | 8 | Grid cards + critical banner |
@@ -2382,7 +2382,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 ### Componentes internos a CRIAR como paralelos (usados apenas pelas views redesenhadas)
 
 | Componente Original | Componente Redesenhado | Wave | Mudanças |
-|---------------------|----------------------|------|----------|
+|---------------------|------------------------|------|----------|
 | `RingGauge.jsx` | `RingGaugeRedesign.jsx` | 6 | Recolor, 12pt stroke, Public Sans |
 | `StockBars.jsx` | `StockAlertInline.jsx` | 6 | Inline alert style |
 | `SparklineAdesao.jsx` | (incorporado no DashboardRedesign) | 6 | Recolor |
@@ -2483,8 +2483,8 @@ Wave 5 (Motion — reusable patterns)
 Wave 6 (Dashboard — highest impact)
     ↓
 Wave 7 ─┬─ Wave 8 (podem ser paralelos)
-         │
-Wave 9 ──┘
+        │
+Wave 9 ─┘
     ↓
 Wave 10 (Progressive Disclosure — polish)
     ↓
@@ -2534,7 +2534,7 @@ O sucesso desta iniciativa será medido em 3 dimensões:
 ### Experiência do Paciente (Qualitativo)
 
 | Persona | Critério de Sucesso | Como Validar |
-|---------|-------------------|--------------|
+|---------|---------------------|--------------|
 | **Dona Maria** (simples, 1-3 meds, baixa literacia tech) | Sente que o app está **mais simples e mais claro**. Consegue tomar suas doses com 1-2 toques. Não se sente confusa com informação excessiva. | Litmus check: "A prioridade da tela é visível nos primeiros 3 segundos?" |
 | **Carlos** (complexo, múltiplos protocolos, health-literate) | Sente que o app está **mais poderoso e melhor organizado**. Consegue acompanhar titulação, adesão por protocolo e estoque em uma única sessão. | Litmus check: "A versão complexa continua serena mesmo com mais informação?" |
 | **Ambos** | A marca parece mais **premium, clínica e humana**. A experiência deixa de parecer um conjunto de telas e passa a parecer um **produto desenhado com intenção**. | Litmus check: "O produto parece cuidado de saúde confiável, e não software administrativo?" |
