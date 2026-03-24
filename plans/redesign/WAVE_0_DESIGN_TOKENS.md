@@ -82,10 +82,19 @@ O redesign migra para "Santuario Terapeutico":
    ```bash
    grep -r "\-\-neon-\|--glow-\|--glass-" src/ --include="*.css" --include="*.jsx" -l
    ```
-4. **Adicionar** o conteudo abaixo DENTRO do bloco `[data-redesign="true"] { }` em `tokens.redesign.css`.
+4. **Adicionar** as variáveis CSS abaixo DIRETAMENTE DENTRO do bloco `[data-redesign="true"] { }` em `tokens.redesign.css`. **CRÍTICO:** NÃO encapsule as variáveis em `:root {}` aninhado — isso quebra o scoping e aplica os tokens para TODOS os usuários sem o flag. Coloque as variáveis diretamente dentro de `[data-redesign="true"] { }`, sem bloco `:root` intermediário.
 5. **NAO alterar** nenhum outro arquivo neste sprint.
 
 ### Conteudo a ADICIONAR dentro de `[data-redesign="true"] { }` em `tokens.redesign.css`
+
+> **Nota:** As variáveis abaixo vão DIRETAMENTE dentro do bloco `[data-redesign="true"] { }` que já existe em `tokens.redesign.css`. Exemplo da estrutura correta no arquivo final:
+> ```css
+> [data-redesign="true"] {
+>   /* Sprint 0.1 colors */
+>   --color-primary: #006a5e;
+>   /* ... */
+> }
+> ```
 
 ```css
 /* ============================================
@@ -99,7 +108,6 @@ O redesign migra para "Santuario Terapeutico":
 /* ============================================
    BRAND COLORS — Verde Saude (Primary)
    ============================================ */
-:root {
   --color-primary: #006a5e;
   --color-primary-container: #008577;
   --color-primary-fixed: #90f4e3;
@@ -112,12 +120,10 @@ O redesign migra para "Santuario Terapeutico":
   --color-primary-dark: #005047;
   --color-primary-bg: rgba(0, 106, 94, 0.05);
   --color-primary-hover: #005047;
-}
 
 /* ============================================
    BRAND COLORS — Azul Clinico (Secondary)
    ============================================ */
-:root {
   --color-secondary: #005db6;
   --color-secondary-container: #63a1ff;
   --color-secondary-fixed: #d6e3ff;
@@ -128,17 +134,14 @@ O redesign migra para "Santuario Terapeutico":
   --color-secondary-light: var(--color-secondary-container);
   --color-secondary-dark: #004490;
   --color-secondary-bg: rgba(0, 93, 182, 0.05);
-}
 
 /* ============================================
    TERTIARY — Warm Highlights (destaques, "Novo!", alertas amenos)
    ============================================ */
-:root {
   --color-tertiary: #7b5700;
   --color-tertiary-container: #9b6e00;
   --color-tertiary-fixed: #ffdea8;
   --color-on-tertiary-fixed: #271900;
-}
 
 /* ============================================
    SURFACE HIERARCHY (Material 3 — Tonal Architecture)
@@ -147,32 +150,27 @@ O redesign migra para "Santuario Terapeutico":
    Level 1 (secoes sutis) = surface-container-low
    Level 2 (cards ativos) = surface-container-lowest (#ffffff)
    ============================================ */
-:root {
   --color-surface: #f8fafb;
   --color-surface-container: #eceeef;
   --color-surface-container-low: #f2f4f5;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-high: #e6e8e9;
   --color-surface-container-highest: #e1e3e4;
-}
 
 /* ============================================
    TEXT & OUTLINE
    REGRA: Nunca usar #000000 puro. Usar --color-on-surface (#191c1d).
    ============================================ */
-:root {
   --color-on-surface: #191c1d;
   --color-on-surface-variant: #3e4946;
   --color-outline: #6d7a76;
   --color-outline-variant: #bdc9c5;
   /* Ghost border — usar APENAS quando necessario para acessibilidade */
   --color-outline-ghost: rgba(25, 28, 29, 0.15);
-}
 
 /* ============================================
    SEMANTIC COLORS — Status
    ============================================ */
-:root {
   --color-success: #22c55e;
   --color-success-light: #4ade80;
   --color-success-bg: #ecfdf5;
@@ -190,13 +188,11 @@ O redesign migra para "Santuario Terapeutico":
   --color-info: #3b82f6;
   --color-info-light: #60a5fa;
   --color-info-bg: #eff6ff;
-}
 
 /* ============================================
    BACKGROUND COLORS (backward compat)
    Componentes antigos referenciam estes nomes.
    ============================================ */
-:root {
   --bg-primary: var(--color-surface);
   --bg-secondary: var(--color-surface-container-low);
   --bg-tertiary: var(--color-surface-container);
@@ -208,12 +204,10 @@ O redesign migra para "Santuario Terapeutico":
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
   --color-bg-card: var(--bg-card);
-}
 
 /* ============================================
    TEXT COLORS (backward compat)
    ============================================ */
-:root {
   --text-primary: var(--color-on-surface);
   --text-secondary: var(--color-on-surface-variant);
   --text-tertiary: var(--color-outline);
@@ -225,12 +219,10 @@ O redesign migra para "Santuario Terapeutico":
   --color-text-tertiary: var(--text-tertiary);
   --color-text-inverse: var(--text-inverse);
   --color-text-link: var(--text-link);
-}
 
 /* ============================================
    BORDER COLORS (backward compat)
    ============================================ */
-:root {
   --border-light: var(--color-surface-container-low);
   --border-default: var(--color-outline-variant);
   --border-dark: var(--color-outline);
@@ -240,72 +232,59 @@ O redesign migra para "Santuario Terapeutico":
   --color-border-light: var(--border-light);
   --color-border-default: var(--border-default);
   --color-border-dark: var(--border-dark);
-}
 
 /* ============================================
    HEALTH SCORE COLORS
    ============================================ */
-:root {
   --score-critical: var(--color-error);
   --score-low: #f97316;
   --score-medium: #eab308;
   --score-good: var(--color-success);
   --score-excellent: var(--color-primary);
-}
 
 /* ============================================
    STATE COLORS (interaction feedback)
    Baseados no verde primary, nao mais no rosa.
    ============================================ */
-:root {
   --state-hover: rgba(0, 106, 94, 0.08);
   --state-active: rgba(0, 106, 94, 0.15);
   --state-focus: rgba(0, 106, 94, 0.20);
   --state-disabled: rgba(25, 28, 29, 0.10);
   --state-loading: rgba(0, 106, 94, 0.5);
-}
 
 /* ============================================
    TOGGLE & THEME COLORS
    ============================================ */
-:root {
   --color-toggle-track: var(--color-surface-container-high);
   --color-toggle-track-dark: #374151;
   --color-sun: #f59e0b;
   --color-moon: #93c5fd;
-}
 
 /* ============================================
    GLASSMORPHISM — SOMENTE para elementos flutuantes
    (nav bar, FAB, modals, overlays)
    NAO usar em cards normais.
    ============================================ */
-:root {
   --glass-bg: rgba(248, 250, 251, 0.80);
   --glass-blur: blur(12px);
   --glass-border: var(--color-outline-ghost);
-}
 
 /* ============================================
    GRADIENT — SOMENTE para acoes primarias (CTAs)
    NAO usar para decoracao.
    ============================================ */
-:root {
   --gradient-primary: linear-gradient(135deg, #006a5e, #008577);
   --gradient-primary-shadow: 0 8px 24px rgba(0, 106, 94, 0.20);
-}
 
 /* ============================================
    OPACITY VALUES
    ============================================ */
-:root {
   --opacity-disabled: 0.5;
   --opacity-hover: 0.8;
   --opacity-focus: 1;
   --opacity-overlay: 0.9;
   --opacity-backdrop: 0.75;
   --opacity-muted-text: 0.40;
-}
 
 /* ============================================
    DARK THEME — PLACEHOLDER (Phase 6)
@@ -327,9 +306,9 @@ O redesign migra para "Santuario Terapeutico":
 }
 ```
 
-### Variaveis que DEVEM ser REMOVIDAS (nao devem existir no novo arquivo)
+### Variaveis que NAO devem estar em `tokens.redesign.css`
 
-As seguintes variaveis existem no arquivo atual e NAO devem estar no novo arquivo:
+As variáveis abaixo são do design atual (neon/cyberpunk) e **não devem aparecer em `tokens.redesign.css`**. Elas continuam existindo em `colors.css` (arquivo intocado) para os usuários sem o flag. O arquivo `tokens.redesign.css` apenas define os NOVOS valores — ele não remove os antigos.
 - `--color-primary: #ec4899` (rosa) — substituida por `#006a5e`
 - `--color-secondary: #06b6d4` (cyan) — substituida por `#005db6`
 - `--neon-*` (TODAS as variaveis neon: cyan, pink, magenta, green, etc.)
@@ -402,7 +381,6 @@ feat(tokens): adicionar paleta Santuario Terapeutico em tokens.redesign.css (sco
    REMOVIDOS: shadow-layer-1 ate shadow-layer-5, todos os glows.
    ============================================ */
 
-:root {
   /* Shadow unica padrao — simula luz ambient natural */
   --shadow-ambient: 0 24px 24px rgba(25, 28, 29, 0.04);
 
@@ -430,7 +408,6 @@ feat(tokens): adicionar paleta Santuario Terapeutico em tokens.redesign.css (sco
   --shadow-md: var(--shadow-ambient);
   --shadow-lg: var(--shadow-floating);
   --shadow-xl: var(--shadow-floating);
-}
 ```
 
 ### Validacao pos-sprint
@@ -484,30 +461,33 @@ feat(tokens): adicionar ambient shadow system em tokens.redesign.css (scoped)
 Os tokens abaixo sobrescrevem os valores do `borders.css` atual apenas quando o flag esta ativo.
 **Minimo 0.75rem** para todos os componentes UI (legibilidade para idosos + Santuario visual).
 
+> **Nota:** Variáveis vão diretamente dentro de `[data-redesign="true"] { }`, sem `:root {}` intermediário.
+
 ```css
   /* Border Radius — Minimo 0.75rem para UI components */
   --radius-none: 0;
---radius-sm: 0.75rem;        /* ERA ~0.25rem, agora mesmo valor que md (backward compat) */
---radius-md: 0.75rem;        /* 12px — MINIMO para UI */
---radius-lg: 1rem;           /* 16px — Standard cards */
---radius-xl: 1.25rem;        /* 20px — Buttons, inputs */
---radius-2xl: 2rem;          /* 32px — Sanctuary cards */
---radius-3xl: 2.5rem;        /* 40px — Hero cards */
---radius-full: 9999px;       /* Circular */
-```
+  --radius-sm: 0.75rem;         /* ERA ~0.25rem, agora mesmo valor que md (backward compat) */
+  --radius-md: 0.75rem;         /* 12px — MINIMO para UI */
+  --radius-lg: 1rem;            /* 16px — Standard cards */
+  --radius-xl: 1.25rem;         /* 20px — Buttons, inputs */
+  --radius-2xl: 2rem;           /* 32px — Sanctuary cards */
+  --radius-3xl: 2.5rem;         /* 40px — Hero cards */
+  --radius-full: 9999px;        /* Circular */
 
   /* Component-specific radius */
-  --radius-card: var(--radius-2xl);         /* 2rem / 32px */
---radius-card-sm: var(--radius-lg);       /* 1rem / 16px */
---radius-button: var(--radius-xl);        /* 1.25rem / 20px */
---radius-input: var(--radius-xl);         /* 1.25rem / 20px */
---radius-badge: var(--radius-full);       /* circular */
---radius-progress: var(--radius-full);    /* circular */
---radius-icon-container: var(--radius-full); /* circular */
-  --radius-nav-item: var(--radius-lg);      /* 1rem / 16px */
+  --radius-card: var(--radius-2xl);            /* 2rem / 32px */
+  --radius-card-sm: var(--radius-lg);          /* 1rem / 16px */
+  --radius-button: var(--radius-xl);           /* 1.25rem / 20px */
+  --radius-input: var(--radius-xl);            /* 1.25rem / 20px */
+  --radius-badge: var(--radius-full);          /* circular */
+  --radius-progress: var(--radius-full);       /* circular */
+  --radius-icon-container: var(--radius-full); /* circular */
+  --radius-nav-item: var(--radius-lg);         /* 1rem / 16px */
 
   /* Focus ring — atualizado para verde primary */
   --focus-ring-color: var(--color-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 ```
 
 ### Validacao pos-sprint
@@ -574,10 +554,9 @@ feat(tokens): adicionar border-radius Santuario em tokens.redesign.css (scoped)
 **B) Background global scoped:**
 
 ```css
-[data-redesign="true"] body {
-  background-color: var(--color-surface);  /* #f8fafb off-white, nao #ffffff */
-  color: var(--color-on-surface);          /* #191c1d, nunca #000000 */
-}
+/* NOTA: body é ANCESTRAL de .app-container, portanto [data-redesign="true"] body NUNCA dá match.
+   O background e cor base já são aplicados via [data-redesign="true"] { } nos tokens globais.
+   Não é necessário regra adicional aqui. */
 ```
 
 **C) Novas classes utilitarias scoped:**
@@ -745,7 +724,7 @@ Apos os 5 sprints, validar:
 
 - [ ] `npm run build` passa sem erros de CSS
 - [ ] `tokens.redesign.css` existe e esta importado em `src/shared/styles/index.css`
-- [ ] Todos os tokens estao dentro do bloco `[data-redesign="true"] { }` (nenhum em `:root` solto)
+- [ ] Todos os tokens estao DIRETAMENTE dentro do bloco `[data-redesign="true"] { }` — NÃO em `:root {}` aninhado (verificar que nenhum `:root {` aparece dentro do arquivo `tokens.redesign.css` após as waves)
 - [ ] Classes utilitarias (`.card-sanctuary`, `.surface-container-*`) usam seletor `[data-redesign="true"] .classe`
 - [ ] Arquivos de tokens originais (`colors.css`, `shadows.css`, `borders.css`) **NAO foram modificados**
 - [ ] Arquivos de tema (`light.css`, `dark.css`) **NAO foram modificados**

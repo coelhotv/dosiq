@@ -595,21 +595,36 @@ feat(layout): criar layout.redesign.css com grid system responsivo
 npm run build
 # Resultado esperado: sucesso
 
-# 2. Zero referencias neon em styles
-grep -rc "neon\|#ec4899\|#06b6d4" src/shared/styles/ --include="*.css" | grep -v ":0$"
-# Resultado esperado: nenhuma linha (todas sao :0)
+# 2. Zero referencias neon nos arquivos de REDESIGN (tokens originais podem ter)
+grep -c "neon\|#ec4899\|#06b6d4" src/shared/styles/tokens.redesign.css
+# Resultado esperado: 0 (nenhuma referencia neon no arquivo de redesign)
 
-# 3. Variaveis criticas existem
-grep "color-primary" src/shared/styles/tokens/colors.css | head -1
+grep -c "neon\|#ec4899\|#06b6d4" src/shared/styles/layout.redesign.css
+# Resultado esperado: 0
+
+# Os arquivos originais (colors.css, index.css) ainda TEM referencias neon — isso e esperado e correto
+
+# 3. Variaveis criticas existem nos arquivos CORRETOS (tokens.redesign.css, NAO nos originais)
+grep "color-primary" src/shared/styles/tokens.redesign.css | head -1
 # Resultado esperado: --color-primary: #006a5e
 
-grep "font-display" src/shared/styles/tokens/typography.css | head -1
+# Verificar que arquivos originais NAO foram modificados
+grep "color-primary" src/shared/styles/tokens/colors.css | head -1
+# Resultado esperado: --color-primary: #ec4899  (rosa original — intacto)
+
+grep "font-display" src/shared/styles/tokens.redesign.css | head -1
 # Resultado esperado: --font-display: "Public Sans"...
 
-grep "shadow-ambient" src/shared/styles/tokens/shadows.css | head -1
+grep "font-display" src/shared/styles/tokens/typography.css
+# Resultado esperado: 0 matches (typography.css nao foi modificado)
+
+grep "shadow-ambient" src/shared/styles/tokens.redesign.css | head -1
 # Resultado esperado: --shadow-ambient: 0 24px 24px...
 
-grep "radius-card" src/shared/styles/tokens/borders.css | head -1
+grep "shadow-ambient" src/shared/styles/tokens/shadows.css
+# Resultado esperado: 0 matches (shadows.css nao foi modificado)
+
+grep "radius-card" src/shared/styles/tokens.redesign.css | head -1
 # Resultado esperado: --radius-card: var(--radius-2xl)
 
 # 4. Layout existe e esta importado

@@ -470,6 +470,7 @@ feat(Card): adicionar estilos Sanctuary em components.redesign.css (scoped)
 ```css
 /* ============================================
    FORM ELEMENTS — Santuario Terapeutico
+   SCOPE: [data-redesign="true"] — sem impacto em usuarios sem o flag
 
    Principios:
    - Background tonal (surface-container-low) ao inves de branco
@@ -481,18 +482,18 @@ feat(Card): adicionar estilos Sanctuary em components.redesign.css (scoped)
    - Placeholder: outline color, 40% opacity
    ============================================ */
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="tel"],
-input[type="url"],
-input[type="search"],
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"],
-textarea,
-select {
+[data-redesign="true"] input[type="text"],
+[data-redesign="true"] input[type="email"],
+[data-redesign="true"] input[type="password"],
+[data-redesign="true"] input[type="number"],
+[data-redesign="true"] input[type="tel"],
+[data-redesign="true"] input[type="url"],
+[data-redesign="true"] input[type="search"],
+[data-redesign="true"] input[type="date"],
+[data-redesign="true"] input[type="time"],
+[data-redesign="true"] input[type="datetime-local"],
+[data-redesign="true"] textarea,
+[data-redesign="true"] select {
   font-family: var(--font-body);
   font-size: var(--text-body-lg);
   font-weight: var(--font-weight-regular);
@@ -508,39 +509,39 @@ select {
   box-sizing: border-box;
 }
 
-input::placeholder,
-textarea::placeholder {
+[data-redesign="true"] input::placeholder,
+[data-redesign="true"] textarea::placeholder {
   color: var(--color-outline);
   opacity: var(--opacity-muted-text);
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+[data-redesign="true"] input:focus,
+[data-redesign="true"] textarea:focus,
+[data-redesign="true"] select:focus {
   border-color: var(--color-primary);
   background-color: var(--color-surface-container-lowest);
 }
 
-input:disabled,
-textarea:disabled,
-select:disabled {
+[data-redesign="true"] input:disabled,
+[data-redesign="true"] textarea:disabled,
+[data-redesign="true"] select:disabled {
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
   background-color: var(--color-surface-container-high);
 }
 
 /* Search input com icone */
-.search-input-wrapper {
+[data-redesign="true"] .search-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.search-input-wrapper input {
+[data-redesign="true"] .search-input-wrapper input {
   padding-left: 3rem;
 }
 
-.search-input-wrapper .search-icon {
+[data-redesign="true"] .search-input-wrapper .search-icon {
   position: absolute;
   left: 1rem;
   color: var(--color-outline);
@@ -548,7 +549,7 @@ select:disabled {
 }
 
 /* Form label */
-.form-label {
+[data-redesign="true"] .form-label {
   display: block;
   font-family: var(--font-body);
   font-size: var(--text-title-sm);
@@ -558,19 +559,19 @@ select:disabled {
 }
 
 /* Form group spacing */
-.form-group {
+[data-redesign="true"] .form-group {
   margin-bottom: 1.5rem;
 }
 
 /* Error state */
-.input-error,
-input.input-error,
-textarea.input-error,
-select.input-error {
+[data-redesign="true"] .input-error,
+[data-redesign="true"] input.input-error,
+[data-redesign="true"] textarea.input-error,
+[data-redesign="true"] select.input-error {
   border-color: var(--color-error);
 }
 
-.input-error-message {
+[data-redesign="true"] .input-error-message {
   font-family: var(--font-body);
   font-size: var(--text-title-sm);
   color: var(--color-error);
@@ -581,9 +582,13 @@ select.input-error {
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que os estilos de input existem no arquivo correto
-grep "input\[type" src/shared/styles/components.redesign.css | head -5
-# Resultado esperado: pelo menos 5 matches
+# 1. Verificar que os estilos de input existem com seletor scoped correto
+grep "\[data-redesign.*input\[type" src/shared/styles/components.redesign.css | head -5
+# Resultado esperado: pelo menos 5 matches (todos com [data-redesign="true"] prefix)
+
+# Verificar que NAO ha seletor input sem scoping
+grep -E "^input\[|^textarea|^select\b" src/shared/styles/components.redesign.css
+# Resultado esperado: 0 matches (todos os seletores devem comecar com [data-redesign])
 
 # 2. Verificar min-height de 56px
 grep "min-height: 56px" src/shared/styles/components.redesign.css

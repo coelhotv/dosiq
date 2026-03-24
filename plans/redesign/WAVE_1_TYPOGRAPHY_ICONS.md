@@ -67,11 +67,13 @@
    ```bash
    grep -rn "font-weight:\s*[123]00\|font-weight-thin\|font-weight-light\|font-weight-extralight" src/ --include="*.css" --include="*.jsx" -l
    ```
-4. **Adicionar** o conteudo abaixo ao bloco `[data-redesign="true"] { }` em `tokens.redesign.css`, apos os tokens de border (Sprint 0.3).
+4. **Adicionar** as variáveis tipográficas abaixo DIRETAMENTE DENTRO do bloco `[data-redesign="true"] { }` em `tokens.redesign.css`, após os tokens de border (Sprint 0.3). **CRÍTICO:** NÃO use `:root {}` aninhado — as variáveis devem ir diretamente no escopo `[data-redesign="true"]` para o scoping funcionar.
 5. **Adicionar** tambem o `@import` das fontes Google no INICIO de `tokens.redesign.css` (ANTES do bloco `[data-redesign="true"]`).
 6. **NAO alterar** nenhum outro arquivo neste sprint.
 
 ### Conteudo a ADICIONAR em `tokens.redesign.css`
+
+> **⚠️ Verificar antes de adicionar:** O `@import` das fontes Google **pode já existir** em `tokens.redesign.css` se a infraestrutura de rollout foi configurada com ele. Execute `grep "fonts.googleapis" src/shared/styles/tokens.redesign.css` antes de adicionar — se já existir, pule a Parte A.
 
 **Parte A — `@import` de fontes (ANTES do bloco `[data-redesign="true"]`):**
 
@@ -81,6 +83,8 @@
 ```
 
 **Parte B — Tokens tipograficos (DENTRO do bloco `[data-redesign="true"] { }`):**
+
+> **Nota:** As variáveis abaixo vão DIRETAMENTE dentro do bloco `[data-redesign="true"] { }` que já existe em `tokens.redesign.css` — sem `:root {}` intermediário.
 
 ```css
 /* ============================================
@@ -99,7 +103,6 @@
 /* ============================================
    FONT FAMILIES
    ============================================ */
-:root {
   /* Display & Headlines — "Clinical Authority" */
   --font-display: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
@@ -114,7 +117,6 @@
   --font-primary: var(--font-body);
   --font-family-mono: var(--font-mono);
   --heading-font-family: var(--font-display);
-}
 
 /* ============================================
    TYPE SCALE — Editorial Health Journal
@@ -122,7 +124,6 @@
    Escala semantica nomeada por funcao, nao por tamanho.
    Mantemos a escala numerica (text-xs a text-5xl) para backward compat.
    ============================================ */
-:root {
   /* Display — grandes numeros, milestones, hero text */
   --text-display-md: clamp(2rem, 4vw, 3rem);
 
@@ -160,14 +161,12 @@
   --font-size-xl: var(--text-xl);
   --font-size-2xl: var(--text-2xl);
   --font-size-3xl: var(--text-3xl);
-}
 
 /* ============================================
    FONT WEIGHTS
    REGRA CRITICA: Minimo 400 para legibilidade de idosos.
    Pesos 100, 200, 300 sao PROIBIDOS.
    ============================================ */
-:root {
   --font-weight-regular: 400;   /* Body, descricoes, instrucoes */
   --font-weight-medium: 500;    /* Labels, section headers, UI controls */
   --font-weight-semibold: 600;  /* Nomes de medicamentos, caminhos primarios */
@@ -180,36 +179,30 @@
   --font-weight-light: var(--font-weight-regular);       /* 300 → 400 (upgrade) */
   --font-weight-extrabold: var(--font-weight-bold);      /* 800 → 700 */
   --font-weight-black: var(--font-weight-bold);          /* 900 → 700 */
-}
 
 /* ============================================
    LINE HEIGHTS
    ============================================ */
-:root {
   --line-height-none: 1;
   --line-height-tight: 1.1;     /* Headlines, displays */
   --line-height-snug: 1.25;     /* Titles, cards */
   --line-height-normal: 1.5;    /* Body text padrao */
   --line-height-relaxed: 1.6;   /* Texto longo, descricoes */
   --line-height-loose: 2;       /* Espacamento generoso */
-}
 
 /* ============================================
    LETTER SPACING
    ============================================ */
-:root {
   --tracking-tighter: -0.05em;
   --tracking-tight: -0.025em;   /* Headlines */
   --tracking-normal: 0;         /* Body */
   --tracking-wide: 0.025em;     /* Buttons */
   --tracking-wider: 0.05em;     /* Labels uppercase */
   --tracking-widest: 0.1em;     /* Nav labels, badges */
-}
 
 /* ============================================
    TEXT DEFAULTS (backward compat)
    ============================================ */
-:root {
   --text-color-primary: var(--text-primary);
   --text-color-secondary: var(--text-secondary);
   --text-color-tertiary: var(--text-tertiary);
@@ -218,13 +211,11 @@
 
   --text-decoration-none: none;
   --text-decoration-underline: underline;
-}
 
 /* ============================================
    HEADING DEFAULTS
    Headings usam Public Sans (--font-display).
    ============================================ */
-:root {
   --heading-font-weight: var(--font-weight-bold);
   --heading-line-height: var(--line-height-tight);
   --heading-letter-spacing: var(--tracking-tight);
@@ -258,15 +249,13 @@
   --text-h6: var(--text-base);
   --heading-6-size: var(--text-base);
   --heading-6-weight: var(--font-weight-medium);
-}
 
 /* ============================================
    MAX LINE WIDTH — readability
    Limitar largura maxima do texto para 65 caracteres
    para manter legibilidade em telas largas.
    ============================================ */
-:root {
-    --max-line-width: 65ch;
+  --max-line-width: 65ch;
 ```
 
 > **Nota:** O `@import` de fontes deve ser adicionado no INICIO de `tokens.redesign.css`, antes do bloco `[data-redesign="true"] { }`. Desta forma o browser so baixa as fontes quando o CSS e carregado — que acontece para todos os usuarios — mas as fontes so sao APLICADAS quando o data-attribute esta presente (pois os tokens `--font-display` e `--font-body` so sobrescrevem dentro do bloco scoped).
@@ -433,7 +422,14 @@ chore(deps): instalar lucide-react para icon system do redesign
    REGRA: Nunca font-weight abaixo de 400.
    ============================================ */
 
-[data-redesign="true"] body {
+/* ============================================
+   TIPOGRAFIA BASE — aplicada ao .app-container
+   NOTA: [data-redesign="true"] está em .app-container, NÃO em um ancestral de body.
+   Portanto "[data-redesign="true"] body" NUNCA dá match.
+   As propriedades de tipografia base são aplicadas ao próprio .app-container
+   e herdam para todos os filhos dentro da app.
+   ============================================ */
+[data-redesign="true"] {
   font-family: var(--font-body);
   font-weight: var(--font-weight-regular);
   font-size: var(--text-body-lg);
@@ -474,8 +470,10 @@ chore(deps): instalar lucide-react para icon system do redesign
 
 ```bash
 # 1. Verificar que as regras scoped estao em tokens.redesign.css
-grep "\[data-redesign.*body\|data-redesign.*h1" src/shared/styles/tokens.redesign.css
-# Resultado esperado: pelo menos 2 matches
+grep "data-redesign.*h1\|data-redesign.*h2" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 2 matches (headings scoped)
+grep "font-family.*font-body\|font-smoothing" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 1 match (tipografia base no .app-container)
 
 # 2. Verificar que index.css NAO foi modificado
 git diff src/shared/styles/index.css
@@ -484,15 +482,15 @@ git diff src/shared/styles/index.css
 # 3. App compila sem erros
 npm run dev
 
-# 4. Smoke test: com ?redesign=1, inspecionar body → "Lexend" no font-family
-# Sem o flag → fonte atual (system-ui ou o que existia antes)
+# 4. Smoke test: com ?redesign=1, inspecionar .app-container → "Lexend" no font-family computado
+# Elementos filhos herdam a fonte. Sem o flag → fonte atual (system-ui ou o que existia antes)
 ```
 
 ### Commit
 ```
 feat(typography): adicionar regras tipograficas globais scoped em tokens.redesign.css
 
-- [data-redesign="true"] body: Lexend regular, antialiased
+- [data-redesign="true"] (app-container): Lexend regular, antialiased — herda para filhos
 - [data-redesign="true"] h1-h6: Public Sans bold/semibold
 - [data-redesign="true"] inputs/buttons: Lexend
 - index.css atual intacto (sem alteracao global de fonte)
