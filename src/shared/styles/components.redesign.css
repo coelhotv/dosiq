@@ -77,7 +77,6 @@
   color: var(--color-on-primary);
   font-weight: var(--font-weight-bold);
   box-shadow: var(--shadow-primary);
-  min-height: 56px;
 }
 
 [data-redesign="true"] .btn-primary.btn-lg {
@@ -94,24 +93,8 @@
   transform: scale(0.98);
 }
 
-/* Variant: Secondary — Outlined, acao secundaria */
-[data-redesign="true"] .btn-secondary {
-  background: transparent;
-  color: var(--color-primary);
-  border: 1.5px solid var(--color-outline-variant);
-  font-weight: var(--font-weight-semibold);
-}
-
-[data-redesign="true"] .btn-secondary:hover:not(:disabled) {
-  background: var(--state-hover);
-  border-color: var(--color-primary);
-}
-
-[data-redesign="true"] .btn-secondary:active:not(:disabled) {
-  background: var(--state-active);
-  transform: scale(0.98);
-}
-
+/* Variant: Secondary & Outline — Shared outlined button styles */
+[data-redesign="true"] .btn-secondary,
 [data-redesign="true"] .btn-outline {
   background: transparent;
   color: var(--color-primary);
@@ -119,11 +102,13 @@
   font-weight: var(--font-weight-semibold);
 }
 
+[data-redesign="true"] .btn-secondary:hover:not(:disabled),
 [data-redesign="true"] .btn-outline:hover:not(:disabled) {
   background: var(--state-hover);
   border-color: var(--color-primary);
 }
 
+[data-redesign="true"] .btn-secondary:active:not(:disabled),
 [data-redesign="true"] .btn-outline:active:not(:disabled) {
   background: var(--state-active);
   transform: scale(0.98);
@@ -147,13 +132,13 @@
 
 [data-redesign="true"] .btn-danger {
   background: var(--color-error);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-weight: var(--font-weight-bold);
   box-shadow: var(--shadow-error);
 }
 
 [data-redesign="true"] .btn-danger:hover:not(:disabled) {
-  background: #a51515;
+  background: color-mix(in srgb, var(--color-error) 85%, #000000);
   transform: scale(1.02);
 }
 
@@ -337,7 +322,7 @@
 
 /* Critical — erro, urgente */
 [data-redesign="true"] .badge-critical {
-  background-color: rgba(186, 26, 26, 0.10);
+  background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
   color: var(--color-error);
 }
 
@@ -347,7 +332,7 @@
 
 /* Warning — aviso, atencao */
 [data-redesign="true"] .badge-warning {
-  background-color: rgba(123, 87, 0, 0.10);
+  background-color: color-mix(in srgb, var(--color-tertiary) 10%, transparent);
   color: var(--color-tertiary);
 }
 
@@ -357,7 +342,7 @@
 
 /* Success — ok, seguro, continuo */
 [data-redesign="true"] .badge-success {
-  background-color: rgba(0, 106, 94, 0.10);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-primary);
 }
 
@@ -367,7 +352,7 @@
 
 /* Info — informativo */
 [data-redesign="true"] .badge-info {
-  background-color: rgba(0, 93, 182, 0.10);
+  background-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);
   color: var(--color-secondary);
 }
 
@@ -455,10 +440,9 @@
   background: var(--color-surface-container-low);
 }
 
-/* Leading icon container (circulo colorido) */
-[data-redesign="true"] .list-item-icon {
-  width: 3rem;
-  height: 3rem;
+/* Leading icon container (circulo colorido) — Shared base styles */
+[data-redesign="true"] .list-item-icon,
+[data-redesign="true"] .list-item-icon-sm {
   border-radius: var(--radius-full);
   background: var(--color-secondary-fixed);
   display: flex;
@@ -468,16 +452,15 @@
   flex-shrink: 0;
 }
 
+/* Size variants */
+[data-redesign="true"] .list-item-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
 [data-redesign="true"] .list-item-icon-sm {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--radius-full);
-  background: var(--color-secondary-fixed);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  flex-shrink: 0;
 }
 
 /* Content area (ocupa espaco restante) */
