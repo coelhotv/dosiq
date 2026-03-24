@@ -287,6 +287,87 @@
   --tracking-widest: 0.1em;
 
   /* ============================================
+     BACKWARD COMPAT SIZE SCALE
+     Manter para componentes existentes
+     ============================================ */
+  --text-xs: 0.625rem;
+  --text-2xs: 0.625rem;
+  --text-sm: 0.75rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.75rem;
+  --text-4xl: 2rem;
+  --text-5xl: 3rem;
+
+  /* Aliases size compat */
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+
+  /* ============================================
+     TEXT DEFAULTS (backward compat)
+     ============================================ */
+  --text-color-primary: var(--text-primary);
+  --text-color-secondary: var(--text-secondary);
+  --text-color-tertiary: var(--text-tertiary);
+  --text-color-inverse: var(--text-inverse);
+  --text-color-link: var(--text-link);
+
+  --text-decoration-none: none;
+  --text-decoration-underline: underline;
+
+  /* ============================================
+     HEADING DEFAULTS
+     Headings usam Public Sans (--font-display).
+     ============================================ */
+  --heading-font-weight: var(--font-weight-bold);
+  --heading-line-height: var(--line-height-tight);
+  --heading-letter-spacing: var(--tracking-tight);
+
+  /* H1 — Page titles, hero */
+  --text-h1: var(--text-4xl);
+  --heading-1-size: var(--text-4xl);
+  --heading-1-weight: var(--font-weight-bold);
+
+  /* H2 — Section titles */
+  --text-h2: var(--text-3xl);
+  --heading-2-size: var(--text-3xl);
+  --heading-2-weight: var(--font-weight-bold);
+
+  /* H3 — Sub-sections */
+  --text-h3: var(--text-2xl);
+  --heading-3-size: var(--text-2xl);
+  --heading-3-weight: var(--font-weight-semibold);
+
+  /* H4 */
+  --text-h4: var(--text-xl);
+  --heading-4-size: var(--text-xl);
+  --heading-4-weight: var(--font-weight-semibold);
+
+  /* H5 */
+  --text-h5: var(--text-lg);
+  --heading-5-size: var(--text-lg);
+  --heading-5-weight: var(--font-weight-medium);
+
+  /* H6 */
+  --text-h6: var(--text-base);
+  --heading-6-size: var(--text-base);
+  --heading-6-weight: var(--font-weight-medium);
+
+  /* ============================================
+     MAX LINE WIDTH — readability
+     Limitar largura maxima do texto para 65 caracteres
+     para manter legibilidade em telas largas.
+     ============================================ */
+  --max-line-width: 65ch;
+
+  /* ============================================
      OPACITY VALUES
      ============================================ */
   --opacity-disabled: 0.50;
@@ -298,44 +379,51 @@
 }
 
 /* ============================================
-   BODY BACKGROUND — Scoped
-   Off-white #f8fafb ao invés de branco puro.
-   Aplicado ao .app-container quando data-redesign="true"
-   (não pode ser [data-redesign="true"] body pois data-redesign
-   está em .app-container, não em um ancestral de <body>).
+   TIPOGRAFIA BASE — aplicada ao .app-container
+   NOTA: [data-redesign="true"] está em .app-container, NÃO em um ancestral de body.
+   Portanto "[data-redesign="true"] body" NUNCA dá match.
+   As propriedades de tipografia base são aplicadas ao próprio .app-container
+   e herdam para todos os filhos dentro da app.
    ============================================ */
 [data-redesign="true"] {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-body-lg);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-surface);
   color: var(--color-on-surface);
 }
 
 /* ============================================
-   W1: TIPOGRAFIA GLOBAL — Scoped
+   W1: HEADINGS — Tipografia Global Scoped
    ============================================ */
 [data-redesign="true"] h1,
 [data-redesign="true"] h2,
-[data-redesign="true"] h3 {
-  font-family: var(--font-display);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-snug);
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-on-surface);
-}
-
+[data-redesign="true"] h3,
 [data-redesign="true"] h4,
 [data-redesign="true"] h5,
 [data-redesign="true"] h6 {
-  font-family: var(--font-body);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-snug);
-  color: var(--color-on-surface);
+  font-family: var(--font-display);
+  font-weight: var(--heading-font-weight);
+  line-height: var(--heading-line-height);
+  letter-spacing: var(--heading-letter-spacing);
 }
 
-[data-redesign="true"] p,
-[data-redesign="true"] span,
-[data-redesign="true"] label {
+[data-redesign="true"] h1 { font-size: var(--heading-1-size); }
+[data-redesign="true"] h2 { font-size: var(--heading-2-size); }
+[data-redesign="true"] h3 { font-size: var(--heading-3-size); font-weight: var(--heading-3-weight); }
+[data-redesign="true"] h4 { font-size: var(--heading-4-size); font-weight: var(--heading-4-weight); }
+[data-redesign="true"] h5 { font-size: var(--heading-5-size); font-weight: var(--heading-5-weight); }
+[data-redesign="true"] h6 { font-size: var(--heading-6-size); font-weight: var(--heading-6-weight); }
+
+/* Inputs e buttons tambem usam Lexend quando o redesign esta ativo */
+[data-redesign="true"] input,
+[data-redesign="true"] textarea,
+[data-redesign="true"] select,
+[data-redesign="true"] button {
   font-family: var(--font-body);
-  color: var(--color-on-surface-variant);
 }
 
 /* ============================================
