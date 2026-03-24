@@ -373,3 +373,26 @@ Agents should read this file + rules + anti-patterns before coding.
   3. Treatment wizard: field appears after autocomplete selection ✅
   4. Onboarding: field appears via FirstMedicineStep ✅
 - **Notes:** Service layer already saves therapeutic_class, no backend changes needed
+
+## Wave 0 — Design Tokens ✅ DELIVERED (2026-03-24)
+**Santuário Terapêutico redesign infrastructure completion**
+- **Commit:** `e5a9036` | **PR:** #417 (mergeado)
+- **Scope:** `src/shared/styles/tokens.redesign.css` — 13 CSS variables added across 3 sprints
+- **Infrastructure:** Scoped `[data-redesign="true"]` feature flag (localStorage + URL params `?redesign=1`)
+  - App renders 100% identically to neon/cyberpunk design when flag OFF
+  - Zero impact on current users; gradual rollout via `mr_redesign_preview` localStorage key
+- **Added Variables (Sprints 0.1-0.4):**
+  - **Sprint 0.1 (Toggle & Theme):** `--color-toggle-track`, `--color-toggle-track-dark`, `--color-moon` (3/4, 75%)
+  - **Sprint 0.2 (Focus Ring):** `--focus-ring-width: 2px`, `--focus-ring-offset: 2px` (2/2, 100%)
+  - **Sprint 0.3 (Opacity):** 6 opacity vars with standardized 2-decimal format (6/8, 75%)
+    - `--opacity-disabled: 0.50`, `--opacity-hover: 0.80`, `--opacity-focus: 1.00`, `--opacity-overlay: 0.90`, `--opacity-backdrop: 0.75`, `--opacity-muted-text: 0.40`
+- **Code Quality:** 539/539 testes ✅ | 0 lint ✅ | Gemini Code Assist: 2 MEDIUM suggestions applied
+  - Color variable reuse optimization (hardcoded `#f59e0b` → `var(--color-warning)`)
+  - Opacity decimal standardization consistency check
+- **Validation:** Manual comparative analysis of spec vs. implementation (all 4 sprints verified against `plans/redesign/WAVE_0_DESIGN_TOKENS.md`)
+- **Documentation:**
+  - Journal: `.memory/journal/2026-W12.md` (detailed completion analysis)
+  - Specification file: `plans/redesign/WAVE_0_DESIGN_TOKENS.md` (source spec, still canonical)
+- **Lessons Learned:**
+  - Partial infrastructure implementation can mask incomplete feature setup (R-135: "Always validate spec vs. implementation comprehensively")
+  - CSS variable scoping with `[data-redesign="true"]` provides safe gradual rollout without affecting current users (R-136: "Feature flags via CSS selectors for low-risk design iterations")
