@@ -15,7 +15,7 @@
 O PDF atual de consulta medica cumpre parcialmente a promessa da Fase 5, mas falha em tres dimensoes criticas:
 
 1. **Confiabilidade dos dados:** o PDF de consulta reutiliza um gerador generico e nao o dataset clinico consolidado do Modo Consulta.
-2. **Utilidade clinica:** o documento nao prioriza informacoes acionaveis para consulta periodica, titracao, risco de estoque e acompanhamento longitudinal.
+2. **Utilidade clinica:** o documento nao prioriza informacoes acionaveis para consulta periodica, titulacao, risco de estoque e acompanhamento longitudinal.
 3. **Legibilidade visual:** os graficos estao inadequados para impressao/leitura rapida e algumas tabelas omitiram dados essenciais de dose e contexto.
 
 Este exec spec redefine o PDF como um **Resumo Clinico de Consulta**. O alvo nao e apenas "gerar um PDF bonito"; e gerar um artefato confiavel, legivel e orientado a decisao.
