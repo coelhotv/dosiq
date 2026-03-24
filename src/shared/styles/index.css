@@ -42,6 +42,7 @@
    Ativação: ?redesign=1 na URL.
    ============================================ */
 @import './tokens.redesign.css';
+@import './layout.redesign.css';
 
 /* ============================================
    CSS RESET
