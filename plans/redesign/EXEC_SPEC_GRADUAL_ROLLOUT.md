@@ -17,11 +17,14 @@ atuais vejam o estilo novo até validação completa?
 
 **Solução:** Feature flag baseado em `data-attribute` no root da app + CSS custom property
 override scoped. Todos os tokens e estilos novos só ativam quando `data-redesign="true"` está
-presente no `.app-container`. Sem o atributo, o app funciona 100% igual ao atual.
+presente no `<div id="app">`. Sem o atributo, o app funciona 100% igual ao atual.
 
-**Princípio central:**
+**Objetivo geral:** definir como o redesign será desenvolvido em paralelo à experiência atual,
+validado com usuários reais sem impacto na base inteira, medido ao longo das waves e promovido
+com segurança até se tornar a experiência padrão.
 
-> Durante construção e pesquisa, o redesign é uma experiência opt-in, isolada por feature flag.
+> **Princípio central:** durante construção e pesquisa, o redesign é uma experiência opt-in,
+> isolada por feature flag.
 
 ---
 
@@ -38,6 +41,34 @@ presente no `.app-container`. Sem o atributo, o app funciona 100% igual ao atual
 - **Compatível com o lazy loading atual:** Nenhuma mudança no sistema de chunks Vite.
 - **Para W4+ (layouts que mudam estruturalmente):** `useRedesign()` hook direciona para
   variantes de componente quando necessário.
+
+### O que esta estratégia evita
+
+- criar uma segunda aplicação paralela;
+- duplicar services, hooks, schemas e integrações;
+- introduzir novo router só para o redesign;
+- expor usuários atuais a regressões visuais durante pesquisa.
+
+---
+
+## Regra de Ouro do Projeto
+
+Nem toda wave de redesign é do mesmo tipo.
+
+- **Foundation waves** mudam tokens, tipografia, superfícies e primitives.
+- **Experience waves** mudam composição, navegação, densidade, hierarquia e fluxo.
+
+Portanto:
+
+- **CSS scoped resolve bem foundation.**
+- **CSS scoped sozinho NÃO resolve experience.**
+
+Qualquer tentativa de empurrar W4+ apenas com override visual aumenta:
+
+- acoplamento entre design antigo e novo;
+- complexidade de manutenção;
+- risco de regressão silenciosa;
+- custo de cleanup no fim do rollout.
 
 ---
 
@@ -59,17 +90,11 @@ const { isRedesignEnabled, toggleRedesign } = useRedesign()
 ```jsx
 const { isRedesignEnabled } = useRedesign()
 return (
-  <div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
+  <div id="app" data-redesign={isRedesignEnabled ? 'true' : undefined}>
     {/* app */}
   </div>
 )
 ```
-
-### Regras do flag
-
-- O flag **nunca** pode nascer ativo por padrão em produção.
-- O flag **nunca** pode alterar dados, payloads ou regras de negócio.
-- O flag controla apresentação e composição, não comportamento clínico.
 
 ### CSS Strategy
 
@@ -85,41 +110,41 @@ return (
 }
 ```
 
+### Contrato técnico
+
+O root autenticado da app deve seguir este padrão:
+
+```jsx
+<div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
+```
+
+### Regras do flag
+
+- O flag nunca pode nascer ativo por padrão em produção.
+- O flag nunca pode alterar dados, payloads ou regras de negócio.
+- O flag controla apresentação e composição, não comportamento clínico.
+
 ---
 
 ## Fluxo por Wave
 
 | Faixa | Natureza da mudança | Estratégia obrigatória |
-|------|----------------------|------------------------|
+|-------|---------------------|------------------------|
 | **W0-W1** | Tokens, cor, tipografia, sombras, radius | CSS scoped em `[data-redesign="true"]` |
 | **W2-W3** | Surface, layout utilities, primitives | CSS scoped + classes novas/aditivas |
 | **W4-W5** | Navigation shell, sidebar, motion estrutural | Variantes explícitas com `useRedesign()` |
 | **W6-W12** | Views e fluxos principais | Variantes explícitas de view/componente |
-
----
-
-## Regra de Ouro — Foundation vs Experience
-
-Nem toda wave de redesign é do mesmo tipo.
-
-- **Foundation waves** (W0-W3): mudam tokens, tipografia, superfícies e primitives.
-  → CSS scoped resolve bem.
-- **Experience waves** (W4-W12): mudam composição, navegação, densidade, hierarquia e fluxo.
-  → CSS scoped sozinho NÃO resolve.
 
 ### Regra operacional
 
 - Se a mudança cabe em token/utilitário/skin: usar CSS scoped.
 - Se a mudança altera árvore JSX, densidade, ordem de blocos, navegação ou composição: criar variante explícita.
 
-Qualquer tentativa de empurrar W4+ apenas com override visual aumenta acoplamento, complexidade
-de manutenção, risco de regressão silenciosa e custo de cleanup no fim do rollout.
-
 ---
 
-## O que Compartilhar vs Duplicar
+## Shared vs Duplicado
 
-### Deve permanecer compartilhado (nunca duplicar)
+### Deve permanecer compartilhado
 
 - services;
 - hooks de domínio;
@@ -147,24 +172,6 @@ de manutenção, risco de regressão silenciosa e custo de cleanup no fim do rol
 
 ---
 
-## Como Ativar para Sessões Privadas de Validação
-
-### Pesquisadores/QA (usuários externos):
-```
-https://app.meusremedios.com.br?redesign=1
-```
-- URL param detectado no `RedesignContext` ao montar
-- Seta `localStorage.mr_redesign_preview = '1'` automaticamente
-- Persiste durante a sessão inteira (reloads mantêm o flag)
-- Para desativar: `?redesign=0` na URL
-
-### Time interno:
-- Toggle oculto em **Configurações** (`src/views/Settings.jsx`)
-- Visível somente quando `localStorage.getItem('mr_dev_mode') === '1'`
-- Permite ligar/desligar sem precisar manipular URL
-
----
-
 ## Estratégia de Branching no Código
 
 ### Onde o branching pode existir
@@ -177,7 +184,10 @@ https://app.meusremedios.com.br?redesign=1
 ### Onde o branching deve ser evitado
 
 - deep inside de subcomponentes pequenos;
-- services, utils, schemas, funções de cálculo.
+- services;
+- utils;
+- schemas;
+- funções de cálculo.
 
 ### Regra prática
 
@@ -196,52 +206,92 @@ Evitar:
 </Card>
 ```
 
-Quando condicionais fragmentadas começam a se repetir em muitos níveis, extrair para variante explícita.
+quando isso começa a se repetir em muitos níveis.
+
+---
+
+## Como Ativar para Sessões Privadas de Validação
+
+### Pesquisadores/QA (usuários externos):
+```
+https://app.meusremedios.com.br?redesign=1
+```
+- URL param detectado no `RedesignContext` ao montar
+- Seta `localStorage.mr_redesign_preview = '1'` automaticamente
+- Persiste durante a sessão inteira (reloads mantêm o flag)
+- Para desativar: `?redesign=0` na URL
+
+### Time interno:
+- Toggle oculto em **Configurações** (`src/views/Settings.jsx`)
+- Visível somente quando `localStorage.getItem('mr_dev_mode') === '1'`
+- Permite ligar/desligar sem precisar manipular URL
 
 ---
 
 ## Pontos de Atenção e Mitigações
 
-### CSS scoped tem limite — não tratar W4+ como tema
+### 8.1 CSS scoped é forte, mas tem limite
 
-**Risco:** tentar resolver layout estrutural apenas com seletor mais específico.
+**Risco:** tratar todo o redesign como se fosse apenas tema.
 
-**Mitigação:** congelar a regra de que W4+ exige variante explícita; rejeitar PR que tente
-resolver composição de layout só com CSS scoped.
+**Mitigação:**
+- congelar a regra de que W4+ exige variante explícita;
+- documentar por wave se ela é foundation ou experience;
+- rejeitar PR que tente resolver layout estrutural só com seletor mais específico.
 
-### Fontes carregadas globalmente
+### 8.2 Duas experiências em paralelo aumentam custo
 
-**Risco:** mesmo sem impacto visual, o `@import` de fontes pode disparar download para todos os usuários.
+**Risco:** manutenção duplicada da camada de apresentação.
 
-**Mitigação:** aceitar este custo nas waves iniciais. Medir efeito em Lighthouse. Se o custo
-ficar relevante, migrar carregamento para estratégia lazy ou dinâmica na fase de hardening.
+**Mitigação:**
+- compartilhar 100% da lógica possível;
+- centralizar branching em poucos pontos (`App.jsx`, shell, views canônicas);
+- evitar `if (isRedesignEnabled)` espalhado em componentes pequenos;
+- preferir wrappers/variantes por view em vez de condicionais fragmentadas.
 
-### `if (isRedesignEnabled)` espalhado cria acoplamento
+### 8.3 Fontes importadas ainda podem impactar usuários sem flag
 
-**Risco:** condicionais fragmentadas em componentes pequenos aumentam custo de manutenção.
+**Risco:** mesmo sem impacto visual, o CSS pode disparar download de fontes para todos.
 
-**Mitigação:** centralizar branching em `App.jsx`, shell e views canônicas. Evitar
-`isRedesignEnabled` espalhado em subcomponentes.
+**Mitigação:**
+- aceitar esse custo nas waves iniciais apenas se o impacto de bundle/rede for pequeno;
+- medir o efeito em build e Lighthouse;
+- se o custo ficar relevante, migrar carregamento de fontes para uma estratégia lazy ou sob demanda na fase de hardening.
 
-### Cleanup final tipo big-bang é arriscado
+### 8.4 `localStorage + URL param` é ótimo para pesquisa, mas fraco para beta segmentado
+
+**Risco:** não permite cohort rollout real por usuário, equipe ou tenant.
+
+**Mitigação:**
+- usar a estratégia atual para pesquisa qualitativa e QA;
+- se houver necessidade de beta controlado, planejar Fase 2 com flag persistido por usuário no backend;
+- não bloquear W0-W12 por essa evolução.
+
+### 8.5 Cleanup final tipo big-bang é arriscado
 
 **Risco:** remover scoping, mesclar tokens e apagar legado tudo de uma vez pode gerar regressão grande.
 
-**Mitigação:** promover redesign a default primeiro. Manter experiência antiga atrás de `legacy flag`
-temporário. Só depois executar limpeza por camadas.
+**Mitigação:**
+- promover o redesign a default primeiro;
+- manter a experiência antiga atrás de um `legacy flag` temporário por curto período;
+- só depois remover legado em waves de cleanup;
+- executar limpeza por camadas: tokens, primitives, shell, views.
 
-### Pesquisa sem protocolo vira opinião
+### 8.6 Pesquisa sem protocolo vira opinião
 
 **Risco:** validar redesign com feedback ad hoc e sem critérios comparáveis.
 
-**Mitigação:** toda sessão precisa de roteiro, hipótese e checklist observacional. Comparar tarefas
-idênticas entre experiência atual e redesign. Registrar fricções por tarefa, não só preferência subjetiva.
+**Mitigação:**
+- toda sessão precisa de roteiro, hipótese e checklist observacional;
+- comparar tarefas idênticas entre experiência atual e redesign;
+- registrar fricções por tarefa, não só gosto subjetivo;
+- só promover fase com evidência qualitativa suficiente.
 
 ---
 
-## Protocolo de Pesquisa Qualitativa
+## Protocolo de Pesquisa e Validação
 
-### Objetivo
+### Objetivo da pesquisa
 
 Responder se o redesign melhora a capacidade do paciente de entender:
 
@@ -250,7 +300,19 @@ Responder se o redesign melhora a capacidade do paciente de entender:
 - como navegar entre Hoje, Tratamentos, Estoque e Perfil;
 - como executar tarefas sem aumentar carga cognitiva.
 
-### Tarefas mínimas por sessão
+### Sessões qualitativas
+
+Cada sessão deve registrar:
+
+- perfil do participante;
+- dispositivo usado;
+- se a sessão ocorreu com `?redesign=1`;
+- tarefas executadas;
+- dúvidas, hesitações e erros;
+- trechos que reduziram ou aumentaram ansiedade;
+- comparação com a experiência atual, quando aplicável.
+
+### Tarefas mínimas recomendadas
 
 - identificar a próxima ação no dashboard;
 - localizar um tratamento específico;
@@ -269,18 +331,33 @@ Responder se o redesign melhora a capacidade do paciente de entender:
 
 ---
 
-## Quality Gates
+## Testes e Quality Gates
 
 ### Gates obrigatórios por PR
 
 - lint sem erros;
 - testes relevantes da área alterada;
 - `npm run validate:agent` para waves que mudem app runtime;
-- build funcionando (`npm run build`);
-- smoke manual com flag **desligado** — app visualmente intacto;
-- smoke manual com flag **ligado** — tokens/estilos corretos para a wave.
+- build funcionando;
+- smoke manual com flag desligado;
+- smoke manual com flag ligado.
 
-### Gates por transição de fase
+### Smoke mínimo obrigatório
+
+Com flag desligado:
+
+- app visualmente intacta;
+- navegação principal intacta;
+- nenhum componente atual degradado.
+
+Com flag ligado:
+
+- tokens/estilos corretos para a wave;
+- view nova ou variante renderizando corretamente;
+- navegação principal sem perda de contexto;
+- fallback de lazy loading preservado com `Suspense` + `ViewSkeleton`.
+
+### Quality gates por transição de fase
 
 | Fase | Gate |
 |------|------|
@@ -303,7 +380,7 @@ Responder se o redesign melhora a capacidade do paciente de entender:
 ### Fase 1 — Pesquisa qualitativa privada
 
 - sessões guiadas com usuários selecionados;
-- acesso por URL com flag (`?redesign=1`);
+- acesso por URL com flag;
 - foco em compreensão, legibilidade e fluxo.
 
 ### Fase 2 — Piloto controlado (opcional)
@@ -314,8 +391,8 @@ Responder se o redesign melhora a capacidade do paciente de entender:
 ### Fase 3 — Redesign vira default
 
 - redesign passa a ser experiência padrão;
-- experiência antiga permanece atrás de flag temporário por período curto e definido;
-- monitorar regressões e feedback.
+- experiência antiga permanece atrás de flag temporário;
+- monitorar regressões e feedback por período curto e definido.
 
 ### Fase 4 — Cleanup
 
@@ -326,9 +403,9 @@ Responder se o redesign melhora a capacidade do paciente de entender:
 
 ---
 
-## Estratégia de Cleanup
+## Plano de Cleanup Recomendado
 
-Executar em quatro passos sequenciais:
+Executar cleanup em quatro passos:
 
 1. tornar redesign default sem apagar legado no mesmo PR;
 2. introduzir `legacy fallback` temporário apenas para segurança operacional;
@@ -336,6 +413,31 @@ Executar em quatro passos sequenciais:
 4. consolidar tokens e apagar arquivos `.redesign.*` somente no fim.
 
 **Regra:** o projeto não deve depender de um único PR final de "virada e limpeza".
+
+---
+
+## Critérios de Sucesso
+
+O rollout será considerado bem-sucedido quando:
+
+- o redesign puder conviver com a experiência atual sem regressões relevantes;
+- as waves W0-W12 forem executadas sem duplicação desnecessária de lógica;
+- a pesquisa qualitativa indicar melhora perceptível na pergunta "o que preciso fazer agora?";
+- a navegação e a legibilidade forem avaliadas como mais claras que no design atual;
+- a promoção para default ocorrer sem big-bang técnico;
+- o cleanup final puder ser feito de forma incremental e segura.
+
+---
+
+## Decisões Fechadas
+
+- O redesign será desenvolvido em paralelo à experiência atual.
+- O mecanismo principal de isolamento continuará sendo `data-redesign="true"`.
+- W0-W3 usam CSS scoped como técnica principal.
+- W4-W12 usam variantes explícitas como técnica principal.
+- Lógica de domínio permanece compartilhada.
+- Pesquisa qualitativa faz parte do rollout, não é atividade separada.
+- O rollout final será progressivo, não um merge técnico único.
 
 ---
 
@@ -375,39 +477,43 @@ src/
 
 ---
 
-## Critérios de Sucesso
+## Verificação
 
-O rollout será considerado bem-sucedido quando:
+```bash
+# Smoke test: flag desligado = app idêntico ao atual
+# Smoke test: ?redesign=1 = tokens novos ativos
 
-- o redesign puder conviver com a experiência atual sem regressões relevantes;
-- as waves W0-W12 forem executadas sem duplicação desnecessária de lógica;
-- a pesquisa qualitativa indicar melhora perceptível na pergunta "o que preciso fazer agora?";
-- a navegação e a legibilidade forem avaliadas como mais claras que no design atual;
-- a promoção para default ocorrer sem big-bang técnico;
-- o cleanup final puder ser feito de forma incremental e segura.
+# Build sem erros
+npm run build
+
+# Sem regressões em testes
+npm run validate:agent
+
+# Bundle: tokens.redesign.css deve ser < 20KB gzip
+```
 
 ---
 
-## Decisões Fechadas
+## Critério de Conclusão deste Sprint
 
-- O redesign será desenvolvido em paralelo à experiência atual.
-- O mecanismo principal de isolamento é `data-redesign="true"` no `.app-container`.
-- W0-W3 usam CSS scoped como técnica principal.
-- W4-W12 usam variantes explícitas como técnica principal.
-- Lógica de domínio permanece 100% compartilhada.
-- Pesquisa qualitativa faz parte do rollout, não é atividade separada.
-- O rollout final será progressivo, não um merge técnico único.
+- [ ] `RedesignContext` + `useRedesign` criados e funcionando
+- [ ] URL `?redesign=1` ativa os novos tokens visualmente
+- [ ] App sem flag = visual atual intacto
+- [ ] Toggle oculto em Settings funciona
+- [ ] `npm run validate:agent` passa
+- [ ] PR criado e aguardando review Gemini
 
 ---
 
 ## Referências
 
-- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — visão e arquitetura macro W0-W12
-- `plans/redesign/EXEC_SPEC_ROLLOUT_PESQUISA_VALIDACAO.md` — SSOT de pesquisa e validação (detalhado)
-- `plans/redesign/WAVE_0_DESIGN_TOKENS.md` — execução W0
-- `plans/redesign/WAVE_1_TYPOGRAPHY_ICONS.md` — execução W1
-- `plans/redesign/WAVE_2_SURFACE_LAYOUT.md` — execução W2
-- `plans/redesign/WAVE_3_COMPONENT_PRIMITIVES.md` — execução W3
+- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`
+- `plans/redesign/EXEC_SPEC_ROLLOUT_PESQUISA_VALIDACAO.md`
+- `plans/redesign/WAVE_0_DESIGN_TOKENS.md`
+- `plans/redesign/WAVE_1_TYPOGRAPHY_ICONS.md`
+- `plans/redesign/WAVE_2_SURFACE_LAYOUT.md`
+- `plans/redesign/WAVE_3_COMPONENT_PRIMITIVES.md`
+- `src/App.jsx`
 - `src/shared/contexts/RedesignContext.jsx`
 - `src/shared/hooks/useRedesign.js`
 - `src/shared/styles/tokens.redesign.css`
