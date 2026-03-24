@@ -1172,5 +1172,97 @@ grep -r "bot\." server/bot/commands/ server/bot/callbacks/ | grep -o "bot\.[a-zA
 
 ---
 
-*Last updated: 2026-03-20*
-*Rules: R-001 to R-134*
+## Typography & Design System
+
+### R-137: Font Weight Accessibility [CRITICAL]
+**Regra:** NUNCA use font-weight < 400 (thin=100, extralight=200, light=300). Pacientes idosos não conseguem ler fontes finas. Todos os pesos leves DEVEM mapear para regular (400).
+**Padrão:**
+```css
+/* ✅ CORRETO */
+--font-weight-light: var(--font-weight-regular);  /* 300 → 400 (accessibility upgrade) */
+--font-weight-thin: var(--font-weight-regular);   /* 100 → 400 */
+
+/* ❌ ERRADO */
+--font-weight-light: 300;  /* VIOLATES WCAG 2.1 AA for elderly users */
+```
+
+**Contexto:** Wave 1 — Typography redesign. ANVISA app serves elderly patients (many 60+). Thin fonts reduce text contrast + readability.
+**Motivo:** Conforms to WCAG 2.1 AA standards (minimum font weight for contrast ratio).
+**Source:** Wave 1 — Sprint 1.1
+
+### R-138: Icon-Text Pairing [HIGH]
+**Regra:** lucide-react icons NUNCA aparecem sozinhos. SEMPRE acompanhados com texto label (`<span>` or accessible label). Exceptions: icon-only MUST have `aria-label` + title attribute.
+**Padrão:**
+```jsx
+// ✅ CORRETO — icon + text
+<button><Pill size={24} /> <span>Tratamentos</span></button>
+
+// ✅ CORRETO — icon-only com accessibility
+<button aria-label="Adicionar dose" title="Adicionar dose"><Plus size={24} /></button>
+
+// ❌ ERRADO — icon sem contexto
+<button><Pill size={24} /></button>  // Screen reader: "button" (no meaning)
+```
+
+**Tamanhos padrão:**
+- 28px: primary nav (BottomNav, Sidebar)
+- 24px: base (cards, headers)
+- 20px: dense lists, secondary actions
+- 16px: inline com texto
+
+**Contexto:** Wave 1 — Icon system setup. Accessibility requirement for elderly patients.
+**Motivo:** Icon-only UI causes confusion + screen reader fails. Text adds clarity.
+**Source:** Wave 1 — Sprint 1.2
+
+### R-139: Font @import Scoping Strategy [MEDIUM]
+**Regra:** Google Fonts SEMPRE via CSS `@import` em token files (scoped), NUNCA via `<link>` em index.html (global). Fonts são carregadas globalmente (browser cache) MAS estilos que as usam ficam scoped ao `[data-redesign="true"]`.
+**Padrão:**
+```css
+/* ✅ CORRETO — top of tokens.redesign.css */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:...');
+
+[data-redesign="true"] {
+  --font-display: 'Public Sans', ...;  /* Só aplica quando flag ON */
+}
+
+/* ❌ ERRADO — index.html <link> */
+<link rel="stylesheet" href="...googleapis..."> <!-- Global, affects all users -->
+```
+
+**Vantagem:** Users sem `?redesign=1` veem fonte atual (neon design), sem breaking changes.
+**Contexto:** Wave 0-1 — Gradual rollout infrastructure.
+**Motivo:** Feature flag via CSS scoping avoids deployment risk + allows A/B testing.
+**Source:** Wave 1 — Sprint 1.1
+
+### R-140: Heading Hierarchy Variables [HIGH]
+**Regra:** TODOS os níveis h1-h6 DEVEM ter variáveis específicas de `size` + `weight`. Sem variáveis → hard-coded values → inconsistency em redesigns futuros.
+**Padrão:**
+```css
+/* ✅ COMPLETO */
+--text-h1: var(--text-4xl);
+--heading-1-size: var(--text-4xl);
+--heading-1-weight: var(--font-weight-bold);
+
+/* Usado em CSS rules */
+[data-redesign="true"] h1 {
+  font-size: var(--heading-1-size);
+  font-weight: var(--heading-1-weight);
+}
+
+/* ❌ INCOMPLETO */
+[data-redesign="true"] h1 { font-size: 2rem; font-weight: 700; }  /* Hard-coded */
+```
+
+**Aplicação em h1-h6:**
+- h1-h2: bold (700), tight spacing
+- h3-h4: semibold (600)
+- h5-h6: medium (500)
+
+**Contexto:** Wave 1 — Typography system foundation.
+**Motivo:** Centralized hierarchy vars make future redesigns (W2+) fast + consistent.
+**Source:** Wave 1 — Sprint 1.3
+
+---
+
+*Last updated: 2026-03-24*
+*Rules: R-001 to R-140*

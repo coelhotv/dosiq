@@ -396,3 +396,30 @@ Agents should read this file + rules + anti-patterns before coding.
 - **Lessons Learned:**
   - Partial infrastructure implementation can mask incomplete feature setup (R-135: "Always validate spec vs. implementation comprehensively")
   - CSS variable scoping with `[data-redesign="true"]` provides safe gradual rollout without affecting current users (R-136: "Feature flags via CSS selectors for low-risk design iterations")
+
+## Wave 1 — Typography & Icon System ✅ DELIVERED (2026-03-24)
+**Typography (Public Sans + Lexend) + lucide-react icon library**
+- **Commit:** `8dde2ca` | **PR:** #418 (squash merged)
+- **Branch:** feature/redesign/wave-1-typography-icons → main (fast-forward)
+- **3 Sprints completed:**
+  - **1.1:** Typography tokens (type scale, font weights ≥400, backward compat aliases, heading defaults, max-line-width)
+  - **1.2:** lucide-react v1.0.1 installation (icon mapping table for future waves)
+  - **1.3:** Global typography rules scoped in `[data-redesign="true"]` (base text, headings, form elements, antialiasing)
+- **Accessibility:** WCAG 2.1 AA compliant (font weight ≥400 for elderly patients, no light/thin fonts)
+- **Code Quality:** 539/539 testes ✅ | 0 lint ✅ | 0 Gemini issues ✅
+- **Tokens Added:**
+  - Font families: `--font-display` (Public Sans), `--font-body` (Lexend)
+  - Type scale: display (3.5/2.75/2.25rem), headline (2/1.75/1.5rem), title, label, body
+  - Font weights: 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
+  - Backward compat: `--text-xs` through `--text-5xl`, `--font-size-*` aliases
+  - Heading defaults: h1-h6 with specific weights per level
+  - Line heights: tight (1.1), snug (1.25), normal (1.5), relaxed (1.75)
+  - Tracking: tight (-0.02em), normal, wide, wider, widest
+- **Dependencies:** lucide-react ^1.0.1 (icons always paired with text labels, sizes: 28px nav / 24px base / 20px dense / 16px inline)
+- **Documentation:**
+  - Journal: `.memory/journal/2026-W13.md` (complete sprint analysis)
+  - New rules: R-137 to R-140 (typography accessibility, icon labeling, @import scoping, heading hierarchy)
+- **Lessons Learned:**
+  - Token systems need both semantic (display/headline/title) AND numeric (text-4xl/3xl/2xl) aliases for compatibility
+  - Form element inheritance works via CSS cascading; explicit selectors improve maintainability
+  - Complete heading hierarchy upfront (size × weight × line-height × tracking) prevents UX inconsistency
