@@ -62,19 +62,17 @@
    ============================================ */
 
 /* Base: sempre coluna unica no mobile */
-.grid-1 {
+.grid-1,
+.grid-2,
+.grid-3,
+.grid-12,
+.grid-dashboard {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
 /* 2 colunas em tablet+ */
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
 @media (min-width: 768px) {
   .grid-2 {
     grid-template-columns: repeat(2, 1fr);
@@ -82,12 +80,6 @@
 }
 
 /* 3 colunas em desktop */
-.grid-3 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
 @media (min-width: 768px) {
   .grid-3 {
     grid-template-columns: repeat(2, 1fr);
@@ -101,12 +93,6 @@
 }
 
 /* 12 colunas em desktop (para layouts complexos) */
-.grid-12 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
 @media (min-width: 768px) {
   .grid-12 {
     grid-template-columns: repeat(12, 1fr);
@@ -114,7 +100,7 @@
 }
 
 /* ============================================
-   DASHBOARD LAYOUT
+   DASHBOARD LAYOUT (extends .grid-dashboard base)
    Mobile: coluna unica
    Desktop: esquerda (ring + prioridade) 1fr + direita (cronograma) 2fr
 
@@ -122,11 +108,6 @@
    - Coluna esquerda: ring gauge de adesao + card prioridade maxima
    - Coluna direita: cronograma do dia + alertas
    ============================================ */
-.grid-dashboard {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
 
 @media (min-width: 1024px) {
   .grid-dashboard {
