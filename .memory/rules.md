@@ -1351,7 +1351,13 @@ grep -r "bot\." server/bot/commands/ server/bot/callbacks/ | grep -o "bot\.[a-zA
 **Source:** Wave 3 — Sprint 3.1 + 3.6 refactor
 **Reference:** AP-C02
 
+### R-146: Centralize PDF Layout Geometry [MEDIUM]
+**Regra:** Em geradores de PDF, repeticoes de coordenadas, offsets, larguras, alturas e raios DEVEM ser extraidas para constantes nomeadas. Nao deixe numeros magicos inline em header, cards, tabelas ou rodape.
+**Contexto:** PR #421 (PDF clinico de consulta) — consolidacao do layout apos review do Gemini
+**Motivo:** Facilita manutencao, reduz regressao visual e deixa revisoes de layout previsiveis
+**Referencia:** AP-P18
+
 ---
 
 *Last updated: 2026-03-24*
-*Rules: R-001 to R-140*
+*Rules: R-001 to R-146*
