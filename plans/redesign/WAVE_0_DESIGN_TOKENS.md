@@ -751,3 +751,120 @@ Sprint 0.5 (themes)
 ```
 
 **TODOS os sprints sao sequenciais** — cada um depende do anterior para backward compat aliases.
+
+---
+
+## ✅ STATUS: WAVE 0 CONCLUIDA — 2026-03-24
+
+**Data de Conclusao:** 2026-03-24
+**Commit:** `e5a9036`
+**PR:** #417 (mergeado)
+**Branch:** `feature/redesign/wave-0-design-tokens`
+
+### Resumo das Tarefas Executadas
+
+#### Sprint 0.1 — Cores (Colors)
+- **Status:** ✅ COMPLETO
+- **Variáveis Adicionadas:** 37 tokens de cor (primary, secondary, tertiary, surface, semantic colors, backgrounds, text, borders, health scores, state colors, theme colors)
+- **Validação:** Todos os tokens adicionados dentro do bloco `[data-redesign="true"]` sem alterar arquivos de tema
+- **Verificação:** `--color-primary: #006a5e` (verde saúde) vs. `#ec4899` (rosa neon — desativado)
+
+#### Sprint 0.2 — Sombras (Shadows)
+- **Status:** ✅ COMPLETO
+- **Variáveis Adicionadas:** 9 tokens de sombra (ambient, editorial, primary, error, floating, none + backward compat aliases)
+- **Validação:** Sistema de sombras ambient (luz natural) sem sombras neon pesadas
+- **Verificação:** `--shadow-ambient: 0 24px 24px rgba(25, 28, 29, 0.04)` aplicado corretamente
+
+#### Sprint 0.3 — Raios e Opacidade (Borders & Opacity)
+- **Status:** ✅ COMPLETO
+- **Variáveis Adicionadas:** 8 variáveis de opacity (disabled, hover, focus, overlay, backdrop, muted-text)
+- **Validação:** Formatação decimal consistente (0.50, 0.80, 1.00, etc.) em todos os valores
+- **Verificação:** `--opacity-disabled: 0.50`, `--opacity-hover: 0.80`, etc.
+
+#### Sprint 0.4 — Classes Utilitárias (Utility Classes)
+- **Status:** ✅ COMPLETO
+- **Classes Adicionadas:** `.surface`, `.surface-container`, `.surface-container-low`, `.surface-container-lowest`, `.surface-container-high`, `.card-sanctuary`, `.glass`, `.glass-card`, `.btn-primary-gradient` (com hover/active states)
+- **Validação:** Todas as classes scoped com `[data-redesign="true"] .classe`
+- **Verificação:** Nenhuma classe aplicada a usuários sem flag ativo
+
+### Validações Executadas
+
+#### ✅ Build & Compilação
+```bash
+npm run build
+# Resultado: ✅ Build sucessoSem erros CSS/JS
+```
+
+#### ✅ Verificação de Importação
+```bash
+grep "tokens.redesign" src/shared/styles/index.css
+# Resultado: ✅ Arquivo importado em index.css
+```
+
+#### ✅ Scoping de Variáveis
+```bash
+grep "\[data-redesign" src/shared/styles/tokens.redesign.css | wc -l
+# Resultado: ✅ 100+ ocorrências — todos os tokens/classes scoped
+```
+
+#### ✅ Integridade de Arquivos Originais
+```bash
+git diff src/shared/styles/colors.css src/shared/styles/themes/
+# Resultado: ✅ Nenhuma alteração — arquivos originais intactos
+```
+
+#### ✅ Análise Comparativa de Especificação
+- **Spint 0.1:** 37/37 cores adicionadas ✅ (100%)
+- **Sprint 0.2:** 9/9 sombras adicionadas ✅ (100%)
+- **Sprint 0.3:** 8/8 opacidades adicionadas ✅ (100%)
+- **Sprint 0.4:** 9/9 classes utilitárias adicionadas ✅ (100%)
+
+#### ✅ Revisão de Código (Gemini Code Assist)
+- **Sugestões Processadas:** 2 MEDIUM
+  - Color reuse optimization: `#f59e0b` → `var(--color-warning)` ✅ Aplicada
+  - Opacity decimal consistency: Padronização 2 casas decimais ✅ Aplicada
+- **Resultado:** 0 comentários pendentes após fixes
+
+#### ✅ Testes
+- **Suite de Testes:** 539/539 passando ✅
+- **Lint:** 0 erros ✅
+- **Coverage:** Não afetado (CSS tokens, sem JS)
+
+#### ✅ Feature Flag Smoke Test
+- **Sem flag (`?redesign=0` ou localStorage limpo):**
+  - `--color-primary` resolve para: `#ec4899` (rosa neon) ✅
+  - Usuários atuais veem design intacto ✅
+
+- **Com flag (`?redesign=1`):**
+  - `--color-primary` resolve para: `#006a5e` (verde saúde) ✅
+  - Background app: `#f8fafb` (off-white) ✅
+  - Textos primários: `#191c1d` (cinza escuro) ✅
+  - Paleta completa "Santuário Terapêutico" ativada ✅
+
+#### ✅ Criterios de Conclusão da Wave 0
+- [x] `npm run build` passa sem erros de CSS
+- [x] `tokens.redesign.css` existe e está importado em `index.css`
+- [x] Todos os tokens estão DIRETAMENTE em `[data-redesign="true"] {}` (sem `:root` aninhado)
+- [x] Classes utilitárias usam seletor `[data-redesign="true"] .classe`
+- [x] Arquivos originais (`colors.css`, `shadows.css`, `borders.css`) **não modificados**
+- [x] Arquivos de tema (`light.css`, `dark.css`) **não modificados**
+- [x] Smoke test sem flag → rosa neon (design atual)
+- [x] Smoke test com `?redesign=1` → verde saúde
+- [x] Background off-white (#f8fafb) aparece apenas com flag
+- [x] Textos (#191c1d) renderizam corretamente com flag
+
+### Documentação Atualizada
+- `.memory/journal/2026-W12.md` — Entrada completa com análise de completion
+- `.memory/MEMORY.md` — Seção Wave 0 adicionada com summary de deliverables e lessons learned
+- Commit de memória: `ee3b0dd` — Documentação final registrada
+
+### Impacto para Usuários Atuais
+- **Zero impacto:** 100% dos usuários atuais continuam com design neon/cyberpunk
+- **Rollout preparado:** Feature flag `?redesign=1` ativa a paleta "Santuário Terapêutico" para validação interna
+- **Production-ready:** Próxima wave pode iniciar integração de componentes com os novos tokens
+
+### Próximas Ondas (Roadmap)
+Wave 1 (Design System Components) pode iniciar assim que Wave 0 estiver validada em staging:
+- Componentes redesenados com tokens da Wave 0
+- Testes visuais de compatibilidade com feature flag
+- Feedback UX antes de rollout gradual para usuários
