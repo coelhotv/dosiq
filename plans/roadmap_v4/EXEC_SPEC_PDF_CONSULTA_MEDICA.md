@@ -2,7 +2,7 @@
 
 **Versao:** 1.0  
 **Data:** 2026-03-24  
-**Status:** Pronto para execucao via `/deliver-sprint`  
+**Status:** Entregue e mergeado via PR #421  
 **Baseline:** v3.3.0+ (Modo Consulta Medica e PDF legado ja existentes)  
 **Escopo:** Redesenho funcional, visual e arquitetural do PDF de consulta medica  
 **Objetivo:** Entregar um PDF clinicamente util para paciente e medico, sem regressao de performance mobile  
@@ -705,7 +705,7 @@ Antes de considerar a sprint concluida:
 - [ ] PR criado
 - [ ] Gemini review aguardado/aplicado
 - [ ] Status reportado ao usuario
-- [ ] Aguardando aprovacao humana para merge
+- [x] Aprovacao humana recebida e merge realizado
 
 ---
 
