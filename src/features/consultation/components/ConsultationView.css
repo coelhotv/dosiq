@@ -41,6 +41,8 @@
   --cv-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
 
   --cv-footer-height: 80px;
+  --cv-bottom-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
+  --cv-footer-gap: var(--cv-spacing-sm);
   --cv-header-height: auto;
 }
 
@@ -53,7 +55,7 @@
   color: var(--cv-color-text);
   font-size: var(--cv-font-base);
   line-height: 1.6;
-  padding-bottom: var(--cv-footer-height);
+  padding-bottom: calc(var(--cv-footer-height) + var(--cv-bottom-nav-height) + var(--cv-footer-gap));
 }
 
 /* ============================================
@@ -486,7 +488,7 @@
    ============================================ */
 .consultation-footer {
   position: fixed;
-  bottom: 0;
+  bottom: calc(var(--cv-bottom-nav-height) + var(--cv-footer-gap));
   left: 0;
   right: 0;
   height: var(--cv-footer-height);
