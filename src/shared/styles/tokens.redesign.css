@@ -289,10 +289,10 @@
   /* ============================================
      OPACITY VALUES
      ============================================ */
-  --opacity-disabled: 0.5;
-  --opacity-hover: 0.8;
-  --opacity-focus: 1;
-  --opacity-overlay: 0.9;
+  --opacity-disabled: 0.50;
+  --opacity-hover: 0.80;
+  --opacity-focus: 1.00;
+  --opacity-overlay: 0.90;
   --opacity-backdrop: 0.75;
   --opacity-muted-text: 0.40;
 }
