@@ -1,8 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { RedesignContext } from './RedesignContext.js'
 
 const STORAGE_KEY = 'mr_redesign_preview'
-
-const RedesignContext = createContext({ isRedesignEnabled: false, toggleRedesign: () => {} })
 
 /**
  * Lê o flag de redesign das fontes disponíveis (URL param ou localStorage).
@@ -18,14 +17,14 @@ function resolveInitialFlag() {
       } else {
         localStorage.removeItem(STORAGE_KEY)
       }
-    } catch (_) {
+    } catch {
       // localStorage indisponível em ambiente de teste
     }
     return value
   }
   try {
     return localStorage.getItem(STORAGE_KEY) === '1'
-  } catch (_) {
+  } catch {
     return false
   }
 }
@@ -41,7 +40,7 @@ export function RedesignProvider({ children }) {
       } else {
         localStorage.removeItem(STORAGE_KEY)
       }
-    } catch (_) {
+    } catch {
       // localStorage indisponível em ambiente de teste
     }
   }, [isRedesignEnabled])
@@ -53,8 +52,4 @@ export function RedesignProvider({ children }) {
       {children}
     </RedesignContext.Provider>
   )
-}
-
-export function useRedesign() {
-  return useContext(RedesignContext)
 }
