@@ -168,6 +168,14 @@
   --state-loading: rgba(0, 106, 94, 0.5);
 
   /* ============================================
+     TOGGLE & THEME COLORS
+     ============================================ */
+  --color-toggle-track: var(--color-surface-container-high);
+  --color-toggle-track-dark: #374151;
+  --color-sun: var(--color-warning);
+  --color-moon: #93c5fd;
+
+  /* ============================================
      GLASSMORPHISM — SOMENTE para elementos flutuantes
      ============================================ */
   --glass-bg: rgba(248, 250, 251, 0.80);
@@ -222,6 +230,8 @@
 
   /* Focus ring — verde primary */
   --focus-ring-color: var(--color-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 
   /* ============================================
      W1: TYPOGRAPHY — Public Sans + Lexend
@@ -275,6 +285,16 @@
   --tracking-wide: 0.02em;
   --tracking-wider: 0.05em;
   --tracking-widest: 0.1em;
+
+  /* ============================================
+     OPACITY VALUES
+     ============================================ */
+  --opacity-disabled: 0.50;
+  --opacity-hover: 0.80;
+  --opacity-focus: 1.00;
+  --opacity-overlay: 0.90;
+  --opacity-backdrop: 0.75;
+  --opacity-muted-text: 0.40;
 }
 
 /* ============================================
