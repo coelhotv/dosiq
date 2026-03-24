@@ -442,3 +442,32 @@ Agents should read this file + rules + anti-patterns before coding.
   - Token systems need both semantic (display/headline/title) AND numeric (text-4xl/3xl/2xl) aliases for compatibility
   - Form element inheritance works via CSS cascading; explicit selectors improve maintainability
   - Complete heading hierarchy upfront (size × weight × line-height × tracking) prevents UX inconsistency
+
+## Wave 3 — Component Library Primitives ✅ DELIVERED (2026-03-24)
+**Santuário Terapêutico — Material Design 3 components (Button, Card, Badge, Input, Progress, ListItem)**
+- **Commit:** `b7293a6` | **PR:** #420 (squash merged)
+- **Branch:** feature/redesign/wave-3-component-primitives → main (deleted post-merge)
+- **6 Sprints completed:**
+  - **3.1:** Button redesign (6 variants: primary/secondary/outline/ghost/danger/danger-ghost, touch-first sizing)
+  - **3.2:** Card redesign (3 variants: default/gradient/alert with ambient shadows, no borders)
+  - **3.3:** Inputs & forms (complete form styling, search wrapper, accessible focus/disabled states)
+  - **3.4:** Badge component (NEW: `Badge.jsx`, 5 semantic variants: critical/warning/success/info/neutral)
+  - **3.5:** Progress bars (semantic colors, labeled progress, full-width container)
+  - **3.6:** List items (no dividers, icon circles, title/subtitle structure, hover/active states)
+- **Code Review & Fixes:** 9 inline suggestions (6 HIGH + 2 MEDIUM + 1 HIGH via ChatGPT Codex) ALL APPLIED:
+  - HIGH (Colors): Line 150 `#ffffff` → CSS var; Line 156 `#a51515` → color-mix; Lines 340/350/360/370 badge rgba → color-mix
+  - HIGH (API): Line 80 removed `min-height: 56px` from primary variant (was overriding size classes)
+  - MEDIUM: Consolidated `.btn-secondary` + `.btn-outline` shared rules (36 → 16 lines)
+  - MEDIUM: Consolidated `.list-item-icon` + `.list-item-icon-sm` base styles
+- **Single Commit:** `f0d33c8` "fix(redesign): replace hardcoded colors with CSS variables..." (all 9 fixes atomic)
+- **Quality:** 539/539 testes ✅ | 0 lint errors ✅ | Gemini + ChatGPT approval ✅
+- **New Components:** Badge.jsx (20 lines, simple semantic component, CSS-only styling)
+- **New Rules:** R-118 (CSS color system), R-119 (button size class preservation), R-120 (CSS consolidation)
+- **New Anti-Patterns:** AP-024 (hardcoded colors bypass design system), AP-W02 (size override), AP-C02 (duplication)
+- **Critical Learning:** Skipping `.memory/rules.md` consult BEFORE coding = 80% of review issues
+  - AP-023 reinforced (memory file reading is non-negotiable R-065)
+  - Implementation order: Read memory → Check pattern → Then code
+- **Documentation:**
+  - Journal: `.memory/journal/2026-W13.md` (comprehensive Wave 1-3 analysis)
+  - Rules: R-118 to R-120 + 3 new anti-patterns registered
+  - MEMORY.md updated (this section)
