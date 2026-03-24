@@ -156,7 +156,7 @@ Para alcançar a coesão desejada, a aplicação será implementada como uma **s
 │     Decide a composição mobile vs. desktop.              │
 │     Controla largura máxima (max-w-7xl), grids por tela, │
 │     e o offset do sidebar (margin-left: 256px desktop).  │
-│     Arquivo: src/App.jsx + src/shared/styles/layout.css  │
+│     Arquivo: src/App.jsx + src/shared/styles/layout.redesign.css  │
 ├─────────────────────────────────────────────────────────┤
 │  3. Navigation System                                    │
 │     BottomNav (mobile) + Sidebar (desktop), operando     │
@@ -199,6 +199,10 @@ Para alcançar a coesão desejada, a aplicação será implementada como uma **s
 ## 3. Gap Analysis: Estado Atual vs. Futuro
 
 ### 2.1 Design Tokens — Delta Completo
+
+> **Contexto de rollout:** "REMOVER" e "ADICIONAR" abaixo descrevem o **target state** (estado após rollout completo).
+> - **"ADICIONAR"** durante rollout = adicionar em `tokens.redesign.css` scoped em `[data-redesign="true"]`, NÃO em `colors.css`
+> - **"REMOVER"** acontece apenas no pós-rollout, quando os tokens originais forem migrados/removidos dos arquivos canônicos
 
 ```
 REMOVER:
@@ -270,6 +274,8 @@ ADICIONAR:
 
 ### 2.3 Views — Delta por Tela
 
+> **Contexto de rollout W4+:** As mudanças abaixo são implementadas em **variantes redesenhadas** (`src/views/redesign/`), NÃO nos arquivos de view originais. O hook `useRedesign()` seleciona qual versão renderizar. Views atuais permanecem intactas até o rollout completo.
+
 | View | Mudanças Visuais | Mudanças Estruturais |
 |------|-----------------|---------------------|
 | **Dashboard** | Greeting editorial, ring recolor, doses por período (Manhã/Tarde/Noite), cards tonal | Grid 2-col desktop (ring+priority left, schedule right) |
@@ -320,6 +326,8 @@ Adicionar no início de `src/shared/styles/tokens.redesign.css` (já scoped pelo
 - **NÃO remover dark mode toggle** — desabilitar temporariamente, preservar infraestrutura para Phase 6
 - **NÃO quebrar lazy loading** — manter React.lazy + Suspense + ViewSkeleton pattern
 - **MANTER** todos os path aliases existentes (@features, @shared, etc.)
+- **NÃO editar arquivos de tokens originais** (`colors.css`, `shadows.css`, `borders.css`, `typography.css`) durante a fase de rollout — alterações vão em `tokens.redesign.css` scoped em `[data-redesign="true"]`
+- **NÃO editar views originais** (`Dashboard.jsx`, `Treatment.jsx`, `Stock.jsx`, etc.) durante a fase de rollout — criar variantes em `src/views/redesign/` e usar `useRedesign()` para selecionar
 
 ---
 
@@ -349,6 +357,7 @@ Adicionar no início de `src/shared/styles/tokens.redesign.css` (já scoped pelo
 **Ação (target state):** REESCREVER completamente. Remover TODAS as variáveis neon/glass/pink/cyan.
 
 ```css
+/* TARGET STATE — na implementação real (rollout): [data-redesign="true"] { ... } em vez de :root {} */
 /* ============================================
    BRAND COLORS — Verde Saúde (Primary)
    ============================================ */
@@ -577,6 +586,7 @@ Adicionar no início de `src/shared/styles/tokens.redesign.css` (já scoped pelo
 **Ação (target state):** REESCREVER. Remover shadow-layer-1 até 5 e todos os glows. Substituir por ambient shadow system.
 
 ```css
+/* TARGET STATE — na implementação real (rollout): [data-redesign="true"] { ... } em vez de :root {} */
 :root {
   /* ============================================
      AMBIENT SHADOW SYSTEM — Therapeutic Sanctuary
@@ -622,6 +632,7 @@ Adicionar no início de `src/shared/styles/tokens.redesign.css` (já scoped pelo
 **Ação (target state):** ATUALIZAR. Manter widths, ATUALIZAR radii para mínimo 0.75rem. Remover radii xs/sm para UI components.
 
 ```css
+/* TARGET STATE — na implementação real (rollout): [data-redesign="true"] { ... } em vez de :root {} */
 :root {
   /* Border Radius — Mínimo 0.75rem para UI */
   --radius-none: 0;
@@ -677,10 +688,11 @@ Alterações chave em `src/shared/styles/index.css`:
 ### Critério de conclusão Wave 0
 
 - [ ] `npm run dev` roda sem erros de CSS
-- [ ] Background da app é `#f8fafb` (off-white)
-- [ ] Textos usam `#191c1d` (nunca preto puro)
-- [ ] Nenhuma referência a `--neon-*` ou `--glow-*` no codebase
-- [ ] Componentes existentes podem estar "feios" (cores quebradas) — isso é esperado e será corrigido nas waves seguintes
+- [ ] `tokens.redesign.css` existe com todos os tokens scoped em `[data-redesign="true"]`
+- [ ] Para usuários **com flag ativo** (`?redesign=1`): background é `#f8fafb`, textos usam `#191c1d`
+- [ ] Para usuários **sem flag**: app permanece 100% idêntica ao estado anterior (sem quebras visuais)
+- [ ] `colors.css`, `shadows.css`, `borders.css` NÃO foram modificados (verificar com `git diff`)
+- [ ] Tokens neon/glow originais continuam funcionando para usuários sem flag (são mantidos em `colors.css`)
 
 ---
 
@@ -705,6 +717,7 @@ Alterações chave em `src/shared/styles/index.css`:
 **Ação (target state):** REESCREVER completamente.
 
 ```css
+/* TARGET STATE — na implementação real (rollout): [data-redesign="true"] { ... } em vez de :root {} */
 :root {
   /* ============================================
      FONT FAMILIES — Therapeutic Sanctuary
@@ -796,9 +809,7 @@ Alterações chave em `src/shared/styles/index.css`:
 }
 ```
 
-**Arquivo:** `index.html`
-
-**Ação:** Adicionar font preload links (ver seção 3.2).
+**Sobre fontes:** Durante rollout, as fontes são carregadas via `@import url(...)` no início de `tokens.redesign.css` (ver seção 3.2). `index.html` NÃO é modificado durante esta fase.
 
 ### Sprint 1.2 — Icon System (Lucide React)
 
@@ -856,11 +867,11 @@ import { Calendar, Pill, Package, User } from 'lucide-react'
 
 ### Critério de conclusão Wave 1
 
-- [ ] Fontes Public Sans + Lexend carregam corretamente
-- [ ] Headings (h1-h6) usam Public Sans bold
-- [ ] Body text usa Lexend regular
-- [ ] `lucide-react` instalado e funcional
-- [ ] Nenhum peso de fonte abaixo de 400 no codebase
+- [ ] `lucide-react` instalado e importável sem erros
+- [ ] `tokens.redesign.css` contém o `@import` das fontes + todos os tokens tipográficos scoped
+- [ ] Para usuários **com flag ativo**: fontes Public Sans (headings) e Lexend (body) renderizam corretamente
+- [ ] Para usuários **sem flag**: app permanece 100% idêntica ao estado anterior (sem quebras visuais)
+- [ ] `typography.css` NÃO foi modificado (verificar com `git diff`)
 
 ---
 
@@ -886,6 +897,7 @@ import { Calendar, Pill, Package, User } from 'lucide-react'
 Adicionar classes de superfície para o Material 3 tonal architecture:
 
 ```css
+/* TARGET STATE — na implementação real (rollout): prefixar todos os seletores com [data-redesign="true"] */
 /* ============================================
    SURFACE TONAL SYSTEM — "No-Line Rule"
    Profundidade por tom de background, NÃO por bordas.
@@ -1004,10 +1016,11 @@ Adicionar classes de superfície para o Material 3 tonal architecture:
 
 ### Critério de conclusão Wave 2
 
-- [ ] Page backgrounds são `#f8fafb`
-- [ ] Cards não têm borders (apenas tonal shift + ambient shadow)
-- [ ] Grid responsivo funciona em 320px, 768px e 1280px
-- [ ] `.card-sanctuary` class aplicada e funcional
+- [ ] `layout.redesign.css` existe com todas as classes scoped em `[data-redesign="true"]`
+- [ ] Para usuários **com flag ativo**: backgrounds são `#f8fafb`, cards sem borders, `.card-sanctuary` funcional
+- [ ] Para usuários **sem flag**: app permanece 100% idêntica ao estado anterior
+- [ ] `index.css` NÃO recebeu novas classes utilitárias não-scoped (verificar com `git diff`)
+- [ ] Grid responsivo funciona em 320px, 768px e 1280px para usuários com flag
 
 ---
 
@@ -1201,21 +1214,40 @@ Padrão de lista sem divisores — separação por espaço ou alternância tonal
 
 ### Critério de conclusão Wave 3
 
-- [ ] Button primary é gradient verde com 64px height
-- [ ] Cards usam sanctuary style (no borders, 2rem radius, ambient shadow)
-- [ ] Inputs têm 56px height com radius xl
-- [ ] Listas não têm dividers (espaço + tonal alternation)
-- [ ] Todos os touch targets ≥ 56px
+- [ ] `components.redesign.css` existe com todos os overrides scoped em `[data-redesign="true"]`
+- [ ] Para usuários **com flag ativo**: Button primary = gradient verde 64px; Cards = sanctuary style; Inputs = 56px radius xl
+- [ ] Para usuários **sem flag**: Button, Card e form elements permanecem 100% idênticos ao estado anterior
+- [ ] `Button.css`, `Card.css` e arquivos de form NÃO foram modificados (verificar com `git diff`)
+- [ ] API de props de Button, Card e Modal: imutável (sem novas props obrigatórias)
 
 ---
 
 ## 9. Wave 4 — Navigation: BottomNav + Sidebar
 
+> **⚠️ ROLLOUT GRADUAL — PADRÃO W4-W12**
+>
+> A partir desta wave, a estratégia muda: em vez de CSS scoped, usamos **variantes de componente/view** controladas pelo hook `useRedesign()`.
+>
+> **Regras para toda execução W4-W12:**
+> - **Views atuais (Dashboard.jsx, Treatment.jsx, Stock.jsx, etc.) NÃO são modificadas**
+> - Para cada view alterada, criar uma variante em `src/views/redesign/` (ex: `DashboardRedesign.jsx`)
+> - `src/App.jsx` usa `useRedesign()` para selecionar qual variante renderizar:
+>   ```jsx
+>   const { isRedesignEnabled } = useRedesign()
+>   // No renderCurrentView():
+>   case 'dashboard': return isRedesignEnabled ? <DashboardRedesign /> : <Dashboard />
+>   ```
+> - Componentes internos de views (RingGauge, DoseZoneList, etc.) podem ser criados como novos arquivos paralelos (`RingGaugeRedesign.jsx`) e usados APENAS pelas views redesenhadas — **sem alterar os originais**
+> - Componentes compartilhados (BottomNav, Modal, etc.) são renderizados condicionalmente: `{isRedesignEnabled ? <BottomNavRedesign /> : <BottomNav />}`
+> - Todos os novos componentes e views redesenhadas devem ser lazy-loaded via `React.lazy()` para não aumentar o bundle para usuários sem flag
+>
+> **Spec completa de infraestrutura:** `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md`
+
 ### Sprint 4.1 — BottomNav Redesign
 
-**Arquivo:** `src/shared/components/ui/BottomNav.jsx` + `BottomNav.css`
-
-**Ação:** REESCREVER completamente.
+**Componente atual:** `src/shared/components/ui/BottomNav.jsx` + `BottomNav.css` — **NÃO alterar**
+**Componente novo:** Criar `src/shared/components/ui/BottomNavRedesign.jsx` + `BottomNavRedesign.css`
+**Renderização em App.jsx:** `{isAuthenticated && (isRedesignEnabled ? <BottomNavRedesign /> : <BottomNav />)}`
 
 **Design futuro (mobile):**
 ```
@@ -1374,22 +1406,35 @@ const navItems = [
 
 **Arquivo:** `src/App.jsx`
 
-**Ação:** Adicionar Sidebar e ajustar layout para desktop.
+**Ação:** Adicionar suporte ao Sidebar e navegação redesenhada, **condicionados ao flag `isRedesignEnabled`**.
 
 ```jsx
-// Adicionar ao return do App:
+import { useRedesign } from '@shared/hooks/useRedesign'
+
+// No componente App:
+const { isRedesignEnabled } = useRedesign()
+
+// No return — tudo condicionado ao flag:
 <OnboardingProvider>
   <DashboardProvider>
-    <div className="app-container">
-      {isAuthenticated && <Sidebar currentView={currentView} setCurrentView={setCurrentView} />}
-      <main className={`app-main ${isAuthenticated ? 'main-with-sidebar' : ''}`}>
+    <div className={`app-container ${isRedesignEnabled ? 'has-sidebar' : ''}`}
+         data-redesign={isRedesignEnabled ? 'true' : undefined}>
+      {/* Sidebar — APENAS para usuários com flag ativo */}
+      {isAuthenticated && isRedesignEnabled && (
+        <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+      )}
+
+      <main className={`app-main ${isAuthenticated && isRedesignEnabled ? 'main-with-sidebar' : ''}`}>
         {renderCurrentView()}
       </main>
 
       <OfflineBanner />
 
+      {/* Nav: redesenhada para flag users, original para outros */}
       {isAuthenticated && (
-        <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+        isRedesignEnabled
+          ? <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
+          : <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
       )}
 
       {/* ... rest (chat, onboarding, install) */}
@@ -1398,43 +1443,47 @@ const navItems = [
 </OnboardingProvider>
 ```
 
-**CSS update (App.module.css ou index.css):**
+**CSS para sidebar offset** (adicionar em `layout.redesign.css`, scoped):
 ```css
-.app-main {
+[data-redesign="true"] .app-main {
   min-height: 100vh;
   position: relative;
-  padding-bottom: 80px; /* BottomNav height on mobile */
+  padding-bottom: 80px; /* BottomNavRedesign height on mobile */
 }
 
 @media (min-width: 768px) {
-  .main-with-sidebar {
+  [data-redesign="true"] .main-with-sidebar {
     margin-left: 16rem; /* sidebar width */
     padding-bottom: 0;  /* no bottom nav on desktop */
   }
 }
 ```
 
+**NOTA:** O `data-redesign="true"` aplicado aqui (no `app-container`) é a âncora de CSS scoping para W0-W3. O Sprint 4.3 garante que esse atributo seja adicionado/removido dinamicamente pelo `RedesignContext`.
+
 ### Sprint 4.4 — Page Transitions (AnimatePresence)
 
 **Arquivo:** `src/App.jsx`
 
-Wrap `renderCurrentView()` com AnimatePresence para Soft Handoff:
+Wrap `renderCurrentView()` com AnimatePresence **apenas para usuários com flag ativo**:
 
 ```jsx
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Dentro do return:
-<AnimatePresence mode="wait">
-  <motion.div
-    key={currentView}
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0 }}
-    transition={{ duration: 0.3, ease: 'easeOut' }}
-  >
-    {renderCurrentView()}
-  </motion.div>
-</AnimatePresence>
+// No renderCurrentView() wrapper — condicionado ao flag:
+{isRedesignEnabled ? (
+  <AnimatePresence mode="wait">
+    <motion.div
+      key={currentView}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
+      {renderCurrentView()}
+    </motion.div>
+  </AnimatePresence>
+) : renderCurrentView()}
 ```
 
 **ATENÇÃO:** Framer Motion 12 já está instalado. Usar import de `framer-motion` (não de `motion/react` como nos protótipos).
@@ -1532,23 +1581,29 @@ export const staticFallback = {
 
 ### Sprint 5.2 — Atualizar animations.css
 
-**Arquivo:** `src/shared/styles/animations.css`
+> **⚠️ ROLLOUT:** `animations.css` é um arquivo global — edições afetam TODOS os usuários.
+> Durante a fase de rollout gradual:
+> - **NÃO remover** as animações neon/glow de `animations.css` (usuários sem flag dependem delas)
+> - As **novas animações CSS** (fadeInUp, fillWidth, pulse-critical atualizado) devem ser adicionadas em `components.redesign.css` scoped em `[data-redesign="true"]`
+> - A remoção das animações antigas de `animations.css` ocorre apenas no **rollout completo (pós-validação)**
 
-**Ação:** Remover animações neon/glow. Manter confetti, pulse-critical. Adicionar novas animações CSS como fallback.
+**Implementação real (durante rollout):** Adicionar em `src/shared/styles/components.redesign.css`:
 
 ```css
-/* Pulse para estoque crítico — MANTER mas atualizar cor */
-.pulse-critical {
-  animation: pulse-critical 2s ease-in-out infinite;
+/* TARGET STATE — implementação real: [data-redesign="true"] { ... } */
+
+/* Pulse para estoque crítico — cor atualizada */
+[data-redesign="true"] .pulse-critical {
+  animation: pulse-critical-sanctuary 2s ease-in-out infinite;
 }
 
-@keyframes pulse-critical {
+@keyframes pulse-critical-sanctuary {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse-critical { animation: none; }
+  [data-redesign="true"] .pulse-critical { animation: none; }
 }
 
 /* Cascade reveal fallback (CSS) */
@@ -1563,6 +1618,8 @@ export const staticFallback = {
   to { transform: scaleX(1); }
 }
 ```
+
+**Target state (pós-rollout):** Remover versões neon/glow de `animations.css` e substituir pelo conteúdo acima (sem o prefixo scoped).
 
 ### Sprint 5.3 — useMotion Hook
 
@@ -1609,11 +1666,16 @@ export function useMotion() {
 
 ## 11. Wave 6 — Dashboard (Hoje) Redesign
 
+> **⚠️ ROLLOUT GRADUAL — PADRÃO useRedesign()**
+> `Dashboard.jsx` atual NÃO é modificado. Criar `src/views/redesign/DashboardRedesign.jsx` com o novo layout.
+> Componentes internos novos (RingGauge com novo visual, PriorityDoseCard, etc.) são criados como arquivos separados e usados APENAS pela view redesenhada.
+> App.jsx seleciona qual view renderizar via `isRedesignEnabled`. Ver banner da Wave 4 para o padrão completo.
+
 Esta é a wave mais complexa. O Dashboard é o coração do app.
 
 ### Sprint 6.1 — Dashboard Layout
 
-**Arquivo:** `src/views/Dashboard.jsx`
+**Arquivo:** `src/views/redesign/DashboardRedesign.jsx` (NOVO — NÃO editar `src/views/Dashboard.jsx`)
 
 **Layout futuro (mobile):**
 ```
@@ -1696,7 +1758,7 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 
 ### Sprint 6.2 — RingGauge Redesign
 
-**Arquivo:** `src/features/dashboard/components/RingGauge.jsx`
+**Arquivo:** `src/features/dashboard/components/RingGaugeRedesign.jsx` (NOVO — NÃO editar `RingGauge.jsx`; usado apenas por `DashboardRedesign.jsx`)
 
 **Mudanças visuais:**
 - Stroke width: 12pt (mais grosso, legível em tamanhos pequenos)
@@ -1718,7 +1780,7 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 
 ### Sprint 6.3 — DoseZoneList → Cronograma por Período
 
-**Arquivo:** `src/features/dashboard/components/DoseZoneList.jsx`
+**Arquivo:** `src/features/dashboard/components/CronogramaPeriodo.jsx` (NOVO — NÃO editar `DoseZoneList.jsx`; usado apenas por `DashboardRedesign.jsx`)
 
 **Mudanças:**
 - Substituir zonas temporais deslizantes (ATRASADAS/AGORA/PRÓXIMAS/MAIS TARDE) por **períodos do dia** (Manhã/Tarde/Noite) como no mockup complex-hoje
@@ -1735,7 +1797,7 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 
 ### Sprint 6.4 — StockBars → Inline Stock Alert
 
-**Arquivo:** `src/features/dashboard/components/StockBars.jsx`
+**Arquivo:** `src/features/dashboard/components/StockAlertInline.jsx` (NOVO — NÃO editar `StockBars.jsx`; usado apenas por `DashboardRedesign.jsx`)
 
 No dashboard, StockBars se torna um **alert inline** (não mais widget separado):
 
@@ -1755,7 +1817,7 @@ No dashboard, StockBars se torna um **alert inline** (não mais widget separado)
 
 ### Sprint 6.5 — SmartAlerts Visual Update
 
-**Arquivo:** `src/features/dashboard/components/SmartAlerts.jsx`
+**Arquivo:** `src/features/dashboard/components/SmartAlertsRedesign.jsx` (NOVO — NÃO editar `SmartAlerts.jsx`; usado apenas por `DashboardRedesign.jsx`)
 
 **Mudanças visuais:**
 - Remover glow/neon effects
@@ -1791,6 +1853,10 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 ---
 
 ## 12. Wave 7 — Tratamentos Redesign
+
+> **⚠️ ROLLOUT GRADUAL — PADRÃO useRedesign()**
+> `Treatment.jsx` atual NÃO é modificado. Criar `src/views/redesign/TreatmentRedesign.jsx`.
+> Componentes internos novos são criados como arquivos separados, usados APENAS pela view redesenhada.
 
 ### Sprint 7.1 — Treatment Layout
 
@@ -1850,7 +1916,7 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 
 ### Sprint 7.2 — TreatmentCard Expandível
 
-**Arquivo:** Evoluir `src/views/Treatment.jsx` ou criar `src/features/protocols/components/TreatmentRow.jsx`
+**Arquivo:** Criar `src/features/protocols/components/TreatmentRowRedesign.jsx` (NÃO editar `Treatment.jsx`; usado apenas por `TreatmentRedesign.jsx`)
 
 Cada medicamento na lista é um row expansível:
 - **Collapsed:** Icon + Name + dosage + frequency + adherence mini-bar + stock bar + chevron
@@ -1899,6 +1965,10 @@ No desktop, mostrar widget fixo no canto inferior direito (como no mockup comple
 ---
 
 ## 13. Wave 8 — Estoque Redesign
+
+> **⚠️ ROLLOUT GRADUAL — PADRÃO useRedesign()**
+> `Stock.jsx` atual NÃO é modificado. Criar `src/views/redesign/StockRedesign.jsx`.
+> `StockCard.jsx` é um componente novo — criado diretamente (sem arquivo original a preservar).
 
 ### Sprint 8.1 — Stock Layout
 
@@ -1974,7 +2044,7 @@ Card individual por medicamento:
 
 ### Sprint 8.3 — Critical Alert Banner
 
-**Arquivo:** Evoluir `src/views/Stock.jsx`
+**Arquivo:** `src/views/redesign/StockRedesign.jsx` (NÃO editar `Stock.jsx`)
 
 Banner topo:
 - Background: error-container/30
@@ -2003,9 +2073,13 @@ Seção colapsável com últimas compras/ajustes:
 
 ## 14. Wave 9 — Perfil & Saúde Redesign
 
+> **⚠️ ROLLOUT GRADUAL — PADRÃO useRedesign()**
+> `Profile.jsx`, `HealthHistory.jsx` e `Emergency.jsx` atuais NÃO são modificados.
+> Criar variantes em `src/views/redesign/` para cada view.
+
 ### Sprint 9.1 — Profile View
 
-**Arquivo:** `src/views/Profile.jsx`
+**Arquivo:** `src/views/redesign/ProfileRedesign.jsx` (NÃO editar `src/views/Profile.jsx`)
 
 Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
@@ -2033,7 +2107,7 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
 ### Sprint 9.2 — HealthHistory Updates
 
-**Arquivo:** `src/views/HealthHistory.jsx`
+**Arquivo:** `src/views/redesign/HealthHistoryRedesign.jsx` (NÃO editar `src/views/HealthHistory.jsx`)
 
 - Calendar heat map: atualizar cores para novo palette (verde/amarelo/vermelho do novo system)
 - Sparkline: atualizar cores
@@ -2041,7 +2115,7 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
 ### Sprint 9.3 — Emergency Card
 
-**Arquivo:** `src/views/Emergency.jsx`
+**Arquivo:** `src/views/redesign/EmergencyRedesign.jsx` (NÃO editar `src/views/Emergency.jsx`)
 
 - Atualizar visual para novo design system
 - Manter funcionalidade offline
@@ -2058,9 +2132,11 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
 ## 15. Wave 10 — Progressive Disclosure System
 
+> **⚠️ ROLLOUT GRADUAL:** `useComplexityMode.js` é um hook compartilhado. Mudanças nele afetam TODAS as views, incluindo as atuais. Durante rollout, preferir criar `useComplexityModeRedesign.js` como hook separado usado pelas views redesenhadas, mantendo o original intacto.
+
 ### Sprint 10.1 — useComplexityMode Evolution
 
-**Arquivo:** `src/features/dashboard/hooks/useComplexityMode.js`
+**Arquivo:** `src/features/dashboard/hooks/useComplexityModeRedesign.js` (NOVO — NÃO editar `useComplexityMode.js` se isso quebrar views atuais)
 
 **Manter:** 3 modos (simples ≤3, moderado 4-6, complexo 7+)
 
@@ -2111,9 +2187,11 @@ Implementar 3 levels:
 
 ## 16. Wave 11 — Accessibility & Polish
 
+> **⚠️ ROLLOUT GRADUAL:** Esta wave aplica-se às **views redesenhadas** (`src/views/redesign/`). As auditorias de acessibilidade, ARIA e focus management devem ser executadas nas variantes redesenhadas — não nas views originais.
+
 ### Sprint 11.1 — Semantic HTML
 
-Garantir em TODAS as views:
+Garantir em TODAS as **views redesenhadas** (`src/views/redesign/`):
 - `<main>`, `<nav>`, `<section>`, `<header>` corretos
 - Heading hierarchy: `<h1>` per page → `<h2>` sections → `<h3>` subsections
 - Buttons são `<button>`, não `<div onClick>`
@@ -2169,9 +2247,13 @@ Verificar WCAG AA compliance:
 
 ## 17. Wave 12 — Landing, Auth & Onboarding
 
+> **⚠️ ROLLOUT GRADUAL:** Landing.jsx, Auth.jsx e OnboardingWizard.jsx atuais NÃO são modificados.
+> Criar variantes em `src/views/redesign/` e `src/shared/components/onboarding/redesign/`.
+> **Exceção:** Landing.jsx é a primeira tela que todos veem (antes de autenticação). Dependendo da estratégia de rollout, pode ser redesenhada direto SE aprovada para todos os usuários simultaneamente — a decidir com o product owner antes da execução.
+
 ### Sprint 12.1 — Landing Page Redesign
 
-**Arquivo:** `src/views/Landing.jsx`
+**Arquivo:** `src/views/redesign/LandingRedesign.jsx` (NÃO editar `src/views/Landing.jsx` durante rollout)
 
 - Hero com Verde Saúde gradient background
 - Typography: Public Sans display para headline
@@ -2181,7 +2263,7 @@ Verificar WCAG AA compliance:
 
 ### Sprint 12.2 — Auth View Redesign
 
-**Arquivo:** `src/views/Auth.jsx`
+**Arquivo:** `src/views/redesign/AuthRedesign.jsx` (NÃO editar `src/views/Auth.jsx`)
 
 - Background: surface
 - Card: sanctuary style centered
@@ -2191,7 +2273,7 @@ Verificar WCAG AA compliance:
 
 ### Sprint 12.3 — Onboarding Wizard Update
 
-**Arquivo:** `src/shared/components/onboarding/OnboardingWizard.jsx`
+**Arquivo:** `src/shared/components/onboarding/redesign/OnboardingWizardRedesign.jsx` (NÃO editar `OnboardingWizard.jsx`)
 
 - Step indicators: primary-fixed dots
 - Cards: sanctuary style
@@ -2275,31 +2357,40 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ### Arquivos a EVOLUIR (mudanças visuais, preservar lógica) — Wave 4+
 
+> **Nota de rollout:** Durante a fase de rollout gradual, os arquivos de views listados abaixo NÃO são editados diretamente. Em vez disso, criar variantes em `src/views/redesign/`. Apenas `src/App.jsx` e `src/shared/styles/animations.css` são editados diretamente (com isolamento adequado).
+
 | Arquivo | Wave | Mudanças |
 |---------|------|----------|
-| `src/shared/styles/animations.css` | 5 | Remover neon, manter pulse-critical |
+| `src/shared/styles/animations.css` | 5 | **Pós-rollout:** remover neon. Durante rollout: novas animações em `components.redesign.css` |
 | `src/shared/components/ui/Modal.jsx` + CSS | 3 | Atualizar visual (via CSS scoped em W3, depois direto) |
-| `src/features/dashboard/components/RingGauge.jsx` | 6 | Recolor, 12pt stroke, Public Sans |
-| `src/features/dashboard/components/StockBars.jsx` | 6 | Inline alert style |
-| `src/features/dashboard/components/SparklineAdesao.jsx` | 6 | Recolor |
-| `src/features/dashboard/components/DoseZoneList.jsx` | 6 | Cronograma por período |
-| `src/features/dashboard/components/SmartAlerts.jsx` | 6 | Tonal surfaces |
-| `src/features/dashboard/components/ViewModeToggle.jsx` | 6 | Segmented control novo |
-| `src/features/dashboard/components/PlanBadge.jsx` | 6 | Recolor |
-| `src/features/dashboard/components/BatchRegisterButton.jsx` | 6 | Gradient primary |
-| `src/features/dashboard/components/AdaptiveLayout.jsx` | 6 | Grid desktop |
-| `src/shared/components/log/SwipeRegisterItem.jsx` | 6 | Sanctuary visual |
-| `src/views/Dashboard.jsx` | 6 | Layout + grid + greeting |
-| `src/views/Treatment.jsx` | 7 | Category grouping + search + tabs |
-| `src/views/Stock.jsx` | 8 | Grid cards + critical banner |
-| `src/views/Profile.jsx` | 9 | Flat utility layout |
-| `src/views/HealthHistory.jsx` | 9 | Recolor |
-| `src/views/Emergency.jsx` | 9 | Recolor |
-| `src/views/Landing.jsx` | 12 | Verde Saúde identity |
-| `src/views/Auth.jsx` | 12 | New visual |
-| `src/shared/components/onboarding/` | 12 | New visual |
-| `src/features/dashboard/hooks/useComplexityMode.js` | 10 | Trigger expansion |
-| `src/App.jsx` | 4 | Add Sidebar + layout offset + AnimatePresence (sob useRedesign()) |
+| `src/App.jsx` | 4 | Renderização condicional via `useRedesign()` (Sidebar, BottomNavRedesign, AnimatePresence) |
+
+### Views a CRIAR como variantes redesenhadas (NÃO editar originais durante rollout)
+
+| Arquivo Original | Variante Redesenhada | Wave | Mudanças |
+|-----------------|---------------------|------|----------|
+| `src/views/Dashboard.jsx` | `src/views/redesign/DashboardRedesign.jsx` | 6 | Layout + grid + greeting |
+| `src/views/Treatment.jsx` | `src/views/redesign/TreatmentRedesign.jsx` | 7 | Category grouping + search + tabs |
+| `src/views/Stock.jsx` | `src/views/redesign/StockRedesign.jsx` | 8 | Grid cards + critical banner |
+| `src/views/Profile.jsx` | `src/views/redesign/ProfileRedesign.jsx` | 9 | Flat utility layout |
+| `src/views/HealthHistory.jsx` | `src/views/redesign/HealthHistoryRedesign.jsx` | 9 | Recolor |
+| `src/views/Emergency.jsx` | `src/views/redesign/EmergencyRedesign.jsx` | 9 | Recolor |
+| `src/views/Landing.jsx` | `src/views/redesign/LandingRedesign.jsx` | 12 | Verde Saúde identity |
+| `src/views/Auth.jsx` | `src/views/redesign/AuthRedesign.jsx` | 12 | New visual |
+| `src/shared/components/onboarding/OnboardingWizard.jsx` | `src/shared/components/onboarding/redesign/OnboardingWizardRedesign.jsx` | 12 | New visual |
+
+### Componentes internos a CRIAR como paralelos (usados apenas pelas views redesenhadas)
+
+| Componente Original | Componente Redesenhado | Wave | Mudanças |
+|---------------------|----------------------|------|----------|
+| `RingGauge.jsx` | `RingGaugeRedesign.jsx` | 6 | Recolor, 12pt stroke, Public Sans |
+| `StockBars.jsx` | `StockAlertInline.jsx` | 6 | Inline alert style |
+| `SparklineAdesao.jsx` | (incorporado no DashboardRedesign) | 6 | Recolor |
+| `DoseZoneList.jsx` | `CronogramaPeriodo.jsx` | 6 | Cronograma por período |
+| `SmartAlerts.jsx` | `SmartAlertsRedesign.jsx` | 6 | Tonal surfaces |
+| `ViewModeToggle.jsx` | (incorporado no DashboardRedesign) | 6 | Segmented control novo |
+| `useComplexityMode.js` | `useComplexityModeRedesign.js` | 10 | Trigger expansion |
+| `BottomNav.jsx` | `BottomNavRedesign.jsx` | 4 | Glass nav + 4 tabs Lucide |
 
 ### Arquivos NOVOS a criar — infraestrutura de rollout (ANTES das waves)
 
@@ -2311,20 +2402,21 @@ Cada wave DEVE passar nestes checks antes de merge:
 | `src/shared/styles/layout.redesign.css` | Classes de layout/superfície scoped (W2) |
 | `src/shared/styles/components.redesign.css` | Overrides de componentes scoped (W3) |
 
-### Arquivos NOVOS a criar — features e componentes
+### Arquivos NOVOS a criar — features e componentes compartilhados
 
 | Arquivo | Wave | Propósito |
 |---------|------|-----------|
-| `src/shared/components/ui/Sidebar.jsx` + CSS | 4 | Desktop navigation |
+| `src/shared/components/ui/Sidebar.jsx` + CSS | 4 | Desktop navigation (só renderizado com flag ativo) |
+| `src/shared/components/ui/BottomNavRedesign.jsx` + CSS | 4 | Nav redesenhada (alternada via useRedesign()) |
 | `src/shared/utils/motionConstants.js` | 5 | Motion language constants |
 | `src/shared/hooks/useMotion.js` | 5 | Motion hook with reduced-motion |
 | `src/features/dashboard/components/PriorityDoseCard.jsx` | 6 | Next dose CTA card |
 | `src/features/stock/components/StockCard.jsx` | 8 | Individual stock card |
-| `src/shared/components/ui/Badge.jsx` + CSS | 3 | Status badges |
+| `src/shared/components/ui/Badge.jsx` + CSS | 3 | Status badges (via components.redesign.css) |
 | `src/shared/components/ui/ProgressiveTooltip.jsx` | 10 | Educational tooltips |
 | `src/shared/components/ui/PageHeader.jsx` | 6 | Reusable page header |
 
-### Arquivos que NÃO mudam (durante rollout W0-W3)
+### Arquivos que NÃO mudam (durante todo o rollout W0-W12)
 
 | Arquivo | Razão |
 |---------|-------|
@@ -2338,8 +2430,18 @@ Cada wave DEVE passar nestes checks antes de merge:
 | `src/shared/components/ui/Button.jsx` + CSS | API imutável; CSS scoped via `components.redesign.css` |
 | `src/shared/components/ui/Card.jsx` + CSS | API imutável; CSS scoped via `components.redesign.css` |
 | `index.html` | Fontes carregadas via @import no `tokens.redesign.css` durante rollout |
+| `src/views/Dashboard.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Treatment.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Stock.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Profile.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/HealthHistory.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Emergency.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Landing.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/views/Auth.jsx` | View original; variante redesenhada em `src/views/redesign/` |
+| `src/shared/components/ui/BottomNav.jsx` + CSS | Nav original; `BottomNavRedesign.jsx` é o paralelo |
+| `src/features/dashboard/hooks/useComplexityMode.js` | Hook original; `useComplexityModeRedesign.js` é o paralelo |
 
-### Arquivos que NÃO mudam
+### Arquivos que NÃO mudam (lógica de negócio — todas as waves)
 
 | Arquivo | Razão |
 |---------|-------|
