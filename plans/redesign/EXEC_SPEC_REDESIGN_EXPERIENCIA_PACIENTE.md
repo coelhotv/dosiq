@@ -252,8 +252,8 @@ ADICIONAR:
 | `SwipeRegisterItem.jsx` | `@shared/components/log/` | EVOLUIR | Atualizar visual para sanctuary style |
 | `BottomNav.jsx` | `@shared/components/ui/` | REESCREVER | Glass nav + 4 tabs com icons Lucide + labels |
 | `BottomNav.css` | `@shared/components/ui/` | REESCREVER | Glass: `bg-surface/80 backdrop-blur-[12px]` |
-| `Button.jsx` | `@shared/components/ui/` | REESCREVER | 64px height, gradient primary, xl radius |
-| `Card.jsx` | `@shared/components/ui/` | REESCREVER | Sanctuary cards: no border, 2rem radius, ambient shadow |
+| `Button.jsx` | `@shared/components/ui/` | CSS scoped (W3) | 64px height, gradient primary, xl radius — via `[data-redesign="true"] .btn` em `components.redesign.css`. **API de props: imutável. `Button.jsx` não é alterado.** |
+| `Card.jsx` | `@shared/components/ui/` | CSS scoped (W3) | Sanctuary cards: no border, 2rem radius, ambient shadow — via `[data-redesign="true"] .card` em `components.redesign.css`. **API de props: imutável. `Card.jsx` não é alterado.** |
 | `Modal.jsx` | `@shared/components/ui/` | EVOLUIR | Atualizar visual, manter lógica |
 | `Loading.jsx` | `@shared/components/ui/` | EVOLUIR | Verde primary spinner |
 | `DoseZoneList.jsx` | `@dashboard/components/` | EVOLUIR | Atualizar visual zones com tonal surfaces |
@@ -296,7 +296,15 @@ npm install lucide-react
 
 ### 3.2 Fonts — Carregamento
 
-Adicionar no `index.html` (preload para performance):
+> **⚠️ ROLLOUT GRADUAL:** As fontes NÃO devem ser adicionadas ao `index.html` globalmente. Durante a fase de rollout, o carregamento das fontes deve ser feito via `@import` dentro do arquivo `tokens.redesign.css`, garantindo que Public Sans e Lexend só carreguem para usuários com o flag ativado.
+
+Adicionar no início de `src/shared/styles/tokens.redesign.css` (já scoped pelo flag):
+```css
+/* Carregamento das fontes — só ativo para usuários com data-redesign="true" */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+```
+
+**Pós-validação (rollout completo para todos):** Ao promover o redesign para todos os usuários, migrar para `<link rel="preconnect">` + `<link rel="preload">` + `<link rel="stylesheet">` no `index.html` para performance máxima:
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -317,15 +325,28 @@ Adicionar no `index.html` (preload para performance):
 
 ## 5. Wave 0 — Foundation: Design Tokens
 
+> **⚠️ ROLLOUT GRADUAL — LEIA ANTES DE EXECUTAR**
+>
+> As instruções de Sprint abaixo descrevem o **target state** do redesign (como os tokens ficam quando o redesign estiver completo). Para implementar esta wave com rollout gradual — mantendo a app atual 100% intacta para todos os usuários — **siga o arquivo `plans/redesign/WAVE_0_DESIGN_TOKENS.md`** em vez das instruções abaixo.
+>
+> **O que muda na implementação real:**
+> - Os tokens NÃO são escritos em `colors.css`, `shadows.css` ou `borders.css` (esses arquivos NÃO são tocados)
+> - Os tokens NÃO são escritos em `:root {}` global
+> - Os tokens vão em `src/shared/styles/tokens.redesign.css`, scoped sob `[data-redesign="true"]`
+> - `index.css`, `light.css` e `dark.css` NÃO são tocados durante esta wave
+>
+> As seções abaixo servem como **referência de target state** e documentação de intenção de design.
+
 **Objetivo:** Substituir TODOS os design tokens de cor, sombra e gradiente de uma vez. Esta é a foundation sobre a qual todo o resto será construído.
 
 **Escopo:** Apenas tokens CSS — sem alterações em componentes React.
 
 ### Sprint 0.1 — Novo arquivo de cores
 
-**Arquivo:** `src/shared/styles/tokens/colors.css`
+**Target state (referência):** `src/shared/styles/tokens/colors.css` — estado final após rollout completo.
+**Implementação real:** Adicionar ao `tokens.redesign.css` scoped em `[data-redesign="true"]` — ver `WAVE_0_DESIGN_TOKENS.md`.
 
-**Ação:** REESCREVER completamente. Remover TODAS as variáveis neon/glass/pink/cyan.
+**Ação (target state):** REESCREVER completamente. Remover TODAS as variáveis neon/glass/pink/cyan.
 
 ```css
 /* ============================================
@@ -550,9 +571,10 @@ Adicionar no `index.html` (preload para performance):
 
 ### Sprint 0.2 — Novo arquivo de sombras
 
-**Arquivo:** `src/shared/styles/tokens/shadows.css`
+**Target state (referência):** `src/shared/styles/tokens/shadows.css`
+**Implementação real:** Adicionar ao `tokens.redesign.css` scoped em `[data-redesign="true"]` — ver `WAVE_0_DESIGN_TOKENS.md`.
 
-**Ação:** REESCREVER. Remover shadow-layer-1 até 5 e todos os glows. Substituir por ambient shadow system.
+**Ação (target state):** REESCREVER. Remover shadow-layer-1 até 5 e todos os glows. Substituir por ambient shadow system.
 
 ```css
 :root {
@@ -594,9 +616,10 @@ Adicionar no `index.html` (preload para performance):
 
 ### Sprint 0.3 — Novo arquivo de borders
 
-**Arquivo:** `src/shared/styles/tokens/borders.css`
+**Target state (referência):** `src/shared/styles/tokens/borders.css`
+**Implementação real:** Adicionar ao `tokens.redesign.css` scoped em `[data-redesign="true"]` — ver `WAVE_0_DESIGN_TOKENS.md`.
 
-**Ação:** ATUALIZAR. Manter widths, ATUALIZAR radii para mínimo 0.75rem. Remover radii xs/sm para UI components.
+**Ação (target state):** ATUALIZAR. Manter widths, ATUALIZAR radii para mínimo 0.75rem. Remover radii xs/sm para UI components.
 
 ```css
 :root {
@@ -626,13 +649,13 @@ Adicionar no `index.html` (preload para performance):
 }
 ```
 
-### Sprint 0.4 — Atualizar index.css
+### Sprint 0.4 — Atualizar index.css (pós-rollout)
 
-**Arquivo:** `src/shared/styles/index.css`
+> **⚠️ ROLLOUT:** `index.css` NÃO é modificado durante a fase de rollout gradual. As classes utilitárias abaixo são adicionadas em `tokens.redesign.css` scoped em `[data-redesign="true"]`. Ver `WAVE_0_DESIGN_TOKENS.md`.
 
-**Ação:** ATUALIZAR as classes utilitárias.
+**Target state** (executado apenas no rollout completo — quando todos os usuários receberem o redesign):
 
-Alterações chave:
+Alterações chave em `src/shared/styles/index.css`:
 - Remover `.glow-*` classes (todas)
 - Remover `.gradient-text` (neon)
 - Atualizar `.glass-card` para usar novos tokens
@@ -641,15 +664,15 @@ Alterações chave:
 - Adicionar `.card-sanctuary` utility class
 - Adicionar `.btn-primary-gradient` utility class
 
-### Sprint 0.5 — Limpar temas
+### Sprint 0.5 — Limpar temas (pós-rollout)
 
-**Arquivo:** `src/shared/styles/themes/light.css`
+> **⚠️ ROLLOUT:** `light.css` e `dark.css` NÃO são modificados durante a fase de rollout gradual. O dark mode placeholder de rollout é feito em `tokens.redesign.css` com selector `[data-theme='dark'] [data-redesign="true"]`.
 
-**Ação:** Atualizar para refletir novo token system. Remover referências neon.
+**Target state** (executado apenas no rollout completo):
 
-**Arquivo:** `src/shared/styles/themes/dark.css`
+**Arquivo:** `src/shared/styles/themes/light.css` — Atualizar para refletir novo token system. Remover referências neon.
 
-**Ação:** Simplificar para placeholder (Phase 6). Manter estrutura, marcar como TODO.
+**Arquivo:** `src/shared/styles/themes/dark.css` — Simplificar para placeholder (Phase 6). Manter estrutura, marcar como TODO.
 
 ### Critério de conclusão Wave 0
 
@@ -663,11 +686,23 @@ Alterações chave:
 
 ## 6. Wave 1 — Typography & Icon System
 
+> **⚠️ ROLLOUT GRADUAL — LEIA ANTES DE EXECUTAR**
+>
+> As instruções de Sprint abaixo descrevem o **target state** da tipografia. Para implementar esta wave com rollout gradual, **siga o arquivo `plans/redesign/WAVE_1_TYPOGRAPHY_ICONS.md`** em vez das instruções abaixo.
+>
+> **O que muda na implementação real:**
+> - Os tokens tipográficos NÃO são escritos em `typography.css` (esse arquivo NÃO é tocado)
+> - Os tokens vão em `tokens.redesign.css`, scoped sob `[data-redesign="true"]`
+> - O `@import` das fontes vai NO INÍCIO de `tokens.redesign.css` (não em `index.html`)
+>
+> As seções abaixo servem como **referência de target state** e documentação de intenção de design.
+
 ### Sprint 1.1 — Tipografia
 
-**Arquivo:** `src/shared/styles/tokens/typography.css`
+**Target state (referência):** `src/shared/styles/tokens/typography.css` — estado final após rollout completo.
+**Implementação real:** Adicionar ao `tokens.redesign.css` scoped em `[data-redesign="true"]` — ver `WAVE_1_TYPOGRAPHY_ICONS.md`.
 
-**Ação:** REESCREVER completamente.
+**Ação (target state):** REESCREVER completamente.
 
 ```css
 :root {
@@ -831,9 +866,22 @@ import { Calendar, Pill, Package, User } from 'lucide-react'
 
 ## 7. Wave 2 — Surface & Layout System
 
+> **⚠️ ROLLOUT GRADUAL — LEIA ANTES DE EXECUTAR**
+>
+> As instruções de Sprint abaixo descrevem o **target state** do sistema de superfícies e layout. Para implementar esta wave com rollout gradual, **siga o arquivo `plans/redesign/WAVE_2_SURFACE_LAYOUT.md`** em vez das instruções abaixo.
+>
+> **O que muda na implementação real:**
+> - As classes de superfície NÃO são adicionadas ao `index.css` (sem scoping = afetaria todos os usuários)
+> - O grid system NÃO vai em um novo `layout.css` — vai em `layout.redesign.css`
+> - Todos os seletores devem incluir `[data-redesign="true"]` como prefixo
+> - Classes com conflito de nomes (ex: `.page-title`, `.section-header`) devem ser obrigatoriamente prefixadas
+>
+> As seções abaixo servem como **referência de target state** e documentação de intenção de design.
+
 ### Sprint 2.1 — Surface Utilities
 
-**Arquivo:** `src/shared/styles/index.css`
+**Target state (referência):** classes adicionadas globalmente — estado final após rollout completo.
+**Implementação real:** Classes em `layout.redesign.css` scoped em `[data-redesign="true"]` — ver `WAVE_2_SURFACE_LAYOUT.md`.
 
 Adicionar classes de superfície para o Material 3 tonal architecture:
 
@@ -897,7 +945,8 @@ Adicionar classes de superfície para o Material 3 tonal architecture:
 
 ### Sprint 2.2 — Layout Grid System
 
-**Arquivo:** Criar `src/shared/styles/layout.css` (importar em index.css)
+**Target state (referência):** ver abaixo — estado final do grid system.
+**Implementação real:** Criar `src/shared/styles/layout.redesign.css` (NÃO `layout.css`) — todo o conteúdo prefixado com `[data-redesign="true"]`. Importar em `index.css` após os arquivos atuais. Ver `WAVE_2_SURFACE_LAYOUT.md`.
 
 ```css
 /* ============================================
@@ -964,9 +1013,22 @@ Adicionar classes de superfície para o Material 3 tonal architecture:
 
 ## 8. Wave 3 — Component Library: Primitives
 
+> **⚠️ ROLLOUT GRADUAL — LEIA ANTES DE EXECUTAR**
+>
+> As instruções de Sprint abaixo descrevem o **target state** dos componentes primitivos. Para implementar esta wave com rollout gradual, **siga o arquivo `plans/redesign/WAVE_3_COMPONENT_PRIMITIVES.md`** em vez das instruções abaixo.
+>
+> **O que muda na implementação real:**
+> - `Button.jsx`, `Card.jsx`, `Button.css`, `Card.css` **NÃO são alterados**
+> - Os estilos vão em `components.redesign.css` via overrides scoped: `[data-redesign="true"] .btn { }`
+> - **TODO bloco CSS abaixo deve receber o prefixo `[data-redesign="true"]` na implementação real**
+> - A API de props de todos os componentes é imutável
+>
+> As seções abaixo servem como **referência de target state** e documentação de intenção de design.
+
 ### Sprint 3.1 — Button
 
-**Arquivo:** `src/shared/components/ui/Button.jsx` + `Button.css`
+**Target state (referência):** override de `Button.css` via CSS scoped — ver `WAVE_3_COMPONENT_PRIMITIVES.md`.
+**Arquivo real:** `src/shared/styles/components.redesign.css`
 
 **Redesign:**
 
@@ -2190,28 +2252,33 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ## 19. Mapeamento de Arquivos
 
-### Arquivos a REESCREVER (breaking change controlado)
+> **⚠️ NOTA DE ROLLOUT:** Durante a fase de rollout gradual (W0-W3), os arquivos originais de tokens NÃO são modificados. Os tokens e overrides vivem em arquivos `.redesign.css` scoped em `[data-redesign="true"]`. As tabelas abaixo refletem o mapeamento correto por fase.
+
+### Arquivos a REESCREVER — Wave 4+ (diretos, sem rollout CSS scoping)
 
 | Arquivo | Wave | Ação |
 |---------|------|------|
-| `src/shared/styles/tokens/colors.css` | 0 | Reescrever completamente |
-| `src/shared/styles/tokens/shadows.css` | 0 | Reescrever completamente |
-| `src/shared/styles/tokens/typography.css` | 1 | Reescrever completamente |
 | `src/shared/components/ui/BottomNav.jsx` | 4 | Reescrever (Lucide icons + glass) |
 | `src/shared/components/ui/BottomNav.css` | 4 | Reescrever completamente |
 
-### Arquivos a EVOLUIR (mudanças visuais, preservar lógica)
+### Arquivos a REESCREVER — pós-rollout (só após validação completa e promoção global)
+
+| Arquivo | Wave origem | Ação pós-validação |
+|---------|------------|---------------------|
+| `src/shared/styles/tokens/colors.css` | 0 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
+| `src/shared/styles/tokens/shadows.css` | 0 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
+| `src/shared/styles/tokens/typography.css` | 1 | Mesclar conteúdo de `tokens.redesign.css`, remover scoping |
+| `src/shared/styles/tokens/borders.css` | 0 | Atualizar radii, remover xs/sm |
+| `src/shared/styles/index.css` | 0+2 | Remover neon, adicionar surface/sanctuary utils (migrar de `layout.redesign.css`) |
+| `src/shared/styles/themes/light.css` | 0 | Atualizar para novo palette |
+| `src/shared/styles/themes/dark.css` | 0 | Placeholder (Phase 6) |
+
+### Arquivos a EVOLUIR (mudanças visuais, preservar lógica) — Wave 4+
 
 | Arquivo | Wave | Mudanças |
 |---------|------|----------|
-| `src/shared/styles/tokens/borders.css` | 0 | Atualizar radii, remover xs/sm |
-| `src/shared/styles/index.css` | 0+2 | Remover neon, adicionar surface/sanctuary utils |
-| `src/shared/styles/themes/light.css` | 0 | Atualizar para novo palette |
-| `src/shared/styles/themes/dark.css` | 0 | Placeholder (Phase 6) |
 | `src/shared/styles/animations.css` | 5 | Remover neon, manter pulse-critical |
-| `src/shared/components/ui/Button.jsx` + CSS | 3 | Gradient verde, 64px, radius xl |
-| `src/shared/components/ui/Card.jsx` + CSS | 3 | Sanctuary style |
-| `src/shared/components/ui/Modal.jsx` + CSS | 3 | Atualizar visual |
+| `src/shared/components/ui/Modal.jsx` + CSS | 3 | Atualizar visual (via CSS scoped em W3, depois direto) |
 | `src/features/dashboard/components/RingGauge.jsx` | 6 | Recolor, 12pt stroke, Public Sans |
 | `src/features/dashboard/components/StockBars.jsx` | 6 | Inline alert style |
 | `src/features/dashboard/components/SparklineAdesao.jsx` | 6 | Recolor |
@@ -2232,22 +2299,45 @@ Cada wave DEVE passar nestes checks antes de merge:
 | `src/views/Auth.jsx` | 12 | New visual |
 | `src/shared/components/onboarding/` | 12 | New visual |
 | `src/features/dashboard/hooks/useComplexityMode.js` | 10 | Trigger expansion |
-| `src/App.jsx` | 4 | Add Sidebar + layout offset + AnimatePresence |
-| `index.html` | 1 | Font preload links |
+| `src/App.jsx` | 4 | Add Sidebar + layout offset + AnimatePresence (sob useRedesign()) |
 
-### Arquivos NOVOS a criar
+### Arquivos NOVOS a criar — infraestrutura de rollout (ANTES das waves)
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `src/shared/contexts/RedesignContext.jsx` | Provider + lógica do flag (URL param + localStorage) |
+| `src/shared/hooks/useRedesign.js` | Hook: { isRedesignEnabled, toggleRedesign } |
+| `src/shared/styles/tokens.redesign.css` | CSS scoped W0+W1 (tokens de cor, sombra, border, tipografia) |
+| `src/shared/styles/layout.redesign.css` | Classes de layout/superfície scoped (W2) |
+| `src/shared/styles/components.redesign.css` | Overrides de componentes scoped (W3) |
+
+### Arquivos NOVOS a criar — features e componentes
 
 | Arquivo | Wave | Propósito |
 |---------|------|-----------|
 | `src/shared/components/ui/Sidebar.jsx` + CSS | 4 | Desktop navigation |
 | `src/shared/utils/motionConstants.js` | 5 | Motion language constants |
 | `src/shared/hooks/useMotion.js` | 5 | Motion hook with reduced-motion |
-| `src/shared/styles/layout.css` | 2 | Grid system + responsive layout |
 | `src/features/dashboard/components/PriorityDoseCard.jsx` | 6 | Next dose CTA card |
 | `src/features/stock/components/StockCard.jsx` | 8 | Individual stock card |
 | `src/shared/components/ui/Badge.jsx` + CSS | 3 | Status badges |
 | `src/shared/components/ui/ProgressiveTooltip.jsx` | 10 | Educational tooltips |
 | `src/shared/components/ui/PageHeader.jsx` | 6 | Reusable page header |
+
+### Arquivos que NÃO mudam (durante rollout W0-W3)
+
+| Arquivo | Razão |
+|---------|-------|
+| `src/shared/styles/tokens/colors.css` | Tokens novos vão em `tokens.redesign.css` |
+| `src/shared/styles/tokens/shadows.css` | Tokens novos vão em `tokens.redesign.css` |
+| `src/shared/styles/tokens/borders.css` | Tokens novos vão em `tokens.redesign.css` |
+| `src/shared/styles/tokens/typography.css` | Tokens novos vão em `tokens.redesign.css` |
+| `src/shared/styles/themes/light.css` | Dark mode placeholder no `tokens.redesign.css` |
+| `src/shared/styles/themes/dark.css` | Dark mode placeholder no `tokens.redesign.css` |
+| `src/shared/styles/index.css` | Apenas recebe os 3 `@import` dos arquivos `.redesign.css` |
+| `src/shared/components/ui/Button.jsx` + CSS | API imutável; CSS scoped via `components.redesign.css` |
+| `src/shared/components/ui/Card.jsx` + CSS | API imutável; CSS scoped via `components.redesign.css` |
+| `index.html` | Fontes carregadas via @import no `tokens.redesign.css` durante rollout |
 
 ### Arquivos que NÃO mudam
 
@@ -2267,7 +2357,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 | Risco | Impacto | Mitigação |
 |-------|---------|-----------|
-| Wave 0 (tokens) quebra visual de TODOS os componentes | Alto | Aceitar "feio" temporário; priorizar waves 0-3 como bloco atômico |
+| Wave 0 (tokens) quebra visual de TODOS os componentes (pós-rollout) | Alto | **Mitigado pelo rollout gradual:** W0-W3 são scoped em `[data-redesign="true"]` — usuários sem o flag não veem nenhuma mudança. Quando o rollout for promovido globalmente, aceitar "feio" temporário e priorizar waves 0-3 como bloco atômico. |
 | Fonts Google causam FOUC (Flash of Unstyled Content) | Médio | `font-display: swap` + `<link rel="preload">` |
 | Dark mode quebra com novos tokens | Médio | Desabilitar dark mode toggle; manter placeholder CSS |
 | Performance degradada com Framer Motion em listas longas | Alto | `useMotion()` com fallback estático; `will-change: transform` |
@@ -2301,7 +2391,7 @@ Wave 11 (Accessibility — compliance)
 Wave 12 (Landing/Auth — final touch)
 ```
 
-**Waves 0-3 DEVEM ser executadas juntas** antes de qualquer outra wave, pois estabelecem os tokens e primitivos que todo o resto usa. Executá-las isoladamente resultará em um app visualmente quebrado sem resolução.
+**Waves 0-3 DEVEM ser executadas juntas** antes de qualquer outra wave, pois estabelecem os tokens e primitivos que todo o resto usa. Durante o rollout, executá-las isoladamente é seguro (CSS scoped não afeta usuários sem o flag). Para o rollout completo (promoção global), o bloco 0-3 deve ser atômico para evitar estado visual parcialmente quebrado.
 
 ---
 
