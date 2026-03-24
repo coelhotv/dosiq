@@ -1,12 +1,28 @@
 # Wave 1 — Typography & Icon System
 
 **Status:** Pronto para execucao
-**Dependencias:** Wave 0 (Design Tokens) DEVE estar completa
+**Dependencias:** Wave 0 (tokens.redesign.css com bloco `[data-redesign="true"]`) DEVE estar completa
 **Branch:** `feature/redesign/wave-1-typography-icons`
 **Estimativa:** 3 sprints sequenciais
-**Risco:** MEDIO — fonts externas podem afetar FCP se nao forem preloaded. Instalacao de lucide-react e segura.
+**Risco:** BAIXO — tipografia scoped, sem impacto em usuarios sem o flag. Lucide e install aditivo.
 
-> **IMPORTANTE para o agente executor:** Esta wave troca o sistema tipografico de system-ui generico para Public Sans (headlines) + Lexend (body), e instala a biblioteca de icones Lucide React. O objetivo e estabelecer a "voz editorial" do Santuario Terapeutico: autoridade clinica nas headlines (Public Sans bold) e hiperlegibilidade no corpo (Lexend regular). **REGRA CRITICA: Nunca usar peso de fonte abaixo de 400** — pacientes idosos nao conseguem ler fontes finas.
+---
+
+## 🚩 ABORDAGEM DE ROLLOUT GRADUAL (LEIA ANTES DE EXECUTAR)
+
+> **Esta wave NAO modifica `typography.css` nem adiciona `<link>` globais em `index.html`.**
+> Tokens tipograficos vao para `tokens.redesign.css` (bloco `[data-redesign="true"]`).
+> Fontes Google sao carregadas via CSS `@import` (no topo do arquivo `tokens.redesign.css`).
+> As fontes sao globais, MAS os estilos de tipografia e as referencias de fonte familly sao aplicadas APENAS dentro do escopo `[data-redesign="true"]`.
+> Ver estrategia completa em `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md`.
+
+**Motivo:** `<link>` de fonte no `<head>` e global e afeta todos os usuarios (mesmo sem o flag). Usando `@import` (que DEVE estar no topo do arquivo, nao dentro de seletores), as fontes sao carregadas SEMPRE, mas a CSS que as utiliza (`--font-family` dentro de `[data-redesign="true"]`) so se aplica quando o data-attribute estiver presente. Usuarios sem o flag nao veem as fontes em uso, minimizando impacto visual/latencia.
+
+**Excecao — lucide-react:** A instalacao via `npm install lucide-react` e segura e global. O pacote so impacta o bundle se importado no codigo — como sera usado apenas em componentes do redesign (W3+), nao ha impacto em producao enquanto nao for usado.
+
+---
+
+> **IMPORTANTE para o agente executor:** Esta wave adiciona tokens tipograficos do Santuario Terapeutico ao arquivo scoped `tokens.redesign.css`. O objetivo e que, ao ativar `?redesign=1`, a tipografia mude para Public Sans (headlines) + Lexend (body) — sem impacto para usuarios sem o flag. O arquivo `typography.css` atual **NAO deve ser modificado nesta wave**. **REGRA CRITICA: Nunca usar peso de fonte abaixo de 400** — pacientes idosos nao conseguem ler fontes finas. Fontes light ou thin (300, 200) violam WCAG 2.1 AA para este grupo. Mapeie `--font-weight-light` para `--font-weight-regular` (400) para conformidade com as diretrizes de acessibilidade do projeto.
 
 ---
 
@@ -29,31 +45,42 @@
 
 ---
 
-## Sprint 1.1 — Reescrever tokens de tipografia
+## Sprint 1.1 — Adicionar tokens de tipografia ao bloco scoped
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Reescrever completamente o arquivo de typography tokens. Adicionar font preload no index.html.
+**Escopo:** Adicionar tokens tipograficos do Santuario (fontes, type scale, pesos) em `tokens.redesign.css`. Carregar fontes Google via CSS `@import` scoped. NAO modificar `typography.css` nem `index.html`.
 
 ### Arquivos alvo
-1. `src/shared/styles/tokens/typography.css`
-2. `index.html`
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR ao bloco `[data-redesign="true"]`
+
+> **NAO ALTERAR:** `src/shared/styles/tokens/typography.css` (arquivo atual intacto)
+> **NAO ALTERAR:** `index.html` (sem `<link>` globais de fonte)
 
 ### O que o agente DEVE fazer
 
-1. **Ler o arquivo atual** `src/shared/styles/tokens/typography.css` por completo (159 linhas).
-2. **Ler o arquivo** `index.html` para ver o estado atual do `<head>`.
-3. **Buscar** no codebase quais componentes usam `--font-primary`, `--font-family`, `--heading-font-family`:
+1. **Ler o arquivo atual** `src/shared/styles/tokens/typography.css` por completo (context apenas — nao modificar).
+2. **Buscar** no codebase quais componentes usam `--font-primary`, `--font-family`, `--heading-font-family` (context):
    ```bash
    grep -rn "\-\-font-primary\|--font-family\|--heading-font-family" src/ --include="*.css" -l
    ```
-4. **Buscar** quais componentes usam pesos abaixo de 400 (100, 200, 300):
+3. **Buscar** quais componentes usam pesos abaixo de 400 (para mapear impacto futuro):
    ```bash
    grep -rn "font-weight:\s*[123]00\|font-weight-thin\|font-weight-light\|font-weight-extralight" src/ --include="*.css" --include="*.jsx" -l
    ```
-5. **Reescrever** `src/shared/styles/tokens/typography.css` com o conteudo EXATO abaixo.
-6. **Editar** `index.html` para adicionar font preload links.
+4. **Adicionar** o conteudo abaixo ao bloco `[data-redesign="true"] { }` em `tokens.redesign.css`, apos os tokens de border (Sprint 0.3).
+5. **Adicionar** tambem o `@import` das fontes Google no INICIO de `tokens.redesign.css` (ANTES do bloco `[data-redesign="true"]`).
+6. **NAO alterar** nenhum outro arquivo neste sprint.
 
-### Conteudo EXATO do novo `typography.css`
+### Conteudo a ADICIONAR em `tokens.redesign.css`
+
+**Parte A — `@import` de fontes (ANTES do bloco `[data-redesign="true"]`):**
+
+```css
+/* Fontes carregadas via CSS @import — so ativam quando [data-redesign="true"] esta presente */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+```
+
+**Parte B — Tokens tipograficos (DENTRO do bloco `[data-redesign="true"] { }`):**
 
 ```css
 /* ============================================
@@ -239,81 +266,48 @@
    para manter legibilidade em telas largas.
    ============================================ */
 :root {
-  --max-line-width: 65ch;
-}
+    --max-line-width: 65ch;
 ```
 
-### Alteracoes EXATAS no `index.html`
+> **Nota:** O `@import` de fontes deve ser adicionado no INICIO de `tokens.redesign.css`, antes do bloco `[data-redesign="true"] { }`. Desta forma o browser so baixa as fontes quando o CSS e carregado — que acontece para todos os usuarios — mas as fontes so sao APLICADAS quando o data-attribute esta presente (pois os tokens `--font-display` e `--font-body` so sobrescrevem dentro do bloco scoped).
 
-Adicionar DENTRO do `<head>`, ANTES do `<title>`, as seguintes linhas:
-
-```html
-<!-- Google Fonts: Public Sans (headlines) + Lexend (body) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
-```
-
-O `index.html` resultante deve ficar assim:
-
-```html
-<!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Google Fonts: Public Sans (headlines) + Lexend (body) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
-    <title>Meus Remédios</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
-```
+> **NAO adicionar** `<link>` de fonte em `index.html`. O `@import` dentro do CSS e suficiente para o rollout gradual.
 
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que as fontes estao no index.html
-grep "Public+Sans" index.html
-grep "Lexend" index.html
-# Resultado esperado: pelo menos 1 match cada
+# 1. Verificar que @import de fontes esta em tokens.redesign.css
+grep "fonts.googleapis" src/shared/styles/tokens.redesign.css
+# Resultado esperado: 1 match (antes do bloco [data-redesign="true"])
 
-# 2. Verificar que font-display esta definido
-grep "font-display" src/shared/styles/tokens/typography.css
-# Resultado esperado: pelo menos 1 match
+# 2. Verificar que font-display esta scoped
+grep "font-display" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 1 match dentro do bloco [data-redesign="true"]
 
-# 3. Verificar que nao ha pesos abaixo de 400 com valores literais
-grep -c ":\s*[123]00;" src/shared/styles/tokens/typography.css
-# Resultado esperado: 0
+# 3. Verificar que typography.css atual NAO foi modificado
+grep "Public Sans\|Lexend" src/shared/styles/tokens/typography.css
+# Resultado esperado: 0 (arquivo atual nao tem essas fontes)
 
-# 4. Verificar backward compat aliases
-grep "font-primary" src/shared/styles/tokens/typography.css
-# Resultado esperado: pelo menos 1 match
+# 4. Verificar que index.html NAO foi modificado
+grep "fonts.googleapis" index.html
+# Resultado esperado: 0 (sem link global de fonte)
 
 # 5. App compila sem erros
 npm run dev
-# Abrir no browser: headings devem renderizar em Public Sans, body em Lexend
+
+# 6. Smoke test: com ?redesign=1, inspecionar h1 → deve mostrar "Public Sans" no font-family
+# Sem o flag → deve mostrar "system-ui" (ou fonte atual)
 ```
 
 ### Commit
 ```
-feat(typography): migrar para Public Sans + Lexend
+feat(typography): adicionar Public Sans + Lexend em tokens.redesign.css (scoped)
 
-- Headlines: Public Sans bold — "Autoridade Clinica"
-- Body: Lexend regular — "Hiperlegibilidade"
-- Pesos thin/light/extralight redirecionados para regular (400)
-- Adicionar type scale semantica (display, headline, title, body, label)
-- Preload de fontes no index.html para performance
-- Manter backward compat aliases (font-primary, text-xs a text-5xl)
+- @import Google Fonts no inicio de tokens.redesign.css
+- font-display, font-body scoped em [data-redesign="true"]
+- Type scale semantica (display, headline, title, body, label) scoped
+- Backward compat aliases (font-primary, text-xs ate text-5xl) scoped
+- typography.css atual intacto, index.html sem alteracao
 ```
 
 ---
@@ -410,103 +404,98 @@ chore(deps): instalar lucide-react para icon system do redesign
 
 ---
 
-## Sprint 1.3 — Aplicar tipografia global nos estilos base
+## Sprint 1.3 — Adicionar regras tipograficas globais scoped
 
 **Skill:** `/deliver-sprint`
-**Escopo:** Garantir que h1-h6 usem Public Sans e body use Lexend em toda a app. Atualizar index.css e animations.css.
+**Escopo:** Adicionar regras de tipografia global (body, h1-h6) scoped em `[data-redesign="true"]` no arquivo `tokens.redesign.css`. NAO modificar `index.css` globalmente.
 
-### Arquivos alvo
-1. `src/shared/styles/index.css`
-2. `src/shared/styles/animations.css`
+### Arquivo alvo
+`src/shared/styles/tokens.redesign.css` ← ADICIONAR regras tipograficas scoped (APOS as classes utilitarias do Sprint 0.4)
+
+> **NAO ALTERAR:** `src/shared/styles/index.css`
 
 ### O que o agente DEVE fazer
 
-1. **Ler** `src/shared/styles/index.css` por completo.
-2. **Ler** `src/shared/styles/animations.css` por completo.
-3. **Buscar** no codebase onde `font-family` e hardcoded (nao via variavel):
+1. **Ler** `src/shared/styles/index.css` por completo (context — verificar se ja existe `body { font-family: ... }` para nao criar conflito).
+2. **Buscar** no codebase onde `font-family` e hardcoded:
    ```bash
    grep -rn "font-family:" src/ --include="*.css" | grep -v "var(" | grep -v "node_modules"
    ```
-4. **Editar** `src/shared/styles/index.css` para adicionar/atualizar as regras tipograficas globais.
+3. **Adicionar** ao final de `tokens.redesign.css` as seguintes regras scoped.
+4. **NAO alterar** `index.css` nem qualquer outro arquivo.
 
-### Alteracoes no `index.css`
-
-Adicionar ou atualizar (se ja existir um seletor `body`, `h1`, etc.) as seguintes regras. Colocar no INICIO do arquivo, logo apos os `@import` existentes:
+### Conteudo a ADICIONAR ao final de `tokens.redesign.css`
 
 ```css
 /* ============================================
-   GLOBAL TYPOGRAPHY — Santuario Terapeutico
-   Public Sans para headlines, Lexend para body.
+   TYPOGRAPHY GLOBAL — Santuario Terapeutico
+   Scoped: so aplica quando [data-redesign="true"] esta presente.
    REGRA: Nunca font-weight abaixo de 400.
    ============================================ */
 
-body {
+[data-redesign="true"] body {
   font-family: var(--font-body);
   font-weight: var(--font-weight-regular);
   font-size: var(--text-body-lg);
   line-height: var(--line-height-normal);
-  color: var(--color-on-surface);
-  background-color: var(--color-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
+[data-redesign="true"] h1,
+[data-redesign="true"] h2,
+[data-redesign="true"] h3,
+[data-redesign="true"] h4,
+[data-redesign="true"] h5,
+[data-redesign="true"] h6 {
   font-family: var(--font-display);
   font-weight: var(--heading-font-weight);
   line-height: var(--heading-line-height);
   letter-spacing: var(--heading-letter-spacing);
-  color: var(--color-on-surface);
 }
 
-h1 { font-size: var(--heading-1-size); font-weight: var(--heading-1-weight); }
-h2 { font-size: var(--heading-2-size); font-weight: var(--heading-2-weight); }
-h3 { font-size: var(--heading-3-size); font-weight: var(--heading-3-weight); }
-h4 { font-size: var(--heading-4-size); font-weight: var(--heading-4-weight); }
-h5 { font-size: var(--heading-5-size); font-weight: var(--heading-5-weight); }
-h6 { font-size: var(--heading-6-size); font-weight: var(--heading-6-weight); }
+[data-redesign="true"] h1 { font-size: var(--heading-1-size); font-weight: var(--heading-1-weight); }
+[data-redesign="true"] h2 { font-size: var(--heading-2-size); font-weight: var(--heading-2-weight); }
+[data-redesign="true"] h3 { font-size: var(--heading-3-size); font-weight: var(--heading-3-weight); }
+[data-redesign="true"] h4 { font-size: var(--heading-4-size); font-weight: var(--heading-4-weight); }
+[data-redesign="true"] h5 { font-size: var(--heading-5-size); font-weight: var(--heading-5-weight); }
+[data-redesign="true"] h6 { font-size: var(--heading-6-size); font-weight: var(--heading-6-weight); }
 
-/* Texto de input tambem usa Lexend */
-input, textarea, select, button {
+/* Inputs e buttons tambem usam Lexend quando o redesign esta ativo */
+[data-redesign="true"] input,
+[data-redesign="true"] textarea,
+[data-redesign="true"] select,
+[data-redesign="true"] button {
   font-family: var(--font-body);
 }
-
-/* Garantir que nenhum elemento use peso abaixo de 400 */
-* {
-  font-weight: max(var(--font-weight-regular), inherit);
-}
 ```
-
-**ATENCAO:** Se o `index.css` ja tiver um seletor `body` com `font-family`, `background-color`, etc., SUBSTITUIR os valores existentes pelos novos. NAO duplicar seletores. Usar a ferramenta de edicao para trocar valores especificos.
-
-**Se existir** uma regra `* { font-weight: ... }` ou similar, atualizar para o valor acima.
 
 ### Validacao pos-sprint
 
 ```bash
-# 1. Verificar que font-display esta referenciado no index.css
-grep "font-display" src/shared/styles/index.css
-# Resultado esperado: pelo menos 1 match
+# 1. Verificar que as regras scoped estao em tokens.redesign.css
+grep "\[data-redesign.*body\|data-redesign.*h1" src/shared/styles/tokens.redesign.css
+# Resultado esperado: pelo menos 2 matches
 
-# 2. Verificar que font-body esta referenciado
-grep "font-body" src/shared/styles/index.css
-# Resultado esperado: pelo menos 1 match
+# 2. Verificar que index.css NAO foi modificado
+git diff src/shared/styles/index.css
+# Resultado esperado: nenhuma alteracao
 
 # 3. App compila sem erros
 npm run dev
 
-# 4. No browser: Inspecionar h1/h2 — devem mostrar "Public Sans" no font-family
-# 5. No browser: Inspecionar paragrafo — deve mostrar "Lexend" no font-family
+# 4. Smoke test: com ?redesign=1, inspecionar body → "Lexend" no font-family
+# Sem o flag → fonte atual (system-ui ou o que existia antes)
 ```
 
 ### Commit
 ```
-feat(typography): aplicar Public Sans + Lexend nos estilos globais
+feat(typography): adicionar regras tipograficas globais scoped em tokens.redesign.css
 
-- h1-h6: Public Sans com pesos bold/semibold
-- body, inputs, buttons: Lexend regular
-- Garantir min font-weight 400 em todos os elementos
-- Antialiased rendering para suavidade
+- [data-redesign="true"] body: Lexend regular, antialiased
+- [data-redesign="true"] h1-h6: Public Sans bold/semibold
+- [data-redesign="true"] inputs/buttons: Lexend
+- index.css atual intacto (sem alteracao global de fonte)
 ```
 
 ---
@@ -515,13 +504,15 @@ feat(typography): aplicar Public Sans + Lexend nos estilos globais
 
 Apos os 3 sprints, validar:
 
-- [ ] Fontes Public Sans + Lexend carregam corretamente (verificar no DevTools > Network > Font)
-- [ ] Headings (h1-h6) renderizam em Public Sans bold
-- [ ] Body text renderiza em Lexend regular
+- [ ] `npm run build` passa sem erros
+- [ ] `tokens.redesign.css` contem `@import` das fontes Google (antes do bloco scoped)
+- [ ] `tokens.redesign.css` contem tokens `--font-display`, `--font-body` dentro de `[data-redesign="true"]`
+- [ ] `typography.css` atual **NAO foi modificado**
+- [ ] `index.html` **NAO tem** `<link>` de fonte Google adicionado
 - [ ] `lucide-react` instalado e importavel (`import { Calendar } from 'lucide-react'`)
-- [ ] Nenhum peso de fonte abaixo de 400 aplicado visualmente
-- [ ] `npm run dev` e `npm run build` sem erros
-- [ ] Font preload no `index.html` (preconnect + preload + stylesheet)
+- [ ] Smoke test **com `?redesign=1`**: headings renderizam em Public Sans bold
+- [ ] Smoke test **com `?redesign=1`**: body text renderiza em Lexend regular
+- [ ] Smoke test **sem flag**: tipografia atual intacta (sem regressao)
 
 ## Ordem de Execucao
 

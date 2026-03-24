@@ -5,10 +5,13 @@ import Loading from '@shared/components/ui/Loading'
 import Modal from '@shared/components/ui/Modal'
 import ExportDialog from '@features/export/components/ExportDialog'
 import ReportGenerator from '@features/reports/components/ReportGenerator'
+import { useRedesign } from '@shared/hooks/useRedesign'
 import styles from './Settings.module.css'
 import './Settings.css'
 
 export default function Settings({ onNavigate }) {
+  const { isRedesignEnabled, toggleRedesign } = useRedesign()
+  const isDevMode = typeof localStorage !== 'undefined' && localStorage.getItem('mr_dev_mode') === '1'
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -266,6 +269,30 @@ export default function Settings({ onNavigate }) {
           </Button>
         </div>
       </div>
+
+      {/* Toggle oculto para preview do redesign — visível apenas em dev mode */}
+      {isDevMode && (
+        <div className="settings-section glass-card">
+          <h3>Preview: Redesign</h3>
+          <p className="section-desc">
+            Ativa o preview do redesign "Santuário Terapêutico" para esta sessão.
+            Persiste via localStorage. Desativar com ?redesign=0 na URL.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <Button
+              variant={isRedesignEnabled ? 'primary' : 'outline'}
+              onClick={toggleRedesign}
+            >
+              {isRedesignEnabled ? 'Redesign ATIVO' : 'Ativar Redesign'}
+            </Button>
+            {isRedesignEnabled && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Visual novo ativo — recarregue para ver todas as mudanças
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {message && <div className="settings-message success">{message}</div>}
       {error && <div className="settings-message error">{error}</div>}
