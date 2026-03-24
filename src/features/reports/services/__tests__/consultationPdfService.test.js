@@ -175,6 +175,8 @@ describe('consultationPdfService', () => {
         subject: 'Consulta medica',
       })
     )
+    expect(doc.splitTextToSize).toHaveBeenCalledWith('Consulta Medica', expect.any(Number))
+    expect(doc.splitTextToSize).toHaveBeenCalledWith('Joao Silva', expect.any(Number))
     expect(doc.output).toHaveBeenCalledWith('blob')
     expect(doc.setPage).toHaveBeenCalled()
   })

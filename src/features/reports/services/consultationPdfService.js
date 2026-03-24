@@ -34,6 +34,38 @@ const PAGE = {
 }
 
 /**
+ * Regras visuais do cabecalho e rodape.
+ * @constant {Object}
+ */
+const CHROME_LAYOUT = {
+  headerLineY: 12,
+  headerY: 8,
+  headerBrandFontSize: 9,
+  headerTitleFontSize: 8,
+  headerTitleOffsetX: 34,
+  headerTitleMaxWidth: 74,
+  headerPatientMaxWidth: 60,
+  footerLineOffsetY: 14,
+  footerTextOffsetY: 8,
+}
+
+/**
+ * Regras visuais dos cards de resumo.
+ * @constant {Object}
+ */
+const KPI_LAYOUT = {
+  valueOffsetY: 8,
+  labelOffsetY: 14,
+  metaOffsetY: 18,
+  paddingX: 4,
+  paddingY: 3,
+  radius: 3,
+  fontSizeValue: 13,
+  fontSizeLabel: 8,
+  fontSizeMeta: 7,
+}
+
+/**
  * Utilitario de cor RGB.
  * @param {Array<number>} rgb - Cor em RGB.
  * @returns {Array<number>} Cor segura.
@@ -68,28 +100,37 @@ function getPeriodLabel(period) {
 function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
   doc.setDrawColor(...rgb(COLORS.line))
   doc.setLineWidth(0.2)
-  doc.line(PAGE.margin, 12, PAGE.width - PAGE.margin, 12)
+  doc.line(PAGE.margin, CHROME_LAYOUT.headerLineY, PAGE.width - PAGE.margin, CHROME_LAYOUT.headerLineY)
 
-  doc.setFontSize(9)
+  doc.setFontSize(CHROME_LAYOUT.headerBrandFontSize)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Meus Remedios', PAGE.margin, 8)
+  doc.text('Meus Remedios', PAGE.margin, CHROME_LAYOUT.headerY)
+
+  const headerTitle = doc.splitTextToSize(pdfData.title, CHROME_LAYOUT.headerTitleMaxWidth)
+  doc.setFontSize(CHROME_LAYOUT.headerTitleFontSize)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(pdfData.title, PAGE.margin + 34, 8)
+  doc.text(headerTitle, PAGE.margin + CHROME_LAYOUT.headerTitleOffsetX, CHROME_LAYOUT.headerY)
 
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(pdfData.patient.name, PAGE.width - PAGE.margin, 8, { align: 'right' })
+  const patientName = doc.splitTextToSize(pdfData.patient.name || 'Paciente sem nome', CHROME_LAYOUT.headerPatientMaxWidth)
+  doc.text(patientName, PAGE.width - PAGE.margin, CHROME_LAYOUT.headerY, { align: 'right' })
 
   doc.setDrawColor(...rgb(COLORS.line))
-  doc.line(PAGE.margin, PAGE.height - 14, PAGE.width - PAGE.margin, PAGE.height - 14)
+  doc.line(
+    PAGE.margin,
+    PAGE.height - CHROME_LAYOUT.footerLineOffsetY,
+    PAGE.width - PAGE.margin,
+    PAGE.height - CHROME_LAYOUT.footerLineOffsetY
+  )
 
   doc.setFontSize(8)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text(
     `Gerado em ${pdfData.generatedAtLabel} | Periodo: ${getPeriodLabel(pdfData.period)}`,
     PAGE.margin,
-    PAGE.height - 8
+    PAGE.height - CHROME_LAYOUT.footerTextOffsetY
   )
-  doc.text(`Pagina ${pageNumber}/${totalPages}`, PAGE.width - PAGE.margin, PAGE.height - 8, {
+  doc.text(`Pagina ${pageNumber}/${totalPages}`, PAGE.width - PAGE.margin, PAGE.height - CHROME_LAYOUT.footerTextOffsetY, {
     align: 'right',
   })
 }
@@ -117,19 +158,19 @@ function drawKpiCard(doc, card, x, y, width, height) {
 
   doc.setFillColor(...rgb(toneColor))
   doc.setDrawColor(...rgb(COLORS.line))
-  doc.roundedRect(x, y, width, height, 3, 3, 'FD')
+  doc.roundedRect(x, y, width, height, KPI_LAYOUT.radius, KPI_LAYOUT.radius, 'FD')
 
-  doc.setFontSize(13)
+  doc.setFontSize(KPI_LAYOUT.fontSizeValue)
   doc.setTextColor(...rgb(accentColor))
-  doc.text(card.value, x + 4, y + 8)
+  doc.text(card.value, x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.valueOffsetY)
 
-  doc.setFontSize(8)
+  doc.setFontSize(KPI_LAYOUT.fontSizeLabel)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text(card.label, x + 4, y + 14)
+  doc.text(card.label, x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.labelOffsetY)
 
-  doc.setFontSize(7)
+  doc.setFontSize(KPI_LAYOUT.fontSizeMeta)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(card.meta || '', x + 4, y + 18)
+  doc.text(card.meta || '', x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.metaOffsetY)
 }
 
 /**
