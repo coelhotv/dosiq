@@ -57,7 +57,6 @@ function downloadBlob(blob, filename) {
  * Componente de geração de relatórios PDF.
  *
  * @param {Object} props - Propriedades do componente.
- * @param {Function} [props.onClose] - Callback executado ao fechar o modal.
  * @returns {JSX.Element} Componente de geração de relatórios.
  *
  * @example
@@ -67,9 +66,10 @@ function downloadBlob(blob, filename) {
  * // Com callback de fechamento
  * <ReportGenerator onClose={() => setIsModalOpen(false)} />
  */
-export default function ReportGenerator({ onClose }) {
+export default function ReportGenerator() {
   // 1. States (R-010: Hook order)
   const [patientName, setPatientName] = useState('')
+  const [patientEmail, setPatientEmail] = useState('')
   const [period, setPeriod] = useState('30d')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -95,8 +95,8 @@ export default function ReportGenerator({ onClose }) {
   )
 
   const consultationData = useMemo(
-    () => getConsultationData(dashboardData, patientName, null),
-    [dashboardData, patientName]
+    () => getConsultationData(dashboardData, patientName, null, patientEmail),
+    [dashboardData, patientEmail, patientName]
   )
 
   useEffect(() => {
@@ -109,7 +109,8 @@ export default function ReportGenerator({ onClose }) {
         } = await supabase.auth.getUser()
 
         if (!isMounted) return
-        setPatientName(user?.user_metadata?.name || '')
+        setPatientName(user?.user_metadata?.name || user?.user_metadata?.full_name || '')
+        setPatientEmail(user?.email || '')
       } catch (err) {
         console.error('Erro ao carregar perfil para relatório clínico:', err)
       }
@@ -251,52 +252,60 @@ export default function ReportGenerator({ onClose }) {
     }
   }, [shareUrl, period])
 
-  /**
-   * Manipula o fechamento do componente.
-   */
-  const handleClose = useCallback(() => {
-    if (onClose) {
-      onClose()
-    }
-  }, [onClose])
-
   return (
     <div className="report-generator">
-      <div className="report-generator__header">
-        <h3 className="report-generator__title">Gerar Resumo Clínico</h3>
-        {onClose && (
-          <button
-            className="report-generator__close"
-            onClick={handleClose}
-            aria-label="Fechar"
-            type="button"
-          >
-            ✕
-          </button>
-        )}
+      <div className="report-generator__hero">
+        <div className="report-generator__hero-copy">
+          <p className="report-generator__eyebrow">PDF clínico</p>
+          <div className="report-generator__header">
+            <h3 className="report-generator__title">Gerar Resumo Clínico</h3>
+          </div>
+          <p className="report-generator__description">
+            Um PDF único, legível em consulta e pronto para compartilhar com o médico.
+          </p>
+        </div>
+        <div className="report-generator__hero-badge">
+          <span>Resumo</span>
+          <strong>Clínico</strong>
+        </div>
       </div>
 
-      <p className="report-generator__description">
-        Gere o PDF clínico da consulta com tratamentos ativos, adesão, alertas de estoque, prescrições e titulação.
-      </p>
+      <div className="report-generator__content">
+        <section className="report-generator__panel">
+          <label className="report-generator__label" htmlFor="report-period">
+            Período
+          </label>
+          <select
+            id="report-period"
+            className="report-generator__select"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            disabled={isGenerating}
+          >
+            {PERIOD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="report-generator__helper">
+            O intervalo define a janela de adesão exibida no resumo principal.
+          </p>
+        </section>
 
-      <div className="report-generator__form">
-        <label className="report-generator__label" htmlFor="report-period">
-          Período do Relatório
-        </label>
-        <select
-          id="report-period"
-          className="report-generator__select"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          disabled={isGenerating}
-        >
-          {PERIOD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <section className="report-generator__panel report-generator__panel--soft">
+          <label className="report-generator__label">Inclui no PDF</label>
+          <div className="report-generator__chips">
+            <span className="report-generator__chip">Tratamentos</span>
+            <span className="report-generator__chip">Adesão</span>
+            <span className="report-generator__chip">Estoque</span>
+            <span className="report-generator__chip">Prescrições</span>
+            <span className="report-generator__chip">Titulação</span>
+          </div>
+          <p className="report-generator__helper">
+            O relatório clínico prioriza leitura rápida, com blocos curtos e gráficos legíveis.
+          </p>
+        </section>
       </div>
 
       {error && (

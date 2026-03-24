@@ -2,7 +2,7 @@
 
 **Versao:** 1.0  
 **Data:** 2026-03-24  
-**Status:** Pronto para execucao via `/deliver-sprint`  
+**Status:** Implementado localmente e validado; aguardando PR/merge  
 **Baseline:** PDF clinico novo ja integrado ao Modo Consulta e ao caminho `Perfil -> Relatorio PDF`  
 **Escopo:** Correcao de bugs clinicos, refinamento visual/editorial e reducao de esforco cognitivo do PDF clinico  
 **Objetivo:** Tornar o PDF novo confiavel, legivel e pedagogico sem regredir performance mobile  

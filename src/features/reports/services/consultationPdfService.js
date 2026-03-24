@@ -66,12 +66,56 @@ const KPI_LAYOUT = {
 }
 
 /**
+ * Regras do hero de adesao.
+ * @constant {Object}
+ */
+const HERO_LAYOUT = {
+  x: 16,
+  y: 51,
+  size: 48,
+}
+
+/**
+ * Regras dos cards do resumo.
+ * @constant {Object}
+ */
+const SUMMARY_CARD_LAYOUT = {
+  startX: 74,
+  startY: 50,
+  width: 38,
+  height: 22,
+  gap: 3,
+  rowGap: 26,
+}
+
+/**
+ * Regras do texto editorial na pagina de resumo.
+ * @constant {Object}
+ */
+const SUMMARY_TEXT_LAYOUT = {
+  topY: 114,
+  columnGap: 6,
+  leftColumnWidth: 88,
+  rightColumnWidth: 92,
+  bodyOffsetY: 6,
+  bodyLineHeight: 4.2,
+  attentionTopY: 148,
+}
+
+/**
  * Utilitario de cor RGB.
  * @param {Array<number>} rgb - Cor em RGB.
  * @returns {Array<number>} Cor segura.
  */
 function rgb(rgb) {
   return Array.isArray(rgb) ? rgb : COLORS.text
+}
+
+function getScoreTone(score) {
+  if (score < 50) return 'danger'
+  if (score < 70) return 'warning'
+  if (score < 85) return 'info'
+  return 'success'
 }
 
 /**
@@ -173,6 +217,82 @@ function drawKpiCard(doc, card, x, y, width, height) {
   doc.text(card.meta || '', x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.metaOffsetY)
 }
 
+function buildArcPath(centerX, centerY, radius, startAngle, endAngle) {
+  const points = []
+  const segments = Math.max(12, Math.ceil(Math.abs(endAngle - startAngle) / 10))
+  const radiansPerDegree = Math.PI / 180
+  const step = (endAngle - startAngle) / segments
+
+  for (let index = 0; index <= segments; index += 1) {
+    const angle = (startAngle + step * index) * radiansPerDegree
+    const x = centerX + radius * Math.cos(angle)
+    const y = centerY + radius * Math.sin(angle)
+    points.push(index === 0 ? { op: 'm', c: [x, y] } : { op: 'l', c: [x, y] })
+  }
+
+  return points
+}
+
+/**
+ * Desenha o hero de adesao na pagina de resumo.
+ * @param {Object} doc - Instancia do jsPDF.
+ * @param {Object} pdfData - Dados do PDF.
+ */
+function drawHeroGauge(doc, pdfData) {
+  const score = Math.max(0, Math.min(pdfData.adherence?.last30d?.score ?? 0, 100))
+  const streak = pdfData.adherence?.currentStreak ?? 0
+  const taken = pdfData.adherence?.last30d?.taken ?? 0
+  const expected = pdfData.adherence?.last30d?.expected ?? 0
+  const tone = getScoreTone(score)
+  const centerX = HERO_LAYOUT.x + HERO_LAYOUT.size / 2
+  const centerY = HERO_LAYOUT.y + HERO_LAYOUT.size / 2
+  const radius = HERO_LAYOUT.size / 2 - 4
+  const arcEnd = -90 + (score / 100) * 360
+  const accentColor =
+    tone === 'danger' ? COLORS.danger : tone === 'warning' ? COLORS.warning : COLORS.primary
+
+  doc.setFillColor(...rgb(COLORS.white))
+  doc.setDrawColor(...rgb(COLORS.line))
+  doc.roundedRect(HERO_LAYOUT.x, HERO_LAYOUT.y, HERO_LAYOUT.size, HERO_LAYOUT.size, 6, 6, 'FD')
+
+  doc.setDrawColor(...rgb(COLORS.line))
+  doc.setLineWidth(4)
+  if (typeof doc.circle === 'function') {
+    doc.circle(centerX, centerY, radius, 'S')
+  }
+
+  if (score > 0 && typeof doc.path === 'function') {
+    doc.setDrawColor(...rgb(accentColor))
+    doc.setLineWidth(4)
+    doc.setLineCap('round')
+    doc.path(buildArcPath(centerX, centerY, radius, -90, arcEnd), 'S')
+  }
+
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...rgb(accentColor))
+  doc.setFontSize(20)
+  doc.text(`${score}%`, centerX, centerY + 2, { align: 'center' })
+
+  doc.setFontSize(7)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.setFont('helvetica', 'normal')
+  doc.text('Adesao 30d', centerX, centerY + 9, { align: 'center' })
+
+  doc.setFontSize(7)
+  doc.setTextColor(...rgb(COLORS.primary))
+  doc.text(`${taken}/${expected} doses`, centerX, HERO_LAYOUT.y + HERO_LAYOUT.size - 2, {
+    align: 'center',
+  })
+
+  doc.setFontSize(7)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.text(`${streak} dias de sequencia`, centerX, HERO_LAYOUT.y + HERO_LAYOUT.size + 5, {
+    align: 'center',
+  })
+
+  doc.setLineWidth(0.2)
+}
+
 /**
  * Desenha uma lista de alertas.
  * @param {Object} doc - Instancia do jsPDF.
@@ -231,47 +351,66 @@ function renderSummaryPage(doc, pdfData) {
   if (pdfData.patient.age !== null && pdfData.patient.age !== undefined) {
     doc.text(`Paciente: ${pdfData.patient.name} | ${pdfData.patient.age} anos`, PAGE.margin, 43)
   } else {
-    doc.text(`Paciente: ${pdfData.patient.name}`, PAGE.margin, 43)
+  doc.text(`Paciente: ${pdfData.patient.name}`, PAGE.margin, 43)
   }
 
-  const cards = pdfData.summaryCards
-  const cardWidth = 58
-  const cardHeight = 22
-  const gap = 4
-  const startX = PAGE.margin
-  const startY = 50
+  drawHeroGauge(doc, pdfData)
 
+  const cards = pdfData.summaryCards
   cards.slice(0, 3).forEach((card, index) => {
-    drawKpiCard(doc, card, startX + index * (cardWidth + gap), startY, cardWidth, cardHeight)
+    drawKpiCard(
+      doc,
+      card,
+      SUMMARY_CARD_LAYOUT.startX + index * (SUMMARY_CARD_LAYOUT.width + SUMMARY_CARD_LAYOUT.gap),
+      SUMMARY_CARD_LAYOUT.startY,
+      SUMMARY_CARD_LAYOUT.width,
+      SUMMARY_CARD_LAYOUT.height
+    )
   })
 
   cards.slice(3, 6).forEach((card, index) => {
-    drawKpiCard(doc, card, startX + index * (cardWidth + gap), startY + 26, cardWidth, cardHeight)
+    drawKpiCard(
+      doc,
+      card,
+      SUMMARY_CARD_LAYOUT.startX + index * (SUMMARY_CARD_LAYOUT.width + SUMMARY_CARD_LAYOUT.gap),
+      SUMMARY_CARD_LAYOUT.startY + SUMMARY_CARD_LAYOUT.rowGap,
+      SUMMARY_CARD_LAYOUT.width,
+      SUMMARY_CARD_LAYOUT.height
+    )
   })
 
-  doc.setFontSize(10)
-  doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Mensagem executiva', PAGE.margin, 104)
-  doc.setFontSize(8)
-  doc.setTextColor(...rgb(COLORS.muted))
   const executiveText = doc.splitTextToSize(
-    'Este documento resume os tratamentos em curso, a adesao recente, alertas de estoque, validade de prescricoes e titulacoes ativas. Ele foi desenhado para ser util tanto na consulta quanto no acompanhamento do paciente.',
-    PAGE.contentWidth
+    'Resumo pensado para decisao rapida em consulta: tratamentos ativos, adesao recente, alertas de estoque, prescricoes e titulacoes.',
+    SUMMARY_TEXT_LAYOUT.leftColumnWidth
   )
-  doc.text(executiveText, PAGE.margin, 110)
-
-  const columnWidth = 86
-  drawAttentionList(doc, pdfData.attentionItems, PAGE.margin, 132, columnWidth)
+  const clinicalNotes = doc.splitTextToSize(
+    pdfData.clinicalNotes.map((note) => `- ${note}`).join('\n'),
+    SUMMARY_TEXT_LAYOUT.rightColumnWidth
+  )
 
   doc.setFontSize(10)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Notas clinicas', PAGE.width - PAGE.margin - columnWidth, 104)
+  doc.text('Mensagem executiva', PAGE.margin, SUMMARY_TEXT_LAYOUT.topY)
   doc.setFontSize(8)
   doc.setTextColor(...rgb(COLORS.muted))
-  const clinicalNotes = pdfData.clinicalNotes
-    .map((note) => `- ${note}`)
-    .join('\n')
-  doc.text(doc.splitTextToSize(clinicalNotes, columnWidth), PAGE.width - PAGE.margin - columnWidth, 112)
+  doc.text(executiveText, PAGE.margin, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY)
+
+  const notesX = PAGE.margin + SUMMARY_TEXT_LAYOUT.leftColumnWidth + SUMMARY_TEXT_LAYOUT.columnGap
+  doc.setFontSize(10)
+  doc.setTextColor(...rgb(COLORS.text))
+  doc.text('Notas clinicas', notesX, SUMMARY_TEXT_LAYOUT.topY)
+  doc.setFontSize(8)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.text(clinicalNotes, notesX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY)
+
+  const editorialHeight =
+    Math.max(executiveText.length, clinicalNotes.length) * SUMMARY_TEXT_LAYOUT.bodyLineHeight
+  const attentionTopY = Math.max(
+    SUMMARY_TEXT_LAYOUT.attentionTopY,
+    SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY + editorialHeight + 6
+  )
+
+  drawAttentionList(doc, pdfData.attentionItems, PAGE.margin, attentionTopY, 86)
 }
 
 /**
@@ -282,7 +421,7 @@ function renderSummaryPage(doc, pdfData) {
  */
 function renderTable(autoTable, doc, options) {
   autoTable(doc, {
-    startY: 22,
+    startY: options.startY ?? 28,
     margin: { left: PAGE.margin, right: PAGE.margin },
     theme: 'striped',
     styles: {
@@ -315,6 +454,7 @@ function renderTreatmentsPage(doc, autoTable, pdfData) {
   doc.text('Tratamentos ativos', PAGE.margin, 18)
 
   renderTable(autoTable, doc, {
+    startY: 28,
     head: [['Tratamento', 'Apresentacao', 'Dose por tomada', 'Frequencia', 'Dose diaria', 'Status']],
     body: pdfData.activeTreatments.map((row) => [
       row.label,
@@ -356,12 +496,13 @@ function renderAdherencePage(doc, autoTable, pdfData) {
   doc.setTextColor(...rgb(COLORS.muted))
   const summary = pdfData.adherence.last30d
   doc.text(
-    `30d: ${summary.score ?? 0}% | ${summary.taken ?? 0}/${summary.expected ?? 0} doses | Pontualidade ${summary.punctuality ?? 0}%`,
+    `30d: ${summary.score ?? 0}% | ${summary.taken ?? 0}/${summary.expected ?? 0} doses | Pontualidade ${summary.punctuality ?? 0}% | Sequencia ${summary.currentStreak ?? 0}d`,
     PAGE.margin,
     24
   )
 
   renderTable(autoTable, doc, {
+    startY: 30,
     head: [['Data', 'Tomadas', 'Esperadas', 'Adesao', 'Leitura']],
     body: pdfData.adherence.trend7d.map((row) => [
       row.label,
@@ -393,21 +534,29 @@ function renderAdherencePage(doc, autoTable, pdfData) {
 }
 
 /**
- * Renderiza a pagina operacional com estoque e prescricoes.
+ * Renderiza a pagina de estoque.
  * @param {Object} doc - Instancia do jsPDF.
  * @param {Object} autoTable - Funcao autoTable.
  * @param {Object} pdfData - Dados do PDF.
  */
-function renderOperationalPage(doc, autoTable, pdfData) {
+function renderStockPage(doc, autoTable, pdfData) {
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Estoque e prescricoes', PAGE.margin, 18)
+  doc.text('Estoque', PAGE.margin, 18)
 
   doc.setFontSize(9)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text('Ordens por urgencia primeiro, para facilitar a decisao durante a consulta.', PAGE.margin, 24)
 
+  if (pdfData.stockRows.length === 0) {
+    doc.setFontSize(9)
+    doc.setTextColor(...rgb(COLORS.muted))
+    doc.text('Nenhum alerta de estoque relevante.', PAGE.margin, 34)
+    return
+  }
+
   renderTable(autoTable, doc, {
+    startY: 30,
     head: [['Tratamento', 'Qtd atual', 'Consumo/dia', 'Dias restantes', 'Status']],
     body: pdfData.stockRows.map((row) => [
       row.label,
@@ -432,12 +581,29 @@ function renderOperationalPage(doc, autoTable, pdfData) {
     },
   })
 
+}
+
+/**
+ * Renderiza a pagina de prescricoes.
+ * @param {Object} doc - Instancia do jsPDF.
+ * @param {Object} autoTable - Funcao autoTable.
+ * @param {Object} pdfData - Dados do PDF.
+ */
+function renderPrescriptionPage(doc, autoTable, pdfData) {
   doc.addPage()
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
   doc.text('Prescricoes', PAGE.margin, 18)
 
+  if (pdfData.prescriptionRows.length === 0) {
+    doc.setFontSize(9)
+    doc.setTextColor(...rgb(COLORS.muted))
+    doc.text('Nenhuma prescricao com vencimento ativo no periodo.', PAGE.margin, 28)
+    return
+  }
+
   renderTable(autoTable, doc, {
+    startY: 28,
     head: [['Tratamento', 'Status', 'Dias', 'Vencimento']],
     body: pdfData.prescriptionRows.map((row) => [
       row.label,
@@ -473,49 +639,31 @@ function renderTitrationPage(doc, autoTable, pdfData) {
   doc.setTextColor(...rgb(COLORS.text))
   doc.text('Titulacao e contexto clinico', PAGE.margin, 18)
 
-  if (pdfData.titrationRows.length === 0) {
-    doc.setFontSize(9)
-    doc.setTextColor(...rgb(COLORS.muted))
-    doc.text('Nenhuma titulacao ativa no momento.', PAGE.margin, 26)
-  } else {
-    renderTable(autoTable, doc, {
-      head: [['Tratamento', 'Progresso', 'Etapa', 'Transicao', 'Nota']],
-      body: pdfData.titrationRows.map((row) => [
-        row.label,
-        `${row.progressPercent}%`,
-        `${row.currentStep}/${row.totalSteps}`,
-        row.isTransitionDue ? 'Pendente' : 'Nao',
-        row.stageNote,
-      ]),
-      columnStyles: {
-        0: { cellWidth: 66 },
-        1: { cellWidth: 24, halign: 'center' },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 20, halign: 'center' },
-        4: { cellWidth: 58 },
-      },
-      didParseCell: (hookData) => {
-        if (hookData.section === 'body' && hookData.column.index === 3) {
-          const row = pdfData.titrationRows[hookData.row.index]
-          hookData.cell.styles.textColor = row.isTransitionDue ? COLORS.warning : COLORS.primary
-          hookData.cell.styles.fontStyle = 'bold'
-        }
-      },
-    })
-  }
-
-  doc.addPage()
-  doc.setFontSize(12)
-  doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Observacoes clinicas', PAGE.margin, 18)
-
-  doc.setFontSize(9)
-  doc.setTextColor(...rgb(COLORS.muted))
-  const notes = [
-    `Paciente: ${pdfData.patient.name}`,
-    ...pdfData.clinicalNotes,
-  ].join('\n')
-  doc.text(doc.splitTextToSize(notes, PAGE.contentWidth), PAGE.margin, 26)
+  renderTable(autoTable, doc, {
+    startY: 28,
+    head: [['Tratamento', 'Progresso', 'Etapa', 'Transicao', 'Nota']],
+    body: pdfData.titrationRows.map((row) => [
+      row.label,
+      `${row.progressPercent}%`,
+      `${row.currentStep}/${row.totalSteps}`,
+      row.isTransitionDue ? 'Pendente' : 'Nao',
+      row.stageNote,
+    ]),
+    columnStyles: {
+      0: { cellWidth: 66 },
+      1: { cellWidth: 24, halign: 'center' },
+      2: { cellWidth: 18, halign: 'center' },
+      3: { cellWidth: 20, halign: 'center' },
+      4: { cellWidth: 58 },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === 'body' && hookData.column.index === 3) {
+        const row = pdfData.titrationRows[hookData.row.index]
+        hookData.cell.styles.textColor = row.isTransitionDue ? COLORS.warning : COLORS.primary
+        hookData.cell.styles.fontStyle = 'bold'
+      }
+    },
+  })
 }
 
 /**
@@ -567,10 +715,15 @@ export async function generateConsultationPDF(options = {}) {
   renderTreatmentsPage(doc, autoTable, pdfData)
   doc.addPage()
   renderAdherencePage(doc, autoTable, pdfData)
-  doc.addPage()
-  renderOperationalPage(doc, autoTable, pdfData)
+  if (pdfData.stockRows.length > 0 || pdfData.prescriptionRows.length > 0) {
+    doc.addPage()
+    renderStockPage(doc, autoTable, pdfData)
+    if (pdfData.prescriptionRows.length > 0) {
+      renderPrescriptionPage(doc, autoTable, pdfData)
+    }
+  }
 
-  if (pdfData.titrationRows.length > 0 || pdfData.clinicalNotes.length > 0) {
+  if (pdfData.titrationRows.length > 0) {
     doc.addPage()
     renderTitrationPage(doc, autoTable, pdfData)
   }

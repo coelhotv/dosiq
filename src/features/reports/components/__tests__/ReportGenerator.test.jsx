@@ -61,6 +61,7 @@ describe('ReportGenerator', () => {
     mocks.getUser.mockResolvedValue({
       data: {
         user: {
+          email: 'joao.silva@email.com',
           user_metadata: {
             name: 'Joao Silva',
           },
@@ -97,7 +98,8 @@ describe('ReportGenerator', () => {
           protocols: [{ id: 'prot-1', medicine_id: 'med-1', active: true }],
         }),
         'Joao Silva',
-        null
+        null,
+        'joao.silva@email.com'
       )
     })
 
