@@ -208,7 +208,13 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
 **Skill:** `/deliver-sprint`
 **Escopo:** Criar novo arquivo `layout.redesign.css` com grid system responsivo e importa-lo no `index.css`.
 
-> As classes de layout (`.page-container`, `.grid-dashboard`, `.grid-stock`, etc.) sao NOVOS nomes que nao existem no CSS atual. Por serem aditivas (nao sobrescrevem nada), podem ser definidas sem o seletor `[data-redesign="true"]` — so afetam elementos que recebem a classe explicitamente no JSX (o que so acontecera nas waves W4+).
+> **Estratégia de scoping por tipo de classe:**
+>
+> | Tipo | Scoping necessário | Motivo |
+> |------|-------------------|--------|
+> | Classes de grid/container (`.page-container`, `.grid-*`, `.app-main`, `.main-with-sidebar`) | **NÃO** — nomes novos | Só afetam elementos que recebem a classe no JSX (só acontece em W4+) |
+> | Classes de tipografia (`.page-title`, `.section-header`, `.page-subtitle`, `.page-header`) | **SIM** — `[data-redesign="true"]` obrigatório | Estes nomes **já existem** no codebase atual (Settings.css, Dashboard.css, Landing.css). Sem scoping, as regras de layout.redesign.css afetariam todos os usuários e quebrariam o design atual. |
+> | Helpers responsivos (`.desktop-only`, `.mobile-only`, `.safe-area-*`) | **NÃO** — nomes novos | Aditivos, sem conflito |
 
 ### Arquivos alvo
 1. **CRIAR** `src/shared/styles/layout.redesign.css` (arquivo NOVO — nome diferente de `layout.css`)
@@ -216,7 +222,15 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
 
 ### O que o agente DEVE fazer
 
-1. **Verificar** que `src/shared/styles/layout.redesign.css` NAO existe:
+1. **Verificar conflitos de nome** antes de criar o arquivo — OBRIGATÓRIO:
+   ```bash
+   grep -rn "\.page-title\|\.section-header\|\.page-subtitle\|\.page-header" src/ --include="*.css" --include="*.jsx" | grep -v node_modules
+   # Resultado esperado: matches encontrados (ja existem no codebase atual — por isso precisam de scoping)
+   grep -rn "\.page-container\|\.grid-dashboard\|\.desktop-only\|\.mobile-only" src/ --include="*.css" --include="*.jsx" | grep -v node_modules
+   # Resultado esperado: 0 matches (sao novos — nao precisam de scoping)
+   ```
+
+2. **Verificar** que `src/shared/styles/layout.redesign.css` NAO existe:
    ```bash
    ls src/shared/styles/layout.redesign.css 2>/dev/null || echo "Nao existe, pode criar"
    ```
@@ -414,10 +428,13 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
 }
 
 /* ============================================
-   PAGE HEADER — header padrao de pagina
-   Usado em todas as views como container do titulo + acoes.
+   PAGE HEADER / TITLE / SUBTITLE / SECTION HEADER
+   SCOPED — estes nomes JA EXISTEM no codebase atual
+   (Settings.css, Dashboard.css, Landing.css).
+   Sem [data-redesign="true"], as regras abaixo
+   afetariam TODOS os usuarios e quebrariam o design atual.
    ============================================ */
-.page-header {
+[data-redesign="true"] .page-header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -425,7 +442,7 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
 }
 
 @media (min-width: 768px) {
-  .page-header {
+  [data-redesign="true"] .page-header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -433,7 +450,7 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
   }
 }
 
-.page-title {
+[data-redesign="true"] .page-title {
   font-family: var(--font-display);
   font-size: var(--text-headline-md);
   font-weight: var(--font-weight-bold);
@@ -442,7 +459,7 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
   color: var(--color-on-surface);
 }
 
-.page-subtitle {
+[data-redesign="true"] .page-subtitle {
   font-family: var(--font-body);
   font-size: var(--text-body-lg);
   font-weight: var(--font-weight-regular);
@@ -450,9 +467,9 @@ feat(styles): adicionar card variants e surface utilities scoped em tokens.redes
 }
 
 /* ============================================
-   SECTION HEADER — header de secao dentro de uma pagina
+   SECTION HEADER — SCOPED (ja existe no codebase atual)
    ============================================ */
-.section-header {
+[data-redesign="true"] .section-header {
   font-family: var(--font-body);
   font-size: var(--text-label-md);
   font-weight: var(--font-weight-bold);

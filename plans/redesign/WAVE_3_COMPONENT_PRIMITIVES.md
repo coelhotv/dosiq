@@ -330,7 +330,18 @@ feat(Button): adicionar estilos Santuario em components.redesign.css (scoped)
    grep -rn "<Card" src/ --include="*.jsx" | head -30
    ```
 
-4. **Atualizar** `Card.jsx` para aceitar prop `variant` (backward compat — prop opcional, default `'default'`).
+4. **Verificar e remover a regra `.card-gradient` de `tokens.redesign.css`** — IMPORTANTE:
+   ```bash
+   grep -n "card-gradient" src/shared/styles/tokens.redesign.css
+   # Se encontrar, REMOVER o bloco [data-redesign="true"] .card-gradient { } de tokens.redesign.css.
+   # Motivo: Sprint 0.4 (Wave 0) adicionou um .card-gradient utilitário com padding/radius hardcoded.
+   # Este sprint define a versão completa e correta em components.redesign.css.
+   # Ter ambas as definições com a mesma especificidade causa conflito de padding/border-radius
+   # quando o Card component usa variant="gradient" (que aplica .card + .card-gradient simultaneamente).
+   # A versão em components.redesign.css é a canônica — a de tokens.redesign.css deve ser removida.
+   ```
+
+5. **Atualizar** `Card.jsx` para aceitar prop `variant` (backward compat — prop opcional, default `'default'`).
 
 5. **Adicionar** estilos de Card scoped em `components.redesign.css` (NAO reescrever `Card.css`).
 

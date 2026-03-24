@@ -286,25 +286,28 @@ O redesign migra para "Santuario Terapeutico":
   --opacity-backdrop: 0.75;
   --opacity-muted-text: 0.40;
 
-/* ============================================
-   DARK THEME — PLACEHOLDER (Phase 6)
-   Mantém estrutura para nao quebrar ThemeToggle,
-   mas NAO e funcional nesta fase do redesign.
-   ============================================ */
-[data-theme='dark'] {
-  /* TODO Phase 6: Implementar dark mode para Santuario Terapeutico
-     Dark surface baseline: #0f1117 (nao preto puro)
-     Primary pode precisar de ajuste de luminosidade para AA em fundo escuro
-     Glass: inverter para rgba(15,17,23,0.80) */
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1d24;
-  --bg-tertiary: #252830;
-  --bg-card: #1a1d24;
-  --text-primary: #f0f2f4;
-  --text-secondary: #a0a4ab;
-  --text-tertiary: #6b7280;
-}
 ```
+
+> **DARK THEME (Phase 6 — regra SEPARADA):** O bloco de dark mode **NÃO vai dentro de `[data-redesign="true"]`**. Como `data-theme='dark'` é aplicado em `<html>` (via `useTheme.js → root.setAttribute('data-theme', theme)`), e `data-redesign="true"` está em `.app-container` (descendente de `<html>`), o seletor correto é descendente. Adicionar SEPARADAMENTE no arquivo, APÓS o bloco principal:
+>
+> ```css
+> /* FORA do bloco [data-redesign="true"] { } — dark mode scoped para redesign */
+> [data-theme='dark'] [data-redesign="true"] {
+>   /* TODO Phase 6: Implementar dark mode para Santuario Terapeutico
+>      Dark surface baseline: #0f1117 (nao preto puro)
+>      Primary pode precisar de ajuste de luminosidade para AA em fundo escuro
+>      Glass: inverter para rgba(15,17,23,0.80) */
+>   --bg-primary: #0f1117;
+>   --bg-secondary: #1a1d24;
+>   --bg-tertiary: #252830;
+>   --bg-card: #1a1d24;
+>   --text-primary: #f0f2f4;
+>   --text-secondary: #a0a4ab;
+>   --text-tertiary: #6b7280;
+> }
+> ```
+>
+> **Por que não funcional agora:** As variáveis `--bg-primary` etc. dentro de `[data-redesign="true"]` têm precedência sobre as herdadas de `<html>`. Na Wave 0, isso é aceitável — dark mode é Phase 6.
 
 ### Variaveis que NAO devem estar em `tokens.redesign.css`
 
