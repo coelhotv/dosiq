@@ -1,0 +1,255 @@
+/* ============================================
+   RESPONSIVE GRID LAYOUT — Santuario Terapeutico
+
+   Breakpoints:
+   - Mobile: < 768px — coluna unica, padding 1rem
+   - Tablet: 768px-1023px — 2 colunas, padding 1.5rem
+   - Desktop: >= 1024px — 2-3 colunas, sidebar 256px, padding 2rem
+
+   Max-width: 80rem (1280px) para manter legibilidade.
+   ============================================ */
+
+/* ============================================
+   PAGE CONTAINER — wrapper principal de conteudo
+   ============================================ */
+.page-container {
+  width: 100%;
+  max-width: 80rem; /* 1280px */
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding: 2rem;
+  }
+}
+
+/* ============================================
+   MAIN WITH SIDEBAR — offset para sidebar fixa
+   Usado no <main> quando o usuario esta autenticado.
+   ============================================ */
+@media (min-width: 768px) {
+  .main-with-sidebar {
+    margin-left: 16rem; /* 256px sidebar width */
+  }
+}
+
+/* ============================================
+   APP MAIN — container do conteudo principal
+   ============================================ */
+.app-main {
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height para mobile */
+  position: relative;
+  padding-bottom: 5rem; /* 80px — espaco para BottomNav no mobile */
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    padding-bottom: 0; /* sem BottomNav no desktop — sidebar substitui */
+  }
+}
+
+/* ============================================
+   GRID PATTERNS — mobile-first, expandem em desktop
+   ============================================ */
+
+/* Base: sempre coluna unica no mobile */
+.grid-1,
+.grid-2,
+.grid-3,
+.grid-12,
+.grid-dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* 2 colunas em tablet+ */
+@media (min-width: 768px) {
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 3 colunas em desktop */
+@media (min-width: 768px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 12 colunas em desktop (para layouts complexos) */
+@media (min-width: 768px) {
+  .grid-12 {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+
+/* ============================================
+   DASHBOARD LAYOUT (extends .grid-dashboard base)
+   Mobile: coluna unica
+   Desktop: esquerda (ring + prioridade) 1fr + direita (cronograma) 2fr
+
+   Referencia: plans/redesign/references/simple-hoje-desktop.png
+   - Coluna esquerda: ring gauge de adesao + card prioridade maxima
+   - Coluna direita: cronograma do dia + alertas
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .grid-dashboard {
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+  }
+}
+
+/* ============================================
+   TRATAMENTOS LAYOUT
+   Mobile: coluna unica (cards empilhados)
+   Desktop: grid tabular
+
+   Referencia: plans/redesign/references/complex-tratamentos-desktop.png
+   - Lista tabular com colunas: nome, dose, frequencia, status
+   ============================================ */
+.grid-treatments {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid-treatments {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ============================================
+   ESTOQUE LAYOUT
+   Mobile: coluna unica
+   Desktop: grid 3 colunas de cards
+
+   Referencia: plans/redesign/references/complex-estoque-desktop.png
+   - Cards com dias restantes, barra de progresso, status badge
+   ============================================ */
+.grid-stock {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid-stock {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-stock {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ============================================
+   PAGE HEADER / TITLE / SUBTITLE / SECTION HEADER
+   SCOPED — estes nomes JA EXISTEM no codebase atual
+   (Settings.css, Dashboard.css, Landing.css).
+   Sem [data-redesign="true"], as regras abaixo
+   afetariam TODOS os usuarios e quebrariam o design atual.
+   ============================================ */
+[data-redesign="true"] .page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  [data-redesign="true"] .page-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+}
+
+[data-redesign="true"] .page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-md);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-on-surface);
+}
+
+[data-redesign="true"] .page-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-on-surface-variant);
+}
+
+/* ============================================
+   SECTION HEADER — SCOPED (ja existe no codebase atual)
+   ============================================ */
+[data-redesign="true"] .section-header {
+  font-family: var(--font-body);
+  font-size: var(--text-label-md);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-outline);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   RESPONSIVE HELPERS
+   ============================================ */
+
+/* Esconder em mobile, mostrar em desktop */
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Esconder em desktop, mostrar em mobile */
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}
+
+/* ============================================
+   SAFE AREA — para dispositivos com notch
+   ============================================ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
