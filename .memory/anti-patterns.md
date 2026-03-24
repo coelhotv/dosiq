@@ -26,6 +26,9 @@
 | AP-021 | Skipping Gemini Code Assist review to save time | Missed CRITICAL/HIGH issues, production bugs | Always wait for Gemini review, address all CRITICAL/HIGH | R-062 |
 | AP-022 | Sequential task creation without validation gates | Accumulated errors, no quality checkpoints | Pause between tasks for review, use quality gates | R-061 |
 | AP-023 | Not reading memory files before coding | Repeated mistakes, rule violations, wasted effort | **ALWAYS read `.memory/rules.md` and `.memory/anti-patterns.md` before coding** (R-065) | R-065 |
+| **AP-024** | **Hardcode colors (hex/rgba) in redesign CSS without checking CSS variable pattern** | **8+ reviewer issues, design system inconsistency, harder future theme updates** | **Always use CSS variables (--color-*) and color-mix() for semantic colors in components.redesign.css. Check tokens.redesign.css first.** | **R-118** |
+| **AP-W02** | **Override button size classes with min-height on variant selector** | **size="sm" and size="md" props stop working, API contract broken, layout regressions** | **Size-specific heights belong in .btn-sm/.btn-md rules only, NOT in .btn-primary/.btn-secondary. Test all size + variant combos.** | **R-119** |
+| **AP-C02** | **Duplicate CSS rules across similar components without consolidation** | **Code bloat, maintenance burden, cascading changes require editing multiple places** | **Use CSS selector grouping (`,`) for shared base styles, then separate size/state modifiers. 1 source of truth.** | **R-120** |
 
 ---
 

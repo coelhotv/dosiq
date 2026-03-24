@@ -1262,6 +1262,95 @@ grep -r "bot\." server/bot/commands/ server/bot/callbacks/ | grep -o "bot\.[a-zA
 **Motivo:** Centralized hierarchy vars make future redesigns (W2+) fast + consistent.
 **Source:** Wave 1 — Sprint 1.3
 
+### R-118: Redesign CSS Color System [CRITICAL]
+**Regra:** TODOS os valores de cor em components.redesign.css DEVEM vir de CSS variables (--color-*). Nunca hardcode hex ou rgba. Use `color-mix()` para derivar variações semânticas.
+**Padrão:**
+```css
+/* ✅ CORRETO — CSS variables + color-mix */
+.btn-danger {
+  background: var(--color-error);  /* Base color from token */
+  color: var(--color-on-primary);  /* Text color from token */
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--color-error) 85%, #000000);  /* Darker shade */
+}
+
+.badge-critical {
+  background-color: color-mix(in srgb, var(--color-error) 10%, transparent);  /* Tinted bg */
+}
+
+/* ❌ ERRADO — Hardcoded colors */
+.btn-danger { background: #a51515; color: #ffffff; }  /* Design system bypass */
+.badge-critical { background-color: rgba(186, 26, 26, 0.10); }  /* No variable */
+```
+
+**Aplicação:**
+- Sempre check tokens.redesign.css PRIMEIRO para variável existente
+- Se cor for derivação, usar color-mix(in srgb, var(--color-*) XX%, black/white/transparent)
+- Isso permite temas futuros (dark mode, custom branding) sem refactor massivo
+
+**Contexto:** Wave 3 — 8+ reviewer issues (Gemini Code Assist) por hardcoded colors
+**Motivo:** Design system consistency, maintainability, future theme support
+**Source:** Wave 3 — Sprint 3.1-3.6 correction cycle
+**Reference:** AP-024
+
+### R-119: Button Size Class Preservation [HIGH]
+**Regra:** Propriedades de tamanho (`min-height`, `padding`) DEVEM ficar APENAS em classes de tamanho (.btn-sm, .btn-md, .btn-lg). NUNCA colocar no variant (.btn-primary, .btn-danger).
+**Padrão:**
+```css
+/* ✅ CORRETO — size classes control dimensions */
+[data-redesign="true"] .btn-sm { min-height: 40px; padding: 0.5rem 1rem; }
+[data-redesign="true"] .btn-md { min-height: 48px; padding: 0.75rem 1.5rem; }
+[data-redesign="true"] .btn-lg { min-height: 56px; padding: 1rem 2rem; }
+
+[data-redesign="true"] .btn-primary {
+  background: var(--gradient-primary);
+  /* NO min-height or padding */
+}
+
+/* ❌ ERRADO — variant overrides size class */
+[data-redesign="true"] .btn-primary { min-height: 56px; }  /* overrides .btn-sm */
+```
+
+**Impacto se violado:** `variant="primary" size="sm"` renders como 56px (lg) ao invés de 40px (sm). Quebra layout + API contract.
+
+**Contexto:** Wave 3 — ChatGPT Codex flagged `.btn-primary` min-height override
+**Motivo:** CSS specificity: variant + min-height come later than size class, overwrites it
+**Source:** Wave 3 — Sprint 3.1 fix
+**Reference:** AP-W02
+
+### R-120: CSS Selector Consolidation Pattern [MEDIUM]
+**Regra:** Quando 2+ classes compartilham >80% dos estilos, consolidate via selector grouping (`,`). Separe apenas size/state modifiers.
+**Padrão:**
+```css
+/* ✅ CORRETO — shared base, then variants */
+[data-redesign="true"] .btn-secondary,
+[data-redesign="true"] .btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-outline-variant);
+  font-weight: var(--font-weight-semibold);
+}
+
+[data-redesign="true"] .btn-secondary:hover:not(:disabled),
+[data-redesign="true"] .btn-outline:hover:not(:disabled) {
+  background: var(--state-hover);
+  border-color: var(--color-primary);
+}
+
+/* ❌ ERRADO — duplicated rules */
+[data-redesign="true"] .btn-secondary { ... 12 lines ... }
+[data-redesign="true"] .btn-outline { ... identical 12 lines ... }
+```
+
+**Vantagem:** Reduz duplicação ~40%, simplifica future updates (1 lugar ao invés de 2)
+
+**Contexto:** Wave 3 — Gemini Code Assist flagged button + list-item duplication
+**Motivo:** Maintainability, single source of truth for shared styles
+**Source:** Wave 3 — Sprint 3.1 + 3.6 refactor
+**Reference:** AP-C02
+
 ---
 
 *Last updated: 2026-03-24*
