@@ -4,8 +4,9 @@ import { getConsultationData } from '@features/consultation/services/consultatio
 import ConsultationView from '@features/consultation/components/ConsultationView'
 import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
-import pdfGeneratorService from '@features/reports/services/pdfGeneratorService'
+import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
 import { shareService } from '@features/reports/services/shareService'
+import { formatLocalDate } from '@utils/dateUtils.js'
 
 /**
  * Consultation - Container View do Modo Consulta Médica
@@ -24,6 +25,17 @@ export default function Consultation({ onBack }) {
   // Obtém dados do contexto do Dashboard
   const { medicines, protocols, logs, stockSummary, stats } = useDashboard()
 
+  const dashboardData = useMemo(
+    () => ({
+      medicines,
+      protocols,
+      logs,
+      stockSummary,
+      stats,
+    }),
+    [medicines, protocols, logs, stockSummary, stats]
+  )
+
   // Agrega dados para o Modo Consulta
   useEffect(() => {
     const loadConsultationData = () => {
@@ -32,14 +44,15 @@ export default function Consultation({ onBack }) {
         setError(null)
 
         // Verifica se temos dados suficientes
-        if (!medicines || !protocols) {
+        if (!dashboardData.medicines || !dashboardData.protocols) {
           setConsultationData(null)
+          setIsLoading(false)
           return
         }
 
         // Agrega dados usando o service
         const data = getConsultationData(
-          { medicines, protocols, logs, stockSummary, stats },
+          dashboardData,
           '', // patientName - pode ser expandido no futuro
           null // patientAge - pode ser expandido no futuro
         )
@@ -54,7 +67,7 @@ export default function Consultation({ onBack }) {
     }
 
     loadConsultationData()
-  }, [medicines, protocols, logs, stockSummary, stats])
+  }, [dashboardData])
 
   // Handler para gerar PDF
   const handleGeneratePDF = useCallback(async () => {
@@ -63,18 +76,18 @@ export default function Consultation({ onBack }) {
         timestamp: Date.now(),
       })
 
-      // Gera relatório de consulta usando o serviço existente
-      const pdfBlob = await pdfGeneratorService.generatePDF({
-        period: 'last30days',
-        includeCharts: true,
-        includeTables: true,
+      // Gera relatório de consulta usando o pipeline dedicado
+      const pdfBlob = await generateConsultationPDF({
+        consultationData,
+        dashboardData,
+        period: '30d',
       })
 
       // Download do PDF
       const url = URL.createObjectURL(pdfBlob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `consulta-medica-${new Date().toISOString().split('T')[0]}.pdf`
+      link.download = `consulta-medica-${formatLocalDate(new Date())}.pdf`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -83,7 +96,7 @@ export default function Consultation({ onBack }) {
       console.error('Erro ao gerar PDF:', err)
       alert('Erro ao gerar PDF. Tente novamente.')
     }
-  }, [])
+  }, [consultationData, dashboardData])
 
   // Handler para compartilhar
   const handleShare = useCallback(async () => {
@@ -93,15 +106,15 @@ export default function Consultation({ onBack }) {
       })
 
       // Gera PDF para compartilhamento
-      const pdfBlob = await pdfGeneratorService.generatePDF({
-        period: 'last30days',
-        includeCharts: true,
-        includeTables: true,
+      const pdfBlob = await generateConsultationPDF({
+        consultationData,
+        dashboardData,
+        period: '30d',
       })
 
       // Tenta usar a Web Share API se disponível
       if (navigator.share && navigator.canShare) {
-        const file = new File([pdfBlob], 'consulta-medica.pdf', {
+        const file = new File([pdfBlob], `consulta-medica-${formatLocalDate(new Date())}.pdf`, {
           type: 'application/pdf',
         })
 
@@ -121,7 +134,7 @@ export default function Consultation({ onBack }) {
 
       // Fallback: upload e gera link
       const { url: shareUrl } = await shareService.shareReport(pdfBlob, {
-        filename: 'consulta-medica.pdf',
+        filename: `consulta-medica-${formatLocalDate(new Date())}.pdf`,
       })
 
       // Copia link para clipboard
@@ -138,7 +151,7 @@ export default function Consultation({ onBack }) {
         alert('Erro ao compartilhar. Tente novamente.')
       }
     }
-  }, [])
+  }, [consultationData, dashboardData])
 
   // Handler para voltar
   const handleBack = useCallback(() => {
