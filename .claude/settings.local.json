@@ -110,7 +110,9 @@
       "WebSearch",
       "WebFetch(domain:ddinter2.scbdd.com)",
       "Read(//Users/coelhotv/git-icloud/meus-remedios/plans/**)",
-      "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/plans/**)"
+      "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/plans/**)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh api repos/coelhotv/meus-remedios/pulls/420/comments --paginate --jq '.[] | select\\(.user.login == \"\"\"\"gemini-code-assist\"\"\"\"\\) |:*)"
     ],
     "additionalDirectories": [
       "/tmp",
