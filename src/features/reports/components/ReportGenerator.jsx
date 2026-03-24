@@ -1,11 +1,14 @@
 /**
- * @fileoverview Componente de geração de relatórios PDF.
- * Permite ao usuário selecionar período e gerar/baixar/compartilhar relatórios.
+ * @fileoverview Componente de geração do resumo clínico em PDF.
+ * Usa o pipeline dedicado do Modo Consulta Médica para todos os entrypoints.
  * @module features/reports/components/ReportGenerator
  */
 
-import { useState, useCallback } from 'react'
-import { generatePDF } from '../services/pdfGeneratorService.js'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { supabase } from '@shared/utils/supabase'
+import { getConsultationData } from '@features/consultation/services/consultationDataService'
+import { generateConsultationPDF } from '../services/consultationPdfService.js'
 import { shareReport, shareNative, copyToClipboard } from '../services/shareService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import Button from '@shared/components/ui/Button'
@@ -66,6 +69,7 @@ function downloadBlob(blob, filename) {
  */
 export default function ReportGenerator({ onClose }) {
   // 1. States (R-010: Hook order)
+  const [patientName, setPatientName] = useState('')
   const [period, setPeriod] = useState('30d')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -76,6 +80,47 @@ export default function ReportGenerator({ onClose }) {
   const [shareUrl, setShareUrl] = useState(null)
   const [shareError, setShareError] = useState(null)
   const [copied, setCopied] = useState(false)
+
+  const { medicines, protocols, logs, stockSummary, stats } = useDashboard()
+
+  const dashboardData = useMemo(
+    () => ({
+      medicines,
+      protocols,
+      logs,
+      stockSummary,
+      stats,
+    }),
+    [medicines, protocols, logs, stockSummary, stats]
+  )
+
+  const consultationData = useMemo(
+    () => getConsultationData(dashboardData, patientName, null),
+    [dashboardData, patientName]
+  )
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadPatientProfile = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!isMounted) return
+        setPatientName(user?.user_metadata?.name || '')
+      } catch (err) {
+        console.error('Erro ao carregar perfil para relatório clínico:', err)
+      }
+    }
+
+    loadPatientProfile()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   // 2. Handlers (R-010: States -> Memos -> Effects -> Handlers)
   /**
@@ -90,7 +135,12 @@ export default function ReportGenerator({ onClose }) {
     setShareError(null)
 
     try {
-      const blob = await generatePDF({ period })
+      const blob = await generateConsultationPDF({
+        consultationData,
+        dashboardData,
+        period,
+        title: 'Meus Remedios - Consulta Medica',
+      })
       setPdfBlob(blob)
 
       // Track analytics event
@@ -98,6 +148,7 @@ export default function ReportGenerator({ onClose }) {
         period,
         fileSize: blob.size,
         fileType: 'pdf',
+        reportType: 'consultation_clinical_pdf',
       })
     } catch (err) {
       console.error('Erro ao gerar relatório:', err)
@@ -109,7 +160,7 @@ export default function ReportGenerator({ onClose }) {
     } finally {
       setIsGenerating(false)
     }
-  }, [period])
+  }, [consultationData, dashboardData, period])
 
   /**
    * Manipula o download do PDF gerado.
@@ -118,7 +169,7 @@ export default function ReportGenerator({ onClose }) {
     if (!pdfBlob) return
 
     const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-    const filename = `meus-remedios-relatorio-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+    const filename = `meus-remedios-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
 
     downloadBlob(pdfBlob, filename)
 
@@ -126,6 +177,7 @@ export default function ReportGenerator({ onClose }) {
       period,
       filename,
       fileSize: pdfBlob.size,
+      reportType: 'consultation_clinical_pdf',
     })
   }, [pdfBlob, period])
 
@@ -143,7 +195,7 @@ export default function ReportGenerator({ onClose }) {
 
     try {
       const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-      const filename = `meus-remedios-relatorio-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+      const filename = `meus-remedios-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
 
       const result = await shareReport(pdfBlob, { filename, expiresInHours: 72 })
       setShareUrl(result.url)
@@ -154,7 +206,7 @@ export default function ReportGenerator({ onClose }) {
       )
       if (isMobile) {
         try {
-          await shareNative(result.url, 'Relatório de Medicamentos')
+          await shareNative(result.url, 'Resumo Clínico de Consulta')
         } catch {
           // Fallback silencioso - usuário verá o link copiável
         }
@@ -164,6 +216,7 @@ export default function ReportGenerator({ onClose }) {
         period,
         filename,
         expiresInHours: 72,
+        reportType: 'consultation_clinical_pdf',
       })
     } catch (err) {
       console.error('Erro ao compartilhar relatório:', err)
@@ -210,7 +263,7 @@ export default function ReportGenerator({ onClose }) {
   return (
     <div className="report-generator">
       <div className="report-generator__header">
-        <h3 className="report-generator__title">Gerar Relatório</h3>
+        <h3 className="report-generator__title">Gerar Resumo Clínico</h3>
         {onClose && (
           <button
             className="report-generator__close"
@@ -224,7 +277,7 @@ export default function ReportGenerator({ onClose }) {
       </div>
 
       <p className="report-generator__description">
-        Gere um relatório completo em PDF com seu histórico de adesão, medicamentos e estoque.
+        Gere o PDF clínico da consulta com tratamentos ativos, adesão, alertas de estoque, prescrições e titulação.
       </p>
 
       <div className="report-generator__form">
@@ -276,7 +329,7 @@ export default function ReportGenerator({ onClose }) {
             ) : (
               <>
                 <span className="report-generator__icon">📊</span>
-                Gerar Relatório
+                Gerar PDF Clínico
               </>
             )}
           </Button>
@@ -284,7 +337,7 @@ export default function ReportGenerator({ onClose }) {
           <div className="report-generator__success">
             <div className="report-generator__success-message">
               <span className="report-generator__success-icon">✅</span>
-              Relatório gerado com sucesso!
+              Resumo clínico gerado com sucesso!
             </div>
             <div className="report-generator__success-actions">
               <Button

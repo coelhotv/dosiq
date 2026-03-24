@@ -1,0 +1,123 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+
+const mocks = vi.hoisted(() => ({
+  useDashboard: vi.fn(),
+  getConsultationData: vi.fn(),
+  generateConsultationPDF: vi.fn(),
+  shareReport: vi.fn(),
+  shareNative: vi.fn(),
+  copyToClipboard: vi.fn(),
+  track: vi.fn(),
+  getUser: vi.fn(),
+}))
+
+vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
+  useDashboard: mocks.useDashboard,
+}))
+
+vi.mock('@shared/utils/supabase', () => ({
+  supabase: {
+    auth: {
+      getUser: mocks.getUser,
+    },
+  },
+}))
+
+vi.mock('@features/consultation/services/consultationDataService', () => ({
+  getConsultationData: mocks.getConsultationData,
+}))
+
+vi.mock('../../services/consultationPdfService.js', () => ({
+  generateConsultationPDF: mocks.generateConsultationPDF,
+}))
+
+vi.mock('../../services/shareService', () => ({
+  shareReport: mocks.shareReport,
+  shareNative: mocks.shareNative,
+  copyToClipboard: mocks.copyToClipboard,
+}))
+
+vi.mock('@dashboard/services/analyticsService', () => ({
+  analyticsService: {
+    track: mocks.track,
+  },
+}))
+
+import ReportGenerator from '../ReportGenerator.jsx'
+
+describe('ReportGenerator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    mocks.useDashboard.mockReturnValue({
+      medicines: [{ id: 'med-1', name: 'Ansitec' }],
+      protocols: [{ id: 'prot-1', medicine_id: 'med-1', active: true }],
+      logs: [{ id: 'log-1', protocol_id: 'prot-1', quantity_taken: 1 }],
+      stockSummary: [],
+      stats: { score: 90 },
+    })
+
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          user_metadata: {
+            name: 'Joao Silva',
+          },
+        },
+      },
+    })
+
+    mocks.getConsultationData.mockReturnValue({
+      patientInfo: { name: 'Joao Silva' },
+      activeMedicines: [],
+      adherenceSummary: {},
+      stockAlerts: [],
+      prescriptionStatus: [],
+      activeTitrations: [],
+      generatedAt: '2026-03-24T10:30:00.000Z',
+    })
+
+    mocks.generateConsultationPDF.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }))
+  })
+
+  it('gera o PDF clinico usando o pipeline de consulta', async () => {
+    render(<ReportGenerator onClose={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(mocks.getUser).toHaveBeenCalled()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
+
+    await waitFor(() => {
+      expect(mocks.getConsultationData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          medicines: [{ id: 'med-1', name: 'Ansitec' }],
+          protocols: [{ id: 'prot-1', medicine_id: 'med-1', active: true }],
+        }),
+        'Joao Silva',
+        null
+      )
+    })
+
+    await waitFor(() => {
+      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
+        expect.objectContaining({
+          consultationData: expect.objectContaining({
+            patientInfo: { name: 'Joao Silva' },
+          }),
+          dashboardData: expect.objectContaining({
+            medicines: [{ id: 'med-1', name: 'Ansitec' }],
+          }),
+          period: '30d',
+          title: 'Meus Remedios - Consulta Medica',
+        })
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/resumo clínico gerado com sucesso/i)).toBeInTheDocument()
+    })
+  })
+})

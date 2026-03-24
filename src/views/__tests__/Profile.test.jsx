@@ -49,8 +49,18 @@ import Profile from '../Profile'
 describe('Profile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+    })
+
     // Reset localStorage for complexity override
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
       localStorage.removeItem('mr_complexity_override')
     }
   })
