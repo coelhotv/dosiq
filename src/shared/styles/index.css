@@ -43,6 +43,7 @@
    ============================================ */
 @import './tokens.redesign.css';
 @import './layout.redesign.css';
+@import './components.redesign.css';
 
 /* ============================================
    CSS RESET

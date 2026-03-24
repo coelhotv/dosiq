@@ -1,0 +1,524 @@
+/* ============================================
+   COMPONENTS REDESIGN — Santuario Terapeutico
+   Wave 3: Component Library Primitives
+
+   SCOPE: [data-redesign="true"] — sem impacto em usuarios sem o flag
+   Ativacao: ?redesign=1 na URL
+
+   Esta arquivo consolida CSS de 6 sprints:
+   - Sprint 3.1: Button redesign
+   - Sprint 3.2: Card redesign
+   - Sprint 3.3: Inputs e Form Elements
+   - Sprint 3.4: Badge component
+   - Sprint 3.5: Progress Bar
+   - Sprint 3.6: List Items (No Dividers)
+
+   Regra Cardinal: API de props JSX NUNCA muda.
+   Apenas CSS e aparencia mudam quando flag esta ativo.
+   ============================================ */
+
+/* ============================================
+   SPRINT 3.1 — BUTTON REDESIGN
+   ============================================ */
+
+/* Button base — todos os botoes */
+[data-redesign="true"] .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-bold);
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  transition: all 200ms ease-out;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  line-height: 1;
+}
+
+[data-redesign="true"] .btn:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+[data-redesign="true"] .btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Sizes — Touch-first scale */
+[data-redesign="true"] .btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: var(--text-title-sm);
+  min-height: 40px;
+}
+
+[data-redesign="true"] .btn-md {
+  padding: 0.75rem 1.5rem;
+  font-size: var(--text-body-lg);
+  min-height: 48px;
+}
+
+[data-redesign="true"] .btn-lg {
+  padding: 1rem 2rem;
+  font-size: var(--text-title-lg);
+  min-height: 56px;
+  max-width: 100%;
+}
+
+/* Variant: Primary — Gradient verde, CTA principal */
+[data-redesign="true"] .btn-primary {
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
+  font-weight: var(--font-weight-bold);
+  box-shadow: var(--shadow-primary);
+}
+
+[data-redesign="true"] .btn-primary.btn-lg {
+  min-height: 64px;
+  font-size: var(--text-title-lg);
+  padding: 1rem 2rem;
+}
+
+[data-redesign="true"] .btn-primary:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+[data-redesign="true"] .btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Variant: Secondary & Outline — Shared outlined button styles */
+[data-redesign="true"] .btn-secondary,
+[data-redesign="true"] .btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-outline-variant);
+  font-weight: var(--font-weight-semibold);
+}
+
+[data-redesign="true"] .btn-secondary:hover:not(:disabled),
+[data-redesign="true"] .btn-outline:hover:not(:disabled) {
+  background: var(--state-hover);
+  border-color: var(--color-primary);
+}
+
+[data-redesign="true"] .btn-secondary:active:not(:disabled),
+[data-redesign="true"] .btn-outline:active:not(:disabled) {
+  background: var(--state-active);
+  transform: scale(0.98);
+}
+
+[data-redesign="true"] .btn-ghost {
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  font-weight: var(--font-weight-medium);
+}
+
+[data-redesign="true"] .btn-ghost:hover:not(:disabled) {
+  background: var(--state-hover);
+  color: var(--color-on-surface);
+}
+
+[data-redesign="true"] .btn-ghost:active:not(:disabled) {
+  background: var(--state-active);
+  transform: scale(0.98);
+}
+
+[data-redesign="true"] .btn-danger {
+  background: var(--color-error);
+  color: var(--color-on-primary);
+  font-weight: var(--font-weight-bold);
+  box-shadow: var(--shadow-error);
+}
+
+[data-redesign="true"] .btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 85%, #000000);
+  transform: scale(1.02);
+}
+
+[data-redesign="true"] .btn-danger:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   SPRINT 3.2 — CARD REDESIGN
+   ============================================ */
+
+[data-redesign="true"] .card {
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+  border: none;
+  transition: all 300ms ease-out;
+}
+
+@media (min-width: 768px) {
+  [data-redesign="true"] .card {
+    padding: 2rem;
+  }
+}
+
+[data-redesign="true"] .card-default {
+  background-color: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+
+[data-redesign="true"] .card-default.card-hover:hover {
+  box-shadow: var(--shadow-editorial);
+}
+
+[data-redesign="true"] .card-gradient {
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+[data-redesign="true"] .card-gradient.card-hover:hover {
+  transform: scale(1.01);
+}
+
+[data-redesign="true"] .card-alert-critical {
+  background-color: var(--color-error-bg);
+  border-left: 4px solid var(--color-error);
+  border-radius: var(--radius-card-sm);
+}
+
+[data-redesign="true"] .card-alert-warning {
+  background-color: var(--color-warning-bg);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-card-sm);
+}
+
+/* ============================================
+   SPRINT 3.3 — INPUTS & FORM ELEMENTS
+   ============================================ */
+
+[data-redesign="true"] input[type="text"],
+[data-redesign="true"] input[type="email"],
+[data-redesign="true"] input[type="password"],
+[data-redesign="true"] input[type="number"],
+[data-redesign="true"] input[type="tel"],
+[data-redesign="true"] input[type="url"],
+[data-redesign="true"] input[type="search"],
+[data-redesign="true"] input[type="date"],
+[data-redesign="true"] input[type="time"],
+[data-redesign="true"] input[type="datetime-local"],
+[data-redesign="true"] textarea,
+[data-redesign="true"] select {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface-container-low);
+  border: 2px solid transparent;
+  border-radius: var(--radius-input);
+  padding: 0.875rem 1rem;
+  min-height: 56px;
+  width: 100%;
+  outline: none;
+  transition: border-color 200ms ease-out, background-color 200ms ease-out;
+  box-sizing: border-box;
+}
+
+[data-redesign="true"] input::placeholder,
+[data-redesign="true"] textarea::placeholder {
+  color: var(--color-outline);
+  opacity: var(--opacity-muted-text);
+}
+
+[data-redesign="true"] input:focus,
+[data-redesign="true"] textarea:focus,
+[data-redesign="true"] select:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface-container-lowest);
+}
+
+[data-redesign="true"] input:disabled,
+[data-redesign="true"] textarea:disabled,
+[data-redesign="true"] select:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  background-color: var(--color-surface-container-high);
+}
+
+/* Search input com icone */
+[data-redesign="true"] .search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+[data-redesign="true"] .search-input-wrapper input {
+  padding-left: 3rem;
+}
+
+[data-redesign="true"] .search-input-wrapper .search-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--color-outline);
+  pointer-events: none;
+}
+
+/* Form label */
+[data-redesign="true"] .form-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--text-title-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface);
+  margin-bottom: 0.5rem;
+}
+
+/* Form group spacing */
+[data-redesign="true"] .form-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Error state */
+[data-redesign="true"] .input-error,
+[data-redesign="true"] input.input-error,
+[data-redesign="true"] textarea.input-error,
+[data-redesign="true"] select.input-error {
+  border-color: var(--color-error);
+}
+
+[data-redesign="true"] .input-error-message {
+  font-family: var(--font-body);
+  font-size: var(--text-title-sm);
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+   SPRINT 3.4 — BADGE COMPONENT
+   ============================================ */
+
+[data-redesign="true"] .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-badge);
+  font-family: var(--font-body);
+  font-size: var(--text-label-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+[data-redesign="true"] .badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* Critical — erro, urgente */
+[data-redesign="true"] .badge-critical {
+  background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+}
+
+[data-redesign="true"] .badge-critical .badge-dot {
+  background-color: var(--color-error);
+}
+
+/* Warning — aviso, atencao */
+[data-redesign="true"] .badge-warning {
+  background-color: color-mix(in srgb, var(--color-tertiary) 10%, transparent);
+  color: var(--color-tertiary);
+}
+
+[data-redesign="true"] .badge-warning .badge-dot {
+  background-color: var(--color-tertiary);
+}
+
+/* Success — ok, seguro, continuo */
+[data-redesign="true"] .badge-success {
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+[data-redesign="true"] .badge-success .badge-dot {
+  background-color: var(--color-primary);
+}
+
+/* Info — informativo */
+[data-redesign="true"] .badge-info {
+  background-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);
+  color: var(--color-secondary);
+}
+
+[data-redesign="true"] .badge-info .badge-dot {
+  background-color: var(--color-secondary);
+}
+
+/* Neutral — padrao */
+[data-redesign="true"] .badge-neutral {
+  background-color: var(--color-surface-container);
+  color: var(--color-outline);
+}
+
+[data-redesign="true"] .badge-neutral .badge-dot {
+  background-color: var(--color-outline);
+}
+
+/* ============================================
+   SPRINT 3.5 — PROGRESS BAR
+   ============================================ */
+
+[data-redesign="true"] .progress-bar {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-highest);
+  overflow: hidden;
+  width: 100%;
+}
+
+[data-redesign="true"] .progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1000ms ease-out;
+  transform-origin: left;
+}
+
+/* Cores semanticas para o fill */
+[data-redesign="true"] .progress-fill-primary { background-color: var(--color-primary); }
+[data-redesign="true"] .progress-fill-secondary { background-color: var(--color-secondary); }
+[data-redesign="true"] .progress-fill-success { background-color: var(--color-success); }
+[data-redesign="true"] .progress-fill-warning { background-color: var(--color-warning); }
+[data-redesign="true"] .progress-fill-error { background-color: var(--color-error); }
+[data-redesign="true"] .progress-fill-info { background-color: var(--color-info); }
+
+/* Progress bar com label ao lado */
+[data-redesign="true"] .progress-with-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+[data-redesign="true"] .progress-with-label .progress-bar {
+  flex: 1;
+}
+
+[data-redesign="true"] .progress-label {
+  font-family: var(--font-body);
+  font-size: var(--text-title-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  white-space: nowrap;
+  min-width: 3ch;
+}
+
+/* ============================================
+   SPRINT 3.6 — LIST ITEMS (NO DIVIDERS)
+   ============================================ */
+
+[data-redesign="true"] .list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  transition: background 200ms ease-out;
+  border: none;
+}
+
+[data-redesign="true"] .list-item:hover {
+  background: var(--color-surface-container-low);
+}
+
+/* Active/selected state */
+[data-redesign="true"] .list-item.active {
+  background: var(--color-surface-container-low);
+}
+
+/* Leading icon container (circulo colorido) — Shared base styles */
+[data-redesign="true"] .list-item-icon,
+[data-redesign="true"] .list-item-icon-sm {
+  border-radius: var(--radius-full);
+  background: var(--color-secondary-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* Size variants */
+[data-redesign="true"] .list-item-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+[data-redesign="true"] .list-item-icon-sm {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Content area (ocupa espaco restante) */
+[data-redesign="true"] .list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-redesign="true"] .list-item-title {
+  font-family: var(--font-body);
+  font-size: var(--text-title-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  line-height: var(--line-height-snug);
+}
+
+[data-redesign="true"] .list-item-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-title-sm);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-on-surface-variant);
+  line-height: var(--line-height-normal);
+}
+
+/* Trailing content (hora, chevron, status) */
+[data-redesign="true"] .list-item-trailing {
+  font-family: var(--font-body);
+  font-size: var(--text-title-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-outline);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Dose status indicators na lista */
+[data-redesign="true"] .list-item-done {
+  opacity: 0.6;
+}
+
+[data-redesign="true"] .list-item-done .list-item-icon {
+  background: var(--color-surface-container);
+  color: var(--color-success);
+}
+
+/* Dose pending (nao tomado ainda) */
+[data-redesign="true"] .list-item-pending .list-item-icon {
+  background: var(--color-surface-container);
+  color: var(--color-outline);
+}
+
+/* Dose current (proxima dose) */
+[data-redesign="true"] .list-item-current {
+  background: var(--color-surface-container-low);
+}
+
+[data-redesign="true"] .list-item-current .list-item-icon {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
