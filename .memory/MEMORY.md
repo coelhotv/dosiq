@@ -397,6 +397,25 @@ Agents should read this file + rules + anti-patterns before coding.
   - Partial infrastructure implementation can mask incomplete feature setup (R-135: "Always validate spec vs. implementation comprehensively")
   - CSS variable scoping with `[data-redesign="true"]` provides safe gradual rollout without affecting current users (R-136: "Feature flags via CSS selectors for low-risk design iterations")
 
+## Wave 2 — Surface & Layout System ✅ DELIVERED (2026-03-24)
+**Santuário Terapêutico — Material 3 "No-Line Rule" + responsive grid system**
+- **Commit:** `1228894` | **PR:** #419 (squash merged)
+- **Branch:** feature/redesign/wave-2-surface-layout → main (deleted post-merge)
+- **3 Sequential Sprints completed:**
+  - **2.1:** Card variants (alert-critical/warning/info/success, card-gradient, card-section), surface utilities (list-tonal, icon-container, status-dot)
+  - **2.2:** Responsive grid system (1/2/3/12-col, dashboard, treatments, stock layouts), page container, main-with-sidebar, responsive helpers
+  - **2.3:** Integration validation (build ✅, lint ✅, tests ✅, zero file changes outside redesign scope)
+- **Code Review:** 4 inline suggestions (1 HIGH + 3 MEDIUM) all applied:
+  - HIGH: Class name collision `.icon-container` → `.icon-container-redesign` (avoid BottomNav conflict)
+  - MEDIUM: Group alert card common properties (CSS consolidation)
+  - MEDIUM: Group grid base selectors (CSS consolidation)
+  - LOW: Format .status-dot on separate lines (readability)
+- **Quality:** 539/539 testes ✅ | 0 lint errors ✅ | Build success ✅
+- **New Files:** layout.redesign.css (255 lines) + tokens.redesign.css extensions (90 lines)
+- **Scoping:** All classes aditivas (no conflicts); existing classes scoped with `[data-redesign="true"]` when necessary
+- **Rollout Infrastructure:** Gradual rollout ready via localStorage (`mr_redesign_preview`) or URL (`?redesign=1`)
+- **Próxima Wave:** Wave 3 — Component Redesign (buttons, cards, inputs, navigation)
+
 ## Wave 1 — Typography & Icon System ✅ DELIVERED (2026-03-24)
 **Typography (Public Sans + Lexend) + lucide-react icon library**
 - **Commit:** `8dde2ca` | **PR:** #418 (squash merged)
