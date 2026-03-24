@@ -37,6 +37,13 @@
 @import './animations.css';
 
 /* ============================================
+   REDESIGN — Santuário Terapêutico (feature flag)
+   Scoped sob [data-redesign="true"] — não afeta usuários sem o flag.
+   Ativação: ?redesign=1 na URL.
+   ============================================ */
+@import './tokens.redesign.css';
+
+/* ============================================
    CSS RESET
    ============================================ */
 *,
