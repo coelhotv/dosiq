@@ -2,7 +2,7 @@
 
 **Versao:** 1.0  
 **Data:** 2026-03-24  
-**Status:** Implementado localmente e validado; aguardando PR/merge  
+**Status:** Entregue e mergeado via PR #422  
 **Baseline:** PDF clinico novo ja integrado ao Modo Consulta e ao caminho `Perfil -> Relatorio PDF`  
 **Escopo:** Correcao de bugs clinicos, refinamento visual/editorial e reducao de esforco cognitivo do PDF clinico  
 **Objetivo:** Tornar o PDF novo confiavel, legivel e pedagogico sem regredir performance mobile  
@@ -237,3 +237,18 @@ Consideraremos este patch bem-sucedido quando:
 ```
 
 O executor deve tratar esta entrega como **patch corretivo e editorial** do PDF clinico ja existente, priorizando P0 e P1 antes de qualquer embellishment visual.
+
+---
+
+## 12. Status Final da Entrega
+
+- ✅ Patch implementado, revisado e mergeado via PR #422
+- ✅ Fluxo `Perfil -> Relatorio PDF` unificado no pipeline novo de PDF clinico
+- ✅ Modo Consulta e modal de exportacao usando a serie diaria correta de adesao
+- ✅ Hero gauge, capa editorial e tabela diaria ajustados e validados em PDF real
+- ✅ Review do Gemini enderecado com:
+  - simplificacao de `punctuality`
+  - extracao de `patientUtils`
+  - alinhamento da memoria ao comportamento real da tabela diaria
+
+**Estado atual:** o PDF clinico novo passa a ser o fluxo canonico e o patch desta spec esta encerrado.

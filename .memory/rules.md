@@ -92,6 +92,10 @@ const FREQUENCIES = ['daily', 'weekly']
 **Rule:** If the profile has no display name, derive the PDF patient label from the email local-part before falling back to `"Paciente"`. This keeps consultation PDFs clinically useful even before the database has a dedicated name field.
 **Source:** PR #421 PDF consultation patch (2026-03-24)
 
+### R-025.1: Reuse Shared Patient Identity Helpers [MEDIUM]
+**Rule:** When any feature needs patient display fallback or email-handle extraction, reuse `src/shared/utils/patientUtils.js` instead of re-implementing local helpers. This keeps clinical labels consistent across consultation and report flows.
+**Source:** PR #422 review follow-up (2026-03-25)
+
 ### R-026: Consultation Summary Must Count Actual Doses Taken [HIGH]
 **Rule:** In consultation and PDF summaries, use the dose-count metric (`taken`) as the numerator for `taken/expected`. Keep `takenAnytime` only for secondary insights, because it counts the presence of a log per protocol-day and can inflate totals when a protocol has multiple time slots.
 **Source:** PDF consultation patch (2026-03-24)
