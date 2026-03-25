@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-20 | **Version:** v3.3.0 | **Fase:** 6 | **Mobile Perf + Chatbot + Groq Cache:** ✅ TODOS MERGED (Sprint 8.5 Complete)
+**Last Updated:** 2026-03-25 | **Version:** v3.3.0 | **Fase:** 6 | **Wave 4 Navigation Shell:** ✅ MERGED (Commit b02c0b7)
 
 ---
 
