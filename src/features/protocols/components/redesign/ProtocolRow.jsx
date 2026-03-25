@@ -8,8 +8,10 @@ import AdherenceBar7d from './AdherenceBar7d'
 import StockPill from './StockPill'
 import TitrationBadge from './TitrationBadge'
 
-export default function ProtocolRow({ item, isComplex, expanded, onToggleExpand, onEdit }) {
+export default function ProtocolRow({ item, isComplex, expanded, onToggleExpand, onEdit, activeTab }) {
   const canExpand = isComplex && (item.hasTitration || item.notes)
+  // Mostrar adesão apenas para protocolos ativos
+  const showAdherence = activeTab === 'ativos'
 
   function handleClick() {
     // Se em modo complexo e tem conteúdo para expandir, expande
@@ -38,7 +40,7 @@ export default function ProtocolRow({ item, isComplex, expanded, onToggleExpand,
           {item.timeSchedule.length > 0 && ` · ${item.timeSchedule.join(' / ')}`}
         </div>
         <div className="protocol-row__metrics">
-          <AdherenceBar7d score={item.adherenceScore7d} />
+          {showAdherence && <AdherenceBar7d score={item.adherenceScore7d} />}
           <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
         </div>
         {canExpand && (

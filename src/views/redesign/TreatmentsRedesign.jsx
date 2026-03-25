@@ -139,9 +139,10 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
           key={activeTab}
           groups={currentGroups}
           onEdit={handleEditProtocol}
+          activeTab={activeTab}
         />
       ) : (
-        <TreatmentsSimple key={activeTab} items={currentItems} onEdit={handleEditProtocol} />
+        <TreatmentsSimple key={activeTab} items={currentItems} onEdit={handleEditProtocol} activeTab={activeTab} />
       )}
 
       {/* TreatmentWizard modal — apenas para novos protocolos via busca */}
