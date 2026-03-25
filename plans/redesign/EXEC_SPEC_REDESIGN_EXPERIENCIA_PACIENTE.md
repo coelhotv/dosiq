@@ -24,7 +24,7 @@
 | W4 | Navigation Shell (BottomNav + Sidebar) | `WAVE_4_NAVIGATION_SHELL.md` | ✅ MERGED #422 (2026-03-25) | main |
 | W5 | Motion Language | `WAVE_5_MOTION_LANGUAGE.md` | ✅ MERGED #424 (2026-03-25) | main |
 | W6 | Dashboard Redesign | `WAVE_6_DASHBOARD_REDESIGN.md` | ✅ MERGED #425 (2026-03-25) | main |
-| W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ⏳ PENDENTE EXECUÇÃO | — |
+| W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ✅ MERGED #426 (2026-03-25) | main |
 | W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ⏳ PENDENTE EXECUÇÃO | — |
 | W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
@@ -36,6 +36,8 @@
 - ✅ **W4:** BottomNavRedesign + Sidebar + App.jsx integration + page transitions (PR #422)
 - ✅ **W5:** motionConstants.js + useMotion hook + CSS keyframes + AI review cycle (PR #424)
 - ✅ **W6:** RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
+- ✅ **W6.5:** CSS Responsive Doses + CronogramaPeriodo + DashboardRedesign + PriorityDoseCard Variants (PR #426)
+
 
 **Foundation (W0-W6):** 100% COMPLETO ✅ — Sistema de design, navegação, motion e dashboard completos
 
