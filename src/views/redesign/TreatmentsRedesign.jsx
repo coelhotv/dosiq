@@ -3,13 +3,13 @@
  * Carrega dados, bifurca por persona, gerencia tabs e modal do wizard
  */
 import { useState } from 'react'
-import { useComplexityMode } from '@shared/hooks/useComplexityMode'
+import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { useTreatmentList } from '@protocols/hooks/useTreatmentList'
 import TreatmentTabBar from '@protocols/components/redesign/TreatmentTabBar'
 import AnvisaSearchBar from '@protocols/components/redesign/AnvisaSearchBar'
 import TreatmentsSimple from './TreatmentsSimple'
 import TreatmentsComplex from './TreatmentsComplex'
-import ViewSkeleton from '@shared/components/ui/ViewSkeleton'
+import Loading from '@shared/components/ui/Loading'
 import TreatmentWizard from '@protocols/components/TreatmentWizard'
 import './TreatmentsRedesign.css'
 
@@ -44,7 +44,7 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
     refetch()
   }
 
-  if (loading) return <ViewSkeleton />
+  if (loading) return <Loading />
   if (error) return <div className="treatments-redesign__error">Erro ao carregar tratamentos: {error}</div>
 
   return (
