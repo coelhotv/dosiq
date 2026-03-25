@@ -7,6 +7,11 @@
   z-index: 1100;
 }
 
+/* Redesign mode: lighter overlay for light theme */
+[data-redesign="true"] .overlay {
+  background: rgba(25, 28, 29, 0.2);
+}
+
 .drawer {
   position: fixed;
   top: 0;
@@ -20,17 +25,32 @@
   z-index: 1101;
 }
 
+/* Redesign mode: use light surface instead of dark background */
+[data-redesign="true"] .drawer {
+  background: var(--color-surface-container-lowest, #ffffff);
+}
+
 .header {
   padding: 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border, #333);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* Redesign mode: light border */
+[data-redesign="true"] .header {
+  border-color: var(--color-outline-variant, #c9ded8);
+}
+
 .headerTitle {
   font-weight: bold;
-  color: var(--color-text);
+  color: var(--color-text, #fff);
+}
+
+/* Redesign mode: ensure dark text on light background */
+[data-redesign="true"] .headerTitle {
+  color: var(--color-on-surface, #191c1d);
 }
 
 .headerActions {
@@ -42,7 +62,7 @@
 .clearButton {
   background: none;
   border: none;
-  color: var(--color-text);
+  color: var(--color-text, #fff);
   font-size: 18px;
   cursor: pointer;
   padding: 4px;
@@ -54,14 +74,24 @@
   opacity: 0.7;
 }
 
+/* Redesign mode: dark text buttons */
+[data-redesign="true"] .clearButton {
+  color: var(--color-on-surface-variant, #3e4946);
+}
+
 .closeButton {
   background: none;
   border: none;
-  color: var(--color-text);
+  color: var(--color-text, #fff);
   font-size: 20px;
   cursor: pointer;
   padding: 4px;
   line-height: 1;
+}
+
+/* Redesign mode: dark text buttons */
+[data-redesign="true"] .closeButton {
+  color: var(--color-on-surface-variant, #3e4946);
 }
 
 .messages {
@@ -81,16 +111,32 @@
   line-height: 1.4;
   white-space: pre-wrap;
   color: var(--color-text, #fff);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .messageBubbleUser {
   align-self: flex-end;
   background: var(--color-primary, #3b82f6);
+  color: white;
+}
+
+/* Redesign mode: use secondary color for user messages */
+[data-redesign="true"] .messageBubbleUser {
+  background: var(--color-secondary, #005db6);
+  color: white;
 }
 
 .messageBubbleAssistant {
   align-self: flex-start;
   background: var(--color-surface, #1e1e1e);
+  color: var(--color-text, #fff);
+}
+
+/* Redesign mode: light gray background for assistant messages */
+[data-redesign="true"] .messageBubbleAssistant {
+  background: var(--color-surface-container-low, #f2f4f5);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .messageTime {
@@ -99,12 +145,23 @@
   opacity: 0.5;
   text-align: right;
   margin-top: 3px;
+  color: inherit;
+}
+
+/* Redesign mode: ensure timestamp is readable */
+[data-redesign="true"] .messageBubbleAssistant .messageTime {
+  color: var(--color-on-surface-variant, #3e4946);
+  opacity: 0.6;
+}
+
+[data-redesign="true"] .messageBubbleUser .messageTime {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .dateSeparator {
   text-align: center;
   font-size: 0.7rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #999);
   opacity: 0.6;
   margin: 8px 0;
   position: relative;
@@ -128,6 +185,16 @@
   right: 0;
 }
 
+/* Redesign mode: use light border and darker text */
+[data-redesign="true"] .dateSeparator {
+  color: var(--color-on-surface-variant, #3e4946);
+}
+
+[data-redesign="true"] .dateSeparator::before,
+[data-redesign="true"] .dateSeparator::after {
+  background: var(--color-outline-variant, #c9ded8);
+}
+
 .thinkingBubble {
   align-self: flex-start;
   background: var(--color-surface);
@@ -135,6 +202,12 @@
   border-radius: 12px;
   font-size: 14px;
   color: var(--color-text-secondary);
+}
+
+/* Redesign mode: light gray with dark text */
+[data-redesign="true"] .thinkingBubble {
+  background: var(--color-surface-container-low, #f2f4f5);
+  color: var(--color-on-surface-variant, #3e4946);
 }
 
 .suggestions {
@@ -147,18 +220,40 @@
 .suggestionButton {
   padding: 6px 12px;
   border-radius: 16px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #333);
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #999);
   font-size: 12px;
   cursor: pointer;
+  transition: all 200ms ease-out;
+}
+
+.suggestionButton:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Redesign mode: light border and dark text */
+[data-redesign="true"] .suggestionButton {
+  border-color: var(--color-outline-variant, #c9ded8);
+  color: var(--color-on-surface-variant, #3e4946);
+}
+
+[data-redesign="true"] .suggestionButton:hover {
+  border-color: var(--color-secondary, #005db6);
+  color: var(--color-secondary, #005db6);
 }
 
 .inputRow {
   padding: 12px 16px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border, #333);
   display: flex;
   gap: 8px;
+}
+
+/* Redesign mode: light border */
+[data-redesign="true"] .inputRow {
+  border-color: var(--color-outline-variant, #c9ded8);
 }
 
 .textInput {
@@ -167,16 +262,27 @@
   border-radius: 20px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-text, #fff);
   font-size: 14px;
   outline: none;
+}
+
+/* Redesign mode: white background with dark border and dark text */
+[data-redesign="true"] .textInput {
+  background: white;
+  color: var(--color-on-surface, #191c1d);
+  border-color: var(--color-outline-variant, #c9ded8);
+}
+
+[data-redesign="true"] .textInput::placeholder {
+  color: var(--color-on-surface-variant, #3e4946);
 }
 
 .sendButton {
   padding: 10px 16px;
   border-radius: 20px;
   border: none;
-  background: var(--color-primary);
+  background: var(--color-primary, #3b82f6);
   color: white;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -185,4 +291,13 @@
 .sendButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Redesign mode: use secondary color */
+[data-redesign="true"] .sendButton {
+  background: var(--color-secondary, #005db6);
+}
+
+[data-redesign="true"] .sendButton:hover:not(:disabled) {
+  opacity: 0.9;
 }
