@@ -1898,113 +1898,145 @@ Durante a revisão dos mocks de referência (`simple-hoje`, `complex-hoje`) e do
 
 ## 12. Wave 7 — Tratamentos Redesign
 
+> **Spec detalhada:** `WAVE_7_TREATMENTS_REDESIGN.md`
 > **⚠️ ROLLOUT GRADUAL — PADRÃO useRedesign()**
-> `Treatment.jsx` atual NÃO é modificado. Criar `src/views/redesign/TreatmentRedesign.jsx`.
-> Componentes internos novos são criados como arquivos separados, usados APENAS pela view redesenhada.
+> `Protocols.jsx` atual NÃO é modificado. Criar `src/views/redesign/TreatmentsRedesign.jsx`.
+> Componentes internos novos ficam em `src/features/protocols/components/redesign/` — usados APENAS pela view redesenhada.
 
-### Sprint 7.1 — Treatment Layout
+### Modelo de dados correto
 
-**Design futuro (mobile):**
-```
-┌──────────────────────────────────────┐
-│  Meus Tratamentos                    │
-│  Acompanhamento de 8 medicações      │
-│                                      │
-│  🔍 Buscar medicamento...            │
-│  [Ativos] [Pausados] [Finalizados]   │
-├──────────────────────────────────────┤
-│  ● CARDIOVASCULAR                 3x │
-│  ┌──────────────────────────────────┐│
-│  │ Losartana                        ││
-│  │ 50mg • 2x ao dia          20:00  ││
-│  │ ▮▮▮▮▮ ▮▮  86%                    ││
-│  ├──────────────────────────────────┤│
-│  │ Atenolol                         ││
-│  │ 25mg • 1x ao dia                 ││
-│  └──────────────────────────────────┘│
-├──────────────────────────────────────┤
-│  ● DIABETES                       2x │
-│  ┌──────────────────────────────────┐│
-│  │ Metformina   ⚠ TITULAÇÃO         ││
-│  │ 850mg → 1000mg                   ││
-│  │ Fase 2 de 4  [Acabando (21)]     ││
-│  └──────────────────────────────────┘│
-├──────────────────────────────────────┤
-│  ● SUPLEMENTAÇÃO                     │
-│  ...                                 │
-└──────────────────────────────────────┘
-```
+O agrupamento de protocolos segue esta hierarquia de prioridade — **sem keyword maps derivados de nomes**:
 
-**Design futuro (desktop):**
+1. **`treatment_plans`** (definidos pelo usuário, ex: "Cardiomiopatia — Quarteto Fantástico") — agrupador primário
+2. **`medicine.therapeutic_class`** (da base ANVISA, ex: "Antilipêmicos") — fallback para protocolos sem plano
+3. **"Medicamentos Avulsos"** — último fallback quando nenhum dos dois existe
+
+Campos relevantes:
+- `treatment_plan.color` = hex (default `#6366f1`), `treatment_plan.emoji` (default `💊`)
+- `protocol.active` = bool; `protocol.end_date` = YYYY-MM-DD
+- `protocol.notes` = notas clínicas livres
+- `protocol.titration_status` = `'estável'|'titulando'|'alvo_atingido'`
+
+### Personas e modos de exibição
+
+| Modo | Hook | Exibição |
+|------|------|---------|
+| `simple` (`isComplex=false`) | `useComplexityMode()` | Lista plana sem headers de grupo — Dona Maria |
+| `complex` (`isComplex=true`) | `useComplexityMode()` | Grupos colapsáveis com headers coloridos — Carlos |
+
+### Design futuro (mobile — modo complexo)
+
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  Tratamentos                        5 PROTOCOLOS ATIVOS      │
-│  🔍 Buscar...              [Ativos] [Pausados] [Finalizados] │
-├─────────────┬──────────┬────────┬──────────┬────────┬────────┤
-│  Nome       │ Posologia│ Freq.  │ Adesão   │ Estoque│        │
-├─────────────┼──────────┼────────┼──────────┼────────┼────────┤
-│ ● CARDIOVASCULAR                                             │
-├─────────────┼──────────┼────────┼──────────┼────────┼────────┤
-│ Losartana   │ 50mg     │ 1x/dia │ ▮▮▮▮▮ 86%│ ████   │  >     │
-│ Anlodipino  │ 5mg      │ 1x/dia │ ▮▮▮▮▮100%│ ▮░░░   │  >     │
-│ ...         │          │        │          │        │        │
-├─────────────┴──────────┴────────┴──────────┴────────┴────────┤
-│ ● ANTI-INFLAMATÓRIO                                          │
-├─────────────┬──────────┬────────┬──────────┬────────┬────────┤
-│ Prednisona  │ 20mg→10mg│ 1x/dia │ ▮▮▮▮▮100%│ ▮▮░░░  │  >     │
-│  └─ TITULAÇÃO                                                │
-│     Semana 1: 20mg ✅  Semana 2: 10mg (Atual) Semana 3: 5mg  │
-│     "Atenção: Não interromper..."                            │
-└──────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────┐
+│  Meus Tratamentos   5 protocolos       │
+│  [🔍 Buscar na base ANVISA...]         │
+│  [Ativos] [Pausados] [Finalizados]     │
+├────────────────────────────────────────┤
+│  💙 CARDIOMIOPATIA — QUARTETO ....  ▼  │
+│  ┌──────────────────────────────────┐  │
+│  │ Metoprolol     25mg              │  │
+│  │ Diário · 08:00 / 20:00           │  │
+│  │ ⚠ Titulação: Etapa 2/4           │  │
+│  │ ██████░░ 75%    [⚠ 8 dias]       │  │
+│  ├──────────────────────────────────┤  │
+│  │ Dapagliflozina  10mg             │  │
+│  │ Diário · 08:00                   │  │
+│  │ ██████████ 100%  [● 30 dias]     │  │
+│  └──────────────────────────────────┘  │
+├────────────────────────────────────────┤
+│  💊 ANTILIPÊMICOS                   ▼  │
+│  ┌──────────────────────────────────┐  │
+│  │ Atorvastatina  20mg              │  │
+│  │ Diário · 22:00                   │  │
+│  │ ██████████ 93%   [● 45 dias]     │  │
+│  └──────────────────────────────────┘  │
+└────────────────────────────────────────┘
 ```
 
-### Sprint 7.2 — TreatmentCard Expandível
+### Design futuro (desktop — modo complexo)
 
-**Arquivo:** Criar `src/features/protocols/components/TreatmentRowRedesign.jsx` (NÃO editar `Treatment.jsx`; usado apenas por `TreatmentRedesign.jsx`)
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Meus Tratamentos                          5 protocolos ativos   │
+│  [🔍 Buscar na base ANVISA...]  [Ativos] [Pausados] [Finalizados]│
+├──────────────────────────────────────────────────────────────────┤
+│  💙 CARDIOMIOPATIA — QUARTETO FANTÁSTICO                         │
+├──────────────┬────────────┬─────────┬──────────────┬─────────────┤
+│  Medicamento │  Posologia │  Freq.  │  Adesão 7d   │  Estoque    │
+├──────────────┼────────────┼─────────┼──────────────┼─────────────┤
+│  Metoprolol  │  1cp 25mg  │  1×/dia │  ██████░ 75% │  ⚠ 8 dias   │
+│  ⚠ Titulação: Etapa 2/4 · próxima etapa em 6 dias                │
+├──────────────┼────────────┼─────────┼──────────────┼─────────────┤
+│  Dapagliflo. │  1cp 10mg  │  1×/dia │  ██████████  │  ● 30 dias  │
+├──────────────┴────────────┴─────────┴──────────────┴─────────────┤
+│  💊 ANTILIPÊMICOS                                                │
+├──────────────┬────────────┬─────────┬──────────────┬─────────────┤
+│  Atorvastati.│  1cp 20mg  │  1×/dia │  █████████░  │  ● 45 dias  │
+└──────────────┴────────────┴─────────┴──────────────┴─────────────┘
+```
 
-Cada medicamento na lista é um row expansível:
-- **Collapsed:** Icon + Name + dosage + frequency + adherence mini-bar + stock bar + chevron
-- **Expanded (AnimatePresence):** Titration timeline + clinical notes + actions
+### Sprints (visão geral)
 
-**Agrupamento por categoria:**
-- Categorias derivadas dos `treatment_plans` (Cardiovascular, Diabetes, Anti-inflamatório, Suplementação)
-- Header de categoria: dot colorido + nome uppercase + count
-- Dentro: lista de medicamentos como rows em card branco
+| Sprint | Entregável | Arquivo criado |
+|--------|-----------|----------------|
+| S7.1 | Hook `useTreatmentList` — busca todos os protocolos + estoque + adesão 7d + titulação | `src/features/protocols/hooks/useTreatmentList.js` |
+| S7.2 | Sub-componentes: `AdherenceBar7d`, `StockPill`, `TitrationBadge`, `ProtocolRow`, `TreatmentPlanHeader` | `src/features/protocols/components/redesign/*.jsx` |
+| S7.3 | Modo simples: lista plana sem grupos | `src/views/redesign/TreatmentsSimple.jsx` |
+| S7.4 | Modo complexo: grupos colapsáveis com header colorido | `src/views/redesign/TreatmentsComplex.jsx` |
+| S7.5 | Tab bar (Ativos/Pausados/Finalizados) + ANVISA search bar com smart routing | `src/features/protocols/components/redesign/TreatmentTabBar.jsx` + `AnvisaSearchBar.jsx` |
+| S7.6 | Orquestração `TreatmentsRedesign.jsx` + wiring em `App.jsx` (lazy + Suspense + feature flag) | `src/views/redesign/TreatmentsRedesign.jsx` |
+| S7.7 | CSS completo em `layout.redesign.css` + motion via `useMotion().cascade` | `src/shared/styles/layout.redesign.css` |
 
-**Titulação badge:**
-- Badge `--color-tertiary-fixed` com ícone TrendingDown + "Titulação"
-- Expandida: protocol steps (completed/current/upcoming)
+### Comportamento da busca ANVISA
 
-### Sprint 7.3 — Search & Filter Bar
+A busca inline retorna medicamentos da base F5.6. Ao selecionar um resultado:
+- **Medicamento já tem protocolo cadastrado** → navega para edição do protocolo existente (view `protocols` original)
+- **Medicamento sem protocolo** → abre `TreatmentWizard` em modal com `preselectedMedicine` prop
 
-**Arquivo:** Adicionar search bar no Treatment view
+### Indicador de adesão
 
-- Input com ícone Search (Lucide)
-- Background: `--color-surface-container-low`
-- Border-radius: `--radius-xl`
-- Placeholder: "Buscar medicamento ou sintoma..."
+Barra de preenchimento (não quadradinhos diários) baseada no score `calculateAllProtocolsAdherence('7d')`:
+- ≥ 80%: verde (`#22c55e`)
+- 60–79%: âmbar (`#f59e0b`)
+- < 60%: vermelho (`#ef4444`)
 
-**Tabs de status:**
-- Segmented control: [Ativos | Pausados | Finalizados]
-- Active tab: bg white, shadow-sm, text primary, rounded-lg
-- Inactive: text outline-variant
+### Derivação de tab por protocolo
 
-### Sprint 7.4 — Weekly Summary Widget (Desktop)
+```
+tabStatus = end_date < hoje → 'finalizado'
+          | active === false → 'pausado'
+          | default         → 'ativo'
+```
 
-No desktop, mostrar widget fixo no canto inferior direito (como no mockup complex-tratamentos):
-- Mini ring gauge (16px stroke, 64x64)
-- "Adesão Geral: 85%"
-- Stats: Melhor horário, Próxima consulta
-- Background: surface-container-lowest, editorial shadow
+> **CRÍTICO:** Usar `parseLocalDate()` de `@utils/dateUtils` — NUNCA `new Date('YYYY-MM-DD')`
+
+### Serviços utilizados (não modificar)
+
+| Service | Função | Retorno relevante |
+|---------|--------|------------------|
+| `adherenceService` | `calculateAllProtocolsAdherence('7d')` | `Array<{protocolId, score}>` |
+| `titrationService` | `getTitrationSummary(protocol)`, `isTitrationActive(protocol)`, `formatDose()`, `formatDaysRemaining()` | shape completo em `WAVE_7_TREATMENTS_REDESIGN.md` |
+| `stockService` | `getStockSummary(medicineId)` | `{total_quantity}` via `medicine_stock_summary` view |
+| `refillPredictionService` | `predictRefill({medicineId, currentStock, logs, protocols})` | `{daysRemaining}` |
+| `treatmentPlanService` | `getAll()` | planos com protocolos nested |
 
 ### Critério de conclusão Wave 7
 
-- [ ] Treatments agrupados por categoria (Cardiovascular, Diabetes, etc.)
-- [ ] Rows expandíveis com titulação e notas clínicas
-- [ ] Search bar funcional
-- [ ] Tabs Ativos/Pausados/Finalizados
-- [ ] Desktop: layout tabular com 12-col grid
-- [ ] Mobile: stack vertical com cards expandíveis
+- [ ] `useTreatmentList` busca todos os protocolos (ativos + pausados + finalizados) via Supabase direto
+- [ ] Agrupamento: `treatment_plans` → `therapeutic_class` → "Avulsos" (sem keyword map)
+- [ ] Tabs Ativos/Pausados/Finalizados com contadores e `tabStatus` derivado corretamente
+- [ ] `AdherenceBar7d` baseada em score 7d (barra, não quadradinhos)
+- [ ] `StockPill` com status visual (critical/low/normal/high) e dias restantes
+- [ ] `TitrationBadge` apenas quando `isTitrationActive(protocol) === true`
+- [ ] Rows expandíveis (modo complex): titulação + notas clínicas
+- [ ] Busca ANVISA inline: smart routing (editar protocolo existente ou abrir TreatmentWizard)
+- [ ] Modo simples: lista plana — Dona Maria
+- [ ] Modo complexo: grupos colapsáveis com header colorido — Carlos
+- [ ] Desktop (≥1024px): layout tabular mais denso
+- [ ] `TreatmentsRedesign` lazy-loaded com `React.lazy()` + `Suspense` + `ViewSkeleton`
+- [ ] Touch targets ≥ 56px em todas as áreas clicáveis
+- [ ] `Protocols.jsx` original intocado
+- [ ] `npm run validate:agent` passa sem erros
 
 ---
 
