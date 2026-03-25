@@ -48,6 +48,7 @@ function removeStorage(key) {
 export function useComplexityMode() {
   const { medicines, protocols } = useDashboard()
 
+
   const [overrideMode, setOverrideMode] = useState(() => readStorage(STORAGE_KEY))
 
   // Medicamentos com ao menos 1 protocolo ativo

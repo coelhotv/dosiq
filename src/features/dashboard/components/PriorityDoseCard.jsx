@@ -2,12 +2,14 @@ import { Clock } from 'lucide-react'
 
 /**
  * PriorityDoseCard — Destaque visual para doses urgentes (late + now).
+ * Suporta duas variantes: 'simple' (Dona Maria) e 'priority' (Carlos).
  *
  * @param {Array} doses — DoseItem[] (late + now não registradas)
  * @param {Function} onRegister — onRegister(dose) — para dose única
  * @param {Function} onRegisterAll — onRegisterAll(doses) — para múltiplas
+ * @param {string} variant — 'simple' | 'priority' (default: 'priority')
  */
-export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll }) {
+export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll, variant = 'priority' }) {
   if (!doses || doses.length === 0) return null
 
   const nextTime = doses[0]?.scheduledTime || ''
@@ -31,6 +33,66 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
     }
   }
 
+  // ═══ VARIANTE: SIMPLE (Dona Maria) ═══
+  if (variant === 'simple') {
+    return (
+      <div
+        role="region"
+        aria-label="Dose prioritária"
+        style={{
+          background: '#ffffff',
+          borderRadius: 'var(--radius-card, 2rem)',
+          padding: '1.5rem',
+          color: 'var(--color-on-surface, #191c1d)',
+          boxShadow: 'var(--shadow-editorial, 0 4px 24px -4px rgba(25, 28, 29, 0.04))',
+          border: '1px solid var(--color-outline-variant, #c9ded8)',
+        }}
+      >
+        <div>
+          <h3 style={{
+            margin: '0 0 0.5rem',
+            fontFamily: 'var(--font-display, Public Sans, sans-serif)',
+            fontSize: 'var(--text-title-lg, 1.125rem)',
+            fontWeight: '600',
+            color: 'var(--color-on-surface, #191c1d)',
+          }}>
+            {doses[0]?.medicineName}
+          </h3>
+          <p style={{
+            margin: '0 0 1rem',
+            fontFamily: 'var(--font-body, Lexend, sans-serif)',
+            fontSize: 'var(--text-body-lg, 1rem)',
+            color: 'var(--color-on-surface-variant, #3e4946)',
+          }}>
+            {doses[0]?.dosagePerIntake} comprimido{doses[0]?.dosagePerIntake !== 1 ? 's' : ''} · {timeLabel}
+          </p>
+        </div>
+
+        <button
+          onClick={handleCTA}
+          aria-label={`Confirmar dose de ${doses[0]?.medicineName}`}
+          style={{
+            width: '100%',
+            padding: '0.625rem 1.125rem',
+            minHeight: '4rem',
+            background: 'var(--color-primary, #006a5e)',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: 'var(--radius-button, 1.25rem)',
+            fontFamily: 'var(--font-body, Lexend, sans-serif)',
+            fontSize: 'var(--text-body-lg, 1rem)',
+            fontWeight: 'var(--font-weight-bold, 700)',
+            cursor: 'pointer',
+            transition: 'all 200ms ease-out',
+          }}
+        >
+          TOMAR AGORA
+        </button>
+      </div>
+    )
+  }
+
+  // ═══ VARIANTE: PRIORITY (Carlos) — DEFAULT ═══
   return (
     <div
       role="region"
