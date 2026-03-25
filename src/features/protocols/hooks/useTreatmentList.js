@@ -4,7 +4,7 @@ import { adherenceService } from '@services/api/adherenceService'
 import { stockService } from '@shared/services'
 import { predictRefill } from '@stock/services/refillPredictionService'
 import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
-import { formatLocalDate, parseLocalDate } from '@utils/dateUtils'
+import { formatLocalDate } from '@utils/dateUtils'
 
 const FREQUENCY_LABELS = {
   diario: 'Diário',
@@ -114,7 +114,6 @@ export function useTreatmentList() {
       )
 
       // Montar TreatmentItem[]
-      const today = formatLocalDate(new Date())
       const allItems = protocols.map(p => {
         const groupInfo = resolveGroup(p)
         const tabStatus = resolveTabStatus(p)

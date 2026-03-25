@@ -80,7 +80,6 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
       {isComplex ? (
         <TreatmentsComplex
           groups={activeTab === 'ativos' ? groups : []}
-          flatItems={currentItems}
         />
       ) : (
         <TreatmentsSimple items={currentItems} />

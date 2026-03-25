@@ -3,13 +3,13 @@
  * Grupos colapsáveis por plano/classe com header colorido
  * Cada grupo contém protocolos com rows expandíveis
  */
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
 import TreatmentPlanHeader from '@protocols/components/redesign/TreatmentPlanHeader'
 import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
 
-export default function TreatmentsComplex({ groups, flatItems }) {
+export default function TreatmentsComplex({ groups }) {
   const { cascade } = useMotion()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const [expandedRow, setExpandedRow] = useState(null)

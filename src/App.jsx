@@ -168,7 +168,7 @@ function AppInner() {
         return isRedesignEnabled ? (
           <Suspense fallback={<ViewSkeleton />}>
             <TreatmentsRedesign
-              onNavigateToProtocol={(item) => {
+              onNavigateToProtocol={() => {
                 setCurrentView('treatment')
               }}
             />
