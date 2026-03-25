@@ -2,8 +2,15 @@
 
 **Versão:** 1.2
 **Data:** 2026-03-24
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W6 em spec ✅
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W6 entregues ✅
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
+
+
+> **Norte criativo:** "Um santuário terapêutico brasileiro: calmo, editorial e legível. Um espaço em camadas e respirável onde dados clínicos sensíveis são apresentados com contraste suave, hierarquia clara e calor humano suficiente para reduzir ansiedade sem parecer infantil."
+
+> **Princípio UX central:** O redesign não é apenas cosmético. Cada tela deve reforçar a pergunta central do paciente: **"O que preciso fazer agora?"**. Reduzir ruído cognitivo, adaptar a densidade da informação automaticamente e consolidar um design system coeso, executável e testável. Se uma decisão de design não ajuda o paciente a responder essa pergunta, ela não pertence à tela.
+
+---
 
 ## Status das Waves
 
@@ -31,11 +38,6 @@
 - ✅ **W6:** RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
 
 **Foundation (W0-W6):** 100% COMPLETO ✅ — Sistema de design, navegação, motion e dashboard completos
-
-
-> **Norte criativo:** "Um santuário terapêutico brasileiro: calmo, editorial e legível. Um espaço em camadas e respirável onde dados clínicos sensíveis são apresentados com contraste suave, hierarquia clara e calor humano suficiente para reduzir ansiedade sem parecer infantil."
-
-> **Princípio UX central:** O redesign não é apenas cosmético. Cada tela deve reforçar a pergunta central do paciente: **"O que preciso fazer agora?"**. Reduzir ruído cognitivo, adaptar a densidade da informação automaticamente e consolidar um design system coeso, executável e testável. Se uma decisão de design não ajuda o paciente a responder essa pergunta, ela não pertence à tela.
 
 ---
 

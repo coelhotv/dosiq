@@ -6,6 +6,7 @@
 **Dependências:** W0–W6 + W6.5 ✅ completas
 **Estimativa:** 7 sprints sequenciais (S7.1–S7.7)
 **Risco:** MÉDIO — nova view, novos componentes, lógica de titulação existente reutilizada. Sem migrations de banco.
+**Projeto:** [REDESIGN UX DO PACIENTE](EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md)
 
 ---
 
