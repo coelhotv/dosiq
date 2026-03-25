@@ -123,11 +123,41 @@ export const staticFallback = {
     transition: { duration: 0 },
     style: { transformOrigin: 'left' },
   },
+  ring: {
+    initial: { pathLength: 1, opacity: 1 },
+    animate: { pathLength: 1, opacity: 1 },
+    transition: { duration: 0 },
+  },
+  counter: {
+    initial: { y: 0, opacity: 1 },
+    animate: { y: 0, opacity: 1 },
+    transition: { duration: 0 },
+  },
   handoff: {
     initial: { opacity: 1, y: 0 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 1 },
     transition: { duration: 0 },
   },
-  tactile: {},
+  tactile: {
+    whileHover: { scale: 1 },
+    whileTap: { scale: 1 },
+    transition: { duration: 0 },
+  },
+  dose: {
+    checkIn: {
+      initial: { scale: 1, opacity: 1 },
+      animate: { scale: 1, opacity: 1 },
+      transition: { duration: 0 },
+    },
+    counterFlip: {
+      initial: { y: 0, opacity: 1 },
+      animate: { y: 0, opacity: 1 },
+      transition: { duration: 0 },
+    },
+    streakPulse: {
+      animate: { scale: 1 },
+      transition: { duration: 0, repeat: 0 },
+    },
+  },
 }
