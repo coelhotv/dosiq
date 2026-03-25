@@ -32,28 +32,23 @@
 }
 
 /* ============================================
-   MAIN WITH SIDEBAR — offset para sidebar fixa
-   Usado no <main> quando o usuario esta autenticado.
-   ============================================ */
-@media (min-width: 768px) {
-  .main-with-sidebar {
-    margin-left: 16rem; /* 256px sidebar width */
-  }
-}
-
-/* ============================================
    APP MAIN — container do conteudo principal
    ============================================ */
 .app-main {
   min-height: 100vh;
-  min-height: 100dvh; /* dynamic viewport height para mobile */
   position: relative;
-  padding-bottom: 5rem; /* 80px — espaco para BottomNav no mobile */
 }
 
+/* Scoped: quando redesign flag esta ativo */
+[data-redesign='true'] .app-main {
+  padding-bottom: 80px; /* espaço para BottomNavRedesign em mobile */
+}
+
+/* MAIN WITH SIDEBAR — offset para sidebar fixa */
 @media (min-width: 768px) {
-  .app-main {
-    padding-bottom: 0; /* sem BottomNav no desktop — sidebar substitui */
+  [data-redesign='true'] .main-with-sidebar {
+    margin-left: 16rem; /* 256px — largura da sidebar */
+    padding-bottom: 0; /* sem bottom nav em desktop */
   }
 }
 
@@ -172,7 +167,7 @@
    Sem [data-redesign="true"], as regras abaixo
    afetariam TODOS os usuarios e quebrariam o design atual.
    ============================================ */
-[data-redesign="true"] .page-header {
+[data-redesign='true'] .page-header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -180,7 +175,7 @@
 }
 
 @media (min-width: 768px) {
-  [data-redesign="true"] .page-header {
+  [data-redesign='true'] .page-header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -188,7 +183,7 @@
   }
 }
 
-[data-redesign="true"] .page-title {
+[data-redesign='true'] .page-title {
   font-family: var(--font-display);
   font-size: var(--text-headline-md);
   font-weight: var(--font-weight-bold);
@@ -197,7 +192,7 @@
   color: var(--color-on-surface);
 }
 
-[data-redesign="true"] .page-subtitle {
+[data-redesign='true'] .page-subtitle {
   font-family: var(--font-body);
   font-size: var(--text-body-lg);
   font-weight: var(--font-weight-regular);
@@ -207,7 +202,7 @@
 /* ============================================
    SECTION HEADER — SCOPED (ja existe no codebase atual)
    ============================================ */
-[data-redesign="true"] .section-header {
+[data-redesign='true'] .section-header {
   font-family: var(--font-body);
   font-size: var(--text-label-md);
   font-weight: var(--font-weight-bold);

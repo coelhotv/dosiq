@@ -19,12 +19,13 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   const today = new Date()
   const todayStr = today.toLocaleDateString('pt-BR')
 
-  const medsContext = (medicines || []).map(med => {
-    const protocol = (protocols || []).find(p => p.medicine_id === med.id && p.active)
+  const medsContext = (medicines || []).map((med) => {
+    const protocol = (protocols || []).find((p) => p.medicine_id === med.id && p.active)
     // Estoque vem via stockSummary ou medicine.stock embedded
-    const stockEntry = (stockSummary || []).find(s => s.medicine_id === med.id)
-    const totalStock = stockEntry?.quantity ??
-      (med.stock || []).filter(s => s.quantity > 0).reduce((sum, s) => sum + s.quantity, 0)
+    const stockEntry = (stockSummary || []).find((s) => s.medicine_id === med.id)
+    const totalStock =
+      stockEntry?.quantity ??
+      (med.stock || []).filter((s) => s.quantity > 0).reduce((sum, s) => sum + s.quantity, 0)
 
     return {
       nome: med.name,
@@ -37,7 +38,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
     }
   })
 
-  const todayLogs = (logs || []).filter(log => {
+  const todayLogs = (logs || []).filter((log) => {
     const logDate = new Date(log.taken_at)
     return (
       logDate.getFullYear() === today.getFullYear() &&
@@ -46,21 +47,21 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
     )
   })
 
-  const adherence7d = stats?.adherence != null
-    ? Math.round(stats.adherence * 100)
-    : null
+  const adherence7d = stats?.adherence != null ? Math.round(stats.adherence * 100) : null
 
   return [
     `Data: ${todayStr}`,
     `Medicamentos ativos: ${medsContext.length}`,
-    ...medsContext.map(m => {
+    ...medsContext.map((m) => {
       const infos = [m.principioAtivo, m.classeTerapeutica].filter(Boolean).join(', ')
       const detalhe = infos ? ` [${infos}]` : ''
       return `- ${m.nome}${detalhe} (${m.dosagem}): ${m.frequencia}, horarios ${m.horarios.join(', ') || 'nao definidos'}, estoque ${m.estoque} un.`
     }),
     `Doses registradas hoje: ${todayLogs.length}`,
     adherence7d != null ? `Adesão ultimos 7 dias: ${adherence7d}%` : '',
-  ].filter(Boolean).join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 /**
@@ -97,10 +98,5 @@ export function buildStaticSystemRules() {
  */
 export function buildSystemPrompt(patientContext) {
   const staticRules = buildStaticSystemRules()
-  return [
-    staticRules,
-    '',
-    'DADOS DO PACIENTE:',
-    patientContext,
-  ].join('\n')
+  return [staticRules, '', 'DADOS DO PACIENTE:', patientContext].join('\n')
 }

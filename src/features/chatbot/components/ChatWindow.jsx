@@ -15,7 +15,7 @@ import styles from './ChatWindow.module.css'
 /**
  * Formata timestamp para exibição relativa (e.g., "às 14:30", "Ontem às 09:15").
  */
-const formatMessageTime = timestamp => {
+const formatMessageTime = (timestamp) => {
   const date = new Date(timestamp)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()
@@ -41,7 +41,7 @@ const shouldShowDateSeparator = (msgs, idx) => {
 /**
  * Formata label do separador de data (e.g., "Hoje", "Ontem", "15/03").
  */
-const formatDaySeparator = timestamp => {
+const formatDaySeparator = (timestamp) => {
   const date = new Date(timestamp)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()
@@ -84,8 +84,8 @@ export default function ChatWindow({ isOpen, onClose }) {
   }, [messages])
 
   // Adiciona mensagem ao estado e persiste histórico
-  const addMessage = useCallback(message => {
-    setMessages(prev => {
+  const addMessage = useCallback((message) => {
+    setMessages((prev) => {
       const next = [...prev, message]
       savePersistedHistory(next)
       return next
@@ -117,7 +117,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     }
   }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats])
 
-  const handleKeyDown = e => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -169,11 +169,7 @@ export default function ChatWindow({ isOpen, onClose }) {
                 >
                   🗑️
                 </button>
-                <button
-                  onClick={onClose}
-                  className={styles.closeButton}
-                  aria-label="Fechar chat"
-                >
+                <button onClick={onClose} className={styles.closeButton} aria-label="Fechar chat">
                   ✕
                 </button>
               </div>
@@ -199,9 +195,7 @@ export default function ChatWindow({ isOpen, onClose }) {
                 </div>
               ))}
 
-              {isLoading && (
-                <div className={styles.thinkingBubble}>Pensando...</div>
-              )}
+              {isLoading && <div className={styles.thinkingBubble}>Pensando...</div>}
 
               <div ref={messagesEndRef} />
             </div>
@@ -225,7 +219,7 @@ export default function ChatWindow({ isOpen, onClose }) {
             <div className={styles.inputRow}>
               <input
                 value={input}
-                onChange={e => setInput(e.target.value)}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Digite sua pergunta..."
                 disabled={isLoading}

@@ -1,0 +1,75 @@
+/* ============================================
+   BOTTOM NAV REDESIGN — Sanctuary Therapeutic
+   Glass morphism. Mobile only (<768px).
+   ============================================ */
+
+.bottom-nav-redesign-container {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--glass-bg, rgba(248, 250, 251, 0.8));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border-top: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.1));
+  padding: 0.75rem 1.5rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+/* Ocultar em desktop — sidebar assume a navegação */
+@media (min-width: 768px) {
+  .bottom-nav-redesign-container {
+    display: none;
+  }
+}
+
+.bottom-nav-redesign {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bnr-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0.5rem;
+  color: var(--color-on-surface-variant, rgba(25, 28, 29, 0.6));
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-lg, 1rem);
+  transition:
+    color 200ms ease-out,
+    background 200ms ease-out,
+    transform 150ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.bnr-item:hover {
+  background: var(--state-hover, rgba(0, 106, 94, 0.08));
+}
+
+.bnr-item--active {
+  color: var(--color-primary, #006a5e);
+  transform: scale(1.05);
+}
+
+.bnr-item--active:hover {
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.05));
+}
+
+.bnr-label {
+  font-family: var(--font-body, 'Lexend', sans-serif);
+  font-size: var(--text-label-sm, 0.625rem);
+  font-weight: var(--font-weight-bold, 700);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider, 0.05em);
+  line-height: 1;
+}

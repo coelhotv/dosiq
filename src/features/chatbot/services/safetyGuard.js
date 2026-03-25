@@ -43,7 +43,7 @@ export function validateUserMessage(message) {
  * @returns {string}
  */
 export function addDisclaimerIfNeeded(response) {
-  const hasHealthContent = CHATBOT_HEALTH_KEYWORDS.some(kw => response.toLowerCase().includes(kw))
+  const hasHealthContent = CHATBOT_HEALTH_KEYWORDS.some((kw) => response.toLowerCase().includes(kw))
 
   if (hasHealthContent && !response.includes('Não substituo')) {
     return `${response}\n\n_${CHATBOT_DISCLAIMER}_`

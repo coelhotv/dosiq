@@ -26,7 +26,12 @@ import { calculateTitrationData } from '@utils/titrationUtils'
  * @param {number} [patientAge] - Idade do paciente (opcional)
  * @returns {Object} Objeto consolidado com todos os dados clínicos
  */
-export function getConsultationData(dashboardData, patientName = '', patientAge = null, patientEmail = '') {
+export function getConsultationData(
+  dashboardData,
+  patientName = '',
+  patientAge = null,
+  patientEmail = ''
+) {
   const { medicines, protocols, logs, stockSummary } = dashboardData
 
   // 1. Informações do paciente + cartão de emergência (offline, do localStorage)
