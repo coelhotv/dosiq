@@ -44,8 +44,11 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **R-128** | Promise coalescence para auth roundtrips | CRITICAL — 13 → 1 roundtrip |
 | **R-129** | String comparison para datas em hot loops | HIGH — 71.3% CPU → negligível |
 | **R-131** | parseLocalDate em TODAS queries Supabase de data | CRITICAL — off-by-one day em GMT-3 |
+| **R-133** | Inspect component prop interface before copying | HIGH (W6.5) — LogForm TypeError |
+| **R-134** | Validate context hook return types | HIGH (W6.5) — RingGaugeRedesign 0% |
+| **R-135** | Prefer direct actions over modal flows | HIGH (W6.5) — 1-click vs 4-click UX |
 
-→ Full rules at `.memory/rules.md` (R-001 to R-131)
+→ Full rules at `.memory/rules.md` (R-001 to R-146, +R-133 to R-135 Wave 6.5)
 
 ---
 
@@ -65,8 +68,11 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | `getUserId()` sem cache (AP-P14) | 13 auth roundtrips (~8s em 4G) | Promise coalescence + cache em memória |
 | `new Date()` em hot loop (AP-P15) | 71.3% CPU, 9.5s freeze mobile | String comparison YYYY-MM-DD |
 | UTC hardcoded em queries (AP-P16) | Off-by-one day em GMT-3 | `parseLocalDate().toISOString()` |
+| **Copy component props without reading interface (AP-W18)** | **TypeError at runtime (LogForm)** | **Always read component prop signature first** |
+| **Assume stats object properties (AP-W19)** | **RingGaugeRedesign shows 0% (wrong prop name)** | **Read hook JSDoc, validate prop names** |
+| **Modal flow vs 1-click registration (AP-W20)** | **4 clicks instead of 1 (worse UX)** | **Study existing patterns, prefer direct actions** |
 
-→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P17, 60+ entries)
+→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P21 + AP-W18-W20, 70+ entries)
 
 ---
 

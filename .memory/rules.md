@@ -1375,5 +1375,127 @@ grep -r "bot\." server/bot/commands/ server/bot/callbacks/ | grep -o "bot\.[a-zA
 
 ---
 
-*Last updated: 2026-03-24*
-*Rules: R-001 to R-146*
+## Wave 6.5 Redesign — Component Integration Patterns (2026-03-25)
+
+### **R-133: Inspect Component Prop Interface Before Copying [HIGH]**
+**Regra:** Quando reutilizar um componente (especialmente copiar patterns de um contexto para outro), SEMPRE ler a assinatura de destructuring do componente-alvo para confirmar os props esperados. Nao assuma que nomes de props são iguais entre contextos diferentes.
+
+**Padrão obrigatório:**
+```jsx
+// ANTES: Ler a assinatura do componente
+// src/features/dashboard/components/LogForm.jsx
+export default function LogForm({
+  protocols,           // ← Nome exato do prop
+  treatmentPlans,      // ← Obrigatório
+  initialValues,
+  onSave,              // ← NÃO é "onSuccess"
+  onCancel
+}) { ... }
+
+// CORRETO — Match nomes exatos
+<LogForm
+  protocols={protocolsData}
+  treatmentPlans={plans}
+  initialValues={formData}
+  onSave={handleSave}
+  onCancel={handleClose}
+/>
+
+// ❌ ERRADO — Nomes diferentes causam TypeError
+<LogForm
+  prefillData={formData}      // ← Prop não existe
+  onSuccess={handleSave}       // ← Esperado: onSave
+/>
+```
+
+**Quando aplicar:** Antes de copiar componentes entre features ou contextos (Dashboard → DashboardRedesign).
+
+**Fonte:** Wave 6.5 — LogForm TypeError descoberto durante teste de "TOMAR" button (2026-03-25). O componente esperava `protocols` do `useDashboard` hook, mas DashboardRedesign passava `prefillData`.
+
+**Referência:** AP-W18
+
+### **R-134: Validate Context Hook Return Types [HIGH]**
+**Regra:** Quando usar dados de um hook context (useDashboard, useFetch, etc), sempre ler o comentário JSDoc do hook para saber quais propriedades retorna. Nao assuma nomes baseado em semântica ("adherence score" → não é `adherenceScore`, pode ser `score`).
+
+**Padrão obrigatório:**
+```javascript
+// src/features/dashboard/hooks/useDashboard.jsx
+export function useDashboard() {
+  return {
+    stats: {
+      score: 0-100,        // ← Nome real
+      currentStreak: 0,     // ← NÃO é "streak"
+      maxStreak: 0
+    },
+    stockSummary: { ... },
+    refresh: () => { ... }
+  }
+}
+
+// ✅ CORRETO — Nomes exatos
+const { stats } = useDashboard()
+const adherenceScore = stats?.score ?? 0
+const streak = stats?.currentStreak ?? 0
+
+// ❌ ERRADO — Assume nomes semânticos
+const adherenceScore = stats?.adherenceScore ?? 0  // undefined ← RingGauge mostra 0%
+const streak = stats?.streak ?? 0                   // undefined
+```
+
+**Checklist:**
+1. Ler o hook source ou JSDoc
+2. Verificar cada propriedade que vai usar
+3. Confirmar nomes exatos ANTES de escrever components
+
+**Fonte:** Wave 6.5 — RingGaugeRedesign exibindo 0% adherence porque DashboardRedesign tentava ler `stats?.adherenceScore` em vez de `stats?.score` (2026-03-25).
+
+**Referência:** AP-W19
+
+### **R-135: Prefer Direct Actions Over Modal Flows for Common Operations [HIGH]**
+**Regra:** Quando uma ação é frequente e simples (ex: registrar dose), estudar padrões de "1-click" diretos em vez de modal flows. Modal flows devem ser reservados para operações complexas (multi-step, validação condicional, dados estruturados).
+
+**Comparação:**
+```jsx
+// ❌ MODAL FLOW (4 cliques: button → open → fill → confirm)
+<button onClick={() => setModalOpen(true)}>
+  TOMAR AGORA
+</button>
+{isModalOpen && <LogForm {...modalProps} onSave={handleSave} />}
+
+// ✅ DIRECT ACTION (1 clique: registra + feedback)
+<button onClick={() =>
+  logService.create({
+    medicine_id: medicineId,
+    protocol_id: protocolId,
+    quantity_taken: dosagePerIntake,
+    taken_at: new Date().toISOString()
+  }).then(() => refresh())
+}>
+  TOMAR AGORA
+</button>
+```
+
+**Padrão de 1-click:**
+1. Validação inline (quantidade, data, protocolo)
+2. Chamada direta ao service (`logService.create()`)
+3. Feedback visual (toast, state update, refresh)
+4. Nenhuma modal/form intermediária
+
+**Quando usar:**
+- ✅ Ações com dados pré-preenchidos (protocolId, dosage já conhecidos)
+- ✅ Operações idempotentes (registrar dose é simples)
+- ✅ Feedback rápido necessário (UX responsiva)
+
+**Quando usar modal:**
+- ✅ Operações complexas (editar múltiplos campos)
+- ✅ Validação condicional (mostrar campos baseado em respostas anteriores)
+- ✅ Confirmação de risco alto (deletar, refund)
+
+**Fonte:** Wave 6.5 — User feedback "essa experiência seria melhor do que há de agora que abre a modal de registro de dose". Pattern validado em SwipeRegisterItem → aplicado a PriorityDoseCard + CronogramaPeriodo (2026-03-25).
+
+**Referência:** AP-W20
+
+---
+
+*Last updated: 2026-03-25*
+*Rules: R-001 to R-146 + R-133 to R-135 (Wave 6.5 Redesign patterns)*
