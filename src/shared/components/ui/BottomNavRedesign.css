@@ -10,10 +10,10 @@
   left: 0;
   right: 0;
   z-index: 50;
-  background: var(--glass-bg, rgba(248, 250, 251, 0.80));
+  background: var(--glass-bg, rgba(248, 250, 251, 0.8));
   backdrop-filter: var(--glass-blur, blur(12px));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border-top: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.10));
+  border-top: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.1));
   padding: 0.75rem 1.5rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
 }
@@ -39,12 +39,15 @@
   min-width: 56px;
   min-height: 56px;
   padding: 0.5rem;
-  color: var(--color-on-surface-variant, rgba(25, 28, 29, 0.60));
+  color: var(--color-on-surface-variant, rgba(25, 28, 29, 0.6));
   background: none;
   border: none;
   cursor: pointer;
   border-radius: var(--radius-lg, 1rem);
-  transition: color 200ms ease-out, background 200ms ease-out, transform 150ms ease-out;
+  transition:
+    color 200ms ease-out,
+    background 200ms ease-out,
+    transform 150ms ease-out;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }

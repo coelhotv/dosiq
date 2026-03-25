@@ -245,7 +245,6 @@ function AppInner() {
     <OnboardingProvider>
       <DashboardProvider>
         <div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
-
           {/* Sidebar — desktop, apenas usuários com flag ativo */}
           {isAuthenticated && isRedesignEnabled && (
             <Suspense fallback={null}>
@@ -254,8 +253,14 @@ function AppInner() {
           )}
 
           <main
-            className={isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'}
-            style={{ paddingBottom: isRedesignEnabled ? undefined : '80px', minHeight: '100vh', position: 'relative' }}
+            className={
+              isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'
+            }
+            style={{
+              paddingBottom: isRedesignEnabled ? undefined : '80px',
+              minHeight: '100vh',
+              position: 'relative',
+            }}
           >
             {isRedesignEnabled ? (
               <AnimatePresence mode="wait" initial={false}>
@@ -288,15 +293,14 @@ function AppInner() {
           <OfflineBanner />
 
           {/* BottomNav: redesign para flag users, original para outros */}
-          {isAuthenticated && (
-            isRedesignEnabled ? (
+          {isAuthenticated &&
+            (isRedesignEnabled ? (
               <Suspense fallback={null}>
                 <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
               </Suspense>
             ) : (
               <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
-            )
-          )}
+            ))}
 
           {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
           {isAuthenticated && (

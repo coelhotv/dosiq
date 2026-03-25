@@ -9,9 +9,15 @@ const mockLocalStorage = (() => {
   let store = {}
   return {
     getItem: (key) => store[key] ?? null,
-    setItem: (key, value) => { store[key] = String(value) },
-    removeItem: (key) => { delete store[key] },
-    clear: () => { store = {} },
+    setItem: (key, value) => {
+      store[key] = String(value)
+    },
+    removeItem: (key) => {
+      delete store[key]
+    },
+    clear: () => {
+      store = {}
+    },
   }
 })()
 vi.stubGlobal('localStorage', mockLocalStorage)
@@ -19,7 +25,16 @@ vi.stubGlobal('localStorage', mockLocalStorage)
 import { sendChatMessage } from '../services/chatbotService'
 
 const mockPatientData = {
-  medicines: [{ id: '1', name: 'Metformina', active_ingredient: null, dosage_per_pill: 500, dosage_unit: 'mg', stock: [] }],
+  medicines: [
+    {
+      id: '1',
+      name: 'Metformina',
+      active_ingredient: null,
+      dosage_per_pill: 500,
+      dosage_unit: 'mg',
+      stock: [],
+    },
+  ],
   protocols: [],
   logs: [],
   stockSummary: [],
@@ -135,10 +150,7 @@ describe('sendChatMessage', () => {
 
   it('retorna rateLimited=true apos 30 mensagens na hora', async () => {
     // Simular 30 mensagens ja enviadas na janela atual
-    mockLocalStorage.setItem(
-      'mr_chat_rate',
-      JSON.stringify({ windowStart: Date.now(), count: 30 })
-    )
+    mockLocalStorage.setItem('mr_chat_rate', JSON.stringify({ windowStart: Date.now(), count: 30 }))
 
     const result = await sendChatMessage({
       message: 'ola',

@@ -131,9 +131,7 @@ export function loadPersistedHistory() {
     const data = JSON.parse(localStorage.getItem(CHATBOT_HISTORY_STORAGE_KEY) || '[]')
     // Validar estrutura mínima: array de objetos com role, content, timestamp
     if (!Array.isArray(data)) return []
-    return data.filter(
-      msg => msg.role && msg.content && typeof msg.timestamp === 'number'
-    )
+    return data.filter((msg) => msg.role && msg.content && typeof msg.timestamp === 'number')
   } catch {
     return []
   }
@@ -148,7 +146,7 @@ export function savePersistedHistory(messages) {
   if (typeof window === 'undefined') return
   try {
     // Filtrar mensagem de boas-vindas (primeira mensagem do assistente sem outras mensagens)
-    const filtered = messages.filter(msg => {
+    const filtered = messages.filter((msg) => {
       if (msg.role === 'assistant' && messages.length === 1) return false // Mensagem inicial
       return true
     })

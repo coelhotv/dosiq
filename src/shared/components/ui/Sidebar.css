@@ -86,7 +86,7 @@
 .sidebar-nav-item--active {
   background: var(--color-primary, #006a5e);
   color: var(--color-on-primary, #ffffff);
-  box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.20));
+  box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.2));
   font-weight: var(--font-weight-semibold, 600);
 }
 
@@ -116,7 +116,7 @@
   font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
   transition: all 200ms ease-out;
-  box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.20));
+  box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.2));
   -webkit-tap-highlight-color: transparent;
 }
 

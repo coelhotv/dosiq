@@ -146,7 +146,12 @@ function getPeriodLabel(period) {
 function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
   doc.setDrawColor(...rgb(COLORS.line))
   doc.setLineWidth(0.2)
-  doc.line(PAGE.margin, CHROME_LAYOUT.headerLineY, PAGE.width - PAGE.margin, CHROME_LAYOUT.headerLineY)
+  doc.line(
+    PAGE.margin,
+    CHROME_LAYOUT.headerLineY,
+    PAGE.width - PAGE.margin,
+    CHROME_LAYOUT.headerLineY
+  )
 
   doc.setFontSize(CHROME_LAYOUT.headerBrandFontSize)
   doc.setTextColor(...rgb(COLORS.text))
@@ -158,7 +163,10 @@ function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
   doc.text(headerTitle, PAGE.margin + CHROME_LAYOUT.headerTitleOffsetX, CHROME_LAYOUT.headerY)
 
   doc.setTextColor(...rgb(COLORS.muted))
-  const patientName = doc.splitTextToSize(pdfData.patient.name || 'Paciente sem nome', CHROME_LAYOUT.headerPatientMaxWidth)
+  const patientName = doc.splitTextToSize(
+    pdfData.patient.name || 'Paciente sem nome',
+    CHROME_LAYOUT.headerPatientMaxWidth
+  )
   doc.text(patientName, PAGE.width - PAGE.margin, CHROME_LAYOUT.headerY, { align: 'right' })
 
   doc.setDrawColor(...rgb(COLORS.line))
@@ -176,9 +184,14 @@ function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
     PAGE.margin,
     PAGE.height - CHROME_LAYOUT.footerTextOffsetY
   )
-  doc.text(`Pagina ${pageNumber}/${totalPages}`, PAGE.width - PAGE.margin, PAGE.height - CHROME_LAYOUT.footerTextOffsetY, {
-    align: 'right',
-  })
+  doc.text(
+    `Pagina ${pageNumber}/${totalPages}`,
+    PAGE.width - PAGE.margin,
+    PAGE.height - CHROME_LAYOUT.footerTextOffsetY,
+    {
+      align: 'right',
+    }
+  )
 }
 
 /**
@@ -200,7 +213,11 @@ function drawKpiCard(doc, card, x, y, width, height) {
 
   const toneColor = toneMap[card.tone] || toneMap.info
   const accentColor =
-    card.tone === 'danger' ? COLORS.danger : card.tone === 'warning' ? COLORS.warning : COLORS.primary
+    card.tone === 'danger'
+      ? COLORS.danger
+      : card.tone === 'warning'
+        ? COLORS.warning
+        : COLORS.primary
 
   doc.setFillColor(...rgb(toneColor))
   doc.setDrawColor(...rgb(COLORS.line))
@@ -241,7 +258,8 @@ function drawArcSegments(doc, centerX, centerY, radius, startAngle, endAngle) {
  * @param {Object} pdfData - Dados do PDF.
  */
 function drawHeroGauge(doc, pdfData) {
-  const selectedPeriodSummary = pdfData.adherence?.selectedPeriod || pdfData.adherence?.last30d || {}
+  const selectedPeriodSummary =
+    pdfData.adherence?.selectedPeriod || pdfData.adherence?.last30d || {}
   const score = Math.max(0, Math.min(selectedPeriodSummary.score ?? 0, 100))
   const streak = pdfData.adherence?.currentStreak ?? 0
   const taken = selectedPeriodSummary.taken ?? 0
@@ -323,8 +341,21 @@ function drawAttentionList(doc, items, x, y, width) {
   }
 
   visibleItems.forEach((item) => {
-    const toneColor = item.tone === 'danger' ? COLORS.danger : item.tone === 'warning' ? COLORS.warning : COLORS.primary
-    doc.setFillColor(...rgb(item.tone === 'danger' ? [254, 242, 242] : item.tone === 'warning' ? [255, 251, 235] : [239, 246, 255]))
+    const toneColor =
+      item.tone === 'danger'
+        ? COLORS.danger
+        : item.tone === 'warning'
+          ? COLORS.warning
+          : COLORS.primary
+    doc.setFillColor(
+      ...rgb(
+        item.tone === 'danger'
+          ? [254, 242, 242]
+          : item.tone === 'warning'
+            ? [255, 251, 235]
+            : [239, 246, 255]
+      )
+    )
     doc.setDrawColor(...rgb(COLORS.line))
     doc.roundedRect(x, offsetY, width, 14, 2, 2, 'FD')
     doc.setFontSize(8)
@@ -357,7 +388,7 @@ function renderSummaryPage(doc, pdfData) {
   if (pdfData.patient.age !== null && pdfData.patient.age !== undefined) {
     doc.text(`Paciente: ${pdfData.patient.name} | ${pdfData.patient.age} anos`, PAGE.margin, 43)
   } else {
-  doc.text(`Paciente: ${pdfData.patient.name}`, PAGE.margin, 43)
+    doc.text(`Paciente: ${pdfData.patient.name}`, PAGE.margin, 43)
   }
 
   drawHeroGauge(doc, pdfData)
@@ -503,7 +534,9 @@ function renderTreatmentsPage(doc, autoTable, pdfData) {
 
   renderTable(autoTable, doc, {
     startY: 28,
-    head: [['Tratamento', 'Apresentacao', 'Dose por tomada', 'Frequencia', 'Dose diaria', 'Status']],
+    head: [
+      ['Tratamento', 'Apresentacao', 'Dose por tomada', 'Frequencia', 'Dose diaria', 'Status'],
+    ],
     body: pdfData.activeTreatments.map((row) => [
       row.label,
       row.presentation,
@@ -598,7 +631,11 @@ function renderStockPage(doc, autoTable, pdfData) {
 
   doc.setFontSize(9)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text('Ordens por urgencia primeiro, para facilitar a decisao durante a consulta.', PAGE.margin, 24)
+  doc.text(
+    'Ordens por urgencia primeiro, para facilitar a decisao durante a consulta.',
+    PAGE.margin,
+    24
+  )
 
   if (pdfData.stockRows.length === 0) {
     doc.setFontSize(9)
@@ -614,7 +651,9 @@ function renderStockPage(doc, autoTable, pdfData) {
       row.label,
       String(row.totalQuantity),
       String(row.dailyIntake),
-      row.daysRemaining === null || row.daysRemaining === undefined ? '-' : String(row.daysRemaining),
+      row.daysRemaining === null || row.daysRemaining === undefined
+        ? '-'
+        : String(row.daysRemaining),
       row.message,
     ]),
     columnStyles: {
@@ -628,11 +667,14 @@ function renderStockPage(doc, autoTable, pdfData) {
       if (hookData.section === 'body' && hookData.column.index === 4) {
         const row = pdfData.stockRows[hookData.row.index]
         hookData.cell.styles.textColor =
-          row.severity === 'critical' ? COLORS.danger : row.severity === 'warning' ? COLORS.warning : COLORS.primary
+          row.severity === 'critical'
+            ? COLORS.danger
+            : row.severity === 'warning'
+              ? COLORS.warning
+              : COLORS.primary
       }
     },
   })
-
 }
 
 /**
@@ -660,7 +702,9 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
     body: pdfData.prescriptionRows.map((row) => [
       row.label,
       row.statusLabel,
-      row.daysRemaining === null || row.daysRemaining === undefined ? '-' : String(row.daysRemaining),
+      row.daysRemaining === null || row.daysRemaining === undefined
+        ? '-'
+        : String(row.daysRemaining),
       row.endDate || '-',
     ]),
     columnStyles: {
@@ -673,7 +717,11 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
       if (hookData.section === 'body' && hookData.column.index === 1) {
         const row = pdfData.prescriptionRows[hookData.row.index]
         hookData.cell.styles.textColor =
-          row.status === 'vencida' ? COLORS.danger : row.status === 'vencendo' ? COLORS.warning : COLORS.primary
+          row.status === 'vencida'
+            ? COLORS.danger
+            : row.status === 'vencendo'
+              ? COLORS.warning
+              : COLORS.primary
         hookData.cell.styles.fontStyle = 'bold'
       }
     },

@@ -43,7 +43,10 @@ function LandingDevSwitcher({ variant }) {
   }
 
   return (
-    <div className="landing-dev-switcher" aria-label="Seletor de variação da landing em desenvolvimento">
+    <div
+      className="landing-dev-switcher"
+      aria-label="Seletor de variação da landing em desenvolvimento"
+    >
       <span className="landing-dev-switcher__label">
         Variante em dev: <strong>{variant === 'new' ? 'nova' : 'controle'}</strong>
       </span>
@@ -139,8 +142,8 @@ function LandingControl({ isAuthenticated, onOpenAuth, onContinue }) {
             <div className="step-icon">💊</div>
             <h3>Cadastre seus medicamentos</h3>
             <p>
-              Use o autocompletar com base ANVISA (10.000+ medicamentos) e preencha nome,
-              princípio ativo e laboratório em segundos.
+              Use o autocompletar com base ANVISA (10.000+ medicamentos) e preencha nome, princípio
+              ativo e laboratório em segundos.
             </p>
           </div>
 
@@ -297,7 +300,9 @@ function LandingControl({ isAuthenticated, onOpenAuth, onContinue }) {
             </div>
           </div>
 
-          <p className="telegram-note">Configure em 30 segundos na seção de Configurações do app.</p>
+          <p className="telegram-note">
+            Configure em 30 segundos na seção de Configurações do app.
+          </p>
         </div>
       </section>
 
@@ -576,11 +581,17 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-hero__cta">
                     {!isAuthenticated ? (
                       <>
-                        <button className="lp-btn lp-btn--primary lp-btn--large" onClick={onOpenAuth}>
+                        <button
+                          className="lp-btn lp-btn--primary lp-btn--large"
+                          onClick={onOpenAuth}
+                        >
                           Começar Agora
                           <ArrowRightIcon size={20} />
                         </button>
-                        <button className="lp-btn lp-btn--secondary lp-btn--large" onClick={onOpenAuth}>
+                        <button
+                          className="lp-btn lp-btn--secondary lp-btn--large"
+                          onClick={onOpenAuth}
+                        >
                           Conhecer o Bot Telegram
                         </button>
                       </>
@@ -679,9 +690,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                           <ShieldCheckIcon className="lp-text-green" size={16} />
                           <p>Cartão de Emergência Ativo</p>
                         </div>
-                        <p>
-                          Disponível offline para socorristas e médicos em caso de urgência.
-                        </p>
+                        <p>Disponível offline para socorristas e médicos em caso de urgência.</p>
                       </div>
                     </div>
                   </div>
@@ -715,8 +724,8 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-card__eyebrow">Sempre Grátis</div>
                   <h3>100% Gratuito</h3>
                   <p>
-                    Funcionalidades essenciais ilimitadas. Sem paywalls, sem versões &apos;Pro&apos;.
-                    Nosso compromisso é com a sua saúde.
+                    Funcionalidades essenciais ilimitadas. Sem paywalls, sem versões
+                    &apos;Pro&apos;. Nosso compromisso é com a sua saúde.
                   </p>
                 </div>
 
@@ -769,42 +778,58 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
 
               <div className="lp-feature-grid">
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><PackageIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <PackageIcon size={20} />
+                  </div>
                   <h4>Controle de Estoque</h4>
                   <p>Alertas automáticos quando seus comprimidos estão acabando.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><FileTextIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <FileTextIcon size={20} />
+                  </div>
                   <h4>PDF para o Médico</h4>
                   <p>Gere relatórios profissionais com seu histórico de adesão em um clique.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><ShieldCheckIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <ShieldCheckIcon size={20} />
+                  </div>
                   <h4>Cartão de Emergência</h4>
                   <p>Acesso offline aos seus medicamentos ativos para situações de urgência.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><ActivityIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <ActivityIcon size={20} />
+                  </div>
                   <h4>Score de Adesão</h4>
                   <p>Acompanhe sua evolução com gráficos de tendências e streaks.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><SmartphoneIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <SmartphoneIcon size={20} />
+                  </div>
                   <h4>PWA Instalável</h4>
                   <p>Instale na sua tela inicial sem precisar de lojas de aplicativos.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><ClockIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <ClockIcon size={20} />
+                  </div>
                   <h4>Protocolos Flexíveis</h4>
                   <p>Diário, semanal, personalizado ou &apos;quando necessário&apos;.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><DownloadIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <DownloadIcon size={20} />
+                  </div>
                   <h4>Portabilidade Total</h4>
                   <p>Exporte seus dados em CSV ou JSON a qualquer momento.</p>
                 </div>
                 <div className="lp-feature">
-                  <div className="lp-feature__icon"><LockIcon size={20} /></div>
+                  <div className="lp-feature__icon">
+                    <LockIcon size={20} />
+                  </div>
                   <h4>Analytics Privado</h4>
                   <p>Sem telemetria externa. Seus dados de uso ficam apenas no seu celular.</p>
                 </div>
@@ -829,10 +854,22 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   </p>
 
                   <ul className="lp-check-list">
-                    <li><CircleCheckIcon className="lp-text-green" size={18} />Sem rastreadores de publicidade</li>
-                    <li><CircleCheckIcon className="lp-text-green" size={18} />Sem venda de dados para farmácias</li>
-                    <li><CircleCheckIcon className="lp-text-green" size={18} />Sem necessidade de criar conta com senha</li>
-                    <li><CircleCheckIcon className="lp-text-green" size={18} />Exportação completa de dados garantida</li>
+                    <li>
+                      <CircleCheckIcon className="lp-text-green" size={18} />
+                      Sem rastreadores de publicidade
+                    </li>
+                    <li>
+                      <CircleCheckIcon className="lp-text-green" size={18} />
+                      Sem venda de dados para farmácias
+                    </li>
+                    <li>
+                      <CircleCheckIcon className="lp-text-green" size={18} />
+                      Sem necessidade de criar conta com senha
+                    </li>
+                    <li>
+                      <CircleCheckIcon className="lp-text-green" size={18} />
+                      Exportação completa de dados garantida
+                    </li>
                   </ul>
                 </div>
 
@@ -849,8 +886,8 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
 
                   <p className="lp-quote-card__text">
                     &quot;Acreditamos que dados de saúde são sagrados. Por isso, construímos uma
-                    ferramenta onde a inteligência acontece no seu navegador, garantindo que
-                    ninguém — nem mesmo nós — tenha acesso ao que você toma.&quot;
+                    ferramenta onde a inteligência acontece no seu navegador, garantindo que ninguém
+                    — nem mesmo nós — tenha acesso ao que você toma.&quot;
                   </p>
                 </div>
               </div>

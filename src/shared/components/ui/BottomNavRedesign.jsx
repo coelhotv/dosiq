@@ -10,7 +10,11 @@ const NAV_ITEMS = [
 
 export default function BottomNavRedesign({ currentView, setCurrentView }) {
   return (
-    <div className="bottom-nav-redesign-container" role="navigation" aria-label="Navegação principal">
+    <div
+      className="bottom-nav-redesign-container"
+      role="navigation"
+      aria-label="Navegação principal"
+    >
       <nav className="bottom-nav-redesign">
         {/* eslint-disable-next-line no-unused-vars */}
         {NAV_ITEMS.map(({ id, label, Icon }) => (
