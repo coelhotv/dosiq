@@ -1499,3 +1499,15 @@ const streak = stats?.streak ?? 0                   // undefined
 
 *Last updated: 2026-03-25*
 *Rules: R-001 to R-146 + R-133 to R-135 (Wave 6.5 Redesign patterns)*
+
+## R-136: Callback Batch Operations Must Match UI Promise
+
+**Rule:** When implementing batch operation callbacks (e.g., `onRegisterAll`), the implementation must register/process ALL selected items, not just the first one. The UI that says "Confirmar 3 doses" is a contract that all 3 will be processed.
+
+**Why:** Wave 6.5 bug where `onRegisterAll(doses)` only registered `doses[0]`, contradicting the UI that displayed a list of doses. Users expected all items to be processed.
+
+**How to apply:** 
+- Test batch callbacks explicitly: `handleRegisterDosesAll([dose1, dose2, dose3])` must process all 3
+- UI wording should accurately reflect implementation: if UI says "Confirmar X doses", ensure loop processes X items
+- Prefer explicit `for...of` or `.map()` with `Promise.all()` over single-item registration
+

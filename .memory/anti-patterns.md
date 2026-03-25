@@ -203,3 +203,60 @@
 *Last updated: 2026-03-25*
 *Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W20 + AP-A01 to AP-A04 + AP-P01 to AP-P21 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
 *Total: 70+ anti-patterns (Wave 6.5 Redesign bugs documented: AP-W18, AP-W19, AP-W20)*
+
+## AP-W21: Batch UI Promises Single-Item Implementation
+
+**Anti-Pattern:** Callback handlers that claim to handle batch operations (UI: "Confirmar 3 doses") but only implement single-item logic (implementation: `doses[0]`).
+
+**Why it fails:** 
+- Contradicts UI contract
+- User selects multiple items, expects all to be processed
+- Only first item processed = data loss (remaining items not registered)
+- Causes bug reports: "I clicked Confirmar, but only 1 of 3 doses was registered"
+
+**Corrected in Wave 6.5:** Issue #426 HIGH priority fix. Implemented `handleRegisterDosesAll()` that loops through all doses sequentially:
+```javascript
+const handleRegisterDosesAll = async (doses) => {
+  for (const dose of doses) {
+    await logService.create(dose)
+  }
+  refresh()
+}
+```
+
+**Prevention:** 
+- Write test case for batch operation: `test('should register all doses in array')`
+- Code review: check if loop processes all array items, not just [0]
+
+
+## AP-W22: Responsive Layout Using Inline Styles Instead of CSS Classes
+
+**Anti-Pattern:** Managing responsive behavior (mobile flex column, desktop grid) with inline styles scattered across React component.
+
+**Why it fails:**
+- Inline styles are fragile and hard to audit
+- Maintenance burden: changing layout requires code review
+- Inconsistency: easy to accidentally use different breakpoints
+- Performance: inline style objects recreated on every render
+
+**Corrected in Wave 6.5:** Gemini Code Assist suggestion (declined in Wave 6.5 scope, but validated as best practice). All responsive layout moved to `.grid-dashboard` and `.cronograma-doses` CSS classes with media queries:
+```css
+.grid-dashboard {
+  display: flex;
+  flex-direction: column;
+  /* mobile default */
+}
+
+@media (min-width: 1024px) {
+  .grid-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 2fr;  /* desktop: left narrow, right wide */
+  }
+}
+```
+
+**Prevention:** 
+- Use CSS classes for all responsive behavior, not inline styles
+- Define breakpoints once in design tokens, reuse everywhere
+- Review code: if you see `style={{}}` in render with conditionals, extract to CSS
+
