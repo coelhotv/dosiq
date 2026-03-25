@@ -1,9 +1,12 @@
-import { Sun, Moon, CheckCircle2, Circle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Sun, Moon, CheckCircle2, Circle, Sunrise } from 'lucide-react'
+import { useMotion } from '@shared/hooks/useMotion'
 
 const PERIODS = [
-  { id: 'morning',   label: 'Manhã',  Icon: Sun,  timeRange: [0,  12] },
-  { id: 'afternoon', label: 'Tarde',  Icon: Sun,  timeRange: [12, 18] },
-  { id: 'night',     label: 'Noite',  Icon: Moon, timeRange: [18, 24] },
+  { id: 'midnight',  label: 'Madrugada', Icon: Moon,    timeRange: [0,  6]  },
+  { id: 'morning',   label: 'Manhã',     Icon: Sunrise, timeRange: [6,  12] },
+  { id: 'afternoon', label: 'Tarde',     Icon: Sun,     timeRange: [12, 18] },
+  { id: 'night',     label: 'Noite',     Icon: Moon,    timeRange: [18, 24] },
 ]
 
 function getHour(scheduledTime) {
@@ -58,8 +61,8 @@ function CronogramaDoseItem({ dose, onRegister }) {
           onClick={() => onRegister?.(dose)}
           aria-label={`Registrar dose de ${dose.medicineName}`}
           style={{
-            padding: '0.5rem 0.875rem',
-            minHeight: '36px',
+            padding: '0.625rem 1.125rem',
+            minHeight: '3.5rem',
             background: 'var(--color-primary, #006a5e)',
             color: 'var(--color-on-primary, #ffffff)',
             border: 'none',
@@ -80,12 +83,15 @@ function CronogramaDoseItem({ dose, onRegister }) {
 }
 
 /**
- * CronogramaPeriodo — Cronograma de doses agrupado por Manhã/Tarde/Noite.
+ * CronogramaPeriodo — Cronograma de doses agrupado por Madrugada/Manhã/Tarde/Noite.
+ * Com animação de cascade reveal ao montar.
  *
  * @param {Array} allDoses — Todas as doses do dia (flat: late+now+upcoming+later+done)
  * @param {Function} onRegister — callback: onRegister(dose)
  */
 export default function CronogramaPeriodo({ allDoses = [], onRegister }) {
+  const { cascade } = useMotion()
+
   const grouped = PERIODS.map(({ id, label, Icon, timeRange }) => {
     const [start, end] = timeRange
     const doses = allDoses
@@ -100,14 +106,21 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister }) {
   if (grouped.length === 0) return null
 
   return (
-    <div
+    <motion.div
       style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
       aria-label="Cronograma de doses de hoje"
+      variants={cascade.container}
+      initial="hidden"
+      animate="visible"
     >
       {grouped.map(({ id, label, Icon, doses }) => {
         const PeriodIcon = Icon
         return (
-        <section key={id} aria-label={`${label}: ${doses.length} dose${doses.length !== 1 ? 's' : ''}`}>
+        <motion.section
+          key={id}
+          aria-label={`${label}: ${doses.length} dose${doses.length !== 1 ? 's' : ''}`}
+          variants={cascade.item}
+        >
           {/* Header do período */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -134,7 +147,7 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="cronograma-doses">
             {doses.map((dose) => (
               <CronogramaDoseItem
                 key={`${dose.protocolId}-${dose.scheduledTime}`}
@@ -143,9 +156,9 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister }) {
               />
             ))}
           </div>
-        </section>
+        </motion.section>
         )
       })}
-    </div>
+    </motion.div>
   )
 }
