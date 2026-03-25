@@ -46,11 +46,13 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
     // Fallback: consumo teorico baseado no protocolo
     // Usa calculateExpectedDoses que considera frequencia corretamente (getDailyDoseRate)
     const activeProtocols = protocols.filter((p) => p.active === true)
-    const expectedDaily =
+    const expectedDoses =
       activeProtocols.length > 0
-        ? calculateExpectedDoses(activeProtocols, 1) // 1 dia
+        ? calculateExpectedDoses(activeProtocols, 1) // 1 dia, retorna numero de doses
         : 0
-    dailyConsumption = expectedDaily
+    // Multiplicar por dosage_per_intake para obter consumo em comprimidos (não apenas doses)
+    const dosagePerIntake = activeProtocols[0]?.dosage_per_intake || 1
+    dailyConsumption = expectedDoses * dosagePerIntake
     isRealData = false
     confidence = 'low'
   }

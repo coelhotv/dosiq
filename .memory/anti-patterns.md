@@ -201,8 +201,8 @@
 ---
 
 *Last updated: 2026-03-25*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W20 + AP-A01 to AP-A04 + AP-P01 to AP-P21 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
-*Total: 70+ anti-patterns (Wave 6.5 Redesign bugs documented: AP-W18, AP-W19, AP-W20)*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W23 + AP-A01 to AP-A04 + AP-P01 to AP-P21 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
+*Total: 71+ anti-patterns (Wave 7 Treatments bugs documented: AP-W23)*
 
 ## AP-W21: Batch UI Promises Single-Item Implementation
 
@@ -255,8 +255,180 @@ const handleRegisterDosesAll = async (doses) => {
 }
 ```
 
-**Prevention:** 
+**Prevention:**
 - Use CSS classes for all responsive behavior, not inline styles
 - Define breakpoints once in design tokens, reuse everywhere
 - Review code: if you see `style={{}}` in render with conditionals, extract to CSS
+
+---
+
+## AP-W23: Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)
+
+**Anti-Pattern:** Destructuring `const { isComplex } = useComplexityMode()` when the hook returns `mode` (not `isComplex`).
+
+**Why it fails:**
+- `isComplex` will always be `undefined`
+- Ternary checks like `isComplex ? <Complex /> : <Simple />` always evaluate to false
+- UI renders wrong variant (Simple instead of Complex for 7+ medicines)
+- No runtime error — silent failure, discovered only in dev testing
+
+**Real case (Wave 7 — 2026-03-25):**
+```javascript
+// ❌ WRONG
+const { isComplex } = useComplexityMode()  // undefined!
+const showComplex = isComplex ? <TreatmentsComplex /> : <TreatmentsSimple />
+// Always renders Simple, even for 10 medicines (should be Complex)
+```
+
+**Corrected:**
+```javascript
+// ✅ CORRECT
+const { mode } = useComplexityMode()
+const isComplex = mode === 'complex'
+const showComplex = isComplex ? <TreatmentsComplex /> : <TreatmentsSimple />
+```
+
+**Hook return values (for reference):**
+```javascript
+useComplexityMode() returns {
+  mode,                    // 'simple' | 'moderate' | 'complex'
+  medicineCount,           // number
+  overrideMode,            // string | null
+  setOverride,             // function
+  ringGaugeSize,           // derived: 'large' | 'medium' | 'compact'
+  defaultViewMode,         // derived: 'plan' | 'time'
+  // NOTE: does NOT return isComplex
+}
+```
+
+**Prevention:**
+- Always read the hook's return type comment or JSDoc before destructuring
+- Don't guess property names — inspect the actual hook file
+- If destructuring `x` from a hook, verify `x` exists in the return statement
+- Test the feature with the expected condition (7+ medicines) — visual inspection catches this immediately
+
+**Related:** This bug only manifested in TreatmentsRedesign (Wave 7). DashboardRedesign correctly uses `const { mode: complexityMode }` — no issues there. Inconsistency in usage patterns across the codebase suggests this is an easy mistake for new agents to make.
+
+---
+
+## AP-S01: Stock Calculation Ignoring Dosage Per Intake
+
+**Problem:** Stock prediction calculates `daysRemaining = currentStock / dailyConsumption`, but `dailyConsumption` from `calculateExpectedDoses()` returns number of DOSES, not number of PILLS. Forgetting to multiply by `dosage_per_intake` produces wildly incorrect stock forecasts.
+
+**Impact:**
+- User has 90 comprimidos of Omega-3
+- Takes 1 dose/day × 3 comprimidos per dose = 3 comprimidos/day
+- Bug: calculates 90 / 1 = 90 days (WRONG)
+- Correct: 90 / 3 = 30 days
+- **30-day difference in refill planning = massive UX failure**
+
+**Real case (Wave 7 Stock Prediction — 2026-03-25):**
+```javascript
+// ❌ WRONG — calculateExpectedDoses returns DOSES, not pills
+const expectedDaily = calculateExpectedDoses(activeProtocols, 1)  // returns 1 dose
+const dailyConsumption = expectedDaily                            // 1 (not 3 pills!)
+const daysRemaining = currentStock / dailyConsumption             // 90 / 1 = 90 days ❌
+
+// ✅ CORRECT — multiply by dosage_per_intake
+const expectedDoses = calculateExpectedDoses(activeProtocols, 1)
+const dosagePerIntake = activeProtocols[0]?.dosage_per_intake || 1
+const dailyConsumption = expectedDoses * dosagePerIntake          // 1 × 3 = 3 pills
+const daysRemaining = currentStock / dailyConsumption             // 90 / 3 = 30 days ✅
+```
+
+**Prevention:**
+- Understand the output of `calculateExpectedDoses()` — it returns DOSES, not pills
+- Every time you convert doses to pills, multiply by `dosage_per_intake`
+- Test with a known example: 90 pills, 3 pills/day = 30 days. If your code produces 90, you forgot the multiplier
+- Add a comment explaining the conversion: `// Multiply by dosage_per_intake to convert doses→pills`
+
+**Related:** R-148 (Domain-Aware Calculations)
+
+---
+
+## AP-D01: Using 1px Borders Instead of Tonal Separation
+
+**Problem:** Designers and developers default to 1px borders to separate UI elements. This violates the project's product design strategy which explicitly forbids hard lines in favor of tonal/background separation.
+
+**Impact:**
+- Visual clutter and noise
+- Harder to scan information
+- Contradicts established design system
+- Requires rework to match product vision
+
+**Real case (Wave 7 Desktop Tabular Layout — 2026-03-25):**
+```css
+/* ❌ WRONG — 1px borders (product design violation) */
+.protocol-row__cell {
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ✅ CORRECT — Tonal row alternation */
+.protocol-row__cell {
+  background-color: var(--surface);
+}
+.protocol-row--even .protocol-row__cell {
+  background-color: var(--surface-container-low);
+}
+/* No borders, visual separation via background color */
+```
+
+**Product design rule:** Never use 1px borders. Use:
+- **Tonal separation** (different background colors) for row alternation
+- **Whitespace** for card separation
+- **Shadows** for elevation (sparingly)
+- **Color overlays** for interactive states
+
+**Prevention:**
+- Before adding ANY border, ask: "Can I achieve this with background color instead?"
+- Reference the product design strategy in `@plans/redesign/references/PRODUCT_STRATEGY_CONSOLIDATED.md`
+- Check existing redesign components for tonal patterns
+
+**Related:** Product design system (Redesign Wave 6.5+)
+
+---
+
+## AP-D02: Computing Aggregations for Primary State Only
+
+**Problem:** When aggregating data by multiple states (active/paused/finished), developers compute groups/filters only for the primary state. When users switch to other states, data is missing or wrong.
+
+**Impact:**
+- Tab switching shows empty lists or stale data
+- Grouped views show wrong grouping for non-primary states
+- Feature works for 90% of users, fails silently for the 10% who use other tabs
+- Bug discovered late in testing, not during development
+
+**Real case (Wave 7 useTreatmentList — 2026-03-25):**
+```javascript
+// ❌ WRONG — groups computed only for activeItems
+const activeItems = useMemo(() => items.filter(i => i.tabStatus === 'ativo'), [items])
+const groups = useMemo(() => computeGroups(activeItems), [activeItems])
+// When user switches to "pausados" tab: uses groups computed from activeItems! ❌
+
+// ✅ CORRECT — groups computed per state
+const activeItems = useMemo(() => items.filter(i => i.tabStatus === 'ativo'), [items])
+const pausedItems = useMemo(() => items.filter(i => i.tabStatus === 'pausado'), [items])
+const finishedItems = useMemo(() => items.filter(i => i.tabStatus === 'finalizado'), [items])
+
+const activeGroups = useMemo(() => computeGroups(activeItems), [activeItems])
+const pausedGroups = useMemo(() => computeGroups(pausedItems), [pausedItems])
+const finishedGroups = useMemo(() => computeGroups(finishedItems), [finishedItems])
+
+// Each tab gets its own groups
+const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: finishedGroups }[activeTab]
+```
+
+**Prevention:**
+- Identify ALL states upfront (active/paused/finished, draft/published, etc.)
+- Compute aggregations for EVERY state, even if some are rarely used
+- Test all state tabs during development — don't just test the primary path
+- Add comments showing the mapping: `{ ativo: activeGroups, pausado: pausedGroups, ...}`
+
+**Related:** R-150 (Compute State-Specific Aggregations)
+
+---
+
+*Last updated: 2026-03-25*
+*Anti-patterns: AP-W01 through AP-W23, AP-S01, AP-D01, AP-D02 (Wave 7 additions)*
 

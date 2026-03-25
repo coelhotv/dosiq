@@ -4,7 +4,7 @@ import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import MedicineAutocomplete from './MedicineAutocomplete'
 import LaboratoryAutocomplete from './LaboratoryAutocomplete'
 import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@schemas/medicineSchema'
-import { toSentenceCase } from '@utils/stringUtils'
+import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import './MedicineForm.css'
 
 /**
@@ -66,7 +66,7 @@ export default function MedicineForm({
     setFormData((prev) => ({
       ...prev,
       name: medicine.name,
-      active_ingredient: toSentenceCase(medicine.activeIngredient),
+      active_ingredient: toTitleCase(medicine.activeIngredient),
       therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
     }))
     if (saveSuccess) setSaveSuccess(false)

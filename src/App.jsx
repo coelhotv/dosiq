@@ -22,6 +22,7 @@ const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
 const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
+const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -164,7 +165,15 @@ function AppInner() {
           </Suspense>
         )
       case 'treatment':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <TreatmentsRedesign
+              onNavigateToProtocol={() => {
+                setCurrentView('treatment')
+              }}
+            />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Treatment
               onNavigate={(view, params) => {

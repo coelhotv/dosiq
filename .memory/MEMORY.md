@@ -47,8 +47,12 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **R-133** | Inspect component prop interface before copying | HIGH (W6.5) — LogForm TypeError |
 | **R-134** | Validate context hook return types | HIGH (W6.5) — RingGaugeRedesign 0% |
 | **R-135** | Prefer direct actions over modal flows | HIGH (W6.5) — 1-click vs 4-click UX |
+| **R-147** | Framer Motion cascade re-trigger via key remount | CRITICAL (W7) — 90% of tab switch bugs |
+| **R-148** | Domain-aware case conversion (Title vs Sentence) | HIGH (W7) — semantic-aware formatting |
+| **R-149** | Full object fetch for edit workflows | CRITICAL (W7) — TreatmentItem ≠ Protocol |
+| **R-150** | Compute state-specific aggregations, not just primary | CRITICAL (W7) — paused/finished tabs empty |
 
-→ Full rules at `.memory/rules.md` (R-001 to R-146, +R-133 to R-135 Wave 6.5)
+→ Full rules at `.memory/rules.md` (R-001 to R-150, +W7 additions)
 
 ---
 
@@ -71,8 +75,12 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **Copy component props without reading interface (AP-W18)** | **TypeError at runtime (LogForm)** | **Always read component prop signature first** |
 | **Assume stats object properties (AP-W19)** | **RingGaugeRedesign shows 0% (wrong prop name)** | **Read hook JSDoc, validate prop names** |
 | **Modal flow vs 1-click registration (AP-W20)** | **4 clicks instead of 1 (worse UX)** | **Study existing patterns, prefer direct actions** |
+| **Destructure wrong prop from hook (AP-W23)** | **`isComplex` undefined → wrong persona rendered (W7)** | **Always verify hook return signature** |
+| **Stock calc ignoring dosage_per_intake (AP-S01)** | **30-day forecast error (90 vs 30 days — 3x off)** | **Multiply expectedDoses × dosage_per_intake** |
+| **Using 1px borders (AP-D01)** | **Violates design system, visual clutter** | **Use tonal separation (bg colors) not borders** |
+| **Computing aggregations for primary state only (AP-D02)** | **Other tabs empty/wrong when switched (W7)** | **Compute for ALL states, not just primary** |
 
-→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P21 + AP-W18-W20, 70+ entries)
+→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P21 + AP-W18-W23, AP-S01, AP-D01-D02)
 
 ---
 

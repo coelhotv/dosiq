@@ -1,0 +1,8 @@
+/* TreatmentsRedesign — View-level styles */
+
+.treatments-redesign__error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-on-surface-variant, #49454f);
+  font-size: 0.9375rem;
+}

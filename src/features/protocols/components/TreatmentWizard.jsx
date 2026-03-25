@@ -6,7 +6,7 @@ import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { DOSAGE_UNITS } from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import { formatLocalDate } from '@utils/dateUtils'
-import { toSentenceCase } from '@utils/stringUtils'
+import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import Button from '@shared/components/ui/Button'
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
@@ -137,7 +137,7 @@ export default function TreatmentWizard({
     setMedicineData((prev) => ({
       ...prev,
       name: medicine.name,
-      active_ingredient: toSentenceCase(medicine.activeIngredient) || '',
+      active_ingredient: toTitleCase(medicine.activeIngredient) || '',
       therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
     }))
   }, [])
