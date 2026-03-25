@@ -119,6 +119,7 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
       <AnvisaSearchBar
         existingProtocols={activeItems}
         onNavigateToProtocol={onNavigateToProtocol}
+        onEditProtocol={handleEditProtocol}
         onOpenWizard={handleOpenWizard}
       />
 

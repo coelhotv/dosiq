@@ -456,6 +456,66 @@
   border-left: 2px solid var(--color-outline-variant, #cac4d0);
 }
 
+/* ────────────────────────────────────────────────────────────────
+   PROTOCOL ROW TABULAR — Célula de tabela (Modo Complexo Desktop)
+   ──────────────────────────────────────────────────────────────── */
+.protocol-row-tabular__cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+  min-height: 3.5rem;
+}
+
+/* Célula clicável (nome) — abre modal de edição */
+.protocol-row-tabular__name-cell {
+  cursor: pointer;
+}
+
+.protocol-row-tabular__name-cell:hover {
+  background: var(--color-surface-container-low, #f7f2fa);
+}
+
+/* Nome do medicamento */
+.protocol-row-tabular__medicine-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #1c1b1f);
+  line-height: 1.2;
+}
+
+/* Dosagem */
+.protocol-row-tabular__dosage {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+  margin-top: 0.125rem;
+}
+
+/* Frequência */
+.protocol-row-tabular__frequency {
+  font-size: 0.875rem;
+  color: var(--color-on-surface, #1c1b1f);
+  font-weight: 500;
+}
+
+/* Horários (tempos específicos) */
+.protocol-row-tabular__times {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+  margin-top: 0.125rem;
+}
+
+/* Coluna de Estoque — padding maior para centralizar a pilula */
+.protocol-row-tabular__stock-cell {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  justify-content: center;
+}
+
 /* TreatmentPlanHeader */
 .plan-header {
   width: 100%;
@@ -603,55 +663,34 @@
   padding-left: 0.5rem;
 }
 
-/* Desktop — layout tabular para rows */
-@media (min-width: 1024px) {
-  .treatments-complex__rows {
-    display: grid;
-    grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
-    gap: 0;
-    padding-left: 0;
-    align-items: stretch;
-  }
+/* Modo tabular em desktop — sem bordas, com alternância de fundo */
+.treatments-complex__rows--tabular {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1.5fr;
+  gap: 0;
+  padding-left: 0;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
 
-  .treatments-complex__rows .protocol-row {
-    border-radius: 0;
-    box-shadow: none;
-    border-right: 1px solid var(--color-outline-variant, #cac4d0);
-    border-bottom: 1px solid var(--color-outline-variant, #cac4d0);
-  }
+/* Célula padrão — sem borda */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell {
+  border: none;
+}
 
-  .treatments-complex__rows .protocol-row:last-child {
-    border-bottom: none;
-  }
+/* Alternância de cores: linhas pares em surface-container-low */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 1),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 2),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 3),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 4) {
+  background: var(--color-surface, #f8fafb);
+}
 
-  .treatments-complex__rows .protocol-row__main {
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 0.25rem;
-    padding: 0.75rem 1rem;
-  }
-
-  .treatments-complex__rows .protocol-row__header {
-    width: 100%;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  .treatments-complex__rows .protocol-row__schedule {
-    width: 100%;
-    margin-top: 0.5rem;
-  }
-
-  .treatments-complex__rows .protocol-row__metrics {
-    width: 100%;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .treatments-complex__rows .protocol-row__chevron {
-    display: none;
-  }
+/* Linhas ímpares em surface-container-low para melhor separação visual */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 5):nth-child(-n + 8),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 13):nth-child(-n + 16),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 21):nth-child(-n + 24) {
+  background: var(--color-surface-container-low, #f2f4f5);
 }
 
 .treatments-complex__empty {

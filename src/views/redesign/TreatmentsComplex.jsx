@@ -3,7 +3,7 @@
  * Grupos colapsáveis por plano/classe com header colorido
  * Cada grupo contém protocolos com rows expandíveis
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
 import TreatmentPlanHeader from '@protocols/components/redesign/TreatmentPlanHeader'
@@ -13,6 +13,16 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
   const { cascade } = useMotion()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const [expandedRow, setExpandedRow] = useState(null)
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
+
+  // Detectar mudanças de tamanho de tela para layout responsivo
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const toggleGroup = key => {
     setCollapsedGroups(prev => {
@@ -47,20 +57,40 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
               onToggle={() => toggleGroup(group.groupKey)}
             />
             {!isCollapsed && (
-              <div className="treatments-complex__rows">
-                {group.items.map(item => (
-                  <ProtocolRow
-                    key={item.id}
-                    item={item}
-                    isComplex={true}
-                    expanded={expandedRow === item.id}
-                    onToggleExpand={() =>
-                      setExpandedRow(prev => (prev === item.id ? null : item.id))
-                    }
-                    onEdit={onEdit}
-                    activeTab={activeTab}
-                  />
-                ))}
+              <div
+                className={`treatments-complex__rows ${
+                  isDesktop ? 'treatments-complex__rows--tabular' : ''
+                }`}
+              >
+                {isDesktop ? (
+                  // Desktop: renderizar como tabela com 4 colunas
+                  group.items.map(item => (
+                    <ProtocolRow
+                      key={item.id}
+                      item={item}
+                      isComplex={true}
+                      onEdit={onEdit}
+                      activeTab={activeTab}
+                      variant="tabular"
+                    />
+                  ))
+                ) : (
+                  // Mobile: renderizar como cards
+                  group.items.map(item => (
+                    <ProtocolRow
+                      key={item.id}
+                      item={item}
+                      isComplex={true}
+                      expanded={expandedRow === item.id}
+                      onToggleExpand={() =>
+                        setExpandedRow(prev => (prev === item.id ? null : item.id))
+                      }
+                      onEdit={onEdit}
+                      activeTab={activeTab}
+                      variant="card"
+                    />
+                  ))
+                )}
               </div>
             )}
           </motion.section>
