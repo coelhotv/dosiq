@@ -104,6 +104,9 @@
 | AP-W15 | Initialize state with `useState(() => derivedHook())` assuming it will stay reactive | State is stale if derived value changes after mount (e.g., `defaultViewMode` after complexity change) | Add `useEffect(() => { if (!savedPref) setState(derived) }, [derived])` | R-107 |
 | AP-W16 | `bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo | CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo ficam ocultos, gerando múltiplos ciclos de fix | Rodar `test:critical` sem bail localmente (ou temporariamente) para revelar TODAS as falhas no arquivo antes de commitar | R-106 |
 | AP-W17 | Componente com estado interno inicializado de uma prop (`complexityMode`) não reinicializa quando a prop muda | Defaults de expansão de seções ficam presos no valor do primeiro render; UX inconsistente ao mudar complexidade | Usar `key={controllingProp}` no componente para forçar remount completo quando o prop que define os defaults muda | R-109 |
+| **AP-W18** | **Copy component usage from existing code without inspecting the actual prop interface (e.g., LogForm usage from Dashboard.jsx)** | **TypeError at runtime: "Cannot read properties of undefined" when component tries to access props with wrong names. E.g., LogForm expects `protocols`, `treatmentPlans`, `initialValues`, `onSave`, `onCancel` but receives `prefillData`, `onSuccess`.** | **Always read the component's destructuring signature in the source code BEFORE copy-pasting usage. Verify all expected props are provided and named correctly. Match prop names exactly.** | **R-133** |
+| **AP-W19** | **Assume stats object properties match component expectations without reading the context/hook that provides the data** | **Component displays wrong values (e.g., ring gauge shows 0% adherence). useDashboard returns `score`, `currentStreak` but code references `adherenceScore`, `streak`.** | **Always read the hook's return type comment and destructure property names exactly as documented. Map property names explicitly if hook returns different names than component expects.** | **R-134** |
+| **AP-W20** | **Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components** | **Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registration. Unnecessary UI complexity for common action.** | **Study existing gesture/quick-action patterns (SwipeRegisterItem, PriorityCard) before implementing new registration flows. Prefer direct `logService.create()` calls for primary actions. Modal flows reserved for complex, multi-step operations only.** | **R-135** |
 
 ## Adherence & Consumption Anti-Patterns (Sprint 6.1 — 2026-03-08)
 
@@ -197,6 +200,6 @@
 
 ---
 
-*Last updated: 2026-03-24*
-*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W17 + AP-A01 to AP-A04 + AP-P01 to AP-P18 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
-*Total: 65+ anti-patterns*
+*Last updated: 2026-03-25*
+*Anti-patterns: AP-001 to AP-023 + AP-T01 to AP-T10 + AP-S01 to AP-S11 + AP-W01 to AP-W20 + AP-A01 to AP-A04 + AP-P01 to AP-P21 + AP-D01 to AP-D03 + AP-B01 to AP-B04 + AP-SL01 to AP-SL03 + AP-LOG-001*
+*Total: 70+ anti-patterns (Wave 6.5 Redesign bugs documented: AP-W18, AP-W19, AP-W20)*
