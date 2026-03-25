@@ -1497,8 +1497,141 @@ const streak = stats?.streak ?? 0                   // undefined
 
 ---
 
+## R-147: Framer Motion Cascade Re-Triggering via Key Remounting
+
+**Rule:** To re-trigger a Framer Motion cascade animation when data changes, force component remounting by adding a `key` prop that changes. Do NOT rely on `initial`/`animate` state changes alone.
+
+**Why:** Cascade animations initialize at `initial="hidden"`, then animate to `animate="visible"`. Changing the component's data (e.g., switching tabs) does NOT re-trigger the animation unless the component is remounted. Users see stale animations or no animation at all.
+
+**How to apply:**
+```jsx
+// ✅ CORRECT — key change forces remount + re-animation
+<Suspense key={activeTab} fallback={<ViewSkeleton />}>
+  <TreatmentsComplex groups={groups[activeTab]} activeTab={activeTab} />
+</Suspense>
+
+// ❌ WRONG — No re-animation on tab switch
+<TreatmentsComplex groups={groups[activeTab]} activeTab={activeTab} />
+```
+
+**Scope:** List views, filtered results, tab-based content, any cascade-animated container that shows different data.
+
+**Source:** Wave 7 Treatments Redesign — tab switching didn't reset cascade animation (2026-03-25)
+
+---
+
+## R-148: Domain-Aware Case Conversion for Autocomplete Data
+
+**Rule:** When formatting autocomplete/autofill data, apply case conversion based on domain semantics, NOT a one-size-fits-all approach.
+
+**Why:** Different fields serve different purposes:
+- **Names/User-visible text:** Title Case (capitalize all words) — emphasizes each component
+- **Classifiers/Metadata:** Sentence Case (first word only) — grammatical, less visual weight
+
+Applying the same rule to all fields results in awkward formatting (e.g., "vitamina c" vs "Vitamina C complex").
+
+**How to apply:**
+```javascript
+// ✅ Domain-aware
+const medicineData = {
+  name: toTitleCase(anvisaMedicine.name),                    // "Dipirona 500mg"
+  active_ingredient: toTitleCase(anvisaMedicine.activeIngredient), // "Paracetamol"
+  therapeutic_class: toSentenceCase(anvisaMedicine.therapeuticClass), // "Analgésicos"
+}
+
+// ❌ One-size-fits-all (wrong)
+const medicineData = {
+  name: toSentenceCase(name),                   // "Dipirona 500mg" (OK)
+  active_ingredient: toSentenceCase(ingredient),  // "Paracetamol" (OK)
+  therapeutic_class: toSentenceCase(classs),      // "Analgésicos" (OK, but inconsistent tone)
+}
+```
+
+**Apply to:**
+- Medicine autocomplete (name, active_ingredient → Title Case; therapeutic_class → Sentence Case)
+- Any multi-field autocomplete with mixed semantic weight
+
+**Source:** Wave 7 AnvisaSearchBar, TreatmentWizard, MedicineForm (2026-03-25)
+
+---
+
+## R-149: Full Object Fetch for Edit Workflows
+
+**Rule:** When implementing edit flows, do NOT edit aggregated/simplified data structures. Fetch the complete entity from the database before opening the edit form.
+
+**Why:** Aggregated data (e.g., TreatmentItem combining protocol + stock + adherence) is read-only, missing required fields, and has different schema than the storage entity. Editing it directly causes:
+- Missing fields in form (e.g., medication associations)
+- Schema mismatch on save (e.g., `dosage_per_intake` present in Protocol but not in TreatmentItem)
+- Silent data loss if form saves only visible fields
+
+**How to apply:**
+```javascript
+// ❌ WRONG — protocolItem is aggregated TreatmentItem
+async function handleEditProtocol(protocolItem) {
+  setFormProtocol(protocolItem) // Missing schema fields!
+  setFormOpen(true)
+}
+
+// ✅ CORRECT — Fetch full Protocol before editing
+async function handleEditProtocol(protocolItem) {
+  try {
+    const fullProtocol = await protocolService.getById(protocolItem.id)
+    setFormProtocol(fullProtocol) // Complete schema, all fields
+    setFormOpen(true)
+  } catch (err) {
+    console.error('Error fetching protocol:', err)
+  }
+}
+```
+
+**Apply to:**
+- Any edit modal that opens from list view (where list shows aggregated data)
+- Forms that need full schema validation
+- Operations where missing optional fields matter
+
+**Source:** Wave 7 TreatmentsRedesign — edit form needed full Protocol schema (2026-03-25)
+
+---
+
+## R-150: Compute State-Specific Aggregations, Not Just Primary State
+
+**Rule:** When aggregating data by state (e.g., active/paused/finished protocols), compute groups/filtered lists for ALL states, not just the primary state. Lazy computation by state causes missing data bugs when switching views.
+
+**Why:** Computing `groups` only for `activeItems` and reusing for other states causes:
+- Wrong grouping when switching tabs
+- Paused/finished protocols not appearing
+- State-specific filtering logic gets bypassed
+
+**How to apply:**
+```javascript
+// ❌ WRONG — groups computed only once for activeItems
+const activeItems = useMemo(() => items.filter(i => i.tabStatus === 'ativo'), [items])
+const groups = useMemo(() => computeGroups(activeItems), [activeItems])
+
+// ✅ CORRECT — groups computed per state
+const activeItems = useMemo(() => items.filter(i => i.tabStatus === 'ativo'), [items])
+const pausedItems = useMemo(() => items.filter(i => i.tabStatus === 'pausado'), [items])
+const finishedItems = useMemo(() => items.filter(i => i.tabStatus === 'finalizado'), [items])
+
+const activeGroups = useMemo(() => computeGroups(activeItems), [activeItems])
+const pausedGroups = useMemo(() => computeGroups(pausedItems), [pausedItems])
+const finishedGroups = useMemo(() => computeGroups(finishedItems), [finishedItems])
+
+// Use per-state groups in tab-based view
+const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: finishedGroups }[activeTab]
+```
+
+**Apply to:**
+- State-based filtering (active/paused/finished, draft/published/archived, etc.)
+- Tab-based views with aggregation
+- Any computed property that depends on filtered state
+
+**Source:** Wave 7 useTreatmentList — groups missing for pausado/finalizado tabs (2026-03-25)
+
+---
+
 *Last updated: 2026-03-25*
-*Rules: R-001 to R-146 + R-133 to R-135 (Wave 6.5 Redesign patterns)*
+*Rules: R-001 to R-150 (Wave 7 Treatments Redesign patterns added)*
 
 ## R-136: Callback Batch Operations Must Match UI Promise
 

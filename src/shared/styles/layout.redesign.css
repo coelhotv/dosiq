@@ -267,3 +267,541 @@
     gap: 0.5rem;
   }
 }
+
+/* ============================================================
+   Wave 7 — Treatments Redesign
+   ============================================================ */
+
+/* Container principal */
+.treatments-redesign {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Header */
+.treatments-redesign__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.treatments-redesign__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-on-surface, #1c1b1f);
+  margin: 0;
+}
+
+.treatments-redesign__count {
+  font-size: 0.875rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+/* AdherenceBar7d */
+.adherence-bar7d {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adherence-bar7d__track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-outline-variant, #cac4d0);
+  overflow: hidden;
+}
+
+.adherence-bar7d__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.adherence-bar7d__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* Adherence color states — using CSS variables for maintainability */
+.adherence-bar7d--good {
+  --adherence-color: #22c55e;
+}
+
+.adherence-bar7d--good .adherence-bar7d__fill {
+  background-color: var(--adherence-color);
+}
+
+.adherence-bar7d--good .adherence-bar7d__label {
+  color: var(--adherence-color);
+}
+
+.adherence-bar7d--medium {
+  --adherence-color: #f59e0b;
+}
+
+.adherence-bar7d--medium .adherence-bar7d__fill {
+  background-color: var(--adherence-color);
+}
+
+.adherence-bar7d--medium .adherence-bar7d__label {
+  color: var(--adherence-color);
+}
+
+.adherence-bar7d--poor {
+  --adherence-color: #ef4444;
+}
+
+.adherence-bar7d--poor .adherence-bar7d__fill {
+  background-color: var(--adherence-color);
+}
+
+.adherence-bar7d--poor .adherence-bar7d__label {
+  color: var(--adherence-color);
+}
+
+/* StockPill */
+.stock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* TitrationBadge — using CSS variables for maintainability */
+.titration-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--titration-bg, #fefce8);
+  border: 1px solid var(--titration-border, #fde047);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.75rem;
+}
+
+.titration-badge__icon {
+  color: var(--titration-icon, #ca8a04);
+}
+
+.titration-badge__text {
+  font-weight: 600;
+  color: var(--titration-text, #854d0e);
+}
+
+.titration-badge__sub {
+  color: var(--titration-sub, #78716c);
+}
+
+.titration-badge__progress {
+  flex: 0 0 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--titration-progress, #fde047);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.titration-badge__progress div {
+  height: 100%;
+  background: #ca8a04;
+  border-radius: 2px;
+}
+
+/* ProtocolRow */
+.protocol-row {
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.protocol-row__main {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.protocol-row__header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.protocol-row__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #1c1b1f);
+}
+
+.protocol-row__dosage {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+.protocol-row__schedule {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+.protocol-row__metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.protocol-row__chevron {
+  align-self: flex-end;
+  font-size: 0.625rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+.protocol-row__details {
+  padding: 0 1rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.protocol-row__notes {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+  border-left: 2px solid var(--color-outline-variant, #cac4d0);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   PROTOCOL ROW TABULAR — Célula de tabela (Modo Complexo Desktop)
+   ──────────────────────────────────────────────────────────────── */
+.protocol-row-tabular__cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+  min-height: 3.5rem;
+}
+
+/* Célula clicável (nome) — abre modal de edição */
+.protocol-row-tabular__name-cell {
+  cursor: pointer;
+}
+
+.protocol-row-tabular__name-cell:hover {
+  background: var(--color-surface-container-low, #f7f2fa);
+}
+
+/* Nome do medicamento */
+.protocol-row-tabular__medicine-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #1c1b1f);
+  line-height: 1.2;
+}
+
+/* Dosagem */
+.protocol-row-tabular__dosage {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+  margin-top: 0.125rem;
+}
+
+/* Frequência */
+.protocol-row-tabular__frequency {
+  font-size: 0.875rem;
+  color: var(--color-on-surface, #1c1b1f);
+  font-weight: 500;
+}
+
+/* Horários (tempos específicos) */
+.protocol-row-tabular__times {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant, #49454f);
+  margin-top: 0.125rem;
+}
+
+/* Coluna de Estoque — padding maior para centralizar a pilula */
+.protocol-row-tabular__stock-cell {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  justify-content: center;
+}
+
+/* TreatmentPlanHeader */
+.plan-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-container-low, #f7f2fa);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  text-align: left;
+}
+
+.plan-header__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.plan-header__emoji {
+  font-size: 1rem;
+}
+
+.plan-header__label {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-on-surface, #1c1b1f);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.plan-header__count {
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+.plan-header__alert {
+  color: #f59e0b;
+  font-size: 0.875rem;
+}
+
+.plan-header__chevron {
+  font-size: 0.625rem;
+  color: var(--color-on-surface-variant, #49454f);
+}
+
+/* TreatmentTabBar */
+.treatment-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--color-surface-container, #ece6f0);
+  border-radius: var(--radius-lg, 12px);
+}
+
+.treatment-tab-bar__tab {
+  flex: 1;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-md, 8px);
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface-variant, #49454f);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.treatment-tab-bar__tab--active {
+  background: var(--color-surface, #fff);
+  color: var(--color-primary, #006a5e);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.treatment-tab-bar__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  background: var(--color-secondary-container, #cce8e0);
+  color: var(--color-on-secondary-container, #00201c);
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* AnvisaSearchBar */
+.anvisa-search-bar {
+  position: relative;
+}
+
+.anvisa-search-bar input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-xl, 20px);
+  border: 1.5px solid var(--color-outline-variant, #cac4d0);
+  background: var(--color-surface-container-low, #f7f2fa);
+  font-size: 0.9375rem;
+}
+
+/* TreatmentsSimple */
+.treatments-simple__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.treatments-simple__empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-on-surface-variant, #49454f);
+  font-size: 0.9375rem;
+}
+
+/* TreatmentsComplex */
+.treatments-complex {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.treatments-complex__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.treatments-complex__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+/* Mobile-only: card layout (flex) — shown on < 1024px */
+.treatments-complex__rows--card-container {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+/* Desktop-only: tabular grid layout — hidden on < 1024px */
+.treatments-complex__rows--tabular-container {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .treatments-complex__rows--card-container {
+    display: none !important;
+  }
+
+  .treatments-complex__rows--tabular-container {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1.5fr;
+    gap: 0;
+    padding-left: 0;
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+  }
+}
+
+/* Modo tabular em desktop — sem bordas, com alternância de fundo */
+.treatments-complex__rows--tabular {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1.5fr;
+  gap: 0;
+  padding-left: 0;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+/* Célula padrão — sem borda */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell,
+.treatments-complex__rows--tabular-container .protocol-row-tabular__cell {
+  border: none;
+}
+
+/* Tonal row alternation: even-numbered rows (2, 4, 6...) use surface-container-low */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 5),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 6),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 7),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 8),
+.treatments-complex__rows--tabular-container .protocol-row-tabular__cell:nth-child(4n + 5),
+.treatments-complex__rows--tabular-container .protocol-row-tabular__cell:nth-child(4n + 6),
+.treatments-complex__rows--tabular-container .protocol-row-tabular__cell:nth-child(4n + 7),
+.treatments-complex__rows--tabular-container .protocol-row-tabular__cell:nth-child(4n + 8) {
+  background: var(--color-surface-container-low, #f2f4f5);
+}
+
+.treatments-complex__empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-on-surface-variant, #49454f);
+  font-size: 0.9375rem;
+}
+
+/* Error Banner */
+.treatments-redesign__error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+  border-radius: 0.375rem;
+  color: #7f1d1d;
+  font-size: 0.9375rem;
+}
+
+.treatments-redesign__error-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.treatments-redesign__error-close {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.treatments-redesign__error-close:hover {
+  opacity: 0.8;
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .treatments-redesign {
+    padding: 1.5rem 2rem;
+  }
+}
