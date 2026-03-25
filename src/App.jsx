@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import appStyles from './App.module.css'
@@ -256,7 +257,21 @@ function AppInner() {
             className={isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'}
             style={{ paddingBottom: isRedesignEnabled ? undefined : '80px', minHeight: '100vh', position: 'relative' }}
           >
-            {renderCurrentView()}
+            {isRedesignEnabled ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentView}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {renderCurrentView()}
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              renderCurrentView()
+            )}
             <footer
               style={{
                 textAlign: 'center',
