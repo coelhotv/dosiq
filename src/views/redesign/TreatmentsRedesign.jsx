@@ -26,6 +26,7 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
   const [formProtocol, setFormProtocol] = useState(null)
   const [medicines, setMedicines] = useState([])
   const [treatmentPlans, setTreatmentPlans] = useState([])
+  const [errorMessage, setErrorMessage] = useState(null)
 
   // Data + context
   const { mode } = useComplexityMode()
@@ -78,11 +79,13 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
     // Form: para editar protocolo existente da lista
     // Buscar protocolo completo do banco (TreatmentItem tem estrutura diferente)
     try {
+      setErrorMessage(null)
       const fullProtocol = await protocolService.getById(protocolItem.id)
       setFormProtocol(fullProtocol)
       setFormOpen(true)
     } catch (err) {
       console.error('Erro ao carregar protocolo para edicao:', err)
+      setErrorMessage('Erro ao carregar protocolo. Tente novamente.')
     }
   }
 
@@ -93,11 +96,13 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
 
   async function handleFormSave(protocolData) {
     try {
+      setErrorMessage(null)
       await protocolService.update(formProtocol.id, protocolData)
       handleFormClose()
       refetch()
     } catch (err) {
       console.error('Erro ao salvar protocolo:', err)
+      setErrorMessage('Erro ao salvar protocolo. Tente novamente.')
     }
   }
 
@@ -114,6 +119,14 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
           {activeItems.length !== 1 ? 's' : ''}
         </span>
       </header>
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="treatments-redesign__error-banner">
+          <p>{errorMessage}</p>
+          <button onClick={() => setErrorMessage(null)} className="treatments-redesign__error-close">×</button>
+        </div>
+      )}
 
       {/* ANVISA Search */}
       <AnvisaSearchBar

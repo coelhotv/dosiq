@@ -65,14 +65,15 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
                 {isDesktop ? (
                   // Desktop: renderizar como tabela com 4 colunas
                   group.items.map(item => (
-                    <ProtocolRow
-                      key={item.id}
-                      item={item}
-                      isComplex={true}
-                      onEdit={onEdit}
-                      activeTab={activeTab}
-                      variant="tabular"
-                    />
+                    <div key={item.id} style={{ display: 'contents' }}>
+                      <ProtocolRow
+                        item={item}
+                        isComplex={true}
+                        onEdit={onEdit}
+                        activeTab={activeTab}
+                        variant="tabular"
+                      />
+                    </div>
                   ))
                 ) : (
                   // Mobile: renderizar como cards

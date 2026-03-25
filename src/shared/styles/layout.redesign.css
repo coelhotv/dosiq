@@ -678,18 +678,11 @@
   border: none;
 }
 
-/* Alternância de cores: linhas pares em surface-container-low */
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 1),
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 2),
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 3),
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 4) {
-  background: var(--color-surface, #f8fafb);
-}
-
-/* Linhas ímpares em surface-container-low para melhor separação visual */
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 5):nth-child(-n + 8),
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 13):nth-child(-n + 16),
-.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(n + 21):nth-child(-n + 24) {
+/* Tonal row alternation: even-numbered rows (2, 4, 6...) use surface-container-low */
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 5),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 6),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 7),
+.treatments-complex__rows--tabular .protocol-row-tabular__cell:nth-child(4n + 8) {
   background: var(--color-surface-container-low, #f2f4f5);
 }
 
@@ -698,6 +691,42 @@
   text-align: center;
   color: var(--color-on-surface-variant, #49454f);
   font-size: 0.9375rem;
+}
+
+/* Error Banner */
+.treatments-redesign__error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+  border-radius: 0.375rem;
+  color: #7f1d1d;
+  font-size: 0.9375rem;
+}
+
+.treatments-redesign__error-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.treatments-redesign__error-close {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.treatments-redesign__error-close:hover {
+  opacity: 0.8;
 }
 
 /* Desktop */
