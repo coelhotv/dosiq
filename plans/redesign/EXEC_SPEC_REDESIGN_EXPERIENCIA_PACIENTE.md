@@ -17,7 +17,7 @@
 | W4 | Navigation Shell (BottomNav + Sidebar) | `WAVE_4_NAVIGATION_SHELL.md` | ✅ MERGED #422 (2026-03-25) | main |
 | W5 | Motion Language | `WAVE_5_MOTION_LANGUAGE.md` | ✅ MERGED #424 (2026-03-25) | main |
 | W6 | Dashboard Redesign | `WAVE_6_DASHBOARD_REDESIGN.md` | ✅ MERGED #425 (2026-03-25) | main |
-| W7 | Tratamentos Redesign | — | 🔜 PRONTO P/ EXECUÇÃO | — |
+| W7 | Tratamentos Redesign | — | ⏳ PENDENTE SPEC | — |
 | W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
@@ -29,7 +29,6 @@
 - ✅ **W5:** motionConstants.js + useMotion hook + CSS keyframes + AI review cycle (PR #424)
 - ✅ **W6:** RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
 
-**Próximo bloco:** W7 (Tratamentos Redesign) — spec aguardando aprovação
 **Foundation (W0-W6):** 100% COMPLETO ✅ — Sistema de design, navegação, motion e dashboard completos
 
 
