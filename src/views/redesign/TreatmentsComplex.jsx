@@ -2,8 +2,9 @@
  * TreatmentsComplex — Modo complexo da view de tratamentos (Carlos)
  * Grupos colapsáveis por plano/classe com header colorido
  * Cada grupo contém protocolos com rows expandíveis
+ * Layout responsivo controlado por media queries (sem useEffect)
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
 import TreatmentPlanHeader from '@protocols/components/redesign/TreatmentPlanHeader'
@@ -13,16 +14,6 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
   const { cascade } = useMotion()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const [expandedRow, setExpandedRow] = useState(null)
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
-
-  // Detectar mudanças de tamanho de tela para layout responsivo
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   const toggleGroup = key => {
     setCollapsedGroups(prev => {
@@ -57,14 +48,10 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
               onToggle={() => toggleGroup(group.groupKey)}
             />
             {!isCollapsed && (
-              <div
-                className={`treatments-complex__rows ${
-                  isDesktop ? 'treatments-complex__rows--tabular' : ''
-                }`}
-              >
-                {isDesktop ? (
-                  // Desktop: renderizar como tabela com 4 colunas
-                  group.items.map(item => (
+              <>
+                {/* Desktop: tabular grid layout (shown on >= 1024px) */}
+                <div className="treatments-complex__rows treatments-complex__rows--tabular-container">
+                  {group.items.map(item => (
                     <div key={item.id} style={{ display: 'contents' }}>
                       <ProtocolRow
                         item={item}
@@ -74,10 +61,11 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
                         variant="tabular"
                       />
                     </div>
-                  ))
-                ) : (
-                  // Mobile: renderizar como cards
-                  group.items.map(item => (
+                  ))}
+                </div>
+                {/* Mobile: card layout (shown on < 1024px) */}
+                <div className="treatments-complex__rows treatments-complex__rows--card-container">
+                  {group.items.map(item => (
                     <ProtocolRow
                       key={item.id}
                       item={item}
@@ -90,9 +78,9 @@ export default function TreatmentsComplex({ groups, onEdit, activeTab }) {
                       activeTab={activeTab}
                       variant="card"
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </motion.section>
         )
