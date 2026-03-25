@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
+import {
+  cachedLogService as logService,
+  cachedTreatmentPlanService as treatmentPlanService,
+} from '@shared/services'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useDoseZones } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
@@ -41,7 +45,7 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  */
 export default function DashboardRedesign({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
-  const { stats, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
+  const { stats, protocols: rawProtocols, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
   const { zones, totals } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
@@ -50,6 +54,7 @@ export default function DashboardRedesign({ onNavigate }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
+  const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
 
   // ── Computadas ──
   const allDoses = useMemo(() => [
@@ -72,18 +77,39 @@ export default function DashboardRedesign({ onNavigate }) {
     )
   }, [stockSummary])
 
-  // ── Carregar nome do usuário ──
+  // ── Injetar dados atualizados de protocolos nos planos de tratamento ──
+  const treatmentPlans = useMemo(() => {
+    return rawTreatmentPlans.map((plan) => ({
+      ...plan,
+      protocols: plan.protocols?.map((p) => {
+        const liveProtocol = rawProtocols.find((rp) => rp.id === p.id)
+        return liveProtocol || p
+      }),
+    }))
+  }, [rawTreatmentPlans, rawProtocols])
+
+  // ── Carregar nome do usuário e planos de tratamento ──
   useEffect(() => {
-    getCurrentUser()
-      .then((user) => {
+    async function loadInitialData() {
+      try {
+        const [user, plans] = await Promise.all([
+          getCurrentUser(),
+          treatmentPlanService.getAll(),
+        ])
+
         if (user?.user_metadata?.full_name) {
           setUserName(user.user_metadata.full_name.split(' ')[0])
         } else if (user?.email) {
           setUserName(user.email.split('@')[0])
         }
+        setRawTreatmentPlans(plans)
+      } catch (err) {
+        console.error('Erro ao carregar dados iniciais:', err)
+      } finally {
         setIsLoading(false)
-      })
-      .catch(() => setIsLoading(false))
+      }
+    }
+    loadInitialData()
   }, [])
 
   // ── Handlers ──
@@ -294,8 +320,17 @@ export default function DashboardRedesign({ onNavigate }) {
       {/* ─── Modal de Registro de Dose ─── */}
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title="Registrar Dose">
         <LogForm
-          prefillData={prefillData}
-          onSuccess={handleLogSuccess}
+          protocols={rawProtocols}
+          treatmentPlans={treatmentPlans}
+          initialValues={prefillData}
+          onSave={async (data) => {
+            if (Array.isArray(data)) {
+              await logService.createBulk(data)
+            } else {
+              await logService.create(data)
+            }
+            handleLogSuccess()
+          }}
           onCancel={handleModalClose}
         />
       </Modal>
