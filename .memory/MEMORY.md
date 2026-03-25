@@ -1,6 +1,6 @@
 # Meus Remédios — Project Memory
 
-**Last Updated:** 2026-03-25 | **Version:** v3.3.0 | **Fase:** 6 | **Wave 4 Navigation Shell:** ✅ MERGED (Commit b02c0b7)
+**Last Updated:** 2026-03-25 | **Version:** v3.3.0 | **Fase:** 6 | **Wave 4:** ✅ MERGED | **Wave 5 (Motion Language):** ✅ MERGED (Commit 4e6b312)
 
 ---
 
