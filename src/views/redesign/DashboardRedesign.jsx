@@ -1,14 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
-import {
-  cachedLogService as logService,
-  cachedTreatmentPlanService as treatmentPlanService,
-} from '@shared/services'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { cachedLogService as logService } from '@shared/services'
+import { analyticsService } from '@dashboard/services/analyticsService'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useDoseZones } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser } from '@shared/utils/supabase'
-import Modal from '@shared/components/ui/Modal'
-import LogForm from '@shared/components/log/LogForm'
 import Loading from '@shared/components/ui/Loading'
 import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
@@ -45,16 +41,13 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  */
 export default function DashboardRedesign({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
-  const { stats, protocols: rawProtocols, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
+  const { stats, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
   const { zones, totals } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
   // ── Estado local ──
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [prefillData, setPrefillData] = useState(null)
-  const [rawTreatmentPlans, setRawTreatmentPlans] = useState([])
 
   // ── Computadas ──
   const allDoses = useMemo(() => [
@@ -77,63 +70,43 @@ export default function DashboardRedesign({ onNavigate }) {
     )
   }, [stockSummary])
 
-  // ── Injetar dados atualizados de protocolos nos planos de tratamento ──
-  const treatmentPlans = useMemo(() => {
-    return rawTreatmentPlans.map((plan) => ({
-      ...plan,
-      protocols: plan.protocols?.map((p) => {
-        const liveProtocol = rawProtocols.find((rp) => rp.id === p.id)
-        return liveProtocol || p
-      }),
-    }))
-  }, [rawTreatmentPlans, rawProtocols])
-
-  // ── Carregar nome do usuário e planos de tratamento ──
+  // ── Carregar nome do usuário ──
   useEffect(() => {
-    async function loadInitialData() {
-      try {
-        const [user, plans] = await Promise.all([
-          getCurrentUser(),
-          treatmentPlanService.getAll(),
-        ])
-
+    getCurrentUser()
+      .then((user) => {
         if (user?.user_metadata?.full_name) {
           setUserName(user.user_metadata.full_name.split(' ')[0])
         } else if (user?.email) {
           setUserName(user.email.split('@')[0])
         }
-        setRawTreatmentPlans(plans)
-      } catch (err) {
-        console.error('Erro ao carregar dados iniciais:', err)
-      } finally {
         setIsLoading(false)
-      }
-    }
-    loadInitialData()
+      })
+      .catch(() => setIsLoading(false))
   }, [])
 
   // ── Handlers ──
-  const handleRegisterDose = (dose) => {
-    setPrefillData({
-      protocol_id: dose.protocolId,
-      medicine_id: dose.medicineId,
-      medicine_name: dose.medicineName,
-      scheduled_time: dose.scheduledTime,
-      dosage_per_intake: dose.dosagePerIntake,
-    })
-    setIsModalOpen(true)
-  }
-
-  const handleModalClose = () => {
-    setIsModalOpen(false)
-    setPrefillData(null)
-  }
-
-  const handleLogSuccess = () => {
-    setIsModalOpen(false)
-    setPrefillData(null)
-    refresh()
-  }
+  // Registra dose DIRETAMENTE sem modal (1-click experience)
+  const handleRegisterDoseQuick = useCallback(
+    async (medicineId, protocolId, dosagePerIntake) => {
+      try {
+        await logService.create({
+          medicine_id: medicineId,
+          protocol_id: protocolId,
+          quantity_taken: dosagePerIntake,
+          taken_at: new Date().toISOString(),
+        })
+        analyticsService.track('dose_registered_quick', {
+          timestamp: Date.now(),
+          method: 'priority-card',
+        })
+        refresh()
+      } catch (err) {
+        console.error('Erro ao registrar dose:', err)
+        alert('Erro ao registrar dose. Tente novamente.')
+      }
+    },
+    [refresh]
+  )
 
   // ── Loading state ──
   if (isLoading || contextLoading) {
@@ -238,13 +211,18 @@ export default function DashboardRedesign({ onNavigate }) {
             </div>
           </div>
 
-          {/* Priority Dose Card */}
+          {/* Priority Dose Card — 1-Click Registration */}
           {urgentDoses.length > 0 && (
             <div style={{ width: '100%' }}>
               <PriorityDoseCard
                 doses={urgentDoses.slice(0, 3)}
-                onRegister={handleRegisterDose}
-                onRegisterAll={(doses) => handleRegisterDose(doses[0])}
+                onRegister={(dose) =>
+                  handleRegisterDoseQuick(
+                    dose.medicineId,
+                    dose.protocolId,
+                    dose.dosagePerIntake
+                  )
+                }
                 variant={complexityMode === 'simple' ? 'simple' : 'priority'}
               />
             </div>
@@ -271,7 +249,16 @@ export default function DashboardRedesign({ onNavigate }) {
               }}>
                 Cronograma de Hoje
               </h2>
-              <CronogramaPeriodo allDoses={allDoses} onRegister={handleRegisterDose} />
+              <CronogramaPeriodo
+                allDoses={allDoses}
+                onRegister={(dose) =>
+                  handleRegisterDoseQuick(
+                    dose.medicineId,
+                    dose.protocolId,
+                    dose.dosagePerIntake
+                  )
+                }
+              />
             </section>
           )}
 
@@ -317,23 +304,6 @@ export default function DashboardRedesign({ onNavigate }) {
         </div>
       </div>
 
-      {/* ─── Modal de Registro de Dose ─── */}
-      <Modal isOpen={isModalOpen} onClose={handleModalClose} title="Registrar Dose">
-        <LogForm
-          protocols={rawProtocols}
-          treatmentPlans={treatmentPlans}
-          initialValues={prefillData}
-          onSave={async (data) => {
-            if (Array.isArray(data)) {
-              await logService.createBulk(data)
-            } else {
-              await logService.create(data)
-            }
-            handleLogSuccess()
-          }}
-          onCancel={handleModalClose}
-        />
-      </Modal>
     </div>
   )
 }
