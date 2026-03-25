@@ -35,8 +35,7 @@ function summarizeTrend(trend = [], fallbackCurrentStreak = 0) {
     { taken: 0, expected: 0 }
   )
 
-  const score =
-    totals.expected > 0 ? Math.round((totals.taken / totals.expected) * 100) : 0
+  const score = totals.expected > 0 ? Math.round((totals.taken / totals.expected) * 100) : 0
 
   return {
     score,
@@ -122,9 +121,10 @@ export function formatFrequency(protocol) {
  */
 export function formatDailyDose(protocol, medicine) {
   const pillsPerIntake = protocol?.dosage_per_intake ?? 1
-  const timesPerDay = Array.isArray(protocol?.time_schedule) && protocol.time_schedule.length > 0
-    ? protocol.time_schedule.length
-    : 1
+  const timesPerDay =
+    Array.isArray(protocol?.time_schedule) && protocol.time_schedule.length > 0
+      ? protocol.time_schedule.length
+      : 1
   const dosagePerPill = medicine?.dosage_per_pill
   const dosageUnit = medicine?.dosage_unit || 'mg'
 
@@ -164,14 +164,15 @@ function buildTreatmentRows(protocols = [], medicines = []) {
   return protocols
     .filter((protocol) => protocol?.active !== false)
     .map((protocol) => {
-      const medicine = medicines.find((item) => item.id === protocol.medicine_id) || protocol.medicine || {}
-      const timesPerDay = Array.isArray(protocol.time_schedule) && protocol.time_schedule.length > 0
-        ? protocol.time_schedule.length
-        : 1
+      const medicine =
+        medicines.find((item) => item.id === protocol.medicine_id) || protocol.medicine || {}
+      const timesPerDay =
+        Array.isArray(protocol.time_schedule) && protocol.time_schedule.length > 0
+          ? protocol.time_schedule.length
+          : 1
       const dosagePerPill = medicine.dosage_per_pill ?? null
-      const dosagePerIntake = dosagePerPill === null
-        ? null
-        : (protocol.dosage_per_intake ?? 1) * dosagePerPill
+      const dosagePerIntake =
+        dosagePerPill === null ? null : (protocol.dosage_per_intake ?? 1) * dosagePerPill
 
       return {
         id: protocol.id,
@@ -201,13 +202,16 @@ function buildTreatmentRows(protocols = [], medicines = []) {
 function buildStockRows(stockSummary = [], protocols = [], medicines = []) {
   return stockSummary
     .map((stockItem) => {
-      const medicine = medicines.find((item) => item.id === stockItem?.medicine?.id) || stockItem?.medicine || {}
-      const protocol = protocols.find((item) => item.medicine_id === medicine.id && item.active !== false)
+      const medicine =
+        medicines.find((item) => item.id === stockItem?.medicine?.id) || stockItem?.medicine || {}
+      const protocol = protocols.find(
+        (item) => item.medicine_id === medicine.id && item.active !== false
+      )
       const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols)
       const totalQuantity = stockItem?.total ?? 0
-      const daysRemaining = stockItem?.daysRemaining ?? (
-        dailyIntake > 0 ? Math.floor(totalQuantity / dailyIntake) : null
-      )
+      const daysRemaining =
+        stockItem?.daysRemaining ??
+        (dailyIntake > 0 ? Math.floor(totalQuantity / dailyIntake) : null)
       const severity = getStockSeverity({ ...stockItem, daysRemaining })
 
       return {
@@ -245,17 +249,19 @@ function buildStockRows(stockSummary = [], protocols = [], medicines = []) {
 function buildPrescriptionRows(prescriptionStatus = [], protocols = [], medicines = []) {
   return prescriptionStatus.map((prescription) => {
     const protocol = protocols.find((item) => item.id === prescription.protocolId)
-    const medicine = medicines.find((item) => item.id === protocol?.medicine_id) || protocol?.medicine || {}
+    const medicine =
+      medicines.find((item) => item.id === protocol?.medicine_id) || protocol?.medicine || {}
 
     return {
       id: prescription.protocolId,
       label: formatTreatmentLabel(protocol, medicine),
       status: prescription.status,
-      statusLabel: prescription.status === 'vencida'
-        ? 'Vencida'
-        : prescription.status === 'vencendo'
-          ? 'Vencendo'
-          : 'Vigente',
+      statusLabel:
+        prescription.status === 'vencida'
+          ? 'Vencida'
+          : prescription.status === 'vencendo'
+            ? 'Vencendo'
+            : 'Vigente',
       daysRemaining: prescription.daysRemaining,
       endDate: prescription.endDate || protocol?.end_date || null,
     }
@@ -272,7 +278,8 @@ function buildPrescriptionRows(prescriptionStatus = [], protocols = [], medicine
 function buildTitrationRows(activeTitrations = [], protocols = [], medicines = []) {
   return activeTitrations.map((titration) => {
     const protocol = protocols.find((item) => item.id === titration.protocolId)
-    const medicine = medicines.find((item) => item.id === titration.medicineId) || protocol?.medicine || {}
+    const medicine =
+      medicines.find((item) => item.id === titration.medicineId) || protocol?.medicine || {}
 
     return {
       id: titration.protocolId,
@@ -386,15 +393,36 @@ export function buildConsultationPdfData({
   const stockSummary = dashboardData.stockSummary || []
   const patientInfo = consultationData?.patientInfo || {}
   const activeMedicines = consultationData?.activeMedicines || []
-  const periodDays = period === 'all' ? Math.max(dailyAdherence.length || 0, 90) : Math.max(parseInt(period, 10) || 7, 1)
+  const periodDays =
+    period === 'all'
+      ? Math.max(dailyAdherence.length || 0, 90)
+      : Math.max(parseInt(period, 10) || 7, 1)
   const activeTreatments = buildTreatmentRows(protocols, medicines)
   const stockRows = buildStockRows(stockSummary, protocols, medicines)
-  const prescriptionRows = buildPrescriptionRows(consultationData?.prescriptionStatus || [], protocols, medicines)
-  const titrationRows = buildTitrationRows(consultationData?.activeTitrations || [], protocols, medicines)
+  const prescriptionRows = buildPrescriptionRows(
+    consultationData?.prescriptionStatus || [],
+    protocols,
+    medicines
+  )
+  const titrationRows = buildTitrationRows(
+    consultationData?.activeTitrations || [],
+    protocols,
+    medicines
+  )
   const adherenceTrend = buildAdherenceTrend(dailyAdherence, logs, protocols, periodDays)
 
-  const adherence30d = consultationData?.adherenceSummary?.last30d || { score: 0, taken: 0, expected: 0, punctuality: 0 }
-  const adherence90d = consultationData?.adherenceSummary?.last90d || { score: 0, taken: 0, expected: 0, punctuality: 0 }
+  const adherence30d = consultationData?.adherenceSummary?.last30d || {
+    score: 0,
+    taken: 0,
+    expected: 0,
+    punctuality: 0,
+  }
+  const adherence90d = consultationData?.adherenceSummary?.last90d || {
+    score: 0,
+    taken: 0,
+    expected: 0,
+    punctuality: 0,
+  }
   const selectedPeriodLabel = getTrendLabel(periodDays)
   const selectedPeriodSummary =
     periodDays === 30
@@ -408,8 +436,12 @@ export function buildConsultationPdfData({
 
   const criticalStockCount = stockRows.filter((item) => item.severity === 'critical').length
   const warningStockCount = stockRows.filter((item) => item.severity === 'warning').length
-  const expiringPrescriptionCount = prescriptionRows.filter((item) => item.status === 'vencendo').length
-  const expiredPrescriptionCount = prescriptionRows.filter((item) => item.status === 'vencida').length
+  const expiringPrescriptionCount = prescriptionRows.filter(
+    (item) => item.status === 'vencendo'
+  ).length
+  const expiredPrescriptionCount = prescriptionRows.filter(
+    (item) => item.status === 'vencida'
+  ).length
   const activeTitrationCount = titrationRows.length
 
   const summaryCards = [
@@ -429,14 +461,22 @@ export function buildConsultationPdfData({
       value: `${adherence30d.score ?? 0}%`,
       meta: `${adherence30d.taken ?? 0}/${adherence30d.expected ?? 0} doses`,
       tone:
-        (adherence30d.score ?? 0) >= 80 ? 'success' : (adherence30d.score ?? 0) >= 50 ? 'warning' : 'danger',
+        (adherence30d.score ?? 0) >= 80
+          ? 'success'
+          : (adherence30d.score ?? 0) >= 50
+            ? 'warning'
+            : 'danger',
     },
     {
       label: 'Adesao 90d',
       value: `${adherence90d.score ?? 0}%`,
       meta: `${adherence90d.taken ?? 0}/${adherence90d.expected ?? 0} doses`,
       tone:
-        (adherence90d.score ?? 0) >= 80 ? 'success' : (adherence90d.score ?? 0) >= 50 ? 'warning' : 'danger',
+        (adherence90d.score ?? 0) >= 80
+          ? 'success'
+          : (adherence90d.score ?? 0) >= 50
+            ? 'warning'
+            : 'danger',
     },
     {
       label: 'Pontualidade',
@@ -494,7 +534,9 @@ export function buildConsultationPdfData({
       })),
     ...titrationRows.slice(0, 3).map((item) => ({
       label: item.label,
-      detail: item.isTransitionDue ? 'Transicao pendente' : `Etapa ${item.currentStep}/${item.totalSteps}`,
+      detail: item.isTransitionDue
+        ? 'Transicao pendente'
+        : `Etapa ${item.currentStep}/${item.totalSteps}`,
       tone: item.isTransitionDue ? 'warning' : 'info',
     })),
   ]
@@ -527,7 +569,8 @@ export function buildConsultationPdfData({
       last90d: adherence90d,
       trend: adherenceTrend,
       trendLabel: selectedPeriodLabel,
-      currentStreak: consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0,
+      currentStreak:
+        consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0,
     },
     stockRows,
     prescriptionRows,

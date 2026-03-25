@@ -24,8 +24,7 @@
    W0: DESIGN TOKENS — SANTUÁRIO TERAPÊUTICO
    Todos os tokens abaixo só ativam com [data-redesign="true"]
    ============================================ */
-[data-redesign="true"] {
-
+[data-redesign='true'] {
   /* ============================================
      BRAND COLORS — Verde Saúde (Primary)
      ============================================ */
@@ -114,7 +113,7 @@
   --bg-tertiary: var(--color-surface-container);
   --bg-card: var(--color-surface-container-lowest);
   --bg-overlay: rgba(25, 28, 29, 0.5);
-  --bg-glass: rgba(248, 250, 251, 0.80);
+  --bg-glass: rgba(248, 250, 251, 0.8);
 
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -163,8 +162,8 @@
      ============================================ */
   --state-hover: rgba(0, 106, 94, 0.08);
   --state-active: rgba(0, 106, 94, 0.15);
-  --state-focus: rgba(0, 106, 94, 0.20);
-  --state-disabled: rgba(25, 28, 29, 0.10);
+  --state-focus: rgba(0, 106, 94, 0.2);
+  --state-disabled: rgba(25, 28, 29, 0.1);
   --state-loading: rgba(0, 106, 94, 0.5);
 
   /* ============================================
@@ -178,7 +177,7 @@
   /* ============================================
      GLASSMORPHISM — SOMENTE para elementos flutuantes
      ============================================ */
-  --glass-bg: rgba(248, 250, 251, 0.80);
+  --glass-bg: rgba(248, 250, 251, 0.8);
   --glass-blur: blur(12px);
   --glass-border: var(--color-outline-ghost);
 
@@ -186,7 +185,7 @@
      GRADIENT — SOMENTE para ações primárias (CTAs)
      ============================================ */
   --gradient-primary: linear-gradient(135deg, #006a5e, #008577);
-  --gradient-primary-shadow: 0 8px 24px rgba(0, 106, 94, 0.20);
+  --gradient-primary-shadow: 0 8px 24px rgba(0, 106, 94, 0.2);
 
   /* ============================================
      AMBIENT SHADOW SYSTEM
@@ -195,8 +194,8 @@
      ============================================ */
   --shadow-ambient: 0 24px 24px rgba(25, 28, 29, 0.04);
   --shadow-editorial: 0 4px 24px -4px rgba(25, 28, 29, 0.04);
-  --shadow-primary: 0 8px 24px rgba(0, 106, 94, 0.20);
-  --shadow-error: 0 8px 24px rgba(186, 26, 26, 0.20);
+  --shadow-primary: 0 8px 24px rgba(0, 106, 94, 0.2);
+  --shadow-error: 0 8px 24px rgba(186, 26, 26, 0.2);
   --shadow-floating: 0 16px 48px rgba(25, 28, 29, 0.12);
   --shadow-none: none;
 
@@ -370,12 +369,12 @@
   /* ============================================
      OPACITY VALUES
      ============================================ */
-  --opacity-disabled: 0.50;
-  --opacity-hover: 0.80;
-  --opacity-focus: 1.00;
-  --opacity-overlay: 0.90;
+  --opacity-disabled: 0.5;
+  --opacity-hover: 0.8;
+  --opacity-focus: 1;
+  --opacity-overlay: 0.9;
   --opacity-backdrop: 0.75;
-  --opacity-muted-text: 0.40;
+  --opacity-muted-text: 0.4;
 }
 
 /* ============================================
@@ -385,7 +384,7 @@
    As propriedades de tipografia base são aplicadas ao próprio .app-container
    e herdam para todos os filhos dentro da app.
    ============================================ */
-[data-redesign="true"] {
+[data-redesign='true'] {
   font-family: var(--font-body);
   font-weight: var(--font-weight-regular);
   font-size: var(--text-body-lg);
@@ -399,30 +398,46 @@
 /* ============================================
    W1: HEADINGS — Tipografia Global Scoped
    ============================================ */
-[data-redesign="true"] h1,
-[data-redesign="true"] h2,
-[data-redesign="true"] h3,
-[data-redesign="true"] h4,
-[data-redesign="true"] h5,
-[data-redesign="true"] h6 {
+[data-redesign='true'] h1,
+[data-redesign='true'] h2,
+[data-redesign='true'] h3,
+[data-redesign='true'] h4,
+[data-redesign='true'] h5,
+[data-redesign='true'] h6 {
   font-family: var(--font-display);
   font-weight: var(--heading-font-weight);
   line-height: var(--heading-line-height);
   letter-spacing: var(--heading-letter-spacing);
 }
 
-[data-redesign="true"] h1 { font-size: var(--heading-1-size); }
-[data-redesign="true"] h2 { font-size: var(--heading-2-size); }
-[data-redesign="true"] h3 { font-size: var(--heading-3-size); font-weight: var(--heading-3-weight); }
-[data-redesign="true"] h4 { font-size: var(--heading-4-size); font-weight: var(--heading-4-weight); }
-[data-redesign="true"] h5 { font-size: var(--heading-5-size); font-weight: var(--heading-5-weight); }
-[data-redesign="true"] h6 { font-size: var(--heading-6-size); font-weight: var(--heading-6-weight); }
+[data-redesign='true'] h1 {
+  font-size: var(--heading-1-size);
+}
+[data-redesign='true'] h2 {
+  font-size: var(--heading-2-size);
+}
+[data-redesign='true'] h3 {
+  font-size: var(--heading-3-size);
+  font-weight: var(--heading-3-weight);
+}
+[data-redesign='true'] h4 {
+  font-size: var(--heading-4-size);
+  font-weight: var(--heading-4-weight);
+}
+[data-redesign='true'] h5 {
+  font-size: var(--heading-5-size);
+  font-weight: var(--heading-5-weight);
+}
+[data-redesign='true'] h6 {
+  font-size: var(--heading-6-size);
+  font-weight: var(--heading-6-weight);
+}
 
 /* Inputs e buttons tambem usam Lexend quando o redesign esta ativo */
-[data-redesign="true"] input,
-[data-redesign="true"] textarea,
-[data-redesign="true"] select,
-[data-redesign="true"] button {
+[data-redesign='true'] input,
+[data-redesign='true'] textarea,
+[data-redesign='true'] select,
+[data-redesign='true'] button {
   font-family: var(--font-body);
 }
 
@@ -430,14 +445,24 @@
    W0: SURFACE TONAL SYSTEM — "No-Line Rule"
    Classes utilitárias scoped
    ============================================ */
-[data-redesign="true"] .surface { background-color: var(--color-surface); }
-[data-redesign="true"] .surface-container { background-color: var(--color-surface-container); }
-[data-redesign="true"] .surface-container-low { background-color: var(--color-surface-container-low); }
-[data-redesign="true"] .surface-container-lowest { background-color: var(--color-surface-container-lowest); }
-[data-redesign="true"] .surface-container-high { background-color: var(--color-surface-container-high); }
+[data-redesign='true'] .surface {
+  background-color: var(--color-surface);
+}
+[data-redesign='true'] .surface-container {
+  background-color: var(--color-surface-container);
+}
+[data-redesign='true'] .surface-container-low {
+  background-color: var(--color-surface-container-low);
+}
+[data-redesign='true'] .surface-container-lowest {
+  background-color: var(--color-surface-container-lowest);
+}
+[data-redesign='true'] .surface-container-high {
+  background-color: var(--color-surface-container-high);
+}
 
 /* Sanctuary Card — container principal do redesign */
-[data-redesign="true"] .card-sanctuary {
+[data-redesign='true'] .card-sanctuary {
   background-color: var(--color-surface-container-lowest);
   border-radius: var(--radius-card);
   padding: 2rem;
@@ -446,18 +471,18 @@
   transition: all 300ms ease-out;
 }
 
-[data-redesign="true"] .card-sanctuary:hover {
+[data-redesign='true'] .card-sanctuary:hover {
   box-shadow: var(--shadow-editorial);
 }
 
 /* Glass utility — floating elements only */
-[data-redesign="true"] .glass {
+[data-redesign='true'] .glass {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
 
-[data-redesign="true"] .glass-card {
+[data-redesign='true'] .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -466,7 +491,7 @@
 }
 
 /* Primary gradient button utility */
-[data-redesign="true"] .btn-primary-gradient {
+[data-redesign='true'] .btn-primary-gradient {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   box-shadow: var(--gradient-primary-shadow);
@@ -481,11 +506,11 @@
   transition: all 200ms ease-out;
 }
 
-[data-redesign="true"] .btn-primary-gradient:hover {
+[data-redesign='true'] .btn-primary-gradient:hover {
   transform: scale(1.02);
 }
 
-[data-redesign="true"] .btn-primary-gradient:active {
+[data-redesign='true'] .btn-primary-gradient:active {
   transform: scale(0.98);
 }
 
@@ -493,53 +518,61 @@
    TONAL SEPARATION — alternativa a borders (scoped)
    ============================================ */
 
-[data-redesign="true"] .list-tonal > *:nth-child(even) {
+[data-redesign='true'] .list-tonal > *:nth-child(even) {
   background-color: var(--color-surface-container-low);
 }
 
-[data-redesign="true"] .list-tonal > *:nth-child(odd) {
+[data-redesign='true'] .list-tonal > *:nth-child(odd) {
   background-color: var(--color-surface);
 }
 
-[data-redesign="true"] .space-y-3 > * + * { margin-top: 1rem; }
-[data-redesign="true"] .space-y-4 > * + * { margin-top: 1.4rem; }
-[data-redesign="true"] .space-y-6 > * + * { margin-top: 1.5rem; }
-[data-redesign="true"] .space-y-8 > * + * { margin-top: 2rem; }
+[data-redesign='true'] .space-y-3 > * + * {
+  margin-top: 1rem;
+}
+[data-redesign='true'] .space-y-4 > * + * {
+  margin-top: 1.4rem;
+}
+[data-redesign='true'] .space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+[data-redesign='true'] .space-y-8 > * + * {
+  margin-top: 2rem;
+}
 
 /* ============================================
    ALERT CARDS — variantes com borda esquerda (scoped)
    ============================================ */
 
-[data-redesign="true"] .card-alert-critical,
-[data-redesign="true"] .card-alert-warning,
-[data-redesign="true"] .card-alert-info,
-[data-redesign="true"] .card-alert-success {
+[data-redesign='true'] .card-alert-critical,
+[data-redesign='true'] .card-alert-warning,
+[data-redesign='true'] .card-alert-info,
+[data-redesign='true'] .card-alert-success {
   border-radius: var(--radius-card-sm);
   padding: 1.25rem;
   border: none;
 }
 
-[data-redesign="true"] .card-alert-critical {
+[data-redesign='true'] .card-alert-critical {
   background-color: var(--color-error-bg);
   border-left: 4px solid var(--color-error);
 }
 
-[data-redesign="true"] .card-alert-warning {
+[data-redesign='true'] .card-alert-warning {
   background-color: var(--color-warning-bg);
   border-left: 4px solid var(--color-warning);
 }
 
-[data-redesign="true"] .card-alert-info {
+[data-redesign='true'] .card-alert-info {
   background-color: var(--color-info-bg);
   border-left: 4px solid var(--color-info);
 }
 
-[data-redesign="true"] .card-alert-success {
+[data-redesign='true'] .card-alert-success {
   background-color: var(--color-success-bg);
   border-left: 4px solid var(--color-success);
 }
 
-[data-redesign="true"] .card-gradient {
+[data-redesign='true'] .card-gradient {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   border-radius: var(--radius-card);
@@ -548,7 +581,7 @@
   border: none;
 }
 
-[data-redesign="true"] .card-section {
+[data-redesign='true'] .card-section {
   background-color: var(--color-surface-container-low);
   border-radius: var(--radius-card-sm);
   padding: 1.5rem;
@@ -556,7 +589,7 @@
   box-shadow: none;
 }
 
-[data-redesign="true"] .icon-container-redesign {
+[data-redesign='true'] .icon-container-redesign {
   width: 3rem;
   height: 3rem;
   border-radius: var(--radius-full);
@@ -568,13 +601,19 @@
   flex-shrink: 0;
 }
 
-[data-redesign="true"] .status-dot {
+[data-redesign='true'] .status-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
-[data-redesign="true"] .status-dot-success { background-color: var(--color-success); }
-[data-redesign="true"] .status-dot-warning { background-color: var(--color-warning); }
-[data-redesign="true"] .status-dot-error { background-color: var(--color-error); }
+[data-redesign='true'] .status-dot-success {
+  background-color: var(--color-success);
+}
+[data-redesign='true'] .status-dot-warning {
+  background-color: var(--color-warning);
+}
+[data-redesign='true'] .status-dot-error {
+  background-color: var(--color-error);
+}

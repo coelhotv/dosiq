@@ -11,7 +11,8 @@ import './Settings.css'
 
 export default function Settings({ onNavigate }) {
   const { isRedesignEnabled, toggleRedesign } = useRedesign()
-  const isDevMode = typeof localStorage !== 'undefined' && localStorage.getItem('mr_dev_mode') === '1'
+  const isDevMode =
+    typeof localStorage !== 'undefined' && localStorage.getItem('mr_dev_mode') === '1'
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -275,14 +276,11 @@ export default function Settings({ onNavigate }) {
         <div className="settings-section glass-card">
           <h3>Preview: Redesign</h3>
           <p className="section-desc">
-            Ativa o preview do redesign "Santuário Terapêutico" para esta sessão.
-            Persiste via localStorage. Desativar com ?redesign=0 na URL.
+            Ativa o preview do redesign "Santuário Terapêutico" para esta sessão. Persiste via
+            localStorage. Desativar com ?redesign=0 na URL.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-            <Button
-              variant={isRedesignEnabled ? 'primary' : 'outline'}
-              onClick={toggleRedesign}
-            >
+            <Button variant={isRedesignEnabled ? 'primary' : 'outline'} onClick={toggleRedesign}>
               {isRedesignEnabled ? 'Redesign ATIVO' : 'Ativar Redesign'}
             </Button>
             {isRedesignEnabled && (

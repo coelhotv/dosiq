@@ -3,23 +3,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mocks = vi.hoisted(() => {
   const createDocMock = () => {
     let pages = 1
-      const doc = {
-        setFillColor: vi.fn(),
-        rect: vi.fn(),
-        setFontSize: vi.fn(),
-        setFont: vi.fn(),
-        setTextColor: vi.fn(),
-        text: vi.fn(),
-        setDrawColor: vi.fn(),
-        setLineWidth: vi.fn(),
-        setLineCap: vi.fn(),
-        line: vi.fn(),
-        circle: vi.fn(),
-        path: vi.fn(),
-        roundedRect: vi.fn(),
-        addPage: vi.fn(() => {
-          pages += 1
-        }),
+    const doc = {
+      setFillColor: vi.fn(),
+      rect: vi.fn(),
+      setFontSize: vi.fn(),
+      setFont: vi.fn(),
+      setTextColor: vi.fn(),
+      text: vi.fn(),
+      setDrawColor: vi.fn(),
+      setLineWidth: vi.fn(),
+      setLineCap: vi.fn(),
+      line: vi.fn(),
+      circle: vi.fn(),
+      path: vi.fn(),
+      roundedRect: vi.fn(),
+      addPage: vi.fn(() => {
+        pages += 1
+      }),
       getNumberOfPages: vi.fn(() => pages),
       setPage: vi.fn(),
       setProperties: vi.fn(),
@@ -63,7 +63,14 @@ const mocks = vi.hoisted(() => {
         },
       ],
       adherence: {
-        selectedPeriod: { label: '30 dias', score: 82, taken: 24, expected: 30, punctuality: 90, currentStreak: 6 },
+        selectedPeriod: {
+          label: '30 dias',
+          score: 82,
+          taken: 24,
+          expected: 30,
+          punctuality: 90,
+          currentStreak: 6,
+        },
         last30d: { score: 82, taken: 24, expected: 30, punctuality: 90, currentStreak: 6 },
         last90d: { score: 76, taken: 72, expected: 90, punctuality: 85, currentStreak: 6 },
         currentStreak: 6,
@@ -130,14 +137,14 @@ describe('consultationPdfService', () => {
   beforeEach(() => {
     mocks.mockJsPdf.mockImplementation(function JsPdfMock() {
       let pages = 1
-        return {
-          setFillColor: vi.fn(),
-          rect: vi.fn(),
-          setFontSize: vi.fn(),
-          setFont: vi.fn(),
-          setTextColor: vi.fn(),
-          text: vi.fn(),
-          setDrawColor: vi.fn(),
+      return {
+        setFillColor: vi.fn(),
+        rect: vi.fn(),
+        setFontSize: vi.fn(),
+        setFont: vi.fn(),
+        setTextColor: vi.fn(),
+        text: vi.fn(),
+        setDrawColor: vi.fn(),
         setLineWidth: vi.fn(),
         setLineCap: vi.fn(),
         line: vi.fn(),
@@ -150,7 +157,9 @@ describe('consultationPdfService', () => {
         setProperties: vi.fn(),
         circle: vi.fn(),
         path: vi.fn(),
-        splitTextToSize: vi.fn((value) => (Array.isArray(value) ? value : String(value).split('\n'))),
+        splitTextToSize: vi.fn((value) =>
+          Array.isArray(value) ? value : String(value).split('\n')
+        ),
         output: vi.fn(() => new Blob(['pdf'], { type: 'application/pdf' })),
       }
     })

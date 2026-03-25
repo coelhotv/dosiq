@@ -64,12 +64,7 @@ export default function Consultation({ onBack }) {
         }
 
         // Agrega dados usando o service
-        const data = getConsultationData(
-          dashboardData,
-          resolvedName,
-          null,
-          resolvedEmail
-        )
+        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail)
 
         setConsultationData(data)
       } catch (err) {

@@ -55,7 +55,9 @@
   color: var(--cv-color-text);
   font-size: var(--cv-font-base);
   line-height: 1.6;
-  padding-bottom: calc(var(--cv-footer-height) + var(--cv-bottom-nav-height) + var(--cv-footer-gap));
+  padding-bottom: calc(
+    var(--cv-footer-height) + var(--cv-bottom-nav-height) + var(--cv-footer-gap)
+  );
 }
 
 /* ============================================

@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import appStyles from './App.module.css'
@@ -21,6 +22,8 @@ const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
+const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
+const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
@@ -242,9 +245,34 @@ function AppInner() {
     <OnboardingProvider>
       <DashboardProvider>
         <div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
-          <main style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
-            {renderCurrentView()}
+          {/* Sidebar — desktop, apenas usuários com flag ativo */}
+          {isAuthenticated && isRedesignEnabled && (
+            <Suspense fallback={null}>
+              <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+            </Suspense>
+          )}
 
+          <main
+            className={
+              isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'
+            }
+            style={{ paddingBottom: isRedesignEnabled ? undefined : '80px' }}
+          >
+            {isRedesignEnabled ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentView}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {renderCurrentView()}
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              renderCurrentView()
+            )}
             <footer
               style={{
                 textAlign: 'center',
@@ -254,27 +282,21 @@ function AppInner() {
                 fontSize: 'var(--font-size-sm)',
               }}
             >
-              {/*           <span 
-              onClick={() => setShowDebug(!showDebug)} 
-              style={{ 
-                cursor: 'pointer', 
-                opacity: 0.1, 
-                fontSize: '10px',
-                display: 'block',
-                margin: '4px 0'
-              }}
-            >
-              {showDebug ? '[-] hide debug' : '[+] check system'}
-            </span>
-    */}{' '}
+              {' '}
             </footer>
           </main>
 
           <OfflineBanner />
 
-          {isAuthenticated && (
-            <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
-          )}
+          {/* BottomNav: redesign para flag users, original para outros */}
+          {isAuthenticated &&
+            (isRedesignEnabled ? (
+              <Suspense fallback={null}>
+                <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
+              </Suspense>
+            ) : (
+              <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+            ))}
 
           {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
           {isAuthenticated && (
