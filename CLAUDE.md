@@ -15,7 +15,8 @@ Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 
 **Dashboard Perf P4:** Slim select DashboardProvider + getUserId cache com promise coalescence (13 → 1 auth roundtrip) + calculateStreaks otimizado + Zod validation em todos read methods ✅
 **Chatbot IA F8.1 (Sprint 8.3 + 8.3.1):** Groq API + contextBuilder + safetyGuard + Framer Motion UI + hallucination fixes (active_ingredient grounding, temperature 0.2) ✅
 **Redesign Wave 4 (2026-03-25):** Navigation Shell — BottomNavRedesign (mobile) + Sidebar (desktop) + App.jsx integration + Page transitions (Commit b02c0b7) ✅
-**Proxima:** Wave 5 — Motion Language + Wave 6 — Dashboard Redesign (roadmap em `plans/redesign/`)
+**Redesign Wave 5 (2026-03-25):** Motion Language — motionConstants.js (6 archetypes) + CSS keyframes + useMotion hook + AI review cycle (staticFallback bug fix + useMemo perf optimization) (Commit 4e6b312) ✅
+**Proxima:** Wave 6 — Dashboard Redesign (roadmap em `plans/redesign/`)
 
 ---
 
