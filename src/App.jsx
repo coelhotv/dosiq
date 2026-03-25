@@ -21,6 +21,7 @@ const HealthHistory = lazy(() => import('./views/HealthHistory'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
+const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -225,19 +226,23 @@ function AppInner() {
           </Suspense>
         )
       case 'dashboard':
-      default:
-        return (
-          <Dashboard
-            onNavigate={(view, params) => {
-              if (view === 'stock' && params?.medicineId) {
-                setInitialStockParams({ medicineId: params.medicineId })
-              } else if (view === 'protocols' && params?.medicineId) {
-                setInitialProtocolParams({ medicineId: params.medicineId })
-              }
-              setCurrentView(view)
-            }}
-          />
+      default: {
+        const dashboardNavigate = (view, params) => {
+          if (view === 'stock' && params?.medicineId) {
+            setInitialStockParams({ medicineId: params.medicineId })
+          } else if (view === 'protocols' && params?.medicineId) {
+            setInitialProtocolParams({ medicineId: params.medicineId })
+          }
+          setCurrentView(view)
+        }
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <DashboardRedesign onNavigate={dashboardNavigate} />
+          </Suspense>
+        ) : (
+          <Dashboard onNavigate={dashboardNavigate} />
         )
+      }
     }
   }
 
