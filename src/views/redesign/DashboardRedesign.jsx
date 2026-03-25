@@ -31,20 +31,6 @@ export default function DashboardRedesign({ onNavigate }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [prefillData, setPrefillData] = useState(null)
 
-  // ── Carregar nome do usuário ──
-  useEffect(() => {
-    getCurrentUser()
-      .then((user) => {
-        if (user?.user_metadata?.full_name) {
-          setUserName(user.user_metadata.full_name.split(' ')[0])
-        } else if (user?.email) {
-          setUserName(user.email.split('@')[0])
-        }
-        setIsLoading(false)
-      })
-      .catch(() => setIsLoading(false))
-  }, [])
-
   // ── Computadas ──
   const allDoses = useMemo(() => [
     ...(zones.late    || []),
@@ -65,6 +51,20 @@ export default function DashboardRedesign({ onNavigate }) {
       (item) => item.stockStatus === 'critical' || item.stockStatus === 'low'
     )
   }, [stockSummary])
+
+  // ── Carregar nome do usuário ──
+  useEffect(() => {
+    getCurrentUser()
+      .then((user) => {
+        if (user?.user_metadata?.full_name) {
+          setUserName(user.user_metadata.full_name.split(' ')[0])
+        } else if (user?.email) {
+          setUserName(user.email.split('@')[0])
+        }
+        setIsLoading(false)
+      })
+      .catch(() => setIsLoading(false))
+  }, [])
 
   // ── Handlers ──
   const handleRegisterDose = (dose) => {
