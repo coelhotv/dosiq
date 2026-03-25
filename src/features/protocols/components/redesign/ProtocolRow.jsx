@@ -8,14 +8,24 @@ import AdherenceBar7d from './AdherenceBar7d'
 import StockPill from './StockPill'
 import TitrationBadge from './TitrationBadge'
 
-export default function ProtocolRow({ item, isComplex, expanded, onToggleExpand }) {
+export default function ProtocolRow({ item, isComplex, expanded, onToggleExpand, onEdit }) {
   const canExpand = isComplex && (item.hasTitration || item.notes)
+
+  function handleClick() {
+    // Se em modo complexo e tem conteúdo para expandir, expande
+    if (canExpand) {
+      onToggleExpand()
+    } else if (onEdit) {
+      // Caso contrário, abre o modal de edição se callback fornecido
+      onEdit(item)
+    }
+  }
 
   return (
     <div className="protocol-row">
       <button
         className="protocol-row__main"
-        onClick={canExpand ? onToggleExpand : undefined}
+        onClick={handleClick}
         aria-expanded={canExpand ? expanded : undefined}
         style={{ minHeight: '3.5rem' }}
       >

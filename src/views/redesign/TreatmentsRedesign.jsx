@@ -21,16 +21,22 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
 
   // Data + context
   const { isComplex } = useComplexityMode()
-  const { activeItems, pausedItems, finishedItems, groups, loading, error, refetch } =
+  const { activeItems, pausedItems, finishedItems, activeGroups, pausedGroups, finishedGroups, loading, error, refetch } =
     useTreatmentList()
 
-  // Memos — item list por tab
+  // Memos — item list e groups por tab
   const tabItems = {
     ativos: activeItems,
     pausados: pausedItems,
     finalizados: finishedItems,
   }
+  const tabGroups = {
+    ativos: activeGroups,
+    pausados: pausedGroups,
+    finalizados: finishedGroups,
+  }
   const currentItems = tabItems[activeTab] || []
+  const currentGroups = tabGroups[activeTab] || []
 
   // Handlers
   function handleOpenWizard(medicine) {
@@ -79,10 +85,12 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
       {/* Content — bifurca por persona */}
       {isComplex ? (
         <TreatmentsComplex
-          groups={activeTab === 'ativos' ? groups : []}
+          key={activeTab}
+          groups={currentGroups}
+          onEdit={handleOpenWizard}
         />
       ) : (
-        <TreatmentsSimple items={currentItems} />
+        <TreatmentsSimple key={activeTab} items={currentItems} onEdit={handleOpenWizard} />
       )}
 
       {/* TreatmentWizard modal */}

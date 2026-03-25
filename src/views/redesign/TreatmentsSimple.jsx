@@ -8,7 +8,7 @@ import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
 import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
 
-export default function TreatmentsSimple({ items }) {
+export default function TreatmentsSimple({ items, onEdit }) {
   const { cascade } = useMotion()
   const [expanded, setExpanded] = useState(null)
 
@@ -34,6 +34,7 @@ export default function TreatmentsSimple({ items }) {
             isComplex={false}
             expanded={expanded === item.id}
             onToggleExpand={() => setExpanded(prev => (prev === item.id ? null : item.id))}
+            onEdit={onEdit}
           />
         </motion.li>
       ))}

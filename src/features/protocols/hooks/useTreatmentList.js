@@ -189,10 +189,10 @@ export function useTreatmentList() {
   const pausedItems = useMemo(() => items.filter(i => i.tabStatus === 'pausado'), [items])
   const finishedItems = useMemo(() => items.filter(i => i.tabStatus === 'finalizado'), [items])
 
-  // Grupos para modo complexo (apenas itens ativos)
-  const groups = useMemo(() => {
+  // Helper para computar grupos de qualquer lista de itens
+  const computeGroups = (itemList) => {
     const map = new Map()
-    for (const item of activeItems) {
+    for (const item of itemList) {
       if (!map.has(item.groupKey)) {
         map.set(item.groupKey, {
           groupKey: item.groupKey,
@@ -208,14 +208,21 @@ export function useTreatmentList() {
       if (item.stockStatus === 'critical' || item.stockStatus === 'low') g.hasAlert = true
     }
     return Array.from(map.values())
-  }, [activeItems])
+  }
+
+  // Grupos para modo complexo (por tab)
+  const activeGroups = useMemo(() => computeGroups(activeItems), [activeItems])
+  const pausedGroups = useMemo(() => computeGroups(pausedItems), [pausedItems])
+  const finishedGroups = useMemo(() => computeGroups(finishedItems), [finishedItems])
 
   return {
     items,
     activeItems,
     pausedItems,
     finishedItems,
-    groups,
+    activeGroups,
+    pausedGroups,
+    finishedGroups,
     loading,
     error,
     refetch: fetchAll,

@@ -9,7 +9,7 @@ import { useMotion } from '@shared/hooks/useMotion'
 import TreatmentPlanHeader from '@protocols/components/redesign/TreatmentPlanHeader'
 import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
 
-export default function TreatmentsComplex({ groups }) {
+export default function TreatmentsComplex({ groups, onEdit }) {
   const { cascade } = useMotion()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const [expandedRow, setExpandedRow] = useState(null)
@@ -57,6 +57,7 @@ export default function TreatmentsComplex({ groups }) {
                     onToggleExpand={() =>
                       setExpandedRow(prev => (prev === item.id ? null : item.id))
                     }
+                    onEdit={onEdit}
                   />
                 ))}
               </div>
