@@ -248,3 +248,22 @@
 .safe-area-top {
   padding-top: env(safe-area-inset-top, 0);
 }
+
+/* ============================================
+   CRONOGRAMA DOSES — Responsive dose list
+   Mobile: stacked column
+   Desktop: 2-column grid
+   ============================================ */
+.cronograma-doses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .cronograma-doses {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
