@@ -108,6 +108,33 @@ export default function DashboardRedesign({ onNavigate }) {
     [refresh]
   )
 
+  // Registra múltiplas doses em batch (PriorityDoseCard com 2+ doses)
+  const handleRegisterDosesAll = useCallback(
+    async (doses) => {
+      if (!doses || doses.length === 0) return
+      try {
+        for (const dose of doses) {
+          await logService.create({
+            medicine_id: dose.medicineId,
+            protocol_id: dose.protocolId,
+            quantity_taken: dose.dosagePerIntake,
+            taken_at: new Date().toISOString(),
+          })
+        }
+        analyticsService.track('doses_registered_batch', {
+          timestamp: Date.now(),
+          method: 'priority-card',
+          count: doses.length,
+        })
+        refresh()
+      } catch (err) {
+        console.error('Erro ao registrar doses:', err)
+        alert('Erro ao registrar doses. Tente novamente.')
+      }
+    },
+    [refresh]
+  )
+
   // ── Loading state ──
   if (isLoading || contextLoading) {
     return (
@@ -223,6 +250,7 @@ export default function DashboardRedesign({ onNavigate }) {
                     dose.dosagePerIntake
                   )
                 }
+                onRegisterAll={handleRegisterDosesAll}
                 variant={complexityMode === 'simple' ? 'simple' : 'priority'}
               />
             </div>
