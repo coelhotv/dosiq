@@ -155,16 +155,7 @@ function AppInner() {
           </Suspense>
         )
       case 'protocols':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <TreatmentsRedesign
-              onNavigateToProtocol={(item) => {
-                setCurrentView('protocols')
-                // TODO: Passar item.id se a view original aceitar selectedProtocolId prop
-              }}
-            />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Protocols
               initialParams={initialProtocolParams}
@@ -174,7 +165,15 @@ function AppInner() {
           </Suspense>
         )
       case 'treatment':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <TreatmentsRedesign
+              onNavigateToProtocol={(item) => {
+                setCurrentView('treatment')
+              }}
+            />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Treatment
               onNavigate={(view, params) => {
