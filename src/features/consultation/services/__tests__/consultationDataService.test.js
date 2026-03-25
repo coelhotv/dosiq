@@ -16,9 +16,11 @@ const mocks = vi.hoisted(() => ({
   mockEmergencyCard: null,
   mockAdherenceStats: {
     score: 85,
+    taken: 27,
     takenAnytime: 28,
     expected: 30,
     rates: { punctuality: 90 },
+    currentStreak: 6,
   },
   mockTitrationData: {
     currentStep: 1,
@@ -89,9 +91,11 @@ describe('consultationDataService', () => {
     mocks.mockEmergencyCard = null
     mocks.mockAdherenceStats = {
       score: 85,
+      taken: 27,
       takenAnytime: 28,
       expected: 30,
       rates: { punctuality: 90 },
+      currentStreak: 6,
     }
     mocks.mockTitrationData = {
       currentStep: 1,
@@ -231,6 +235,14 @@ describe('consultationDataService', () => {
 
       expect(result.patientInfo.name).toBe('Maria Souza')
       expect(result.patientInfo.age).toBe(32)
+    })
+
+    it('deve usar o handle do email quando o nome nao existe', () => {
+      const dashboardData = createMockDashboardData()
+      const result = getConsultationData(dashboardData, '', 32, 'joao.silva@email.com')
+
+      expect(result.patientInfo.name).toBe('Joao Silva')
+      expect(result.patientInfo.handle).toBe('joao.silva')
     })
 
     it('deve extrair medicamentos ativos corretamente', () => {
@@ -398,16 +410,19 @@ describe('consultationDataService', () => {
 
       expect(result.adherenceSummary.last30d).toMatchObject({
         score: 85,
-        taken: 28,
+        taken: 27,
         expected: 30,
-        punctuality: 90,
+        punctuality: 85,
+        currentStreak: 6,
       })
       expect(result.adherenceSummary.last90d).toMatchObject({
         score: 85,
-        taken: 28,
+        taken: 27,
         expected: 30,
-        punctuality: 90,
+        punctuality: 85,
+        currentStreak: 6,
       })
+      expect(result.adherenceSummary.currentStreak).toBe(6)
     })
 
     it('deve incluir timestamp de geração', () => {
@@ -496,12 +511,14 @@ describe('consultationDataService', () => {
         taken: 0,
         expected: 0,
         punctuality: 0,
+        currentStreak: 0,
       })
       expect(result.adherenceSummary.last90d).toEqual({
         score: 0,
         taken: 0,
         expected: 0,
         punctuality: 0,
+        currentStreak: 0,
       })
     })
 

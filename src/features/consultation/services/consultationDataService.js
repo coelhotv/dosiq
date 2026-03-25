@@ -9,6 +9,7 @@
 
 import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionService'
 import { emergencyCardService } from '@emergency/services/emergencyCardService'
+import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateAdherenceStats } from '@utils/adherenceLogic'
 import { calculateTitrationData } from '@utils/titrationUtils'
 
@@ -25,14 +26,15 @@ import { calculateTitrationData } from '@utils/titrationUtils'
  * @param {number} [patientAge] - Idade do paciente (opcional)
  * @returns {Object} Objeto consolidado com todos os dados clínicos
  */
-export function getConsultationData(dashboardData, patientName = '', patientAge = null) {
-  const { medicines, protocols, logs, stockSummary, stats: _stats } = dashboardData
+export function getConsultationData(dashboardData, patientName = '', patientAge = null, patientEmail = '') {
+  const { medicines, protocols, logs, stockSummary } = dashboardData
 
   // 1. Informações do paciente + cartão de emergência (offline, do localStorage)
   const emergencyCard = emergencyCardService.getOfflineCard()
 
   const patientInfo = {
-    name: patientName,
+    name: formatPatientDisplayName(patientName, patientEmail),
+    handle: extractEmailHandle(patientEmail) || null,
     age: patientAge,
     emergencyCard: emergencyCard || null,
   }
@@ -162,8 +164,9 @@ function _calculateDosageInfo(protocols, dosagePerPill) {
 function _calculateAdherenceSummary(logs, protocols) {
   if (!logs || !protocols) {
     return {
-      last30d: { score: 0, taken: 0, expected: 0 },
-      last90d: { score: 0, taken: 0, expected: 0 },
+      last30d: { score: 0, taken: 0, expected: 0, punctuality: 0, currentStreak: 0 },
+      last90d: { score: 0, taken: 0, expected: 0, punctuality: 0, currentStreak: 0 },
+      currentStreak: 0,
     }
   }
 
@@ -181,16 +184,19 @@ function _calculateAdherenceSummary(logs, protocols) {
   return {
     last30d: {
       score: stats30d.score || 0,
-      taken: stats30d.takenAnytime || 0,
+      taken: stats30d.taken || 0,
       expected: Math.round(stats30d.expected) || 0,
-      punctuality: stats30d.rates?.punctuality || 0,
+      punctuality: stats30d.score || 0,
+      currentStreak: stats30d.currentStreak || 0,
     },
     last90d: {
       score: stats90d.score || 0,
-      taken: stats90d.takenAnytime || 0,
+      taken: stats90d.taken || 0,
       expected: Math.round(stats90d.expected) || 0,
-      punctuality: stats90d.rates?.punctuality || 0,
+      punctuality: stats90d.score || 0,
+      currentStreak: stats90d.currentStreak || 0,
     },
+    currentStreak: stats30d.currentStreak || 0,
   }
 }
 
