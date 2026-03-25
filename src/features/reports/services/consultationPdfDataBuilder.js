@@ -5,6 +5,7 @@
  */
 
 import { addDays, formatLocalDate, parseLocalDate } from '@utils/dateUtils.js'
+import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
 
 /**
@@ -44,26 +45,6 @@ function summarizeTrend(trend = [], fallbackCurrentStreak = 0) {
     punctuality: score,
     currentStreak: fallbackCurrentStreak,
   }
-}
-
-function extractEmailHandle(email) {
-  if (!email || typeof email !== 'string') return ''
-  const [handle] = email.split('@')
-  return handle?.trim() || ''
-}
-
-function formatPatientDisplayName(patientName, patientEmail) {
-  const trimmedName = typeof patientName === 'string' ? patientName.trim() : ''
-  if (trimmedName) return trimmedName
-
-  const handle = extractEmailHandle(patientEmail)
-  if (!handle) return 'Paciente'
-
-  return handle
-    .split(/[._-]+/g)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
 }
 
 /**

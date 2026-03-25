@@ -9,28 +9,9 @@
 
 import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionService'
 import { emergencyCardService } from '@emergency/services/emergencyCardService'
+import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateAdherenceStats } from '@utils/adherenceLogic'
 import { calculateTitrationData } from '@utils/titrationUtils'
-
-function extractEmailHandle(email) {
-  if (!email || typeof email !== 'string') return ''
-  const [handle] = email.split('@')
-  return handle?.trim() || ''
-}
-
-function formatPatientDisplayName(patientName, patientEmail) {
-  const trimmedName = typeof patientName === 'string' ? patientName.trim() : ''
-  if (trimmedName) return trimmedName
-
-  const handle = extractEmailHandle(patientEmail)
-  if (!handle) return 'Paciente'
-
-  return handle
-    .split(/[._-]+/g)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-}
 
 /**
  * Agrega todos os dados clínicos para o Modo Consulta Médica
@@ -205,20 +186,14 @@ function _calculateAdherenceSummary(logs, protocols) {
       score: stats30d.score || 0,
       taken: stats30d.taken || 0,
       expected: Math.round(stats30d.expected) || 0,
-      punctuality:
-        stats30d.expected > 0
-          ? Math.round(((stats30d.taken || 0) / stats30d.expected) * 100)
-          : 0,
+      punctuality: stats30d.score || 0,
       currentStreak: stats30d.currentStreak || 0,
     },
     last90d: {
       score: stats90d.score || 0,
       taken: stats90d.taken || 0,
       expected: Math.round(stats90d.expected) || 0,
-      punctuality:
-        stats90d.expected > 0
-          ? Math.round(((stats90d.taken || 0) / stats90d.expected) * 100)
-          : 0,
+      punctuality: stats90d.score || 0,
       currentStreak: stats90d.currentStreak || 0,
     },
     currentStreak: stats30d.currentStreak || 0,

@@ -191,7 +191,7 @@
 | ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
 |----|-------------|-------------|------------|----------|
 | AP-P18 | Hardcode PDF header/card geometry and render long labels with fixed single-line `text()` calls | Title/patient overlap, clipped headers, and layout churn every time content length changes | Centralize layout constants and use `splitTextToSize()` or explicit width limits for any header/title/patient block | R-146 |
-| AP-P19 | Build daily adherence totals from raw array lengths or include future `scheduledDoses` in the denominator | Daily rows show inflated totals like `360/360`, hiding real adherence and confusing clinicians | Sum dose quantities (`expectedQuantity` / `quantity_taken`) and only compare completed vs missed doses for the current day | R-147 |
+| AP-P19 | Reuse monthly totals in each daily PDF row or mix pill-quantity math into a table labeled as daily dose adherence | Daily rows show inflated totals like `360/360` or mismatch the clinical meaning of `Tomadas` vs `Esperadas`, confusing patients and clinicians | For the PDF daily table, compare expected vs completed dose events for that specific day only, excluding future slots; if quantity-based adherence is needed, expose it in a separate metric with explicit labeling | R-147 |
 | AP-P20 | Show `"Paciente"` even when the user email already provides a safe local-part fallback | The consultation PDF loses clinical usefulness and makes it harder to distinguish which patient was exported | Derive the display label from the email handle, then fall back to `"Paciente"` only if no handle exists | R-148 |
 
 ---

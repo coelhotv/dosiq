@@ -412,14 +412,14 @@ describe('consultationDataService', () => {
         score: 85,
         taken: 27,
         expected: 30,
-        punctuality: 90,
+        punctuality: 85,
         currentStreak: 6,
       })
       expect(result.adherenceSummary.last90d).toMatchObject({
         score: 85,
         taken: 27,
         expected: 30,
-        punctuality: 90,
+        punctuality: 85,
         currentStreak: 6,
       })
       expect(result.adherenceSummary.currentStreak).toBe(6)
