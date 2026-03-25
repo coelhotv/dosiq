@@ -17,7 +17,8 @@
 | W4 | Navigation Shell (BottomNav + Sidebar) | `WAVE_4_NAVIGATION_SHELL.md` | ✅ MERGED #422 (2026-03-25) | main |
 | W5 | Motion Language | `WAVE_5_MOTION_LANGUAGE.md` | ✅ MERGED #424 (2026-03-25) | main |
 | W6 | Dashboard Redesign | `WAVE_6_DASHBOARD_REDESIGN.md` | ✅ MERGED #425 (2026-03-25) | main |
-| W7 | Tratamentos Redesign | — | ⏳ PENDENTE SPEC | — |
+| W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ⏳ PENDENTE EXECUÇÃO | — |
+| W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ⏳ PENDENTE EXECUÇÃO | — |
 | W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
@@ -1867,15 +1868,31 @@ Card gradient (secondary → secondary-container) que destaca a próxima dose ur
 - Lista de meds do horário
 - CTA: "Confirmar Agora" (bg white, text secondary)
 
-### Critério de conclusão Wave 6
+### Critério de conclusão Wave 6 + 6.5
 
 - [ ] Dashboard mobile: ring gauge → greeting → priority card → cronograma → stock alert
-- [ ] Dashboard desktop: 2-col grid (ring+priority left, cronograma right)
+- [ ] Dashboard desktop: 2-col grid (ring+priority left, cronograma right) ← **W6.5.3**
 - [ ] RingGauge: verde/azul sanctuary, não mais neon
-- [ ] Cronograma agrupado por período (Manhã/Tarde/Noite)
-- [ ] Stock alert inline no bottom do dashboard
-- [ ] Touch targets ≥ 56px em todos os botões
+- [ ] Label "ADESÃO DIÁRIA" visível acima do ring ← **W6.5.4**
+- [ ] Mensagem motivacional contextual abaixo da saudação (4 faixas por score) ← **W6.5.4**
+- [ ] Cronograma agrupado por período: **Madrugada/Manhã/Tarde/Noite** (4 períodos) ← **W6.5.5**
+- [ ] Cronograma: animação Cascade Reveal nas seções (Framer Motion, prefers-reduced-motion respeitado) ← **W6.5.5**
+- [ ] PriorityDoseCard adaptado por persona: simples → card branco + "Tomar Agora" verde; complexo → card azul + "Confirmar Agora" ← **W6.5.4**
+- [ ] Stock alert: modo simples → fundo da coluna direita; modo complexo → topo do dashboard (acima do grid) ← **W6.5.4**
+- [ ] Stock alert inline com progress bar
+- [ ] Touch targets ≥ 56px em todos os botões ← **W6.5.2**
 - [ ] Page transition com Soft Handoff
+
+### Melhorias identificadas nas referências — reservadas para W7
+
+Durante a revisão dos mocks de referência (`simple-hoje`, `complex-hoje`) e do PRODUCT_STRATEGY, foram identificados os seguintes elementos **não implementados** na W6/W6.5 por requererem mudanças de schema ou backend. Devem ser considerados na spec da W7:
+
+| Feature | UX Goal | Bloqueador atual |
+|---------|---------|-----------------|
+| Botão "ADIAR" por dose | Usuário complexo adia a dose sem fechar o app | Backend snooze endpoint + campo no DoseItem |
+| Ícone circular por tipo de medicamento | Escaneabilidade visual — Dona Maria identifica remédio pelo ícone | Campo `medicine_type` não exposto pelo `useDoseZones` |
+| Instrução de administração ("Após o café", "Em jejum") | Contexto clínico inline na dose, sem abrir o protocolo | Campo `instructions` no schema de protocolo (não existe) |
+| Streak proeminente no canto superior direito (desktop) | Reforço positivo para engajamento contínuo de Carlos | Depende de layout de header (responsabilidade do Navigation Shell W4) |
 
 ---
 

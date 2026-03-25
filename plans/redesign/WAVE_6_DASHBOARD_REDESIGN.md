@@ -6,6 +6,13 @@
 **Estimativa:** 6 sprints sequenciais ✅ (S6.1-S6.6 concluídos em single delivery)
 **Risco:** ALTO — Dashboard é o coração da app. Compartilha lógica com Dashboard.jsx original. ✅ **MITIGADO**
 
+### ⚠️ Débito Técnico — Corrigido em W6.5
+
+**Problema identificado (2026-03-25):** `DashboardRedesign.jsx` foi entregue sem o layout desktop 2 colunas (critério da master spec §1873). O botão "TOMAR" em `CronogramaPeriodo.jsx` foi entregue com `minHeight: 36px` (critério exigia ≥56px).
+**Correção:** `plans/redesign/WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` — branch `fix/redesign/wave-6-desktop-layout`.
+
+---
+
 ### 📦 Entrega Completa
 
 **Sprints 6.1-6.6 — Dashboard Redesign (Single Delivery)** ✅
