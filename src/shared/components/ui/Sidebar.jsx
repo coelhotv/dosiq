@@ -17,6 +17,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
       </div>
 
       <nav className="sidebar-nav">
+        {/* eslint-disable-next-line no-unused-vars */}
         {NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
