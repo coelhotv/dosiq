@@ -536,3 +536,69 @@
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
+
+/* ============================================
+   SPRINT 5.1-5.3 — MOTION LANGUAGE — Sanctuary Therapeutic
+   Animações CSS para fallback e estados simples.
+   Todas scoped em [data-redesign="true"].
+   ============================================ */
+
+/* Keyframes globais (sem scoping — são apenas definições) */
+@keyframes fadeInUp-sanctuary {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fillWidth-sanctuary {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes pulse-sanctuary {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+@keyframes scaleIn-sanctuary {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Classe utilitária: cascade reveal (CSS fallback sem Framer Motion) */
+[data-redesign="true"] .motion-fade-in {
+  animation: fadeInUp-sanctuary 300ms ease-out forwards;
+}
+
+/* Classe utilitária: living fill para barras (CSS fallback) */
+[data-redesign="true"] .motion-fill-bar {
+  animation: fillWidth-sanctuary 1000ms 500ms ease-out both;
+  transform-origin: left;
+}
+
+/* Pulse para estoque crítico — atualizado para cores sanctuary */
+[data-redesign="true"] .pulse-critical {
+  animation: pulse-sanctuary 2s ease-in-out infinite;
+}
+
+/* Scale in — para modais, tooltips */
+[data-redesign="true"] .motion-scale-in {
+  animation: scaleIn-sanctuary 200ms ease-out forwards;
+}
+
+/* Respeitar prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  [data-redesign="true"] .motion-fade-in,
+  [data-redesign="true"] .motion-fill-bar,
+  [data-redesign="true"] .pulse-critical,
+  [data-redesign="true"] .motion-scale-in {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}
