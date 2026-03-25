@@ -117,8 +117,8 @@ export default function DashboardRedesign({ onNavigate }) {
     )
   }
 
-  const adherenceScore = stats?.adherenceScore ?? 0
-  const streak = stats?.streak ?? 0
+  const adherenceScore = stats?.score ?? 0
+  const streak = stats?.currentStreak ?? 0
   const today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long',
   })
