@@ -126,6 +126,7 @@
 | AP-P09 | N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))` | N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100ms+ blocking (safari trace M7). With `select('*')` each = ~500 bytes × 10 = 5KB waste per call | **Batch query:** 1 `SELECT key` for all items, then `Map.set(key, count)` client-side O(M) grouping. Eliminates round-trip amplification | R-118 |
 | AP-P10 | `select('*')` when only need count | All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows × ~500 bytes/row = 1.35MB waste per query | Use `select('*', { count: 'exact', head: true })` — HEAD request, zero data bytes, server returns only count | R-119 |
 | AP-P11 | `useCallback` with state in deps of a ref callback | Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` with new observer. 16ms window with two observers. Leads to duplicate event fires or race conditions | Ref callbacks **ALWAYS deps `[]`**. Use `useRef` for stateful flags that would need closure. Return value of ref callback is ignored (only useEffect cleanup runs) | R-120 |
+| AP-P21 | Using `takenAnytime` as the numerator for clinical adherence summaries | A protocol with multiple time slots per day counts the same day several times, inflating `taken/expected` (e.g., `360/360` or `466/466` from a real 30d period) | Use the actual dose-count metric (`taken`) for consultation/PDF summaries; reserve `takenAnytime` for auxiliary heuristics only | R-026 |
 
 ## Database & Aggregation Anti-Patterns (Sprint M3 — 2026-03-13)
 
@@ -190,6 +191,8 @@
 | ID | Anti-Pattern | Consequence | Prevention | Rule Ref |
 |----|-------------|-------------|------------|----------|
 | AP-P18 | Hardcode PDF header/card geometry and render long labels with fixed single-line `text()` calls | Title/patient overlap, clipped headers, and layout churn every time content length changes | Centralize layout constants and use `splitTextToSize()` or explicit width limits for any header/title/patient block | R-146 |
+| AP-P19 | Reuse monthly totals in each daily PDF row or mix pill-quantity math into a table labeled as daily dose adherence | Daily rows show inflated totals like `360/360` or mismatch the clinical meaning of `Tomadas` vs `Esperadas`, confusing patients and clinicians | For the PDF daily table, compare expected vs completed dose events for that specific day only, excluding future slots; if quantity-based adherence is needed, expose it in a separate metric with explicit labeling | R-147 |
+| AP-P20 | Show `"Paciente"` even when the user email already provides a safe local-part fallback | The consultation PDF loses clinical usefulness and makes it harder to distinguish which patient was exported | Derive the display label from the email handle, then fall back to `"Paciente"` only if no handle exists | R-148 |
 
 ---
 

@@ -84,6 +84,18 @@ const FREQUENCIES = ['daily', 'weekly']
 **Rule:** Always follow Validate -> Record -> Decrement order for dose registration. Validate stock first, then create log, then decrease stock.
 **Source:** journal/archive
 
+### R-024: Daily PDF Adherence Must Count Dose Events [HIGH]
+**Rule:** In the clinical PDF daily table, count completed vs expected dose events for each day and exclude future `scheduledDoses`. Do not reuse monthly aggregate totals per row, and do not switch this table to pill-quantity math unless the UI and labels are redesigned for that unit.
+**Source:** PR #422 review follow-up (2026-03-25)
+
+### R-025: Fallback Patient Identity From Email Handle [MEDIUM]
+**Rule:** If the profile has no display name, derive the PDF patient label from the email local-part before falling back to `"Paciente"`. This keeps consultation PDFs clinically useful even before the database has a dedicated name field.
+**Source:** PR #421 PDF consultation patch (2026-03-24)
+
+### R-026: Consultation Summary Must Count Actual Doses Taken [HIGH]
+**Rule:** In consultation and PDF summaries, use the dose-count metric (`taken`) as the numerator for `taken/expected`. Keep `takenAnytime` only for secondary insights, because it counts the presence of a log per protocol-day and can inflate totals when a protocol has multiple time slots.
+**Source:** PDF consultation patch (2026-03-24)
+
 ---
 
 ## Telegram Bot

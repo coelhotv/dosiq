@@ -46,6 +46,7 @@ target/
 # Testing
 coverage/
 screenshots/
+tmp/
 
 # Run outputs
 run/

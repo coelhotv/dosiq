@@ -5,6 +5,7 @@
  */
 
 import { addDays, formatLocalDate, parseLocalDate } from '@utils/dateUtils.js'
+import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
 
 /**
@@ -16,6 +17,34 @@ import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogi
 function safeText(value, fallback = '-') {
   if (value === null || value === undefined || value === '') return fallback
   return String(value)
+}
+
+function getTrendLabel(days) {
+  if (days >= 90) return '90 dias'
+  if (days >= 30) return '30 dias'
+  if (days >= 7) return '7 dias'
+  return `${days} dias`
+}
+
+function summarizeTrend(trend = [], fallbackCurrentStreak = 0) {
+  const totals = trend.reduce(
+    (accumulator, row) => ({
+      taken: accumulator.taken + Number(row.taken ?? 0),
+      expected: accumulator.expected + Number(row.expected ?? 0),
+    }),
+    { taken: 0, expected: 0 }
+  )
+
+  const score =
+    totals.expected > 0 ? Math.round((totals.taken / totals.expected) * 100) : 0
+
+  return {
+    score,
+    taken: totals.taken,
+    expected: totals.expected,
+    punctuality: score,
+    currentStreak: fallbackCurrentStreak,
+  }
 }
 
 /**
@@ -261,20 +290,52 @@ function buildTitrationRows(activeTitrations = [], protocols = [], medicines = [
 
 /**
  * Gera uma trilha sintetica de adesao dos ultimos dias.
+ * @param {Array<Object>} dailyAdherence - Série diária já consolidada pelo dashboard.
  * @param {Array<Object>} logs - Logs de dose.
  * @param {Array<Object>} protocols - Protocolos.
  * @param {number} days - Numero de dias a incluir.
  * @returns {Array<Object>} Rows com a adesao diaria.
  */
-function buildAdherenceTrend(logs = [], protocols = [], days = 7) {
+function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], days = 7) {
+  if (Array.isArray(dailyAdherence) && dailyAdherence.length > 0) {
+    return dailyAdherence.slice(-days).map((row) => {
+      const taken = Number(row.taken ?? 0)
+      const expected = Number(row.expected ?? 0)
+      const score = expected > 0 ? Math.round((taken / expected) * 100) : null
+
+      return {
+        date: row.date,
+        label: row.date
+          ? parseLocalDate(row.date).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+            })
+          : row.label || '',
+        taken,
+        expected,
+        score,
+        status:
+          expected === 0
+            ? 'Sem doses'
+            : score >= 90
+              ? 'Excelente'
+              : score >= 70
+                ? 'Atenção'
+                : 'Critico',
+      }
+    })
+  }
+
+  const activeProtocols = protocols.filter((protocol) => protocol?.active !== false)
   const trend = []
 
   for (let offset = days - 1; offset >= 0; offset -= 1) {
     const date = addDays(new Date(), -offset)
     const dateStr = formatLocalDate(date)
-    const result = calculateDosesByDate(dateStr, logs, protocols)
-    const expected = result.takenDoses.length + result.missedDoses.length + result.scheduledDoses.length
+    const result = calculateDosesByDate(dateStr, logs, activeProtocols)
     const taken = result.takenDoses.length
+    const missed = result.missedDoses.length
+    const expected = taken + missed
     const score = expected > 0 ? Math.round((taken / expected) * 100) : null
 
     trend.push({
@@ -316,21 +377,34 @@ export function buildConsultationPdfData({
   period = '30d',
   generatedAt = new Date(),
   title = 'Meus Remedios - Consulta Medica',
+  patientEmail = '',
 } = {}) {
   const medicines = dashboardData.medicines || []
   const protocols = dashboardData.protocols || []
   const logs = dashboardData.logs || []
+  const dailyAdherence = dashboardData.dailyAdherence || []
   const stockSummary = dashboardData.stockSummary || []
   const patientInfo = consultationData?.patientInfo || {}
   const activeMedicines = consultationData?.activeMedicines || []
+  const periodDays = period === 'all' ? Math.max(dailyAdherence.length || 0, 90) : Math.max(parseInt(period, 10) || 7, 1)
   const activeTreatments = buildTreatmentRows(protocols, medicines)
   const stockRows = buildStockRows(stockSummary, protocols, medicines)
   const prescriptionRows = buildPrescriptionRows(consultationData?.prescriptionStatus || [], protocols, medicines)
   const titrationRows = buildTitrationRows(consultationData?.activeTitrations || [], protocols, medicines)
-  const adherenceTrend = buildAdherenceTrend(logs, protocols, 7)
+  const adherenceTrend = buildAdherenceTrend(dailyAdherence, logs, protocols, periodDays)
 
   const adherence30d = consultationData?.adherenceSummary?.last30d || { score: 0, taken: 0, expected: 0, punctuality: 0 }
   const adherence90d = consultationData?.adherenceSummary?.last90d || { score: 0, taken: 0, expected: 0, punctuality: 0 }
+  const selectedPeriodLabel = getTrendLabel(periodDays)
+  const selectedPeriodSummary =
+    periodDays === 30
+      ? adherence30d
+      : periodDays === 90
+        ? adherence90d
+        : summarizeTrend(
+            adherenceTrend,
+            consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0
+          )
 
   const criticalStockCount = stockRows.filter((item) => item.severity === 'critical').length
   const warningStockCount = stockRows.filter((item) => item.severity === 'warning').length
@@ -339,6 +413,17 @@ export function buildConsultationPdfData({
   const activeTitrationCount = titrationRows.length
 
   const summaryCards = [
+    {
+      label: `Adesao ${selectedPeriodLabel}`,
+      value: `${selectedPeriodSummary.score ?? 0}%`,
+      meta: `${selectedPeriodSummary.taken ?? 0}/${selectedPeriodSummary.expected ?? 0} doses`,
+      tone:
+        (selectedPeriodSummary.score ?? 0) >= 80
+          ? 'success'
+          : (selectedPeriodSummary.score ?? 0) >= 50
+            ? 'warning'
+            : 'danger',
+    },
     {
       label: 'Adesao 30d',
       value: `${adherence30d.score ?? 0}%`,
@@ -355,10 +440,14 @@ export function buildConsultationPdfData({
     },
     {
       label: 'Pontualidade',
-      value: `${adherence30d.punctuality ?? 0}%`,
-      meta: 'Janela de tolerancia',
+      value: `${selectedPeriodSummary.punctuality ?? 0}%`,
+      meta: `Janela de tolerancia | ${selectedPeriodLabel}`,
       tone:
-        (adherence30d.punctuality ?? 0) >= 80 ? 'success' : (adherence30d.punctuality ?? 0) >= 50 ? 'warning' : 'danger',
+        (selectedPeriodSummary.punctuality ?? 0) >= 80
+          ? 'success'
+          : (selectedPeriodSummary.punctuality ?? 0) >= 50
+            ? 'warning'
+            : 'danger',
     },
     {
       label: 'Tratamentos ativos',
@@ -369,13 +458,13 @@ export function buildConsultationPdfData({
     {
       label: 'Alertas criticos',
       value: String(criticalStockCount + expiredPrescriptionCount),
-      meta: `${warningStockCount} em atencao`,
+      meta: `${warningStockCount + expiringPrescriptionCount} em atencao`,
       tone: criticalStockCount + expiredPrescriptionCount > 0 ? 'danger' : 'success',
     },
     {
       label: 'Titulações',
       value: String(activeTitrationCount),
-      meta: `${expiringPrescriptionCount} vencendo`,
+      meta: `${titrationRows.filter((item) => item.isTransitionDue).length} pendentes`,
       tone: activeTitrationCount > 0 ? 'warning' : 'success',
     },
   ]
@@ -422,16 +511,23 @@ export function buildConsultationPdfData({
       minute: '2-digit',
     }),
     patient: {
-      name: safeText(patientInfo.name, 'Paciente'),
+      name: formatPatientDisplayName(patientInfo.name, patientEmail),
       age: patientInfo.age ?? null,
+      handle: extractEmailHandle(patientEmail) || null,
       emergencyCard: patientInfo.emergencyCard || null,
     },
     summaryCards,
     activeTreatments,
     adherence: {
+      selectedPeriod: {
+        ...selectedPeriodSummary,
+        label: selectedPeriodLabel,
+      },
       last30d: adherence30d,
       last90d: adherence90d,
-      trend7d: adherenceTrend,
+      trend: adherenceTrend,
+      trendLabel: selectedPeriodLabel,
+      currentStreak: consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0,
     },
     stockRows,
     prescriptionRows,

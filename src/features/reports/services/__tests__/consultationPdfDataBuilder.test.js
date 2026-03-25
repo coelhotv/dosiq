@@ -64,8 +64,9 @@ describe('consultationPdfDataBuilder', () => {
       },
     },
     adherenceSummary: {
-      last30d: { score: 82, taken: 24, expected: 30, punctuality: 90 },
-      last90d: { score: 76, taken: 72, expected: 90, punctuality: 85 },
+      last30d: { score: 82, taken: 24, expected: 30, punctuality: 90, currentStreak: 7 },
+      last90d: { score: 76, taken: 72, expected: 90, punctuality: 85, currentStreak: 7 },
+      currentStreak: 7,
     },
     stockAlerts: [
       { medicineId: 'med-1', medicineName: 'Losartana', severity: 'warning', daysRemaining: 1 },
@@ -97,6 +98,7 @@ describe('consultationPdfDataBuilder', () => {
     medicines,
     protocols,
     logs: [],
+    dailyAdherence: [],
     stockSummary: [
       {
         medicine: { id: 'med-1', name: 'Losartana' },
@@ -140,7 +142,8 @@ describe('consultationPdfDataBuilder', () => {
     expect(pdfData.title).toBe('Consulta Medica')
     expect(pdfData.period).toBe('30d')
     expect(pdfData.patient.name).toBe('Joao Silva')
-    expect(pdfData.summaryCards).toHaveLength(6)
+    expect(pdfData.patient.handle).toBeNull()
+    expect(pdfData.summaryCards).toHaveLength(7)
     expect(pdfData.activeTreatments).toHaveLength(2)
     expect(pdfData.activeTreatments[0]).toMatchObject({
       label: 'Ansiedade - Ansitec',
@@ -157,7 +160,109 @@ describe('consultationPdfDataBuilder', () => {
     })
     expect(pdfData.titrationRows).toHaveLength(1)
     expect(pdfData.attentionItems.length).toBeGreaterThan(0)
-    expect(pdfData.adherence.trend7d).toHaveLength(7)
+    expect(pdfData.adherence.trend).toHaveLength(30)
+    expect(pdfData.adherence.trendLabel).toBe('30 dias')
+    expect(pdfData.adherence.selectedPeriod).toMatchObject({
+      label: '30 dias',
+      score: 82,
+      taken: 24,
+      expected: 30,
+    })
+    expect(pdfData.summaryCards[0]).toMatchObject({
+      label: 'Adesao 30 dias',
+      value: '82%',
+      meta: '24/30 doses',
+    })
     expect(pdfData.clinicalNotes[0]).toContain('Penicilina')
+  })
+
+  it('prefere a serie diaria consolidada do dashboard quando disponivel', () => {
+    const dailyAdherence = [
+      { date: past, taken: 8, expected: 10, adherence: 80 },
+      { date: future, taken: 10, expected: 10, adherence: 100 },
+    ]
+
+    const pdfData = buildConsultationPdfData({
+      consultationData,
+      dashboardData: {
+        ...dashboardData,
+        dailyAdherence,
+      },
+      period: '7d',
+      generatedAt: new Date('2026-03-24T10:30:00'),
+      title: 'Consulta Medica',
+    })
+
+    expect(pdfData.adherence.trend.slice(-2)).toEqual([
+      expect.objectContaining({ taken: 8, expected: 10, score: 80 }),
+      expect.objectContaining({ taken: 10, expected: 10, score: 100 }),
+    ])
+    expect(pdfData.adherence.selectedPeriod).toMatchObject({
+      label: '7 dias',
+      score: 90,
+      taken: 18,
+      expected: 20,
+    })
+  })
+
+  it('usa o handle do email como fallback quando o nome nao existe', () => {
+    const pdfData = buildConsultationPdfData({
+      consultationData: {
+        ...consultationData,
+        patientInfo: {
+          ...consultationData.patientInfo,
+          name: '',
+        },
+      },
+      dashboardData,
+      period: '30d',
+      generatedAt: new Date('2026-03-24T10:30:00'),
+      title: 'Consulta Medica',
+      patientEmail: 'joao.silva@email.com',
+    })
+
+    expect(pdfData.patient.name).toBe('Joao Silva')
+    expect(pdfData.patient.handle).toBe('joao.silva')
+  })
+
+  it('conta a adesao diaria por evento de dose, nao por quantidade de comprimidos', () => {
+    const today = formatLocalDate(new Date())
+    const dailyProtocol = {
+      id: 'prot-3',
+      name: 'Dor',
+      medicine_id: 'med-1',
+      active: true,
+      dosage_per_intake: 2,
+      time_schedule: ['08:00'],
+      start_date: past,
+      end_date: future,
+    }
+
+    const pdfData = buildConsultationPdfData({
+      consultationData: {
+        ...consultationData,
+      },
+      dashboardData: {
+        ...dashboardData,
+        protocols: [dailyProtocol],
+        logs: [
+          {
+            id: 'log-1',
+            protocol_id: 'prot-3',
+            medicine_id: 'med-1',
+            taken_at: new Date(`${today}T08:10:00`).toISOString(),
+            quantity_taken: 2,
+          },
+        ],
+      },
+      period: '7d',
+      generatedAt: new Date('2026-03-24T10:30:00'),
+      title: 'Consulta Medica',
+    })
+
+    const todayRow = pdfData.adherence.trend[pdfData.adherence.trend.length - 1]
+    expect(todayRow.taken).toBe(1)
+    expect(todayRow.expected).toBe(1)
+    expect(todayRow.score).toBe(100)
   })
 })

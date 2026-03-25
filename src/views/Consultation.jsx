@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { getCurrentUser } from '@shared/utils/supabase'
+import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
 import ConsultationView from '@features/consultation/components/ConsultationView'
 import Loading from '@shared/components/ui/Loading'
@@ -23,7 +25,7 @@ export default function Consultation({ onBack }) {
   const [error, setError] = useState(null)
 
   // Obtém dados do contexto do Dashboard
-  const { medicines, protocols, logs, stockSummary, stats } = useDashboard()
+  const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
 
   const dashboardData = useMemo(
     () => ({
@@ -32,41 +34,60 @@ export default function Consultation({ onBack }) {
       logs,
       stockSummary,
       stats,
+      dailyAdherence,
     }),
-    [medicines, protocols, logs, stockSummary, stats]
+    [medicines, protocols, logs, stockSummary, stats, dailyAdherence]
   )
 
   // Agrega dados para o Modo Consulta
   useEffect(() => {
-    const loadConsultationData = () => {
+    let isMounted = true
+
+    const loadConsultationData = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
+        const user = await getCurrentUser()
+        const resolvedName = user?.user_metadata?.name || user?.user_metadata?.full_name || ''
+        const resolvedEmail = user?.email || ''
+
+        if (!isMounted) return
+
         // Verifica se temos dados suficientes
         if (!dashboardData.medicines || !dashboardData.protocols) {
-          setConsultationData(null)
-          setIsLoading(false)
+          if (isMounted) {
+            setConsultationData(null)
+            setIsLoading(false)
+          }
           return
         }
 
         // Agrega dados usando o service
         const data = getConsultationData(
           dashboardData,
-          '', // patientName - pode ser expandido no futuro
-          null // patientAge - pode ser expandido no futuro
+          resolvedName,
+          null,
+          resolvedEmail
         )
 
         setConsultationData(data)
       } catch (err) {
+        if (!isMounted) return
         console.error('Erro ao carregar dados de consulta:', err)
         setError('Não foi possível carregar os dados para consulta.')
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadConsultationData()
+
+    return () => {
+      isMounted = false
+    }
   }, [dashboardData])
 
   // Handler para gerar PDF
@@ -76,10 +97,15 @@ export default function Consultation({ onBack }) {
         timestamp: Date.now(),
       })
 
+      const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
+
       // Gera relatório de consulta usando o pipeline dedicado
       const pdfBlob = await generateConsultationPDF({
         consultationData,
-        dashboardData,
+        dashboardData: {
+          ...dashboardData,
+          dailyAdherence: resolvedDailyAdherence,
+        },
         period: '30d',
       })
 
@@ -105,10 +131,15 @@ export default function Consultation({ onBack }) {
         timestamp: Date.now(),
       })
 
+      const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
+
       // Gera PDF para compartilhamento
       const pdfBlob = await generateConsultationPDF({
         consultationData,
-        dashboardData,
+        dashboardData: {
+          ...dashboardData,
+          dailyAdherence: resolvedDailyAdherence,
+        },
         period: '30d',
       })
 

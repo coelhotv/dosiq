@@ -5,13 +5,95 @@
 
 /* Container principal */
 .report-generator {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.1));
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
-  border-radius: 16px;
-  padding: 24px;
-  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   width: 100%;
+  max-width: 560px;
+}
+
+.report-generator__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.report-generator__hero-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-generator__eyebrow {
+  margin: 0 0 6px;
+  color: var(--primary, #10b981);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.report-generator__hero-badge {
+  min-width: 92px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--primary-light, #eef2ff), rgba(16, 185, 129, 0.08));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  text-align: right;
+}
+
+.report-generator__hero-badge span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #666);
+  margin-bottom: 2px;
+}
+
+.report-generator__hero-badge strong {
+  display: block;
+  color: var(--text-primary, #333);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.report-generator__content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.report-generator__panel {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  background: var(--surface, rgba(255, 255, 255, 0.72));
+}
+
+.report-generator__panel--soft {
+  background: linear-gradient(180deg, var(--bg-secondary, #f8f9fa), rgba(255, 255, 255, 0.98));
+}
+
+.report-generator__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-generator__chip {
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.report-generator__helper {
+  margin: 10px 0 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 /* Header */
@@ -23,10 +105,11 @@
 }
 
 .report-generator__title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.35rem;
+  font-weight: 700;
   color: var(--text-primary, #333);
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .report-generator__close {
@@ -47,15 +130,15 @@
 
 /* Description */
 .report-generator__description {
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   color: var(--text-secondary, #666);
-  margin: 0 0 20px 0;
+  margin: 0;
   line-height: 1.5;
 }
 
 /* Form elements */
 .report-generator__form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .report-generator__label {
@@ -120,6 +203,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-top: 4px;
 }
 
 .report-generator__button {
@@ -199,6 +283,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
 }
 
 .report-generator__success-message {
@@ -268,14 +353,13 @@
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .report-generator {
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
     --text-primary: #f5f5f5;
     --text-secondary: #a3a3a3;
     --input-bg: rgba(255, 255, 255, 0.1);
     --input-border: rgba(255, 255, 255, 0.2);
     --hover-bg: rgba(255, 255, 255, 0.1);
     --border-color: rgba(255, 255, 255, 0.1);
+    --surface: rgba(255, 255, 255, 0.05);
   }
 
   .report-generator__select {
@@ -286,8 +370,21 @@
 /* Responsive */
 @media (max-width: 480px) {
   .report-generator {
-    padding: 16px;
-    border-radius: 12px;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .report-generator__hero {
+    flex-direction: column;
+  }
+
+  .report-generator__hero-badge {
+    align-self: flex-start;
+    text-align: left;
+  }
+
+  .report-generator__content {
+    grid-template-columns: 1fr;
   }
 
   .report-generator__title {
