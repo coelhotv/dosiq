@@ -25,7 +25,8 @@
 | W5 | Motion Language | `WAVE_5_MOTION_LANGUAGE.md` | ✅ MERGED #424 (2026-03-25) | main |
 | W6 | Dashboard Redesign | `WAVE_6_DASHBOARD_REDESIGN.md` | ✅ MERGED #425 (2026-03-25) | main |
 | W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ✅ MERGED #426 (2026-03-25) | main |
-| W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ⏳ PENDENTE EXECUÇÃO | — |
+| W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ✅ MERGED #431 (2026-03-25) | main |
+| W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ⏳ PENDENTE EXECUÇÃO | — |
 | W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
@@ -37,9 +38,9 @@
 - ✅ **W5:** motionConstants.js + useMotion hook + CSS keyframes + AI review cycle (PR #424)
 - ✅ **W6:** RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
 - ✅ **W6.5:** CSS Responsive Doses + CronogramaPeriodo + DashboardRedesign + PriorityDoseCard Variants (PR #426)
+- ✅ **W7:** Treatments Redesign — 7 sprints, 2 personas (Simple/Complex), responsive layout, ANVISA search, 10 critical fixes (PR #431)
 
-
-**Foundation (W0-W6):** 100% COMPLETO ✅ — Sistema de design, navegação, motion e dashboard completos
+**Foundation (W0-W7):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard e tratamentos completos
 
 ---
 

@@ -51,8 +51,9 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **R-148** | Domain-aware case conversion (Title vs Sentence) | HIGH (W7) — semantic-aware formatting |
 | **R-149** | Full object fetch for edit workflows | CRITICAL (W7) — TreatmentItem ≠ Protocol |
 | **R-150** | Compute state-specific aggregations, not just primary | CRITICAL (W7) — paused/finished tabs empty |
+| **R-151** | Modal component consistency — use shared Modal, not custom overlays | HIGH (W7) — UX consistency |
 
-→ Full rules at `.memory/rules.md` (R-001 to R-150, +W7 additions)
+→ Full rules at `.memory/rules.md` (R-001 to R-151, +W7 additions)
 
 ---
 

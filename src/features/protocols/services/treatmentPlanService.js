@@ -27,6 +27,29 @@ export const treatmentPlanService = {
   },
 
   /**
+   * Get a single treatment plan by ID
+   */
+  async getById(id) {
+    const { data, error } = await supabase
+      .from('treatment_plans')
+      .select(
+        `
+        *,
+        protocols:protocols(
+          *,
+          medicine:medicines(*)
+        )
+      `
+      )
+      .eq('id', id)
+      .eq('user_id', await getUserId())
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  /**
    * Create a new treatment plan
    */
   async create(plan) {

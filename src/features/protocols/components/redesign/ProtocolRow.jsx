@@ -16,6 +16,11 @@ import AdherenceBar7d from './AdherenceBar7d'
 import StockPill from './StockPill'
 import TitrationBadge from './TitrationBadge'
 
+/**
+ * ProtocolRow — Row reutilizável com dois variantes
+ * S7.5.5: Adicionar isHovered prop para iluminar linha inteira em desktop
+ * Célula 1 convertida de button para div (clique agora no wrapper pai)
+ */
 export default function ProtocolRow({
   item,
   isComplex,
@@ -24,6 +29,10 @@ export default function ProtocolRow({
   onEdit,
   activeTab,
   variant = 'card',
+  isHovered = false, // S7.5.5
+  onRowMouseEnter, // S7.5.5
+  onRowMouseLeave, // S7.5.5
+  onRowClick, // S7.5.5
 }) {
   const showAdherence = activeTab === 'ativos'
 
@@ -31,33 +40,45 @@ export default function ProtocolRow({
   // VARIANTE: TABULAR (Modo Complexo Desktop)
   // ────────────────────────────────────────────────────────────────
   if (variant === 'tabular') {
+    const hoverClass = isHovered ? 'protocol-row-tabular__cell--hovered' : '' // S7.5.5
+
     return (
       <>
-        {/* CÉLULA 1: Nome + Dosagem */}
-        <button
-          className="protocol-row-tabular__cell protocol-row-tabular__name-cell"
-          onClick={() => onEdit?.(item)}
+        {/* CÉLULA 1: Nome + Dosagem — S7.5.5: recebe mouse events e click */}
+        <div
+          className={`protocol-row-tabular__cell protocol-row-tabular__name-cell ${hoverClass}`}
           style={{ minHeight: '3.5rem' }}
+          onMouseEnter={onRowMouseEnter}
+          onMouseLeave={onRowMouseLeave}
+          onClick={onRowClick}
+          role="row"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && onRowClick) {
+              e.preventDefault()
+              onRowClick()
+            }
+          }}
         >
           <div className="protocol-row-tabular__medicine-name">{item.medicineName}</div>
           <div className="protocol-row-tabular__dosage">{item.dosageLabel}</div>
-        </button>
+        </div>
 
-        {/* CÉLULA 2: Frequência + Horários */}
-        <div className="protocol-row-tabular__cell protocol-row-tabular__schedule-cell">
+        {/* CÉLULA 2: Frequência + Horários — S7.5.5: aplicar hover class */}
+        <div className={`protocol-row-tabular__cell protocol-row-tabular__schedule-cell ${hoverClass}`}>
           <div className="protocol-row-tabular__frequency">{item.frequencyLabel}</div>
           {item.timeSchedule.length > 0 && (
             <div className="protocol-row-tabular__times">{item.timeSchedule.join(' / ')}</div>
           )}
         </div>
 
-        {/* CÉLULA 3: Adesão 7d (apenas em aba ativos) */}
-        <div className="protocol-row-tabular__cell protocol-row-tabular__adherence-cell">
+        {/* CÉLULA 3: Adesão 7d (apenas em aba ativos) — S7.5.5: aplicar hover class */}
+        <div className={`protocol-row-tabular__cell protocol-row-tabular__adherence-cell ${hoverClass}`}>
           {showAdherence && <AdherenceBar7d score={item.adherenceScore7d} />}
         </div>
 
-        {/* CÉLULA 4: Estoque */}
-        <div className="protocol-row-tabular__cell protocol-row-tabular__stock-cell">
+        {/* CÉLULA 4: Estoque — S7.5.5: aplicar hover class */}
+        <div className={`protocol-row-tabular__cell protocol-row-tabular__stock-cell ${hoverClass}`}>
           <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
         </div>
       </>

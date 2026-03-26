@@ -19,6 +19,7 @@ import { parseLocalDate, getTodayLocal } from '@utils/dateUtils'
  * @property {string} protocolId
  * @property {string} medicineId
  * @property {string} medicineName
+ * @property {string} medicineType - 'medicamento' | 'suplemento'
  * @property {string} scheduledTime - "HH:MM"
  * @property {number} dosagePerIntake
  * @property {string|null} treatmentPlanId
@@ -121,6 +122,7 @@ export function expandProtocolsToDoses(protocols, todayLogs) {
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         medicineName: protocol.medicine?.name || 'Desconhecido',
+        medicineType: protocol.medicine?.type || 'medicamento', // S7.5 visual: medicamento | suplemento
         scheduledTime: time,
         dosagePerIntake: protocol.dosage_per_intake ?? 1,
         treatmentPlanId: protocol.treatment_plan_id || null,
@@ -165,7 +167,7 @@ export function filterTodayLogs(logs) {
  * @param {number} [options.lateWindowMinutes=120]
  * @param {number} [options.nowWindowMinutes=60]
  * @param {number} [options.upcomingWindowMinutes=240]
- * @returns {{ zones, totals, isLoading, refresh }}
+ * @returns {{ zones, totals, isLoading, refresh, now }}
  */
 export function useDoseZones({
   lateWindowMinutes = 120,
@@ -255,5 +257,5 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh }
+  return { zones, totals, isLoading, refresh, now }
 }
