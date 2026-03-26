@@ -58,9 +58,9 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
                 {/* Desktop: tabular grid layout (shown on >= 1024px) — S7.5.5: hover state */}
                 <div className="treatments-complex__rows treatments-complex__rows--tabular-container">
                   {group.items.map(item => (
+                    // S7.5.5: wrapper exterior (sem display:contents) para receber mouse events
                     <div
                       key={item.id}
-                      style={{ display: 'contents' }}
                       onMouseEnter={() => setHoveredRow(item.id)}
                       onMouseLeave={() => setHoveredRow(null)}
                       onClick={() => onEdit?.(item)}
@@ -74,14 +74,16 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
                         }
                       }}
                     >
-                      <ProtocolRow
-                        item={item}
-                        isComplex={true}
-                        onEdit={onEdit}
-                        activeTab={activeTab}
-                        variant="tabular"
-                        isHovered={hoveredRow === item.id}
-                      />
+                      <div style={{ display: 'contents' }}>
+                        <ProtocolRow
+                          item={item}
+                          isComplex={true}
+                          onEdit={onEdit}
+                          activeTab={activeTab}
+                          variant="tabular"
+                          isHovered={hoveredRow === item.id}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
