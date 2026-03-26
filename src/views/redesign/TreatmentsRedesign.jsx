@@ -106,6 +106,21 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
     }
   }
 
+  // S7.5.5: Handler para editar plano de tratamento — TODO: implementar TreatmentPlanForm se não existir
+  async function handleEditPlan(group) {
+    try {
+      setErrorMessage(null)
+      // Extrair ID do plano: groupKey é 'plan:{id}'
+      const planId = group.groupKey.replace('plan:', '')
+      const fullPlan = await treatmentPlanService.getById(planId)
+      // TODO: abrir modal com TreatmentPlanForm preenchido com fullPlan
+      console.log('Edit plan:', fullPlan)
+    } catch (err) {
+      console.error('Erro ao carregar plano para edicao:', err)
+      setErrorMessage('Erro ao carregar plano. Tente novamente.')
+    }
+  }
+
   if (loading) return <Loading />
   if (error) return <div className="treatments-redesign__error">Erro ao carregar tratamentos: {error}</div>
 
@@ -128,31 +143,36 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
         </div>
       )}
 
-      {/* ANVISA Search */}
-      <AnvisaSearchBar
-        existingProtocols={activeItems}
-        onNavigateToProtocol={onNavigateToProtocol}
-        onEditProtocol={handleEditProtocol}
-        onOpenWizard={handleOpenWizard}
-      />
+      {/* S7.5.6: Controls container — busca + filtros responsive layout */}
+      <div className="treatments-redesign__controls">
+        {/* ANVISA Search */}
+        <AnvisaSearchBar
+          existingProtocols={activeItems}
+          onNavigateToProtocol={onNavigateToProtocol}
+          onEditProtocol={handleEditProtocol}
+          onOpenWizard={handleOpenWizard}
+        />
 
-      {/* Tab Bar */}
-      <TreatmentTabBar
-        activeTab={activeTab}
-        counts={{
-          ativos: activeItems.length,
-          pausados: pausedItems.length,
-          finalizados: finishedItems.length,
-        }}
-        onChange={setActiveTab}
-      />
+        {/* Tab Bar — Ativos/Pausados/Finalizados */}
+        <TreatmentTabBar
+          activeTab={activeTab}
+          counts={{
+            ativos: activeItems.length,
+            pausados: pausedItems.length,
+            finalizados: finishedItems.length,
+          }}
+          onChange={setActiveTab}
+        />
+      </div>
 
       {/* Content — bifurca por persona */}
       {isComplex ? (
+        // S7.5.5: onEditPlan para editar plano de tratamento
         <TreatmentsComplex
           key={activeTab}
           groups={currentGroups}
           onEdit={handleEditProtocol}
+          onEditPlan={handleEditPlan}
           activeTab={activeTab}
         />
       ) : (
@@ -191,6 +211,8 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
           />
         )}
       </Modal>
+
+      {/* S7.5.5: TreatmentPlanForm modal — TODO: implementar quando TreatmentPlanForm estiver disponível */}
     </div>
   )
 }

@@ -1628,10 +1628,49 @@ const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: 
 
 **Source:** Wave 7 useTreatmentList — groups missing for pausado/finalizado tabs (2026-03-25)
 
+## R-151: Modal Component Consistency — Use Shared Modal, Not Custom Overlays
+
+**Rule:** When implementing modals (dialogs, forms, wizards), always use the project's shared `<Modal>` component instead of custom overlay divs. This ensures consistent UX behavior (Esc key handling, overlay styling, animations).
+
+**Why:** Custom modal implementations diverge:
+- Different Esc key handling (shared Modal has built-in support)
+- Inconsistent backdrop styling and opacity
+- Maintenance burden of parallel CSS rules
+- UX inconsistency confuses users
+
+**How to apply:**
+```jsx
+// ❌ WRONG — custom overlay + modal divs
+{wizardOpen && (
+  <div className="custom__modal-overlay">
+    <div className="custom__modal">
+      <WizardComponent />
+    </div>
+  </div>
+)}
+
+// ✅ CORRECT — shared Modal component
+<Modal isOpen={wizardOpen} onClose={() => setWizardOpen(false)}>
+  {wizardMedicine && (
+    <WizardComponent
+      medicine={wizardMedicine}
+      onComplete={handleWizardComplete}
+    />
+  )}
+</Modal>
+```
+
+**Apply to:**
+- All modals, dialogs, popups, overlays in the project
+- Forms, wizards, confirmations, alerts
+- Always check if `<Modal>` or similar shared component already exists
+
+**Source:** Wave 7 Treatments Redesign PR review — Gemini Code Assist suggested consolidating TreatmentWizard modal with ProtocolForm modal (2026-03-25)
+
 ---
 
 *Last updated: 2026-03-25*
-*Rules: R-001 to R-150 (Wave 7 Treatments Redesign patterns added)*
+*Rules: R-001 to R-151 (Wave 7 Treatments Redesign patterns added)*
 
 ## R-136: Callback Batch Operations Must Match UI Promise
 
@@ -1639,7 +1678,7 @@ const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: 
 
 **Why:** Wave 6.5 bug where `onRegisterAll(doses)` only registered `doses[0]`, contradicting the UI that displayed a list of doses. Users expected all items to be processed.
 
-**How to apply:** 
+**How to apply:**
 - Test batch callbacks explicitly: `handleRegisterDosesAll([dose1, dose2, dose3])` must process all 3
 - UI wording should accurately reflect implementation: if UI says "Confirmar X doses", ensure loop processes X items
 - Prefer explicit `for...of` or `.map()` with `Promise.all()` over single-item registration
