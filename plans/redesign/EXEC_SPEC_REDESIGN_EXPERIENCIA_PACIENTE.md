@@ -27,7 +27,7 @@
 | W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ✅ MERGED #426 (2026-03-25) | main |
 | W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ✅ MERGED #431 (2026-03-25) | main |
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
-| W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
+| W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ⏳ PENDENTE IMPLEMENTAÇÃO | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
