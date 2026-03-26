@@ -190,6 +190,7 @@ export function useTreatmentList() {
   const finishedItems = useMemo(() => items.filter(i => i.tabStatus === 'finalizado'), [items])
 
   // Helper para computar grupos de qualquer lista de itens
+  // Ordena: planos reais primeiro (com lápis de edição), depois classes terapêuticas
   const computeGroups = (itemList) => {
     const map = new Map()
     for (const item of itemList) {
@@ -208,7 +209,12 @@ export function useTreatmentList() {
       g.items.push(item)
       if (item.stockStatus === 'critical' || item.stockStatus === 'low') g.hasAlert = true
     }
-    return Array.from(map.values())
+    // Separar planos reais (com lápis) vs classes terapêuticas (sem lápis)
+    const groups = Array.from(map.values())
+    const realPlans = groups.filter(g => g.isPlan)
+    const therapeuticClasses = groups.filter(g => !g.isPlan)
+    // Retornar planos reais primeiro, depois classes terapêuticas
+    return [...realPlans, ...therapeuticClasses]
   }
 
   // Grupos para modo complexo (por tab)
