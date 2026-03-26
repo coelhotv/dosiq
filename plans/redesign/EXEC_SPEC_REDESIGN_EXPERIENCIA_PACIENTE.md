@@ -1,8 +1,8 @@
 # Plano de Redesign: Neon/Glass → Santuário Terapêutico
 
-**Versão:** 1.2
-**Data:** 2026-03-24
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W6 entregues ✅
+**Versão:** 1.3
+**Data:** 2026-03-26
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W7.5 entregues ✅
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 
@@ -26,21 +26,22 @@
 | W6 | Dashboard Redesign | `WAVE_6_DASHBOARD_REDESIGN.md` | ✅ MERGED #425 (2026-03-25) | main |
 | W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ✅ MERGED #426 (2026-03-25) | main |
 | W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ✅ MERGED #431 (2026-03-25) | main |
-| W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ⏳ PENDENTE EXECUÇÃO | — |
+| W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
 | W8 | Estoque Redesign | — | ⏳ PENDENTE SPEC | — |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
 | W12 | Landing, Auth & Onboarding | — | ⏳ PENDENTE SPEC | — |
 
-**Entregas Completas (2026-03-25):**
-- ✅ **W4:** BottomNavRedesign + Sidebar + App.jsx integration + page transitions (PR #422)
-- ✅ **W5:** motionConstants.js + useMotion hook + CSS keyframes + AI review cycle (PR #424)
-- ✅ **W6:** RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
-- ✅ **W6.5:** CSS Responsive Doses + CronogramaPeriodo + DashboardRedesign + PriorityDoseCard Variants (PR #426)
-- ✅ **W7:** Treatments Redesign — 7 sprints, 2 personas (Simple/Complex), responsive layout, ANVISA search, 10 critical fixes (PR #431)
+**Entregas Completas:**
+- ✅ **W4** (2026-03-25): BottomNavRedesign + Sidebar + App.jsx integration + page transitions (PR #422)
+- ✅ **W5** (2026-03-25): motionConstants.js + useMotion hook + CSS keyframes + AI review cycle (PR #424)
+- ✅ **W6** (2026-03-25): RingGaugeRedesign + PriorityDoseCard + CronogramaPeriodo + StockAlertInline + DashboardRedesign.jsx (PR #425)
+- ✅ **W6.5** (2026-03-25): CSS Responsive Doses + CronogramaPeriodo + DashboardRedesign + PriorityDoseCard Variants (PR #426)
+- ✅ **W7** (2026-03-25): Treatments Redesign — 7 sprints, 2 personas (Simple/Complex), responsive layout, ANVISA search, 10 critical fixes (PR #431)
+- ✅ **W7.5** (2026-03-26): Dashboard "Hoje" — dose card redesign (Pill/PillBottle icons), accordion zonas inteligentes (S7.5.1-S7.5.6), edit plan button, adherence neutra (PR #432)
 
-**Foundation (W0-W7):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard e tratamentos completos
+**Foundation (W0-W7.5):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard completo (hoje + zonas) e tratamentos com refinamentos
 
 ---
 
