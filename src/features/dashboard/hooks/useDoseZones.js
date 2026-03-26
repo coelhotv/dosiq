@@ -167,7 +167,7 @@ export function filterTodayLogs(logs) {
  * @param {number} [options.lateWindowMinutes=120]
  * @param {number} [options.nowWindowMinutes=60]
  * @param {number} [options.upcomingWindowMinutes=240]
- * @returns {{ zones, totals, isLoading, refresh }}
+ * @returns {{ zones, totals, isLoading, refresh, now }}
  */
 export function useDoseZones({
   lateWindowMinutes = 120,
@@ -257,5 +257,5 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh }
+  return { zones, totals, isLoading, refresh, now }
 }

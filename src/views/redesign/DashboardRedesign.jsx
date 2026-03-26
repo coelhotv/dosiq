@@ -42,7 +42,7 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
 export default function DashboardRedesign({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
   const { stats, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
-  const { zones, totals } = useDoseZones()
+  const { zones, totals, now } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
   // ── Estado local ──
@@ -306,6 +306,7 @@ export default function DashboardRedesign({ onNavigate }) {
                   )
                 }
                 variant={complexityMode === 'simple' ? 'simple' : 'complex'}
+                now={now}
               />
             </section>
           )}

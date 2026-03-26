@@ -76,13 +76,14 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus }) {
  * @param {Array} allDoses — Todas as doses do dia (flat: late+now+upcoming+later+done)
  * @param {Function} onRegister — callback: onRegister(dose)
  * @param {string} variant — 'complex' (default) ou 'simple' para lista plana
+ * @param {Date} now — Instância de data sincronizada com useDoseZones para consistência temporal
  */
-export default function CronogramaPeriodo({ allDoses = [], onRegister, variant = 'complex' }) {
+export default function CronogramaPeriodo({ allDoses = [], onRegister, variant = 'complex', now = new Date() }) {
   const { cascade } = useMotion()
 
   // ── Computar grouped para inicialização de accordion (S7.5.2) ──
   const grouped = useMemo(() => {
-    const currentHour = new Date().getHours()
+    const currentHour = now.getHours()
     return PERIODS.map(({ id, label, Icon, timeRange }) => {
       const [start, end] = timeRange
       const doses = allDoses
@@ -100,7 +101,7 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
 
       return { id, label, Icon, doses, isCurrent, isPast, isCollapsible }
     }).filter(({ doses }) => doses.length > 0)
-  }, [allDoses])
+  }, [allDoses, now])
 
   // Inicializar openZones: zonas passadas fechadas, atual + próximas abertas (S7.5.2)
   const [openZones, setOpenZones] = useState(() => {
