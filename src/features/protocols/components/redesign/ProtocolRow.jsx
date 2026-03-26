@@ -30,6 +30,9 @@ export default function ProtocolRow({
   activeTab,
   variant = 'card',
   isHovered = false, // S7.5.5
+  onRowMouseEnter, // S7.5.5
+  onRowMouseLeave, // S7.5.5
+  onRowClick, // S7.5.5
 }) {
   const showAdherence = activeTab === 'ativos'
 
@@ -41,10 +44,21 @@ export default function ProtocolRow({
 
     return (
       <>
-        {/* CÉLULA 1: Nome + Dosagem — S7.5.5: convertida de button para div */}
+        {/* CÉLULA 1: Nome + Dosagem — S7.5.5: recebe mouse events e click */}
         <div
           className={`protocol-row-tabular__cell protocol-row-tabular__name-cell ${hoverClass}`}
           style={{ minHeight: '3.5rem' }}
+          onMouseEnter={onRowMouseEnter}
+          onMouseLeave={onRowMouseLeave}
+          onClick={onRowClick}
+          role="row"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && onRowClick) {
+              e.preventDefault()
+              onRowClick()
+            }
+          }}
         >
           <div className="protocol-row-tabular__medicine-name">{item.medicineName}</div>
           <div className="protocol-row-tabular__dosage">{item.dosageLabel}</div>

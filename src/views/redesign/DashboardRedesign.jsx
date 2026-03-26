@@ -206,7 +206,7 @@ export default function DashboardRedesign({ onNavigate }) {
             <RingGaugeRedesign
               score={adherenceScore}
               streak={streak}
-              size={complexityMode === 'complex' ? 'medium' : 'large'}
+              size="large"
             />
 
             <div>
@@ -240,15 +240,6 @@ export default function DashboardRedesign({ onNavigate }) {
                 color: 'var(--color-on-surface-variant, #3e4946)',
               }}>
                 {getMotivationalMessage(adherenceScore, totals.remaining)}
-              </p>
-
-              <p style={{
-                margin: '0.25rem 0 0',
-                fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                fontSize: 'var(--text-label-md, 0.75rem)',
-                color: 'var(--color-outline, #6d7a76)',
-              }}>
-                {today}
               </p>
             </div>
           </div>

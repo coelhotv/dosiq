@@ -201,6 +201,7 @@ export function useTreatmentList() {
           groupColor: item.groupColor,
           items: [],
           hasAlert: false,
+          isPlan: item.groupKey.startsWith('plan:'), // S7.5.5: detectar se é plano real
         })
       }
       const g = map.get(item.groupKey)

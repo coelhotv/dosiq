@@ -7,7 +7,7 @@ import { PencilLine } from 'lucide-react'
 
 export default function TreatmentPlanHeader({ group, isCollapsed, onToggle, onEditPlan }) {
   // S7.5.5: Detectar se é plano real (não fallback de classe terapêutica)
-  const isPlan = group.isPlan ?? group.groupKey?.startsWith('plan-')
+  const isPlan = group.isPlan ?? group.groupKey?.startsWith('plan:')
 
   return (
     <div className="plan-header-wrap">

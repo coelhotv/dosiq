@@ -58,32 +58,22 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
                 {/* Desktop: tabular grid layout (shown on >= 1024px) — S7.5.5: hover state */}
                 <div className="treatments-complex__rows treatments-complex__rows--tabular-container">
                   {group.items.map(item => (
-                    // S7.5.5: wrapper exterior (sem display:contents) para receber mouse events
+                    // S7.5.5: display:contents preserva grid, mouse events na 1ª célula
                     <div
                       key={item.id}
-                      onMouseEnter={() => setHoveredRow(item.id)}
-                      onMouseLeave={() => setHoveredRow(null)}
-                      onClick={() => onEdit?.(item)}
-                      role="row"
-                      aria-label={`Editar protocolo de ${item.medicineName}`}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          onEdit?.(item)
-                        }
-                      }}
+                      style={{ display: 'contents' }}
                     >
-                      <div style={{ display: 'contents' }}>
-                        <ProtocolRow
-                          item={item}
-                          isComplex={true}
-                          onEdit={onEdit}
-                          activeTab={activeTab}
-                          variant="tabular"
-                          isHovered={hoveredRow === item.id}
-                        />
-                      </div>
+                      <ProtocolRow
+                        item={item}
+                        isComplex={true}
+                        onEdit={onEdit}
+                        activeTab={activeTab}
+                        variant="tabular"
+                        isHovered={hoveredRow === item.id}
+                        onRowMouseEnter={() => setHoveredRow(item.id)}
+                        onRowMouseLeave={() => setHoveredRow(null)}
+                        onRowClick={() => onEdit?.(item)}
+                      />
                     </div>
                   ))}
                 </div>

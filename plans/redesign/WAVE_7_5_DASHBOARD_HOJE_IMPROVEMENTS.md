@@ -616,9 +616,9 @@ const statusClass = pct >= 70 ? 'adherence-bar7d--neutral' : 'adherence-bar7d--w
 
 **Layout alvo:**
 ```
-┌─────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────┐
 │  [🔍 Buscar medicamento ou sintoma...]   Ativos  Pausados  Finalizados  │
-└─────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 Desktop (≥ 1024px): busca + filtros em uma única linha, `display: flex`, `justify-content: space-between`.

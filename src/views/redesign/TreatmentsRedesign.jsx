@@ -110,8 +110,9 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
   async function handleEditPlan(group) {
     try {
       setErrorMessage(null)
-      // Buscar plano completo via planId do grupo
-      const fullPlan = await treatmentPlanService.getById(group.planId || group.groupKey.replace('plan-', ''))
+      // Extrair ID do plano: groupKey é 'plan:{id}'
+      const planId = group.groupKey.replace('plan:', '')
+      const fullPlan = await treatmentPlanService.getById(planId)
       // TODO: abrir modal com TreatmentPlanForm preenchido com fullPlan
       console.log('Edit plan:', fullPlan)
     } catch (err) {

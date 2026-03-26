@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, Moon, CheckCircle2, Circle, Sunrise, ChevronRight } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
@@ -78,6 +78,46 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
   const { cascade } = useMotion()
   const [openZones, setOpenZones] = useState({})
 
+  // ── Computar grouped para inicialização de accordion (S7.5.2) ──
+  const grouped = useMemo(() => {
+    const currentHour = new Date().getHours()
+    return PERIODS.map(({ id, label, Icon, timeRange }) => {
+      const [start, end] = timeRange
+      const doses = allDoses
+        .filter((d) => {
+          const h = getHour(d.scheduledTime)
+          return h >= start && h < end
+        })
+        .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime))
+
+      // Classificar zona (S7.5.2)
+      const isCurrent = currentHour >= start && currentHour < end
+      const isPast = currentHour >= end
+      const allDone = doses.every(d => d.isRegistered)
+      const isCollapsible = isPast && allDone
+
+      return { id, label, Icon, doses, isCurrent, isPast, isCollapsible }
+    }).filter(({ doses }) => doses.length > 0)
+  }, [allDoses])
+
+  // Inicializar openZones via useEffect (S7.5.2: accordion state — apenas para complex)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Nota: openZones não está no dependency array para evitar loop infinito
+    // A condição Object.keys(openZones).length === 0 garante que isso roda apenas uma vez
+    if (variant === 'complex' && Object.keys(openZones).length === 0 && grouped.length > 0) {
+      const currentZoneIndex = grouped.findIndex(g => g.isCurrent)
+      const initialOpen = Object.fromEntries(
+        grouped.map((z, idx) => {
+          // Abrir: zona atual, ou próxima zona se atual está completa
+          const shouldOpen = z.isCurrent || (currentZoneIndex >= 0 && idx === currentZoneIndex + 1 && grouped[currentZoneIndex].doses.every(d => d.isRegistered))
+          return [z.id, shouldOpen ? true : !z.isCollapsible]
+        })
+      )
+      setOpenZones(initialOpen)
+    }
+  }, [variant, grouped])
+
   // ── MODO SIMPLE: lista plana cronológica (S7.5.3) ──
   if (variant === 'simple') {
     const sorted = [...allDoses].sort((a, b) =>
@@ -99,33 +139,6 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
   }
 
   // ── MODO COMPLEX: zonas com accordion (S7.5.2) ──
-  const currentHour = new Date().getHours()
-
-  const grouped = PERIODS.map(({ id, label, Icon, timeRange }) => {
-    const [start, end] = timeRange
-    const doses = allDoses
-      .filter((d) => {
-        const h = getHour(d.scheduledTime)
-        return h >= start && h < end
-      })
-      .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime))
-
-    // Classificar zona (S7.5.2)
-    const isCurrent = currentHour >= start && currentHour < end
-    const isPast = currentHour >= end
-    const allDone = doses.every(d => d.isRegistered)
-    const isCollapsible = isPast && allDone
-
-    return { id, label, Icon, doses, isCurrent, isPast, isCollapsible }
-  }).filter(({ doses }) => doses.length > 0)
-
-  // Inicializar openZones: zonas colapsáveis começam fechadas
-  if (Object.keys(openZones).length === 0 && grouped.length > 0) {
-    const initialOpen = Object.fromEntries(
-      grouped.map(z => [z.id, z.isCurrent || (grouped.findIndex(g => g.isCurrent) >= 0 && grouped[grouped.findIndex(g => g.isCurrent) + 1]?.id === z.id && grouped[grouped.findIndex(g => g.isCurrent)].doses.every(d => d.isRegistered)) ? true : !z.isCollapsible])
-    )
-    setOpenZones(initialOpen)
-  }
 
   if (grouped.length === 0) return null
 
