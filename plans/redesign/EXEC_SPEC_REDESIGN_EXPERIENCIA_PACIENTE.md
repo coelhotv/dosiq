@@ -2094,19 +2094,18 @@ tabStatus = end_date < hoje → 'finalizado'
 ┌──────────────────────────────────────────────────────────────┐
 │  Estoque de Medicamentos           Relatórios | Farmácias    │
 ├──────────────────────────────────────────────────────────────┤
-│  ⚠ 3 itens precisam de reposição   [Comprar Tudo Agora]      │
-│     imediata                                                 │
+│  ⚠ 3 itens precisam de reposição imediata                    │
 ├─────────────────────┬────────────────────┬───────────────────┤
 │  ┌─ URGENTE ─────┐  │  ┌─ ATENÇÃO ────┐  │  ┌─ SEGURO ─────┐ │
 │  │ Atorvast.     │  │  │ Losartana    │  │  │ Metformina   │ │
 │  │    2 DIAS     │  │  │    5 DIAS    │  │  │   24 DIAS    │ │
 │  │ ████░░ 6%     │  │  │ █████░ 15%   │  │  │ ███████ 80%  │ │
-│  │[Comprar Agora]│  │  │[Reabastecer] │  │  │[Agendar]     │ │
+│  │ [Reabastecer] │  │  │ [Registrar]  │  │  │  [Agendar]   │ │
 │  └───────────────┘  │  └──────────────┘  │  └──────────────┘ │
 │  ┌───────────────┐  │  ┌──────────────┐  │  ┌──────────────┐ │
 │  │ Ômega 3       │  │  │ Levotirox.   │  │  │ Simeticona   │ │
 │  │    1 CÁP      │  │  │    6 DIAS    │  │  │   30+ DIAS   │ │
-│  │[Comprar Agora]│  │  │[Reabastecer] │  │  │[Agendar]     │ │
+│  │ [Registrar]   │  │  │ [Registrar]  │  │  │  [Agendar]   │ │
 │  └───────────────┘  │  └──────────────┘  │  └──────────────┘ │
 ├─────────────────────┴────────────────────┴───────────────────┤
 │  HISTÓRICO DE ENTRADAS                           Ver Tudo    │
