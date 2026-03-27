@@ -1,0 +1,134 @@
+/* ============================================================
+   HealthHistoryRedesign.css — Wave 9
+   Override de tokens neon/glass → Santuário nos componentes
+   internos de HealthHistory.
+   Escopo: .hhr-wrapper (wrapper container)
+   ============================================================ */
+
+.hhr-wrapper {
+  /* Substitui background neon pelo surface tonal */
+  --color-primary: var(--color-primary); /* já definido em tokens.redesign.css */
+  background: transparent;
+}
+
+/* ── Calendar heat map colors ─────────────────────────────── */
+
+/* Dias com doses tomadas (status "full") */
+.hhr-wrapper .calendar-day--full,
+.hhr-wrapper .calendar-day--taken {
+  background: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+  /* Remove qualquer box-shadow/glow neon */
+  box-shadow: none !important;
+}
+
+/* Dias com doses parciais */
+.hhr-wrapper .calendar-day--partial {
+  background: var(--color-secondary-fixed) !important;
+  color: var(--color-on-surface) !important;
+  box-shadow: none !important;
+}
+
+/* Dias sem doses */
+.hhr-wrapper .calendar-day--missed,
+.hhr-wrapper .calendar-day--empty {
+  background: var(--color-error-bg, #ffdad6) !important;
+  color: var(--color-error) !important;
+  box-shadow: none !important;
+}
+
+/* Dia selecionado */
+.hhr-wrapper .calendar-day--selected {
+  outline: 2px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+/* Hoje */
+.hhr-wrapper .calendar-day--today {
+  border: 2px solid var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+/* ── AdherenceHeatmap colors ──────────────────────────────── */
+
+.hhr-wrapper .heatmap-cell--high {
+  background: var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.hhr-wrapper .heatmap-cell--medium {
+  background: var(--color-primary-fixed) !important;
+  box-shadow: none !important;
+}
+
+.hhr-wrapper .heatmap-cell--low {
+  background: var(--color-warning, #f59e0b) !important;
+  box-shadow: none !important;
+}
+
+.hhr-wrapper .heatmap-cell--none {
+  background: var(--color-surface-container-high) !important;
+}
+
+/* ── SparklineAdesao ──────────────────────────────────────── */
+
+/* Recharts svg paths — sobrepõe a cor da linha */
+.hhr-wrapper .recharts-line-curve {
+  stroke: var(--color-primary) !important;
+  filter: none !important; /* remove neon glow filter */
+}
+
+.hhr-wrapper .recharts-area-area {
+  fill: var(--color-primary) !important;
+  opacity: 0.1 !important;
+  filter: none !important;
+}
+
+.hhr-wrapper .recharts-dot {
+  fill: var(--color-primary) !important;
+  stroke: var(--color-surface-container-lowest) !important;
+  filter: none !important;
+}
+
+/* ── Stats card row ───────────────────────────────────────── */
+
+.hhr-wrapper .health-history__stat-card,
+.hhr-wrapper .stat-card {
+  background: var(--color-surface-container-lowest) !important;
+  border: none !important;
+  box-shadow: var(--shadow-ambient) !important;
+  border-radius: 1.25rem !important;
+  /* Remove glass */
+  backdrop-filter: none !important;
+}
+
+.hhr-wrapper .health-history__stat-value,
+.hhr-wrapper .stat-value {
+  color: var(--color-primary) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  /* Remove neon glow em texto */
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* ── Log entries ─────────────────────────────────────────── */
+
+.hhr-wrapper .log-entry,
+.hhr-wrapper .health-history__log-item {
+  background: var(--color-surface-container-lowest) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-outline-ghost, rgba(25,28,29,0.08)) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+
+.hhr-wrapper .health-history__header,
+.hhr-wrapper .page-header {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+}
