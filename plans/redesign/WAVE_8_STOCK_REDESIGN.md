@@ -49,41 +49,46 @@ A view de Estoque bifurca seu layout baseado em `useComplexityMode().mode`:
 
 | Modo | Trigger | Layout Desktop | Card | Informação |
 |------|---------|---------------|------|------------|
-| `simple` | ≤ 3 medicamentos ativos | **1 coluna** (igual mobile) | Compacto | Nome + qtd + status + barra + dias + CTA |
-| `moderate` | 4–6 medicamentos | **2 colunas** (`grid-2`) | Completo | + linha de uso + lote info |
-| `complex` | 7+ medicamentos | **3 colunas** (`grid-3`) | Completo | Idem moderate |
+| `simple` | Dona Maria | **2 colunas** (desktop) / **1 coluna** (mobile) | Compacto | Nome + `StockPill` + barra + dias + CTA apenas para urgente/atencao + "última compra: DD/MM · R$ X,XX" |
+| `complex` | Carlos | **Grid responsivo** (`grid-2` → `grid-3` por contagem) | Completo | + linha de uso + `EntradaHistorico` com custo |
 
-**Mobile é sempre 1 coluna** independente do modo — `grid-2` e `grid-3` só ativam nos breakpoints definidos em `layout.redesign.css`.
+**`isComplex = mode !== 'simple'`** — o modo `moderate` foi eliminado. Carlos sempre recebe grid responsivo; o número de colunas se ajusta automaticamente pelo CSS.
 
-### Simple (Dona Maria — ≤3 meds)
+**Mobile é sempre 1 coluna** independente do modo.
+
+### Simple (Dona Maria — modo simples, desktop 2-col)
 
 ```
-┌─────────────────────────────────────┐
-│  Controle de Estoque                │
-│  Prioridade de Reabastecimento      │
-├─────────────────────────────────────┤
-│  ┌── URGENTE ──────────────────────┐│
-│  │ Losartana 50mg                  ││
-│  │ ████░░░░░░░░░░  3 dias restantes││
-│  │ 8 comprimidos          URGENTE  ││
-│  │ [  Reabastecer Agora          ] ││
-│  └─────────────────────────────────┘│
-│  ┌── ATENÇÃO ──────────────────────┐│
-│  │ Atorvastatina 20mg              ││
-│  │ ██████████░░░░  11 dias         ││
-│  │ 22 comprimidos          ATENÇÃO ││
-│  │ [  Registrar Compra          ]  ││
-│  └─────────────────────────────────┘│
-│  Estoque OK                         │
-│  ┌─────────────────────────────────┐│
-│  │ Vitamina D 7000UI   22 cápsulas ││
-│  │ ██████████████░░  SEGURO        ││
-│  └─────────────────────────────────┘│
-├─────────────────────────────────────┤
-│  HISTÓRICO                 Ver Tudo │
-│  • Compra  Losartana  +30  13/03    │
-│  • Ajuste  Atorvast.  -2   11/03    │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  Controle de Estoque                                                │
+│  Prioridade de Reabastecimento                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Crítico (1)                                                        │
+│  ┌──────────────────────────────────┐ ┌───────────────────────────┐ │
+│  │ Losartana 50mg  [📅✕ 3 dias]    │ │ Atorvastatina 20mg        │ │
+│  │ ████░░░░░░░░░░░░  10%            │ │ [📅↺ 11 dias]             │ │
+│  │ 3 / 30 DIAS                      │ │ ██████░░░░░  37%          │ │
+│  │ última compra: 13/03 · R$ 18,90  │ │ 11 / 30 DIAS              │ │
+│  │ [ Comprar Agora                ] │ │ última compra: 05/03      │ │
+│  └──────────────────────────────────┘ │ [ Comprar em Breve      ] │ │
+│                                       └───────────────────────────┘ │
+│  Estoque OK (1)                                                     │
+│  ┌──────────────────────────────────┐                               │
+│  │ Vitamina D 7000UI [📅✓ 22 dias] │                               │
+│  │ ████████████░░░░  73%            │                               │
+│  │ 22 / 30 DIAS                     │                               │
+│  │ última compra: 01/03 · R$ 42,00  │                               │
+│  └──────────────────────────────────┘                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+Notas Dona Maria:
+• Seções por urgência (Crítico / Atenção / OK) — 2 colunas no desktop
+• StockPill (ícone + dias) no header do card — sem badge separado
+• "última compra: DD/MM · R$ X,XX" como subtexto por card
+• CTA visível APENAS para urgente e atencao; cards seguro/alto sem botão
+• "atencao" CTA: "Comprar em Breve" (não "Reabastecer")
+• Sem seção de histórico separada — info relevante está per-card
+• Sem "bar-pct %" — barra fala por si só
 ```
 
 ### Complex (Carlos — 4+ meds, desktop)
@@ -228,6 +233,13 @@ O wrapper da barra precisa de `overflow: hidden` e o `motion.div` interno recebe
   } | null,
   // Percentual para a barra (0-100)
   barPercentage: number,
+  // Última compra (entry mais recente com quantity > 0)
+  // Ponto de referência para busca de reposição: "está mais caro ou mais barato?"
+  lastPurchase: {
+    date: string,               // 'YYYY-MM-DD'
+    unitPrice: number | null,   // null se não registrado
+    quantity: number,           // quantidade comprada no lote
+  } | null,
 }
 ```
 
@@ -356,6 +368,19 @@ export function useStockData() {
       const stockStatus = getStockStatus(stock.total, daysRemaining)
       const barPercentage = getBarPercentage(stock.total, daysRemaining)
 
+      // Última compra: entry mais recente com quantity > 0, ordenada por purchase_date
+      const purchaseEntries = (stock.entries || [])
+        .filter((e) => e.quantity > 0)
+        .sort((a, b) => new Date(b.purchase_date) - new Date(a.purchase_date))
+      const latestEntry = purchaseEntries[0] || null
+      const lastPurchase = latestEntry
+        ? {
+            date: latestEntry.purchase_date,
+            unitPrice: latestEntry.unit_price ?? null,
+            quantity: latestEntry.quantity,
+          }
+        : null
+
       return {
         medicine: {
           id: medicine.id,
@@ -372,6 +397,7 @@ export function useStockData() {
         hasActiveProtocol: activeMedicineIds.has(medicine.id),
         primaryProtocol: primaryProtocolMap[medicine.id] || null,
         barPercentage,
+        lastPurchase,
       }
     })
   }, [medicines, protocols, stockMap])
@@ -519,28 +545,44 @@ StockCardRedesign({
  * StockCardRedesign — Card de medicamento para o redesign do Estoque.
  * Dois modos: simples (Dona Maria) e complexo (Carlos).
  *
- * Simple: nome + quantidade + status + barra + dias + CTA
- * Complex: idem + linha de uso (dose/dia · Período) + info de lote
+ * Simple: nome + StockPill + barra + dias + "última compra" + CTA (urgente/atencao apenas)
+ * Complex: idem + linha de uso (dose/dia · Período) + bar-pct + EntradaHistorico integrado
+ *
+ * Reutiliza StockPill (W7.6) para consistência visual — sem sistema de badge próprio.
  */
 import { motion } from 'framer-motion'
 import { ShoppingCart } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
+import StockPill from '@protocols/components/redesign/StockPill'
+import { parseLocalDate } from '@utils/dateUtils'
 import './StockCardRedesign.css'
 
-// Labels de status para exibição ao usuário
-const STATUS_LABELS = {
-  urgente: 'URGENTE',
-  atencao: 'ATENÇÃO',
-  seguro:  'SEGURO',
-  alto:    'ALTO',
-}
-
 // Texto do CTA por status
+// Simple: CTA visível apenas para urgente e atencao; seguro/alto não têm botão
+// Complex: CTA visível para todos os status
 const CTA_LABELS = {
   urgente: 'Comprar Agora',
-  atencao: 'Reabastecer',
+  atencao: 'Comprar em Breve',
   seguro:  'Agendar Compra',
   alto:    'Agendar Compra',
+}
+
+/**
+ * Formata "última compra: DD/MM · R$ X,XX" para o subtexto do card (modo simple).
+ * Sem unit_price: "última compra: DD/MM".
+ */
+function formatLastPurchase(lastPurchase) {
+  if (!lastPurchase) return null
+  const date = parseLocalDate(lastPurchase.date).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit',
+  })
+  if (lastPurchase.unitPrice != null) {
+    const price = lastPurchase.unitPrice.toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL',
+    })
+    return `última compra: ${date} · ${price}`
+  }
+  return `última compra: ${date}`
 }
 
 /**
@@ -568,10 +610,12 @@ function formatDays(daysRemaining, hasActiveProtocol) {
 
 export default function StockCardRedesign({ item, isComplex, onAddStock, index = 0 }) {
   const motionConfig = useMotion()
-  const { medicine, totalQuantity, stockStatus, barPercentage, primaryProtocol, hasActiveProtocol } = item
+  const { medicine, totalQuantity, stockStatus, barPercentage, primaryProtocol, hasActiveProtocol, lastPurchase } = item
   const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
-  const ctaLabel = CTA_LABELS[stockStatus] || 'Reabastecer'
+  const ctaLabel = CTA_LABELS[stockStatus] || 'Comprar Agora'
+  const showCta = isComplex || stockStatus === 'urgente' || stockStatus === 'atencao'
+  const lastPurchaseText = formatLastPurchase(lastPurchase)
 
   return (
     <motion.div
@@ -579,28 +623,20 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
       variants={motionConfig.cascade.item}
       {...motionConfig.tactile}
       role="article"
-      aria-label={`${medicine.name} — ${daysNumber} ${daysLabel}, status ${STATUS_LABELS[stockStatus]}`}
+      aria-label={`${medicine.name} — ${daysNumber} ${daysLabel}`}
     >
-      {/* ── Status badge ── */}
-      <div className="stock-card-r__badge-row">
-        <span className={`stock-card-r__badge stock-card-r__badge--${stockStatus}`}>
-          {STATUS_LABELS[stockStatus]}
-        </span>
-        {/* Dias restantes — número editorial (headline-md Public Sans 700) */}
-        <div className="stock-card-r__days" aria-label={`${daysNumber} ${daysLabel}`}>
-          <span className="stock-card-r__days-number">{daysNumber}</span>
-          <span className="stock-card-r__days-label">{daysLabel}</span>
+      {/* ── Medicine name + StockPill (substitui badge row) ── */}
+      <div className="stock-card-r__name-row">
+        <div className="stock-card-r__medicine">
+          <h3 className="stock-card-r__name">{medicine.name}</h3>
+          {medicine.dosage_per_pill && (
+            <span className="stock-card-r__dosage">
+              {medicine.dosage_per_pill}{medicine.dosage_unit}
+            </span>
+          )}
         </div>
-      </div>
-
-      {/* ── Medicine name + dosage ── */}
-      <div className="stock-card-r__medicine">
-        <h3 className="stock-card-r__name">{medicine.name}</h3>
-        {medicine.dosage_per_pill && (
-          <span className="stock-card-r__dosage">
-            {medicine.dosage_per_pill}{medicine.dosage_unit}
-          </span>
-        )}
+        {/* StockPill reutilizado de W7.6 — consistência total com TreatmentsRedesign */}
+        <StockPill status={stockStatus} daysRemaining={Math.floor(item.daysRemaining)} />
       </div>
 
       {/* ── Complex only: linha de uso ── */}
@@ -608,10 +644,18 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
         <p className="stock-card-r__usage">{usageLine}</p>
       )}
 
-      {/* ── Quantidade total ── */}
-      <p className="stock-card-r__quantity">
-        {totalQuantity} {medicine.medicine_type === 'liquido' ? 'ml' : medicine.medicine_type === 'capsula' ? 'cáps.' : 'comprimidos'}
-      </p>
+      {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
+      {isComplex && (
+        <p className="stock-card-r__quantity">
+          {totalQuantity} {medicine.medicine_type === 'liquido' ? 'ml' : medicine.medicine_type === 'capsula' ? 'cáps.' : 'comprimidos'}
+        </p>
+      )}
+
+      {/* ── Dias restantes — número editorial (headline-md Public Sans 700) ── */}
+      <div className="stock-card-r__days" aria-label={`${daysNumber} ${daysLabel}`}>
+        <span className="stock-card-r__days-number">{daysNumber}</span>
+        <span className="stock-card-r__days-label">{daysLabel}</span>
+      </div>
 
       {/* ── Progress bar (Living Fill — GPU scaleX) ── */}
       <div className="stock-card-r__bar-track" aria-hidden="true">
@@ -626,17 +670,27 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
           }}
         />
       </div>
-      <span className="stock-card-r__bar-pct" aria-hidden="true">{barPercentage}%</span>
+      {/* bar-pct: apenas no modo complex (Carlos quer precisão; Dona Maria não precisa) */}
+      {isComplex && (
+        <span className="stock-card-r__bar-pct" aria-hidden="true">{barPercentage}%</span>
+      )}
 
-      {/* ── CTA button ── */}
-      <button
-        className={`stock-card-r__cta stock-card-r__cta--${stockStatus}`}
-        onClick={(e) => { e.stopPropagation(); onAddStock?.() }}
-        aria-label={`${ctaLabel} ${medicine.name}`}
-      >
-        <ShoppingCart size={16} aria-hidden="true" />
-        {ctaLabel}
-      </button>
+      {/* ── Última compra — subtexto de referência de preço ── */}
+      {lastPurchaseText && (
+        <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>
+      )}
+
+      {/* ── CTA button — simple: apenas urgente/atencao; complex: todos ── */}
+      {showCta && (
+        <button
+          className={`stock-card-r__cta stock-card-r__cta--${stockStatus}`}
+          onClick={(e) => { e.stopPropagation(); onAddStock?.() }}
+          aria-label={`${ctaLabel} ${medicine.name}`}
+        >
+          <ShoppingCart size={16} aria-hidden="true" />
+          {ctaLabel}
+        </button>
+      )}
     </motion.div>
   )
 }
@@ -671,47 +725,13 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
 .stock-card-r--seguro  { border-left-color: var(--color-primary); }
 .stock-card-r--alto    { border-left-color: var(--color-secondary); }
 
-/* ── Badge row (status badge + dias) ── */
-.stock-card-r__badge-row {
+/* ── Name row (nome + StockPill) ── */
+/* Badge system removido — StockPill de W7.6 é reutilizado diretamente */
+.stock-card-r__name-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-}
-
-.stock-card-r__badge {
-  font-family: var(--font-body);
-  font-size: 0.625rem;   /* label-sm */
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.08em;
-  padding: 0.25rem 0.625rem;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-}
-
-/* Cores dos badges — SOMENTE via CSS vars */
-.stock-card-r__badge--urgente {
-  background: var(--color-error-bg);
-  color: var(--color-error);
-}
-.stock-card-r__badge--atencao {
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
-}
-.stock-card-r__badge--seguro {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-}
-.stock-card-r__badge--alto {
-  background: var(--color-secondary-bg);
-  color: var(--color-secondary);
-}
-
-/* @supports fallback para color-mix() (AP-W06) */
-@supports not (background: color-mix(in srgb, red 10%, white)) {
-  .stock-card-r__badge--urgente { background: rgba(186, 26, 26, 0.08); }
-  .stock-card-r__badge--atencao { background: rgba(245, 158, 11, 0.08); }
-  .stock-card-r__badge--seguro  { background: rgba(0, 106, 94, 0.08); }
-  .stock-card-r__badge--alto    { background: rgba(0, 93, 182, 0.08); }
+  gap: 0.75rem;
 }
 
 /* ── Dias restantes — número editorial ── */
@@ -806,6 +826,14 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
   margin-top: -0.25rem;
 }
 
+/* ── Última compra — subtexto de referência de preço ── */
+.stock-card-r__last-purchase {
+  font-family: var(--font-body);
+  font-size: var(--text-label-sm);
+  color: var(--color-outline);
+  margin: 0;
+}
+
 /* ── CTA button ── */
 .stock-card-r__cta {
   display: flex;
@@ -851,11 +879,14 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
 ### Critério de conclusão do Sprint 8.2
 
 - [ ] Componente renderiza corretamente para todos os 4 status (urgente/atencao/seguro/alto)
-- [ ] Modo simple: sem linha de uso, card mais compacto
-- [ ] Modo complex: exibe usageLine e quantidade formatada
+- [ ] `StockPill` de W7.6 importado e renderizado no `name-row` — sem badge CSS próprio
+- [ ] Simple mode: sem linha de uso, sem quantidade, sem bar-pct%; CTA oculto para seguro/alto
+- [ ] Simple mode: "Comprar em Breve" para atencao (não "Reabastecer")
+- [ ] Complex mode: exibe usageLine, quantidade e bar-pct%
+- [ ] "última compra: DD/MM · R$ X,XX" visível em ambos os modos (quando disponível)
 - [ ] Progress bar anima com `scaleX` (verificar DevTools: transform, não width)
 - [ ] Zero hardcoded hex no CSS
-- [ ] `@supports` fallback presente para `color-mix()`
+- [ ] `@supports` fallback presente para `color-mix()` se necessário
 - [ ] CTA tem `min-height: 56px`
 
 ---
@@ -1026,6 +1057,15 @@ function formatQuantity(entry) {
   return `${sign}${entry.quantity} un.`
 }
 
+/**
+ * Formata o custo do lote: "R$ X,XX" ou null se não registrado.
+ * Exibido para ambas as personas — é o ponto de referência para reposição.
+ */
+function formatCost(entry) {
+  if (entry.unit_price == null) return null
+  return entry.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 export default function EntradaHistorico({ entries = [], medicineName, maxVisible = 3 }) {
   const motionConfig = useMotion()
   const [expanded, setExpanded] = useState(false)
@@ -1071,7 +1111,13 @@ export default function EntradaHistorico({ entries = [], medicineName, maxVisibl
               <span className={`entrada-historico__qty entrada-historico__qty--${entry.quantity >= 0 ? 'positive' : 'negative'}`}>
                 {formatQuantity(entry)}
               </span>
-              <span className="entrada-historico__date">{formatDate(entry.purchase_date)}</span>
+              <div className="entrada-historico__meta">
+                <span className="entrada-historico__date">{formatDate(entry.purchase_date)}</span>
+                {/* Custo do lote — referência de preço para reposição (ambas as personas) */}
+                {formatCost(entry) && (
+                  <span className="entrada-historico__cost">{formatCost(entry)}</span>
+                )}
+              </div>
             </motion.li>
           )
         })}
@@ -1157,10 +1203,24 @@ export default function EntradaHistorico({ entries = [], medicineName, maxVisibl
 .entrada-historico__qty--positive { color: var(--color-primary); }
 .entrada-historico__qty--negative { color: var(--color-error); }
 
+.entrada-historico__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  white-space: nowrap;
+}
+
 .entrada-historico__date {
   font-size: var(--text-label-sm);
   color: var(--color-outline);
-  white-space: nowrap;
+}
+
+/* Custo do lote — referência de preço para reposição */
+.entrada-historico__cost {
+  font-size: var(--text-label-sm);
+  color: var(--color-on-surface-variant);
+  font-weight: var(--font-weight-medium);
 }
 
 .entrada-historico__toggle {
@@ -1205,9 +1265,10 @@ StockRedesign({ initialParams, onClearParams })
 
 ```javascript
 const { mode } = useComplexityMode()
-const isComplex = mode === 'complex' || mode === 'moderate'
-// gridClass: simple = sem grid (1 col), moderate = grid-2, complex = grid-3
-const gridClass = mode === 'complex' ? 'grid-3' : mode === 'moderate' ? 'grid-2' : 'stock-redesign__list'
+// moderate removido: isComplex = qualquer coisa que não seja 'simple'
+const isComplex = mode !== 'simple'
+// Sem gridClass condicional: simple usa CSS grid (2-col desktop via CSS)
+// Complex: grid responsivo (grid-2 → grid-3) controlado por contagem de itens via CSS
 ```
 
 ### Flat list de entradas para o histórico
@@ -1262,7 +1323,7 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 
   // ── Complexidade / Persona ──
   const { mode } = useComplexityMode()
-  const isComplex = mode === 'complex' || mode === 'moderate'
+  const isComplex = mode !== 'simple'  // moderate eliminado
 
   // ── Estado local (UI) ──
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -1371,7 +1432,7 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 
       {/* ── Seção principal ── */}
       {isComplex ? (
-        // Complex / Moderate: grid único, ordenado por urgência
+        // Complex: grid único ordenado por urgência; CSS decide 2-col vs 3-col por contagem
         <>
           <div className="stock-redesign__section-header">
             <h2 className="stock-redesign__section-title">
@@ -1379,7 +1440,7 @@ export default function StockRedesign({ initialParams, onClearParams }) {
             </h2>
           </div>
           <motion.div
-            className={`stock-redesign__grid ${mode === 'complex' ? 'grid-3' : 'grid-2'}`}
+            className="stock-redesign__grid stock-redesign__grid--complex"
             variants={motionConfig.cascade.container}
             initial="hidden"
             animate="visible"
@@ -1456,8 +1517,10 @@ export default function StockRedesign({ initialParams, onClearParams }) {
         </motion.div>
       )}
 
-      {/* ── Histórico de Entradas ── */}
-      {allEntries.length > 0 && (
+      {/* ── Histórico de Entradas (complex only) ── */}
+      {/* Simple: informação de última compra + custo já está per-card em StockCardRedesign */}
+      {/* Complex: Carlos precisa do histórico completo para auditoria e comparação */}
+      {isComplex && allEntries.length > 0 && (
         <section className="stock-redesign__history-section">
           <h2 className="stock-redesign__section-title">Histórico de Entradas</h2>
           <EntradaHistorico entries={allEntries} maxVisible={3} />
@@ -1599,7 +1662,8 @@ export default function StockRedesign({ initialParams, onClearParams }) {
   margin: 0;
 }
 
-/* Sections (simple mode) */
+/* Sections (simple mode) — 1 coluna mobile, 2 colunas desktop */
+/* Consistente com TreatmentsSimple W7.6 (align-items: start = Pinterest effect) */
 .stock-redesign__sections {
   display: flex;
   flex-direction: column;
@@ -1610,6 +1674,15 @@ export default function StockRedesign({ initialParams, onClearParams }) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .stock-redesign__sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;        /* Pinterest effect — cards sem altura forçada */
+    gap: 2rem;
+  }
 }
 
 .stock-redesign__section-label {
@@ -1625,9 +1698,25 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 .stock-redesign__section-label--atencao { color: var(--color-warning); }
 .stock-redesign__section-label--seguro  { color: var(--color-primary); }
 
-/* Grid (complex mode) — reutiliza grid-2 e grid-3 de layout.redesign.css */
+/* Grid (complex mode) — responsivo por contagem, sem moderate */
 .stock-redesign__grid {
   margin-bottom: 2rem;
+}
+
+/* Carlos: grid sempre responsivo — CSS decide colunas sem prop mode */
+@media (min-width: 768px) {
+  .stock-redesign__grid--complex {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .stock-redesign__grid--complex {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* Histórico section */
@@ -1666,8 +1755,11 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 
 ### Critério de conclusão do Sprint 8.5
 
-- [ ] Simple mode: seções CRÍTICO / ATENÇÃO / OK separadas por label colorido
-- [ ] Complex mode: grid único ordenado por urgência (`grid-2` para moderate, `grid-3` para complex)
+- [ ] `isComplex = mode !== 'simple'` — sem referência a `moderate`
+- [ ] Simple mode: seções CRÍTICO / ATENÇÃO / OK separadas por label colorido; 2 colunas no desktop
+- [ ] Simple mode: sem `EntradaHistorico` global (história por card via `lastPurchase`)
+- [ ] Complex mode: grid responsivo único (`grid-2` tablet, `grid-3` desktop) via CSS puro
+- [ ] Complex mode: `EntradaHistorico` com coluna de custo visível
 - [ ] FAB visível em mobile, oculto em desktop
 - [ ] "Adicionar Estoque" no header visível só em desktop
 - [ ] Modal de compra reutiliza `StockForm` original sem modificação
@@ -1729,8 +1821,8 @@ Se necessário, ajustar o matcher para incluir `StockRedesign`:
 **Com flag LIGADO (`?redesign=1`):**
 - [ ] `case 'stock'` → `StockRedesign` renderiza
 - [ ] `ViewSkeleton` aparece brevemente durante carregamento do chunk
-- [ ] Simple mode (≤3 meds): seções separadas por urgência, 1 coluna
-- [ ] Complex mode (4+ meds): grid responsivo em desktop
+- [ ] Simple mode: seções separadas por urgência, 2 colunas no desktop; sem histórico global
+- [ ] Complex mode: grid responsivo (2-col tablet, 3-col desktop); EntradaHistorico visível
 - [ ] `CriticalAlertBanner` aparece apenas quando há itens urgentes
 - [ ] Progress bars animam com `scaleX` (verificar via DevTools)
 - [ ] FAB visível em mobile, oculto em desktop
@@ -1783,13 +1875,15 @@ Se necessário, ajustar o matcher para incluir `StockRedesign`:
 >
 > **Como evitar:** Usar `livingFill.bar` do `useMotion()` — ele anima `scaleX: 0 → 1` com `transformOrigin: left`. O `width` percentual é definido estaticamente no `style` do elemento, não animado. Ver implementação em Sprint 8.2.
 
-### AP-W8-04: Hardcodar cores hex no CSS (AP-024 recorrente)
+### AP-W8-04: Hardcodar cores hex no CSS de `StockCardRedesign` (AP-024 recorrente)
 
 > **O que é:** escrever `.stock-card-r--urgente { color: #ba1a1a }` em vez de `var(--color-error)`.
 >
-> **Por que importa aqui:** `StockPill.jsx` (componente existente de W7) usa cores hex hardcoded e **já é uma dívida técnica identificada**. W8 não deve replicar este erro. O revisor Gemini sinaliza isso como CRITICAL.
+> **Por que importa aqui:** `StockPill.jsx` (reutilizado em W8) tem cores hex hardcoded — isso é dívida técnica conhecida (AP-024), mas está contida no componente existente e não se propaga para o CSS novo. O novo CSS de `StockCardRedesign` deve ser 100% via CSS vars.
 >
-> **Como evitar:** Antes de escrever qualquer cor no CSS, consultar `tokens.redesign.css`. Toda cor tem seu `--color-*` correspondente. Para transparências: `rgba(0,0,0,0)` ou futuro `color-mix()` com fallback `@supports`.
+> **Nota sobre StockPill:** ao reutilizar `StockPill` em vez de criar badge próprio (decisão W8), a dívida de hex hardcoded está isolada em um único arquivo existente. Não copiar esse padrão em nenhum CSS novo desta wave.
+>
+> **Como evitar:** Antes de escrever qualquer cor no CSS novo, consultar `tokens.redesign.css`. Toda cor tem seu `--color-*` correspondente.
 
 ### AP-W8-05: Esquecer `@supports` para `color-mix()` (AP-W06)
 
@@ -1838,22 +1932,23 @@ Se necessário, ajustar o matcher para incluir `StockRedesign`:
 
 ### Funcionalidade
 
-- [ ] `useStockData.js` criado e exportando `getStockStatus` + `getBarPercentage` testáveis
+- [ ] `useStockData.js` criado com `getStockStatus`, `getBarPercentage` e `lastPurchase` exportados/testáveis
 - [ ] `Stock.jsx` usa o hook — visual idêntico ao original (smoke test com flag off)
-- [ ] `StockCardRedesign.jsx` renderiza todos os 4 status sem erros
+- [ ] `StockCardRedesign.jsx` renderiza todos os 4 status sem erros; reutiliza `StockPill`
 - [ ] `CriticalAlertBanner` aparece/desaparece corretamente
-- [ ] `EntradaHistorico` expande/colapsa com "Ver tudo"
-- [ ] `StockRedesign.jsx` orquestra corretamente simple vs complex/moderate
+- [ ] `EntradaHistorico` exibe custo do lote + expande/colapsa com "Ver tudo"
+- [ ] `StockRedesign.jsx` orquestra corretamente simple vs complex (sem moderate)
 
 ### Design
 
-- [ ] Simple mode (≤3 meds): seções CRÍTICO / ATENÇÃO / OK em 1 coluna
-- [ ] Moderate mode (4-6 meds): grid-2 em desktop
-- [ ] Complex mode (7+ meds): grid-3 em desktop
+- [ ] Simple mode: seções CRÍTICO / ATENÇÃO / OK; **2 colunas desktop** (Pinterest deck)
+- [ ] Simple mode: sem badge próprio — `StockPill` W7.6 reutilizado; sem bar-pct%; sem seção histórico
+- [ ] Simple mode: CTA visível apenas em urgente/atencao; "Comprar em Breve" para atencao
+- [ ] Simple mode: "última compra: DD/MM · R$ X,XX" como subtexto per-card
+- [ ] Complex mode: grid responsivo (2-col tablet → 3-col desktop) via CSS puro
+- [ ] Complex mode: `EntradaHistorico` com custo do lote por entrada
 - [ ] Dias restantes em Public Sans 700, destaque visual claro
 - [ ] Progress bars animam com `scaleX` (não `width`)
-- [ ] Status badge colorido por urgência
-- [ ] CTA diferenciado: gradient error / outlined secondary / ghost primary
 - [ ] Border-left 4px semântico nos cards
 - [ ] FAB em mobile acima da BottomNav; botão de header em desktop
 

@@ -1669,7 +1669,99 @@ const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: 
 
 ---
 
-*Last updated: 2026-03-25*
+---
+
+## Design Philosophy — Linguagem Dicotômica (2026-03-26)
+
+### R-152: isComplex = mode !== 'simple' [CRITICAL — Design Personas]
+
+**Regra:** O único ponto de bifurcação de persona é `const isComplex = mode !== 'simple'`. O modo `moderate` não existe — foi eliminado. O CSS gerencia densidade visual por grid responsivo (grid-2 → grid-3), sem prop `mode` extra.
+
+```javascript
+// ✅ CORRETO
+const isComplex = mode !== 'simple'
+
+// ❌ ERRADO — moderate não existe mais
+const isComplex = mode === 'complex' || mode === 'moderate'
+```
+
+**Por que:** Três modos criam uma terceira persona inexistente. Carlos com 4 meds não é diferente de Carlos com 8 — o CSS resolve a densidade. Dois modos = dois paradigmas mentais limpos.
+
+**Source:** Wave 7.5/8 design dichotomy session (2026-03-26)
+
+---
+
+### R-153: Dona Maria quer hierarquia, não menos dados [CRITICAL — Design Simple Mode]
+
+**Regra:** Ao projetar para `isComplex = false` (Dona Maria), nunca remova dados por reflexo. Pergunte: "esse dado informa uma **ação** ou apenas contextualiza?". Se contextualiza sem levar à ação, remova ou traduza em linguagem humana.
+
+**Checklist de validação para modo simple:**
+1. ❓ CTA é o elemento visual dominante no card?
+2. ❓ Dados numéricos têm equivalente em linguagem humana?
+3. ❓ Não há comparação horizontal forçada?
+4. ❓ O dado não está sendo redundante com outra área do card?
+
+**Exemplos concretos:**
+- `AdherenceLabel` em vez de `AdherenceBar7d` (veredicto > métrica)
+- "Comprar em Breve" em vez de "Reabastecer" (orientação > registro)
+- "última compra: DD/MM · R$ X,XX" per-card em vez de seção histórico global
+- CTA oculto para `seguro`/`alto` (sem ação necessária = sem botão)
+- `bar-pct %` oculto (barra fala por si; % é redundante)
+
+**Source:** Wave 7.6 + Wave 8 spec review (2026-03-26)
+
+---
+
+### R-154: Reutilizar StockPill para qualquer status de estoque [HIGH]
+
+**Regra:** `StockPill` (`src/features/protocols/components/redesign/StockPill.jsx`) é o componente **universal** de status de estoque. Nunca criar badge de status de estoque novo em outra tela — sempre importar `StockPill`.
+
+**Mapeamento de ícones (W7.6, estável):**
+- `alto` (30+ dias): `CalendarArrowUp` — azul
+- `normal` (14–29 dias): `CalendarCheck2` — verde
+- `low` (7–13 dias): `CalendarSync` — âmbar
+- `critical` (<7 dias): `CalendarX2` — vermelho
+
+**Por que:** Consistência entre Treatments e Stock é crítica. Dois sistemas de badge para o mesmo conceito confundem o usuário ao navegar entre telas.
+
+**Source:** Wave 8 spec review — item 6 (2026-03-26)
+
+---
+
+### R-155: PriorityDoseCard registra TODOS os doses da faixa, exibe slice visual [HIGH]
+
+**Regra:** `PriorityDoseCard` recebe `doses={urgentDoses}` sem slice. O display limita-se a 3 (`DISPLAY_LIMIT = 3`) com linha de overflow "+ N medicamentos". O CTA "Confirmar Agora" registra **todos** — não apenas os visíveis.
+
+```jsx
+// ✅ CORRETO — pass todos, display limita internamente
+<PriorityDoseCard doses={urgentDoses} onRegisterAll={handleRegisterDosesAll} />
+
+// ❌ ERRADO — slice no prop = CTA registra só os 3 visíveis
+<PriorityDoseCard doses={urgentDoses.slice(0, 3)} />
+```
+
+**Por que:** Carlos pode ter 6+ protocolos noturnos. Confirmar apenas 3 de 6 deixaria doses esquecidas mesmo com o CTA de "Confirmar Agora".
+
+**Source:** Wave 7.5 PriorityDoseCard universal session (2026-03-26)
+
+---
+
+### R-156: AdherenceLabel usa linguagem humana (não %) para modo simple [MEDIUM]
+
+**Regra:** Em modo `isComplex = false`, usar `AdherenceLabel` (não `AdherenceBar7d`). Thresholds e textos canônicos:
+- >90%: "Tratamento em dia" (green)
+- 70–90%: "Algumas doses perdidas" (neutral)
+- 50–70%: "Tratamento em risco" (warning/amber)
+- <50%: "Muitas doses perdidas" (critical/red)
+- 0% ou sem histórico: não renderiza nada
+
+**Componente:** `src/features/protocols/components/redesign/AdherenceLabel.jsx`
+
+**Source:** Wave 7.6 ProtocolRow card gestalt redesign (2026-03-26)
+
+---
+
+*Last updated: 2026-03-26*
 *Rules: R-001 to R-151 (Wave 7 Treatments Redesign patterns added)*
 
 ## R-136: Callback Batch Operations Must Match UI Promise
