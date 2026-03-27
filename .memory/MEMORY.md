@@ -322,6 +322,19 @@ Agents should read this file + rules + anti-patterns before coding.
 - Fix coluna `status` inexistente em `medicine_logs`
 - Spec criada: `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` (D1-D6, target ≤12 queries)
 - R-128 to R-131 + AP-P14 to AP-P17 registradas
+
+## 🎨 Wave 9: Profile, Health History, Emergency Redesign ✅ DELIVERED (2026-03-27)
+**Status:** MERGED (commit c78e1a4) | **PR:** #434 | **Branch:** `feature/redesign/wave-9-profile-saude`
+- **ProfileRedesign.jsx** (282 linhas): two-column desktop layout (240px sidebar + 1fr) + 3 sub-components
+- **ProfileHeaderRedesign, ProfileSectionRedesign, ProfileLinkRedesign:** reusable utilities
+- **HealthHistoryRedesign + EmergencyRedesign:** wrapper strategy (CSS-only overrides)
+- **App.jsx integration:** 3 lazy imports + branching `isRedesignEnabled` em 4 cases
+- **Bugfix:** Consultation onBack navigation (volta para 'profile', não 'dashboard')
+- **Design:** Material 3, verde saúde #006a5e, surface tonal, CSS data-active visibility pattern
+- **AI Review:** 2 comments → 1 accepted (loadProfile error feedback), 1 declined (ProfileHeaderRedesign consolidation)
+- **New Anti-Patterns:** AP-W9-01 (conditional inside Suspense for lazy imports), AP-W9-02 (silent async errors)
+- **Spec:** `plans/redesign/WAVE_9_PROFILE_SAUDE_REDESIGN.md` (3000+ linhas, completo)
+- **Journal:** `.memory/journal/2026-W13-WAVE9-PROFILE-SAUDE.md` (lessons learned, metrics)
 - Journal: `.memory/journal/2026-W12-P4.md`
 
 ## Sprint 8.3 ✅ ENTREGUE (2026-03-20) — F8.1 Chatbot IA

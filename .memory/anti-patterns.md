@@ -29,6 +29,8 @@
 | **AP-024** | **Hardcode colors (hex/rgba) in redesign CSS without checking CSS variable pattern** | **8+ reviewer issues, design system inconsistency, harder future theme updates** | **Always use CSS variables (--color-*) and color-mix() for semantic colors in components.redesign.css. Check tokens.redesign.css first.** | **R-118** |
 | **AP-W02** | **Override button size classes with min-height on variant selector** | **size="sm" and size="md" props stop working, API contract broken, layout regressions** | **Size-specific heights belong in .btn-sm/.btn-md rules only, NOT in .btn-primary/.btn-secondary. Test all size + variant combos.** | **R-119** |
 | **AP-C02** | **Duplicate CSS rules across similar components without consolidation** | **Code bloat, maintenance burden, cascading changes require editing multiple places** | **Use CSS selector grouping (`,`) for shared base styles, then separate size/state modifiers. 1 source of truth.** | **R-120** |
+| **AP-W9-01** | **Conditional JSX inside Suspense boundary for lazy imports** | **Dynamic import error: "Failed to fetch dynamically imported module" in browser console. Lazy component fails to load.** | **Move conditional outside Suspense. Each branch gets its own Suspense wrapper: `isFlag ? <Suspense><New/></Suspense> : <Suspense><Old/></Suspense>`** | **R-117** |
+| **AP-W9-02** | **Silent error handling in async operations (console.error only)** | **User sees nothing when operation fails. Silent failures lead to UX confusion, support tickets.** | **Always use user-facing error message for async operations: `setError('User-friendly message')` + optional `console.error()` for debugging.** | **R-051** |
 
 ---
 
