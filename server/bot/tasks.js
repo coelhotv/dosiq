@@ -240,8 +240,7 @@ function formatStockAlertMessage(zeroStock, lowStock) {
  */
 function formatProactiveStockMessage(userName, medicines) {
   let message = `💡 *Lembrete de Reposição*\n\n`;
-  // eslint-disable-next-line no-useless-escape
-  message += `Oi ${escapeMarkdownV2(userName)}\! Passando para lembrar que alguns medicamentos estão chegando no fim:\n\n`;
+  message += `Oi ${escapeMarkdownV2(userName)}\\! Passando para lembrar que alguns medicamentos estão chegando no fim:\n\n`;
 
   medicines.forEach(m => {
     const dateHint = m.predictedStockoutDate
@@ -250,8 +249,7 @@ function formatProactiveStockMessage(userName, medicines) {
     message += `• ${escapeMarkdownV2(m.name)} — cerca de ${m.days} dias restantes${dateHint}\n`;
   });
 
-  // eslint-disable-next-line no-useless-escape
-  message += `\nQue tal aproveitar para fazer a reposição com calma\? 🛒`;
+  message += `\nQue tal aproveitar para fazer a reposição com calma\\? 🛒`;
 
   return message;
 }
@@ -1302,8 +1300,7 @@ function formatPrescriptionAlertMessage(protocol, daysRemaining) {
   let message = '';
   
   if (daysRemaining === 1) {
-    // eslint-disable-next-line no-useless-escape
-    message = `⚠️ *Prescrição vence amanhã\!*\n\n`;
+    message = `⚠️ *Prescrição vence amanhã\\!*\n\n`;
   } else if (daysRemaining === 7) {
     message = `⚠️ *Prescrição vencendo em 7 dias*\n\n`;
   } else if (daysRemaining === 30) {
@@ -1316,14 +1313,11 @@ function formatPrescriptionAlertMessage(protocol, daysRemaining) {
   message += `Vencimento: ${escapeMarkdownV2(endDate)}\n\n`;
 
   if (daysRemaining <= 1) {
-    // eslint-disable-next-line no-useless-escape
-    message += `🚨 *Atenção\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\.`;
+    message += `🚨 *Atenção\\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
   } else if (daysRemaining <= 7) {
-    // eslint-disable-next-line no-useless-escape
-    message += `📅 Agende sua consulta para renovar a prescrição\.`;
+    message += `📅 Agende sua consulta para renovar a prescrição\\.`;
   } else {
-    // eslint-disable-next-line no-useless-escape
-    message += `💡 É um bom momento para agendar sua consulta de acompanhamento\.`;
+    message += `💡 É um bom momento para agendar sua consulta de acompanhamento\\.`;
   }
 
   return message;
