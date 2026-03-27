@@ -13,6 +13,7 @@
  */
 import { AnimatePresence, motion } from 'framer-motion'
 import AdherenceBar7d from './AdherenceBar7d'
+import AdherenceLabel from './AdherenceLabel'
 import StockPill from './StockPill'
 import TitrationBadge from './TitrationBadge'
 
@@ -60,8 +61,13 @@ export default function ProtocolRow({
             }
           }}
         >
-          <div className="protocol-row-tabular__medicine-name">{item.medicineName}</div>
-          <div className="protocol-row-tabular__dosage">{item.dosageLabel}</div>
+          <div className="protocol-row-tabular__name-row">
+            <span className="protocol-row-tabular__medicine-name">{item.medicineName}</span>
+            {item.concentrationLabel && (
+              <span className="protocol-row__dosage">{item.concentrationLabel}</span>
+            )}
+          </div>
+          <div className="protocol-row-tabular__intake">{item.intakeLabel}</div>
         </div>
 
         {/* CÉLULA 2: Frequência + Horários — S7.5.5: aplicar hover class */}
@@ -108,18 +114,33 @@ export default function ProtocolRow({
         aria-expanded={canExpand ? expanded : undefined}
         style={{ minHeight: '3.5rem' }}
       >
-        <div className="protocol-row__header">
-          <span className="protocol-row__name">{item.medicineName}</span>
-          <span className="protocol-row__dosage">{item.dosageLabel}</span>
-        </div>
-        <div className="protocol-row__schedule">
-          {item.frequencyLabel}
-          {item.timeSchedule.length > 0 && ` · ${item.timeSchedule.join(' / ')}`}
-        </div>
-        <div className="protocol-row__metrics">
-          {showAdherence && <AdherenceBar7d score={item.adherenceScore7d} />}
+        {/* Linha 1: nome + badge (esq) · stock pill (dir) */}
+        <div className="protocol-row__top-row">
+          <div className="protocol-row__header">
+            <span className="protocol-row__name">{item.medicineName}</span>
+            {item.concentrationLabel && (
+              <span className="protocol-row__dosage">{item.concentrationLabel}</span>
+            )}
+          </div>
           <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
         </div>
+
+        {/* Linha 2: quantidade por dose */}
+        <div className="protocol-row__intake">{item.intakeLabel}</div>
+
+        {/* Linha 3: frequência/horários (esq) · adesão (dir) */}
+        <div className="protocol-row__bottom-row">
+          <div className="protocol-row__schedule">
+            {item.frequencyLabel}
+            {item.timeSchedule.length > 0 && ` · ${item.timeSchedule.join(' / ')}`}
+          </div>
+          {showAdherence && (
+            isComplex
+              ? <AdherenceBar7d score={item.adherenceScore7d} />
+              : <AdherenceLabel score={item.adherenceScore7d} />
+          )}
+        </div>
+
         {canExpand && (
           <span className="protocol-row__chevron" aria-hidden="true">
             {expanded ? '▲' : '▼'}
