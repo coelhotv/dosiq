@@ -429,6 +429,90 @@ const currentGroups = { ativo: activeGroups, pausado: pausedGroups, finalizado: 
 
 ---
 
-*Last updated: 2026-03-25*
-*Anti-patterns: AP-W01 through AP-W23, AP-S01, AP-D01, AP-D02 (Wave 7 additions)*
+---
+
+## Design Dichotomy Anti-Patterns (Wave 7.5/8 — 2026-03-26)
+
+### AP-D03: Usar `mode === 'moderate'` como terceiro modo de persona
+
+**O que é:** Verificar `mode === 'moderate'` em qualquer componente ou lógica de view.
+
+**Consequência:** O modo `moderate` foi eliminado da filosofia de design. `isComplex = mode !== 'simple'` é o único predicado válido. Carlos com 4 meds e Carlos com 8 meds são a mesma persona — o CSS grid resolve a densidade por breakpoint.
+
+**Prevenção:**
+```javascript
+// ❌ PROIBIDO
+const isComplex = mode === 'complex' || mode === 'moderate'
+const gridClass = mode === 'complex' ? 'grid-3' : mode === 'moderate' ? 'grid-2' : ''
+
+// ✅ CORRETO
+const isComplex = mode !== 'simple'
+// CSS decide colunas: @media (min-width: 768px) { grid-template-columns: repeat(2,1fr) }
+// @media (min-width: 1280px) { grid-template-columns: repeat(3,1fr) }
+```
+
+**Relacionado:** R-152
+
+---
+
+### AP-D04: Criar sistema de badge de estoque novo em vez de reutilizar StockPill
+
+**O que é:** Criar classes CSS de badge (e.g., `.stock-badge--urgente`) em um componente novo quando `StockPill` já existe.
+
+**Consequência:** Dois sistemas visuais para o mesmo conceito (status de estoque) em telas diferentes. Usuário vê linguagem visual inconsistente entre Treatments e Stock. Dívida técnica duplicada.
+
+**Prevenção:**
+```jsx
+// ❌ ERRADO — badge próprio
+<span className={`stock-card-r__badge stock-card-r__badge--${stockStatus}`}>
+  {STATUS_LABELS[stockStatus]}
+</span>
+
+// ✅ CORRETO — reutilizar StockPill de W7.6
+import StockPill from '@protocols/components/redesign/StockPill'
+<StockPill status={stockStatus} daysRemaining={Math.floor(item.daysRemaining)} />
+```
+
+**Relacionado:** R-154
+
+---
+
+### AP-D05: Slice no prop de doses do PriorityDoseCard
+
+**O que é:** Passar `doses={urgentDoses.slice(0, 3)}` para `PriorityDoseCard`.
+
+**Consequência:** O CTA "Confirmar Agora" registra apenas 3 doses — as demais da faixa horária ficam sem registro, mesmo que o usuário pense que confirmou tudo.
+
+**Prevenção:**
+```jsx
+// ❌ ERRADO — slice no prop
+<PriorityDoseCard doses={urgentDoses.slice(0, 3)} />
+
+// ✅ CORRETO — passa todos; componente faz slice interno só para display
+<PriorityDoseCard doses={urgentDoses} onRegisterAll={handleRegisterDosesAll} />
+```
+
+**Relacionado:** R-155
+
+---
+
+### AP-D06: Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria
+
+**O que é:** Copiar elementos do modo `complex` para o modo `simple` sem questionar se cada elemento informa uma ação.
+
+**Elementos que Carlos vê mas Dona Maria NÃO deve ver:**
+- `bar-pct %` (a barra visual já é suficiente)
+- Quantidade de unidades em estoque (não informa decisão imediata)
+- Seção de `EntradaHistorico` global (substituída por "última compra: DD/MM · R$ X,XX" per-card)
+- `AdherenceBar7d` com % (substituída por `AdherenceLabel` com texto humano)
+- CTA para status `seguro`/`alto` em StockCard (sem ação necessária = sem botão)
+
+**Teste mental:** "Esse dado leva Dona Maria a tomar uma ação agora?" Se não → remova ou traduza.
+
+**Relacionado:** R-153
+
+---
+
+*Last updated: 2026-03-26*
+*Anti-patterns: AP-W01 through AP-W23, AP-S01, AP-D01 through AP-D06 (Wave 7.5/8 design dichotomy additions)*
 

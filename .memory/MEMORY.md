@@ -52,8 +52,14 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **R-149** | Full object fetch for edit workflows | CRITICAL (W7) — TreatmentItem ≠ Protocol |
 | **R-150** | Compute state-specific aggregations, not just primary | CRITICAL (W7) — paused/finished tabs empty |
 | **R-151** | Modal component consistency — use shared Modal, not custom overlays | HIGH (W7) — UX consistency |
+| **R-152** | `isComplex = mode !== 'simple'` — sem modo `moderate` | CRITICAL — 2 personas, não 3 |
+| **R-153** | Dona Maria = hierarquia certa, não menos dados | CRITICAL — checklist de validação |
+| **R-154** | Reutilizar `StockPill` para qualquer status de estoque (nunca criar badge novo) | HIGH — consistência entre telas |
+| **R-155** | `PriorityDoseCard` recebe todos os doses; display faz slice; CTA registra todos | HIGH — sem doses esquecidas |
+| **R-156** | Modo simple: `AdherenceLabel` (linguagem humana), não `AdherenceBar7d` (%) | MEDIUM |
 
-→ Full rules at `.memory/rules.md` (R-001 to R-151, +W7 additions)
+→ Full rules at `.memory/rules.md` (R-001 to R-156)
+→ Design philosophy completa: `.memory/design-philosophy.md`
 
 ---
 
@@ -80,8 +86,12 @@ npm run validate:agent      # OBRIGATÓRIO antes de push (10 min kill-switch)
 | **Stock calc ignoring dosage_per_intake (AP-S01)** | **30-day forecast error (90 vs 30 days — 3x off)** | **Multiply expectedDoses × dosage_per_intake** |
 | **Using 1px borders (AP-D01)** | **Violates design system, visual clutter** | **Use tonal separation (bg colors) not borders** |
 | **Computing aggregations for primary state only (AP-D02)** | **Other tabs empty/wrong when switched (W7)** | **Compute for ALL states, not just primary** |
+| **`mode === 'moderate'` como terceiro modo (AP-D03)** | **Persona inexistente; CSS resolve densidade** | **`isComplex = mode !== 'simple'` apenas** |
+| **Badge de estoque novo em vez de StockPill (AP-D04)** | **Inconsistência visual entre Treatments e Stock** | **Importar `StockPill` de W7.6** |
+| **Slice no prop de PriorityDoseCard (AP-D05)** | **CTA registra só 3 de N doses** | **Passar todos; componente faz slice visual** |
+| **Dados de Carlos no modo Dona Maria (AP-D06)** | **Ruído visual, CTA diluted, hierarquia errada** | **Checklist R-153: dado informa ação?** |
 
-→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P21 + AP-W18-W23, AP-S01, AP-D01-D02)
+→ Full anti-patterns at `.memory/anti-patterns.md` (AP-001 to AP-P21 + AP-W18-W23, AP-S01, AP-D01 through AP-D06)
 
 ---
 
@@ -269,7 +279,8 @@ git push -u origin feature/fase-N/descriptive-name
 
 ## 📚 Documentation
 
-- `.memory/rules.md` — 134 project-specific rules (R-001 to R-134, +3 from Sprint 8.5 Groq optimization)
+- `.memory/rules.md` — 156 project-specific rules (R-001 to R-156; R-152–R-156: design dichotomy personas)
+- `.memory/design-philosophy.md` — **Design Philosophy: Linguagem Dicotômica** (Dona Maria vs Carlos, componentes universais, mapeamento por tela, StockPill/AdherenceLabel references)
   - R-132: Logging em `api/*.js` para Visibilidade Vercel
   - R-133: Event-Driven Router Fallback
   - R-134: Mock/Adapter Interface Completeness
