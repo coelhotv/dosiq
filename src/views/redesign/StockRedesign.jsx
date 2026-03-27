@@ -230,13 +230,13 @@ export default function StockRedesign({ initialParams, onClearParams }) {
             </>
           )}
 
-          {(okItems.filter(i => i.hasActiveProtocol).length > 0 || highItems.filter(i => i.hasActiveProtocol).length > 0) && (
+          {(okItemsWithoutOrphans.length > 0 || highItemsWithoutOrphans.length > 0) && (
             <>
               <h2 className="stock-redesign__section-label stock-redesign__section-label--seguro">
-                Estoque OK ({okItems.filter(i => i.hasActiveProtocol).length + highItems.filter(i => i.hasActiveProtocol).length})
+                Estoque OK ({okItemsWithoutOrphans.length + highItemsWithoutOrphans.length})
               </h2>
               <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
-                {[...okItems.filter(i => i.hasActiveProtocol), ...highItems.filter(i => i.hasActiveProtocol)].map((item, index) => (
+                {[...okItemsWithoutOrphans, ...highItemsWithoutOrphans].map((item, index) => (
                   <StockCardRedesign
                     key={item.medicine.id}
                     item={item}

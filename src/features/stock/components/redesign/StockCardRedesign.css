@@ -170,8 +170,8 @@
 
 /* CTA cores por status */
 .stock-card-r__cta--urgente {
-  background: linear-gradient(135deg, var(--color-error), #d32f2f);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 70%, black));
+  color: var(--color-on-primary);
   box-shadow: var(--shadow-error);
 }
 

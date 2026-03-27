@@ -104,7 +104,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
       {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
       {isComplex && (
         <p className="stock-card-r__quantity">
-          {totalQuantity} {medicine.medicine_type === 'liquido' ? 'ml' : medicine.medicine_type === 'capsula' ? 'cáps.' : 'comprimidos'}
+          {totalQuantity} {{ liquido: 'ml', capsula: 'cáps.' }[medicine.medicine_type] ?? 'comprimidos'}
         </p>
       )}
 

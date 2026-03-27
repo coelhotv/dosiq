@@ -8,6 +8,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { medicineService, stockService, protocolService } from '@shared/services'
+import { parseLocalDate } from '@utils/dateUtils'
+import { SYSTEM_NOTE_PREFIXES } from '@stock/constants'
 
 // ─── Status Helpers (Exportados para testes) ─────────────────────────────────
 
@@ -41,9 +43,6 @@ export function getBarPercentage(totalQuantity, daysRemaining) {
   return Math.round((daysRemaining / 30) * 100)
 }
 
-// Prefixos de ajustes automáticos do sistema (mesma lógica de PR #402)
-// stockService.increase() gera entradas reais ao deletar doses — não são compras reais
-const SYSTEM_NOTE_PREFIXES = ['Dose excluída', 'Ajuste de dose']
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -104,7 +103,7 @@ export function useStockData() {
       // Exclui entradas geradas por logService.delete() → stockService.increase()
       const purchaseEntries = (stock.entries || [])
         .filter((e) => e.quantity > 0 && !SYSTEM_NOTE_PREFIXES.some((p) => e.notes?.startsWith(p)))
-        .sort((a, b) => new Date(b.purchase_date) - new Date(a.purchase_date))
+        .sort((a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date))
       const latestEntry = purchaseEntries[0] || null
       const lastPurchase = latestEntry
         ? {

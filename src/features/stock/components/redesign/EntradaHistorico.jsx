@@ -12,9 +12,7 @@ import { motion } from 'framer-motion'
 import { Pill, Leaf, ChevronDown, ChevronUp } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
-
-// Prefixos de ajustes automáticos do sistema (mesma lógica de StockCard.jsx original)
-const SYSTEM_PREFIXES = ['Dose excluída', 'Ajuste de dose']
+import { SYSTEM_NOTE_PREFIXES } from '@stock/constants'
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -48,11 +46,11 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
   // Filtrar apenas compras reais (excluir ajustes automáticos e saídas por FIFO)
   // Mesma lógica de PR #402: quantity > 0 E notes não é prefixo de sistema
   const purchases = entries.filter(
-    (e) => e.quantity > 0 && !SYSTEM_PREFIXES.some((p) => e.notes?.startsWith(p))
+    (e) => e.quantity > 0 && !SYSTEM_NOTE_PREFIXES.some((p) => e.notes?.startsWith(p))
   )
 
   // Ordenar por data mais recente primeiro
-  const sorted = [...purchases].sort((a, b) => new Date(b.purchase_date) - new Date(a.purchase_date))
+  const sorted = [...purchases].sort((a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date))
   const visible = expanded ? sorted : sorted.slice(0, maxVisible)
   const hasMore = sorted.length > maxVisible
 
@@ -69,6 +67,7 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
           // Ícone de tipo de medicamento
           const isSupplement = entry.medicineType === 'suplemento'
           const TypeIcon = isSupplement ? Leaf : Pill
+          const cost = formatCost(entry)
 
           return (
             <motion.li key={entry.id} className="entrada-historico__item" variants={motionConfig.cascade.item}>
@@ -93,7 +92,7 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
               </span>
 
               {/* Custo total */}
-              {formatCost(entry) && <span className="entrada-historico__cost">{formatCost(entry)}</span>}
+              {cost && <span className="entrada-historico__cost">{cost}</span>}
             </motion.li>
           )
         })}

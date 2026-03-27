@@ -40,7 +40,7 @@
   border: none;
   border-radius: var(--radius-lg);
   background: var(--gradient-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   cursor: pointer;
   box-shadow: var(--shadow-primary);
 }
@@ -180,7 +180,7 @@
   height: 56px;
   border-radius: var(--radius-full);
   background: var(--gradient-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: none;
   cursor: pointer;
   display: flex;
@@ -249,8 +249,8 @@
   min-height: 44px;
   border: none;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--color-error), #d32f2f);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 70%, black));
+  color: var(--color-on-primary);
   font-family: var(--font-body);
   font-size: var(--text-label-md);
   font-weight: var(--font-weight-bold);
