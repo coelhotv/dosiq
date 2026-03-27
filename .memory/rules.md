@@ -1775,3 +1775,75 @@ const isComplex = mode === 'complex' || mode === 'moderate'
 - UI wording should accurately reflect implementation: if UI says "Confirmar X doses", ensure loop processes X items
 - Prefer explicit `for...of` or `.map()` with `Promise.all()` over single-item registration
 
+---
+
+### R-157: Filter System Adjustments from Ledger History [HIGH]
+
+**Rule:** Ledger tables (like `stock`) that record both real events and automatic adjustments must filter system-generated entries before display. Use a module-level constant of known prefixes and filter with `.some(p => field?.startsWith(p))`.
+
+**Pattern:**
+```javascript
+// Module-level constant
+const SYSTEM_NOTE_PREFIXES = ['Dose excluída', 'Ajuste de dose']
+
+// Filter function (applies anywhere)
+const filtered = entries.filter(e =>
+  e.quantity > 0 &&
+  !SYSTEM_NOTE_PREFIXES.some(p => e.notes?.startsWith(p))
+)
+```
+
+**Why:** `stockService.increase()` creates real ledger rows when doses are deleted — not actual purchases. Without filtering, history becomes "dirty" with system-injected entries. Identified in PR #402 (W12); reapplied in W8 Stock final refinements.
+
+**Where applied:**
+- `src/features/stock/hooks/useStockData.js:100` — lastPurchase calculation
+- `src/features/stock/components/redesign/EntradaHistorico.jsx:55` — purchases list rendering
+
+**Source:** Wave 8 Stock Redesign (2026-03-27) + PR #402 (W12)
+
+---
+
+### R-158: Force Framer Motion Cascade Reset with Key Prop [MEDIUM]
+
+**Rule:** When a `motion.ul` with `variants={cascade.container}` and child `motion.li` items has dynamic list contents, use `key={stateVariable}` on the `motion.ul` to force React remount and reset Framer Motion's animation state.
+
+**Pattern:**
+```jsx
+// ✅ CORRECT — key={expanded} forces remount on state change
+<motion.ul
+  key={expanded}  // ← CRITICAL
+  className="list"
+  variants={motionConfig.cascade.container}
+  initial="hidden"
+  animate="visible"
+>
+  {visibleItems.map((item) => (
+    <motion.li key={item.id} variants={motionConfig.cascade.item}>
+      {/* ... */}
+    </motion.li>
+  ))}
+</motion.ul>
+
+// ❌ WRONG — no key, ul stays in "visible" state
+<motion.ul
+  className="list"
+  variants={motionConfig.cascade.container}
+  initial="hidden"
+  animate="visible"
+>
+  {/* new items don't animate on add — ul never re-enters cascade */}
+</motion.ul>
+```
+
+**Why:** Framer Motion's cascade animation fires on mount/`animate` prop change. If the list element (`motion.ul`) stays mounted while its children list changes, Framer Motion doesn't re-trigger the cascade for newly added children — they render with no animation.
+
+**Where applied:**
+- `src/features/stock/components/redesign/EntradaHistorico.jsx:65` — fixed "Ver tudo (N)" expand not animating new entries
+
+**Source:** Wave 8 Stock Redesign (2026-03-27)
+
+---
+
+*Last updated: 2026-03-27*
+*Rules: R-001 to R-158 (Wave 8 Stock final refinements + patterns)*
+

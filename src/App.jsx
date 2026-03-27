@@ -23,6 +23,7 @@ const Consultation = lazy(() => import('./views/Consultation'))
 const Landing = lazy(() => import('./views/Landing'))
 const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
 const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesign'))
+const StockRedesign = lazy(() => import('./views/redesign/StockRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -146,7 +147,14 @@ function AppInner() {
           </Suspense>
         )
       case 'stock':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <StockRedesign
+              initialParams={initialStockParams}
+              onClearParams={() => setInitialStockParams(null)}
+            />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Stock
               initialParams={initialStockParams}
