@@ -1,7 +1,8 @@
 # Wave 8 — Estoque Redesign: Santuário Terapêutico
 
-**Status:** ⏳ PENDENTE IMPLEMENTAÇÃO
+**Status:** ✅ COMPLETA (2026-03-27)
 **Data de criação da spec:** 2026-03-26
+**Data de merge:** 2026-03-27 (PR #433, commit c55c208)
 **Dependências:** W0 ✅ W1 ✅ W2 ✅ W3 ✅ W4 ✅ W5 ✅ W6 ✅ W6.5 ✅ W7 ✅ W7.5 ✅ (todos mergeados em main)
 **Branch:** `feature/redesign/wave-8-stock`
 **Risco:** MÉDIO — envolve criação de hook compartilhado (`useStockData`) que será usado tanto por `Stock.jsx` quanto por `StockRedesign.jsx`; qualquer regressão no hook afeta a view original.

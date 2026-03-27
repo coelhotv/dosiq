@@ -27,7 +27,7 @@
 | W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ✅ MERGED #426 (2026-03-25) | main |
 | W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ✅ MERGED #431 (2026-03-25) | main |
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
-| W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ⏳ PENDENTE IMPLEMENTAÇÃO | — |
+| W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ✅ MERGED #433 (2026-03-27) | main |
 | W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
@@ -40,8 +40,9 @@
 - ✅ **W6.5** (2026-03-25): CSS Responsive Doses + CronogramaPeriodo + DashboardRedesign + PriorityDoseCard Variants (PR #426)
 - ✅ **W7** (2026-03-25): Treatments Redesign — 7 sprints, 2 personas (Simple/Complex), responsive layout, ANVISA search, 10 critical fixes (PR #431)
 - ✅ **W7.5** (2026-03-26): Dashboard "Hoje" — dose card redesign (Pill/PillBottle icons), accordion zonas inteligentes (S7.5.1-S7.5.6), edit plan button, adherence neutra (PR #432)
+- ✅ **W8** (2026-03-27): Stock Redesign — two-persona layout (Simple/Complex), CriticalAlertBanner, StockCardRedesign with Living Fill bars, EntradaHistorico history, useStockData shared hook, SYSTEM_NOTE_PREFIXES pattern, CSS var compliance, 6 refinement sprints (PR #433)
 
-**Foundation (W0-W7.5):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard completo (hoje + zonas) e tratamentos com refinamentos
+**Foundation (W0-W8):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard (hoje + zonas), tratamentos com refinamentos e estoque com dois personas
 
 ---
 
