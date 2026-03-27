@@ -29,7 +29,10 @@
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
 | W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ✅ MERGED #433 (2026-03-27) | main |
 | W9 | Perfil & Saúde | `WAVE_9_PROFILE_SAUDE_REDESIGN.md` | ✅ MERGED #434 (2026-03-27) | main |
-| W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
+| W10 | Perfil Hub + Histórico Calendar-Driven + Settings | `WAVE_10_PERFIL_HISTORICO_SETTINGS.md` | ⏳ SPECS PRONTAS (10A+10B+10C) | — |
+| W10A | Settings Extraction | `WAVE_10A_SETTINGS_EXTRACTION.md` | ⏳ PRONTA PARA EXECUÇÃO | — |
+| W10B | Profile Hub + Migração de Dados | `WAVE_10B_PROFILE_HUB.md` | ⏳ SPEC PRONTA | — |
+| W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ⏳ SPEC PRONTA | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
 | W12 | Landing, Auth & Onboarding | — | ⏳ PENDENTE SPEC | — |
 
@@ -63,7 +66,7 @@
 12. [Wave 7 — Tratamentos Redesign](#12-wave-7--tratamentos-redesign)
 13. [Wave 8 — Estoque Redesign](#13-wave-8--estoque-redesign)
 14. [Wave 9 — Perfil & Saúde Redesign](#14-wave-9--perfil--saúde-redesign)
-15. [Wave 10 — Progressive Disclosure System](#15-wave-10--progressive-disclosure-system)
+15. [Wave 10 — Perfil Hub, Histórico Calendar-Driven & Settings](#15-wave-10--perfil-hub-histórico-calendar-driven--settings-extraction)
 16. [Wave 11 — Accessibility & Polish](#16-wave-11--accessibility--polish)
 17. [Wave 12 — Landing, Auth & Onboarding](#17-wave-12--landing-auth--onboarding)
 18. [Checklist de Validação por Wave](#18-checklist-de-validação-por-wave)
@@ -2213,58 +2216,45 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 
 ---
 
-## 15. Wave 10 — Progressive Disclosure System
+## 15. Wave 10 — Perfil Hub, Histórico Calendar-Driven & Settings Extraction
 
-> **⚠️ ROLLOUT GRADUAL:** `useComplexityMode.js` é um hook compartilhado. Mudanças nele afetam TODAS as views, incluindo as atuais. Durante rollout, preferir criar `useComplexityModeRedesign.js` como hook separado usado pelas views redesenhadas, mantendo o original intacto.
+> **Escopo revisado (2026-03-27):** Wave 10 foi reformulada após avaliação de mocks de referência do designer. O escopo original (Progressive Disclosure) foi absorvido parcialmente — o controle de densidade da interface faz parte da Settings Extraction (10A), e a diferenciação Simples/Complex é aplicada no Histórico (10C). ProgressiveTooltip e Escalation Path movidos para wave futura.
 
-### Sprint 10.1 — useComplexityMode Evolution
+**Spec completa:** `WAVE_10_PERFIL_HISTORICO_SETTINGS.md`
 
-**Arquivo:** `src/features/dashboard/hooks/useComplexityModeRedesign.js` (NOVO — NÃO editar `useComplexityMode.js` se isso quebrar views atuais)
+### Sub-Wave 10A — Settings Extraction
+**Spec:** `WAVE_10A_SETTINGS_EXTRACTION.md`
+- Criar `SettingsRedesign.jsx` como view independente
+- Extrair Telegram, Densidade, Senha, Admin DLQ do ProfileRedesign
+- Ícone ⚙️ no header do Perfil → navega para Settings
+- Rota `settings` no App.jsx (apenas redesign)
+- Controle de densidade com 3 opções (Simples/Automático/Complexo) + descrição de cada modo
 
-**Manter:** 3 modos (simples ≤3, moderado 4-6, complexo 7+)
+### Sub-Wave 10B — Profile Hub + Migração de Dados
+**Spec:** A criar após entrega de 10A
+- Rewrite do ProfileRedesign como hub centralizado
+- Dados do paciente (nome, idade, tipo sanguíneo, localização) em destaque
+- Cartão de Emergência como card visual com QR
+- Grid "Ferramentas de Gestão"
+- Migração de dados: localStorage → Supabase (novas colunas em `user_settings`)
 
-**Adicionar triggers:**
-- Titulation schedule present → força moderado mínimo
-- Manual override via Settings persiste em localStorage
-- Frequent monitoring med → força moderado mínimo
-
-### Sprint 10.2 — ProgressiveTooltip Component
-
-**Arquivo:** Criar `src/shared/components/ui/ProgressiveTooltip.jsx`
-
-Tooltip educativo one-time que aparece quando uma feature é introduzida pela primeira vez:
-
-```
-┌──────────────────────────────────────┐
-│  ✨ Novo!                            │
-│  Adicionamos um gráfico para ajudar  │
-│  você a acompanhar suas doses        │
-│  variáveis.                          │
-│                     [Entendi]        │
-└──────────────────────────────────────┘
-```
-
-- Background: surface-container-lowest
-- Shadow: floating
-- Arrow/pointer CSS
-- Dismiss persiste em localStorage
-- Copy: warm, encouraging, Brazilian Portuguese
-
-### Sprint 10.3 — Escalation Path Implementation
-
-Implementar 3 levels:
-1. **Level 1 (Default Simple):** Clean Dona Maria interface
-2. **Level 2 (Introductory):** When trigger met, show ProgressiveTooltip for ONE new element
-3. **Level 3 (Opt-In Complex):** Element permanent, "Ver menos detalhes" toggle available
+### Sub-Wave 10C — Histórico Calendar-Driven
+**Spec:** A criar após entrega de 10B
+- KPI cards (adesão, sequência, doses/mês)
+- Calendário como controle principal (click dia → doses do dia)
+- Eliminar infinite scroll (Virtuoso) no redesign
+- Modo Simples: KPI + calendário + doses do dia
+- Modo Complex: + gráfico adesão 30d + padrão por período
 
 ### Critério de conclusão Wave 10
 
-- [ ] useComplexityMode detecta triggers automáticos
-- [ ] ProgressiveTooltip funcional e dismissível
-- [ ] Transição gradual entre modos sem quebra visual
-- [ ] "Ver menos detalhes" toggle funcional
-- [ ] Dashboard simples: ring grande, cards 3-linhas, botão explícito
-- [ ] Dashboard complexo: ring compact, cronograma denso, batch register
+- [ ] Settings é view separada, acessada via ⚙️ no header do Perfil
+- [ ] Perfil é hub centralizado com dados do paciente e Ferramentas
+- [ ] Dados de perfil persistidos no Supabase
+- [ ] Histórico navega por calendário (click dia → doses do dia)
+- [ ] Modo Simples vs Complex funciona no Histórico
+- [ ] Scroll infinito eliminado do redesign do Histórico
+- [ ] Views originais intactas (fallback quando redesign desligado)
 
 ---
 
