@@ -171,7 +171,7 @@ const DashboardView = () => {
       <div className="lg:col-span-8 flex flex-col gap-6">
         <header className="flex justify-between items-end">
           <div>
-            <h3 className="font-headline text-2xl font-black text-on-surface">Cronograma Compacto</h3>
+            <h3 className="font-headline text-2xl font-black text-on-surface">Cronograma de Hoje</h3>
             <p className="text-on-surface-variant text-sm mt-1">Sexta-feira, 24 de Maio</p>
           </div>
           <div className="flex gap-2">

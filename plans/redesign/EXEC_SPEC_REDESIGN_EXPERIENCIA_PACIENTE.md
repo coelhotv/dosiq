@@ -1757,7 +1757,7 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 │                 │  Painel de Controle                    🔔👤 │
 │   Sidebar       ├──────────────────────┬──────────────────────┤
 │                 │                      │                      │
-│                 │   ADESÃO DIÁRIA      │  Cronograma Compacto │
+│                 │   ADESÃO DIÁRIA      │  Cronograma de Hoje  │
 │                 │   ╭────────╮         │  Sex, 24 de Maio     │
 │                 │   │  85%   │         │                      │
 │                 │   │Concluído│        │  ☀ MANHÃ             │

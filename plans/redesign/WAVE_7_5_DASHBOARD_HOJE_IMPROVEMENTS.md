@@ -481,7 +481,7 @@ const allDosesEnriched = useMemo(() => allDoses.map(dose => ({
 ```jsx
 {/* Titulo + Data — renderizar uma unica vez, nao duplicar */}
 <div style={{ marginBottom: '1rem' }}>
-  <h2 style={{ margin: 0, /* ... */ }}>Cronograma Compacto</h2>
+  <h2 style={{ margin: 0, /* ... */ }}>Cronograma de Hoje</h2>
   <p style={{ margin: '0.25rem 0 0', /* color outline, label-md */ }}>{today}</p>
 </div>
 ```
@@ -1063,7 +1063,7 @@ fix(redesign): correcoes wave 7.5 — limpeza de duplicacao + ajustes CSS
 - [ ] Zona passada 100% concluída: accordion fechado por padrão
 - [ ] Accordion abre/fecha ao clicar no header da zona
 - [ ] Modo `simple`: lista plana 1 coluna, sem headers de zona, ordem cronológica
-- [ ] Header "Cronograma Compacto" + data do dia
+- [ ] Header "Cronograma de Hoje" + data do dia
 - [ ] `variant` passado corretamente por `DashboardRedesign` baseado em `complexityMode`
 
 ### Tratamentos (Modo Complex)
