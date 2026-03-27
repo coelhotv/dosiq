@@ -134,6 +134,13 @@ export function useTreatmentList() {
           p.medicine?.dosage_unit || 'mg',
           p.medicine?.dosage_per_pill
         )
+        // Concentração do comprimido: badge (ex: "500mg") — null se não disponível
+        const concentrationLabel = p.medicine?.dosage_per_pill && p.medicine?.dosage_unit
+          ? `${p.medicine.dosage_per_pill}${p.medicine.dosage_unit}`
+          : null
+        // Quantidade por dose: texto (ex: "1 comprimido") — consistente com dashboard
+        const n = p.dosage_per_intake ?? 1
+        const intakeLabel = `${n} comprimido${n !== 1 ? 's' : ''}`
 
         // Próxima dose não-registrada (simplificado — comparar timeSchedule com hora atual)
         const now = new Date()
@@ -149,6 +156,8 @@ export function useTreatmentList() {
           medicineName: p.medicine?.name || p.name,
           medicineType: p.medicine?.type || 'medicamento',
           dosageLabel,
+          concentrationLabel,
+          intakeLabel,
           frequency: p.frequency,
           frequencyLabel: FREQUENCY_LABELS[p.frequency] || p.frequency,
           timeSchedule: times,

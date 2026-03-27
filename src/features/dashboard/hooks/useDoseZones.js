@@ -30,7 +30,14 @@ import { parseLocalDate, getTodayLocal } from '@utils/dateUtils'
  */
 
 /**
- * Verifica se uma dose foi registrada hoje, com tolerância de ±30 minutos.
+ * Janela de tolerância para matching de dose registrada.
+ * Deve ser idêntica a LATE_WINDOW_MINUTES em CronogramaPeriodo e lateWindowMinutes em classifyDose.
+ * Regra: dose registrada dentro de ±120min do horário agendado conta como tomada.
+ */
+export const DOSE_REGISTRATION_TOLERANCE_MS = 120 * 60 * 1000 // 120 minutos
+
+/**
+ * Verifica se uma dose foi registrada hoje, com tolerância de ±120 minutos.
  * @param {string} protocolId
  * @param {string} scheduledTime - "HH:MM"
  * @param {Array} todayLogs - logs filtrados para hoje
@@ -39,13 +46,12 @@ import { parseLocalDate, getTodayLocal } from '@utils/dateUtils'
 export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
   if (!todayLogs || todayLogs.length === 0) return false
   const [h, m] = scheduledTime.split(':').map(Number)
-  const TOLERANCE_MS = 30 * 60 * 1000 // 30 minutos
   return todayLogs.some((log) => {
     if (log.protocol_id !== protocolId) return false
     const logDate = new Date(log.taken_at)
     const scheduled = new Date(logDate)
     scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= TOLERANCE_MS
+    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
 }
 
@@ -59,13 +65,12 @@ export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
 export function findRegistrationTime(protocolId, scheduledTime, todayLogs) {
   if (!todayLogs || todayLogs.length === 0) return null
   const [h, m] = scheduledTime.split(':').map(Number)
-  const TOLERANCE_MS = 30 * 60 * 1000
   const log = todayLogs.find((l) => {
     if (l.protocol_id !== protocolId) return false
     const logDate = new Date(l.taken_at)
     const scheduled = new Date(logDate)
     scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= TOLERANCE_MS
+    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
   return log ? log.taken_at : null
 }
@@ -122,7 +127,9 @@ export function expandProtocolsToDoses(protocols, todayLogs) {
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         medicineName: protocol.medicine?.name || 'Desconhecido',
-        medicineType: protocol.medicine?.type || 'medicamento', // S7.5 visual: medicamento | suplemento
+        medicineType: protocol.medicine?.type || 'medicamento',
+        dosagePerPill: protocol.medicine?.dosage_per_pill ?? null,
+        dosageUnit: protocol.medicine?.dosage_unit ?? null,
         scheduledTime: time,
         dosagePerIntake: protocol.dosage_per_intake ?? 1,
         treatmentPlanId: protocol.treatment_plan_id || null,

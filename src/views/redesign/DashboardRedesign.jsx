@@ -258,7 +258,7 @@ export default function DashboardRedesign({ onNavigate }) {
           {urgentDoses.length > 0 && (
             <div style={{ width: '100%' }}>
               <PriorityDoseCard
-                doses={urgentDoses.slice(0, 3)}
+                doses={urgentDoses}
                 onRegister={(dose) =>
                   handleRegisterDoseQuick(
                     dose.medicineId,
@@ -267,7 +267,7 @@ export default function DashboardRedesign({ onNavigate }) {
                   )
                 }
                 onRegisterAll={handleRegisterDosesAll}
-                variant={complexityMode === 'simple' ? 'simple' : 'priority'}
+                variant="priority"
               />
             </div>
           )}
