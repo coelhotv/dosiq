@@ -1,0 +1,117 @@
+/* ============================================================
+   EmergencyRedesign.css — Wave 9
+   Override de tokens neon/glass → Santuário na view Emergency.
+   Escopo: .er-wrapper
+   ============================================================ */
+
+.er-wrapper {
+  background: transparent;
+}
+
+/* ── Emergency card container ────────────────────────────── */
+
+.er-wrapper .emergency-card,
+.er-wrapper .emergency-card-view,
+.er-wrapper .emergency-view {
+  background: var(--color-surface-container-lowest) !important;
+  border: none !important;
+  box-shadow: var(--shadow-ambient) !important;
+  border-radius: 2rem !important;
+  backdrop-filter: none !important;
+}
+
+/* ── Cabeçalho do cartão de emergência ───────────────────── */
+
+.er-wrapper .emergency-card__header,
+.er-wrapper .emergency-header {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-container)) !important;
+  /* Remove neon glow do header */
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.er-wrapper .emergency-card__title,
+.er-wrapper .emergency-title {
+  color: var(--color-on-primary) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+/* ── Campos de informação ─────────────────────────────────── */
+
+.er-wrapper .emergency-card__field,
+.er-wrapper .emergency-field {
+  background: var(--color-surface-container-low) !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+}
+
+.er-wrapper .emergency-card__field-label,
+.er-wrapper .emergency-field-label {
+  color: var(--color-on-surface) !important;
+  opacity: 0.5 !important;
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+.er-wrapper .emergency-card__field-value,
+.er-wrapper .emergency-field-value {
+  color: var(--color-on-surface) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 400 !important;
+  /* Remove neon text effects */
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* ── Alerta crítico (tag vermelha) ────────────────────────── */
+
+.er-wrapper .emergency-alert,
+.er-wrapper .emergency-critical-tag {
+  background: var(--color-error-bg, #ffdad6) !important;
+  color: var(--color-error) !important;
+  border: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  border-radius: 99px !important;
+}
+
+/* ── Form de edição ───────────────────────────────────────── */
+
+.er-wrapper .emergency-form input,
+.er-wrapper .emergency-form textarea,
+.er-wrapper .emergency-card-form input,
+.er-wrapper .emergency-card-form textarea {
+  background: var(--color-surface-container-low) !important;
+  border: 1px solid var(--color-outline-ghost, rgba(25,28,29,0.15)) !important;
+  border-radius: 0.75rem !important;
+  color: var(--color-on-surface) !important;
+  font-family: var(--font-body) !important;
+  box-shadow: none !important;
+}
+
+.er-wrapper .emergency-form input:focus,
+.er-wrapper .emergency-card-form input:focus,
+.er-wrapper .emergency-form textarea:focus,
+.er-wrapper .emergency-card-form textarea:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(0, 106, 94, 0.12) !important;
+  outline: none !important;
+}
+
+/* ── Botão de editar / salvar ─────────────────────────────── */
+
+.er-wrapper .emergency-edit-btn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-container)) !important;
+  color: var(--color-on-primary) !important;
+  border: none !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 8px 24px rgba(0, 106, 94, 0.20) !important;
+  /* Remove neon glow */
+  filter: none !important;
+}
