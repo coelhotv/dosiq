@@ -28,7 +28,7 @@ import './StockRedesign.css'
 
 export default function StockRedesign({ initialParams, onClearParams }) {
   // ── Dados (hook compartilhado) ──
-  const { items, criticalItems, warningItems, okItems, highItems, medicines, isLoading, error, reload } = useStockData()
+  const { items, criticalItems, warningItems, okItems, highItems, orphanItems, medicines, isLoading, error, reload } = useStockData()
 
   // ── Complexidade / Persona ──
   // R-152: isComplex = mode !== 'simple'; sem modo "moderate"
@@ -44,12 +44,34 @@ export default function StockRedesign({ initialParams, onClearParams }) {
   const motionConfig = useMotion()
 
   // ── Entries agregadas para histórico (complex only) ──
-  const allEntries = useMemo(() => items.flatMap((i) => i.entries), [items])
+  // Inclui medicamento info em cada entry para o layout correto
+  const allEntries = useMemo(
+    () =>
+      items.flatMap((item) =>
+        item.entries.map((entry) => ({
+          ...entry,
+          medicineName: item.medicine.name,
+          medicineType: item.medicine.medicine_type,
+        }))
+      ),
+    [items]
+  )
 
   // ── Todos os itens ordenados por urgência (para Complex grid) ──
+  // Filtra órfãos de okItems/highItems, eles aparecem só no final
+  const okItemsWithoutOrphans = useMemo(
+    () => okItems.filter(i => i.hasActiveProtocol),
+    [okItems]
+  )
+  const highItemsWithoutOrphans = useMemo(
+    () => highItems.filter(i => i.hasActiveProtocol),
+    [highItems]
+  )
+
+  // Órfãos (sem protocolo ativo) vão para o FINAL da listagem
   const sortedAllItems = useMemo(
-    () => [...criticalItems, ...warningItems, ...okItems, ...highItems],
-    [criticalItems, warningItems, okItems, highItems]
+    () => [...criticalItems, ...warningItems, ...okItemsWithoutOrphans, ...highItemsWithoutOrphans, ...orphanItems],
+    [criticalItems, warningItems, okItemsWithoutOrphans, highItemsWithoutOrphans, orphanItems]
   )
 
   // ── Handlers ──
@@ -114,14 +136,14 @@ export default function StockRedesign({ initialParams, onClearParams }) {
           <h1 className="stock-redesign__title">Controle de Estoque</h1>
           <p className="stock-redesign__subtitle">Prioridade de Reabastecimento</p>
         </div>
-        {/* Desktop: botão no header; Mobile: FAB fixo abaixo */}
+        {/* Botão responsivo: ícone mobile, texto + ícone desktop */}
         <button
           className="stock-redesign__add-btn stock-redesign__add-btn--desktop"
           onClick={() => handleOpenModal()}
           aria-label="Adicionar estoque"
         >
           <Plus size={16} aria-hidden="true" />
-          Adicionar Estoque
+          <span>Adicionar Estoque</span>
         </button>
       </header>
 
@@ -165,79 +187,95 @@ export default function StockRedesign({ initialParams, onClearParams }) {
           </motion.div>
         </>
       ) : (
-        // Simple: seções por urgência (Dona Maria)
+        // Simple: seções por urgência (Dona Maria) — headers fora do grid
         <motion.div className="stock-redesign__sections" variants={motionConfig.cascade.container} initial="hidden" animate="visible">
           {criticalItems.length > 0 && (
-            <motion.section variants={motionConfig.cascade.item} className="stock-redesign__section">
+            <>
               <h2 className="stock-redesign__section-label stock-redesign__section-label--urgente">
                 Crítico ({criticalItems.length})
               </h2>
-              {criticalItems.map((item, index) => (
-                <StockCardRedesign
-                  key={item.medicine.id}
-                  item={item}
-                  isComplex={false}
-                  onAddStock={() => handleOpenModal(item.medicine.id)}
-                  index={index}
-                />
-              ))}
-            </motion.section>
+              <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
+                {criticalItems.map((item, index) => (
+                  <StockCardRedesign
+                    key={item.medicine.id}
+                    item={item}
+                    isComplex={false}
+                    onAddStock={() => handleOpenModal(item.medicine.id)}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            </>
           )}
 
           {warningItems.length > 0 && (
-            <motion.section variants={motionConfig.cascade.item} className="stock-redesign__section">
+            <>
               <h2 className="stock-redesign__section-label stock-redesign__section-label--atencao">
                 Atenção ({warningItems.length})
               </h2>
-              {warningItems.map((item, index) => (
-                <StockCardRedesign
-                  key={item.medicine.id}
-                  item={item}
-                  isComplex={false}
-                  onAddStock={() => handleOpenModal(item.medicine.id)}
-                  index={index}
-                />
-              ))}
-            </motion.section>
+              <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
+                {warningItems.map((item, index) => (
+                  <StockCardRedesign
+                    key={item.medicine.id}
+                    item={item}
+                    isComplex={false}
+                    onAddStock={() => handleOpenModal(item.medicine.id)}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            </>
           )}
 
-          {(okItems.length > 0 || highItems.length > 0) && (
-            <motion.section variants={motionConfig.cascade.item} className="stock-redesign__section">
+          {(okItems.filter(i => i.hasActiveProtocol).length > 0 || highItems.filter(i => i.hasActiveProtocol).length > 0) && (
+            <>
               <h2 className="stock-redesign__section-label stock-redesign__section-label--seguro">
-                Estoque OK ({okItems.length + highItems.length})
+                Estoque OK ({okItems.filter(i => i.hasActiveProtocol).length + highItems.filter(i => i.hasActiveProtocol).length})
               </h2>
-              {[...okItems, ...highItems].map((item, index) => (
-                <StockCardRedesign
-                  key={item.medicine.id}
-                  item={item}
-                  isComplex={false}
-                  onAddStock={() => handleOpenModal(item.medicine.id)}
-                  index={index}
-                />
-              ))}
-            </motion.section>
+              <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
+                {[...okItems.filter(i => i.hasActiveProtocol), ...highItems.filter(i => i.hasActiveProtocol)].map((item, index) => (
+                  <StockCardRedesign
+                    key={item.medicine.id}
+                    item={item}
+                    isComplex={false}
+                    onAddStock={() => handleOpenModal(item.medicine.id)}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            </>
+          )}
+
+          {orphanItems.length > 0 && (
+            <>
+              <h2 className="stock-redesign__section-label stock-redesign__section-label--seguro">
+                Sem Tratamento Ativo ({orphanItems.length})
+              </h2>
+              <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
+                {orphanItems.map((item, index) => (
+                  <StockCardRedesign
+                    key={item.medicine.id}
+                    item={item}
+                    isComplex={false}
+                    onAddStock={() => handleOpenModal(item.medicine.id)}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            </>
           )}
         </motion.div>
       )}
 
-      {/* ── Histórico de Entradas (complex only) ── */}
+      {/* ── Histórico de Compras (complex only) ── */}
       {/* Simple: informação de última compra + custo já está per-card em StockCardRedesign */}
-      {/* Complex: Carlos precisa do histórico completo para auditoria e comparação */}
+      {/* Complex: Carlos precisa do histórico completo para auditoria e análise de preço */}
       {isComplex && allEntries.length > 0 && (
         <section className="stock-redesign__history-section">
-          <h2 className="stock-redesign__section-title">Histórico de Entradas</h2>
+          <h2 className="stock-redesign__section-title">Histórico de Compras</h2>
           <EntradaHistorico entries={allEntries} maxVisible={3} />
         </section>
       )}
-
-      {/* ── FAB mobile — fixo acima da BottomNav ── */}
-      <button
-        className="stock-redesign__fab"
-        onClick={() => handleOpenModal()}
-        aria-label="Adicionar estoque"
-      >
-        <Plus size={20} aria-hidden="true" />
-      </button>
 
       {/* ── Modal de compra (reutiliza StockForm original) ── */}
       <Modal

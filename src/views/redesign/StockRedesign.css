@@ -28,28 +28,40 @@
   margin: 0.25rem 0 0;
 }
 
-/* Botão "+ Adicionar" no header — visível só em desktop */
+/* Botão "+ Adicionar" no header — responsivo (ícone mobile, texto desktop) */
 .stock-redesign__add-btn--desktop {
-  display: none; /* oculto em mobile — usa FAB */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: var(--shadow-primary);
+}
+
+.stock-redesign__add-btn--desktop span {
+  display: none; /* Esconde texto em mobile */
 }
 
 @media (min-width: 768px) {
   .stock-redesign__add-btn--desktop {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    width: auto;
     padding: 0.75rem 1.25rem;
-    min-height: 44px;
-    border: none;
+    height: auto;
     border-radius: var(--radius-xl);
-    background: var(--gradient-primary);
-    color: #ffffff;
     font-family: var(--font-body);
     font-size: var(--text-label-md);
     font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    box-shadow: var(--shadow-primary);
-    white-space: nowrap;
+  }
+
+  .stock-redesign__add-btn--desktop span {
+    display: inline; /* Mostra texto em desktop */
   }
 }
 
@@ -90,36 +102,41 @@
   margin: 0;
 }
 
-/* Sections (simple mode) — 1 coluna mobile, 2 colunas desktop */
-/* Consistente com TreatmentsSimple W7.6 (align-items: start = Pinterest effect) */
+/* Sections (simple mode) — layout em blocos verticais */
 .stock-redesign__sections {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
-.stock-redesign__section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-@media (min-width: 1024px) {
-  .stock-redesign__sections {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start; /* Pinterest effect — cards sem altura forçada */
-    gap: 2rem;
-  }
-}
-
+/* Headers — fora do grid, 100% width */
 .stock-redesign__section-label {
   font-family: var(--font-body);
   font-size: var(--text-label-md);
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.75rem;
+  width: 100%;
+  display: block;
+}
+
+/* Cada seção (Crítico, Atenção, Estoque OK, Sem Tratamento) tem 2 colunas no desktop */
+.stock-redesign__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .stock-redesign__section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 1.5rem;
+  }
 }
 
 .stock-redesign__section-label--urgente { color: var(--color-error); }
@@ -256,27 +273,41 @@
 }
 
 .entrada-historico__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
+  gap: 1rem;
+  padding: 0.75rem 0;
 }
 
-.entrada-historico__icon-wrap {
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-full);
-  background: var(--color-secondary-fixed);
+.entrada-historico__type-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--color-secondary);
+  color: var(--color-primary);
 }
 
 .entrada-historico__info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   min-width: 0;
+}
+
+.entrada-historico__medicine {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface);
+  display: block;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .entrada-historico__desc {
@@ -289,40 +320,30 @@
   text-overflow: ellipsis;
 }
 
-.entrada-historico__medicine {
-  font-size: var(--text-label-sm);
+.entrada-historico__date {
+  font-size: var(--text-label-md);
   color: var(--color-outline);
-  display: block;
+  font-weight: var(--font-weight-medium);
 }
 
 .entrada-historico__qty {
   font-family: var(--font-body);
-  font-size: var(--text-label-md);
+  font-size: var(--text-body-lg);
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
+  text-align: right;
 }
 
 .entrada-historico__qty--positive { color: var(--color-primary); }
 .entrada-historico__qty--negative { color: var(--color-error); }
 
-.entrada-historico__meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.125rem;
-  white-space: nowrap;
-}
-
-.entrada-historico__date {
-  font-size: var(--text-label-sm);
-  color: var(--color-outline);
-}
-
 /* Custo do lote — referência de preço para reposição */
 .entrada-historico__cost {
-  font-size: var(--text-label-sm);
-  color: var(--color-on-surface-variant);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  text-align: right;
 }
 
 .entrada-historico__toggle {
