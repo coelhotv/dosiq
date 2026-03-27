@@ -2,7 +2,7 @@
 
 > Source of truth for all visual, narrative, and motion decisions. This document consolidates the best of both strategy proposals, creating a single, actionable blueprint.
 > Read this before designing or coding any screen. Reference it when validating pages.
-> Last updated: 2026-03-23
+> Last updated: 2026-03-26
 
 ---
 
@@ -24,6 +24,54 @@ Two distinct user journeys share one design language:
 | **Carlos** | Complex conditions, multiple protocols, health-literate | **Complex** | Data density, protocol grouping, analytics |
 
 **Design rule:** Simple view is the default. Complex features must not increase cognitive load for simple users. The system must gracefully guide users from the Simple to the Complex view based on their evolving needs.
+
+---
+
+## Dichotomous Design Philosophy
+
+> This is the most important design decision in the product. Read it before touching any screen.
+
+The two personas don't just have different needs — they have fundamentally different **mental models** for the app. The UI must reflect this at every level: layout, information density, component shape, and copy tone.
+
+### The Two Design Languages
+
+| Dimension | Dona Maria — "Card Deck" | Carlos — "Control Panel" |
+|-----------|--------------------------|--------------------------|
+| **Mental model** | "What do I do right now?" | "How is my treatment performing?" |
+| **Primary job** | Act | Monitor |
+| **Layout metaphor** | Pinterest deck — tactile, browsable cards | Dashboard panel — tabular, scannable, comparable |
+| **Desktop layout** | 2-column card grid, cards anchored top (`align-items: start`) | Multi-column table grid, rows aligned horizontally |
+| **Mobile layout** | Full-width stacked cards | Same cards, but with denser info per card |
+| **Data philosophy** | **Prioritized hierarchy** — right data, high contrast | **Density** — all data, equal weight, comparable |
+| **Adherence display** | Human label: "Tratamento em dia", "Algumas doses perdidas" | Numeric bar: 93% + 7-day fill bar |
+| **Stock display** | Calendar icon + days (semantic: is this urgent?) | Same pill, same icon — universal pattern |
+| **CTA prominence** | Maximum — "TOMAR AGORA" fills card width, 64px tall | Present but secondary — inline, contextual |
+| **Empty states** | Encouraging, action-oriented | Informational, data-forward |
+
+### The Key Distinction: Prioritized vs Dense
+
+A common mistake is to define Simple mode as "less data." That is wrong. Dona Maria doesn't want fewer data points — she wants **the right data, with the right hierarchy**. The scheduled time shown at 32px is not less data than a 12px percentage; it is the same data, re-prioritized. The label "Tratamento em dia" carries more decision-support than "93%" for a non-technical user.
+
+Carlos doesn't want more data either — he wants **density and comparability**. He needs to scan across 6 protocols and spot which one is underperforming. Tabular layout serves him because it aligns the same data type vertically, enabling comparison.
+
+**Rule: never reduce Dona Maria's data. Reprioritize it. Never overwhelm Carlos with decoration. Give him structure.**
+
+### Per-Screen Application
+
+| Screen | Dona Maria | Carlos |
+|--------|------------|--------|
+| **Dashboard (Hoje)** | PriorityDoseCard prominent, large CTA, cronograma as schedule reference | PriorityDoseCard + ring gauge + full cronograma with period accordion |
+| **Tratamentos** | 2-col card grid on desktop, each card: name+badge / intake / schedule+label | Tabular grid: name\|schedule\|adherence bar\|stock pill per row |
+| **Estoque** | (future) Card per medicine, large stock indicator, single reorder CTA | (future) Table view, all medicines, sortable columns |
+
+### Validation Questions (per screen, per decision)
+
+Before shipping any component change, answer:
+1. In Simple mode: is the primary action reachable within 2 taps?
+2. In Simple mode: does every data point shown drive a decision or action?
+3. In Complex mode: can the user compare across rows/protocols without scrolling horizontally?
+4. In Complex mode: does adding a new data point create a new column, not a new card?
+5. Does the same component work for both — or does it need a deliberate split?
 
 ---
 
