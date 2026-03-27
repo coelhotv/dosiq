@@ -1203,7 +1203,7 @@ git diff src/features/dashboard/components/StockBars.jsx
 
 ## Referências
 
-- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 11 (Wave 6)
+- `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 11 (Wave 6)
 - `src/views/Dashboard.jsx` — lógica de referência (modal, dados, navigation)
 - `src/features/dashboard/hooks/useDoseZones.js` — estrutura de zones
 - `src/features/dashboard/hooks/useDashboardContext.jsx` — dados compartilhados

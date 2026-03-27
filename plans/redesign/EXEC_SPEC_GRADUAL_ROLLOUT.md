@@ -507,7 +507,7 @@ npm run validate:agent
 
 ## Referências
 
-- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`
+- `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`
 - `plans/redesign/EXEC_SPEC_ROLLOUT_PESQUISA_VALIDACAO.md`
 - `plans/redesign/WAVE_0_DESIGN_TOKENS.md`
 - `plans/redesign/WAVE_1_TYPOGRAPHY_ICONS.md`

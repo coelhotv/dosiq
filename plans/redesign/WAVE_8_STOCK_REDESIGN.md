@@ -1977,7 +1977,7 @@ Se necessário, ajustar o matcher para incluir `StockRedesign`:
 
 | Arquivo | Propósito |
 |---------|-----------|
-| `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` (seção 13) | Spec master da W8 |
+| `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` (seção 13) | Spec master da W8 |
 | `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md` | Estratégia de rollout + regras de flag |
 | `plans/redesign/references/simple-estoque-mobile.png` | Mock mobile (Simple mode) |
 | `plans/redesign/references/complex-estoque-desktop.png` | Mock desktop (Complex mode) |
