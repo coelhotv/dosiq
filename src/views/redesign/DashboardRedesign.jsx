@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { cachedLogService as logService } from '@shared/services'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { useDoseZones } from '@dashboard/hooks/useDoseZones'
+import { useDoseZones, expandProtocolsToDoses, filterTodayLogs } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser } from '@shared/utils/supabase'
+import { getTodayLocal } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
 import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
@@ -41,38 +42,35 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  */
 export default function DashboardRedesign({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
-  const { stats, stockSummary, refresh, isLoading: contextLoading } = useDashboard()
+  const { stats, stockSummary, protocols, logs, refresh, isLoading: contextLoading } = useDashboard()
   const { zones, totals, now } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
   // ── Estado local ──
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const currentDateRef = useRef(getTodayLocal())
 
   // ── Computadas ──
-  // S7.5.4: Enriquecer doses com dados de estoque
+  // Enriquecer doses com dados de estoque
   const stockByMedicineId = useMemo(() => {
     const map = new Map()
     stockSummary?.items?.forEach(item => map.set(item.medicineId, item))
     return map
   }, [stockSummary])
 
-  const allDoses = useMemo(() => {
-    const doses = [
-      ...(zones.late    || []),
-      ...(zones.now     || []),
-      ...(zones.upcoming || []),
-      ...(zones.later   || []),
-      ...(zones.done    || []),
-    ]
-    // Enriquecer com dados de estoque
-    return doses.map(dose => ({
+  // scheduleAllDoses: fonte separada para CronogramaPeriodo — todos os protocolos expandidos (sem filtro classifyDose)
+  const scheduleAllDoses = useMemo(() => {
+    if (!protocols?.length) return []
+    const todayLogs = filterTodayLogs(logs || [])
+    return expandProtocolsToDoses(protocols, todayLogs).map(dose => ({
       ...dose,
       stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
       stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
     }))
-  }, [zones, stockByMedicineId])
+  }, [protocols, logs, stockByMedicineId])
 
+  // urgentDoses: fonte separada para PriorityDoseCard — zonas late/now filtradas
   const urgentDoses = useMemo(() => [
     ...(zones.late || []).filter(d => !d.isRegistered),
     ...(zones.now  || []).filter(d => !d.isRegistered),
@@ -98,6 +96,18 @@ export default function DashboardRedesign({ onNavigate }) {
       })
       .catch(() => setIsLoading(false))
   }, [])
+
+  // ── Refresh automático ao virar o dia (timezone local) ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentDate = getTodayLocal()
+      if (currentDate !== currentDateRef.current) {
+        currentDateRef.current = currentDate
+        refresh()
+      }
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [refresh])
 
   // ── Handlers ──
   // Registra dose DIRETAMENTE sem modal (1-click experience)
@@ -272,7 +282,7 @@ export default function DashboardRedesign({ onNavigate }) {
           }}
         >
           {/* Cronograma do Dia */}
-          {allDoses.length > 0 && (
+          {scheduleAllDoses.length > 0 && (
             <section aria-label="Cronograma de hoje">
               <div style={{ marginBottom: '1rem' }}>
                 <h2 style={{
@@ -282,7 +292,7 @@ export default function DashboardRedesign({ onNavigate }) {
                   fontWeight: '600',
                   color: 'var(--color-on-surface, #191c1d)',
                 }}>
-                  Cronograma Compacto
+                  Cronograma de Hoje
                 </h2>
                 <p style={{
                   margin: '0.25rem 0 0',
@@ -297,7 +307,7 @@ export default function DashboardRedesign({ onNavigate }) {
                 </p>
               </div>
               <CronogramaPeriodo
-                allDoses={allDoses}
+                allDoses={scheduleAllDoses}
                 onRegister={(dose) =>
                   handleRegisterDoseQuick(
                     dose.medicineId,
@@ -312,7 +322,7 @@ export default function DashboardRedesign({ onNavigate }) {
           )}
 
           {/* Empty State */}
-          {allDoses.length === 0 && !contextLoading && (
+          {scheduleAllDoses.length === 0 && !contextLoading && (
             <div
               style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-outline, #6d7a76)' }}
               role="status"
