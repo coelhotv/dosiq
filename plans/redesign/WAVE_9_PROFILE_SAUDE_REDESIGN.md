@@ -1866,7 +1866,7 @@ As sprints são sequenciais porque `ProfileRedesign.jsx` (S9.2) depende dos sub-
 | Arquivo | Propósito |
 |---------|-----------|
 | `plans/redesign/PRODUCT_STRATEGY_CONSOLIDATED.md` | Dichotomous design philosophy, Perfil = "flat utility layout" |
-| `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` | Seção 14 (Wave 9), Gap Analysis seção 2.3 |
+| `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` | Seção 14 (Wave 9), Gap Analysis seção 2.3 |
 | `src/views/Profile.jsx` | Lógica original a ser replicada em ProfileRedesign.jsx |
 | `src/views/profile/Profile.css` | CSS original (para identificar classes a sobrepor) |
 | `src/views/HealthHistory.jsx` | View original wrappada por HealthHistoryRedesign |

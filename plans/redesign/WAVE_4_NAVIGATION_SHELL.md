@@ -626,7 +626,7 @@ git diff src/shared/components/ui/BottomNav.css
 ## Referências
 
 - `plans/redesign/EXEC_SPEC_GRADUAL_ROLLOUT.md` — estratégia de rollout
-- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 9 (Wave 4)
+- `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 9 (Wave 4)
 - `src/shared/contexts/RedesignContext.jsx` — provider do flag
 - `src/shared/hooks/useRedesign.js` — hook de consumo
 - `src/shared/styles/layout.redesign.css` — classes de grid e layout (a atualizar no Sprint 4.3)

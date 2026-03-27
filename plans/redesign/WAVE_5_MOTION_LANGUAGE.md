@@ -466,7 +466,7 @@ git diff src/shared/styles/animations.css
 
 ## Referências
 
-- `plans/redesign/EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 10 (Wave 5)
+- `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` — seção 10 (Wave 5)
 - `src/shared/styles/components.redesign.css` — arquivo a modificar no Sprint 5.2
 - `src/shared/utils/motionConstants.js` — a criar no Sprint 5.1
 - `src/shared/hooks/useMotion.js` — a criar no Sprint 5.3

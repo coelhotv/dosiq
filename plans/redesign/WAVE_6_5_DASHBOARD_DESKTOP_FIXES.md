@@ -11,7 +11,7 @@
 
 ## Por que esta wave existe
 
-A Wave 6 entregou todos os componentes novos corretamente (`RingGaugeRedesign`, `PriorityDoseCard`, `CronogramaPeriodo`, `StockAlertInline`), mas a **view de orquestração** (`DashboardRedesign.jsx`) foi implementada com um layout de coluna única que ignora o breakpoint desktop. O critério de conclusão da master spec (`EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`, linha 1873) exige explicitamente:
+A Wave 6 entregou todos os componentes novos corretamente (`RingGaugeRedesign`, `PriorityDoseCard`, `CronogramaPeriodo`, `StockAlertInline`), mas a **view de orquestração** (`DashboardRedesign.jsx`) foi implementada com um layout de coluna única que ignora o breakpoint desktop. O critério de conclusão da master spec (`MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`, linha 1873) exige explicitamente:
 
 > `Dashboard desktop: 2-col grid (ring+priority left, cronograma right)`
 
@@ -1311,7 +1311,7 @@ Durante a revisão das referências visuais (`simple-hoje`, `complex-hoje`, PROD
 
 ## Atualizar após merge
 
-Ao fazer merge desta wave, atualizar em `EXEC_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`:
+Ao fazer merge desta wave, atualizar em `MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`:
 
 ```markdown
 | W6.5 | Dashboard Desktop Layout Fixes | `WAVE_6_5_DASHBOARD_DESKTOP_FIXES.md` | ⏳ PENDENTE → ✅ MERGED #XXX |
