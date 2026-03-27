@@ -257,8 +257,8 @@ export default function Profile({ onNavigate }) {
           )}
         </div>
 
-        {/* Admin DLQ — visível apenas para admins */}
-        {user?.user_metadata?.role === 'admin' && (
+        {/* Admin DLQ — visível para admins (by role ou by telegram admin id) */}
+        {(user?.user_metadata?.role === 'admin' || settings?.telegram_chat_id === import.meta.env.VITE_ADMIN_CHAT_ID) && (
           <ProfileLink icon="🛠️" label="Admin DLQ" onClick={() => onNavigate('admin-dlq')} />
         )}
       </ProfileSection>

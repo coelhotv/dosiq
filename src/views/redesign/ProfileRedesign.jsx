@@ -208,7 +208,7 @@ export default function ProfileRedesign({ onNavigate }) {
         )}
       </div>
 
-      {user?.user_metadata?.role === 'admin' && (
+      {(user?.user_metadata?.role === 'admin' || settings?.telegram_chat_id === import.meta.env.VITE_ADMIN_CHAT_ID) && (
         <ProfileLinkRedesign icon="🛠️" label="Admin DLQ" onClick={() => onNavigate('admin-dlq')} />
       )}
     </ProfileSectionRedesign>
