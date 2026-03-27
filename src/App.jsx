@@ -24,6 +24,9 @@ const Landing = lazy(() => import('./views/Landing'))
 const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
 const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesign'))
 const StockRedesign = lazy(() => import('./views/redesign/StockRedesign'))
+const ProfileRedesign = lazy(() => import('./views/redesign/ProfileRedesign'))
+const HealthHistoryRedesign = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
+const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -194,20 +197,32 @@ function AppInner() {
           </Suspense>
         )
       case 'profile':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <ProfileRedesign onNavigate={setCurrentView} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Profile onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'health-history':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <HealthHistoryRedesign key="health-history" onNavigate={setCurrentView} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <HealthHistory key="health-history" onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'history':
         // W3-06: historico agora vive em HealthHistory
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <HealthHistoryRedesign key="history" onNavigate={setCurrentView} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <HealthHistory key="history" onNavigate={setCurrentView} />
           </Suspense>
@@ -215,7 +230,7 @@ function AppInner() {
       case 'consultation':
         return (
           <Suspense fallback={<ViewSkeleton />}>
-            <Consultation onBack={() => setCurrentView('dashboard')} />
+            <Consultation onBack={() => setCurrentView('profile')} />
           </Suspense>
         )
       case 'settings':
@@ -225,7 +240,11 @@ function AppInner() {
           </Suspense>
         )
       case 'emergency':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <EmergencyRedesign onNavigate={setCurrentView} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Emergency onNavigate={setCurrentView} />
           </Suspense>
