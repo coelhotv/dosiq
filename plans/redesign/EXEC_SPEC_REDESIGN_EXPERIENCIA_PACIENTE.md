@@ -28,7 +28,7 @@
 | W7 | Tratamentos Redesign | `WAVE_7_TREATMENTS_REDESIGN.md` | ✅ MERGED #431 (2026-03-25) | main |
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
 | W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ✅ MERGED #433 (2026-03-27) | main |
-| W9 | Perfil & Saúde | — | ⏳ PENDENTE SPEC | — |
+| W9 | Perfil & Saúde | `WAVE_9_PROFILE_SAUDE_REDESIGN.md` | ⏳ PRONTA PARA EXECUÇÃO | — |
 | W10 | Progressive Disclosure | — | ⏳ PENDENTE SPEC | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
 | W12 | Landing, Auth & Onboarding | — | ⏳ PENDENTE SPEC | — |
