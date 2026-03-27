@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
-import { medicineService, stockService, protocolService } from '@shared/services'
+import { useState, useMemo } from 'react'
+import { useEffect } from 'react'
+import { stockService } from '@shared/services'
 import { parseLocalDate } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
@@ -11,18 +12,25 @@ import CostChart from '@stock/components/CostChart'
 import PrescriptionTimeline from '@features/stock/components/PrescriptionTimeline'
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
 import { PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
+import { useStockData } from '@stock/hooks/useStockData'
 import './Stock.css'
 
 export default function Stock({ initialParams, onClearParams }) {
-  // 1. States
-  const [medicines, setMedicines] = useState([])
-  const [protocols, setProtocols] = useState([])
-  const [stockData, setStockData] = useState({}) // { medicineId: { entries: [], total: 0, ...status } }
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  // 1. Hook de dados (substitui estados + loadData)
+  const {
+    items,
+    medicines,
+    protocols,
+    isLoading,
+    error: hookError,
+    reload: loadData,
+  } = useStockData()
+
+  // 2. States locais (apenas UI)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMedicineId, setSelectedMedicineId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [error, setError] = useState(hookError)
 
   // 2. Memos
   // Calcular custos mensais (F5.10)
@@ -32,15 +40,18 @@ export default function Stock({ initialParams, onClearParams }) {
       return { items: [], totalMonthly: 0, projection3m: 0 }
     }
 
-    // Preparar medicines com stock embarcado
-    const medicinesWithStock = medicines.map((medicine) => ({
-      ...medicine,
-      stock: stockData[medicine.id]?.entries || [],
-    }))
+    // Preparar medicines com stock embarcado (extrair entries dos items do hook)
+    const medicinesWithStock = medicines.map((medicine) => {
+      const item = items.find((i) => i.medicine.id === medicine.id)
+      return {
+        ...medicine,
+        stock: item?.entries || [],
+      }
+    })
 
     // Calcular custos
     return calculateMonthlyCosts(medicinesWithStock, protocols)
-  }, [medicines, protocols, stockData])
+  }, [medicines, items, protocols])
 
   // Processar protocolos para PrescriptionTimeline (EV-07)
   const prescriptionTimelineData = useMemo(() => {
@@ -92,82 +103,15 @@ export default function Stock({ initialParams, onClearParams }) {
   }, [protocols])
 
   // 3. Effects
-  const loadData = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const [medicinesData, protocolsData] = await Promise.all([
-        medicineService.getAll(),
-        protocolService.getActive(),
-      ])
-
-      // Salvar protocols para useMemo calcular custos
-      setProtocols(protocolsData)
-
-      // Calcular consumo diário por medicamento
-      const dailyIntakeMap = {}
-      const activeMedicineIds = new Set(protocolsData.map((p) => p.medicine_id))
-
-      protocolsData.forEach((p) => {
-        if (p.active) {
-          const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
-          dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
-        }
-      })
-
-      setMedicines(medicinesData)
-
-      // Carregar estoque para cada medicamento
-      const stockPromises = medicinesData.map(async (medicine) => {
-        const entries = await stockService.getByMedicine(medicine.id)
-        const total = entries.reduce((sum, entry) => sum + entry.quantity, 0)
-
-        const dailyIntake = dailyIntakeMap[medicine.id] || 0
-        const daysRemaining = dailyIntake > 0 ? total / dailyIntake : Infinity
-        const isLow = dailyIntake > 0 && daysRemaining < 4
-
-        return {
-          medicineId: medicine.id,
-          hasActiveProtocol: activeMedicineIds.has(medicine.id),
-          entries,
-          total,
-          dailyIntake,
-          daysRemaining,
-          isLow,
-        }
-      })
-
-      const stockResults = await Promise.all(stockPromises)
-
-      // Organizar dados de estoque por medicamento
-      const stockMap = {}
-      stockResults.forEach((result) => {
-        stockMap[result.medicineId] = {
-          hasActiveProtocol: result.hasActiveProtocol,
-          entries: result.entries,
-          total: result.total,
-          dailyIntake: result.dailyIntake,
-          daysRemaining: result.daysRemaining,
-          isLow: result.isLow,
-        }
-      })
-
-      setStockData(stockMap)
-    } catch (err) {
-      setError('Erro ao carregar dados: ' + err.message)
-      console.error(err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Atualizar hook error para state local (para display)
   useEffect(() => {
-    loadData()
-  }, [])
+    setError(hookError)
+  }, [hookError])
 
+  // Deep link: abrir modal pré-selecionado se initialParams passado
   useEffect(() => {
     if (initialParams?.medicineId && medicines.length > 0) {
+      setSelectedMedicineId(initialParams.medicineId)
       setIsModalOpen(true)
     }
   }, [initialParams, medicines])
@@ -202,16 +146,24 @@ export default function Stock({ initialParams, onClearParams }) {
     setTimeout(() => setSuccessMessage(''), 3000)
   }
 
-  // Filtrar medicamentos que têm estoque ou foram cadastrados
-  const medicinesWithStock = medicines.map((medicine) => ({
-    medicine,
-    stock: stockData[medicine.id] || {
-      entries: [],
-      total: 0,
-      daysRemaining: Infinity,
-      isLow: false,
-      dailyIntake: 0,
-      hasActiveProtocol: false,
+  // Adaptar items do hook ao formato esperado pelo restante de Stock.jsx
+  // Hook retorna shape novo; Stock.jsx espera formato antigo para compatibilidade
+  const medicinesWithStock = items.map((item) => ({
+    medicine: {
+      ...item.medicine,
+      id: item.medicine.id,
+      name: item.medicine.name,
+      dosage_per_pill: item.medicine.dosage_per_pill,
+      dosage_unit: item.medicine.dosage_unit,
+      medicine_type: item.medicine.medicine_type,
+    },
+    stock: {
+      entries: item.entries,
+      total: item.totalQuantity,
+      daysRemaining: item.daysRemaining,
+      isLow: item.daysRemaining > 0 && item.daysRemaining < 4,
+      dailyIntake: item.dailyIntake,
+      hasActiveProtocol: item.hasActiveProtocol,
     },
   }))
 
