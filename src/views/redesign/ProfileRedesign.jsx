@@ -10,9 +10,9 @@ import { validateUserProfile, BRAZILIAN_STATES } from '@schemas/userProfileSchem
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import Button from '@shared/components/ui/Button'
 import Modal from '@shared/components/ui/Modal'
+import Loading from '@shared/components/ui/Loading'
 import ExportDialog from '@features/export/components/ExportDialog'
 import ReportGenerator from '@features/reports/components/ReportGenerator'
-import ViewSkeleton from '@shared/components/ui/ViewSkeleton'
 import './profile/ProfileRedesign.css'
 
 /**
@@ -213,7 +213,7 @@ export default function ProfileRedesign({ onNavigate }) {
 
   // ═══ Render Loading ═══
   if (isLoading) {
-    return <ViewSkeleton />
+    return <Loading />
   }
 
   // ═══ Render Main ═══
