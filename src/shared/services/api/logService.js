@@ -541,8 +541,9 @@ export const logService = {
       .from('medicine_logs')
       .select(
         `
-        id, taken_at, quantity_taken, medicine_id,
-        medicine:medicines(id, name)
+        id, taken_at, quantity_taken, medicine_id, protocol_id,
+        medicine:medicines(id, name, dosage_per_pill, dosage_unit),
+        protocol:protocols(id, name)
       `,
         { count: 'exact' }
       )

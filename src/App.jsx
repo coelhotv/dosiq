@@ -31,6 +31,7 @@ const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
+const GlobalDoseModal = lazy(() => import('@shared/components/ui/GlobalDoseModal'))
 import TestConnection from '@shared/components/TestConnection'
 import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
@@ -68,6 +69,7 @@ function AppInner() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState('dashboard')
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
@@ -294,7 +296,11 @@ function AppInner() {
           {/* Sidebar — desktop, apenas usuários com flag ativo */}
           {isAuthenticated && isRedesignEnabled && (
             <Suspense fallback={null}>
-              <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+              <Sidebar
+                currentView={currentView}
+                setCurrentView={setCurrentView}
+                onNewDose={() => setIsDoseModalOpen(true)}
+              />
             </Suspense>
           )}
 
@@ -360,6 +366,27 @@ function AppInner() {
                 </Suspense>
               )}
             </>
+          )}
+
+          {/* FAB móvel "Registrar Dose" — visível apenas mobile, apenas redesign */}
+          {isAuthenticated && isRedesignEnabled && (
+            <button
+              onClick={() => setIsDoseModalOpen(true)}
+              aria-label="Registrar dose"
+              className={appStyles.doseFab}
+            >
+              + Dose
+            </button>
+          )}
+
+          {/* Modal global de registro de dose */}
+          {isAuthenticated && isRedesignEnabled && isDoseModalOpen && (
+            <Suspense fallback={null}>
+              <GlobalDoseModal
+                isOpen={isDoseModalOpen}
+                onClose={() => setIsDoseModalOpen(false)}
+              />
+            </Suspense>
           )}
 
           {/* Onboarding Wizard - apenas para usuários autenticados */}
