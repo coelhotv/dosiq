@@ -1,6 +1,6 @@
 # Wave 10 — Perfil Hub, Histórico Calendar-Driven & Settings Extraction
 
-**Status:** 🚀 EM PROGRESSO — Wave 10A ✅ ENTREGUE (2026-03-27) | Wave 10B ✅ ENTREGUE (2026-03-27)
+**Status:** ✅ COMPLETA — Wave 10A ✅ ENTREGUE (2026-03-27) | Wave 10B ✅ ENTREGUE (2026-03-27) | Wave 10C ✅ ENTREGUE (2026-03-28)
 **Data de criação:** 2026-03-27
 **Dependências:** W0-W9 ✅ (todos mergeados em main)
 **Risco:** MÉDIO — inclui migração de dados (localStorage → Supabase) e mudança de paradigma de navegação no Histórico (infinite scroll → calendar-driven)
@@ -8,7 +8,7 @@
 ### Sub-Wave Status:
 - **10A — Settings Extraction:** ✅ ENTREGUE (PR #435 mergeada em main, commit 50a0665, 2026-03-27)
 - **10B — Profile Hub:** ✅ ENTREGUE (PR #436 mergeada em main, commit 9d4141b, 2026-03-27)
-- **10C — Histórico Calendar-Driven:** ⏳ ROADMAP (Wave 10C)
+- **10C — Histórico Calendar-Driven:** ✅ ENTREGUE (PR #437 — aguardando merge, 2026-03-28)
 
 ---
 
@@ -243,18 +243,25 @@ Mocks de referência (designs aspiracionais, não spec pixel-perfect):
 - [x] Santuário design system: CSS vars + scope .sr-*
 - [x] Código review Gemini: 4 issues avaliadas, HIGH security fix + 3 refactors aplicadas
 
-### Wave 10B ⏳ PLANEJADO
-- [ ] Perfil é hub centralizado com dados do paciente, Cartão de Emergência, e Ferramentas
-- [ ] Dados de perfil persistidos no Supabase (não mais só localStorage)
-- [ ] Migration: emergency_card JSONB + profile fields (display_name, birth_date, city, state)
-- [ ] Editar Perfil: formulário com sync para Supabase
+### Wave 10B ✅ CONCLUÍDA (PR #436, 2026-03-27)
+- [x] Perfil é hub centralizado com dados do paciente, Cartão de Emergência, e Ferramentas
+- [x] Dados de perfil persistidos no Supabase (não mais só localStorage)
+- [x] Migration: emergency_card JSONB + profile fields (display_name, birth_date, city, state)
+- [x] Editar Perfil: formulário com sync para Supabase
 
-### Wave 10C ⏳ PLANEJADO
-- [ ] Histórico navega por calendário (click dia → doses do dia)
-- [ ] KPI cards: adesão 30d, sequência, doses/mês
-- [ ] Modo Simples vs Complex funciona no Histórico (gráfico + padrão por período só no Complex)
-- [ ] Scroll infinito (Virtuoso) eliminado do redesign do Histórico
+### Wave 10C ✅ CONCLUÍDA (PR #437, 2026-03-28)
+- [x] Histórico navega por calendário (click dia → doses do dia)
+- [x] KPI cards: adesão 30d, sequência, doses/mês
+- [x] Modo Simples vs Complex funciona no Histórico (gráfico + padrão por período só no Complex)
+- [x] Scroll infinito (Virtuoso) eliminado do redesign do Histórico
+- [x] GlobalDoseModal extraído como componente compartilhado (App.jsx + DashboardProvider)
+- [x] HistoryLogCard: 3 linhas (medicamento + dosagem / protocolo / quantidade tomada)
+- [x] logService.getByMonthSlim expandido (protocol_id, medicine.dosage_per_pill/unit)
+- [x] Phase-loading: Phase 1 (UI-critical, 1 query/mês) + Phase 2 (deferred via requestIdleCallback)
+- [x] Evento global mr:dose-saved para sincronização cross-view
+- [x] Gemini Code Assist review: 13 sugestões — 8 aplicadas, 5 declinadas com justificativa
+- [x] Backlog criado: Issue #438 (refactor custom hooks — useHealthHistoryData, useLogEditingModal, useFeedbackMessages)
 
 ### Wave 10 Geral
 - [x] Todas as funcionalidades existentes preservadas (Emergency, Consulta, PDF, Export, Telegram, Senha)
-- [ ] Views originais intactas (fallback quando redesign desligado)
+- [x] Views originais intactas (fallback quando redesign desligado)

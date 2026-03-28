@@ -92,7 +92,8 @@
 }
 
 .calendar-day.has-log {
-  background: rgba(0, 255, 136, 0.05);
+  background: rgba(0, 255, 136, 0.15);
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.2);
 }
 
 .calendar-day:not(.empty) {
