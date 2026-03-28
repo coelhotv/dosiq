@@ -605,3 +605,45 @@
     display: block;
   }
 }
+
+/* ── Gear icon button — mobile header ──────────────────── */
+.pr-header__settings-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-on-surface);
+  opacity: 0.5;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.pr-header__settings-btn:hover {
+  opacity: 1;
+  background: var(--color-surface-container-low);
+}
+
+/* ── Gear icon button — desktop panel header ────────────── */
+.pr-panel__settings-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-on-surface);
+  opacity: 0.4;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.pr-panel__settings-btn:hover {
+  opacity: 1;
+  background: var(--color-surface-container-low);
+}

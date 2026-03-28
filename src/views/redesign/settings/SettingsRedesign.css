@@ -1,0 +1,390 @@
+/* ============================================================
+   SettingsRedesign.css — Wave 10A
+   View independente de Configurações (Santuário design system).
+   Escopo: .sr-view (Settings Redesign)
+   ============================================================ */
+
+/* ── Container principal ───────────────────────────────────── */
+.sr-view {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+  padding-bottom: 2rem;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.sr-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  margin-bottom: 1.25rem;
+}
+
+.sr-header__back {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--color-on-surface);
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.sr-header__back:hover {
+  background: var(--color-surface-container-low);
+}
+
+.sr-header__title {
+  font-family: var(--font-display, 'Public Sans', sans-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+  flex: 1;
+}
+
+/* ── Feedback messages ─────────────────────────────────────── */
+.sr-message {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sr-message--success {
+  background: color-mix(in srgb, var(--color-success, #22c55e) 12%, transparent);
+  color: var(--color-success, #22c55e);
+}
+
+.sr-message--error {
+  background: var(--color-error-bg, #ffdad6);
+  color: var(--color-error, #c5032b);
+}
+
+/* ── Seções ────────────────────────────────────────────────── */
+.sr-section {
+  margin-bottom: 1.5rem;
+}
+
+.sr-section__title {
+  font-family: var(--font-display, 'Public Sans', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-on-surface);
+  opacity: 0.6;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sr-section__card {
+  background: var(--color-surface-container-lowest);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-ambient);
+  padding: 1.25rem;
+}
+
+/* ── Telegram ──────────────────────────────────────────────── */
+.sr-telegram__badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+  color: var(--color-success, #22c55e);
+}
+
+.sr-telegram__badge--connected {
+  color: var(--color-success, #22c55e);
+}
+
+.sr-telegram__badge--disconnected {
+  color: var(--color-on-surface);
+  opacity: 0.5;
+}
+
+.sr-telegram__button {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: transparent;
+  color: var(--color-on-surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.sr-telegram__button--primary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sr-telegram__button--primary:hover {
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+.sr-telegram__button--danger {
+  border-color: var(--color-error, #c5032b);
+  color: var(--color-error, #c5032b);
+  margin-top: 0.75rem;
+}
+
+.sr-telegram__button--danger:hover {
+  background: var(--color-error-bg, #ffdad6);
+}
+
+.sr-telegram__link {
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 0.15s;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.sr-telegram__link:hover {
+  opacity: 0.7;
+}
+
+/* ── Densidade (segmented control) ──────────────────────────── */
+.sr-density__options {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sr-density__option {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: transparent;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sr-density__option-icon {
+  color: var(--color-primary);
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.sr-density__option:hover {
+  border-color: var(--color-primary);
+}
+
+.sr-density__option--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+.sr-density__option--selected .sr-density__option-icon {
+  opacity: 1;
+}
+
+.sr-density__option-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.sr-density__option-desc {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.sr-density__current {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+/* ── Senha ────────────────────────────────────────────────── */
+.sr-password__toggle {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+.sr-password__toggle:hover {
+  opacity: 0.7;
+}
+
+.sr-password__form {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sr-password__input {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.sr-password__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.sr-password__button {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: transparent;
+  color: var(--color-on-surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sr-password__button--primary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sr-password__button--primary:hover {
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+.sr-password__button--secondary {
+  border-color: var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+}
+
+.sr-password__button--secondary:hover {
+  background: var(--color-surface-container-low);
+}
+
+/* ── Admin DLQ ──────────────────────────────────────────────── */
+.sr-admin {
+  border-left: 3px solid var(--color-warning, #f59e0b);
+}
+
+.sr-admin__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--color-error-bg, #ffdad6);
+  color: var(--color-error, #c5032b);
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-left: 0.5rem;
+}
+
+.sr-admin__button {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.sr-admin__button:hover {
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+/* ── Logout ────────────────────────────────────────────────– */
+.sr-logout {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.sr-logout__btn {
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-error, #c5032b);
+  color: var(--color-error, #c5032b);
+  font-weight: 600;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.sr-logout__btn:hover {
+  background: var(--color-error-bg, #ffdad6);
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.sr-footer {
+  text-align: center;
+  font-size: 0.7rem;
+  opacity: 0.35;
+  margin-top: 1.5rem;
+  padding-bottom: 2rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile (< 768px)
+   ============================================================ */
+@media (max-width: 767px) {
+  .sr-view {
+    padding: 0.75rem;
+  }
+
+  .sr-header__title {
+    font-size: 1.375rem;
+  }
+
+  .sr-density__options {
+    flex-direction: column;
+  }
+
+  .sr-density__option {
+    flex: 1;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Large Desktop (≥ 1024px)
+   ============================================================ */
+@media (min-width: 1024px) {
+  .sr-view {
+    max-width: 700px;
+  }
+}
