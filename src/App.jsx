@@ -26,6 +26,7 @@ const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesig
 const StockRedesign = lazy(() => import('./views/redesign/StockRedesign'))
 const ProfileRedesign = lazy(() => import('./views/redesign/ProfileRedesign'))
 const HealthHistoryRedesign = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
+const SettingsRedesign = lazy(() => import('./views/redesign/SettingsRedesign'))
 const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
@@ -234,7 +235,11 @@ function AppInner() {
           </Suspense>
         )
       case 'settings':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <SettingsRedesign onNavigate={setCurrentView} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Settings onNavigate={setCurrentView} />
           </Suspense>
