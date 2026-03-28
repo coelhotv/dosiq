@@ -29,10 +29,10 @@
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
 | W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ✅ MERGED #433 (2026-03-27) | main |
 | W9 | Perfil & Saúde | `WAVE_9_PROFILE_SAUDE_REDESIGN.md` | ✅ MERGED #434 (2026-03-27) | main |
-| W10 | Perfil Hub + Histórico Calendar-Driven + Settings | `WAVE_10_PERFIL_HISTORICO_SETTINGS.md` | ⏳ SPECS PRONTAS (10A+10B+10C) | — |
-| W10A | Settings Extraction | `WAVE_10A_SETTINGS_EXTRACTION.md` | ⏳ PRONTA PARA EXECUÇÃO | — |
-| W10B | Profile Hub + Migração de Dados | `WAVE_10B_PROFILE_HUB.md` | ⏳ SPEC PRONTA | — |
-| W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ⏳ SPEC PRONTA | — |
+| W10 | Perfil Hub + Histórico Calendar-Driven + Settings | `WAVE_10_PERFIL_HISTORICO_SETTINGS.md` | 🚀 W10A+W10B ENTREGUES, W10C ROADMAP | — |
+| W10A | Settings Extraction | `WAVE_10A_SETTINGS_EXTRACTION.md` | ✅ MERGED #435 (2026-03-27) | main |
+| W10B | Profile Hub + Migração de Dados | `WAVE_10B_PROFILE_HUB.md` | ✅ MERGED #436 (2026-03-27) | main |
+| W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ⏳ PRONTA PARA EXECUÇÃO | — |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
 | W12 | Landing, Auth & Onboarding | — | ⏳ PENDENTE SPEC | — |
 
@@ -45,8 +45,12 @@
 - ✅ **W7.5** (2026-03-26): Dashboard "Hoje" — dose card redesign (Pill/PillBottle icons), accordion zonas inteligentes (S7.5.1-S7.5.6), edit plan button, adherence neutra (PR #432)
 - ✅ **W8** (2026-03-27): Stock Redesign — two-persona layout (Simple/Complex), CriticalAlertBanner, StockCardRedesign with Living Fill bars, EntradaHistorico history, useStockData shared hook, SYSTEM_NOTE_PREFIXES pattern, CSS var compliance, 6 refinement sprints (PR #433)
 - ✅ **W9** (2026-03-27): Profile & Health History & Emergency Redesign — ProfileRedesign + 3 sub-components + wrapper strategy for Health History & Emergency, two-column desktop layout, CSS-based state management, Consultation navigation bugfix (PR #434)
+- ✅ **W10A** (2026-03-27): Settings Extraction — SettingsRedesign view independente, 4 cards por função (Integrações/Preferências/Segurança/Admin), geração de token Telegram, density settings com descrição, logout + versão app (PR #435)
+- ✅ **W10B** (2026-03-27): Profile Hub + Migração de Dados — ProfileRedesign rewrite como hub centralizado, 4 sub-componentes (ProfileHeader/EmergencyCard/ConsultationCard/EditProfileModal), migração localStorage → Supabase, schema Zod com validação, lucide icons, layout responsivo hub-grid (PR #436)
 
-**Foundation (W0-W9):** 100% COMPLETO ✅ — Sistema de design, navegação, motion, dashboard (hoje + zonas), tratamentos com refinamentos, estoque com dois personas, perfil com layout responsivo
+**Foundation (W0-W9):** 100% COMPLETO ✅
+**Hub & Settings (W10A-W10B):** 100% COMPLETO ✅
+**Próxima:** W10C — Histórico Calendar-Driven (roadmap pronto)
 
 ---
 

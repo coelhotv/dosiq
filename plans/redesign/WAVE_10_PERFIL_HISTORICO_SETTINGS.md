@@ -1,13 +1,13 @@
 # Wave 10 — Perfil Hub, Histórico Calendar-Driven & Settings Extraction
 
-**Status:** 🚀 EM PROGRESSO — Wave 10A ✅ ENTREGUE (2026-03-27)
+**Status:** 🚀 EM PROGRESSO — Wave 10A ✅ ENTREGUE (2026-03-27) | Wave 10B ✅ ENTREGUE (2026-03-27)
 **Data de criação:** 2026-03-27
 **Dependências:** W0-W9 ✅ (todos mergeados em main)
 **Risco:** MÉDIO — inclui migração de dados (localStorage → Supabase) e mudança de paradigma de navegação no Histórico (infinite scroll → calendar-driven)
 
 ### Sub-Wave Status:
-- **10A — Settings Extraction:** ✅ ENTREGUE (PR #435 mergeada em main, commit 50a0665)
-- **10B — Profile Hub:** ⏳ EM PLANEJAMENTO (roadmap Wave 10B)
+- **10A — Settings Extraction:** ✅ ENTREGUE (PR #435 mergeada em main, commit 50a0665, 2026-03-27)
+- **10B — Profile Hub:** ✅ ENTREGUE (PR #436 mergeada em main, commit 9d4141b, 2026-03-27)
 - **10C — Histórico Calendar-Driven:** ⏳ ROADMAP (Wave 10C)
 
 ---
@@ -99,9 +99,11 @@ A Wave 9 entregou a estrutura visual do Perfil (sidebar + seções + links), mas
 ---
 
 ### Wave 10B — Profile Hub + Migração de Dados
+**Status:** ✅ ENTREGUE (2026-03-27)
 **Prioridade:** 2ª (depende de 10A para Settings estar fora do Profile)
 **Estimativa:** ~300-400 linhas JSX + ~400 linhas CSS + migration SQL
 **Spec detalhada:** `WAVE_10B_PROFILE_HUB.md`
+**Merge:** PR #436 → commit 9d4141b (squash merge)
 
 **Escopo:**
 1. Rewrite de ProfileRedesign.jsx como hub centralizado (eliminar sidebar de seções)

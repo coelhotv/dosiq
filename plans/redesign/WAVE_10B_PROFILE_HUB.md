@@ -1,10 +1,11 @@
 # Wave 10B — Profile Hub + Migração de Dados para Supabase
 
-**Status:** ⏳ PENDENTE EXECUÇÃO (aguarda entrega de 10A)
+**Status:** ✅ ENTREGUE (2026-03-27)
 **Data de criação da spec:** 2026-03-27
-**Dependências:** W0-W9 ✅ + W10A (Settings Extraction)
+**Dependências:** W0-W9 ✅ + W10A (Settings Extraction) ✅
 **Risco:** MÉDIO — inclui migration SQL (novas colunas em `user_settings`), lógica de migração localStorage → Supabase, e rewrite completo do ProfileRedesign
-**Branch:** `feature/redesign/wave-10b-profile-hub`
+**Branch:** `feature/redesign/wave-10b-profile-hub` (merged em main)
+**Merge:** PR #436 → commit 9d4141b (squash merge)
 **Master doc:** `WAVE_10_PERFIL_HISTORICO_SETTINGS.md`
 
 ---
