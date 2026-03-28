@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Perfil', Icon: User },
 ]
 
-export default function Sidebar({ currentView, setCurrentView }) {
+export default function Sidebar({ currentView, setCurrentView, onNewDose }) {
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
@@ -34,11 +34,11 @@ export default function Sidebar({ currentView, setCurrentView }) {
       <div className="sidebar-footer">
         <button
           className="sidebar-add-btn"
-          onClick={() => setCurrentView('medicines')}
-          aria-label="Adicionar medicamento"
+          onClick={onNewDose}
+          aria-label="Registrar dose"
         >
           <Plus size={18} aria-hidden="true" />
-          <span>Adicionar Med.</span>
+          <span>Registrar Dose</span>
         </button>
       </div>
     </aside>

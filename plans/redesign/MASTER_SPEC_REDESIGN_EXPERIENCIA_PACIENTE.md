@@ -2,7 +2,7 @@
 
 **Versão:** 1.4
 **Data:** 2026-03-27
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 
@@ -29,10 +29,10 @@
 | W7.5 | Dashboard "Hoje": Card Redesign + Zonas Inteligentes | `WAVE_7_5_DASHBOARD_HOJE_IMPROVEMENTS.md` | ✅ MERGED #432 (2026-03-26) | main |
 | W8 | Estoque Redesign | `WAVE_8_STOCK_REDESIGN.md` | ✅ MERGED #433 (2026-03-27) | main |
 | W9 | Perfil & Saúde | `WAVE_9_PROFILE_SAUDE_REDESIGN.md` | ✅ MERGED #434 (2026-03-27) | main |
-| W10 | Perfil Hub + Histórico Calendar-Driven + Settings | `WAVE_10_PERFIL_HISTORICO_SETTINGS.md` | 🚀 W10A+W10B ENTREGUES, W10C ROADMAP | — |
+| W10 | Perfil Hub + Histórico Calendar-Driven + Settings | `WAVE_10_PERFIL_HISTORICO_SETTINGS.md` | ✅ COMPLETA (10A+10B+10C) | main |
 | W10A | Settings Extraction | `WAVE_10A_SETTINGS_EXTRACTION.md` | ✅ MERGED #435 (2026-03-27) | main |
 | W10B | Profile Hub + Migração de Dados | `WAVE_10B_PROFILE_HUB.md` | ✅ MERGED #436 (2026-03-27) | main |
-| W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ⏳ PRONTA PARA EXECUÇÃO | — |
+| W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ✅ PR #437 (2026-03-28) | aguardando merge |
 | W11 | Accessibility & Polish | — | ⏳ PENDENTE SPEC | — |
 | W12 | Landing, Auth & Onboarding | — | ⏳ PENDENTE SPEC | — |
 
@@ -47,10 +47,11 @@
 - ✅ **W9** (2026-03-27): Profile & Health History & Emergency Redesign — ProfileRedesign + 3 sub-components + wrapper strategy for Health History & Emergency, two-column desktop layout, CSS-based state management, Consultation navigation bugfix (PR #434)
 - ✅ **W10A** (2026-03-27): Settings Extraction — SettingsRedesign view independente, 4 cards por função (Integrações/Preferências/Segurança/Admin), geração de token Telegram, density settings com descrição, logout + versão app (PR #435)
 - ✅ **W10B** (2026-03-27): Profile Hub + Migração de Dados — ProfileRedesign rewrite como hub centralizado, 4 sub-componentes (ProfileHeader/EmergencyCard/ConsultationCard/EditProfileModal), migração localStorage → Supabase, schema Zod com validação, lucide icons, layout responsivo hub-grid (PR #436)
+- ✅ **W10C** (2026-03-28): Histórico Calendar-Driven — rewrite completo HealthHistoryRedesign (calendar-driven, phase-loading), HistoryLogCard (3 linhas), HistoryDayPanel, HistoryKPICards, GlobalDoseModal compartilhado, logService expandido, mobile FAB + Sidebar "Registrar Dose", Gemini review 13 sugestões processadas, Issue #438 backlog refactor (PR #437)
 
 **Foundation (W0-W9):** 100% COMPLETO ✅
-**Hub & Settings (W10A-W10B):** 100% COMPLETO ✅
-**Próxima:** W10C — Histórico Calendar-Driven (roadmap pronto)
+**Hub & Settings & Histórico (W10A-W10B-W10C):** 100% COMPLETO ✅
+**Próxima:** W11 — Accessibility & Polish (spec pendente)
 
 ---
 
@@ -2225,40 +2226,45 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 > **Escopo revisado (2026-03-27):** Wave 10 foi reformulada após avaliação de mocks de referência do designer. O escopo original (Progressive Disclosure) foi absorvido parcialmente — o controle de densidade da interface faz parte da Settings Extraction (10A), e a diferenciação Simples/Complex é aplicada no Histórico (10C). ProgressiveTooltip e Escalation Path movidos para wave futura.
 
 **Spec completa:** `WAVE_10_PERFIL_HISTORICO_SETTINGS.md`
+**Status:** ✅ COMPLETA — 10A (PR #435) + 10B (PR #436) + 10C (PR #437), todas em main
 
-### Sub-Wave 10A — Settings Extraction
+### Sub-Wave 10A — Settings Extraction ✅ ENTREGUE (PR #435, 2026-03-27)
 **Spec:** `WAVE_10A_SETTINGS_EXTRACTION.md`
-- Criar `SettingsRedesign.jsx` como view independente
-- Extrair Telegram, Densidade, Senha, Admin DLQ do ProfileRedesign
-- Ícone ⚙️ no header do Perfil → navega para Settings
-- Rota `settings` no App.jsx (apenas redesign)
-- Controle de densidade com 3 opções (Simples/Automático/Complexo) + descrição de cada modo
+- [x] `SettingsRedesign.jsx` como view independente
+- [x] Extraídos: Telegram, Densidade, Senha, Admin DLQ do ProfileRedesign
+- [x] Ícone ⚙️ no header do Perfil → navega para Settings
+- [x] Rota `settings` no App.jsx (apenas redesign)
+- [x] Controle de densidade com 3 opções (Simples/Automático/Complexo) + descrição de cada modo
 
-### Sub-Wave 10B — Profile Hub + Migração de Dados
-**Spec:** A criar após entrega de 10A
-- Rewrite do ProfileRedesign como hub centralizado
-- Dados do paciente (nome, idade, tipo sanguíneo, localização) em destaque
-- Cartão de Emergência como card visual com QR
-- Grid "Ferramentas de Gestão"
-- Migração de dados: localStorage → Supabase (novas colunas em `user_settings`)
+### Sub-Wave 10B — Profile Hub + Migração de Dados ✅ ENTREGUE (PR #436, 2026-03-27)
+**Spec:** `WAVE_10B_PROFILE_HUB.md`
+- [x] Rewrite do ProfileRedesign como hub centralizado
+- [x] Dados do paciente (nome, idade, tipo sanguíneo, localização) em destaque
+- [x] Cartão de Emergência como card visual com QR
+- [x] Grid "Ferramentas de Gestão"
+- [x] Migração de dados: localStorage → Supabase (novas colunas em `user_settings`)
 
-### Sub-Wave 10C — Histórico Calendar-Driven
-**Spec:** A criar após entrega de 10B
-- KPI cards (adesão, sequência, doses/mês)
-- Calendário como controle principal (click dia → doses do dia)
-- Eliminar infinite scroll (Virtuoso) no redesign
-- Modo Simples: KPI + calendário + doses do dia
-- Modo Complex: + gráfico adesão 30d + padrão por período
+### Sub-Wave 10C — Histórico Calendar-Driven ✅ ENTREGUE (PR #437, 2026-03-28)
+**Spec:** `WAVE_10C_HISTORICO_CALENDAR.md`
+- [x] KPI cards (adesão, sequência, doses/mês)
+- [x] Calendário como controle principal (click dia → doses do dia)
+- [x] Infinite scroll (Virtuoso) eliminado no redesign — phase-loading por mês
+- [x] Modo Simples: KPI + calendário + doses do dia
+- [x] Modo Complex: + gráfico adesão 30d + padrão por período
+- [x] GlobalDoseModal compartilhado (App.jsx + DashboardProvider + mr:dose-saved event)
+- [x] HistoryLogCard 3 linhas: medicamento+dosagem / protocolo / quantidade tomada
+- [x] logService.getByMonthSlim expandido com protocol + medicine details
+- [x] Backlog: Issue #438 (refactor custom hooks — useHealthHistoryData, useLogEditingModal, useFeedbackMessages)
 
-### Critério de conclusão Wave 10
+### Critério de conclusão Wave 10 ✅ TODOS CONCLUÍDOS
 
-- [ ] Settings é view separada, acessada via ⚙️ no header do Perfil
-- [ ] Perfil é hub centralizado com dados do paciente e Ferramentas
-- [ ] Dados de perfil persistidos no Supabase
-- [ ] Histórico navega por calendário (click dia → doses do dia)
-- [ ] Modo Simples vs Complex funciona no Histórico
-- [ ] Scroll infinito eliminado do redesign do Histórico
-- [ ] Views originais intactas (fallback quando redesign desligado)
+- [x] Settings é view separada, acessada via ⚙️ no header do Perfil
+- [x] Perfil é hub centralizado com dados do paciente e Ferramentas
+- [x] Dados de perfil persistidos no Supabase
+- [x] Histórico navega por calendário (click dia → doses do dia)
+- [x] Modo Simples vs Complex funciona no Histórico
+- [x] Scroll infinito eliminado do redesign do Histórico
+- [x] Views originais intactas (fallback quando redesign desligado)
 
 ---
 

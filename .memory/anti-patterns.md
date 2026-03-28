@@ -518,3 +518,37 @@ import StockPill from '@protocols/components/redesign/StockPill'
 *Last updated: 2026-03-26*
 *Anti-patterns: AP-W01 through AP-W23, AP-S01, AP-D01 through AP-D06 (Wave 7.5/8 design dichotomy additions)*
 
+
+---
+
+## AP-H01: Usar quantity_taken como valor do dosage pill
+
+**O que é:** Exibir `log.quantity_taken` como o valor de dosagem do remédio no HistoryLogCard.
+
+**Problema:** `quantity_taken` é quantos comprimidos foram tomados naquela dose, não a dosagem unitária do remédio. Mostra "1mg" quando deveria mostrar "10mg".
+
+**Correção:** Usar `log.medicine?.dosage_per_pill + log.medicine?.dosage_unit` para o pill de dosagem. `quantity_taken` vai para a linha de "N comprimidos".
+
+**Requer:** `getByMonthSlim` deve incluir `medicine(dosage_per_pill, dosage_unit)` no select.
+
+---
+
+## AP-H02: Passar IDs ao invés de objetos para treatmentPlanService no LogForm
+
+**O que é:** Derivar array de IDs de planos de tratamento a partir de `protocols` e passar para LogForm como `treatmentPlans`.
+
+**Problema:** LogForm espera objetos completos `{id, name, protocols:[{active, medicine_id, dosage_per_intake}]}` para montar o dropdown. Passar só IDs resulta em "0 remédios" e nomes vazios.
+
+**Correção:** Chamar `cachedTreatmentPlanService.getAll()` para obter os objetos completos.
+
+---
+
+## AP-H03: Estado isDoseModalOpen fora do DashboardProvider sem lazy load
+
+**O que é:** Colocar o componente `GlobalDoseModal` fora da árvore do `DashboardProvider` porque o estado de controle (`isDoseModalOpen`) vive fora do provider.
+
+**Problema:** `GlobalDoseModal` usa `useDashboard()` internamente; renderizá-lo fora do provider causa crash com "must be used within DashboardProvider".
+
+**Correção:** Estado de controle fica em `AppInner` (fora do provider); componente `GlobalDoseModal` é lazy-loaded e renderizado DENTRO da árvore do `DashboardProvider`. O lazy import resolve o problema sem mover o estado.
+
+*Last updated: 2026-03-28*
