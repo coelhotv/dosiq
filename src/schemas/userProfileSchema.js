@@ -47,11 +47,10 @@ const userProfileSchema = z.object({
     .optional(),
 
   state: z
-    .string()
-    .max(50, 'Estado não pode ter mais de 50 caracteres')
-    .trim()
+    .union([z.enum(BRAZILIAN_STATES), z.literal('')])
     .nullable()
-    .optional(),
+    .optional()
+    .transform(val => val === '' ? null : val),
 })
 
 /**
