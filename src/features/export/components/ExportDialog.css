@@ -272,5 +272,5 @@
   gap: 0.75rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid var(--color-outline-ghost);
+  margin-top: 0.5rem;
 }
