@@ -31,6 +31,7 @@
 | **AP-C02** | **Duplicate CSS rules across similar components without consolidation** | **Code bloat, maintenance burden, cascading changes require editing multiple places** | **Use CSS selector grouping (`,`) for shared base styles, then separate size/state modifiers. 1 source of truth.** | **R-120** |
 | **AP-W9-01** | **Conditional JSX inside Suspense boundary for lazy imports** | **Dynamic import error: "Failed to fetch dynamically imported module" in browser console. Lazy component fails to load.** | **Move conditional outside Suspense. Each branch gets its own Suspense wrapper: `isFlag ? <Suspense><New/></Suspense> : <Suspense><Old/></Suspense>`** | **R-117** |
 | **AP-W9-02** | **Silent error handling in async operations (console.error only)** | **User sees nothing when operation fails. Silent failures lead to UX confusion, support tickets.** | **Always use user-facing error message for async operations: `setError('User-friendly message')` + optional `console.error()` for debugging.** | **R-051** |
+| **AP-025** | **Zod `.transform((val) => val \|\| null)` on optional/nullable field** | **When field is absent in partial update, transform receives `undefined`, outputs `null`, and Supabase NULLs the DB column** | **Use `(val) => val === undefined ? undefined : val \|\| null` to skip transform on absent fields. Affects any field using this pattern in schemas used with `.partial()`** | — |
 
 ---
 
