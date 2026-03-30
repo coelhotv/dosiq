@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Pill, Folders } from 'lucide-react'
 import Button from '@shared/components/ui/Button'
 import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
 import './LogForm.css'
@@ -192,7 +193,7 @@ export default function LogForm({
           className={formData.type === 'protocol' ? 'active' : ''}
           onClick={() => setFormData((prev) => ({ ...prev, type: 'protocol' }))}
         >
-          💊 Único Remédio
+          <Pill size={18} /> Único Remédio
         </button>
         <button
           type="button"
@@ -200,7 +201,7 @@ export default function LogForm({
           onClick={() => setFormData((prev) => ({ ...prev, type: 'plan' }))}
           disabled={treatmentPlans.length === 0 || formData.id}
         >
-          📁 Plano Completo
+          <Folders size={18} /> Plano Completo
         </button>
       </div>
 
@@ -348,10 +349,10 @@ export default function LogForm({
           {isSubmitting
             ? 'Salvando...'
             : formData.id
-              ? '💾 Atualizar Registro'
+              ? 'Atualizar Registro'
               : formData.type === 'plan' && selectedPlanProtocols.length > 0
-                ? `✅ Registrar (${selectedPlanProtocols.length})`
-                : '✅ Registrar Dose'}
+                ? `Registrar (${selectedPlanProtocols.length})`
+                : 'Registrar Dose'}
         </Button>
       </div>
     </form>

@@ -35,3 +35,16 @@
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .stock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Os demais estilos (form h3, form-group, form-row, form-actions, error-*,
+   required) são herdados de components.redesign.css via Sprint 11.2. */

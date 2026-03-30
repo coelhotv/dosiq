@@ -20,8 +20,8 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
   const [expandedRow, setExpandedRow] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null) // S7.5.5
 
-  const toggleGroup = key => {
-    setCollapsedGroups(prev => {
+  const toggleGroup = (key) => {
+    setCollapsedGroups((prev) => {
       const next = new Set(prev)
       next.has(key) ? next.delete(key) : next.add(key)
       return next
@@ -43,10 +43,14 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
       initial="hidden"
       animate="visible"
     >
-      {groups.map(group => {
+      {groups.map((group) => {
         const isCollapsed = collapsedGroups.has(group.groupKey)
         return (
-          <motion.section key={group.groupKey} variants={cascade.item} className="treatments-complex__group">
+          <motion.section
+            key={group.groupKey}
+            variants={cascade.item}
+            className="treatments-complex__group"
+          >
             <TreatmentPlanHeader
               group={group}
               isCollapsed={isCollapsed}
@@ -57,12 +61,9 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
               <>
                 {/* Desktop: tabular grid layout (shown on >= 1024px) — S7.5.5: hover state */}
                 <div className="treatments-complex__rows treatments-complex__rows--tabular-container">
-                  {group.items.map(item => (
+                  {group.items.map((item) => (
                     // S7.5.5: display:contents preserva grid, mouse events na 1ª célula
-                    <div
-                      key={item.id}
-                      style={{ display: 'contents' }}
-                    >
+                    <div key={item.id} style={{ display: 'contents' }}>
                       <ProtocolRow
                         item={item}
                         isComplex={true}
@@ -79,14 +80,14 @@ export default function TreatmentsComplex({ groups, onEdit, onEditPlan, activeTa
                 </div>
                 {/* Mobile: card layout (shown on < 1024px) */}
                 <div className="treatments-complex__rows treatments-complex__rows--card-container">
-                  {group.items.map(item => (
+                  {group.items.map((item) => (
                     <ProtocolRow
                       key={item.id}
                       item={item}
                       isComplex={true}
                       expanded={expandedRow === item.id}
                       onToggleExpand={() =>
-                        setExpandedRow(prev => (prev === item.id ? null : item.id))
+                        setExpandedRow((prev) => (prev === item.id ? null : item.id))
                       }
                       onEdit={onEdit}
                       activeTab={activeTab}

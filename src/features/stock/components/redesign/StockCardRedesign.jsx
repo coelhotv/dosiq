@@ -68,7 +68,15 @@ function formatDays(daysRemaining, hasActiveProtocol) {
 
 export default function StockCardRedesign({ item, isComplex, onAddStock, index = 0 }) {
   const motionConfig = useMotion()
-  const { medicine, totalQuantity, stockStatus, barPercentage, primaryProtocol, hasActiveProtocol, lastPurchase } = item
+  const {
+    medicine,
+    totalQuantity,
+    stockStatus,
+    barPercentage,
+    primaryProtocol,
+    hasActiveProtocol,
+    lastPurchase,
+  } = item
   const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
   const ctaConfig = CTA_CONFIG[stockStatus] || { label: 'Comprar Agora', Icon: ScanBarcode }
@@ -104,7 +112,8 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
       {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
       {isComplex && (
         <p className="stock-card-r__quantity">
-          {totalQuantity} {{ liquido: 'ml', capsula: 'cáps.' }[medicine.medicine_type] ?? 'comprimidos'}
+          {totalQuantity}{' '}
+          {{ liquido: 'ml', capsula: 'cáps.' }[medicine.medicine_type] ?? 'comprimidos'}
         </p>
       )}
 

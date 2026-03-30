@@ -45,16 +45,10 @@ export default function HistoryLogCard({ log, onEdit, onDelete }) {
         <div className="hlc-card__info">
           <div className="hlc-card__title-row">
             <span className="hlc-card__name">{medicineName}</span>
-            {dosageLabel && (
-              <span className="hlc-card__dosage-pill">{dosageLabel}</span>
-            )}
+            {dosageLabel && <span className="hlc-card__dosage-pill">{dosageLabel}</span>}
           </div>
-          {protocolName && (
-            <span className="hlc-card__protocol">{protocolName}</span>
-          )}
-          {quantityLabel && (
-            <span className="hlc-card__quantity">{quantityLabel}</span>
-          )}
+          {protocolName && <span className="hlc-card__protocol">{protocolName}</span>}
+          {quantityLabel && <span className="hlc-card__quantity">{quantityLabel}</span>}
         </div>
         <span className="hlc-card__time">{timeLabel}</span>
       </div>

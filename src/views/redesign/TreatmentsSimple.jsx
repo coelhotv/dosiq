@@ -27,13 +27,13 @@ export default function TreatmentsSimple({ items, onEdit, activeTab }) {
       initial="hidden"
       animate="visible"
     >
-      {items.map(item => (
+      {items.map((item) => (
         <motion.li key={item.id} variants={cascade.item}>
           <ProtocolRow
             item={item}
             isComplex={false}
             expanded={expanded === item.id}
-            onToggleExpand={() => setExpanded(prev => (prev === item.id ? null : item.id))}
+            onToggleExpand={() => setExpanded((prev) => (prev === item.id ? null : item.id))}
             onEdit={onEdit}
             activeTab={activeTab}
           />

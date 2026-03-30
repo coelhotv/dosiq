@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200; /* acima de FABs (1100) e chatbot (1100/1101) */
   padding: var(--space-4);
   animation: fadeIn var(--transition-base);
 }
@@ -115,4 +115,148 @@
   .modal-body {
     padding-bottom: calc(var(--space-4) + 60px); /* Espaço extra para scroll até o final */
   }
+}
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   Ativo apenas quando [data-redesign="true"]
+   ============================================ */
+
+[data-redesign='true'] .modal-overlay {
+  background: rgba(25, 28, 29, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: modalFadeIn 200ms ease-out;
+}
+
+[data-redesign='true'] .modal-content {
+  background: var(--color-surface-container-lowest);
+  border: none;
+  border-radius: 2rem;
+  box-shadow: 0 24px 48px rgba(25, 28, 29, 0.12);
+  max-width: 560px;
+  animation: modalScaleIn 200ms ease-out;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-redesign='true'] .modal-content {
+    animation: none;
+  }
+  [data-redesign='true'] .modal-overlay {
+    animation: none;
+  }
+}
+
+[data-redesign='true'] .modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: none;
+  background: transparent;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+[data-redesign='true'] .modal-header h2 {
+  font-family: var(--font-body);
+  font-size: var(--text-title-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin: 0;
+  flex: 1;
+}
+
+[data-redesign='true'] .modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: background-color 200ms ease-out;
+  font-size: inherit;
+  padding: 0;
+}
+
+[data-redesign='true'] .modal-close:hover {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+}
+
+[data-redesign='true'] .modal-body {
+  padding: 0 2rem 2rem;
+}
+
+/* Mobile — bottom sheet */
+@media (max-width: 767px) {
+  [data-redesign='true'] .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  [data-redesign='true'] .modal-content {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 2rem 2rem 0 0;
+    animation: modalSlideUp 250ms ease-out;
+  }
+
+  @keyframes modalSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  [data-redesign='true'] .modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  [data-redesign='true'] .modal-body {
+    padding: 0 1.5rem 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Scrollbar — redesign */
+[data-redesign='true'] .modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-redesign='true'] .modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-redesign='true'] .modal-content::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: var(--radius-full);
 }

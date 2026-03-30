@@ -43,7 +43,6 @@ export function getBarPercentage(totalQuantity, daysRemaining) {
   return Math.round((daysRemaining / 30) * 100)
 }
 
-
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -145,24 +144,28 @@ export function useStockData() {
   // Critical items: urgente MAS excluir (estoque 0 E sem protocolo ativo)
   // Racional: não fazem sentido como "críticos" se não há protocolo para reabastecimento
   const criticalItems = useMemo(
-    () => items
-      .filter((i) => i.stockStatus === 'urgente')
-      .filter((i) => !(i.totalQuantity === 0 && !i.hasActiveProtocol))
-      .sort((a, b) => a.daysRemaining - b.daysRemaining),
+    () =>
+      items
+        .filter((i) => i.stockStatus === 'urgente')
+        .filter((i) => !(i.totalQuantity === 0 && !i.hasActiveProtocol))
+        .sort((a, b) => a.daysRemaining - b.daysRemaining),
     [items]
   )
   const warningItems = useMemo(
-    () => items.filter((i) => i.stockStatus === 'atencao').sort((a, b) => a.daysRemaining - b.daysRemaining),
+    () =>
+      items
+        .filter((i) => i.stockStatus === 'atencao')
+        .sort((a, b) => a.daysRemaining - b.daysRemaining),
     [items]
   )
   const okItems = useMemo(
-    () => items.filter((i) => i.stockStatus === 'seguro').sort((a, b) => a.daysRemaining - b.daysRemaining),
+    () =>
+      items
+        .filter((i) => i.stockStatus === 'seguro')
+        .sort((a, b) => a.daysRemaining - b.daysRemaining),
     [items]
   )
-  const highItems = useMemo(
-    () => items.filter((i) => i.stockStatus === 'alto'),
-    [items]
-  )
+  const highItems = useMemo(() => items.filter((i) => i.stockStatus === 'alto'), [items])
 
   // 3. Effects
   const loadData = async () => {

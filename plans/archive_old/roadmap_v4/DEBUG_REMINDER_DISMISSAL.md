@@ -1,8 +1,8 @@
 # Debug: Reminder Optimizer Dismissal Issue
 
-**Status**: ONGOING INVESTIGATION
-**Last Updated**: 2026-03-09
-**Next Step**: Capture logs when a new reminder suggestion appears
+**Status**: RESOLVED ✅
+**Last Updated**: 2026-03-30
+**Next Step**: —
 
 ---
 
@@ -39,7 +39,7 @@
 - Changed useMemo to use `allLogsForAnalysis` instead of limited `timelineLogs`
 - Now fetches 3 datasets in parallel: month logs + paginated timeline + full history
 
-### Phase 3: Reminder Dismissal Storage Issue (PENDING INVESTIGATION)
+### Phase 3: Reminder Dismissal Storage Issue (RESOLVED ✓)
 **Discovery**: localStorage does NOT contain `optimizer_dismissed_*` keys
 **Observation**: User accepted all suggestions but keys never created
 **Hypothesis**:
@@ -243,8 +243,8 @@ When logs are available, answer these:
 | 2026-03-08 | Protocol edit modal: fixed prop names + onSave persistence | ✓ COMPLETE |
 | 2026-03-09 | Add dismissal logging to reminderOptimizerService + ReminderSuggestion | ✓ COMPLETE |
 | 2026-03-09 | Attempt to reproduce — NO suggestions generated yet | ⏳ WAITING |
-| TBD | Capture logs when next suggestion appears | ⏳ PENDING |
-| TBD | Investigate treatment_plan_id nullification | ⏳ PENDING |
+| 2026-03-30 | Capture logs when next suggestion appears | ✓ COMPLETE |
+| 2026-03-30 | Fix treatment_plan_id nullification (Zod transform bug) | ✓ COMPLETE |
 
 ---
 

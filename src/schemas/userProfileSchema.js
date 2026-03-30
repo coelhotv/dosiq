@@ -8,8 +8,33 @@ import { z } from 'zod'
  * Usado em validação de seleção no formulário "Editar Perfil"
  */
 export const BRAZILIAN_STATES = [
-  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
-  'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'
+  'AC',
+  'AL',
+  'AM',
+  'AP',
+  'BA',
+  'CE',
+  'DF',
+  'ES',
+  'GO',
+  'MA',
+  'MG',
+  'MS',
+  'MT',
+  'PA',
+  'PB',
+  'PE',
+  'PI',
+  'PR',
+  'RJ',
+  'RN',
+  'RO',
+  'RR',
+  'RS',
+  'SC',
+  'SE',
+  'SP',
+  'TO',
 ]
 
 /**
@@ -50,7 +75,7 @@ const userProfileSchema = z.object({
     .union([z.enum(BRAZILIAN_STATES), z.literal('')])
     .nullable()
     .optional()
-    .transform(val => val === '' ? null : val),
+    .transform((val) => (val === '' ? null : val)),
 })
 
 /**
@@ -64,7 +89,7 @@ export function validateUserProfile(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.issues.map(issue => ({
+      errors: result.error.issues.map((issue) => ({
         field: issue.path[0],
         message: issue.message,
       })),

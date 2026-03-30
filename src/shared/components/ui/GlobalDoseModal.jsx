@@ -3,7 +3,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { cachedLogService as logService, cachedTreatmentPlanService as treatmentPlanService } from '@shared/services'
+import {
+  cachedLogService as logService,
+  cachedTreatmentPlanService as treatmentPlanService,
+} from '@shared/services'
 import Modal from './Modal'
 import LogForm from '@shared/components/log/LogForm'
 
@@ -26,10 +29,10 @@ export default function GlobalDoseModal({ isOpen, onClose }) {
     if (!isOpen) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlansError(null)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     treatmentPlanService
       .getAll()
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       .then(setTreatmentPlans)
       .catch((err) => {
         console.error('[GlobalDoseModal] Erro ao carregar planos de tratamento:', err)

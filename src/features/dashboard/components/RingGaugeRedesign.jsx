@@ -4,9 +4,9 @@ const RADIUS = 46
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 const SIZE_MAP = {
-  large:   { svgSize: 120, strokeWidth: 12, fontSize: '1.75rem', labelSize: '0.625rem' },
-  medium:  { svgSize: 96,  strokeWidth: 10, fontSize: '1.25rem', labelSize: '0.6rem'   },
-  compact: { svgSize: 56,  strokeWidth: 8,  fontSize: '0.875rem', labelSize: '0.5rem'  },
+  large: { svgSize: 120, strokeWidth: 12, fontSize: '1.75rem', labelSize: '0.625rem' },
+  medium: { svgSize: 96, strokeWidth: 10, fontSize: '1.25rem', labelSize: '0.6rem' },
+  compact: { svgSize: 56, strokeWidth: 8, fontSize: '0.875rem', labelSize: '0.5rem' },
 }
 
 export default function RingGaugeRedesign({
@@ -21,8 +21,7 @@ export default function RingGaugeRedesign({
   const isClickable = Boolean(onClick)
 
   const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
     <div
@@ -30,7 +29,13 @@ export default function RingGaugeRedesign({
       onClick={isClickable ? onClick : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') onClick()
+            }
+          : undefined
+      }
       aria-label={`Adesão diária: ${score}%. Streak: ${streak} dias`}
       style={{
         display: 'inline-flex',
@@ -50,7 +55,9 @@ export default function RingGaugeRedesign({
       >
         {/* Track */}
         <circle
-          cx="60" cy="60" r={RADIUS}
+          cx="60"
+          cy="60"
+          r={RADIUS}
           fill="none"
           stroke="var(--color-secondary, #005db6)"
           strokeWidth={strokeWidth}
@@ -58,7 +65,9 @@ export default function RingGaugeRedesign({
         />
         {/* Progress */}
         <motion.circle
-          cx="60" cy="60" r={RADIUS}
+          cx="60"
+          cy="60"
+          r={RADIUS}
           fill="none"
           stroke="var(--color-primary-fixed, #90f4e3)"
           strokeWidth={strokeWidth}
@@ -66,15 +75,17 @@ export default function RingGaugeRedesign({
           strokeDasharray={CIRCUMFERENCE}
           initial={{ strokeDashoffset: CIRCUMFERENCE }}
           animate={{ strokeDashoffset: offset }}
-          transition={prefersReducedMotion
-            ? { duration: 0 }
-            : { duration: 1, delay: 0.5, ease: [0.4, 0, 0.2, 1] }
+          transition={
+            prefersReducedMotion
+              ? { duration: 0 }
+              : { duration: 1, delay: 0.5, ease: [0.4, 0, 0.2, 1] }
           }
           style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
         />
         {/* Percentagem */}
         <text
-          x="60" y="56"
+          x="60"
+          y="56"
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--color-on-surface, #191c1d)"
@@ -86,7 +97,8 @@ export default function RingGaugeRedesign({
         </text>
         {/* Label */}
         <text
-          x="60" y="72"
+          x="60"
+          y="72"
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--color-outline, #6d7a76)"

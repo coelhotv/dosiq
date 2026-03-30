@@ -5,6 +5,9 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: true, // expõe na rede local (0.0.0.0) — acesse pelo IP da máquina no celular
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

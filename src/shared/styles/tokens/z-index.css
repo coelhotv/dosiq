@@ -37,6 +37,12 @@
   --z-toast: 800;
   --z-notification: 900;
 
+  /* Chatbot drawer — acima de notificações, abaixo de modais */
+  --z-chatbot: 1100;
+
+  /* Modais — sempre acima de tudo (FAB, chatbot, toasts) */
+  --z-modal-overlay: 1200;
+
   /* Highest priority */
   --z-skip-link: 9999;
 

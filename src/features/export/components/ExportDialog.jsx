@@ -11,6 +11,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react'
+import { FileBracesCorner, FileDigit } from 'lucide-react'
 import Modal from '@shared/components/ui/Modal'
 import Button from '@shared/components/ui/Button'
 import { exportAsJSON, exportAsCSV } from '@features/export/services/exportService'
@@ -18,8 +19,8 @@ import './ExportDialog.css'
 
 /** Opções de formato de exportação */
 const FORMAT_OPTIONS = [
-  { value: 'json', label: 'JSON' },
-  { value: 'csv', label: 'CSV' },
+  { value: 'json', label: 'JSON', icon: FileBracesCorner },
+  { value: 'csv', label: 'CSV', icon: FileDigit },
 ]
 
 /** Labels para tipos de dados */
@@ -59,8 +60,8 @@ export default function ExportDialog({ isOpen, onClose }) {
   }, [dateRange])
 
   // 3. Handlers (R-010: Hook order)
-  const handleFormatChange = useCallback((e) => {
-    setFormat(e.target.value)
+  const handleFormatChange = useCallback((value) => {
+    setFormat(value)
     setExportError(null)
   }, [])
 
@@ -154,23 +155,22 @@ export default function ExportDialog({ isOpen, onClose }) {
         {/* Format Selector */}
         <div className="export-section">
           <label className="export-label">Formato</label>
-          <div className="format-selector">
-            {FORMAT_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className={`format-option ${format === option.value ? 'selected' : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="format"
-                  value={option.value}
-                  checked={format === option.value}
-                  onChange={handleFormatChange}
+          <div className="format-toggle">
+            {FORMAT_OPTIONS.map((option) => {
+              const OptionIcon = option.icon
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`format-toggle-btn${format === option.value ? ' active' : ''}`}
+                  onClick={() => handleFormatChange(option.value)}
                   disabled={isExporting}
-                />
-                <span className="format-label">{option.label}</span>
-              </label>
-            ))}
+                >
+                  <OptionIcon size={18} />
+                  {option.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 

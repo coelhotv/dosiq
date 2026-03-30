@@ -66,6 +66,7 @@
   --z-modal-footer: var(--z-modal);
   --z-modal-close: calc(var(--z-modal) + 1);
   --z-modal-overlay: calc(var(--z-modal-backdrop) + 1);
+  --z-chatbot: 1100; /* drawer chatbot — abaixo de modais */
 
   /* Toast/Notification components */
   --z-toast-container: var(--z-toast);

@@ -382,10 +382,7 @@ function AppInner() {
           {/* Modal global de registro de dose */}
           {isAuthenticated && isRedesignEnabled && isDoseModalOpen && (
             <Suspense fallback={null}>
-              <GlobalDoseModal
-                isOpen={isDoseModalOpen}
-                onClose={() => setIsDoseModalOpen(false)}
-              />
+              <GlobalDoseModal isOpen={isDoseModalOpen} onClose={() => setIsDoseModalOpen(false)} />
             </Suspense>
           )}
 

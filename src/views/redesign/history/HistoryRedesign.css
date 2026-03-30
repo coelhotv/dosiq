@@ -150,7 +150,7 @@
 .hhr-day-panel__header {
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-outline-ghost, rgba(25,28,29,0.08));
+  border-bottom: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
   flex-shrink: 0;
 }
 
@@ -281,7 +281,9 @@
   cursor: pointer;
   color: var(--color-on-surface);
   opacity: 0.4;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
 }
 
 .hlc-card__btn:hover {
@@ -415,7 +417,7 @@
 .hhr-loading__spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--color-outline-ghost, rgba(25,28,29,0.08));
+  border: 3px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: hhr-spin 0.8s linear infinite;
@@ -423,12 +425,19 @@
 
 /* ── Animations ────────────────────────────────────────────── */
 @keyframes hhr-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes hhr-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* ============================================================

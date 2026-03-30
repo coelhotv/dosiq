@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Webhook, MonitorCog, UserKey, ShieldUser, Form, Wand2, Grid3x2, LogOut } from 'lucide-react'
+import {
+  Webhook,
+  MonitorCog,
+  UserKey,
+  ShieldUser,
+  Form,
+  Wand2,
+  Grid3x2,
+  LogOut,
+} from 'lucide-react'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { validatePasswordChange } from '@schemas/authSchema'
@@ -68,10 +77,9 @@ export default function SettingsRedesign({ onNavigate }) {
     try {
       const token = crypto.randomUUID()
       const userId = await getUserId()
-      const { error } = await supabase.from('user_settings').upsert(
-        { user_id: userId, telegram_token: token },
-        { onConflict: 'user_id' }
-      )
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({ user_id: userId, telegram_token: token }, { onConflict: 'user_id' })
       if (error) throw error
       setTelegramToken(token)
       showFeedback('Código gerado! Copie e envie ao bot.')
@@ -100,7 +108,9 @@ export default function SettingsRedesign({ onNavigate }) {
   const handleComplexityChange = useCallback(
     (newMode) => {
       setOverride(newMode === 'auto' ? null : newMode)
-      showFeedback(`Modo alterado para ${newMode === 'auto' ? 'Automático' : newMode === 'simple' ? 'Padrão' : 'Detalhado'}.`)
+      showFeedback(
+        `Modo alterado para ${newMode === 'auto' ? 'Automático' : newMode === 'simple' ? 'Padrão' : 'Detalhado'}.`
+      )
     },
     [setOverride, showFeedback]
   )
@@ -161,15 +171,23 @@ export default function SettingsRedesign({ onNavigate }) {
 
   const currentYear = new Date().getFullYear()
 
-  const isTelegramConnected = settings?.telegram_chat_id !== null && settings?.telegram_chat_id !== undefined
+  const isTelegramConnected =
+    settings?.telegram_chat_id !== null && settings?.telegram_chat_id !== undefined
 
-  const isAdmin = user?.user_metadata?.role === 'admin' || String(settings?.telegram_chat_id) === import.meta.env.VITE_ADMIN_CHAT_ID
+  const isAdmin =
+    user?.user_metadata?.role === 'admin' ||
+    String(settings?.telegram_chat_id) === import.meta.env.VITE_ADMIN_CHAT_ID
 
   return (
     <div className="sr-view">
       {/* ── Header com back button ── */}
       <div className="sr-header">
-        <button className="sr-header__back" onClick={() => onNavigate?.('profile')} aria-label="Voltar" type="button">
+        <button
+          className="sr-header__back"
+          onClick={() => onNavigate?.('profile')}
+          aria-label="Voltar"
+          type="button"
+        >
           ←
         </button>
         <h1 className="sr-header__title">Configurações</h1>
@@ -186,7 +204,9 @@ export default function SettingsRedesign({ onNavigate }) {
         </h3>
 
         <div className="sr-section__card">
-          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: 600 }}>Telegram</h3>
+          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Telegram
+          </h3>
           <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', opacity: 0.6 }}>
             Receba lembretes de medicação e alertas diretamente no seu chat.
           </p>
@@ -203,9 +223,24 @@ export default function SettingsRedesign({ onNavigate }) {
               {telegramToken && (
                 <div style={{ marginTop: '0.75rem' }}>
                   <p style={{ fontSize: '0.8rem', opacity: 0.6, margin: '0 0 0.5rem 0' }}>
-                    Envie ao bot: <code style={{ fontSize: '0.75rem', background: 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '3px' }}>/start {telegramToken}</code>
+                    Envie ao bot:{' '}
+                    <code
+                      style={{
+                        fontSize: '0.75rem',
+                        background: 'rgba(0,0,0,0.05)',
+                        padding: '2px 4px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      /start {telegramToken}
+                    </code>
                   </p>
-                  <a href="https://t.me/meus_remedios_bot" target="_blank" rel="noopener noreferrer" className="sr-telegram__link">
+                  <a
+                    href="https://t.me/meus_remedios_bot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sr-telegram__link"
+                  >
                     Abrir no Telegram →
                   </a>
                 </div>
@@ -233,7 +268,9 @@ export default function SettingsRedesign({ onNavigate }) {
         </h3>
 
         <div className="sr-section__card">
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: 600 }}>Densidade da Interface</h3>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Densidade da Interface
+          </h3>
 
           <div className="sr-density__options">
             <button
@@ -278,11 +315,19 @@ export default function SettingsRedesign({ onNavigate }) {
         </h3>
 
         <div className="sr-section__card">
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: 600 }}>Alterar Senha</h3>
-          <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', opacity: 0.5 }}>Última alteração: --</p>
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Alterar Senha
+          </h3>
+          <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', opacity: 0.5 }}>
+            Última alteração: --
+          </p>
 
           {!showPasswordForm ? (
-            <button className="sr-password__toggle" onClick={() => setShowPasswordForm(true)} type="button">
+            <button
+              className="sr-password__toggle"
+              onClick={() => setShowPasswordForm(true)}
+              type="button"
+            >
               Alterar →
             </button>
           ) : (
@@ -320,15 +365,22 @@ export default function SettingsRedesign({ onNavigate }) {
       {isAdmin && (
         <section className="sr-section">
           <h3 className="sr-section__title">
-            <ShieldUser size={24} /> Área Administrativa <span className="sr-admin__badge">ACESSO RESTRITO</span>
+            <ShieldUser size={24} /> Área Administrativa{' '}
+            <span className="sr-admin__badge">ACESSO RESTRITO</span>
           </h3>
 
           <div className="sr-section__card sr-admin">
-            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: 600 }}>Dead Letter Queue (DLQ)</h3>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+              Dead Letter Queue (DLQ)
+            </h3>
             <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', opacity: 0.6 }}>
               Gerenciar falhas de sincronização e alertas do sistema.
             </p>
-            <button className="sr-admin__button" onClick={() => onNavigate?.('admin-dlq')} type="button">
+            <button
+              className="sr-admin__button"
+              onClick={() => onNavigate?.('admin-dlq')}
+              type="button"
+            >
               Ver Alertas →
             </button>
           </div>

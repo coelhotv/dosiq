@@ -16,11 +16,12 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
   const mostCritical = sorted[0]
   const isCritical = mostCritical.stockStatus === 'critical'
 
-  const accentColor = isCritical
-    ? 'var(--color-error, #ba1a1a)'
-    : 'var(--color-tertiary, #7b5700)'
+  const accentColor = isCritical ? 'var(--color-error, #ba1a1a)' : 'var(--color-tertiary, #7b5700)'
 
-  const progressPct = Math.max(0, Math.min((mostCritical.daysRemaining / PROGRESS_BAR_MAX_DAYS) * 100, 100))
+  const progressPct = Math.max(
+    0,
+    Math.min((mostCritical.daysRemaining / PROGRESS_BAR_MAX_DAYS) * 100, 100)
+  )
 
   return (
     <div
@@ -41,29 +42,33 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
       {/* Título */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <AlertTriangle size={16} color={accentColor} aria-hidden="true" />
-        <span style={{
-          fontFamily: 'var(--font-body, Lexend, sans-serif)',
-          fontWeight: 'var(--font-weight-semibold, 600)',
-          fontSize: 'var(--text-body-lg, 1rem)',
-          color: accentColor,
-        }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-body, Lexend, sans-serif)',
+            fontWeight: 'var(--font-weight-semibold, 600)',
+            fontSize: 'var(--text-body-lg, 1rem)',
+            color: accentColor,
+          }}
+        >
           {isCritical ? 'Estoque Crítico' : 'Estoque Baixo'}
           {criticalItems.length > 1
             ? ` · ${criticalItems.length} itens`
-            : ` · ${mostCritical.medicineName}`
-          }
+            : ` · ${mostCritical.medicineName}`}
         </span>
       </div>
 
       {/* Barra de progresso */}
       <div>
-        <div style={{
-          fontFamily: 'var(--font-body, Lexend, sans-serif)',
-          fontSize: 'var(--text-label-md, 0.75rem)',
-          color: 'var(--color-on-surface-variant, #3e4946)',
-          marginBottom: '0.375rem',
-        }}>
-          {mostCritical.daysRemaining} dia{mostCritical.daysRemaining !== 1 ? 's' : ''} restante{mostCritical.daysRemaining !== 1 ? 's' : ''}
+        <div
+          style={{
+            fontFamily: 'var(--font-body, Lexend, sans-serif)',
+            fontSize: 'var(--text-label-md, 0.75rem)',
+            color: 'var(--color-on-surface-variant, #3e4946)',
+            marginBottom: '0.375rem',
+          }}
+        >
+          {mostCritical.daysRemaining} dia{mostCritical.daysRemaining !== 1 ? 's' : ''} restante
+          {mostCritical.daysRemaining !== 1 ? 's' : ''}
         </div>
         <div
           role="progressbar"
@@ -78,13 +83,15 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
             overflow: 'hidden',
           }}
         >
-          <div style={{
-            height: '100%',
-            width: `${progressPct}%`,
-            borderRadius: 'var(--radius-full, 9999px)',
-            background: accentColor,
-            transition: 'width 1s ease-out',
-          }} />
+          <div
+            style={{
+              height: '100%',
+              width: `${progressPct}%`,
+              borderRadius: 'var(--radius-full, 9999px)',
+              background: accentColor,
+              transition: 'width 1s ease-out',
+            }}
+          />
         </div>
       </div>
 

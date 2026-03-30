@@ -31,6 +31,7 @@
 | **AP-C02** | **Duplicate CSS rules across similar components without consolidation** | **Code bloat, maintenance burden, cascading changes require editing multiple places** | **Use CSS selector grouping (`,`) for shared base styles, then separate size/state modifiers. 1 source of truth.** | **R-120** |
 | **AP-W9-01** | **Conditional JSX inside Suspense boundary for lazy imports** | **Dynamic import error: "Failed to fetch dynamically imported module" in browser console. Lazy component fails to load.** | **Move conditional outside Suspense. Each branch gets its own Suspense wrapper: `isFlag ? <Suspense><New/></Suspense> : <Suspense><Old/></Suspense>`** | **R-117** |
 | **AP-W9-02** | **Silent error handling in async operations (console.error only)** | **User sees nothing when operation fails. Silent failures lead to UX confusion, support tickets.** | **Always use user-facing error message for async operations: `setError('User-friendly message')` + optional `console.error()` for debugging.** | **R-051** |
+| **AP-025** | **Zod `.transform((val) => val \|\| null)` on optional/nullable field** | **When field is absent in partial update, transform receives `undefined`, outputs `null`, and Supabase NULLs the DB column** | **Use `(val) => val === undefined ? undefined : val \|\| null` to skip transform on absent fields. Affects any field using this pattern in schemas used with `.partial()`** | — |
 
 ---
 
@@ -552,3 +553,21 @@ import StockPill from '@protocols/components/redesign/StockPill'
 **Correção:** Estado de controle fica em `AppInner` (fora do provider); componente `GlobalDoseModal` é lazy-loaded e renderizado DENTRO da árvore do `DashboardProvider`. O lazy import resolve o problema sem mover o estado.
 
 *Last updated: 2026-03-28*
+
+## AP-W24: FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido
+
+**O que é:** Durante Wave 11, o `z-index` do Modal foi elevado para `1200` (acima do chatbot `1100` e FABs), mas os elementos continuaram visíveis sobre o modal no mobile após múltiplos refreshes.
+
+**Arquivos corrigidos mas bug persistente:**
+- `src/App.module.css` → `.doseFab` e `.chatFab` alterados para `var(--z-chatbot, 1100)`
+- `src/features/chatbot/components/ChatWindow.module.css` → `var(--z-chatbot)` e `calc(var(--z-chatbot) + 1)`
+- `src/shared/components/ui/Modal.css` → `var(--z-modal-overlay, 1200)`
+
+**Hipóteses para investigar:**
+- `transform: translateX(-50%)` no `.doseFab` cria novo stacking context, anulando z-index
+- Elemento pai em `App.jsx` sem `isolation: isolate` quebra hierarquia de composição
+- CSS Modules podem não estar injetando variáveis CSS corretamente no mobile
+
+**Status:** BUG ABERTO — investigar em Wave 12 ou hotfix dedicado.
+
+*Registrado: 2026-03-30*

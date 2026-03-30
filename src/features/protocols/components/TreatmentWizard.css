@@ -246,3 +246,41 @@
 .wizard__complete-summary strong {
   color: var(--text-primary);
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .treatment-wizard {
+  padding: 0;
+}
+
+[data-redesign='true'] .treatment-wizard .wizard-step {
+  background: transparent;
+}
+
+[data-redesign='true'] .treatment-wizard .step-indicator {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+[data-redesign='true'] .treatment-wizard .step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-outline-variant);
+  transition: all 200ms ease-out;
+}
+
+[data-redesign='true'] .treatment-wizard .step-dot.active {
+  width: 24px;
+  background: var(--color-primary);
+}
+
+[data-redesign='true'] .treatment-wizard .step-dot.completed {
+  background: var(--color-primary-fixed);
+}
+
+/* Herda form styles de components.redesign.css via Sprint 11.2. */

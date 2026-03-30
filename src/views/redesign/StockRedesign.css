@@ -139,9 +139,15 @@
   }
 }
 
-.stock-redesign__section-label--urgente { color: var(--color-error); }
-.stock-redesign__section-label--atencao { color: var(--color-warning); }
-.stock-redesign__section-label--seguro { color: var(--color-primary); }
+.stock-redesign__section-label--urgente {
+  color: var(--color-error);
+}
+.stock-redesign__section-label--atencao {
+  color: var(--color-warning);
+}
+.stock-redesign__section-label--seguro {
+  color: var(--color-primary);
+}
 
 /* Grid (complex mode) — responsivo por contagem, sem moderate */
 .stock-redesign__grid {
@@ -249,7 +255,11 @@
   min-height: 44px;
   border: none;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 70%, black));
+  background: linear-gradient(
+    135deg,
+    var(--color-error),
+    color-mix(in srgb, var(--color-error) 70%, black)
+  );
   color: var(--color-on-primary);
   font-family: var(--font-body);
   font-size: var(--text-label-md);
@@ -334,8 +344,12 @@
   text-align: right;
 }
 
-.entrada-historico__qty--positive { color: var(--color-primary); }
-.entrada-historico__qty--negative { color: var(--color-error); }
+.entrada-historico__qty--positive {
+  color: var(--color-primary);
+}
+.entrada-historico__qty--negative {
+  color: var(--color-error);
+}
 
 /* Custo do lote — referência de preço para reposição */
 .entrada-historico__cost {

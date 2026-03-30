@@ -29,7 +29,7 @@ export default function AnvisaSearchBar({
   function handleSelect(anvisaMedicine) {
     // Verificar se já existe protocolo para este medicamento (match por nome, case-insensitive)
     const match = existingProtocols.find(
-      item => item.medicineName.toLowerCase() === anvisaMedicine.name.toLowerCase()
+      (item) => item.medicineName.toLowerCase() === anvisaMedicine.name.toLowerCase()
     )
 
     if (match) {

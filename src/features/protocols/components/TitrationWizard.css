@@ -177,3 +177,70 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-color);
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .titration-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+[data-redesign='true'] .wizard-header h4 {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+[data-redesign='true'] .wizard-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  margin: 0.25rem 0 0;
+}
+
+[data-redesign='true'] .titration-stage-card {
+  background: var(--color-surface-container-lowest);
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(25, 28, 29, 0.06);
+}
+
+[data-redesign='true'] .stage-number {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+[data-redesign='true'] .stage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+[data-redesign='true'] .stage-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+[data-redesign='true'] .form-group-mini label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+[data-redesign='true'] .form-group-mini input {
+  min-height: 44px;
+  font-size: 0.875rem;
+}

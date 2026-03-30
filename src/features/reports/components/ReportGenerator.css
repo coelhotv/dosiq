@@ -506,3 +506,217 @@
     color: #f5f5f5;
   }
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .report-generator {
+  font-family: var(--font-body);
+  color: var(--color-on-surface);
+}
+
+[data-redesign='true'] .report-generator .report-section {
+  background: var(--color-surface-container-low);
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+[data-redesign='true'] .report-generator .report-label {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+[data-redesign='true'] .report-generator .report-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+}
+
+[data-redesign='true'] .report-generator .share-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+[data-redesign='true'] .report-generator .share-button {
+  padding: 0.5rem 1rem;
+  background: var(--color-surface-container-low);
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: background 200ms ease-out;
+}
+
+[data-redesign='true'] .report-generator .share-button:hover {
+  background: var(--color-surface-container-high);
+}
+
+/* --- Legibilidade: classes BEM do ReportGenerator sobre fundo branco --- */
+
+[data-redesign='true'] .report-generator__eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-primary);
+  margin: 0 0 0.25rem;
+}
+
+[data-redesign='true'] .report-generator__title {
+  font-family: var(--font-body);
+  font-size: var(--text-title-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin: 0 0 0.5rem;
+}
+
+[data-redesign='true'] .report-generator__description {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+  line-height: 1.5;
+}
+
+[data-redesign='true'] .report-generator__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+[data-redesign='true'] .report-generator__hero-copy {
+  flex: 1;
+}
+
+[data-redesign='true'] .report-generator__hero-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-radius: var(--radius-card);
+  min-width: 72px;
+}
+
+[data-redesign='true'] .report-generator__hero-badge span {
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-redesign='true'] .report-generator__hero-badge strong {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+[data-redesign='true'] .report-generator__panel {
+  background: var(--color-surface-container-low);
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+[data-redesign='true'] .report-generator__panel--soft {
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+[data-redesign='true'] .report-generator__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+[data-redesign='true'] .report-generator__helper {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  margin: 0.5rem 0 0;
+  line-height: 1.4;
+}
+
+[data-redesign='true'] .report-generator__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+[data-redesign='true'] .report-generator__chip {
+  padding: 0.25rem 0.75rem;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+}
+
+[data-redesign='true'] .report-generator__select {
+  width: 100%;
+  font-family: var(--font-body);
+}
+
+[data-redesign='true'] .report-generator__error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+[data-redesign='true'] .report-generator__success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-success-bg);
+  color: var(--color-primary);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: 1rem;
+}
+
+[data-redesign='true'] .report-generator__loading-text {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+[data-redesign='true'] .report-generator__share-expiry {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  margin: 0.5rem 0 0;
+}

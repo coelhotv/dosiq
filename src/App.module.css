@@ -10,7 +10,11 @@
   padding: 0 1.25rem;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary, var(--color-primary)) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-secondary, var(--color-primary)) 100%
+  );
   color: var(--color-on-primary, #fff);
   font-size: 14px;
   font-weight: 600;
@@ -19,7 +23,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-ambient);
-  z-index: 1000;
+  z-index: var(--z-chatbot, 1100);
   white-space: nowrap;
 }
 
@@ -45,5 +49,5 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: var(--z-chatbot, 1100);
 }

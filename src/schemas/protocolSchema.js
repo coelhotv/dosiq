@@ -77,7 +77,7 @@ export const protocolSchema = z.object({
     .uuid('ID do plano de tratamento deve ser um UUID válido')
     .optional()
     .nullable()
-    .transform((val) => val || null),
+    .transform((val) => (val === undefined ? undefined : val || null)),
 
   name: z
     .string()

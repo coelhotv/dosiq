@@ -556,49 +556,239 @@
 }
 
 @keyframes fillWidth-sanctuary {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @keyframes pulse-sanctuary {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 @keyframes scaleIn-sanctuary {
-  from { transform: scale(0.85); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Classe utilitária: cascade reveal (CSS fallback sem Framer Motion) */
-[data-redesign="true"] .motion-fade-in {
+[data-redesign='true'] .motion-fade-in {
   animation: fadeInUp-sanctuary 300ms ease-out forwards;
 }
 
 /* Classe utilitária: living fill para barras (CSS fallback) */
-[data-redesign="true"] .motion-fill-bar {
+[data-redesign='true'] .motion-fill-bar {
   animation: fillWidth-sanctuary 1000ms 500ms ease-out both;
   transform-origin: left;
 }
 
 /* Pulse para estoque crítico — atualizado para cores sanctuary */
-[data-redesign="true"] .pulse-critical {
+[data-redesign='true'] .pulse-critical {
   animation: pulse-sanctuary 2s ease-in-out infinite;
 }
 
 /* Scale in — para modais, tooltips */
-[data-redesign="true"] .motion-scale-in {
+[data-redesign='true'] .motion-scale-in {
   animation: scaleIn-sanctuary 200ms ease-out forwards;
 }
 
 /* Respeitar prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  [data-redesign="true"] .motion-fade-in,
-  [data-redesign="true"] .motion-fill-bar,
-  [data-redesign="true"] .pulse-critical,
-  [data-redesign="true"] .motion-scale-in {
+  [data-redesign='true'] .motion-fade-in,
+  [data-redesign='true'] .motion-fill-bar,
+  [data-redesign='true'] .pulse-critical,
+  [data-redesign='true'] .motion-scale-in {
     animation: none;
     transform: none;
     opacity: 1;
   }
+}
+
+/* ============================================
+   WAVE 11 — FORM UTILITY CLASSES
+   Classes compartilhadas por TODOS os forms.
+   ============================================ */
+
+/* --- Layout --- */
+
+[data-redesign='true'] .form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  [data-redesign='true'] .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+[data-redesign='true'] .form-row > .form-group {
+  flex: 1;
+}
+
+[data-redesign='true'] .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  [data-redesign='true'] .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  [data-redesign='true'] .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* --- Labels & Hints --- */
+
+[data-redesign='true'] .form-group label,
+[data-redesign='true'] .form-group > .form-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface);
+  margin-bottom: 0.5rem;
+}
+
+[data-redesign='true'] .required {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+[data-redesign='true'] .field-hint,
+[data-redesign='true'] .form-group small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+/* --- Feedback: errors --- */
+
+[data-redesign='true'] .error-message {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
+
+[data-redesign='true'] .error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+}
+
+/* Error state para inputs (classe .error que os forms usam) */
+[data-redesign='true'] input.error,
+[data-redesign='true'] textarea.error,
+[data-redesign='true'] select.error {
+  border-color: var(--color-error);
+}
+
+/* --- Feedback: success --- */
+
+[data-redesign='true'] .success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-success-bg);
+  color: var(--color-primary);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+}
+
+[data-redesign='true'] .success-message svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* --- Checkbox & Radio --- */
+
+[data-redesign='true'] .checkbox-label,
+[data-redesign='true'] .checkbox-group .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+[data-redesign='true'] .checkbox-label input[type='checkbox'],
+[data-redesign='true'] .checkbox-label input[type='radio'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+[data-redesign='true'] .checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* --- Form title (h3 inside forms) --- */
+
+[data-redesign='true'] form h3 {
+  font-family: var(--font-body);
+  font-size: var(--text-title-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin: 0 0 1.5rem 0;
+}
+
+/* --- Autocomplete badge (ANVISA source) --- */
+
+[data-redesign='true'] .autocomplete-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
