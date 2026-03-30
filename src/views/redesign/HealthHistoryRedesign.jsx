@@ -181,40 +181,46 @@ export default function HealthHistoryRedesign({ onNavigate }) {
     setSelectedDate(date)
   }, [])
 
-  const handleLogMedicine = useCallback(async (logData) => {
-    try {
-      if (logData.id) {
-        await logService.update(logData.id, logData)
-        showSuccess('Registro atualizado!')
-      } else if (Array.isArray(logData)) {
-        await logService.createBulk(logData)
-        showSuccess('Plano registrado!')
-      } else {
-        await logService.create(logData)
-        showSuccess('Dose registrada!')
+  const handleLogMedicine = useCallback(
+    async (logData) => {
+      try {
+        if (logData.id) {
+          await logService.update(logData.id, logData)
+          showSuccess('Registro atualizado!')
+        } else if (Array.isArray(logData)) {
+          await logService.createBulk(logData)
+          showSuccess('Plano registrado!')
+        } else {
+          await logService.create(logData)
+          showSuccess('Dose registrada!')
+        }
+        setIsModalOpen(false)
+        setEditingLog(null)
+        await loadData()
+        refresh()
+      } catch (err) {
+        console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
+        throw new Error(err.message)
       }
-      setIsModalOpen(false)
-      setEditingLog(null)
-      await loadData()
-      refresh()
-    } catch (err) {
-      console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
-      throw new Error(err.message)
-    }
-  }, [loadData, refresh, showSuccess])
+    },
+    [loadData, refresh, showSuccess]
+  )
 
-  const handleDeleteLog = useCallback(async (id) => {
-    try {
-      await logService.delete(id)
-      showSuccess('Registro removido!')
-      // Remover do state local (otimismo) — evita reload completo
-      setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
-      setTotalLogs((prev) => Math.max(0, prev - 1))
-      refresh()
-    } catch (err) {
-      setError('Erro ao remover: ' + err.message)
-    }
-  }, [refresh, showSuccess])
+  const handleDeleteLog = useCallback(
+    async (id) => {
+      try {
+        await logService.delete(id)
+        showSuccess('Registro removido!')
+        // Remover do state local (otimismo) — evita reload completo
+        setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
+        setTotalLogs((prev) => Math.max(0, prev - 1))
+        refresh()
+      } catch (err) {
+        setError('Erro ao remover: ' + err.message)
+      }
+    },
+    [refresh, showSuccess]
+  )
 
   const handleEditClick = useCallback((log) => {
     setEditingLog(log)
@@ -239,7 +245,11 @@ export default function HealthHistoryRedesign({ onNavigate }) {
       {/* ── Header ── */}
       <div className="hhr-header">
         {onNavigate && (
-          <button className="hhr-back-btn" onClick={() => onNavigate('profile')} aria-label="Voltar">
+          <button
+            className="hhr-back-btn"
+            onClick={() => onNavigate('profile')}
+            aria-label="Voltar"
+          >
             ← Voltar
           </button>
         )}
@@ -250,12 +260,8 @@ export default function HealthHistoryRedesign({ onNavigate }) {
       </div>
 
       {/* ── Feedback messages ── */}
-      {successMessage && (
-        <div className="hhr-banner hhr-banner--success">{successMessage}</div>
-      )}
-      {error && (
-        <div className="hhr-banner hhr-banner--error">{error}</div>
-      )}
+      {successMessage && <div className="hhr-banner hhr-banner--success">{successMessage}</div>}
+      {error && <div className="hhr-banner hhr-banner--error">{error}</div>}
 
       {/* ── KPI Cards ── */}
       <HistoryKPICards

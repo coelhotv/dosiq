@@ -11,7 +11,7 @@ const TABS = [
 export default function TreatmentTabBar({ activeTab, counts, onChange }) {
   return (
     <div className="treatment-tab-bar" role="tablist">
-      {TABS.map(tab => (
+      {TABS.map((tab) => (
         <button
           key={tab.key}
           role="tab"

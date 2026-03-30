@@ -109,3 +109,98 @@
     padding-bottom: 140px;
   }
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .log-form {
+  padding-bottom: 1rem;
+}
+
+[data-redesign='true'] .log-form h3 {
+  /* Herda de form h3 em components.redesign.css */
+}
+
+[data-redesign='true'] .log-type-toggle {
+  display: flex;
+  background: var(--color-surface-container-low);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+[data-redesign='true'] .log-type-toggle button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 200ms ease-out;
+}
+
+[data-redesign='true'] .log-type-toggle button.active {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(25, 28, 29, 0.08);
+}
+
+[data-redesign='true'] .log-type-toggle button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+[data-redesign='true'] .protocol-info {
+  padding: 1rem;
+  background: var(--color-surface-container-low);
+  border: none;
+  border-radius: var(--radius-card);
+}
+
+[data-redesign='true'] .info-item {
+  font-family: var(--font-body);
+}
+
+[data-redesign='true'] .info-label {
+  color: var(--color-on-surface-variant);
+}
+
+[data-redesign='true'] .info-value {
+  color: var(--color-on-surface);
+}
+
+[data-redesign='true'] .plan-summary-title {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-redesign='true'] .plan-medicines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+[data-redesign='true'] .plan-med-item {
+  border-bottom-color: var(--color-outline-ghost);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+}
+
+@media (max-width: 640px) {
+  [data-redesign='true'] .log-form {
+    padding-bottom: 1rem;
+  }
+}

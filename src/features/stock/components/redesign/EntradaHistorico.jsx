@@ -50,7 +50,9 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
   )
 
   // Ordenar por data mais recente primeiro
-  const sorted = [...purchases].sort((a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date))
+  const sorted = [...purchases].sort(
+    (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
+  )
   const visible = expanded ? sorted : sorted.slice(0, maxVisible)
   const hasMore = sorted.length > maxVisible
 
@@ -70,7 +72,11 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
           const cost = formatCost(entry)
 
           return (
-            <motion.li key={entry.id} className="entrada-historico__item" variants={motionConfig.cascade.item}>
+            <motion.li
+              key={entry.id}
+              className="entrada-historico__item"
+              variants={motionConfig.cascade.item}
+            >
               {/* Ícone tipo de medicamento */}
               <div className="entrada-historico__type-icon">
                 <TypeIcon size={16} aria-hidden="true" />

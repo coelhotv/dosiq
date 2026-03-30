@@ -30,10 +30,7 @@ export default function AdherenceLabel({ score }) {
   }
 
   return (
-    <span
-      className={`adherence-label adherence-label--${modifier}`}
-      title={`Adesão 7d: ${pct}%`}
-    >
+    <span className={`adherence-label adherence-label--${modifier}`} title={`Adesão 7d: ${pct}%`}>
       {label}
     </span>
   )

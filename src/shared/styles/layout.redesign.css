@@ -281,7 +281,7 @@
   padding: 0.875rem;
   border-radius: var(--radius-lg, 1rem);
   background: var(--color-surface-container-lowest, #ffffff);
-  box-shadow: var(--shadow-editorial, 0 4px 24px -4px rgba(25,28,29,0.06));
+  box-shadow: var(--shadow-editorial, 0 4px 24px -4px rgba(25, 28, 29, 0.06));
   transition: all 200ms ease-out;
 }
 
@@ -643,7 +643,9 @@
   border-radius: var(--radius-sm, 0.5rem);
   min-height: 2rem;
   min-width: 2rem;
-  transition: color 150ms, background 150ms;
+  transition:
+    color 150ms,
+    background 150ms;
 }
 
 .plan-header__edit-btn:hover {
@@ -717,7 +719,9 @@
   font-weight: 500;
   color: var(--color-outline, #6d7a76);
   cursor: pointer;
-  transition: color 150ms, border-color 150ms;
+  transition:
+    color 150ms,
+    border-color 150ms;
 }
 
 .treatment-tab-bar__tab--active {
@@ -983,7 +987,6 @@
   color: var(--color-on-surface-variant, #49454f);
 }
 
-
 .protocol-row__chevron {
   align-self: flex-end;
   font-size: 0.625rem;
@@ -1177,7 +1180,9 @@
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;

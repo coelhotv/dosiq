@@ -3,7 +3,11 @@ import { supabase, getUserId } from '@shared/utils/supabase'
 import { adherenceService } from '@services/api/adherenceService'
 import { stockService } from '@shared/services'
 import { predictRefill } from '@stock/services/refillPredictionService'
-import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
+import {
+  getTitrationSummary,
+  isTitrationActive,
+  formatDose,
+} from '@protocols/services/titrationService'
 import { formatLocalDate } from '@utils/dateUtils'
 
 const FREQUENCY_LABELS = {
@@ -13,7 +17,7 @@ const FREQUENCY_LABELS = {
   semanal: 'Semanal',
   personalizado: 'Personalizado',
   quando_necessario: 'Quando necessário',
-  'quando_necessário': 'Quando necessário',
+  quando_necessário: 'Quando necessário',
 }
 
 const STOCK_STATUS_COLORS = {
@@ -101,20 +105,20 @@ export function useTreatmentList() {
       // calculateAllProtocolsAdherence retorna Array<{protocolId, name, score}>
       const adherenceList = await adherenceService.calculateAllProtocolsAdherence('7d', userId)
       const adherenceMap = Object.fromEntries(
-        (adherenceList || []).map(a => [a.protocolId, a.score ?? 0])
+        (adherenceList || []).map((a) => [a.protocolId, a.score ?? 0])
       )
 
       // Query 3: Estoque por medicine_id único
-      const uniqueMedicineIds = [...new Set(protocols.map(p => p.medicine_id))]
+      const uniqueMedicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
       const stockSummaries = await Promise.all(
-        uniqueMedicineIds.map(id => stockService.getStockSummary(id))
+        uniqueMedicineIds.map((id) => stockService.getStockSummary(id))
       )
       const stockMap = Object.fromEntries(
-        stockSummaries.map(s => [s.medicine_id, s.total_quantity || 0])
+        stockSummaries.map((s) => [s.medicine_id, s.total_quantity || 0])
       )
 
       // Montar TreatmentItem[]
-      const allItems = protocols.map(p => {
+      const allItems = protocols.map((p) => {
         const groupInfo = resolveGroup(p)
         const tabStatus = resolveTabStatus(p)
         const totalStock = stockMap[p.medicine_id] ?? 0
@@ -135,9 +139,10 @@ export function useTreatmentList() {
           p.medicine?.dosage_per_pill
         )
         // Concentração do comprimido: badge (ex: "500mg") — null se não disponível
-        const concentrationLabel = p.medicine?.dosage_per_pill && p.medicine?.dosage_unit
-          ? `${p.medicine.dosage_per_pill}${p.medicine.dosage_unit}`
-          : null
+        const concentrationLabel =
+          p.medicine?.dosage_per_pill && p.medicine?.dosage_unit
+            ? `${p.medicine.dosage_per_pill}${p.medicine.dosage_unit}`
+            : null
         // Quantidade por dose: texto (ex: "1 comprimido") — consistente com dashboard
         const n = p.dosage_per_intake ?? 1
         const intakeLabel = `${n} comprimido${n !== 1 ? 's' : ''}`
@@ -148,7 +153,7 @@ export function useTreatmentList() {
           now.getMinutes()
         ).padStart(2, '0')}`
         const times = Array.isArray(p.time_schedule) ? p.time_schedule : []
-        const nextDoseTime = times.find(t => t > currentHHMM) || null
+        const nextDoseTime = times.find((t) => t > currentHHMM) || null
 
         return {
           id: p.id,
@@ -194,9 +199,9 @@ export function useTreatmentList() {
   }, [fetchAll])
 
   // Derived states por tab
-  const activeItems = useMemo(() => items.filter(i => i.tabStatus === 'ativo'), [items])
-  const pausedItems = useMemo(() => items.filter(i => i.tabStatus === 'pausado'), [items])
-  const finishedItems = useMemo(() => items.filter(i => i.tabStatus === 'finalizado'), [items])
+  const activeItems = useMemo(() => items.filter((i) => i.tabStatus === 'ativo'), [items])
+  const pausedItems = useMemo(() => items.filter((i) => i.tabStatus === 'pausado'), [items])
+  const finishedItems = useMemo(() => items.filter((i) => i.tabStatus === 'finalizado'), [items])
 
   // Helper para computar grupos de qualquer lista de itens
   // Ordena: planos reais primeiro (com lápis de edição), depois classes terapêuticas
@@ -220,8 +225,8 @@ export function useTreatmentList() {
     }
     // Separar planos reais (com lápis) vs classes terapêuticas (sem lápis)
     const groups = Array.from(map.values())
-    const realPlans = groups.filter(g => g.isPlan)
-    const therapeuticClasses = groups.filter(g => !g.isPlan)
+    const realPlans = groups.filter((g) => g.isPlan)
+    const therapeuticClasses = groups.filter((g) => !g.isPlan)
     // Retornar planos reais primeiro, depois classes terapêuticas
     return [...realPlans, ...therapeuticClasses]
   }

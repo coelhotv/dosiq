@@ -18,9 +18,7 @@ export default function AdherenceBar7d({ score }) {
       <div className="adherence-bar7d__track">
         <div className="adherence-bar7d__fill" style={{ width: `${pct}%` }} />
       </div>
-      <span className="adherence-bar7d__label">
-        {pct}%
-      </span>
+      <span className="adherence-bar7d__label">{pct}%</span>
     </div>
   )
 }

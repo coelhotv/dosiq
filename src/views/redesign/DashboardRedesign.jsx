@@ -2,7 +2,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { cachedLogService as logService } from '@shared/services'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { useDoseZones, expandProtocolsToDoses, filterTodayLogs } from '@dashboard/hooks/useDoseZones'
+import {
+  useDoseZones,
+  expandProtocolsToDoses,
+  filterTodayLogs,
+} from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser } from '@shared/utils/supabase'
 import { getTodayLocal } from '@utils/dateUtils'
@@ -42,7 +46,14 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  */
 export default function DashboardRedesign({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
-  const { stats, stockSummary, protocols, logs, refresh, isLoading: contextLoading } = useDashboard()
+  const {
+    stats,
+    stockSummary,
+    protocols,
+    logs,
+    refresh,
+    isLoading: contextLoading,
+  } = useDashboard()
   const { zones, totals, now } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
@@ -55,7 +66,7 @@ export default function DashboardRedesign({ onNavigate }) {
   // Enriquecer doses com dados de estoque
   const stockByMedicineId = useMemo(() => {
     const map = new Map()
-    stockSummary?.items?.forEach(item => map.set(item.medicineId, item))
+    stockSummary?.items?.forEach((item) => map.set(item.medicineId, item))
     return map
   }, [stockSummary])
 
@@ -63,7 +74,7 @@ export default function DashboardRedesign({ onNavigate }) {
   const scheduleAllDoses = useMemo(() => {
     if (!protocols?.length) return []
     const todayLogs = filterTodayLogs(logs || [])
-    return expandProtocolsToDoses(protocols, todayLogs).map(dose => ({
+    return expandProtocolsToDoses(protocols, todayLogs).map((dose) => ({
       ...dose,
       stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
       stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
@@ -71,10 +82,13 @@ export default function DashboardRedesign({ onNavigate }) {
   }, [protocols, logs, stockByMedicineId])
 
   // urgentDoses: fonte separada para PriorityDoseCard — zonas late/now filtradas
-  const urgentDoses = useMemo(() => [
-    ...(zones.late || []).filter(d => !d.isRegistered),
-    ...(zones.now  || []).filter(d => !d.isRegistered),
-  ], [zones])
+  const urgentDoses = useMemo(
+    () => [
+      ...(zones.late || []).filter((d) => !d.isRegistered),
+      ...(zones.now || []).filter((d) => !d.isRegistered),
+    ],
+    [zones]
+  )
 
   const criticalStockItems = useMemo(() => {
     if (!stockSummary?.items) return []
@@ -163,7 +177,14 @@ export default function DashboardRedesign({ onNavigate }) {
   // ── Loading state ──
   if (isLoading || contextLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '50vh',
+        }}
+      >
         <Loading text="Carregando..." />
       </div>
     )
@@ -172,7 +193,9 @@ export default function DashboardRedesign({ onNavigate }) {
   const adherenceScore = stats?.score ?? 0
   const streak = stats?.currentStreak ?? 0
   const today = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long', day: 'numeric', month: 'long',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   })
 
   return (
@@ -213,42 +236,44 @@ export default function DashboardRedesign({ onNavigate }) {
               width: '100%',
             }}
           >
-            <RingGaugeRedesign
-              score={adherenceScore}
-              streak={streak}
-              size="large"
-            />
+            <RingGaugeRedesign score={adherenceScore} streak={streak} size="large" />
 
             <div>
-              <h1 style={{
-                margin: 0,
-                fontFamily: 'var(--font-display, Public Sans, sans-serif)',
-                fontSize: 'var(--text-headline-md, 1.75rem)',
-                fontWeight: '700',
-                color: 'var(--color-on-surface, #191c1d)',
-                lineHeight: 1.2,
-              }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontFamily: 'var(--font-display, Public Sans, sans-serif)',
+                  fontSize: 'var(--text-headline-md, 1.75rem)',
+                  fontWeight: '700',
+                  color: 'var(--color-on-surface, #191c1d)',
+                  lineHeight: 1.2,
+                }}
+              >
                 {userName ? `Olá, ${userName} 👋` : 'Olá! 👋'}
               </h1>
 
-              <p style={{
-                margin: '0.25rem 0 0',
-                fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                fontSize: 'var(--text-label-md, 0.75rem)',
-                color: 'var(--color-outline, #6d7a76)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontWeight: '600',
-              }}>
+              <p
+                style={{
+                  margin: '0.25rem 0 0',
+                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
+                  fontSize: 'var(--text-label-md, 0.75rem)',
+                  color: 'var(--color-outline, #6d7a76)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  fontWeight: '600',
+                }}
+              >
                 ADESÃO DIÁRIA
               </p>
 
-              <p style={{
-                margin: '0.5rem 0 0',
-                fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                fontSize: 'var(--text-body-lg, 1rem)',
-                color: 'var(--color-on-surface-variant, #3e4946)',
-              }}>
+              <p
+                style={{
+                  margin: '0.5rem 0 0',
+                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
+                  fontSize: 'var(--text-body-lg, 1rem)',
+                  color: 'var(--color-on-surface-variant, #3e4946)',
+                }}
+              >
                 {getMotivationalMessage(adherenceScore, totals.remaining)}
               </p>
             </div>
@@ -260,11 +285,7 @@ export default function DashboardRedesign({ onNavigate }) {
               <PriorityDoseCard
                 doses={urgentDoses}
                 onRegister={(dose) =>
-                  handleRegisterDoseQuick(
-                    dose.medicineId,
-                    dose.protocolId,
-                    dose.dosagePerIntake
-                  )
+                  handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
                 }
                 onRegisterAll={handleRegisterDosesAll}
                 variant="priority"
@@ -285,35 +306,35 @@ export default function DashboardRedesign({ onNavigate }) {
           {scheduleAllDoses.length > 0 && (
             <section aria-label="Cronograma de hoje">
               <div style={{ marginBottom: '1rem' }}>
-                <h2 style={{
-                  margin: 0,
-                  fontFamily: 'var(--font-display, Public Sans, sans-serif)',
-                  fontSize: 'var(--text-title-lg, 1.125rem)',
-                  fontWeight: '600',
-                  color: 'var(--color-on-surface, #191c1d)',
-                }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontFamily: 'var(--font-display, Public Sans, sans-serif)',
+                    fontSize: 'var(--text-title-lg, 1.125rem)',
+                    fontWeight: '600',
+                    color: 'var(--color-on-surface, #191c1d)',
+                  }}
+                >
                   Cronograma de Hoje
                 </h2>
-                <p style={{
-                  margin: '0.25rem 0 0',
-                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                  fontSize: 'var(--text-label-md, 0.75rem)',
-                  color: 'var(--color-outline, #6d7a76)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  fontWeight: '600',
-                }}>
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontFamily: 'var(--font-body, Lexend, sans-serif)',
+                    fontSize: 'var(--text-label-md, 0.75rem)',
+                    color: 'var(--color-outline, #6d7a76)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    fontWeight: '600',
+                  }}
+                >
                   {today}
                 </p>
               </div>
               <CronogramaPeriodo
                 allDoses={scheduleAllDoses}
                 onRegister={(dose) =>
-                  handleRegisterDoseQuick(
-                    dose.medicineId,
-                    dose.protocolId,
-                    dose.dosagePerIntake
-                  )
+                  handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
                 }
                 variant={complexityMode === 'simple' ? 'simple' : 'complex'}
                 now={now}
@@ -324,11 +345,20 @@ export default function DashboardRedesign({ onNavigate }) {
           {/* Empty State */}
           {scheduleAllDoses.length === 0 && !contextLoading && (
             <div
-              style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-outline, #6d7a76)' }}
+              style={{
+                textAlign: 'center',
+                padding: '3rem 1rem',
+                color: 'var(--color-outline, #6d7a76)',
+              }}
               role="status"
             >
               <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💊</p>
-              <p style={{ fontFamily: 'var(--font-body, Lexend, sans-serif)', fontSize: 'var(--text-body-lg, 1rem)' }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
+                  fontSize: 'var(--text-body-lg, 1rem)',
+                }}
+              >
                 Nenhuma dose agendada para hoje.
               </p>
               <button
@@ -362,7 +392,6 @@ export default function DashboardRedesign({ onNavigate }) {
           )}
         </div>
       </div>
-
     </div>
   )
 }

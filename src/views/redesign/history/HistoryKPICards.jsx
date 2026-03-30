@@ -10,19 +10,13 @@
  * @param {number} props.dosesThisMonth - Total de doses registradas no mês selecionado
  * @param {number} props.totalExpectedThisMonth - Total de logs do mês (para exibir "X doses")
  */
-export default function HistoryKPICards({
-  adherenceScore,
-  currentStreak,
-  dosesThisMonth,
-}) {
+export default function HistoryKPICards({ adherenceScore, currentStreak, dosesThisMonth }) {
   return (
     <div className="hhr-kpi-row">
       {/* Card 1: Adesão 30d */}
       <div className="hhr-kpi-card">
         <span className="hhr-kpi-card__label">Adesão (30 dias)</span>
-        <span className="hhr-kpi-card__value hhr-kpi-card__value--primary">
-          {adherenceScore}%
-        </span>
+        <span className="hhr-kpi-card__value hhr-kpi-card__value--primary">{adherenceScore}%</span>
       </div>
 
       {/* Card 2: Sequência Atual */}
@@ -36,9 +30,7 @@ export default function HistoryKPICards({
       {/* Card 3: Doses este Mês */}
       <div className="hhr-kpi-card">
         <span className="hhr-kpi-card__label">Doses este Mês</span>
-        <span className="hhr-kpi-card__value hhr-kpi-card__value--accent">
-          {dosesThisMonth}
-        </span>
+        <span className="hhr-kpi-card__value hhr-kpi-card__value--accent">{dosesThisMonth}</span>
       </div>
     </div>
   )

@@ -497,7 +497,9 @@
   color: var(--color-on-surface);
   background: var(--color-surface-container-lowest);
   font-family: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .ph-edit-form__field input::placeholder {

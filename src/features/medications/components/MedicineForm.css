@@ -123,3 +123,23 @@
     width: 100%;
   }
 }
+
+/* ============================================
+   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   ============================================ */
+
+[data-redesign='true'] .medicine-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+[data-redesign='true'] .medicine-form .dosage-input-group {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.5rem;
+}
+
+/* Os demais estilos (form h3, form-group, form-actions, error-*, success-*,
+   autocomplete-badge, field-hint, required) são herdados de components.redesign.css
+   via Sprint 11.2 — NÃO duplicar aqui. */

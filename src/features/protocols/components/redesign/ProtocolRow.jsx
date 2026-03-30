@@ -71,7 +71,9 @@ export default function ProtocolRow({
         </div>
 
         {/* CÉLULA 2: Frequência + Horários — S7.5.5: aplicar hover class */}
-        <div className={`protocol-row-tabular__cell protocol-row-tabular__schedule-cell ${hoverClass}`}>
+        <div
+          className={`protocol-row-tabular__cell protocol-row-tabular__schedule-cell ${hoverClass}`}
+        >
           <div className="protocol-row-tabular__frequency">{item.frequencyLabel}</div>
           {item.timeSchedule.length > 0 && (
             <div className="protocol-row-tabular__times">{item.timeSchedule.join(' / ')}</div>
@@ -79,12 +81,16 @@ export default function ProtocolRow({
         </div>
 
         {/* CÉLULA 3: Adesão 7d (apenas em aba ativos) — S7.5.5: aplicar hover class */}
-        <div className={`protocol-row-tabular__cell protocol-row-tabular__adherence-cell ${hoverClass}`}>
+        <div
+          className={`protocol-row-tabular__cell protocol-row-tabular__adherence-cell ${hoverClass}`}
+        >
           {showAdherence && <AdherenceBar7d score={item.adherenceScore7d} />}
         </div>
 
         {/* CÉLULA 4: Estoque — S7.5.5: aplicar hover class */}
-        <div className={`protocol-row-tabular__cell protocol-row-tabular__stock-cell ${hoverClass}`}>
+        <div
+          className={`protocol-row-tabular__cell protocol-row-tabular__stock-cell ${hoverClass}`}
+        >
           <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
         </div>
       </>
@@ -134,11 +140,12 @@ export default function ProtocolRow({
             {item.frequencyLabel}
             {item.timeSchedule.length > 0 && ` · ${item.timeSchedule.join(' / ')}`}
           </div>
-          {showAdherence && (
-            isComplex
-              ? <AdherenceBar7d score={item.adherenceScore7d} />
-              : <AdherenceLabel score={item.adherenceScore7d} />
-          )}
+          {showAdherence &&
+            (isComplex ? (
+              <AdherenceBar7d score={item.adherenceScore7d} />
+            ) : (
+              <AdherenceLabel score={item.adherenceScore7d} />
+            ))}
         </div>
 
         {canExpand && (

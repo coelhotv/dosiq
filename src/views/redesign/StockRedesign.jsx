@@ -28,7 +28,18 @@ import './StockRedesign.css'
 
 export default function StockRedesign({ initialParams, onClearParams }) {
   // ── Dados (hook compartilhado) ──
-  const { items, criticalItems, warningItems, okItems, highItems, orphanItems, medicines, isLoading, error, reload } = useStockData()
+  const {
+    items,
+    criticalItems,
+    warningItems,
+    okItems,
+    highItems,
+    orphanItems,
+    medicines,
+    isLoading,
+    error,
+    reload,
+  } = useStockData()
 
   // ── Complexidade / Persona ──
   // R-152: isComplex = mode !== 'simple'; sem modo "moderate"
@@ -59,18 +70,21 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 
   // ── Todos os itens ordenados por urgência (para Complex grid) ──
   // Filtra órfãos de okItems/highItems, eles aparecem só no final
-  const okItemsWithoutOrphans = useMemo(
-    () => okItems.filter(i => i.hasActiveProtocol),
-    [okItems]
-  )
+  const okItemsWithoutOrphans = useMemo(() => okItems.filter((i) => i.hasActiveProtocol), [okItems])
   const highItemsWithoutOrphans = useMemo(
-    () => highItems.filter(i => i.hasActiveProtocol),
+    () => highItems.filter((i) => i.hasActiveProtocol),
     [highItems]
   )
 
   // Órfãos (sem protocolo ativo) vão para o FINAL da listagem
   const sortedAllItems = useMemo(
-    () => [...criticalItems, ...warningItems, ...okItemsWithoutOrphans, ...highItemsWithoutOrphans, ...orphanItems],
+    () => [
+      ...criticalItems,
+      ...warningItems,
+      ...okItemsWithoutOrphans,
+      ...highItemsWithoutOrphans,
+      ...orphanItems,
+    ],
     [criticalItems, warningItems, okItemsWithoutOrphans, highItemsWithoutOrphans, orphanItems]
   )
 
@@ -105,7 +119,9 @@ export default function StockRedesign({ initialParams, onClearParams }) {
     }
   }, [initialParams, medicines.length])
 
-  const modalInitialValues = selectedMedicineId ? { medicine_id: selectedMedicineId } : initialParams || null
+  const modalInitialValues = selectedMedicineId
+    ? { medicine_id: selectedMedicineId }
+    : initialParams || null
 
   // ── Loading / Error ──
   if (isLoading) {
@@ -163,7 +179,10 @@ export default function StockRedesign({ initialParams, onClearParams }) {
       )}
 
       {/* ── Banner de alerta crítico ── */}
-      <CriticalAlertBanner criticalCount={criticalItems.length} onBuyAll={() => handleOpenModal()} />
+      <CriticalAlertBanner
+        criticalCount={criticalItems.length}
+        onBuyAll={() => handleOpenModal()}
+      />
 
       {/* ── Seção principal ── */}
       {isComplex ? (
@@ -191,7 +210,12 @@ export default function StockRedesign({ initialParams, onClearParams }) {
         </>
       ) : (
         // Simple: seções por urgência (Dona Maria) — headers fora do grid
-        <motion.div className="stock-redesign__sections" variants={motionConfig.cascade.container} initial="hidden" animate="visible">
+        <motion.div
+          className="stock-redesign__sections"
+          variants={motionConfig.cascade.container}
+          initial="hidden"
+          animate="visible"
+        >
           {criticalItems.length > 0 && (
             <>
               <h2 className="stock-redesign__section-label stock-redesign__section-label--urgente">

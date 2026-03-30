@@ -32,11 +32,7 @@ export default function Sidebar({ currentView, setCurrentView, onNewDose }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button
-          className="sidebar-add-btn"
-          onClick={onNewDose}
-          aria-label="Registrar dose"
-        >
+        <button className="sidebar-add-btn" onClick={onNewDose} aria-label="Registrar dose">
           <Plus size={18} aria-hidden="true" />
           <span>Registrar Dose</span>
         </button>

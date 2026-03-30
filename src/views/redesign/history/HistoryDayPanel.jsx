@@ -15,12 +15,7 @@ import HistoryLogCard from './HistoryLogCard'
  * @param {Function} props.onDeleteLog - Callback chamado com o id do log quando usuário quer deletar.
  *   Assinatura: onDeleteLog(logId) → deleta e remove do state no componente pai.
  */
-export default function HistoryDayPanel({
-  selectedDate,
-  dayLogs,
-  onEditLog,
-  onDeleteLog,
-}) {
+export default function HistoryDayPanel({ selectedDate, dayLogs, onEditLog, onDeleteLog }) {
   // Formatar data para exibição
   const dateLabel = selectedDate
     ? selectedDate.toLocaleDateString('pt-BR', {
@@ -42,19 +37,12 @@ export default function HistoryDayPanel({
 
       {dayLogs.length === 0 ? (
         <div className="hhr-day-panel__empty">
-          <span className="hhr-day-panel__empty-text">
-            Nenhuma dose registrada neste dia.
-          </span>
+          <span className="hhr-day-panel__empty-text">Nenhuma dose registrada neste dia.</span>
         </div>
       ) : (
         <div className="hhr-day-panel__list">
           {dayLogs.map((log) => (
-            <HistoryLogCard
-              key={log.id}
-              log={log}
-              onEdit={onEditLog}
-              onDelete={onDeleteLog}
-            />
+            <HistoryLogCard key={log.id} log={log} onEdit={onEditLog} onDelete={onDeleteLog} />
           ))}
         </div>
       )}

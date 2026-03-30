@@ -3,7 +3,15 @@
 // View centralizada: identidade + dados críticos + ferramentas de gestão
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Settings, MapPinHouse, Phone, BriefcaseMedical, ClipboardPlus, History, CloudDownload } from 'lucide-react'
+import {
+  Settings,
+  MapPinHouse,
+  Phone,
+  BriefcaseMedical,
+  ClipboardPlus,
+  History,
+  CloudDownload,
+} from 'lucide-react'
 import QRCode from 'qrcode'
 import { supabase } from '@shared/utils/supabase'
 import { parseLocalDate } from '@utils/dateUtils'
@@ -22,7 +30,11 @@ import './profile/ProfileRedesign.css'
  * @returns {string} Base64 encoded string
  */
 function jsonToBase64(jsonString) {
-  return btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))))
+  return btoa(
+    encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) =>
+      String.fromCharCode(parseInt(p1, 16))
+    )
+  )
 }
 
 /**
@@ -67,7 +79,9 @@ export default function ProfileRedesign({ onNavigate }) {
       setIsLoading(true)
 
       // 1. Fetch auth user
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       // 2. Fetch user_settings (inclui novas colunas de perfil)
@@ -129,11 +143,7 @@ export default function ProfileRedesign({ onNavigate }) {
   // ═══ Derived Data ═══
   // Nome de exibição
   const displayName = useMemo(
-    () =>
-      settings?.display_name ||
-      user?.user_metadata?.name ||
-      user?.email ||
-      'Paciente',
+    () => settings?.display_name || user?.user_metadata?.name || user?.email || 'Paciente',
     [settings?.display_name, user]
   )
 
@@ -196,7 +206,9 @@ export default function ProfileRedesign({ onNavigate }) {
           n: displayName,
           bt: emergencyCard.blood_type || '',
           a: emergencyCard.allergies?.join(', ') || '',
-          c: emergencyCard.emergency_contacts?.[0] ? `${emergencyCard.emergency_contacts[0].name} - ${emergencyCard.emergency_contacts[0].phone}` : '',
+          c: emergencyCard.emergency_contacts?.[0]
+            ? `${emergencyCard.emergency_contacts[0].name} - ${emergencyCard.emergency_contacts[0].phone}`
+            : '',
         }
         const qrString = jsonToBase64(JSON.stringify(payload))
         const miniatureUrl = await QRCode.toDataURL(qrString, {
@@ -231,16 +243,14 @@ export default function ProfileRedesign({ onNavigate }) {
       setError(null)
 
       try {
-        const { error: upsertError } = await supabase
-          .from('user_settings')
-          .upsert(
-            {
-              user_id: user.id,
-              ...validation.data,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'user_id' }
-          )
+        const { error: upsertError } = await supabase.from('user_settings').upsert(
+          {
+            user_id: user.id,
+            ...validation.data,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        )
 
         if (upsertError) throw upsertError
 
@@ -459,7 +469,11 @@ function EmergencyCard({ emergencyCard, qrMiniatureUrl, onNavigate }) {
         {/* QR code miniatura */}
         {qrMiniatureUrl && (
           <div className="ph-emergency-card__qr">
-            <img src={qrMiniatureUrl} alt="QR Code Cartão de Emergência" className="ph-emergency-card__qr-image" />
+            <img
+              src={qrMiniatureUrl}
+              alt="QR Code Cartão de Emergência"
+              className="ph-emergency-card__qr-image"
+            />
           </div>
         )}
       </div>
@@ -494,9 +508,7 @@ function ConsultationCard({ onNavigate }) {
       </div>
       <div className="ph-consultation-card__content">
         <h3>Modo Consulta Médica</h3>
-        <p>
-          Abre um resumo clínico otimizado para compartilhar com seu médico durante a consulta.
-        </p>
+        <p>Abre um resumo clínico otimizado para compartilhar com seu médico durante a consulta.</p>
       </div>
       <span className="ph-consultation-card__chevron">→</span>
     </div>
@@ -506,7 +518,14 @@ function ConsultationCard({ onNavigate }) {
 /**
  * EditProfileModal — Formulário de edição do perfil
  */
-function EditProfileModal({ isOpen, onClose, profileForm, setProfileForm, handleSaveProfile, isSaving }) {
+function EditProfileModal({
+  isOpen,
+  onClose,
+  profileForm,
+  setProfileForm,
+  handleSaveProfile,
+  isSaving,
+}) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form className="ph-edit-form" onSubmit={handleSaveProfile}>
@@ -551,7 +570,9 @@ function EditProfileModal({ isOpen, onClose, profileForm, setProfileForm, handle
             >
               <option value="">Selecionar</option>
               {BRAZILIAN_STATES.map((uf) => (
-                <option key={uf} value={uf}>{uf}</option>
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
               ))}
             </select>
           </label>

@@ -30,22 +30,30 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
 
   // Data + context
   const { mode } = useComplexityMode()
-  const { activeItems, pausedItems, finishedItems, activeGroups, pausedGroups, finishedGroups, loading, error, refetch } =
-    useTreatmentList()
+  const {
+    activeItems,
+    pausedItems,
+    finishedItems,
+    activeGroups,
+    pausedGroups,
+    finishedGroups,
+    loading,
+    error,
+    refetch,
+  } = useTreatmentList()
 
   const isComplex = mode === 'complex'
 
   // Fetch medicines and treatmentPlans on mount
   useEffect(() => {
-    Promise.all([
-      medicineService.getAll(),
-      treatmentPlanService.getAll(),
-    ]).then(([med, plans]) => {
-      setMedicines(med || [])
-      setTreatmentPlans(plans || [])
-    }).catch(err => {
-      console.error('Erro ao carregar medicamentos/planos:', err)
-    })
+    Promise.all([medicineService.getAll(), treatmentPlanService.getAll()])
+      .then(([med, plans]) => {
+        setMedicines(med || [])
+        setTreatmentPlans(plans || [])
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar medicamentos/planos:', err)
+      })
   }, [])
 
   // Memos — item list e groups por tab
@@ -122,7 +130,8 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
   }
 
   if (loading) return <Loading />
-  if (error) return <div className="treatments-redesign__error">Erro ao carregar tratamentos: {error}</div>
+  if (error)
+    return <div className="treatments-redesign__error">Erro ao carregar tratamentos: {error}</div>
 
   return (
     <div className="treatments-redesign" data-redesign="true">
@@ -139,7 +148,12 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
       {errorMessage && (
         <div className="treatments-redesign__error-banner">
           <p>{errorMessage}</p>
-          <button onClick={() => setErrorMessage(null)} className="treatments-redesign__error-close">×</button>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="treatments-redesign__error-close"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -176,14 +190,22 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
           activeTab={activeTab}
         />
       ) : (
-        <TreatmentsSimple key={activeTab} items={currentItems} onEdit={handleEditProtocol} activeTab={activeTab} />
+        <TreatmentsSimple
+          key={activeTab}
+          items={currentItems}
+          onEdit={handleEditProtocol}
+          activeTab={activeTab}
+        />
       )}
 
       {/* TreatmentWizard modal — apenas para novos protocolos via busca */}
-      <Modal isOpen={wizardOpen} onClose={() => {
-        setWizardOpen(false)
-        setWizardMedicine(null)
-      }}>
+      <Modal
+        isOpen={wizardOpen}
+        onClose={() => {
+          setWizardOpen(false)
+          setWizardMedicine(null)
+        }}
+      >
         {wizardMedicine && (
           <TreatmentWizard
             preselectedMedicine={wizardMedicine}

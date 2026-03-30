@@ -515,21 +515,10 @@ export default function Dashboard({ onNavigate }) {
         time === reminderSuggestion.currentTime ? newTime : time
       )
 
-      // [DEBUG] Log antes de atualizar
-      console.log('[Dashboard] Antes de atualizar protocolo:', {
-        protocolId: suggestionProtocolId,
-        treatment_plan_id: protocol.treatment_plan_id,
-        time_schedule: protocol.time_schedule,
-        newTimeSchedule,
-      })
-
       await protocolService.update(suggestionProtocolId, { time_schedule: newTimeSchedule })
 
       setReminderSuggestion(null)
       setSuggestionProtocolId(null)
-
-      // [DEBUG] Log após update
-      console.log('[Dashboard] Protocolo atualizado, chamando refresh()')
 
       refresh()
     } catch (err) {

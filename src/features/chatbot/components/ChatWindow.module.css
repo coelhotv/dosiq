@@ -4,11 +4,11 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1100;
+  z-index: var(--z-chatbot, 1100);
 }
 
 /* Redesign mode: lighter overlay for light theme */
-[data-redesign="true"] .overlay {
+[data-redesign='true'] .overlay {
   background: rgba(25, 28, 29, 0.2);
 }
 
@@ -22,11 +22,11 @@
   background: var(--color-background, #0f0f0f);
   display: flex;
   flex-direction: column;
-  z-index: 1101;
+  z-index: calc(var(--z-chatbot, 1100) + 1);
 }
 
 /* Redesign mode: use light surface instead of dark background */
-[data-redesign="true"] .drawer {
+[data-redesign='true'] .drawer {
   background: var(--color-surface-container-lowest, #ffffff);
 }
 
@@ -39,7 +39,7 @@
 }
 
 /* Redesign mode: light border */
-[data-redesign="true"] .header {
+[data-redesign='true'] .header {
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
@@ -49,7 +49,7 @@
 }
 
 /* Redesign mode: ensure dark text on light background */
-[data-redesign="true"] .headerTitle {
+[data-redesign='true'] .headerTitle {
   color: var(--color-on-surface, #191c1d);
 }
 
@@ -75,7 +75,7 @@
 }
 
 /* Redesign mode: dark text buttons */
-[data-redesign="true"] .clearButton {
+[data-redesign='true'] .clearButton {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -90,7 +90,7 @@
 }
 
 /* Redesign mode: dark text buttons */
-[data-redesign="true"] .closeButton {
+[data-redesign='true'] .closeButton {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -122,7 +122,7 @@
 }
 
 /* Redesign mode: use secondary color for user messages */
-[data-redesign="true"] .messageBubbleUser {
+[data-redesign='true'] .messageBubbleUser {
   background: var(--color-secondary, #005db6);
   color: white;
 }
@@ -134,7 +134,7 @@
 }
 
 /* Redesign mode: light gray background for assistant messages */
-[data-redesign="true"] .messageBubbleAssistant {
+[data-redesign='true'] .messageBubbleAssistant {
   background: var(--color-surface-container-low, #f2f4f5);
   color: var(--color-on-surface, #191c1d);
 }
@@ -149,12 +149,12 @@
 }
 
 /* Redesign mode: ensure timestamp is readable */
-[data-redesign="true"] .messageBubbleAssistant .messageTime {
+[data-redesign='true'] .messageBubbleAssistant .messageTime {
   color: var(--color-on-surface-variant, #3e4946);
   opacity: 0.6;
 }
 
-[data-redesign="true"] .messageBubbleUser .messageTime {
+[data-redesign='true'] .messageBubbleUser .messageTime {
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -186,12 +186,12 @@
 }
 
 /* Redesign mode: use light border and darker text */
-[data-redesign="true"] .dateSeparator {
+[data-redesign='true'] .dateSeparator {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
-[data-redesign="true"] .dateSeparator::before,
-[data-redesign="true"] .dateSeparator::after {
+[data-redesign='true'] .dateSeparator::before,
+[data-redesign='true'] .dateSeparator::after {
   background: var(--color-outline-variant, #c9ded8);
 }
 
@@ -205,7 +205,7 @@
 }
 
 /* Redesign mode: light gray with dark text */
-[data-redesign="true"] .thinkingBubble {
+[data-redesign='true'] .thinkingBubble {
   background: var(--color-surface-container-low, #f2f4f5);
   color: var(--color-on-surface-variant, #3e4946);
 }
@@ -234,12 +234,12 @@
 }
 
 /* Redesign mode: light border and dark text */
-[data-redesign="true"] .suggestionButton {
+[data-redesign='true'] .suggestionButton {
   border-color: var(--color-outline-variant, #c9ded8);
   color: var(--color-on-surface-variant, #3e4946);
 }
 
-[data-redesign="true"] .suggestionButton:hover {
+[data-redesign='true'] .suggestionButton:hover {
   border-color: var(--color-secondary, #005db6);
   color: var(--color-secondary, #005db6);
 }
@@ -252,7 +252,7 @@
 }
 
 /* Redesign mode: light border */
-[data-redesign="true"] .inputRow {
+[data-redesign='true'] .inputRow {
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
@@ -268,13 +268,13 @@
 }
 
 /* Redesign mode: white background with dark border and dark text */
-[data-redesign="true"] .textInput {
+[data-redesign='true'] .textInput {
   background: white;
   color: var(--color-on-surface, #191c1d);
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
-[data-redesign="true"] .textInput::placeholder {
+[data-redesign='true'] .textInput::placeholder {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -294,10 +294,10 @@
 }
 
 /* Redesign mode: use secondary color */
-[data-redesign="true"] .sendButton {
+[data-redesign='true'] .sendButton {
   background: var(--color-secondary, #005db6);
 }
 
-[data-redesign="true"] .sendButton:hover:not(:disabled) {
+[data-redesign='true'] .sendButton:hover:not(:disabled) {
   opacity: 0.9;
 }

@@ -332,14 +332,12 @@ export default function ReportGenerator() {
 
       {error && (
         <div className="report-generator__error" role="alert">
-          <span className="report-generator__error-icon">⚠️</span>
           {error}
         </div>
       )}
 
       {shareError && (
         <div className="report-generator__error" role="alert">
-          <span className="report-generator__error-icon">⚠️</span>
           {shareError}
         </div>
       )}
@@ -358,16 +356,12 @@ export default function ReportGenerator() {
                 Gerando...
               </>
             ) : (
-              <>
-                <span className="report-generator__icon">📊</span>
-                Gerar PDF Clínico
-              </>
+              'Gerar PDF Clínico'
             )}
           </Button>
         ) : (
           <div className="report-generator__success">
             <div className="report-generator__success-message">
-              <span className="report-generator__success-icon">✅</span>
               Resumo clínico gerado com sucesso!
             </div>
             <div className="report-generator__success-actions">
@@ -376,7 +370,6 @@ export default function ReportGenerator() {
                 onClick={handleDownload}
                 variant="primary"
               >
-                <span className="report-generator__icon">📥</span>
                 Baixar PDF
               </Button>
               <Button
@@ -391,10 +384,7 @@ export default function ReportGenerator() {
                     Enviando...
                   </>
                 ) : (
-                  <>
-                    <span className="report-generator__icon">🔗</span>
-                    Compartilhar
-                  </>
+                  'Compartilhar'
                 )}
               </Button>
               <Button
@@ -409,10 +399,7 @@ export default function ReportGenerator() {
                     Gerando...
                   </>
                 ) : (
-                  <>
-                    <span className="report-generator__icon">🔄</span>
-                    Gerar Novo
-                  </>
+                  'Gerar Novo'
                 )}
               </Button>
             </div>
@@ -437,23 +424,10 @@ export default function ReportGenerator() {
               variant={copied ? 'success' : 'secondary'}
               size="small"
             >
-              {copied ? (
-                <>
-                  <span className="report-generator__icon">✅</span>
-                  Copiado!
-                </>
-              ) : (
-                <>
-                  <span className="report-generator__icon">📋</span>
-                  Copiar
-                </>
-              )}
+              {copied ? 'Copiado!' : 'Copiar'}
             </Button>
           </div>
-          <p className="report-generator__share-expiry">
-            <span className="report-generator__icon">⏰</span>
-            Link válido por 72 horas
-          </p>
+          <p className="report-generator__share-expiry">Link válido por 72 horas</p>
         </div>
       )}
 

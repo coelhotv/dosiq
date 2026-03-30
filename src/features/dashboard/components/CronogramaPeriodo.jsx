@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, Moon, Sunrise, ChevronRight, Pill, PillBottle, CheckCircle2, CircleCheckBig, CircleAlert, Circle } from 'lucide-react'
+import {
+  Sun,
+  Moon,
+  Sunrise,
+  ChevronRight,
+  Pill,
+  PillBottle,
+  CheckCircle2,
+  CircleCheckBig,
+  CircleAlert,
+  Circle,
+} from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
 
@@ -8,10 +19,10 @@ import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
 const LATE_WINDOW_MINUTES = DOSE_REGISTRATION_TOLERANCE_MS / 60_000
 
 const PERIODS = [
-  { id: 'midnight',  label: 'Madrugada', Icon: Moon,    timeRange: [0,  6]  },
-  { id: 'morning',   label: 'Manhã',     Icon: Sunrise, timeRange: [6,  12] },
-  { id: 'afternoon', label: 'Tarde',     Icon: Sun,     timeRange: [12, 18] },
-  { id: 'night',     label: 'Noite',     Icon: Moon,    timeRange: [18, 24] },
+  { id: 'midnight', label: 'Madrugada', Icon: Moon, timeRange: [0, 6] },
+  { id: 'morning', label: 'Manhã', Icon: Sunrise, timeRange: [6, 12] },
+  { id: 'afternoon', label: 'Tarde', Icon: Sun, timeRange: [12, 18] },
+  { id: 'night', label: 'Noite', Icon: Moon, timeRange: [18, 24] },
 ]
 
 function getHour(scheduledTime) {
@@ -61,16 +72,26 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
     <div className={`cronograma-dose-card cronograma-dose-card--${status}`}>
       {/* Status icon — topo-direita (posição absoluta) */}
       {done && (
-        <CircleCheckBig size={18} className="cronograma-dose-card__status-icon"
-          color="var(--color-primary, #006a5e)" aria-label="Dose registrada" />
+        <CircleCheckBig
+          size={18}
+          className="cronograma-dose-card__status-icon"
+          color="var(--color-primary, #006a5e)"
+          aria-label="Dose registrada"
+        />
       )}
       {missed && (
-        <CircleAlert size={18} className="cronograma-dose-card__status-icon"
-          color="var(--color-warning, #f59e0b)" aria-label="Dose perdida" />
+        <CircleAlert
+          size={18}
+          className="cronograma-dose-card__status-icon"
+          color="var(--color-warning, #f59e0b)"
+          aria-label="Dose perdida"
+        />
       )}
 
       {/* Ícone do tipo */}
-      <div className={`cronograma-dose-card__icon-wrap cronograma-dose-card__icon-wrap--${isSupplement ? 'supplement' : 'medicine'}`}>
+      <div
+        className={`cronograma-dose-card__icon-wrap cronograma-dose-card__icon-wrap--${isSupplement ? 'supplement' : 'medicine'}`}
+      >
         <MedicineIcon size={20} color="#ffffff" aria-hidden="true" />
       </div>
 
@@ -82,7 +103,8 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
             <span className="cronograma-dose-card__title">{dose.medicineName}</span>
             {dose.dosagePerPill && dose.dosageUnit && (
               <span className="cronograma-dose-card__strength">
-                {dose.dosagePerPill}{dose.dosageUnit}
+                {dose.dosagePerPill}
+                {dose.dosageUnit}
               </span>
             )}
           </div>
@@ -92,7 +114,9 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
               {dose.dosagePerIntake} comprimido{dose.dosagePerIntake !== 1 ? 's' : ''}
             </span>
             {showStockBadge && (
-              <span className={`cronograma-dose-card__stock-badge cronograma-dose-card__stock-badge--${stockStatus}`}>
+              <span
+                className={`cronograma-dose-card__stock-badge cronograma-dose-card__stock-badge--${stockStatus}`}
+              >
                 {stockStatus === 'critical' ? 'Crítico' : 'Baixo'}
                 {stockDays !== null ? ` ${stockDays}d` : ''}
               </span>
@@ -133,7 +157,12 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
  * @param {string} variant — 'complex' (default) ou 'simple' para lista plana
  * @param {Date} now — Instância de data sincronizada com useDoseZones
  */
-export default function CronogramaPeriodo({ allDoses = [], onRegister, variant = 'complex', now = new Date() }) {
+export default function CronogramaPeriodo({
+  allDoses = [],
+  onRegister,
+  variant = 'complex',
+  now = new Date(),
+}) {
   const { cascade } = useMotion()
   const didInitRef = useRef(false)
 
@@ -141,21 +170,23 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
 
   // Estado inicial baseado no horário atual: passados → fechados, atual/futuros → abertos
   const [openZones, setOpenZones] = useState(() =>
-    Object.fromEntries(PERIODS.map(({ id, timeRange }) => {
-      const [, end] = timeRange
-      return [id, currentHour < end]
-    }))
+    Object.fromEntries(
+      PERIODS.map(({ id, timeRange }) => {
+        const [, end] = timeRange
+        return [id, currentHour < end]
+      })
+    )
   )
 
   // Após primeiro carregamento de dados: fechar zonas vazias
   useEffect(() => {
     if (didInitRef.current || allDoses.length === 0) return
     didInitRef.current = true
-    setOpenZones(prev => {
+    setOpenZones((prev) => {
       const next = { ...prev }
       PERIODS.forEach(({ id, timeRange }) => {
         const [start, end] = timeRange
-        const hasDoses = allDoses.some(d => {
+        const hasDoses = allDoses.some((d) => {
           const h = getHour(d.scheduledTime)
           return h >= start && h < end
         })
@@ -172,7 +203,7 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
       const isPast = currentHour >= end
       const isCurrent = currentHour >= start && currentHour < end
       const doses = allDoses
-        .filter(d => {
+        .filter((d) => {
           const h = getHour(d.scheduledTime)
           return h >= start && h < end
         })
@@ -184,12 +215,13 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
 
   // ── MODO SIMPLE: lista plana cronológica ──
   if (variant === 'simple') {
-    const sorted = [...allDoses].sort((a, b) =>
-      a.scheduledTime.localeCompare(b.scheduledTime)
-    )
+    const sorted = [...allDoses].sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime))
     if (sorted.length === 0) return null
     return (
-      <div className="cronograma-doses cronograma-doses--simple" aria-label="Cronograma de doses de hoje">
+      <div
+        className="cronograma-doses cronograma-doses--simple"
+        aria-label="Cronograma de doses de hoje"
+      >
         {sorted.map((dose) => (
           <CronogramaDoseItem
             key={`${dose.protocolId}-${dose.scheduledTime}`}
@@ -220,8 +252,8 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
         // Passado com conteúdo → verde apagado; passado vazio → cinza esmaecido
         const isPastActive = isPast && !isEmpty
         const isPastEmpty = isPast && isEmpty
-        const doneCount = doses.filter(d => d.isRegistered).length
-        const missedCount = isPast ? doses.filter(d => !d.isRegistered).length : 0
+        const doneCount = doses.filter((d) => d.isRegistered).length
+        const missedCount = isPast ? doses.filter((d) => !d.isRegistered).length : 0
 
         return (
           <motion.section
@@ -234,18 +266,22 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
               className={[
                 'cronograma-period-header',
                 isPastActive ? 'cronograma-period-header--past-active' : '',
-                isPastEmpty  ? 'cronograma-period-header--past' : '',
-                isCurrent    ? 'cronograma-period-header--current' : '',
-              ].filter(Boolean).join(' ')}
-              onClick={() => setOpenZones(prev => ({ ...prev, [id]: !prev[id] }))}
+                isPastEmpty ? 'cronograma-period-header--past' : '',
+                isCurrent ? 'cronograma-period-header--current' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setOpenZones((prev) => ({ ...prev, [id]: !prev[id] }))}
               aria-expanded={isOpen}
             >
               <PeriodIcon
                 size={16}
                 color={
-                  isPastActive ? 'var(--color-primary, #006a5e)' :
-                  isPastEmpty  ? 'var(--color-outline-variant, #bec9c5)' :
-                                 'var(--color-outline, #6d7a76)'
+                  isPastActive
+                    ? 'var(--color-primary, #006a5e)'
+                    : isPastEmpty
+                      ? 'var(--color-outline-variant, #bec9c5)'
+                      : 'var(--color-outline, #6d7a76)'
                 }
                 aria-hidden="true"
               />
@@ -262,7 +298,11 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
                   ) : (
                     <>
                       <span className="cronograma-period-header__done-tag">· Concluído</span>
-                      <CheckCircle2 size={14} color="var(--color-primary, #006a5e)" aria-hidden="true" />
+                      <CheckCircle2
+                        size={14}
+                        color="var(--color-primary, #006a5e)"
+                        aria-hidden="true"
+                      />
                     </>
                   )
                 ) : (
@@ -279,11 +319,17 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
             </button>
 
             {/* Conteúdo: empty state ou lista de doses */}
-            {isOpen && (
-              isEmpty ? (
+            {isOpen &&
+              (isEmpty ? (
                 <div className="cronograma-period-empty" role="status">
-                  <Circle size={18} color="var(--color-outline-variant, #bec9c5)" aria-hidden="true" />
-                  <p className="cronograma-period-empty__text">Nenhum medicamento para este período</p>
+                  <Circle
+                    size={18}
+                    color="var(--color-outline-variant, #bec9c5)"
+                    aria-hidden="true"
+                  />
+                  <p className="cronograma-period-empty__text">
+                    Nenhum medicamento para este período
+                  </p>
                 </div>
               ) : (
                 <div className="cronograma-doses">
@@ -298,8 +344,7 @@ export default function CronogramaPeriodo({ allDoses = [], onRegister, variant =
                     />
                   ))}
                 </div>
-              )
-            )}
+              ))}
           </motion.section>
         )
       })}

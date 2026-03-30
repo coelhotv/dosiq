@@ -18,10 +18,18 @@
 }
 
 /* Modificadores de status — border-left colorido */
-.stock-card-r--urgente { border-left-color: var(--color-error); }
-.stock-card-r--atencao { border-left-color: var(--color-warning); }
-.stock-card-r--seguro { border-left-color: var(--color-primary); }
-.stock-card-r--alto { border-left-color: var(--color-secondary); }
+.stock-card-r--urgente {
+  border-left-color: var(--color-error);
+}
+.stock-card-r--atencao {
+  border-left-color: var(--color-warning);
+}
+.stock-card-r--seguro {
+  border-left-color: var(--color-primary);
+}
+.stock-card-r--alto {
+  border-left-color: var(--color-secondary);
+}
 
 /* ── Name row (nome + StockPill) ── */
 /* Badge system removido — StockPill de W7.6 é reutilizado diretamente */
@@ -97,8 +105,12 @@
   line-height: 1;
 }
 
-.stock-card-r--urgente .stock-card-r__days-number { color: var(--color-error); }
-.stock-card-r--atencao .stock-card-r__days-number { color: var(--color-warning); }
+.stock-card-r--urgente .stock-card-r__days-number {
+  color: var(--color-error);
+}
+.stock-card-r--atencao .stock-card-r__days-number {
+  color: var(--color-warning);
+}
 
 .stock-card-r__days-label {
   font-family: var(--font-body);
@@ -124,10 +136,18 @@
   /* width setado inline via prop style */
 }
 
-.stock-card-r__bar-fill--urgente { background: var(--color-error); }
-.stock-card-r__bar-fill--atencao { background: var(--color-warning); }
-.stock-card-r__bar-fill--seguro { background: var(--color-primary); }
-.stock-card-r__bar-fill--alto { background: var(--color-secondary); }
+.stock-card-r__bar-fill--urgente {
+  background: var(--color-error);
+}
+.stock-card-r__bar-fill--atencao {
+  background: var(--color-warning);
+}
+.stock-card-r__bar-fill--seguro {
+  background: var(--color-primary);
+}
+.stock-card-r__bar-fill--alto {
+  background: var(--color-secondary);
+}
 
 .stock-card-r__bar-pct {
   font-family: var(--font-body);
@@ -166,11 +186,17 @@
   margin-top: auto;
 }
 
-.stock-card-r__cta:active { opacity: 0.85; }
+.stock-card-r__cta:active {
+  opacity: 0.85;
+}
 
 /* CTA cores por status */
 .stock-card-r__cta--urgente {
-  background: linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 70%, black));
+  background: linear-gradient(
+    135deg,
+    var(--color-error),
+    color-mix(in srgb, var(--color-error) 70%, black)
+  );
   color: var(--color-on-primary);
   box-shadow: var(--shadow-error);
 }
