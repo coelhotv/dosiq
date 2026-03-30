@@ -3,7 +3,7 @@
 > **Status:** Documento autoritativo para a evolucao dual stack do projeto
 > **Data:** 2026-03-29
 > **Escopo:** Meus Remedios v3.3.0
-> **Supersede:** `plans/analise-migracao-pwa-para-react-native.md`, `plans/PLANO_EXECUTIVO_REACT_NATIVE.md`, `plans/ARQUITETURA_RN_MONOREPO.md`, `plans/EXEC_SPEC_RN_FASE1_CORE.md`, `plans/EXEC_SPEC_RN_FASE2_MOBILE.md`
+> **Supersede:** `plans/archive_old/native_app/analise-migracao-pwa-para-react-native.md`, `plans/archive_old/native_app/PLANO_EXECUTIVO_REACT_NATIVE.md`, `plans/archive_old/native_app/ARQUITETURA_RN_MONOREPO.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE1_CORE.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE2_MOBILE.md`
 
 ---
 
@@ -23,7 +23,7 @@ Este documento existe para impedir que agentes futuros:
 - assumam que o projeto ja possui PWA completa com service worker e web push ativos
 - substituam Telegram por push nativo antes da arquitetura de notificacao estar desacoplada
 
-> **Addenda normativos complementares:** esta master spec agora deve ser lida em conjunto com `plans/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`, `plans/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`, `plans/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md` e `plans/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`.
+> **Addenda normativos complementares:** esta master spec agora deve ser lida em conjunto com `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`, `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`, `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md` e `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`.
 
 ---
 
