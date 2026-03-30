@@ -11,9 +11,10 @@
 ### 🚀 Para Novos Desenvolvedores
 
 1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido ✅
-2. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v2.8.0) ✅
-3. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos ✅
-4. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes ✅
+2. [`getting-started/SETUP_NATIVE_HIBRIDO.md`](getting-started/SETUP_NATIVE_HIBRIDO.md) - Setup local para desenvolvimento iOS/Android/Expo da frente hibrida ✅
+3. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v2.8.0) ✅
+4. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos ✅
+5. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes ✅
 
 ### 🏗️ Arquitetura & Design
 
@@ -70,11 +71,12 @@
 
 ```
 1. getting-started/SETUP.md          [30 min] - Setup do ambiente
-2. ARQUITETURA.md                   [45 min] - Entender arquitetura
-3. PADROES_CODIGO.md               [45 min] - Aprender convenções
-4. standards/TESTING.md              [30 min] - Como escrever testes
-5. reference/SERVICES.md             [20 min] - API de services
-6. standards/GIT_WORKFLOW.md         [15 min] - Workflow obrigatório
+2. getting-started/SETUP_NATIVE_HIBRIDO.md [30 min] - Setup local iOS/Android/Expo
+3. ARQUITETURA.md                   [45 min] - Entender arquitetura
+4. PADROES_CODIGO.md               [45 min] - Aprender convenções
+5. standards/TESTING.md              [30 min] - Como escrever testes
+6. reference/SERVICES.md             [20 min] - API de services
+7. standards/GIT_WORKFLOW.md         [15 min] - Workflow obrigatório
 ```
 
 ### Quick Reference (Desenvolvedores Experientes)

@@ -25,7 +25,7 @@
 
 | Need to... | Read... |
 |-----------|---------|
-| **Set up environment** | [`docs/getting-started/SETUP.md`](docs/getting-started/SETUP.md) |
+| **Set up environment** | [`docs/getting-started/SETUP.md`](docs/getting-started/SETUP.md) + [`docs/getting-started/SETUP_NATIVE_HIBRIDO.md`](docs/getting-started/SETUP_NATIVE_HIBRIDO.md) |
 | **Understand architecture** | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) *(consolidating)* |
 | **Learn coding standards** | [`docs/PADROES_CODIGO.md`](docs/PADROES_CODIGO.md) *(consolidating)* |
 | **Write tests** | [`docs/standards/TESTING.md`](docs/standards/TESTING.md) ✅ |
@@ -685,6 +685,7 @@ Example completion report:
 
 **Getting Started**
 - [`docs/getting-started/SETUP.md`](docs/getting-started/SETUP.md) - Environment setup
+- [`docs/getting-started/SETUP_NATIVE_HIBRIDO.md`](docs/getting-started/SETUP_NATIVE_HIBRIDO.md) - Local setup para iOS/Android/Expo da frente hibrida
 
 **Architecture**
 - [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) - System overview *(consolidating)*

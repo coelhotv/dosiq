@@ -2,6 +2,8 @@
 
 Este guia vai te ajudar a configurar todos os serviços necessários para rodar o projeto.
 
+> **Nota:** para o novo ambiente local da frente native/hibrida, leia tambem `docs/getting-started/SETUP_NATIVE_HIBRIDO.md`.
+
 ## 📋 Pré-requisitos
 
 - Conta no GitHub (gratuita)
