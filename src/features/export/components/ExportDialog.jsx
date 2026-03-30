@@ -156,18 +156,21 @@ export default function ExportDialog({ isOpen, onClose }) {
         <div className="export-section">
           <label className="export-label">Formato</label>
           <div className="format-toggle">
-            {FORMAT_OPTIONS.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                type="button"
-                className={`format-toggle-btn${format === value ? ' active' : ''}`}
-                onClick={() => handleFormatChange(value)}
-                disabled={isExporting}
-              >
-                <Icon size={18} />
-                {label}
-              </button>
-            ))}
+            {FORMAT_OPTIONS.map((option) => {
+              const OptionIcon = option.icon
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`format-toggle-btn${format === option.value ? ' active' : ''}`}
+                  onClick={() => handleFormatChange(option.value)}
+                  disabled={isExporting}
+                >
+                  <OptionIcon size={18} />
+                  {option.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
