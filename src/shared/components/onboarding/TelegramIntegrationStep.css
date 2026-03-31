@@ -43,8 +43,8 @@
   height: 36px;
   min-width: 36px;
   border-radius: var(--radius-md, 8px);
-  background: linear-gradient(135deg, rgba(0, 136, 204, 0.15) 0%, rgba(0, 170, 255, 0.1) 100%);
-  color: var(--neon-cyan);
+  background: rgba(0, 136, 204, 0.12);
+  color: #0088cc;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,7 +145,7 @@
 .notification-title {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--neon-cyan);
+  color: #0088cc;
   margin-bottom: 2px;
 }
 
@@ -283,7 +283,7 @@
 }
 
 .telegram-instructions strong {
-  color: var(--color-primary, #3b82f6);
+  color: var(--color-primary, #006a5e);
   font-weight: 600;
 }
 

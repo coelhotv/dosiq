@@ -13,8 +13,8 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--color-primary-light, #dbeafe);
-  color: var(--color-primary, #3b82f6);
+  background: var(--color-secondary-fixed, #ccebe5);
+  color: var(--color-primary, #006a5e);
   display: flex;
   align-items: center;
   justify-content: center;
