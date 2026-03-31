@@ -1,5 +1,30 @@
 /* Onboarding Wizard Styles */
 
+/* ============================================
+   Tokens Sanctuary — sempre ativos no onboarding,
+   independente do tema ou isRedesignEnabled do usuário.
+   Definidos aqui para isolar completamente do tema neon.
+   ============================================ */
+.onboarding-overlay {
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f5;
+  --color-surface-container: #eceeef;
+  --color-surface-container-high: #e6e8e9;
+  --color-surface: #f8fafb;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #3e4946;
+  --color-primary: #006a5e;
+  --color-success: #10b981;
+  --color-error: #ba1a1a;
+  --color-secondary-fixed: #ccebe5;
+  --font-heading: 'Public Sans', ui-sans-serif, sans-serif;
+  --font-body: 'Lexend', ui-sans-serif, sans-serif;
+  --radius-xl: 1rem;
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
 .onboarding-overlay {
   position: fixed;
   top: 0;
@@ -11,7 +36,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
   padding: 1rem;
   animation: fadeIn 0.3s ease-out;
 }
@@ -26,7 +51,7 @@
 }
 
 .onboarding-modal {
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface-container-lowest, #ffffff);
   border-radius: var(--radius-xl, 16px);
   width: 100%;
   max-width: 640px;
@@ -52,8 +77,8 @@
 /* Progress Indicator */
 .onboarding-progress {
   padding: 1.5rem 1.5rem 1rem;
-  border-bottom: 1px solid var(--color-border, #e5e7eb);
-  background: var(--color-surface-elevated, #f9fafb);
+  border-bottom: 1px solid var(--color-surface-container-high, #e6e8e9);
+  background: var(--color-surface-container-low, #f2f4f5);
 }
 
 .progress-steps {
@@ -76,8 +101,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-gray-200, #e5e7eb);
-  color: var(--color-gray-500, #6b7280);
+  background: var(--color-surface-container-high, #e6e8e9);
+  color: var(--color-on-surface-variant, #3f484a);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -93,10 +118,10 @@
 }
 
 .progress-step.active .step-number {
-  background: var(--color-primary, #3b82f6);
+  background: var(--color-primary, #006a5e);
   color: white;
   transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 4px rgba(0, 106, 94, 0.2);
 }
 
 .progress-step.completed .step-number {
@@ -106,14 +131,14 @@
 
 .step-name {
   font-size: 0.75rem;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   font-weight: 500;
   text-align: center;
   transition: color 0.3s ease;
 }
 
 .progress-step.active .step-name {
-  color: var(--color-primary, #3b82f6);
+  color: var(--color-primary, #006a5e);
   font-weight: 600;
 }
 
@@ -127,7 +152,7 @@
   left: 50%;
   width: 100%;
   height: 2px;
-  background: var(--color-gray-200, #e5e7eb);
+  background: var(--color-surface-container-high, #e6e8e9);
   z-index: 0;
   transform: translateX(50%);
 }
@@ -164,7 +189,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem 1.5rem;
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  border-top: 1px solid var(--color-surface-container-high, #e6e8e9);
   gap: 1rem;
 }
 
@@ -190,7 +215,7 @@
 .btn-skip {
   background: transparent;
   border: none;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   font-size: 0.875rem;
   cursor: pointer;
   padding: 0.5rem 1rem;
@@ -199,15 +224,57 @@
 }
 
 .btn-skip:hover {
-  color: var(--color-gray-700, #374151);
+  color: var(--color-on-surface, #191c1d);
 }
 
-.btn-previous,
 .btn-next,
 .btn-finish {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--color-primary, #006a5e);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 106, 94, 0.2);
+}
+
+.btn-next:hover:not(:disabled),
+.btn-finish:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(0, 106, 94, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-next:disabled,
+.btn-finish:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-previous {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: transparent;
+  color: var(--color-on-surface-variant, #3f484a);
+  border: 1.5px solid var(--color-surface-container-high, #e6e8e9);
+  border-radius: var(--radius-full, 999px);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-previous:hover {
+  background: var(--color-surface-container, #eceeef);
+  border-color: var(--color-surface-container-high, #e6e8e9);
 }
 
 .icon-left,
@@ -295,35 +362,4 @@
   }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  .onboarding-modal {
-    background: var(--color-surface-dark, #1f2937);
-  }
-
-  .onboarding-progress {
-    background: var(--color-surface-elevated-dark, #111827);
-    border-color: var(--color-border-dark, #374151);
-  }
-
-  .step-name {
-    color: var(--color-gray-400, #9ca3af);
-  }
-
-  .step-number {
-    background: var(--color-gray-700, #374151);
-    color: var(--color-gray-400, #9ca3af);
-  }
-
-  .step-connector {
-    background: var(--color-gray-700, #374151);
-  }
-
-  .btn-skip {
-    color: var(--color-gray-400, #9ca3af);
-  }
-
-  .btn-skip:hover {
-    color: var(--color-gray-200, #e5e7eb);
-  }
-}
+/* Onboarding é sempre light (Sanctuary) — sem dark mode override */

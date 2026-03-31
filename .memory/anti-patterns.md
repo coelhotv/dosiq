@@ -554,6 +554,20 @@ import StockPill from '@protocols/components/redesign/StockPill'
 
 *Last updated: 2026-03-28*
 
+## AP-W25: Usar componente Button com className custom causa conflito de estilos no mobile
+
+**O que é:** O componente `Button` renderiza `btn btn-primary btn-md {className}`. As classes `btn-primary` e `btn-md` do Button.css têm suas próprias regras (incluindo media queries mobile) que ganham em especificidade ou ordem de cascata sobre o `className` custom passado.
+
+**Problema:** No Auth redesign (W13), o botão "Entrar" ficava com cor diferente no mobile — o `btn-primary` sobrescrevia o gradiente verde do `.auth-submit-btn` no breakpoint `@media (max-width: 480px)`.
+
+**Prevenção:** Quando os estilos do botão são 100% custom (gradiente próprio, border-radius próprio, etc.), usar `<button>` nativo com o className diretamente — não passar o componente `Button`.
+
+**Regra:** `Button` = variantes do design system (primary, secondary, ghost). Estilo 100% próprio = `<button>` nativo.
+
+*Registrado: 2026-03-31*
+
+---
+
 ## AP-W24: FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido
 
 **O que é:** Durante Wave 11, o `z-index` do Modal foi elevado para `1200` (acima do chatbot `1100` e FABs), mas os elementos continuaram visíveis sobre o modal no mobile após múltiplos refreshes.

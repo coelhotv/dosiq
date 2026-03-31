@@ -46,9 +46,10 @@ export function RedesignProvider({ children }) {
   }, [isRedesignEnabled])
 
   const toggleRedesign = () => setIsRedesignEnabled((prev) => !prev)
+  const enableRedesign = () => setIsRedesignEnabled(true)
 
   return (
-    <RedesignContext.Provider value={{ isRedesignEnabled, toggleRedesign }}>
+    <RedesignContext.Provider value={{ isRedesignEnabled, toggleRedesign, enableRedesign }}>
       {children}
     </RedesignContext.Provider>
   )

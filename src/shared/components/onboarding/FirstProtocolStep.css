@@ -21,19 +21,19 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .error-state p {
   font-size: 0.9375rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin: 0;
 }
 
-/* Protocol Icon */
+/* Protocol Icon — verde terapêutico (igual ao step-icon do FirstMedicineStep) */
 .protocol-icon {
-  background: var(--color-secondary-light, #e0e7ff) !important;
-  color: var(--color-secondary, #6366f1) !important;
+  background: var(--color-secondary-fixed, #ccebe5) !important;
+  color: var(--color-primary, #006a5e) !important;
 }
 
 /* Override ProtocolForm styles for onboarding context */
@@ -100,7 +100,29 @@
 .first-protocol-step .form-hint {
   text-align: center;
   font-size: 0.8125rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin-top: 1rem;
   margin-bottom: 0;
+}
+
+/* Override neon glow do Button component no contexto do onboarding */
+.first-protocol-step .btn-save,
+.first-protocol-step .btn-primary {
+  background: var(--color-primary, #006a5e) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 106, 94, 0.2) !important;
+  border-radius: 999px;
+}
+
+.first-protocol-step .btn-save:hover:not(:disabled),
+.first-protocol-step .btn-primary:hover:not(:disabled) {
+  background: var(--color-primary, #006a5e) !important;
+  box-shadow: 0 4px 16px rgba(0, 106, 94, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* Botao "Adicionar horário" — outline sem glow neon */
+.first-protocol-step .btn-outline:hover:not(:disabled),
+.first-protocol-step .btn-ghost:hover:not(:disabled) {
+  box-shadow: none !important;
 }

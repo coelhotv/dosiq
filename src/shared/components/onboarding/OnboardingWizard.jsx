@@ -4,7 +4,6 @@ import FirstMedicineStep from './FirstMedicineStep'
 import FirstProtocolStep from './FirstProtocolStep'
 import StockStep from './StockStep'
 import TelegramIntegrationStep from './TelegramIntegrationStep'
-import Button from '@shared/components/ui/Button'
 import './OnboardingWizard.css'
 
 export default function OnboardingWizard() {
@@ -17,6 +16,7 @@ export default function OnboardingWizard() {
     prevStep,
     skipOnboarding,
     completeOnboarding,
+    onboardingData,
   } = useOnboarding()
 
   if (isLoading || !isOpen) return null
@@ -42,6 +42,13 @@ export default function OnboardingWizard() {
   const isLastStep = currentStep === totalSteps - 1
   const isFirstStep = currentStep === 0
   const isStockStep = steps[currentStep]?.name === 'Estoque'
+
+  // Bloqueia avanço até o dado obrigatório do passo ser salvo
+  const isMedicineStep = steps[currentStep]?.name === 'Medicamento'
+  const isProtocolStep = steps[currentStep]?.name === 'Protocolo'
+  const isNextDisabled =
+    (isMedicineStep && !onboardingData?.medicine) ||
+    (isProtocolStep && !onboardingData?.protocol)
 
   return (
     <div className="onboarding-overlay">
@@ -86,7 +93,7 @@ export default function OnboardingWizard() {
           <div className="onboarding-navigation">
             <div className="nav-left">
               {!isFirstStep && (
-                <Button variant="secondary" onClick={prevStep} className="btn-previous">
+                <button onClick={prevStep} className="btn-previous">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -97,19 +104,19 @@ export default function OnboardingWizard() {
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                   Anterior
-                </Button>
+                </button>
               )}
             </div>
 
             <div className="nav-center">
-              <Button variant="ghost" onClick={handleSkip} className="btn-skip">
+              <button onClick={handleSkip} className="btn-skip">
                 Pular tour
-              </Button>
+              </button>
             </div>
 
             <div className="nav-right">
               {isLastStep ? (
-                <Button variant="primary" onClick={handleFinish} className="btn-finish">
+                <button onClick={handleFinish} className="btn-finish">
                   Concluir
                   <svg
                     viewBox="0 0 24 24"
@@ -120,9 +127,9 @@ export default function OnboardingWizard() {
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                </Button>
+                </button>
               ) : (
-                <Button variant="primary" onClick={nextStep} className="btn-next">
+                <button onClick={nextStep} className="btn-next" disabled={isNextDisabled}>
                   Próximo
                   <svg
                     viewBox="0 0 24 24"
@@ -133,7 +140,7 @@ export default function OnboardingWizard() {
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </Button>
+                </button>
               )}
             </div>
           </div>

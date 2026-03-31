@@ -4,17 +4,36 @@ import { cachedMedicineService } from '@shared/services/cachedServices'
 import './FirstMedicineStep.css'
 
 export default function FirstMedicineStep() {
-  const { updateOnboardingData, nextStep } = useOnboarding()
+  const { updateOnboardingData, onboardingData, nextStep } = useOnboarding()
+
+  const savedMedicine = onboardingData?.medicine
 
   const handleSave = async (data) => {
-    const savedMedicine = await cachedMedicineService.create(data)
-    // Salva no contexto do onboarding
-    updateOnboardingData('medicine', savedMedicine)
-    return savedMedicine
+    const medicine = await cachedMedicineService.create(data)
+    updateOnboardingData('medicine', medicine)
+    return medicine
   }
 
   const handleSuccess = () => {
     nextStep()
+  }
+
+  if (savedMedicine) {
+    return (
+      <div className="first-medicine-step">
+        <div className="step-header">
+          <div className="step-icon step-icon--saved">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h3 className="step-title">Medicamento cadastrado!</h3>
+          <p className="step-description">
+            <strong>{savedMedicine.name}</strong> foi salvo com sucesso. Clique em Próximo para continuar.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -66,7 +66,7 @@ function ViewSkeleton() {
 }
 
 function AppInner() {
-  const { isRedesignEnabled } = useRedesign()
+  const { isRedesignEnabled, enableRedesign } = useRedesign()
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState('dashboard')
@@ -126,9 +126,11 @@ function AppInner() {
       return showAuth ? (
         <Auth
           onAuthSuccess={() => {
+            enableRedesign()
             setShowAuth(false)
-            setCurrentView('landing')
+            setCurrentView('dashboard')
           }}
+          onClose={() => setShowAuth(false)}
         />
       ) : (
         <Suspense fallback={<ViewSkeleton />}>
