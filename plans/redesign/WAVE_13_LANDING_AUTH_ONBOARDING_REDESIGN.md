@@ -1,7 +1,8 @@
 # Wave 13 — Landing, Auth & Onboarding Redesign
 
-**Status:** ⏳ PENDENTE
+**Status:** ✅ ENTREGUE (2026-03-31, PR #441)
 **Data de criação:** 2026-03-30
+**Data de conclusão:** 2026-03-31
 **Dependências:** W0-W11 ✅ (W12 pode estar em paralelo — sem dependência direta)
 **Risco:** MÉDIO-ALTO — Landing e Auth são pre-autenticação: afetam 100% dos usuários sem proteção de feature flag. Onboarding é a jornada de ativação do novo usuário.
 **Estimativa:** ~4 sprints, ~400 linhas CSS modificado + ~300 linhas JSX modificado/novo

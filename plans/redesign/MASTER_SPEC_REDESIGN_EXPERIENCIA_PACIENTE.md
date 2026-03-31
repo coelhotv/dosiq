@@ -2,7 +2,7 @@
 
 **Versão:** 2.0
 **Data:** 2026-03-29
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅ | W12 entregue ✅ | W13 entregue ✅
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 
@@ -35,7 +35,7 @@
 | W10C | Histórico Calendar-Driven | `WAVE_10C_HISTORICO_CALENDAR.md` | ✅ MERGED #437 (2026-03-28) | main |
 | W11 | Forms & Modals Redesign | (seção 16 abaixo) | ✅ MERGED #439 (2026-03-30) | main |
 | W12 | Medicines View & Consultation Mode | (seção 17 abaixo) | ✅ MERGED #440 (2026-03-31) | main |
-| W13 | Landing, Auth & Onboarding | `WAVE_13_LANDING_AUTH_ONBOARDING_REDESIGN.md` | ⏳ PENDENTE | — |
+| W13 | Landing, Auth & Onboarding | `WAVE_13_LANDING_AUTH_ONBOARDING_REDESIGN.md` | ✅ MERGED #441 (2026-03-31) | main |
 | W14 | Shared Components & Chatbot | (seção 19 abaixo) | ⏳ PENDENTE | — |
 | W15 | Accessibility & Polish | (seção 20 abaixo) | ⏳ PENDENTE | — |
 | W16 | Rollout Promotion & Legacy Cleanup | (seção 21 abaixo) | ⏳ PENDENTE | — |
@@ -2519,12 +2519,28 @@ O modo consulta é usado para mostrar dados ao médico. Precisa parecer profissi
 
 ### Critério de conclusão Wave 13
 
-- [ ] Landing page transmite Verde Saúde identity em 3 segundos
-- [ ] Auth form usa novo design system
-- [ ] Onboarding wizard 5 steps visualmente Santuário
-- [ ] Steps de onboarding usam forms redesenhados (W11)
-- [ ] Transições entre steps com Soft Handoff
-- [ ] Jornada completa (landing → auth → onboarding → dashboard) sem visual antigo
+- [x] Landing page transmite Verde Saúde identity em 3 segundos
+- [x] Auth form usa novo design system
+- [x] Onboarding wizard 5 steps visualmente Santuário
+- [x] Steps de onboarding usam forms redesenhados (W11)
+- [x] Transições entre steps com Soft Handoff
+- [x] Jornada completa (landing → auth → onboarding → dashboard) sem visual antigo
+
+### Entrega Wave 13 (2026-03-31, PR #441)
+
+✅ **Sprint 13.1 — Landing:** A/B test removido, variante `new` promovida, 19+ cores azuis → verde terapêutico (#006a5e), tipografia Sanctuary
+
+✅ **Sprint 13.2 — Auth:** Reescrita completa CSS (zero neon/glass), botão X fechar (canto superior esquerdo), submit button via `<button>` nativo (AP-W25 — Button component conflict), `data-redesign="true"` no container
+
+✅ **Sprint 13.3 — Onboarding Shell:** `OnboardingWizard.css` com tokens Sanctuary hardcoded em `.onboarding-overlay` (isolamento total do tema neon), z-index 1200 (acima FABs), botões nav nativos (`<button>`)
+
+✅ **Sprint 13.4 — Onboarding Steps:** Overrides neon → verde em FirstMedicineStep, FirstProtocolStep, StockStep; FirstMedicineStep com estado de confirmação (preserva medicamento ao navegar de volta); botão "Próximo" desabilitado até passo obrigatório salvo
+
+✅ **Pós-autenticação:** `RedesignContext.enableRedesign()` chamado em `App.jsx` `onAuthSuccess` — todos os usuários da landing entram na experiência logada com redesign ativado
+
+**Commits:** 7394f95 (fixes onboarding), 4180c93 (memory journal), 0a78d2b (design tokens via color-mix)
+
+**Impacto:** Landing + Auth + Onboarding = 100% Sanctuary visual, zero neon residual em superfícies pré-auth, jornada de ativação redesenhada completa (W13 fecha o redesign user journey até o dashboard).
 
 ---
 
