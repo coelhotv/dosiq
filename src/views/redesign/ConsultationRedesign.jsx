@@ -113,8 +113,12 @@ export default function ConsultationRedesign({ onBack }) {
             return
           }
         } catch (shareErr) {
+          // Se usuário cancelou a share sheet, trata como no-op
+          if (shareErr.name === 'AbortError') {
+            return
+          }
+          // Caso contrário, fallback para download
           console.warn('Web Share API failed, falling back to download:', shareErr)
-          // Continua para download abaixo
         }
       }
 

@@ -112,10 +112,12 @@ export default function MedicinesRedesign({ onNavigateToProtocol }) {
     setNewMedicineId(null)
   }
 
-  const handleProtocolPromptCancel = () => {
+  const handleProtocolPromptCancel = useCallback(() => {
     setShowProtocolPrompt(false)
     setNewMedicineId(null)
-  }
+    setIsModalOpen(false)
+    setEditingMedicine(null)
+  }, [])
 
   // 5. Derived state
   const filteredMedicines = useMemo(
