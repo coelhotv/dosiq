@@ -12,7 +12,13 @@ import './MedicinesRedesign.css'
 
 export default function MedicinesRedesign({ onNavigateToProtocol }) {
   // 1. Context & Memos
-  const { medicines: contextMedicines, protocols, stockSummary, isLoading, refetchAll } = useDashboard()
+  const {
+    medicines: contextMedicines,
+    protocols,
+    stockSummary,
+    isLoading,
+    refetchAll,
+  } = useDashboard()
 
   // 2. States
   const [error, setError] = useState(null)
@@ -30,8 +36,8 @@ export default function MedicinesRedesign({ onNavigateToProtocol }) {
     if (!contextMedicines || !protocols || !stockSummary) return deps
 
     contextMedicines.forEach((med) => {
-      const hasProtocols = protocols.some(p => p.medicine_id === med.id)
-      const hasStock = stockSummary.some(s => s.medicine_id === med.id)
+      const hasProtocols = protocols.some((p) => p.medicine_id === med.id)
+      const hasStock = stockSummary.some((s) => s.medicine_id === med.id)
       deps[med.id] = { hasProtocols, hasStock }
     })
     return deps
@@ -54,29 +60,32 @@ export default function MedicinesRedesign({ onNavigateToProtocol }) {
     setIsModalOpen(true)
   }
 
-  const handleSave = useCallback(async (medicineData) => {
-    try {
-      if (editingMedicine) {
-        await medicineService.update(editingMedicine.id, medicineData)
-        showSuccess('Medicamento atualizado com sucesso!')
-      } else {
-        const newMedicine = await medicineService.create(medicineData)
-        showSuccess('Medicamento cadastrado com sucesso!')
-        // Show protocol prompt instead of window.confirm()
-        setNewMedicineId(newMedicine.id)
-        setShowProtocolPrompt(true)
+  const handleSave = useCallback(
+    async (medicineData) => {
+      try {
+        if (editingMedicine) {
+          await medicineService.update(editingMedicine.id, medicineData)
+          showSuccess('Medicamento atualizado com sucesso!')
+        } else {
+          const newMedicine = await medicineService.create(medicineData)
+          showSuccess('Medicamento cadastrado com sucesso!')
+          // Show protocol prompt instead of window.confirm()
+          setNewMedicineId(newMedicine.id)
+          setShowProtocolPrompt(true)
+          setIsModalOpen(false)
+          setEditingMedicine(null)
+          refetchAll({ force: true })
+          return // Don't close modal yet after refetch
+        }
         setIsModalOpen(false)
         setEditingMedicine(null)
         refetchAll({ force: true })
-        return // Don't close modal yet after refetch
+      } catch (err) {
+        setError('Erro ao salvar medicamento: ' + err.message)
       }
-      setIsModalOpen(false)
-      setEditingMedicine(null)
-      refetchAll({ force: true })
-    } catch (err) {
-      setError('Erro ao salvar medicamento: ' + err.message)
-    }
-  }, [editingMedicine, refetchAll])
+    },
+    [editingMedicine, refetchAll]
+  )
 
   const handleDeleteRequest = useCallback((medicine) => {
     setDeleteTarget(medicine)

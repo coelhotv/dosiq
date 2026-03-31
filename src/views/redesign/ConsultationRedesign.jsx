@@ -154,9 +154,7 @@ export default function ConsultationRedesign({ onBack }) {
   if (error || !consultationData) {
     return (
       <div className="cr-error">
-        <h2 className="cr-error__title">
-          {error ? 'Erro ao carregar' : 'Nenhum dado disponível'}
-        </h2>
+        <h2 className="cr-error__title">{error ? 'Erro ao carregar' : 'Nenhum dado disponível'}</h2>
         <p className="cr-error__message">
           {error || 'Cadastre medicamentos e protocolos para visualizar dados na consulta.'}
         </p>
