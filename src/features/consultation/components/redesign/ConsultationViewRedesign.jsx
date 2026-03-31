@@ -1,9 +1,19 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft, Pill, BarChart3, Package, ClipboardList, Target,
-  AlertTriangle, AlertCircle, XCircle, CheckCircle2, Bell,
-  FileText, Share2
+  ArrowLeft,
+  Pill,
+  BarChart3,
+  Package,
+  ClipboardList,
+  Target,
+  AlertTriangle,
+  AlertCircle,
+  XCircle,
+  CheckCircle2,
+  Bell,
+  FileText,
+  Share2,
 } from 'lucide-react'
 import './ConsultationViewRedesign.css'
 
@@ -12,25 +22,41 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
   const [isSharing, setIsSharing] = useState(false)
 
   const {
-    patientInfo, activeMedicines, adherenceSummary,
-    stockAlerts, prescriptionStatus, activeTitrations, generatedAt,
+    patientInfo,
+    activeMedicines,
+    adherenceSummary,
+    stockAlerts,
+    prescriptionStatus,
+    activeTitrations,
+    generatedAt,
   } = useMemo(() => data || {}, [data])
 
   const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true)
-    try { await onGeneratePDF?.() } finally { setIsGeneratingPDF(false) }
+    try {
+      await onGeneratePDF?.()
+    } finally {
+      setIsGeneratingPDF(false)
+    }
   }
 
   const handleShare = async () => {
     setIsSharing(true)
-    try { await onShare?.() } finally { setIsSharing(false) }
+    try {
+      await onShare?.()
+    } finally {
+      setIsSharing(false)
+    }
   }
 
   const formattedGeneratedAt = useMemo(() => {
     if (!generatedAt) return ''
     return new Date(generatedAt).toLocaleString('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }, [generatedAt])
 
@@ -51,14 +77,17 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
   }
 
   return (
-    <motion.div className="sr-consultation" initial="hidden" animate="visible" variants={containerVariants}>
+    <motion.div
+      className="sr-consultation"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Header */}
       <motion.header className="sr-consultation__header" variants={itemVariants}>
         <div className="sr-consultation__header-content">
           <div>
-            <h1 className="sr-consultation__patient-name">
-              {patientInfo?.name || 'Paciente'}
-            </h1>
+            <h1 className="sr-consultation__patient-name">{patientInfo?.name || 'Paciente'}</h1>
             {patientInfo?.age && (
               <span className="sr-consultation__patient-age">{patientInfo.age} anos</span>
             )}
@@ -77,13 +106,22 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
       <main className="sr-consultation__content">
         {/* Medicamentos Ativos */}
-        <motion.section className="sr-consultation__section sr-consultation__section--full" variants={itemVariants}>
-          <h2 className="sr-consultation__section-title"><Pill size={20} /> Medicamentos Ativos</h2>
+        <motion.section
+          className="sr-consultation__section sr-consultation__section--full"
+          variants={itemVariants}
+        >
+          <h2 className="sr-consultation__section-title">
+            <Pill size={20} /> Medicamentos Ativos
+          </h2>
           {activeMedicines?.length > 0 ? (
             <div className="sr-consultation__table-wrap">
               <table className="sr-consultation__table">
                 <thead>
-                  <tr><th>Nome</th><th>Dosagem</th><th>Tipo</th></tr>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Dosagem</th>
+                    <th>Tipo</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {activeMedicines.map((med) => (
@@ -92,14 +130,19 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
                       <td>
                         {med.dosagePerIntake && med.timesPerDay ? (
                           <span>
-                            {med.dosagePerIntake}{med.dosageUnit}
+                            {med.dosagePerIntake}
+                            {med.dosageUnit}
                             <span className="sr-consultation__dosage-detail">
-                              {' '}({med.timesPerDay}x ao dia
+                              {' '}
+                              ({med.timesPerDay}x ao dia
                               {med.dailyDosage ? `, ${med.dailyDosage}${med.dosageUnit}/dia` : ''})
                             </span>
                           </span>
                         ) : med.dosagePerPill ? (
-                          <span>{med.dosagePerPill}{med.dosageUnit}</span>
+                          <span>
+                            {med.dosagePerPill}
+                            {med.dosageUnit}
+                          </span>
                         ) : (
                           <span className="sr-consultation__dosage-unknown">Não informado</span>
                         )}
@@ -117,7 +160,9 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
         {/* Aderência */}
         <motion.section className="sr-consultation__section" variants={itemVariants}>
-          <h2 className="sr-consultation__section-title"><BarChart3 size={20} /> Aderência ao Tratamento</h2>
+          <h2 className="sr-consultation__section-title">
+            <BarChart3 size={20} /> Aderência ao Tratamento
+          </h2>
           <div className="sr-consultation__adherence-grid">
             {['last30d', 'last90d'].map((key) => {
               const d = adherenceSummary?.[key]
@@ -128,7 +173,10 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
                     <span className="sr-adherence-card__period">
                       Últimos {key === 'last30d' ? '30 dias' : '90 dias'}
                     </span>
-                    <span className="sr-adherence-card__score" style={{ color: getScoreColor(score) }}>
+                    <span
+                      className="sr-adherence-card__score"
+                      style={{ color: getScoreColor(score) }}
+                    >
                       {score}%
                     </span>
                   </div>
@@ -143,7 +191,9 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
                   </div>
                   <div className="sr-adherence-card__details">
                     <div>
-                      <span className="sr-adherence-card__detail-value">{d?.taken || 0}/{d?.expected || 0}</span>
+                      <span className="sr-adherence-card__detail-value">
+                        {d?.taken || 0}/{d?.expected || 0}
+                      </span>
                       <span className="sr-adherence-card__detail-label"> doses tomadas</span>
                     </div>
                     {(d?.punctuality || 0) > 0 && (
@@ -161,19 +211,30 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
         {/* Alertas de Estoque */}
         <motion.section className="sr-consultation__section" variants={itemVariants}>
-          <h2 className="sr-consultation__section-title"><Package size={20} /> Alertas de Estoque</h2>
+          <h2 className="sr-consultation__section-title">
+            <Package size={20} /> Alertas de Estoque
+          </h2>
           {stockAlerts?.length > 0 ? (
             <div className="sr-consultation__alerts">
               {stockAlerts.map((alert) => (
-                <div key={alert.medicineId} className={`sr-stock-alert sr-stock-alert--${alert.severity}`}>
+                <div
+                  key={alert.medicineId}
+                  className={`sr-stock-alert sr-stock-alert--${alert.severity}`}
+                >
                   <span className="sr-stock-alert__icon">
-                    {alert.severity === 'critical' ? <AlertTriangle size={20} /> : <AlertCircle size={20} />}
+                    {alert.severity === 'critical' ? (
+                      <AlertTriangle size={20} />
+                    ) : (
+                      <AlertCircle size={20} />
+                    )}
                   </span>
                   <div>
                     <strong className="sr-stock-alert__name">{alert.medicineName}</strong>
                     <span className="sr-stock-alert__message"> — {alert.message}</span>
                     {alert.daysRemaining > 0 && (
-                      <div className="sr-stock-alert__days">~{alert.daysRemaining} dias restantes</div>
+                      <div className="sr-stock-alert__days">
+                        ~{alert.daysRemaining} dias restantes
+                      </div>
                     )}
                   </div>
                 </div>
@@ -186,17 +247,27 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
         {/* Status de Prescrições */}
         <motion.section className="sr-consultation__section" variants={itemVariants}>
-          <h2 className="sr-consultation__section-title"><ClipboardList size={20} /> Status das Prescrições</h2>
+          <h2 className="sr-consultation__section-title">
+            <ClipboardList size={20} /> Status das Prescrições
+          </h2>
           {prescriptionStatus?.length > 0 ? (
             <div className="sr-consultation__prescriptions">
               {prescriptionStatus.map((rx) => {
-                const BadgeIcon = rx.status === 'vencida' ? XCircle
-                  : rx.status === 'vencendo' ? AlertTriangle : CheckCircle2
+                const BadgeIcon =
+                  rx.status === 'vencida'
+                    ? XCircle
+                    : rx.status === 'vencendo'
+                      ? AlertTriangle
+                      : CheckCircle2
                 return (
                   <div key={rx.protocolId} className="sr-prescription">
                     <span className={`sr-prescription__badge sr-prescription__badge--${rx.status}`}>
                       <BadgeIcon size={14} />
-                      {rx.status === 'vigente' ? 'Vigente' : rx.status === 'vencendo' ? 'Vencendo' : 'Vencida'}
+                      {rx.status === 'vigente'
+                        ? 'Vigente'
+                        : rx.status === 'vencendo'
+                          ? 'Vencendo'
+                          : 'Vencida'}
                     </span>
                     <span className="sr-prescription__name">{rx.medicineName}</span>
                     {rx.daysRemaining !== undefined && (
@@ -214,8 +285,13 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
         </motion.section>
 
         {/* Titulação */}
-        <motion.section className="sr-consultation__section sr-consultation__section--full" variants={itemVariants}>
-          <h2 className="sr-consultation__section-title"><Target size={20} /> Progresso de Titulação</h2>
+        <motion.section
+          className="sr-consultation__section sr-consultation__section--full"
+          variants={itemVariants}
+        >
+          <h2 className="sr-consultation__section-title">
+            <Target size={20} /> Progresso de Titulação
+          </h2>
           {activeTitrations?.length > 0 ? (
             <div className="sr-consultation__titrations">
               {activeTitrations.map((t) => (
@@ -250,29 +326,32 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
         </motion.section>
       </main>
 
-        {/* Ações */}
-        <motion.section className="sr-consultation__section sr-consultation__section--actions" variants={itemVariants}>
-          <div className="sr-consultation__actions">
-            <button
-              className="sr-consultation__action-btn sr-consultation__action-btn--secondary"
-              onClick={handleGeneratePDF}
-              disabled={isGeneratingPDF}
-              type="button"
-            >
-              <FileText size={18} />
-              {isGeneratingPDF ? 'Gerando...' : 'Gerar PDF'}
-            </button>
-            <button
-              className="sr-consultation__action-btn sr-consultation__action-btn--primary"
-              onClick={handleShare}
-              disabled={isSharing}
-              type="button"
-            >
-              <Share2 size={18} />
-              {isSharing ? 'Enviando...' : 'Compartilhar'}
-            </button>
-          </div>
-        </motion.section>
+      {/* Ações */}
+      <motion.section
+        className="sr-consultation__section sr-consultation__section--actions"
+        variants={itemVariants}
+      >
+        <div className="sr-consultation__actions">
+          <button
+            className="sr-consultation__action-btn sr-consultation__action-btn--secondary"
+            onClick={handleGeneratePDF}
+            disabled={isGeneratingPDF}
+            type="button"
+          >
+            <FileText size={18} />
+            {isGeneratingPDF ? 'Gerando...' : 'Gerar PDF'}
+          </button>
+          <button
+            className="sr-consultation__action-btn sr-consultation__action-btn--primary"
+            onClick={handleShare}
+            disabled={isSharing}
+            type="button"
+          >
+            <Share2 size={18} />
+            {isSharing ? 'Enviando...' : 'Compartilhar'}
+          </button>
+        </div>
+      </motion.section>
     </motion.div>
   )
 }

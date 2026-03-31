@@ -126,9 +126,7 @@ export default function MedicinesRedesign({ onNavigateToProtocol }) {
   }
 
   // 5. Derived state
-  const filteredMedicines = medicines.filter(
-    (m) => filterType === 'all' || m.type === filterType
-  )
+  const filteredMedicines = medicines.filter((m) => filterType === 'all' || m.type === filterType)
 
   if (isLoading) {
     return (
@@ -149,9 +147,7 @@ export default function MedicinesRedesign({ onNavigateToProtocol }) {
             </div>
             <h2 className="sr-medicines__title">Medicamentos</h2>
           </div>
-          <p className="sr-medicines__subtitle">
-            Gerencie seus medicamentos cadastrados
-          </p>
+          <p className="sr-medicines__subtitle">Gerencie seus medicamentos cadastrados</p>
         </div>
         <button className="btn-primary" onClick={handleAdd}>
           <Plus size={18} /> Adicionar
