@@ -72,7 +72,7 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
   const getScoreColor = (score) => {
     if (score >= 80) return 'var(--color-success, #10b981)'
     if (score >= 60) return 'var(--color-warning, #f59e0b)'
-    if (score >= 40) return '#f97316'
+    if (score >= 40) return 'color-mix(in srgb, var(--color-warning, #f59e0b), var(--color-error, #ef4444))'
     return 'var(--color-error, #ef4444)'
   }
 
