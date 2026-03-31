@@ -43,7 +43,7 @@ export default function Auth({ onAuthSuccess, onClose }) {
   }
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" data-redesign="true">
       <div className="auth-card">
         {onClose && (
           <button className="auth-close-btn" onClick={onClose} aria-label="Fechar">

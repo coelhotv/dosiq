@@ -127,7 +127,7 @@ function AppInner() {
         <Auth
           onAuthSuccess={() => {
             setShowAuth(false)
-            setCurrentView('landing')
+            setCurrentView('dashboard')
           }}
           onClose={() => setShowAuth(false)}
         />
