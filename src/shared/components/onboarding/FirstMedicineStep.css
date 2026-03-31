@@ -29,13 +29,13 @@
 .step-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
   margin-bottom: 0.5rem;
 }
 
 .step-description {
   font-size: 0.9375rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin: 0;
 }
 

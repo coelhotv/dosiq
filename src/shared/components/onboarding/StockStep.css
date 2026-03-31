@@ -13,13 +13,13 @@
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .stock-header p {
   margin: 0;
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: var(--color-on-surface-variant, #3f484a);
 }
 
 .stock-header strong {
@@ -43,23 +43,23 @@
 .form-group label {
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .form-group input {
   padding: 0.75rem;
   font-size: 1rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-surface-container-high, #e6e8e9);
   border-radius: 0.5rem;
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
+  background-color: var(--color-surface-container-low, #f2f4f5);
+  color: var(--color-on-surface, #191c1d);
   transition: border-color 200ms ease;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-surface-container-lowest, #ffffff);
 }
 
 .form-group input:disabled {
@@ -69,7 +69,7 @@
 
 .form-group small {
   font-size: 0.85rem;
-  color: var(--color-text-secondary);
+  color: var(--color-on-surface-variant, #3f484a);
 }
 
 /* Error message */
@@ -85,21 +85,21 @@
 /* Stock preview */
 .stock-preview {
   padding: 1.5rem;
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-surface-container-low, #f2f4f5);
   border-radius: 0.75rem;
 }
 
 .preview-label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--color-on-surface-variant, #3f484a);
   margin-bottom: 0.75rem;
 }
 
 .stock-bar {
   width: 100%;
   height: 8px;
-  background-color: var(--color-border);
+  background-color: var(--color-surface-container-high, #e6e8e9);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.75rem;
@@ -113,7 +113,7 @@
 
 .preview-text {
   font-size: 0.9rem;
-  color: var(--color-text-secondary);
+  color: var(--color-on-surface-variant, #3f484a);
   text-align: center;
 }
 
@@ -123,7 +123,7 @@
   flex-direction: column;
   gap: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-surface-container-high, #e6e8e9);
 }
 
 .btn-save {
@@ -135,13 +135,13 @@
   font-size: 0.95rem;
   background-color: transparent;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-on-surface-variant, #3f484a);
   cursor: pointer;
   transition: color 200ms ease;
 }
 
 .btn-skip-stock:hover:not(:disabled) {
-  color: var(--color-text-primary);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .btn-skip-stock:disabled {

@@ -21,12 +21,12 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .error-state p {
   font-size: 0.9375rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin: 0;
 }
 
@@ -100,7 +100,7 @@
 .first-protocol-step .form-hint {
   text-align: center;
   font-size: 0.8125rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin-top: 1rem;
   margin-bottom: 0;
 }

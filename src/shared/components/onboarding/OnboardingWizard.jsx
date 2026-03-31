@@ -44,7 +44,7 @@ export default function OnboardingWizard() {
   const isStockStep = steps[currentStep]?.name === 'Estoque'
 
   return (
-    <div className="onboarding-overlay">
+    <div className="onboarding-overlay" data-redesign="true">
       <div className="onboarding-modal">
         {/* Progress Indicator */}
         <div className="onboarding-progress">

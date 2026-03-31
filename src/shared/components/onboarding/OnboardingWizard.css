@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
   padding: 1rem;
   animation: fadeIn 0.3s ease-out;
 }
@@ -26,7 +26,7 @@
 }
 
 .onboarding-modal {
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface-container-lowest, #ffffff);
   border-radius: var(--radius-xl, 16px);
   width: 100%;
   max-width: 640px;
@@ -52,8 +52,8 @@
 /* Progress Indicator */
 .onboarding-progress {
   padding: 1.5rem 1.5rem 1rem;
-  border-bottom: 1px solid var(--color-border, #e5e7eb);
-  background: var(--color-surface-elevated, #f9fafb);
+  border-bottom: 1px solid var(--color-surface-container-high, #e6e8e9);
+  background: var(--color-surface-container-low, #f2f4f5);
 }
 
 .progress-steps {
@@ -76,8 +76,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-gray-200, #e5e7eb);
-  color: var(--color-gray-500, #6b7280);
+  background: var(--color-surface-container-high, #e6e8e9);
+  color: var(--color-on-surface-variant, #3f484a);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +106,7 @@
 
 .step-name {
   font-size: 0.75rem;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   font-weight: 500;
   text-align: center;
   transition: color 0.3s ease;
@@ -127,7 +127,7 @@
   left: 50%;
   width: 100%;
   height: 2px;
-  background: var(--color-gray-200, #e5e7eb);
+  background: var(--color-surface-container-high, #e6e8e9);
   z-index: 0;
   transform: translateX(50%);
 }
@@ -164,7 +164,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem 1.5rem;
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  border-top: 1px solid var(--color-surface-container-high, #e6e8e9);
   gap: 1rem;
 }
 
@@ -190,7 +190,7 @@
 .btn-skip {
   background: transparent;
   border: none;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   font-size: 0.875rem;
   cursor: pointer;
   padding: 0.5rem 1rem;
@@ -199,7 +199,7 @@
 }
 
 .btn-skip:hover {
-  color: var(--color-gray-700, #374151);
+  color: var(--color-on-surface, #191c1d);
 }
 
 .btn-previous,
@@ -307,23 +307,23 @@
   }
 
   .step-name {
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--color-on-surface-variant, #3f484a);
   }
 
   .step-number {
-    background: var(--color-gray-700, #374151);
-    color: var(--color-gray-400, #9ca3af);
+    background: var(--color-on-surface, #191c1d);
+    color: var(--color-on-surface-variant, #3f484a);
   }
 
   .step-connector {
-    background: var(--color-gray-700, #374151);
+    background: var(--color-on-surface, #191c1d);
   }
 
   .btn-skip {
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--color-on-surface-variant, #3f484a);
   }
 
   .btn-skip:hover {
-    color: var(--color-gray-200, #e5e7eb);
+    color: var(--color-surface-container-high, #e6e8e9);
   }
 }

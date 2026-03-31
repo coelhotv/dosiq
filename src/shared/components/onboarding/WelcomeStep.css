@@ -22,14 +22,14 @@
 .welcome-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
   margin-bottom: 0.75rem;
   line-height: 1.2;
 }
 
 .welcome-subtitle {
   font-size: 1rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   margin-bottom: 2rem;
   line-height: 1.5;
 }
@@ -47,7 +47,7 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem;
-  background: var(--color-surface-elevated, #f9fafb);
+  background: var(--color-surface-container-low, #f2f4f5);
   border-radius: var(--radius-lg, 12px);
   transition:
     transform 0.2s ease,
@@ -79,13 +79,13 @@
 .benefit-content h4 {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
   margin-bottom: 0.25rem;
 }
 
 .benefit-content p {
   font-size: 0.875rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-on-surface-variant, #3f484a);
   line-height: 1.4;
   margin: 0;
 }
@@ -104,7 +104,7 @@
 .welcome-note p {
   margin: 0;
   font-size: 0.9375rem;
-  color: var(--color-text, #111827);
+  color: var(--color-on-surface, #191c1d);
   line-height: 1.5;
 }
 
