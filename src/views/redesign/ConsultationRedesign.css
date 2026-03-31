@@ -1,0 +1,29 @@
+/* ConsultationRedesign — Container view wrapper */
+
+.cr-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.cr-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.cr-error__title {
+  margin-bottom: 0.75rem;
+  color: var(--color-on-surface);
+}
+
+.cr-error__message {
+  color: var(--color-on-surface-variant);
+  margin-bottom: 1.5rem;
+}

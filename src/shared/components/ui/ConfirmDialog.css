@@ -1,0 +1,67 @@
+/* ================================================
+   ConfirmDialog — Diálogo de Confirmação
+   ================================================ */
+
+.sr-confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+.sr-confirm-dialog__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr-confirm-dialog__icon--danger {
+  background: rgba(186, 26, 26, 0.08);
+  color: var(--color-error);
+}
+
+.sr-confirm-dialog__icon--warning {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--color-warning, #b45309);
+}
+
+.sr-confirm-dialog__icon--default {
+  background: var(--color-secondary-fixed);
+  color: var(--color-primary);
+}
+
+.sr-confirm-dialog__title {
+  font-family: var(--font-heading);
+  font-size: var(--text-title-lg);
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.sr-confirm-dialog__message {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.sr-confirm-dialog__actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.sr-confirm-dialog__actions button {
+  flex: 1;
+  min-height: 48px;
+  font-size: var(--text-body-lg);
+  border-radius: var(--radius-md);
+}
