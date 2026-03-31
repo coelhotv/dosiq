@@ -14,6 +14,7 @@ import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
 import { formatLocalDate } from '@utils/dateUtils.js'
+import './ConsultationRedesign.css'
 
 export default function ConsultationRedesign({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
@@ -144,15 +145,7 @@ export default function ConsultationRedesign({ onBack }) {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          padding: '1.5rem',
-        }}
-      >
+      <div className="cr-loading">
         <Loading text="Carregando dados da consulta..." />
       </div>
     )
@@ -160,21 +153,11 @@ export default function ConsultationRedesign({ onBack }) {
 
   if (error || !consultationData) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          padding: '1.5rem',
-          textAlign: 'center',
-        }}
-      >
-        <h2 style={{ marginBottom: '0.75rem', color: 'var(--color-on-surface)' }}>
+      <div className="cr-error">
+        <h2 className="cr-error__title">
           {error ? 'Erro ao carregar' : 'Nenhum dado disponível'}
         </h2>
-        <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: '1.5rem' }}>
+        <p className="cr-error__message">
           {error || 'Cadastre medicamentos e protocolos para visualizar dados na consulta.'}
         </p>
         <button className="btn-primary" onClick={handleBack}>
