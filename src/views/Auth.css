@@ -12,12 +12,35 @@
 }
 
 .auth-card {
+  position: relative;
   width: 100%;
   max-width: 420px;
   padding: 2.5rem;
   background: var(--color-surface-container-lowest, #ffffff);
   border-radius: var(--radius-xl, 1rem);
   box-shadow: 0 4px 24px rgba(25, 28, 29, 0.06);
+}
+
+/* Botão fechar — canto superior direito (padrão modal do projeto) */
+.auth-close-btn {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant, #3f484a);
+  padding: 0.375rem;
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auth-close-btn:hover {
+  background: var(--color-surface-container, #eceeef);
+  color: var(--color-on-surface, #191c1d);
 }
 
 /* Header */

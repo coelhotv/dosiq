@@ -129,6 +129,7 @@ function AppInner() {
             setShowAuth(false)
             setCurrentView('landing')
           }}
+          onClose={() => setShowAuth(false)}
         />
       ) : (
         <Suspense fallback={<ViewSkeleton />}>

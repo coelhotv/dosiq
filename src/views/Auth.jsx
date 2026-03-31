@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { signIn, signUp } from '@shared/utils/supabase'
 import Button from '@shared/components/ui/Button'
 import './Auth.css'
 
-export default function Auth({ onAuthSuccess }) {
+export default function Auth({ onAuthSuccess, onClose }) {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,6 +46,11 @@ export default function Auth({ onAuthSuccess }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        {onClose && (
+          <button className="auth-close-btn" onClick={onClose} aria-label="Fechar">
+            <X size={20} />
+          </button>
+        )}
         <div className="auth-header">
           <div className="logo-container">
             <img src="/logo-new.svg" alt="Meus Remédios" className="auth-logo" />
