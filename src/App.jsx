@@ -9,6 +9,7 @@ import Loading from '@shared/components/ui/Loading'
 
 // Lazy imports — carregam apenas quando a view é acessada
 const Medicines = lazy(() => import('./views/Medicines'))
+const MedicinesRedesign = lazy(() => import('./views/redesign/MedicinesRedesign'))
 const Stock = lazy(() => import('./views/Stock'))
 const Protocols = lazy(() => import('./views/Protocols'))
 const History = lazy(() => import('./views/History'))
@@ -28,6 +29,7 @@ const ProfileRedesign = lazy(() => import('./views/redesign/ProfileRedesign'))
 const HealthHistoryRedesign = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
 const SettingsRedesign = lazy(() => import('./views/redesign/SettingsRedesign'))
 const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'))
+const ConsultationRedesign = lazy(() => import('./views/redesign/ConsultationRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -147,7 +149,11 @@ function AppInner() {
           </Suspense>
         )
       case 'medicines':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <MedicinesRedesign onNavigateToProtocol={navigateToProtocol} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Medicines onNavigateToProtocol={navigateToProtocol} />
           </Suspense>
@@ -231,7 +237,11 @@ function AppInner() {
           </Suspense>
         )
       case 'consultation':
-        return (
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <ConsultationRedesign onBack={() => setCurrentView('profile')} />
+          </Suspense>
+        ) : (
           <Suspense fallback={<ViewSkeleton />}>
             <Consultation onBack={() => setCurrentView('profile')} />
           </Suspense>
