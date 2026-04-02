@@ -3,7 +3,7 @@
 > **Status:** Guia operacional local
 > **Data:** 2026-03-30
 > **Publico-alvo:** maintainer do projeto e agentes/coders que vao trabalhar na frente native
-> **Base arquitetural:** `plans/native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base arquitetural:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 
 ---
 
@@ -668,12 +668,12 @@ Depois valide os comandos do checklist da secao 18.
 
 Depois de preparar o ambiente, a ordem de leitura recomendada para a frente native e:
 
-1. `plans/native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
-2. `plans/native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
-3. `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-4. `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-5. `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
-6. `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+1. `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+2. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
+3. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+4. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+5. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
+6. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 ---
 
