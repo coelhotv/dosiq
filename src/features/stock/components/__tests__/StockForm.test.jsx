@@ -180,9 +180,11 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '0' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.submit(screen.getByRole('button', { name: /Adicionar Estoque/i }).closest('form'))
 
-      expect(screen.queryByText('Quantidade deve ser maior que zero')).not.toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText('Quantidade deve ser maior que zero')).toBeInTheDocument()
+      })
     })
 
     it('should show error when quantity is negative', async () => {
@@ -194,9 +196,11 @@ describe('StockForm', () => {
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '-5' } })
 
-      fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
+      fireEvent.submit(screen.getByRole('button', { name: /Adicionar Estoque/i }).closest('form'))
 
-      expect(screen.getByLabelText(/Quantidade/i)).toHaveValue(-5)
+      await waitFor(() => {
+        expect(screen.getByText('Quantidade deve ser maior que zero')).toBeInTheDocument()
+      })
     })
 
     it('should show error when quantity is empty', async () => {
