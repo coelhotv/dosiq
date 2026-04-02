@@ -679,24 +679,23 @@
 }
 
 /* Treatments header layout — S7.5.6 */
-.treatments-redesign__controls {
+/* Top bar: título (esq) + busca ANVISA (dir) — W14.5 */
+.treatments-redesign__topbar {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
 }
 
 @media (min-width: 1024px) {
-  .treatments-redesign__controls {
+  .treatments-redesign__topbar {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 2rem;
   }
 
-  .treatments-redesign__controls > :first-child {
-    flex: 1;
-    max-width: 28rem;
+  .treatments-redesign__topbar .anvisa-search-bar {
+    flex: 0 0 28rem;
   }
 }
 
@@ -744,25 +743,13 @@
   gap: 1rem;
 }
 
-/* Header */
-.treatments-redesign__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
+/* Título */
 .treatments-redesign__title {
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--color-on-surface, #1c1b1f);
   margin: 0;
-}
-
-.treatments-redesign__count {
-  font-size: 0.875rem;
-  color: var(--color-on-surface-variant, #49454f);
+  white-space: nowrap;
 }
 
 /* AdherenceBar7d */
@@ -1213,6 +1200,13 @@
 /* AnvisaSearchBar */
 .anvisa-search-bar {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.anvisa-search-bar > :first-child {
+  width: 100%;
 }
 
 .anvisa-search-bar input {
@@ -1222,6 +1216,26 @@
   border: 1.5px solid var(--color-outline-variant, #cac4d0);
   background: var(--color-surface-container-low, #f7f2fa);
   font-size: 0.9375rem;
+}
+
+.anvisa-search__view-all {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+.anvisa-search__view-all:hover {
+  color: var(--color-primary-container);
 }
 
 /* TreatmentsSimple */

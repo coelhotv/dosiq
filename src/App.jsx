@@ -193,6 +193,7 @@ function AppInner() {
               onNavigateToProtocol={() => {
                 setCurrentView('treatment')
               }}
+              onNavigate={setCurrentView}
             />
           </Suspense>
         ) : (

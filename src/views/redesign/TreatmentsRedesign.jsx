@@ -17,7 +17,7 @@ import Modal from '@shared/components/ui/Modal'
 import { protocolService } from '@shared/services'
 import './TreatmentsRedesign.css'
 
-export default function TreatmentsRedesign({ onNavigateToProtocol }) {
+export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate }) {
   // Estados
   const [activeTab, setActiveTab] = useState('ativos')
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -135,14 +135,28 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
 
   return (
     <div className="treatments-redesign" data-redesign="true">
-      {/* Header */}
-      <header className="treatments-redesign__header">
+      {/* Top bar: título (esq) + busca ANVISA (dir) */}
+      <div className="treatments-redesign__topbar">
         <h1 className="treatments-redesign__title">Meus Tratamentos</h1>
-        <span className="treatments-redesign__count">
-          {activeItems.length} protocolo{activeItems.length !== 1 ? 's' : ''} ativo
-          {activeItems.length !== 1 ? 's' : ''}
-        </span>
-      </header>
+        <AnvisaSearchBar
+          existingProtocols={activeItems}
+          onNavigateToProtocol={onNavigateToProtocol}
+          onEditProtocol={handleEditProtocol}
+          onOpenWizard={handleOpenWizard}
+          onViewAllMedicines={onNavigate ? () => onNavigate('medicines') : undefined}
+        />
+      </div>
+
+      {/* Tab bar — abaixo do título, alinhada à esquerda */}
+      <TreatmentTabBar
+        activeTab={activeTab}
+        counts={{
+          ativos: activeItems.length,
+          pausados: pausedItems.length,
+          finalizados: finishedItems.length,
+        }}
+        onChange={setActiveTab}
+      />
 
       {/* Error Banner */}
       {errorMessage && (
@@ -156,28 +170,6 @@ export default function TreatmentsRedesign({ onNavigateToProtocol }) {
           </button>
         </div>
       )}
-
-      {/* S7.5.6: Controls container — busca + filtros responsive layout */}
-      <div className="treatments-redesign__controls">
-        {/* ANVISA Search */}
-        <AnvisaSearchBar
-          existingProtocols={activeItems}
-          onNavigateToProtocol={onNavigateToProtocol}
-          onEditProtocol={handleEditProtocol}
-          onOpenWizard={handleOpenWizard}
-        />
-
-        {/* Tab Bar — Ativos/Pausados/Finalizados */}
-        <TreatmentTabBar
-          activeTab={activeTab}
-          counts={{
-            ativos: activeItems.length,
-            pausados: pausedItems.length,
-            finalizados: finishedItems.length,
-          }}
-          onChange={setActiveTab}
-        />
-      </div>
 
       {/* Content — bifurca por persona */}
       {isComplex ? (
