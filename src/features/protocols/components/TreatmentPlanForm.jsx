@@ -115,7 +115,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
             value={formData.emoji}
             onChange={handleChange}
             placeholder="💊"
-            maxLength={4}
+            maxLength={10}
           />
         </div>
 
@@ -126,7 +126,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
               type="color"
               id="color"
               name="color"
-              value={formData.color || '#6366f1'}
+              value={formData.color || '#3d6b5e'}
               onChange={handleChange}
               className="treatment-plan-form__color-picker"
             />
