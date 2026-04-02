@@ -28,7 +28,7 @@ export default function ProtocolForm({
     name:
       protocol?.name ||
       initialValues?.name ||
-      (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Protocolo` : ''),
+      (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Tratamento` : ''),
     frequency: protocol?.frequency || initialValues?.frequency || 'diário',
     time_schedule: protocol?.time_schedule || initialValues?.time_schedule || [],
     dosage_per_intake: protocol?.dosage_per_intake || initialValues?.dosage_per_intake || '',
@@ -108,7 +108,7 @@ export default function ProtocolForm({
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Nome do protocolo é obrigatório'
+      newErrors.name = 'Nome do tratamento é obrigatório'
     }
 
     if (!formData.frequency.trim()) {
@@ -180,14 +180,14 @@ export default function ProtocolForm({
       }
     } catch (error) {
       console.error('Erro ao salvar protocolo:', error)
-      const errorMessage = error?.message || 'Erro desconhecido ao salvar protocolo'
+      const errorMessage = error?.message || 'Erro desconhecido ao salvar tratamento'
       setErrors({ submit: errorMessage })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const formTitle = title || (protocol ? 'Editar Protocolo' : 'Novo Protocolo')
+  const formTitle = title || (protocol ? 'Editar Tratamento' : 'Novo Tratamento')
 
   return (
     <form
@@ -239,7 +239,7 @@ export default function ProtocolForm({
             value={formData.treatment_plan_id}
             onChange={handleChange}
           >
-            <option value="">Nenhum (Protocolo isolado)</option>
+            <option value="">Nenhum (Tratamento isolado)</option>
             {treatmentPlans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name}
@@ -254,7 +254,7 @@ export default function ProtocolForm({
 
       <div className="form-group">
         <label htmlFor="name">
-          Nome do Protocolo <span className="required">*</span>
+          Nome do Tratamento <span className="required">*</span>
         </label>
         <ShakeEffect trigger={shakeFields.name}>
           <input
@@ -284,7 +284,7 @@ export default function ProtocolForm({
             onChange={handleChange}
             required
           />
-          <small>Quando você começou este protocolo</small>
+          <small>Quando você começou este tratamento</small>
         </div>
 
         <div className="form-group">
@@ -297,7 +297,7 @@ export default function ProtocolForm({
             onChange={handleChange}
             min={formData.start_date}
           />
-          <small>Deixe em branco para protocolo contínuo</small>
+          <small>Deixe em branco para tratamento contínuo</small>
         </div>
       </div>
 
@@ -456,7 +456,7 @@ export default function ProtocolForm({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Protocolo criado com sucesso!</span>
+          <span>Tratamento criado com sucesso!</span>
         </div>
       )}
 
@@ -473,7 +473,7 @@ export default function ProtocolForm({
           placeholder={
             isSimpleMode
               ? 'Ex: Tomar após as refeições'
-              : 'Informações adicionais sobre o protocolo...'
+              : 'Informações adicionais sobre o tratamento...'
           }
           rows={isSimpleMode ? 3 : 3}
           disabled={isSubmitting}
@@ -489,7 +489,7 @@ export default function ProtocolForm({
               checked={formData.active}
               onChange={handleChange}
             />
-            <span>Protocolo ativo</span>
+            <span>Tratamento ativo</span>
           </label>
         </div>
       )}
@@ -549,7 +549,7 @@ export default function ProtocolForm({
           ) : protocol ? (
             'Atualizar'
           ) : (
-            'Criar Protocolo'
+            'Criar Tratamento'
           )}
         </Button>
       </div>

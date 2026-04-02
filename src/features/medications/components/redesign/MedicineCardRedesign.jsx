@@ -56,7 +56,7 @@ export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDe
       {hasDependencies && (
         <div className="sr-medicine-card__warning">
           <AlertTriangle size={16} />
-          Possui protocolos e/ou estoque associados
+          Possui tratamentos e/ou estoque associados
         </div>
       )}
 

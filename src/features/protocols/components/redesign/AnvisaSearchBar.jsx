@@ -6,6 +6,7 @@
  * - Se não tem protocolo → abre TreatmentWizard para criar novo
  */
 import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 
@@ -14,6 +15,7 @@ export default function AnvisaSearchBar({
   onNavigateToProtocol, // Deprecated — mantido por compatibilidade retroativa
   onEditProtocol, // Novo: callback para editar protocolo existente
   onOpenWizard,
+  onViewAllMedicines, // Novo: link "todos medicamentos" abaixo da busca
 }) {
   const [query, setQuery] = useState('')
 
@@ -66,6 +68,12 @@ export default function AnvisaSearchBar({
         onSelect={handleSelect}
         placeholder="Buscar na base ANVISA..."
       />
+      {onViewAllMedicines && (
+        <button className="anvisa-search__view-all" onClick={onViewAllMedicines}>
+          todos medicamentos
+          <ArrowRight size={13} />
+        </button>
+      )}
     </div>
   )
 }

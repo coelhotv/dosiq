@@ -187,7 +187,7 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
   if (isLoading) {
     return (
       <div className="protocols-view">
-        <Loading text="Carregando protocolos..." />
+        <Loading text="Carregando tratamentos..." />
       </div>
     )
   }
