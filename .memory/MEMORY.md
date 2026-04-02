@@ -333,7 +333,7 @@ Agents should read this file + rules + anti-patterns before coding.
 - **Design:** Material 3, verde saúde #006a5e, surface tonal, CSS data-active visibility pattern
 - **AI Review:** 2 comments → 1 accepted (loadProfile error feedback), 1 declined (ProfileHeaderRedesign consolidation)
 - **New Anti-Patterns:** AP-W9-01 (conditional inside Suspense for lazy imports), AP-W9-02 (silent async errors)
-- **Spec:** `plans/redesign/WAVE_9_PROFILE_SAUDE_REDESIGN.md` (3000+ linhas, completo)
+- **Spec:** `plans/backlog-redesign/WAVE_9_PROFILE_SAUDE_REDESIGN.md` (3000+ linhas, completo)
 - **Journal:** `.memory/journal/2026-W13-WAVE9-PROFILE-SAUDE.md` (lessons learned, metrics)
 - Journal: `.memory/journal/2026-W12-P4.md`
 
@@ -428,10 +428,10 @@ Agents should read this file + rules + anti-patterns before coding.
 - **Code Quality:** 539/539 testes ✅ | 0 lint ✅ | Gemini Code Assist: 2 MEDIUM suggestions applied
   - Color variable reuse optimization (hardcoded `#f59e0b` → `var(--color-warning)`)
   - Opacity decimal standardization consistency check
-- **Validation:** Manual comparative analysis of spec vs. implementation (all 4 sprints verified against `plans/redesign/WAVE_0_DESIGN_TOKENS.md`)
+- **Validation:** Manual comparative analysis of spec vs. implementation (all 4 sprints verified against `plans/backlog-redesign/WAVE_0_DESIGN_TOKENS.md`)
 - **Documentation:**
   - Journal: `.memory/journal/2026-W12.md` (detailed completion analysis)
-  - Specification file: `plans/redesign/WAVE_0_DESIGN_TOKENS.md` (source spec, still canonical)
+  - Specification file: `plans/backlog-redesign/WAVE_0_DESIGN_TOKENS.md` (source spec, still canonical)
 - **Lessons Learned:**
   - Partial infrastructure implementation can mask incomplete feature setup (R-135: "Always validate spec vs. implementation comprehensively")
   - CSS variable scoping with `[data-redesign="true"]` provides safe gradual rollout without affecting current users (R-136: "Feature flags via CSS selectors for low-risk design iterations")
