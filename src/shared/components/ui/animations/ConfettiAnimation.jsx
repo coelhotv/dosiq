@@ -9,6 +9,7 @@
 
 import { useEffect, useState, memo } from 'react'
 import { useHapticFeedback } from '@shared/hooks/useHapticFeedback'
+import { SANCTUARY_COLORS } from './confettiColors'
 import './Animations.css'
 
 /**
@@ -18,8 +19,9 @@ import './Animations.css'
  * @param {boolean} props.trigger - Controla quando disparar o confete
  * @param {Function} props.onComplete - Callback quando animação terminar
  * @param {string} props.type - Tipo: 'burst' (central) ou 'rain' (caindo)
+ * @param {string[]} props.colors - Paleta de cores das partículas (default: sanctuary)
  */
-function ConfettiAnimation({ trigger = false, onComplete, type = 'burst' }) {
+function ConfettiAnimation({ trigger = false, onComplete, type = 'burst', colors = SANCTUARY_COLORS }) {
   const [particles, setParticles] = useState([])
   const { trigger: haptic } = useHapticFeedback()
 
@@ -47,7 +49,7 @@ function ConfettiAnimation({ trigger = false, onComplete, type = 'burst' }) {
         vx: type === 'burst' ? Math.cos(angle) * velocity : (Math.random() - 0.5) * 2,
         vy: type === 'burst' ? Math.sin(angle) * velocity : 2 + Math.random() * 3,
         size,
-        color: ['#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#3b82f6'][colorIndex],
+        color: colors[colorIndex % colors.length],
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 10,
         duration,
@@ -69,7 +71,7 @@ function ConfettiAnimation({ trigger = false, onComplete, type = 'burst' }) {
       clearTimeout(timer)
       clearTimeout(cleanupTimer)
     }
-  }, [trigger, type, haptic, onComplete])
+  }, [trigger, type, haptic, onComplete, colors])
 
   if (!trigger && particles.length === 0) return null
 

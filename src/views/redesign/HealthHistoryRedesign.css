@@ -24,8 +24,8 @@
 
 /* Dias com doses parciais */
 .hhr-wrapper .calendar-day--partial {
-  background: var(--color-secondary-fixed) !important;
-  color: var(--color-on-surface) !important;
+  background: rgba(0, 106, 94, 0.15) !important;
+  color: var(--color-primary) !important;
   box-shadow: none !important;
 }
 

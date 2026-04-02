@@ -100,12 +100,14 @@
   color: var(--color-primary);
   border: 1.5px solid var(--color-outline-variant);
   font-weight: var(--font-weight-semibold);
+  box-shadow: none;
 }
 
 [data-redesign='true'] .btn-secondary:hover:not(:disabled),
 [data-redesign='true'] .btn-outline:hover:not(:disabled) {
   background: var(--state-hover);
   border-color: var(--color-primary);
+  box-shadow: none;
 }
 
 [data-redesign='true'] .btn-secondary:active:not(:disabled),
@@ -791,4 +793,199 @@
   letter-spacing: 0.5px;
   margin-left: 0.5rem;
   vertical-align: middle;
+}
+
+/* ============================================
+   SPRINT 14.1 — EMPTYSTATE REDESIGN
+   ============================================ */
+
+[data-redesign='true'] .empty-state {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-ambient);
+  border: none;
+  padding: 2rem;
+  text-align: center;
+  transition: box-shadow 300ms ease-out;
+}
+
+[data-redesign='true'] .empty-state:hover {
+  box-shadow: var(--shadow-editorial);
+}
+
+[data-redesign='true'] .empty-state__illustration {
+  margin-bottom: 1.5rem;
+}
+
+[data-redesign='true'] .empty-state__illustration svg {
+  max-width: 160px;
+  height: auto;
+}
+
+[data-redesign='true'] .empty-state__title {
+  font-family: var(--font-display);
+  font-size: var(--text-title-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin: 0 0 0.5rem 0;
+}
+
+[data-redesign='true'] .empty-state__description {
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface-variant);
+  margin: 0 0 1.5rem 0;
+  line-height: 1.6;
+}
+
+[data-redesign='true'] .empty-state__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  min-height: 48px;
+  transition: all 200ms ease-out;
+  box-shadow: var(--shadow-primary);
+}
+
+[data-redesign='true'] .empty-state__cta:hover {
+  transform: scale(1.02);
+}
+
+[data-redesign='true'] .empty-state__cta:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   SPRINT 14.3 — CALENDAR DUAL-THEME
+   ============================================ */
+
+/* Widget container */
+[data-redesign='true'] .calendar-widget {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-ambient);
+  padding: 1.25rem;
+}
+
+/* Controles de navegação */
+[data-redesign='true'] .calendar-controls button,
+[data-redesign='true'] .calendar-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-card-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms ease-out;
+}
+
+[data-redesign='true'] .calendar-controls button:hover,
+[data-redesign='true'] .calendar-nav-btn:hover {
+  background: var(--state-hover);
+  color: var(--color-on-surface);
+}
+
+/* Mês atual */
+[data-redesign='true'] .current-month {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface);
+}
+
+/* Nomes dos dias da semana */
+[data-redesign='true'] .calendar-weekdays {
+  color: var(--color-on-surface-variant);
+}
+
+/* Célula de dia genérica */
+[data-redesign='true'] .calendar-day {
+  background: transparent;
+  color: var(--color-on-surface);
+  border-radius: var(--radius-card-sm);
+}
+
+[data-redesign='true'] .calendar-day:not(.empty):hover {
+  background: var(--state-hover);
+  transform: none;
+}
+
+/* Hoje */
+[data-redesign='true'] .calendar-day.today {
+  background: rgba(0, 106, 94, 0.08);
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Dia selecionado */
+[data-redesign='true'] .calendar-day.selected {
+  background: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+  box-shadow: none !important;
+}
+
+[data-redesign='true'] .calendar-day.selected .log-dot {
+  background: var(--color-on-primary);
+  box-shadow: none;
+}
+
+/* Dia com registro */
+[data-redesign='true'] .calendar-day.has-log {
+  background: rgba(0, 106, 94, 0.08);
+  box-shadow: none;
+}
+
+/* Indicador de log (ponto) */
+[data-redesign='true'] .log-dot {
+  background: var(--color-primary);
+  box-shadow: none;
+}
+
+/* Número do dia */
+[data-redesign='true'] .day-number {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Month picker dropdown */
+[data-redesign='true'] .month-picker {
+  background: var(--color-surface-container-low);
+  border: 1.5px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
+  border-radius: var(--radius-button);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-body);
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 200ms ease-out;
+}
+
+[data-redesign='true'] .month-picker:hover {
+  border-color: var(--color-primary);
+}
+
+/* Loading skeleton do calendário */
+[data-redesign='true'] .skeleton-day {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container) 25%,
+    var(--color-surface-container-low) 50%,
+    var(--color-surface-container) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-card-sm);
 }

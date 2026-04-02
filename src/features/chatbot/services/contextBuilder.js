@@ -79,7 +79,7 @@ export function buildStaticSystemRules() {
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
     '- NUNCA sugira parar ou alterar tratamento sem consultar o medico.',
     '- Se sua resposta menciona medicamentos ou saúde, SEMPRE termine com uma linha em branco seguida de: "Não substituo orientação médica."',
-    '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
+    '- Responda em portugues brasileiro, de forma concisa (max 3 frases), em texto puro sem markdown, asteriscos, hashtags ou listas.',
     '- Use os dados do paciente abaixo para contextualizar respostas.',
   ].join('\n')
 }

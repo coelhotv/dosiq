@@ -28,6 +28,7 @@
 /* Redesign mode: use light surface instead of dark background */
 [data-redesign='true'] .drawer {
   background: var(--color-surface-container-lowest, #ffffff);
+  border-left: 1px solid var(--color-outline-variant, #c9ded8);
 }
 
 .header {
@@ -109,7 +110,6 @@
   max-width: 85%;
   font-size: 14px;
   line-height: 1.4;
-  white-space: pre-wrap;
   color: var(--color-text, #fff);
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -121,10 +121,10 @@
   color: white;
 }
 
-/* Redesign mode: use secondary color for user messages */
+/* Redesign mode: use primary (sanctuary green) for user messages */
 [data-redesign='true'] .messageBubbleUser {
-  background: var(--color-secondary, #005db6);
-  color: white;
+  background: var(--color-primary, #006a5e);
+  color: var(--color-on-primary, #ffffff);
 }
 
 .messageBubbleAssistant {
@@ -240,8 +240,8 @@
 }
 
 [data-redesign='true'] .suggestionButton:hover {
-  border-color: var(--color-secondary, #005db6);
-  color: var(--color-secondary, #005db6);
+  border-color: var(--color-primary, #006a5e);
+  color: var(--color-primary, #006a5e);
 }
 
 .inputRow {
@@ -293,11 +293,23 @@
   cursor: not-allowed;
 }
 
-/* Redesign mode: use secondary color */
+/* Redesign mode: use primary (sanctuary green) */
 [data-redesign='true'] .sendButton {
-  background: var(--color-secondary, #005db6);
+  background: var(--color-primary, #006a5e);
 }
 
 [data-redesign='true'] .sendButton:hover:not(:disabled) {
-  opacity: 0.9;
+  background: color-mix(in srgb, var(--color-primary, #006a5e) 85%, #000000);
+}
+
+/* Itálico para disclaimers e ênfase nos bubbles do assistente */
+.messageBubbleAssistant em {
+  font-style: italic;
+  opacity: 0.75;
+}
+
+[data-redesign='true'] .messageBubbleAssistant em {
+  color: var(--color-primary, #006a5e);
+  opacity: 1;
+  font-weight: 500;
 }
