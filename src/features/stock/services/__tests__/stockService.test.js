@@ -1,36 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock do Supabase com configuração completa
 const mockSupabase = {
-  from: vi.fn().mockReturnValue({
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          gt: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          }),
-          lte: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-      }),
-    }),
-    insert: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-    }),
-    update: vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    }),
-    delete: vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    }),
-  }),
-  rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+  from: vi.fn(),
+  rpc: vi.fn(),
 }
 
 const mockGetUserId = vi.fn().mockResolvedValue('test-user-id')
@@ -43,235 +15,158 @@ vi.mock('@shared/utils/supabase', () => ({
 describe('stockService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Resetar mocks para estado padrão
+
     mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            gt: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
             maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            single: vi.fn().mockResolvedValue({
+              data: {
+                id: 'stock-1',
+                entry_type: 'adjustment',
+                quantity: 5,
+                original_quantity: 5,
+              },
+              error: null,
+            }),
           }),
         }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
       }),
       delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
       }),
     })
-    mockSupabase.rpc.mockResolvedValue({ data: [], error: null })
-  })
 
-  describe('getByMedicine', () => {
-    it('should fetch stock entries for a specific medicine', async () => {
-      const { stockService } = await import('@stock/services/stockService')
-      const mockStock = [
-        { id: '1', medicine_id: 'med-1', quantity: 10 },
-        { id: '2', medicine_id: 'med-1', quantity: 5 },
-      ]
-
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: mockStock, error: null }),
-            }),
-          }),
-        }),
-      })
-
-      const result = await stockService.getByMedicine('med-1')
-      expect(result).toEqual(mockStock)
-    })
-  })
-
-  describe('getTotalQuantity', () => {
-    it('should return total quantity from view', async () => {
-      const { stockService } = await import('@stock/services/stockService')
-
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockResolvedValue({ data: { total_quantity: 42 }, error: null }),
-            }),
-          }),
-        }),
-      })
-
-      const result = await stockService.getTotalQuantity('med-1')
-      expect(result).toBe(42)
-    })
-  })
-
-  describe('getStockSummary', () => {
-    it('should return stock summary from view', async () => {
-      const { stockService } = await import('@stock/services/stockService')
-      const mockSummary = {
-        medicine_id: 'med-1',
-        total_quantity: 25,
-        stock_entries_count: 3,
-      }
-
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockResolvedValue({ data: mockSummary, error: null }),
-            }),
-          }),
-        }),
-      })
-
-      const result = await stockService.getStockSummary('med-1')
-      expect(result).toEqual(mockSummary)
-    })
-  })
-
-  describe('getLowStockMedicines', () => {
-    it('should return medicines below threshold using RPC', async () => {
-      const { stockService } = await import('@stock/services/stockService')
-      const mockLowStock = [{ medicine_id: 'med-1', total_quantity: 5 }]
-
-      mockSupabase.rpc.mockResolvedValue({ data: mockLowStock, error: null })
-
-      const result = await stockService.getLowStockMedicines(10)
-      expect(result).toEqual(mockLowStock)
-    })
+    mockSupabase.rpc.mockResolvedValue({ data: { ok: true }, error: null })
   })
 
   describe('add', () => {
-    it('should add new stock entry', async () => {
+    it('calls create_purchase_with_stock RPC', async () => {
       const { stockService } = await import('@stock/services/stockService')
-      const newStock = {
+
+      const payload = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity: 30,
-        purchase_date: '2024-01-15',
+        purchase_date: '2026-04-02',
+        expiration_date: '2026-05-02',
+        unit_price: 1.5,
+        pharmacy: 'Drogaria Teste',
+        laboratory: 'Lab Teste',
+        notes: 'Compra mensal',
       }
-      const createdStock = { id: 'stock-1', ...newStock, user_id: 'test-user-id' }
 
-      mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: createdStock, error: null }),
-          }),
-        }),
+      const rpcResult = { purchase: { id: 'purchase-1' }, stock: { id: 'stock-1' } }
+      mockSupabase.rpc.mockResolvedValueOnce({ data: rpcResult, error: null })
+
+      const result = await stockService.add(payload)
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('create_purchase_with_stock', {
+        p_medicine_id: payload.medicine_id,
+        p_quantity: payload.quantity,
+        p_unit_price: payload.unit_price,
+        p_purchase_date: payload.purchase_date,
+        p_expiration_date: payload.expiration_date,
+        p_pharmacy: payload.pharmacy,
+        p_laboratory: payload.laboratory,
+        p_notes: payload.notes,
       })
-
-      const result = await stockService.add(newStock)
-      expect(result).toEqual(createdStock)
-    })
-
-    it('should throw error when data is invalid', async () => {
-      const { stockService } = await import('@stock/services/stockService')
-      await expect(stockService.add({ quantity: 30 })).rejects.toThrow()
+      expect(result).toEqual(rpcResult)
     })
   })
 
   describe('decrease', () => {
-    it('should throw error when stock is insufficient', async () => {
+    it('requires medicineLogId for tracked FIFO consumption', async () => {
       const { stockService } = await import('@stock/services/stockService')
-      const mockStock = [
-        { id: '1', medicine_id: '123e4567-e89b-12d3-a456-426614174000', quantity: 5 },
-      ]
-
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              gt: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: mockStock, error: null }),
-              }),
-            }),
-          }),
-        }),
-      })
 
       await expect(
-        stockService.decrease('123e4567-e89b-12d3-a456-426614174000', 10)
-      ).rejects.toThrow()
+        stockService.decrease('123e4567-e89b-12d3-a456-426614174000', 2)
+      ).rejects.toThrow('medicineLogId é obrigatório')
     })
 
-    it('should update stock when sufficient', async () => {
+    it('calls consume_stock_fifo RPC', async () => {
       const { stockService } = await import('@stock/services/stockService')
-      const mockStock = [
-        { id: '1', medicine_id: '123e4567-e89b-12d3-a456-426614174000', quantity: 10 },
-      ]
 
-      let updateCalled = false
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              gt: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: mockStock, error: null }),
-              }),
-            }),
-          }),
-        }),
-        update: vi.fn().mockReturnValue({
-          eq: vi.fn().mockImplementation(() => {
-            updateCalled = true
-            return { error: null }
-          }),
-        }),
+      await stockService.decrease(
+        '123e4567-e89b-12d3-a456-426614174000',
+        2,
+        '123e4567-e89b-12d3-a456-426614174111'
+      )
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('consume_stock_fifo', {
+        p_medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_quantity: 2,
+        p_medicine_log_id: '123e4567-e89b-12d3-a456-426614174111',
       })
-
-      await stockService.decrease('123e4567-e89b-12d3-a456-426614174000', 5)
-      expect(updateCalled).toBe(true)
     })
   })
 
   describe('increase', () => {
-    it('should create adjustment entry', async () => {
+    it('calls restore_stock_for_log when medicine_log_id is provided', async () => {
       const { stockService } = await import('@stock/services/stockService')
-      const mockResult = {
-        id: 'stock-2',
-        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-        quantity: 5,
-      }
 
-      mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: mockResult, error: null }),
-          }),
-        }),
+      await stockService.increase('123e4567-e89b-12d3-a456-426614174000', 2, {
+        medicine_log_id: '123e4567-e89b-12d3-a456-426614174111',
+        reason: 'dose_deleted_restore',
       })
 
-      const result = await stockService.increase('123e4567-e89b-12d3-a456-426614174000', 5)
-      expect(result).toEqual(mockResult)
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('restore_stock_for_log', {
+        p_medicine_log_id: '123e4567-e89b-12d3-a456-426614174111',
+        p_reason: 'dose_deleted_restore',
+      })
+    })
+
+    it('calls apply_manual_stock_adjustment for positive manual adjustment', async () => {
+      const { stockService } = await import('@stock/services/stockService')
+
+      await stockService.increase('123e4567-e89b-12d3-a456-426614174000', 5, {
+        reason: 'manual_adjustment',
+        notes: 'Entrada manual',
+      })
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('apply_manual_stock_adjustment', {
+        p_medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_quantity_delta: 5,
+        p_reason: 'manual_adjustment',
+        p_notes: 'Entrada manual',
+      })
     })
   })
 
   describe('delete', () => {
-    it('should delete a stock entry', async () => {
+    it('deletes a removable stock entry', async () => {
       const { stockService } = await import('@stock/services/stockService')
-      let deleteCalled = false
 
-      mockSupabase.from.mockReturnValue({
-        delete: vi.fn().mockReturnValue({
+      await stockService.delete('stock-1')
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('stock')
+    })
+
+    it('blocks deletion of a partially consumed purchase', async () => {
+      const { stockService } = await import('@stock/services/stockService')
+
+      mockSupabase.from.mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockImplementation(() => {
-              deleteCalled = true
-              return { error: null }
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: 'stock-2',
+                  entry_type: 'purchase',
+                  quantity: 10,
+                  original_quantity: 30,
+                },
+                error: null,
+              }),
             }),
           }),
         }),
       })
 
-      await stockService.delete('stock-1')
-      expect(deleteCalled).toBe(true)
+      await expect(stockService.delete('stock-2')).rejects.toThrow('não podem ser removidas')
     })
   })
 })

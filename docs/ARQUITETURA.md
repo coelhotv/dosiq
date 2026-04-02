@@ -1,8 +1,8 @@
 # 🏗️ Arquitetura do Meus Remédios
 
-**Versão:** 3.3.0
-**Data:** 2026-03-20
-**Status:** Ativo (v3.3.0 — Fases 1-6 + Mobile Performance Initiative M0-M8, P1-P4, D0-D3)
+**Versão:** 4.0.0
+**Data:** 2026-04-02
+**Status:** Ativo (v4.0.0 — Refactor de estoque/purchases + rollout redesign-first + Mobile Performance Initiative M0-M8, P1-P4, D0-D3)
 
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
@@ -26,7 +26,7 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 
 ---
 
-## 📊 Visão Arquitetural (v3.3.0)
+## 📊 Visão Arquitetural (v4.0.0)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -102,6 +102,24 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 | **P1-P4** | HealthHistory Perf | requestIdleCallback + SWR cache + slim select (76% payload reduction) |
 | **D0-D3** | Dashboard Perf | Lazy loading fixes + auth cache (13 → 1 roundtrip) + slim selects |
 | **F6.1-F6.5** | Fase 6 (4/5) | Refill Prediction, Risk Score, Dose Insights, Export PDF, Smart Alerts |
+| **F6.6** | Stock Refactor v4.0 | `purchases` + `stock_consumptions` + ANVISA + Telegram parity |
+
+### Refactor de Estoque v4.0.0
+
+O domínio de estoque passou a operar com separação explícita entre:
+
+- `purchases`: histórico imutável de compras
+- `stock`: saldo corrente por lote
+- `stock_adjustments`: trilha de auditoria para correções e restaurações
+- `stock_consumptions`: vínculo exato entre `medicine_logs` e os lotes consumidos
+
+Consequências arquiteturais:
+
+- histórico de compras e última compra deixam de ser inferidos a partir de `stock.notes`
+- consumo e restauração de estoque passam por RPCs transacionais FIFO
+- o redesign `?redesign=1` é a superfície oficial desta onda
+- o bot Telegram usa os mesmos RPCs da aplicação web para compra e consumo
+- `medicines.regulatory_category` passa a suportar a UX de laboratório por compra
 
 ### Sistema de Notificações v3.0.0
 
@@ -509,7 +527,7 @@ server/services/
 
 ## � Performance
 
-### Métricas Atuais (v3.3.0)
+### Métricas Atuais (v4.0.0)
 
 | Métrica | Antes | Depois | Sprint |
 |---------|-------|--------|--------|
@@ -600,7 +618,7 @@ Dashboard
 
 ---
 
-## 🧪 Testes (v3.3.0)
+## 🧪 Testes (v4.0.0)
 
 ```
 Testes Unitários (Vitest 4)
@@ -727,4 +745,4 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 
 ---
 
-*Última atualização: 20/03/2026 — v3.3.0: métricas de performance real, lazy loading pattern, auth cache, histórico de entregas. Referências .roo/ substituídas por CLAUDE.md + .memory/.*
+*Última atualização: 02/04/2026 — v4.0.0: refactor de estoque/purchases, rollout redesign-first, integração ANVISA (`regulatory_category`) e paridade do Telegram com RPCs transacionais.*

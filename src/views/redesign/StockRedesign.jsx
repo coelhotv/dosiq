@@ -54,13 +54,13 @@ export default function StockRedesign({ initialParams, onClearParams }) {
   // ── Motion ──
   const motionConfig = useMotion()
 
-  // ── Entries agregadas para histórico (complex only) ──
-  // Inclui medicamento info em cada entry para o layout correto
-  const allEntries = useMemo(
+  // ── Purchases agregadas para histórico (complex only) ──
+  // Inclui medicamento info em cada compra para o layout correto
+  const allPurchases = useMemo(
     () =>
       items.flatMap((item) =>
-        item.entries.map((entry) => ({
-          ...entry,
+        item.purchases.map((purchase) => ({
+          ...purchase,
           medicineName: item.medicine.name,
           medicineType: item.medicine.medicine_type,
         }))
@@ -297,10 +297,10 @@ export default function StockRedesign({ initialParams, onClearParams }) {
       {/* ── Histórico de Compras (complex only) ── */}
       {/* Simple: informação de última compra + custo já está per-card em StockCardRedesign */}
       {/* Complex: Carlos precisa do histórico completo para auditoria e análise de preço */}
-      {isComplex && allEntries.length > 0 && (
+      {isComplex && allPurchases.length > 0 && (
         <section className="stock-redesign__history-section">
           <h2 className="stock-redesign__section-title">Histórico de Compras</h2>
-          <EntradaHistorico entries={allEntries} maxVisible={3} />
+          <EntradaHistorico purchases={allPurchases} maxVisible={3} />
         </section>
       )}
 

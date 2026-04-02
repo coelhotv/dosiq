@@ -2,16 +2,19 @@
 
 O banco de dados do **Meus Remédios** é hospedado no Supabase (PostgreSQL) e utiliza Row-Level Security (RLS) para garantir a privacidade dos dados de cada usuário.
 
-> **Última atualização**: 2026-03-18
-> **Fonte**: Exportação real do Supabase (produção)
+> **Última atualização**: 2026-04-02
+> **Fonte**: Exportação real do Supabase (produção) + migration `20260402_stock_purchases_refactor.sql`
 
 ## Diagrama de Tabelas
 
 ```mermaid
 erDiagram
     users ||--o{ medicines : "cadastra"
+    users ||--o{ purchases : "compra"
     users ||--o{ protocols : "configura"
     users ||--o{ stock : "possui"
+    users ||--o{ stock_adjustments : "ajusta"
+    users ||--o{ stock_consumptions : "consome"
     users ||--o{ medicine_logs : "registra"
     users ||--o{ treatment_plans : "organiza"
     users ||--|| user_settings : "define"
@@ -23,11 +26,16 @@ erDiagram
     users ||--o{ bot_sessions : "sessões bot"
 
     medicines ||--o{ protocols : "usado em"
+    medicines ||--o{ purchases : "tem compras"
     medicines ||--o{ stock : "tem estoque"
+    medicines ||--o{ stock_adjustments : "tem ajustes"
+    medicines ||--o{ stock_consumptions : "tem consumos"
     medicines ||--o{ medicine_logs : "logado como"
 
     treatment_plans ||--o{ protocols : "agrupa"
     protocols ||--o{ medicine_logs : "gera logs"
+    medicine_logs ||--o{ stock_consumptions : "consome lotes"
+    purchases ||--o{ stock : "origina lotes"
     protocols ||--o{ notification_log : "gera notificações"
     protocols ||--o{ failed_notification_queue : "falhas de notificação"
 
@@ -208,6 +216,7 @@ Cadastro básico de medicamentos e suplementos.
 | `dosage_unit` | text (default: 'mg') | Unidade (mg, mcg, ml, etc) |
 | `type` | text (default: 'medicine') | 'medicamento' ou 'suplemento' |
 | `therapeutic_class` | text | Classe terapêutica (ex: 'Antidepressivo', 'Anti-inflamatório') |
+| `regulatory_category` | text | Categoria ANVISA: `Genérico`, `Similar` ou `Novo` |
 | `created_at` | timestamptz (default: now()) | Data de criação |
 
 **Check Constraint:**
@@ -277,7 +286,7 @@ CHECK (status_ultima_notificacao::text = ANY (ARRAY['pendente'::character varyin
 
 ### `stock`
 
-Controle de inventário.
+Controle de inventário por lote remanescente. Em `v4.0.0`, `stock` deixou de ser histórico de compra e passou a representar apenas o saldo corrente por lote.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -289,7 +298,72 @@ Controle de inventário.
 | `unit_price` | numeric (default: 0) | Preço por unidade |
 | `notes` | text | Observações |
 | `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+| `purchase_id` | uuid (FK) | Compra de origem do lote |
+| `original_quantity` | numeric | Quantidade original do lote |
+| `entry_type` | text | `purchase`, `adjustment` ou `legacy_unrecoverable` |
 | `created_at` | timestamptz (default: now()) | Data de criação |
+| `updated_at` | timestamptz (default: now()) | Data da última atualização |
+
+**Check Constraint:**
+```sql
+CHECK (entry_type IN ('purchase', 'adjustment', 'legacy_unrecoverable'))
+```
+
+---
+
+### `purchases`
+
+Histórico imutável de compras. É a fonte canônica para histórico de compras, última compra e custo médio.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
+| `medicine_id` | uuid (FK, NOT NULL) | Medicamento comprado |
+| `quantity_bought` | numeric (NOT NULL) | Quantidade comprada |
+| `unit_price` | numeric(10,2) | Preço unitário |
+| `purchase_date` | date (NOT NULL) | Data da compra |
+| `expiration_date` | date | Data de validade |
+| `pharmacy` | text | Farmácia de origem |
+| `laboratory` | text | Laboratório da compra |
+| `notes` | text | Observações da compra |
+| `legacy_stock_id` | uuid | Linha legacy de `stock` usada no backfill |
+| `created_at` | timestamptz | Data de criação |
+
+---
+
+### `stock_adjustments`
+
+Auditoria de ajustes e restaurações que não representam uma compra nova.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
+| `medicine_id` | uuid (FK, NOT NULL) | Medicamento afetado |
+| `stock_id` | uuid (FK) | Lote afetado |
+| `quantity_delta` | numeric (NOT NULL) | Variação aplicada, nunca zero |
+| `reason` | text | Motivo do ajuste |
+| `reference_id` | uuid | Referência opcional ao evento de origem |
+| `notes` | text | Observações |
+| `created_at` | timestamptz | Data de criação |
+
+---
+
+### `stock_consumptions`
+
+Rastreia exatamente quais lotes foram consumidos por cada `medicine_log`.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | uuid (PK) | ID único |
+| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
+| `medicine_log_id` | uuid (FK, NOT NULL) | Log de dose associado |
+| `medicine_id` | uuid (FK, NOT NULL) | Medicamento consumido |
+| `stock_id` | uuid (FK, NOT NULL) | Lote consumido |
+| `quantity_consumed` | numeric (NOT NULL) | Quantidade retirada do lote |
+| `reversed_at` | timestamptz | Marca reversões idempotentes |
+| `created_at` | timestamptz | Data de criação |
 
 ---
 
@@ -414,10 +488,22 @@ SELECT * FROM get_dlq_stats();
          ┌──────────────────────────────────┼───────────────┐
          │                                  │               │
          ▼                                  ▼               ▼
-┌───────────────┐               ┌───────────────┐ ┌───────────────┐
-│ medicine_logs │               │     stock     │ │notification_log│
-│ (FK: protocol)│               │  (FK: med)    │ │(FK: user,prot)│
-└───────────────┘               └───────────────┘ └───────────────┘
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│ medicine_logs │─────▶│stock_consumpt.│─────▶│     stock     │
+│ (FK: protocol)│      │ (FK: log)     │      │  (FK: med)    │
+└───────────────┘      └───────────────┘      └───────▲───────┘
+         ▲                                  ┌─────────┘
+         │                                  │
+         └─────────────── protocols         │
+                                            │
+                                    ┌───────┴───────┐
+                                    │   purchases   │
+                                    │  (FK: med)    │
+                                    └───────────────┘
+                                                      ┌───────────────┐
+                                                      │notification_log│
+                                                      │(FK: user,prot)│
+                                                      └───────────────┘
                                                            │
                                                            ▼
                                                   ┌───────────────────┐
@@ -435,6 +521,7 @@ Para garantir a consistência entre o banco de dados e a aplicação, consulte t
 - [`src/schemas/medicineSchema.js`](../src/schemas/medicineSchema.js)
 - [`src/schemas/protocolSchema.js`](../src/schemas/protocolSchema.js)
 - [`src/schemas/stockSchema.js`](../src/schemas/stockSchema.js)
+- [`src/schemas/costAnalysisSchema.js`](../src/schemas/costAnalysisSchema.js)
 - [`src/schemas/geminiReviewSchema.js`](../src/schemas/geminiReviewSchema.js) *(se existir)*
 
 > ⚠️ **Nota**: Sempre que alterar o schema do banco, atualize os schemas Zod correspondentes e esta documentação.
@@ -460,6 +547,15 @@ Para garantir a consistência entre o banco de dados e a aplicação, consulte t
    - Cria tabela `gemini_reviews`
    - Adiciona CHECK constraints para status, priority e category
    - Adiciona Foreign Keys para `resolved_by` e `user_id`
+
+### Migração de Estoque/Purchases (v4.0.0)
+
+4. **`docs/migrations/20260402_stock_purchases_refactor.sql`**
+   - Adiciona `medicines.regulatory_category`
+   - Cria `purchases`, `stock_adjustments` e `stock_consumptions`
+   - Evolui `stock` com `purchase_id`, `original_quantity`, `entry_type` e `updated_at`
+   - Implementa backfill idempotente do modelo legado
+   - Cria RPCs transacionais para compra, consumo FIFO, restauração e ajuste manual
 
 ---
 

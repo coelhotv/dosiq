@@ -28,6 +28,14 @@ export const MEDICINE_TYPE_LABELS = {
   suplemento: 'Suplemento',
 }
 
+export const REGULATORY_CATEGORIES = ['Genérico', 'Similar', 'Novo']
+
+export const REGULATORY_CATEGORY_LABELS = {
+  'Genérico': 'Genérico',
+  Similar: 'Similar',
+  Novo: 'Novo',
+}
+
 /**
  * Schema base para medicamento
  */
@@ -72,6 +80,16 @@ export const medicineSchema = z.object({
   therapeutic_class: z
     .string()
     .max(100, 'Classe terapêutica não pode ter mais de 100 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  regulatory_category: z
+    .enum(REGULATORY_CATEGORIES, {
+      errorMap: () => ({
+        message: 'Categoria regulatória inválida. Use: Genérico, Similar ou Novo',
+      }),
+    })
     .optional()
     .nullable()
     .transform((val) => val || null),

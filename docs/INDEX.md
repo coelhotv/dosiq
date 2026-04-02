@@ -1,7 +1,7 @@
 # Documentação - Meus Remédios
 
-**Versão:** 3.0.0  
-**Última Atualização:** 2026-02-19  
+**Versão:** 4.0.0  
+**Última Atualização:** 2026-04-02  
 **Status:** Índice Principal de Documentação
 
 ---
@@ -12,7 +12,7 @@
 
 1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido ✅
 2. [`getting-started/SETUP_NATIVE_HIBRIDO.md`](getting-started/SETUP_NATIVE_HIBRIDO.md) - Setup local para desenvolvimento iOS/Android/Expo da frente hibrida ✅
-3. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v2.8.0) ✅
+3. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v4.0.0) ✅
 4. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos ✅
 5. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes ✅
 
@@ -20,10 +20,11 @@
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v2.8.0) | ✅ Atual |
-| [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase | ✅ Migrado |
+| [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v4.0.0) | ✅ Atual |
+| [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase com refactor de estoque/purchases | ✅ Atual |
 | [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system | ✅ Migrado |
-| [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) | Bot Telegram consolidado (v3.1.0) | ✅ Completo |
+| [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) | Bot Telegram consolidado com fluxos de estoque via RPC | ✅ Atual |
+| [`releases/v4.0.0.md`](releases/v4.0.0.md) | Release notes oficiais da v4.0.0 | ✅ Novo |
 
 **Nota**: ARQUITETURA.md permanece na raiz como documento primário. ARQUITETURA_FRAMEWORK.md arquivado (conteúdo sobreposto).
 
@@ -31,7 +32,7 @@
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [`PADROES_CODIGO.md`](PADROES_CODIGO.md) | Convenções completas de nomenclatura, imports, React | ✅ Atual (v2.8.0) |
+| [`PADROES_CODIGO.md`](PADROES_CODIGO.md) | Convenções completas de nomenclatura, imports, React | ✅ Atual |
 | [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
 | [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório extraído | ✅ Completo (Fase 3) |
 | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
@@ -43,7 +44,7 @@
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services | ✅ Migrado |
+| [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services com purchases/stock transacional | ✅ Atual |
 | [`reference/HOOKS.md`](reference/HOOKS.md) | Hooks customizados | ✅ Migrado |
 | [`reference/SCHEMAS.md`](reference/SCHEMAS.md) | Schemas Zod e validação | ✅ Completo (Fase 3) |
 
@@ -97,6 +98,7 @@
 | Esquemas do banco de dados | [`architecture/DATABASE.md`](architecture/DATABASE.md) |
 | Sistema CSS e tokens | [`architecture/CSS.md`](architecture/CSS.md) |
 | Bot do Telegram | [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) |
+| Release notes da versão atual | [`releases/v4.0.0.md`](releases/v4.0.0.md) |
 | Como nomear variáveis/funções | [`PADROES_CODIGO.md`](PADROES_CODIGO.md) |
 | Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
 | Como criar PR | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) |
@@ -168,5 +170,5 @@ Este índice faz parte da **Phase 2: Documentation Restructure** do plano de ove
 ---
 
 *Índice criado em: 2026-02-17*  
-*Última atualização: 2026-02-19*  
-*Versão do projeto: 3.0.0*
+*Última atualização: 2026-04-02*  
+*Versão do projeto: 4.0.0*

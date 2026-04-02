@@ -1,5 +1,14 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { validateMedicineCreate, validateMedicineUpdate } from '@schemas/medicineSchema'
+import { calculateAvgUnitPrice } from '@stock/services/costAnalysisService'
+
+function getPriceEntries(medicine) {
+  if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
+    return medicine.purchases
+  }
+
+  return medicine.stock || []
+}
 
 /**
  * Medicine Service - CRUD operations for medicines
@@ -19,7 +28,8 @@ export const medicineService = {
       .select(
         `
         *,
-        stock(*)
+        stock(*),
+        purchases(*)
       `
       )
       .eq('user_id', await getUserId())
@@ -27,17 +37,12 @@ export const medicineService = {
 
     if (error) throw error
 
-    // Calcula o custo médio ponderado baseado no estoque disponível
+    // Usa purchases como fonte canônica de custo médio.
+    // Fallback temporário para stock preserva compatibilidade enquanto a migration não foi aplicada.
     return data.map((medicine) => {
-      const activeStock = (medicine.stock || []).filter((s) => s.quantity > 0)
-      const totalQuantity = activeStock.reduce((sum, s) => sum + s.quantity, 0)
-      const totalValue = activeStock.reduce((sum, s) => sum + (s.unit_price || 0) * s.quantity, 0)
-
-      const avgPrice = totalQuantity > 0 ? totalValue / totalQuantity : null
-
       return {
         ...medicine,
-        avg_price: avgPrice,
+        avg_price: calculateAvgUnitPrice(getPriceEntries(medicine)) || null,
       }
     })
   },
@@ -51,7 +56,8 @@ export const medicineService = {
       .select(
         `
         *,
-        stock(*)
+        stock(*),
+        purchases(*)
       `
       )
       .eq('id', id)
@@ -60,12 +66,10 @@ export const medicineService = {
 
     if (error) throw error
 
-    const activeStock = (data.stock || []).filter((s) => s.quantity > 0)
-    const totalQuantity = activeStock.reduce((sum, s) => sum + s.quantity, 0)
-    const totalValue = activeStock.reduce((sum, s) => sum + (s.unit_price || 0) * s.quantity, 0)
-    const avgPrice = totalQuantity > 0 ? totalValue / totalQuantity : null
-
-    return { ...data, avg_price: avgPrice }
+    return {
+      ...data,
+      avg_price: calculateAvgUnitPrice(getPriceEntries(data)) || null,
+    }
   },
 
   /**

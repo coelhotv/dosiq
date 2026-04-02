@@ -1,7 +1,7 @@
 # Schemas Zod - Referência de Validação
 
-**Versão:** 2.0
-**Última Atualização:** 2026-03-18
+**Versão:** 4.0.0
+**Última Atualização:** 2026-04-02
 **Status:** Referência de API
 
 ---
@@ -30,6 +30,7 @@ import { z } from 'zod'
 
 export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
 export const MEDICINE_TYPES = ['medicamento', 'suplemento']
+export const REGULATORY_CATEGORIES = ['Genérico', 'Similar', 'Novo']
 
 export const medicineSchema = z.object({
   name: z.string().min(2).max(200).trim(),
@@ -39,6 +40,7 @@ export const medicineSchema = z.object({
   dosage_unit: z.enum(DOSAGE_UNITS),
   type: z.enum(MEDICINE_TYPES).default('medicamento'),
   therapeutic_class: z.string().max(100).optional().nullable(),
+  regulatory_category: z.enum(REGULATORY_CATEGORIES).optional().nullable(),
 })
 ```
 
@@ -124,11 +126,15 @@ export const stockSchema = z.object({
   purchase_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   expiration_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   unit_price: z.number().min(0).max(100000).optional().default(0),
+  pharmacy: z.string().max(200).optional().nullable(),
+  laboratory: z.string().max(200).optional().nullable(),
   notes: z.string().max(500).optional().nullable(),
 })
 ```
 
 **Schemas adicionais:** `stockDecreaseSchema`, `stockIncreaseSchema`
+
+`stockIncreaseSchema` agora suporta `medicine_log_id` para restauração exata de estoque a partir de um `medicine_log`.
 
 **Funções exportadas:** `validateStock`, `validateStockCreate`, `validateStockUpdate`, `validateStockDecrease`, `validateStockIncrease`, `mapStockErrorsToForm`
 

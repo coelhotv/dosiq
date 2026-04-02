@@ -1,7 +1,7 @@
 # 💻 API dos Services - Meus Remédios
 
-**Versão:** 2.8.0
-**Data:** 2026-02-12
+**Versão:** 4.0.0
+**Data:** 2026-04-02
 
 Documentação completa das APIs internas dos services com exemplos de uso.
 
@@ -47,8 +47,10 @@ const medicines = await medicineService.getAll()
     price_paid: 25.90,
     user_id: 'uuid',
     created_at: '2024-01-15T10:30:00Z',
-    stock: [...],           // Array de entradas de estoque
-    avg_price: 23.50        // Preço médio ponderado calculado
+    stock: [...],           // Lotes remanescentes de inventário
+    purchases: [...],       // Histórico imutável de compras
+    avg_price: 23.50,       // Preço médio ponderado calculado via purchases
+    regulatory_category: 'Genérico'
   }
 ]
 ```
@@ -280,7 +282,7 @@ Local: [`src/features/stock/services/stockService.js`](../../src/features/stock/
 
 ### `getByMedicineId(medicineId)`
 
-Retorna todas as entradas de estoque de um medicamento.
+Retorna todos os lotes remanescentes de estoque de um medicamento.
 
 ```javascript
 const stock = await stockService.getByMedicineId('uuid-medicamento')
@@ -322,9 +324,9 @@ const summary = await stockService.getSummaryByMedicineId('uuid')
 
 ---
 
-### `create(stock)`
+### `add(stock)`
 
-Adiciona entrada de estoque.
+Cria compra + lote de estoque via RPC transacional `create_purchase_with_stock`.
 
 ```javascript
 import { validateStockCreate } from '../schemas/stockSchema'
@@ -340,15 +342,15 @@ const newStock = {
 
 const validation = validateStockCreate(newStock)
 if (validation.success) {
-  const created = await stockService.create(validation.data)
+  const created = await stockService.add(validation.data)
 }
 ```
 
 ---
 
-### `decrease(medicineId, amount, protocolId?)`
+### `decrease(medicineId, amount, medicineLogId)`
 
-Decrementa estoque (quando toma remédio).
+Consome estoque via FIFO transacional e registra o vínculo em `stock_consumptions`.
 
 ```javascript
 import { validateStockDecrease } from '../schemas/stockSchema'
@@ -356,7 +358,7 @@ import { validateStockDecrease } from '../schemas/stockSchema'
 const decreaseData = {
   medicine_id: 'uuid-medicamento',
   quantity: 2,              // Quantidade a diminuir
-  protocol_id: 'uuid-protocolo' // Opcional: para rastreamento
+  medicine_log_id: 'uuid-log' // Obrigatório no fluxo canônico
 }
 
 const validation = validateStockDecrease(decreaseData)
@@ -364,9 +366,9 @@ if (validation.success) {
   const result = await stockService.decrease(
     validation.data.medicine_id,
     validation.data.quantity,
-    validation.data.protocol_id
+    validation.data.medicine_log_id
   )
-  // Retorna: { success: true, affectedEntries: [...] }
+  // Retorna resumo do consumo FIFO
 }
 ```
 
@@ -374,13 +376,15 @@ if (validation.success) {
 
 ---
 
-### `increase(medicineId, amount, stockEntryId?)`
+### `increase(medicineId, amount, options?)`
 
-Aumenta estoque (quando cancela registro).
+Aumenta estoque por restauração de log ou ajuste manual positivo.
 
 ```javascript
-const result = await stockService.increase('uuid-medicamento', 2)
-// Retorna o estoque atualizado
+const result = await stockService.increase('uuid-medicamento', 2, {
+  medicine_log_id: 'uuid-log',
+  reason: 'dose_deleted_restore'
+})
 ```
 
 ---
@@ -397,7 +401,7 @@ await stockService.delete('uuid-estoque')
 
 ## Log Service
 
-Local: [`src/features/adherence/services/logService.js`](../../src/features/adherence/services/logService.js)
+Local: [`src/shared/services/api/logService.js`](../../src/shared/services/api/logService.js)
 
 ### `getAll(options)`
 
@@ -470,7 +474,7 @@ const logEntry = {
 const validation = validateLogCreate(logEntry)
 if (validation.success) {
   const created = await logService.create(validation.data)
-  // Automaticamente decrementa estoque!
+  // Cria o medicine_log e consome estoque via consume_stock_fifo
 }
 ```
 
@@ -493,7 +497,7 @@ if (validation.success) {
 }
 ```
 
-**Nota:** Ajusta automaticamente o estoque quando quantity_taken muda.
+**Nota:** Quando `quantity_taken` muda, o service restaura os lotes anteriores e reconsome via FIFO para manter rastreabilidade correta.
 
 ---
 
@@ -505,6 +509,22 @@ Remove registro e restaura estoque.
 await logService.delete('uuid-log')
 // Estoque é automaticamente restaurado
 ```
+
+---
+
+## Purchase Service
+
+Local: [`src/features/stock/services/purchaseService.js`](../../src/features/stock/services/purchaseService.js)
+
+Service canônico para histórico de compras e custo médio.
+
+### Métodos principais
+
+- `getByMedicine(medicineId)`
+- `getLatestByMedicineIds(medicineIds)`
+- `getHistoryByMedicineIds(medicineIds)`
+- `getAverageUnitPriceByMedicineIds(medicineIds)`
+- `create(input)` → chama `create_purchase_with_stock`
 
 ---
 

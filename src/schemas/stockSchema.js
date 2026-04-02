@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseLocalDate } from '@utils/dateUtils'
 
 /**
  * Schema de validação para Estoque
@@ -20,11 +21,11 @@ export const stockSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de compra deve estar no formato YYYY-MM-DD')
     .refine((date) => {
-      const parsed = new Date(date)
+      const parsed = parseLocalDate(date)
       return !isNaN(parsed.getTime())
     }, 'Data de compra inválida')
     .refine((date) => {
-      const parsed = new Date(date)
+      const parsed = parseLocalDate(date)
       const today = new Date()
       today.setHours(23, 59, 59, 999)
       return parsed <= today
@@ -35,7 +36,7 @@ export const stockSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de validade deve estar no formato YYYY-MM-DD')
     .refine((date) => {
       if (!date) return true
-      const parsed = new Date(date)
+      const parsed = parseLocalDate(date)
       return !isNaN(parsed.getTime())
     }, 'Data de validade inválida')
     .optional()
@@ -55,6 +56,20 @@ export const stockSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  pharmacy: z
+    .string()
+    .max(200, 'Farmácia não pode ter mais de 200 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  laboratory: z
+    .string()
+    .max(200, 'Laboratório não pode ter mais de 200 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
 })
 
 /**
@@ -65,8 +80,8 @@ export const stockCreateSchema = stockSchema
     (data) => {
       if (!data.expiration_date) return true
 
-      const purchase = new Date(data.purchase_date)
-      const expiration = new Date(data.expiration_date)
+      const purchase = parseLocalDate(data.purchase_date)
+      const expiration = parseLocalDate(data.expiration_date)
 
       return expiration > purchase
     },
@@ -79,7 +94,7 @@ export const stockCreateSchema = stockSchema
     (data) => {
       if (!data.expiration_date) return true
 
-      const expiration = new Date(data.expiration_date)
+      const expiration = parseLocalDate(data.expiration_date)
       const today = new Date()
       const oneYearAgo = new Date(today)
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
@@ -132,11 +147,25 @@ export const stockIncreaseSchema = z.object({
     .positive('Quantidade a adicionar deve ser maior que zero')
     .max(1000, 'Quantidade máxima por operação é 1000'),
 
+  medicine_log_id: z
+    .string()
+    .uuid('ID do log deve ser um UUID válido')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
   reason: z
     .string()
     .max(200, 'Motivo não pode ter mais de 200 caracteres')
     .optional()
     .default('Ajuste de estoque'),
+
+  notes: z
+    .string()
+    .max(500, 'Notas não podem ter mais de 500 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
 })
 
 /**

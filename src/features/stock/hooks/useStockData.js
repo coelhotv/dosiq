@@ -8,8 +8,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { medicineService, stockService, protocolService } from '@shared/services'
+import { purchaseService } from '@stock/services/purchaseService'
 import { parseLocalDate } from '@utils/dateUtils'
-import { SYSTEM_NOTE_PREFIXES } from '@stock/constants'
 
 // ─── Status Helpers (Exportados para testes) ─────────────────────────────────
 
@@ -56,6 +56,7 @@ export function useStockData() {
   const [medicines, setMedicines] = useState([])
   const [protocols, setProtocols] = useState([])
   const [stockMap, setStockMap] = useState({})
+  const [purchaseHistoryMap, setPurchaseHistoryMap] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -93,22 +94,23 @@ export function useStockData() {
         entries: [],
         total: 0,
       }
+      const purchases = purchaseHistoryMap[medicine.id] || []
       const dailyIntake = dailyIntakeMap[medicine.id] || 0
       const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
       const stockStatus = getStockStatus(stock.total, daysRemaining)
       const barPercentage = getBarPercentage(stock.total, daysRemaining)
 
-      // Última compra REAL: quantity > 0 E não é ajuste automático do sistema
-      // Exclui entradas geradas por logService.delete() → stockService.increase()
-      const purchaseEntries = (stock.entries || [])
-        .filter((e) => e.quantity > 0 && !SYSTEM_NOTE_PREFIXES.some((p) => e.notes?.startsWith(p)))
-        .sort((a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date))
+      const purchaseEntries = [...purchases].sort(
+        (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
+      )
       const latestEntry = purchaseEntries[0] || null
       const lastPurchase = latestEntry
         ? {
             date: latestEntry.purchase_date,
             unitPrice: latestEntry.unit_price ?? null,
-            quantity: latestEntry.quantity,
+            quantity: latestEntry.quantity_bought,
+            pharmacy: latestEntry.pharmacy ?? null,
+            laboratory: latestEntry.laboratory ?? null,
           }
         : null
 
@@ -121,6 +123,7 @@ export function useStockData() {
           medicine_type: medicine.medicine_type || 'comprimido',
         },
         entries: stock.entries,
+        purchases: purchaseEntries,
         totalQuantity: stock.total,
         dailyIntake,
         daysRemaining,
@@ -131,7 +134,7 @@ export function useStockData() {
         lastPurchase,
       }
     })
-  }, [medicines, protocols, stockMap])
+  }, [medicines, protocols, purchaseHistoryMap, stockMap])
 
   // Sub-listas por urgência — ordenadas por criticidade (menor dias primeiro)
 
@@ -195,6 +198,11 @@ export function useStockData() {
         map[medicineId] = { entries, total }
       })
       setStockMap(map)
+
+      const purchaseHistory = await purchaseService.getHistoryByMedicineIds(
+        medicinesData.map((medicine) => medicine.id)
+      )
+      setPurchaseHistoryMap(purchaseHistory)
     } catch (err) {
       setError('Erro ao carregar estoque: ' + err.message)
       console.error('[useStockData] Erro:', err)

@@ -1,7 +1,7 @@
 # 🤖 Bot Telegram - Meus Remédios
 
-**Versão:** 3.1.0  
-**Última atualização:** 2026-02-17  
+**Versão:** 4.0.0  
+**Última atualização:** 2026-04-02  
 **Status:** Produção
 
 Documentação consolidada do bot Telegram do Meus Remédios, incluindo arquitetura, comandos, sistema de notificações e desenvolvimentos recentes.
@@ -11,6 +11,8 @@ Documentação consolidada do bot Telegram do Meus Remédios, incluindo arquitet
 ## 📋 Visão Geral
 
 O bot Telegram do Meus Remédios é uma interface de comunicação que permite aos usuários gerenciar seus medicamentos, receber lembretes de doses e monitorar estoque diretamente pelo Telegram.
+
+> Em `v4.0.0`, os fluxos de compra e consumo de estoque do bot passaram a usar os mesmos RPCs transacionais da aplicação web (`create_purchase_with_stock` e `consume_stock_fifo`), eliminando a mutação manual de `stock` no cliente do bot.
 
 ### Propósito
 
@@ -99,7 +101,7 @@ O sistema de notificações implementa uma arquitetura resiliente em 3 fases:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    SISTEMA DE NOTIFICAÇÕES v3.1.0                       │
+│                    SISTEMA DE NOTIFICAÇÕES v4.0.0                       │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐               │
@@ -142,6 +144,27 @@ logSuccessfulNotification
 | **Daily Digest** | 23:00 diário | Resumo do dia |
 | **Adherence Report** | Domingo 23:00 | Relatório semanal de adesão |
 | **Monthly Report** | Dia 1, 10:00 | Relatório mensal |
+
+---
+
+## 📦 Estoque no Bot (v4.0.0)
+
+### Escritas
+
+- `/adicionar_estoque` usa `create_purchase_with_stock`
+- registro de dose nos callbacks usa `consume_stock_fifo`
+- o bot não faz mais decremento FIFO manual em `stock`
+
+### Leituras
+
+- o bot continua lendo saldo agregado a partir de `stock.quantity`
+- histórico de compras deixa de depender de convenções em `stock.notes`
+
+### Benefícios
+
+- consistência entre app web e Telegram
+- FIFO centralizado no banco
+- restauração de lotes preparada para exclusão/edição de logs
 
 ---
 

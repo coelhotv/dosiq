@@ -131,7 +131,8 @@ async function handleManualStockInput(bot, msg, session) {
     return bot.sendMessage(chatId, '⚠️ Por favor, digite um número válido\\.', { parse_mode: 'MarkdownV2' });
   }
 
-  await processAddStock(bot, chatId, session.medicineId, quantity, session.medicineName);
+  const userId = await getUserIdByChatId(chatId);
+  await processAddStock(bot, chatId, userId, session.medicineId, quantity, session.medicineName);
   clearSession(chatId);
 }
 
@@ -307,7 +308,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     
     // 2. Criar Log (só se houver estoque suficiente)
     // quantity_taken deve ser em comprimidos, não em mg
-    const { error: logError } = await supabase
+    const { data: createdLog, error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
         user_id: userId,
@@ -315,7 +316,9 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
         medicine_id: medicineId,
         quantity_taken: pillsToDecrease,
         taken_at: new Date().toISOString()
-      }]);
+      }])
+      .select('id')
+      .single();
 
     if (logError) {
       logger.error('Erro ao criar log de dose:', logError, { 
@@ -348,17 +351,22 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       return;
     }
 
-    // 3. Decrementar Estoque (só se houver estoque suficiente)
+    // 3. Decrementar Estoque via RPC FIFO (só se houver estoque suficiente)
     if (!fetchError && stockEntries.length > 0) {
-      let remaining = pillsToDecrease;
-      for (const entry of stockEntries) {
-        if (remaining <= 0) break;
-        const toDecrease = Math.min(entry.quantity, remaining);
+      const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+        p_medicine_id: medicineId,
+        p_quantity: pillsToDecrease,
+        p_medicine_log_id: createdLog.id
+      });
+
+      if (consumeError) {
         await supabase
-          .from('stock')
-          .update({ quantity: entry.quantity - toDecrease })
-          .eq('id', entry.id);
-        remaining -= toDecrease;
+          .from('medicine_logs')
+          .delete()
+          .eq('id', createdLog.id)
+          .eq('user_id', userId);
+
+        throw consumeError;
       }
     }
 

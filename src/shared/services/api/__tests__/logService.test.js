@@ -1,161 +1,151 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Hoist dos mocks para uso em vi.mock
-const mocks = vi.hoisted(() => {
-  return {
-    mockSupabase: {
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              gt: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: [], error: null }),
-                single: vi.fn().mockResolvedValue({ data: null, error: null }),
-                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-              }),
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              single: vi.fn().mockResolvedValue({ data: null, error: null }),
-              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-            }),
-            gt: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              single: vi.fn().mockResolvedValue({ data: null, error: null }),
-              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-            }),
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-          gt: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-        order: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    },
-    mockGetUserId: vi.fn().mockResolvedValue('test-user-id'),
-  }
-})
-
-// Mock do stockService
-vi.mock('@stock/services/stockService', () => ({
+const mocks = vi.hoisted(() => ({
   stockService: {
-    decrease: vi.fn().mockResolvedValue(undefined),
-    increase: vi.fn().mockResolvedValue(undefined),
+    decrease: vi.fn(),
+    increase: vi.fn(),
+  },
+  getUserId: vi.fn().mockResolvedValue('test-user-id'),
+  supabase: {
+    from: vi.fn(),
   },
 }))
 
-// Mock do módulo supabase
+vi.mock('@stock/services/stockService', () => ({
+  stockService: mocks.stockService,
+}))
+
 vi.mock('@shared/utils/supabase', () => ({
-  supabase: mocks.mockSupabase,
-  getUserId: mocks.mockGetUserId,
+  supabase: mocks.supabase,
+  getUserId: mocks.getUserId,
 }))
 
 import { logService } from '@shared/services/api/logService'
 
+function buildLogInsertChain(result) {
+  return {
+    insert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue(result),
+      }),
+    }),
+  }
+}
+
+function buildSelectSingleChain(result) {
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue(result),
+      }),
+    }),
+  }
+}
+
+function buildDeleteChain(result = { error: null }) {
+  return {
+    delete: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue(result),
+      }),
+    }),
+  }
+}
+
 describe('logService', () => {
+  const baseLog = {
+    protocol_id: '123e4567-e89b-12d3-a456-426614174001',
+    medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+    quantity_taken: 2,
+    taken_at: '2026-04-02T10:00:00Z',
+    notes: 'Tomado após café',
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
-
-    // Resetar mock para estado padrão
-    mocks.mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            gt: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              single: vi.fn().mockResolvedValue({ data: null, error: null }),
-              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-            }),
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-          gt: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    })
   })
 
   describe('create', () => {
-    const mockLog = {
-      protocol_id: '123e4567-e89b-12d3-a456-426614174001',
-      medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-      quantity_taken: 2,
-      taken_at: '2024-01-15T10:00:00Z',
-      notes: 'Tomado após café',
-    }
+    it('creates the log and consumes stock using the created log id', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
 
-    it('should create log and decrease stock', async () => {
-      const createdLog = { id: 'log-1', ...mockLog, user_id: 'test-user-id' }
+      mocks.supabase.from.mockReturnValueOnce(
+        buildLogInsertChain({ data: createdLog, error: null })
+      )
+      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
 
-      // Mock para insert do log
-      mocks.mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: createdLog, error: null }),
-          }),
-        }),
-      })
+      const result = await logService.create(baseLog)
 
-      const result = await logService.create(mockLog)
-
-      expect(mocks.mockSupabase.from).toHaveBeenCalledWith('medicine_logs')
+      expect(mocks.stockService.decrease).toHaveBeenCalledWith(
+        baseLog.medicine_id,
+        baseLog.quantity_taken,
+        createdLog.id
+      )
       expect(result).toEqual(createdLog)
     })
 
-    it('should throw error when log creation fails', async () => {
-      // Mock para insert do log com erro
-      mocks.mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi
-              .fn()
-              .mockResolvedValue({ data: null, error: { message: 'Validation error' } }),
-          }),
-        }),
-      })
+    it('deletes the created log if stock consumption fails', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
 
-      await expect(logService.create(mockLog)).rejects.toThrow('Validation error')
+      mocks.supabase.from
+        .mockReturnValueOnce(buildLogInsertChain({ data: createdLog, error: null }))
+        .mockReturnValueOnce(buildDeleteChain())
+
+      mocks.stockService.decrease.mockRejectedValueOnce(new Error('Estoque insuficiente'))
+
+      await expect(logService.create(baseLog)).rejects.toThrow('Não foi possível consumir o estoque')
+    })
+  })
+
+  describe('update', () => {
+    it('restores old consumption and reapplies FIFO with the same log id', async () => {
+      const oldLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+      const updatedLog = { ...oldLog, quantity_taken: 1 }
+
+      mocks.supabase.from
+        .mockReturnValueOnce(buildSelectSingleChain({ data: oldLog, error: null }))
+        .mockReturnValueOnce({
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({ data: updatedLog, error: null }),
+                }),
+              }),
+            }),
+          }),
+        })
+
+      mocks.stockService.increase.mockResolvedValueOnce({ quantity_restored: 2 })
+      mocks.stockService.decrease.mockResolvedValueOnce({ quantity_consumed: 1 })
+
+      const result = await logService.update('log-1', { quantity_taken: 1 })
+
+      expect(mocks.stockService.increase).toHaveBeenCalledWith(oldLog.medicine_id, oldLog.quantity_taken, {
+        medicine_log_id: 'log-1',
+        reason: 'dose_update_restore',
+      })
+      expect(mocks.stockService.decrease).toHaveBeenCalledWith(updatedLog.medicine_id, 1, 'log-1')
+      expect(result).toEqual(updatedLog)
+    })
+  })
+
+  describe('delete', () => {
+    it('restores exact consumed lots before deleting the log', async () => {
+      const oldLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+
+      mocks.supabase.from
+        .mockReturnValueOnce(buildSelectSingleChain({ data: oldLog, error: null }))
+        .mockReturnValueOnce(buildDeleteChain())
+
+      mocks.stockService.increase.mockResolvedValueOnce({ quantity_restored: 2 })
+
+      await logService.delete('log-1')
+
+      expect(mocks.stockService.increase).toHaveBeenCalledWith(oldLog.medicine_id, oldLog.quantity_taken, {
+        medicine_log_id: 'log-1',
+        reason: 'dose_deleted_restore',
+      })
     })
   })
 })

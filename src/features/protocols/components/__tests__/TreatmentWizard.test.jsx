@@ -22,6 +22,12 @@ vi.mock('@shared/services', () => ({
 
 vi.mock('@schemas/medicineSchema', () => ({
   DOSAGE_UNITS: ['mg', 'mcg', 'g'],
+  REGULATORY_CATEGORIES: ['Genérico', 'Similar', 'Novo'],
+  REGULATORY_CATEGORY_LABELS: {
+    'Genérico': 'Genérico',
+    Similar: 'Similar',
+    Novo: 'Novo',
+  },
 }))
 
 vi.mock('@schemas/protocolSchema', () => ({
@@ -59,7 +65,9 @@ describe('TreatmentWizard', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('heading', { name: 'Medicamento' })).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Ex: Losartana')).toBeInTheDocument()
+    expect(
+      screen.getByPlaceholderText('Ex: Losartana ou busque na base ANVISA...')
+    ).toBeInTheDocument()
   })
 
   it('renderiza step 2 quando preselectedMedicine fornecido', () => {
@@ -85,7 +93,7 @@ describe('TreatmentWizard', () => {
   it('habilita Proximo quando campos preenchidos', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
-    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), {
+    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana ou busque na base ANVISA...'), {
       target: { value: 'Losartana' },
     })
     fireEvent.change(screen.getByPlaceholderText('50'), { target: { value: '50' } })
@@ -97,7 +105,7 @@ describe('TreatmentWizard', () => {
   it('avanca para step 2 ao clicar Proximo', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
-    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana'), {
+    fireEvent.change(screen.getByPlaceholderText('Ex: Losartana ou busque na base ANVISA...'), {
       target: { value: 'Losartana' },
     })
     fireEvent.change(screen.getByPlaceholderText('50'), { target: { value: '50' } })

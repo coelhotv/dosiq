@@ -397,7 +397,7 @@ export default function SettingsRedesign({ onNavigate }) {
 
       {/* ═══ FOOTER ═══ */}
       <footer className="sr-footer">
-        MEUS REMÉDIOS V{import.meta.env.VITE_APP_VERSION || '3.3.0'} • {currentYear}
+        MEUS REMÉDIOS V{import.meta.env.VITE_APP_VERSION || '4.0.0'} • {currentYear}
       </footer>
     </div>
   )

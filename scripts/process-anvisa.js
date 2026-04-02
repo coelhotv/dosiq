@@ -67,7 +67,13 @@ async function processCSV() {
     if (parts.length < 5) continue
 
     // Colunas do CSV: NOME_PRODUTO;CATEGORIA_REGULATORIA;CLASSE_TERAPEUTICA;PRINCIPIO_ATIVO;EMPRESA_DETENTORA_REGISTRO
-    const [nomeProduto, , classeTerapeutica, principioAtivo, empresaDetentora] = parts
+    const [
+      nomeProduto,
+      categoriaRegulatoria,
+      classeTerapeutica,
+      principioAtivo,
+      empresaDetentora,
+    ] = parts
 
     if (!nomeProduto || !principioAtivo) continue
 
@@ -80,6 +86,7 @@ async function processCSV() {
         name: nomeProduto.trim(),
         activeIngredient: principioAtivo.trim().toLowerCase(),
         therapeuticClass: classeTerapeutica.trim() || null,
+        regulatoryCategory: categoriaRegulatoria.trim() || null,
       }
       medicines.set(medicineDedupeKey, medicine)
     } else {
