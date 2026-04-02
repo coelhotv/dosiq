@@ -1,30 +1,65 @@
+/* TreatmentPlanForm — design santuário terapêutico (W14.5) */
+
 .treatment-plan-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  padding: var(--space-2);
+  padding: var(--space-6);
 }
 
-.form-help {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
-  margin-bottom: var(--space-2);
+.treatment-plan-form__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .treatment-plan-form h3 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-on-surface);
   margin: 0;
-  color: var(--text-primary);
+}
+
+.treatment-plan-form__help {
+  font-size: var(--font-size-sm);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* Seção visual: emoji + cor lado a lado */
+.treatment-plan-form__visual {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* Input de emoji: texto centralizado e grande */
+.treatment-plan-form__emoji-input {
+  text-align: center;
   font-size: var(--font-size-xl);
 }
 
-/* ============================================
-   REDESIGN: SANTUÁRIO TERAPÊUTICO
-   ============================================ */
-
-[data-redesign='true'] .treatment-plan-form {
+/* Linha cor: color picker + hex text juntos */
+.treatment-plan-form__color-row {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  gap: var(--space-2);
+  align-items: center;
 }
 
-/* Os demais estilos são herdados de components.redesign.css via Sprint 11.2. */
+.treatment-plan-form__color-picker {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.125rem;
+  border: 1px solid var(--color-outline-variant, #bec9c6);
+  border-radius: var(--radius-sm, 0.5rem);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.treatment-plan-form__color-text {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+}
+

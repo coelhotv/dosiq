@@ -74,6 +74,7 @@ function AppInner() {
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
+  const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
 
   useEffect(() => {
@@ -99,8 +100,13 @@ function AppInner() {
   }, [])
 
   const navigateToProtocol = (medicineId) => {
-    setInitialProtocolParams({ medicineId })
-    setCurrentView('protocols')
+    if (isRedesignEnabled) {
+      setInitialTreatmentMedicineId(medicineId)
+      setCurrentView('treatment')
+    } else {
+      setInitialProtocolParams({ medicineId })
+      setCurrentView('protocols')
+    }
   }
 
   const navigateToStock = (medicineId) => {
@@ -190,9 +196,10 @@ function AppInner() {
         return isRedesignEnabled ? (
           <Suspense fallback={<ViewSkeleton />}>
             <TreatmentsRedesign
-              onNavigateToProtocol={() => {
-                setCurrentView('treatment')
-              }}
+              onNavigateToProtocol={() => setCurrentView('treatment')}
+              onNavigate={setCurrentView}
+              initialMedicineId={initialTreatmentMedicineId}
+              onClearInitialMedicine={() => setInitialTreatmentMedicineId(null)}
             />
           </Suspense>
         ) : (

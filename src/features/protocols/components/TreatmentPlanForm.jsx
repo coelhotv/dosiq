@@ -7,6 +7,8 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
     name: plan?.name || '',
     description: plan?.description || '',
     objective: plan?.objective || '',
+    emoji: plan?.emoji || '',
+    color: plan?.color || '',
   })
 
   const [errors, setErrors] = useState({})
@@ -40,6 +42,8 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         objective: formData.objective.trim() || null,
+        emoji: formData.emoji.trim() || null,
+        color: formData.color.trim() || null,
       })
     } catch (error) {
       console.error('Erro ao salvar plano de tratamento:', error)
@@ -52,30 +56,32 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
 
   return (
     <form className="treatment-plan-form" onSubmit={handleSubmit}>
-      <h3>{plan ? 'Editar Plano de Tratamento' : 'Novo Plano de Tratamento'}</h3>
-      <p className="form-help">
-        Use planos para agrupar medicamentos de um mesmo tratamento (ex: Insuficiência Cardíaca).
-      </p>
+      <div className="treatment-plan-form__header">
+        <h3>{plan ? 'Editar Plano de Tratamento' : 'Novo Plano de Tratamento'}</h3>
+        <p className="treatment-plan-form__help">
+          Use planos para agrupar medicamentos de um mesmo tratamento (ex: Insuficiência Cardíaca).
+        </p>
+      </div>
 
-      <div className="form-group">
-        <label htmlFor="name">
-          Nome do Plano <span className="required">*</span>
+      <div className="form-row">
+        <label className="form-label" htmlFor="name">
+          Nome do Plano <span className="required" aria-hidden="true">*</span>
         </label>
         <input
           type="text"
           id="name"
           name="name"
+          className={errors.name ? 'error' : ''}
           value={formData.name}
           onChange={handleChange}
-          className={errors.name ? 'error' : ''}
           placeholder="Ex: Quarteto Fantástico (IC)"
           autoFocus
         />
         {errors.name && <span className="error-message">{errors.name}</span>}
       </div>
 
-      <div className="form-group">
-        <label htmlFor="description">Descrição</label>
+      <div className="form-row">
+        <label className="form-label" htmlFor="description">Descrição</label>
         <textarea
           id="description"
           name="description"
@@ -86,8 +92,8 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         />
       </div>
 
-      <div className="form-group">
-        <label htmlFor="objective">Objetivo do Tratamento</label>
+      <div className="form-row">
+        <label className="form-label" htmlFor="objective">Objetivo do Tratamento</label>
         <input
           type="text"
           id="objective"
@@ -98,7 +104,50 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         />
       </div>
 
-      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
+      <div className="treatment-plan-form__visual">
+        <div className="form-row">
+          <label className="form-label" htmlFor="emoji">Emoji do Plano</label>
+          <input
+            type="text"
+            id="emoji"
+            name="emoji"
+            className="treatment-plan-form__emoji-input"
+            value={formData.emoji}
+            onChange={handleChange}
+            placeholder="💊"
+            maxLength={10}
+          />
+        </div>
+
+        <div className="form-row">
+          <label className="form-label" htmlFor="color">Cor do Badge</label>
+          <div className="treatment-plan-form__color-row">
+            <input
+              type="color"
+              id="color"
+              name="color"
+              value={formData.color || '#3d6b5e'}
+              onChange={handleChange}
+              className="treatment-plan-form__color-picker"
+            />
+            <input
+              type="text"
+              name="color"
+              className="treatment-plan-form__color-text"
+              value={formData.color}
+              onChange={handleChange}
+              placeholder="#6366f1"
+              maxLength={7}
+            />
+          </div>
+        </div>
+      </div>
+
+      {errors.submit && (
+        <div className="error-banner" role="alert">
+          {errors.submit}
+        </div>
+      )}
 
       <div className="form-actions">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>

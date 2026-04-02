@@ -166,7 +166,7 @@ export default function SettingsRedesign({ onNavigate }) {
     if (overrideMode === 'simple') return `Modo atual: Padrão (manual)`
     if (overrideMode === 'complex') return `Modo atual: Detalhado (manual)`
     const autoMode = complexityMode === 'complex' ? 'Detalhado' : 'Padrão'
-    return `Modo atual: Automático (${autoMode} — ${medicineCount} protocolo${medicineCount !== 1 ? 's' : ''} ativos)`
+    return `Modo atual: Automático (${autoMode} — ${medicineCount} tratamento${medicineCount !== 1 ? 's' : ''} ativos)`
   }
 
   const currentYear = new Date().getFullYear()

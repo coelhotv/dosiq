@@ -11,6 +11,7 @@
  * - Renderiza sem button, sem expand (cada célula é independente)
  * - CSS Grid do container pai distribui as 4 células horizontalmente
  */
+import { Trash2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import AdherenceBar7d from './AdherenceBar7d'
 import AdherenceLabel from './AdherenceLabel'
@@ -28,6 +29,7 @@ export default function ProtocolRow({
   expanded,
   onToggleExpand,
   onEdit,
+  onDelete,
   activeTab,
   variant = 'card',
   isHovered = false, // S7.5.5
@@ -68,6 +70,19 @@ export default function ProtocolRow({
             )}
           </div>
           <div className="protocol-row-tabular__intake">{item.intakeLabel}</div>
+          {onDelete && isHovered && (
+            <button
+              className="protocol-row-tabular__delete-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(item)
+              }}
+              aria-label={`Excluir tratamento ${item.medicineName}`}
+              title="Excluir tratamento"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
 
         {/* CÉLULA 2: Frequência + Horários — S7.5.5: aplicar hover class */}
@@ -114,6 +129,19 @@ export default function ProtocolRow({
 
   return (
     <div className="protocol-row">
+      {onDelete && (
+        <button
+          className="protocol-row__delete-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(item)
+          }}
+          aria-label={`Excluir tratamento ${item.medicineName}`}
+          title="Excluir tratamento"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
       <button
         className="protocol-row__main"
         onClick={handleClick}

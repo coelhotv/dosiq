@@ -160,7 +160,7 @@ export default function ConsultationRedesign({ onBack }) {
       <div className="cr-error">
         <h2 className="cr-error__title">{error ? 'Erro ao carregar' : 'Nenhum dado disponível'}</h2>
         <p className="cr-error__message">
-          {error || 'Cadastre medicamentos e protocolos para visualizar dados na consulta.'}
+          {error || 'Cadastre medicamentos e tratamentos para visualizar dados na consulta.'}
         </p>
         <button className="btn-primary" onClick={handleBack}>
           Voltar

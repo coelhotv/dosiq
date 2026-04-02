@@ -1,0 +1,59 @@
+/* NewTreatmentDropdown — W14.5 */
+
+.new-treatment-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.new-treatment-dropdown__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.new-treatment-dropdown__trigger .rotated {
+  transform: rotate(180deg);
+  transition: transform 0.15s;
+}
+
+.new-treatment-dropdown__trigger svg {
+  transition: transform 0.15s;
+}
+
+.new-treatment-dropdown__menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 14rem;
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-card-sm);
+  box-shadow: var(--shadow-editorial);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.new-treatment-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-on-surface);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.new-treatment-dropdown__item:hover {
+  background: var(--color-surface-container-low);
+}
+
+.new-treatment-dropdown__item svg {
+  color: var(--color-on-surface-variant);
+  flex-shrink: 0;
+}
