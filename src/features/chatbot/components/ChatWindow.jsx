@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Trash2, X } from 'lucide-react'
 import {
   sendChatMessage,
   loadPersistedHistory,
@@ -8,9 +9,32 @@ import {
 } from '../services/chatbotService'
 import { createWelcomeMessage } from '../config/chatbotConfig'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import styles from './ChatWindow.module.css'
 
 // Funções auxiliares puras (fora do componente para melhor performance e organização)
+
+/**
+ * Renderiza conteúdo com suporte básico a markdown inline:
+ * _texto_ → <em>texto</em> (itálico para disclaimers e ênfase)
+ * Quebras de linha \n → <br>
+ */
+function renderMessageContent(content) {
+  return content.split('\n').map((line, lineIdx) => {
+    const parts = line.split(/(_[^_]+_)/g)
+    return (
+      <span key={lineIdx}>
+        {lineIdx > 0 && <br />}
+        {parts.map((part, i) => {
+          if (part.startsWith('_') && part.endsWith('_') && part.length > 2) {
+            return <em key={i}>{part.slice(1, -1)}</em>
+          }
+          return part
+        })}
+      </span>
+    )
+  })
+}
 
 /**
  * Formata timestamp para exibição relativa (e.g., "às 14:30", "Ontem às 09:15").
@@ -76,6 +100,7 @@ export default function ChatWindow({ isOpen, onClose }) {
   })
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const messagesEndRef = useRef(null)
 
   // Auto-scroll para ultima mensagem
@@ -131,9 +156,17 @@ export default function ChatWindow({ isOpen, onClose }) {
   ]
 
   const handleClearHistory = () => {
-    if (!confirm('Tem certeza que deseja limpar o histórico de conversa?')) return
+    setShowClearConfirm(true)
+  }
+
+  const handleConfirmClear = () => {
     clearPersistedHistory()
     setMessages([createWelcomeMessage()])
+    setShowClearConfirm(false)
+  }
+
+  const handleCancelClear = () => {
+    setShowClearConfirm(false)
   }
 
   return (
@@ -167,10 +200,10 @@ export default function ChatWindow({ isOpen, onClose }) {
                   title="Limpar histórico"
                   aria-label="Limpar histórico de conversa"
                 >
-                  🗑️
+                  <Trash2 size={16} aria-hidden="true" />
                 </button>
                 <button onClick={onClose} className={styles.closeButton} aria-label="Fechar chat">
-                  ✕
+                  <X size={18} aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -187,7 +220,7 @@ export default function ChatWindow({ isOpen, onClose }) {
                       msg.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleAssistant
                     }`}
                   >
-                    {msg.content}
+                    {renderMessageContent(msg.content)}
                     {msg.timestamp && (
                       <span className={styles.messageTime}>{formatMessageTime(msg.timestamp)}</span>
                     )}
@@ -236,6 +269,18 @@ export default function ChatWindow({ isOpen, onClose }) {
           </motion.div>
         </>
       )}
+
+      {/* Modal de confirmação — limpar histórico */}
+      <ConfirmDialog
+        isOpen={showClearConfirm}
+        title="Limpar histórico"
+        message="Tem certeza que deseja limpar todo o histórico de conversa? Esta ação não pode ser desfeita."
+        confirmLabel="Limpar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmClear}
+        onCancel={handleCancelClear}
+        variant="danger"
+      />
     </AnimatePresence>
   )
 }
