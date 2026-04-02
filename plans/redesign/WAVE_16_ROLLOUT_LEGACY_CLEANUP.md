@@ -1,0 +1,1253 @@
+# Wave 16 — Rollout Promotion & Legacy Cleanup
+
+> **Spec de Execução — Nível Coder Agent**
+> Referência: `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` §21
+> Pré-requisito: W15 (Accessibility & Polish) mergeado e Lighthouse ≥ 95 ✅
+
+---
+
+## Contexto
+
+Com W0–W15 completos, **100% das telas** estão no design Santuário Terapêutico. Esta wave final:
+
+1. Promove o redesign a **default absoluto** (ninguém mais vê neon/cyberpunk)
+2. Consolida os tokens CSS de redesign → paleta global
+3. Remove todas as views e componentes legacy
+4. Elimina a infraestrutura do feature flag (`RedesignContext`, `useRedesign`)
+5. Limpa o código morto resultante (imports, chunks, testes)
+
+**Após esta wave:** zero referências a `isRedesignEnabled`, `data-redesign`, `--neon-*` em código ativo. O produto tem uma única UI.
+
+---
+
+## Inventário de Arquivos por Categoria
+
+### Arquivos a CRIAR
+| Arquivo | Propósito |
+|---------|-----------|
+| `src/shared/styles/tokens/sanctuary.css` | Tokens de cor do Santuário sem scoping `[data-redesign]` |
+
+### Arquivos a MODIFICAR
+| Arquivo | Mudança |
+|---------|---------|
+| `src/App.jsx` | Remover todas as branches `isRedesignEnabled`, remover `RedesignProvider`, simplificar |
+| `src/shared/styles/index.css` | Adicionar import de `sanctuary.css`, remover imports de `tokens.redesign.css` e `layout.redesign.css` |
+| `src/shared/styles/layout.redesign.css` | Remover scoping `[data-redesign='true']` de todas as regras — depois substituído |
+| `src/shared/styles/components.redesign.css` | Mover seções para CSS individuais de cada componente |
+| `src/shared/components/ui/Button.css` | Receber seção S3.1 de `components.redesign.css` sem wrapper |
+| `src/shared/components/ui/Card.css` | Receber seção S3.2 |
+| `src/shared/styles/index.css` | Receber seção de inputs (S3.3) |
+| `src/shared/components/ui/Badge.css` | Receber seção S3.4 |
+| `src/shared/components/ui/ProgressBar.css` | Receber seção S3.5 |
+| `src/shared/styles/tokens.css` | Remover variáveis `--neon-*` |
+| `src/views/Settings.jsx` | Remover bloco de toggle redesign + import `useRedesign` |
+| `vite.config.js` | Atualizar `manualChunks` após renomear views |
+| `src/views/redesign/TreatmentsRedesign.jsx` | Remover `data-redesign="true"` do div raiz |
+| `src/views/Auth.jsx` | Remover `data-redesign="true"` do div raiz |
+| `src/shared/components/ui/Badge.jsx` | Atualizar JSDoc (remover referência a `[data-redesign]`) |
+
+### Arquivos a RENOMEAR/MOVER
+| Origem | Destino |
+|--------|---------|
+| `src/views/redesign/DashboardRedesign.jsx` | `src/views/redesign/Dashboard.jsx` |
+| `src/views/redesign/MedicinesRedesign.jsx` | `src/views/redesign/Medicines.jsx` |
+| `src/views/redesign/MedicinesRedesign.css` | `src/views/redesign/Medicines.css` |
+| `src/views/redesign/StockRedesign.jsx` | `src/views/redesign/Stock.jsx` |
+| `src/views/redesign/StockRedesign.css` | `src/views/redesign/Stock.css` |
+| `src/views/redesign/TreatmentsRedesign.jsx` | `src/views/redesign/Treatments.jsx` |
+| `src/views/redesign/TreatmentsRedesign.css` | `src/views/redesign/Treatments.css` |
+| `src/views/redesign/ProfileRedesign.jsx` | `src/views/redesign/Profile.jsx` |
+| `src/views/redesign/HealthHistoryRedesign.jsx` | `src/views/redesign/HealthHistory.jsx` |
+| `src/views/redesign/HealthHistoryRedesign.css` | `src/views/redesign/HealthHistory.css` |
+| `src/views/redesign/SettingsRedesign.jsx` | `src/views/redesign/Settings.jsx` |
+| `src/views/redesign/EmergencyRedesign.jsx` | `src/views/redesign/Emergency.jsx` |
+| `src/views/redesign/EmergencyRedesign.css` | `src/views/redesign/Emergency.css` |
+| `src/views/redesign/ConsultationRedesign.jsx` | `src/views/redesign/Consultation.jsx` |
+| `src/views/redesign/ConsultationRedesign.css` | `src/views/redesign/Consultation.css` |
+
+### Arquivos a DELETAR
+#### Views legacy (`src/views/`)
+- `src/views/Dashboard.jsx` + `src/views/Dashboard.css` + `src/views/Dashboard.module.css`
+- `src/views/Treatment.jsx` + `src/views/treatment/` (dir completo)
+- `src/views/Stock.jsx` + `src/views/Stock.css`
+- `src/views/Profile.jsx` + `src/views/profile/` (dir completo)
+- `src/views/HealthHistory.jsx` + `src/views/HealthHistory.css`
+- `src/views/Emergency.jsx`
+- `src/views/Consultation.jsx`
+- `src/views/History.jsx` + `src/views/History.css`
+- `src/views/Calendar.jsx` (deprecated — view já removida da navegação)
+
+#### Componentes legacy
+- `src/shared/components/ui/BottomNav.jsx` + `src/shared/components/ui/BottomNav.css`
+
+#### Feature flag infrastructure
+- `src/shared/contexts/RedesignContext.jsx`
+- `src/shared/contexts/RedesignContext.js`
+- `src/shared/hooks/useRedesign.js`
+
+#### CSS consolidados (após migração de regras)
+- `src/shared/styles/tokens.redesign.css` (tokens migrados para `sanctuary.css`)
+- `src/shared/styles/layout.redesign.css` (layout migrado para `index.css`)
+- `src/shared/styles/components.redesign.css` (componentes migrados para CSS individuais)
+
+#### CSS puramente neon (legacy sem redesign coverage)
+- `src/views/Dashboard.css` (deletado com Dashboard.jsx)
+- `src/views/HealthHistory.css` (deletado com HealthHistory.jsx)
+- `src/views/Stock.css` (deletado com Stock.jsx)
+- `src/views/History.css` (deletado com History.jsx)
+- `src/views/Medicines.css` (verificar se não é usado pela view redesign antes de deletar)
+- `src/views/Protocols.css` (verificar — `Protocols.jsx` não tem equivalente redesign, manter)
+- `src/features/dashboard/components/SmartAlerts.css` (verificar — manter se componente ainda usado)
+
+---
+
+## Sprint 16.0 — Preparação e Auditoria
+
+**Branch:** `feature/redesign/wave-16-rollout`
+
+### Verificações obrigatórias antes de começar
+
+```bash
+# 1. Listar todos os arquivos que referenciam isRedesignEnabled
+grep -rl "isRedesignEnabled\|useRedesign\|RedesignContext\|data-redesign" src/ --include="*.{js,jsx,css}"
+
+# 2. Listar todos os arquivos que usam variáveis neon
+grep -rl "\-\-neon-\|neon-cyan\|neon-magenta\|neon-purple\|neon-green\|neon-pink" src/ --include="*.css"
+
+# 3. Verificar quais views legacy têm imports ativos em App.jsx
+grep "import.*views/" src/App.jsx
+
+# 4. Confirmar que validate:agent passa no estado atual (baseline)
+npm run validate:agent
+```
+
+### Checklist de entrada
+
+- [ ] W15 mergeado e Lighthouse ≥ 95 verificado
+- [ ] Branch criada a partir de `main` atualizado
+- [ ] `npm run validate:agent` verde no baseline
+
+---
+
+## Sprint 16.1 — Soft Promotion (Redesign Default)
+
+**Objetivo:** Fazer o redesign ser ativo por default para todos os usuários novos. A infraestrutura do flag **permanece** para rollback emergencial.
+
+### Mudança 1: `src/shared/contexts/RedesignContext.jsx`
+
+Localizar a função `resolveInitialFlag` (linhas 10–30) e alterar o comportamento padrão:
+
+```jsx
+// ANTES (linha 26-29):
+  try {
+    return localStorage.getItem(STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+
+// DEPOIS:
+  try {
+    // Se o usuário nunca interagiu com o flag, default é true (redesign ativo)
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === null) return true   // novo usuário → redesign
+    return stored === '1'              // usuário existente → respeitar escolha salva
+  } catch {
+    return true  // sem localStorage → assumir redesign (novo contexto)
+  }
+```
+
+**Efeito:** Usuários que já tinham o redesign desligado (`mr_redesign_preview = '0'`) continuam sem redesign até que o localStorage seja limpo. Novos usuários (sem `mr_redesign_preview`) recebem redesign automaticamente.
+
+### Mudança 2: `src/views/Settings.jsx`
+
+Remover o bloco de toggle redesign da UI. Localizar por "Ativar Redesign" (em torno das linhas 282–290):
+
+```jsx
+// REMOVER completamente este bloco:
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <Button variant={isRedesignEnabled ? 'primary' : 'outline'} onClick={toggleRedesign}>
+              {isRedesignEnabled ? 'Redesign ATIVO' : 'Ativar Redesign'}
+            </Button>
+            {isRedesignEnabled && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+```
+
+Também remover o import `useRedesign` da linha 8 e a desestruturação na linha 13.
+
+### Período de observação
+
+Após merge do S16.1: **aguardar 2 semanas** monitorando:
+- Erros de console na Vercel (`Runtime Logs`)
+- Feedback via Telegram bot
+- `npm run validate:agent` verde
+
+Se tudo ok, prosseguir para S16.2+. Se houver regressão, reverter `resolveInitialFlag` para `return false` como hotfix.
+
+---
+
+## Sprint 16.2 — Token Consolidation
+
+**Objetivo:** Mover os tokens Santuário de `tokens.redesign.css` (com scoping `[data-redesign='true']`) para um arquivo global `tokens/sanctuary.css`.
+
+### Criar `src/shared/styles/tokens/sanctuary.css`
+
+Conteúdo: copiar o bloco inteiro do `[data-redesign='true'] { ... }` de `tokens.redesign.css` e transformar em `:root { ... }`.
+
+```css
+/**
+ * sanctuary.css — Tokens globais do design system Santuário Terapêutico
+ *
+ * Anteriormente scoped em [data-redesign="true"]. A partir da W16,
+ * estes tokens são a paleta global do produto.
+ *
+ * Gerado de: tokens.redesign.css durante Wave 16 cleanup.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+
+:root {
+  /* === BRAND — Verde Saúde (Primary) === */
+  --color-primary: #006a5e;
+  --color-primary-container: #008577;
+  --color-primary-fixed: #90f4e3;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed-variant: #005047;
+
+  /* Backward compat aliases */
+  --brand-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-container);
+  --color-primary-dark: #005047;
+  --color-primary-bg: rgba(0, 106, 94, 0.05);
+  --color-primary-hover: #005047;
+
+  /* === SECONDARY — Azul Clínico === */
+  --color-secondary: #005db6;
+  --color-secondary-container: #63a1ff;
+  --color-secondary-fixed: #d6e3ff;
+  --color-on-secondary-fixed: #001b3d;
+
+  --brand-secondary: var(--color-secondary);
+  --color-secondary-light: var(--color-secondary-container);
+  --color-secondary-dark: #004490;
+  --color-secondary-bg: rgba(0, 93, 182, 0.05);
+
+  /* === TERTIARY — Warm Highlights === */
+  --color-tertiary: #7b5700;
+  --color-tertiary-container: #9b6e00;
+  --color-tertiary-fixed: #ffdea8;
+  --color-on-tertiary-fixed: #271900;
+
+  /* === SURFACE HIERARCHY === */
+  --color-surface: #f8fafb;
+  --color-surface-container: #eceeef;
+  --color-surface-container-low: #f2f4f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #e6e8e9;
+  --color-surface-container-highest: #e1e3e4;
+
+  /* === TEXT & OUTLINE === */
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #3e4946;
+  --color-outline: #6d7a76;
+  --color-outline-variant: #bdc9c5;
+  --color-outline-ghost: rgba(25, 28, 29, 0.15);
+
+  /* === SEMANTIC — Status === */
+  --color-success: #22c55e;
+  --color-success-light: #4ade80;
+  --color-success-bg: #ecfdf5;
+
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-warning-bg: #fffbeb;
+
+  --color-error: #ba1a1a;
+  --color-error-light: #ff897d;
+  --color-error-bg: #ffdad6;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+  --color-info-bg: #eff6ff;
+
+  /* === BACKGROUND (backward compat) === */
+  --bg-primary: var(--color-surface);
+  --bg-secondary: var(--color-surface-container-low);
+  --bg-tertiary: var(--color-surface-container);
+  --bg-card: var(--color-surface-container-lowest);
+  --bg-overlay: rgba(25, 28, 29, 0.5);
+  --bg-glass: rgba(248, 250, 251, 0.8);
+
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+
+  /* === TEXT (backward compat) === */
+  --text-primary: var(--color-on-surface);
+  --text-secondary: var(--color-on-surface-variant);
+  --text-tertiary: var(--color-outline);
+  --text-inverse: #ffffff;
+  --text-link: var(--color-primary);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-link: var(--text-link);
+
+  /* === BORDERS (backward compat) === */
+  --border-light: var(--color-surface-container-low);
+  --border-default: var(--color-outline-variant);
+  --border-dark: var(--color-outline);
+  --border: var(--border-default);
+  --border-color: var(--border);
+
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+
+  /* === HEALTH SCORE === */
+  --score-critical: var(--color-error);
+  --score-low: #f97316;
+  --score-medium: #eab308;
+  --score-good: var(--color-success);
+  --score-excellent: var(--color-primary);
+
+  /* === SHADOWS — Ambient (NO hard borders) === */
+  --shadow-xs: 0 1px 2px rgba(25, 28, 29, 0.06);
+  --shadow-sm: 0 1px 4px rgba(25, 28, 29, 0.08), 0 1px 2px rgba(25, 28, 29, 0.04);
+  --shadow-md: 0 2px 8px rgba(25, 28, 29, 0.10), 0 1px 3px rgba(25, 28, 29, 0.06);
+  --shadow-lg: 0 4px 16px rgba(25, 28, 29, 0.12), 0 2px 6px rgba(25, 28, 29, 0.08);
+  --shadow-xl: 0 8px 32px rgba(25, 28, 29, 0.14), 0 4px 12px rgba(25, 28, 29, 0.08);
+
+  /* Backward compat */
+  --shadow-card: var(--shadow-sm);
+  --shadow-modal: var(--shadow-xl);
+  --shadow-button: var(--shadow-xs);
+  --shadow-focus: 0 0 0 3px rgba(0, 106, 94, 0.25);
+
+  /* === GRADIENTS === */
+  --gradient-primary: linear-gradient(135deg, #006a5e, #008577);
+  --gradient-primary-hover: linear-gradient(135deg, #005047, #006a5e);
+  --gradient-surface: linear-gradient(180deg, var(--color-surface), var(--color-surface-container-low));
+  --gradient-hero: linear-gradient(135deg, #006a5e 0%, #008577 50%, #00a896 100%);
+
+  /* === BORDER RADIUS === */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* === TYPOGRAPHY === */
+  --font-display: 'Lexend', 'Public Sans', system-ui, sans-serif;
+  --font-body: 'Public Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.4;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* === SPACING === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* === MOTION === */
+  --motion-instant: 50ms;
+  --motion-fast: 120ms;
+  --motion-normal: 200ms;
+  --motion-slow: 350ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* === Z-INDEX === */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}
+```
+
+**IMPORTANTE:** O arquivo `sanctuary.css` deve conter TODOS os tokens que estavam em `tokens.redesign.css`. Comparar com o arquivo atual antes de criar para não omitir nenhum token. Se tokens adicionais foram adicionados em waves posteriores (W5–W15), incluí-los também.
+
+### Atualizar `src/shared/styles/index.css`
+
+Substituir os imports existentes:
+
+```css
+/* REMOVER estas linhas: */
+@import './tokens.redesign.css';
+@import './layout.redesign.css';
+@import './components.redesign.css';
+
+/* ADICIONAR no lugar (antes dos demais imports): */
+@import './tokens/sanctuary.css';
+@import './layout.redesign.css';  /* mantém por enquanto — será inline no S16.3 */
+```
+
+**Nota:** `tokens.css` (neon) continua importado por ora — será removido no S16.8 após todas as referências a `--neon-*` serem eliminadas das views legacy.
+
+---
+
+## Sprint 16.3 — Layout Consolidation
+
+**Objetivo:** Mover as regras de `layout.redesign.css` para `index.css` sem scoping `[data-redesign='true']`.
+
+### Editar `src/shared/styles/layout.redesign.css`
+
+Remover todos os seletores `[data-redesign='true']` e `[data-redesign='true'] .`:
+
+```css
+/* ANTES: */
+[data-redesign='true'] .app-main {
+  padding-bottom: 80px;
+}
+
+[data-redesign='true'] .main-with-sidebar {
+  margin-left: 16rem;
+}
+
+/* DEPOIS (remover o wrapper, deixar a classe diretamente): */
+.app-main {
+  padding-bottom: 80px;
+}
+
+@media (min-width: 768px) {
+  .main-with-sidebar {
+    margin-left: 16rem;
+    padding-bottom: 0;
+  }
+}
+```
+
+Fazer esta transformação para **todas** as regras com `[data-redesign='true']` no arquivo. As regras `.page-container`, `.grid-*`, `.grid-dashboard`, `.grid-treatments` já são globais (sem scoping) — não precisam de mudança.
+
+### Após migrar as regras:
+
+Em `src/shared/styles/index.css`, mudar o import de `layout.redesign.css` para inline (mover o conteúdo do arquivo para `index.css` diretamente) ou manter como import — qualquer um funciona. O arquivo `layout.redesign.css` pode ser deletado após esta migração.
+
+### Atualizar `src/App.jsx`
+
+Remover o `style={{ paddingBottom: isRedesignEnabled ? undefined : '80px' }}` do `<main>` (linha ~323) — o CSS agora garante 80px globalmente via `.app-main`.
+
+---
+
+## Sprint 16.4 — Component CSS Consolidation
+
+**Objetivo:** Mover as regras de `components.redesign.css` para os CSS individuais de cada componente, removendo o wrapper `[data-redesign='true']`.
+
+### Seção S3.1 — Button → `src/shared/components/ui/Button.css`
+
+No arquivo `components.redesign.css`, localizar o bloco:
+```css
+/* S3.1 — BUTTON */
+[data-redesign='true'] .btn {
+  ...
+}
+[data-redesign='true'] .btn-primary {
+  ...
+}
+/* etc */
+```
+
+**Ação:** Copiar todas as regras da seção S3.1 para `Button.css`. Substituir `[data-redesign='true'] .btn` por `.btn`, `[data-redesign='true'] .btn-primary` por `.btn-primary`, etc.
+
+O `Button.css` atual tem estilos neon. **Substituir completamente** o conteúdo de `Button.css` pelos estilos sanctuary (sem wrapper). Não fazer merge — os estilos neon são eliminados.
+
+### Seção S3.2 — Card → `src/shared/components/ui/Card.css`
+
+Mesma abordagem: mover seção S3.2 para `Card.css`, remover scoping, substituir neon styles.
+
+### Seção S3.3 — Inputs
+
+As regras de inputs são globais (`.form-group`, `.form-input`, etc.). Mover para `src/shared/styles/index.css` na seção de componentes base (não para um CSS de componente específico).
+
+### Seção S3.4 — Badge → `src/shared/components/ui/Badge.css`
+
+Se o arquivo não existir, criar. Mover seção S3.4 para ele.
+
+### Seção S3.5 — Progress Bar
+
+Localizar o componente de progress bar em `src/shared/components/ui/`. Mover seção S3.5 para o CSS correspondente.
+
+### Seção S3.6 — List Items
+
+Mover para `src/shared/styles/index.css` na seção de componentes base.
+
+### Demais seções
+
+Varrer `components.redesign.css` completo e mapear cada seção para o arquivo CSS correto. Após migrar todas as seções, deletar `components.redesign.css`.
+
+### Verificação
+
+```bash
+# Após migração, verificar que nenhum componente perdeu estilos
+# Navegar visualmente por: Dashboard, Medicines, Stock, Treatments, Profile
+# Verificar que botões, cards, inputs, badges têm aparência correta
+```
+
+---
+
+## Sprint 16.5 — App.jsx Simplification
+
+**Objetivo:** Remover todas as branches `isRedesignEnabled ?` de `App.jsx`. Resultado: código 40% menor, zero conditional logic de UI.
+
+### Mudança 1: Remover imports legacy (linhas 11–24 aprox.)
+
+```jsx
+// REMOVER estas linhas de lazy imports:
+const Medicines = lazy(() => import('./views/Medicines'))
+const Stock = lazy(() => import('./views/Stock'))
+const History = lazy(() => import('./views/History'))
+const Calendar = lazy(() => import('./views/Calendar'))
+const Emergency = lazy(() => import('./views/Emergency'))
+const Treatment = lazy(() => import('./views/Treatment'))
+const Profile = lazy(() => import('./views/Profile'))
+const HealthHistory = lazy(() => import('./views/HealthHistory'))
+const Consultation = lazy(() => import('./views/Consultation'))
+const BottomNav = lazy(() => import('@shared/components/ui/BottomNav'))  // ou import direto
+
+// E os imports estáticos no final do bloco de imports:
+import BottomNav from '@shared/components/ui/BottomNav'  // linha ~38
+
+// MANTER os redesign lazy imports MAS atualizar paths após rename (S16.7):
+const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
+const MedicinesView = lazy(() => import('./views/redesign/Medicines'))
+const StockView = lazy(() => import('./views/redesign/Stock'))
+const TreatmentsView = lazy(() => import('./views/redesign/Treatments'))
+const ProfileView = lazy(() => import('./views/redesign/Profile'))
+const HealthHistoryView = lazy(() => import('./views/redesign/HealthHistory'))
+const SettingsView = lazy(() => import('./views/redesign/Settings'))
+const EmergencyView = lazy(() => import('./views/redesign/Emergency'))
+const ConsultationView = lazy(() => import('./views/redesign/Consultation'))
+```
+
+**Nota de nomenclatura:** Como os nomes dos arquivos após rename conflitam com as views legacy ainda em `src/views/`, usar nomes de variável diferentes no lazy import (ex: `MedicinesView`, `StockView`) até que os arquivos legacy sejam deletados. Após S16.6, podem ser renomeados para os nomes simples.
+
+### Mudança 2: Remover `useRedesign` import e uso
+
+```jsx
+// REMOVER linha 42:
+import { useRedesign } from '@shared/hooks/useRedesign'
+
+// REMOVER de AppInner (linha 69):
+const { isRedesignEnabled, enableRedesign } = useRedesign()
+
+// REMOVER chamada enableRedesign() na linha 129 (dentro de onAuthSuccess):
+// ANTES:
+  onAuthSuccess={() => {
+    enableRedesign()
+    setShowAuth(false)
+    setCurrentView('dashboard')
+  }}
+// DEPOIS:
+  onAuthSuccess={() => {
+    setShowAuth(false)
+    setCurrentView('dashboard')
+  }}
+```
+
+### Mudança 3: Simplificar `renderCurrentView()`
+
+Para cada case com `isRedesignEnabled ?`:
+
+```jsx
+// ANTES (exemplo medicine):
+      case 'medicines':
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <MedicinesRedesign onNavigateToProtocol={navigateToProtocol} />
+          </Suspense>
+        ) : (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Medicines onNavigateToProtocol={navigateToProtocol} />
+          </Suspense>
+        )
+
+// DEPOIS:
+      case 'medicines':
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <MedicinesView onNavigateToProtocol={navigateToProtocol} />
+          </Suspense>
+        )
+```
+
+Repetir para: `stock`, `treatment`, `profile`, `health-history`, `history`, `consultation`, `settings`, `emergency`, `dashboard`.
+
+**Para `dashboard` especificamente:**
+```jsx
+// ANTES:
+      case 'dashboard':
+      default: {
+        ...
+        return isRedesignEnabled ? (
+          <Suspense fallback={<ViewSkeleton />}>
+            <DashboardRedesign onNavigate={dashboardNavigate} />
+          </Suspense>
+        ) : (
+          <Dashboard onNavigate={dashboardNavigate} />  // sem Suspense (não era lazy)
+        )
+      }
+
+// DEPOIS:
+      case 'dashboard':
+      default: {
+        const dashboardNavigate = (view, params) => {
+          if (view === 'stock' && params?.medicineId) {
+            setInitialStockParams({ medicineId: params.medicineId })
+          } else if (view === 'protocols' && params?.medicineId) {
+            setInitialProtocolParams({ medicineId: params.medicineId })
+          }
+          setCurrentView(view)
+        }
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <Dashboard onNavigate={dashboardNavigate} />
+          </Suspense>
+        )
+      }
+```
+
+### Mudança 4: Simplificar o JSX de retorno
+
+```jsx
+// ANTES (linhas ~306-365 aprox.):
+<div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
+  {isAuthenticated && isRedesignEnabled && (
+    <Suspense fallback={null}>
+      <Sidebar ... />
+    </Suspense>
+  )}
+  <main
+    className={isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'}
+    style={{ paddingBottom: isRedesignEnabled ? undefined : '80px' }}
+  >
+    {isRedesignEnabled ? (
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={currentView} ...>
+          {renderCurrentView()}
+        </motion.div>
+      </AnimatePresence>
+    ) : (
+      renderCurrentView()
+    )}
+    ...
+  </main>
+
+  {isAuthenticated &&
+    (isRedesignEnabled ? (
+      <Suspense fallback={null}>
+        <BottomNavRedesign ... />
+      </Suspense>
+    ) : (
+      <BottomNav ... />
+    ))}
+
+  {isAuthenticated && isRedesignEnabled && (
+    <button ... className={appStyles.doseFab}>+ Dose</button>
+  )}
+  {isAuthenticated && isRedesignEnabled && isDoseModalOpen && (
+    <Suspense fallback={null}><GlobalDoseModal ... /></Suspense>
+  )}
+</div>
+
+// DEPOIS (simplificado):
+<div className="app-container">
+  {isAuthenticated && (
+    <Suspense fallback={null}>
+      <Sidebar ... />
+    </Suspense>
+  )}
+  <main
+    className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}
+    id="main-content"
+  >
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={currentView}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
+        exit={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+      >
+        {renderCurrentView()}
+      </motion.div>
+    </AnimatePresence>
+    <footer ...> </footer>
+  </main>
+
+  <OfflineBanner />
+
+  {isAuthenticated && (
+    <Suspense fallback={null}>
+      <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
+    </Suspense>
+  )}
+
+  {/* chatbot FAB — mantido para todos os autenticados */}
+  {isAuthenticated && (
+    <>
+      <button onClick={() => setIsChatOpen(true)} aria-label="Abrir assistente IA" className={appStyles.chatFab}>
+        🤖
+      </button>
+      {isChatOpen && (
+        <Suspense fallback={null}>
+          <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        </Suspense>
+      )}
+    </>
+  )}
+
+  {isAuthenticated && (
+    <button onClick={() => setIsDoseModalOpen(true)} aria-label="Registrar dose" className={appStyles.doseFab}>
+      + Dose
+    </button>
+  )}
+
+  {isAuthenticated && isDoseModalOpen && (
+    <Suspense fallback={null}>
+      <GlobalDoseModal isOpen={isDoseModalOpen} onClose={() => setIsDoseModalOpen(false)} />
+    </Suspense>
+  )}
+
+  {isAuthenticated && <OnboardingWizard />}
+  <InstallPrompt />
+</div>
+```
+
+**Nota sobre `shouldReduceMotion`:** Adicionar `import { useReducedMotion } from 'framer-motion'` e `const shouldReduceMotion = useReducedMotion()` em `AppInner` (S15.1 já fez isso — verificar se já está presente antes de adicionar).
+
+### Mudança 5: Simplificar wrapper `App()`
+
+```jsx
+// ANTES:
+function App() {
+  return (
+    <RedesignProvider>
+      <AppInner />
+    </RedesignProvider>
+  )
+}
+
+// DEPOIS:
+function App() {
+  return <AppInner />
+}
+```
+
+Remover o import `{ RedesignProvider }` da linha 41.
+
+---
+
+## Sprint 16.6 — Legacy View Removal
+
+**Objetivo:** Deletar as views legacy de `src/views/` que não são mais referenciadas.
+
+### Verificação antes de deletar
+
+```bash
+# Para cada arquivo a deletar, confirmar que não há import ativo:
+grep -r "from.*views/Dashboard" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Treatment" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Stock" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Profile" src/ --include="*.{js,jsx}"
+grep -r "from.*views/HealthHistory" src/ --include="*.{js,jsx}"
+grep -r "from.*views/History" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Emergency" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Consultation" src/ --include="*.{js,jsx}"
+grep -r "from.*views/Calendar" src/ --include="*.{js,jsx}"
+```
+
+Se qualquer grep retornar resultado (exceto o próprio arquivo), corrigir o import primeiro.
+
+### Arquivos a deletar
+
+```bash
+# Views legacy
+rm src/views/Dashboard.jsx
+rm src/views/Dashboard.css
+rm src/views/Dashboard.module.css
+rm -rf src/views/treatment/         # pasta com Treatment.jsx e componentes legacy
+rm src/views/Stock.jsx
+rm src/views/Stock.css
+rm -rf src/views/profile/           # pasta com Profile.jsx e subcomponentes
+rm src/views/HealthHistory.jsx
+rm src/views/HealthHistory.css
+rm src/views/Emergency.jsx
+rm src/views/Consultation.jsx
+rm src/views/History.jsx
+rm src/views/History.css
+rm src/views/Calendar.jsx           # deprecated, nunca teve redesign
+
+# Componente BottomNav legacy
+rm src/shared/components/ui/BottomNav.jsx
+rm src/shared/components/ui/BottomNav.css
+```
+
+**Não deletar ainda:**
+- `src/views/Auth.jsx` — única view de auth, ainda em uso
+- `src/views/Landing.jsx` — única view de landing, ainda em uso
+- `src/views/Medicines.jsx` — pode estar em `feature-history` chunk; verificar
+- `src/views/Protocols.jsx` — sem equivalente redesign, manter
+- `src/views/Settings.jsx` — verificar se SettingsRedesign já substitui completamente
+
+**Sobre `src/views/Settings.jsx`:** Após S16.1 (remoção do toggle), confirmar que `SettingsRedesign.jsx` tem paridade funcional (todas as mesmas opções), então deletar `Settings.jsx`.
+
+### Atualizar `vite.config.js` após deletar views legacy
+
+As referências em `manualChunks` precisam ser atualizadas:
+
+```js
+// ANTES:
+'feature-history': [
+  './src/views/HealthHistory.jsx',     // ← arquivo deletado
+  './src/features/adherence/components/AdherenceHeatmap.jsx',
+  './src/features/adherence/services/adherencePatternService.js',
+],
+'feature-stock': ['./src/views/Stock.jsx'],     // ← arquivo deletado
+'feature-landing': ['./src/views/Landing.jsx'], // ← mantido
+
+// DEPOIS (após rename em S16.7):
+'feature-history': [
+  './src/views/redesign/HealthHistory.jsx',
+  './src/features/adherence/components/AdherenceHeatmap.jsx',
+  './src/features/adherence/services/adherencePatternService.js',
+],
+'feature-stock': ['./src/views/redesign/Stock.jsx'],
+'feature-landing': ['./src/views/Landing.jsx'],
+```
+
+---
+
+## Sprint 16.7 — Rename & Reorganize Redesign Views
+
+**Objetivo:** Remover o sufixo "Redesign" de todos os nomes de arquivos de views e componentes.
+
+### Ordem de operação
+
+**IMPORTANTE:** Fazer rename + update de imports em uma única operação atômica para não quebrar o build intermediariamente.
+
+#### Passo 1 — Renomear os arquivos
+
+```bash
+cd src/views/redesign/
+
+# JSX
+mv DashboardRedesign.jsx Dashboard.jsx
+mv MedicinesRedesign.jsx Medicines.jsx
+mv StockRedesign.jsx Stock.jsx
+mv TreatmentsRedesign.jsx Treatments.jsx
+mv TreatmentsComplex.jsx TreatmentsComplex.jsx   # mantém nome (sem sufixo)
+mv TreatmentsSimple.jsx TreatmentsSimple.jsx     # mantém nome (sem sufixo)
+mv ProfileRedesign.jsx Profile.jsx
+mv HealthHistoryRedesign.jsx HealthHistory.jsx
+mv SettingsRedesign.jsx Settings.jsx
+mv EmergencyRedesign.jsx Emergency.jsx
+mv ConsultationRedesign.jsx Consultation.jsx
+
+# CSS
+mv MedicinesRedesign.css Medicines.css
+mv StockRedesign.css Stock.css
+mv TreatmentsRedesign.css Treatments.css
+mv HealthHistoryRedesign.css HealthHistory.css
+mv EmergencyRedesign.css Emergency.css
+mv ConsultationRedesign.css Consultation.css
+```
+
+#### Passo 2 — Atualizar self-imports CSS em cada JSX
+
+Dentro de cada arquivo JSX renomeado, verificar o import CSS:
+
+```jsx
+// DashboardRedesign.jsx → Dashboard.jsx
+// Se tinha: import './DashboardRedesign.css'  (se existia)
+// Mudar para: import './Dashboard.css'        (se CSS foi renomeado)
+
+// MedicinesRedesign.jsx → Medicines.jsx
+// ANTES: import './MedicinesRedesign.css'
+// DEPOIS: import './Medicines.css'
+
+// StockRedesign.jsx → Stock.jsx
+// ANTES: import './StockRedesign.css'
+// DEPOIS: import './Stock.css'
+
+// TreatmentsRedesign.jsx → Treatments.jsx
+// ANTES: import './TreatmentsRedesign.css'
+// DEPOIS: import './Treatments.css'
+
+// HealthHistoryRedesign.jsx → HealthHistory.jsx
+// ANTES: import './HealthHistoryRedesign.css'
+// DEPOIS: import './HealthHistory.css'
+
+// EmergencyRedesign.jsx → Emergency.jsx
+// ANTES: import './EmergencyRedesign.css'
+// DEPOIS: import './Emergency.css'
+
+// ConsultationRedesign.jsx → Consultation.jsx
+// ANTES: import './ConsultationRedesign.css'
+// DEPOIS: import './Consultation.css'
+```
+
+#### Passo 3 — Remover `data-redesign="true"` hardcoded
+
+Em `src/views/redesign/Treatments.jsx` (ex-TreatmentsRedesign.jsx), linha ~137:
+```jsx
+// ANTES:
+    <div className="treatments-redesign" data-redesign="true">
+
+// DEPOIS:
+    <div className="treatments-redesign">
+```
+
+Em `src/views/Auth.jsx`, linha ~46:
+```jsx
+// ANTES:
+    <div className="auth-container" data-redesign="true">
+
+// DEPOIS:
+    <div className="auth-container">
+```
+
+#### Passo 4 — Atualizar App.jsx imports
+
+Após rename, atualizar todos os lazy imports em `App.jsx`:
+
+```jsx
+// ANTES:
+const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
+const MedicinesRedesign = lazy(() => import('./views/redesign/MedicinesRedesign'))
+const StockRedesign = lazy(() => import('./views/redesign/StockRedesign'))
+const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesign'))
+const ProfileRedesign = lazy(() => import('./views/redesign/ProfileRedesign'))
+const HealthHistoryRedesign = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
+const SettingsRedesign = lazy(() => import('./views/redesign/SettingsRedesign'))
+const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'))
+const ConsultationRedesign = lazy(() => import('./views/redesign/ConsultationRedesign'))
+
+// DEPOIS (nomes de variável também atualizados):
+const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
+const Medicines = lazy(() => import('./views/redesign/Medicines'))
+const Stock = lazy(() => import('./views/redesign/Stock'))
+const Treatments = lazy(() => import('./views/redesign/Treatments'))
+const Profile = lazy(() => import('./views/redesign/Profile'))
+const HealthHistory = lazy(() => import('./views/redesign/HealthHistory'))
+const SettingsView = lazy(() => import('./views/redesign/Settings'))  // Settings conflita com view Settings
+const Emergency = lazy(() => import('./views/redesign/Emergency'))
+const Consultation = lazy(() => import('./views/redesign/Consultation'))
+```
+
+#### Passo 5 — Atualizar referências nos JSX de renderView()
+
+Em `renderCurrentView()`, os nomes dos componentes JSX também precisam ser atualizados para bater com as novas variáveis declaradas acima.
+
+#### Passo 6 — Verificar cross-imports
+
+```bash
+# Verificar se algum componente importa diretamente as views renomeadas pelo nome antigo
+grep -r "MedicinesRedesign\|StockRedesign\|DashboardRedesign\|TreatmentsRedesign" src/ --include="*.{js,jsx}"
+grep -r "ProfileRedesign\|HealthHistoryRedesign\|SettingsRedesign\|EmergencyRedesign" src/ --include="*.{js,jsx}"
+grep -r "ConsultationRedesign" src/ --include="*.{js,jsx}"
+```
+
+Se encontrar, corrigir cada import.
+
+---
+
+## Sprint 16.8 — Feature Flag Infrastructure Removal
+
+**Objetivo:** Deletar o sistema de feature flag completamente.
+
+### Verificação final de dependências
+
+```bash
+# Confirmar que nenhum arquivo ativo ainda importa estes módulos
+grep -r "useRedesign\|RedesignContext\|RedesignProvider" src/ --include="*.{js,jsx}"
+```
+
+Se o grep retornar apenas os próprios arquivos de infraestrutura (context + hook), prosseguir com a deleção.
+
+### Arquivos a deletar
+
+```bash
+rm src/shared/contexts/RedesignContext.jsx
+rm src/shared/contexts/RedesignContext.js
+rm src/shared/hooks/useRedesign.js
+```
+
+### Atualizar JSDoc em `src/shared/components/ui/Badge.jsx`
+
+Linha 11 menciona `[data-redesign="true"]`. Atualizar o comentário:
+
+```jsx
+// ANTES:
+ * NOTA: estilos em src/shared/styles/components.redesign.css
+ * sob [data-redesign="true"] .badge {}
+
+// DEPOIS:
+ * Estilos em src/shared/components/ui/Badge.css
+```
+
+---
+
+## Sprint 16.9 — Token & CSS Cleanup
+
+**Objetivo:** Remover os arquivos `.redesign.css` após confirmar que todos os tokens/regras foram migrados, e limpar as variáveis `--neon-*` de `tokens.css`.
+
+### Pré-condições
+
+Antes de deletar qualquer arquivo CSS nesta sprint, executar:
+
+```bash
+# Build de produção — se passar, as regras CSS foram migradas corretamente
+npm run build
+
+# Verificar que não há referências a arquivos que serão deletados
+grep -r "tokens.redesign\|layout.redesign\|components.redesign" src/ --include="*.{js,jsx,css}"
+```
+
+### Deletar arquivos `.redesign.css`
+
+```bash
+rm src/shared/styles/tokens.redesign.css
+rm src/shared/styles/layout.redesign.css
+rm src/shared/styles/components.redesign.css
+```
+
+### Remover `--neon-*` de `tokens.css`
+
+Em `src/shared/styles/tokens.css`, remover o bloco de variáveis neon (linhas ~9-26 aproximadamente):
+
+```css
+/* REMOVER este bloco inteiro: */
+  --neon-cyan: #00e5ff;
+  --neon-blue: #0072ff;
+  --neon-magenta: #d500f9;
+  --neon-purple: #aa00ff;
+  --neon-green: #00ff88;
+  --neon-pink: #ff006e;
+
+  --accent-primary: var(--neon-cyan);
+  --accent-secondary: var(--neon-magenta);
+  --accent-success: var(--neon-green);
+  --accent-error: var(--neon-pink);
+```
+
+**ATENÇÃO:** Antes de remover, verificar se algum arquivo ainda ativo usa estas variáveis:
+
+```bash
+grep -r "\-\-neon-\|\-\-accent-primary\|\-\-accent-secondary\|\-\-accent-success\|\-\-accent-error" src/ --include="*.css"
+```
+
+Se houver arquivos em `src/views/redesign/` ou `src/shared/components/` usando `--accent-primary`, mapear para `--color-primary` antes de remover.
+
+### Remover CSS de componentes legacy que ficaram órfãos
+
+Após deletar as views legacy no S16.6, verificar se os CSS delas foram deletados junto. Se não:
+
+```bash
+# Verificar CSS órfãos (sem JSX correspondente)
+ls src/views/*.css  # Todos devem ter JSX equivalente
+```
+
+Deletar qualquer `.css` em `src/views/` cujo correspondente `.jsx` não existe mais.
+
+### Limpar `src/shared/styles/index.css`
+
+Remover imports que não existem mais:
+```css
+/* REMOVER: */
+@import './tokens.redesign.css';
+@import './layout.redesign.css';
+@import './components.redesign.css';
+```
+
+Garantir que `@import './tokens/sanctuary.css'` está presente e é o primeiro import.
+
+---
+
+## Sprint 16.10 — Onboarding & Final Polish
+
+**Objetivo:** Verificar estado do onboarding e fazer cleanup final.
+
+### Situação do Onboarding
+
+O `OnboardingWizard.jsx` atual em `src/shared/components/onboarding/` é o componente original. Verificar se:
+
+1. Ele usa `[data-redesign='true']` scoping internamente:
+   ```bash
+   grep "data-redesign\|isRedesignEnabled\|useRedesign" src/shared/components/onboarding/OnboardingWizard.jsx
+   ```
+
+2. Seu CSS usa variáveis neon:
+   ```bash
+   grep "\-\-neon-\|neon-cyan" src/shared/components/onboarding/OnboardingWizard.css
+   ```
+
+**Se o onboarding usa classes/variáveis sanctuary e não há referências a neon:** nenhuma ação necessária — ele já funciona com a paleta global.
+
+**Se ainda usa neon:** atualizar manualmente cada variável neon para sua equivalência sanctuary:
+- `--neon-cyan` → `--color-primary`
+- `--neon-magenta` → `--color-secondary`
+- `--neon-green` → `--color-success`
+- `--neon-pink` → `--color-error`
+- `--accent-primary` → `--color-primary`
+
+### Verificar `motionConstants.js`
+
+O arquivo `src/shared/components/ui/animations/motionConstants.js` pode ter referências a `isRedesignEnabled`. Verificar:
+
+```bash
+grep "isRedesignEnabled\|redesign" src/shared/components/ui/animations/motionConstants.js
+```
+
+Se houver, remover as conditionals.
+
+### Limpar `App.module.css`
+
+Verificar se há estilos em `App.module.css` que só faziam sentido com o flag (ex: estilos específicos para estado `!isRedesignEnabled`). Remover se houver.
+
+### Atualizar comentários em `App.jsx`
+
+Após todas as mudanças, varrer o arquivo e remover comentários que mencionam "redesign flag", "apenas redesign", "flag ativo", etc. O código deve falar por si mesmo sem essas referências.
+
+---
+
+## Sprint 16.11 — Validação Final
+
+### Build de Produção
+
+```bash
+npm run build 2>&1 | head -50
+```
+
+Critérios de sucesso:
+- Zero erros de build
+- Zero warnings de import não encontrado
+- Bundle principal ≤ 110kB gzip (pode aumentar levemente por novos chunks serem inline)
+- Nenhum chunk com sufixo "Redesign" no nome
+
+### Test Suite
+
+```bash
+npm run validate:agent
+```
+
+Critérios:
+- Zero test failures
+- Zero mocks de `useRedesign` remanescentes (devem ter sido removidos no S16.8)
+
+### Grep de Limpeza Final
+
+```bash
+# Zero referências a infraestrutura removida
+grep -r "isRedesignEnabled\|useRedesign\|RedesignContext\|RedesignProvider\|data-redesign\|mr_redesign" src/ --include="*.{js,jsx,css}"
+
+# Zero variáveis neon em código ativo
+grep -r "\-\-neon-\|neon-cyan\|neon-magenta\|neon-purple\|neon-green\|neon-pink" src/ --include="*.css" | grep -v "tokens.css" | grep -v "Legacy"
+
+# Zero sufixos "Redesign" em nomes de componentes importados
+grep -r "Redesign'" src/ --include="*.{js,jsx}"
+```
+
+Todos os greps devem retornar zero resultados.
+
+### Lighthouse Check
+
+Abrir a app em modo produção (ou `npm run preview`) e verificar:
+- Lighthouse Performance: ≥ 90
+- Lighthouse Accessibility: ≥ 95 (regressão W15 não permitida)
+- Lighthouse Best Practices: ≥ 95
+
+### Visual Smoke Test
+
+Navegar manualmente por cada view no browser:
+- [ ] Dashboard — ring gauge, dose cards, alertas de estoque
+- [ ] Medicines — lista, busca ANVISA, formulário
+- [ ] Stock — cards de estoque, formulário de entrada
+- [ ] Treatments — lista de tratamentos, detail
+- [ ] Profile — dados do usuário
+- [ ] Settings — opções de configuração (sem toggle redesign)
+- [ ] Emergency — conteúdo de emergência
+- [ ] Consultation — histórico de consultas
+- [ ] Auth — login/signup
+- [ ] Landing — página de entrada
+
+---
+
+## Critério de Conclusão Wave 16
+
+- [ ] `npm run validate:agent` passa (zero erros, zero falhas)
+- [ ] `npm run build` completa sem warnings de imports ausentes
+- [ ] Bundle ≤ 110kB gzip (main chunk)
+- [ ] Zero resultados para `grep -r "isRedesignEnabled\|useRedesign\|RedesignContext" src/`
+- [ ] Zero resultados para `grep -r "data-redesign" src/ --include="*.jsx"`
+- [ ] Zero resultados para `grep -r "\-\-neon-" src/ --include="*.css"` (exceto comentários históricos)
+- [ ] Zero sufixos "Redesign" em nomes de arquivos em `src/views/`
+- [ ] Arquivos `.redesign.css` deletados
+- [ ] Lighthouse Accessibility ≥ 95 (não regrediu)
+- [ ] Lighthouse Performance ≥ 90
+- [ ] Smoke test visual em todas as views: ✅
+
+---
+
+## Tabela de Risco
+
+| Risco | Probabilidade | Impacto | Mitigação |
+|-------|--------------|---------|-----------|
+| CSS de componente legacy referenciado em view redesign via classe compartilhada | Alta | Médio | Fazer grep por classe antes de deletar CSS; testar visualmente cada view |
+| Token neon usado em componente shared que não foi migrado | Média | Médio | Fazer grep por `--neon-` após build; corrigir mapeamentos |
+| Import de view legacy esquecido em algum componente de feature | Baixa | Alto | Grep obrigatório antes de deletar; build produção valida imports |
+| `vite.config.js` manualChunks desatualizado causa chunk incorreto | Média | Baixo | Verificar output de `npm run build` — chunks sem conteúdo geram warning |
+| Onboarding com estilos neon não migrados | Baixa | Baixo | Verificar grep antes de remover neon tokens |
+| Regressão de acessibilidade com token de placeholder desaparecendo | Baixa | Médio | Lighthouse check obrigatório no S16.11 |
+
+---
+
+## Notas Finais para o Agente
+
+1. **Esta wave tem alta blast radius.** Commite por sprint, não tudo de uma vez. Cada sprint deve deixar o app em estado deployável.
+
+2. **Ordem dos sprints é obrigatória.** S16.2 (tokens) deve preceder S16.4 (component CSS) que deve preceder S16.5 (App.jsx). Reorganizar a ordem causará quebras intermediárias.
+
+3. **S16.1 é um sprint separado com período de observação.** Não merge S16.2+ junto com S16.1 no mesmo PR.
+
+4. **Antes de deletar QUALQUER arquivo:** executar o grep de verificação de imports. Um arquivo deletado sem atualizar imports quebra o build imediatamente.
+
+5. **`src/views/Auth.jsx` e `src/views/Landing.jsx`:** Estes arquivos não têm equivalentes em `src/views/redesign/`. Eles já são as versões definitivas. Não deletar — apenas remover o `data-redesign="true"` hardcoded de `Auth.jsx`.
+
+6. **`src/views/Protocols.jsx`:** Não tem equivalente redesign. Manter como está. Verificar se usa variáveis neon; se sim, migrar para sanctuary.
+
+7. **CSS de `src/features/`:** Os arquivos de CSS em `src/features/*/components/` que usam `--neon-*` pertencem a componentes que são usados dentro das views redesign (SmartAlerts, etc.). Estes precisam ser migrados para sanctuary antes da remoção dos tokens neon.
+
+8. **`src/shared/styles/themes/dark.css` e `light.css`:** Contêm `--neon-*`. Verificar se estes arquivos são carregados ativamente; se não, deletar. Se sim, migrar para sanctuary equivalents.
