@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import './Calendar.css'
 
 /**
@@ -244,8 +245,14 @@ export default function Calendar({
     if (enableMonthPicker) {
       return (
         <div className="calendar-controls">
-          <button onClick={handlePreviousMonth} disabled={isLoading} aria-label="Mes anterior">
-            {'<'}
+          <button
+            onClick={handlePreviousMonth}
+            disabled={isLoading}
+            className="calendar-nav-btn"
+            aria-label="Mês anterior"
+            type="button"
+          >
+            <ChevronLeft size={20} aria-hidden="true" />
           </button>
           <select
             className="month-picker"
@@ -260,8 +267,14 @@ export default function Calendar({
               </option>
             ))}
           </select>
-          <button onClick={handleNextMonth} disabled={isLoading} aria-label="Proximo mes">
-            {'>'}
+          <button
+            onClick={handleNextMonth}
+            disabled={isLoading}
+            className="calendar-nav-btn"
+            aria-label="Próximo mês"
+            type="button"
+          >
+            <ChevronRight size={20} aria-hidden="true" />
           </button>
         </div>
       )
@@ -270,14 +283,26 @@ export default function Calendar({
     // Controles simples (default)
     return (
       <div className="calendar-controls">
-        <button onClick={handlePreviousMonth} disabled={isLoading} aria-label="Mes anterior">
-          {'<'}
+        <button
+          onClick={handlePreviousMonth}
+          disabled={isLoading}
+          className="calendar-nav-btn"
+          aria-label="Mês anterior"
+          type="button"
+        >
+          <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <div className="current-month">
           {monthNames[month]} {year}
         </div>
-        <button onClick={handleNextMonth} disabled={isLoading} aria-label="Proximo mes">
-          {'>'}
+        <button
+          onClick={handleNextMonth}
+          disabled={isLoading}
+          className="calendar-nav-btn"
+          aria-label="Próximo mês"
+          type="button"
+        >
+          <ChevronRight size={20} aria-hidden="true" />
         </button>
       </div>
     )

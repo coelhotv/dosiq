@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Download, X } from 'lucide-react'
 import './InstallPrompt.css'
 import {
   isStandalone,
@@ -184,10 +185,8 @@ export default function InstallPrompt() {
           >
             <div className="install-prompt__content">
               {/* Ícone do app */}
-              <div className="install-prompt__icon">
-                <span role="img" aria-label="Ícone do app">
-                  💊
-                </span>
+              <div className="install-prompt__icon" aria-hidden="true">
+                <Download size={24} />
               </div>
 
               {/* Conteúdo textual */}
@@ -211,7 +210,7 @@ export default function InstallPrompt() {
                   type="button"
                   aria-label="Fechar prompt de instalação"
                 >
-                  ✕
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -252,7 +251,7 @@ export default function InstallPrompt() {
                   type="button"
                   aria-label="Fechar instruções"
                 >
-                  ✕
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
 

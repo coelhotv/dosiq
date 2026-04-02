@@ -400,3 +400,170 @@
     transform: none;
   }
 }
+
+/* ============================================
+   InstallPrompt — Sanctuary (sempre ativo)
+   Novos usuários chegam pela landing e sempre
+   veem o tema Santuário, independente do flag.
+   ============================================ */
+
+.install-prompt {
+  background: var(--color-surface-container-lowest, #ffffff);
+  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0,0,0,0.10));
+  border-radius: var(--radius-card, 1rem) var(--radius-card, 1rem) 0 0;
+  border: none;
+  backdrop-filter: none;
+}
+
+.install-prompt__icon {
+  color: #006a5e;
+  background: rgba(0, 106, 94, 0.08);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.install-prompt__title {
+  font-family: var(--font-display, inherit);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-on-surface, #191c1d);
+  font-size: var(--text-body-lg, 1rem);
+  margin: 0 0 0.25rem 0;
+}
+
+.install-prompt__description {
+  font-size: var(--text-label-md, 0.875rem);
+  color: var(--color-on-surface-variant, #3e4946);
+  margin: 0;
+}
+
+.install-prompt__install-btn {
+  background: var(--gradient-primary, linear-gradient(135deg, #006a5e, #008577));
+  color: var(--color-on-primary, #ffffff);
+  border: none;
+  border-radius: var(--radius-button, 0.75rem);
+  font-weight: var(--font-weight-bold, 700);
+  font-size: var(--text-label-md, 0.875rem);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  min-height: 40px;
+  transition: all 200ms ease-out;
+}
+
+.install-prompt__install-btn:hover {
+  transform: scale(1.02);
+  box-shadow: none;
+  background: var(--gradient-primary, linear-gradient(135deg, #006a5e, #008577));
+}
+
+.install-prompt__install-btn:active {
+  transform: scale(0.98);
+}
+
+.install-prompt__dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant, #3e4946);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 200ms ease-out;
+}
+
+.install-prompt__dismiss-btn:hover {
+  background: var(--state-hover, rgba(0,0,0,0.04));
+}
+
+/* Modal de instruções */
+.install-prompt__modal-overlay {
+  background: rgba(25, 28, 29, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.install-prompt__modal {
+  background: var(--color-surface-container-lowest, #ffffff);
+  border-radius: var(--radius-card, 1rem);
+  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0,0,0,0.10));
+  border: none;
+}
+
+.install-prompt__modal-header {
+  border-bottom: 1px solid var(--color-outline-variant, #c9ded8);
+}
+
+.install-prompt__modal-title {
+  font-family: var(--font-display, inherit);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-on-surface, #191c1d);
+}
+
+.install-prompt__modal-close {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant, #3e4946);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 200ms ease-out;
+}
+
+.install-prompt__modal-close:hover {
+  background: var(--state-hover, rgba(0,0,0,0.04));
+  color: var(--color-on-surface, #191c1d);
+}
+
+.install-prompt__step-number {
+  background: #006a5e;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-label-md, 0.875rem);
+  font-weight: var(--font-weight-bold, 700);
+  flex-shrink: 0;
+}
+
+.install-prompt__step-text {
+  color: var(--color-on-surface, #191c1d);
+}
+
+.install-prompt__modal-footer {
+  border-top: 1px solid var(--color-outline-variant, #c9ded8);
+}
+
+.install-prompt__modal-btn {
+  background: var(--gradient-primary, linear-gradient(135deg, #006a5e, #008577));
+  color: var(--color-on-primary, #ffffff);
+  border: none;
+  border-radius: var(--radius-button, 0.75rem);
+  font-weight: var(--font-weight-bold, 700);
+  padding: 0.75rem 1.5rem;
+  min-height: 48px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 200ms ease-out;
+}
+
+.install-prompt__modal-btn:hover {
+  transform: scale(1.02);
+  box-shadow: none;
+}
+
+.install-prompt__modal-btn:active {
+  transform: scale(0.98);
+}

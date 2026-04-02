@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { WifiOff } from 'lucide-react'
 import './OfflineBanner.css'
 
 /**
@@ -30,7 +31,8 @@ export function OfflineBanner() {
 
   return (
     <div className="offline-banner" role="alert" aria-live="polite">
-      Sem conexão — exibindo dados salvos
+      <WifiOff size={14} aria-hidden="true" />
+      <span>Sem conexão — exibindo dados salvos</span>
     </div>
   )
 }
