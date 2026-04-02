@@ -64,3 +64,59 @@
     transform: rotate(360deg);
   }
 }
+
+/* Redesign overrides — sanctuary theme */
+[data-redesign='true'] .spinner-ring:nth-child(1) {
+  border-top-color: var(--color-primary);
+}
+
+[data-redesign='true'] .spinner-ring:nth-child(2) {
+  border-top-color: var(--color-primary-fixed);
+}
+
+[data-redesign='true'] .spinner-ring:nth-child(3) {
+  border-top-color: color-mix(in srgb, var(--color-primary) 60%, white);
+}
+
+[data-redesign='true'] .loading-text {
+  color: var(--color-on-surface-variant);
+}
+
+/* Skeleton variant — shimmer lines para lazy content */
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  width: 100%;
+}
+
+.skeleton-line {
+  height: 1rem;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container, #eceeef) 25%,
+    var(--color-surface-container-low, #f2f4f5) 50%,
+    var(--color-surface-container, #eceeef) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+.skeleton-line:first-child {
+  height: 1.5rem;
+  width: 40% !important;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+    background: var(--color-surface-container, #eceeef);
+  }
+}
