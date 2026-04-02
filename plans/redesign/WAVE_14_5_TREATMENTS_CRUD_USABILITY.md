@@ -3,7 +3,7 @@
 
 **Versão:** 1.0
 **Data:** 2026-04-02
-**Status:** ⏳ PENDENTE
+**Status:** ✅ MERGED #444 (2026-04-02)
 **Branch alvo:** `feature/redesign/wave-14.5/treatments-crud-usability`
 **PR base:** `main`
 **Referência:** `MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`
