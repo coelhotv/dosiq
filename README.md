@@ -4,7 +4,7 @@
 
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
-![Version](https://img.shields.io/badge/version-2.8.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-4.0.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
@@ -17,9 +17,9 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ---
 
-## 🎯 Funcionalidades (v2.8.0)
+## 🎯 Funcionalidades (v4.0.0)
 
-### Phase 4 - Instalabilidade e Navegação (Novo!)
+### Phase 4-5 - Consolidação PWA e Dados ANVISA
 
 #### F4.1: Hash Router & Deep Linking
 - ✅ **Navegação por Hash**: URLs amigáveis com `#/dashboard`, `#/medicamentos`, etc.
