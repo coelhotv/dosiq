@@ -1,8 +1,8 @@
 # Plano de Redesign: Neon/Glass → Santuário Terapêutico
 
 **Versão:** 2.0
-**Data:** 2026-03-29
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅ | W12 entregue ✅ | W13 entregue ✅
+**Data:** 2026-04-02
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅ | W12 entregue ✅ | W13 entregue ✅ | W14 entregue ✅
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 
@@ -36,7 +36,7 @@
 | W11 | Forms & Modals Redesign | (seção 16 abaixo) | ✅ MERGED #439 (2026-03-30) | main |
 | W12 | Medicines View & Consultation Mode | (seção 17 abaixo) | ✅ MERGED #440 (2026-03-31) | main |
 | W13 | Landing, Auth & Onboarding | `WAVE_13_LANDING_AUTH_ONBOARDING_REDESIGN.md` | ✅ MERGED #441 (2026-03-31) | main |
-| W14 | Shared Components & Chatbot | `WAVE_14_SHARED_COMPONENTS_CHATBOT.md` | ⏳ PENDENTE | — |
+| W14 | Shared Components & Chatbot | `WAVE_14_SHARED_COMPONENTS_CHATBOT.md` | ✅ MERGED #442 (2026-04-02) | main |
 | W15 | Accessibility & Polish | (seção 20 abaixo) | ⏳ PENDENTE | — |
 | W16 | Rollout Promotion & Legacy Cleanup | (seção 21 abaixo) | ⏳ PENDENTE | — |
 
@@ -54,12 +54,16 @@
 - ✅ **W10C** (2026-03-28): Histórico Calendar-Driven — rewrite completo HealthHistoryRedesign (calendar-driven, phase-loading), HistoryLogCard (3 linhas), HistoryDayPanel, HistoryKPICards, GlobalDoseModal compartilhado, logService expandido, mobile FAB + Sidebar "Registrar Dose", Gemini review 13 sugestões processadas, Issue #438 backlog refactor (PR #437)
 - ✅ **W11** (2026-03-30): Forms & Modals Redesign — Modal base (lucide X, bottom sheet mobile, glass overlay, z-index 1200 hardcode), form utilities (form-row/form-actions/labels/error/checkbox), LogForm (Pill+Folders lucide icons, segmented control), MedicineForm, ProtocolForm, TitrationWizard, StockForm, TreatmentWizard, ExportDialog (format toggle segmented control, FileBracesCorner/FileDigit icons), ReportGenerator (legibilidade BEM over white bg), EmergencyCard, DailyDoseModal, z-index token --z-chatbot:1100, vite host:true, AP-W24 documentado (PR #439)
 - ✅ **W12** (2026-03-31): Medicines View & Consultation Mode Redesign — MedicineCardRedesign + ConfirmDialog (W12.1), MedicinesRedesign view com useDashboard() context + dependency in-memory calc (W12.2), ConsultationViewRedesign presenter com design tokens + color-mix() (W12.3), ConsultationRedesign container com temporal consistency (W12.4), Gemini + Codex review 10 sugestões processadas, fix modal close on "Depois" + preserve AbortError behavior, lint 0 erros, tests críticos pass (PR #440)
+- ✅ **W13** (2026-03-31): Landing, Auth & Onboarding Redesign — LandingRedesign rewrite (hero green gradient, feature cards sanctuary, CTA buttons), LoginRedesign (form-row pattern, sanctuary colors, invalid/error states), OnboardingRedesign v3.2 (4 steps, Framer Motion micro-interactions), Gemini review 8 sugestões processadas, migration from old login/auth state (PR #441)
+- ✅ **W14** (2026-04-02): Shared Components & Chatbot — Loading skeleton shimmer (3 green rings), AlertList Lucide icons (AlertTriangle/AlertCircle/Info), OfflineBanner WifiOff icon, Calendar ChevronLeft/Right icons, InstallPrompt sanctuary incondicional (hardcode #006a5e), ChatWindow Trash2/X icons + ConfirmDialog + renderMessageContent() inline markdown, Gamification BadgeDisplay/MilestoneCelebration sanctuary, ConfettiAnimation SANCTUARY_COLORS paleta, DLQAdmin CSS overrides, fix btn-secondary glow (box-shadow:none), Gemini Code Assist 2 sugestões processadas (alertlist ternary clarity, ChatWindow key prop), lint 0 erros, all tests pass (PR #442)
 
 **Foundation (W0-W9):** 100% COMPLETO ✅
 **Hub & Settings & Histórico (W10A-W10B-W10C):** 100% COMPLETO ✅
 **Forms & Modals (W11):** 100% COMPLETO ✅
 **Medicines & Consultation (W12):** 100% COMPLETO ✅
-**Views (W0-W12):** 100% — Todas as views e forms principais redesenhados
+**Landing/Auth/Onboarding (W13):** 100% COMPLETO ✅
+**Shared Components & Chatbot (W14):** 100% COMPLETO ✅
+**Views (W0-W14):** 100% — Todas as views, forms e componentes compartilhados redesenhados
 **Próximo bloco — Landing/Auth/Onboarding (W13):** Login redesign, Landing page, Onboarding flow
 **Polish (W15):** Accessibility & compliance
 **Closure (W16):** Feature flag removal, legacy cleanup, token consolidation

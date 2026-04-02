@@ -3,7 +3,7 @@
 
 **Versão:** 1.0
 **Data:** 2026-04-01
-**Status:** ⏳ PENDENTE
+**Status:** ✅ ENTREGUE (PR #442, merged 2026-04-02)
 **Branch alvo:** `feature/redesign/wave-14/shared-components-chatbot`
 **PR base:** `main`
 **Referência:** `MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`, seção 19
