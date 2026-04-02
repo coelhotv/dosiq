@@ -28,3 +28,41 @@
 }
 
 /* Os demais estilos são herdados de components.redesign.css via Sprint 11.2. */
+
+/* Seção visual: emoji + cor lado a lado */
+.treatment-plan-form__visual {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* Input de emoji: tamanho compacto e centralizado */
+.treatment-plan-form__emoji-input {
+  text-align: center;
+  font-size: var(--font-size-xl);
+  padding: var(--space-2);
+  width: 100%;
+}
+
+/* Linha cor: color picker + hex text juntos */
+.treatment-plan-form__color-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.treatment-plan-form__color-picker {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.125rem;
+  border: 1px solid var(--color-outline-variant, #bec9c6);
+  border-radius: var(--radius-sm, 0.5rem);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.treatment-plan-form__color-text {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+}

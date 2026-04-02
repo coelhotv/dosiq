@@ -7,6 +7,8 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
     name: plan?.name || '',
     description: plan?.description || '',
     objective: plan?.objective || '',
+    emoji: plan?.emoji || '',
+    color: plan?.color || '',
   })
 
   const [errors, setErrors] = useState({})
@@ -40,6 +42,8 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         objective: formData.objective.trim() || null,
+        emoji: formData.emoji.trim() || null,
+        color: formData.color.trim() || null,
       })
     } catch (error) {
       console.error('Erro ao salvar plano de tratamento:', error)
@@ -96,6 +100,45 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
           onChange={handleChange}
           placeholder="Ex: Titular Beta-bloqueador até 100mg"
         />
+      </div>
+
+      <div className="treatment-plan-form__visual">
+        <div className="form-group">
+          <label htmlFor="emoji">Emoji do Plano</label>
+          <input
+            type="text"
+            id="emoji"
+            name="emoji"
+            value={formData.emoji}
+            onChange={handleChange}
+            placeholder="💊"
+            maxLength={4}
+            className="treatment-plan-form__emoji-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="color">Cor do Badge</label>
+          <div className="treatment-plan-form__color-row">
+            <input
+              type="color"
+              id="color"
+              name="color"
+              value={formData.color || '#6366f1'}
+              onChange={handleChange}
+              className="treatment-plan-form__color-picker"
+            />
+            <input
+              type="text"
+              name="color"
+              value={formData.color}
+              onChange={handleChange}
+              placeholder="#6366f1"
+              maxLength={7}
+              className="treatment-plan-form__color-text"
+            />
+          </div>
+        </div>
       </div>
 
       {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}

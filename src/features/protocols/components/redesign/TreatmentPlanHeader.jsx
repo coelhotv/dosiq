@@ -3,9 +3,9 @@
  * S7.5.5: Adicionar botão de editar plano com ícone PencilLine
  * Exibe: dot + emoji + nome + count + alert + chevron + [edit btn se for plano real]
  */
-import { PencilLine } from 'lucide-react'
+import { PencilLine, Trash2 } from 'lucide-react'
 
-export default function TreatmentPlanHeader({ group, isCollapsed, onToggle, onEditPlan }) {
+export default function TreatmentPlanHeader({ group, isCollapsed, onToggle, onEditPlan, onDeletePlan }) {
   // S7.5.5: Detectar se é plano real (não fallback de classe terapêutica)
   const isPlan = group.isPlan ?? group.groupKey?.startsWith('plan:')
 
@@ -35,6 +35,19 @@ export default function TreatmentPlanHeader({ group, isCollapsed, onToggle, onEd
           title="Editar plano de tratamento"
         >
           <PencilLine size={15} />
+        </button>
+      )}
+      {isPlan && onDeletePlan && (
+        <button
+          className="plan-header__delete-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDeletePlan(group)
+          }}
+          aria-label={`Excluir plano ${group.groupLabel}`}
+          title="Excluir plano de tratamento"
+        >
+          <Trash2 size={15} />
         </button>
       )}
     </div>

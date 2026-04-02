@@ -18,6 +18,7 @@ import TreatmentPlanForm from '@protocols/components/TreatmentPlanForm'
 import MedicineForm from '@medications/components/MedicineForm'
 import NewTreatmentDropdown from '@protocols/components/redesign/NewTreatmentDropdown'
 import Modal from '@shared/components/ui/Modal'
+import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { protocolService } from '@shared/services'
 import './TreatmentsRedesign.css'
 
@@ -33,6 +34,8 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate })
   const [errorMessage, setErrorMessage] = useState(null)
   const [medicineCreateOpen, setMedicineCreateOpen] = useState(false)
   const [planFormOpen, setPlanFormOpen] = useState(false)
+  const [planEditTarget, setPlanEditTarget] = useState(null)
+  const [deletePlanTarget, setDeletePlanTarget] = useState(null)
 
   // Data + context
   const { mode } = useComplexityMode()
@@ -98,6 +101,7 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate })
 
   function handleAddPlan() {
     // TreatmentPlanForm: cria agrupador de tratamentos
+    setPlanEditTarget(null)
     setPlanFormOpen(true)
   }
 
@@ -138,18 +142,35 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate })
     }
   }
 
-  // S7.5.5: Handler para editar plano de tratamento — TODO: implementar TreatmentPlanForm se não existir
   async function handleEditPlan(group) {
     try {
       setErrorMessage(null)
-      // Extrair ID do plano: groupKey é 'plan:{id}'
       const planId = group.groupKey.replace('plan:', '')
       const fullPlan = await treatmentPlanService.getById(planId)
-      // TODO: abrir modal com TreatmentPlanForm preenchido com fullPlan
-      console.log('Edit plan:', fullPlan)
+      setPlanEditTarget(fullPlan)
+      setPlanFormOpen(true)
     } catch (err) {
       console.error('Erro ao carregar plano para edicao:', err)
       setErrorMessage('Erro ao carregar plano. Tente novamente.')
+    }
+  }
+
+  function handleDeletePlanRequest(group) {
+    const planId = group.groupKey.replace('plan:', '')
+    setDeletePlanTarget({ id: planId, label: group.groupLabel })
+  }
+
+  async function handleDeletePlanConfirm() {
+    if (!deletePlanTarget) return
+    try {
+      setErrorMessage(null)
+      await treatmentPlanService.delete(deletePlanTarget.id)
+      setDeletePlanTarget(null)
+      refetch()
+    } catch (err) {
+      console.error('Erro ao excluir plano:', err)
+      setErrorMessage('Erro ao excluir plano. Tente novamente.')
+      setDeletePlanTarget(null)
     }
   }
 
@@ -206,12 +227,12 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate })
 
       {/* Content — bifurca por persona */}
       {isComplex ? (
-        // S7.5.5: onEditPlan para editar plano de tratamento
         <TreatmentsComplex
           key={activeTab}
           groups={currentGroups}
           onEdit={handleEditProtocol}
           onEditPlan={handleEditPlan}
+          onDeletePlan={handleDeletePlanRequest}
           activeTab={activeTab}
         />
       ) : (
@@ -275,18 +296,44 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate })
       </Modal>
 
       {/* TreatmentPlanForm modal — criar/editar plano de tratamento */}
-      <Modal isOpen={planFormOpen} onClose={() => setPlanFormOpen(false)}>
+      <Modal
+        isOpen={planFormOpen}
+        onClose={() => {
+          setPlanFormOpen(false)
+          setPlanEditTarget(null)
+        }}
+      >
         {planFormOpen && (
           <TreatmentPlanForm
+            plan={planEditTarget || undefined}
             onSave={async (data) => {
-              await treatmentPlanService.create(data)
+              if (planEditTarget) {
+                await treatmentPlanService.update(planEditTarget.id, data)
+              } else {
+                await treatmentPlanService.create(data)
+              }
               setPlanFormOpen(false)
+              setPlanEditTarget(null)
               refetch()
             }}
-            onCancel={() => setPlanFormOpen(false)}
+            onCancel={() => {
+              setPlanFormOpen(false)
+              setPlanEditTarget(null)
+            }}
           />
         )}
       </Modal>
+
+      {/* ConfirmDialog — excluir plano de tratamento */}
+      <ConfirmDialog
+        isOpen={!!deletePlanTarget}
+        title={`Excluir plano "${deletePlanTarget?.label}"?`}
+        message="Os tratamentos associados a este plano não serão excluídos, apenas o agrupamento. Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={handleDeletePlanConfirm}
+        onCancel={() => setDeletePlanTarget(null)}
+      />
     </div>
   )
 }
