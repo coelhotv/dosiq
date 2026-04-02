@@ -1,9 +1,6 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
-import {
-  validateStockCreate,
-  validateStockDecrease,
-  validateStockIncrease,
-} from '@schemas/stockSchema'
+import { validateStockDecrease, validateStockIncrease } from '@schemas/stockSchema'
+import { purchaseService } from './purchaseService'
 
 /**
  * Stock Service - Manage medicine stock
@@ -136,30 +133,7 @@ export const stockService = {
    * @throws {Error} Se os dados forem inválidos
    */
   async add(stock) {
-    // Validação Zod (substitui validações manuais anteriores)
-    const validation = validateStockCreate(stock)
-    if (!validation.success) {
-      const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
-      throw new Error(`Erro de validação: ${errorMessages}`)
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('stock')
-        .insert([{ ...validation.data, user_id: await getUserId() }])
-        .select()
-        .single()
-
-      if (error) {
-        // Parse Supabase error for better messaging
-        const errorMsg = error.message || error.details || 'Erro desconhecido ao adicionar estoque'
-        throw new Error(errorMsg)
-      }
-      return data
-    } catch (err) {
-      // Re-throw with context
-      throw new Error(err.message || 'Falha ao conectar com o servidor')
-    }
+    return purchaseService.create(stock)
   },
 
   /**
@@ -169,7 +143,7 @@ export const stockService = {
    * VALIDAÇÃO: Dados são validados com Zod antes de processar
    * @throws {Error} Se os dados forem inválidos
    */
-  async decrease(medicineId, quantity) {
+  async decrease(medicineId, quantity, medicineLogId) {
     // Validação Zod
     const validation = validateStockDecrease({ medicine_id: medicineId, quantity })
     if (!validation.success) {
@@ -177,38 +151,18 @@ export const stockService = {
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
-    // Get oldest stock entries first
-    const { data: stockEntries, error: fetchError } = await supabase
-      .from('stock')
-      .select('*')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', await getUserId())
-      .gt('quantity', 0)
-      .order('purchase_date', { ascending: true })
-
-    if (fetchError) throw fetchError
-
-    let remaining = quantity
-
-    for (const entry of stockEntries) {
-      if (remaining <= 0) break
-
-      const toDecrease = Math.min(entry.quantity, remaining)
-      const newQuantity = entry.quantity - toDecrease
-
-      const { error: updateError } = await supabase
-        .from('stock')
-        .update({ quantity: newQuantity })
-        .eq('id', entry.id)
-
-      if (updateError) throw updateError
-
-      remaining -= toDecrease
+    if (!medicineLogId) {
+      throw new Error('medicineLogId é obrigatório para consumo FIFO rastreável')
     }
 
-    if (remaining > 0) {
-      throw new Error('Estoque insuficiente')
-    }
+    const { data, error } = await supabase.rpc('consume_stock_fifo', {
+      p_medicine_id: medicineId,
+      p_quantity: quantity,
+      p_medicine_log_id: medicineLogId,
+    })
+
+    if (error) throw error
+    return data
   },
 
   /**
@@ -218,28 +172,41 @@ export const stockService = {
    * VALIDAÇÃO: Dados são validados com Zod antes de processar
    * @throws {Error} Se os dados forem inválidos
    */
-  async increase(medicineId, quantity, reason = 'Estorno de dose') {
-    // Validação Zod
-    const validation = validateStockIncrease({ medicine_id: medicineId, quantity, reason })
+  async increase(medicineId, quantity, options = {}) {
+    const normalizedOptions =
+      typeof options === 'string' ? { reason: options } : { ...options, quantity }
+
+    const validation = validateStockIncrease({
+      medicine_id: medicineId,
+      quantity,
+      medicine_log_id: normalizedOptions.medicine_log_id ?? null,
+      reason: normalizedOptions.reason ?? 'Ajuste de estoque',
+      notes: normalizedOptions.notes ?? null,
+    })
+
     if (!validation.success) {
       const errorMessages = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
       throw new Error(`Erro de validação: ${errorMessages}`)
     }
 
-    const { data, error } = await supabase
-      .from('stock')
-      .insert([
-        {
-          medicine_id: medicineId,
-          quantity: quantity,
-          purchase_date: new Date().toISOString().split('T')[0],
-          unit_price: 0,
-          user_id: await getUserId(),
-          notes: reason,
-        },
-      ])
-      .select()
-      .single()
+    const payload = validation.data
+
+    if (payload.medicine_log_id) {
+      const { data, error } = await supabase.rpc('restore_stock_for_log', {
+        p_medicine_log_id: payload.medicine_log_id,
+        p_reason: payload.reason,
+      })
+
+      if (error) throw error
+      return data
+    }
+
+    const { data, error } = await supabase.rpc('apply_manual_stock_adjustment', {
+      p_medicine_id: medicineId,
+      p_quantity_delta: quantity,
+      p_reason: payload.reason,
+      p_notes: payload.notes,
+    })
 
     if (error) throw error
     return data
@@ -249,6 +216,25 @@ export const stockService = {
    * Delete a stock entry
    */
   async delete(id) {
+    const { data: entry, error: fetchError } = await supabase
+      .from('stock')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', await getUserId())
+      .single()
+
+    if (fetchError) throw fetchError
+
+    if (
+      entry.entry_type === 'purchase' &&
+      entry.original_quantity !== null &&
+      entry.quantity !== entry.original_quantity
+    ) {
+      throw new Error(
+        'Compras com consumo associado não podem ser removidas. Use ajuste manual positivo.'
+      )
+    }
+
     const { error } = await supabase
       .from('stock')
       .delete()

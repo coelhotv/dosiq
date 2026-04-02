@@ -15,21 +15,25 @@ const mockDatabase = [
     name: 'Losartana Potassica',
     activeIngredient: 'losartana potássica',
     therapeuticClass: 'ANTI-HIPERTENSIVOS',
+    regulatoryCategory: 'Genérico',
   },
   {
     name: 'Metformina Cloridrato',
     activeIngredient: 'metformina',
     therapeuticClass: 'ANTIDIABETICOS',
+    regulatoryCategory: 'Similar',
   },
   {
     name: 'Ibuprofeno',
     activeIngredient: 'ibuprofeno',
     therapeuticClass: 'ANALGESICOS NAO NARCOTICOS',
+    regulatoryCategory: 'Novo',
   },
   {
     name: 'Ácido Acetilsalicílico',
     activeIngredient: 'ácido acetilsalicílico',
     therapeuticClass: 'ANALGESICOS NAO NARCOTICOS',
+    regulatoryCategory: 'Genérico',
   },
 ]
 
@@ -180,6 +184,7 @@ describe('medicineDatabaseService', () => {
       expect(results[0]).toHaveProperty('name')
       expect(results[0]).toHaveProperty('activeIngredient')
       expect(results[0]).toHaveProperty('therapeuticClass')
+      expect(results[0]).toHaveProperty('regulatoryCategory')
     })
   })
 

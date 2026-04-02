@@ -9,7 +9,8 @@ import { z } from 'zod'
 
 // Schema para entrada de estoque
 export const StockEntrySchema = z.object({
-  quantity: z.number().nonnegative('quantity deve ser >= 0'),
+  quantity: z.number().nonnegative('quantity deve ser >= 0').optional(),
+  quantity_bought: z.number().positive('quantity_bought deve ser > 0').optional(),
   unit_price: z.number().nonnegative('unit_price deve ser >= 0'),
   // Campos adicionais opcionais (não validamos todos, apenas os críticos)
 })
@@ -19,6 +20,7 @@ export const MedicineWithStockSchema = z.object({
   id: z.string().min(1, 'id é obrigatório'),
   name: z.string().min(1, 'name é obrigatório'),
   stock: z.array(StockEntrySchema).optional().default([]).describe('Array de entradas de estoque'),
+  purchases: z.array(StockEntrySchema).optional().default([]),
 })
 
 // Schema para protocolo

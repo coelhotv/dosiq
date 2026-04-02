@@ -3,7 +3,13 @@ import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import MedicineAutocomplete from './MedicineAutocomplete'
 import LaboratoryAutocomplete from './LaboratoryAutocomplete'
-import { MEDICINE_TYPES, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@schemas/medicineSchema'
+import {
+  MEDICINE_TYPES,
+  DOSAGE_UNITS,
+  DOSAGE_UNIT_LABELS,
+  REGULATORY_CATEGORIES,
+  REGULATORY_CATEGORY_LABELS,
+} from '@schemas/medicineSchema'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import './MedicineForm.css'
 
@@ -39,6 +45,7 @@ export default function MedicineForm({
     type: medicine?.type || 'medicamento',
     dosage_unit: medicine?.dosage_unit || 'mg',
     therapeutic_class: medicine?.therapeutic_class || null,
+    regulatory_category: medicine?.regulatory_category || null,
   })
 
   const [errors, setErrors] = useState({})
@@ -68,6 +75,7 @@ export default function MedicineForm({
       name: medicine.name,
       active_ingredient: toTitleCase(medicine.activeIngredient),
       therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
+      regulatory_category: medicine.regulatoryCategory || null,
     }))
     if (saveSuccess) setSaveSuccess(false)
   }
@@ -126,6 +134,7 @@ export default function MedicineForm({
         type: formData.type,
         dosage_unit: formData.dosage_unit,
         therapeutic_class: formData.therapeutic_class || null,
+        regulatory_category: formData.regulatory_category || null,
       }
 
       const savedMedicine = await onSave(dataToSave)
@@ -263,6 +272,34 @@ export default function MedicineForm({
           disabled={isSubmitting}
         />
         <small className="field-hint">Opcional. Base ANVISA com 278 laboratórios registrados</small>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="regulatory_category">
+          Categoria Regulatória
+          {formData.regulatory_category && !medicine?.regulatory_category && (
+            <span className="autocomplete-badge" title="Preenchido via Base ANVISA">
+              Fonte: ANVISA
+            </span>
+          )}
+        </label>
+        <select
+          id="regulatory_category"
+          name="regulatory_category"
+          value={formData.regulatory_category || ''}
+          onChange={handleChange}
+          disabled={isSubmitting}
+        >
+          <option value="">Selecione (opcional)</option>
+          {REGULATORY_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {REGULATORY_CATEGORY_LABELS[category] || category}
+            </option>
+          ))}
+        </select>
+        <small className="field-hint">
+          Preenchido via ANVISA e usado no fluxo de compras do estoque redesign.
+        </small>
       </div>
 
       <div className="form-group">

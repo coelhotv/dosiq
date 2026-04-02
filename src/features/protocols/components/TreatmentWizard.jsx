@@ -3,7 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { medicineService, protocolService, stockService } from '@shared/services'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
-import { DOSAGE_UNITS } from '@schemas/medicineSchema'
+import {
+  DOSAGE_UNITS,
+  REGULATORY_CATEGORIES,
+  REGULATORY_CATEGORY_LABELS,
+} from '@schemas/medicineSchema'
 import { FREQUENCIES } from '@schemas/protocolSchema'
 import { formatLocalDate } from '@utils/dateUtils'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
@@ -53,6 +57,7 @@ export default function TreatmentWizard({
     laboratory: preselectedMedicine?.laboratory || '',
     active_ingredient: preselectedMedicine?.active_ingredient || '',
     therapeutic_class: preselectedMedicine?.therapeutic_class || null,
+    regulatory_category: preselectedMedicine?.regulatory_category || null,
   })
 
   const [protocolData, setProtocolData] = useState({
@@ -139,6 +144,7 @@ export default function TreatmentWizard({
       name: medicine.name,
       active_ingredient: toTitleCase(medicine.activeIngredient) || '',
       therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
+      regulatory_category: medicine.regulatoryCategory || null,
     }))
   }, [])
 
@@ -165,6 +171,7 @@ export default function TreatmentWizard({
             laboratory: medicineData.laboratory || null,
             active_ingredient: medicineData.active_ingredient || null,
             therapeutic_class: medicineData.therapeutic_class || null,
+            regulatory_category: medicineData.regulatory_category || null,
           }))
 
         // Resolver plan ID: pode vir de prop, seleção ou criação
@@ -193,7 +200,7 @@ export default function TreatmentWizard({
         }
 
         if (!skipStock && stockData.quantity) {
-          await stockService.create({
+          await stockService.add({
             medicine_id: medicine.id,
             quantity: Number(stockData.quantity),
             purchase_date: stockData.purchase_date,
@@ -372,6 +379,25 @@ export default function TreatmentWizard({
                       </small>
                     </label>
                   )}
+
+                  <label className="wizard__label">
+                    Categoria Regulatória
+                    <select
+                      className="wizard__select"
+                      value={medicineData.regulatory_category || ''}
+                      onChange={(e) => updateMedicine('regulatory_category', e.target.value || null)}
+                    >
+                      <option value="">Selecione (opcional)</option>
+                      {REGULATORY_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {REGULATORY_CATEGORY_LABELS[category] || category}
+                        </option>
+                      ))}
+                    </select>
+                    <small className="wizard__label-note">
+                      Preenchido automaticamente via ANVISA quando disponível.
+                    </small>
+                  </label>
 
                   <div className="wizard__row">
                     <label className="wizard__label" style={{ flex: 1 }}>

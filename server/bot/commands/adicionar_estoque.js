@@ -2,6 +2,7 @@ import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
+import { getCurrentDateInTimezone } from '../../utils/timezone.js';
 
 // Helper function to fetch medicines
 async function fetchMedicines(userId, medicineName = null) {
@@ -124,14 +125,16 @@ export async function handleReporShortcut(bot, msg, match) {
 
 export async function processAddStock(bot, chatId, userId, medicineId, quantity, medicineName) {
   try {
-    const { error } = await supabase
-      .from('stock')
-      .insert([{
-        user_id: userId,
-        medicine_id: medicineId,
-        quantity: quantity,
-        purchase_date: new Date().toISOString().split('T')[0]
-      }]);
+    const { error } = await supabase.rpc('create_purchase_with_stock', {
+      p_medicine_id: medicineId,
+      p_quantity: quantity,
+      p_unit_price: 0,
+      p_purchase_date: getCurrentDateInTimezone('America/Sao_Paulo'),
+      p_expiration_date: null,
+      p_pharmacy: null,
+      p_laboratory: null,
+      p_notes: 'Entrada registrada via Telegram'
+    });
 
     if (error) throw error;
 

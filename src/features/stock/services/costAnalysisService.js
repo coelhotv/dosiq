@@ -6,6 +6,14 @@ import {
 } from '@schemas/costAnalysisSchema'
 import { formatLocalDate } from '@utils/dateUtils'
 
+function getPriceEntries(medicine = {}) {
+  if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
+    return medicine.purchases
+  }
+
+  return medicine.stock || []
+}
+
 /**
  * Serviço de análise de custo de tratamento.
  *
@@ -19,10 +27,12 @@ import { formatLocalDate } from '@utils/dateUtils'
 /**
  * Calcula a média ponderada do preço unitário.
  *
- * Fórmula: avgPrice = SUM(unit_price × quantity) / SUM(quantity)
- * Considera apenas entradas com quantity > 0 e unit_price > 0
+ * Fórmula: avgPrice = SUM(unit_price × quantityBase) / SUM(quantityBase)
+ * quantityBase:
+ * - purchases: quantity_bought
+ * - fallback legado: quantity
  *
- * @param {Array} stockEntries - Array de {quantity, unit_price, ...}
+ * @param {Array} stockEntries - Array de compras ou entradas de estoque
  * @returns {number} Preço médio ou 0 se sem dados de preço
  */
 export function calculateAvgUnitPrice(stockEntries = []) {
@@ -37,12 +47,17 @@ export function calculateAvgUnitPrice(stockEntries = []) {
 
   if (!validatedEntries || validatedEntries.length === 0) return 0
 
-  const activeEntries = validatedEntries.filter((s) => s.quantity > 0 && s.unit_price > 0)
+  const activeEntries = validatedEntries
+    .map((entry) => ({
+      ...entry,
+      quantityBase: entry.quantity_bought ?? entry.quantity ?? 0,
+    }))
+    .filter((s) => s.quantityBase > 0 && s.unit_price > 0)
 
   if (activeEntries.length === 0) return 0
 
-  const totalValue = activeEntries.reduce((sum, s) => sum + s.unit_price * s.quantity, 0)
-  const totalQty = activeEntries.reduce((sum, s) => sum + s.quantity, 0)
+  const totalValue = activeEntries.reduce((sum, s) => sum + s.unit_price * s.quantityBase, 0)
+  const totalQty = activeEntries.reduce((sum, s) => sum + s.quantityBase, 0)
 
   return totalQty > 0 ? totalValue / totalQty : 0
 }
@@ -81,7 +96,7 @@ export function calculateDailyIntake(medicineId, protocols = []) {
  * Calcula custo mensal por medicamento.
  *
  * Estrutura esperada de entrada:
- * - medicines: Array<{id, name, stock: Array<{quantity, unit_price, ...}>}>
+ * - medicines: Array<{id, name, purchases?: Array<{quantity_bought, unit_price, ...}>, stock?: Array<{quantity, unit_price, ...}>}>
  * - protocols: Array<{id, medicine_id, active, dosage_per_intake, time_schedule, ...}>
  *
  * Retorna:
@@ -126,7 +141,7 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
       const dailyIntake = dailyIntakeMap[medicine.id] || 0
       if (dailyIntake === 0) return null
 
-      const avgUnitPrice = calculateAvgUnitPrice(medicine.stock)
+      const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(medicine))
       const monthlyCost = dailyIntake * avgUnitPrice * 30
       const hasPriceData = avgUnitPrice > 0
 
@@ -234,7 +249,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
     .filter((med) => activeMedicineIds.has(med.id))
     .map((med) => {
       const medLogs = logsByMedicine[med.id] || []
-      const avgUnitPrice = calculateAvgUnitPrice(med.stock || [])
+      const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(med))
 
       // Consumo real vs teórico
       const daysWithData = new Set(medLogs.map((l) => formatLocalDate(new Date(l.taken_at)))).size

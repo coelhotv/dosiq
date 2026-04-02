@@ -44,7 +44,7 @@ function normalizeText(text) {
  *
  * @param {string} query - Termo de busca (mínimo 1 caractere para iniciar, recomendado 3+)
  * @param {number} limit - Máximo de resultados (default: 10)
- * @returns {Promise<Array<{name, activeIngredient, therapeuticClass}>>}
+ * @returns {Promise<Array<{name, activeIngredient, therapeuticClass, regulatoryCategory}>>}
  */
 export async function searchMedicines(query, limit = 10) {
   if (!query || query.trim().length < 3) return []
@@ -91,7 +91,7 @@ export async function getMedicineDetails(name) {
  * Busca medicamentos por princípio ativo específico.
  *
  * @param {string} activeIngredient - Princípio ativo
- * @returns {Promise<Array<{name, activeIngredient, therapeuticClass}>>}
+ * @returns {Promise<Array<{name, activeIngredient, therapeuticClass, regulatoryCategory}>>}
  */
 export async function searchByActiveIngredient(activeIngredient) {
   if (!activeIngredient) return []
@@ -118,7 +118,7 @@ export async function getAllMedicines() {
  *
  * @param {string} activeIngredient - Princípio ativo
  * @param {string} excludeName - Nome comercial a excluir da busca (para edição)
- * @returns {Promise<Array<{name, activeIngredient}>>}
+ * @returns {Promise<Array<{name, activeIngredient, regulatoryCategory}>>}
  */
 export async function findDuplicatesByIngredient(activeIngredient, excludeName = null) {
   const medicines = await searchByActiveIngredient(activeIngredient)

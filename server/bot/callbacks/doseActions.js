@@ -45,7 +45,7 @@ async function handleTakeDose(bot, callbackQuery) {
     const medicineName = protocol.medicine.name;
 
     // 2. Criar Log
-    const { error: logError } = await supabase
+    const { data: createdLogs, error: logError } = await supabase
       .from('medicine_logs')
       .insert([{
         user_id: userId,
@@ -53,30 +53,27 @@ async function handleTakeDose(bot, callbackQuery) {
         medicine_id: medicineId,
         quantity_taken: parseFloat(quantity),
         taken_at: new Date().toISOString()
-      }]);
+      }])
+      .select('id')
+      .single();
 
     if (logError) throw logError;
 
-    // 3. Decrementar Estoque
-    const { data: stockEntries, error: fetchError } = await supabase
-      .from('stock')
-      .select('*')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', userId)
-      .gt('quantity', 0)
-      .order('purchase_date', { ascending: true });
-    
-    if (!fetchError && stockEntries.length > 0) {
-      let remaining = parseFloat(quantity);
-      for (const entry of stockEntries) {
-        if (remaining <= 0) break;
-        const toDecrease = Math.min(entry.quantity, remaining);
-        await supabase
-          .from('stock')
-          .update({ quantity: entry.quantity - toDecrease })
-          .eq('id', entry.id);
-        remaining -= toDecrease;
-      }
+    // 3. Decrementar Estoque via RPC FIFO
+    const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+      p_medicine_id: medicineId,
+      p_quantity: parseFloat(quantity),
+      p_medicine_log_id: createdLogs.id
+    });
+
+    if (consumeError) {
+      await supabase
+        .from('medicine_logs')
+        .delete()
+        .eq('id', createdLogs.id)
+        .eq('user_id', userId);
+
+      throw consumeError;
     }
 
     // 4. Check stock levels and warn if low

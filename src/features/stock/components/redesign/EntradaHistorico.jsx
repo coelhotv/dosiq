@@ -12,7 +12,6 @@ import { motion } from 'framer-motion'
 import { Pill, Leaf, ChevronDown, ChevronUp } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
-import { SYSTEM_NOTE_PREFIXES } from '@stock/constants'
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -23,8 +22,7 @@ function formatDate(dateStr) {
 }
 
 function formatQuantity(entry) {
-  const sign = entry.quantity >= 0 ? '+' : ''
-  return `${sign}${entry.quantity} un.`
+  return `+${entry.quantity_bought} un.`
 }
 
 /**
@@ -37,17 +35,11 @@ function formatCost(entry) {
   return `${entry.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un.`
 }
 
-export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
+export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
   const motionConfig = useMotion()
   const [expanded, setExpanded] = useState(false)
 
-  if (entries.length === 0) return null
-
-  // Filtrar apenas compras reais (excluir ajustes automáticos e saídas por FIFO)
-  // Mesma lógica de PR #402: quantity > 0 E notes não é prefixo de sistema
-  const purchases = entries.filter(
-    (e) => e.quantity > 0 && !SYSTEM_NOTE_PREFIXES.some((p) => e.notes?.startsWith(p))
-  )
+  if (purchases.length === 0) return null
 
   // Ordenar por data mais recente primeiro
   const sorted = [...purchases].sort(
@@ -85,7 +77,7 @@ export default function EntradaHistorico({ entries = [], maxVisible = 3 }) {
               {/* Data + Nome */}
               <div className="entrada-historico__info">
                 <span className="entrada-historico__date">{formatDate(entry.purchase_date)}</span>
-                <span className="entrada-historico__medicine">{entry.medicineName}</span>
+              <span className="entrada-historico__medicine">{entry.medicineName}</span>
               </div>
 
               {/* Quantidade */}

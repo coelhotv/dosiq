@@ -14,6 +14,7 @@ import { cachedQuery, invalidateCache, generateCacheKey } from '@shared/utils/qu
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { stockService } from '@stock/services/stockService'
+import { purchaseService } from '@stock/services/purchaseService'
 import { logService } from '@shared/services/api/logService'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { adherenceService } from '@services/api/adherenceService'
@@ -26,6 +27,10 @@ export const CACHE_KEYS = {
   PROTOCOLS_ACTIVE: 'protocols:active',
   PROTOCOL_BY_ID: 'protocol',
   STOCK_BY_MEDICINE: 'stock:medicine',
+  PURCHASES_BY_MEDICINE: 'purchases:medicine',
+  PURCHASES_HISTORY: 'purchases:history',
+  PURCHASES_LATEST: 'purchases:latest',
+  PURCHASES_AVG_PRICE: 'purchases:avgPrice',
   STOCK_TOTAL: 'stock:total',
   STOCK_SUMMARY: 'stock:summary',
   STOCK_LOW: 'stock:low',
@@ -173,6 +178,11 @@ export const cachedStockService = {
     return cachedQuery(key, () => stockService.getLowStockMedicines(threshold))
   },
 
+  async getPurchasesByMedicine(medicineId) {
+    const key = generateCacheKey(CACHE_KEYS.PURCHASES_BY_MEDICINE, { medicineId })
+    return cachedQuery(key, () => purchaseService.getByMedicine(medicineId))
+  },
+
   // Métodos de escrita (com invalidação de cache)
   async add(stock) {
     const result = await stockService.add(stock)
@@ -181,6 +191,10 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_BY_MEDICINE}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_HISTORY}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     // Invalida medicamentos (preço médio pode mudar)
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após add')
@@ -193,6 +207,10 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_BY_MEDICINE}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_HISTORY}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após update')
     return result
@@ -204,6 +222,10 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_BY_MEDICINE}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_HISTORY}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após delete')
   },
@@ -214,6 +236,10 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_BY_MEDICINE}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_HISTORY}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após decrease')
     return result
@@ -225,6 +251,10 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_BY_MEDICINE}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_HISTORY}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
+    invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
     console.log('[cachedStockService] Cache invalidado após increase')
     return result

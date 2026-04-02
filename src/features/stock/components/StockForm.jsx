@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
+import { formatLocalDate } from '@utils/dateUtils'
 import './StockForm.css'
 
 export default function StockForm({ medicines, initialValues, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     medicine_id: initialValues?.medicine_id || '',
-    quantity: '',
-    unit_price: '',
-    purchase_date: new Date().toISOString().split('T')[0],
-    expiration_date: '',
+    quantity: initialValues?.quantity ?? '',
+    unit_price: initialValues?.unit_price ?? '',
+    purchase_date: initialValues?.purchase_date || formatLocalDate(new Date()),
+    expiration_date: initialValues?.expiration_date || '',
+    pharmacy: initialValues?.pharmacy || '',
+    laboratory: initialValues?.laboratory || '',
+    notes: initialValues?.notes || '',
   })
 
   const [errors, setErrors] = useState({})
@@ -21,6 +25,14 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
       setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
+
+  const selectedMedicine = medicines.find((medicine) => medicine.id === formData.medicine_id) || null
+  const regulatoryCategory = selectedMedicine?.regulatory_category || null
+  const shouldAskPurchaseLaboratory = regulatoryCategory === 'Genérico'
+  const fixedLaboratory = regulatoryCategory === 'Similar' || regulatoryCategory === 'Novo'
+  const effectiveLaboratory = shouldAskPurchaseLaboratory
+    ? formData.laboratory.trim() || null
+    : selectedMedicine?.laboratory || null
 
   const validate = () => {
     const newErrors = {}
@@ -59,6 +71,9 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
         unit_price: formData.unit_price ? parseFloat(formData.unit_price) : 0,
         purchase_date: formData.purchase_date || null,
         expiration_date: formData.expiration_date || null,
+        pharmacy: formData.pharmacy.trim() || null,
+        laboratory: effectiveLaboratory,
+        notes: formData.notes.trim() || null,
       }
 
       await onSave(dataToSave)
@@ -160,6 +175,66 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             <span className="error-message">{errors.expiration_date}</span>
           )}
         </div>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="pharmacy">Farmácia</label>
+        <input
+          type="text"
+          id="pharmacy"
+          name="pharmacy"
+          value={formData.pharmacy}
+          onChange={handleChange}
+          placeholder="Ex: Drogasil, Drogaria São Paulo"
+          maxLength={200}
+        />
+      </div>
+
+      {shouldAskPurchaseLaboratory && (
+        <div className="form-group">
+          <label htmlFor="laboratory">Laboratório desta compra</label>
+          <input
+            type="text"
+            id="laboratory"
+            name="laboratory"
+            value={formData.laboratory}
+            onChange={handleChange}
+            placeholder="Ex: EMS, Medley"
+            maxLength={200}
+          />
+          <small className="field-hint">
+            Para genéricos, o laboratório pode variar a cada compra.
+          </small>
+        </div>
+      )}
+
+      {fixedLaboratory && effectiveLaboratory && (
+        <div className="form-group">
+          <label htmlFor="laboratory_fixed">Laboratório</label>
+          <input
+            type="text"
+            id="laboratory_fixed"
+            value={effectiveLaboratory}
+            disabled
+            readOnly
+          />
+          <small className="field-hint">
+            Para {regulatoryCategory?.toLowerCase()}, usamos o laboratório fixo do medicamento.
+          </small>
+        </div>
+      )}
+
+      <div className="form-group">
+        <label htmlFor="notes">Observações da compra</label>
+        <textarea
+          id="notes"
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          placeholder="Ex: promoção, lote especial, compra emergencial"
+          rows="3"
+          maxLength={500}
+        />
       </div>
 
       {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
