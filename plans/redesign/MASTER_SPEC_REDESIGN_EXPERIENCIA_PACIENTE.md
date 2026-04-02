@@ -36,7 +36,7 @@
 | W11 | Forms & Modals Redesign | (seção 16 abaixo) | ✅ MERGED #439 (2026-03-30) | main |
 | W12 | Medicines View & Consultation Mode | (seção 17 abaixo) | ✅ MERGED #440 (2026-03-31) | main |
 | W13 | Landing, Auth & Onboarding | `WAVE_13_LANDING_AUTH_ONBOARDING_REDESIGN.md` | ✅ MERGED #441 (2026-03-31) | main |
-| W14 | Shared Components & Chatbot | (seção 19 abaixo) | ⏳ PENDENTE | — |
+| W14 | Shared Components & Chatbot | `WAVE_14_SHARED_COMPONENTS_CHATBOT.md` | ⏳ PENDENTE | — |
 | W15 | Accessibility & Polish | (seção 20 abaixo) | ⏳ PENDENTE | — |
 | W16 | Rollout Promotion & Legacy Cleanup | (seção 21 abaixo) | ⏳ PENDENTE | — |
 
