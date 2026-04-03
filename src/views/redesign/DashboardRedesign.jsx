@@ -23,7 +23,7 @@ import {
   analyzeReminderTiming,
   isSuggestionDismissed,
 } from '@features/protocols/services/reminderOptimizerService'
-import { insightService } from '@dashboard/services/insightService'
+import insightService from '@dashboard/services/insightService'
 
 /**
  * getMotivationalMessage — Mensagem contextual baseada em adesão e doses restantes
