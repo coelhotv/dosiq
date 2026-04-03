@@ -1,4 +1,4 @@
-# Wave 15 — Accessibility & Polish
+# Wave 16 — Accessibility & Polish
 ## Spec de Execução — Meus Remédios Redesign
 
 **Versão:** 1.0
@@ -12,7 +12,7 @@
 
 ## Contexto e Objetivos
 
-Wave 15 é a wave de **compliance de acessibilidade**. Com W0–W14, toda a UI do Santuário Terapêutico foi construída. W15 não adiciona features — ela **garante que tudo que foi construído seja usável por todos os usuários**, incluindo pessoas com deficiências motoras, visuais ou vestibulares.
+Wave 16 é a wave de **compliance de acessibilidade**. Com W0–W15, toda a UI do Santuário Terapêutico foi construída (incluindo Smart Insights em W15). W16 não adiciona features — ela **garante que tudo que foi construído seja usável por todos os usuários**, incluindo pessoas com deficiências motoras, visuais ou vestibulares.
 
 **Objetivo central:** Alcançar **Lighthouse Accessibility Score ≥ 95** e garantir navegação completa por teclado, leitores de tela e contextos de motion reduzido.
 

@@ -38,8 +38,9 @@
 | W13 | Landing, Auth & Onboarding | `WAVE_13_LANDING_AUTH_ONBOARDING_REDESIGN.md` | ✅ MERGED #441 (2026-03-31) | main |
 | W14 | Shared Components & Chatbot | `WAVE_14_SHARED_COMPONENTS_CHATBOT.md` | ✅ MERGED #442 (2026-04-02) | main |
 | W14.5 | Tratamentos: CRUD Completo & Usabilidade | `WAVE_14_5_TREATMENTS_CRUD_USABILITY.md` | ✅ MERGED #444 (2026-04-02) | main |
-| W15 | Accessibility & Polish | `WAVE_15_ACCESSIBILITY_POLISH.md` | ⏳ PENDENTE | — |
-| W16 | Rollout Promotion & Legacy Cleanup | `WAVE_16_ROLLOUT_LEGACY_CLEANUP.md` | ⏳ PENDENTE | — |
+| W15 | Smart Insights Integration | `WAVE_15_SMART_INSIGHTS_INTEGRATION.md` | ⏳ PENDENTE | — |
+| W16 | Accessibility & Polish | `WAVE_16_ACCESSIBILITY_POLISH.md` | ⏳ PENDENTE | — |
+| W17 | Rollout Promotion & Legacy Cleanup | `WAVE_17_ROLLOUT_LEGACY_CLEANUP.md` | ⏳ PENDENTE | — |
 
 **Entregas Completas:**
 - ✅ **W4** (2026-03-25): BottomNavRedesign + Sidebar + App.jsx integration + page transitions (PR #422)
@@ -67,8 +68,9 @@
 **Shared Components & Chatbot (W14):** 100% COMPLETO ✅
 **Views (W0-W14):** 100% — Todas as views, forms e componentes compartilhados redesenhados
 **Próximo bloco — Landing/Auth/Onboarding (W13):** Login redesign, Landing page, Onboarding flow
-**Polish (W15):** Accessibility & compliance
-**Closure (W16):** Feature flag removal, legacy cleanup, token consolidation
+**Smart Insights (W15):** Phase 6 intelligence integration — smart alerts, risk scores, cost analysis, reminder optimizer
+**Polish (W16):** Accessibility & compliance
+**Closure (W17):** Feature flag removal, legacy cleanup, token consolidation
 
 ---
 
@@ -93,12 +95,13 @@
 17. [Wave 12 — Medicines View & Consultation Mode](#17-wave-12--medicines-view--consultation-mode)
 18. [Wave 13 — Landing, Auth & Onboarding](#18-wave-13--landing-auth--onboarding)
 19. [Wave 14 — Shared Components & Chatbot](#19-wave-14--shared-components--chatbot)
-20. [Wave 15 — Accessibility & Polish](#20-wave-15--accessibility--polish)
-21. [Wave 16 — Rollout Promotion & Legacy Cleanup](#21-wave-16--rollout-promotion--legacy-cleanup)
-22. [Checklist de Validação por Wave](#22-checklist-de-validação-por-wave)
-23. [Mapeamento de Arquivos](#23-mapeamento-de-arquivos)
-24. [Riscos e Mitigações](#24-riscos-e-mitigações)
-21. [Definição de Sucesso](#21-definição-de-sucesso)
+20. [Wave 15 — Smart Insights Integration](#20-wave-15--smart-insights-integration)
+21. [Wave 16 — Accessibility & Polish](#21-wave-16--accessibility--polish)
+22. [Wave 17 — Rollout Promotion & Legacy Cleanup](#22-wave-17--rollout-promotion--legacy-cleanup)
+23. [Checklist de Validação por Wave](#23-checklist-de-validação-por-wave)
+24. [Mapeamento de Arquivos](#24-mapeamento-de-arquivos)
+25. [Riscos e Mitigações](#25-riscos-e-mitigações)
+26. [Definição de Sucesso](#26-definição-de-sucesso)
 - [Referências](#referências)
 
 ---
@@ -330,7 +333,7 @@ ADICIONAR:
 | `PlanBadge.jsx` | `@dashboard/components/` | EVOLUIR | Atualizar cores |
 | `BatchRegisterButton.jsx` | `@dashboard/components/` | EVOLUIR | Gradient primary style |
 | `AdaptiveLayout.jsx` | `@dashboard/components/` | EVOLUIR | Manter lógica, ajustar breakpoints |
-| `SmartAlerts.jsx` | `@dashboard/components/` | EVOLUIR | Atualizar visual para tonal surfaces |
+| `SmartAlerts.jsx` | `@dashboard/components/` | REESCREVER (W15) | `SmartAlertsRedesign.jsx` — Smart alerts Sanctuary com tipos Fase 6 |
 | — (novo) | — | CRIAR | `Sidebar.jsx` — Desktop navigation sidebar |
 | — (novo) | — | CRIAR | `PageHeader.jsx` — Reusable page header component |
 | — (novo) | — | CRIAR | `StockCard.jsx` — Card individual de estoque (complex mode) |
@@ -2674,11 +2677,269 @@ View admin não precisa de variant separada (só admin vê). Redesign direto:
 
 ---
 
-## 20. Wave 15 — Accessibility & Polish
+## 20. Wave 15 — Smart Insights Integration
 
-> **Escopo:** Auditoria completa de acessibilidade em TODAS as views e componentes redesenhados (W0-W14). Esta wave é de compliance — não adiciona features, apenas garante que tudo que foi construído é acessível.
+> **Spec detalhada:** `WAVE_15_SMART_INSIGHTS_INTEGRATION.md`
+> **Escopo:** Integrar toda a inteligência entregue nas Fases 5-6 do Roadmap v4 no redesign Santuário Terapêutico. O produto tem services robustos de predição, risco, custo e otimização de horários — mas o redesign (W0-W14.5) não os consome. Esta wave fecha essa lacuna, trazendo o valor analítico para o novo visual.
 
-### Sprint 15.1 — Semantic HTML Audit
+### Motivação
+
+O Dashboard legacy (`Dashboard.jsx`) consome 7 smart features que o `DashboardRedesign.jsx` não possui:
+1. **SmartAlerts** — alertas contextuais de estoque, dose atrasada, prescrição vencendo
+2. **InsightCard** — cards rotativos com insights do `insightService`
+3. **ReminderSuggestion** — sugestão de ajuste de horário via `reminderOptimizerService`
+4. **Protocol Risk Score** — score de risco por protocolo via `protocolRiskService` (não surfaceado em componente visual)
+5. **Cost Analysis** — gráfico de custo mensal via `costAnalysisService` + `CostChart.jsx`
+6. **Prescription Timeline** — timeline visual de vigência de prescrições (EV-07) via `PrescriptionTimeline.jsx`
+7. **Refill Prediction** — previsão de reposição com data de esgotamento via `refillPredictionService`
+
+O Heatmap de Adesão (`AdherenceHeatmap.jsx`) já está integrado no `HealthHistoryRedesign` — **não entra nesta wave**.
+
+### Modelo visual: InsightCard Sanctuary
+
+Todas as interações inteligentes desta wave reutilizam o modelo visual do `PriorityDoseCard` (já implementado em W6) como template de design. O card gradient com badge, conteúdo rico e CTA contextual é o padrão "Smart Card" do produto:
+
+```
+┌─ Smart Card Pattern ────────────────────────────┐
+│  ● Badge (categoria)                  Ícone     │
+│                                                  │
+│  Headline (título do insight)                    │
+│  Subtítulo descritivo (Lexend 400)               │
+│                                                  │
+│  [Conteúdo contextual: barra, lista, métrica]    │
+│                                                  │
+│  ╭─────────────────╮  ╭──────────────╮           │
+│  │   CTA Primário   │  │  Dispensar   │           │
+│  ╰─────────────────╯  ╰──────────────╯           │
+└──────────────────────────────────────────────────┘
+```
+
+**Variantes por semântica:**
+| Variante | Background | Badge | Uso |
+|----------|-----------|-------|-----|
+| `priority` | `secondary → secondary-container` gradient | "Prioridade Máxima" | Dose urgente (existente) |
+| `risk` | `error-container` at 20% | "Atenção" / "Crítico" | Risk score, stock zerado |
+| `suggestion` | `primary → primary-container` gradient | "Sugestão Inteligente" | Reminder optimizer |
+| `insight` | `surface-container-lowest` + ambient shadow | "Dica do Dia" | InsightCard rotativo |
+| `cost` | `tertiary-fixed` at 30% | "Análise de Custo" | Cost summary |
+
+### Principios de Integração
+
+1. **Zero new Supabase calls** — computação pura sobre dados já no `DashboardProvider` / `useDashboard()`.
+2. **Progressive Disclosure respeitado** — Dona Maria vê alertas críticos como linguagem humana; Carlos vê métricas numéricas.
+3. **Smart ≠ Noise** — cada insight tem threshold mínimo (14 dias de dados) e frequency capping via `insightService`.
+4. **Sanctuary visual** — tonal surfaces, sem bordas 1px, Living Fill em barras, Cascade Reveal em listas.
+5. **Reutilização máxima** — os services existentes (`protocolRiskService`, `refillPredictionService`, `reminderOptimizerService`, `costAnalysisService`) não são modificados.
+
+### Sprint 15.1 — SmartAlertsRedesign (Dashboard)
+
+**Criar:** `src/features/dashboard/components/SmartAlertsRedesign.jsx` + `.css`
+**Consumido por:** `DashboardRedesign.jsx`
+
+Traz os alertas inteligentes do `Dashboard.jsx` legacy para o redesign. Os dados são computados inline no `DashboardRedesign` (mesmo padrão do legacy: `useMemo` sobre `stockSummary`, `protocols`, `logs`).
+
+**Tipos de alerta:**
+| Tipo | Trigger | Severidade | Persona adaptação |
+|------|---------|-----------|-------------------|
+| Estoque zerado | `item.isZero` | `critical` | Ambas: label "Estoque Zerado" + CTA "Comprar Agora" |
+| Estoque baixo | `item.isLow` | `warning` | Simple: "Estoque acabando em X dias" / Complex: barra + % |
+| Dose atrasada | `delay > toleranceMin` | `warning`/`critical` | Simple: "Tome agora" / Complex: delta em minutos |
+| Prescrição vencendo | `daysRemaining < 30` | `warning`/`critical` | Ambas: data + CTA "Renovar" |
+
+**Visual Sanctuary:**
+- Cada alerta é um card tonal (não lista genérica)
+- `critical`: bg `color-mix(in srgb, var(--color-error) 8%, transparent)`, border-left 4px `error`
+- `warning`: bg `color-mix(in srgb, var(--color-tertiary-fixed) 40%, transparent)`, border-left 4px `tertiary`
+- `info`: bg `secondary-fixed` at 20%, border-left 4px `secondary`
+- Ícones Lucide: `AlertTriangle` (critical), `AlertCircle` (warning), `Info` (info)
+- CTA inline: texto link com seta (não botão full-width — reduzir peso visual)
+- Cascade Reveal: stagger 0.1s por alerta
+- Max 3 alertas visíveis; "Ver todos (N)" expand link
+
+### Sprint 15.2 — InsightCardRedesign (Dashboard)
+
+**Criar:** `src/features/dashboard/components/InsightCardRedesign.jsx` + `.css`
+**Consumido por:** `DashboardRedesign.jsx`
+
+Card rotativo de insights contextuais do `insightService`. Reutiliza o layout do PriorityDoseCard (padrão Smart Card):
+
+- Background: `surface-container-lowest` + `shadow-ambient`
+- Badge: tipo do insight (e.g., "Dica do Dia", "Parabéns!", "Atenção")
+- Ícone temático por tipo (Lucide: `TrendingUp`, `Award`, `Clock`, `Target`)
+- Texto: Lexend 400, 1-2 linhas
+- CTA opcional: "Ver Detalhes" para navegar à view relevante
+- Animação: fade-in suave (Living Fill pattern para métricas numéricas)
+- Frequency capping: delegado ao `insightService` (já implementado)
+
+**Persona:**
+- Simple: apenas insights de alta prioridade (critical + high), tom encorajador
+- Complex: todos os insights, incluindo IMPROVEMENT_OPPORTUNITY
+
+### Sprint 15.3 — ReminderSuggestionRedesign (Dashboard)
+
+**Criar:** `src/features/protocols/components/ReminderSuggestionRedesign.jsx` + `.css`
+**Consumido por:** `DashboardRedesign.jsx`
+
+Redesenha o `ReminderSuggestion.jsx` legacy com visual Smart Card (variante `suggestion`):
+
+- Background: `primary → primary-container` gradient (mesma assinatura do PriorityDoseCard mas verde)
+- Badge: "Sugestão Inteligente"
+- Texto: "Você costuma tomar **{nome}** por volta das **{suggestedTime}**. Ajustar o lembrete de {currentTime}?"
+- Subtexto: "(baseado em {sampleCount} doses)"
+- CTAs: "Ajustar Horário" (branco, primary text) + "Manter Atual" (ghost) + "Não perguntar mais" (text link)
+- Ícone: Lucide `Clock` ou `BellRing`
+- `dismissSuggestion()` + `isSuggestionDismissed()` reutilizados do service existente
+- **Persona:** Ambas veem (sugestão é acionável e simples)
+- **Threshold:** `analyzeReminderTiming()` retorna `null` se <7 amostras ou delta <15min
+
+### Sprint 15.4 — ProtocolRiskBadge (Tratamentos)
+
+**Criar:** `src/features/adherence/components/ProtocolRiskBadge.jsx` + `.css`
+**Consumido por:** `TreatmentsRedesign.jsx` (dentro de cada protocol row/card)
+
+Surfacea o `protocolRiskService` como badge visual inline nos cards de tratamento:
+
+- Badge pill: `RISK_LABELS[riskLevel]` (Estável / Atenção / Crítico)
+- Cor: `RISK_COLORS[riskLevel]` (verde / âmbar / vermelho)
+- Trend indicator: seta ↑↓→ baseada em `trend7d` (positivo = melhorando, negativo = piorando)
+- Tooltip (Complex mode): "Adesão 14d: {adherence14d}% | Tendência 7d: {trend7d > 0 ? '+' : ''}{trend7d}%"
+- Guard: `hasEnoughData === false` → não renderizar (princípio de dados suficientes)
+
+**Persona:**
+- Simple (Dona Maria): badge com label colorida ("Atenção"), sem número. Só aparece se `riskLevel !== 'stable'`.
+- Complex (Carlos): badge + % adesão 14d + trend arrow. Sempre visível.
+
+**Posição no layout:**
+- Card mode (mobile/simple): ao lado do `StockPill`, na linha de badges
+- Tabular mode (desktop/complex): coluna dedicada "Risco" entre Adesão e Estoque
+
+### Sprint 15.5 — CostSummaryRedesign (Estoque)
+
+**Criar:** `src/features/stock/components/CostSummaryRedesign.jsx` + `.css`
+**Consumido por:** `StockRedesign.jsx`
+
+Redesenha o `CostChart.jsx` legacy com visual Santuário:
+
+- Card: `surface-container-lowest`, radius `2rem`, padding `2rem`
+- Header: "Análise de Custo Mensal" + ícone `DollarSign` (Lucide)
+- Total: número grande `headline-md` (Public Sans 700) — "R$ {totalMonthly}/mês"
+- Breakdown: lista de medicamentos com barra proporcional (Living Fill)
+  - Cada item: nome + "R$ {cost}/mês" + barra horizontal proporcional ao total
+  - Barras: 8px, full-radius, cor `primary`; item mais caro em `tertiary`
+- Guard: `costData.items.length === 0` → "Adicione dados de compra para ver a análise de custo"
+- **Persona:**
+  - Simple: apenas total + top 3 medicamentos mais caros
+  - Complex: lista completa + barras proporcionais
+
+**Service:** reutiliza `calculateMonthlyCosts()` de `costAnalysisService` sem modificação.
+
+### Sprint 15.6 — PrescriptionTimelineRedesign (Estoque)
+
+**Criar:** `src/features/stock/components/PrescriptionTimelineRedesign.jsx` + `.css`
+**Consumido por:** `StockRedesign.jsx`
+
+Redesenha o `PrescriptionTimeline.jsx` (EV-07) legacy:
+
+- Barra horizontal de vigência: posição relativa ao período total (start_date → end_date)
+- Cores semânticas: ativo = `primary`, vencendo = `tertiary`, vencido = `error`
+- Label: nome do medicamento + período (DD/MM — DD/MM)
+- Marcador "Hoje": linha vertical `primary-fixed` tracejada
+- Border-radius: `full` nas barras
+- Sem bordas 1px — separação por spacing
+
+**Persona:**
+- Simple: lista de barras empilhadas com label + status
+- Complex: grid horizontal com eixo temporal compartilhado (comparação visual entre prescrições)
+
+### Sprint 15.7 — Refill Prediction Enrichment (Estoque)
+
+**Onde:** Enriquecer `StockCardRedesign.jsx` existente e `StockAlertInline.jsx` com dados de `refillPredictionService`.
+
+Atualmente, `StockPill` e `StockAlertInline` usam `daysRemaining` do `stockSummary` (cálculo simplificado). A Fase 6 entregou `refillPredictionService.predictRefill()` com consumo real 30d + confiança.
+
+**Enriquecimentos:**
+- `StockCardRedesign`: exibir data prevista de esgotamento ("Acaba em ~15/04") + badge de confiança ("Alta"/"Média"/"Baixa")
+- `StockAlertInline` (Dashboard): quando disponível, usar `predictedStockoutDate` em vez de `daysRemaining` genérico
+- Indicador visual: ícone de confiança — `ShieldCheck` (high), `ShieldAlert` (medium), `ShieldQuestion` (low)
+- Guard: dados insuficientes (`isRealData === false && confidence === 'low'`) → manter comportamento atual sem enriquecimento
+
+### Sprint 15.8 — DashboardRedesign Integration (Orquestração)
+
+**Onde:** `src/views/redesign/DashboardRedesign.jsx`
+
+Sprint de integração que conecta os componentes novos (15.1-15.3) ao Dashboard redesenhado:
+
+**Layout atualizado:**
+```
+Mobile:
+  Ring + Greeting + Motivational
+  PriorityDoseCard (doses urgentes)
+  SmartAlertsRedesign (max 3 alertas)
+  ReminderSuggestionRedesign (se houver)
+  InsightCardRedesign (1 insight rotativo)
+  CronogramaPeriodo
+  StockAlertInline
+
+Desktop (grid 1fr + 2fr):
+  Left: Ring + Greeting + PriorityDoseCard + InsightCard
+  Right: SmartAlerts (topo) + ReminderSuggestion + Cronograma + StockAlert
+```
+
+**Dados computados (novos `useMemo`):**
+1. `smartAlerts` — replicar lógica do `Dashboard.jsx` legacy (stock + dose delay + prescription)
+2. `reminderSuggestion` — chamar `analyzeReminderTiming()` para cada protocolo
+3. `currentInsight` — chamar `insightService.getNextInsight()`
+
+**Persona awareness:**
+- Simple: SmartAlerts max 2 + InsightCard (se critical/high) + ReminderSuggestion
+- Complex: SmartAlerts max 5 + InsightCard sempre + ReminderSuggestion + risk context
+
+### Sprint 15.9 — StockRedesign Integration (Orquestração)
+
+**Onde:** `src/views/redesign/StockRedesign.jsx`
+
+Sprint de integração que adiciona CostSummary e PrescriptionTimeline ao Estoque redesenhado:
+
+**Layout atualizado:**
+```
+Mobile (stack):
+  CriticalAlertBanner
+  Stock Cards (por prioridade)
+  CostSummaryRedesign
+  PrescriptionTimelineRedesign
+  EntradaHistorico
+
+Desktop (grid):
+  Left: CriticalBanner + Stock Cards
+  Right: CostSummary + PrescriptionTimeline + Histórico
+```
+
+**Service calls (novos):**
+1. `calculateMonthlyCosts(medicines, protocols)` → via `useMemo`
+2. Timeline data: mapeamento de protocolos com `start_date`, `end_date`, status
+
+### Critério de conclusão Wave 15
+
+- [ ] `SmartAlertsRedesign` renderiza alertas de estoque, dose atrasada e prescrição no Dashboard redesenhado
+- [ ] `InsightCardRedesign` exibe insight rotativo do `insightService` com visual Smart Card
+- [ ] `ReminderSuggestionRedesign` exibe sugestão de ajuste de horário com CTAs funcionais
+- [ ] `ProtocolRiskBadge` exibe risk score nos cards de tratamento (com threshold de dados)
+- [ ] `CostSummaryRedesign` exibe análise de custo mensal no Estoque redesenhado
+- [ ] `PrescriptionTimelineRedesign` exibe timeline de vigência de prescrições no Estoque
+- [ ] Refill prediction enriquece `StockCardRedesign` com data de esgotamento prevista
+- [ ] Todos os componentes respeitam Progressive Disclosure (Simple vs Complex persona)
+- [ ] Zero new Supabase calls — tudo computado client-side sobre cache existente
+- [ ] Touch targets ≥ 56px em todos os CTAs de alerta
+- [ ] Cascade Reveal + Living Fill aplicados onde relevante
+- [ ] `npm run validate:agent` passa
+
+---
+
+## 21. Wave 16 — Accessibility & Polish
+
+> **Escopo:** Auditoria completa de acessibilidade em TODAS as views e componentes redesenhados (W0-W16). Esta wave é de compliance — não adiciona features, apenas garante que tudo que foi construído é acessível.
+
+### Sprint 16.1 — Semantic HTML Audit
 
 Garantir em TODAS as views redesenhadas (`src/views/redesign/` + componentes shared):
 - `<main>`, `<nav>`, `<section>`, `<header>` corretos
@@ -2687,7 +2948,7 @@ Garantir em TODAS as views redesenhadas (`src/views/redesign/` + componentes sha
 - Form inputs têm `<label>` visível (não apenas placeholder)
 - Lists usam `<ul>`/`<ol>` + `<li>`
 
-### Sprint 15.2 — ARIA & Screen Readers
+### Sprint 16.2 — ARIA & Screen Readers
 
 - RingGauge: `role="img"` + `aria-label="Adesão: 85%. Streak: 12 dias"`
 - Progress bars: `role="progressbar"` + `aria-valuenow` + `aria-valuemin` + `aria-valuemax`
@@ -2697,8 +2958,9 @@ Garantir em TODAS as views redesenhadas (`src/views/redesign/` + componentes sha
 - Calendar: `role="grid"` + `aria-label` nos dias
 - Forms: `aria-describedby` para mensagens de erro
 - Live regions: `aria-live="polite"` para toasts/feedback
+- **SmartAlertsRedesign:** `aria-live="polite"` no container, `role="alert"` em alertas critical
 
-### Sprint 15.3 — Focus Management
+### Sprint 16.3 — Focus Management
 
 - Focus ring: 2px solid `primary` (#006a5e), visible on all backgrounds
 - Tab navigation: todos os elementos interativos acessíveis via keyboard
@@ -2707,7 +2969,7 @@ Garantir em TODAS as views redesenhadas (`src/views/redesign/` + componentes sha
 - Dropdown/select: navegação por setas
 - Form validation: foco move para primeiro campo com erro
 
-### Sprint 15.4 — Color Contrast Audit
+### Sprint 16.4 — Color Contrast Audit
 
 Verificar WCAG AA compliance em TODAS as combinações:
 - `on-surface` (#191c1d) on `surface` (#f8fafb) → AAA ✅
@@ -2717,16 +2979,19 @@ Verificar WCAG AA compliance em TODAS as combinações:
 - `on-surface` at 40% opacity (muted text) → TESTAR
 - Badge text on badge backgrounds → TESTAR
 - All text-over-gradient combinations → TESTAR
+- **RiskBadge colors on surface backgrounds** → TESTAR
+- **SmartAlert accent colors on tinted backgrounds** → TESTAR
 
-### Sprint 15.5 — Touch Target Audit
+### Sprint 16.5 — Touch Target Audit
 
 - Todos os targets interativos ≥ 56px tall
 - Botões primários 64px
 - Gap mínimo 8px entre targets adjacentes
 - Testar com large text system setting
 - Verificar em Medicines, Protocols (forms com muitos inputs próximos)
+- **SmartAlertsRedesign CTA links** ≥ 44px tap area
 
-### Sprint 15.6 — Motion & Reduced Motion Audit
+### Sprint 16.6 — Motion & Reduced Motion Audit
 
 - Todos os Framer Motion animations checam `useReducedMotion()`
 - CSS animations checam `@media (prefers-reduced-motion: reduce)`
@@ -2734,11 +2999,11 @@ Verificar WCAG AA compliance em TODAS as combinações:
 - Progress bars visíveis sem animação (dados não dependem de motion)
 - Confetti/celebration pode ser desabilitado
 
-### Critério de conclusão Wave 15
+### Critério de conclusão Wave 16
 
 - [ ] Lighthouse Accessibility score ≥ 95
 - [ ] Semantic HTML correto em todas as views redesenhadas
-- [ ] ARIA labels em todos os widgets de dados (rings, bars, calendar)
+- [ ] ARIA labels em todos os widgets de dados (rings, bars, calendar, risk badges, cost bars)
 - [ ] Focus ring visível em todos os backgrounds
 - [ ] Touch targets ≥ 56px (primários 64px)
 - [ ] `prefers-reduced-motion` respeitado universalmente
@@ -2747,17 +3012,17 @@ Verificar WCAG AA compliance em TODAS as combinações:
 
 ---
 
-## 21. Wave 16 — Rollout Promotion & Legacy Cleanup
+## 22. Wave 17 — Rollout Promotion & Legacy Cleanup
 
-> **Escopo:** Com 100% de cobertura visual alcançada (W0-W15), promover o redesign como default, remover o feature flag, limpar código legacy, e consolidar tokens.
+> **Escopo:** Com 100% de cobertura visual alcançada (W0-W16), promover o redesign como default, remover o feature flag, limpar código legacy, e consolidar tokens.
 
-### Sprint 16.1 — Rollout Promotion
+### Sprint 17.1 — Rollout Promotion
 
 - `useRedesign()` retorna `true` por default (flag invertido)
 - Período de observação: 2 semanas com flag default true
 - Monitorar: erros console, métricas de uso, feedback telegram bot
 
-### Sprint 16.2 — Token Consolidation
+### Sprint 17.2 — Token Consolidation
 
 - Mesclar `tokens.redesign.css` → `tokens/colors.css`, `tokens/shadows.css`, `tokens/typography.css`, `tokens/borders.css`
 - Remover scoping `[data-redesign="true"]` — tokens se tornam globais
@@ -2765,7 +3030,7 @@ Verificar WCAG AA compliance em TODAS as combinações:
 - Mesclar `components.redesign.css` → CSS individual de cada componente
 - Remover `tokens.redesign.css`, `layout.redesign.css`, `components.redesign.css`
 
-### Sprint 16.3 — Legacy View Removal
+### Sprint 17.3 — Legacy View Removal
 
 Remover views e componentes legacy que não são mais necessários:
 
@@ -2783,7 +3048,7 @@ Remover views e componentes legacy que não são mais necessários:
 - Componentes antigos de `SmartAlerts`, `StockBars`, `ViewModeToggle`, etc.
 - CSS files antigos (neon theme): `animations.css` neon keyframes, `.glass-card`, etc.
 
-### Sprint 16.4 — Rename & Reorganize
+### Sprint 17.4 — Rename & Reorganize
 
 - Remover sufixo "Redesign" de todos os componentes e views:
   - `DashboardRedesign.jsx` → `Dashboard.jsx` (mover para `src/views/`)
@@ -2794,7 +3059,7 @@ Remover views e componentes legacy que não são mais necessários:
 - Atualizar imports em todo o codebase
 - Remover `RedesignContext.jsx`, `useRedesign.js`
 
-### Sprint 16.5 — Feature Flag Removal & Final Cleanup
+### Sprint 17.5 — Feature Flag Removal & Final Cleanup
 
 - Remover `RedesignProvider` de App.jsx
 - Remover `data-redesign` attribute de `app-container`
@@ -2804,14 +3069,14 @@ Remover views e componentes legacy que não são mais necessários:
 - Atualizar testes: remover mocks de `useRedesign`
 - Git: cleanup de branches feature/redesign/* orphanadas
 
-### Sprint 16.6 — Onboarding Legacy Removal
+### Sprint 17.6 — Onboarding Legacy Removal
 
 - Remover `src/shared/components/onboarding/OnboardingWizard.jsx` (legacy)
 - Remover 5 steps legacy (`WelcomeStep.jsx`, `FirstMedicineStep.jsx`, etc.)
 - Renomear `redesign/OnboardingWizardRedesign.jsx` → `OnboardingWizard.jsx`
 - Atualizar `OnboardingProvider.jsx`
 
-### Critério de conclusão Wave 16
+### Critério de conclusão Wave 17
 
 - [ ] Feature flag removido — redesign é o default e único visual
 - [ ] Zero referências a `isRedesignEnabled`, `useRedesign`, `data-redesign`
@@ -2824,7 +3089,7 @@ Remover views e componentes legacy que não são mais necessários:
 
 ---
 
-## 22. Checklist de Validação por Wave
+## 23. Checklist de Validação por Wave
 
 Cada wave DEVE passar nestes checks antes de merge:
 
@@ -2868,7 +3133,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ---
 
-## 23. Mapeamento de Arquivos
+## 24. Mapeamento de Arquivos
 
 > **⚠️ NOTA DE ROLLOUT:** Durante a fase de rollout gradual (W0-W3), os arquivos originais de tokens NÃO são modificados. Os tokens e overrides vivem em arquivos `.redesign.css` scoped em `[data-redesign="true"]`. As tabelas abaixo refletem o mapeamento correto por fase.
 
@@ -2926,7 +3191,11 @@ Cada wave DEVE passar nestes checks antes de merge:
 | `StockBars.jsx` | `StockAlertInline.jsx` | 6 | Inline alert style |
 | `SparklineAdesao.jsx` | (incorporado no DashboardRedesign) | 6 | Recolor |
 | `DoseZoneList.jsx` | `CronogramaPeriodo.jsx` | 6 | Cronograma por período |
-| `SmartAlerts.jsx` | `SmartAlertsRedesign.jsx` | 6 | Tonal surfaces |
+| `SmartAlerts.jsx` | `SmartAlertsRedesign.jsx` | **15** | Smart alerts Sanctuary (tonal cards, Lucide icons) |
+| `InsightCard.jsx` | `InsightCardRedesign.jsx` | **15** | Insight rotativo Smart Card pattern |
+| `ReminderSuggestion.jsx` | `ReminderSuggestionRedesign.jsx` | **15** | Sugestão de horário Smart Card verde |
+| `CostChart.jsx` | `CostSummaryRedesign.jsx` | **15** | Análise de custo Sanctuary |
+| `PrescriptionTimeline.jsx` | `PrescriptionTimelineRedesign.jsx` | **15** | Timeline prescrições Sanctuary |
 | `ViewModeToggle.jsx` | (incorporado no DashboardRedesign) | 6 | Segmented control novo |
 | `useComplexityMode.js` | `useComplexityModeRedesign.js` | 10 | Trigger expansion |
 | `BottomNav.jsx` | `BottomNavRedesign.jsx` | 4 | Glass nav + 4 tabs Lucide |
@@ -2954,6 +3223,12 @@ Cada wave DEVE passar nestes checks antes de merge:
 | `src/shared/components/ui/Badge.jsx` + CSS | 3 | Status badges (via components.redesign.css) |
 | `src/shared/components/ui/ProgressiveTooltip.jsx` | 10 | Educational tooltips |
 | `src/shared/components/ui/PageHeader.jsx` | 6 | Reusable page header |
+| `src/features/dashboard/components/SmartAlertsRedesign.jsx` + CSS | **15** | Smart alerts Sanctuary |
+| `src/features/dashboard/components/InsightCardRedesign.jsx` + CSS | **15** | Insight rotativo Sanctuary |
+| `src/features/protocols/components/ReminderSuggestionRedesign.jsx` + CSS | **15** | Sugestão de horário Sanctuary |
+| `src/features/adherence/components/ProtocolRiskBadge.jsx` + CSS | **15** | Risk score badge |
+| `src/features/stock/components/CostSummaryRedesign.jsx` + CSS | **15** | Análise de custo Sanctuary |
+| `src/features/stock/components/PrescriptionTimelineRedesign.jsx` + CSS | **15** | Timeline de prescrições Sanctuary |
 
 ### Arquivos que NÃO mudam (durante todo o rollout W0-W12)
 
@@ -2994,7 +3269,7 @@ Cada wave DEVE passar nestes checks antes de merge:
 
 ---
 
-## 24. Riscos e Mitigações
+## 25. Riscos e Mitigações
 
 | Risco | Impacto | Mitigação |
 |-------|---------|-----------|
@@ -3035,9 +3310,11 @@ Wave 13 (Landing/Auth/Onboarding — jornada de entrada)
     ↓
 Wave 14 (Shared Components + Chatbot — limpeza visual global)
     ↓
-Wave 15 (Accessibility — compliance WCAG AA)
+Wave 15 (Smart Insights — integração de inteligência Fase 6 no redesign)
     ↓
-Wave 16 (Rollout Promotion + Legacy Cleanup — flag removal)
+Wave 16 (Accessibility — compliance WCAG AA)
+    ↓
+Wave 17 (Rollout Promotion + Legacy Cleanup — flag removal)
 ```
 
 **W11 é a próxima prioridade** porque Modal.jsx é o keystone blocker: 12+ componentes abrem modais com visual neon dentro de views Santuário. Redesenhar Modal primeiro desbloqueia todos os forms e dialogs.
@@ -3046,7 +3323,9 @@ Wave 16 (Rollout Promotion + Legacy Cleanup — flag removal)
 
 **W14 é sweep final** — componentes shared que aparecem em contexto redesign mas ainda carregam estilos antigos.
 
-**W15-W16 são sequenciais** — accessibility audit só faz sentido quando toda a UI está no novo design, e legacy cleanup é o passo final.
+**W15 é valor ao paciente** — traz toda a inteligência analítica (smart alerts, risk scores, custo, otimizador de horários) para o novo visual. Sem esta wave, o redesign é mais bonito mas menos inteligente que o legacy.
+
+**W16-W17 são sequenciais** — accessibility audit só faz sentido quando toda a UI está no novo design (incluindo insights), e legacy cleanup é o passo final.
 
 ---
 
