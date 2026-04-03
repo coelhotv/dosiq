@@ -1,8 +1,8 @@
-# Wave 16 — Rollout Promotion & Legacy Cleanup
+# Wave 17 — Rollout Promotion & Legacy Cleanup
 
 > **Spec de Execução — Nível Coder Agent**
-> Referência: `plans/redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` §21
-> Pré-requisito: W15 (Accessibility & Polish) mergeado e Lighthouse ≥ 95 ✅
+> Referência: `plans/backlog-redesign/MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md` §22
+> Pré-requisito: W16 (Accessibility & Polish) mergeado e Lighthouse ≥ 95 ✅
 
 ---
 
