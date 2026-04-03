@@ -8,9 +8,10 @@ import {
   filterTodayLogs,
 } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
-import { getCurrentUser } from '@shared/utils/supabase'
+import { getCurrentUser, supabase } from '@shared/utils/supabase'
 import { getTodayLocal } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
+import './DashboardRedesign.css'
 import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
 import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
@@ -100,15 +101,28 @@ export default function DashboardRedesign({ onNavigate }) {
   // ── Carregar nome do usuário ──
   useEffect(() => {
     getCurrentUser()
-      .then((user) => {
-        if (user?.user_metadata?.full_name) {
+      .then(async (user) => {
+        if (!user) return
+
+        // 1. Prioridade: display_name do perfil (user_settings)
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('display_name')
+          .eq('user_id', user.id)
+          .single()
+
+        if (settings?.display_name) {
+          setUserName(settings.display_name.split(' ')[0])
+        } else if (user?.user_metadata?.full_name) {
+          // 2. Fallback: nome do auth metadata
           setUserName(user.user_metadata.full_name.split(' ')[0])
         } else if (user?.email) {
+          // 3. Fallback: prefixo do email
           setUserName(user.email.split('@')[0])
         }
-        setIsLoading(false)
       })
-      .catch(() => setIsLoading(false))
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
   }, [])
 
   // ── Refresh automático ao virar o dia (timezone local) ──
@@ -226,19 +240,8 @@ export default function DashboardRedesign({ onNavigate }) {
           }}
         >
           {/* Header + Ring de Adesão */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              textAlign: 'center',
-              width: '100%',
-            }}
-          >
-            <RingGaugeRedesign score={adherenceScore} streak={streak} size="large" />
-
-            <div>
+          <div className="dr-badge">
+            <div className="dr-badge__text">
               <h1
                 style={{
                   margin: 0,
@@ -277,6 +280,8 @@ export default function DashboardRedesign({ onNavigate }) {
                 {getMotivationalMessage(adherenceScore, totals.remaining)}
               </p>
             </div>
+
+            <RingGaugeRedesign score={adherenceScore} streak={streak} size="large" />
           </div>
 
           {/* Priority Dose Card — 1-Click Registration */}

@@ -76,7 +76,7 @@
   font-family: var(--font-display, 'Public Sans', sans-serif);
   font-size: 0.875rem;
   font-weight: 600;
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
   letter-spacing: 0.06em;
   color: var(--color-on-surface);
   opacity: 0.6;

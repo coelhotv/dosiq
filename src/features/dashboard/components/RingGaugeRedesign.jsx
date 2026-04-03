@@ -116,7 +116,7 @@ export default function RingGaugeRedesign({
           aria-label={`Streak: ${streak} dias consecutivos`}
           style={{
             fontFamily: 'var(--font-body, Lexend, sans-serif)',
-            fontSize: 'var(--text-label-md, 0.75rem)',
+            fontSize: 'var(--text-label-lg, 0.875rem)',
             fontWeight: 'var(--font-weight-medium, 500)',
             color: 'var(--color-tertiary, #7b5700)',
           }}

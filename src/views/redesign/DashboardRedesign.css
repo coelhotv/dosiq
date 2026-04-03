@@ -1,0 +1,31 @@
+/* ============================================================
+   DashboardRedesign.css — Wave Dashboard
+   ============================================================ */
+
+/* ── Badge (saudação + ring gauge) ── */
+.dr-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  width: 100%;
+}
+
+.dr-badge__text {
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .dr-badge {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    text-align: left;
+  }
+
+  .dr-badge__text {
+    text-align: left;
+  }
+}
