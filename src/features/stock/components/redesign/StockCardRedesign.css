@@ -142,6 +142,9 @@
   color: var(--color-outline);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 /* ── Progress bar ── */
@@ -235,4 +238,40 @@
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
+}
+
+/* ── Previsão de reabastecimento (Sprint 15.7) ── */
+.stock-card-r__prediction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stock-card-r__prediction-date {
+  font-size: var(--text-label-md, 0.75rem);
+  color: var(--color-on-surface-variant, #3e4946);
+}
+
+.stock-card-r__prediction-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: var(--text-label-xs, 0.5625rem);
+  font-weight: 700;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full, 9999px);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stock-card-r__prediction-confidence--high {
+  background: color-mix(in srgb, #22c55e 15%, transparent);
+  color: #15803d;
+}
+
+.stock-card-r__prediction-confidence--medium {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  color: #92400e;
 }

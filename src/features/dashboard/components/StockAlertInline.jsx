@@ -1,10 +1,11 @@
 import { AlertTriangle } from 'lucide-react'
+import { parseLocalDate } from '@utils/dateUtils'
 
 /**
  * StockAlertInline — Banner de alerta de estoque para o Dashboard redesenhado.
  *
  * @param {Array} criticalItems — items com stockStatus === 'critical' ou 'low'
- *   Shape: { medicineName: string, daysRemaining: number, stockStatus: 'critical'|'low' }
+ *   Shape: { medicineName: string, daysRemaining: number, stockStatus: 'critical'|'low', prediction?: { predictedStockoutDate: string } }
  * @param {Function} onNavigateToStock — Callback para navegar para Estoque
  */
 export default function StockAlertInline({ criticalItems = [], onNavigateToStock }) {
@@ -67,8 +68,9 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
             marginBottom: '0.375rem',
           }}
         >
-          {mostCritical.daysRemaining} dia{mostCritical.daysRemaining !== 1 ? 's' : ''} restante
-          {mostCritical.daysRemaining !== 1 ? 's' : ''}
+          {mostCritical.prediction?.predictedStockoutDate
+            ? `Acaba em ~${parseLocalDate(mostCritical.prediction.predictedStockoutDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+            : `${mostCritical.daysRemaining} dia${mostCritical.daysRemaining !== 1 ? 's' : ''} restante${mostCritical.daysRemaining !== 1 ? 's' : ''}`}
         </div>
         <div
           role="progressbar"
