@@ -70,9 +70,7 @@ export default function DashboardRedesign({ onNavigate }) {
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const currentDateRef = useRef(getTodayLocal())
-  const [reminderSuggestion, setReminderSuggestion] = useState(null)
-  const [suggestionProtocolId, setSuggestionProtocolId] = useState(null)
-  const [suggestionProtocolName, setSuggestionProtocolName] = useState('')
+  const [dismissedSuggestionId, setDismissedSuggestionId] = useState(null)
   const [snoozedAlerts, setSnoozedAlerts] = useState({})
 
   // ── Computadas ──
@@ -211,21 +209,26 @@ export default function DashboardRedesign({ onNavigate }) {
     return () => clearInterval(interval)
   }, [refresh])
 
-  // ── Analisar sugestão de lembrete ──
-  useEffect(() => {
-    if (!protocols?.length || !logs?.length) return
+  // ── Sugestão de lembrete calculada (sem setState em effect) ──
+  // isSuggestionDismissed e analyzeReminderTiming são funções estáveis importadas (não reativas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const reminderSuggestionData = useMemo(() => {
+    if (!protocols?.length || !logs?.length) return null
     for (const protocol of protocols) {
       if (!protocol.active) continue
+      if (protocol.id === dismissedSuggestionId) continue
       if (isSuggestionDismissed(protocol.id)) continue
       const suggestion = analyzeReminderTiming({ protocol, logs })
       if (suggestion?.shouldSuggest) {
-        setReminderSuggestion(suggestion)
-        setSuggestionProtocolId(protocol.id)
-        setSuggestionProtocolName(protocol.medicine?.name || protocol.name || '')
-        break
+        return {
+          suggestion,
+          protocolId: protocol.id,
+          protocolName: protocol.medicine?.name || protocol.name || '',
+        }
       }
     }
-  }, [protocols, logs])
+    return null
+  }, [protocols, logs, dismissedSuggestionId])
 
   // ── Handlers ──
   // Registra dose DIRETAMENTE sem modal (1-click experience)
@@ -282,12 +285,11 @@ export default function DashboardRedesign({ onNavigate }) {
     setSnoozedAlerts(prev => ({ ...prev, [alertId]: true }))
   }, [])
 
-  const handleReminderAccept = useCallback(async (newTime) => {
+  const handleReminderAccept = useCallback(() => {
     // TODO: persistir novo horário no protocolo via protocolService.update
-    // Por ora, apenas fecha a sugestão
-    setReminderSuggestion(null)
+    setDismissedSuggestionId(reminderSuggestionData?.protocolId ?? null)
     refresh()
-  }, [refresh])
+  }, [refresh, reminderSuggestionData?.protocolId])
 
   // ── Loading state ──
   if (isLoading || contextLoading) {
@@ -425,13 +427,13 @@ export default function DashboardRedesign({ onNavigate }) {
           )}
 
           {/* 🆕 Reminder Suggestion */}
-          {reminderSuggestion && (
+          {reminderSuggestionData && (
             <ReminderSuggestionRedesign
-              suggestion={reminderSuggestion}
-              protocolId={suggestionProtocolId}
-              protocolName={suggestionProtocolName}
+              suggestion={reminderSuggestionData.suggestion}
+              protocolId={reminderSuggestionData.protocolId}
+              protocolName={reminderSuggestionData.protocolName}
               onAccept={handleReminderAccept}
-              onDismiss={() => setReminderSuggestion(null)}
+              onDismiss={() => setDismissedSuggestionId(reminderSuggestionData.protocolId)}
             />
           )}
 
