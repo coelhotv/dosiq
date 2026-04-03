@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wave 15 — Smart Insights · Mocks de Alta Fidelidade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Public+Sans:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Design Tokens (Sanctuary) ─── */
+    :root {
+      --font-body: 'Lexend', sans-serif;
+      --font-display: 'Public Sans', sans-serif;
+
+      --color-primary: #006a5e;
+      --color-primary-container: #008577;
+      --color-primary-fixed: #90f4e3;
+      --color-on-primary: #ffffff;
+
+      --color-secondary: #005db6;
+      --color-secondary-fixed: #d6e3ff;
+      --color-secondary-container: #003e84;
+
+      --color-tertiary: #7b5700;
+      --color-tertiary-fixed: #ffdea8;
+
+      --color-error: #ba1a1a;
+      --color-error-container: #ffdad6;
+
+      --color-surface: #f8fafb;
+      --color-surface-container-low: #f2f4f5;
+      --color-surface-container-lowest: #ffffff;
+
+      --color-on-surface: #191c1d;
+      --color-on-surface-variant: #3e4946;
+      --color-outline: #6d7a76;
+      --color-outline-variant: #bec9c5;
+
+      --gradient-primary: linear-gradient(135deg, #006a5e 0%, #008577 100%);
+      --gradient-primary-shadow: 0 8px 24px rgba(0, 106, 94, 0.22);
+      --gradient-secondary: linear-gradient(135deg, #003e84, #005db6);
+
+      --shadow-ambient: 0 24px 24px rgba(25, 28, 29, 0.04);
+      --shadow-card: 0 4px 16px rgba(25, 28, 29, 0.08);
+      --shadow-float: 0 8px 32px rgba(25, 28, 29, 0.12);
+
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.5rem;
+      --radius-card: 2rem;
+      --radius-button: 1.25rem;
+      --radius-full: 9999px;
+
+      --text-label-xs: 0.5625rem;
+      --text-label-sm: 0.625rem;
+      --text-label-md: 0.75rem;
+      --text-body-sm: 0.875rem;
+      --text-body-lg: 1rem;
+      --text-title-md: 1rem;
+      --text-title-lg: 1.125rem;
+      --text-headline-sm: 1.25rem;
+      --text-headline-md: 1.5rem;
+      --text-display-sm: 1.75rem;
+
+      --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-out: cubic-bezier(0, 0, 0.2, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: #eef1f2;
+      color: var(--color-on-surface);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout Shell ─── */
+    .page-header {
+      background: var(--gradient-primary);
+      color: white;
+      padding: 3rem 2rem 2.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .page-header__eyebrow {
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 0.25rem;
+    }
+    .page-header__title {
+      font-family: var(--font-display);
+      font-size: var(--text-display-sm);
+      font-weight: 900;
+      line-height: 1.1;
+    }
+    .page-header__subtitle {
+      font-size: var(--text-body-lg);
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+    .page-header__nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    .page-header__nav a {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      text-decoration: none;
+      padding: 0.375rem 0.875rem;
+      border-radius: var(--radius-full);
+      font-size: var(--text-label-md);
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .page-header__nav a:hover { background: rgba(255,255,255,0.28); }
+
+    .main-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    /* ─── Section Headers ─── */
+    .section-header {
+      margin-bottom: 1.75rem;
+    }
+    .section-header__eyebrow {
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: 0.375rem;
+    }
+    .section-header__title {
+      font-family: var(--font-display);
+      font-size: var(--text-headline-md);
+      font-weight: 700;
+      color: var(--color-on-surface);
+      line-height: 1.2;
+    }
+    .section-header__desc {
+      font-size: var(--text-body-sm);
+      color: var(--color-outline);
+      margin-top: 0.375rem;
+    }
+
+    /* ─── Persona Toggle Tabs ─── */
+    .persona-tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-lg);
+      padding: 0.25rem;
+      width: fit-content;
+      margin-bottom: 1.5rem;
+    }
+    .persona-tab {
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: var(--text-body-sm);
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--color-outline);
+      font-family: var(--font-body);
+      transition: all 0.2s var(--ease-default);
+    }
+    .persona-tab.active {
+      background: var(--color-surface-container-lowest);
+      color: var(--color-primary);
+      box-shadow: var(--shadow-card);
+    }
+
+    .persona-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: var(--text-label-md);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-full);
+      margin-bottom: 1rem;
+    }
+    .persona-label--simple {
+      background: color-mix(in srgb, #f59e0b 12%, transparent);
+      color: #92400e;
+    }
+    .persona-label--complex {
+      background: var(--color-secondary-fixed);
+      color: var(--color-secondary-container);
+    }
+
+    .variant-row {
+      display: grid;
+      gap: 1.25rem;
+    }
+    .variant-row--2col { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .variant-row--2col { grid-template-columns: 1fr; } }
+
+    /* ─── Sprint Label ─── */
+    .sprint-badge {
+      display: inline-block;
+      background: var(--color-secondary-fixed);
+      color: var(--color-secondary-container);
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.625rem;
+      border-radius: var(--radius-full);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ─── Component: SmartAlerts ─── */
+    .smart-alerts-redesign {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .smart-alert {
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-lg);
+      animation: slideInAlert 0.4s var(--ease-out) both;
+    }
+    .smart-alert:nth-child(1) { animation-delay: 0s; }
+    .smart-alert:nth-child(2) { animation-delay: 0.1s; }
+    .smart-alert:nth-child(3) { animation-delay: 0.2s; }
+    .smart-alert:nth-child(4) { animation-delay: 0.3s; }
+    .smart-alert:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes slideInAlert {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .smart-alert--critical {
+      background: color-mix(in srgb, var(--color-error) 8%, transparent);
+      border-left: 4px solid var(--color-error);
+    }
+    .smart-alert--warning {
+      background: color-mix(in srgb, var(--color-tertiary-fixed) 40%, transparent);
+      border-left: 4px solid var(--color-tertiary);
+    }
+    .smart-alert--info {
+      background: color-mix(in srgb, var(--color-secondary-fixed) 20%, transparent);
+      border-left: 4px solid var(--color-secondary);
+    }
+    .smart-alert__header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .smart-alert__icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+    .smart-alert__icon--critical { color: var(--color-error); }
+    .smart-alert__icon--warning  { color: var(--color-tertiary); }
+    .smart-alert__icon--info     { color: var(--color-secondary); }
+    .smart-alert__title {
+      font-weight: 600;
+      font-size: var(--text-body-lg);
+      flex: 1;
+    }
+    .smart-alert--critical .smart-alert__title { color: var(--color-error); }
+    .smart-alert--warning  .smart-alert__title { color: var(--color-tertiary); }
+    .smart-alert--info     .smart-alert__title { color: var(--color-secondary); }
+    .smart-alert__snooze {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-outline);
+      transition: background 0.15s;
+    }
+    .smart-alert__snooze:hover { background: rgba(0,0,0,0.06); }
+    .smart-alert__message {
+      font-size: var(--text-label-md);
+      color: var(--color-on-surface-variant);
+      margin: 0.375rem 0 0 calc(16px + 0.5rem);
+      line-height: 1.5;
+    }
+    .smart-alert__actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      padding-left: calc(16px + 0.5rem);
+    }
+    .smart-alert__action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: var(--text-label-md);
+      padding: 0.375rem 0;
+      min-height: 2.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: opacity 0.15s;
+    }
+    .smart-alert__action:hover { opacity: 0.75; }
+    .smart-alert__action--primary { color: var(--color-primary); }
+    .smart-alert__action--secondary { color: var(--color-outline); }
+    .alerts-expand {
+      font-size: var(--text-label-md);
+      font-weight: 600;
+      color: var(--color-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem 0;
+      text-align: left;
+    }
+
+    /* ─── Component: InsightCard ─── */
+    .insight-card-redesign {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-ambient);
+      animation: fadeUp 0.5s var(--ease-out) both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .insight-card-redesign__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.875rem;
+    }
+    .insight-card-redesign__badge {
+      background: color-mix(in srgb, var(--color-primary-fixed) 30%, transparent);
+      color: var(--color-primary);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .insight-card-redesign__icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--color-primary-fixed) 20%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+    }
+    .insight-card-redesign__title {
+      font-weight: 600;
+      font-size: var(--text-title-lg);
+      color: var(--color-on-surface);
+      margin: 0 0 0.25rem;
+    }
+    .insight-card-redesign__message {
+      font-size: var(--text-body-lg);
+      color: var(--color-on-surface-variant);
+      margin: 0;
+      line-height: 1.6;
+    }
+    .insight-card-redesign__cta {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: var(--text-label-md);
+      color: var(--color-primary);
+      padding: 0.5rem 0;
+      margin-top: 0.875rem;
+      min-height: 2.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: gap 0.2s;
+    }
+    .insight-card-redesign__cta:hover { gap: 0.5rem; }
+    .insight-card-redesign__dismiss {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+      margin-top: 0.25rem;
+    }
+
+    /* Insight variants */
+    .insight-card-redesign--streak .insight-card-redesign__icon {
+      background: color-mix(in srgb, #f59e0b 15%, transparent);
+      color: #92400e;
+    }
+    .insight-card-redesign--streak .insight-card-redesign__badge {
+      background: color-mix(in srgb, #f59e0b 15%, transparent);
+      color: #92400e;
+    }
+    .insight-card-redesign--warning .insight-card-redesign__icon {
+      background: color-mix(in srgb, var(--color-error) 10%, transparent);
+      color: var(--color-error);
+    }
+    .insight-card-redesign--warning .insight-card-redesign__badge {
+      background: color-mix(in srgb, var(--color-error) 10%, transparent);
+      color: var(--color-error);
+    }
+    .insight-card-redesign--tip .insight-card-redesign__icon {
+      background: var(--color-secondary-fixed);
+      color: var(--color-secondary-container);
+    }
+    .insight-card-redesign--tip .insight-card-redesign__badge {
+      background: var(--color-secondary-fixed);
+      color: var(--color-secondary-container);
+    }
+
+    /* ─── Component: ReminderSuggestion ─── */
+    .reminder-suggestion-redesign {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      color: #ffffff;
+      box-shadow: var(--gradient-primary-shadow);
+      animation: fadeUp 0.45s var(--ease-out) both;
+    }
+    .reminder-suggestion-redesign__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: rgba(255,255,255,0.2);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.875rem;
+    }
+    .reminder-suggestion-redesign__text {
+      font-weight: 600;
+      font-size: var(--text-title-lg);
+      margin: 0 0 0.25rem;
+      line-height: 1.4;
+    }
+    .reminder-suggestion-redesign__subtext {
+      font-size: var(--text-body-lg);
+      margin: 0;
+      opacity: 0.88;
+      line-height: 1.5;
+    }
+    .reminder-suggestion-redesign__sample {
+      font-size: var(--text-label-md);
+      margin: 0.5rem 0 0;
+      opacity: 0.65;
+    }
+    .reminder-suggestion-redesign__actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .reminder-suggestion-redesign__btn {
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: var(--text-body-lg);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-button);
+      min-height: 3.5rem;
+      transition: transform 0.15s var(--ease-spring), opacity 0.15s;
+    }
+    .reminder-suggestion-redesign__btn:hover { transform: scale(1.02); }
+    .reminder-suggestion-redesign__btn:active { transform: scale(0.98); }
+    .reminder-suggestion-redesign__btn--accept {
+      background: #ffffff;
+      color: var(--color-primary);
+    }
+    .reminder-suggestion-redesign__btn--keep {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+    }
+    .reminder-suggestion-redesign__never {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: var(--text-label-md);
+      color: rgba(255,255,255,0.55);
+      padding: 0.5rem 0;
+      margin-top: 0.5rem;
+      text-decoration: underline;
+      min-height: 2.75rem;
+      display: block;
+    }
+
+    /* ─── Component: ProtocolRiskBadge ─── */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-family: var(--font-body);
+      font-size: var(--text-label-sm);
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+    .risk-badge--stable {
+      background: color-mix(in srgb, #22c55e 15%, transparent);
+      color: #15803d;
+    }
+    .risk-badge--attention {
+      background: color-mix(in srgb, #f59e0b 15%, transparent);
+      color: #92400e;
+    }
+    .risk-badge--critical {
+      background: color-mix(in srgb, var(--color-error) 15%, transparent);
+      color: var(--color-error);
+    }
+    .risk-badge__detail {
+      font-weight: 700;
+      margin-left: 0.125rem;
+    }
+    .risk-badge__trend {
+      font-size: 0.75rem;
+    }
+
+    /* Protocol row wrapper for badge demos */
+    .protocol-row-demo {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: var(--shadow-ambient);
+    }
+    .protocol-row-demo__avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-md);
+      background: var(--color-secondary-fixed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .protocol-row-demo__name {
+      font-weight: 600;
+      font-size: var(--text-title-md);
+      flex: 1;
+    }
+    .protocol-row-demo__sub {
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+      margin-top: 0.125rem;
+    }
+
+    /* ─── Component: CostSummary ─── */
+    .cost-summary-redesign {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      padding: 1.75rem 1.75rem 1.5rem;
+      box-shadow: var(--shadow-ambient);
+    }
+    .cost-summary-redesign__header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .cost-summary-redesign__icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--color-tertiary-fixed) 60%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-tertiary);
+      font-size: 1.1rem;
+    }
+    .cost-summary-redesign__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-headline-sm);
+      color: var(--color-on-surface);
+    }
+    .cost-summary-redesign__total {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-display-sm);
+      color: var(--color-on-surface);
+      margin: 1rem 0 1.5rem;
+      line-height: 1;
+    }
+    .cost-summary-redesign__total span {
+      font-family: var(--font-body);
+      font-size: var(--text-label-md);
+      font-weight: 400;
+      color: var(--color-outline);
+      margin-left: 0.25rem;
+    }
+    .cost-summary-redesign__list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .cost-summary-redesign__item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+    .cost-summary-redesign__item-name {
+      font-size: var(--text-body-sm);
+      font-weight: 600;
+      color: var(--color-on-surface);
+    }
+    .cost-summary-redesign__item-cost {
+      font-size: var(--text-label-md);
+      font-weight: 700;
+      color: var(--color-on-surface-variant);
+      font-variant-numeric: tabular-nums;
+    }
+    .cost-summary-redesign__bar-track {
+      height: 8px;
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .cost-summary-redesign__bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      width: 0;
+      animation: livingFill 1s var(--ease-out) forwards;
+      animation-delay: 0.5s;
+    }
+    .cost-summary-redesign__bar-fill--top {
+      background: var(--color-tertiary);
+    }
+    @keyframes livingFill {
+      from { width: 0; }
+    }
+    .cost-summary-redesign__more {
+      margin-top: 1rem;
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+    }
+    .cost-summary-redesign__daily {
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+      margin-top: 0.25rem;
+    }
+
+    /* ─── Component: PrescriptionTimeline ─── */
+    .prescription-timeline-redesign {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-ambient);
+    }
+    .prescription-timeline-redesign__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-headline-sm);
+      color: var(--color-on-surface);
+      margin-bottom: 1.5rem;
+    }
+    .prescription-timeline-redesign__list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .prescription-timeline-redesign__item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .prescription-timeline-redesign__name {
+      font-weight: 600;
+      font-size: var(--text-body-sm);
+    }
+    .prescription-timeline-redesign__dates {
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+      font-variant-numeric: tabular-nums;
+    }
+    .prescription-timeline-redesign__bar-track {
+      height: 8px;
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+    .prescription-timeline-redesign__bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      width: 0;
+      animation: livingFill 1.2s var(--ease-out) forwards;
+      animation-delay: 0.3s;
+    }
+    .prescription-timeline-redesign__bar-fill--ativa    { background: var(--color-primary); }
+    .prescription-timeline-redesign__bar-fill--vencendo { background: var(--color-tertiary); }
+    .prescription-timeline-redesign__bar-fill--vencida  { background: var(--color-error); }
+    .prescription-timeline-redesign__bar-fill--finalizada { background: var(--color-outline); }
+    .prescription-timeline-redesign__status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: var(--text-label-sm);
+      font-weight: 600;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+    .status--ativa    { background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+    .status--vencendo { background: color-mix(in srgb, var(--color-tertiary-fixed) 60%, transparent); color: var(--color-tertiary); }
+    .status--vencida  { background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error); }
+    .status--finalizada { background: color-mix(in srgb, var(--color-outline) 12%, transparent); color: var(--color-outline); }
+
+    /* ─── Component: Stock Enrichment ─── */
+    .stock-card-enriched {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-ambient);
+    }
+    .stock-card-enriched__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .stock-card-enriched__medicine {
+      font-weight: 600;
+      font-size: var(--text-title-lg);
+    }
+    .stock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: var(--text-label-md);
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-full);
+    }
+    .stock-pill--critical { background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error); }
+    .stock-pill--low { background: color-mix(in srgb, #f59e0b 12%, transparent); color: #92400e; }
+    .stock-pill--normal { background: color-mix(in srgb, #22c55e 12%, transparent); color: #15803d; }
+    .stock-pill--high { background: var(--color-secondary-fixed); color: var(--color-secondary-container); }
+    .stock-card-enriched__prediction {
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .stock-card-enriched__prediction-label {
+      font-size: var(--text-label-md);
+      color: var(--color-outline);
+      margin-bottom: 0.25rem;
+    }
+    .stock-card-enriched__prediction-value {
+      font-weight: 700;
+      font-size: var(--text-title-md);
+      color: var(--color-on-surface);
+    }
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: var(--text-label-xs);
+      font-weight: 700;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-left: 0.5rem;
+    }
+    .confidence-badge--high   { background: color-mix(in srgb, #22c55e 15%, transparent); color: #15803d; }
+    .confidence-badge--medium { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #92400e; }
+    .confidence-badge--low    { background: color-mix(in srgb, var(--color-outline) 15%, transparent); color: var(--color-outline); }
+    .stock-card-enriched__bar-track {
+      height: 8px;
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .stock-card-enriched__bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      width: 0;
+      animation: livingFill 1s var(--ease-out) forwards;
+      animation-delay: 0.6s;
+    }
+    .stock-card-enriched__bar-fill--critical { background: var(--color-error); }
+    .stock-card-enriched__bar-fill--low      { background: #f59e0b; }
+    .stock-card-enriched__bar-fill--normal   { background: var(--color-primary); }
+    .stock-card-enriched__action {
+      margin-top: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: var(--text-label-md);
+      color: var(--color-primary);
+      padding: 0.375rem 0;
+      min-height: 2.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* ─── Dashboard Context Mock ─── */
+    .dashboard-context-mock {
+      background: var(--color-surface);
+      border-radius: var(--radius-card);
+      padding: 1.75rem;
+      border: 2px dashed var(--color-outline-variant);
+    }
+    .dashboard-context-mock__label {
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-outline);
+      margin-bottom: 1.25rem;
+    }
+    .dashboard-context-mock__grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* ─── Priority Dose Card (reference) ─── */
+    .priority-dose-card {
+      background: var(--gradient-secondary);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      color: white;
+      box-shadow: 0 8px 32px rgba(0,93,182,0.25);
+    }
+    .priority-dose-card__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: rgba(255,255,255,0.2);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
+      font-size: var(--text-label-sm);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .priority-dose-card__title {
+      font-weight: 700;
+      font-size: var(--text-headline-sm);
+      margin: 0 0 0.25rem;
+    }
+    .priority-dose-card__medicines {
+      font-size: var(--text-body-lg);
+      opacity: 0.85;
+      margin: 0 0 1.25rem;
+    }
+    .priority-dose-card__cta {
+      background: white;
+      color: var(--color-secondary-container);
+      border: none;
+      border-radius: var(--radius-button);
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: var(--text-body-lg);
+      padding: 0.875rem 1.5rem;
+      cursor: pointer;
+      min-height: 3.5rem;
+      transition: transform 0.15s var(--ease-spring);
+    }
+    .priority-dose-card__cta:hover { transform: scale(1.02); }
+
+    /* ─── Empty State ─── */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-ambient);
+    }
+    .empty-state__icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.35;
+    }
+    .empty-state__title {
+      font-weight: 600;
+      font-size: var(--text-title-lg);
+      color: var(--color-on-surface);
+      margin-bottom: 0.375rem;
+    }
+    .empty-state__desc {
+      font-size: var(--text-body-sm);
+      color: var(--color-outline);
+    }
+
+    /* ─── Utility ─── */
+    .divider {
+      height: 1px;
+      background: var(--color-outline-variant);
+      opacity: 0.3;
+      margin: 0.5rem 0;
+    }
+    .card-shell {
+      background: var(--color-surface-container-lowest);
+      border-radius: var(--radius-card);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-ambient);
+    }
+    .tag {
+      display: inline-block;
+      font-size: var(--text-label-sm);
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-full);
+      background: var(--color-surface-container-low);
+      color: var(--color-outline);
+    }
+
+    /* ─── Reduced motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .smart-alert,
+      .insight-card-redesign,
+      .reminder-suggestion-redesign,
+      .cost-summary-redesign__bar-fill,
+      .prescription-timeline-redesign__bar-fill,
+      .stock-card-enriched__bar-fill {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        width: var(--target-width, 70%);
+      }
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--color-outline-variant); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE HEADER
+═══════════════════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="page-header__eyebrow">Meus Remédios · Redesign</div>
+  <h1 class="page-header__title">Wave 15 — Smart Insights</h1>
+  <p class="page-header__subtitle">Mocks de alta fidelidade · Todos os componentes · Ambas as personas</p>
+  <nav class="page-header__nav">
+    <a href="#s1">1. SmartAlerts</a>
+    <a href="#s2">2. InsightCard</a>
+    <a href="#s3">3. ReminderSuggestion</a>
+    <a href="#s4">4. ProtocolRiskBadge</a>
+    <a href="#s5">5. CostSummary</a>
+    <a href="#s6">6. PrescriptionTimeline</a>
+    <a href="#s7">7. Stock Enrichment</a>
+    <a href="#s8">8. Composição Dashboard</a>
+  </nav>
+</header>
+
+<main class="main-content">
+
+  <!-- ═══ SPRINT 15.1 — SmartAlertsRedesign ═══════════════════ -->
+  <section id="s1">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.1</div>
+      <h2 class="section-header__title">SmartAlerts Redesign</h2>
+      <p class="section-header__desc">
+        3 variantes semânticas (critical / warning / info) · cascade reveal · ação inline · persona filter
+      </p>
+    </div>
+
+    <!-- All 3 variants stacked -->
+    <div class="card-shell" style="margin-bottom:1.5rem;">
+      <div style="font-size:var(--text-label-sm);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-outline);margin-bottom:1rem;">Todas as 3 severidades</div>
+      <div class="smart-alerts-redesign">
+
+        <!-- CRITICAL -->
+        <div class="smart-alert smart-alert--critical" role="alert" aria-live="assertive">
+          <div class="smart-alert__header">
+            <svg class="smart-alert__icon smart-alert__icon--critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span class="smart-alert__title">Estoque crítico — Metformina</span>
+            <button class="smart-alert__snooze" aria-label="Silenciar alerta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="smart-alert__message">Apenas 4 comprimidos restantes — previsão de fim em 2 dias. Reposição urgente necessária.</p>
+          <div class="smart-alert__actions">
+            <button class="smart-alert__action smart-alert__action--primary">Registrar Compra →</button>
+            <button class="smart-alert__action smart-alert__action--secondary">Ver Estoque</button>
+          </div>
+        </div>
+
+        <!-- WARNING -->
+        <div class="smart-alert smart-alert--warning" role="status" aria-live="polite">
+          <div class="smart-alert__header">
+            <svg class="smart-alert__icon smart-alert__icon--warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span class="smart-alert__title">Dose de 20h não confirmada</span>
+            <button class="smart-alert__snooze" aria-label="Silenciar alerta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="smart-alert__message">Losartana 50mg — Protocolo Hipertensão está com 1h45min de atraso.</p>
+          <div class="smart-alert__actions">
+            <button class="smart-alert__action smart-alert__action--primary">Registrar Agora →</button>
+            <button class="smart-alert__action smart-alert__action--secondary">Já tomei</button>
+          </div>
+        </div>
+
+        <!-- INFO -->
+        <div class="smart-alert smart-alert--info" role="status" aria-live="polite">
+          <div class="smart-alert__header">
+            <svg class="smart-alert__icon smart-alert__icon--info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="smart-alert__title">Prescrição vence em 12 dias</span>
+          </div>
+          <p class="smart-alert__message">Receita de Metformina 850mg emitida em 04/01/2026 vence em 04/04/2026. Solicite renovação ao médico.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Persona comparison -->
+    <div class="variant-row variant-row--2col">
+      <div class="card-shell">
+        <div class="persona-label persona-label--simple">🌸 Dona Maria · Simple</div>
+        <p style="font-size:var(--text-label-md);color:var(--color-outline);margin-bottom:1rem;">Máximo 2 alertas · apenas critical + warning</p>
+        <div class="smart-alerts-redesign">
+          <div class="smart-alert smart-alert--critical">
+            <div class="smart-alert__header">
+              <svg class="smart-alert__icon smart-alert__icon--critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span class="smart-alert__title">Estoque crítico</span>
+            </div>
+            <p class="smart-alert__message">Metformina acaba em 2 dias.</p>
+            <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar Compra →</button></div>
+          </div>
+          <div class="smart-alert smart-alert--warning">
+            <div class="smart-alert__header">
+              <svg class="smart-alert__icon smart-alert__icon--warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span class="smart-alert__title">Dose atrasada</span>
+            </div>
+            <p class="smart-alert__message">Losartana 20h não confirmada.</p>
+            <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar Agora →</button></div>
+          </div>
+          <button class="alerts-expand">Ver todos (5) →</button>
+        </div>
+      </div>
+      <div class="card-shell">
+        <div class="persona-label persona-label--complex">📊 Carlos · Complex</div>
+        <p style="font-size:var(--text-label-md);color:var(--color-outline);margin-bottom:1rem;">Máximo 5 alertas · todos os tipos</p>
+        <div class="smart-alerts-redesign">
+          <div class="smart-alert smart-alert--critical">
+            <div class="smart-alert__header">
+              <svg class="smart-alert__icon smart-alert__icon--critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span class="smart-alert__title">Estoque crítico — Metformina</span>
+            </div>
+            <p class="smart-alert__message">4 unidades · 2 dias restantes · previsão: 05/04</p>
+            <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar Compra →</button></div>
+          </div>
+          <div class="smart-alert smart-alert--warning">
+            <div class="smart-alert__header">
+              <svg class="smart-alert__icon smart-alert__icon--warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span class="smart-alert__title">Dose de 20h — 1h45 de atraso</span>
+            </div>
+            <p class="smart-alert__message">Losartana 50mg · Protocolo Hipertensão · Adesão 7d: 82%</p>
+            <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar →</button></div>
+          </div>
+          <div class="smart-alert smart-alert--info">
+            <div class="smart-alert__header">
+              <svg class="smart-alert__icon smart-alert__icon--info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span class="smart-alert__title">Prescrição vence em 12 dias</span>
+            </div>
+            <p class="smart-alert__message">Receita Metformina 850mg · Validade: 04/04/2026</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.2 — InsightCardRedesign ══════════════════ -->
+  <section id="s2">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.2</div>
+      <h2 class="section-header__title">InsightCard Redesign</h2>
+      <p class="section-header__desc">Card de insight rotativo · 7 tipos · surface + ambient shadow · persona filter</p>
+    </div>
+
+    <div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
+
+      <!-- ADHERENCE_POSITIVE -->
+      <div class="insight-card-redesign">
+        <div class="insight-card-redesign__header">
+          <span class="insight-card-redesign__badge">Parabéns!</span>
+          <div class="insight-card-redesign__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+        </div>
+        <p class="insight-card-redesign__title">Adesão excelente esta semana</p>
+        <p class="insight-card-redesign__message">Você tomou 95% das suas doses nos últimos 7 dias. Continue assim!</p>
+        <button class="insight-card-redesign__cta">Ver detalhes →</button>
+      </div>
+
+      <!-- STREAK_CELEBRATION -->
+      <div class="insight-card-redesign insight-card-redesign--streak">
+        <div class="insight-card-redesign__header">
+          <span class="insight-card-redesign__badge">Sequência!</span>
+          <div class="insight-card-redesign__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+          </div>
+        </div>
+        <p class="insight-card-redesign__title">21 dias sem perder uma dose!</p>
+        <p class="insight-card-redesign__message">Sua maior sequência até hoje. Tratamentos consistentes têm muito mais efeito.</p>
+        <button class="insight-card-redesign__cta">Compartilhar →</button>
+      </div>
+
+      <!-- MISSED_DOSE_ALERT / warning -->
+      <div class="insight-card-redesign insight-card-redesign--warning">
+        <div class="insight-card-redesign__header">
+          <span class="insight-card-redesign__badge">Atenção</span>
+          <div class="insight-card-redesign__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
+        <p class="insight-card-redesign__title">3 doses perdidas nos últimos 5 dias</p>
+        <p class="insight-card-redesign__message">Losartana tem maior efeito quando tomada no horário certo. Tente ajustar o lembrete.</p>
+        <button class="insight-card-redesign__cta">Ajustar lembrete →</button>
+      </div>
+
+      <!-- IMPROVEMENT_OPPORTUNITY / tip (Complex only) -->
+      <div class="insight-card-redesign insight-card-redesign--tip">
+        <div class="insight-card-redesign__header">
+          <span class="insight-card-redesign__badge">Dica</span>
+          <div class="insight-card-redesign__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+          </div>
+        </div>
+        <p class="insight-card-redesign__title">Você tende a tomar doses mais cedo às sextas</p>
+        <p class="insight-card-redesign__message">Análise dos últimos 30 dias mostra que sua rotina muda no final de semana. Considere horários flexíveis.</p>
+        <button class="insight-card-redesign__cta">Explorar padrão →</button>
+      </div>
+
+      <!-- Simple persona — only high/critical -->
+      <div class="card-shell" style="grid-column: 1 / -1;">
+        <div class="persona-label persona-label--simple">🌸 Dona Maria · Simple — filtra: só priority critical/high</div>
+        <p style="font-size:var(--text-body-sm);color:var(--color-outline);">A Dica (IMPROVEMENT_OPPORTUNITY) acima fica oculta para Dona Maria. Apenas insights de alto impacto são exibidos, com linguagem encorajadora.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.3 — ReminderSuggestionRedesign ══════════ -->
+  <section id="s3">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.3</div>
+      <h2 class="section-header__title">ReminderSuggestion Redesign</h2>
+      <p class="section-header__desc">Smart Card variante <em>suggestion</em> · gradient verde · 3 CTAs · análise de padrão de horário</p>
+    </div>
+
+    <div class="variant-row variant-row--2col">
+      <div>
+        <div style="font-size:var(--text-label-sm);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-outline);margin-bottom:0.875rem;">Sugestão — atrasar horário</div>
+        <div class="reminder-suggestion-redesign" role="alert">
+          <span class="reminder-suggestion-redesign__badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Sugestão Inteligente
+          </span>
+          <p class="reminder-suggestion-redesign__text">
+            Você costuma tomar <strong>Losartana</strong> por volta das <strong>20h45</strong>.
+          </p>
+          <p class="reminder-suggestion-redesign__subtext">
+            Ajustar o lembrete de 20h00 para 20h45?
+          </p>
+          <p class="reminder-suggestion-redesign__sample">Baseado em 14 doses registradas</p>
+          <div class="reminder-suggestion-redesign__actions">
+            <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--accept">Ajustar Horário</button>
+            <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--keep">Manter Atual</button>
+          </div>
+          <button class="reminder-suggestion-redesign__never">Não perguntar mais</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:var(--text-label-sm);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-outline);margin-bottom:0.875rem;">Sugestão — adiantar horário</div>
+        <div class="reminder-suggestion-redesign" role="alert">
+          <span class="reminder-suggestion-redesign__badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Sugestão Inteligente
+          </span>
+          <p class="reminder-suggestion-redesign__text">
+            Você costuma tomar <strong>Metformina</strong> por volta das <strong>07h30</strong>.
+          </p>
+          <p class="reminder-suggestion-redesign__subtext">
+            Ajustar o lembrete de 08h00 para 07h30?
+          </p>
+          <p class="reminder-suggestion-redesign__sample">Baseado em 21 doses registradas · confiança alta</p>
+          <div class="reminder-suggestion-redesign__actions">
+            <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--accept">Ajustar Horário</button>
+            <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--keep">Manter Atual</button>
+          </div>
+          <button class="reminder-suggestion-redesign__never">Não perguntar mais</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.4 — ProtocolRiskBadge ══════════════════ -->
+  <section id="s4">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.4</div>
+      <h2 class="section-header__title">ProtocolRisk Badge</h2>
+      <p class="section-header__desc">3 níveis de risco · guard hasEnoughData · Simple só mostra se não-stable · Complex sempre</p>
+    </div>
+
+    <!-- Badge variants solo -->
+    <div class="card-shell" style="margin-bottom:1.5rem;">
+      <div style="font-size:var(--text-label-sm);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-outline);margin-bottom:1.25rem;">Badges isoladas</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+        <span class="risk-badge risk-badge--stable">Em dia</span>
+        <span class="risk-badge risk-badge--stable risk-badge--complex">Em dia <span class="risk-badge__detail">97% <span class="risk-badge__trend">↑</span></span></span>
+        <span class="risk-badge risk-badge--attention">Atenção</span>
+        <span class="risk-badge risk-badge--attention risk-badge--complex">Atenção <span class="risk-badge__detail">74% <span class="risk-badge__trend">→</span></span></span>
+        <span class="risk-badge risk-badge--critical">Em risco</span>
+        <span class="risk-badge risk-badge--critical risk-badge--complex">Em risco <span class="risk-badge__detail">41% <span class="risk-badge__trend">↓</span></span></span>
+        <span class="tag">sem dados</span>
+      </div>
+    </div>
+
+    <!-- Protocol rows with badges -->
+    <div class="variant-row variant-row--2col">
+      <div>
+        <div class="persona-label persona-label--simple" style="margin-bottom:1rem;">🌸 Dona Maria · Simple</div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">💊</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Metformina 850mg</div>
+              <div class="protocol-row-demo__sub">1 comprimido · manhã</div>
+            </div>
+            <!-- stable → badge oculta para Simple -->
+            <span class="tag" style="font-size:var(--text-label-xs);opacity:0.5;">badge oculta</span>
+          </div>
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">❤️</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Losartana 50mg</div>
+              <div class="protocol-row-demo__sub">1 comprimido · noite</div>
+            </div>
+            <span class="risk-badge risk-badge--attention">Atenção</span>
+          </div>
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">🧪</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Omeprazol 20mg</div>
+              <div class="protocol-row-demo__sub">1 cápsula · manhã em jejum</div>
+            </div>
+            <span class="risk-badge risk-badge--critical">Em risco</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="persona-label persona-label--complex" style="margin-bottom:1rem;">📊 Carlos · Complex</div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">💊</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Metformina 850mg</div>
+              <div class="protocol-row-demo__sub">Adesão 14d: 97%</div>
+            </div>
+            <span class="risk-badge risk-badge--stable risk-badge--complex">Em dia <span class="risk-badge__detail">97% <span class="risk-badge__trend">↑</span></span></span>
+          </div>
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">❤️</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Losartana 50mg</div>
+              <div class="protocol-row-demo__sub">Adesão 14d: 74%</div>
+            </div>
+            <span class="risk-badge risk-badge--attention risk-badge--complex">Atenção <span class="risk-badge__detail">74% <span class="risk-badge__trend">→</span></span></span>
+          </div>
+          <div class="protocol-row-demo">
+            <div class="protocol-row-demo__avatar">🧪</div>
+            <div style="flex:1">
+              <div class="protocol-row-demo__name">Omeprazol 20mg</div>
+              <div class="protocol-row-demo__sub">Adesão 14d: 41%</div>
+            </div>
+            <span class="risk-badge risk-badge--critical risk-badge--complex">Em risco <span class="risk-badge__detail">41% <span class="risk-badge__trend">↓</span></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.5 — CostSummaryRedesign ════════════════ -->
+  <section id="s5">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.5</div>
+      <h2 class="section-header__title">CostSummary Redesign</h2>
+      <p class="section-header__desc">Barras proporcionais · Living Fill animation · top 3 (Simple) ou todos (Complex) · empty state</p>
+    </div>
+
+    <div class="variant-row variant-row--2col">
+      <!-- Simple: top 3 -->
+      <div>
+        <div class="persona-label persona-label--simple" style="margin-bottom:1rem;">🌸 Dona Maria · top 3</div>
+        <div class="cost-summary-redesign">
+          <div class="cost-summary-redesign__header">
+            <div class="cost-summary-redesign__icon">💰</div>
+            <h3 class="cost-summary-redesign__title">Custo Mensal</h3>
+          </div>
+          <p class="cost-summary-redesign__total">R$ 287,40<span>/mês</span></p>
+          <div class="cost-summary-redesign__list">
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Jardiance 10mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 148,90</span>
+              </div>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill cost-summary-redesign__bar-fill--top" style="--target-width:100%;animation-fill-mode:forwards;"></div>
+              </div>
+              <style>.cost-summary-redesign__bar-fill:nth-child(1){width:0;}@keyframes fill1{to{width:100%}}</style>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Metformina 850mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 89,20</span>
+              </div>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barAnim2;--target-width:60%;"></div>
+                <style>@keyframes barAnim2{from{width:0}to{width:60%}}.cost-summary-redesign__bar-fill:nth-child(1){animation-name:barAnim2}</style>
+              </div>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Losartana 50mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 49,30</span>
+              </div>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barAnim3;"></div>
+                <style>@keyframes barAnim3{from{width:0}to{width:33%}}</style>
+              </div>
+            </div>
+          </div>
+          <p class="cost-summary-redesign__more">+ 2 medicamentos</p>
+        </div>
+      </div>
+
+      <!-- Complex: all + daily -->
+      <div>
+        <div class="persona-label persona-label--complex" style="margin-bottom:1rem;">📊 Carlos · todos</div>
+        <div class="cost-summary-redesign">
+          <div class="cost-summary-redesign__header">
+            <div class="cost-summary-redesign__icon">💰</div>
+            <h3 class="cost-summary-redesign__title">Custo Mensal</h3>
+          </div>
+          <p class="cost-summary-redesign__total">R$ 357,80<span>/mês</span></p>
+          <div class="cost-summary-redesign__list">
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Jardiance 10mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 148,90</span>
+              </div>
+              <p class="cost-summary-redesign__daily">R$ 4,96/dia</p>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill cost-summary-redesign__bar-fill--top" style="animation-name:barC1;"></div>
+                <style>@keyframes barC1{from{width:0}to{width:100%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Metformina 850mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 89,20</span>
+              </div>
+              <p class="cost-summary-redesign__daily">R$ 2,97/dia</p>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barC2;"></div>
+                <style>@keyframes barC2{from{width:0}to{width:60%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Losartana 50mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 49,30</span>
+              </div>
+              <p class="cost-summary-redesign__daily">R$ 1,64/dia</p>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barC3;"></div>
+                <style>@keyframes barC3{from{width:0}to{width:33%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Omeprazol 20mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 38,20</span>
+              </div>
+              <p class="cost-summary-redesign__daily">R$ 1,27/dia</p>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barC4;"></div>
+                <style>@keyframes barC4{from{width:0}to{width:26%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="cost-summary-redesign__item-header">
+                <span class="cost-summary-redesign__item-name">Sinvastatina 20mg</span>
+                <span class="cost-summary-redesign__item-cost">R$ 32,20</span>
+              </div>
+              <p class="cost-summary-redesign__daily">R$ 1,07/dia</p>
+              <div class="cost-summary-redesign__bar-track">
+                <div class="cost-summary-redesign__bar-fill" style="animation-name:barC5;"></div>
+                <style>@keyframes barC5{from{width:0}to{width:22%}}</style>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div style="margin-top:1.5rem;">
+      <div style="font-size:var(--text-label-sm);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-outline);margin-bottom:0.875rem;">Estado vazio (sem dados de compra)</div>
+      <div class="empty-state">
+        <div class="empty-state__icon">💰</div>
+        <p class="empty-state__title">Nenhum dado de custo ainda</p>
+        <p class="empty-state__desc">Adicione dados de compra nos medicamentos para ver a análise de custo mensal.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.6 — PrescriptionTimelineRedesign ═══════ -->
+  <section id="s6">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.6</div>
+      <h2 class="section-header__title">PrescriptionTimeline Redesign</h2>
+      <p class="section-header__desc">Barras de vigência · 4 estados semânticos · Living Fill · marcador hoje</p>
+    </div>
+
+    <div class="variant-row variant-row--2col">
+      <div>
+        <div class="persona-label persona-label--simple" style="margin-bottom:1rem;">🌸 Dona Maria · lista empilhada</div>
+        <div class="prescription-timeline-redesign">
+          <h3 class="prescription-timeline-redesign__title">Prescrições</h3>
+          <div class="prescription-timeline-redesign__list">
+
+            <!-- ativa -->
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Metformina 850mg</span>
+                <span class="status status--ativa">Ativa</span>
+              </div>
+              <div class="prescription-timeline-redesign__dates">10/01/2026 → 10/07/2026</div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.5rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--ativa" style="animation-name:tl1;"></div>
+                <style>@keyframes tl1{from{width:0}to{width:47%}}</style>
+              </div>
+              <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.375rem;">47% concluído · 94 dias restantes</div>
+            </div>
+
+            <!-- vencendo -->
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Losartana 50mg</span>
+                <span class="status status--vencendo">Vencendo</span>
+              </div>
+              <div class="prescription-timeline-redesign__dates">03/01/2026 → 16/04/2026</div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.5rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--vencendo" style="animation-name:tl2;"></div>
+                <style>@keyframes tl2{from{width:0}to{width:88%}}</style>
+              </div>
+              <div style="font-size:var(--text-label-md);color:var(--color-tertiary);margin-top:0.375rem;font-weight:600;">Vence em 13 dias</div>
+            </div>
+
+            <!-- vencida -->
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Omeprazol 20mg</span>
+                <span class="status status--vencida">Vencida</span>
+              </div>
+              <div class="prescription-timeline-redesign__dates">01/10/2025 → 01/04/2026</div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.5rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--vencida" style="animation-name:tl3;"></div>
+                <style>@keyframes tl3{from{width:0}to{width:100%}}</style>
+              </div>
+              <div style="font-size:var(--text-label-md);color:var(--color-error);margin-top:0.375rem;font-weight:600;">Vencida há 2 dias · Renove a receita</div>
+            </div>
+
+            <!-- finalizada -->
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Amoxicilina 500mg</span>
+                <span class="status status--finalizada">Finalizada</span>
+              </div>
+              <div class="prescription-timeline-redesign__dates">15/03/2026 → 22/03/2026</div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.5rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--finalizada" style="animation-name:tl4;"></div>
+                <style>@keyframes tl4{from{width:0}to{width:100%}}</style>
+              </div>
+              <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.375rem;">Tratamento concluído</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="persona-label persona-label--complex" style="margin-bottom:1rem;">📊 Carlos · eixo temporal</div>
+        <div class="prescription-timeline-redesign">
+          <h3 class="prescription-timeline-redesign__title">Vigência das Prescrições</h3>
+          <!-- Status summary row -->
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+            <span class="status status--ativa">2 ativas</span>
+            <span class="status status--vencendo">1 vencendo</span>
+            <span class="status status--vencida">1 vencida</span>
+          </div>
+          <div class="prescription-timeline-redesign__list">
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Metformina 850mg</span>
+                <span style="font-size:var(--text-label-md);color:var(--color-outline);font-variant-numeric:tabular-nums;">94d restantes</span>
+              </div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.375rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--ativa" style="animation-name:ctlA1;"></div>
+                <style>@keyframes ctlA1{from{width:0}to{width:47%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Losartana 50mg</span>
+                <span style="font-size:var(--text-label-md);color:var(--color-tertiary);font-weight:700;">13d</span>
+              </div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.375rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--vencendo" style="animation-name:ctlA2;"></div>
+                <style>@keyframes ctlA2{from{width:0}to{width:88%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Omeprazol 20mg</span>
+                <span style="font-size:var(--text-label-md);color:var(--color-error);font-weight:700;">VENCIDA</span>
+              </div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.375rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--vencida" style="animation-name:ctlA3;"></div>
+                <style>@keyframes ctlA3{from{width:0}to{width:100%}}</style>
+              </div>
+            </div>
+            <div>
+              <div class="prescription-timeline-redesign__item-header">
+                <span class="prescription-timeline-redesign__name">Jardiance 10mg</span>
+                <span style="font-size:var(--text-label-md);color:var(--color-outline);font-variant-numeric:tabular-nums;">158d restantes</span>
+              </div>
+              <div class="prescription-timeline-redesign__bar-track" style="margin-top:0.375rem;">
+                <div class="prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--ativa" style="animation-name:ctlA4;"></div>
+                <style>@keyframes ctlA4{from{width:0}to{width:25%}}</style>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.7 — Stock Enrichment ═══════════════════ -->
+  <section id="s7">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.7</div>
+      <h2 class="section-header__title">Stock Card — Refill Prediction Enrichment</h2>
+      <p class="section-header__desc">StockCardRedesign enriquecido com <code>predictedStockoutDate</code> + badges de confiança de previsão</p>
+    </div>
+
+    <div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+
+      <!-- Critical, high confidence -->
+      <div class="stock-card-enriched">
+        <div class="stock-card-enriched__header">
+          <div>
+            <div class="stock-card-enriched__medicine">Metformina 850mg</div>
+            <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">4 comprimidos restantes</div>
+          </div>
+          <span class="stock-pill stock-pill--critical">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M17 14h-6"/><path d="M13 18H7"/><path d="M7 14h.01"/></svg>
+            2 dias
+          </span>
+        </div>
+        <div class="stock-card-enriched__prediction">
+          <div class="stock-card-enriched__prediction-label">Previsão de término</div>
+          <div class="stock-card-enriched__prediction-value">
+            05/04/2026
+            <span class="confidence-badge confidence-badge--high">Alta confiança</span>
+          </div>
+          <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">Consumo: 2 comp/dia · baseado em 28 dias</div>
+        </div>
+        <div class="stock-card-enriched__bar-track">
+          <div class="stock-card-enriched__bar-fill stock-card-enriched__bar-fill--critical" style="animation-name:sb1;"></div>
+          <style>@keyframes sb1{from{width:0}to{width:12%}}</style>
+        </div>
+        <button class="stock-card-enriched__action">Registrar Compra →</button>
+      </div>
+
+      <!-- Low, medium confidence -->
+      <div class="stock-card-enriched">
+        <div class="stock-card-enriched__header">
+          <div>
+            <div class="stock-card-enriched__medicine">Losartana 50mg</div>
+            <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">11 comprimidos restantes</div>
+          </div>
+          <span class="stock-pill stock-pill--low">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            11 dias
+          </span>
+        </div>
+        <div class="stock-card-enriched__prediction">
+          <div class="stock-card-enriched__prediction-label">Previsão de término</div>
+          <div class="stock-card-enriched__prediction-value">
+            14/04/2026
+            <span class="confidence-badge confidence-badge--medium">Média</span>
+          </div>
+          <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">Consumo: 1 comp/dia · baseado em 15 dias</div>
+        </div>
+        <div class="stock-card-enriched__bar-track">
+          <div class="stock-card-enriched__bar-fill stock-card-enriched__bar-fill--low" style="animation-name:sb2;"></div>
+          <style>@keyframes sb2{from{width:0}to{width:38%}}</style>
+        </div>
+        <button class="stock-card-enriched__action">Planejar reposição →</button>
+      </div>
+
+      <!-- Normal, high confidence -->
+      <div class="stock-card-enriched">
+        <div class="stock-card-enriched__header">
+          <div>
+            <div class="stock-card-enriched__medicine">Jardiance 10mg</div>
+            <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">45 comprimidos restantes</div>
+          </div>
+          <span class="stock-pill stock-pill--normal">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 14 2 2 4-4"/></svg>
+            45 dias
+          </span>
+        </div>
+        <div class="stock-card-enriched__prediction">
+          <div class="stock-card-enriched__prediction-label">Previsão de término</div>
+          <div class="stock-card-enriched__prediction-value">
+            18/05/2026
+            <span class="confidence-badge confidence-badge--high">Alta confiança</span>
+          </div>
+          <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">Consumo: 1 comp/dia · baseado em 30 dias</div>
+        </div>
+        <div class="stock-card-enriched__bar-track">
+          <div class="stock-card-enriched__bar-fill stock-card-enriched__bar-fill--normal" style="animation-name:sb3;"></div>
+          <style>@keyframes sb3{from{width:0}to{width:72%}}</style>
+        </div>
+      </div>
+
+      <!-- Low confidence / insufficient data -->
+      <div class="stock-card-enriched">
+        <div class="stock-card-enriched__header">
+          <div>
+            <div class="stock-card-enriched__medicine">Sinvastatina 20mg</div>
+            <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">22 comprimidos restantes</div>
+          </div>
+          <span class="stock-pill stock-pill--normal">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 14 2 2 4-4"/></svg>
+            22 dias
+          </span>
+        </div>
+        <div class="stock-card-enriched__prediction" style="border:1.5px dashed var(--color-outline-variant);">
+          <div class="stock-card-enriched__prediction-label">Previsão de término</div>
+          <div class="stock-card-enriched__prediction-value">
+            25/04/2026
+            <span class="confidence-badge confidence-badge--low">Baixa</span>
+          </div>
+          <div style="font-size:var(--text-label-md);color:var(--color-outline);margin-top:0.25rem;">Apenas 8 dias de histórico · dados insuficientes</div>
+        </div>
+        <div class="stock-card-enriched__bar-track">
+          <div class="stock-card-enriched__bar-fill stock-card-enriched__bar-fill--normal" style="animation-name:sb4;opacity:0.5;"></div>
+          <style>@keyframes sb4{from{width:0}to{width:55%}}</style>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ SPRINT 15.8 — Dashboard Composition ═════════════ -->
+  <section id="s8">
+    <div class="section-header">
+      <div class="sprint-badge">Sprint 15.8 · Composição</div>
+      <h2 class="section-header__title">Dashboard Redesign — Vista Completa</h2>
+      <p class="section-header__desc">Todos os componentes compostos no DashboardRedesign · ordem de leitura natural · ambas as personas</p>
+    </div>
+
+    <div class="variant-row variant-row--2col">
+
+      <!-- DONA MARIA VIEW -->
+      <div>
+        <div class="persona-label persona-label--simple" style="margin-bottom:1.25rem;">🌸 Dona Maria — Dashboard</div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+
+          <!-- PriorityDoseCard (reference — Wave 6) -->
+          <div class="priority-dose-card">
+            <span class="priority-dose-card__badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Prioridade Máxima
+            </span>
+            <p class="priority-dose-card__title">Dose das 20h em atraso</p>
+            <p class="priority-dose-card__medicines">Losartana · Metformina</p>
+            <button class="priority-dose-card__cta">Confirmar Agora</button>
+          </div>
+
+          <!-- SmartAlerts (max 2) -->
+          <div class="smart-alerts-redesign">
+            <div class="smart-alert smart-alert--critical">
+              <div class="smart-alert__header">
+                <svg class="smart-alert__icon smart-alert__icon--critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="smart-alert__title">Estoque crítico</span>
+              </div>
+              <p class="smart-alert__message">Metformina acaba em 2 dias.</p>
+              <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar Compra →</button></div>
+            </div>
+          </div>
+
+          <!-- InsightCard (positive) -->
+          <div class="insight-card-redesign">
+            <div class="insight-card-redesign__header">
+              <span class="insight-card-redesign__badge">Parabéns!</span>
+              <div class="insight-card-redesign__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              </div>
+            </div>
+            <p class="insight-card-redesign__title">Semana excelente!</p>
+            <p class="insight-card-redesign__message">Você tomou 95% das doses esta semana. Continue assim!</p>
+          </div>
+
+          <!-- ReminderSuggestion -->
+          <div class="reminder-suggestion-redesign" role="alert">
+            <span class="reminder-suggestion-redesign__badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              Sugestão
+            </span>
+            <p class="reminder-suggestion-redesign__text">Ajustar lembrete de <strong>Losartana</strong> para <strong>20h45</strong>?</p>
+            <p class="reminder-suggestion-redesign__subtext">Baseado no seu padrão real de uso.</p>
+            <div class="reminder-suggestion-redesign__actions">
+              <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--accept">Ajustar</button>
+              <button class="reminder-suggestion-redesign__btn reminder-suggestion-redesign__btn--keep">Manter</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CARLOS VIEW -->
+      <div>
+        <div class="persona-label persona-label--complex" style="margin-bottom:1.25rem;">📊 Carlos — Dashboard</div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+
+          <!-- PriorityDoseCard -->
+          <div class="priority-dose-card">
+            <span class="priority-dose-card__badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Prioridade Máxima · 1h45 atraso
+            </span>
+            <p class="priority-dose-card__title">Dose das 20h em atraso</p>
+            <p class="priority-dose-card__medicines">Losartana 50mg · Metformina 850mg</p>
+            <button class="priority-dose-card__cta">Confirmar 2 doses agora</button>
+          </div>
+
+          <!-- SmartAlerts (max 5) -->
+          <div class="smart-alerts-redesign">
+            <div class="smart-alert smart-alert--critical">
+              <div class="smart-alert__header">
+                <svg class="smart-alert__icon smart-alert__icon--critical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="smart-alert__title">Metformina — 4 unid · fim em 2 dias</span>
+              </div>
+              <p class="smart-alert__message">Consumo: 2 comp/dia · previsão término: 05/04</p>
+              <div class="smart-alert__actions"><button class="smart-alert__action smart-alert__action--primary">Registrar Compra →</button></div>
+            </div>
+            <div class="smart-alert smart-alert--warning">
+              <div class="smart-alert__header">
+                <svg class="smart-alert__icon smart-alert__icon--warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span class="smart-alert__title">Receita Omeprazol vencida há 2 dias</span>
+              </div>
+              <p class="smart-alert__message">Solicite renovação para continuar o protocolo.</p>
+            </div>
+            <div class="smart-alert smart-alert--info">
+              <div class="smart-alert__header">
+                <svg class="smart-alert__icon smart-alert__icon--info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span class="smart-alert__title">Losartana prescrição vence em 13 dias</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- InsightCard (tip/complex only) -->
+          <div class="insight-card-redesign insight-card-redesign--tip">
+            <div class="insight-card-redesign__header">
+              <span class="insight-card-redesign__badge">Dica</span>
+              <div class="insight-card-redesign__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+              </div>
+            </div>
+            <p class="insight-card-redesign__title">Padrão irregular às sextas-feiras</p>
+            <p class="insight-card-redesign__message">Adesão 7d: 71% · Adesão dias úteis: 94% · Ajuste o horário de sexta.</p>
+            <button class="insight-card-redesign__cta">Explorar padrão →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══ REFERÊNCIA: Smart Card Pattern ══════════════════ -->
+  <section id="s9">
+    <div class="section-header">
+      <div class="sprint-badge">Referência Visual</div>
+      <h2 class="section-header__title">Smart Card Pattern — Anatomia</h2>
+      <p class="section-header__desc">5 variantes semânticas · baseadas no PriorityDoseCard (W6)</p>
+    </div>
+
+    <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
+      <div style="background:color-mix(in srgb,#ba1a1a 8%,transparent);border-left:4px solid #ba1a1a;border-radius:var(--radius-lg);padding:1.25rem;">
+        <div style="font-size:var(--text-label-xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ba1a1a;margin-bottom:0.5rem;">● RISK</div>
+        <div style="font-size:var(--text-body-sm);font-weight:600;">Estoque zerado · dose crítica · prescrição vencida</div>
+      </div>
+      <div style="background:color-mix(in srgb,#ffdea8 40%,transparent);border-left:4px solid #7b5700;border-radius:var(--radius-lg);padding:1.25rem;">
+        <div style="font-size:var(--text-label-xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7b5700;margin-bottom:0.5rem;">● WARNING</div>
+        <div style="font-size:var(--text-body-sm);font-weight:600;">Estoque baixo · dose atrasada · prescrição vencendo</div>
+      </div>
+      <div style="background:var(--gradient-primary);border-radius:var(--radius-card);padding:1.25rem;color:white;">
+        <div style="font-size:var(--text-label-xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.8;margin-bottom:0.5rem;">● SUGGESTION</div>
+        <div style="font-size:var(--text-body-sm);font-weight:600;">Reminder optimizer · sugestão de ajuste de horário</div>
+      </div>
+      <div style="background:#ffffff;border-radius:var(--radius-card);padding:1.25rem;box-shadow:var(--shadow-ambient);">
+        <div style="font-size:var(--text-label-xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-primary);margin-bottom:0.5rem;">● INSIGHT</div>
+        <div style="font-size:var(--text-body-sm);font-weight:600;">Insight rotativo · dica do dia · celebração de streak</div>
+      </div>
+      <div style="background:color-mix(in srgb,#ffdea8 30%,transparent);border-radius:var(--radius-card);padding:1.25rem;">
+        <div style="font-size:var(--text-label-xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7b5700;margin-bottom:0.5rem;">● COST</div>
+        <div style="font-size:var(--text-body-sm);font-weight:600;">Análise de custo · barras proporcionais · tertiary tonal</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Re-trigger bar fill animations when elements scroll into view
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.animationPlayState = 'running';
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('[style*="animation-name:"]').forEach(el => {
+    el.style.animationPlayState = 'paused';
+    observer.observe(el.closest('section') || el);
+    setTimeout(() => { el.style.animationPlayState = 'running'; }, 300);
+  });
+</script>
+
+</body>
+</html>

@@ -763,14 +763,37 @@ Redesenhar a análise de custo mensal (legacy `CostChart.jsx`) para o visual San
 ### Arquivo a criar
 `src/features/stock/components/CostSummaryRedesign.jsx` + `CostSummaryRedesign.css`
 
+### ⚠️ Fonte de dados obrigatória — Nova arquitetura de estoque
+
+O cálculo de custo **deve** usar a nova arquitetura de estoque definida em
+`plans/archive_old/stock_refactor/exec_spec_stock_refactor.md` (§14.2 e §9.1).
+
+**Regra fechada de fonte de dados (não negociável):**
+
+1. Se houver registros em `purchases` para o medicamento → usar **somente `purchases`**
+2. Se não houver `purchases` → fallback em `stock.original_quantity` (transição legacy)
+3. **Nunca misturar** `purchases` e fallback legacy no mesmo medicamento
+
+**O que isso significa para o componente:**
+- `costData` é fornecido pelo `costAnalysisService.calculateMonthlyCosts()` **já atualizado** para
+  ler de `purchases` (não de `stock.quantity` remanescente)
+- Preço médio = `SUM(quantity_bought * unit_price) / SUM(quantity_bought)` sobre `purchases`
+- Compras com `unit_price = 0` entram como grátis (não quebram o cálculo)
+- O componente em si não acessa `stock` diretamente — recebe `costData` já calculado
+
+**Dependência de sprint:** O `costAnalysisService` e o `purchaseService` devem estar refatorados
+(stock refactor PR#443) antes de implementar este componente. Se o refactor ainda não foi mergeado,
+usar o serviço legado temporariamente com comentário `// TODO: migrar para purchaseService após PR#443`.
+
 ### Interface (Props)
 
 ```jsx
 /**
  * CostSummaryRedesign — Análise de custo mensal com barras proporcionais.
  *
- * @param {Object} costData — Saída de calculateMonthlyCosts()
- *   Shape: { items: [{ medicineName, monthlyCost, dailyCost }], totalMonthly }
+ * @param {Object} costData — Saída de costAnalysisService.calculateMonthlyCosts()
+ *   Shape: { items: [{ medicineName, monthlyCost, dailyCost, avgUnitPrice }], totalMonthly }
+ *   Fonte: purchases (nova arquitetura) com fallback em stock.original_quantity (legacy)
  * @param {boolean} isComplex — true = lista completa, false = top 3
  */
 export default function CostSummaryRedesign({ costData, isComplex })
@@ -789,12 +812,20 @@ itemsToShow:
 maxCost = Math.max(...items.map(i => i.monthlyCost)) — para barra proporcional
 ```
 
+### Ícone
+
+Usar `Receipt` do Lucide (não emoji, não `DollarSign`):
+```jsx
+import { Receipt } from 'lucide-react'
+```
+> **Regra geral:** preferir sempre ícones Lucide ao invés de emojis no redesign.
+
 ### Markup
 
 ```jsx
 <section className="cost-summary-redesign" aria-label="Análise de custo mensal">
   <div className="cost-summary-redesign__header">
-    <DollarSign size={20} aria-hidden="true" />
+    <Receipt size={20} aria-hidden="true" />
     <h3 className="cost-summary-redesign__title">Custo Mensal</h3>
   </div>
 
@@ -846,6 +877,8 @@ maxCost = Math.max(...items.map(i => i.monthlyCost)) — para barra proporcional
 - [ ] Empty state quando sem dados de compra
 - [ ] `section` + `aria-label`
 - [ ] Sem bordas 1px — separation by spacing
+- [ ] Ícone `Receipt` (Lucide), não emoji nem `DollarSign`
+- [ ] Fonte de dados: `costAnalysisService` lendo de `purchases` (nova arquitetura stock refactor)
 
 ---
 
@@ -864,17 +897,32 @@ Redesenhar a timeline de prescrições (EV-07) com visual Santuário.
  * PrescriptionTimelineRedesign — Barras de vigência de prescrições.
  *
  * @param {Array} prescriptions — Lista de protocolos com start/end date
- *   Shape: [{ id, name, medicineName, startDate, endDate, status }]
+ *   Shape: [{ id, name, medicineName, startDate, endDate, status, isContinuous }]
  *   status: 'ativa' | 'vencendo' | 'vencida' | 'finalizada'
+ *   isContinuous: boolean — true quando endDate é null (uso contínuo, sem data final)
  * @param {boolean} isComplex — false = lista empilhada, true = eixo temporal compartilhado
  */
 export default function PrescriptionTimelineRedesign({ prescriptions, isComplex })
 ```
 
+### ⚠️ Filtro obrigatório — Prescrições de uso contínuo
+
+Prescrições **sem data final (`endDate === null`)** representam tratamentos de uso contínuo
+(ex: Metformina para diabetes tipo 2 tomada indefinidamente). Essas **não devem aparecer** no widget,
+pois não há vigência temporal a exibir e geram barra sem sentido semântico.
+
+**Filtro obrigatório antes de qualquer renderização:**
+
+```js
+const timedPrescriptions = prescriptions.filter(p => p.endDate != null && !p.isContinuous)
+
+SE timedPrescriptions.length === 0 → return null
+```
+
 ### Lógica
 
 ```
-SE prescriptions.length === 0 → return null
+Aplicar sobre timedPrescriptions (já filtrado — sem uso contínuo):
 
 Para cada prescrição:
   totalDays = diff(endDate, startDate)
@@ -940,6 +988,8 @@ Para cada prescrição:
 - [ ] Living Fill animation (prefers-reduced-motion respeitado)
 - [ ] `role="progressbar"` + aria-values
 - [ ] Sem bordas 1px
+- [ ] **Prescrições de uso contínuo (`endDate === null` ou `isContinuous === true`) são filtradas e não renderizadas**
+- [ ] `return null` quando todas as prescrições forem de uso contínuo (lista vazia após filtro)
 
 ---
 
@@ -979,6 +1029,36 @@ Atualmente exibe `daysRemaining` do `stockSummary`. Adicionar:
 
 **Guard:** Se `prediction.isRealData === false && prediction.confidence === 'low'` → não mostrar enriquecimento. Manter comportamento atual.
 
+### ⚠️ Restrições de layout — não regredir o card atual
+
+Ao adicionar o enriquecimento de previsão, **preservar obrigatoriamente** os elementos visuais já existentes no `StockCardRedesign`:
+
+#### 1. Pill de dosagem
+
+O card atual exibe um **pill com a concentração do medicamento** (ex: "40mg", "1200mg") ao lado do nome, como visto no screenshot de referência (`screenshots/stock-card-complex-redesign.png`). Esse pill **não deve ser removido** pela adição da prop `prediction`.
+
+Verificar que o JSX ainda inclui:
+```jsx
+<span className="stock-card__dosage-pill">{medicine.dosage_per_pill}{medicine.dosage_unit}</span>
+```
+
+#### 2. Badge de dias — não quebrar em duas linhas no desktop
+
+O badge "30+ DIAS" (ou "X DIAS") exibido no canto direito do card atualmente quebra em duas linhas no desktop enquanto fica correto no mobile. **Corrigir junto com este sprint.**
+
+Causa provável: `white-space` não definido no elemento `.stock-card__days-badge` ou largura insuficiente no layout de grid do desktop.
+
+Correção obrigatória no CSS:
+```css
+.stock-card__days-badge {
+  white-space: nowrap;   /* impede quebra de linha */
+  flex-shrink: 0;        /* não comprime em flex containers */
+  min-width: max-content;
+}
+```
+
+Verificar que no layout desktop (grid ou flex) a coluna/célula do badge tenha largura suficiente ou `width: auto` para acomodar o texto sem quebra.
+
 ### Enriquecimentos no StockAlertInline
 
 Quando `prediction?.predictedStockoutDate` está disponível:
@@ -992,6 +1072,8 @@ Quando `prediction?.predictedStockoutDate` está disponível:
 - [ ] Guard: low confidence → fallback para comportamento atual
 - [ ] Ícone de confiança (ShieldCheck/ShieldAlert) no StockCard
 - [ ] Props backwards-compatible (prediction é opcional)
+- [ ] **Pill de dosagem (concentração) preservado** — não removido pela adição da prop `prediction`
+- [ ] **Badge de dias não quebra em duas linhas no desktop** — `white-space: nowrap` + `flex-shrink: 0` no `.stock-card__days-badge`
 
 ---
 
