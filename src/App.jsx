@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { BotMessageSquare } from 'lucide-react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import appStyles from './App.module.css'
@@ -377,7 +378,7 @@ function AppInner() {
                 aria-label="Abrir assistente IA"
                 className={appStyles.chatFab}
               >
-                🤖
+                <BotMessageSquare size={24} />
               </button>
               {isChatOpen && (
                 <Suspense fallback={null}>

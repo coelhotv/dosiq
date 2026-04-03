@@ -205,13 +205,29 @@
   gap: 1rem;
   padding: 1rem 1.25rem;
   flex: 1;
-  justify-content: space-between;
   align-items: flex-start;
+}
+
+/* Sem alergias/condições: centraliza contato+QR */
+.ph-emergency-card__body:not(:has(.ph-emergency-card__data)) {
+  justify-content: center;
+  align-items: center;
 }
 
 .ph-emergency-card__data {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ph-emergency-card__contact-section {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .ph-emergency-card__field {
@@ -283,6 +299,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem;
+  flex-shrink: 0;
 }
 
 .ph-emergency-card__qr-image {
@@ -558,20 +575,6 @@
     gap: 1rem;
   }
 
-  .ph-emergency-card__body {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: center;
-  }
-
-  .ph-emergency-card__qr {
-    padding: 0.5rem;
-  }
-
-  .ph-emergency-card__qr-image {
-    width: 80px;
-    height: 80px;
-  }
 
   .ph-tools__grid {
     grid-template-columns: 1fr;
