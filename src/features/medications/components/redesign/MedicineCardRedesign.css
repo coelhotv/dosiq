@@ -27,12 +27,19 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--color-secondary-fixed);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--color-on-secondary-fixed, var(--color-primary));
+  color: #ffffff;
+}
+
+.sr-medicine-card__icon--medicine {
+  background: linear-gradient(135deg, #006a5e 0%, #008577 100%);
+}
+
+.sr-medicine-card__icon--supplement {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
 }
 
 .sr-medicine-card__name {

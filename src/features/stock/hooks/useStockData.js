@@ -120,7 +120,7 @@ export function useStockData() {
           name: medicine.name,
           dosage_per_pill: medicine.dosage_per_pill,
           dosage_unit: medicine.dosage_unit || 'mg',
-          medicine_type: medicine.medicine_type || 'comprimido',
+          type: medicine.type || 'medicamento',
         },
         entries: stock.entries,
         purchases: purchaseEntries,

@@ -1,12 +1,15 @@
-import { Pill, Building2, Beaker, Tag, Pencil, Trash2, AlertTriangle } from 'lucide-react'
+import { Pill, PillBottle, Building2, Beaker, Tag, Pencil, Trash2, AlertTriangle } from 'lucide-react'
 import './MedicineCardRedesign.css'
 
 export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDependencies }) {
+  const isSupplement = medicine.type === 'suplemento'
+  const MedicineIcon = isSupplement ? PillBottle : Pill
+
   return (
-    <div className="sr-medicine-card">
+    <div className={`sr-medicine-card sr-medicine-card--${isSupplement ? 'supplement' : 'medicine'}`}>
       <div className="sr-medicine-card__header">
-        <div className="sr-medicine-card__icon">
-          <Pill size={20} />
+        <div className={`sr-medicine-card__icon sr-medicine-card__icon--${isSupplement ? 'supplement' : 'medicine'}`}>
+          <MedicineIcon size={20} />
         </div>
         <div>
           <h4 className="sr-medicine-card__name">{medicine.name}</h4>

@@ -420,36 +420,38 @@ function EmergencyCard({ emergencyCard, qrMiniatureUrl, onNavigate }) {
       </div>
 
       <div className="ph-emergency-card__body">
-        <div className="ph-emergency-card__data">
-          {/* Alergias como tags */}
-          {emergencyCard.allergies?.length > 0 && (
-            <div className="ph-emergency-card__field">
-              <span className="ph-emergency-card__field-label">ALERGIAS</span>
-              <div className="ph-emergency-card__tags">
-                {emergencyCard.allergies.map((allergy, i) => (
-                  <span key={i} className="ph-emergency-card__tag ph-emergency-card__tag--danger">
-                    {allergy}
-                  </span>
-                ))}
+        {/* Alergias + Condições — só renderiza se houver conteúdo */}
+        {(emergencyCard.allergies?.length > 0 || emergencyCard.conditions?.length > 0) && (
+          <div className="ph-emergency-card__data">
+            {emergencyCard.allergies?.length > 0 && (
+              <div className="ph-emergency-card__field">
+                <span className="ph-emergency-card__field-label">ALERGIAS</span>
+                <div className="ph-emergency-card__tags">
+                  {emergencyCard.allergies.map((allergy, i) => (
+                    <span key={i} className="ph-emergency-card__tag ph-emergency-card__tag--danger">
+                      {allergy}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Condições */}
-          {emergencyCard.conditions?.length > 0 && (
-            <div className="ph-emergency-card__field">
-              <span className="ph-emergency-card__field-label">CONDIÇÕES</span>
-              <div className="ph-emergency-card__tags">
-                {emergencyCard.conditions.map((condition, i) => (
-                  <span key={i} className="ph-emergency-card__tag ph-emergency-card__tag--info">
-                    {condition}
-                  </span>
-                ))}
+            )}
+            {emergencyCard.conditions?.length > 0 && (
+              <div className="ph-emergency-card__field">
+                <span className="ph-emergency-card__field-label">CONDIÇÕES</span>
+                <div className="ph-emergency-card__tags">
+                  {emergencyCard.conditions.map((condition, i) => (
+                    <span key={i} className="ph-emergency-card__tag ph-emergency-card__tag--info">
+                      {condition}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Contato principal */}
+        {/* Contato + QR (lado a lado no mobile também) */}
+        <div className="ph-emergency-card__contact-section">
           {emergencyCard.emergency_contacts?.[0] && (
             <div className="ph-emergency-card__field">
               <span className="ph-emergency-card__field-label">CONTATO</span>
@@ -464,18 +466,18 @@ function EmergencyCard({ emergencyCard, qrMiniatureUrl, onNavigate }) {
               </a>
             </div>
           )}
-        </div>
 
-        {/* QR code miniatura */}
-        {qrMiniatureUrl && (
-          <div className="ph-emergency-card__qr">
-            <img
-              src={qrMiniatureUrl}
-              alt="QR Code Cartão de Emergência"
-              className="ph-emergency-card__qr-image"
-            />
-          </div>
-        )}
+          {/* QR code miniatura */}
+          {qrMiniatureUrl && (
+            <div className="ph-emergency-card__qr">
+              <img
+                src={qrMiniatureUrl}
+                alt="QR Code Cartão de Emergência"
+                className="ph-emergency-card__qr-image"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <button

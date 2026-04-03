@@ -7,7 +7,7 @@
  */
 
 import { motion } from 'framer-motion'
-import { ScanBarcode, ShoppingBasket, CalendarClock } from 'lucide-react'
+import { ScanBarcode, ShoppingBasket, CalendarClock, Pill, PillBottle } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import './StockCardRedesign.css'
@@ -82,10 +82,12 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
   const ctaConfig = CTA_CONFIG[stockStatus] || { label: 'Comprar Agora', Icon: ScanBarcode }
   const showCta = isComplex || stockStatus === 'urgente' || stockStatus === 'atencao'
   const lastPurchaseText = formatLastPurchase(lastPurchase)
+  const isSupplement = medicine.type === 'suplemento'
+  const MedicineIcon = isSupplement ? PillBottle : Pill
 
   return (
     <motion.div
-      className={`stock-card-r stock-card-r--${stockStatus}`}
+      className={`stock-card-r stock-card-r--${stockStatus} stock-card-r--${isSupplement ? 'supplement' : 'medicine'}`}
       variants={motionConfig.cascade.item}
       {...motionConfig.tactile}
       role="article"
@@ -94,6 +96,12 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, index =
       {/* ── Medicine name + dosage pill (inline) ── */}
       <div className="stock-card-r__name-row">
         <div className="stock-card-r__medicine">
+          <div className="stock-card-r__icon-wrap">
+            <MedicineIcon
+              size={18}
+              aria-label={isSupplement ? 'Suplemento' : 'Medicamento'}
+            />
+          </div>
           <div className="stock-card-r__name-dosage">
             <h3 className="stock-card-r__name">{medicine.name}</h3>
             {medicine.dosage_per_pill && (
