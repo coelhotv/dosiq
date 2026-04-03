@@ -22,8 +22,10 @@ import ReminderSuggestionRedesign from '@features/protocols/components/ReminderS
 import {
   analyzeReminderTiming,
   isSuggestionDismissed,
+  dismissSuggestion,
 } from '@features/protocols/services/reminderOptimizerService'
 import insightService from '@dashboard/services/insightService'
+import { protocolService } from '@features/protocols/services/protocolService'
 
 /**
  * getMotivationalMessage — Mensagem contextual baseada em adesão e doses restantes
@@ -285,11 +287,31 @@ export default function DashboardRedesign({ onNavigate }) {
     setSnoozedAlerts(prev => ({ ...prev, [alertId]: true }))
   }, [])
 
-  const handleReminderAccept = useCallback(() => {
-    // TODO: persistir novo horário no protocolo via protocolService.update
-    setDismissedSuggestionId(reminderSuggestionData?.protocolId ?? null)
+  const handleReminderAccept = useCallback(async (newTime) => {
+    const protocolId = reminderSuggestionData?.protocolId
+    const currentTime = reminderSuggestionData?.suggestion?.currentTime
+    if (protocolId && newTime && currentTime) {
+      // Atualiza time_schedule: substitui horário antigo pelo sugerido
+      const protocol = protocols?.find(p => p.id === protocolId)
+      const currentSchedule = protocol?.time_schedule ?? []
+      const updatedSchedule = currentSchedule.map(t => t === currentTime ? newTime : t)
+      // Se o horário antigo não estava no array (edge case), adiciona o novo
+      const finalSchedule = updatedSchedule.includes(newTime)
+        ? updatedSchedule
+        : [...updatedSchedule, newTime]
+      try {
+        await protocolService.update(protocolId, { time_schedule: finalSchedule })
+      } catch (err) {
+        console.error('[DashboardRedesign] Erro ao atualizar horário do protocolo:', err)
+      }
+    }
+    if (protocolId) {
+      // Persiste dispensa no localStorage (30 dias) para sobreviver ao reload
+      dismissSuggestion(protocolId, false)
+      setDismissedSuggestionId(protocolId)
+    }
     refresh()
-  }, [refresh, reminderSuggestionData?.protocolId])
+  }, [refresh, reminderSuggestionData, protocols])
 
   // ── Loading state ──
   if (isLoading || contextLoading) {
@@ -405,6 +427,32 @@ export default function DashboardRedesign({ onNavigate }) {
               />
             </div>
           )}
+
+          {/* 🆕 Insight Card — coluna esquerda, sob o PriorityDoseCard */}
+          {currentInsight && (
+            <div style={{ width: '100%' }}>
+              <InsightCardRedesign
+                insight={currentInsight}
+                onAction={(insight) => {
+                  if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
+                }}
+                onDismiss={() => {}}
+              />
+            </div>
+          )}
+
+          {/* 🆕 Reminder Suggestion — coluna esquerda, sob o InsightCard */}
+          {reminderSuggestionData && (
+            <div style={{ width: '100%' }}>
+              <ReminderSuggestionRedesign
+                suggestion={reminderSuggestionData.suggestion}
+                protocolId={reminderSuggestionData.protocolId}
+                protocolName={reminderSuggestionData.protocolName}
+                onAccept={handleReminderAccept}
+                onDismiss={() => setDismissedSuggestionId(reminderSuggestionData.protocolId)}
+              />
+            </div>
+          )}
         </div>
 
         {/* ═══ RIGHT COLUMN (2fr) ═══ */}
@@ -415,28 +463,6 @@ export default function DashboardRedesign({ onNavigate }) {
             gap: '1.5rem',
           }}
         >
-          {/* 🆕 Insight Card */}
-          {currentInsight && (
-            <InsightCardRedesign
-              insight={currentInsight}
-              onAction={(insight) => {
-                if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
-              }}
-              onDismiss={() => {}}
-            />
-          )}
-
-          {/* 🆕 Reminder Suggestion */}
-          {reminderSuggestionData && (
-            <ReminderSuggestionRedesign
-              suggestion={reminderSuggestionData.suggestion}
-              protocolId={reminderSuggestionData.protocolId}
-              protocolName={reminderSuggestionData.protocolName}
-              onAccept={handleReminderAccept}
-              onDismiss={() => setDismissedSuggestionId(reminderSuggestionData.protocolId)}
-            />
-          )}
-
           {/* Cronograma do Dia */}
           {scheduleAllDoses.length > 0 && (
             <section aria-label="Cronograma de hoje">

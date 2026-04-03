@@ -130,3 +130,30 @@
   background: color-mix(in srgb, var(--color-outline, #6d7a76) 12%, transparent);
   color: var(--color-outline, #6d7a76);
 }
+
+/* ── Bar footer: datas + dias restantes ── */
+.prescription-timeline-redesign__bar-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+  gap: 0.5rem;
+}
+
+.prescription-timeline-redesign__dates-label {
+  font-size: var(--text-label-sm, 0.6875rem);
+  color: var(--color-outline, #6d7a76);
+  font-family: var(--font-body, Lexend, sans-serif);
+}
+
+.prescription-timeline-redesign__days-left {
+  font-size: var(--text-label-sm, 0.6875rem);
+  font-weight: 600;
+  font-family: var(--font-body, Lexend, sans-serif);
+  white-space: nowrap;
+}
+
+.prx-days--ativa { color: var(--color-primary, #006a5e); }
+.prx-days--vencendo { color: var(--color-tertiary, #7b5700); }
+.prx-days--vencida { color: var(--color-error, #ba1a1a); }
+.prx-days--finalizada { color: var(--color-outline, #6d7a76); }

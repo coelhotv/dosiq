@@ -43,10 +43,12 @@ export default function CostSummaryRedesign({ costData, isComplex }) {
           const widthPct = maxCost > 0 ? (item.monthlyCost / maxCost) * 100 : 0
           const isTop = index === 0
           return (
-            <div key={item.medicineName} className="cost-summary-redesign__item">
+            <div key={item.name ?? item.medicineName} className="cost-summary-redesign__item">
               <div className="cost-summary-redesign__item-header">
-                <span className="cost-summary-redesign__item-name">{item.medicineName}</span>
-                <span className="cost-summary-redesign__item-cost">R$ {item.monthlyCost.toFixed(2)}</span>
+                <span className="cost-summary-redesign__item-name">{item.name ?? item.medicineName}</span>
+                <span className="cost-summary-redesign__item-cost">
+                  {item.monthlyCost < 0.01 ? 'Grátis' : `R$ ${item.monthlyCost.toFixed(2)}`}
+                </span>
               </div>
               {isComplex && item.dailyCost != null && (
                 <p className="cost-summary-redesign__daily">R$ {item.dailyCost.toFixed(2)}/dia</p>

@@ -16,9 +16,8 @@ import './InsightCardRedesign.css';
 export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
   // Handlers
   const handleCTA = () => {
-    if (onAction) {
-      onAction(insight);
-    }
+    insight.onAction?.()
+    onAction?.(insight)
   };
 
   const handleDismiss = () => {
@@ -68,12 +67,16 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
         <div className="insight-card-redesign__icon-wrap">{getIconComponent(insight.type)}</div>
       </div>
 
-      <p className="insight-card-redesign__title">{insight.title}</p>
-      <p className="insight-card-redesign__message">{insight.message}</p>
+      {insight.highlight && (
+        <p className="insight-card-redesign__title">{insight.highlight}</p>
+      )}
+      <p className="insight-card-redesign__message">
+        {insight.text ?? insight.message ?? insight.title}
+      </p>
 
-      {insight.action && (
+      {(insight.actionLabel ?? insight.action?.label) && (
         <button className="insight-card-redesign__cta" onClick={handleCTA}>
-          {insight.action.label} →
+          {insight.actionLabel ?? insight.action.label} →
         </button>
       )}
 
