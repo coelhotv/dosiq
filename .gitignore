@@ -9,12 +9,15 @@ bug-logs/
 
 # Dependencies
 node_modules/
+.expo/
 
 # Build output
 dist/
 dist-ssr
 build/
 target/
+ts-config.json
+tsconfig.tsbuildinfo
 
 # Environment variables
 .env

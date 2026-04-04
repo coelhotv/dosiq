@@ -1,0 +1,101 @@
+.reminder-suggestion-redesign {
+  background: var(--gradient-primary, linear-gradient(135deg, #006a5e, #008577));
+  border-radius: var(--radius-card, 2rem);
+  padding: 1.5rem;
+  color: #ffffff;
+  box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.22));
+}
+
+.reminder-suggestion-redesign__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.25rem 0.75rem;
+  font-size: var(--text-label-sm, 0.625rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.875rem;
+}
+
+.reminder-suggestion-redesign__text {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-weight: 600;
+  font-size: var(--text-title-lg, 1.125rem);
+  margin: 0 0 0.25rem;
+  line-height: 1.4;
+}
+
+.reminder-suggestion-redesign__subtext {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-body-lg, 1rem);
+  margin: 0;
+  opacity: 0.88;
+  line-height: 1.5;
+}
+
+.reminder-suggestion-redesign__sample {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-label-md, 0.75rem);
+  margin: 0.5rem 0 0;
+  opacity: 0.65;
+}
+
+.reminder-suggestion-redesign__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.reminder-suggestion-redesign__btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-weight: 700;
+  font-size: var(--text-body-lg, 1rem);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-button, 1.25rem);
+  min-height: 3.5rem;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reminder-suggestion-redesign__btn:hover {
+  transform: scale(1.02);
+}
+
+.reminder-suggestion-redesign__btn:active {
+  transform: scale(0.98);
+}
+
+.reminder-suggestion-redesign__btn--accept {
+  background: #ffffff;
+  color: var(--color-primary, #006a5e);
+}
+
+.reminder-suggestion-redesign__btn--keep {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.reminder-suggestion-redesign__never {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-label-md, 0.75rem);
+  color: rgba(255, 255, 255, 0.55);
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  text-decoration: underline;
+  min-height: 2.75rem;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-suggestion-redesign__btn {
+    transition: none;
+  }
+}

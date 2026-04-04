@@ -3,12 +3,16 @@
  * Grupos colapsáveis por plano/classe com header colorido
  * Cada grupo contém protocolos com rows expandíveis
  * Layout responsivo controlado por media queries (sem useEffect)
+ * Wave 15.10: Integração de ProtocolRiskBadge
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import TreatmentPlanHeader from '@protocols/components/redesign/TreatmentPlanHeader'
 import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
+import ProtocolRiskBadge from '@adherence/components/ProtocolRiskBadge'
+import { calculateProtocolRisk } from '@adherence/services/protocolRiskService'
 
 /**
  * TreatmentsComplex — Modo complexo com grupos colapsáveis
@@ -16,9 +20,28 @@ import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
  */
 export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan, onDeletePlan, activeTab }) {
   const { cascade } = useMotion()
+  const { logs } = useDashboard()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const [expandedRow, setExpandedRow] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null) // S7.5.5
+
+  // Calcular scores de risco para cada protocolo (Wave 15.10)
+  const riskByProtocol = useMemo(() => {
+    if (!groups?.length || !logs?.length) return new Map()
+    const map = new Map()
+    groups.forEach((group) => {
+      group.items?.forEach((item) => {
+        if (!item?.id || item.active === false) return
+        const risk = calculateProtocolRisk({
+          protocolId: item.id,
+          logs,
+          protocol: item,
+        })
+        if (risk) map.set(item.id, risk)
+      })
+    })
+    return map
+  }, [groups, logs])
 
   const toggleGroup = (key) => {
     setCollapsedGroups((prev) => {
@@ -76,6 +99,7 @@ export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan
                         onRowMouseEnter={() => setHoveredRow(item.id)}
                         onRowMouseLeave={() => setHoveredRow(null)}
                         onRowClick={() => onEdit?.(item)}
+                        riskBadge={<ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />}
                       />
                     </div>
                   ))}
@@ -95,6 +119,7 @@ export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan
                       onDelete={onDelete}
                       activeTab={activeTab}
                       variant="card"
+                      riskBadge={<ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />}
                     />
                   ))}
                 </div>

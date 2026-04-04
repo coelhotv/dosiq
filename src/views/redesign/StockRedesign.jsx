@@ -16,6 +16,7 @@ import { Plus } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { useStockData } from '@stock/hooks/useStockData'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import Loading from '@shared/components/ui/Loading'
 import EmptyState from '@shared/components/ui/EmptyState'
 import Modal from '@shared/components/ui/Modal'
@@ -23,8 +24,28 @@ import StockForm from '@stock/components/StockForm'
 import StockCardRedesign from '@stock/components/redesign/StockCardRedesign'
 import CriticalAlertBanner from '@stock/components/redesign/CriticalAlertBanner'
 import EntradaHistorico from '@stock/components/redesign/EntradaHistorico'
+import CostSummaryRedesign from '@stock/components/CostSummaryRedesign'
+import PrescriptionTimelineRedesign from '@stock/components/PrescriptionTimelineRedesign'
+import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
+import { parseLocalDate } from '@utils/dateUtils'
 import { stockService } from '@shared/services'
 import './StockRedesign.css'
+
+/**
+ * Derivar status do protocolo baseado em datas de vigência
+ *
+ * @param {object} protocol — protocolo com start_date, end_date, active
+ * @returns {'ativa' | 'vencida' | 'vencendo' | 'finalizada'}
+ */
+function deriveProtocolStatus(protocol, now = new Date()) {
+  if (!protocol.end_date) return 'ativa'
+  const end = parseLocalDate(protocol.end_date)
+  const daysLeft = (end - now) / 86400000
+  if (daysLeft < 0) return 'vencida'
+  if (daysLeft <= 14) return 'vencendo'
+  if (protocol.active === false) return 'finalizada'
+  return 'ativa'
+}
 
 export default function StockRedesign({ initialParams, onClearParams }) {
   // ── Dados (hook compartilhado) ──
@@ -53,6 +74,9 @@ export default function StockRedesign({ initialParams, onClearParams }) {
 
   // ── Motion ──
   const motionConfig = useMotion()
+
+  // ── Dashboard context para protocolos (necessário para timeline de prescrições) ──
+  const dashboardData = useDashboard()
 
   // ── Purchases agregadas para histórico (complex only) ──
   // Inclui medicamento info em cada compra para o layout correto
@@ -87,6 +111,43 @@ export default function StockRedesign({ initialParams, onClearParams }) {
     ],
     [criticalItems, warningItems, okItemsWithoutOrphans, highItemsWithoutOrphans, orphanItems]
   )
+
+  // ── Custo mensal calculado ──
+  const costData = useMemo(() => {
+    if (!medicines?.length) return null
+    // Enriquecer medicines com stock e purchases para cálculo de custo
+    const medicinesWithStock = medicines.map((med) => ({
+      ...med,
+      stock: items?.filter((s) => s.medicine.id === med.id)?.flatMap((s) => s.entries) || [],
+      purchases: allPurchases?.filter((p) => p.medicine_id === med.id) || [],
+    }))
+    try {
+      const protocols = dashboardData?.protocols || []
+      return calculateMonthlyCosts(medicinesWithStock, protocols)
+    } catch (err) {
+      console.error('[StockRedesign] Erro ao calcular custos:', err)
+      return null
+    }
+  }, [medicines, items, allPurchases, dashboardData])
+
+  // ── Dados de prescrição para timeline (exclui uso contínuo) ──
+  const prescriptionTimelineData = useMemo(() => {
+    if (!dashboardData?.protocols?.length) return []
+    return dashboardData.protocols
+      .filter((p) => p.start_date && p.end_date) // filtra apenas protocolos com vigência definida (exclui uso contínuo)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        medicineName:
+          p.medicine?.name ||
+          medicines?.find((m) => m.id === p.medicine_id)?.name ||
+          'Medicamento',
+        startDate: p.start_date,
+        endDate: p.end_date,
+        isContinuous: false, // já filtrado acima
+        status: deriveProtocolStatus(p),
+      }))
+  }, [dashboardData?.protocols, medicines])
 
   // ── Handlers ──
   const handleOpenModal = (medicineId = null) => {
@@ -301,6 +362,20 @@ export default function StockRedesign({ initialParams, onClearParams }) {
         <section className="stock-redesign__history-section">
           <h2 className="stock-redesign__section-title">Histórico de Compras</h2>
           <EntradaHistorico purchases={allPurchases} maxVisible={3} />
+        </section>
+      )}
+
+      {/* 🆕 Análise de Custo Mensal */}
+      {costData && costData.items?.length > 0 && (
+        <section style={{ marginTop: '1.5rem' }} aria-label="Custo mensal dos medicamentos">
+          <CostSummaryRedesign costData={costData} isComplex={isComplex} />
+        </section>
+      )}
+
+      {/* 🆕 Timeline de Prescrições */}
+      {prescriptionTimelineData.length > 0 && (
+        <section style={{ marginTop: '1rem' }} aria-label="Vigência das prescrições">
+          <PrescriptionTimelineRedesign prescriptions={prescriptionTimelineData} isComplex={isComplex} />
         </section>
       )}
 

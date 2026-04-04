@@ -1,16 +1,36 @@
 /**
  * TreatmentsSimple — Modo simples da view de tratamentos (Dona Maria)
  * Lista plana sem agrupamento visual de grupos
- * Foco: próximo horário + estoque visível
+ * Foco: próximo horário + estoque visível + risco de protocolo (Wave 15.10)
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
+import ProtocolRiskBadge from '@adherence/components/ProtocolRiskBadge'
+import { calculateProtocolRisk } from '@adherence/services/protocolRiskService'
 
 export default function TreatmentsSimple({ items, onEdit, onDelete, activeTab }) {
   const { cascade } = useMotion()
+  const { logs } = useDashboard()
   const [expanded, setExpanded] = useState(null)
+
+  // Calcular scores de risco para cada protocolo (Wave 15.10)
+  const riskByProtocol = useMemo(() => {
+    if (!items?.length || !logs?.length) return new Map()
+    const map = new Map()
+    items.forEach((item) => {
+      if (!item?.id || item.active === false) return
+      const risk = calculateProtocolRisk({
+        protocolId: item.id,
+        logs,
+        protocol: item,
+      })
+      if (risk) map.set(item.id, risk)
+    })
+    return map
+  }, [items, logs])
 
   if (items.length === 0) {
     return (
@@ -37,6 +57,7 @@ export default function TreatmentsSimple({ items, onEdit, onDelete, activeTab })
             onEdit={onEdit}
             onDelete={onDelete}
             activeTab={activeTab}
+            riskBadge={<ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={false} />}
           />
         </motion.li>
       ))}

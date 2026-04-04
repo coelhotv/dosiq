@@ -16,6 +16,16 @@ import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
 import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
+import SmartAlertsRedesign from '@dashboard/components/SmartAlertsRedesign'
+import InsightCardRedesign from '@dashboard/components/InsightCardRedesign'
+import ReminderSuggestionRedesign from '@features/protocols/components/ReminderSuggestionRedesign'
+import {
+  analyzeReminderTiming,
+  isSuggestionDismissed,
+  dismissSuggestion,
+} from '@features/protocols/services/reminderOptimizerService'
+import insightService from '@dashboard/services/insightService'
+import { protocolService } from '@features/protocols/services/protocolService'
 
 /**
  * getMotivationalMessage — Mensagem contextual baseada em adesão e doses restantes
@@ -62,6 +72,8 @@ export default function DashboardRedesign({ onNavigate }) {
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const currentDateRef = useRef(getTodayLocal())
+  const [dismissedSuggestionId, setDismissedSuggestionId] = useState(null)
+  const [snoozedAlerts, setSnoozedAlerts] = useState({})
 
   // ── Computadas ──
   // Enriquecer doses com dados de estoque
@@ -97,6 +109,68 @@ export default function DashboardRedesign({ onNavigate }) {
       (item) => item.stockStatus === 'critical' || item.stockStatus === 'low'
     )
   }, [stockSummary])
+
+  // ── smartAlerts: alertas inteligentes (estoque + dose atrasada + prescrição) ──
+  const smartAlerts = useMemo(() => {
+    const alerts = []
+
+    // 1. Stock alerts
+    stockSummary?.items?.forEach(item => {
+      if (snoozedAlerts[`stock-${item.medicineId}`]) return
+      if (item.stockStatus === 'critical' || item.stockStatus === 'low') {
+        const severity = item.stockStatus === 'critical' ? 'critical' : 'warning'
+        alerts.push({
+          id: `stock-${item.medicineId}`,
+          severity,
+          title: severity === 'critical'
+            ? `Estoque crítico — ${item.medicineName}`
+            : `Estoque baixo — ${item.medicineName}`,
+          message: severity === 'critical'
+            ? `${item.quantity ?? 0} unidades restantes. Reposição urgente.`
+            : `${item.daysRemaining} dias restantes. Programe a compra.`,
+          actions: [{ label: 'Registrar Compra', type: 'primary' }],
+        })
+      }
+    })
+
+    // 2. Doses atrasadas (zones.late)
+    const lateDoses = (zones.late || []).filter(d => !d.isRegistered)
+    if (lateDoses.length > 0 && !snoozedAlerts['late-doses']) {
+      const names = lateDoses.slice(0, 2).map(d => d.medicineName).join(', ')
+      const extra = lateDoses.length > 2 ? ` +${lateDoses.length - 2}` : ''
+      alerts.push({
+        id: 'late-doses',
+        severity: 'warning',
+        title: `${lateDoses.length} dose${lateDoses.length > 1 ? 's' : ''} atrasada${lateDoses.length > 1 ? 's' : ''}`,
+        message: `${names}${extra} — registre agora para manter sua adesão.`,
+        actions: [{ label: 'Registrar Agora', type: 'primary' }],
+      })
+    }
+
+    return alerts.sort((a, b) => {
+      const order = { critical: 0, warning: 1, info: 2 }
+      return (order[a.severity] ?? 2) - (order[b.severity] ?? 2)
+    })
+  }, [stockSummary, zones, snoozedAlerts])
+
+  // ── currentInsight: insight rotativo do insightService ──
+  const currentInsight = useMemo(() => {
+    if (!stats) return null
+    const insight = insightService.selectBestInsight({
+      stats: {
+        score: stats.score ?? 0,
+        currentStreak: stats.currentStreak ?? 0,
+        longestStreak: stats.longestStreak ?? 0,
+        adherence: stats.adherence ?? 0,
+        activeProtocols: protocols?.filter(p => p.active)?.length ?? 0,
+      },
+      dailyAdherence: [],
+      stockSummary: stockSummary?.items ?? [],
+      logs: logs ?? [],
+      onNavigate,
+    })
+    return insight
+  }, [stats, stockSummary, logs, protocols, onNavigate])
 
   // ── Carregar nome do usuário ──
   useEffect(() => {
@@ -136,6 +210,27 @@ export default function DashboardRedesign({ onNavigate }) {
     }, 60_000)
     return () => clearInterval(interval)
   }, [refresh])
+
+  // ── Sugestão de lembrete calculada (sem setState em effect) ──
+  // isSuggestionDismissed e analyzeReminderTiming são funções estáveis importadas (não reativas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const reminderSuggestionData = useMemo(() => {
+    if (!protocols?.length || !logs?.length) return null
+    for (const protocol of protocols) {
+      if (!protocol.active) continue
+      if (protocol.id === dismissedSuggestionId) continue
+      if (isSuggestionDismissed(protocol.id)) continue
+      const suggestion = analyzeReminderTiming({ protocol, logs })
+      if (suggestion?.shouldSuggest) {
+        return {
+          suggestion,
+          protocolId: protocol.id,
+          protocolName: protocol.medicine?.name || protocol.name || '',
+        }
+      }
+    }
+    return null
+  }, [protocols, logs, dismissedSuggestionId])
 
   // ── Handlers ──
   // Registra dose DIRETAMENTE sem modal (1-click experience)
@@ -188,6 +283,36 @@ export default function DashboardRedesign({ onNavigate }) {
     [refresh]
   )
 
+  const handleSnoozeAlert = useCallback((alertId) => {
+    setSnoozedAlerts(prev => ({ ...prev, [alertId]: true }))
+  }, [])
+
+  const handleReminderAccept = useCallback(async (newTime) => {
+    const protocolId = reminderSuggestionData?.protocolId
+    const currentTime = reminderSuggestionData?.suggestion?.currentTime
+    if (protocolId && newTime && currentTime) {
+      // Atualiza time_schedule: substitui horário antigo pelo sugerido
+      const protocol = protocols?.find(p => p.id === protocolId)
+      const currentSchedule = protocol?.time_schedule ?? []
+      const updatedSchedule = currentSchedule.map(t => t === currentTime ? newTime : t)
+      // Se o horário antigo não estava no array (edge case), adiciona o novo
+      const finalSchedule = updatedSchedule.includes(newTime)
+        ? updatedSchedule
+        : [...updatedSchedule, newTime]
+      try {
+        await protocolService.update(protocolId, { time_schedule: finalSchedule })
+      } catch (err) {
+        console.error('[DashboardRedesign] Erro ao atualizar horário do protocolo:', err)
+      }
+    }
+    if (protocolId) {
+      // Persiste dispensa no localStorage (30 dias) para sobreviver ao reload
+      dismissSuggestion(protocolId, false)
+      setDismissedSuggestionId(protocolId)
+    }
+    refresh()
+  }, [refresh, reminderSuggestionData, protocols])
+
   // ── Loading state ──
   if (isLoading || contextLoading) {
     return (
@@ -218,12 +343,17 @@ export default function DashboardRedesign({ onNavigate }) {
       style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}
       aria-label="Dashboard — Meus Remédios"
     >
-      {/* ─── Stock Alert (Complex Mode: Top) ─── */}
-      {complexityMode === 'complex' && criticalStockItems.length > 0 && (
-        <section style={{ marginBottom: '1.25rem' }} aria-label="Alertas críticos de estoque">
-          <StockAlertInline
-            criticalItems={criticalStockItems}
-            onNavigateToStock={() => onNavigate?.('stock')}
+      {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
+      {smartAlerts.length > 0 && (
+        <section style={{ marginBottom: '1.25rem' }} aria-label="Alertas inteligentes">
+          <SmartAlertsRedesign
+            alerts={smartAlerts}
+            onAction={(alert, action) => {
+              if (action.label === 'Registrar Compra') onNavigate?.('stock')
+              if (action.label === 'Registrar Agora') onNavigate?.('dashboard')
+            }}
+            isComplex={complexityMode !== 'simple'}
+            onSnooze={handleSnoozeAlert}
           />
         </section>
       )}
@@ -294,6 +424,32 @@ export default function DashboardRedesign({ onNavigate }) {
                 }
                 onRegisterAll={handleRegisterDosesAll}
                 variant="priority"
+              />
+            </div>
+          )}
+
+          {/* 🆕 Insight Card — coluna esquerda, sob o PriorityDoseCard */}
+          {currentInsight && (
+            <div style={{ width: '100%' }}>
+              <InsightCardRedesign
+                insight={currentInsight}
+                onAction={(insight) => {
+                  if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
+                }}
+                onDismiss={() => {}}
+              />
+            </div>
+          )}
+
+          {/* 🆕 Reminder Suggestion — coluna esquerda, sob o InsightCard */}
+          {reminderSuggestionData && (
+            <div style={{ width: '100%' }}>
+              <ReminderSuggestionRedesign
+                suggestion={reminderSuggestionData.suggestion}
+                protocolId={reminderSuggestionData.protocolId}
+                protocolName={reminderSuggestionData.protocolName}
+                onAccept={handleReminderAccept}
+                onDismiss={() => setDismissedSuggestionId(reminderSuggestionData.protocolId)}
               />
             </div>
           )}
