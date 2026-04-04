@@ -76,6 +76,7 @@ export default function MedicineForm({
       active_ingredient: toTitleCase(medicine.activeIngredient),
       therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
       regulatory_category: medicine.regulatoryCategory || null,
+      laboratory: medicine.laboratory || prev.laboratory,
     }))
     if (saveSuccess) setSaveSuccess(false)
   }

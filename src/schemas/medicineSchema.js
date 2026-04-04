@@ -28,12 +28,24 @@ export const MEDICINE_TYPE_LABELS = {
   suplemento: 'Suplemento',
 }
 
-export const REGULATORY_CATEGORIES = ['Genérico', 'Similar', 'Novo']
+export const REGULATORY_CATEGORIES = [
+  'Genérico',
+  'Similar',
+  'Novo',
+  'Biológico',
+  'Específico',
+  'Fitoterápico',
+  'Outros'
+]
 
 export const REGULATORY_CATEGORY_LABELS = {
   'Genérico': 'Genérico',
-  Similar: 'Similar',
-  Novo: 'Novo',
+  'Similar': 'Similar',
+  'Novo': 'Novo',
+  'Biológico': 'Biológico',
+  'Específico': 'Específico',
+  'Fitoterápico': 'Fitoterápico',
+  'Outros': 'Outros'
 }
 
 /**
@@ -87,7 +99,7 @@ export const medicineSchema = z.object({
   regulatory_category: z
     .enum(REGULATORY_CATEGORIES, {
       errorMap: () => ({
-        message: 'Categoria regulatória inválida. Use: Genérico, Similar ou Novo',
+        message: 'Categoria regulatória inválida.',
       }),
     })
     .optional()

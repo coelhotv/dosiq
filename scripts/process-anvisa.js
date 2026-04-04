@@ -36,11 +36,34 @@ function normalizeForComparison(text) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
+function toTitleCase(str) {
+  if (!str) return '';
+  const lower = str.toLowerCase();
+  const exceptions = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'em', 'para', 'por']);
+  return lower.split(/\s+/).map((word, index) => {
+    if (index > 0 && exceptions.has(word)) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
+function mapRegulatoryCategory(catText) {
+  if (!catText) return 'Outros';
+  const c = catText.toUpperCase();
+  if (c.includes('GEN') || c.includes('GENÉRICO')) return 'Genérico';
+  if (c.includes('SIMILAR')) return 'Similar';
+  if (c.includes('NOVO')) return 'Novo';
+  if (c.includes('BIOL') || c.includes('BIOLÓGICO')) return 'Biológico';
+  if (c.includes('ESPEC')) return 'Específico';
+  if (c.includes('FITO')) return 'Fitoterápico';
+  if (c.includes('DINAMI')) return 'Dinamizado';
+  return 'Outros';
+}
+
 /**
  * Processa o CSV linha por linha e retorna medicines + laboratories deduplicated
  */
 async function processCSV() {
-  const medicines = new Map() // "nome+principio" → objeto de medicamento
+  const medicines = new Map() // chave → objeto de medicamento
   const laboratories = new Map() // "laboratorio_normalizado" → nome original
 
   let lineCount = 0
@@ -68,25 +91,36 @@ async function processCSV() {
 
     // Colunas do CSV: NOME_PRODUTO;CATEGORIA_REGULATORIA;CLASSE_TERAPEUTICA;PRINCIPIO_ATIVO;EMPRESA_DETENTORA_REGISTRO
     const [
-      nomeProduto,
-      categoriaRegulatoria,
-      classeTerapeutica,
-      principioAtivo,
-      empresaDetentora,
+      rawNomeProduto,
+      rawCategoriaRegulatoria,
+      rawClasseTerapeutica,
+      rawPrincipioAtivo,
+      rawEmpresaDetentora,
     ] = parts
 
-    if (!nomeProduto || !principioAtivo) continue
+    if (!rawNomeProduto || !rawPrincipioAtivo) continue
+
+    const categoriaOficial = mapRegulatoryCategory(rawCategoriaRegulatoria)
+    const empresaNormalizada = toTitleCase(rawEmpresaDetentora)
+    const nomeProdutoNormalizado = toTitleCase(rawNomeProduto)
+    const principioAtivoNormalizado = toTitleCase(rawPrincipioAtivo)
 
     // ===== DEDUPLICACAO DE MEDICAMENTOS =====
-    const medicineDedupeKey = `${normalizeForComparison(nomeProduto)}|${normalizeForComparison(principioAtivo)}`
+    let medicineDedupeKey = ''
+    if (categoriaOficial === 'Genérico') {
+      medicineDedupeKey = `${normalizeForComparison(nomeProdutoNormalizado)}|${normalizeForComparison(principioAtivoNormalizado)}`
+    } else {
+      medicineDedupeKey = `${normalizeForComparison(nomeProdutoNormalizado)}|${normalizeForComparison(principioAtivoNormalizado)}|${normalizeForComparison(empresaNormalizada)}`
+    }
 
     if (!medicines.has(medicineDedupeKey)) {
-      // Nota: Todos os registros ANVISA mapeiam para "medicamento", não precisa armazenar
       const medicine = {
-        name: nomeProduto.trim(),
-        activeIngredient: principioAtivo.trim().toLowerCase(),
-        therapeuticClass: classeTerapeutica.trim() || null,
-        regulatoryCategory: categoriaRegulatoria.trim() || null,
+        name: nomeProdutoNormalizado,
+        activeIngredient: principioAtivoNormalizado,
+        therapeuticClass: rawClasseTerapeutica ? toTitleCase(rawClasseTerapeutica) : null,
+        regulatoryCategory: categoriaOficial,
+        // Genéricos não fixam o laboratório; outras categorias fixam
+        laboratory: categoriaOficial === 'Genérico' ? null : (empresaNormalizada || null)
       }
       medicines.set(medicineDedupeKey, medicine)
     } else {
@@ -94,10 +128,10 @@ async function processCSV() {
     }
 
     // ===== DEDUPLICACAO DE LABORATORIOS =====
-    if (empresaDetentora) {
-      const labDedupeKey = normalizeForComparison(empresaDetentora)
+    if (rawEmpresaDetentora) {
+      const labDedupeKey = normalizeForComparison(rawEmpresaDetentora)
       if (!laboratories.has(labDedupeKey)) {
-        laboratories.set(labDedupeKey, empresaDetentora.trim())
+        laboratories.set(labDedupeKey, empresaNormalizada)
       } else {
         laboratoryDuplicates++
       }
@@ -158,8 +192,8 @@ async function main() {
     // Será gzip-comprimido para ~100-120 KB na transferência.
     if (totalSizeKB > 500) {
       console.warn(`\n⚠️  Aviso: Tamanho total ${totalSizeKB.toFixed(2)} KB excede estimativa de 500 KB.`)
-      console.warn(`   Motivo: A base ANVISA tem 6.816 medicamentos únicos (não 2.000-4.000 estimados).`)
-      console.warn(`   Mitigação: Arquivo será lazy-loaded (dynamic import) + gzip-comprimido (~103 KB).`)
+      // Not actually 2.000-4.000 anymore, we know with 'laboratory' it expands.
+      console.warn(`   Mitigação: Arquivo será lazy-loaded (dynamic import) + gzip-comprimido.`)
     }
 
     console.log(`\n✨ Sprint 5.B ETL-1 concluído com sucesso!`)

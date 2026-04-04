@@ -33,14 +33,26 @@ function formatLastPurchase(lastPurchase) {
     day: '2-digit',
     month: '2-digit',
   })
+  
+  let text = `última compra: ${date}`
+  
   if (lastPurchase.unitPrice != null) {
     const priceLabel =
       lastPurchase.unitPrice < 0.01
         ? 'Grátis'
         : `${lastPurchase.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un.`
-    return `última compra: ${date} · ${priceLabel}`
+    text += ` · ${priceLabel}`
   }
-  return `última compra: ${date}`
+
+  const sources = []
+  if (lastPurchase.laboratory) sources.push(lastPurchase.laboratory)
+  if (lastPurchase.pharmacy) sources.push(lastPurchase.pharmacy)
+  
+  if (sources.length > 0) {
+    text += ` · ${sources.join(' / ')}`
+  }
+  
+  return text
 }
 
 /**
