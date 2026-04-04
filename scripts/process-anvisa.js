@@ -36,26 +36,18 @@ function normalizeForComparison(text) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
-function toTitleCase(str) {
-  if (!str) return '';
-  const lower = str.toLowerCase();
-  const exceptions = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'em', 'para', 'por']);
-  return lower.split(/\s+/).map((word, index) => {
-    if (index > 0 && exceptions.has(word)) return word;
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }).join(' ');
-}
+import { toTitleCase } from '../src/utils/stringUtils.js'
 
 function mapRegulatoryCategory(catText) {
   if (!catText) return 'Outros';
   const c = catText.toUpperCase();
-  if (c.includes('GEN') || c.includes('GENÉRICO')) return 'Genérico';
+  if (c.includes('GENÉRICO') || c.includes('GENERICO')) return 'Genérico';
   if (c.includes('SIMILAR')) return 'Similar';
   if (c.includes('NOVO')) return 'Novo';
-  if (c.includes('BIOL') || c.includes('BIOLÓGICO')) return 'Biológico';
-  if (c.includes('ESPEC')) return 'Específico';
-  if (c.includes('FITO')) return 'Fitoterápico';
-  if (c.includes('DINAMI')) return 'Dinamizado';
+  if (c.includes('BIOLÓGICO') || c.includes('BIOLOGICO')) return 'Biológico';
+  if (c.includes('ESPECÍFICO') || c.includes('ESPECIFICO')) return 'Específico';
+  if (c.includes('FITOTERÁPICO') || c.includes('FITOTERAPICO')) return 'Fitoterápico';
+  if (c.includes('DINAMIZADO')) return 'Dinamizado';
   return 'Outros';
 }
 

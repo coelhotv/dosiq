@@ -35,6 +35,7 @@ export const REGULATORY_CATEGORIES = [
   'Biológico',
   'Específico',
   'Fitoterápico',
+  'Dinamizado',
   'Outros'
 ]
 
@@ -45,6 +46,7 @@ export const REGULATORY_CATEGORY_LABELS = {
   'Biológico': 'Biológico',
   'Específico': 'Específico',
   'Fitoterápico': 'Fitoterápico',
+  'Dinamizado': 'Dinamizado',
   'Outros': 'Outros'
 }
 
