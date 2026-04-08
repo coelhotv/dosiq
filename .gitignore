@@ -56,3 +56,6 @@ run/
 # DEVFLOW runtime files (not versioned)
 .agent/sessions/.lock
 .agent/sessions/events.jsonl
+
+# DEVFLOW skill (symlink to master — not versioned)
+.agent/DEVFLOW.md
