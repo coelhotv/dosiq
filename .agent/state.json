@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "name": "meus-remedios",
+    "slug": "meus-remedios",
+    "stack": [
+      "react",
+      "vite",
+      "supabase",
+      "typescript",
+      "vitest",
+      "framer-motion",
+      "telegram"
+    ],
+    "phase": "initial",
+    "current_sprint": "2026-W15"
+  },
+  "session": {
+    "id": null,
+    "started_at": null,
+    "mode": null,
+    "goal": null,
+    "goal_type": null,
+    "status": "idle"
+  },
+  "memory": {
+    "rules_count": 20,
+    "anti_patterns_count": 0,
+    "decisions_count": 0,
+    "contracts_count": 0,
+    "last_distillation": null,
+    "journal_entries_since_distillation": 0
+  },
+  "evolution": {
+    "genes_version": "1.0",
+    "pending_mutations": []
+  },
+  "quality_gates": {
+    "index_loaded_at": null,
+    "relevant_rules_loaded_at": null
+  }
+}

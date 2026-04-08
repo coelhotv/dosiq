@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "genes": {
+    "memory_distillation_threshold": 10,
+    "auto_promote_rule_after_incidents": 2,
+    "require_adr_for_schema_changes": true,
+    "require_adr_for_api_breaking_changes": true,
+    "enforce_contract_checks": true,
+    "rule_review_cadence_weeks": 12,
+    "anti_pattern_expiry_weeks": 52,
+    "cross_project_export_auto": false
+  },
+  "last_modified": "2026-04-08T00:32:56Z",
+  "modified_by": null
+}

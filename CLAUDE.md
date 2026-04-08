@@ -1,5 +1,8 @@
 # CLAUDE.md — Meus Remedios
 
+> This project uses DEVFLOW. Primary agent context: `.agent/DEVFLOW.md`
+> Legacy memory files in `.memory/` remain authoritative during migration.
+
 > Contexto completo do projeto para agentes Claude. Leia este arquivo INTEIRO antes de qualquer tarefa.
 
 ## Projeto

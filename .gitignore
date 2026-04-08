@@ -53,3 +53,6 @@ tmp/
 
 # Run outputs
 run/
+# DEVFLOW runtime files (not versioned)
+.agent/sessions/.lock
+.agent/sessions/events.jsonl

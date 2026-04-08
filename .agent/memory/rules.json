@@ -1,0 +1,342 @@
+[
+  {
+    "id": "R-001",
+    "title": "Duplicate File Check",
+    "summary": "Before modifying ANY file, search for duplicates with the same name; modify only the canonical file and delete duplicates.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "file-management",
+      "safety"
+    ],
+    "incident_count": 5,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-002",
+    "title": "Path Alias Verification",
+    "summary": "Always verify path aliases in vite.config.js before assuming @feature/x resolves to a given path.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "file-management",
+      "safety"
+    ],
+    "incident_count": 3,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-003",
+    "title": "Import Existence Check",
+    "summary": "Never import files that do not exist; validate with npm run build before pushing.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "file-management",
+      "safety"
+    ],
+    "incident_count": 2,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-010",
+    "title": "Hook Declaration Order",
+    "summary": "Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong order causes TDZ ReferenceError.",
+    "applies_to": [
+      "react"
+    ],
+    "tags": [
+      "react",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-011",
+    "title": "LogForm Dual Return Type",
+    "summary": "LogForm returns Array when type==='plan' and Object when type==='protocol'. Always check Array.isArray(logData) before processing.",
+    "applies_to": [
+      "react"
+    ],
+    "tags": [
+      "react",
+      "data"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-020",
+    "title": "Timezone — Local Dates",
+    "summary": "ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('YYYY-MM-DD') — creates UTC midnight = wrong day in GMT-3.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "timezone",
+      "data",
+      "safety"
+    ],
+    "incident_count": 3,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-021",
+    "title": "Zod Enums in Portuguese",
+    "summary": "All Zod schema enum values must be in Portuguese. Always export labels for UI display.",
+    "applies_to": [
+      "zod"
+    ],
+    "tags": [
+      "zod",
+      "design"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-022",
+    "title": "Dosage in Pills, Not Milligrams",
+    "summary": "quantity_taken must be in pills (Zod limit: 100), never in milligrams.",
+    "applies_to": [
+      "zod",
+      "supabase"
+    ],
+    "tags": [
+      "zod",
+      "data",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-023",
+    "title": "Operation Order for Doses",
+    "summary": "Always follow Validate → Record → Decrement for dose registration. Never decrement stock before validating and recording.",
+    "applies_to": [
+      "supabase"
+    ],
+    "tags": [
+      "supabase",
+      "data",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-024",
+    "title": "Daily PDF Adherence Must Count Dose Events",
+    "summary": "In the clinical PDF daily table, count completed vs expected dose events per day; exclude future scheduledDoses. Do not reuse monthly aggregate totals.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "data",
+      "design"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-025",
+    "title": "Fallback Patient Identity From Email Handle",
+    "summary": "If no display name, derive PDF patient label from email local-part before falling back to 'Paciente'.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "data",
+      "design"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-025-1",
+    "title": "Reuse Shared Patient Identity Helpers",
+    "summary": "Always reuse src/shared/utils/patientUtils.js for patient display fallback. Do not re-implement local helpers.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "file-management",
+      "data"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-026",
+    "title": "Consultation Summary Must Count Actual Doses Taken",
+    "summary": "Use dose-count metric (taken) as numerator for taken/expected. Keep takenAnytime only for secondary insights.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "data"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-030",
+    "title": "Callback Data < 64 Bytes",
+    "summary": "Use numeric indices in callback_data, not UUIDs. Store full mapping in session.",
+    "applies_to": [
+      "telegram"
+    ],
+    "tags": [
+      "telegram"
+    ],
+    "incident_count": 2,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-031",
+    "title": "MarkdownV2 Escaping",
+    "summary": "Always use escapeMarkdownV2() for MarkdownV2 messages. Escape backslash FIRST. Do NOT escape answerCallbackQuery text.",
+    "applies_to": [
+      "telegram"
+    ],
+    "tags": [
+      "telegram"
+    ],
+    "incident_count": 2,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-032",
+    "title": "shouldSendNotification() Includes Logging",
+    "summary": "shouldSendNotification() calls logNotification() internally. Never call logNotification() explicitly after — causes duplicate logs.",
+    "applies_to": [
+      "telegram"
+    ],
+    "tags": [
+      "telegram"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-040",
+    "title": "Vercel API Rewrites",
+    "summary": "Always add explicit rewrites in vercel.json for new API routes. Catch-all must be LAST. Use :id syntax for dynamic params.",
+    "applies_to": [
+      "vercel"
+    ],
+    "tags": [
+      "infra"
+    ],
+    "incident_count": 2,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-041",
+    "title": "No process.exit() in Serverless",
+    "summary": "Never use process.exit() in Vercel serverless functions. Use throw new Error() instead.",
+    "applies_to": [
+      "vercel"
+    ],
+    "tags": [
+      "infra",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-042",
+    "title": "Service Role Authentication",
+    "summary": "Any endpoint using service_role key (bypasses RLS) MUST have authentication via Supabase Auth + ADMIN_CHAT_ID.",
+    "applies_to": [
+      "supabase",
+      "vercel"
+    ],
+    "tags": [
+      "supabase",
+      "infra",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-050",
+    "title": "JSDoc in Portuguese",
+    "summary": "All JSDoc comments must be in Portuguese from the first commit.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  }
+]
