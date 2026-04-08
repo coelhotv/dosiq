@@ -11,6 +11,25 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 - **Validação:** Zod 4 (Runtime Validation).
 - **Testes:** Vitest 4 + React Testing Library.
 
+## 🚀 DEVFLOW — Skill Oficial de Desenvolvimento
+
+> **Este projeto usa DEVFLOW como sistema de memória persistente e workflow estruturado.**
+> Todos os agentes DEVEM usar `/devflow` como primeiro passo em qualquer tarefa de desenvolvimento.
+
+**Modos disponíveis do `/devflow`:**
+
+| Modo | Comando | Proposito |
+|------|---------|-----------|
+| Bootstrap | `/devflow` (sem args) | **OBRIGATORIO** — carrega state + rules + anti-patterns + knowledge filtrados |
+| Status | `/devflow status` | Dashboard: sprint, counts de memória, distillation pending, mutations |
+| Planning | `/devflow planning "goal"` | Planejamento: análise de scope, spec, ADRs, verificação de contratos |
+| Coding | `/devflow coding "task"` | Implementação: C1-C4 checklist, contract gateway, quality gates |
+| Reviewing | `/devflow reviewing "PR #N"` | Revisão: violation scan, memory sync, atualizar trigger counts de APs |
+| Distillation | `/devflow distill` | Compressão de journals e revisar lifecycle (quando journal_entries >= 10) |
+| Export | `/devflow export` | Promover regras candidatas ao global_base (requer aprovação) |
+
+---
+
 ## 🏗️ Estrutura de Pastas (v4.0.0)
 - `src/features/`: Módulos de domínio (adherence, dashboard, medications, protocols, stock). **Fonte canônica de lógica de negócio.**
 - `src/shared/`: Recursos compartilhados (components/ui, hooks, services, utils, styles).

@@ -201,16 +201,19 @@ npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 > **Este projeto usa DEVFLOW como sistema de memória e workflow.**
 > Todo agente DEVE executar o bootstrap DEVFLOW antes de qualquer tarefa de desenvolvimento.
 
-### Skills obrigatórias
+### Skills obrigatórias — DEVFLOW Modos
 
-| Comando | Quando usar |
-|---------|-------------|
-| `/devflow` (sem args) | **SEMPRE primeiro** — bootstrap: state + rules + anti-patterns + knowledge |
-| `/devflow status` | Ver estado atual: sprint, contadores de memória, pendências |
-| `/deliver-sprint` | Executar uma entrega estruturada (8 fases, zero-defect) |
-| `/devflow distill` | Comprimir journals quando `journal_entries >= 10` |
-| `/devflow export` | Promover regras ao global_base (requer aprovação humana) |
-| `/check-review` | Revisão técnica de código (complementa DEVFLOW reviewing) |
+| Modo | Comando | Quando usar |
+|------|---------|-------------|
+| **Bootstrap** | `/devflow` (sem args) | **SEMPRE PRIMEIRO** — carrega state.json + regras filtradas + APs filtrados por goal |
+| **Status** | `/devflow status` | Ver estado da sessão: sprint, counts de memória, pending mutations, rules em review |
+| **Planning** | `/devflow planning "goal"` | Antes de implementar — design, spec, ADR check, scope analysis |
+| **Coding** | `/devflow coding "task"` | Durante implementação — C1-C4 checklist, contract gateway, quality gates |
+| **Reviewing** | `/devflow reviewing "PR #N"` | Ao revisar PRs — violation scan, sync memory, atualizar trigger counts |
+| **Distillation** | `/devflow distill` | Quando `journal_entries >= 10` — comprimir, revisar lifecycle, preparar exports |
+| **Export** | `/devflow export` | Promover regras ao global_base (~/.devflow/global_base/) — requer aprovação |
+| **Delivery** | `/deliver-sprint` | Executar entrega estruturada (8 fases, zero-defect workflow) |
+| **Review (Tech)** | `/check-review` | Revisão técnica de código (complementa DEVFLOW reviewing com análise Gemini) |
 
 ### Ciclo completo de desenvolvimento
 ```
