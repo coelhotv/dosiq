@@ -67,10 +67,10 @@
 **Medicines & Consultation (W12):** 100% COMPLETO ✅
 **Landing/Auth/Onboarding (W13):** 100% COMPLETO ✅
 **Shared Components & Chatbot (W14):** 100% COMPLETO ✅
-**Views (W0-W14):** 100% — Todas as views, forms e componentes compartilhados redesenhados
-**Próximo bloco — Landing/Auth/Onboarding (W13):** Login redesign, Landing page, Onboarding flow
-**Smart Insights (W15):** Phase 6 intelligence integration — smart alerts, risk scores, cost analysis, reminder optimizer
-**Polish (W16):** Accessibility & compliance
+**Views (W0-W14):** 100% COMPLETO ✅ — Todas as views, forms e componentes compartilhados redesenhados
+**Landing/Auth/Onboarding (W13):** 100% COMPLETO ✅
+**Smart Insights (W15):** 100% COMPLETO ✅
+**NEXT: Accessibility & Polish (W16):** Accessibility & compliance
 **Closure (W17):** Feature flag removal, legacy cleanup, token consolidation
 
 ---
