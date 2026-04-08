@@ -2,7 +2,7 @@
 
 **Versão:** 2.0
 **Data:** 2026-04-02
-**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅ | W12 entregue ✅ | W13 entregue ✅ | W14 entregue ✅ | W14.5 entregue ✅ | W15 entregue ✅
+**Status:** Em execução — Foundation Waves W0-W3 entregues ✅ | W4-W8 entregues ✅ | W9 entregue ✅ | W10 (10A+10B+10C) entregues ✅ | W11 entregue ✅ | W12 entregue ✅ | W13 entregue ✅ | W14 entregue ✅ | W14.5 entregue ✅ | W15 entregue ✅ | W16 entregue ✅ (PR #448, 2026-04-08)
 **Escopo:** Redesign completo de Design System, UI e UX — mobile-first + desktop responsivo
 
 
@@ -39,7 +39,7 @@
 | W14 | Shared Components & Chatbot | `WAVE_14_SHARED_COMPONENTS_CHATBOT.md` | ✅ MERGED #442 (2026-04-02) | main |
 | W14.5 | Tratamentos: CRUD Completo & Usabilidade | `WAVE_14_5_TREATMENTS_CRUD_USABILITY.md` | ✅ MERGED #444 (2026-04-02) | main |
 | W15 | Smart Insights Integration | `WAVE_15_SMART_INSIGHTS_INTEGRATION.md` | ✅ MERGED #445 (2026-04-04) | main |
-| W16 | Accessibility & Polish | `WAVE_16_ACCESSIBILITY_POLISH.md` | ⏳ PENDENTE | — |
+| W16 | Accessibility & Polish | `WAVE_16_ACCESSIBILITY_POLISH.md` | ✅ MERGED #448 (2026-04-08) | main |
 | W17 | Rollout Promotion & Legacy Cleanup | `WAVE_17_ROLLOUT_LEGACY_CLEANUP.md` | ⏳ PENDENTE | — |
 
 **Entregas Completas:**
@@ -60,6 +60,7 @@
 - ✅ **W14** (2026-04-02): Shared Components & Chatbot — Loading skeleton shimmer (3 green rings), AlertList Lucide icons (AlertTriangle/AlertCircle/Info), OfflineBanner WifiOff icon, Calendar ChevronLeft/Right icons, InstallPrompt sanctuary incondicional (hardcode #006a5e), ChatWindow Trash2/X icons + ConfirmDialog + renderMessageContent() inline markdown, Gamification BadgeDisplay/MilestoneCelebration sanctuary, ConfettiAnimation SANCTUARY_COLORS paleta, DLQAdmin CSS overrides, fix btn-secondary glow (box-shadow:none), Gemini Code Assist 2 sugestões processadas (alertlist ternary clarity, ChatWindow key prop), lint 0 erros, all tests pass (PR #442)
 - ✅ **W14.5** (2026-04-02): Tratamentos CRUD Completo & Usabilidade — NewTreatmentDropdown (2-3 opções por persona), deletar tratamento (card absoluto + hover tabular), deletar plano de tratamento (TreatmentPlanHeader Trash2), TreatmentPlanForm com campos emoji + color (picker + hex), redesign TreatmentPlanForm com tokens sanctuary, terminologia "protocolo"→"tratamento" em toda UI redesign, fluxo novo medicamento→novo tratamento via initialMedicineId, fix ConfirmDialog glow neon rosa (btn-primary/btn-danger overrides), Gemini review 4 sugestões processadas (PR #444)
 - ✅ **W15** (2026-04-04): Smart Insights Integration — SmartAlertsRedesign (3 severidades, cascade reveal, snooze, max 2/5 por persona), InsightCardRedesign (7 tipos, Lucide icons, fade-up), ReminderSuggestionRedesign (sugestão horário ótimo + persistência localStorage 30 dias + protocolService.update), ProtocolRiskBadge (adherence14d% + trend arrow, guard hasEnoughData), CostSummaryRedesign (Living Fill bars, fonte purchases, label "Grátis" para SUS), PrescriptionTimelineRedesign (filtra contínuas, footer dias restantes colorido por status), StockCardRedesign prediction enrichment; integração em Dashboard (coluna esquerda) + Stock + Treatments; zero novas chamadas Supabase; Gemini review 6 sugestões processadas (PR #445)
+- ✅ **W16** (2026-04-08): Accessibility & Polish — skip link + `id="main-content"` + `role="status"` no `ViewSkeleton`, `useReducedMotion` nas transições e widgets motion, ARIA grid no `Calendar`, `aria-describedby` nos forms críticos, `min-height: 44px` em `.btn-sm`, foco/contraste auditados, Gemini review aplicado, PR #448 merged em `main`
 
 **Foundation (W0-W9):** 100% COMPLETO ✅
 **Hub & Settings & Histórico (W10A-W10B-W10C):** 100% COMPLETO ✅
@@ -70,7 +71,7 @@
 **Views (W0-W14):** 100% COMPLETO ✅ — Todas as views, forms e componentes compartilhados redesenhados
 **Landing/Auth/Onboarding (W13):** 100% COMPLETO ✅
 **Smart Insights (W15):** 100% COMPLETO ✅
-**NEXT: Accessibility & Polish (W16):** Accessibility & compliance
+**NEXT: Rollout Promotion & Legacy Cleanup (W17):** Feature flag removal, legacy cleanup, token consolidation
 **Closure (W17):** Feature flag removal, legacy cleanup, token consolidation
 
 ---
@@ -2939,6 +2940,8 @@ Desktop (grid):
 ## 21. Wave 16 — Accessibility & Polish
 
 > **Escopo:** Auditoria completa de acessibilidade em TODAS as views e componentes redesenhados (W0-W16). Esta wave é de compliance — não adiciona features, apenas garante que tudo que foi construído é acessível.
+
+> **Status da wave:** ✅ MERGED — PR #448 em `main` (2026-04-08)
 
 ### Sprint 16.1 — Semantic HTML Audit
 

@@ -1,8 +1,8 @@
 # PLAN: Wave 16 Accessibility & Polish — Execution Order
 
 **Gerado:** 2026-04-08 via DEVFLOW Planning  
-**Spec Referência:** `plans/backlog-redesign/WAVE_16_ACCESSIBILITY_POLISH.md` (1094 linhas)  
-**Status:** ⏳ Ready for Coding (P1-P4 Complete)
+**Spec Referência:** `plans/archive_old/redesign_2026/WAVE_16_ACCESSIBILITY_POLISH.md` (1094 linhas)  
+**Status:** ✅ COMPLETE (PHASE 1+2 delivered, PR #448 merged)
 
 ---
 
@@ -10,6 +10,8 @@
 
 Wave 16 é a wave de **compliance de acessibilidade** para Santuário Terapêutico (Waves 0-15 completas).  
 **Goal:** Lighthouse Accessibility ≥ 95 + navegação completa via teclado/screen reader.
+
+**Resultado final:** PR #448 mergeado em `main` em 2026-04-08.
 
 **Escopo:**
 - 1 arquivo criado (`useFocusTrap.js` hook)
@@ -161,17 +163,9 @@ npm run build             # MUST complete without errors
 
 ---
 
-## Next Session: DEVFLOW Coding Mode
+## Next Session: Arquivo Histórico
 
-```
-/devflow coding "S15.1: App-level skip link, main id, useReducedMotion"
-```
-
-This will:
-1. Load filtered rules/APs/contracts relevant to React + accessibility
-2. Run C1-C2 pre-code checks
-3. Provide C3-C4 implementation scaffolding
-4. Ensure C5 memory updates post-implementation
+Wave 16 já foi entregue. Use este plano como referência do caminho executado; o próximo trabalho de redesign agora pertence a W17 ou a novas waves.
 
 ---
 
@@ -180,7 +174,7 @@ This will:
 - **Mobile Performance:** No regression expected (acessibilidade é semântica, não afeta bundle)
 - **Contracts:** Nenhum contrato quebrado (nenhum método de API muda, apenas ARIA é aditiva)
 - **Browser Support:** All ARIA features are standard; `useReducedMotion` from framer-motion is stable
-- **Feature Flag:** Wave 16 só roda com `?redesign=1` (ADR-001 in effect)
+- **Feature Flag:** Wave 16 rodou com `?redesign=1` (ADR-001 in effect); o status atual é histórico após merge
 
 ---
 
