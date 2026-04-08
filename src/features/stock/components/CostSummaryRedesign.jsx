@@ -9,20 +9,25 @@ import './CostSummaryRedesign.css'
 export default function CostSummaryRedesign({ costData, isComplex }) {
   if (!costData || costData.items.length === 0) {
     return (
-      <section className="cost-summary-redesign cost-summary-redesign--empty" aria-label="Análise de custo mensal">
+      <section
+        className="cost-summary-redesign cost-summary-redesign--empty"
+        aria-label="Análise de custo mensal"
+      >
         <div className="cost-summary-redesign__header">
           <div className="cost-summary-redesign__icon-wrap">
             <Receipt size={20} aria-hidden="true" />
           </div>
           <h3 className="cost-summary-redesign__title">Custo Mensal</h3>
         </div>
-        <p className="cost-summary-redesign__empty-msg">Adicione dados de compra para ver a análise de custo.</p>
+        <p className="cost-summary-redesign__empty-msg">
+          Adicione dados de compra para ver a análise de custo.
+        </p>
       </section>
     )
   }
 
   const itemsToShow = isComplex ? costData.items : costData.items.slice(0, 3)
-  const maxCost = Math.max(...costData.items.map(i => i.monthlyCost))
+  const maxCost = Math.max(...costData.items.map((i) => i.monthlyCost))
 
   return (
     <section className="cost-summary-redesign" aria-label="Análise de custo mensal">
@@ -45,7 +50,9 @@ export default function CostSummaryRedesign({ costData, isComplex }) {
           return (
             <div key={item.name ?? item.medicineName} className="cost-summary-redesign__item">
               <div className="cost-summary-redesign__item-header">
-                <span className="cost-summary-redesign__item-name">{item.name ?? item.medicineName}</span>
+                <span className="cost-summary-redesign__item-name">
+                  {item.name ?? item.medicineName}
+                </span>
                 <span className="cost-summary-redesign__item-cost">
                   {item.monthlyCost < 0.01 ? 'Grátis' : `R$ ${item.monthlyCost.toFixed(2)}`}
                 </span>

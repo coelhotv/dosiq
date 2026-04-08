@@ -77,7 +77,9 @@
 .sr-confirm-dialog .btn-primary:hover:not(:disabled) {
   box-shadow: var(--shadow-primary, 0 4px 12px rgba(0, 0, 0, 0.2));
   transform: scale(1.02);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .sr-confirm-dialog .btn-primary:active:not(:disabled) {
@@ -95,7 +97,9 @@
   background: color-mix(in srgb, var(--color-error, #ba1a1a) 85%, #000);
   box-shadow: 0 2px 8px rgba(186, 26, 26, 0.3);
   transform: scale(1.02);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .sr-confirm-dialog .btn-danger:active:not(:disabled) {

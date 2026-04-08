@@ -18,7 +18,14 @@ import { calculateProtocolRisk } from '@adherence/services/protocolRiskService'
  * TreatmentsComplex — Modo complexo com grupos colapsáveis
  * S7.5.5: Adicionar hoveredRow state para iluminar linha inteira em desktop
  */
-export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan, onDeletePlan, activeTab }) {
+export default function TreatmentsComplex({
+  groups,
+  onEdit,
+  onDelete,
+  onEditPlan,
+  onDeletePlan,
+  activeTab,
+}) {
   const { cascade } = useMotion()
   const { logs } = useDashboard()
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
@@ -99,7 +106,9 @@ export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan
                         onRowMouseEnter={() => setHoveredRow(item.id)}
                         onRowMouseLeave={() => setHoveredRow(null)}
                         onRowClick={() => onEdit?.(item)}
-                        riskBadge={<ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />}
+                        riskBadge={
+                          <ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />
+                        }
                       />
                     </div>
                   ))}
@@ -119,7 +128,9 @@ export default function TreatmentsComplex({ groups, onEdit, onDelete, onEditPlan
                       onDelete={onDelete}
                       activeTab={activeTab}
                       variant="card"
-                      riskBadge={<ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />}
+                      riskBadge={
+                        <ProtocolRiskBadge risk={riskByProtocol.get(item.id)} isComplex={true} />
+                      }
                     />
                   ))}
                 </div>

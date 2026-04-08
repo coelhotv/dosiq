@@ -115,28 +115,33 @@ export default function DashboardRedesign({ onNavigate }) {
     const alerts = []
 
     // 1. Stock alerts
-    stockSummary?.items?.forEach(item => {
+    stockSummary?.items?.forEach((item) => {
       if (snoozedAlerts[`stock-${item.medicineId}`]) return
       if (item.stockStatus === 'critical' || item.stockStatus === 'low') {
         const severity = item.stockStatus === 'critical' ? 'critical' : 'warning'
         alerts.push({
           id: `stock-${item.medicineId}`,
           severity,
-          title: severity === 'critical'
-            ? `Estoque crítico — ${item.medicineName}`
-            : `Estoque baixo — ${item.medicineName}`,
-          message: severity === 'critical'
-            ? `${item.quantity ?? 0} unidades restantes. Reposição urgente.`
-            : `${item.daysRemaining} dias restantes. Programe a compra.`,
+          title:
+            severity === 'critical'
+              ? `Estoque crítico — ${item.medicineName}`
+              : `Estoque baixo — ${item.medicineName}`,
+          message:
+            severity === 'critical'
+              ? `${item.quantity ?? 0} unidades restantes. Reposição urgente.`
+              : `${item.daysRemaining} dias restantes. Programe a compra.`,
           actions: [{ label: 'Registrar Compra', type: 'primary' }],
         })
       }
     })
 
     // 2. Doses atrasadas (zones.late)
-    const lateDoses = (zones.late || []).filter(d => !d.isRegistered)
+    const lateDoses = (zones.late || []).filter((d) => !d.isRegistered)
     if (lateDoses.length > 0 && !snoozedAlerts['late-doses']) {
-      const names = lateDoses.slice(0, 2).map(d => d.medicineName).join(', ')
+      const names = lateDoses
+        .slice(0, 2)
+        .map((d) => d.medicineName)
+        .join(', ')
       const extra = lateDoses.length > 2 ? ` +${lateDoses.length - 2}` : ''
       alerts.push({
         id: 'late-doses',
@@ -162,7 +167,7 @@ export default function DashboardRedesign({ onNavigate }) {
         currentStreak: stats.currentStreak ?? 0,
         longestStreak: stats.longestStreak ?? 0,
         adherence: stats.adherence ?? 0,
-        activeProtocols: protocols?.filter(p => p.active)?.length ?? 0,
+        activeProtocols: protocols?.filter((p) => p.active)?.length ?? 0,
       },
       dailyAdherence: [],
       stockSummary: stockSummary?.items ?? [],
@@ -213,7 +218,7 @@ export default function DashboardRedesign({ onNavigate }) {
 
   // ── Sugestão de lembrete calculada (sem setState em effect) ──
   // isSuggestionDismissed e analyzeReminderTiming são funções estáveis importadas (não reativas)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   const reminderSuggestionData = useMemo(() => {
     if (!protocols?.length || !logs?.length) return null
     for (const protocol of protocols) {
@@ -284,34 +289,37 @@ export default function DashboardRedesign({ onNavigate }) {
   )
 
   const handleSnoozeAlert = useCallback((alertId) => {
-    setSnoozedAlerts(prev => ({ ...prev, [alertId]: true }))
+    setSnoozedAlerts((prev) => ({ ...prev, [alertId]: true }))
   }, [])
 
-  const handleReminderAccept = useCallback(async (newTime) => {
-    const protocolId = reminderSuggestionData?.protocolId
-    const currentTime = reminderSuggestionData?.suggestion?.currentTime
-    if (protocolId && newTime && currentTime) {
-      // Atualiza time_schedule: substitui horário antigo pelo sugerido
-      const protocol = protocols?.find(p => p.id === protocolId)
-      const currentSchedule = protocol?.time_schedule ?? []
-      const updatedSchedule = currentSchedule.map(t => t === currentTime ? newTime : t)
-      // Se o horário antigo não estava no array (edge case), adiciona o novo
-      const finalSchedule = updatedSchedule.includes(newTime)
-        ? updatedSchedule
-        : [...updatedSchedule, newTime]
-      try {
-        await protocolService.update(protocolId, { time_schedule: finalSchedule })
-      } catch (err) {
-        console.error('[DashboardRedesign] Erro ao atualizar horário do protocolo:', err)
+  const handleReminderAccept = useCallback(
+    async (newTime) => {
+      const protocolId = reminderSuggestionData?.protocolId
+      const currentTime = reminderSuggestionData?.suggestion?.currentTime
+      if (protocolId && newTime && currentTime) {
+        // Atualiza time_schedule: substitui horário antigo pelo sugerido
+        const protocol = protocols?.find((p) => p.id === protocolId)
+        const currentSchedule = protocol?.time_schedule ?? []
+        const updatedSchedule = currentSchedule.map((t) => (t === currentTime ? newTime : t))
+        // Se o horário antigo não estava no array (edge case), adiciona o novo
+        const finalSchedule = updatedSchedule.includes(newTime)
+          ? updatedSchedule
+          : [...updatedSchedule, newTime]
+        try {
+          await protocolService.update(protocolId, { time_schedule: finalSchedule })
+        } catch (err) {
+          console.error('[DashboardRedesign] Erro ao atualizar horário do protocolo:', err)
+        }
       }
-    }
-    if (protocolId) {
-      // Persiste dispensa no localStorage (30 dias) para sobreviver ao reload
-      dismissSuggestion(protocolId, false)
-      setDismissedSuggestionId(protocolId)
-    }
-    refresh()
-  }, [refresh, reminderSuggestionData, protocols])
+      if (protocolId) {
+        // Persiste dispensa no localStorage (30 dias) para sobreviver ao reload
+        dismissSuggestion(protocolId, false)
+        setDismissedSuggestionId(protocolId)
+      }
+      refresh()
+    },
+    [refresh, reminderSuggestionData, protocols]
+  )
 
   // ── Loading state ──
   if (isLoading || contextLoading) {

@@ -47,8 +47,7 @@ export default function OnboardingWizard() {
   const isMedicineStep = steps[currentStep]?.name === 'Medicamento'
   const isProtocolStep = steps[currentStep]?.name === 'Protocolo'
   const isNextDisabled =
-    (isMedicineStep && !onboardingData?.medicine) ||
-    (isProtocolStep && !onboardingData?.protocol)
+    (isMedicineStep && !onboardingData?.medicine) || (isProtocolStep && !onboardingData?.protocol)
 
   return (
     <div className="onboarding-overlay">
