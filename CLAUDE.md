@@ -268,14 +268,17 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 **DEVFLOW e o sistema de memoria e workflow deste projeto.** Nao use `.memory/` (aposentado).
 
-### Skill: `/devflow`
+### Skill: `/devflow` — Modos Disponíveis
 
-```
-/devflow           → bootstrap completo (status, regras, anti-patterns)
-/devflow status    → painel de estado da sessao
-/devflow distill   → comprimir journals, revisar lifecycle de regras
-/devflow export    → promover regras ao global_base (~/.devflow/global_base/)
-```
+| Modo | Comando | Proposito |
+|------|---------|-----------|
+| **Bootstrap** | `/devflow` (sem args) | **OBRIGATORIO** — carrega state.json + rules.json + anti-patterns.json + knowledge.json filtrados por goal atual |
+| **Status** | `/devflow status` | Painel de estado: sprint atual, memoria counts, distilacao pending, mutations |
+| **Planning** | `/devflow planning "goal"` | Modo planejamento: analisa scope, cria specs, drafta ADRs, verifica contratos |
+| **Coding** | `/devflow coding "task"` | Modo codificacao: C1-C4 checklist, contract gateway, quality gates |
+| **Reviewing** | `/devflow reviewing "PR #N"` | Modo revisao: scan violations, sync memory, atualiza trigger counts de APs |
+| **Distillation** | `/devflow distill` | Comprimir journals, revisar lifecycle de regras, preparar exports (quando journal_entries >= 10) |
+| **Export** | `/devflow export` | Promover regras candidatas ao global_base (~/.devflow/global_base/) — requer aprovacao |
 
 ### Estrutura de Memoria (CANONICA — `.agent/memory/`)
 
