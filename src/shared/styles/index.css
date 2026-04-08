@@ -579,3 +579,45 @@ body {
   flex: 1;
   position: relative;
 }
+
+/* ============================================
+   SKIP TO MAIN CONTENT LINK — W16 Accessibility
+   Visível apenas quando focado via teclado
+   ============================================ */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  background: var(--color-primary, #006a5e);
+  color: var(--color-on-primary, #ffffff);
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 0.5rem 0;
+  transition: top 150ms ease-out;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skip-to-content:focus-visible {
+  top: 0;
+  outline: 2px solid var(--color-on-primary, #ffffff);
+  outline-offset: 2px;
+}
+
+/* Classe utilitária para texto visível apenas para screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
