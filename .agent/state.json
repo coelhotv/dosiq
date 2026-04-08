@@ -1,17 +1,9 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.",
   "project": {
     "name": "meus-remedios",
     "slug": "meus-remedios",
-    "stack": [
-      "react",
-      "vite",
-      "supabase",
-      "typescript",
-      "vitest",
-      "framer-motion",
-      "telegram"
-    ],
+    "stack": ["react", "vite", "supabase", "typescript", "vitest", "framer-motion", "telegram"],
     "phase": "initial",
     "current_sprint": "2026-W15"
   },
@@ -43,7 +35,7 @@
     "journal_entries_since_distillation": 0
   },
   "evolution": {
-    "genes_version": "1.0",
+    "genes_version": "1.1",
     "pending_mutations": []
   },
   "quality_gates": {
