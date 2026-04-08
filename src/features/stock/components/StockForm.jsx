@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import { formatLocalDate } from '@utils/dateUtils'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './StockForm.css'
 
 export default function StockForm({ medicines, initialValues, onSave, onCancel }) {
-  const getFieldDescribedBy = (fieldName, hintId = null) =>
-    [hintId, errors[fieldName] ? `${fieldName}-error` : null].filter(Boolean).join(' ') || undefined
-
   const [formData, setFormData] = useState({
     medicine_id: initialValues?.medicine_id || '',
     quantity: initialValues?.quantity ?? '',

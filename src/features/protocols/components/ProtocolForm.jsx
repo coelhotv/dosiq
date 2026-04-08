@@ -3,6 +3,7 @@ import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
 import { FREQUENCIES, FREQUENCY_LABELS, getTodayDateString } from '@schemas/protocolSchema'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({
@@ -21,8 +22,6 @@ export default function ProtocolForm({
   showTreatmentPlan = true,
 }) {
   const isSimpleMode = mode === 'simple'
-  const getFieldDescribedBy = (fieldName, hintId = null) =>
-    [hintId, errors[fieldName] ? `${fieldName}-error` : null].filter(Boolean).join(' ') || undefined
 
   const [formData, setFormData] = useState({
     medicine_id:

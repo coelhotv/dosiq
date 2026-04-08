@@ -192,7 +192,7 @@ export default function Calendar({
   // Preencher dias vazios no inicio
   for (let i = 0; i < firstDay; i++) {
     days.push(
-      <div key={`empty-${i}`} className="calendar-day empty" role="presentation" aria-hidden="true"></div>
+      <div key={`empty-${i}`} className="calendar-day empty" role="gridcell" aria-hidden="true" />
     )
   }
 
@@ -352,7 +352,17 @@ export default function Calendar({
               ))}
           </div>
         ) : (
-          days
+          (() => {
+            const rows = []
+            for (let i = 0; i < days.length; i += 7) {
+              rows.push(
+                <div key={`row-${i / 7}`} className="calendar-grid-row" role="row">
+                  {days.slice(i, i + 7)}
+                </div>
+              )
+            }
+            return rows
+          })()
         )}
       </div>
     </div>

@@ -16,10 +16,10 @@ export default function RingGaugeRedesign({
   onClick,
   className = '',
 }) {
+  const prefersReducedMotion = useReducedMotion()
   const { svgSize, strokeWidth, fontSize, labelSize } = SIZE_MAP[size] || SIZE_MAP.medium
   const offset = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE
   const isClickable = Boolean(onClick)
-  const prefersReducedMotion = useReducedMotion()
 
   return (
     <div

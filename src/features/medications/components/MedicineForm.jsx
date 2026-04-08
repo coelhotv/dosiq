@@ -11,6 +11,7 @@ import {
   REGULATORY_CATEGORY_LABELS,
 } from '@schemas/medicineSchema'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './MedicineForm.css'
 
 /**
@@ -37,9 +38,6 @@ export default function MedicineForm({
   submitButtonLabel,
   title,
 }) {
-  const getFieldDescribedBy = (fieldName, hintId = null) =>
-    [hintId, errors[fieldName] ? `${fieldName}-error` : null].filter(Boolean).join(' ') || undefined
-
   const [formData, setFormData] = useState({
     name: medicine?.name || '',
     laboratory: medicine?.laboratory || '',
