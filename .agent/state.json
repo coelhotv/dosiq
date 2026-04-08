@@ -24,7 +24,7 @@
     "status": "idle"
   },
   "memory": {
-    "rules_count": 20,
+    "rules_count": 38,
     "anti_patterns_count": 0,
     "decisions_count": 0,
     "contracts_count": 0,
