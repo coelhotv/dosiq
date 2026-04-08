@@ -1,8 +1,13 @@
 # CLAUDE.md — Meus Remedios
 
-> This project uses DEVFLOW. Primary agent context: `.agent/DEVFLOW.md`
-> For DEVFLOW wave execution instructions: see `/Users/coelhotv/SKILLS/devflow/CLAUDE.md`
-> Migration complete (2026-04-08). Primary memory: `.agent/memory/` — all waves 0–7 done.
+> **DEVFLOW é o processo oficial de desenvolvimento deste projeto.**
+> Skill: `/devflow` | Contexto do agente: `.agent/DEVFLOW.md` | Memória canônica: `.agent/memory/`
+> Migração completa (2026-04-08). Waves 0–7 concluídas. `.memory/` **aposentado** (somente leitura histórica).
+>
+> **Antes de qualquer tarefa:**
+> 1. Leia `.agent/state.json` (estado do projeto)
+> 2. Execute `/devflow` para bootstrap completo (rules.json + anti-patterns.json + knowledge.json)
+> 3. Use `/deliver-sprint` para entregas e `/devflow distill` periodicamente
 
 > Contexto completo do projeto para agentes Claude. Leia este arquivo INTEIRO antes de qualquer tarefa.
 
@@ -59,21 +64,34 @@ server/bot/          # Telegram bot
   utils/             # Helpers
 plans/               # PRDs, specs de execucao, roadmap
 docs/                # Documentacao do projeto
-.agent/              # DEVFLOW agent memory (CANONICA — artifacts and state)
-  DEVFLOW.md         #   - Agent skill definition
-  state.json         #   - Current session state
-  decisions.json     #   - ADRs from Wave 4 (25 items)
+.agent/              # DEVFLOW — MEMORIA CANONICA DO PROJETO ✅
+  DEVFLOW.md         #   - Skill definition (nao modificar sem /devflow meta-evolve)
+  state.json         #   - Estado da sessao (sprint, goal, contadores de memoria)
+  decisions.json     #   - ADRs (25 decisoes arquiteturais)
   decisions_detail/  #   - ADR detail files (ADR-001.md through ADR-025.md)
   memory/
-    journal/         #   - JSONL format journals (recent weeks converted from markdown)
-      2026-W*.jsonl  #   - Weekly journals in JSONL format (one event per line)
-      archive/       #   - Old journals (W08-W11) preserved as markdown
-.memory/             # Memoria de longo prazo do projeto (CANONICA — arquivos persistem entre sessoes)
-  rules.md           #   - Regras positivas (R-NNN) — padroes que funcionam neste projeto
-  anti-patterns.md   #   - Anti-patterns (AP-NNN) — erros a evitar, licoes aprendidas
-  knowledge.md       #   - Domain facts (APIs, schemas, arquitetura)
-  journal/           #   - Entregas e sprints (YYYY-WWW.md, uma entrada por semana)
-    MEMORY.md        #   - Index de longo prazo (max 200 linhas, resumido)
+    rules.json       #   - Indice de regras R-NNN (107 ativas) — SEMPRE carregar primeiro
+    anti-patterns.json #  - Indice AP-NNN (93 ativos) — SEMPRE carregar primeiro
+    contracts.json   #   - Contratos de interface CON-NNN (16)
+    knowledge.json   #   - Domain facts K-NNN (70 fatos)
+    rules_detail/    #   - R-NNN.md on-demand
+    anti-patterns_detail/ # AP-NNN.md on-demand
+    knowledge_detail/ #  - K-NNN.md on-demand
+    journal/         #   - JSONL journals por sprint (2026-W*.jsonl)
+    journal/archive/ #   - Journals comprimidos pos-distilacao
+  evolution/
+    genes.json       #   - Parametros de comportamento (threshold, cadencias)
+    evolution_log.jsonl # - Historico de mutacoes (append-only)
+  sessions/
+    events.jsonl     #   - Eventos da sessao atual (append-only)
+    .lock            #   - Lock otimista para escritas concorrentes
+  synthesis/
+    pending_export.json # - Regras/APs candidatos ao global_base
+.memory/             # LEGADO — somente leitura historica (W01-W11, aposentado 2026-04-08)
+  rules.md           #   ⚠️ NAO ATUALIZAR — use .agent/memory/rules.json
+  anti-patterns.md   #   ⚠️ NAO ATUALIZAR — use .agent/memory/anti-patterns.json
+  knowledge.md       #   ⚠️ NAO ATUALIZAR — use .agent/memory/knowledge.json
+  journal/           #   ⚠️ NAO ATUALIZAR — use .agent/memory/journal/
 ```
 
 ---
@@ -246,69 +264,91 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 ---
 
-## Learning Loops (Memoria de Longo Prazo)
+## DEVFLOW — Processo Oficial de Desenvolvimento
 
-**CRITICO:** Memoria de longo prazo vive em `/.memory/` **DENTRO DO PROJETO**, nao em structs externas (/.claude/projects/...).
+**DEVFLOW e o sistema de memoria e workflow deste projeto.** Nao use `.memory/` (aposentado).
 
-**Obrigatorio:** Ao final de qualquer sessao de desenvolvimento, antes de commitar, perguntar:
-> *"Cometi algum erro que um proximo agente repetiria? Aprendi algum padrao novo?"*
-
-### Estrutura de Memoria (CANONICA)
+### Skill: `/devflow`
 
 ```
-.memory/
-  rules.md                    # Regras positivas: R-001, R-002, ... R-NNN
-  anti-patterns.md            # Armadilhas: AP-001, AP-T01, AP-S01, AP-P01, etc.
-  knowledge.md                # Domain facts (APIs, schemas, arquitetura, integracoes)
-  journal/
-    2026-W11.md              # Sprint W11 (YYYY-WWW.md = year-week)
-    2026-W12.md
-  MEMORY.md                   # Auto-memory resumido (max 200 linhas, index only)
+/devflow           → bootstrap completo (status, regras, anti-patterns)
+/devflow status    → painel de estado da sessao
+/devflow distill   → comprimir journals, revisar lifecycle de regras
+/devflow export    → promover regras ao global_base (~/.devflow/global_base/)
 ```
 
-### Quando registrar
+### Estrutura de Memoria (CANONICA — `.agent/memory/`)
+
+```
+.agent/
+  state.json                    # Estado do projeto (sprint, goal, contadores)
+  memory/
+    rules.json                  # Indice de regras R-NNN (107 ativas)
+    anti-patterns.json          # Indice de anti-patterns AP-NNN (93 ativos)
+    contracts.json              # Contratos de interface CON-NNN (16)
+    decisions.json              # ADRs ADR-NNN (25 decisoes arquiteturais)
+    knowledge.json              # Domain facts K-NNN (70 fatos)
+    rules_detail/R-NNN.md       # Detalhes on-demand
+    anti-patterns_detail/AP-NNN.md
+    journal/YYYY-WWW.jsonl      # Journals por sprint (JSONL, append-only)
+    journal/archive/            # Journals comprimidos pos-distilacao
+  evolution/
+    genes.json                  # Parametros de comportamento do agente
+    evolution_log.jsonl         # Historico de mutacoes
+  sessions/
+    events.jsonl                # Eventos da sessao atual
+```
+
+### Ciclo de Desenvolvimento (Assess → Execute → Record)
+
+```
+ANTES de codificar:
+  1. /devflow → bootstrap (le state.json + rules.json + anti-patterns.json)
+  2. Verificar rules e APs relevantes para o goal atual
+  3. Checar contratos (contracts.json) para interfaces tocadas
+
+DURANTE (coding):
+  - Seguir C1-C4 do DEVFLOW (checklist + contract gateway + order + quality gates)
+  - /deliver-sprint para execucao estruturada de sprints
+
+APOS codificar:
+  - DEVFLOW C5: registrar novos R-NNN / AP-NNN / ADR-NNN se aplicavel
+  - Append ao journal YYYY-WWW.jsonl
+  - /devflow distill quando journal_entries >= 10
+```
+
+### Quando Registrar na Memoria DEVFLOW
 | Situacao | Acao | Arquivo |
 |----------|------|---------|
-| Corrigi bug causado por padrao errado | Adicionar novo item | `anti-patterns.md` |
-| Descobri abordagem X que falha | Regra preventiva | `rules.md` |
-| Entreguei feature/sprint/fase | Journal entry (YYYY-WWW.md) | `journal/` |
-| Aprendi tecnica/pattern novo | Regra positiva | `rules.md` |
-| Domain fact novo (API, schema) | Documentar | `knowledge.md` |
+| Corrigi bug causado por padrao errado | AP-NNN | `anti-patterns.json` + `_detail/` |
+| Descobri padrao que funciona | R-NNN | `rules.json` + `rules_detail/` |
+| Decisao arquitetural tomada | ADR-NNN | `decisions.json` + `decisions_detail/` |
+| Entrega de sprint/wave | Journal entry | `memory/journal/YYYY-WWW.jsonl` |
+| Domain fact novo (API, schema) | K-NNN | `knowledge.json` + `knowledge_detail/` |
 
-### Regra de Ouro
-- **SEMPRE ler** `.memory/rules.md` + `.memory/anti-patterns.md` antes de codificar (R-065)
-- **Registre IMEDIATAMENTE** apos corrigir erro nao-trivial (contexto fresco = memoria precisa)
-- **Nao espere fim da sprint** para documentar (erros esquecidos se repetem)
-- **Verifique duplicatas** em memoria antes de criar novo R-NNN ou AP-NNN
-
-### Como Localizar Memoria
-```bash
-# Dentro do projeto (CANONICA)
-cat .memory/rules.md
-cat .memory/anti-patterns.md
-cat .memory/knowledge.md
-cat .memory/journal/2026-W11.md
-
-# NUNCA usar estruturas externas (/.claude/projects/...) para memoria do projeto
-# Aquelas sao para configuracoes do Claude Code, nao project memory
-```
+### `.memory/` — APOSENTADO (somente leitura historica)
+Os arquivos em `.memory/` (rules.md, anti-patterns.md, knowledge.md, journal/) foram migrados
+para o DEVFLOW em 2026-04-08 (waves 0-7). **Nao escreva nesses arquivos.** Consulte apenas
+como referencia historica de W01-W11. Todo novo registro vai para `.agent/memory/`.
 
 ---
 
 ## Git Workflow
 
 ```
-1. CREATE BRANCH (feature/wave-X/nome ou feature/fase-N/nome)
-2. MAKE CHANGES (seguir padroes de codigo)
-3. VALIDATE LOCALLY (npm run validate:agent)
-4. UPDATE MEMORY — registrar licoes aprendidas em .memory/ (obrigatorio)
-5. COMMIT (semantico, portugues)
-6. PUSH BRANCH
-7. CREATE PR
-8. WAIT FOR GEMINI CODE ASSIST REVIEW
-9. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
-10. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
-11. MERGE & CLEANUP (--no-ff, deletar branch)
+1. /devflow → bootstrap (ler state.json + rules.json + anti-patterns.json relevantes)
+2. CREATE BRANCH (feature/wave-X/nome ou feature/fase-N/nome)
+3. MAKE CHANGES (seguir padroes de codigo, DEVFLOW C1-C4)
+4. VALIDATE LOCALLY (npm run validate:agent)
+5. /devflow C5 — registrar licoes em .agent/memory/ (obrigatorio)
+6. COMMIT (semantico, portugues)
+7. PUSH BRANCH
+8. CREATE PR
+9. WAIT FOR GEMINI CODE ASSIST REVIEW
+10. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
+11. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
+12. MERGE & CLEANUP (--no-ff, deletar branch)
+13. /devflow distill se journal_entries >= 10
 ```
 
 **REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs.
@@ -450,21 +490,23 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 - `plans/EXEC_SPEC_DASHBOARD_FIRST_LOAD.md` — **NOVO** — Sprints D1-D6 para otimizar first load do Dashboard (target: 25 → ≤12 queries, ~15s → <5s em 4G)
 - `plans/ROADMAP_v4.md` — roadmap futuro
 
-### Memoria de Longo Prazo (em `/.memory/` — DENTRO DO PROJETO)
-**IMPORTANTE:** Estes arquivos persistem entre sessoes e devem ser consultados/atualizados regularmente.
-- `.memory/rules.md` — Regras positivas (R-NNN), padroes que funcionam neste projeto
-- `.memory/anti-patterns.md` — Anti-patterns (AP-NNN), armadilhas e licoes aprendidas
-- `.memory/knowledge.md` — Domain facts (APIs, schemas, arquitetura, integracoes, hacks conhecidos)
-- `.memory/journal/YYYY-WWW.md` — Entregas por semana (ex: `2026-W11.md` = semana 11 de 2026)
-- `.memory/MEMORY.md` — Auto-memory resumido (ate 200 linhas, index + contexto sessao passada)
+### Memoria de Longo Prazo (DEVFLOW — `.agent/memory/`)
+**IMPORTANTE:** A memoria canonica e gerenciada pelo DEVFLOW. Use `/devflow` para acessar e atualizar.
+- `.agent/memory/rules.json` + `rules_detail/` — Regras R-NNN (107 ativas), indice filtrado
+- `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` — AP-NNN (93 ativos)
+- `.agent/memory/knowledge.json` + `knowledge_detail/` — Domain facts K-NNN (70 fatos)
+- `.agent/memory/decisions.json` + `decisions_detail/` — ADRs (25 decisoes arquiteturais)
+- `.agent/memory/journal/YYYY-WWW.jsonl` — Journals JSONL por sprint (append-only)
+- `.agent/state.json` — Estado atual (sprint, goal, contadores, last_distillation)
+
+> `.memory/` esta **aposentado** (somente leitura historica W01-W11). Nunca escreva nele.
 
 ---
 
 ## Checklist Pre-Codigo
 
 - [ ] Li CLAUDE.md inteiro (este arquivo)
-- [ ] Li `.memory/rules.md` e `.memory/anti-patterns.md` (R-065 — OBRIGATORIO)
-  - Localizacao: PROJECT_ROOT/.memory/ (dentro do projeto, nao external)
+- [ ] Executei `/devflow` bootstrap (rules.json + anti-patterns.json filtrados por goal — R-065 OBRIGATORIO)
 - [ ] Verifiquei duplicatas do arquivo alvo (`find src -name "*File*" -type f`)
 - [ ] Confirmei path aliases em vite.config.js
 - [ ] Sei qual view/feature/service estou modificando
@@ -472,9 +514,11 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 - [ ] Vou rodar `npm run validate:agent` (10-min kill switch) antes de push
 - [ ] Criei schemas Zod com validacao se novo service (schema-first approach)
 
-## Checklist Pos-Codigo (antes do commit)
+## Checklist Pos-Codigo — DEVFLOW C5 (antes do commit)
 
-- [ ] Corrigi algum erro nao-trivial? → registrar em `.memory/anti-patterns.md`
-- [ ] Descobri padrao novo ou pegadinha do projeto? → registrar em `.memory/rules.md`
-- [ ] Esta e uma entrega significativa? → adicionar entrada em `.memory/journal/YYYY-WWW.md`
-- [ ] Atualizei as contagens na secao Documentacao acima (R-NNN, AP count)?
+- [ ] Corrigi erro nao-trivial? → `AP-NNN` em `.agent/memory/anti-patterns.json` + `_detail/`
+- [ ] Descobri padrao novo? → `R-NNN` em `.agent/memory/rules.json` + `rules_detail/`
+- [ ] Decisao arquitetural tomada? → `ADR-NNN` em `.agent/memory/decisions.json` + `decisions_detail/`
+- [ ] Entrega significativa? → entrada em `.agent/memory/journal/YYYY-WWW.jsonl`
+- [ ] Atualizei `.agent/state.json` (journal_entries_since_distillation)?
+- [ ] Se journal_entries >= 10 → executar `/devflow distill`

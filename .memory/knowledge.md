@@ -1,4 +1,15 @@
-# Domain Knowledge
+# ⚠️ ARQUIVO APOSENTADO — NÃO ATUALIZAR
+
+> **Migrado para DEVFLOW em 2026-04-08.**
+> A memória canônica do projeto agora vive em `.agent/memory/` (formato JSON + Markdown indexado).
+> Este arquivo é preservado como referência histórica (W01–W11). Leia-o, mas **nunca escreva aqui**.
+>
+> **Fonte atual de knowledge:** `.agent/memory/knowledge.json` + `.agent/memory/knowledge_detail/K-NNN.md`
+> **Processo:** use `/devflow` (skill oficial do projeto)
+
+---
+
+# Domain Knowledge — LEGADO
 
 > Static facts, component APIs, and patterns specific to this project.
 > Updated when the project evolves. Not for chronological entries (use journal/).

@@ -11,8 +11,10 @@ Este documento contém as diretrizes e convenções de código que o Gemini Code
 
 ## 📋 Regras de Ouro (Golden Rules)
 
-> Regras completas com exemplos: `.memory/rules.md`
-> Anti-patterns com prevenção: `.memory/anti-patterns.md`
+> **Sistema de memória: DEVFLOW** — skill `/devflow` (processo oficial do projeto)
+> Regras completas (DEVFLOW): `.agent/memory/rules.json` + `rules_detail/` (107 regras R-NNN)
+> Anti-patterns (DEVFLOW): `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` (93 AP-NNN)
+> `.memory/` está **aposentado** desde 2026-04-08 — não referenciar como fonte de regras.
 
 **Top 5 (referência rápida):**
 

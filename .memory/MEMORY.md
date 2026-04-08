@@ -1,4 +1,15 @@
-# Meus Remédios — Project Memory
+# ⚠️ ARQUIVO APOSENTADO — NÃO ATUALIZAR
+
+> **Migrado para DEVFLOW em 2026-04-08.**
+> O índice de memória canônico agora é gerenciado pelo DEVFLOW em `.agent/state.json` e `.agent/memory/`.
+> Este arquivo é preservado como snapshot histórico de W11 (2026-03-30). **Não escreva aqui.**
+>
+> **Estado atual do projeto:** `.agent/state.json`
+> **Processo de desenvolvimento:** `/devflow` (skill oficial — consulte `.agent/DEVFLOW.md`)
+
+---
+
+# Meus Remédios — Project Memory — LEGADO (snapshot W11)
 
 **Last Updated:** 2026-03-30 | **Version:** v3.3.0 | **Fase:** 6 | **Wave 10A/B:** ✅ MERGED | **Wave 11 (Forms & Modals):** ✅ PR #439 AGUARDANDO REVIEW
 

@@ -44,14 +44,17 @@
 | **Gemini/AI code review** | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) ✅ |
 
 **Agent-specific rules:**
-- **Long-term memory**: [`.memory/`](.memory/) (rules, knowledge, anti-patterns, journal)
+- **Long-term memory (DEVFLOW)**: [`.agent/memory/`](.agent/memory/) — rules.json, anti-patterns.json, knowledge.json, decisions.json, journal/
+- **Skill oficial**: `/devflow` — bootstrap obrigatório antes de qualquer tarefa de desenvolvimento
+- **Legado aposentado**: `.memory/` — somente leitura histórica (W01-W11, não atualizar)
 
 ---
 
 ## 🚨 Critical Constraints (Top 8 Quick Reference)
 
-> Complete rules with examples: [`.memory/rules.md`](.memory/rules.md)
-> Anti-patterns table: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
+> Regras completas (DEVFLOW): [`.agent/memory/rules.json`](.agent/memory/rules.json) + `rules_detail/`
+> Anti-patterns (DEVFLOW): [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) + `anti-patterns_detail/`
+> Bootstrap: execute `/devflow` para carregar contexto filtrado por goal (não leia os JSONs diretamente)
 
 | # | Constraint | Rule | Ref |
 |---|-----------|------|-----|
@@ -189,6 +192,33 @@ npm run lint          # ESLint check
 npm run validate:agent # **AGENTS USE THIS**: critical tests + bail-fast + 10min timeout
 npm run validate:quick # Lint + test:changed + 5min timeout (pre-commit)
 npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
+```
+
+---
+
+## 🤖 DEVFLOW — Processo Oficial de Desenvolvimento
+
+> **Este projeto usa DEVFLOW como sistema de memória e workflow.**
+> Todo agente DEVE executar o bootstrap DEVFLOW antes de qualquer tarefa de desenvolvimento.
+
+### Skills obrigatórias
+
+| Comando | Quando usar |
+|---------|-------------|
+| `/devflow` (sem args) | **SEMPRE primeiro** — bootstrap: state + rules + anti-patterns + knowledge |
+| `/devflow status` | Ver estado atual: sprint, contadores de memória, pendências |
+| `/deliver-sprint` | Executar uma entrega estruturada (8 fases, zero-defect) |
+| `/devflow distill` | Comprimir journals quando `journal_entries >= 10` |
+| `/devflow export` | Promover regras ao global_base (requer aprovação humana) |
+| `/check-review` | Revisão técnica de código (complementa DEVFLOW reviewing) |
+
+### Ciclo completo de desenvolvimento
+```
+/devflow           → bootstrap (Assess)
+→ codificar         → seguir C1-C4 DEVFLOW (Execute)
+→ /deliver-sprint   → entrega estruturada (Execute)
+→ DEVFLOW C5        → registrar na memória (Record)
+→ /devflow distill  → quando journal_entries >= 10 (Record)
 ```
 
 ---
@@ -387,18 +417,31 @@ CRON_SECRET=...
 
 ---
 
-## 🧠 Agent Memory System
+## 🧠 Agent Memory System — DEVFLOW
 
-All lessons learned, rules, and domain knowledge are stored in [`.memory/`](.memory/):
+> **DEVFLOW é o sistema oficial de memória e desenvolvimento deste projeto.**
+> Skill: `/devflow` | Definição: [`.agent/DEVFLOW.md`](.agent/DEVFLOW.md)
 
-| File | Contains |
-|------|----------|
-| [`.memory/rules.md`](.memory/rules.md) | Graduated rules (R-NNN) — the "brain" |
-| [`.memory/knowledge.md`](.memory/knowledge.md) | Domain facts, component APIs, patterns |
-| [`.memory/anti-patterns.md`](.memory/anti-patterns.md) | Mistake prevention table (AP-NNN) |
-| [`.memory/journal/`](.memory/journal/) | Chronological session entries (weekly) |
+A memória persiste entre sessões em formato JSON indexado (index-first, detail on-demand):
 
-**Session protocol:** See [`.memory/README.md`](.memory/README.md) for full loading and writing instructions.
+| Arquivo | Contém | Como usar |
+|---------|--------|-----------|
+| [`.agent/memory/rules.json`](.agent/memory/rules.json) | 107 regras R-NNN indexadas | Bootstrap: filtrar por tags relevantes ao goal |
+| [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) | 93 AP-NNN indexados | Bootstrap: filtrar por tags relevantes |
+| [`.agent/memory/knowledge.json`](.agent/memory/knowledge.json) | 70 domain facts K-NNN | Carregar tópicos relevantes ao goal |
+| [`.agent/memory/decisions.json`](.agent/memory/decisions.json) | 25 ADRs arquiteturais | Consultar antes de decisões de design |
+| [`.agent/memory/contracts.json`](.agent/memory/contracts.json) | 16 contratos de interface CON-NNN | Contract gateway antes de modificar APIs |
+| [`.agent/memory/journal/`](.agent/memory/journal/) | Journals JSONL por sprint | Append-only — nunca reescrever |
+| [`.agent/state.json`](.agent/state.json) | Estado atual (sprint, goal, contadores) | Ler primeiro, atualizar por último |
+
+**Ciclo DEVFLOW:**
+```
+/devflow → bootstrap → codificar (C1-C4) → /deliver-sprint → DEVFLOW C5 (memoria) → /devflow distill
+```
+
+**Global base:** 69 regras universais (GR-001..069) + 64 APs (GAP-001..064) exportados para `~/.devflow/global_base/`
+
+> **Legado aposentado:** `.memory/` contém referência histórica W01-W11. Não atualizar. Não usar como fonte de verdade.
 
 ---
 
@@ -522,7 +565,9 @@ Before committing, verify:
 
 ## 🚫 Anti-Patterns
 
-> Complete table with 60+ anti-patterns: [`.memory/anti-patterns.md`](.memory/anti-patterns.md)
+> 93 anti-patterns indexados (DEVFLOW): [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json)
+> Detalhes on-demand: `.agent/memory/anti-patterns_detail/AP-NNN.md`
+> Bootstrap via `/devflow` filtra os APs relevantes para o goal atual automaticamente.
 
 ---
 
@@ -586,7 +631,7 @@ Before proceeding to the next phase, validate:
 | **Tests Pass** | Critical tests pass | `npm run test:critical` |
 | **Build Success** | Production build works | `npm run build` |
 | **No Duplicates** | No duplicate files created | `find src -name "*File*" -type f` |
-| **Memory Updated** | Lessons learned documented | Update `.memory/journal/` |
+| **Memory Updated** | Lessons learned documented | DEVFLOW C5 → `.agent/memory/journal/YYYY-WWW.jsonl` |
 
 ### Mandatory Post-Task Review
 
@@ -603,8 +648,8 @@ After each significant task completion, the agent MUST:
    ```
 
 2. **Update Memory** (if significant):
-   - Add entry to `.memory/journal/[current-week].md`
-   - Follow the format in [`.memory/README.md`](.memory/README.md)
+   - Append entry to `.agent/memory/journal/YYYY-WWW.jsonl` (formato JSONL, append-only)
+   - Seguir protocolo DEVFLOW C5 (rules/APs/ADRs + journal + state.json update)
 
 3. **Report to Orchestrator** (with strict R-060 compliance):
    - Use comprehensive summary with specific file paths and line numbers
@@ -859,7 +904,7 @@ O projeto passou por uma evolucao de UX (navegacao por entidade -> navegacao por
 
 ---
 
-*Última atualização: 2026-03-20*
-*Versão do projeto: 3.3.0*
-*Status: Fase 5 ✅ + Mobile Perf M0-M8 ✅ + HealthHistory P1-P4 ✅*
-*Formato: Routing Table (Wave 9 — Legacy Cleanup concluído) + Mobile Performance Initiative*
+*Última atualização: 2026-04-08*
+*Versão do projeto: 4.0.0*
+*Status: Redesign Waves 1-15 ✅ + DEVFLOW migração completa ✅ + Smart Insights ✅*
+*Processo: DEVFLOW v1.0.0 — skill `/devflow` oficial. Memória em `.agent/memory/`. `.memory/` aposentado.*
