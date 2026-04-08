@@ -2,7 +2,7 @@
 
 > This project uses DEVFLOW. Primary agent context: `.agent/DEVFLOW.md`
 > For DEVFLOW wave execution instructions: see `/Users/coelhotv/SKILLS/devflow/CLAUDE.md`
-> Legacy memory files in `.memory/` remain authoritative during migration.
+> Migration complete (2026-04-08). Primary memory: `.agent/memory/` — all waves 0–7 done.
 
 > Contexto completo do projeto para agentes Claude. Leia este arquivo INTEIRO antes de qualquer tarefa.
 
