@@ -24,11 +24,12 @@
     "status": "planning_complete",
     "acceptance_criteria": [
       "Delivery requirements documented in DELIVERY_REQUIREMENTS_WAVE_17.md",
-      "11 sprints sequenced with dependencies mapped",
+      "12 sprints sequenced with dependencies mapped (16.0-16.12)",
       "All quality gates (C4) specified per sprint",
       "Risks identified with mitigations",
       "ADRs verified (ADR-001, ADR-007) — no new ADRs needed",
-      "Pre-delivery checklist created"
+      "Pre-delivery checklist created",
+      "Sprint 16.12 (Release & Documentation) added — v4.0.0 release with CHANGELOG, tag, docs update"
     ]
   },
   "memory": {
