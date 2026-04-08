@@ -23,9 +23,13 @@ function resolveInitialFlag() {
     return value
   }
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1'
+    // Default to true (redesign enabled) for new users who never set the flag
+    // Existing users who set '0' explicitly will get false
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === null) return true // New user → redesign enabled by default
+    return stored === '1' // Existing user → respect their preference
   } catch {
-    return false
+    return true // Fail-safe: enable redesign on localStorage error
   }
 }
 
