@@ -230,6 +230,7 @@
      ============================================ */
   --font-display: 'Public Sans', system-ui, sans-serif;
   --font-body: 'Lexend', system-ui, sans-serif;
+  --font-family: var(--font-body);
 
   /* Font weights */
   /* REGRA DE ACESSIBILIDADE: Pesos < 400 prejudicam legibilidade para pacientes idosos.
@@ -486,11 +487,11 @@ button {
   box-shadow: var(--gradient-primary-shadow);
   border-radius: var(--radius-button);
   border: none;
-  min-height: 64px;
-  padding: 0 2rem;
+  min-height: var(--space-16);
+  padding: 0 var(--space-8);
   font-family: var(--font-body, system-ui);
   font-weight: 700;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   cursor: pointer;
   transition: all 200ms ease-out;
 }
@@ -516,16 +517,16 @@ button {
 }
 
 .space-y-3 > * + * {
-  margin-top: 1rem;
+  margin-top: var(--space-3);
 }
 .space-y-4 > * + * {
-  margin-top: 1.4rem;
+  margin-top: var(--space-4);
 }
 .space-y-6 > * + * {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 .space-y-8 > * + * {
-  margin-top: 2rem;
+  margin-top: var(--space-8);
 }
 
 /* ============================================
