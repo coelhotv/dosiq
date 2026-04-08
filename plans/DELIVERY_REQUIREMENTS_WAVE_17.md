@@ -219,6 +219,7 @@ Each sprint in Wave 17 has mandatory gates:
 | 16.9 | ✓ | ✓ | ✓ | ✓ | **CRITICAL:** grep for --neon-* |
 | 16.10 | ✓ | ✓ | ✓ | ✓ | Final polish pass |
 | 16.11 | ✓ | ✓ | ✓ | ✓ | Lighthouse + smoke test |
+| 16.12 | ✓ | — | — | — | Release prep (version bump, docs, tag, release notes) |
 
 ### Deliver-Sprint Integration
 
@@ -323,15 +324,377 @@ grep -r "tokens.redesign\|layout.redesign\|components.redesign" src/ --include="
 
 ---
 
+## Sprint 16.12 — Release v4.0.0 & Major Release Documentation
+
+**Objetivo:** Formalizar Wave 17 como v4.0.0 major release com documentação completa
+
+### Pré-condições
+- Sprint 16.11 (Validação Final) completo e aprovado
+- Todos os testes passando (0 failures)
+- Lighthouse validado: Accessibility ≥95, Performance ≥90
+- Smoke test visual completado em todas as views
+
+### 16.12.1 — Atualizar versão do projeto
+
+**Arquivo:** `package.json`
+```json
+{
+  "name": "meus-remedios",
+  "version": "4.0.0",  // ← Mudar de 3.3.0
+  ...
+}
+```
+
+### 16.12.2 — Criar CHANGELOG.md
+
+**Novo arquivo:** `CHANGELOG.md` (raiz do projeto)
+
+**Conteúdo:** Documentar todas as features de v4.0.0:
+
+```markdown
+# Changelog
+
+## [4.0.0] — 2026-04-08 — Santuário Terapêutico Complete ✨
+
+### 🎨 **Major: Design System Overhaul**
+- Santuário Terapêutico design (Waves 0-16) agora padrão em 100% das telas
+- Nova paleta: Health Green (#006a5e) + Clinical Blue (#005db6)
+- Tipografia moderna: Public Sans (display) + Lexend (body)
+- Border radius: mínimo 0.75rem (healthcare-appropriate aesthetics)
+- Shadow system: ambient (Material Design 3) em lugar de glows
+
+### ♿ **Major: WCAG 2.1 AA Accessibility**
+- Font weights ≥400 only (elderly users, geriatric compliance)
+- Todos os ícones pareados com text labels
+- Motion preferences respeitadas
+- Color contrast ratios verificados
+
+### 📱 **Major: Mobile Performance**
+- Bundle: 989kB → 102.47kB gzip (89% reduction)
+- Lazy loading em 13+ views
+- Dashboard queries: 13+ → 1 (cache coalescence)
+- Mobile FCP: ~500ms mais rápido
+
+### 🤖 **New: AI Chatbot Multi-Canal**
+- Groq API com prompt caching
+- Web + Telegram unified assistant
+- Context-aware recomendações
+- Safety guard + hallucination mitigations
+
+### 🎛️ **New: Navigation Redesign**
+- BottomNav (mobile) + Sidebar (desktop)
+- Framer Motion page transitions
+- 6 motion archetypes (entrada, saída, feedback)
+
+### 📊 **Improvements: Dashboard & Insights**
+- Adherence widgets redesigned
+- Smart alerts (adherence, stock, protocols)
+- Cost analysis view
+- Health history com calendar navigation
+
+### 🏥 **Improvements: Clinical Features**
+- Consultation mode (read-only medicines)
+- Clinical PDF reports
+- ANVISA drug database
+- Therapeutic class field
+
+### ✅ **Improvements: Protocol Management**
+- Enhanced treatment wizard
+- Titration schedule support
+- Protocol reminders
+
+### 📦 **Improvements: Stock & Inventory**
+- Four-tier system (CRITICAL/LOW/NORMAL/HIGH)
+- FIFO inventory management
+- Expiration tracking
+- Cost analytics
+
+### 🔧 **Technical: Architecture**
+- Feature-based organization
+- Zod validation everywhere
+- Supabase RLS enforcement
+- Telegram bot sem logic duplication
+
+### 🚀 **Infrastructure**
+- 6/12 serverless functions: DLQ, Gemini, health, notify, share, telegram
+- GitHub Actions + Gemini Code Assist
+
+### 📝 **Breaking Changes**
+- Feature flag infrastructure removed
+- Neon colors removed (`--neon-*`)
+- Legacy views deleted
+- BottomNav replaced (agora BottomNavRedesign)
+
+### 🎓 **Documentation**
+- Complete redesign system docs
+- Mobile performance standards
+- Bot architecture guide
+- Chatbot AI integration guide
+
+---
+```
+
+### 16.12.3 — Atualizar README.md
+
+**Arquivo:** `README.md` (adicionar/atualizar seções):
+
+```markdown
+# Meus Remedios — Medication Management PWA
+
+> **Personal medication management for elderly patients**
+> 
+> Version: **v4.0.0** | Lighthouse: **A11y ≥95** | Performance: **≥90**
+
+## ✨ What's New in v4.0.0?
+
+### Santuário Terapêutico Design
+- New healthcare-focused palette (green #006a5e + blue #005db6)
+- Modern typography, soft edges, ambient shadows
+- 100% of screens redesigned
+
+### WCAG 2.1 AA Accessibility ✅
+- Elderly-friendly fonts (weights ≥400)
+- All icons labeled
+- Motion preferences honored
+
+### Performance (89% Reduction)
+- Main bundle: **102.47kB gzip** (from 989kB)
+- Dashboard load: **<5s on 4G mobile**
+- Lazy loading + code splitting
+
+### New Features
+- 🤖 AI Chatbot (Groq, multi-channel)
+- 💊 Consultation mode
+- 📊 Cost analysis
+- 🏥 ANVISA database + clinical features
+- 📱 Touch-optimized navigation
+
+## Quick Start
+
+```bash
+git clone https://github.com/coelhotv/meus-remedios.git
+cd meus-remedios
+npm install
+npm run dev  # http://localhost:5173
+```
+
+---
+```
+
+### 16.12.4 — Criar docs/v4_0_0_RELEASE.md
+
+**Novo arquivo:** Migration guide para usuários
+
+```markdown
+# v4.0.0 Release Guide
+
+## What's Changed
+
+### Design
+Complete visual overhaul: **Santuário Terapêutico** (healthcare-focused)
+- Before (v3.x): Neon/cyberpunk
+- After (v4.0.0): Clinical, accessible, soft design
+
+### Accessibility
+**WCAG 2.1 AA** compliance:
+- Fonts ≥400 (no thin/light)
+- Icons labeled
+- Motion preferences honored
+
+### Performance
+- Bundle: 989kB → 102.47kB (89% smaller)
+- Dashboard: <5s on 4G mobile
+- Lazy loading on all views
+
+### New Features
+1. **Chatbot IA** — Medicine recommendations
+2. **Consultation Mode** — Read-only medicines
+3. **Cost Analysis** — Expense tracking
+4. **Clinical Features** — ANVISA DB, PDFs
+5. **Navigation** — Bottom nav (mobile) + sidebar (desktop)
+
+## Migration from v3.x
+
+### Data
+✅ All user data **preserved automatically**:
+- Medications, protocols, stock, adherence logs, settings
+
+### UI
+⚠️ Interface looks completely different, but functionality is the same
+
+### Breaking Changes
+None for users. For developers:
+- Feature flag removed (`RedesignContext` deleted)
+- Legacy views deleted
+- CSS tokens restructured
+
+---
+```
+
+### 16.12.5 — Atualizar docs/INDEX.md
+
+**Arquivo:** `docs/INDEX.md` (update version header)
+
+```bash
+# At top of file:
+# Meus Remedios Documentation
+# Version: v4.0.0 (Santuário Terapêutico Complete)
+# Last Updated: 2026-04-08
+
+# Add to table of contents:
+## Release Information
+- [v4.0.0 Release Notes](../CHANGELOG.md#400--2026-04-08)
+- [Migration from v3.x](v4_0_0_RELEASE.md)
+```
+
+### 16.12.6 — Criar git tag e commit
+
+```bash
+# Stage all changes
+git add -A
+
+# Commit release
+git commit -m "chore(release): v4.0.0 — Santuário Terapêutico Complete
+
+- Bump package.json to v4.0.0
+- Create CHANGELOG.md with release notes
+- Update README.md with new features
+- Add v4_0_0_RELEASE.md migration guide
+- Update docs/INDEX.md version reference
+
+Wave 17 Complete:
+  ✅ Redesign rollout (Waves 0-16)
+  ✅ WCAG 2.1 AA accessibility
+  ✅ 89% bundle reduction (mobile perf)
+  ✅ AI Chatbot (Groq multi-channel)
+  ✅ Clinical features (consultations, ANVISA, PDFs)
+  ✅ Feature flag infrastructure removed
+  ✅ Legacy code cleaned up
+
+Breaking Changes:
+  - RedesignContext + useRedesign deleted
+  - Legacy views + neon colors removed
+  - BottomNav replaced by BottomNavRedesign
+
+No Data Migrations Needed
+All user data preserved (medications, protocols, adherence logs)
+
+Lighthouse Scores:
+  - Accessibility: ≥95 (maintained from W15)
+  - Performance: ≥90 (improved from perf optimization)
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
+
+# Create annotated tag
+git tag -a v4.0.0 -m "v4.0.0 — Santuário Terapêutico Complete
+
+Major Release Features:
+✨ New Design Language (Waves 0-16)
+♿ WCAG 2.1 AA Compliance (Wave 16)  
+⚡ 89% Bundle Reduction (Mobile M2)
+🤖 AI Chatbot (Groq, web + Telegram)
+🏥 Clinical Features (ANVISA, consultations, PDFs)
+
+Architecture:
+- Feature-based org (src/features/*)
+- Zod schema-first validation
+- Supabase RLS enforcement
+- Telegram bot service mirror
+
+Breaking Changes:
+- Feature flag removed (RedesignContext deleted)
+- Neon colors removed (--neon-*)
+- Legacy views deleted (replaced by redesign)
+
+Data: All user data preserved, no migrations needed.
+
+Performance:
+- Main bundle: 102.47kB gzip
+- Dashboard load: <5s on 4G
+- Lazy loading + code splitting
+
+Quality:
+- Lighthouse Accessibility: ≥95
+- Lighthouse Performance: ≥90
+- Tests: 100% pass
+- Build: zero warnings
+
+Released: 2026-04-08
+Commit: $(git rev-parse --short HEAD)
+Author: Claude Code DEVFLOW"
+
+# Push to remote
+git push origin main --tags
+```
+
+### 16.12.7 — Criar GitHub Release (opcional)
+
+```bash
+# Via GitHub CLI:
+gh release create v4.0.0 \
+  --title "v4.0.0 — Santuário Terapêutico Complete" \
+  --notes "See CHANGELOG.md for full release notes" \
+  --latest=true
+
+# Via GitHub Web UI:
+# 1. Go to Releases → Create a new release
+# 2. Tag: v4.0.0
+# 3. Title: v4.0.0 — Santuário Terapêutico Complete
+# 4. Body: Copy CHANGELOG.md v4.0.0 section
+# 5. Publish
+```
+
+### 16.12.8 — Validação Pós-Release
+
+```bash
+# Verify production deployment
+curl https://meus-remedios.vercel.app/package.json  # Should show v4.0.0
+
+# Verify Lighthouse scores
+npm run preview  # Then manual Lighthouse audit
+
+# Verify git tag exists
+git tag -l v4.0.0  # Should list the tag
+
+# Verify CHANGELOG updated
+grep "^## \[4.0.0\]" CHANGELOG.md  # Should find v4.0.0 section
+```
+
+### 16.12.9 — Notificar equipe
+
+- [ ] Announcement em email/Slack to team
+- [ ] Update project status in tracking tool
+- [ ] Document in release notes that v4.0.0 is production (stable)
+- [ ] Monitor production (Vercel, error logs) for 2-3 days post-release
+
+---
+
+## Critério de Conclusão Sprint 16.12
+
+- [ ] `package.json` versão bumped para 4.0.0
+- [ ] `CHANGELOG.md` criado com v4.0.0 release notes
+- [ ] `README.md` atualizado com nova versão + features
+- [ ] `docs/v4_0_0_RELEASE.md` criado (migration guide)
+- [ ] `docs/INDEX.md` atualizado com referência v4.0.0
+- [ ] Git tag `v4.0.0` criado e pusheado
+- [ ] GitHub Release criado (ou release notes postadas)
+- [ ] Vercel deployment validado (URL carrega com v4.0.0)
+- [ ] Lighthouse scores validados em produção
+- [ ] Equipe notificada de novo major release
+
+---
+
 ## Summary
 
 **Wave 17 Delivery Process:**
-- **11 sequential sprints**, each deployable
+- **12 sequential sprints** (16.0–16.12):
+  - Sprints 16.0–16.11: Code delivery (cleanup, consolidation, validation)
+  - Sprint 16.12: Release & documentation (v4.0.0 tag, release notes, docs update)
 - **Mandatory order** (dependencies documented)
 - **2-week observation** after soft promotion (16.1)
-- **11 quality gates** (lint/test/build/agent per sprint)
+- **12 quality gates** (lint/test/build/agent per sprint)
 - **Zero contracts broken** (feature flag infrastructure is intentionally deprecated)
 - **Spec reference:** `plans/backlog-redesign/WAVE_17_ROLLOUT_LEGACY_CLEANUP.md`
 - **DEVFLOW integration:** Use `/deliver-sprint` for each sprint (Option 1 recommended)
 
-**Next Step:** Run `/deliver-sprint` or manual implementation starting with Sprint 16.0 (Audit).
+**Next Step:** Run `/deliver-sprint` starting with Sprint 16.0 (Audit) → continuous through 16.12 (Release).
