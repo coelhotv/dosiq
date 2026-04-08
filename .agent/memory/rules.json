@@ -338,5 +338,305 @@
     "review_due": "2026-06-30",
     "status": "active",
     "has_detail": true
+  },
+  {
+    "id": "R-051",
+    "title": "Validate Before Push",
+    "summary": "Run validate:quick during development; run validate (all tests) before creating a PR.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process",
+      "testing"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-060",
+    "title": "No Self-Merge for Code Agents",
+    "summary": "Never allow a code agent to merge its own PR. Code creates PR → review → DevOps merges only after explicit approval.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process",
+      "git"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-061",
+    "title": "Mandatory Review Pause",
+    "summary": "Always pause for review between coding tasks. Never create sequential tasks without validation gates.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-062",
+    "title": "Quality Over Speed",
+    "summary": "One well-reviewed PR is worth more than 3 rushed PRs. Gemini Code Assist review is non-negotiable.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process",
+      "git"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-063",
+    "title": "Process as Protection",
+    "summary": "Never skip workflow steps 'just this once'. Process violations compound into production failures.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-065",
+    "title": "Read Memory Before Coding",
+    "summary": "Every agent MUST read rules.md and anti-patterns.md BEFORE writing any code.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-070",
+    "title": "No setTimeout in act() Blocks",
+    "summary": "Never use setTimeout inside act() to wait for components. Use waitFor(() => expect(...)) instead.",
+    "applies_to": [
+      "react"
+    ],
+    "tags": [
+      "testing",
+      "react"
+    ],
+    "incident_count": 11,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-071",
+    "title": "Mock External Services in Hook Tests",
+    "summary": "Hook tests rendering a Provider that calls Supabase/API MUST mock those services with vi.mock() at module level.",
+    "applies_to": [
+      "react"
+    ],
+    "tags": [
+      "testing",
+      "supabase"
+    ],
+    "incident_count": 3,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-072",
+    "title": "Always Resolve Dangling Promises",
+    "summary": "When a test creates a manually-controlled Promise, ALWAYS resolve it in a finally block to prevent Vitest hangs.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing"
+    ],
+    "incident_count": 2,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-073",
+    "title": "Use Fake Timers for Timer-Dependent Tests",
+    "summary": "Use vi.useFakeTimers() and vi.runAllTimersAsync() for deterministic timer control. Always restore in afterEach.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-074",
+    "title": "Use validate:agent for Agent Sessions",
+    "summary": "Agents MUST use npm run validate:agent (10-min kill switch). Never use validate:quick or validate:full from agent sessions.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-075",
+    "title": "Low-RAM Test Compatibility",
+    "summary": "All tests must pass on 8GB RAM via npm run test:lowram. Split test files >300 lines by scope.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "performance"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-076",
+    "title": "Disable localStorage in Tests",
+    "summary": "Skip localStorage persistence in test env (NODE_ENV === 'test') to save ~200MB memory.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "performance"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-077",
+    "title": "Cancel setInterval in Tests",
+    "summary": "Global setIntervals MUST be cancellable. Export cancelGarbageCollection()/restartGarbageCollection() and call in beforeAll/afterAll.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "performance"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-078",
+    "title": "Aggressive Test Cleanup",
+    "summary": "afterEach must call: clearCache(), vi.clearAllMocks(), vi.clearAllTimers(), optionally global.gc().",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-079",
+    "title": "Split Test Files by Scope",
+    "summary": "Test files >300 lines must be split by feature/hook/component. Each file tests ONE logical unit.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "performance"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-080",
+    "title": "Cache Architecture Optimizations",
+    "summary": "queryCache OOM fixes (2026-02-23): generation counter, TTL eviction, debounced persistence, LRU reset, stable queriesKey, deduplication.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "performance"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
+  },
+  {
+    "id": "R-081",
+    "title": "Test Suite Performance Strategy",
+    "summary": "Choose test command by context: test:fast (dev), test:lowram (8GB), validate:agent (agents — MANDATORY), validate:full (CI).",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "testing",
+      "performance",
+      "process"
+    ],
+    "incident_count": 1,
+    "last_referenced": null,
+    "review_due": "2026-06-30",
+    "status": "active",
+    "has_detail": true
   }
 ]
