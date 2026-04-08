@@ -1,0 +1,43 @@
+{
+  "period": "2026-W12 to 2026-W14",
+  "distilled_at": "2026-04-08",
+  "sessions": 39,
+  "sprints_delivered": [
+    "S12.1 — Console errors fix (modulepreload MIME, schema drift in medicine_logs)",
+    "S12.2 — StockCard UX (hide consumed/system entries)",
+    "Dashboard Perf D0-D3 — 7→5 GETs, 3→1 auth calls, vendor-pdf removed from modulepreload",
+    "P4 — Clinical PDF report (patient demographics, medications, adherence)",
+    "S13.1 — Wave 1: Typography & Icon System (Public Sans + Lexend)",
+    "Wave 6.5 — Dashboard Hoje redesign (calendar, adherence summary, quick actions)",
+    "Wave 7 — Treatments view redesign (7 sprints, 10 critical fixes)",
+    "Wave 8 — Stock Final (FIFO, expiry alerts, refill predictions)",
+    "Wave 9 — Profile/Health Hub (account, health info, emergency, health history calendar)",
+    "Wave 10A — Settings extraction to independent view",
+    "Wave 10B — Profile Hub consolidation + data migration",
+    "Wave 11 — Forms & Modals redesign (Sanctuary Terapêutico aesthetic)",
+    "Wave 12 — Medicines View & Consultation Mode (read-only, prescription management)",
+    "Wave 12 (cont) — Shared Components + Chatbot (Loading, AlertList, Calendar, Gamification, ChatWindow)",
+    "Wave 13 — Landing, Auth & Onboarding redesign",
+    "Wave 14.5 — CRUD Usability Treatments refinements",
+    "Wave 15 — Smart Insights Integration (AI-powered recommendations, health patterns)",
+    "Stock purchases refactor — separate purchases/inventory with dedicated RPCs"
+  ],
+  "rules_added": ["R-137", "R-138", "R-157"],
+  "rules_verified": ["R-020", "R-137"],
+  "aps_triggered": [],
+  "aps_verified": ["AP-B03"],
+  "decisions_made": ["ADR-021", "ADR-022", "ADR-023", "ADR-024", "ADR-025"],
+  "key_observations": [
+    "HAR on localhost inflates query counts 2-3x vs production (StrictMode doubles effects) — measure perf on prod",
+    "Barrel exports break lazy loading: @shared/services/index.js pulls entire dep chain into main bundle (AP-B03)",
+    "CSS var() fallback doesn't work when token defined with wrong value in legacy :root — use hex hardcoded",
+    "Vite 7 base64-encodes manual <link rel=modulepreload> href for JSX files (bug already in AP list)",
+    "Treatments Wave 7 required 7 sprints + 10 critical fixes — more complex than estimated",
+    "Bot diverged silently from web stock logic causing FIFO restoration bugs → ADR-025 + R-157"
+  ],
+  "source_files": [
+    ".agent/memory/journal/2026-W12.jsonl",
+    ".agent/memory/journal/2026-W13.jsonl",
+    ".agent/memory/journal/2026-W14.jsonl"
+  ]
+}
