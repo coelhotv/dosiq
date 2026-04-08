@@ -1,1 +1,232 @@
-[]
+[
+  {
+    "id": "CON-001",
+    "name": "medicineService.getAll()",
+    "file": "src/features/medications/services/medicineService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/dashboard/hooks/useDashboardContext.jsx",
+      "src/features/stock/hooks/useStockData.js",
+      "src/shared/services/cachedServices.js",
+      "src/views/Medicines.jsx",
+      "src/views/Protocols.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-002",
+    "name": "medicineService.create(medicine)",
+    "file": "src/features/medications/services/medicineService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/medications/components/MedicineForm.jsx",
+      "src/views/Medicines.jsx"
+    ],
+    "breaking_change_requires": "ADR + schema migration + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-003",
+    "name": "medicineService.update(id, updates)",
+    "file": "src/features/medications/services/medicineService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/medications/components/MedicineForm.jsx"
+    ],
+    "breaking_change_requires": "ADR + schema migration + consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-004",
+    "name": "stockService.getStockForMedicine(medicineId)",
+    "file": "src/features/stock/services/stockService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/stock/hooks/useStockData.js",
+      "src/features/stock/components/StockForm.jsx",
+      "src/features/reports/services/pdfGeneratorService.js"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-005",
+    "name": "logService.createLog(data)",
+    "file": "src/shared/services/api/logService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/adherence/hooks/useRegisterDose.js",
+      "src/features/stock/services/stockService.js",
+      "src/views/Dashboard.jsx",
+      "server/bot/callbacks/conversational.js"
+    ],
+    "breaking_change_requires": "ADR + migration script + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-006",
+    "name": "useCachedQuery(key, fetcher, options)",
+    "file": "src/shared/hooks/useCachedQuery.js",
+    "type": "react-hook",
+    "consumers": [
+      "src/features/dashboard/hooks/useDashboardContext.jsx",
+      "src/features/medications/hooks/useMedicineList.js",
+      "src/features/stock/hooks/useStockData.js",
+      "src/features/adherence/hooks/useAdherenceData.js"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-007",
+    "name": "parseLocalDate(dateString)",
+    "file": "src/utils/dateUtils.js",
+    "type": "utility-function",
+    "consumers": [
+      "src/features/stock/services/stockService.js",
+      "src/features/adherence/services/adherenceLogic.js",
+      "src/features/reports/services/pdfGeneratorService.js",
+      "src/views/HealthHistory.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates + timezone audit",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-008",
+    "name": "medicineSchema (Zod)",
+    "file": "src/schemas/medicineSchema.js",
+    "type": "zod-schema",
+    "consumers": [
+      "src/features/medications/components/MedicineForm.jsx",
+      "src/features/medications/services/medicineService.js",
+      "src/features/protocols/components/TreatmentWizard.jsx",
+      "src/shared/services/cachedServices.js"
+    ],
+    "breaking_change_requires": "Database migration + ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-009",
+    "name": "useTheme()",
+    "file": "src/shared/hooks/useTheme.js",
+    "type": "react-hook",
+    "consumers": [
+      "src/shared/components/ui/Button.jsx",
+      "src/shared/components/ui/Card.jsx",
+      "src/shared/components/ui/Modal.jsx",
+      "src/views/Dashboard.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer theme updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-010",
+    "name": "protocolService.getAll()",
+    "file": "src/features/protocols/services/protocolService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/protocols/hooks/useTreatmentList.js",
+      "src/features/dashboard/hooks/useDashboardContext.jsx",
+      "src/views/Protocols.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-011",
+    "name": "adherenceService.getAdherence(days)",
+    "file": "src/features/adherence/services/adherenceService.js",
+    "type": "service-method",
+    "consumers": [
+      "src/features/adherence/hooks/useAdherenceData.js",
+      "src/features/dashboard/hooks/useDashboardContext.jsx",
+      "src/views/Adherence.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-012",
+    "name": "cachedMedicineService (SWR wrapper)",
+    "file": "src/shared/services/cachedServices.js",
+    "type": "service-wrapper",
+    "consumers": [
+      "src/views/Medicines.jsx",
+      "src/views/Stock.jsx",
+      "src/features/dashboard/hooks/useDashboardContext.jsx"
+    ],
+    "breaking_change_requires": "ADR + cache invalidation strategy + consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-013",
+    "name": "queryCache.delete(key)",
+    "file": "src/shared/utils/queryCache.js",
+    "type": "utility-function",
+    "consumers": [
+      "src/features/medications/services/medicineService.js",
+      "src/features/stock/services/stockService.js",
+      "src/features/adherence/services/adherenceService.js"
+    ],
+    "breaking_change_requires": "ADR + cache management audit",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-014",
+    "name": "Button component props",
+    "file": "src/shared/components/ui/Button.jsx",
+    "type": "react-component",
+    "consumers": [
+      "src/features/medications/components/MedicineForm.jsx",
+      "src/features/stock/components/StockForm.jsx",
+      "src/shared/components/ui/Modal.jsx",
+      "src/views/Dashboard.jsx"
+    ],
+    "breaking_change_requires": "ADR + all consumer prop updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-015",
+    "name": "logSchema (Zod)",
+    "file": "src/schemas/logSchema.js",
+    "type": "zod-schema",
+    "consumers": [
+      "src/shared/services/api/logService.js",
+      "src/features/adherence/hooks/useRegisterDose.js",
+      "src/features/log/components/LogForm.jsx"
+    ],
+    "breaking_change_requires": "Database migration + ADR + all consumer updates",
+    "status": "stable",
+    "has_detail": true
+  },
+  {
+    "id": "CON-016",
+    "name": "useRedesign()",
+    "file": "src/shared/contexts/RedesignContext.jsx",
+    "type": "react-hook",
+    "consumers": [
+      "src/App.jsx",
+      "src/shared/components/ui/Button.jsx",
+      "src/views/Dashboard.jsx",
+      "src/views/Medicines.jsx"
+    ],
+    "breaking_change_requires": "ADR + feature flag strategy update",
+    "status": "stable",
+    "has_detail": true
+  }
+]
