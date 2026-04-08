@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { BotMessageSquare } from 'lucide-react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
@@ -50,6 +50,7 @@ import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 function ViewSkeleton() {
   return (
     <div
+      role="status"
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -59,15 +60,16 @@ function ViewSkeleton() {
         fontSize: '14px',
       }}
       aria-busy="true"
-      aria-label="Carregando..."
+      aria-label="Carregando view..."
     >
-      Carregando...
+      <span className="sr-only">Carregando...</span>
     </div>
   )
 }
 
 function AppInner() {
   const { isRedesignEnabled, enableRedesign } = useRedesign()
+  const shouldReduceMotion = useReducedMotion()
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState('dashboard')
@@ -312,6 +314,11 @@ function AppInner() {
   return (
     <OnboardingProvider>
       <DashboardProvider>
+        {/* Skip to main content — visível apenas no focus, para navegação por teclado */}
+        <a href="#main-content" className="skip-to-content">
+          Ir para conteúdo principal
+        </a>
+
         <div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
           {/* Sidebar — desktop, apenas usuários com flag ativo */}
           {isAuthenticated && isRedesignEnabled && (
@@ -325,6 +332,7 @@ function AppInner() {
           )}
 
           <main
+            id="main-content"
             className={
               isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'
             }
@@ -334,10 +342,10 @@ function AppInner() {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={currentView}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
+                  transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
                 >
                   {renderCurrentView()}
                 </motion.div>

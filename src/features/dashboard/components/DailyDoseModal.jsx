@@ -16,12 +16,13 @@
  * />
  */
 
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 import Modal from '@shared/components/ui/Modal'
 import Loading from '@shared/components/ui/Loading'
 import EmptyState from '@shared/components/ui/EmptyState'
 import DoseListItem from './DoseListItem'
 import { calculateDosesByDate } from '@utils/adherenceLogic'
+import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 import './DailyDoseModal.css'
 
 /**
@@ -55,58 +56,6 @@ const formatShortDate = (dateStr) => {
 }
 
 /**
- * Hook para gerenciar focus trap no modal
- * @param {boolean} isOpen - Se o modal está aberto
- */
-function useFocusTrap(isOpen) {
-  const modalRef = useRef(null)
-  const previousFocus = useRef(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      // Salvar elemento focado anteriormente
-      previousFocus.current = document.activeElement
-
-      // Focar no primeiro elemento focável após abrir
-      const timer = setTimeout(() => {
-        const focusable = modalRef.current?.querySelector(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        focusable?.focus()
-      }, 100)
-
-      return () => clearTimeout(timer)
-    } else if (previousFocus.current) {
-      // Restaurar foco ao fechar
-      previousFocus.current.focus()
-    }
-  }, [isOpen])
-
-  // Handler para capturar Tab e fazer focus trap
-  const handleKeyDown = (e) => {
-    if (e.key !== 'Tab') return
-
-    const focusableElements = modalRef.current?.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    if (!focusableElements?.length) return
-
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
-
-    if (e.shiftKey && document.activeElement === firstElement) {
-      e.preventDefault()
-      lastElement.focus()
-    } else if (!e.shiftKey && document.activeElement === lastElement) {
-      e.preventDefault()
-      firstElement.focus()
-    }
-  }
-
-  return { modalRef, handleKeyDown }
-}
-
-/**
  * Componente DailyDoseModal
  *
  * @param {Object} props
@@ -131,7 +80,7 @@ export function DailyDoseModal({
   dailySummary = null,
   onRetry,
 }) {
-  const { modalRef, handleKeyDown } = useFocusTrap(isOpen)
+  const { containerRef: modalRef, handleKeyDown } = useFocusTrap(isOpen)
 
   // Calcular doses tomadas, perdidas e agendadas usando a nova função
   const { takenDoses, missedDoses, scheduledDoses } = useMemo(() => {
