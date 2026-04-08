@@ -16,12 +16,12 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_planning",
-    "started_at": "2026-04-08T20:58:00Z",
-    "mode": "planning",
-    "goal": "Wave 17 — Rollout Promotion & Legacy Cleanup (delivery requirements documented)",
-    "goal_type": "feature",
-    "status": "planning_complete",
+    "id": "session_2026W15_wave17_sprint17.0",
+    "started_at": "2026-04-08T21:45:00Z",
+    "mode": "coding",
+    "goal": "Sprint 17.0 — Audit (feature flag infrastructure & neon tokens baseline)",
+    "goal_type": "chore",
+    "status": "coding_in_progress",
     "acceptance_criteria": [
       "Delivery requirements documented in DELIVERY_REQUIREMENTS_WAVE_17.md",
       "12 sprints sequenced with dependencies mapped (17.0-17.12)",
@@ -40,15 +40,15 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T12:00:00Z",
-    "journal_entries_since_distillation": 8
+    "journal_entries_since_distillation": 9
   },
   "evolution": {
     "genes_version": "1.0",
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-08T20:55:12Z",
-    "relevant_rules_loaded_at": "2026-04-08T20:55:12Z"
+    "index_loaded_at": "2026-04-08T21:45:00Z",
+    "relevant_rules_loaded_at": "2026-04-08T21:45:00Z"
   },
   "migration": {
     "status": "complete",
