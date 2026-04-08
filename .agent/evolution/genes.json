@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "genes": {
-    "memory_distillation_threshold": 10,
+    "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 2,
     "require_adr_for_schema_changes": true,
     "require_adr_for_api_breaking_changes": true,
@@ -10,6 +10,6 @@
     "anti_pattern_expiry_weeks": 52,
     "cross_project_export_auto": false
   },
-  "last_modified": "2026-04-08T00:32:56Z",
-  "modified_by": null
+  "last_modified": "2026-04-08T23:59:00Z",
+  "modified_by": "@coelhotv"
 }
