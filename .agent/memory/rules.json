@@ -1787,5 +1787,24 @@
     "review_due": "2026-06-30",
     "status": "active",
     "has_detail": true
+  },
+  {
+    "id": "R-157",
+    "title": "Weekly Audit: Web/Bot Code Drift",
+    "summary": "Auditar semanalmente divergências entre lógica do Telegram bot (server/bot/) e web app (src/features/). Bot deve usar exatamente os mesmos RPCs e services. Drift silencioso causa bugs em produção (ex: FIFO stock restoration).",
+    "applies_to": [
+      "telegram",
+      "supabase"
+    ],
+    "tags": [
+      "telegram",
+      "process",
+      "safety"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-06",
+    "review_due": "2026-07-08",
+    "status": "active",
+    "has_detail": false
   }
 ]

@@ -24,13 +24,13 @@
     "status": "idle"
   },
   "memory": {
-    "rules_count": 106,
+    "rules_count": 107,
     "anti_patterns_count": 93,
     "decisions_count": 25,
     "contracts_count": 16,
     "knowledge_count": 70,
-    "last_distillation": null,
-    "journal_entries_since_distillation": 38
+    "last_distillation": "2026-04-08T12:00:00Z",
+    "journal_entries_since_distillation": 1
   },
   "evolution": {
     "genes_version": "1.0",
@@ -46,6 +46,9 @@
     "waves_done": [0, 1, 2, 3, 4, 5, 6, 7],
     "primary_memory": ".agent/memory/",
     "global_base_exported": true,
-    "global_base_path": "~/.devflow/global_base/"
+    "global_base_path": "~/.devflow/global_base/",
+    "global_base_export_at": "2026-04-08T00:32:56Z",
+    "global_base_rules_count": 69,
+    "global_base_aps_count": 64
   }
 }
