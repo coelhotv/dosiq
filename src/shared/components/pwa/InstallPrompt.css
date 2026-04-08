@@ -409,7 +409,7 @@
 
 .install-prompt {
   background: var(--color-surface-container-lowest, #ffffff);
-  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0,0,0,0.10));
+  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0, 0, 0, 0.1));
   border-radius: var(--radius-card, 1rem) var(--radius-card, 1rem) 0 0;
   border: none;
   backdrop-filter: none;
@@ -479,7 +479,7 @@
 }
 
 .install-prompt__dismiss-btn:hover {
-  background: var(--state-hover, rgba(0,0,0,0.04));
+  background: var(--state-hover, rgba(0, 0, 0, 0.04));
 }
 
 /* Modal de instruções */
@@ -491,7 +491,7 @@
 .install-prompt__modal {
   background: var(--color-surface-container-lowest, #ffffff);
   border-radius: var(--radius-card, 1rem);
-  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0,0,0,0.10));
+  box-shadow: var(--shadow-editorial, 0 4px 16px rgba(0, 0, 0, 0.1));
   border: none;
 }
 
@@ -520,7 +520,7 @@
 }
 
 .install-prompt__modal-close:hover {
-  background: var(--state-hover, rgba(0,0,0,0.04));
+  background: var(--state-hover, rgba(0, 0, 0, 0.04));
   color: var(--color-on-surface, #191c1d);
 }
 

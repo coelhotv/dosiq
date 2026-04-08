@@ -65,7 +65,10 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
 
       <div className="form-row">
         <label className="form-label" htmlFor="name">
-          Nome do Plano <span className="required" aria-hidden="true">*</span>
+          Nome do Plano{' '}
+          <span className="required" aria-hidden="true">
+            *
+          </span>
         </label>
         <input
           type="text"
@@ -81,7 +84,9 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
       </div>
 
       <div className="form-row">
-        <label className="form-label" htmlFor="description">Descrição</label>
+        <label className="form-label" htmlFor="description">
+          Descrição
+        </label>
         <textarea
           id="description"
           name="description"
@@ -93,7 +98,9 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
       </div>
 
       <div className="form-row">
-        <label className="form-label" htmlFor="objective">Objetivo do Tratamento</label>
+        <label className="form-label" htmlFor="objective">
+          Objetivo do Tratamento
+        </label>
         <input
           type="text"
           id="objective"
@@ -106,7 +113,9 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
 
       <div className="treatment-plan-form__visual">
         <div className="form-row">
-          <label className="form-label" htmlFor="emoji">Emoji do Plano</label>
+          <label className="form-label" htmlFor="emoji">
+            Emoji do Plano
+          </label>
           <input
             type="text"
             id="emoji"
@@ -120,7 +129,9 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         </div>
 
         <div className="form-row">
-          <label className="form-label" htmlFor="color">Cor do Badge</label>
+          <label className="form-label" htmlFor="color">
+            Cor do Badge
+          </label>
           <div className="treatment-plan-form__color-row">
             <input
               type="color"

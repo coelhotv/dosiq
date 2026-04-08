@@ -166,7 +166,9 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(screen.getByText('Selecione um medicamento', { selector: 'span' })).toBeInTheDocument()
+        expect(
+          screen.getByText('Selecione um medicamento', { selector: 'span' })
+        ).toBeInTheDocument()
       })
     })
 
@@ -254,7 +256,9 @@ describe('StockForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /Adicionar Estoque/i }))
 
       await waitFor(() => {
-        expect(screen.getByText('Selecione um medicamento', { selector: 'span' })).toBeInTheDocument()
+        expect(
+          screen.getByText('Selecione um medicamento', { selector: 'span' })
+        ).toBeInTheDocument()
       })
 
       // Fix error
@@ -262,7 +266,9 @@ describe('StockForm', () => {
       fireEvent.change(medicineSelect, { target: { value: 'med-1' } })
 
       await waitFor(() => {
-        expect(screen.queryByText('Selecione um medicamento', { selector: 'span' })).not.toBeInTheDocument()
+        expect(
+          screen.queryByText('Selecione um medicamento', { selector: 'span' })
+        ).not.toBeInTheDocument()
       })
     })
   })

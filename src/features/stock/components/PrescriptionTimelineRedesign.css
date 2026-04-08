@@ -153,7 +153,15 @@
   white-space: nowrap;
 }
 
-.prx-days--ativa { color: var(--color-primary, #006a5e); }
-.prx-days--vencendo { color: var(--color-tertiary, #7b5700); }
-.prx-days--vencida { color: var(--color-error, #ba1a1a); }
-.prx-days--finalizada { color: var(--color-outline, #6d7a76); }
+.prx-days--ativa {
+  color: var(--color-primary, #006a5e);
+}
+.prx-days--vencendo {
+  color: var(--color-tertiary, #7b5700);
+}
+.prx-days--vencida {
+  color: var(--color-error, #ba1a1a);
+}
+.prx-days--finalizada {
+  color: var(--color-outline, #6d7a76);
+}

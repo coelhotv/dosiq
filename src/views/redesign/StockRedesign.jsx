@@ -139,9 +139,7 @@ export default function StockRedesign({ initialParams, onClearParams }) {
         id: p.id,
         name: p.name,
         medicineName:
-          p.medicine?.name ||
-          medicines?.find((m) => m.id === p.medicine_id)?.name ||
-          'Medicamento',
+          p.medicine?.name || medicines?.find((m) => m.id === p.medicine_id)?.name || 'Medicamento',
         startDate: p.start_date,
         endDate: p.end_date,
         isContinuous: false, // já filtrado acima
@@ -375,7 +373,10 @@ export default function StockRedesign({ initialParams, onClearParams }) {
       {/* 🆕 Timeline de Prescrições */}
       {prescriptionTimelineData.length > 0 && (
         <section style={{ marginTop: '1rem' }} aria-label="Vigência das prescrições">
-          <PrescriptionTimelineRedesign prescriptions={prescriptionTimelineData} isComplex={isComplex} />
+          <PrescriptionTimelineRedesign
+            prescriptions={prescriptionTimelineData}
+            isComplex={isComplex}
+          />
         </section>
       )}
 

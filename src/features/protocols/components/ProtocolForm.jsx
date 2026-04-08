@@ -325,11 +325,11 @@ export default function ProtocolForm({
             <select
               id="frequency"
               name="frequency"
-            value={formData.frequency}
-            onChange={handleChange}
-            className={errors.frequency ? 'error' : ''}
-            aria-describedby={getFieldDescribedBy('frequency')}
-            aria-invalid={Boolean(errors.frequency)}
+              value={formData.frequency}
+              onChange={handleChange}
+              className={errors.frequency ? 'error' : ''}
+              aria-describedby={getFieldDescribedBy('frequency')}
+              aria-invalid={Boolean(errors.frequency)}
             >
               <option value="">Selecione a frequência</option>
               {FREQUENCIES.map((freq) => (

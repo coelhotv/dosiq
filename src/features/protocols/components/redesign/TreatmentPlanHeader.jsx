@@ -5,7 +5,13 @@
  */
 import { PencilLine, Trash2 } from 'lucide-react'
 
-export default function TreatmentPlanHeader({ group, isCollapsed, onToggle, onEditPlan, onDeletePlan }) {
+export default function TreatmentPlanHeader({
+  group,
+  isCollapsed,
+  onToggle,
+  onEditPlan,
+  onDeletePlan,
+}) {
   // S7.5.5: Detectar se é plano real (não fallback de classe terapêutica)
   const isPlan = group.isPlan ?? group.groupKey?.startsWith('plan:')
 

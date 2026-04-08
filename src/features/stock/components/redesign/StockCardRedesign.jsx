@@ -7,7 +7,15 @@
  */
 
 import { motion } from 'framer-motion'
-import { ScanBarcode, ShoppingBasket, CalendarClock, Pill, PillBottle, ShieldCheck, ShieldAlert } from 'lucide-react'
+import {
+  ScanBarcode,
+  ShoppingBasket,
+  CalendarClock,
+  Pill,
+  PillBottle,
+  ShieldCheck,
+  ShieldAlert,
+} from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import './StockCardRedesign.css'
@@ -33,9 +41,9 @@ function formatLastPurchase(lastPurchase) {
     day: '2-digit',
     month: '2-digit',
   })
-  
+
   let text = `última compra: ${date}`
-  
+
   if (lastPurchase.unitPrice != null) {
     const priceLabel =
       lastPurchase.unitPrice < 0.01
@@ -47,11 +55,11 @@ function formatLastPurchase(lastPurchase) {
   const sources = []
   if (lastPurchase.laboratory) sources.push(lastPurchase.laboratory)
   if (lastPurchase.pharmacy) sources.push(lastPurchase.pharmacy)
-  
+
   if (sources.length > 0) {
     text += ` · ${sources.join(' / ')}`
   }
-  
+
   return text
 }
 
@@ -109,10 +117,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       <div className="stock-card-r__name-row">
         <div className="stock-card-r__medicine">
           <div className="stock-card-r__icon-wrap">
-            <MedicineIcon
-              size={18}
-              aria-label={isSupplement ? 'Suplemento' : 'Medicamento'}
-            />
+            <MedicineIcon size={18} aria-label={isSupplement ? 'Suplemento' : 'Medicamento'} />
           </div>
           <div className="stock-card-r__name-dosage">
             <h3 className="stock-card-r__name">{medicine.name}</h3>
@@ -171,24 +176,31 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       {lastPurchaseText && <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>}
 
       {/* ── Previsão de reabastecimento (Sprint 15.7) ── */}
-      {prediction?.predictedStockoutDate && (prediction.confidence === 'high' || prediction.confidence === 'medium') && (
-        <div className="stock-card-r__prediction">
-          <span className="stock-card-r__prediction-date">
-            Previsão: acaba em ~{parseLocalDate(prediction.predictedStockoutDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-          </span>
-          <span className={`stock-card-r__prediction-confidence stock-card-r__prediction-confidence--${prediction.confidence}`}>
-            {prediction.confidence === 'high' ? (
-              <>
-                <ShieldCheck size={12} aria-hidden="true" /> Alta
-              </>
-            ) : (
-              <>
-                <ShieldAlert size={12} aria-hidden="true" /> Média
-              </>
-            )}
-          </span>
-        </div>
-      )}
+      {prediction?.predictedStockoutDate &&
+        (prediction.confidence === 'high' || prediction.confidence === 'medium') && (
+          <div className="stock-card-r__prediction">
+            <span className="stock-card-r__prediction-date">
+              Previsão: acaba em ~
+              {parseLocalDate(prediction.predictedStockoutDate).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+              })}
+            </span>
+            <span
+              className={`stock-card-r__prediction-confidence stock-card-r__prediction-confidence--${prediction.confidence}`}
+            >
+              {prediction.confidence === 'high' ? (
+                <>
+                  <ShieldCheck size={12} aria-hidden="true" /> Alta
+                </>
+              ) : (
+                <>
+                  <ShieldAlert size={12} aria-hidden="true" /> Média
+                </>
+              )}
+            </span>
+          </div>
+        )}
 
       {/* ── CTA button — simple: apenas urgente/atencao; complex: todos ── */}
       {showCta && (

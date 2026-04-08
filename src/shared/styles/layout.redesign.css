@@ -40,13 +40,13 @@
 }
 
 /* Scoped: quando redesign flag esta ativo */
-[data-redesign='true'] .app-main {
+.app-main {
   padding-bottom: 80px; /* espaço para BottomNavRedesign em mobile */
 }
 
 /* MAIN WITH SIDEBAR — offset para sidebar fixa */
 @media (min-width: 768px) {
-  [data-redesign='true'] .main-with-sidebar {
+  .main-with-sidebar {
     margin-left: 16rem; /* 256px — largura da sidebar */
     padding-bottom: 0; /* sem bottom nav em desktop */
   }
@@ -167,7 +167,7 @@
    Sem [data-redesign="true"], as regras abaixo
    afetariam TODOS os usuarios e quebrariam o design atual.
    ============================================ */
-[data-redesign='true'] .page-header {
+.page-header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -175,7 +175,7 @@
 }
 
 @media (min-width: 768px) {
-  [data-redesign='true'] .page-header {
+  .page-header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -183,7 +183,7 @@
   }
 }
 
-[data-redesign='true'] .page-title {
+.page-title {
   font-family: var(--font-display);
   font-size: var(--text-headline-md);
   font-weight: var(--font-weight-bold);
@@ -192,7 +192,7 @@
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .page-subtitle {
+.page-subtitle {
   font-family: var(--font-body);
   font-size: var(--text-body-lg);
   font-weight: var(--font-weight-regular);
@@ -202,7 +202,7 @@
 /* ============================================
    SECTION HEADER — SCOPED (ja existe no codebase atual)
    ============================================ */
-[data-redesign='true'] .section-header {
+.section-header {
   font-family: var(--font-body);
   font-size: var(--text-label-md);
   font-weight: var(--font-weight-bold);
@@ -951,7 +951,9 @@
   padding: 0.25rem;
   border-radius: var(--radius-sm, 0.5rem);
   z-index: 1;
-  transition: color 150ms, background 150ms;
+  transition:
+    color 150ms,
+    background 150ms;
 }
 
 .protocol-row__delete-btn:hover {
@@ -972,7 +974,9 @@
   align-items: center;
   padding: 0.25rem;
   border-radius: var(--radius-sm, 0.5rem);
-  transition: color 150ms, background 150ms;
+  transition:
+    color 150ms,
+    background 150ms;
 }
 
 .protocol-row-tabular__delete-btn:hover {

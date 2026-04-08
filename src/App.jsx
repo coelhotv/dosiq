@@ -336,7 +336,6 @@ function AppInner() {
             className={
               isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'
             }
-            style={{ paddingBottom: isRedesignEnabled ? undefined : '80px' }}
           >
             {isRedesignEnabled ? (
               <AnimatePresence mode="wait" initial={false}>

@@ -16,7 +16,6 @@ import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import './TreatmentWizard.css'
 
-
 const slideVariants = {
   enter: (direction) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -379,7 +378,9 @@ export default function TreatmentWizard({
                     <select
                       className="wizard__select"
                       value={medicineData.regulatory_category || ''}
-                      onChange={(e) => updateMedicine('regulatory_category', e.target.value || null)}
+                      onChange={(e) =>
+                        updateMedicine('regulatory_category', e.target.value || null)
+                      }
                     >
                       <option value="">Selecione (opcional)</option>
                       {REGULATORY_CATEGORIES.map((category) => (

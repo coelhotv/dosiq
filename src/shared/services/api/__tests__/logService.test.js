@@ -93,7 +93,9 @@ describe('logService', () => {
 
       mocks.stockService.decrease.mockRejectedValueOnce(new Error('Estoque insuficiente'))
 
-      await expect(logService.create(baseLog)).rejects.toThrow('Não foi possível consumir o estoque')
+      await expect(logService.create(baseLog)).rejects.toThrow(
+        'Não foi possível consumir o estoque'
+      )
     })
   })
 
@@ -121,10 +123,14 @@ describe('logService', () => {
 
       const result = await logService.update('log-1', { quantity_taken: 1 })
 
-      expect(mocks.stockService.increase).toHaveBeenCalledWith(oldLog.medicine_id, oldLog.quantity_taken, {
-        medicine_log_id: 'log-1',
-        reason: 'dose_update_restore',
-      })
+      expect(mocks.stockService.increase).toHaveBeenCalledWith(
+        oldLog.medicine_id,
+        oldLog.quantity_taken,
+        {
+          medicine_log_id: 'log-1',
+          reason: 'dose_update_restore',
+        }
+      )
       expect(mocks.stockService.decrease).toHaveBeenCalledWith(updatedLog.medicine_id, 1, 'log-1')
       expect(result).toEqual(updatedLog)
     })
@@ -142,10 +148,14 @@ describe('logService', () => {
 
       await logService.delete('log-1')
 
-      expect(mocks.stockService.increase).toHaveBeenCalledWith(oldLog.medicine_id, oldLog.quantity_taken, {
-        medicine_log_id: 'log-1',
-        reason: 'dose_deleted_restore',
-      })
+      expect(mocks.stockService.increase).toHaveBeenCalledWith(
+        oldLog.medicine_id,
+        oldLog.quantity_taken,
+        {
+          medicine_log_id: 'log-1',
+          reason: 'dose_deleted_restore',
+        }
+      )
     })
   })
 })

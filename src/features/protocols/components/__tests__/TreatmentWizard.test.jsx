@@ -24,7 +24,7 @@ vi.mock('@schemas/medicineSchema', () => ({
   DOSAGE_UNITS: ['mg', 'mcg', 'g'],
   REGULATORY_CATEGORIES: ['Genérico', 'Similar', 'Novo'],
   REGULATORY_CATEGORY_LABELS: {
-    'Genérico': 'Genérico',
+    Genérico: 'Genérico',
     Similar: 'Similar',
     Novo: 'Novo',
   },

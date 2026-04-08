@@ -20,11 +20,14 @@ export const toSentenceCase = (str) => {
  * @returns {string} Texto em Title Case ou string vazia
  */
 export const toTitleCase = (str) => {
-  if (!str) return '';
-  const lower = str.toLowerCase();
-  const exceptions = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'em', 'para', 'por']);
-  return lower.split(/\s+/).map((word, index) => {
-    if (index > 0 && exceptions.has(word)) return word;
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }).join(' ');
+  if (!str) return ''
+  const lower = str.toLowerCase()
+  const exceptions = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'em', 'para', 'por'])
+  return lower
+    .split(/\s+/)
+    .map((word, index) => {
+      if (index > 0 && exceptions.has(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
+    .join(' ')
 }

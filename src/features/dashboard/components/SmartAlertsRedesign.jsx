@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
-import './SmartAlertsRedesign.css';
+import { useState, useMemo } from 'react'
+import { AlertTriangle, AlertCircle, Info, X } from 'lucide-react'
+import './SmartAlertsRedesign.css'
 
 /**
  * SmartAlertsRedesign — Componente redesenhado de alertas inteligentes (Wave 15.1)
@@ -13,55 +13,60 @@ import './SmartAlertsRedesign.css';
  * @param {Boolean} props.isComplex - Se true, exibe até 5 alertas; se false, máximo 2
  * @param {Function} props.onSnooze - Callback ao silenciar: (alertId) => void
  */
-export default function SmartAlertsRedesign({ alerts = [], onAction, isComplex = false, onSnooze }) {
-  const [showAll, setShowAll] = useState(false);
+export default function SmartAlertsRedesign({
+  alerts = [],
+  onAction,
+  isComplex = false,
+  onSnooze,
+}) {
+  const [showAll, setShowAll] = useState(false)
 
   // States
-  const maxVisible = isComplex ? 5 : 2;
+  const maxVisible = isComplex ? 5 : 2
 
   // Memos — ordenação e filtragem
-  const severityOrder = { critical: 0, warning: 1, info: 2 };
+  const severityOrder = { critical: 0, warning: 1, info: 2 }
   const sorted = useMemo(
     () => [...alerts].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]),
     [alerts]
-  );
+  )
   const displayed = useMemo(
     () => (showAll ? sorted : sorted.slice(0, maxVisible)),
     [showAll, sorted, maxVisible]
-  );
-  const hasMore = sorted.length > maxVisible;
+  )
+  const hasMore = sorted.length > maxVisible
 
   // Effects — nenhum necessário neste componente
 
   // Handlers
   const handleSnooze = (alertId) => {
     if (onSnooze) {
-      onSnooze(alertId);
+      onSnooze(alertId)
     }
-  };
+  }
 
   const handleAction = (alert, action) => {
     if (onAction) {
-      onAction(alert, action);
+      onAction(alert, action)
     }
-  };
+  }
 
   // Render
   if (alerts.length === 0) {
-    return null;
+    return null
   }
 
   const getIcon = (severity) => {
     switch (severity) {
       case 'critical':
-        return <AlertTriangle size={16} aria-hidden="true" />;
+        return <AlertTriangle size={16} aria-hidden="true" />
       case 'warning':
-        return <AlertCircle size={16} aria-hidden="true" />;
+        return <AlertCircle size={16} aria-hidden="true" />
       case 'info':
       default:
-        return <Info size={16} aria-hidden="true" />;
+        return <Info size={16} aria-hidden="true" />
     }
-  };
+  }
 
   return (
     <div className="smart-alerts-redesign" id="smart-alerts-list">
@@ -124,5 +129,5 @@ export default function SmartAlertsRedesign({ alerts = [], onAction, isComplex =
         </button>
       )}
     </div>
-  );
+  )
 }
