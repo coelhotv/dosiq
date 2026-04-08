@@ -1,0 +1,7 @@
+{"ts":"2026-03-18","type":"bug_found","summary":"Vite 7 base64-encodes manual <link rel=modulepreload> href for JSX files","rule":"Never add manual modulepreload hints in index.html; let Vite generate them","source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"bug_found","summary":"medicine_logs table missing status and treatment_plan_id columns (schema drift)","source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"observation","summary":"Schema documentation SCHEMAS.md was ~1.5 years out of date; requires regular audits","source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"delivery","sprint":"S12.1","summary":"Fixed 3 console errors: modulepreload MIME issue, schema drift in medicine_logs queries","files":["index.html","src/shared/services/api/logService.js"],"source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"delivery","sprint":"S12.2","summary":"StockCard UX: hide consumed entries and system adjustments in collapsible sections","files":["src/features/stock/components/StockCard.jsx"],"source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"rule_applied","summary":"Use parseLocalDate() instead of new Date() for timezone-aware parsing (R-020)","rule":"R-020","source":"meus-remedios/.memory/journal/2026-W12.md"}
+{"ts":"2026-03-18","type":"observation","summary":"Array.filter() chained 3x should be single Array.reduce() for performance","source":"meus-remedios/.memory/journal/2026-W12.md"}
