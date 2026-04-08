@@ -16,21 +16,21 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.0",
-    "started_at": "2026-04-08T21:45:00Z",
+    "id": "session_2026W15_wave17_sprint17.1",
+    "started_at": "2026-04-08T23:00:00Z",
     "mode": "coding",
-    "goal": "Sprint 17.0 — Audit (feature flag infrastructure & neon tokens baseline)",
-    "goal_type": "chore",
-    "status": "coding_in_progress",
+    "goal": "Sprint 17.1 — Soft Promotion (enable redesign by default)",
+    "goal_type": "feat",
+    "status": "merged",
     "acceptance_criteria": [
-      "Delivery requirements documented in DELIVERY_REQUIREMENTS_WAVE_17.md",
-      "12 sprints sequenced with dependencies mapped (17.0-17.12)",
-      "All quality gates (C4) specified per sprint",
-      "Risks identified with mitigations",
-      "ADRs verified (ADR-001, ADR-007) — no new ADRs needed",
-      "Pre-delivery checklist created",
-      "Sprint 17.12 (Release & Documentation) added — v4.0.0 release with CHANGELOG, tag, docs update",
-      "Sprint numbering corrected: 16.x → 17.x (Wave 17 = sprints 17.0-17.12)"
+      "Modify resolveInitialFlag() to return true by default for new users",
+      "Preserve existing user preferences (localStorage '0' = disabled)",
+      "Implement fail-safe behavior (error → true)",
+      "Keep feature flag infrastructure for rollback capability",
+      "All quality gates pass (lint, test, build, validate:agent)",
+      "Semantic commit with wave/sprint reference",
+      "Non-breaking change to contracts (CON-016)",
+      "PR merged to main, 2-week observation period begins"
     ]
   },
   "memory": {
@@ -40,7 +40,7 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T12:00:00Z",
-    "journal_entries_since_distillation": 9
+    "journal_entries_since_distillation": 14
   },
   "evolution": {
     "genes_version": "1.0",
