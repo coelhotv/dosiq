@@ -1,0 +1,428 @@
+[
+  {
+    "id": "ADR-001",
+    "title": "Gradual Redesign Rollout via Feature Flags",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "architecture",
+      "feature-flags",
+      "rollout",
+      "redesign"
+    ],
+    "context": "Need to develop new 'Santu\u00e1rio Terap\u00eautico' design (Waves 0-12) without impacting regular users until design validation is complete",
+    "decision": "Implement feature flag infrastructure with URL parameter (?redesign=1) and localStorage to toggle between neon/cyberpunk and new design, CSS scoped under [data-redesign='true']",
+    "source_pr": 416,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-002",
+    "title": "Environment-Aware Logger to Reduce Console Noise",
+    "status": "accepted",
+    "date": "2026-03-21",
+    "tags": [
+      "logging",
+      "debugging",
+      "refactor"
+    ],
+    "context": "Dashboard console was noisy with debug logs during development",
+    "decision": "Implement environment-aware logger that suppresses debug output in production",
+    "source_pr": 413,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-003",
+    "title": "Groq Prompt Caching Optimization Strategy",
+    "status": "accepted",
+    "date": "2026-03-20",
+    "tags": [
+      "chatbot",
+      "groq",
+      "optimization",
+      "caching"
+    ],
+    "context": "Chatbot was making redundant Groq API calls across web and Telegram interfaces",
+    "decision": "Implement unified prompt caching layer to optimize Groq API usage",
+    "source_pr": 412,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-004",
+    "title": "Structured Logging for Telegram Bot Debugging",
+    "status": "accepted",
+    "date": "2026-03-20",
+    "tags": [
+      "chatbot",
+      "telegram",
+      "logging",
+      "debugging"
+    ],
+    "context": "Telegram bot debugging was difficult due to lack of structured logs",
+    "decision": "Implement structured JSON logging for Telegram bot to aid debugging and monitoring",
+    "source_pr": 411,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-005",
+    "title": "Add Therapeutic Class Field to Medicines",
+    "status": "accepted",
+    "date": "2026-03-21",
+    "tags": [
+      "medicines",
+      "schema",
+      "feature"
+    ],
+    "context": "Medical professionals requested ability to categorize medicines by therapeutic class for better clinical management",
+    "decision": "Add therapeutic_class field to medicine forms and schema",
+    "source_pr": 415,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-006",
+    "title": "Claude Code GitHub Actions Integration",
+    "status": "accepted",
+    "date": "2026-03-21",
+    "tags": [
+      "ci-cd",
+      "automation",
+      "claude-code"
+    ],
+    "context": "Need automated code review and validation in GitHub Actions",
+    "decision": "Integrate Claude Code GitHub Actions workflow for automated validation",
+    "source_pr": 414,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-007",
+    "title": "Wave-Based Redesign Incremental Delivery",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "redesign",
+      "architecture",
+      "waves"
+    ],
+    "context": "Complete design overhaul required for better UX and modern aesthetics (Santu\u00e1rio Terap\u00eautico concept)",
+    "decision": "Break redesign into 15 waves, each delivered incrementally with feature flags to enable gradual rollout",
+    "source_pr": 416,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-008",
+    "title": "Design System Hierarchy: Tokens \u2192 Typography \u2192 Components \u2192 Layouts",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "design-system",
+      "tokens",
+      "architecture"
+    ],
+    "context": "Need structured design system foundation to ensure consistency across redesign waves",
+    "decision": "Implement four-level design system: W0 (Design Tokens), W1 (Typography/Icons), W2 (Surface/Layout), W3 (Component Primitives)",
+    "source_pr": 417,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-009",
+    "title": "CSS Scoped Design Token System",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "css",
+      "design-tokens",
+      "architecture"
+    ],
+    "context": "Need ability to run both old and new design systems in parallel during migration",
+    "decision": "All redesign tokens scoped under CSS attribute selector [data-redesign='true'], allowing coexistence of old/new styles",
+    "source_pr": 416,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-010",
+    "title": "Gradual Color Palette Transition (Neon \u2192 Health-Focused)",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "design",
+      "colors",
+      "branding"
+    ],
+    "context": "Original cyberpunk/neon aesthetic is not aligned with healthcare mission",
+    "decision": "Transition primary colors: neon \u2192 #006a5e (health green), add clinical blue #005db6, implement Material Design 3 surface hierarchy",
+    "source_pr": 417,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-011",
+    "title": "Typography Stack: Public Sans (Display) + Lexend (Body)",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "typography",
+      "design",
+      "fonts"
+    ],
+    "context": "Need modern, readable typography that works well for medical information display",
+    "decision": "Use Public Sans for displays/headlines and Lexend for body/labels, loaded via CSS @import",
+    "source_pr": 418,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-012",
+    "title": "No Sharp Borders: Minimum 0.75rem Border Radius",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "design",
+      "ui-guidelines"
+    ],
+    "context": "New design aesthetic requires softer, more approachable appearance",
+    "decision": "All UI elements have minimum 0.75rem border radius, card elements use --radius-card: 2rem",
+    "source_pr": 417,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-013",
+    "title": "Shadow System: Ambient Shadows Over Neon Glows",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "design",
+      "shadows",
+      "tokens"
+    ],
+    "context": "Neon glow effects are visually jarring for a healthcare app",
+    "decision": "Replace neon glows with Material Design 3 ambient shadow system (--shadow-sm/md/lg CSS variables)",
+    "source_pr": 417,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-014",
+    "title": "Feature-Based Architecture Over Layer-Based",
+    "status": "accepted",
+    "date": "2026-03-23",
+    "tags": [
+      "architecture",
+      "code-organization"
+    ],
+    "context": "Improving code organization and maintainability",
+    "decision": "Organize code by feature (src/features/*) rather than by layer (src/components, src/hooks, src/utils)",
+    "source_pr": 440,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-015",
+    "title": "Medicines View: Consultation Mode with Read-Only Interface",
+    "status": "accepted",
+    "date": "2026-03-31",
+    "tags": [
+      "medicines",
+      "ux",
+      "consultation"
+    ],
+    "context": "Users need ability to review medicines during consultations without modifying data",
+    "decision": "Implement consultation mode in medicines view with read-only interface and modal presentation",
+    "source_pr": 440,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-016",
+    "title": "Calendar-Driven History Navigation",
+    "status": "accepted",
+    "date": "2026-03-28",
+    "tags": [
+      "ux",
+      "history",
+      "calendar"
+    ],
+    "context": "Users need fast way to navigate historical medication data",
+    "decision": "Implement calendar-driven history view for quick navigation to past entries",
+    "source_pr": 437,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-017",
+    "title": "Profile Hub: Centralized User Data Management",
+    "status": "accepted",
+    "date": "2026-03-28",
+    "tags": [
+      "ux",
+      "profile",
+      "data"
+    ],
+    "context": "User profile was scattered across multiple views",
+    "decision": "Create unified Profile Hub component as central location for user data and account management",
+    "source_pr": 436,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-018",
+    "title": "Stock Levels System: Four-Tier Threshold Model",
+    "status": "accepted",
+    "date": "2026-03-27",
+    "tags": [
+      "stock",
+      "inventory",
+      "schema"
+    ],
+    "context": "Need clear visual indicators for medication stock levels",
+    "decision": "Implement four-tier stock system: CRITICAL (<7 days), LOW (<14 days), NORMAL (<30 days), HIGH (\u226530 days)",
+    "source_pr": 433,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-019",
+    "title": "PDF Report: Clinical Consultation Format",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "reports",
+      "pdf",
+      "feature"
+    ],
+    "context": "Users need to generate clinical reports for consultations",
+    "decision": "Implement PDF generation for clinical consultation reports with standardized format",
+    "source_pr": 421,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-020",
+    "title": "Separate Stock Purchases from Inventory Tracking",
+    "status": "accepted",
+    "date": "2026-04-02",
+    "tags": [
+      "stock",
+      "inventory",
+      "refactor"
+    ],
+    "context": "Stock purchases and inventory tracking had conflicting logic",
+    "decision": "Separate purchases and inventory into distinct domains with independent data models",
+    "source_pr": 443,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-021",
+    "title": "InstallPrompt Always Renders in Sanctuary Mode (Unconditionally)",
+    "status": "accepted",
+    "date": "2026-04-04",
+    "tags": [
+      "pwa",
+      "redesign",
+      "installation"
+    ],
+    "context": "InstallPrompt (PWA install banner) behavior should be independent of redesign flag because new users arrive via landing page and see sanctuary design first",
+    "decision": "Render InstallPrompt with sanctuary colors unconditionally (no redesign selector), hardcoded #006a5e instead of var() fallback",
+    "source_pr": 442,
+    "has_detail": false,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-022",
+    "title": "LLM Responses Forbidden from Using Markdown Syntax",
+    "status": "accepted",
+    "date": "2026-04-04",
+    "tags": [
+      "chatbot",
+      "llm",
+      "ux"
+    ],
+    "context": "Chatbot rendering could support markdown, but simpler approach: constraint the LLM to never generate markdown symbols",
+    "decision": "Forbid LLM from using markdown in prompt instructions; render plain text with <em> tags for emphasis instead of implementing markdown parser",
+    "source_pr": 442,
+    "has_detail": false,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-023",
+    "title": "No Font Weights Below 400 (Elderly Accessibility)",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "typography",
+      "accessibility",
+      "wcag"
+    ],
+    "context": "App serves elderly patients (geriatric use case) who cannot read thin/light fonts",
+    "decision": "Map all light/thin/extralight font weights to 400 (regular). No font weights below 400 ever rendered, ensures WCAG 2.1 AA compliance for readability",
+    "source_pr": 418,
+    "has_detail": false,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-024",
+    "title": "Lucide-React Icons Always Paired with Text Labels",
+    "status": "accepted",
+    "date": "2026-03-24",
+    "tags": [
+      "icons",
+      "accessibility",
+      "ui"
+    ],
+    "context": "Icons alone are insufficient for accessibility; elderly users may not recognize icon meanings",
+    "decision": "Every icon rendered must have accompanying text label explaining its purpose. No standalone icons without aria-label or visible text",
+    "source_pr": 418,
+    "has_detail": false,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-025",
+    "title": "Bot Architecture Must Mirror Web App Services",
+    "status": "accepted",
+    "date": "2026-04-06",
+    "tags": [
+      "telegram",
+      "architecture",
+      "consistency"
+    ],
+    "context": "Telegram bot had silently diverged from web app stock management logic, causing bugs in FIFO restoration",
+    "decision": "Bot must use identical RPCs and services as web app. No client-side logic duplication. Audit weekly for drift between bot and web code paths",
+    "source_pr": 443,
+    "has_detail": false,
+    "supersedes": null,
+    "superseded_by": null
+  }
+]

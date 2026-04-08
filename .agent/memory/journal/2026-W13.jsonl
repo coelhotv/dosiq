@@ -1,0 +1,6 @@
+{"ts":"2026-03-24","type":"delivery","sprint":"S13.1","summary":"Wave 1: Typography & Icon System — Public Sans (headlines) + Lexend (body)","files":["src/shared/styles/tokens.redesign.css"],"source":"meus-remedios/.memory/journal/2026-W13.md"}
+{"ts":"2026-03-24","type":"decision","summary":"No font weights below 400 (elderly patients accessibility, WCAG 2.1 AA)","adr":"ADR-023","source":"meus-remedios/.memory/journal/2026-W13.md"}
+{"ts":"2026-03-24","type":"decision","summary":"All lucide-react icons must be paired with text labels (accessibility requirement)","adr":"ADR-024","source":"meus-remedios/.memory/journal/2026-W13.md"}
+{"ts":"2026-03-24","type":"rule_added","summary":"Light/thin font weights all map to 400 (regular) for geriatric readability","rule":"--font-weight-light = --font-weight-regular","source":"meus-remedios/.memory/journal/2026-W13.md"}
+{"ts":"2026-03-24","type":"delivery","sprint":"S13.2","summary":"lucide-react v1.0.1 installed and icon mapping created for all app features","files":["package.json"],"source":"meus-remedios/.memory/journal/2026-W13.md"}
+{"ts":"2026-03-24","type":"observation","summary":"Icon size standards: 28px for nav, 24px for base components","source":"meus-remedios/.memory/journal/2026-W13.md"}
