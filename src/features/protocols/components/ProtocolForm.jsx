@@ -3,6 +3,7 @@ import Button from '@shared/components/ui/Button'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import TitrationWizard from './TitrationWizard'
 import { FREQUENCIES, FREQUENCY_LABELS, getTodayDateString } from '@schemas/protocolSchema'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './ProtocolForm.css'
 
 export default function ProtocolForm({
@@ -21,6 +22,7 @@ export default function ProtocolForm({
   showTreatmentPlan = true,
 }) {
   const isSimpleMode = mode === 'simple'
+
   const [formData, setFormData] = useState({
     medicine_id:
       protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || '',
@@ -210,6 +212,8 @@ export default function ProtocolForm({
               onChange={handleChange}
               className={errors.medicine_id ? 'error' : ''}
               disabled={!!protocol} // Não permite mudar medicamento ao editar
+              aria-describedby={getFieldDescribedBy('medicine_id')}
+              aria-invalid={Boolean(errors.medicine_id)}
             >
               <option value="">Selecione um medicamento</option>
               {medicines.map((medicine) => (
@@ -222,7 +226,11 @@ export default function ProtocolForm({
               ))}
             </select>
           </ShakeEffect>
-          {errors.medicine_id && <span className="error-message">{errors.medicine_id}</span>}
+          {errors.medicine_id && (
+            <span id="medicine_id-error" className="error-message">
+              {errors.medicine_id}
+            </span>
+          )}
         </div>
       )}
 
@@ -266,9 +274,15 @@ export default function ProtocolForm({
             className={errors.name ? 'error' : ''}
             placeholder="Ex: Paracetamol para dor"
             autoFocus={!protocol}
+            aria-describedby={getFieldDescribedBy('name')}
+            aria-invalid={Boolean(errors.name)}
           />
         </ShakeEffect>
-        {errors.name && <span className="error-message">{errors.name}</span>}
+        {errors.name && (
+          <span id="name-error" className="error-message">
+            {errors.name}
+          </span>
+        )}
       </div>
 
       <div className="form-row">
@@ -283,8 +297,9 @@ export default function ProtocolForm({
             value={formData.start_date}
             onChange={handleChange}
             required
+            aria-describedby="start_date-hint"
           />
-          <small>Quando você começou este tratamento</small>
+          <small id="start_date-hint">Quando você começou este tratamento</small>
         </div>
 
         <div className="form-group">
@@ -310,9 +325,11 @@ export default function ProtocolForm({
             <select
               id="frequency"
               name="frequency"
-              value={formData.frequency}
-              onChange={handleChange}
-              className={errors.frequency ? 'error' : ''}
+            value={formData.frequency}
+            onChange={handleChange}
+            className={errors.frequency ? 'error' : ''}
+            aria-describedby={getFieldDescribedBy('frequency')}
+            aria-invalid={Boolean(errors.frequency)}
             >
               <option value="">Selecione a frequência</option>
               {FREQUENCIES.map((freq) => (
@@ -322,7 +339,11 @@ export default function ProtocolForm({
               ))}
             </select>
           </ShakeEffect>
-          {errors.frequency && <span className="error-message">{errors.frequency}</span>}
+          {errors.frequency && (
+            <span id="frequency-error" className="error-message">
+              {errors.frequency}
+            </span>
+          )}
         </div>
 
         <div className="form-group">
@@ -340,10 +361,14 @@ export default function ProtocolForm({
               placeholder="1"
               min="0.1"
               step="0.1"
+              aria-describedby={getFieldDescribedBy('dosage_per_intake')}
+              aria-invalid={Boolean(errors.dosage_per_intake)}
             />
           </ShakeEffect>
           {errors.dosage_per_intake && (
-            <span className="error-message">{errors.dosage_per_intake}</span>
+            <span id="dosage_per_intake-error" className="error-message">
+              {errors.dosage_per_intake}
+            </span>
           )}
         </div>
       </div>
@@ -429,13 +454,19 @@ export default function ProtocolForm({
               value={timeInput}
               onChange={(e) => setTimeInput(e.target.value)}
               className={errors.time_schedule ? 'error' : ''}
+              aria-describedby={getFieldDescribedBy('time_schedule')}
+              aria-invalid={Boolean(errors.time_schedule)}
             />
             <Button type="button" variant="outline" size="sm" onClick={addTime}>
               ➕ Adicionar
             </Button>
           </div>
         </ShakeEffect>
-        {errors.time_schedule && <span className="error-message">{errors.time_schedule}</span>}
+        {errors.time_schedule && (
+          <span id="time_schedule-error" className="error-message">
+            {errors.time_schedule}
+          </span>
+        )}
 
         {formData.time_schedule.length > 0 && (
           <div className="time-schedule-list">

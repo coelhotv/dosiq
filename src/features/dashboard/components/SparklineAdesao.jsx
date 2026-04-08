@@ -17,7 +17,7 @@
  */
 
 import { useMemo, useCallback, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { debugLog } from '@shared/utils/logger'
 import './SparklineAdesao.css'
@@ -143,6 +143,7 @@ export function SparklineAdesao({
 }) {
   // Estado do tooltip interativo (tap num ponto)
   const [activePoint, setActivePoint] = useState(null)
+  const prefersReducedMotion = useReducedMotion()
 
   // Handler memoizado para evitar recriações
   const handleDayClick = useCallback(
@@ -302,10 +303,6 @@ export function SparklineAdesao({
       </div>
     )
   }
-
-  // Detectar prefers-reduced-motion
-  const prefersReducedMotion =
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   // -------------------------
   // SIZE: inline — minimalista (sem labels, dots, stats, tooltip)

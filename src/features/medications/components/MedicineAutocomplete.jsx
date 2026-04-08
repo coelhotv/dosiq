@@ -17,6 +17,9 @@ export default function MedicineAutocomplete({
   onSelect,
   placeholder,
   disabled = false,
+  inputId,
+  ariaDescribedBy,
+  ariaInvalid = false,
 }) {
   const renderSuggestion = (medicine) => (
     <>
@@ -38,6 +41,9 @@ export default function MedicineAutocomplete({
       placeholder={placeholder || 'Digite o nome do medicamento (mín. 3 caracteres)...'}
       disabled={disabled}
       dropdownId="medicine-dropdown"
+      inputId={inputId}
+      ariaDescribedBy={ariaDescribedBy}
+      ariaInvalid={ariaInvalid}
     />
   )
 }

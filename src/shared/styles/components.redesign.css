@@ -55,7 +55,7 @@
 [data-redesign='true'] .btn-sm {
   padding: 0.5rem 1rem;
   font-size: var(--text-title-sm);
-  min-height: 40px;
+  min-height: 44px;
 }
 
 [data-redesign='true'] .btn-md {

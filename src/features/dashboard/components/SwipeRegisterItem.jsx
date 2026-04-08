@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion'
+import { motion, useMotionValue, useTransform, AnimatePresence, useReducedMotion } from 'framer-motion'
 import PulseEffect from '@shared/components/ui/animations/PulseEffect'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import './SwipeRegisterItem.css'
@@ -26,6 +26,7 @@ export default function SwipeRegisterItem({
   const [isSuccess, setIsSuccess] = useState(false)
   const [showPulse, setShowPulse] = useState(false)
   const x = useMotionValue(0)
+  const prefersReducedMotion = useReducedMotion()
 
   // Mapear o arraste para opacidade e cor do fundo de confirmação
   const background = useTransform(x, [0, 200], ['rgba(0, 229, 255, 0)', 'rgba(0, 229, 255, 0.2)'])
@@ -100,7 +101,7 @@ export default function SwipeRegisterItem({
             animate={{ scale: [0, 1.3, 1] }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{
-              duration: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 0.4,
+              duration: prefersReducedMotion ? 0 : 0.4,
               ease: 'easeOut',
             }}
             aria-hidden="true"

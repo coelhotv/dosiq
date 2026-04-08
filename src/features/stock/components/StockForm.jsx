@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import { formatLocalDate } from '@utils/dateUtils'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './StockForm.css'
 
 export default function StockForm({ medicines, initialValues, onSave, onCancel }) {
@@ -99,6 +100,8 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
           value={formData.medicine_id}
           onChange={handleChange}
           className={errors.medicine_id ? 'error' : ''}
+          aria-describedby={getFieldDescribedBy('medicine_id')}
+          aria-invalid={Boolean(errors.medicine_id)}
         >
           <option value="">Selecione um medicamento</option>
           {medicines.map((medicine) => (
@@ -110,7 +113,11 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             </option>
           ))}
         </select>
-        {errors.medicine_id && <span className="error-message">{errors.medicine_id}</span>}
+        {errors.medicine_id && (
+          <span id="medicine_id-error" className="error-message">
+            {errors.medicine_id}
+          </span>
+        )}
       </div>
 
       <div className="form-row">
@@ -128,8 +135,14 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             placeholder="30"
             min="0.1"
             step="0.1"
+            aria-describedby={getFieldDescribedBy('quantity')}
+            aria-invalid={Boolean(errors.quantity)}
           />
-          {errors.quantity && <span className="error-message">{errors.quantity}</span>}
+          {errors.quantity && (
+            <span id="quantity-error" className="error-message">
+              {errors.quantity}
+            </span>
+          )}
         </div>
 
         <div className="form-group">
@@ -144,8 +157,14 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             placeholder="0.50"
             step="0.001"
             min="0"
+            aria-describedby={getFieldDescribedBy('unit_price')}
+            aria-invalid={Boolean(errors.unit_price)}
           />
-          {errors.unit_price && <span className="error-message">{errors.unit_price}</span>}
+          {errors.unit_price && (
+            <span id="unit_price-error" className="error-message">
+              {errors.unit_price}
+            </span>
+          )}
         </div>
       </div>
 
@@ -170,9 +189,13 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             value={formData.expiration_date}
             onChange={handleChange}
             className={errors.expiration_date ? 'error' : ''}
+            aria-describedby={getFieldDescribedBy('expiration_date')}
+            aria-invalid={Boolean(errors.expiration_date)}
           />
           {errors.expiration_date && (
-            <span className="error-message">{errors.expiration_date}</span>
+            <span id="expiration_date-error" className="error-message">
+              {errors.expiration_date}
+            </span>
           )}
         </div>
       </div>
@@ -201,8 +224,9 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             onChange={handleChange}
             placeholder="Ex: EMS, Medley"
             maxLength={200}
+            aria-describedby="laboratory-hint"
           />
-          <small className="field-hint">
+          <small id="laboratory-hint" className="field-hint">
             Para genéricos, o laboratório pode variar a cada compra.
           </small>
         </div>
@@ -217,8 +241,9 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
             value={effectiveLaboratory}
             disabled
             readOnly
+            aria-describedby="laboratory_fixed-hint"
           />
-          <small className="field-hint">
+          <small id="laboratory_fixed-hint" className="field-hint">
             Para {regulatoryCategory?.toLowerCase()}, usamos o laboratório fixo do medicamento.
           </small>
         </div>

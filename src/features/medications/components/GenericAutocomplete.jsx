@@ -26,6 +26,9 @@ export default function GenericAutocomplete({
   placeholder = 'Digite para buscar...',
   disabled = false,
   dropdownId = 'autocomplete-dropdown',
+  inputId,
+  ariaDescribedBy,
+  ariaInvalid = false,
 }) {
   const [suggestions, setSuggestions] = useState([])
   const [isOpen, setIsOpen] = useState(false)
@@ -169,6 +172,7 @@ export default function GenericAutocomplete({
       <div className="autocomplete-input-container">
         <input
           ref={inputRef}
+          id={inputId}
           type="text"
           value={value}
           onChange={handleInputChange}
@@ -180,6 +184,8 @@ export default function GenericAutocomplete({
           aria-autocomplete="list"
           aria-expanded={isOpen && suggestions.length > 0}
           aria-controls={dropdownId}
+          aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
         />
         {isLoading && <span className="autocomplete-spinner">⟳</span>}
       </div>
