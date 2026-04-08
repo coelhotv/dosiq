@@ -17,6 +17,9 @@ export default function LaboratoryAutocomplete({
   onSelect,
   placeholder,
   disabled = false,
+  inputId,
+  ariaDescribedBy,
+  ariaInvalid = false,
 }) {
   const renderSuggestion = (laboratory) => (
     <div className="autocomplete-item-name">{laboratory.laboratory}</div>
@@ -32,6 +35,9 @@ export default function LaboratoryAutocomplete({
       placeholder={placeholder || 'Digite o nome do laboratório (mín. 3 caracteres)...'}
       disabled={disabled}
       dropdownId="laboratory-dropdown"
+      inputId={inputId}
+      ariaDescribedBy={ariaDescribedBy}
+      ariaInvalid={ariaInvalid}
     />
   )
 }
