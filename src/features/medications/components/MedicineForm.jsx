@@ -11,6 +11,7 @@ import {
   REGULATORY_CATEGORY_LABELS,
 } from '@schemas/medicineSchema'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import './MedicineForm.css'
 
 /**
@@ -210,11 +211,18 @@ export default function MedicineForm({
               if (saveSuccess) setSaveSuccess(false)
             }}
             onSelect={handleMedicineSelect}
+            inputId="name"
             placeholder="Ex: Paracetamol ou digite para buscar..."
             disabled={isSubmitting}
+            ariaDescribedBy={getFieldDescribedBy('name')}
+            ariaInvalid={Boolean(errors.name)}
           />
         </ShakeEffect>
-        {errors.name && <span className="error-message">{errors.name}</span>}
+        {errors.name && (
+          <span id="name-error" className="error-message">
+            {errors.name}
+          </span>
+        )}
       </div>
 
       <div className="form-group">
@@ -235,8 +243,11 @@ export default function MedicineForm({
           placeholder="Ex: Paracetamol"
           disabled={isSubmitting}
           readOnly={formData.active_ingredient && !medicine?.active_ingredient}
+          aria-describedby="active_ingredient-hint"
         />
-        <small className="field-hint">Preenchido automaticamente ao selecionar medicamento</small>
+        <small id="active_ingredient-hint" className="field-hint">
+          Preenchido automaticamente ao selecionar medicamento
+        </small>
       </div>
 
       <div className="form-group">
@@ -269,10 +280,14 @@ export default function MedicineForm({
             if (saveSuccess) setSaveSuccess(false)
           }}
           onSelect={handleLaboratorySelect}
+          inputId="laboratory"
           placeholder="Ex: EMS, Medley ou digite para buscar..."
           disabled={isSubmitting}
+          ariaDescribedBy="laboratory-hint"
         />
-        <small className="field-hint">Opcional. Base ANVISA com 278 laboratórios registrados</small>
+        <small id="laboratory-hint" className="field-hint">
+          Opcional. Base ANVISA com 278 laboratórios registrados
+        </small>
       </div>
 
       <div className="form-group">
@@ -290,6 +305,7 @@ export default function MedicineForm({
           value={formData.regulatory_category || ''}
           onChange={handleChange}
           disabled={isSubmitting}
+          aria-describedby="regulatory_category-hint"
         >
           <option value="">Selecione (opcional)</option>
           {REGULATORY_CATEGORIES.map((category) => (
@@ -298,7 +314,7 @@ export default function MedicineForm({
             </option>
           ))}
         </select>
-        <small className="field-hint">
+        <small id="regulatory_category-hint" className="field-hint">
           Preenchido via ANVISA e usado no fluxo de compras do estoque redesign.
         </small>
       </div>
@@ -322,6 +338,8 @@ export default function MedicineForm({
               placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
               step="0.01"
               disabled={isSubmitting}
+              aria-describedby={getFieldDescribedBy('dosage_per_pill', 'dosage_per_pill-hint')}
+              aria-invalid={Boolean(errors.dosage_per_pill)}
             />
           </ShakeEffect>
           <select
@@ -337,8 +355,14 @@ export default function MedicineForm({
             ))}
           </select>
         </div>
-        <small className="field-hint">Preencha com a dosagem prescrita pelo seu médico</small>
-        {errors.dosage_per_pill && <span className="error-message">{errors.dosage_per_pill}</span>}
+        <small id="dosage_per_pill-hint" className="field-hint">
+          Preencha com a dosagem prescrita pelo seu médico
+        </small>
+        {errors.dosage_per_pill && (
+          <span id="dosage_per_pill-error" className="error-message">
+            {errors.dosage_per_pill}
+          </span>
+        )}
       </div>
 
       {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
