@@ -1,5 +1,5 @@
-import { TrendingUp, Target, Award, Package, Clock, AlertCircle, Lightbulb } from 'lucide-react';
-import './InsightCardRedesign.css';
+import { TrendingUp, Target, Award, Package, Clock, AlertCircle, Lightbulb } from 'lucide-react'
+import './InsightCardRedesign.css'
 
 /**
  * InsightCardRedesign — Cartão redesenhado de insight inteligente (Wave 15.2)
@@ -18,13 +18,13 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
   const handleCTA = () => {
     insight.onAction?.()
     onAction?.(insight)
-  };
+  }
 
   const handleDismiss = () => {
     if (onDismiss) {
-      onDismiss(insight.id);
+      onDismiss(insight.id)
     }
-  };
+  }
 
   /**
    * Retorna o label do badge baseado no tipo de insight
@@ -38,9 +38,9 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
       PROTOCOL_REMINDER: 'Lembrete',
       MISSED_DOSE_ALERT: 'Dose Perdida',
       IMPROVEMENT_OPPORTUNITY: 'Dica',
-    };
-    return labels[type] || 'Info';
-  };
+    }
+    return labels[type] || 'Info'
+  }
 
   /**
    * Retorna o componente Lucide correto baseado no tipo de insight
@@ -54,10 +54,10 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
       PROTOCOL_REMINDER: Clock,
       MISSED_DOSE_ALERT: AlertCircle,
       IMPROVEMENT_OPPORTUNITY: Lightbulb,
-    };
-    const IconComponent = icons[type] || AlertCircle;
-    return <IconComponent size={20} aria-hidden="true" />;
-  };
+    }
+    const IconComponent = icons[type] || AlertCircle
+    return <IconComponent size={20} aria-hidden="true" />
+  }
 
   // Render
   return (
@@ -67,9 +67,7 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
         <div className="insight-card-redesign__icon-wrap">{getIconComponent(insight.type)}</div>
       </div>
 
-      {insight.highlight && (
-        <p className="insight-card-redesign__title">{insight.highlight}</p>
-      )}
+      {insight.highlight && <p className="insight-card-redesign__title">{insight.highlight}</p>}
       <p className="insight-card-redesign__message">
         {insight.text ?? insight.message ?? insight.title}
       </p>
@@ -86,5 +84,5 @@ export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
         </button>
       )}
     </div>
-  );
+  )
 }

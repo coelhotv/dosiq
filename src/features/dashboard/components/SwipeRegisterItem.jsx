@@ -1,5 +1,11 @@
 import React, { useState } from 'react'
-import { motion, useMotionValue, useTransform, AnimatePresence, useReducedMotion } from 'framer-motion'
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  AnimatePresence,
+  useReducedMotion,
+} from 'framer-motion'
 import PulseEffect from '@shared/components/ui/animations/PulseEffect'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import './SwipeRegisterItem.css'

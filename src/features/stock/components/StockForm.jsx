@@ -27,7 +27,8 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
     }
   }
 
-  const selectedMedicine = medicines.find((medicine) => medicine.id === formData.medicine_id) || null
+  const selectedMedicine =
+    medicines.find((medicine) => medicine.id === formData.medicine_id) || null
   const regulatoryCategory = selectedMedicine?.regulatory_category || null
   const shouldAskPurchaseLaboratory = regulatoryCategory === 'Genérico'
   const fixedLaboratory = regulatoryCategory && regulatoryCategory !== 'Genérico'

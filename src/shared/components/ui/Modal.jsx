@@ -44,11 +44,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
   if (!isOpen) return null
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      aria-hidden="false"
-    >
+    <div className="modal-overlay" onClick={onClose} aria-hidden="false">
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
@@ -68,9 +64,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
           >
             <X size={20} aria-hidden="true" />
           </button>
-          {title && (
-            <h2 id="modal-title">{title}</h2>
-          )}
+          {title && <h2 id="modal-title">{title}</h2>}
         </div>
         <div className="modal-body">{children}</div>
       </div>

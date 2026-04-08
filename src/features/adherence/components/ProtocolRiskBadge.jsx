@@ -23,10 +23,8 @@ export default function ProtocolRiskBadge({ risk, isComplex }) {
     return null
   }
 
-  const trendArrow =
-    risk.trend7d > 2 ? '↑' : risk.trend7d < -2 ? '↓' : '→'
-  const trendLabel =
-    risk.trend7d > 2 ? 'melhorando' : risk.trend7d < -2 ? 'piorando' : 'estável'
+  const trendArrow = risk.trend7d > 2 ? '↑' : risk.trend7d < -2 ? '↓' : '→'
+  const trendLabel = risk.trend7d > 2 ? 'melhorando' : risk.trend7d < -2 ? 'piorando' : 'estável'
 
   if (!isComplex) {
     return (
