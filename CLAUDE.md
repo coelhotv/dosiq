@@ -1,6 +1,7 @@
 # CLAUDE.md — Meus Remedios
 
 > This project uses DEVFLOW. Primary agent context: `.agent/DEVFLOW.md`
+> For DEVFLOW wave execution instructions: see `/Users/coelhotv/SKILLS/devflow/CLAUDE.md`
 > Legacy memory files in `.memory/` remain authoritative during migration.
 
 > Contexto completo do projeto para agentes Claude. Leia este arquivo INTEIRO antes de qualquer tarefa.
@@ -58,6 +59,15 @@ server/bot/          # Telegram bot
   utils/             # Helpers
 plans/               # PRDs, specs de execucao, roadmap
 docs/                # Documentacao do projeto
+.agent/              # DEVFLOW agent memory (CANONICA — artifacts and state)
+  DEVFLOW.md         #   - Agent skill definition
+  state.json         #   - Current session state
+  decisions.json     #   - ADRs from Wave 4 (25 items)
+  decisions_detail/  #   - ADR detail files (ADR-001.md through ADR-025.md)
+  memory/
+    journal/         #   - JSONL format journals (recent weeks converted from markdown)
+      2026-W*.jsonl  #   - Weekly journals in JSONL format (one event per line)
+      archive/       #   - Old journals (W08-W11) preserved as markdown
 .memory/             # Memoria de longo prazo do projeto (CANONICA — arquivos persistem entre sessoes)
   rules.md           #   - Regras positivas (R-NNN) — padroes que funcionam neste projeto
   anti-patterns.md   #   - Anti-patterns (AP-NNN) — erros a evitar, licoes aprendidas
