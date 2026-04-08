@@ -18,6 +18,7 @@ build/
 target/
 ts-config.json
 tsconfig.tsbuildinfo
+node_modules/
 
 # Environment variables
 .env
