@@ -21,7 +21,7 @@
     "mode": "idle",
     "goal": "Wave 16 Accessibility & Polish — PHASE 1 Complete, PHASE 2 Pending",
     "goal_type": "feature",
-    "status": "phase_1_complete"
+    "status": "phase_1_merged"
   },
   "memory": {
     "rules_count": 107,
@@ -30,7 +30,7 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T12:00:00Z",
-    "journal_entries_since_distillation": 3
+    "journal_entries_since_distillation": 5
   },
   "evolution": {
     "genes_version": "1.0",
