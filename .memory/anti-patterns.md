@@ -1,4 +1,15 @@
-# Anti-Patterns (Mistake Prevention)
+# ⚠️ ARQUIVO APOSENTADO — NÃO ATUALIZAR
+
+> **Migrado para DEVFLOW em 2026-04-08.**
+> A memória canônica do projeto agora vive em `.agent/memory/` (formato JSON + Markdown indexado).
+> Este arquivo é preservado como referência histórica (W01–W11). Leia-o, mas **nunca escreva aqui**.
+>
+> **Fonte atual de anti-patterns:** `.agent/memory/anti-patterns.json` + `.agent/memory/anti-patterns_detail/AP-NNN.md`
+> **Processo:** use `/devflow` (skill oficial do projeto)
+
+---
+
+# Anti-Patterns (Mistake Prevention) — LEGADO
 
 > Every row represents a mistake that happened in production or during development.
 > Cross-referenced with [rules.md](rules.md) for the positive "what to do" guidance.

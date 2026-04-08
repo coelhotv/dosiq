@@ -1,4 +1,15 @@
-# Project Rules (Graduated from Experience)
+# ⚠️ ARQUIVO APOSENTADO — NÃO ATUALIZAR
+
+> **Migrado para DEVFLOW em 2026-04-08.**
+> A memória canônica do projeto agora vive em `.agent/memory/` (formato JSON + Markdown indexado).
+> Este arquivo é preservado como referência histórica (W01–W11). Leia-o, mas **nunca escreva aqui**.
+>
+> **Fonte atual de regras:** `.agent/memory/rules.json` + `.agent/memory/rules_detail/R-NNN.md`
+> **Processo:** use `/devflow` (skill oficial do projeto)
+
+---
+
+# Project Rules (Graduated from Experience) — LEGADO
 
 > Source of truth for all project-specific rules learned through development.
 > Do NOT duplicate these in AGENTS.md, .gemini/styleguide.md, or other files — link here.

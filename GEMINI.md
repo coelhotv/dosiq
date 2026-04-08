@@ -18,7 +18,7 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 - `src/views/`: Wrappers de páginas (Dashboard, Medicines, etc.). Carregados via `React.lazy`.
 - `server/bot/`: Código do Bot do Telegram.
 - `api/`: Serverless Functions da Vercel (limite de 12 funções no plano Hobby).
-- `.memory/`: **Memória de Longo Prazo** (Regras `rules.md`, Anti-patterns `anti-patterns.md`).
+- `.agent/memory/`: **Memória de Longo Prazo — DEVFLOW** (rules.json, anti-patterns.json, knowledge.json, decisions.json, journal/ JSONL).
 
 ## 🛠️ Comandos Principais
 - `npm run dev`: Servidor de desenvolvimento.
@@ -37,7 +37,7 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 - **Arquivos:** PascalCase para Componentes, camelCase para o restante.
 
 ### Regras Críticas (R-NNN)
-1. **Sempre ler** `.memory/rules.md` e `.memory/anti-patterns.md` antes de codificar.
+1. **Sempre executar `/devflow`** (bootstrap) antes de codificar — carrega rules.json + anti-patterns.json filtrados por goal.
 2. **Datas:** NUNCA use `new Date('YYYY-MM-DD')`. Use `parseLocalDate()` de `@utils/dateUtils`.
 3. **Validar:** SEMPRE use `safeParse()` do Zod nos services antes de operações no Supabase.
 4. **Cache:** Use `useCachedQuery` e `cachedServices` para leitura; invalide após mutations.
@@ -54,11 +54,20 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 - **Vitest:** Use `vi.mock()` no topo do arquivo. Sempre limpe mocks em `afterEach`.
 - **Kill Switch:** O comando `validate:agent` garante que a aplicação está estável em < 10min.
 
-## 🤖 Memória de Longo Prazo
-Ao final de cada tarefa bem-sucedida ou correção de bug não trivial, **VOCÊ DEVE** atualizar:
-- `.memory/rules.md`: Novos padrões ou regras positivas descobertas.
-- `.memory/anti-patterns.md`: Erros cometidos ou armadilhas identificadas.
-- `.memory/journal/YYYY-WWW.md`: Registro da entrega realizada.
+## 🤖 Memória de Longo Prazo — DEVFLOW
+
+> **Este projeto usa DEVFLOW como sistema oficial de memória e desenvolvimento.**
+> Skill: `/devflow` | Definição: `.agent/DEVFLOW.md`
+
+Ao final de cada tarefa, execute o protocolo **DEVFLOW C5**:
+- Novo bug corrigido → `AP-NNN` em `.agent/memory/anti-patterns.json` + `anti-patterns_detail/`
+- Novo padrão descoberto → `R-NNN` em `.agent/memory/rules.json` + `rules_detail/`
+- Entrega realizada → entrada em `.agent/memory/journal/YYYY-WWW.jsonl` (JSONL, append-only)
+- Atualizar `.agent/state.json` (incrementar `journal_entries_since_distillation`)
+- Se `journal_entries >= 10` → executar `/devflow distill`
+
+> ⚠️ `.memory/` está **aposentado** desde 2026-04-08. Não escreva nele.
+> Fontes canônicas: `.agent/memory/rules.json` (107 regras) + `.agent/memory/anti-patterns.json` (93 APs)
 
 ---
-*Última atualização: 2026-04-02*
+*Última atualização: 2026-04-08*
