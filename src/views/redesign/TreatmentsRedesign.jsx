@@ -22,7 +22,12 @@ import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { protocolService } from '@shared/services'
 import './TreatmentsRedesign.css'
 
-export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate, initialMedicineId, onClearInitialMedicine }) {
+export default function TreatmentsRedesign({
+  onNavigateToProtocol,
+  onNavigate,
+  initialMedicineId,
+  onClearInitialMedicine,
+}) {
   // Estados
   const [activeTab, setActiveTab] = useState('ativos')
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -58,7 +63,8 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate, i
   // Auto-abrir wizard com medicamento pré-selecionado (fluxo: novo medicamento → novo tratamento)
   useEffect(() => {
     if (!initialMedicineId) return
-    medicineService.getById(initialMedicineId)
+    medicineService
+      .getById(initialMedicineId)
       .then((medicine) => {
         if (medicine) {
           setWizardMedicine(medicine)
@@ -236,7 +242,6 @@ export default function TreatmentsRedesign({ onNavigateToProtocol, onNavigate, i
           onViewAllMedicines={onNavigate ? () => onNavigate('medicines') : undefined}
         />
       </div>
-
 
       {/* Tab bar — abaixo do título, alinhada à esquerda */}
       <TreatmentTabBar

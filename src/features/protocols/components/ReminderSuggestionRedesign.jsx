@@ -18,7 +18,7 @@ export default function ReminderSuggestionRedesign({
   protocolId,
   protocolName,
   onAccept,
-  onDismiss
+  onDismiss,
 }) {
   return (
     <div className="reminder-suggestion-redesign" role="alert">

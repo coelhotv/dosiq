@@ -146,7 +146,11 @@ export const logService = {
       await stockService.decrease(validatedLog.medicine_id, validatedLog.quantity_taken, data.id)
     } catch (stockError) {
       console.error('Erro ao decrementar estoque:', stockError)
-      await supabase.from('medicine_logs').delete().eq('id', data.id).eq('user_id', await getUserId())
+      await supabase
+        .from('medicine_logs')
+        .delete()
+        .eq('id', data.id)
+        .eq('user_id', await getUserId())
       throw new Error('Não foi possível consumir o estoque: ' + stockError.message)
     }
 

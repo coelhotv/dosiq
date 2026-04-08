@@ -37,7 +37,7 @@ const STATUS_LABELS = {
 }
 
 export default function PrescriptionTimelineRedesign({ prescriptions, isComplex }) {
-  const timedPrescriptions = prescriptions.filter(p => p.endDate != null && !p.isContinuous)
+  const timedPrescriptions = prescriptions.filter((p) => p.endDate != null && !p.isContinuous)
   if (timedPrescriptions.length === 0) return null
 
   return (
@@ -48,8 +48,8 @@ export default function PrescriptionTimelineRedesign({ prescriptions, isComplex 
 
       {isComplex && (
         <div className="prescription-timeline-redesign__summary">
-          {['ativa', 'vencendo', 'vencida'].map(s => {
-            const count = timedPrescriptions.filter(p => p.status === s).length
+          {['ativa', 'vencendo', 'vencida'].map((s) => {
+            const count = timedPrescriptions.filter((p) => p.status === s).length
             return count > 0 ? (
               <span key={s} className={`prx-status prx-status--${s}`}>
                 {count} {STATUS_LABELS[s].toLowerCase()}
@@ -61,21 +61,24 @@ export default function PrescriptionTimelineRedesign({ prescriptions, isComplex 
       )}
 
       <div className="prescription-timeline-redesign__list">
-        {timedPrescriptions.map(p => {
+        {timedPrescriptions.map((p) => {
           const progress = deriveProgress(p.startDate, p.endDate)
           const daysLeft = getDaysRemaining(p.endDate)
-          const daysLabel = daysLeft == null
-            ? ''
-            : daysLeft < 0
-              ? 'Vencida'
-              : daysLeft === 0
-                ? 'Vence hoje'
-                : `${daysLeft} dia${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}`
+          const daysLabel =
+            daysLeft == null
+              ? ''
+              : daysLeft < 0
+                ? 'Vencida'
+                : daysLeft === 0
+                  ? 'Vence hoje'
+                  : `${daysLeft} dia${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}`
           return (
             <div key={p.id} className="prescription-timeline-redesign__item">
               <div className="prescription-timeline-redesign__item-header">
                 <span className="prescription-timeline-redesign__name">{p.medicineName}</span>
-                <span className={`prx-status prx-status--${p.status}`}>{STATUS_LABELS[p.status]}</span>
+                <span className={`prx-status prx-status--${p.status}`}>
+                  {STATUS_LABELS[p.status]}
+                </span>
               </div>
               <div className="prescription-timeline-redesign__bar-track">
                 <div

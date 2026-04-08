@@ -35,7 +35,9 @@
   padding: 0.375rem;
   border-radius: var(--radius-md, 0.5rem);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .auth-close-btn:hover {
@@ -104,7 +106,9 @@
   padding: 0.875rem 1rem;
   color: var(--color-on-surface, #191c1d);
   min-height: 56px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
   outline: none;
   width: 100%;
 }
@@ -160,12 +164,18 @@
   font-family: var(--font-body, 'Lexend', sans-serif);
   font-size: var(--text-body-lg, 1rem);
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary), black 10%));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    color-mix(in srgb, var(--color-primary), black 10%)
+  );
   color: var(--color-on-primary, #ffffff);
   border: none;
   border-radius: var(--radius-full, 999px);
   cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
   box-shadow: 0 2px 12px rgba(0, 106, 94, 0.2);
 }
 

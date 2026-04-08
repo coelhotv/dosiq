@@ -79,7 +79,10 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
                 <span className="entrada-historico__date">{formatDate(entry.purchase_date)}</span>
                 <span className="entrada-historico__medicine">{entry.medicineName}</span>
                 {(entry.laboratory || entry.pharmacy) && (
-                  <span className="entrada-historico__origin" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                  <span
+                    className="entrada-historico__origin"
+                    style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
+                  >
                     {[entry.laboratory, entry.pharmacy].filter(Boolean).join(' • ')}
                   </span>
                 )}

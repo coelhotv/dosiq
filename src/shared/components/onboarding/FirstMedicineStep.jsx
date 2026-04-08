@@ -29,7 +29,8 @@ export default function FirstMedicineStep() {
           </div>
           <h3 className="step-title">Medicamento cadastrado!</h3>
           <p className="step-description">
-            <strong>{savedMedicine.name}</strong> foi salvo com sucesso. Clique em Próximo para continuar.
+            <strong>{savedMedicine.name}</strong> foi salvo com sucesso. Clique em Próximo para
+            continuar.
           </p>
         </div>
       </div>

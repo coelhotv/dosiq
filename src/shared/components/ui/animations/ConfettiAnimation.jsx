@@ -21,7 +21,12 @@ import './Animations.css'
  * @param {string} props.type - Tipo: 'burst' (central) ou 'rain' (caindo)
  * @param {string[]} props.colors - Paleta de cores das partículas (default: sanctuary)
  */
-function ConfettiAnimation({ trigger = false, onComplete, type = 'burst', colors = SANCTUARY_COLORS }) {
+function ConfettiAnimation({
+  trigger = false,
+  onComplete,
+  type = 'burst',
+  colors = SANCTUARY_COLORS,
+}) {
   const [particles, setParticles] = useState([])
   const { trigger: haptic } = useHapticFeedback()
 

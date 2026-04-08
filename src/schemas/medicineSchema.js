@@ -36,18 +36,18 @@ export const REGULATORY_CATEGORIES = [
   'Específico',
   'Fitoterápico',
   'Dinamizado',
-  'Outros'
+  'Outros',
 ]
 
 export const REGULATORY_CATEGORY_LABELS = {
-  'Genérico': 'Genérico',
-  'Similar': 'Similar',
-  'Novo': 'Novo',
-  'Biológico': 'Biológico',
-  'Específico': 'Específico',
-  'Fitoterápico': 'Fitoterápico',
-  'Dinamizado': 'Dinamizado',
-  'Outros': 'Outros'
+  Genérico: 'Genérico',
+  Similar: 'Similar',
+  Novo: 'Novo',
+  Biológico: 'Biológico',
+  Específico: 'Específico',
+  Fitoterápico: 'Fitoterápico',
+  Dinamizado: 'Dinamizado',
+  Outros: 'Outros',
 }
 
 /**
