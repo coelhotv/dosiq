@@ -218,8 +218,7 @@ export default function DashboardRedesign({ onNavigate }) {
 
   // ── Sugestão de lembrete calculada (sem setState em effect) ──
   // isSuggestionDismissed e analyzeReminderTiming são funções estáveis importadas (não reativas)
-
-  const reminderSuggestionData = useMemo(() => {
+  const reminderSuggestionData = (() => {
     if (!protocols?.length || !logs?.length) return null
     for (const protocol of protocols) {
       if (!protocol.active) continue
@@ -235,7 +234,7 @@ export default function DashboardRedesign({ onNavigate }) {
       }
     }
     return null
-  }, [protocols, logs, dismissedSuggestionId])
+  })()
 
   // ── Handlers ──
   // Registra dose DIRETAMENTE sem modal (1-click experience)
