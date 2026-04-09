@@ -41,7 +41,7 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: linear-gradient(135deg, var(--accent-danger), var(--neon-pink));
+  background: linear-gradient(135deg, var(--color-error), var(--color-primary));
   color: var(--text-primary);
   font-size: 10px;
   font-weight: 700;
@@ -74,12 +74,12 @@
 }
 
 .stock-alerts__urgent {
-  color: var(--neon-pink);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .stock-alerts__warning {
-  color: var(--accent-warning);
+  color: var(--color-warning);
   font-weight: 600;
 }
 
@@ -112,12 +112,12 @@
 }
 
 .stock-alerts__item--out {
-  border-left-color: var(--neon-red);
+  border-left-color: var(--color-error);
   background: rgba(239, 68, 68, 0.08);
 }
 
 .stock-alerts__item--low {
-  border-left-color: var(--accent-warning);
+  border-left-color: var(--color-warning);
   background: rgba(245, 158, 11, 0.08);
 }
 
@@ -135,12 +135,12 @@
 
 .stock-alerts__status--out {
   background: rgba(239, 68, 68, 0.2);
-  color: var(--neon-pink);
+  color: var(--color-primary);
 }
 
 .stock-alerts__status--low {
   background: rgba(245, 158, 11, 0.2);
-  color: var(--accent-warning);
+  color: var(--color-warning);
 }
 
 .stock-alerts__item-info {
@@ -167,7 +167,7 @@
 
 .stock-alerts__add-btn {
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-info));
   color: var(--bg-primary);
   border: none;
   padding: 6px 12px;

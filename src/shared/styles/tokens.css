@@ -6,12 +6,12 @@
   --bg-glass: rgba(18, 18, 18, 0.8);
 
   /* Neon Color Palette - Reference Match */
-  --neon-cyan: #00e5ff;
-  --neon-blue: #0072ff;
-  --neon-magenta: #d500f9;
-  --neon-purple: #aa00ff;
-  --neon-green: #00ff88;
-  --neon-pink: #ff006e;
+  --color-secondary: #00e5ff;
+  --color-info: #0072ff;
+  --color-primary: #d500f9;
+  --color-primary: #aa00ff;
+  --color-success: #00ff88;
+  --color-primary: #ff006e;
 
   /* Text Colors */
   --text-primary: #ffffff;
@@ -19,11 +19,11 @@
   --text-tertiary: #7a7a8c;
 
   /* Accent Colors */
-  --accent-primary: var(--neon-cyan);
-  --accent-secondary: var(--neon-magenta);
-  --accent-success: var(--neon-green);
-  --accent-warning: #ffaa00;
-  --accent-error: var(--neon-pink);
+  --color-primary: var(--color-secondary);
+  --color-secondary: var(--color-primary);
+  --color-success: var(--color-success);
+  --color-warning: #ffaa00;
+  --color-error: var(--color-primary);
 
   /* Borders & Shadows */
   --border: #e5e7eb; /* Visible in light theme */

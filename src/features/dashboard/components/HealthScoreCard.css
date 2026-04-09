@@ -19,7 +19,7 @@
 
 .health-score-card--clickable:hover {
   transform: translateY(-1px); /* Mais sutil */
-  border-color: var(--neon-cyan);
+  border-color: var(--color-secondary);
   box-shadow: var(--glow-hover-primary), var(--shadow-card-hover);
   transition: var(--transition-hover), var(--transition-glow);
 }
@@ -55,7 +55,7 @@
 
 .health-score-card__progress {
   fill: none;
-  stroke: var(--neon-cyan);
+  stroke: var(--color-secondary);
   stroke-width: 5; /* Era 6 */
   stroke-linecap: round;
   transition: stroke-dashoffset var(--transition-slow);
@@ -97,11 +97,11 @@
 }
 
 .health-score-card__trend--up {
-  color: var(--neon-green);
+  color: var(--color-success);
 }
 
 .health-score-card__trend--down {
-  color: var(--neon-pink);
+  color: var(--color-primary);
 }
 
 .health-score-card__status {
@@ -124,7 +124,7 @@
 .health-score-card__streak-value {
   font-size: 11px; /* Muito menor: era 2xl (24px) */
   font-weight: 600;
-  color: var(--neon-magenta);
+  color: var(--color-primary);
 }
 
 .health-score-card__streak-label {

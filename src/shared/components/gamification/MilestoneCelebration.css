@@ -49,7 +49,7 @@
 }
 
 .milestone-button {
-  background: var(--accent-primary);
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 12px 32px;
@@ -64,7 +64,7 @@
 
 .milestone-button:hover {
   transform: scale(1.05);
-  background: var(--accent-primary);
+  background: var(--color-primary);
 }
 
 .milestone-button:active {

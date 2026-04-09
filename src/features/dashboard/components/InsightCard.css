@@ -20,7 +20,7 @@
 .insight-card:hover {
   box-shadow: var(--shadow-card-hover), var(--glow-hover);
   transform: translateY(-2px);
-  border-color: var(--neon-cyan);
+  border-color: var(--color-secondary);
 }
 
 .insight-card__icon {
@@ -41,7 +41,7 @@
 }
 
 .insight-card__highlight {
-  color: var(--neon-cyan);
+  color: var(--color-secondary);
   font-weight: 600;
   text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
@@ -63,9 +63,9 @@
 }
 
 .insight-card__action:hover {
-  background: var(--neon-cyan);
+  background: var(--color-secondary);
   color: var(--text-on-primary);
-  border-color: var(--neon-cyan);
+  border-color: var(--color-secondary);
   box-shadow: var(--shadow-button), var(--glow-hover);
 }
 

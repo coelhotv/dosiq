@@ -18,7 +18,7 @@
   justify-content: flex-start;
   padding-left: var(--space-6);
   gap: var(--space-3);
-  color: var(--neon-cyan);
+  color: var(--color-secondary);
   font-weight: 800;
   font-size: var(--font-size-xs);
   letter-spacing: 0.1em;
@@ -40,7 +40,7 @@
   gap: var(--space-4);
   cursor: grab;
   touch-action: pan-y;
-  border-left: var(--border-width-subtle) solid var(--neon-blue);
+  border-left: var(--border-width-subtle) solid var(--color-info);
 }
 
 .swipe-item-card:active {
@@ -81,7 +81,7 @@
 .swipe-item-card__time {
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--neon-cyan);
+  color: var(--color-secondary);
   background: var(--bg-glass);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
