@@ -465,34 +465,34 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-/* Neon glow effects */
+/* Glow effects — Using Sanctuary color tokens */
 .glow-cyan {
-  box-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-hover-secondary);
 }
 
 .glow-magenta {
-  box-shadow: var(--glow-magenta);
+  box-shadow: var(--glow-hover-primary);
 }
 
 .glow-pink {
-  box-shadow: var(--glow-pink);
+  box-shadow: var(--glow-hover-primary);
 }
 
 .glow-success {
-  box-shadow: var(--glow-success);
+  box-shadow: var(--glow-hover-success);
 }
 
 .glow-warning {
-  box-shadow: var(--glow-warning);
+  box-shadow: var(--glow-hover-warning);
 }
 
 .glow-error {
-  box-shadow: var(--glow-error);
+  box-shadow: var(--glow-hover-critical);
 }
 
-/* Gradient text */
+/* Gradient text — Using Sanctuary colors */
 .gradient-text {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

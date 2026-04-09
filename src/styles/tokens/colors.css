@@ -63,15 +63,14 @@
    NEON COLORS - Special Effects
    ============================================ */
 :root {
-  --neon-cyan: #06b6d4;
-  --neon-pink: #ec4899;
-  --neon-magenta: #d946ef;
-  --neon-green: #10b981;
-  --neon-orange: #f97316;
-  --neon-yellow: #eab308;
-  --neon-red: #ef4444;
-  --neon-blue: #0072ff;
-  --neon-purple: #aa00ff;
+  --color-secondary: #06b6d4;
+  --color-primary: #ec4899;
+  --color-primary: #d946ef;
+  --color-success: #10b981;
+  --color-warning: #f97316;
+  --color-error: #ef4444;
+  --color-info: #0072ff;
+  --color-primary: #aa00ff;
 }
 
 /* ============================================
@@ -323,15 +322,14 @@
   --border-color: var(--border);
 
   /* Neon Colors - More vibrant in dark mode */
-  --neon-cyan: #22d3ee;
-  --neon-pink: #f472b6;
-  --neon-magenta: #e879f9;
-  --neon-green: #34d399;
-  --neon-orange: #fb923c;
-  --neon-yellow: #facc15;
-  --neon-red: #f87171;
-  --neon-blue: #60a5fa;
-  --neon-purple: #c084fc;
+  --color-secondary: #22d3ee;
+  --color-primary: #f472b6;
+  --color-primary: #e879f9;
+  --color-success: #34d399;
+  --color-warning: #fb923c;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+  --color-primary: #c084fc;
 
   /* Glow Effects - More intense in dark mode */
   --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);

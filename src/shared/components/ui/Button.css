@@ -19,7 +19,7 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--neon-cyan);
+  outline: 2px solid var(--color-secondary);
   outline-offset: 2px;
   box-shadow: var(--glow-focus-primary);
   transition: var(--transition-focus);
@@ -47,7 +47,7 @@
 
 /* Primary variant - Neon cyan glow */
 .btn-primary {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-info));
   color: #000; /* Contraste em fundo claro */
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 240, 255, 0.3); /* Sutil */
@@ -66,7 +66,7 @@
 
 /* Secondary variant - Neon magenta glow */
 .btn-secondary {
-  background: linear-gradient(135deg, var(--neon-magenta), var(--neon-purple));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: #fff;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(255, 0, 255, 0.3);
@@ -86,12 +86,12 @@
 /* Outline variant */
 .btn-outline {
   background: transparent;
-  color: var(--accent-primary);
-  border: var(--border-width-default) solid var(--accent-primary);
+  color: var(--color-primary);
+  border: var(--border-width-default) solid var(--color-primary);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--accent-primary);
+  background: var(--color-primary);
   color: #000;
   box-shadow: var(--glow-hover-primary);
   transform: translateY(-1px);
@@ -123,7 +123,7 @@
 
 /* Danger variant */
 .btn-danger {
-  background: linear-gradient(135deg, var(--neon-pink), #ff3366);
+  background: linear-gradient(135deg, var(--color-primary), #ff3366);
   color: #fff;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(255, 0, 110, 0.3);

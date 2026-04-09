@@ -10,7 +10,7 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent-warning);
+  color: var(--color-warning);
 }
 
 .streak-badge.high-streak {

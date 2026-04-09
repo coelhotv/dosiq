@@ -13,7 +13,7 @@
 .protocol-info {
   padding: var(--space-4);
   background: var(--bg-tertiary);
-  border: 1px solid var(--accent-primary);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -60,7 +60,7 @@
 
 .log-type-toggle button.active {
   background: var(--bg-primary);
-  color: var(--accent-primary);
+  color: var(--color-primary);
   box-shadow: var(--shadow-sm);
 }
 

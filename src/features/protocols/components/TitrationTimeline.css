@@ -49,14 +49,14 @@
 
 .timeline-status.active {
   background: rgba(255, 170, 0, 0.1);
-  color: var(--accent-warning);
-  border: 1px solid var(--accent-warning);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
 }
 
 .timeline-status.complete {
   background: rgba(0, 255, 136, 0.1);
-  color: var(--accent-success);
-  border: 1px solid var(--accent-success);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 
 .timeline-status.paused {
@@ -86,7 +86,7 @@
 .progress-value {
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--color-primary);
 }
 
 .progress-bar {
@@ -98,7 +98,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
   border-radius: var(--radius-full);
   transition: width 0.5s ease;
 }
@@ -147,11 +147,11 @@
 }
 
 .next-step-info {
-  border-left: 3px solid var(--accent-primary);
+  border-left: 3px solid var(--color-primary);
 }
 
 .completion-message {
-  border-left: 3px solid var(--accent-success);
+  border-left: 3px solid var(--color-success);
   background: rgba(0, 255, 136, 0.05);
 }
 
@@ -200,12 +200,12 @@
 
 .preview-step.completed {
   background: rgba(0, 255, 136, 0.1);
-  border-color: var(--accent-success);
+  border-color: var(--color-success);
 }
 
 .preview-step.current {
   background: rgba(0, 122, 255, 0.1);
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
@@ -222,11 +222,11 @@
 }
 
 .preview-step.completed .preview-dose {
-  color: var(--accent-success);
+  color: var(--color-success);
 }
 
 .preview-step.current .preview-dose {
-  color: var(--accent-primary);
+  color: var(--color-primary);
 }
 
 .preview-unit {
@@ -251,7 +251,7 @@
 
 .progress-fill-mini {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
 }

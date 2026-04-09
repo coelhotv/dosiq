@@ -15,7 +15,7 @@
 .protocols-header h2 {
   margin: 0 0 var(--space-2) 0;
   font-size: var(--font-size-3xl);
-  background: linear-gradient(135deg, var(--neon-magenta), var(--neon-purple));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

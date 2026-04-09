@@ -62,15 +62,14 @@
 
 /* Neon Colors */
 :root {
-  --neon-cyan: #06b6d4;
-  --neon-pink: #ec4899;
-  --neon-magenta: #d946ef;
-  --neon-green: #10b981;
-  --neon-orange: #f97316;
-  --neon-yellow: #eab308;
-  --neon-red: #ef4444;
-  --neon-blue: #0072ff;
-  --neon-purple: #aa00ff;
+  --color-secondary: #06b6d4;
+  --color-primary: #ec4899;
+  --color-primary: #d946ef;
+  --color-success: #10b981;
+  --color-warning: #f97316;
+  --color-error: #ef4444;
+  --color-info: #0072ff;
+  --color-primary: #aa00ff;
 }
 
 /* Glow Effects */

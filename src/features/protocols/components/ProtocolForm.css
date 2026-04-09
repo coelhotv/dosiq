@@ -25,7 +25,7 @@
 
 .protocol-form textarea:focus {
   outline: none;
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   box-shadow: var(--glow-focus-secondary);
 }
 
@@ -52,9 +52,9 @@
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-tertiary);
-  border: var(--border-width-default) solid var(--accent-primary);
+  border: var(--border-width-default) solid var(--color-primary);
   border-radius: var(--radius-full);
-  color: var(--accent-primary);
+  color: var(--color-primary);
   font-size: var(--font-size-sm);
   font-weight: 500;
 }
@@ -62,7 +62,7 @@
 .remove-time {
   background: none;
   border: none;
-  color: var(--accent-error);
+  color: var(--color-error);
   cursor: pointer;
   padding: 0;
   font-size: var(--font-size-sm);
@@ -86,7 +86,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--accent-primary);
+  accent-color: var(--color-primary);
 }
 
 .checkbox-label span {

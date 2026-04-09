@@ -37,7 +37,7 @@
 .stock-form input:focus,
 .stock-form textarea:focus {
   outline: none;
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
 }
 
@@ -48,12 +48,12 @@
 
 .stock-form select:focus {
   outline: none;
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
 }
 
 .stock-form select.error {
-  border-color: var(--accent-error);
+  border-color: var(--color-error);
 }
 
 .stock-form select option {

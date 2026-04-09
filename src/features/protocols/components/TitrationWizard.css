@@ -8,7 +8,7 @@
 
 .wizard-header h4 {
   margin: 0;
-  color: var(--accent-primary);
+  color: var(--color-primary);
   font-size: 1rem;
 }
 
@@ -32,7 +32,7 @@
   border-radius: var(--radius-sm);
   padding: var(--space-3);
   padding-left: var(--space-4);
-  border-left: 3px solid var(--accent-secondary);
+  border-left: 3px solid var(--color-secondary);
 }
 
 .titration-stage-card:hover {

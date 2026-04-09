@@ -25,7 +25,7 @@
 }
 
 .form-group .required {
-  color: var(--accent-error);
+  color: var(--color-error);
 }
 
 .autocomplete-badge {
@@ -64,12 +64,12 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   box-shadow: var(--glow-focus-secondary);
 }
 
 .form-group input.error {
-  border-color: var(--accent-error);
+  border-color: var(--color-error);
 }
 
 .form-group input:read-only {
@@ -84,16 +84,16 @@
 
 .error-message {
   font-size: var(--font-size-xs);
-  color: var(--accent-error);
+  color: var(--color-error);
   margin-top: var(--space-1);
 }
 
 .error-banner {
   padding: var(--space-4);
   background: rgba(255, 0, 110, 0.1);
-  border: var(--border-width-default) solid var(--accent-error);
+  border: var(--border-width-default) solid var(--color-error);
   border-radius: var(--radius-md);
-  color: var(--accent-error);
+  color: var(--color-error);
   font-size: var(--font-size-sm);
 }
 

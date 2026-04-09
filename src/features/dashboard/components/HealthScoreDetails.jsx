@@ -95,7 +95,7 @@ export default function HealthScoreDetails({ isOpen, onClose, stats, stockSummar
             <div className="health-details__progress-bar">
               <div
                 className="health-details__progress-fill"
-                style={{ width: `${stockRate * 100}%`, backgroundColor: 'var(--neon-green)' }}
+                style={{ width: `${stockRate * 100}%`, backgroundColor: 'var(--color-success)' }}
               />
             </div>
             <span className="health-details__metric-weight">Peso: 20%</span>

@@ -451,7 +451,7 @@ a:hover {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

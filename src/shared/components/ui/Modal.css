@@ -67,7 +67,7 @@
 
 .modal-close:hover {
   background: var(--bg-tertiary);
-  color: var(--accent-error);
+  color: var(--color-error);
 }
 
 .modal-body {
@@ -90,7 +90,7 @@
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+  background: var(--color-primary);
 }
 
 /* Mobile: garantir scroll completo sem corte pelo BottomNav */

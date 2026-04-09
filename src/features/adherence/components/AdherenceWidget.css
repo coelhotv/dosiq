@@ -97,16 +97,16 @@
 }
 
 .score-label.good {
-  color: var(--neon-green);
+  color: var(--color-success);
   text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .score-label.warning {
-  color: var(--neon-yellow);
+  color: var(--color-warning);
 }
 
 .score-label.poor {
-  color: var(--neon-pink);
+  color: var(--color-primary);
 }
 
 .score-detail {
@@ -243,12 +243,12 @@
 
 .tip-text.success {
   background: rgba(0, 255, 136, 0.1);
-  color: var(--neon-green);
+  color: var(--color-success);
 }
 
 /* Error state */
 .error-text {
-  color: var(--neon-pink);
+  color: var(--color-primary);
   font-size: 14px;
   margin: 0;
 }

@@ -3,7 +3,7 @@
   gap: var(--space-4);
   padding: var(--space-5);
   background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.1) 100%);
-  border: 2px solid var(--accent-warning);
+  border: 2px solid var(--color-warning);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-5);
   animation: slideDown 0.3s ease-out;
@@ -70,7 +70,7 @@
 }
 
 .titration-transition-alert .stage-box.next {
-  border-color: var(--accent-success);
+  border-color: var(--color-success);
   background: rgba(76, 175, 80, 0.1);
 }
 
@@ -91,7 +91,7 @@
 .titration-transition-alert .stage-dose {
   font-size: var(--font-size-lg);
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--color-primary);
 }
 
 .titration-transition-alert .stage-note {
@@ -102,7 +102,7 @@
 
 .titration-transition-alert .arrow {
   font-size: 24px;
-  color: var(--accent-success);
+  color: var(--color-success);
   flex-shrink: 0;
 }
 
@@ -116,7 +116,7 @@
   margin-top: var(--space-2);
   padding: var(--space-3);
   background: var(--bg-tertiary);
-  border-left: 3px solid var(--accent-success);
+  border-left: 3px solid var(--color-success);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   color: var(--text-secondary);

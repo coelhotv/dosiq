@@ -53,7 +53,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background: linear-gradient(135deg, var(--accent-danger), var(--neon-pink));
+  background: linear-gradient(135deg, var(--color-error), var(--color-primary));
   color: var(--text-primary);
   font-size: 11px;
   font-weight: 700;
@@ -82,7 +82,7 @@
   background: var(--glass-bg);
   backdrop-filter: blur(4px);
   border: 1px solid var(--glass-border);
-  border-left: 3px solid var(--alert-color, var(--neon-cyan));
+  border-left: 3px solid var(--alert-color, var(--color-secondary));
   border-radius: var(--radius-card-md);
   box-shadow: var(--shadow-sm);
   animation: alert-slide-in 0.3s ease-out;
@@ -107,16 +107,16 @@
 
 /* Severity variants */
 .alert-list__item--critical {
-  --alert-color: var(--neon-pink);
+  --alert-color: var(--color-primary);
   box-shadow: var(--shadow-alert-critical);
 }
 
 .alert-list__item--warning {
-  --alert-color: var(--accent-warning);
+  --alert-color: var(--color-warning);
 }
 
 .alert-list__item--info {
-  --alert-color: var(--neon-cyan);
+  --alert-color: var(--color-secondary);
 }
 
 /* Item Icon */
@@ -177,7 +177,7 @@
 }
 
 .alert-list__btn--primary {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--accent-cyan-dark));
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-dark));
   color: var(--bg-primary);
 }
 
@@ -188,7 +188,7 @@
 }
 
 .alert-list__btn--danger {
-  background: linear-gradient(135deg, var(--neon-pink), var(--accent-danger-dark));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-error-dark));
   color: var(--text-primary);
 }
 

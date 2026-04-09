@@ -53,8 +53,8 @@ export default function TestConnection() {
             borderRadius: 'var(--radius-md)',
             backgroundColor:
               status === 'error' ? 'rgba(255, 0, 110, 0.1)' : 'rgba(0, 255, 136, 0.1)',
-            border: `1px solid ${status === 'error' ? 'var(--accent-error)' : 'var(--accent-success)'}`,
-            color: status === 'error' ? 'var(--accent-error)' : 'var(--accent-success)',
+            border: `1px solid ${status === 'error' ? 'var(--color-error)' : 'var(--color-success)'}`,
+            color: status === 'error' ? 'var(--color-error)' : 'var(--color-success)',
           }}
         >
           {message}

@@ -54,7 +54,7 @@
   line-height: 1;
   color: var(--text-primary);
   text-shadow:
-    0 0 15px var(--neon-cyan),
+    0 0 15px var(--color-secondary),
     0 0 30px rgba(0, 243, 255, 0.8),
     0 0 60px rgba(0, 243, 255, 0.5);
   z-index: 1;
@@ -177,7 +177,7 @@
 .health-details__insight-card small {
   display: block;
   margin-top: 0.4rem;
-  color: var(--neon-cyan);
+  color: var(--color-secondary);
   font-weight: 500;
 }
 
