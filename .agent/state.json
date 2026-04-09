@@ -16,10 +16,10 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.6_complete",
+    "id": "session_2026W15_wave17_sprint17.7_complete",
     "started_at": "2026-04-08T23:00:00Z",
     "mode": "coding",
-    "goal": "Sprint 17.6 — Emergency View Restoration + Legacy Cleanup",
+    "goal": "Sprint 17.7 — Rename Redesign Views + Component Exports",
     "goal_type": "feat",
     "status": "merged",
     "acceptance_criteria": [
@@ -38,7 +38,7 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 2
+    "journal_entries_since_distillation": 3
   },
   "evolution": {
     "genes_version": "1.1",
