@@ -14,9 +14,9 @@ import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
 import { formatLocalDate } from '@utils/dateUtils.js'
-import './ConsultationRedesign.css'
+import './Consultation.css'
 
-export default function ConsultationRedesign({ onBack }) {
+export default function Consultation({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
   const [consultationData, setConsultationData] = useState(null)
   const [error, setError] = useState(null)

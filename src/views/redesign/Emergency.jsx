@@ -27,7 +27,7 @@ import './emergency/EmergencyRedesign.css'
  * @param {Object} props
  * @param {Function} props.onNavigate - Callback para navegação (ex: back)
  */
-export default function EmergencyRedesign({ onNavigate }) {
+export default function Emergency({ onNavigate }) {
   // ═══ States ═══
   const [view, setView] = useState('display') // 'display' | 'edit'
   const [cardData, setCardData] = useState(null)

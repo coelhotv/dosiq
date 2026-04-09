@@ -24,7 +24,7 @@ import './settings/SettingsRedesign.css'
  * @param {Object} props
  * @param {Function} props.onNavigate - Callback para navegação ('profile', 'admin-dlq', etc.)
  */
-export default function SettingsRedesign({ onNavigate }) {
+export default function Settings({ onNavigate }) {
   // ═══ States ═══
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState(null)

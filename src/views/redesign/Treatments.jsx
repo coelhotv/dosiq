@@ -20,9 +20,9 @@ import NewTreatmentDropdown from '@protocols/components/redesign/NewTreatmentDro
 import Modal from '@shared/components/ui/Modal'
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { protocolService } from '@shared/services'
-import './TreatmentsRedesign.css'
+import './Treatments.css'
 
-export default function TreatmentsRedesign({
+export default function Treatments({
   onNavigateToProtocol,
   onNavigate,
   initialMedicineId,

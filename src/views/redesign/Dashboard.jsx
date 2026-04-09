@@ -11,7 +11,7 @@ import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser, supabase } from '@shared/utils/supabase'
 import { getTodayLocal } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
-import './DashboardRedesign.css'
+import './Dashboard.css'
 import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
 import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
@@ -55,7 +55,7 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  *
  * @param {Function} onNavigate — Callback de navegação (view, params?) => void
  */
-export default function DashboardRedesign({ onNavigate }) {
+export default function Dashboard({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
   const {
     stats,

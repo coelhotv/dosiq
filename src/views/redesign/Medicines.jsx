@@ -8,9 +8,9 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import MedicineForm from '@medications/components/MedicineForm'
 import MedicineCardRedesign from '@medications/components/redesign/MedicineCardRedesign'
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
-import './MedicinesRedesign.css'
+import './Medicines.css'
 
-export default function MedicinesRedesign({ onNavigateToProtocol }) {
+export default function Medicines({ onNavigateToProtocol }) {
   // 1. Context & Memos
   const {
     medicines: contextMedicines,

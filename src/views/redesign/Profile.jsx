@@ -42,7 +42,7 @@ function jsonToBase64(jsonString) {
  * @param {Object} props
  * @param {Function} props.onNavigate - Callback para navegação
  */
-export default function ProfileRedesign({ onNavigate }) {
+export default function Profile({ onNavigate }) {
   // ═══ States ═══
   // User & data
   const [user, setUser] = useState(null)
