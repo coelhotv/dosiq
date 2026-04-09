@@ -1737,5 +1737,29 @@
     "status": "active",
     "related_rule": "R-067",
     "has_detail": true
+  },
+  {
+    "id": "AP-096",
+    "title": "CSS Deletion Without Verifying className Usage in JSX",
+    "context": "refactoring, cleanup",
+    "applies_to": [
+      "refactor",
+      "cleanup",
+      "css"
+    ],
+    "first_seen": "2026-04-09T15:00:00Z",
+    "tags": [
+      "css",
+      "regression",
+      "verification",
+      "jsx"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-09T15:00:00Z",
+    "incident_count": 1,
+    "expiry_date": "2027-04-09",
+    "status": "active",
+    "related_rule": "R-086",
+    "has_detail": true
   }
 ]
