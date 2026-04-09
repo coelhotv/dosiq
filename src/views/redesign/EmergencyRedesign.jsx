@@ -45,8 +45,14 @@ export default function EmergencyRedesign({ onNavigate }) {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await emergencyCardService.load()
-      setCardData(data)
+      const result = await emergencyCardService.load()
+      if (result.success) {
+        setCardData(result.data)
+        // Restaura comportamento legado: entra em edição se o cartão estiver vazio
+        if (!result.data) {
+          setView('edit')
+        }
+      }
     } catch (err) {
       setError('Erro ao carregar cartão: ' + err.message)
       console.error('[EmergencyRedesign] Load error:', err)
@@ -58,11 +64,15 @@ export default function EmergencyRedesign({ onNavigate }) {
   const handleSave = useCallback(async (updatedData) => {
     try {
       setError(null)
-      await emergencyCardService.save(updatedData)
-      setCardData(updatedData)
-      setView('display')
-      setMessage('Cartão atualizado com sucesso!')
-      setTimeout(() => setMessage(null), 3000)
+      const result = await emergencyCardService.save(updatedData)
+      if (result.success) {
+        setCardData(updatedData)
+        setView('display')
+        setMessage('Cartão atualizado com sucesso!')
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        setError('Erro ao salvar: ' + (result.error || 'Erro desconhecido'))
+      }
     } catch (err) {
       setError('Erro ao salvar: ' + err.message)
       console.error('[EmergencyRedesign] Save error:', err)
