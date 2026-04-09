@@ -60,21 +60,6 @@
 }
 
 /* ============================================
-   NEON COLORS - Special Effects
-   ============================================ */
-:root {
-  --neon-cyan: #06b6d4;
-  --neon-pink: #ec4899;
-  --neon-magenta: #d946ef;
-  --neon-green: #10b981;
-  --neon-orange: #f97316;
-  --neon-yellow: #eab308;
-  --neon-red: #ef4444;
-  --neon-blue: #0072ff;
-  --neon-purple: #aa00ff;
-}
-
-/* ============================================
    BACKGROUND COLORS
    ============================================ */
 :root {
@@ -321,17 +306,6 @@
   --color-border-dark: var(--border-dark);
   --border: var(--border-default);
   --border-color: var(--border);
-
-  /* Neon Colors - More vibrant in dark mode */
-  --neon-cyan: #22d3ee;
-  --neon-pink: #f472b6;
-  --neon-magenta: #e879f9;
-  --neon-green: #34d399;
-  --neon-orange: #fb923c;
-  --neon-yellow: #facc15;
-  --neon-red: #f87171;
-  --neon-blue: #60a5fa;
-  --neon-purple: #c084fc;
 
   /* Glow Effects - More intense in dark mode */
   --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);

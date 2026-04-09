@@ -27,15 +27,15 @@
 }
 
 .calendar-controls button:hover {
-  background: var(--accent-primary);
+  background: var(--color-primary);
   color: var(--color-text-primary);
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
 }
 
 .current-month {
   font-weight: 700;
   font-size: var(--font-size-lg);
-  color: var(--accent-primary);
+  color: var(--color-primary);
 }
 
 .calendar-weekdays {
@@ -80,14 +80,14 @@
   background: rgba(0, 240, 255, 0.1);
   border: 1px solid rgba(0, 240, 255, 0.3);
   font-weight: 800;
-  color: var(--accent-primary);
+  color: var(--color-primary);
 }
 
 .calendar-day.selected {
-  background: var(--accent-primary) !important;
+  background: var(--color-primary) !important;
   color: #000 !important;
   font-weight: 800;
-  box-shadow: 0 0 15px var(--accent-primary);
+  box-shadow: 0 0 15px var(--color-primary);
 }
 
 .calendar-day.selected .log-dot {
@@ -115,9 +115,9 @@
 .log-dot {
   width: 6px;
   height: 6px;
-  background: var(--accent-success);
+  background: var(--color-success);
   border-radius: 50%;
-  box-shadow: 0 0 10px var(--accent-success);
+  box-shadow: 0 0 10px var(--color-success);
   position: absolute;
   bottom: 6px;
 }
@@ -144,7 +144,7 @@
 }
 
 .month-picker:hover {
-  border-color: var(--accent-primary);
+  border-color: var(--color-primary);
   background: var(--bg-secondary);
 }
 

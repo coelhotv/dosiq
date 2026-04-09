@@ -20,7 +20,7 @@
 }
 
 .treatment-accordion--expanded {
-  border-color: var(--neon-cyan);
+  border-color: var(--color-secondary);
   box-shadow: var(--glow-hover-secondary);
 }
 
@@ -100,8 +100,8 @@
 
 .treatment-accordion__batch-btn {
   background: var(--glass-bg);
-  border: 1px solid var(--neon-cyan);
-  color: var(--neon-cyan);
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
   padding: var(--space-1) var(--space-3); /* 4px 12px */
   border-radius: var(--radius-full);
   font-size: 10px;
@@ -113,7 +113,7 @@
 }
 
 .treatment-accordion__batch-btn:hover {
-  background: var(--neon-cyan);
+  background: var(--color-secondary);
   color: var(--bg-primary);
   transform: scale(1.02); /* Mais sutil */
   box-shadow: var(--glow-focus);

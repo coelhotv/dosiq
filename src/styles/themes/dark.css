@@ -62,15 +62,14 @@
 
 /* Neon Colors - More vibrant in dark mode */
 [data-theme='dark'] {
-  --neon-cyan: #22d3ee;
-  --neon-pink: #f472b6;
-  --neon-magenta: #e879f9;
-  --neon-green: #34d399;
-  --neon-orange: #fb923c;
-  --neon-yellow: #facc15;
-  --neon-red: #f87171;
-  --neon-blue: #60a5fa;
-  --neon-purple: #c084fc;
+  --color-secondary: #22d3ee;
+  --color-primary: #f472b6;
+  --color-primary: #e879f9;
+  --color-success: #34d399;
+  --color-warning: #fb923c;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+  --color-primary: #c084fc;
 }
 
 /* Glow Effects - More intense in dark mode */

@@ -60,19 +60,6 @@
   --border-color: var(--border);
 }
 
-/* Neon Colors */
-:root {
-  --neon-cyan: #06b6d4;
-  --neon-pink: #ec4899;
-  --neon-magenta: #d946ef;
-  --neon-green: #10b981;
-  --neon-orange: #f97316;
-  --neon-yellow: #eab308;
-  --neon-red: #ef4444;
-  --neon-blue: #0072ff;
-  --neon-purple: #aa00ff;
-}
-
 /* Glow Effects */
 :root {
   --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);

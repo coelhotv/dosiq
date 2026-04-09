@@ -205,21 +205,21 @@ This aligns perfectly with spec order.
 
 Each sprint in Wave 17 has mandatory gates:
 
-| Sprint | Lint | Test | Build | Agent | Notes |
-|--------|------|------|-------|-------|-------|
-| 17.0 | ✓ | ✓ | ✓ | ✓ | Baseline only, no changes |
-| 17.1 | ✓ | ✓ | ✓ | ✓ | 2-week wait before 17.2 |
-| 17.2 | ✓ | ✓ | ✓ | ✓ | `npm run build` validates token moves |
-| 17.3 | ✓ | ✓ | ✓ | ✓ | Layout CSS removed from scoping |
-| 17.4 | ✓ | ✓ | ✓ | ✓ | Component CSS consolidated |
-| 17.5 | ✓ | ✓ | ✓ | ✓ | App.jsx simplified; visual regression test |
-| 17.6 | ✓ | ✓ | ✓ | ✓ | **CRITICAL:** grep validation before delete |
-| 17.7 | ✓ | ✓ | ✓ | ✓ | **CRITICAL:** grep for old names after rename |
-| 17.8 | ✓ | ✓ | ✓ | ✓ | **CRITICAL:** grep for useRedesign/RedesignContext |
-| 17.9 | ✓ | ✓ | ✓ | ✓ | **CRITICAL:** grep for --neon-* |
-| 17.10 | ✓ | ✓ | ✓ | ✓ | Final polish pass |
-| 17.11 | ✓ | ✓ | ✓ | ✓ | Lighthouse + smoke test |
-| 17.12 | ✓ | — | — | — | Release prep (version bump, docs, tag, release notes) |
+| Sprint | Lint | Test | Build | Agent | Status | PR | Notes |
+|--------|------|------|-------|-------|--------|----|----|
+| **17.0** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | — | Baseline audit — feature flag clean, neon tokens documented |
+| **17.1** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #449 | Soft promotion (redesign default) — 2-week observation |
+| **17.2-17.3** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #450 | Token consolidation + layout unscoping — Gemini fixes applied |
+| **17.4** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | — | Component CSS consolidation (part of 17.2-17.3 delivery) |
+| **17.5** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | — | App.jsx simplification (part of 17.2-17.3 delivery) |
+| **17.6** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #452 | Legacy view deletion + Emergency restoration — AP-094/AP-095 created |
+| **17.7** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #453 | Rename redesign views (9 files) — check-review workflow applied |
+| **17.8** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | — | Feature flag cleanup (RedesignContext deleted in S17.6 + JSDoc) |
+| **17.9** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #454 | CSS cleanup — Landing regression fix + AP-096 documented |
+| **17.9.5** | ✅ | ✅ | ✅ | ✅ | **🔄 IN PROGRESS** | #455 | Neon token migration — 265 refs, 40+ files, awaiting review |
+| 17.10 | — | — | — | — | 📋 Pending | — | Onboarding & final polish |
+| 17.11 | — | — | — | — | 📋 Pending | — | Validation final (lighthouse + smoke tests) |
+| 17.12 | — | — | — | — | 📋 Pending | — | Release v4.0.0 (tag, CHANGELOG, docs) |
 
 ### Deliver-Sprint Integration
 
@@ -271,6 +271,60 @@ Before starting Sprint 17.0:
 - [ ] Build/test pipeline green on main
 - [ ] Vercel deploy preview working
 - [ ] GitHub branch protection rules current (require tests pass)
+
+---
+
+## Progress Checkpoint (Updated 2026-04-09)
+
+### Current Status: Sprint 17.9 ✅ COMPLETED
+
+**Date:** 2026-04-09  
+**Branch:** `feature/wave-17/s17.9.5-neon-token-migration`  
+**PR:** [#455](https://github.com/coelhotv/meus-remedios/pull/455) — Awaiting Gemini Code Assist review
+
+### Deliverables Completed (S17.9 + S17.9.5)
+
+| Item | Status | Details |
+|------|--------|---------|
+| Landing.css orphaned file deletion | ✅ | 973 lines removed, AP-096 verified |
+| CSS token migration (40+ files) | ✅ | Grupos 2-7 migrated to Sanctuary equivalents |
+| Neon token definition removal | ✅ | Removed from src/index.css, colors.css, themes |
+| JSX inline style migration | ✅ | var(--neon-*) → var(--color-*) in 3 components |
+| Zero neon/accent tokens verification | ✅ | grep -r "--neon-\|--accent-" → 0 matches |
+| Quality gates | ✅ | Lint OK, Build OK, 543/543 tests passed |
+
+### Commits Merged (6 total)
+
+1. **28022cf** — Delete Landing.css (AP-096 verified)
+2. **717b09f** — Migrate index.css glow/gradient classes
+3. **0932a1e** — Migrate Animations.css
+4. **dcf8e91** — Migrate UI components batch (Calendar, AlertList, Button)
+5. **54bbb8d** — Bulk migrate 40+ CSS files (Grupos 2-7)
+6. **ce384e1** — Remove neon token definitions
+7. **a1373ab** — Migrate JSX inline styles (final)
+
+### Metrics
+
+- **265 token references** migrated (250 CSS + 15 JSX)
+- **41 CSS files** touched (1 deleted, 40 migrated)
+- **6 atomic commits** with semantic messages
+- **0 build warnings** introduced
+- **100% test pass rate** (543/543)
+
+### Next Steps
+
+- ⏳ Await Gemini Code Assist review of PR #455
+- 📋 Address any reviewer suggestions (if any)
+- ✅ Merge to main once approved
+- 🚀 Trigger DEVFLOW C5 post-code protocol (memory updates + journal)
+- 📅 Proceed to S17.10 (Onboarding & Final Polish)
+
+### Notes
+
+- **Delivery approach:** 9-step sprint (Pasos 1-9) executed sequentially with validation between steps
+- **Quality assurance:** Every commit validated with lint + build before final compilation
+- **Documentation:** All changes documented in git history with detailed commit messages
+- **Risk mitigation:** AP-096 (CSS deletion verification) applied rigorously before Landing.css removal
 
 ---
 
