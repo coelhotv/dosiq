@@ -16,20 +16,19 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.9_complete",
-    "started_at": "2026-04-08T23:00:00Z",
-    "completed_at": "2026-04-09T15:20:00Z",
-    "mode": "coding",
-    "goal": "Sprint 17.9 — CSS Cleanup (Revised Scope)",
+    "id": "session_2026W15_wave17_sprint17.9.5_planning",
+    "started_at": "2026-04-09T15:30:00Z",
+    "mode": "planning",
+    "goal": "Sprint 17.9.5 — Neon Token Migration",
     "goal_type": "chore",
-    "status": "complete",
+    "status": "planning",
     "acceptance_criteria": [
-      "tokens.redesign.css deleted",
-      "layout.redesign.css renamed to layout.css",
-      "components.redesign.css renamed to components.css",
-      "Orphaned CSS in src/views/ deleted",
+      "grep -r '--neon-' src/ --include='*.css' returns zero",
+      "grep -r '--accent-' src/ --include='*.css' returns zero (exceto --accent-color em sanctuary)",
+      "src/views/Landing.css deleted (orphaned, AP-096 verified)",
+      "Token source files (colors.css, tokens.css) cleaned of neon definitions",
       "npm run build passes",
-      "npm run validate:agent passes"
+      "npm run validate:agent passes (543+ tests)"
     ]
   },
   "memory": {
@@ -39,16 +38,16 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 6
+    "journal_entries_since_distillation": 7
   },
   "evolution": {
     "genes_version": "1.1",
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-09T03:40:00Z",
-    "relevant_rules_loaded_at": "2026-04-09T03:40:00Z",
-    "review_completed_at": "2026-04-09T03:36:00Z"
+    "index_loaded_at": "2026-04-09T15:30:00Z",
+    "relevant_rules_loaded_at": "2026-04-09T15:30:00Z",
+    "review_completed_at": "2026-04-09T15:20:00Z"
   },
   "migration": {
     "status": "complete",
