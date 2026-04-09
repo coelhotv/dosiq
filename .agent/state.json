@@ -16,19 +16,16 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.7_complete",
+    "id": "session_2026W15_wave17_sprint17.8_complete",
     "started_at": "2026-04-08T23:00:00Z",
     "mode": "coding",
-    "goal": "Sprint 17.7 — Rename Redesign Views + Component Exports",
+    "goal": "Sprint 17.8 — Feature Flag Infrastructure Removal",
     "goal_type": "feat",
     "status": "merged",
     "acceptance_criteria": [
-      "Emergency card view restored with redesigned components ✓",
-      "All legacy views deleted (Dashboard, Stock, HealthHistory, etc.) ✓",
-      "RedesignContext & useRedesign removed ✓",
-      "All quality gates pass (lint, build, tests, validate:agent) ✓",
-      "Learned & documented 2 critical bugs (AP-094, AP-095) ✓",
-      "PR #452 merged to main ✓"
+      "Badge.jsx JSDoc updated (removed [data-redesign] reference) ✓",
+      "Feature flag infrastructure deleted in prior sprints (S17.6) ✓",
+      "All quality gates pass (lint, validate:agent) ✓"
     ]
   },
   "memory": {
@@ -38,7 +35,7 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 3
+    "journal_entries_since_distillation": 4
   },
   "evolution": {
     "genes_version": "1.1",
@@ -47,7 +44,7 @@
   "quality_gates": {
     "index_loaded_at": "2026-04-08T21:45:00Z",
     "relevant_rules_loaded_at": "2026-04-08T21:45:00Z",
-    "review_completed_at": "2026-04-08T23:48:25Z"
+    "review_completed_at": "2026-04-09T03:36:00Z"
   },
   "migration": {
     "status": "complete",
