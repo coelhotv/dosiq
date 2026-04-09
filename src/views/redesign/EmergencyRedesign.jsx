@@ -35,11 +35,6 @@ export default function EmergencyRedesign({ onNavigate }) {
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
 
-  // ═══ Effects ═══
-  useEffect(() => {
-    loadCardData()
-  }, [loadCardData])
-
   // ═══ Handlers ═══
   const loadCardData = useCallback(async () => {
     try {
@@ -88,6 +83,11 @@ export default function EmergencyRedesign({ onNavigate }) {
     setView('display')
     setError(null)
   }, [])
+
+  // ═══ Effects ═══
+  useEffect(() => {
+    loadCardData()
+  }, [loadCardData])
 
   // ═══ Render ═══
   if (isLoading) {
