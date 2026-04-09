@@ -14,7 +14,6 @@ const Stock = lazy(() => import('./views/redesign/StockRedesign'))
 const Protocols = lazy(() => import('./views/Protocols'))
 const HealthHistory = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
 const Settings = lazy(() => import('./views/redesign/SettingsRedesign'))
-const Calendar = lazy(() => import('./views/Calendar'))
 const Emergency = lazy(() => import('./views/redesign/EmergencyRedesign'))
 const Treatment = lazy(() => import('./views/redesign/TreatmentsRedesign'))
 const Profile = lazy(() => import('./views/redesign/ProfileRedesign'))
@@ -28,7 +27,6 @@ const GlobalDoseModal = lazy(() => import('@shared/components/ui/GlobalDoseModal
 import TestConnection from '@shared/components/TestConnection'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
-import { RedesignProvider } from '@shared/contexts/RedesignContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 
@@ -219,12 +217,6 @@ function AppInner() {
             <DLQAdmin />
           </Suspense>
         )
-      case 'calendar':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Calendar onNavigate={setCurrentView} />
-          </Suspense>
-        )
       case 'dashboard':
       default: {
         const dashboardNavigate = (view, params) => {
@@ -349,11 +341,7 @@ function AppInner() {
 }
 
 function App() {
-  return (
-    <RedesignProvider>
-      <AppInner />
-    </RedesignProvider>
-  )
+  return <AppInner />
 }
 
 export default App
