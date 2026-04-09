@@ -29,7 +29,7 @@ import PrescriptionTimelineRedesign from '@stock/components/PrescriptionTimeline
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
 import { parseLocalDate } from '@utils/dateUtils'
 import { stockService } from '@shared/services'
-import './StockRedesign.css'
+import './Stock.css'
 
 /**
  * Derivar status do protocolo baseado em datas de vigência
