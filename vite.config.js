@@ -38,11 +38,11 @@ export default defineConfig({
 
           // Feature chunks — carregados apenas quando a view é acessada
           'feature-history': [
-            './src/views/HealthHistory.jsx',
+            './src/views/redesign/HealthHistoryRedesign.jsx',
             './src/features/adherence/components/AdherenceHeatmap.jsx',
             './src/features/adherence/services/adherencePatternService.js',
           ],
-          'feature-stock': ['./src/views/Stock.jsx'],
+          'feature-stock': ['./src/views/redesign/StockRedesign.jsx'],
           'feature-landing': ['./src/views/Landing.jsx'],
 
           // Base ANVISA — 819KB, carregada apenas em Medicines/autocomplete

@@ -1699,5 +1699,43 @@
     "status": "active",
     "related_rule": "R-145",
     "has_detail": false
+  },
+  {
+    "id": "AP-094",
+    "title": "Reference handler (useCallback) in useEffect before declaration",
+    "summary": "ReferenceError: Cannot access handler before initialization — TDZ crash",
+    "applies_to": [
+      "react",
+      "hooks"
+    ],
+    "tags": [
+      "safety",
+      "react",
+      "hooks"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-08T23:59:45Z",
+    "expiry_date": "2027-04-08",
+    "status": "active",
+    "related_rule": "R-010",
+    "has_detail": true
+  },
+  {
+    "id": "AP-095",
+    "title": "Skip local lint/build validation before push",
+    "summary": "Preview build fails, PR unmergeeable, wasted review cycles",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "safety",
+      "quality-gates"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-08T21:45:00Z",
+    "expiry_date": "2027-04-08",
+    "status": "active",
+    "related_rule": "R-067",
+    "has_detail": true
   }
 ]
