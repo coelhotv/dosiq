@@ -7,8 +7,7 @@
  * Referencia visual: plans/redesign/references/complex-estoque-desktop.png
  * — badges "URGENTE", "ATENCAO", "SEGURO" nos cards de estoque.
  *
- * NOTA: estilos em src/shared/styles/components.redesign.css
- * sob [data-redesign="true"] .badge {}
+ * Estilos: src/shared/styles/components.redesign.css
  */
 export default function Badge({ children, variant = 'neutral', className = '' }) {
   return (
