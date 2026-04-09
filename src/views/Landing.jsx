@@ -1,4 +1,5 @@
 import React from 'react'
+import './LandingPrototype.css'
 
 function PrototypeIcon({ children, className = '', size = 20, viewBox = '0 0 24 24' }) {
   return (
