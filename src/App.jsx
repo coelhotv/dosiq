@@ -5,42 +5,30 @@ import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import appStyles from './App.module.css'
 import Auth from './views/Auth'
-import Dashboard from './views/Dashboard'
 import Loading from '@shared/components/ui/Loading'
 
-// Lazy imports — carregam apenas quando a view é acessada
-const Medicines = lazy(() => import('./views/Medicines'))
-const MedicinesRedesign = lazy(() => import('./views/redesign/MedicinesRedesign'))
-const Stock = lazy(() => import('./views/Stock'))
-const Protocols = lazy(() => import('./views/Protocols'))
-const History = lazy(() => import('./views/History'))
-const Settings = lazy(() => import('./views/Settings'))
-const Calendar = lazy(() => import('./views/Calendar'))
-const Emergency = lazy(() => import('./views/Emergency'))
-const Treatment = lazy(() => import('./views/Treatment'))
-const Profile = lazy(() => import('./views/Profile'))
-const HealthHistory = lazy(() => import('./views/HealthHistory'))
-const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
-const Consultation = lazy(() => import('./views/Consultation'))
+// Lazy imports — carregam apenas quando a view é acessada (versão consolidada — apenas redesign)
 const Landing = lazy(() => import('./views/Landing'))
-const DashboardRedesign = lazy(() => import('./views/redesign/DashboardRedesign'))
-const TreatmentsRedesign = lazy(() => import('./views/redesign/TreatmentsRedesign'))
-const StockRedesign = lazy(() => import('./views/redesign/StockRedesign'))
-const ProfileRedesign = lazy(() => import('./views/redesign/ProfileRedesign'))
-const HealthHistoryRedesign = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
-const SettingsRedesign = lazy(() => import('./views/redesign/SettingsRedesign'))
-const EmergencyRedesign = lazy(() => import('./views/redesign/EmergencyRedesign'))
-const ConsultationRedesign = lazy(() => import('./views/redesign/ConsultationRedesign'))
+const Medicines = lazy(() => import('./views/redesign/MedicinesRedesign'))
+const Stock = lazy(() => import('./views/redesign/StockRedesign'))
+const Protocols = lazy(() => import('./views/Protocols'))
+const HealthHistory = lazy(() => import('./views/redesign/HealthHistoryRedesign'))
+const Settings = lazy(() => import('./views/redesign/SettingsRedesign'))
+const Calendar = lazy(() => import('./views/Calendar'))
+const Emergency = lazy(() => import('./views/redesign/EmergencyRedesign'))
+const Treatment = lazy(() => import('./views/redesign/TreatmentsRedesign'))
+const Profile = lazy(() => import('./views/redesign/ProfileRedesign'))
+const Consultation = lazy(() => import('./views/redesign/ConsultationRedesign'))
+const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
+const Dashboard = lazy(() => import('./views/redesign/DashboardRedesign'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
 const GlobalDoseModal = lazy(() => import('@shared/components/ui/GlobalDoseModal'))
 import TestConnection from '@shared/components/TestConnection'
-import BottomNav from '@shared/components/ui/BottomNav'
 import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import { RedesignProvider } from '@shared/contexts/RedesignContext.jsx'
-import { useRedesign } from '@shared/hooks/useRedesign'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 
@@ -68,7 +56,6 @@ function ViewSkeleton() {
 }
 
 function AppInner() {
-  const { isRedesignEnabled, enableRedesign } = useRedesign()
   const shouldReduceMotion = useReducedMotion()
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -103,13 +90,8 @@ function AppInner() {
   }, [])
 
   const navigateToProtocol = (medicineId) => {
-    if (isRedesignEnabled) {
-      setInitialTreatmentMedicineId(medicineId)
-      setCurrentView('treatment')
-    } else {
-      setInitialProtocolParams({ medicineId })
-      setCurrentView('protocols')
-    }
+    setInitialTreatmentMedicineId(medicineId)
+    setCurrentView('treatment')
   }
 
   const navigateToStock = (medicineId) => {
@@ -135,7 +117,6 @@ function AppInner() {
       return showAuth ? (
         <Auth
           onAuthSuccess={() => {
-            enableRedesign()
             setShowAuth(false)
             setCurrentView('dashboard')
           }}
@@ -160,24 +141,13 @@ function AppInner() {
           </Suspense>
         )
       case 'medicines':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <MedicinesRedesign onNavigateToProtocol={navigateToProtocol} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Medicines onNavigateToProtocol={navigateToProtocol} />
           </Suspense>
         )
       case 'stock':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <StockRedesign
-              initialParams={initialStockParams}
-              onClearParams={() => setInitialStockParams(null)}
-            />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Stock
               initialParams={initialStockParams}
@@ -196,84 +166,49 @@ function AppInner() {
           </Suspense>
         )
       case 'treatment':
-        return isRedesignEnabled ? (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
-            <TreatmentsRedesign
+            <Treatment
               onNavigateToProtocol={() => setCurrentView('treatment')}
               onNavigate={setCurrentView}
               initialMedicineId={initialTreatmentMedicineId}
               onClearInitialMedicine={() => setInitialTreatmentMedicineId(null)}
             />
           </Suspense>
-        ) : (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Treatment
-              onNavigate={(view, params) => {
-                if (view === 'protocols' && params?.medicineId) {
-                  setInitialProtocolParams({ medicineId: params.medicineId })
-                }
-                setCurrentView(view)
-              }}
-            />
-          </Suspense>
         )
       case 'profile':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <ProfileRedesign onNavigate={setCurrentView} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Profile onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'health-history':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <HealthHistoryRedesign key="health-history" onNavigate={setCurrentView} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <HealthHistory key="health-history" onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'history':
         // W3-06: historico agora vive em HealthHistory
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <HealthHistoryRedesign key="history" onNavigate={setCurrentView} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <HealthHistory key="history" onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'consultation':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <ConsultationRedesign onBack={() => setCurrentView('profile')} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Consultation onBack={() => setCurrentView('profile')} />
           </Suspense>
         )
       case 'settings':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <SettingsRedesign onNavigate={setCurrentView} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Settings onNavigate={setCurrentView} />
           </Suspense>
         )
       case 'emergency':
-        return isRedesignEnabled ? (
-          <Suspense fallback={<ViewSkeleton />}>
-            <EmergencyRedesign onNavigate={setCurrentView} />
-          </Suspense>
-        ) : (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
             <Emergency onNavigate={setCurrentView} />
           </Suspense>
@@ -300,12 +235,10 @@ function AppInner() {
           }
           setCurrentView(view)
         }
-        return isRedesignEnabled ? (
+        return (
           <Suspense fallback={<ViewSkeleton />}>
-            <DashboardRedesign onNavigate={dashboardNavigate} />
+            <Dashboard onNavigate={dashboardNavigate} />
           </Suspense>
-        ) : (
-          <Dashboard onNavigate={dashboardNavigate} />
         )
       }
     }
@@ -319,9 +252,9 @@ function AppInner() {
           Ir para conteúdo principal
         </a>
 
-        <div className="app-container" data-redesign={isRedesignEnabled ? 'true' : undefined}>
-          {/* Sidebar — desktop, apenas usuários com flag ativo */}
-          {isAuthenticated && isRedesignEnabled && (
+        <div className="app-container" data-redesign="true">
+          {/* Sidebar — desktop, apenas usuários autenticados */}
+          {isAuthenticated && (
             <Suspense fallback={null}>
               <Sidebar
                 currentView={currentView}
@@ -333,25 +266,19 @@ function AppInner() {
 
           <main
             id="main-content"
-            className={
-              isAuthenticated && isRedesignEnabled ? 'app-main main-with-sidebar' : 'app-main'
-            }
+            className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}
           >
-            {isRedesignEnabled ? (
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={currentView}
-                  initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
-                  transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
-                >
-                  {renderCurrentView()}
-                </motion.div>
-              </AnimatePresence>
-            ) : (
-              renderCurrentView()
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={currentView}
+                initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
+              >
+                {renderCurrentView()}
+              </motion.div>
+            </AnimatePresence>
             <footer
               style={{
                 textAlign: 'center',
@@ -367,15 +294,12 @@ function AppInner() {
 
           <OfflineBanner />
 
-          {/* BottomNav: redesign para flag users, original para outros */}
-          {isAuthenticated &&
-            (isRedesignEnabled ? (
-              <Suspense fallback={null}>
-                <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
-              </Suspense>
-            ) : (
-              <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
-            ))}
+          {/* BottomNav — redesign version */}
+          {isAuthenticated && (
+            <Suspense fallback={null}>
+              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
+            </Suspense>
+          )}
 
           {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
           {isAuthenticated && (
@@ -395,8 +319,8 @@ function AppInner() {
             </>
           )}
 
-          {/* FAB móvel "Registrar Dose" — visível apenas mobile, apenas redesign */}
-          {isAuthenticated && isRedesignEnabled && (
+          {/* FAB móvel "Registrar Dose" — visível apenas mobile */}
+          {isAuthenticated && (
             <button
               onClick={() => setIsDoseModalOpen(true)}
               aria-label="Registrar dose"
@@ -407,7 +331,7 @@ function AppInner() {
           )}
 
           {/* Modal global de registro de dose */}
-          {isAuthenticated && isRedesignEnabled && isDoseModalOpen && (
+          {isAuthenticated && isDoseModalOpen && (
             <Suspense fallback={null}>
               <GlobalDoseModal isOpen={isDoseModalOpen} onClose={() => setIsDoseModalOpen(false)} />
             </Suspense>

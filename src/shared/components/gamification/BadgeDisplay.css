@@ -46,11 +46,11 @@
    BadgeDisplay — Redesign (Sanctuary)
    ============================================ */
 
-[data-redesign='true'] .badge-display {
+.badge-display {
   margin-top: 0;
 }
 
-[data-redesign='true'] .badge-title {
+.badge-title {
   font-family: var(--font-display);
   font-weight: var(--font-weight-semibold);
   color: var(--color-on-surface);
@@ -60,18 +60,18 @@
   margin-bottom: 1rem;
 }
 
-[data-redesign='true'] .badge-item {
+.badge-item {
   background: var(--color-surface-container-low);
   border-radius: var(--radius-card-sm);
   transition: box-shadow 200ms ease-out;
 }
 
-[data-redesign='true'] .badge-item:hover {
+.badge-item:hover {
   transform: none;
   box-shadow: var(--shadow-ambient);
 }
 
-[data-redesign='true'] .badge-name {
+.badge-name {
   font-size: var(--text-label-md);
   color: var(--color-on-surface-variant);
   font-weight: var(--font-weight-medium);

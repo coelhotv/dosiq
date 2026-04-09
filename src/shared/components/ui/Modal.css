@@ -122,14 +122,14 @@
    Ativo apenas quando [data-redesign="true"]
    ============================================ */
 
-[data-redesign='true'] .modal-overlay {
+.modal-overlay {
   background: rgba(25, 28, 29, 0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: modalFadeIn 200ms ease-out;
 }
 
-[data-redesign='true'] .modal-content {
+.modal-content {
   background: var(--color-surface-container-lowest);
   border: none;
   border-radius: 2rem;
@@ -161,15 +161,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-redesign='true'] .modal-content {
+  .modal-content {
     animation: none;
   }
-  [data-redesign='true'] .modal-overlay {
+  .modal-overlay {
     animation: none;
   }
 }
 
-[data-redesign='true'] .modal-header {
+.modal-header {
   padding: 1.5rem 2rem;
   border-bottom: none;
   background: transparent;
@@ -177,7 +177,7 @@
   gap: 0.75rem;
 }
 
-[data-redesign='true'] .modal-header h2 {
+.modal-header h2 {
   font-family: var(--font-body);
   font-size: var(--text-title-lg);
   font-weight: var(--font-weight-semibold);
@@ -186,7 +186,7 @@
   flex: 1;
 }
 
-[data-redesign='true'] .modal-close {
+.modal-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,23 +203,23 @@
   padding: 0;
 }
 
-[data-redesign='true'] .modal-close:hover {
+.modal-close:hover {
   background: var(--color-surface-container-low);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .modal-body {
+.modal-body {
   padding: 0 2rem 2rem;
 }
 
 /* Mobile — bottom sheet */
 @media (max-width: 767px) {
-  [data-redesign='true'] .modal-overlay {
+  .modal-overlay {
     align-items: flex-end;
     padding: 0;
   }
 
-  [data-redesign='true'] .modal-content {
+  .modal-content {
     max-width: 100%;
     max-height: 90vh;
     border-radius: 2rem 2rem 0 0;
@@ -237,26 +237,26 @@
     }
   }
 
-  [data-redesign='true'] .modal-header {
+  .modal-header {
     padding: 1.25rem 1.5rem;
   }
 
-  [data-redesign='true'] .modal-body {
+  .modal-body {
     padding: 0 1.5rem 1.5rem;
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
 /* Scrollbar — redesign */
-[data-redesign='true'] .modal-content::-webkit-scrollbar {
+.modal-content::-webkit-scrollbar {
   width: 6px;
 }
 
-[data-redesign='true'] .modal-content::-webkit-scrollbar-track {
+.modal-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-[data-redesign='true'] .modal-content::-webkit-scrollbar-thumb {
+.modal-content::-webkit-scrollbar-thumb {
   background: var(--color-outline-variant);
   border-radius: var(--radius-full);
 }

@@ -712,12 +712,12 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO (EmergencyCardForm)
    ============================================ */
 
-[data-redesign='true'] .emergency-card-form {
+.emergency-card-form {
   font-family: var(--font-body);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .emergency-card-form .contact-card {
+.emergency-card-form .contact-card {
   background: var(--color-surface-container-low);
   border: none;
   border-radius: var(--radius-card);
@@ -725,7 +725,7 @@
   margin-bottom: 0.75rem;
 }
 
-[data-redesign='true'] .emergency-card-form .allergy-chip {
+.emergency-card-form .allergy-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -737,7 +737,7 @@
   font-weight: var(--font-weight-medium);
 }
 
-[data-redesign='true'] .emergency-card-form .allergy-chip button {
+.emergency-card-form .allergy-chip button {
   background: none;
   border: none;
   color: inherit;

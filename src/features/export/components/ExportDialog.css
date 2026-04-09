@@ -178,26 +178,26 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .export-dialog {
+.export-dialog {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-[data-redesign='true'] .export-section {
+.export-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-[data-redesign='true'] .export-label {
+.export-label {
   font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: var(--font-weight-semibold);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .format-toggle {
+.format-toggle {
   display: flex;
   background: var(--color-surface-container-low);
   padding: 4px;
@@ -205,7 +205,7 @@
   gap: 4px;
 }
 
-[data-redesign='true'] .format-toggle-btn {
+.format-toggle-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -223,42 +223,42 @@
   transition: all 200ms ease-out;
 }
 
-[data-redesign='true'] .format-toggle-btn.active {
+.format-toggle-btn.active {
   background: var(--color-surface-container-lowest);
   color: var(--color-primary);
   box-shadow: 0 1px 3px rgba(25, 28, 29, 0.08);
 }
 
-[data-redesign='true'] .format-toggle-btn:disabled {
+.format-toggle-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-[data-redesign='true'] .date-range {
+.date-range {
   display: flex;
   gap: 0.75rem;
 }
 
 @media (max-width: 640px) {
-  [data-redesign='true'] .date-range {
+  .date-range {
     flex-direction: column;
   }
 }
 
-[data-redesign='true'] .date-input-group {
+.date-input-group {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-[data-redesign='true'] .date-input-group label {
+.date-input-group label {
   font-family: var(--font-body);
   font-size: 0.75rem;
   color: var(--color-on-surface-variant);
 }
 
-[data-redesign='true'] .export-error {
+.export-error {
   padding: 0.75rem 1rem;
   background-color: var(--color-error-bg);
   color: var(--color-error);
@@ -267,7 +267,7 @@
   font-size: 0.875rem;
 }
 
-[data-redesign='true'] .export-actions {
+.export-actions {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;

@@ -65,7 +65,7 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .stock-form {
+.stock-form {
   display: flex;
   flex-direction: column;
   gap: 0;

@@ -66,19 +66,19 @@
 }
 
 /* Redesign overrides — sanctuary theme */
-[data-redesign='true'] .spinner-ring:nth-child(1) {
+.spinner-ring:nth-child(1) {
   border-top-color: var(--color-primary);
 }
 
-[data-redesign='true'] .spinner-ring:nth-child(2) {
+.spinner-ring:nth-child(2) {
   border-top-color: var(--color-primary-fixed);
 }
 
-[data-redesign='true'] .spinner-ring:nth-child(3) {
+.spinner-ring:nth-child(3) {
   border-top-color: color-mix(in srgb, var(--color-primary) 60%, white);
 }
 
-[data-redesign='true'] .loading-text {
+.loading-text {
   color: var(--color-on-surface-variant);
 }
 

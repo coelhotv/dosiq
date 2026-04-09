@@ -432,36 +432,36 @@
    DLQAdmin — Redesign (Sanctuary)
    ============================================ */
 
-[data-redesign='true'] .dlq-admin {
+.dlq-admin {
   padding: 1.5rem;
 }
 
-[data-redesign='true'] .dlq-admin__header h1 {
+.dlq-admin__header h1 {
   font-family: var(--font-display);
   font-weight: var(--font-weight-semibold);
   color: var(--color-on-surface);
   font-size: var(--text-title-lg);
 }
 
-[data-redesign='true'] .dlq-admin__subtitle {
+.dlq-admin__subtitle {
   color: var(--color-on-surface-variant);
   font-size: var(--text-label-md);
 }
 
-[data-redesign='true'] .dlq-admin__controls {
+.dlq-admin__controls {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-ambient);
   border: none;
 }
 
-[data-redesign='true'] .dlq-admin__filter label {
+.dlq-admin__filter label {
   color: var(--color-on-surface-variant);
   font-size: var(--text-label-md);
 }
 
-[data-redesign='true'] .dlq-admin__select,
-[data-redesign='true'] .dlq-admin__filter input {
+.dlq-admin__select,
+.dlq-admin__filter input {
   background: var(--color-surface-container-low);
   border: 1.5px solid var(--color-outline-variant);
   color: var(--color-on-surface);
@@ -470,14 +470,14 @@
   font-family: var(--font-body);
 }
 
-[data-redesign='true'] .dlq-admin__select:focus,
-[data-redesign='true'] .dlq-admin__filter input:focus {
+.dlq-admin__select:focus,
+.dlq-admin__filter input:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
   border-color: var(--color-primary);
 }
 
-[data-redesign='true'] .dlq-admin__table-container {
+.dlq-admin__table-container {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-ambient);
@@ -485,12 +485,12 @@
   border: none;
 }
 
-[data-redesign='true'] .dlq-admin__table {
+.dlq-admin__table {
   border-collapse: collapse;
   width: 100%;
 }
 
-[data-redesign='true'] .dlq-admin__table thead th {
+.dlq-admin__table thead th {
   background: var(--color-surface-container-low);
   color: var(--color-on-surface-variant);
   font-size: var(--text-label-md);
@@ -502,26 +502,26 @@
   text-align: left;
 }
 
-[data-redesign='true'] .dlq-admin__row:nth-child(even) {
+.dlq-admin__row:nth-child(even) {
   background: var(--color-surface-container-low);
 }
 
-[data-redesign='true'] .dlq-admin__row:nth-child(odd) {
+.dlq-admin__row:nth-child(odd) {
   background: var(--color-surface-container-lowest);
 }
 
-[data-redesign='true'] .dlq-admin__row:hover {
+.dlq-admin__row:hover {
   background: rgba(0, 106, 94, 0.04);
 }
 
-[data-redesign='true'] .dlq-admin__cell {
+.dlq-admin__cell {
   padding: 0.75rem 1rem;
   color: var(--color-on-surface);
   font-size: var(--text-label-md);
   border-bottom: 1px solid var(--color-outline-variant);
 }
 
-[data-redesign='true'] .dlq-admin__message--success {
+.dlq-admin__message--success {
   background: rgba(0, 106, 94, 0.08);
   color: var(--color-primary);
   border-radius: var(--radius-card-sm);
@@ -531,7 +531,7 @@
   border: 1px solid rgba(0, 106, 94, 0.2);
 }
 
-[data-redesign='true'] .dlq-admin__message--error {
+.dlq-admin__message--error {
   background: var(--color-error-bg);
   color: var(--color-error);
   border-radius: var(--radius-card-sm);
@@ -541,7 +541,7 @@
   border: 1px solid rgba(186, 26, 26, 0.2);
 }
 
-[data-redesign='true'] .dlq-admin__pagination {
+.dlq-admin__pagination {
   display: flex;
   align-items: center;
   justify-content: center;

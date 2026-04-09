@@ -511,12 +511,12 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .report-generator {
+.report-generator {
   font-family: var(--font-body);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .report-generator .report-section {
+.report-generator .report-section {
   background: var(--color-surface-container-low);
   border: none;
   border-radius: var(--radius-card);
@@ -524,26 +524,26 @@
   margin-bottom: 1rem;
 }
 
-[data-redesign='true'] .report-generator .report-label {
+.report-generator .report-label {
   font-size: 0.875rem;
   font-weight: var(--font-weight-semibold);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .report-generator .report-actions {
+.report-generator .report-actions {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
   padding-top: 1rem;
 }
 
-[data-redesign='true'] .report-generator .share-buttons {
+.report-generator .share-buttons {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-[data-redesign='true'] .report-generator .share-button {
+.report-generator .share-button {
   padding: 0.5rem 1rem;
   background: var(--color-surface-container-low);
   border: none;
@@ -556,13 +556,13 @@
   transition: background 200ms ease-out;
 }
 
-[data-redesign='true'] .report-generator .share-button:hover {
+.report-generator .share-button:hover {
   background: var(--color-surface-container-high);
 }
 
 /* --- Legibilidade: classes BEM do ReportGenerator sobre fundo branco --- */
 
-[data-redesign='true'] .report-generator__eyebrow {
+.report-generator__eyebrow {
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: var(--font-weight-bold);
@@ -572,7 +572,7 @@
   margin: 0 0 0.25rem;
 }
 
-[data-redesign='true'] .report-generator__title {
+.report-generator__title {
   font-family: var(--font-body);
   font-size: var(--text-title-lg);
   font-weight: var(--font-weight-semibold);
@@ -580,7 +580,7 @@
   margin: 0 0 0.5rem;
 }
 
-[data-redesign='true'] .report-generator__description {
+.report-generator__description {
   font-family: var(--font-body);
   font-size: 0.875rem;
   color: var(--color-on-surface-variant);
@@ -588,7 +588,7 @@
   line-height: 1.5;
 }
 
-[data-redesign='true'] .report-generator__hero {
+.report-generator__hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -596,11 +596,11 @@
   margin-bottom: 1.5rem;
 }
 
-[data-redesign='true'] .report-generator__hero-copy {
+.report-generator__hero-copy {
   flex: 1;
 }
 
-[data-redesign='true'] .report-generator__hero-badge {
+.report-generator__hero-badge {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -611,7 +611,7 @@
   min-width: 72px;
 }
 
-[data-redesign='true'] .report-generator__hero-badge span {
+.report-generator__hero-badge span {
   font-family: var(--font-body);
   font-size: 0.625rem;
   font-weight: var(--font-weight-medium);
@@ -620,14 +620,14 @@
   letter-spacing: 0.5px;
 }
 
-[data-redesign='true'] .report-generator__hero-badge strong {
+.report-generator__hero-badge strong {
   font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
 }
 
-[data-redesign='true'] .report-generator__panel {
+.report-generator__panel {
   background: var(--color-surface-container-low);
   border: none;
   border-radius: var(--radius-card);
@@ -635,11 +635,11 @@
   margin-bottom: 0.75rem;
 }
 
-[data-redesign='true'] .report-generator__panel--soft {
+.report-generator__panel--soft {
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
-[data-redesign='true'] .report-generator__label {
+.report-generator__label {
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: var(--font-weight-semibold);
@@ -650,7 +650,7 @@
   margin-bottom: 0.5rem;
 }
 
-[data-redesign='true'] .report-generator__helper {
+.report-generator__helper {
   font-family: var(--font-body);
   font-size: 0.75rem;
   color: var(--color-on-surface-variant);
@@ -658,13 +658,13 @@
   line-height: 1.4;
 }
 
-[data-redesign='true'] .report-generator__chips {
+.report-generator__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
 }
 
-[data-redesign='true'] .report-generator__chip {
+.report-generator__chip {
   padding: 0.25rem 0.75rem;
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
@@ -674,12 +674,12 @@
   font-weight: var(--font-weight-medium);
 }
 
-[data-redesign='true'] .report-generator__select {
+.report-generator__select {
   width: 100%;
   font-family: var(--font-body);
 }
 
-[data-redesign='true'] .report-generator__error {
+.report-generator__error {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -692,7 +692,7 @@
   margin-bottom: 1rem;
 }
 
-[data-redesign='true'] .report-generator__success-message {
+.report-generator__success-message {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -706,7 +706,7 @@
   margin-bottom: 1rem;
 }
 
-[data-redesign='true'] .report-generator__loading-text {
+.report-generator__loading-text {
   font-family: var(--font-body);
   font-size: 0.875rem;
   color: var(--color-on-surface-variant);
@@ -714,7 +714,7 @@
   margin-top: 0.5rem;
 }
 
-[data-redesign='true'] .report-generator__share-expiry {
+.report-generator__share-expiry {
   font-family: var(--font-body);
   font-size: 0.75rem;
   color: var(--color-on-surface-variant);

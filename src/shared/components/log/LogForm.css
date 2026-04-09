@@ -114,15 +114,15 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .log-form {
+.log-form {
   padding-bottom: 1rem;
 }
 
-[data-redesign='true'] .log-form h3 {
+.log-form h3 {
   /* Herda de form h3 em components.redesign.css */
 }
 
-[data-redesign='true'] .log-type-toggle {
+.log-type-toggle {
   display: flex;
   background: var(--color-surface-container-low);
   padding: 4px;
@@ -130,7 +130,7 @@
   gap: 4px;
 }
 
-[data-redesign='true'] .log-type-toggle button {
+.log-type-toggle button {
   flex: 1;
   display: flex;
   align-items: center;
@@ -148,37 +148,37 @@
   transition: all 200ms ease-out;
 }
 
-[data-redesign='true'] .log-type-toggle button.active {
+.log-type-toggle button.active {
   background: var(--color-surface-container-lowest);
   color: var(--color-primary);
   box-shadow: 0 1px 3px rgba(25, 28, 29, 0.08);
 }
 
-[data-redesign='true'] .log-type-toggle button:disabled {
+.log-type-toggle button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-[data-redesign='true'] .protocol-info {
+.protocol-info {
   padding: 1rem;
   background: var(--color-surface-container-low);
   border: none;
   border-radius: var(--radius-card);
 }
 
-[data-redesign='true'] .info-item {
+.info-item {
   font-family: var(--font-body);
 }
 
-[data-redesign='true'] .info-label {
+.info-label {
   color: var(--color-on-surface-variant);
 }
 
-[data-redesign='true'] .info-value {
+.info-value {
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .plan-summary-title {
+.plan-summary-title {
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: var(--font-weight-semibold);
@@ -187,20 +187,20 @@
   letter-spacing: 0.5px;
 }
 
-[data-redesign='true'] .plan-medicines-list {
+.plan-medicines-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-[data-redesign='true'] .plan-med-item {
+.plan-med-item {
   border-bottom-color: var(--color-outline-ghost);
   color: var(--color-on-surface);
   font-family: var(--font-body);
 }
 
 @media (max-width: 640px) {
-  [data-redesign='true'] .log-form {
+  .log-form {
     padding-bottom: 1rem;
   }
 }

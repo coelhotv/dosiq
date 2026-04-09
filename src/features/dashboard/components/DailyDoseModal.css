@@ -305,12 +305,12 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .daily-dose-modal {
+.daily-dose-modal {
   font-family: var(--font-body);
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .daily-dose-modal .dose-summary {
+.daily-dose-modal .dose-summary {
   background: var(--color-surface-container-low);
   border: none;
   border-radius: var(--radius-card);
@@ -318,7 +318,7 @@
   margin-bottom: 1rem;
 }
 
-[data-redesign='true'] .daily-dose-modal .dose-list-header {
+.daily-dose-modal .dose-list-header {
   font-size: 0.75rem;
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;

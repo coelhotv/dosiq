@@ -75,12 +75,12 @@
    MilestoneCelebration — Redesign (Sanctuary)
    ============================================ */
 
-[data-redesign='true'] .milestone-backdrop {
+.milestone-backdrop {
   background: rgba(25, 28, 29, 0.4);
   backdrop-filter: blur(4px);
 }
 
-[data-redesign='true'] .milestone-modal {
+.milestone-modal {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-editorial);
@@ -90,11 +90,11 @@
   width: calc(100% - 2rem);
 }
 
-[data-redesign='true'] .milestone-icon {
+.milestone-icon {
   filter: none;
 }
 
-[data-redesign='true'] .milestone-title {
+.milestone-title {
   font-family: var(--font-display);
   font-size: var(--text-title-lg);
   font-weight: var(--font-weight-bold);
@@ -102,14 +102,14 @@
   margin: 0 0 0.5rem 0;
 }
 
-[data-redesign='true'] .milestone-description {
+.milestone-description {
   font-size: var(--text-body-lg);
   color: var(--color-on-surface-variant);
   margin: 0 0 1.5rem 0;
   line-height: 1.6;
 }
 
-[data-redesign='true'] .milestone-button {
+.milestone-button {
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   border: none;
@@ -123,11 +123,11 @@
   transition: all 200ms ease-out;
 }
 
-[data-redesign='true'] .milestone-button:hover {
+.milestone-button:hover {
   transform: scale(1.02);
   background: var(--gradient-primary);
 }
 
-[data-redesign='true'] .milestone-button:active {
+.milestone-button:active {
   transform: scale(0.98);
 }

@@ -128,13 +128,13 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .medicine-form {
+.medicine-form {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-[data-redesign='true'] .medicine-form .dosage-input-group {
+.medicine-form .dosage-input-group {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 0.5rem;

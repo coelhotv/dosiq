@@ -122,28 +122,28 @@
    REDESIGN: SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
-[data-redesign='true'] .protocol-form {
+.protocol-form {
   padding-bottom: 1rem;
 }
 
-[data-redesign='true'] .time-input-group {
+.time-input-group {
   display: flex;
   gap: 0.5rem;
   align-items: stretch;
 }
 
-[data-redesign='true'] .time-input-group input[type='time'] {
+.time-input-group input[type='time'] {
   flex: 1;
 }
 
-[data-redesign='true'] .time-schedule-list {
+.time-schedule-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
 
-[data-redesign='true'] .time-chip {
+.time-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
@@ -156,7 +156,7 @@
   color: var(--color-on-surface);
 }
 
-[data-redesign='true'] .time-chip .remove-time {
+.time-chip .remove-time {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,13 +172,13 @@
   transition: all 150ms ease-out;
 }
 
-[data-redesign='true'] .time-chip .remove-time:hover {
+.time-chip .remove-time:hover {
   background: var(--color-error-bg);
   color: var(--color-error);
 }
 
 /* Titration section container (inline style override) */
-[data-redesign='true'] .protocol-form .form-row[style*='border'] {
+.protocol-form .form-row[style*='border'] {
   border-color: var(--color-outline-ghost) !important;
   background: var(--color-surface-container-low) !important;
   border-radius: var(--radius-card) !important;

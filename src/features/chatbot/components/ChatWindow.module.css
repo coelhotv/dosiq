@@ -8,7 +8,7 @@
 }
 
 /* Redesign mode: lighter overlay for light theme */
-[data-redesign='true'] .overlay {
+.overlay {
   background: rgba(25, 28, 29, 0.2);
 }
 
@@ -26,7 +26,7 @@
 }
 
 /* Redesign mode: use light surface instead of dark background */
-[data-redesign='true'] .drawer {
+.drawer {
   background: var(--color-surface-container-lowest, #ffffff);
   border-left: 1px solid var(--color-outline-variant, #c9ded8);
 }
@@ -40,7 +40,7 @@
 }
 
 /* Redesign mode: light border */
-[data-redesign='true'] .header {
+.header {
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
@@ -50,7 +50,7 @@
 }
 
 /* Redesign mode: ensure dark text on light background */
-[data-redesign='true'] .headerTitle {
+.headerTitle {
   color: var(--color-on-surface, #191c1d);
 }
 
@@ -76,7 +76,7 @@
 }
 
 /* Redesign mode: dark text buttons */
-[data-redesign='true'] .clearButton {
+.clearButton {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -91,7 +91,7 @@
 }
 
 /* Redesign mode: dark text buttons */
-[data-redesign='true'] .closeButton {
+.closeButton {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -122,7 +122,7 @@
 }
 
 /* Redesign mode: use primary (sanctuary green) for user messages */
-[data-redesign='true'] .messageBubbleUser {
+.messageBubbleUser {
   background: var(--color-primary, #006a5e);
   color: var(--color-on-primary, #ffffff);
 }
@@ -134,7 +134,7 @@
 }
 
 /* Redesign mode: light gray background for assistant messages */
-[data-redesign='true'] .messageBubbleAssistant {
+.messageBubbleAssistant {
   background: var(--color-surface-container-low, #f2f4f5);
   color: var(--color-on-surface, #191c1d);
 }
@@ -149,12 +149,12 @@
 }
 
 /* Redesign mode: ensure timestamp is readable */
-[data-redesign='true'] .messageBubbleAssistant .messageTime {
+.messageBubbleAssistant .messageTime {
   color: var(--color-on-surface-variant, #3e4946);
   opacity: 0.6;
 }
 
-[data-redesign='true'] .messageBubbleUser .messageTime {
+.messageBubbleUser .messageTime {
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -186,12 +186,12 @@
 }
 
 /* Redesign mode: use light border and darker text */
-[data-redesign='true'] .dateSeparator {
+.dateSeparator {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
-[data-redesign='true'] .dateSeparator::before,
-[data-redesign='true'] .dateSeparator::after {
+.dateSeparator::before,
+.dateSeparator::after {
   background: var(--color-outline-variant, #c9ded8);
 }
 
@@ -205,7 +205,7 @@
 }
 
 /* Redesign mode: light gray with dark text */
-[data-redesign='true'] .thinkingBubble {
+.thinkingBubble {
   background: var(--color-surface-container-low, #f2f4f5);
   color: var(--color-on-surface-variant, #3e4946);
 }
@@ -234,12 +234,12 @@
 }
 
 /* Redesign mode: light border and dark text */
-[data-redesign='true'] .suggestionButton {
+.suggestionButton {
   border-color: var(--color-outline-variant, #c9ded8);
   color: var(--color-on-surface-variant, #3e4946);
 }
 
-[data-redesign='true'] .suggestionButton:hover {
+.suggestionButton:hover {
   border-color: var(--color-primary, #006a5e);
   color: var(--color-primary, #006a5e);
 }
@@ -252,7 +252,7 @@
 }
 
 /* Redesign mode: light border */
-[data-redesign='true'] .inputRow {
+.inputRow {
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
@@ -268,13 +268,13 @@
 }
 
 /* Redesign mode: white background with dark border and dark text */
-[data-redesign='true'] .textInput {
+.textInput {
   background: white;
   color: var(--color-on-surface, #191c1d);
   border-color: var(--color-outline-variant, #c9ded8);
 }
 
-[data-redesign='true'] .textInput::placeholder {
+.textInput::placeholder {
   color: var(--color-on-surface-variant, #3e4946);
 }
 
@@ -294,11 +294,11 @@
 }
 
 /* Redesign mode: use primary (sanctuary green) */
-[data-redesign='true'] .sendButton {
+.sendButton {
   background: var(--color-primary, #006a5e);
 }
 
-[data-redesign='true'] .sendButton:hover:not(:disabled) {
+.sendButton:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-primary, #006a5e) 85%, #000000);
 }
 
@@ -308,7 +308,7 @@
   opacity: 0.75;
 }
 
-[data-redesign='true'] .messageBubbleAssistant em {
+.messageBubbleAssistant em {
   color: var(--color-primary, #006a5e);
   opacity: 1;
   font-weight: 500;
