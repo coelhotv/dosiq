@@ -210,7 +210,7 @@ npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 | **Planning** | `/devflow planning "goal"` | Antes de implementar — design, spec, ADR check, scope analysis |
 | **Coding** | `/devflow coding "task"` | Durante implementação — C1-C4 checklist, contract gateway, quality gates |
 | **Reviewing** | `/devflow reviewing "PR #N"` | Ao revisar PRs — violation scan, sync memory, atualizar trigger counts |
-| **Distillation** | `/devflow distill` | Quando `journal_entries >= 10` — comprimir, revisar lifecycle, preparar exports |
+| **Distillation** | `/devflow distill` | Quando `journal_entries >= 15` — comprimir, revisar lifecycle, preparar exports |
 | **Export** | `/devflow export` | Promover regras ao global_base (~/.devflow/global_base/) — requer aprovação |
 | **Delivery** | `/deliver-sprint` | Executar entrega estruturada (8 fases, zero-defect workflow) |
 | **Review (Tech)** | `/check-review` | Revisão técnica de código (complementa DEVFLOW reviewing com análise Gemini) |
@@ -221,7 +221,7 @@ npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 → codificar         → seguir C1-C4 DEVFLOW (Execute)
 → /deliver-sprint   → entrega estruturada (Execute)
 → DEVFLOW C5        → registrar na memória (Record)
-→ /devflow distill  → quando journal_entries >= 10 (Record)
+→ /devflow distill  → quando journal_entries >= 15 (Record)
 ```
 
 ---

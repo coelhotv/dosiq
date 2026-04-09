@@ -16,21 +16,19 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.1",
+    "id": "session_2026W15_wave17_sprint17.6_complete",
     "started_at": "2026-04-08T23:00:00Z",
     "mode": "coding",
-    "goal": "Sprint 17.1 — Soft Promotion (enable redesign by default)",
+    "goal": "Sprint 17.6 — Emergency View Restoration + Legacy Cleanup",
     "goal_type": "feat",
     "status": "merged",
     "acceptance_criteria": [
-      "Modify resolveInitialFlag() to return true by default for new users",
-      "Preserve existing user preferences (localStorage '0' = disabled)",
-      "Implement fail-safe behavior (error → true)",
-      "Keep feature flag infrastructure for rollback capability",
-      "All quality gates pass (lint, test, build, validate:agent)",
-      "Semantic commit with wave/sprint reference",
-      "Non-breaking change to contracts (CON-016)",
-      "PR merged to main, 2-week observation period begins"
+      "Emergency card view restored with redesigned components ✓",
+      "All legacy views deleted (Dashboard, Stock, HealthHistory, etc.) ✓",
+      "RedesignContext & useRedesign removed ✓",
+      "All quality gates pass (lint, build, tests, validate:agent) ✓",
+      "Learned & documented 2 critical bugs (AP-094, AP-095) ✓",
+      "PR #452 merged to main ✓"
     ]
   },
   "memory": {
