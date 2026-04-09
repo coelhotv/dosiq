@@ -22,7 +22,7 @@ import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { protocolService } from '@shared/services'
 import './Treatments.css'
 
-export default function TreatmentsRedesign({
+export default function Treatments({
   onNavigateToProtocol,
   onNavigate,
   initialMedicineId,

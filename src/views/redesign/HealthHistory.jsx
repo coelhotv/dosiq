@@ -30,7 +30,7 @@ const AdherenceHeatmap = lazy(() => import('@adherence/components/AdherenceHeatm
  * @param {Object} props
  * @param {Function} props.onNavigate - Callback de navegação (para 'profile', etc.)
  */
-export default function HealthHistoryRedesign({ onNavigate }) {
+export default function HealthHistory({ onNavigate }) {
   // ═══ States ═══
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)

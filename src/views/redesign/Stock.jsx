@@ -47,7 +47,7 @@ function deriveProtocolStatus(protocol, now = new Date()) {
   return 'ativa'
 }
 
-export default function StockRedesign({ initialParams, onClearParams }) {
+export default function Stock({ initialParams, onClearParams }) {
   // ── Dados (hook compartilhado) ──
   const {
     items,

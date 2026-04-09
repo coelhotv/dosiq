@@ -16,7 +16,7 @@ import { generateConsultationPDF } from '@features/reports/services/consultation
 import { formatLocalDate } from '@utils/dateUtils.js'
 import './Consultation.css'
 
-export default function ConsultationRedesign({ onBack }) {
+export default function Consultation({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
   const [consultationData, setConsultationData] = useState(null)
   const [error, setError] = useState(null)

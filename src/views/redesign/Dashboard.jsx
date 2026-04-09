@@ -55,7 +55,7 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
  *
  * @param {Function} onNavigate — Callback de navegação (view, params?) => void
  */
-export default function DashboardRedesign({ onNavigate }) {
+export default function Dashboard({ onNavigate }) {
   // ── Dados compartilhados (NÃO duplicar) ──
   const {
     stats,

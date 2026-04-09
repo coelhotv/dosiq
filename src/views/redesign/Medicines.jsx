@@ -10,7 +10,7 @@ import MedicineCardRedesign from '@medications/components/redesign/MedicineCardR
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import './Medicines.css'
 
-export default function MedicinesRedesign({ onNavigateToProtocol }) {
+export default function Medicines({ onNavigateToProtocol }) {
   // 1. Context & Memos
   const {
     medicines: contextMedicines,
