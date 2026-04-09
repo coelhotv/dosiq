@@ -16,16 +16,19 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.8_complete",
+    "id": "session_2026W15_wave17_sprint17.9_planning",
     "started_at": "2026-04-08T23:00:00Z",
     "mode": "coding",
-    "goal": "Sprint 17.8 — Feature Flag Infrastructure Removal",
-    "goal_type": "feat",
-    "status": "merged",
+    "goal": "Sprint 17.9 — CSS Cleanup (Revised Scope)",
+    "goal_type": "chore",
+    "status": "planning",
     "acceptance_criteria": [
-      "Badge.jsx JSDoc updated (removed [data-redesign] reference) ✓",
-      "Feature flag infrastructure deleted in prior sprints (S17.6) ✓",
-      "All quality gates pass (lint, validate:agent) ✓"
+      "tokens.redesign.css deleted",
+      "layout.redesign.css renamed to layout.css",
+      "components.redesign.css renamed to components.css",
+      "Orphaned CSS in src/views/ deleted",
+      "npm run build passes",
+      "npm run validate:agent passes"
     ]
   },
   "memory": {
@@ -35,15 +38,15 @@
     "contracts_count": 16,
     "knowledge_count": 70,
     "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 4
+    "journal_entries_since_distillation": 5
   },
   "evolution": {
     "genes_version": "1.1",
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-08T21:45:00Z",
-    "relevant_rules_loaded_at": "2026-04-08T21:45:00Z",
+    "index_loaded_at": "2026-04-09T03:40:00Z",
+    "relevant_rules_loaded_at": "2026-04-09T03:40:00Z",
     "review_completed_at": "2026-04-09T03:36:00Z"
   },
   "migration": {
