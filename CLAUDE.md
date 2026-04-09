@@ -277,7 +277,7 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 | **Planning** | `/devflow planning "goal"` | Modo planejamento: analisa scope, cria specs, drafta ADRs, verifica contratos |
 | **Coding** | `/devflow coding "task"` | Modo codificacao: C1-C4 checklist, contract gateway, quality gates |
 | **Reviewing** | `/devflow reviewing "PR #N"` | Modo revisao: scan violations, sync memory, atualiza trigger counts de APs |
-| **Distillation** | `/devflow distill` | Comprimir journals, revisar lifecycle de regras, preparar exports (quando journal_entries >= 10) |
+| **Distillation** | `/devflow distill` | Comprimir journals, revisar lifecycle de regras, preparar exports (quando journal_entries >= 15) |
 | **Export** | `/devflow export` | Promover regras candidatas ao global_base (~/.devflow/global_base/) — requer aprovacao |
 
 ### Estrutura de Memoria (CANONICA — `.agent/memory/`)
@@ -317,7 +317,7 @@ DURANTE (coding):
 APOS codificar:
   - DEVFLOW C5: registrar novos R-NNN / AP-NNN / ADR-NNN se aplicavel
   - Append ao journal YYYY-WWW.jsonl
-  - /devflow distill quando journal_entries >= 10
+  - /devflow distill quando journal_entries >= 15
 ```
 
 ### Quando Registrar na Memoria DEVFLOW
@@ -351,7 +351,7 @@ como referencia historica de W01-W11. Todo novo registro vai para `.agent/memory
 10. ANALYZE AND ACT ON REVIEWER SUGGESTIONS
 11. ISSUE COMMENT FOR RE-REVIEW ('/gemini review')
 12. MERGE & CLEANUP (--no-ff, deletar branch)
-13. /devflow distill se journal_entries >= 10
+13. /devflow distill se journal_entries >= 15
 ```
 
 **REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs.
@@ -524,4 +524,4 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 - [ ] Decisao arquitetural tomada? → `ADR-NNN` em `.agent/memory/decisions.json` + `decisions_detail/`
 - [ ] Entrega significativa? → entrada em `.agent/memory/journal/YYYY-WWW.jsonl`
 - [ ] Atualizei `.agent/state.json` (journal_entries_since_distillation)?
-- [ ] Se journal_entries >= 10 → executar `/devflow distill`
+- [ ] Se journal_entries >= 15 → executar `/devflow distill`
