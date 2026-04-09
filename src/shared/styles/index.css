@@ -41,8 +41,8 @@
    Wave 17: Global tokens (W17.2), layout consolidation (W17.3), components (W17.4)
    ============================================ */
 @import './tokens/sanctuary.css';
-@import './layout.redesign.css';
-@import './components.redesign.css';
+@import './layout.css';         /* renamed from layout.redesign.css in S17.9 */
+@import './components.css';     /* renamed from components.redesign.css in S17.9 */
 
 /* ============================================
    CSS RESET
