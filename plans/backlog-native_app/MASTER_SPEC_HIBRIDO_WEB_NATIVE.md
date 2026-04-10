@@ -23,30 +23,30 @@ Este documento existe para impedir que agentes futuros:
 - assumam que o projeto ja possui PWA completa com service worker e web push ativos
 - substituam Telegram por push nativo antes da arquitetura de notificacao estar desacoplada
 
-> **Addenda normativos complementares:** esta master spec agora deve ser lida em conjunto com `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`, `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`, `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md` e `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`.
+> **Addenda normativos complementares:** esta master spec agora deve ser lida em conjunto com `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`, `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`, `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md` e `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`.
 
 ### Mapa documental oficial
 
 Os documentos oficiais e ativos deste projeto hybrid/native passam a ser:
 
-- `plans/native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+- `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 Regra:
 
 - tudo que estiver em `plans/archive_old/native_app/` e historico
-- o maintainer e os agentes devem preferir sempre os docs de `plans/native_app/`
+- o maintainer e os agentes devem preferir sempre os docs de `plans/backlog-native_app/`
 - em caso de conflito, a precedence correta e: `MASTER_SPEC` -> `EXEC_SPEC_FASE_*` -> `ADDENDUM_*` aplicavel
 
 ---
@@ -668,7 +668,7 @@ O MVP **nao** existe para atingir paridade total da web.
 
 ## Fase 0 - Alinhamento e Guardrails
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
 
 ### Objetivo
 
@@ -692,7 +692,7 @@ Criar o terreno correto para a execucao. Nenhum codigo native de produto entra a
 
 ## Fase 1 - Workspaces sem mover a web
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
 
 ### Objetivo
 
@@ -720,7 +720,7 @@ Adicionar estrutura de monorepo sem quebrar o fluxo atual da web.
 
 ## Fase 2 - Extracao do core puro
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
 
 ### Objetivo
 
@@ -746,7 +746,7 @@ Se o modulo exigir `window`, `document`, `navigator`, `localStorage`, `import.me
 
 ## Fase 3 - Adapters e shared-data
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
 
 ### Objetivo
 
@@ -771,13 +771,13 @@ Criar contratos compartilhados para storage, config, query cache e acesso a dado
 
 ## Fase 4 - Scaffold mobile
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
 
 **Addenda obrigatorios desta fase:**
 
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 ### Objetivo
 
@@ -804,12 +804,12 @@ Subir o app Expo com auth, sessao, navegacao e tela de smoke.
 
 ## Fase 5 - MVP de produto mobile
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
 
 **Addenda obrigatorios desta fase:**
 
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
 
 ### Objetivo
 
@@ -836,14 +836,14 @@ Entregar as telas do MVP e provar consumo real da camada compartilhada.
 
 ## Fase 6 - Push native e beta interno
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
 
 **Addenda obrigatorios desta fase:**
 
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 ### Objetivo
 
@@ -871,12 +871,12 @@ Adicionar notificacao nativa com arquitetura multicanal correta.
 
 ## Fase 7 - Mover web para `apps/web` se necessario
 
-**Exec spec detalhada:** `plans/native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
+**Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
 
 **Addenda obrigatorios desta fase:**
 
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-- `plans/native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 ### Objetivo
 
