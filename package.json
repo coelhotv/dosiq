@@ -3,6 +3,10 @@
   "private": true,
   "version": "4.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
