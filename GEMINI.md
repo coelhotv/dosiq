@@ -86,7 +86,7 @@ Ao final de cada tarefa, execute o protocolo **DEVFLOW C5**:
 - Se `journal_entries >= 10` → executar `/devflow distill`
 
 > ⚠️ `.memory/` está **aposentado** desde 2026-04-08. Não escreva nele.
-> Fontes canônicas: `.agent/memory/rules.json` (96 regras ativas) + `.agent/memory/anti-patterns.json` (74 APs ativos)
+> Fontes canônicas: `.agent/memory/rules.json` (96 regras ativas) + `.agent/memory/anti-patterns.json` (54 APs ativos)
 
 ---
 *Última atualização: 2026-04-08*

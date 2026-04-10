@@ -71,7 +71,7 @@ docs/                # Documentacao do projeto
   decisions_detail/  #   - ADR detail files (ADR-001.md through ADR-025.md)
   memory/
     rules.json       #   - Indice de regras R-NNN (96 ativas) — carregar `hot` primeiro e expandir `warm` por contexto
-    anti-patterns.json #  - Indice AP-NNN (74 ativos) — carregar `hot` primeiro e expandir `warm` por contexto
+    anti-patterns.json #  - Indice AP-NNN (54 ativos) — carregar `hot` primeiro e expandir `warm` por contexto
     contracts.json   #   - Contratos de interface CON-NNN (16)
     knowledge.json   #   - Domain facts K-NNN (70 fatos)
     rules_detail/    #   - R-NNN.md on-demand
@@ -287,7 +287,7 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
   state.json                    # Estado do projeto (sprint, goal, contadores)
   memory/
     rules.json                  # Indice de regras R-NNN (96 ativas)
-    anti-patterns.json          # Indice de anti-patterns AP-NNN (74 ativos)
+    anti-patterns.json          # Indice de anti-patterns AP-NNN (54 ativos)
     contracts.json              # Contratos de interface CON-NNN (16)
     decisions.json              # ADRs ADR-NNN (25 decisoes arquiteturais)
     knowledge.json              # Domain facts K-NNN (70 fatos)
@@ -496,7 +496,7 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 ### Memoria de Longo Prazo (DEVFLOW — `.agent/memory/`)
 **IMPORTANTE:** A memoria canonica e gerenciada pelo DEVFLOW. Use `/devflow` para acessar e atualizar.
 - `.agent/memory/rules.json` + `rules_detail/` — Regras R-NNN (96 ativas), com lifecycle `hot/warm/cold/archived`
-- `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` — AP-NNN (74 ativos), com lifecycle `hot/warm/cold/archived`
+- `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` — AP-NNN (54 ativos), com lifecycle `hot/warm/cold/archived`
 - `.agent/memory/knowledge.json` + `knowledge_detail/` — Domain facts K-NNN (70 fatos)
 - `.agent/memory/decisions.json` + `decisions_detail/` — ADRs (25 decisoes arquiteturais)
 - `.agent/memory/journal/YYYY-WWW.jsonl` — Journals JSONL por sprint (append-only)
