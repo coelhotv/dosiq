@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Addendum: Offline e Sync do Mobile
 
 > **Status:** Addendum normativo e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Consumido por:** Fase 5 e Fase 6
 > **Objetivo:** congelar a politica de conectividade, cache e sincronizacao do app mobile para evitar promessas de offline que a arquitetura ainda nao suporta
 

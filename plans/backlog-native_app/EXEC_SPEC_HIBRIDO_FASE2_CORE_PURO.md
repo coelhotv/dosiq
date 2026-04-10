@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 2: Extracao do Core Puro
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 1 concluida
 > **Objetivo da fase:** extrair somente codigo puro para `packages/core` sem introduzir adapters nem mover services browser-dependent
 

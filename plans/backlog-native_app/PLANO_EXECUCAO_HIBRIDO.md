@@ -102,8 +102,8 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 2 sessoes | ~3-4 dias
 **Pre-requisitos humanos:** validacao visual da web + deploy preview Vercel
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
-**Addendums:** Deploy Vercel Monorepo
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
+**Addendums:** Deploy Vercel Monorepo [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEPLOY_VERCEL_MONOREPO.md`]
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -128,8 +128,8 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 3-4 sessoes | ~1-2 semanas
 **Pre-requisitos humanos:** nenhum (fase de codigo puro)
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
-**Addendums:** Design Tokens
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
+**Addendums:** Design Tokens [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DESIGN_TOKENS.md`]
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -152,7 +152,7 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 4-5 sessoes | ~2-3 semanas
 **Pre-requisitos humanos:** nenhum (fase de refactor web)
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -177,8 +177,8 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 3-4 sessoes | ~2 semanas
 **Pre-requisitos humanos:** CRITICO — conta Expo, Apple Dev, Google Play, bundleIdentifier
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
-**Addendums:** Release Engineering, Testing Mobile, Deploy Vercel, Human Dependencies, Privacy
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
+**Addendums:** Release Engineering [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`], Testing Mobile [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_TESTING_MOBILE.md`], Deploy Vercel [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEPLOY_VERCEL_MONOREPO.md`], Human Dependencies [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_HUMAN_DEPENDENCIES.md`], Privacy [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`]
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -205,8 +205,8 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 6-8 sessoes | ~3-4 semanas
 **Pre-requisitos humanos:** validacao funcional de cada tela
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
-**Addendums:** Deep Links, Offline/Sync, Testing Mobile, Design Tokens
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
+**Addendums:** Deep Links [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEP_LINKS.md`], Offline/Sync [plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md], Testing Mobile [plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_TESTING_MOBILE.md], Design Tokens [plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DESIGN_TOKENS.md]
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -235,7 +235,7 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 5-7 sessoes | ~3-4 semanas
 **Pre-requisitos humanos:** CRITICO — APNs key, FCM, migracao SQL, device real, TestFlight
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md`
 **Addendums:** TODOS (Release Eng, Deep Links, Offline, Privacy, Testing, Human Deps)
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
@@ -266,7 +266,7 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 **Estimativa:** 2-3 sessoes | ~1 semana
 **Pre-requisitos humanos:** aprovacao explicita do maintainer
-**Spec:** `EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
+**Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md`
 **Addendums:** Release Engineering, Deploy Vercel, Privacy
 
 **Esta wave so executa se o maintainer decidir que o layout monorepo completo e necessario.**

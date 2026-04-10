@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 7: Migracao Tardia da Web para `apps/web`
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 6 concluida
 > **Objetivo da fase:** mover a aplicacao web da raiz para `apps/web` somente se a estabilizacao da arquitetura hibrida justificar a mudanca
 

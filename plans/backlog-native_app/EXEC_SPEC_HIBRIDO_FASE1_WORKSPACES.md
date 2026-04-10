@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 1: Workspaces sem mover a web
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 0 concluida
 > **Objetivo da fase:** adicionar estrutura de monorepo e pacotes vazios sem interromper a web atual
 

@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 0: Guardrails, ADRs e Inventario
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Objetivo da fase:** preparar a execucao; nao implementar produto native
 > **Resultado esperado:** arquitetura alinhada, escopo congelado, inventario pronto, docs legados controlados
 
@@ -59,7 +59,7 @@ Esta fase pode preparar o terreno documental, mas nao deve produzir extracao fun
 
 ### R0-004. Um unico documento manda
 
-`plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` e a master spec.
+`plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` e a master spec.
 
 Todos os documentos escritos nesta fase devem:
 

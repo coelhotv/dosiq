@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Addendum: Release Engineering Mobile
 
 > **Status:** Addendum normativo e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Consumido por:** Fase 4, Fase 6 e Fase 7
 > **Objetivo:** congelar as decisoes de identidade, build, ambiente, versionamento e distribuicao do app mobile para impedir improviso operacional
 

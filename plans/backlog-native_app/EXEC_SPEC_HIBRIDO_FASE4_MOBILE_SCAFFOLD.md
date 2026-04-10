@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 4: Mobile Scaffold
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 3 concluida
 > **Objetivo da fase:** subir o app Expo com auth, sessao, navegacao minima e tela de smoke consumindo o compartilhado
 

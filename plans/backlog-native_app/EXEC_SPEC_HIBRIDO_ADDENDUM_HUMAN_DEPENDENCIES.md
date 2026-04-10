@@ -27,8 +27,8 @@ Este addendum lista explicitamente o que o maintainer humano deve fazer e quando
 
 | Dependencia | Responsavel | Bloqueante para | Status |
 |-------------|-------------|-----------------|--------|
-| Revisao e aprovacao das 3 ADRs | Maintainer | Fase 1 | Pendente |
-| Decisao sobre remocao de `expo` do `package.json` raiz | Maintainer | Fase 1 | Pendente |
+| Revisao e aprovacao das 3 ADRs | Maintainer | Fase 1 | Aprovado ✅ |
+| Decisao sobre remocao de `expo` do `package.json` raiz | Maintainer | Fase 1 | Aprovado ✅ |
 
 ### 2.2. Fase 1 — Workspaces
 
@@ -41,7 +41,7 @@ Este addendum lista explicitamente o que o maintainer humano deve fazer e quando
 
 | Dependencia | Responsavel | Bloqueante para | Status |
 |-------------|-------------|-----------------|--------|
-| Conta Apple Developer ($99/ano) | Maintainer | Builds iOS, TestFlight | Pendente |
+| Conta Apple Developer ($99/ano) | Maintainer | Builds iOS, TestFlight | Em aprovação Apple |
 | Conta Google Play Console ($25 one-time) | Maintainer | Builds Android, Internal Testing | Pendente |
 | Conta Expo / EAS | Maintainer | `eas build`, `eas submit` | Pendente |
 | `bundleIdentifier` e `androidPackage` finais | Maintainer | `app.config.js` | Pendente |

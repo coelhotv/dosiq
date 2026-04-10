@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Addendum: Privacy, Permissions e Compliance Mobile
 
 > **Status:** Addendum normativo e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Consumido por:** Fase 4, Fase 6 e Fase 7
 > **Objetivo:** congelar como o app mobile pede permissoes, trata dados sensiveis e se prepara para distribuicao sem vazamento de contexto clinico
 

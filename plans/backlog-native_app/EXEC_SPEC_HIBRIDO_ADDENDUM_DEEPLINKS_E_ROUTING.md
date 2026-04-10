@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Addendum: Deep Links e Routing Native
 
 > **Status:** Addendum normativo e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Consumido por:** Fase 5 e Fase 6
 > **Objetivo:** congelar como o app mobile representa rotas, trata deep links e encaminha taps em notificacoes sem improviso
 

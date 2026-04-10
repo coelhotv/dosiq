@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 3: Adapters e Shared Data
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 2 concluida
 > **Objetivo da fase:** criar contratos compartilhados e extrair a camada de dados adaptada por injecao, sem ainda construir o app mobile funcional
 

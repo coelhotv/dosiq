@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 5: MVP de Produto Mobile
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 4 concluida
 > **Objetivo da fase:** entregar o primeiro MVP funcional do produto mobile, provando consumo real da camada compartilhada sem tentar atingir paridade total da web
 
