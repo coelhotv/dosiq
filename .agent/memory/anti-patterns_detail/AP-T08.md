@@ -2,7 +2,7 @@
 
 **Category:** Testing
 **Status:** active
-**Related Rule:** —
+**Related Rule:** R-051
 **Applies To:** all
 
 ## Problem

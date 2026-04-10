@@ -2,7 +2,7 @@
 
 **Category:** Ui
 **Status:** active
-**Related Rule:** None
+**Related Rule:** R-119
 **Applies To:** all
 
 ## Problem

@@ -264,7 +264,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-113",
+    "related_rule": "\\",
     "has_detail": false
   },
   {
@@ -643,8 +643,8 @@
   },
   {
     "id": "AP-W12",
-    "title": "Use `||` fallback for numeric props that can legitimately be `0`",
-    "summary": "`dosage_per_intake = 0` becomes `1`; incorrect dose recorded",
+    "title": "Use `\\",
+    "summary": "\\",
     "applies_to": [
       "all"
     ],
@@ -655,7 +655,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-104",
+    "related_rule": "`dosage_per_intake = 0` becomes `1`; incorrect dose recorded",
     "has_detail": false
   },
   {
@@ -824,7 +824,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-136",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -842,7 +842,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-120",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -861,7 +861,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-134",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1096,7 +1096,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-154",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1114,7 +1114,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-155",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1131,7 +1131,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-153",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1150,7 +1150,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-117",
+    "related_rule": "\u2014",
     "has_detail": false
   },
   {
@@ -1170,7 +1170,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-089",
+    "related_rule": "AP-S08",
     "has_detail": false
   },
   {
@@ -1205,7 +1205,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-117",
+    "related_rule": "\u2014",
     "has_detail": false
   },
   {
@@ -1281,7 +1281,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-089",
+    "related_rule": "R-089, AP-B02",
     "has_detail": false
   },
   {
@@ -1555,7 +1555,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-051",
+    "related_rule": "\u2014",
     "has_detail": false
   },
   {
@@ -1574,7 +1574,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-081",
+    "related_rule": "\u2014",
     "has_detail": false
   },
   {
@@ -1609,7 +1609,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-149",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1626,7 +1626,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-133",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1643,7 +1643,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-095",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1660,7 +1660,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-151",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1678,7 +1678,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-119",
+    "related_rule": null,
     "has_detail": true
   },
   {
@@ -1697,7 +1697,7 @@
     "last_triggered": null,
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-116",
+    "related_rule": "R-145",
     "has_detail": false
   },
   {
@@ -1735,7 +1735,7 @@
     "last_triggered": "2026-04-08T21:45:00Z",
     "expiry_date": "2027-04-08",
     "status": "active",
-    "related_rule": "R-051",
+    "related_rule": "R-067",
     "has_detail": true
   },
   {
@@ -1781,7 +1781,7 @@
     "last_triggered": "2026-04-09",
     "expiry_date": "2027-04-09",
     "status": "active",
-    "related_rule": "R-118",
+    "related_rule": "R-095",
     "has_detail": true
   }
 ]
