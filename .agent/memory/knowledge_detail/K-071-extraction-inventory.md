@@ -1,0 +1,111 @@
+# K-071 — Extraction Inventory (Fase 0)
+
+**Categoria:** Inventory mapping de código atual por tipo e fase de extração.
+
+## Legenda de Categorias
+
+| Categoria | Significado | Exemplo | Decisao de Extracao |
+|-----------|------------|---------|-------------------|
+| **PURE** | Zero deps de browser, sem storage, sem env vars — pode ser compartilhado | schemas, pure utils | Mover para `packages/core` em Fase 2 |
+| **ADAPTER_REQUIRED** | Usa browser APIs (localStorage, import.meta.env); requer adaptador | queryCache, supabase client | Refatorar em Fase 3 com adapter pattern |
+| **PLATFORM_WEB** | Dependencia web-only; nunca compartilhar | Framer Motion, jsPDF, Groq SDK | Ficar em `src/` para sempre |
+| **PLATFORM_MOBILE** | Dependencia mobile-only; nunca compartilhar | React Native, Expo | Ir para `apps/mobile/` em Fase 4+ |
+| **SHARED_TOKEN** | Design tokens que viajam entre plataformas | Cores, espacamento Sanctuary | Mover para `packages/design-tokens` em Fase 2 |
+| **DO_NOT_SHARE** | Codigo entrelacado ou dominio especifico; custo alto para extrair | Feature-specific hooks, views | Manter em `src/features/` |
+| **DOC_INCONSISTENCY** | Spec/docs desalinhados com codigo real | Pode haver notas obsoletas | Documentar e depois sincronizar |
+
+## Inventario Resumido
+
+### Schemas (PURE)
+- `src/schemas/medicineSchema.js` → Mover para `packages/core` Fase 2
+- `src/schemas/protocolSchema.js` → Mover para `packages/core` Fase 2
+- `src/schemas/stockSchema.js` → Mover para `packages/core` Fase 2
+- `src/schemas/logSchema.js` → Mover para `packages/core` Fase 2
+- Todos os schemas sao puros Zod (sem deps externas)
+
+### Utils Puros (PURE)
+- `src/utils/dateUtils.js` → Mover `packages/core` Fase 2
+- `src/utils/adherenceLogic.js` → Mover `packages/core` Fase 2
+- `src/features/protocols/utils/titrationUtils.js` → Mover `packages/core` Fase 2
+- `src/features/protocols/utils/protocolUtils.js` → Mover `packages/core` Fase 2
+- `src/features/dashboard/utils/analyticsUtils.js` → Mover `packages/core` Fase 2
+- `src/features/medications/utils/medicineUtils.js` → Mover `packages/core` Fase 2
+
+### Services Puros com Contratos (PURE → ADAPTER_REQUIRED)
+- `src/features/medications/services/medicineService.js` → Refatorar Fase 3 (CON-001)
+- `src/features/protocols/services/protocolService.js` → Refatorar Fase 3
+- `src/features/stock/services/stockService.js` → Refatorar Fase 3
+- `src/features/dashboard/services/adherenceService.js` → Refatorar Fase 3
+- `src/features/emergency/services/emergencyCardService.js` → Mover `packages/core` Fase 2 (puro)
+- `src/features/chatbot/services/chatbotService.js` → Refatorar Fase 3
+- `src/features/export/services/exportService.js` → Ficar `src/` (PLATFORM_WEB)
+- `src/features/reports/services/shareService.js` → Ficar `src/` (PLATFORM_WEB)
+
+### Supabase Client (ADAPTER_REQUIRED)
+- `src/shared/utils/supabase.js` → Refatorar Fase 3 com adapter
+
+### Query Cache (ADAPTER_REQUIRED)
+- `src/shared/utils/queryCache.js` → Refatorar Fase 3
+- `src/shared/hooks/useCachedQuery.js` → Refatorar Fase 3
+- `src/shared/services/cachedServices.js` → Refatorar Fase 3
+
+### Storage (ADAPTER_REQUIRED)
+- `src/shared/services/migrationService.js` → Refatorar Fase 3
+
+### Componentes (PLATFORM_WEB ou DO_NOT_SHARE)
+- `src/shared/components/ui/` → Ficar `src/` (PLATFORM_WEB)
+- `src/shared/components/log/` → Ficar `src/` (DO_NOT_SHARE)
+- `src/shared/components/pwa/` → Ficar `src/` (PLATFORM_WEB)
+- `src/shared/components/onboarding/` → Ficar `src/` (DO_NOT_SHARE, refatorar Fase 8+)
+- `src/features/*/components/` → Ficar `src/` (PLATFORM_WEB)
+
+### Views (PLATFORM_WEB)
+- `src/views/` → Ficar `src/` (React-only)
+
+### Styles (SHARED_TOKEN + PLATFORM_WEB)
+- `src/shared/styles/tokens/colors.css` → Migrar `packages/design-tokens` Fase 2
+- `src/shared/styles/tokens/spacing.css` → Migrar `packages/design-tokens` Fase 2
+- `src/shared/styles/tokens/typography.css` → Migrar `packages/design-tokens` Fase 2
+- `src/shared/styles/motionConstants.js` → Ficar `src/` (PLATFORM_WEB)
+- CSS geral → Ficar `src/` (PLATFORM_WEB)
+
+### Dependencies Especiais (PLATFORM_WEB)
+- `framer-motion` → Ficar `src/`; nao compartilhar
+- `jspdf` + `html2canvas` → Ficar `src/features/export/`
+- `groq-sdk` → Refatorar Fase 3 (avaliar se compartilha ou nao)
+- `react-virtuoso` → Ficar `src/`
+- `zod` → Dependencia compartilhada; vai para `packages/core`
+- `@supabase/supabase-js` → Adapter para web/mobile
+
+### API Serverless (PLATFORM_WEB)
+- `api/notify.js` → Refatorar Fase 6
+- `api/telegram.js` → Refatorar Fase 3
+- `api/share.js` → Ficar `api/`
+- `api/health/*` → Logica para `packages/core` Fase 2
+- `api/gemini-reviews/` → Ficar `api/`
+- `api/dlq/` → Refatorar Fase 3
+
+### Bot (PLATFORM_WEB + ADAPTER_REQUIRED)
+- `server/bot/tasks.js` → Refatorar Fase 6
+- `server/bot/callbacks/` → Refatorar Fase 6
+- `server/bot/commands/` → Refatorar Fase 6
+- `server/bot/middleware/` → Refatorar Fase 6
+
+## Resumo de Volumes
+
+| Categoria | Count | Acao |
+|-----------|-------|------|
+| PURE (→ `packages/core`) | ~20 arquivos | Mover em Fase 2 |
+| ADAPTER_REQUIRED (→ refactor + adapter) | ~15 arquivos | Refatorar em Fase 3 |
+| SHARED_TOKEN (→ `packages/design-tokens`) | ~5 arquivos | Mover em Fase 2 |
+| PLATFORM_WEB (ficar em `src/`) | ~60 arquivos | Nada muda; web continua na raiz |
+| DO_NOT_SHARE (ficar em `src/features/`) | ~30 arquivos | Nada muda |
+
+## Notas Importantes
+
+1. **Migracao preserva funcionalidade:** Cada movo em Fase 2+ nao quebra a web; apenas reorganiza.
+2. **Contratos ja existem:** Muitos CON-NNN ja estao em `.agent/memory/contracts.json`; inventario so mapeia o que vai mudar.
+3. **Fase 1 (Workspaces):** Vai criar estrutura `packages/*` vazia; Fase 2 vai alimenta-la.
+4. **Fase 3 (Adapters):** E a fase critica onde storage, config, queries sao desacopladas.
+5. **Design tokens (Fase 2):** Critica para mobile ter cores/espacamento compativel com web.
+6. **Expo dependencies:** Ainda NAO entram em root; apenas `packages/mobile/` em Fase 4.
