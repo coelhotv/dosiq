@@ -2,7 +2,7 @@
   {
     "id": "AP-001",
     "title": "Modify a duplicate file without checking which is actually imported",
-    "summary": "Production bug \u2014 fix goes to unused file",
+    "summary": "Production bug — fix goes to unused file",
     "applies_to": [
       "all"
     ],
@@ -15,7 +15,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-001",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "file-integrity"
   },
   {
     "id": "AP-002",
@@ -32,7 +35,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-002",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "file-integrity",
+    "derived_from": "R-002"
   },
   {
     "id": "AP-003",
@@ -50,12 +57,16 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-003",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "file-integrity",
+    "derived_from": "R-003"
   },
   {
     "id": "AP-004",
     "title": "Declare state after useMemo/useEffect",
-    "summary": "`ReferenceError` \u2014 TDZ crash",
+    "summary": "`ReferenceError` — TDZ crash",
     "applies_to": [
       "all"
     ],
@@ -69,7 +80,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-010",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-005",
@@ -87,7 +101,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-020",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "date-time"
   },
   {
     "id": "AP-006",
@@ -104,7 +121,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-021",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data",
+    "derived_from": "R-021"
   },
   {
     "id": "AP-007",
@@ -121,7 +142,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-022",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data",
+    "derived_from": "R-022"
   },
   {
     "id": "AP-008",
@@ -140,7 +165,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-030",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "telegram",
+    "derived_from": "R-030"
   },
   {
     "id": "AP-009",
@@ -159,7 +188,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-031",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "telegram",
+    "derived_from": "R-031"
   },
   {
     "id": "AP-010",
@@ -176,7 +209,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-041",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-041"
   },
   {
     "id": "AP-011",
@@ -195,7 +232,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-040",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-040"
   },
   {
     "id": "AP-012",
@@ -214,7 +255,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-051",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "review-validation"
   },
   {
     "id": "AP-A01",
@@ -231,7 +275,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-065",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "review-validation"
   },
   {
     "id": "AP-A02",
@@ -248,7 +295,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-112",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile",
+    "derived_from": "R-112"
   },
   {
     "id": "AP-A03",
@@ -265,12 +316,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-113",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-A04",
     "title": "Compare local `new Date()` with ISO timestamps without zeroing hours",
-    "summary": "\u00b11 day boundary errors when local time \u2260 UTC (GMT-3 offset). Log taken at 2026-03-08T09:00-03:00 may",
+    "summary": "±1 day boundary errors when local time ≠ UTC (GMT-3 offset). Log taken at 2026-03-08T09:00-03:00 may",
     "applies_to": [
       "all"
     ],
@@ -284,12 +338,16 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-114",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time",
+    "derived_from": "R-114"
   },
   {
     "id": "AP-P01",
     "title": "IntersectionObserver sentinel positioned before fold + rootMargin high",
-    "summary": "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open \u2192 lazy load becom",
+    "summary": "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becom",
     "applies_to": [
       "all"
     ],
@@ -302,7 +360,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-115",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P02",
@@ -320,7 +381,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-116",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-P03",
@@ -339,12 +403,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-117",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P09",
     "title": "N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`",
-    "summary": "N queries Supabase simultaneous. With 10 items \u2192 10 round-trips HTTP, each blocking Main Thread. 100",
+    "summary": "N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100",
     "applies_to": [
       "all"
     ],
@@ -358,12 +425,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-118",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-P10",
     "title": "`select('*')` when only need count",
-    "summary": "All columns transferred unnecessarily. 90 days logs \u00d7 10 protocols = ~2700 rows \u00d7 ~500 bytes/row = 1",
+    "summary": "All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows × ~500 bytes/row = 1",
     "applies_to": [
       "all"
     ],
@@ -376,12 +446,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-119",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-P11",
     "title": "`useCallback` with state in deps of a ref callback",
-    "summary": "Ref callbacks recreated on state change. React calls `old(null)` without cleanup \u2192 `new(element)` wi",
+    "summary": "Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` wi",
     "applies_to": [
       "all"
     ],
@@ -395,12 +468,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-120",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-P12",
-    "title": "Mesma query Supabase chamada N vezes em sub-fun\u00e7\u00f5es paralelas",
-    "summary": "`getAdherenceSummary` chamava 3 sub-fun\u00e7\u00f5es que cada uma buscava `protocols` independentemente = 3 q",
+    "title": "Mesma query Supabase chamada N vezes em sub-funções paralelas",
+    "summary": "`getAdherenceSummary` chamava 3 sub-funções que cada uma buscava `protocols` independentemente = 3 q",
     "applies_to": [
       "all"
     ],
@@ -414,11 +490,14 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-125",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P13",
-    "title": "Disparar queries de background imediatamente ap\u00f3s `setIsLoading(false)`",
+    "title": "Disparar queries de background imediatamente após `setIsLoading(false)`",
     "summary": "`setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack fram",
     "applies_to": [
       "all"
@@ -433,7 +512,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-126",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-W01",
@@ -451,7 +533,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-092",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "file-integrity"
   },
   {
     "id": "AP-W02",
@@ -471,12 +556,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-119",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W03",
     "title": "Use `screen.getByText('X%')` when the same text appears in multiple elements",
-    "summary": "`\"Found multiple elements with text\u2026\"` test failure",
+    "summary": "`\"Found multiple elements with text…\"` test failure",
     "applies_to": [
       "all"
     ],
@@ -489,7 +577,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-094",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-W04",
@@ -507,7 +598,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-095",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W05",
@@ -525,7 +619,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-096",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W06",
@@ -544,7 +641,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-097",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W07",
@@ -563,7 +663,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-020",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-W08",
@@ -581,7 +684,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-102",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W09",
@@ -600,7 +706,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-098",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W10",
@@ -619,7 +728,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-101",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W11",
@@ -639,7 +751,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-103",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W12",
@@ -656,7 +771,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-104",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-W13",
@@ -676,7 +794,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-105",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W14",
@@ -695,7 +816,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-106",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-W15",
@@ -714,11 +838,14 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-107",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W16",
-    "title": "`bail: 1` em vitest.critical.config.js mascara m\u00faltiplas falhas timezone no mesmo arquivo",
+    "title": "`bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo",
     "summary": "CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo fi",
     "applies_to": [
       "all"
@@ -732,12 +859,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-106",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-W17",
-    "title": "Componente com estado interno inicializado de uma prop (`complexityMode`) n\u00e3o reinicializa quando a prop muda",
-    "summary": "Defaults de expans\u00e3o de se\u00e7\u00f5es ficam presos no valor do primeiro render; UX inconsistente ao mudar c",
+    "title": "Componente com estado interno inicializado de uma prop (`complexityMode`) não reinicializa quando a prop muda",
+    "summary": "Defaults de expansão de seções ficam presos no valor do primeiro render; UX inconsistente ao mudar c",
     "applies_to": [
       "all"
     ],
@@ -751,7 +881,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-109",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W18",
@@ -771,7 +904,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-133",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W19",
@@ -790,12 +926,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-134",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W20",
     "title": "Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components",
-    "summary": "Worse UX: 4 clicks (button \u2192 modal open \u2192 form fill \u2192 confirm) instead of 1-click direct registratio",
+    "summary": "Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registratio",
     "applies_to": [
       "all"
     ],
@@ -808,7 +947,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-135",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W21",
@@ -825,7 +967,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-136",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-W22",
@@ -843,12 +988,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-120",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W23",
-    "title": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments \u2014 2026-03-25)",
-    "summary": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments \u2014 2026-03-25)",
+    "title": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)",
+    "summary": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)",
     "applies_to": [
       "all"
     ],
@@ -862,7 +1010,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-134",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-S01",
@@ -881,7 +1032,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-082",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "schema-data"
   },
   {
     "id": "AP-S02",
@@ -901,7 +1055,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-085",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data",
+    "derived_from": "R-085"
   },
   {
     "id": "AP-S04",
@@ -919,7 +1077,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-084",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-084"
   },
   {
     "id": "AP-S05",
@@ -937,7 +1099,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-086",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-086"
   },
   {
     "id": "AP-S06",
@@ -955,7 +1121,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-087",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-087"
   },
   {
     "id": "AP-S07",
@@ -973,7 +1143,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-088",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-088"
   },
   {
     "id": "AP-S08",
@@ -992,7 +1166,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-089",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "schema-data"
   },
   {
     "id": "AP-S09",
@@ -1010,7 +1187,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-082",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data",
+    "derived_from": "R-082"
   },
   {
     "id": "AP-S11",
@@ -1028,7 +1209,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-091",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api",
+    "derived_from": "R-091"
   },
   {
     "id": "AP-D01",
@@ -1046,12 +1231,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-121",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-D02",
-    "title": "Cartesian product in LEFT JOIN logs \u2a1d expected_doses without pre-aggregation",
-    "summary": "12 logs \u00d7 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates",
+    "title": "Cartesian product in LEFT JOIN logs ⨝ expected_doses without pre-aggregation",
+    "summary": "12 logs × 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates",
     "applies_to": [
       "all"
     ],
@@ -1063,7 +1251,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-122",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "process-hygiene"
   },
   {
     "id": "AP-D03",
@@ -1080,7 +1271,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-121",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-D04",
@@ -1097,7 +1291,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-154",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-D05",
@@ -1115,12 +1312,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-155",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-D06",
-    "title": "Exibir dados de Carlos (bar-pct, quantidade, hist\u00f3rico global) no modo Dona Maria",
-    "summary": "Exibir dados de Carlos (bar-pct, quantidade, hist\u00f3rico global) no modo Dona Maria",
+    "title": "Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria",
+    "summary": "Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria",
     "applies_to": [
       "all"
     ],
@@ -1132,12 +1332,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-153",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-B01",
     "title": "Adicionar `<link rel=\"modulepreload\" href=\"/src/main.jsx\" />` manual em `index.html` no Vite 7",
-    "summary": "Vite 7 base64-encoda o conte\u00fado raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. ",
+    "summary": "Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. ",
     "applies_to": [
       "all"
     ],
@@ -1151,7 +1354,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-117",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-B02",
@@ -1171,12 +1377,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-089",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-B03",
-    "title": "Import est\u00e1tico de componente pesado que internamente importa services/vendors grandes",
-    "summary": "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` \u2192 `pdfGenera",
+    "title": "Import estático de componente pesado que internamente importa services/vendors grandes",
+    "summary": "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGenera",
     "applies_to": [
       "all"
     ],
@@ -1189,7 +1398,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-117",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-B04",
@@ -1206,7 +1418,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-117",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P14",
@@ -1225,12 +1440,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-128",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P15",
-    "title": "`new Date()` construction em hot loop (>100 itera\u00e7\u00f5es)",
-    "summary": "`calculateStreaks()` criava ~2700 Date objects (90 dias \u00d7 N protocolos \u00d7 3 calls). Chrome trace: `pa",
+    "title": "`new Date()` construction em hot loop (>100 iterações)",
+    "summary": "`calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `pa",
     "applies_to": [
       "all"
     ],
@@ -1244,12 +1462,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-129",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-P16",
     "title": "Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``",
-    "summary": "Ignora fuso hor\u00e1rio local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc",
+    "summary": "Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc",
     "applies_to": [
       "all"
     ],
@@ -1263,7 +1484,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-131",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-P17",
@@ -1282,7 +1506,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-089",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-P18",
@@ -1301,7 +1528,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-146",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P19",
@@ -1318,7 +1548,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-147",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-P20",
@@ -1335,7 +1568,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-148",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-P21",
@@ -1353,12 +1589,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-026",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-SL01",
     "title": "Logging estruturado em `server/bot/` em vez de em `api/*.js`",
-    "summary": "Logs n\u00e3o aparecem em Vercel. Fun\u00e7\u00e3o Node.js server context \u00e9 invis\u00edvel para Vercel logging (dois pro",
+    "summary": "Logs não aparecem em Vercel. Função Node.js server context é invisível para Vercel logging (dois pro",
     "applies_to": [
       "all"
     ],
@@ -1372,12 +1611,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-130",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "schema-data"
   },
   {
     "id": "AP-SL02",
     "title": "Mock/adapter object com interface incompleta",
-    "summary": "Handler chama `bot.sendChatAction()` que n\u00e3o existe no mock \u2192 `\"is not a function\"` error em produ\u00e7\u00e3",
+    "summary": "Handler chama `bot.sendChatAction()` que não existe no mock → `\"is not a function\"` error em produçã",
     "applies_to": [
       "all"
     ],
@@ -1391,12 +1633,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-131",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "date-time"
   },
   {
     "id": "AP-SL03",
-    "title": "Message router sem fallback para casos n\u00e3o-capturados",
-    "summary": "Listeners espec\u00edficos (com patterns/sess\u00e3o) capturam algumas mensagens, outras caem silenciosamente.",
+    "title": "Message router sem fallback para casos não-capturados",
+    "summary": "Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras caem silenciosamente.",
     "applies_to": [
       "all"
     ],
@@ -1408,7 +1653,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-132",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api"
   },
   {
     "id": "AP-T01",
@@ -1425,7 +1673,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-081",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-T02",
@@ -1445,7 +1696,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-078",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-T03",
@@ -1464,7 +1718,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-076",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "test-hygiene",
+    "derived_from": "R-076"
   },
   {
     "id": "AP-T04",
@@ -1483,7 +1741,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-077",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "test-hygiene",
+    "derived_from": "R-077"
   },
   {
     "id": "AP-T05",
@@ -1502,7 +1764,11 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-079",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "test-hygiene",
+    "derived_from": "R-079"
   },
   {
     "id": "AP-T06",
@@ -1520,12 +1786,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-073",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-T07",
     "title": "Resolve Promise only after assertion without `finally`",
-    "summary": "If assertion fails, Promise stays pending \u2192 Vitest hangs indefinitely",
+    "summary": "If assertion fails, Promise stays pending → Vitest hangs indefinitely",
     "applies_to": [
       "all"
     ],
@@ -1538,7 +1807,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-072",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-T08",
@@ -1556,7 +1828,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-051",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "review-validation"
   },
   {
     "id": "AP-T09",
@@ -1575,7 +1850,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-081",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "test-hygiene"
   },
   {
     "id": "AP-T10",
@@ -1593,7 +1871,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-020",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "date-time"
   },
   {
     "id": "AP-H01",
@@ -1610,12 +1891,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-149",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   },
   {
     "id": "AP-H02",
-    "title": "Passar IDs ao inv\u00e9s de objetos para treatmentPlanService no LogForm",
-    "summary": "Passar IDs ao inv\u00e9s de objetos para treatmentPlanService no LogForm",
+    "title": "Passar IDs ao invés de objetos para treatmentPlanService no LogForm",
+    "summary": "Passar IDs ao invés de objetos para treatmentPlanService no LogForm",
     "applies_to": [
       "all"
     ],
@@ -1627,7 +1911,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-133",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-H03",
@@ -1644,7 +1931,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-095",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W24",
@@ -1661,7 +1951,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-151",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-W25",
@@ -1679,7 +1972,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-119",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-LOG-001",
@@ -1698,12 +1994,15 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-116",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   },
   {
     "id": "AP-094",
     "title": "Reference handler (useCallback) in useEffect before declaration",
-    "summary": "ReferenceError: Cannot access handler before initialization \u2014 TDZ crash",
+    "summary": "ReferenceError: Cannot access handler before initialization — TDZ crash",
     "applies_to": [
       "react",
       "hooks"
@@ -1718,7 +2017,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-010",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "react-hooks"
   },
   {
     "id": "AP-095",
@@ -1736,7 +2038,10 @@
     "expiry_date": "2027-04-08",
     "status": "active",
     "related_rule": "R-051",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "review-validation"
   },
   {
     "id": "AP-096",
@@ -1760,12 +2065,15 @@
     "expiry_date": "2027-04-09",
     "status": "active",
     "related_rule": "R-086",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api"
   },
   {
     "id": "AP-97",
-    "title": "CSS token definitions duplicadas/conflitantes em m\u00faltiplos arquivos",
-    "summary": "\u00daltima defini\u00e7\u00e3o sobrescreve design system can\u00f4nico, causando valores legados/opostos em runtime",
+    "title": "CSS token definitions duplicadas/conflitantes em múltiplos arquivos",
+    "summary": "Última definição sobrescreve design system canônico, causando valores legados/opostos em runtime",
     "applies_to": [
       "css",
       "design-system",
@@ -1782,6 +2090,9 @@
     "expiry_date": "2027-04-09",
     "status": "active",
     "related_rule": "R-118",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "design-ui"
   }
 ]

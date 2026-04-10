@@ -205,7 +205,7 @@ npm run validate:full  # Lint + coverage + build + 15min timeout (full CI)
 
 | Modo | Comando | Quando usar |
 |------|---------|-------------|
-| **Bootstrap** | `/devflow` (sem args) | **SEMPRE PRIMEIRO** — carrega state.json + regras filtradas + APs filtrados por goal |
+| **Bootstrap** | `/devflow` (sem args) | **SEMPRE PRIMEIRO** — carrega `state.json` + core `hot` + packs `warm` inferidos por goal/stack/arquivos |
 | **Status** | `/devflow status` | Ver estado da sessão: sprint, counts de memória, pending mutations, rules em review |
 | **Planning** | `/devflow planning "goal"` | Antes de implementar — design, spec, ADR check, scope analysis |
 | **Coding** | `/devflow coding "task"` | Durante implementação — C1-C4 checklist, contract gateway, quality gates |
@@ -429,13 +429,19 @@ A memória persiste entre sessões em formato JSON indexado (index-first, detail
 
 | Arquivo | Contém | Como usar |
 |---------|--------|-----------|
-| [`.agent/memory/rules.json`](.agent/memory/rules.json) | 107 regras R-NNN indexadas | Bootstrap: filtrar por tags relevantes ao goal |
-| [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) | 93 AP-NNN indexados | Bootstrap: filtrar por tags relevantes |
+| [`.agent/memory/rules.json`](.agent/memory/rules.json) | 107 regras R-NNN indexadas | Bootstrap: carregar `hot` por padrão e expandir `warm` por `pack`, tags, stack e arquivos em escopo |
+| [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) | 97 AP-NNN indexados | Bootstrap: carregar `hot` por padrão e expandir `warm` por `pack`, tags, stack e arquivos em escopo |
 | [`.agent/memory/knowledge.json`](.agent/memory/knowledge.json) | 70 domain facts K-NNN | Carregar tópicos relevantes ao goal |
 | [`.agent/memory/decisions.json`](.agent/memory/decisions.json) | 25 ADRs arquiteturais | Consultar antes de decisões de design |
 | [`.agent/memory/contracts.json`](.agent/memory/contracts.json) | 16 contratos de interface CON-NNN | Contract gateway antes de modificar APIs |
 | [`.agent/memory/journal/`](.agent/memory/journal/) | Journals JSONL por sprint | Append-only — nunca reescrever |
 | [`.agent/state.json`](.agent/state.json) | Estado atual (sprint, goal, contadores) | Ler primeiro, atualizar por último |
+
+Taxonomia operacional de memória:
+
+- `hot`: guardrails universais, sempre carregados
+- `warm`: packs contextuais, carregados sob demanda
+- `cold`: histórico ou contexto específico, fora do bootstrap normal
 
 **Ciclo DEVFLOW:**
 ```
