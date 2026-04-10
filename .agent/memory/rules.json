@@ -14,7 +14,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "file-integrity",
+    "bootstrap_default": true
   },
   {
     "id": "R-002",
@@ -31,7 +34,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "file-integrity",
+    "bootstrap_default": true
   },
   {
     "id": "R-003",
@@ -48,12 +54,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "file-integrity",
+    "bootstrap_default": true
   },
   {
     "id": "R-010",
     "title": "Hook Declaration Order",
-    "summary": "Declare React hooks in order: States \u2192 useMemo \u2192 useEffect \u2192 Handlers. Wrong order causes TDZ ReferenceError.",
+    "summary": "Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong order causes TDZ ReferenceError.",
     "applies_to": [
       "react"
     ],
@@ -65,7 +74,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "react-hooks",
+    "bootstrap_default": true
   },
   {
     "id": "R-011",
@@ -82,12 +94,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-020",
-    "title": "Timezone \u2014 Local Dates",
-    "summary": "ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('YYYY-MM-DD') \u2014 creates UTC midnight = wrong day in GMT-3.",
+    "title": "Timezone — Local Dates",
+    "summary": "ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('YYYY-MM-DD') — creates UTC midnight = wrong day in GMT-3.",
     "applies_to": [
       "all"
     ],
@@ -100,7 +115,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "date-time",
+    "bootstrap_default": true
   },
   {
     "id": "R-021",
@@ -117,7 +135,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "schema-data",
+    "bootstrap_default": false
   },
   {
     "id": "R-022",
@@ -136,12 +157,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "schema-data",
+    "bootstrap_default": false
   },
   {
     "id": "R-023",
     "title": "Operation Order for Doses",
-    "summary": "Always follow Validate \u2192 Record \u2192 Decrement for dose registration. Never decrement stock before validating and recording.",
+    "summary": "Always follow Validate → Record → Decrement for dose registration. Never decrement stock before validating and recording.",
     "applies_to": [
       "supabase"
     ],
@@ -154,7 +178,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "schema-data",
+    "bootstrap_default": false
   },
   {
     "id": "R-024",
@@ -171,7 +198,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-025",
@@ -188,7 +218,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-025-1",
@@ -205,7 +238,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-026",
@@ -221,7 +257,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-030",
@@ -237,7 +276,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "telegram",
+    "bootstrap_default": false
   },
   {
     "id": "R-031",
@@ -253,12 +295,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "telegram",
+    "bootstrap_default": false
   },
   {
     "id": "R-032",
     "title": "shouldSendNotification() Includes Logging",
-    "summary": "shouldSendNotification() calls logNotification() internally. Never call logNotification() explicitly after \u2014 causes duplicate logs.",
+    "summary": "shouldSendNotification() calls logNotification() internally. Never call logNotification() explicitly after — causes duplicate logs.",
     "applies_to": [
       "telegram"
     ],
@@ -269,7 +314,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "telegram",
+    "bootstrap_default": false
   },
   {
     "id": "R-040",
@@ -285,7 +333,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-041",
@@ -302,7 +353,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-042",
@@ -321,7 +375,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-050",
@@ -337,7 +394,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "process-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-051",
@@ -354,12 +414,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-060",
     "title": "No Self-Merge for Code Agents",
-    "summary": "Never allow a code agent to merge its own PR. Code creates PR \u2192 review \u2192 DevOps merges only after explicit approval.",
+    "summary": "Never allow a code agent to merge its own PR. Code creates PR → review → DevOps merges only after explicit approval.",
     "applies_to": [
       "all"
     ],
@@ -371,7 +434,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-061",
@@ -387,7 +453,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-062",
@@ -404,7 +473,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-063",
@@ -420,7 +492,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-065",
@@ -436,7 +511,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-070",
@@ -453,7 +531,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "test-hygiene",
+    "bootstrap_default": true
   },
   {
     "id": "R-071",
@@ -470,7 +551,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "test-hygiene",
+    "bootstrap_default": true
   },
   {
     "id": "R-072",
@@ -486,7 +570,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "test-hygiene",
+    "bootstrap_default": true
   },
   {
     "id": "R-073",
@@ -502,7 +589,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "test-hygiene",
+    "bootstrap_default": true
   },
   {
     "id": "R-074",
@@ -519,7 +609,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "review-validation",
+    "bootstrap_default": true
   },
   {
     "id": "R-075",
@@ -536,7 +629,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-076",
@@ -553,7 +649,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-077",
@@ -570,7 +669,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-078",
@@ -586,7 +688,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-079",
@@ -603,7 +708,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-080",
@@ -619,12 +727,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-081",
     "title": "Test Suite Performance Strategy",
-    "summary": "Choose test command by context: test:fast (dev), test:lowram (8GB), validate:agent (agents \u2014 MANDATORY), validate:full (CI).",
+    "summary": "Choose test command by context: test:fast (dev), test:lowram (8GB), validate:agent (agents — MANDATORY), validate:full (CI).",
     "applies_to": [
       "all"
     ],
@@ -637,7 +748,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-082",
@@ -657,7 +771,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "schema-data",
+    "bootstrap_default": true
   },
   {
     "id": "R-083",
@@ -674,7 +791,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-084",
@@ -691,7 +811,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-085",
@@ -708,7 +831,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "schema-data",
+    "bootstrap_default": false
   },
   {
     "id": "R-086",
@@ -724,7 +850,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-087",
@@ -741,7 +870,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-088",
@@ -758,12 +890,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-089",
     "title": "Database Column Existence Check",
-    "summary": "When writing INSERT statements, verify all columns exist in the target table. Never assume based on docs \u2014 check actual schema.",
+    "summary": "When writing INSERT statements, verify all columns exist in the target table. Never assume based on docs — check actual schema.",
     "applies_to": [
       "supabase"
     ],
@@ -776,7 +911,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "schema-data",
+    "bootstrap_default": true
   },
   {
     "id": "R-090",
@@ -793,7 +931,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-091",
@@ -809,7 +950,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-092",
@@ -826,12 +970,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "file-integrity",
+    "bootstrap_default": true
   },
   {
     "id": "R-093",
-    "title": "ESLint Unused Vars \u2014 Remove, Don't Alias",
-    "summary": "When a destructured prop/variable is unused, remove it entirely. Do NOT use _prefix aliasing \u2014 varsIgnorePattern doesn't reliably cover aliased destructuring.",
+    "title": "ESLint Unused Vars — Remove, Don't Alias",
+    "summary": "When a destructured prop/variable is unused, remove it entirely. Do NOT use _prefix aliasing — varsIgnorePattern doesn't reliably cover aliased destructuring.",
     "applies_to": [
       "all"
     ],
@@ -842,7 +989,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "process-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-094",
@@ -859,11 +1009,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "test-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-095",
-    "title": "Wave 1 Component Purity \u2014 No Context Imports",
+    "title": "Wave 1 Component Purity — No Context Imports",
     "summary": "All Wave 1 (Onda 1) components must receive data ONLY via props. Never import useDashboardContext or any feature context in Onda 1.",
     "applies_to": [
       "react"
@@ -876,11 +1029,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-096",
-    "title": "Framer Motion SVG \u2014 Set strokeDashoffset in Both style and initial",
+    "title": "Framer Motion SVG — Set strokeDashoffset in Both style and initial",
     "summary": "For SVG motion.circle with strokeDashoffset animation, set value in BOTH style (static CSS) and initial/animate. Without style, browser renders full ring before Framer Motion takes control.",
     "applies_to": [
       "react"
@@ -894,7 +1050,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-097",
@@ -910,11 +1069,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-098",
-    "title": "DoseZoneList Adapter Pattern \u2014 Interface Mismatch",
+    "title": "DoseZoneList Adapter Pattern — Interface Mismatch",
     "summary": "When a new component has a different callback interface than existing handlers, create thin adapter functions. Do NOT refactor existing handlers.",
     "applies_to": [
       "react"
@@ -926,11 +1088,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-099",
-    "title": "selectedMedicines useState Position \u2014 Known Tech Debt",
+    "title": "selectedMedicines useState Position — Known Tech Debt",
     "summary": "selectedMedicines useState in Dashboard.jsx is at line ~535 (after handlers), violating States-first order. Do NOT move without a dedicated refactor PR.",
     "applies_to": [
       "react"
@@ -943,12 +1108,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-100",
     "title": "Multiple useDashboard() Calls are Safe",
-    "summary": "Multiple components calling useDashboard() is safe. React Context consumers always receive the same object reference \u2014 no performance penalty.",
+    "summary": "Multiple components calling useDashboard() is safe. React Context consumers always receive the same object reference — no performance penalty.",
     "applies_to": [
       "react"
     ],
@@ -960,7 +1128,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-101",
@@ -976,7 +1147,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-102",
@@ -992,12 +1166,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-103",
-    "title": "Props Passadas mas n\u00e3o Declaradas na Assinatura S\u00e3o Silenciosas",
-    "summary": "Uma prop passada no JSX mas ausente no destructuring da fun\u00e7\u00e3o \u00e9 silenciosamente ignorada \u2014 sem erro em runtime. Listar TODAS as props interativas no destructuring.",
+    "title": "Props Passadas mas não Declaradas na Assinatura São Silenciosas",
+    "summary": "Uma prop passada no JSX mas ausente no destructuring da função é silenciosamente ignorada — sem erro em runtime. Listar TODAS as props interativas no destructuring.",
     "applies_to": [
       "react"
     ],
@@ -1009,12 +1186,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-104",
-    "title": "|| vs ?? para Valores Num\u00e9ricos com Zero V\u00e1lido",
-    "summary": "Use ?? (nullish coalescing) when 0 is a valid value. || treats 0 as falsy and replaces with fallback \u2014 incorrect behavior.",
+    "title": "|| vs ?? para Valores Numéricos com Zero Válido",
+    "summary": "Use ?? (nullish coalescing) when 0 is a valid value. || treats 0 as falsy and replaces with fallback — incorrect behavior.",
     "applies_to": [
       "all"
     ],
@@ -1026,12 +1206,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "schema-data",
+    "bootstrap_default": true
   },
   {
     "id": "R-105",
-    "title": "Remover Dead Code Imediatamente ao Substituir Se\u00e7\u00f5es",
-    "summary": "Ao substituir uma se\u00e7\u00e3o JSX por novo componente, remover simultaneamente: props antigas, useMemos/states relacionados, imports n\u00e3o usados.",
+    "title": "Remover Dead Code Imediatamente ao Substituir Seções",
+    "summary": "Ao substituir uma seção JSX por novo componente, remover simultaneamente: props antigas, useMemos/states relacionados, imports não usados.",
     "applies_to": [
       "react"
     ],
@@ -1043,12 +1226,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-106",
-    "title": "Testes com Date Devem Usar setHours (n\u00e3o UTC Hardcoded)",
-    "summary": "Ao criar datas de refer\u00eancia em testes com horas locais, NUNCA usar timestamps UTC fixos \u2014 produzem horas locais diferentes por timezone. Use setHours() local.",
+    "title": "Testes com Date Devem Usar setHours (não UTC Hardcoded)",
+    "summary": "Ao criar datas de referência em testes com horas locais, NUNCA usar timestamps UTC fixos — produzem horas locais diferentes por timezone. Use setHours() local.",
     "applies_to": [
       "all"
     ],
@@ -1060,11 +1246,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "date-time",
+    "bootstrap_default": true
   },
   {
     "id": "R-107",
-    "title": "useState n\u00e3o Reage a Mudan\u00e7as de Prop Derivada \u2014 Usar useEffect",
+    "title": "useState não Reage a Mudanças de Prop Derivada — Usar useEffect",
     "summary": "useState(() => derivedValue) usa o initializer APENAS na montagem. Se derivedValue pode mudar, adicionar useEffect para sincronizar.",
     "applies_to": [
       "react"
@@ -1076,12 +1265,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-108",
     "title": "Page Visibility API para Pausar Intervals em Abas Inativas",
-    "summary": "setInterval continua em abas n\u00e3o vis\u00edveis. Usar visibilitychange para pausar/retomar e atualizar estado ao voltar \u00e0 aba.",
+    "summary": "setInterval continua em abas não visíveis. Usar visibilitychange para pausar/retomar e atualizar estado ao voltar à aba.",
     "applies_to": [
       "react"
     ],
@@ -1093,12 +1285,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-109",
     "title": "key={controllingProp} para Reinicializar Estado Interno",
-    "summary": "Quando estado interno \u00e9 inicializado com base em prop e deve reinicializar quando a prop muda, usar key={controllingProp} no JSX para for\u00e7ar remount.",
+    "summary": "Quando estado interno é inicializado com base em prop e deve reinicializar quando a prop muda, usar key={controllingProp} no JSX para forçar remount.",
     "applies_to": [
       "react"
     ],
@@ -1109,12 +1304,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-110",
     "title": "Guard Clauses AFTER All Hooks",
-    "summary": "Early returns with guard clauses MUST come AFTER all hook declarations (States \u2192 Memos \u2192 Effects \u2192 Handlers). Placing guard clause before hooks causes 'React Hook called conditionally' error.",
+    "summary": "Early returns with guard clauses MUST come AFTER all hook declarations (States → Memos → Effects → Handlers). Placing guard clause before hooks causes 'React Hook called conditionally' error.",
     "applies_to": [
       "react"
     ],
@@ -1126,7 +1324,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "react-hooks",
+    "bootstrap_default": true
   },
   {
     "id": "R-111",
@@ -1143,7 +1344,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-112",
@@ -1159,12 +1363,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-113",
     "title": "Filter Logs by protocol_id Only, Never by medicine_id",
-    "summary": "Filter logs using ONLY log.protocol_id === protocolId. Never add OR with medicine_id \u2014 2+ protocols may share the same medicine.",
+    "summary": "Filter logs using ONLY log.protocol_id === protocolId. Never add OR with medicine_id — 2+ protocols may share the same medicine.",
     "applies_to": [
       "all"
     ],
@@ -1177,7 +1384,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-114",
@@ -1194,7 +1404,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "date-time",
+    "bootstrap_default": false
   },
   {
     "id": "R-115",
@@ -1211,12 +1424,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-116",
     "title": "Console Logs for Development Debugging",
-    "summary": "Manter logs detalhados \u00e9 obrigat\u00f3rio. Cada opera\u00e7\u00e3o cr\u00edtica deve ter console.log/error com contexto detalhado. N\u00e3o remover logs ao mergear.",
+    "summary": "Manter logs detalhados é obrigatório. Cada operação crítica deve ter console.log/error com contexto detalhado. Não remover logs ao mergear.",
     "applies_to": [
       "all"
     ],
@@ -1227,7 +1443,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-117",
@@ -1244,7 +1463,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-118",
@@ -1260,7 +1482,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-119",
@@ -1276,7 +1501,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-120",
@@ -1292,7 +1520,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-121",
@@ -1310,7 +1541,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "schema-data",
+    "bootstrap_default": true
   },
   {
     "id": "R-122",
@@ -1326,11 +1560,14 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "process-hygiene",
+    "bootstrap_default": false
   },
   {
     "id": "R-125",
-    "title": "Cache SWR para Queries de Ades\u00e3o",
+    "title": "Cache SWR para Queries de Adesão",
     "summary": "Queries do adherenceService DEVEM usar cachedAdherenceService. Keys: adherence:summary:{period}, adherence:daily:{days}, adherence:pattern.",
     "applies_to": [
       "all"
@@ -1343,12 +1580,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-126",
     "title": "Serializar Queries Supabase em Views Mobile",
-    "summary": "Views mobile-critical NUNCA devem disparar >4 requests Supabase simult\u00e2neos. Usar fases: UI-blocking (max 2) \u2192 requestIdleCallback \u2192 IntersectionObserver.",
+    "summary": "Views mobile-critical NUNCA devem disparar >4 requests Supabase simultâneos. Usar fases: UI-blocking (max 2) → requestIdleCallback → IntersectionObserver.",
     "applies_to": [
       "supabase",
       "react"
@@ -1361,12 +1601,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-127",
-    "title": "Select M\u00ednimo em Queries Supabase para Listas",
-    "summary": "Queries para listas DEVEM selecionar apenas colunas usadas no render. Resultado: ~76-80% redu\u00e7\u00e3o de payload em timelines.",
+    "title": "Select Mínimo em Queries Supabase para Listas",
+    "summary": "Queries para listas DEVEM selecionar apenas colunas usadas no render. Resultado: ~76-80% redução de payload em timelines.",
     "applies_to": [
       "supabase"
     ],
@@ -1378,12 +1621,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-128",
     "title": "Promise Coalescence para Auth Roundtrips",
-    "summary": "Fun\u00e7\u00f5es que fazem HTTP roundtrip para auth (getUser(), getSession()) DEVEM implementar coalesc\u00eancia: se j\u00e1 h\u00e1 chamada em voo, reutilizar a mesma promise.",
+    "summary": "Funções que fazem HTTP roundtrip para auth (getUser(), getSession()) DEVEM implementar coalescência: se já há chamada em voo, reutilizar a mesma promise.",
     "applies_to": [
       "supabase"
     ],
@@ -1395,12 +1641,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-129",
     "title": "String Comparison para Datas em Hot Loops",
-    "summary": "Em loops com >100 itera\u00e7\u00f5es sobre datas YYYY-MM-DD, usar compara\u00e7\u00e3o de strings (dateStr < startStr) ao inv\u00e9s de new Date(). Strings YYYY-MM-DD s\u00e3o lexicograficamente orden\u00e1veis.",
+    "summary": "Em loops com >100 iterações sobre datas YYYY-MM-DD, usar comparação de strings (dateStr < startStr) ao invés de new Date(). Strings YYYY-MM-DD são lexicograficamente ordenáveis.",
     "applies_to": [
       "all"
     ],
@@ -1412,12 +1661,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "date-time",
+    "bootstrap_default": false
   },
   {
     "id": "R-130",
-    "title": "Zod Validation em TODOS os M\u00e9todos de Leitura de Services",
-    "summary": "N\u00e3o validar apenas m\u00e9todos de escrita. M\u00e9todos de leitura (get/list/getByRange) tamb\u00e9m DEVEM ter schemas Zod validando par\u00e2metros.",
+    "title": "Zod Validation em TODOS os Métodos de Leitura de Services",
+    "summary": "Não validar apenas métodos de escrita. Métodos de leitura (get/list/getByRange) também DEVEM ter schemas Zod validando parâmetros.",
     "applies_to": [
       "zod"
     ],
@@ -1429,12 +1681,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "schema-data",
+    "bootstrap_default": false
   },
   {
     "id": "R-131",
     "title": "parseLocalDate em TODAS as Queries de Data ao Supabase",
-    "summary": "Queries Supabase com filtros de data DEVEM converter datas locais para UTC via parseLocalDate(). NUNCA usar template T00:00:00.000Z \u2014 ignora fuso hor\u00e1rio.",
+    "summary": "Queries Supabase com filtros de data DEVEM converter datas locais para UTC via parseLocalDate(). NUNCA usar template T00:00:00.000Z — ignora fuso horário.",
     "applies_to": [
       "supabase"
     ],
@@ -1447,12 +1702,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "date-time",
+    "bootstrap_default": true
   },
   {
     "id": "R-132",
     "title": "Logging em api/*.js para Visibilidade Vercel",
-    "summary": "Estruturar logs no entry point api/*.js, N\u00c3O em server/bot/**. Node.js server context \u00e9 invis\u00edvel para Vercel logging (VMs diferentes).",
+    "summary": "Estruturar logs no entry point api/*.js, NÃO em server/bot/**. Node.js server context é invisível para Vercel logging (VMs diferentes).",
     "applies_to": [
       "vercel"
     ],
@@ -1464,12 +1722,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "infra-api",
+    "bootstrap_default": false
   },
   {
     "id": "R-133",
     "title": "Inspect Component Prop Interface Before Copying",
-    "summary": "Antes de reutilizar/copiar um componente entre contextos, SEMPRE ler a assinatura de destructuring para confirmar os props esperados. N\u00e3o assuma nomes por sem\u00e2ntica.",
+    "summary": "Antes de reutilizar/copiar um componente entre contextos, SEMPRE ler a assinatura de destructuring para confirmar os props esperados. Não assuma nomes por semântica.",
     "applies_to": [
       "react"
     ],
@@ -1481,12 +1742,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-134",
     "title": "Validate Context Hook Return Types",
-    "summary": "Quando usar dados de hook context, sempre ler o JSDoc do hook para saber quais propriedades retorna. N\u00e3o assuma nomes baseado em sem\u00e2ntica.",
+    "summary": "Quando usar dados de hook context, sempre ler o JSDoc do hook para saber quais propriedades retorna. Não assuma nomes baseado em semântica.",
     "applies_to": [
       "react"
     ],
@@ -1498,12 +1762,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-135",
     "title": "Prefer Direct Actions Over Modal Flows for Common Operations",
-    "summary": "A\u00e7\u00f5es frequentes e simples devem usar 1-click direto (inline validation + service call + feedback). Modals devem ser reservados para opera\u00e7\u00f5es complexas/multi-step.",
+    "summary": "Ações frequentes e simples devem usar 1-click direto (inline validation + service call + feedback). Modals devem ser reservados para operações complexas/multi-step.",
     "applies_to": [
       "react"
     ],
@@ -1515,7 +1782,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-136",
@@ -1532,12 +1802,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "react-hooks",
+    "bootstrap_default": false
   },
   {
     "id": "R-137",
     "title": "Font Weight Accessibility",
-    "summary": "NUNCA use font-weight < 400 (thin/light). Pacientes idosos n\u00e3o conseguem ler fontes finas. Mapear light=400, thin=400.",
+    "summary": "NUNCA use font-weight < 400 (thin/light). Pacientes idosos não conseguem ler fontes finas. Mapear light=400, thin=400.",
     "applies_to": [
       "all"
     ],
@@ -1548,7 +1821,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-138",
@@ -1565,7 +1841,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-139",
@@ -1582,12 +1861,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-140",
     "title": "Heading Hierarchy Variables",
-    "summary": "TODOS os n\u00edveis h1-h6 DEVEM ter vari\u00e1veis espec\u00edficas de size + weight em CSS tokens. Sem vari\u00e1veis \u2192 hard-coded values \u2192 inconsist\u00eancia em redesigns futuros.",
+    "summary": "TODOS os níveis h1-h6 DEVEM ter variáveis específicas de size + weight em CSS tokens. Sem variáveis → hard-coded values → inconsistência em redesigns futuros.",
     "applies_to": [
       "all"
     ],
@@ -1598,12 +1880,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-146",
     "title": "Centralize PDF Layout Geometry",
-    "summary": "Em geradores de PDF, coordenadas, offsets, larguras e alturas DEVEM ser extra\u00eddas para constantes nomeadas. Sem n\u00fameros m\u00e1gicos inline.",
+    "summary": "Em geradores de PDF, coordenadas, offsets, larguras e alturas DEVEM ser extraídas para constantes nomeadas. Sem números mágicos inline.",
     "applies_to": [
       "all"
     ],
@@ -1615,12 +1900,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-147",
     "title": "Framer Motion Cascade Re-Triggering via Key Remounting",
-    "summary": "Para re-triggerar anima\u00e7\u00f5es cascade quando dados mudam, for\u00e7ar remount via key prop. N\u00e3o confie em initial/animate state changes sozinhos.",
+    "summary": "Para re-triggerar animações cascade quando dados mudam, forçar remount via key prop. Não confie em initial/animate state changes sozinhos.",
     "applies_to": [
       "react"
     ],
@@ -1632,12 +1920,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-148",
     "title": "Domain-Aware Case Conversion for Autocomplete Data",
-    "summary": "Aplicar case conversion baseado em sem\u00e2ntica do dom\u00ednio: Names/User-visible \u2192 Title Case; Classifiers/Metadata \u2192 Sentence Case.",
+    "summary": "Aplicar case conversion baseado em semântica do domínio: Names/User-visible → Title Case; Classifiers/Metadata → Sentence Case.",
     "applies_to": [
       "all"
     ],
@@ -1649,12 +1940,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-149",
     "title": "Full Object Fetch for Edit Workflows",
-    "summary": "Em edit flows, NUNCA editar dados agregados/simplificados. Buscar a entidade completa do banco antes de abrir o form de edi\u00e7\u00e3o.",
+    "summary": "Em edit flows, NUNCA editar dados agregados/simplificados. Buscar a entidade completa do banco antes de abrir o form de edição.",
     "applies_to": [
       "react",
       "supabase"
@@ -1668,7 +1962,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-150",
@@ -1685,12 +1982,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "warm",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-151",
-    "title": "Modal Component Consistency \u2014 Use Shared Modal",
-    "summary": "Ao implementar modals, sempre usar o <Modal> compartilhado do projeto. Nunca criar overlay divs customizados. Shared modal tem Esc key handling, backdrop e anima\u00e7\u00f5es consistentes.",
+    "title": "Modal Component Consistency — Use Shared Modal",
+    "summary": "Ao implementar modals, sempre usar o <Modal> compartilhado do projeto. Nunca criar overlay divs customizados. Shared modal tem Esc key handling, backdrop e animações consistentes.",
     "applies_to": [
       "react"
     ],
@@ -1702,12 +2002,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-152",
     "title": "isComplex = mode !== 'simple'",
-    "summary": "O \u00fanico ponto de bifurca\u00e7\u00e3o de persona \u00e9 isComplex = mode !== 'simple'. O modo 'moderate' n\u00e3o existe. CSS gerencia densidade por grid responsivo.",
+    "summary": "O único ponto de bifurcação de persona é isComplex = mode !== 'simple'. O modo 'moderate' não existe. CSS gerencia densidade por grid responsivo.",
     "applies_to": [
       "react"
     ],
@@ -1719,12 +2022,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-153",
-    "title": "Dona Maria quer hierarquia, n\u00e3o menos dados",
-    "summary": "Em isComplex=false, nunca remover dados por reflexo. Perguntar: o dado informa uma a\u00e7\u00e3o ou apenas contextualiza? Se s\u00f3 contextualiza, remover ou traduzir em linguagem humana.",
+    "title": "Dona Maria quer hierarquia, não menos dados",
+    "summary": "Em isComplex=false, nunca remover dados por reflexo. Perguntar: o dado informa uma ação ou apenas contextualiza? Se só contextualiza, remover ou traduzir em linguagem humana.",
     "applies_to": [
       "react"
     ],
@@ -1735,12 +2041,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-154",
     "title": "Reutilizar StockPill para qualquer status de estoque",
-    "summary": "StockPill (src/features/protocols/components/redesign/StockPill.jsx) \u00e9 o componente universal de status de estoque. Nunca criar badge de status novo.",
+    "summary": "StockPill (src/features/protocols/components/redesign/StockPill.jsx) é o componente universal de status de estoque. Nunca criar badge de status novo.",
     "applies_to": [
       "react"
     ],
@@ -1752,12 +2061,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-155",
     "title": "PriorityDoseCard registra TODOS os doses da faixa",
-    "summary": "PriorityDoseCard recebe doses={urgentDoses} sem slice. Display limita a 3 internamente (DISPLAY_LIMIT). CTA 'Confirmar Agora' registra TODOS, n\u00e3o apenas os vis\u00edveis.",
+    "summary": "PriorityDoseCard recebe doses={urgentDoses} sem slice. Display limita a 3 internamente (DISPLAY_LIMIT). CTA 'Confirmar Agora' registra TODOS, não apenas os visíveis.",
     "applies_to": [
       "react"
     ],
@@ -1769,12 +2081,15 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "adherence-reporting-mobile",
+    "bootstrap_default": false
   },
   {
     "id": "R-156",
-    "title": "AdherenceLabel usa linguagem humana (n\u00e3o %) para modo simple",
-    "summary": "Em isComplex=false, usar AdherenceLabel (n\u00e3o AdherenceBar7d). Thresholds: >90% 'Tratamento em dia', 70-90% 'Algumas doses perdidas', 50-70% 'Tratamento em risco', <50% 'Muitas doses perdidas'.",
+    "title": "AdherenceLabel usa linguagem humana (não %) para modo simple",
+    "summary": "Em isComplex=false, usar AdherenceLabel (não AdherenceBar7d). Thresholds: >90% 'Tratamento em dia', 70-90% 'Algumas doses perdidas', 50-70% 'Tratamento em risco', <50% 'Muitas doses perdidas'.",
     "applies_to": [
       "react"
     ],
@@ -1786,7 +2101,10 @@
     "last_referenced": null,
     "review_due": "2026-06-30",
     "status": "active",
-    "has_detail": true
+    "has_detail": true,
+    "layer": "cold",
+    "pack": "design-ui",
+    "bootstrap_default": false
   },
   {
     "id": "R-157",
@@ -1805,6 +2123,9 @@
     "last_referenced": "2026-04-06",
     "review_due": "2026-07-08",
     "status": "active",
-    "has_detail": false
+    "has_detail": false,
+    "layer": "cold",
+    "pack": "telegram",
+    "bootstrap_default": false
   }
 ]
