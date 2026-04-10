@@ -424,5 +424,59 @@
     "has_detail": false,
     "supersedes": null,
     "superseded_by": null
+  },
+  {
+    "id": "ADR-026",
+    "title": "Web Permanece na Raiz nas Fases 0-6",
+    "status": "accepted",
+    "date": "2026-04-10",
+    "tags": [
+      "architecture",
+      "monorepo",
+      "hybrid",
+      "phases"
+    ],
+    "context": "Hybrid web+native architecture evolution spans 7 phases. Moving web from ./ to apps/web/ early causes Vercel regressions, refactoring friction, and parallel conflicts.",
+    "decision": "Web remains at root during Phases 0-6 (Guardrails → Push + Beta). Move to apps/web/ only if Phase 7 (optional monorepo) is executed.",
+    "source_pr": 457,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-027",
+    "title": "Tabela Dedicada notification_devices para Tokens",
+    "status": "accepted",
+    "date": "2026-04-10",
+    "tags": [
+      "database",
+      "mobile",
+      "notifications",
+      "privacy"
+    ],
+    "context": "Mobile app (Phase 6) needs to support push notifications. Device tokens are sensitive, temporary, and multiple per user.",
+    "decision": "Create dedicated notification_devices table (M:1 relationship) instead of storing tokens in profiles. Schema includes expo_push_token, apns_identifier, fcm_token with is_active flag.",
+    "source_pr": 457,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
+  },
+  {
+    "id": "ADR-028",
+    "title": "StyleSheet + AsyncStorage no MVP (Fase 4-5)",
+    "status": "accepted",
+    "date": "2026-04-10",
+    "tags": [
+      "mobile",
+      "mvp",
+      "styling",
+      "storage"
+    ],
+    "context": "MVP mobile (Phases 4-5) must run on React Native 0.75+ with Expo. Multiple styling and storage alternatives available.",
+    "decision": "Use React Native StyleSheet (not NativeWind) and AsyncStorage (not MMKV/SQLite) to minimize native module friction. Migration to advanced options allowed only in Phase 8+.",
+    "source_pr": 457,
+    "has_detail": true,
+    "supersedes": null,
+    "superseded_by": null
   }
 ]
