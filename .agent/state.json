@@ -19,8 +19,8 @@
     "id": "session_2026W15_devflow_memory_refactor_phase0",
     "started_at": "2026-04-10T15:00:00Z",
     "mode": "planning",
-    "status": "phase-5-complete",
-    "goal": "DEVFLOW memory refactor — Fase 5 arquivamento operacional concluido",
+    "status": "phase-6-complete",
+    "goal": "DEVFLOW memory refactor — Fase 6 lifecycle documental concluido",
     "goal_type": "refactor",
     "acceptance_criteria": [
       "Snapshot local de state.json, rules.json, anti-patterns.json e knowledge.json criado",
@@ -30,10 +30,10 @@
     ],
     "active_refactor": {
       "name": "devflow-memory-refactor",
-      "phase": 5,
+      "phase": 6,
       "spec": "plans/devflow-memory-refactor.md",
       "status": "phase-complete",
-      "notes": "Refactor de memoria DEVFLOW em andamento. Agentes devem evitar alterar .agent/memory/* fora do escopo desta iniciativa sem revisao explicita. Fase 5 concluida; itens cold de baixa recorrencia e forte especificidade historica foram arquivados, enquanto cold ainda operacional permanece ativo. Proxima etapa recomendada: consolidar a documentacao de lifecycle e promocao/arquivamento."
+      "notes": "Refactor de memoria DEVFLOW concluido ate a Fase 6. O lifecycle operacional agora diferencia `hot + active`, `warm + active`, `cold + active` e `cold + archived`, com heuristicas documentadas para promocao, rebaixamento e arquivamento. Agentes devem evitar alterar `.agent/memory/*` fora desse fluxo sem revisao explicita."
     }
   },
   "memory": {
@@ -63,7 +63,9 @@
     "memory_refactor_phase4_started_at": "2026-04-10T00:00:00Z",
     "memory_refactor_phase4_completed_at": "2026-04-10T00:00:00Z",
     "memory_refactor_phase5_started_at": "2026-04-10T00:00:00Z",
-    "memory_refactor_phase5_completed_at": "2026-04-10T00:00:00Z"
+    "memory_refactor_phase5_completed_at": "2026-04-10T00:00:00Z",
+    "memory_refactor_phase6_started_at": "2026-04-10T00:00:00Z",
+    "memory_refactor_phase6_completed_at": "2026-04-10T00:00:00Z"
   },
   "migration": {
     "status": "complete",

@@ -429,8 +429,8 @@ A memória persiste entre sessões em formato JSON indexado (index-first, detail
 
 | Arquivo | Contém | Como usar |
 |---------|--------|-----------|
-| [`.agent/memory/rules.json`](.agent/memory/rules.json) | 107 regras R-NNN indexadas | Bootstrap: carregar `hot` por padrão e expandir `warm` por `pack`, tags, stack e arquivos em escopo |
-| [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) | 97 AP-NNN indexados | Bootstrap: carregar `hot` por padrão e expandir `warm` por `pack`, tags, stack e arquivos em escopo |
+| [`.agent/memory/rules.json`](.agent/memory/rules.json) | 96 regras ativas R-NNN indexadas | Bootstrap: carregar `hot` por padrão, expandir `warm` por `pack`, tags, stack e arquivos em escopo, e consultar `cold` apenas sob demanda |
+| [`.agent/memory/anti-patterns.json`](.agent/memory/anti-patterns.json) | 74 APs ativos indexados | Bootstrap: carregar `hot` por padrão, expandir `warm` por `pack`, tags, stack e arquivos em escopo, e consultar `cold` apenas sob demanda |
 | [`.agent/memory/knowledge.json`](.agent/memory/knowledge.json) | 70 domain facts K-NNN | Carregar tópicos relevantes ao goal |
 | [`.agent/memory/decisions.json`](.agent/memory/decisions.json) | 25 ADRs arquiteturais | Consultar antes de decisões de design |
 | [`.agent/memory/contracts.json`](.agent/memory/contracts.json) | 16 contratos de interface CON-NNN | Contract gateway antes de modificar APIs |
@@ -441,7 +441,14 @@ Taxonomia operacional de memória:
 
 - `hot`: guardrails universais, sempre carregados
 - `warm`: packs contextuais, carregados sob demanda
-- `cold`: histórico ou contexto específico, fora do bootstrap normal
+- `cold`: contexto específico ainda ativo, fora do bootstrap normal
+- `archived`: histórico preservado apenas para rastreabilidade e auditoria
+
+Lifecycle operacional:
+
+- promover para `hot` somente quando um item provar valor transversal e recorrente
+- rebaixar para `cold` quando continuar válido, mas só importar em escopos estreitos
+- arquivar somente itens já `cold`, de baixa recorrência e valor principalmente histórico
 
 **Ciclo DEVFLOW:**
 ```

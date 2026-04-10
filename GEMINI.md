@@ -20,12 +20,12 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 
 | Modo | Comando | Proposito |
 |------|---------|-----------|
-| Bootstrap | `/devflow` (sem args) | **OBRIGATORIO** — carrega state + rules + anti-patterns + knowledge filtrados |
+| Bootstrap | `/devflow` (sem args) | **OBRIGATORIO** — carrega `state` + core `hot` + packs `warm` inferidos; `cold` so entra sob demanda |
 | Status | `/devflow status` | Dashboard: sprint, counts de memória, distillation pending, mutations |
 | Planning | `/devflow planning "goal"` | Planejamento: análise de scope, spec, ADRs, verificação de contratos |
 | Coding | `/devflow coding "task"` | Implementação: C1-C4 checklist, contract gateway, quality gates |
 | Reviewing | `/devflow reviewing "PR #N"` | Revisão: violation scan, memory sync, atualizar trigger counts de APs |
-| Distillation | `/devflow distill` | Compressão de journals e revisar lifecycle (quando journal_entries >= 10) |
+| Distillation | `/devflow distill` | Compressão de journals e revisar lifecycle `hot/warm/cold/archived` (quando journal_entries >= 10) |
 | Export | `/devflow export` | Promover regras candidatas ao global_base (requer aprovação) |
 
 ---
@@ -56,7 +56,7 @@ Este arquivo serve como guia de contexto para interações com o **Gemini CLI** 
 - **Arquivos:** PascalCase para Componentes, camelCase para o restante.
 
 ### Regras Críticas (R-NNN)
-1. **Sempre executar `/devflow`** (bootstrap) antes de codificar — carrega rules.json + anti-patterns.json filtrados por goal.
+1. **Sempre executar `/devflow`** (bootstrap) antes de codificar — carrega `hot` e expande `warm` conforme o goal; `cold` fica fora do bootstrap normal.
 2. **Datas:** NUNCA use `new Date('YYYY-MM-DD')`. Use `parseLocalDate()` de `@utils/dateUtils`.
 3. **Validar:** SEMPRE use `safeParse()` do Zod nos services antes de operações no Supabase.
 4. **Cache:** Use `useCachedQuery` e `cachedServices` para leitura; invalide após mutations.
@@ -86,7 +86,7 @@ Ao final de cada tarefa, execute o protocolo **DEVFLOW C5**:
 - Se `journal_entries >= 10` → executar `/devflow distill`
 
 > ⚠️ `.memory/` está **aposentado** desde 2026-04-08. Não escreva nele.
-> Fontes canônicas: `.agent/memory/rules.json` (107 regras) + `.agent/memory/anti-patterns.json` (93 APs)
+> Fontes canônicas: `.agent/memory/rules.json` (96 regras ativas) + `.agent/memory/anti-patterns.json` (74 APs ativos)
 
 ---
 *Última atualização: 2026-04-08*
