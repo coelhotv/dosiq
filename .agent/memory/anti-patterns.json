@@ -21,49 +21,6 @@
     "pack": "file-integrity"
   },
   {
-    "id": "AP-002",
-    "title": "Assume import location based on file name",
-    "summary": "Wrong file modified, feature doesn't work",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-002",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "file-integrity",
-    "derived_from": "R-002"
-  },
-  {
-    "id": "AP-003",
-    "title": "Import a file that doesn't exist",
-    "summary": "`ERR_MODULE_NOT_FOUND` crashes build",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-003",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "file-integrity",
-    "derived_from": "R-003"
-  },
-  {
     "id": "AP-004",
     "title": "Declare state after useMemo/useEffect",
     "summary": "`ReferenceError` — TDZ crash",
@@ -105,138 +62,6 @@
     "layer": "hot",
     "bootstrap_default": true,
     "pack": "date-time"
-  },
-  {
-    "id": "AP-006",
-    "title": "Use English values in Zod enums",
-    "summary": "UI inconsistency, validation mismatch",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-021",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "schema-data",
-    "derived_from": "R-021"
-  },
-  {
-    "id": "AP-007",
-    "title": "Record dosage in mg instead of pills",
-    "summary": "Exceeds Zod limit of 100",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-022",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "schema-data",
-    "derived_from": "R-022"
-  },
-  {
-    "id": "AP-008",
-    "title": "Callback data > 64 bytes in Telegram",
-    "summary": "API silently fails",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "api",
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-030",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "telegram",
-    "derived_from": "R-030"
-  },
-  {
-    "id": "AP-009",
-    "title": "Unescaped MarkdownV2 special chars",
-    "summary": "Telegram API error 400",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "api",
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-031",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "telegram",
-    "derived_from": "R-031"
-  },
-  {
-    "id": "AP-010",
-    "title": "`process.exit()` in serverless function",
-    "summary": "Function terminates, no response",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-041",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-041"
-  },
-  {
-    "id": "AP-011",
-    "title": "Missing rewrite in `vercel.json` for API route",
-    "summary": "405 error, catch-all serves HTML",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "api",
-      "code"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-040",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-040"
   },
   {
     "id": "AP-012",
@@ -281,27 +106,6 @@
     "pack": "review-validation"
   },
   {
-    "id": "AP-A02",
-    "title": "Count logs (`.length`) instead of summing `quantity_taken` for adherence",
-    "summary": "Patient taking 2 pills/dose with 1 log per day = 50% adherence calculated, 100% actual. Adherence un",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "adherence"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-112",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "adherence-reporting-mobile",
-    "derived_from": "R-112"
-  },
-  {
     "id": "AP-A03",
     "title": "Filter logs with `medicine_id` in addition to `protocol_id`",
     "summary": "When 2+ protocols exist for same medicine, logs bleed between them. Protocol A's adherence = Protoco",
@@ -314,35 +118,12 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-113",
     "has_detail": false,
     "layer": "cold",
     "bootstrap_default": false,
     "pack": "adherence-reporting-mobile"
-  },
-  {
-    "id": "AP-A04",
-    "title": "Compare local `new Date()` with ISO timestamps without zeroing hours",
-    "summary": "±1 day boundary errors when local time ≠ UTC (GMT-3 offset). Log taken at 2026-03-08T09:00-03:00 may",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "adherence",
-      "datetime"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-114",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "date-time",
-    "derived_from": "R-114"
   },
   {
     "id": "AP-P01",
@@ -596,7 +377,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-095",
     "has_detail": false,
     "layer": "cold",
@@ -682,7 +463,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-102",
     "has_detail": false,
     "layer": "cold",
@@ -704,7 +485,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-098",
     "has_detail": false,
     "layer": "cold",
@@ -902,7 +683,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-133",
     "has_detail": false,
     "layer": "cold",
@@ -945,7 +726,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-135",
     "has_detail": false,
     "layer": "cold",
@@ -965,7 +746,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-136",
     "has_detail": true,
     "layer": "cold",
@@ -986,7 +767,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-120",
     "has_detail": true,
     "layer": "cold",
@@ -1008,7 +789,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-134",
     "has_detail": true,
     "layer": "cold",
@@ -1038,118 +819,6 @@
     "pack": "schema-data"
   },
   {
-    "id": "AP-S02",
-    "title": "Use `.optional()` for fields that can be `null`",
-    "summary": "Zod rejects `null` from APIs/databases, 400 error",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "database",
-      "api",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-085",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "schema-data",
-    "derived_from": "R-085"
-  },
-  {
-    "id": "AP-S04",
-    "title": "Access private storage without authentication",
-    "summary": "403 Forbidden, download fails",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-084",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-084"
-  },
-  {
-    "id": "AP-S05",
-    "title": "Use Express-style `res.json()` in Vercel serverless",
-    "summary": "Response may not be sent correctly",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "styling",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-086",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-086"
-  },
-  {
-    "id": "AP-S06",
-    "title": "Implement logging \"later\" after functionality works",
-    "summary": "Hours wasted debugging production issues without visibility",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-087",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-087"
-  },
-  {
-    "id": "AP-S07",
-    "title": "Deploy without validating environment variables",
-    "summary": "500 errors in production, missing config",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-088",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-088"
-  },
-  {
     "id": "AP-S08",
     "title": "INSERT into columns that don't exist",
     "summary": "Database error, failed writes",
@@ -1170,50 +839,6 @@
     "layer": "hot",
     "bootstrap_default": true,
     "pack": "schema-data"
-  },
-  {
-    "id": "AP-S09",
-    "title": "Assume `user_id` or other NOT NULL columns have defaults",
-    "summary": "INSERT fails with constraint violation",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "safety",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-082",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "schema-data",
-    "derived_from": "R-082"
-  },
-  {
-    "id": "AP-S11",
-    "title": "Place utility/helper files in `api/` without `_` directory prefix",
-    "summary": "Utility counted as serverless function, wastes budget",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "api",
-      "schema"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-091",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "infra-api",
-    "derived_from": "R-091"
   },
   {
     "id": "AP-D01",
@@ -1289,7 +914,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-154",
     "has_detail": true,
     "layer": "cold",
@@ -1310,7 +935,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-155",
     "has_detail": true,
     "layer": "cold",
@@ -1330,7 +955,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-153",
     "has_detail": true,
     "layer": "cold",
@@ -1352,7 +977,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-117",
     "has_detail": false,
     "layer": "cold",
@@ -1375,7 +1000,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-089",
     "has_detail": false,
     "layer": "cold",
@@ -1416,7 +1041,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-117",
     "has_detail": false,
     "layer": "cold",
@@ -1504,7 +1129,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-089",
     "has_detail": false,
     "layer": "cold",
@@ -1702,75 +1327,6 @@
     "pack": "test-hygiene"
   },
   {
-    "id": "AP-T03",
-    "title": "Store data in localStorage during tests",
-    "summary": "~200MB memory waste per test suite run",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "testing",
-      "state",
-      "perf"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-076",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "test-hygiene",
-    "derived_from": "R-076"
-  },
-  {
-    "id": "AP-T04",
-    "title": "Leave `setInterval()` running during test suite",
-    "summary": "Garbage collection never runs, memory grows indefinitely",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "testing",
-      "state",
-      "perf"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-077",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "test-hygiene",
-    "derived_from": "R-077"
-  },
-  {
-    "id": "AP-T05",
-    "title": "Test file >300 lines with multiple unrelated test suites",
-    "summary": "Memory accumulation in single worker, OOM on 8GB machines",
-    "applies_to": [
-      "all"
-    ],
-    "tags": [
-      "testing",
-      "state",
-      "perf"
-    ],
-    "trigger_count": 0,
-    "last_triggered": null,
-    "expiry_date": "2027-04-08",
-    "status": "active",
-    "related_rule": "R-079",
-    "has_detail": false,
-    "layer": "warm",
-    "bootstrap_default": false,
-    "pack": "test-hygiene",
-    "derived_from": "R-079"
-  },
-  {
     "id": "AP-T06",
     "title": "Hardcode `setTimeout()` for timing in `act()` blocks",
     "summary": "Timing-dependent, flaky in CI; can timeout unexpectedly",
@@ -1826,7 +1382,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-051",
     "has_detail": false,
     "layer": "cold",
@@ -1848,7 +1404,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-081",
     "has_detail": false,
     "layer": "cold",
@@ -1889,7 +1445,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-149",
     "has_detail": true,
     "layer": "cold",
@@ -1909,7 +1465,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-133",
     "has_detail": true,
     "layer": "cold",
@@ -1929,7 +1485,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-095",
     "has_detail": true,
     "layer": "cold",
@@ -1949,7 +1505,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-151",
     "has_detail": true,
     "layer": "cold",
@@ -1970,7 +1526,7 @@
     "trigger_count": 0,
     "last_triggered": null,
     "expiry_date": "2027-04-08",
-    "status": "active",
+    "status": "archived",
     "related_rule": "R-119",
     "has_detail": true,
     "layer": "cold",
