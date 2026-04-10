@@ -33,7 +33,6 @@
     "@supabase/supabase-js": "^2.90.1",
     "@vercel/blob": "^2.3.0",
     "dotenv": "^17.2.3",
-    "expo": "^55.0.9",
     "framer-motion": "^12.33.0",
     "groq-sdk": "^1.1.1",
     "jsonwebtoken": "^9.0.3",

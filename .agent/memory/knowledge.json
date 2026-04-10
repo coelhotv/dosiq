@@ -495,5 +495,19 @@
     "valid_for": ["general"],
     "correct": "Always use 1 thread for integration tests touching mocked Supabase or DOM",
     "source": "knowledge.md"
+  },
+  {
+    "id": "K-071",
+    "topic": "phase0-extraction-inventory",
+    "fact": "Extraction inventory maps ~100 files by category (PURE, ADAPTER_REQUIRED, PLATFORM_WEB, SHARED_TOKEN, DO_NOT_SHARE). Guides code organization for Phases 1-3.",
+    "valid_for": ["general", "architecture"],
+    "source": "Wave H0 Fase 0 Guardrails"
+  },
+  {
+    "id": "K-072",
+    "topic": "phase0-boundary-matrix",
+    "fact": "Shared boundary matrix defines package boundaries: packages/core (Fase 2), packages/design-tokens (Fase 2), packages/storage/config/shared-data (Fase 3). Web stays at root Phases 0-6 (ADR-026).",
+    "valid_for": ["general", "architecture"],
+    "source": "Wave H0 Fase 0 Guardrails"
   }
 ]
