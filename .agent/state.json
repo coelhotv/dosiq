@@ -37,12 +37,15 @@
       "name": "Wave H1 — Workspaces (Fase 1)",
       "phase": 1,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md",
-      "sprint": "H1.1",
-      "status": "in_progress",
+      "sprint": "H1 Complete",
+      "status": "merged",
       "started_at": "2026-04-10T23:20:00Z",
-      "commit": "747c985",
+      "completed_at": "2026-04-10T23:50:00Z",
+      "merged_at": "2026-04-10T23:50:30Z",
+      "merge_commit": "09636dd",
+      "pr": "#458",
       "branch": "feature/hybrid-h1/workspaces-skeleton",
-      "notes": "Sprint H1.1 (Sprints internos 1.1-1.5) concluída. Pronto para H1.2 ou PR review."
+      "notes": "Wave H1.1 + H1.2 mergeadas com sucesso. Pronto para Wave H2 (Core Pure extraction)."
     }
   },
   "memory": {
@@ -52,7 +55,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "recent_additions": {
       "decisions": ["ADR-026", "ADR-027", "ADR-028"],
       "knowledge": ["K-071", "K-072"],
