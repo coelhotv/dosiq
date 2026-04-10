@@ -7,7 +7,7 @@ import appStyles from './App.module.css'
 import Auth from './views/Auth'
 import Loading from '@shared/components/ui/Loading'
 
-// Lazy imports — carregam apenas quando a view é acessada (versão consolidada — apenas redesign)
+// Lazy imports — carregam apenas quando a view é acessada
 const Landing = lazy(() => import('./views/Landing'))
 const Medicines = lazy(() => import('./views/redesign/Medicines'))
 const Stock = lazy(() => import('./views/redesign/Stock'))
@@ -244,7 +244,7 @@ function AppInner() {
           Ir para conteúdo principal
         </a>
 
-        <div className="app-container" data-redesign="true">
+        <div className="app-container">
           {/* Sidebar — desktop, apenas usuários autenticados */}
           {isAuthenticated && (
             <Suspense fallback={null}>

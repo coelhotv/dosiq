@@ -216,9 +216,9 @@ Each sprint in Wave 17 has mandatory gates:
 | **17.7** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #453 | Rename redesign views (9 files) — check-review workflow applied |
 | **17.8** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | — | Feature flag cleanup (RedesignContext deleted in S17.6 + JSDoc) |
 | **17.9** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #454 | CSS cleanup — Landing regression fix + AP-096 documented |
-| **17.9.5** | ✅ | ✅ | ✅ | ✅ | **🔄 IN PROGRESS** | #455 | Neon token migration — 265 refs, 40+ files, awaiting review |
-| 17.10 | — | — | — | — | 📋 Pending | — | Onboarding & final polish |
-| 17.11 | — | — | — | — | 📋 Pending | — | Validation final (lighthouse + smoke tests) |
+| **17.9.5** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #455 | Neon token migration — 265 refs, 40+ files, awaiting review |
+| **17.10** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #456 | Onboarding & final polish — remove data-redesign attributes |
+| **17.11** | ✅ | ✅ | ✅ | ✅ | **✅ DONE** | #456 | Validation final — all greps ZERO, tests pass 100% |
 | 17.12 | — | — | — | — | 📋 Pending | — | Release v4.0.0 (tag, CHANGELOG, docs) |
 
 ### Deliver-Sprint Integration
