@@ -222,7 +222,7 @@ export default function Treatments({
     return <div className="treatments-redesign__error">Erro ao carregar tratamentos: {error}</div>
 
   return (
-    <div className="treatments-redesign" data-redesign="true">
+    <div className="treatments-redesign">
       {/* Top bar: título + dropdown (esq) + busca ANVISA (dir) */}
       <div className="treatments-redesign__topbar">
         <div className="treatments-redesign__topbar-left">

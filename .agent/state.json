@@ -16,12 +16,12 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_wave17_sprint17.9.5_planning",
-    "started_at": "2026-04-09T15:30:00Z",
-    "mode": "planning",
-    "goal": "Sprint 17.9.5 \u2014 Neon Token Migration",
+    "id": "session_2026W15_wave17_sprints17.10-17.11_coding",
+    "started_at": "2026-04-09T16:45:00Z",
+    "mode": "coding",
+    "goal": "Sprints 17.10 e 17.11 \u2014 Onboarding Final Polish & Validação Final",
     "goal_type": "chore",
-    "status": "planning",
+    "status": "analysis",
     "acceptance_criteria": [
       "grep -r '--neon-' src/ --include='*.css' returns zero",
       "grep -r '--accent-' src/ --include='*.css' returns zero (exceto --accent-color em sanctuary)",
