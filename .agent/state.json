@@ -19,8 +19,8 @@
     "id": "session_2026W15_devflow_memory_refactor_phase0",
     "started_at": "2026-04-10T15:00:00Z",
     "mode": "planning",
-    "status": "phase-3-complete",
-    "goal": "DEVFLOW memory refactor — Fase 3 adaptacao do bootstrap concluida",
+    "status": "phase-4-complete",
+    "goal": "DEVFLOW memory refactor — Fase 4 consolidacao semantica concluida",
     "goal_type": "refactor",
     "acceptance_criteria": [
       "Snapshot local de state.json, rules.json, anti-patterns.json e knowledge.json criado",
@@ -30,10 +30,10 @@
     ],
     "active_refactor": {
       "name": "devflow-memory-refactor",
-      "phase": 3,
+      "phase": 4,
       "spec": "plans/devflow-memory-refactor.md",
       "status": "phase-complete",
-      "notes": "Refactor de memoria DEVFLOW em andamento. Agentes devem evitar alterar .agent/memory/* fora do escopo desta iniciativa sem revisao explicita. Fase 3 concluida; bootstrap documental do /devflow agora parte de layer=hot e expande packs warm por contexto. Proxima etapa recomendada: consolidacao semantica de regras e APs derivados."
+      "notes": "Refactor de memoria DEVFLOW em andamento. Agentes devem evitar alterar .agent/memory/* fora do escopo desta iniciativa sem revisao explicita. Fase 4 concluida; regras-mae agora absorvem os principais APs derivados no proprio detail. Proxima etapa recomendada: arquivamento operacional e politicas de lifecycle para itens cold."
     }
   },
   "memory": {
@@ -59,7 +59,9 @@
     "memory_refactor_phase2_started_at": "2026-04-10T00:00:00Z",
     "memory_refactor_phase2_completed_at": "2026-04-10T00:00:00Z",
     "memory_refactor_phase3_started_at": "2026-04-10T00:00:00Z",
-    "memory_refactor_phase3_completed_at": "2026-04-10T00:00:00Z"
+    "memory_refactor_phase3_completed_at": "2026-04-10T00:00:00Z",
+    "memory_refactor_phase4_started_at": "2026-04-10T00:00:00Z",
+    "memory_refactor_phase4_completed_at": "2026-04-10T00:00:00Z"
   },
   "migration": {
     "status": "complete",
