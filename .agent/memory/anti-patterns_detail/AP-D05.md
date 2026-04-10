@@ -2,7 +2,7 @@
 
 **Category:** Design
 **Status:** active
-**Related Rule:** None
+**Related Rule:** R-155
 **Applies To:** all
 
 ## Problem

@@ -425,7 +425,7 @@
   {
     "id": "R-065",
     "title": "Read Memory Before Coding",
-    "summary": "Every agent MUST load the relevant .agent/memory indexes before writing any code.",
+    "summary": "Every agent MUST read rules.md and anti-patterns.md BEFORE writing any code.",
     "applies_to": [
       "all"
     ],

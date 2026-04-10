@@ -2,7 +2,7 @@
 
 **Category:** Logging
 **Status:** active
-**Related Rule:** R-145
+**Related Rule:** R-116
 **Applies To:** all
 
 ## Problem

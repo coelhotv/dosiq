@@ -16,25 +16,21 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_devflow_memory_refactor_phase0",
+    "id": "session_2026W15_hybrid_h0_guardrails",
     "started_at": "2026-04-10T15:00:00Z",
-    "mode": "planning",
-    "status": "phase-1-complete",
-    "goal": "DEVFLOW memory refactor — Fase 1 saneamento estrutural concluido",
-    "goal_type": "refactor",
+    "mode": "coding",
+    "status": "analysis",
+    "goal": "Wave H0.1-H0.3 — Guardrails, ADRs e Inventarios (Fase 0)",
+    "goal_type": "docs",
     "acceptance_criteria": [
-      "Snapshot local de state.json, rules.json, anti-patterns.json e knowledge.json criado",
-      "Inventario inicial da memoria DEVFLOW registrado em plans/",
-      "state.json sinaliza explicitamente o refactor de memoria em andamento",
-      "Referencias legadas a .memory/*.md inventariadas para saneamento futuro"
-    ],
-    "active_refactor": {
-      "name": "devflow-memory-refactor",
-      "phase": 1,
-      "spec": "plans/devflow-memory-refactor.md",
-      "status": "phase-complete",
-      "notes": "Refactor de memoria DEVFLOW em andamento. Agentes devem evitar alterar .agent/memory/* fora do escopo desta iniciativa sem revisao explicita. Fase 1 concluida; proxima etapa recomendada: classificacao hot/warm/cold."
-    }
+      "3 ADRs criadas em plans/adr/",
+      "PHASE0_EXTRACTION_INVENTORY.md concluido com todos os caminhos reais",
+      "PHASE0_SHARED_BOUNDARY_MATRIX.md com decisoes de fronteira",
+      "expo removido do package.json raiz",
+      "npm run build passa",
+      "npm run validate:agent passa",
+      "Docs RN legados marcados como supersedidos"
+    ]
   },
   "memory": {
     "rules_count": 107,
@@ -52,10 +48,7 @@
   "quality_gates": {
     "index_loaded_at": "2026-04-09T15:30:00Z",
     "relevant_rules_loaded_at": "2026-04-09T15:30:00Z",
-    "review_completed_at": "2026-04-09T15:20:00Z",
-    "memory_refactor_baseline_at": "2026-04-10T00:00:00Z",
-    "memory_refactor_phase1_started_at": "2026-04-10T00:00:00Z",
-    "memory_refactor_phase1_completed_at": "2026-04-10T00:00:00Z"
+    "review_completed_at": "2026-04-09T15:20:00Z"
   },
   "migration": {
     "status": "complete",
