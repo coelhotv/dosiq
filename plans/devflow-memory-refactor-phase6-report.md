@@ -43,7 +43,7 @@ Mudanças aplicadas:
 
 - contagens da memória ativa alinhadas ao estado pós-Fase 5:
   - `96` regras ativas
-  - `74` anti-patterns ativos
+  - `54` anti-patterns ativos
 - taxonomia operacional expandida para incluir `archived`
 - lifecycle resumido no guia para evitar ambiguidade entre consulta histórica e bootstrap normal
 
