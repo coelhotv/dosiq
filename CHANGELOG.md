@@ -3,7 +3,102 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+e este projeto adhere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+
+---
+
+## [4.0.0] — 2026-04-09 — Santuário Terapêutico Complete ✨
+
+### 🎨 **Major: Design System Overhaul**
+- Santuário Terapêutico design (Waves 0-16) agora padrão em 100% das telas
+- Nova paleta: Health Green (#006a5e) + Clinical Blue (#005db6)
+- Tipografia moderna: Public Sans (display) + Lexend (body)
+- Border radius: mínimo 0.75rem (healthcare-appropriate aesthetics)
+- Shadow system: ambient (Material Design 3) em lugar de glows
+
+### ♿ **Major: WCAG 2.1 AA Accessibility**
+- Font weights ≥400 only (elderly users, geriatric compliance)
+- Todos os ícones pareados com text labels
+- Motion preferences respeitadas via `useReducedMotion()`
+- Color contrast ratios verificados (4.5:1 minimum)
+- Touch targets ≥44px, keyboard navigation completa
+
+### 📱 **Major: Mobile Performance**
+- Bundle: 989kB → 102.47kB gzip (89% reduction)
+- Lazy loading em 13+ views com ViewSkeleton pattern
+- Dashboard queries: 13+ → 1 (promise coalescence cache)
+- Mobile FCP: ~500ms mais rápido
+- Vite manualChunks: 8 vendor/feature chunks
+
+### 🤖 **New: AI Chatbot Multi-Canal**
+- Groq API com prompt caching
+- Web + Telegram unified assistant
+- Context-aware recomendações
+- Safety guard + hallucination mitigations
+- Active ingredient grounding (temperature 0.2)
+
+### 🎛️ **New: Navigation Redesign**
+- BottomNav (mobile) + Sidebar (desktop)
+- Framer Motion page transitions (6 motion archetypes)
+- Responsive layout with CSS Grid
+- Keyboard-friendly navigation
+
+### 📊 **Improvements: Dashboard & Insights**
+- Adherence widgets redesigned
+- Smart alerts (adherence, stock, protocols)
+- Cost analysis view
+- Health history com calendar navigation
+- Ring gauge + sparkline visualizations
+
+### 🏥 **Improvements: Clinical Features**
+- Consultation mode (read-only medicines)
+- Clinical PDF reports via jsPDF
+- ANVISA drug database (819KB feature chunk)
+- Therapeutic class field
+
+### ✅ **Improvements: Protocol Management**
+- Enhanced treatment wizard
+- Titration schedule support
+- Protocol reminders via Telegram bot
+- Duration validation (start/end dates)
+
+### 📦 **Improvements: Stock & Inventory**
+- Four-tier system (CRITICAL/LOW/NORMAL/HIGH)
+- FIFO inventory management
+- Expiration tracking
+- Cost analytics
+
+### 🔧 **Technical: Architecture**
+- Feature-based organization (src/features/)
+- Zod validation everywhere
+- Supabase RLS enforcement
+- Telegram bot com message deduplication
+- QueryCache + SWR adherence
+
+### 🚀 **Infrastructure**
+- 6/12 serverless functions: DLQ, Gemini, health, notify, share, telegram
+- GitHub Actions + Gemini Code Assist review
+- Vercel Hobby deployment (grátis)
+
+### 🗑️ **Breaking Changes**
+- Feature flag infrastructure removed (`RedesignContext`, `useRedesign`)
+- Neon colors removed (`--neon-*` tokens)
+- Legacy views deleted (Dashboard, Stock, HealthHistory, etc.)
+- BottomNav replaced with BottomNavRedesign
+- Old theme tokens (tokens.redesign.css) consolidated to sanctuary.css
+
+### 📚 **Documentation**
+- Complete redesign system docs
+- Mobile performance standards
+- Bot architecture guide
+- Chatbot AI integration guide
+- Release migration guide (v3.x → v4.0.0)
+
+### 📊 **Metrics**
+- Lighthouse Performance: ≥90
+- Lighthouse Accessibility: ≥95
+- Test coverage: 32 test files, 543+ tests
+- Bundle size: 102.47kB gzip (main)
 
 ---
 
