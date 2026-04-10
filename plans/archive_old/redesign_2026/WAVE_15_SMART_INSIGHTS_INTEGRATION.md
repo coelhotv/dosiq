@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 2026-04-03
-**Status:** ✅ MERGED #445 (2026-04-04)
+**Status:** ⏳ PENDENTE
 **Dependências:** W0-W14.5 COMPLETAS ✅
 **Princípio:** Zero new Supabase calls. Computação pura sobre cache SWR existente.
 **Branch pattern:** `feature/wave-15/smart-insights`

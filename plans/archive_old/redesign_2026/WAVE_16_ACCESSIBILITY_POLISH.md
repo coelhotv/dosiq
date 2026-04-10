@@ -3,10 +3,10 @@
 
 **Versão:** 1.0
 **Data:** 2026-04-02
-**Status:** ✅ MERGED (PR #448, 2026-04-08)
-**Branch alvo:** `main`
+**Status:** ⏳ PENDENTE
+**Branch alvo:** `feature/redesign/wave-15/accessibility-polish`
 **PR base:** `main`
-**Referência:** `MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`, seção 21
+**Referência:** `MASTER_SPEC_REDESIGN_EXPERIENCIA_PACIENTE.md`, seção 20
 
 ---
 
@@ -14,16 +14,14 @@
 
 Wave 16 é a wave de **compliance de acessibilidade**. Com W0–W15, toda a UI do Santuário Terapêutico foi construída (incluindo Smart Insights em W15). W16 não adiciona features — ela **garante que tudo que foi construído seja usável por todos os usuários**, incluindo pessoas com deficiências motoras, visuais ou vestibulares.
 
-**Entrega final:** PR #448 mergeado em `main` em 2026-04-08.
-
 **Objetivo central:** Alcançar **Lighthouse Accessibility Score ≥ 95** e garantir navegação completa por teclado, leitores de tela e contextos de motion reduzido.
 
-### O que W16 NÃO é
+### O que W15 NÃO é
 - Não é refatoração visual — cores e layout não mudam
 - Não adiciona features novas
 - Não desfaz decisões de design — apenas adiciona camada semântica e behavioral
 
-### Estado atual (pós W0–W15)
+### Estado atual (pós W0–W14)
 
 | Área | Estado | Prioridade |
 |------|--------|------------|
@@ -1082,12 +1080,13 @@ S15.1 (App.jsx: skip link, main id, reduced motion, ViewSkeleton)
 
 ---
 
-## Nota sobre W16 (entregue)
+## Nota sobre W16 (próxima e última wave)
 
-W16 foi concluída e mergeada em `main` via PR #448. O que permanece como próximo passo do roadmap é:
-- **W17 (Rollout Promotion & Legacy Cleanup)** remover o feature flag, consolidar tokens, eliminar views legacy e promover os componentes `*Redesign` para nomes definitivos
-- W16 **não** altera mais o legado; esse trabalho fica para W17
-- `useFocusTrap.js` permanece em `@shared/hooks/` como parte da base acessível consolidada
+W15 é a **última wave de conteúdo**. Após merge de W15:
+- **W16 (Rollout Promotion & Legacy Cleanup)** remove o feature flag, faz merge de tokens, remove views legacy e renomeia componentes `*Redesign` para seus nomes definitivos
+- W15 **não deve remover código legacy** — essa é responsabilidade de W16
+- A presença de `useFocusTrap` em `DailyDoseModal.jsx` como local function (removida em W15.2.2) e importada de shared é a abordagem correta; W16 não precisa reverter isso
+- O `useFocusTrap.js` criado em W15 permanece em `@shared/hooks/` e é promovido junto com os outros shared hooks em W16
 
 ---
 
