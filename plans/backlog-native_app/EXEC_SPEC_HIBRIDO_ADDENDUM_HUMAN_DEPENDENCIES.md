@@ -34,8 +34,8 @@ Este addendum lista explicitamente o que o maintainer humano deve fazer e quando
 
 | Dependencia | Responsavel | Bloqueante para | Status |
 |-------------|-------------|-----------------|--------|
-| Validacao visual da web apos workspaces (`npm run dev`) | Maintainer | Fase 2 | Pendente |
-| Validacao do deploy Vercel preview | Maintainer | Merge do PR | Pendente |
+| Validacao visual da web apos workspaces (`npm run dev`) | Maintainer | Fase 2 | Aprovado ✅ |
+| Validacao do deploy Vercel preview | Maintainer | Merge do PR | Aprovado ✅ |
 
 ### 2.3. Fase 4 — Scaffold Mobile
 
