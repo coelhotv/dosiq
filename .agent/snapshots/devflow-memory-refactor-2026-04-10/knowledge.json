@@ -392,7 +392,7 @@
   {
     "id": "K-056",
     "topic": "code-mode-preface",
-    "fact": "Every delegation to Code mode MUST include: read .agent/memory/rules.json, read .agent/memory/anti-patterns.json, check for duplicate files",
+    "fact": "Every delegation to Code mode MUST include: read .memory/rules.md, read .memory/anti-patterns.md, check for duplicate files",
     "valid_for": ["general"],
     "source": "knowledge.md"
   },

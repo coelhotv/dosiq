@@ -2,7 +2,7 @@
 
 **Category:** Performance
 **Status:** active
-**Related Rule:** R-089, AP-B02
+**Related Rule:** R-089
 **Applies To:** all
 
 ## Problem

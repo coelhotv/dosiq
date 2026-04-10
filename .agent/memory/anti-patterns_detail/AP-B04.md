@@ -2,7 +2,7 @@
 
 **Category:** Build
 **Status:** active
-**Related Rule:** —
+**Related Rule:** R-117
 **Applies To:** all
 
 ## Problem
