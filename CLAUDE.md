@@ -6,7 +6,7 @@
 >
 > **Antes de qualquer tarefa:**
 > 1. Leia `.agent/state.json` (estado do projeto)
-> 2. Execute `/devflow` para bootstrap completo (rules.json + anti-patterns.json + knowledge.json)
+> 2. Execute `/devflow` para bootstrap seletivo (`hot` + `warm` por contexto; `cold` apenas sob demanda)
 > 3. Use `/deliver-sprint` para entregas e `/devflow distill` periodicamente
 
 > Contexto completo do projeto para agentes Claude. Leia este arquivo INTEIRO antes de qualquer tarefa.
@@ -70,8 +70,8 @@ docs/                # Documentacao do projeto
   decisions.json     #   - ADRs (25 decisoes arquiteturais)
   decisions_detail/  #   - ADR detail files (ADR-001.md through ADR-025.md)
   memory/
-    rules.json       #   - Indice de regras R-NNN (107 ativas) — SEMPRE carregar primeiro
-    anti-patterns.json #  - Indice AP-NNN (93 ativos) — SEMPRE carregar primeiro
+    rules.json       #   - Indice de regras R-NNN (96 ativas) — carregar `hot` primeiro e expandir `warm` por contexto
+    anti-patterns.json #  - Indice AP-NNN (74 ativos) — carregar `hot` primeiro e expandir `warm` por contexto
     contracts.json   #   - Contratos de interface CON-NNN (16)
     knowledge.json   #   - Domain facts K-NNN (70 fatos)
     rules_detail/    #   - R-NNN.md on-demand
@@ -272,7 +272,7 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 | Modo | Comando | Proposito |
 |------|---------|-----------|
-| **Bootstrap** | `/devflow` (sem args) | **OBRIGATORIO** — carrega state.json + rules.json + anti-patterns.json + knowledge.json filtrados por goal atual |
+| **Bootstrap** | `/devflow` (sem args) | **OBRIGATORIO** — carrega `state.json` + core `hot` + packs `warm` inferidos por goal/stack/arquivos; `cold` fica fora do bootstrap normal |
 | **Status** | `/devflow status` | Painel de estado: sprint atual, memoria counts, distilacao pending, mutations |
 | **Planning** | `/devflow planning "goal"` | Modo planejamento: analisa scope, cria specs, drafta ADRs, verifica contratos |
 | **Coding** | `/devflow coding "task"` | Modo codificacao: C1-C4 checklist, contract gateway, quality gates |
@@ -286,8 +286,8 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 .agent/
   state.json                    # Estado do projeto (sprint, goal, contadores)
   memory/
-    rules.json                  # Indice de regras R-NNN (107 ativas)
-    anti-patterns.json          # Indice de anti-patterns AP-NNN (93 ativos)
+    rules.json                  # Indice de regras R-NNN (96 ativas)
+    anti-patterns.json          # Indice de anti-patterns AP-NNN (74 ativos)
     contracts.json              # Contratos de interface CON-NNN (16)
     decisions.json              # ADRs ADR-NNN (25 decisoes arquiteturais)
     knowledge.json              # Domain facts K-NNN (70 fatos)
@@ -306,7 +306,7 @@ Retorna array (plan/bulk) ou objeto (protocol/single) — SEMPRE checar `Array.i
 
 ```
 ANTES de codificar:
-  1. /devflow → bootstrap (le state.json + rules.json + anti-patterns.json)
+  1. /devflow → bootstrap (le state.json + carrega `hot` + `warm` relevantes)
   2. Verificar rules e APs relevantes para o goal atual
   3. Checar contratos (contracts.json) para interfaces tocadas
 
@@ -339,7 +339,7 @@ como referencia historica de W01-W11. Todo novo registro vai para `.agent/memory
 ## Git Workflow
 
 ```
-1. /devflow → bootstrap (ler state.json + rules.json + anti-patterns.json relevantes)
+1. /devflow → bootstrap (ler state.json + `hot` + `warm` relevantes; consultar `cold` so quando necessario)
 2. CREATE BRANCH (feature/wave-X/nome ou feature/fase-N/nome)
 3. MAKE CHANGES (seguir padroes de codigo, DEVFLOW C1-C4)
 4. VALIDATE LOCALLY (npm run validate:agent)
@@ -495,8 +495,8 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 
 ### Memoria de Longo Prazo (DEVFLOW — `.agent/memory/`)
 **IMPORTANTE:** A memoria canonica e gerenciada pelo DEVFLOW. Use `/devflow` para acessar e atualizar.
-- `.agent/memory/rules.json` + `rules_detail/` — Regras R-NNN (107 ativas), indice filtrado
-- `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` — AP-NNN (93 ativos)
+- `.agent/memory/rules.json` + `rules_detail/` — Regras R-NNN (96 ativas), com lifecycle `hot/warm/cold/archived`
+- `.agent/memory/anti-patterns.json` + `anti-patterns_detail/` — AP-NNN (74 ativos), com lifecycle `hot/warm/cold/archived`
 - `.agent/memory/knowledge.json` + `knowledge_detail/` — Domain facts K-NNN (70 fatos)
 - `.agent/memory/decisions.json` + `decisions_detail/` — ADRs (25 decisoes arquiteturais)
 - `.agent/memory/journal/YYYY-WWW.jsonl` — Journals JSONL por sprint (append-only)
@@ -509,7 +509,7 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 ## Checklist Pre-Codigo
 
 - [ ] Li CLAUDE.md inteiro (este arquivo)
-- [ ] Executei `/devflow` bootstrap (rules.json + anti-patterns.json filtrados por goal — R-065 OBRIGATORIO)
+- [ ] Executei `/devflow` bootstrap (`hot` + `warm` filtrados por goal; `cold` so sob demanda — R-065 OBRIGATORIO)
 - [ ] Verifiquei duplicatas do arquivo alvo (`find src -name "*File*" -type f`)
 - [ ] Confirmei path aliases em vite.config.js
 - [ ] Sei qual view/feature/service estou modificando
