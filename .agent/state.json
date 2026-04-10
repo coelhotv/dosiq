@@ -16,10 +16,11 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h1_workspaces",
-    "started_at": "2026-04-10T23:20:00Z",
-    "mode": "coding",
-    "status": "completed",
+    "id": "session_2026W15_distillation",
+    "started_at": "2026-04-11T00:15:30Z",
+    "completed_at": "2026-04-11T00:16:00Z",
+    "mode": "distillation",
+    "status": "distilled",
     "goal": "H1.2 — Turbo opcional + Validação retrocompatível",
     "goal_type": "refactor",
     "acceptance_criteria": [
@@ -54,8 +55,8 @@
     "decisions_count": 28,
     "contracts_count": 16,
     "knowledge_count": 72,
-    "last_distillation": "2026-04-08T23:58:00Z",
-    "journal_entries_since_distillation": 15,
+    "last_distillation": "2026-04-11T00:15:30Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "decisions": ["ADR-026", "ADR-027", "ADR-028"],
       "knowledge": ["K-071", "K-072"],
