@@ -16,36 +16,31 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h2_phase2_protocols_utils",
-    "started_at": "2026-04-11T03:15:00Z",
+    "id": "session_2026W15_h2_phase2_design_tokens",
+    "started_at": "2026-04-11T01:30:00Z",
     "mode": "coding",
-    "status": "analysis",
-    "goal": "H2.4 — Auditoria e deduplicação: src/features/protocols/utils/** (Fase 2, Wave H2)",
-    "goal_type": "refactor",
+    "status": "in_review",
+    "goal": "H2.3 — Design Tokens Extraction: packages/design-tokens (Fase 2, Wave H2)",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "✅ root possui 'workspaces' field",
-      "✅ apps/mobile exists como placeholder",
-      "✅ packages/core, shared-data, storage, config existem",
-      "✅ todos os workspaces tem package.json, README.md, src/index.js",
-      "✅ src/, public/, index.html, vite.config.js permanecem na raiz",
-      "✅ npm run dev continua funcionando",
-      "✅ npm run build continua funcionando",
-      "✅ npm run validate:agent continua funcionando (543 tests passed)",
-      "✅ branch feature/hybrid-h1/workspaces-skeleton criada e feito push"
+      "✅ Create packages/design-tokens with colors, spacing, radii, typography JS/JSON exports",
+      "✅ Extract tokens from src/shared/styles/tokens/ (source of truth = web)",
+      "✅ Zero npm dependencies",
+      "✅ Platform-agnostic structure (Web + Mobile + Server)",
+      "✅ All quality gates pass (lint, test:critical, build)",
+      "✅ PR merged with explicit human approval"
     ],
     "active_wave": {
-      "name": "Wave H1 — Workspaces (Fase 1)",
-      "phase": 1,
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md",
-      "sprint": "H1 Complete",
-      "status": "merged",
-      "started_at": "2026-04-10T23:20:00Z",
-      "completed_at": "2026-04-10T23:50:00Z",
-      "merged_at": "2026-04-10T23:50:30Z",
-      "merge_commit": "09636dd",
-      "pr": "#458",
-      "branch": "feature/hybrid-h1/workspaces-skeleton",
-      "notes": "Wave H1.1 + H1.2 mergeadas com sucesso. Pronto para Wave H2 (Core Pure extraction)."
+      "name": "Wave H2 — Core Pure Extraction (Fase 2)",
+      "phase": 2,
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md",
+      "sprint": "H2.3 Design Tokens",
+      "status": "in_progress",
+      "started_at": "2026-04-10T23:50:00Z",
+      "current_pr": "#461",
+      "completed_prs": ["#459", "#460"],
+      "branch": "feature/hybrid-h2/design-tokens",
+      "notes": "H2.1 (workspaces), H2.2 (schemas extraction) merged. H2.3 Design Tokens in PR review. H2.4 (dedup) completed in PR #460. Ready for H2.5 (Adapters) after H2.3 merge."
     }
   },
   "memory": {
@@ -55,7 +50,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "recent_additions": {
       "decisions": [
         "ADR-026",
