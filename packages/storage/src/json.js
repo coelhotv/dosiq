@@ -30,7 +30,15 @@ export async function getJSON(adapter, key, fallback = null) {
  * @param {string} key - Chave de armazenamento
  * @param {*} value - Valor a serializar
  * @returns {Promise<void>}
+ * @throws {Error} Se JSON.stringify ou adapter.setItem falharem
  */
 export async function setJSON(adapter, key, value) {
-  await adapter.setItem(key, JSON.stringify(value))
+  try {
+    const serialized = JSON.stringify(value)
+    await adapter.setItem(key, serialized)
+  } catch (error) {
+    // Log error para debugging (mesmo que falha seja silenciosa para caller)
+    console.error(`[setJSON] Failed to store key "${key}":`, error.message)
+    throw error
+  }
 }
