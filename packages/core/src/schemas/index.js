@@ -16,7 +16,7 @@ export {
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
-} from './medicineSchema'
+} from './medicineSchema.js'
 
 export {
   protocolSchema,
@@ -30,7 +30,7 @@ export {
   validateTitrationStage,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
-} from './protocolSchema'
+} from './protocolSchema.js'
 
 export {
   stockSchema,
@@ -46,7 +46,7 @@ export {
   validateStockIncrease,
   mapStockErrorsToForm,
   getStockErrorMessage,
-} from './stockSchema'
+} from './stockSchema.js'
 
 export {
   logSchema,
@@ -63,7 +63,7 @@ export {
   mapBulkLogErrors,
   getLogErrorMessage,
   getBulkLogErrorMessage,
-} from './logSchema'
+} from './logSchema.js'
 
 export {
   geminiReviewSchema,
@@ -89,7 +89,7 @@ export {
   REVIEW_PRIORITY_LABELS,
   REVIEW_CATEGORIES,
   REVIEW_CATEGORY_LABELS,
-} from './geminiReviewSchema'
+} from './geminiReviewSchema.js'
 
 // Helper geral de validação
-export { validateEntity, ValidationError } from './validationHelper'
+export { validateEntity, ValidationError } from './validationHelper.js'
