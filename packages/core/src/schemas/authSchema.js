@@ -14,8 +14,7 @@ const passwordChangeSchema = z.object({
     .string()
     .trim()
     .min(6, 'Senha deve ter no mínimo 6 caracteres')
-    .max(128, 'Senha deve ter no máximo 128 caracteres')
-    .refine((pass) => pass.length >= 6, 'Senha deve ter no mínimo 6 caracteres'),
+    .max(128, 'Senha deve ter no máximo 128 caracteres'),
 })
 
 /**

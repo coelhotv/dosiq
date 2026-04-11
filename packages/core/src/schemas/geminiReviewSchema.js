@@ -427,5 +427,11 @@ export function getCategoryLabel(category) {
  * @returns {boolean} true se o status é final
  */
 export function isFinalStatus(status) {
-  return status === 'corrigido' || status === 'descartado'
+  return [
+    'corrigido',
+    'descartado',
+    'resolved',
+    'wontfix',
+    'duplicate',
+  ].includes(status)
 }

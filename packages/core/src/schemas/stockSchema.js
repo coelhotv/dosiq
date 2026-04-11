@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para Estoque

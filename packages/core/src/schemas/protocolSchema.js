@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getTodayLocal } from '../../../src/utils/dateUtils.js'
+import { getTodayLocal, parseLocalDate } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para Protocolos
@@ -189,7 +189,7 @@ export const protocolCreateSchema = protocolSchema
       // Se end_date está definido, deve ser maior ou igual a start_date
       // Usa T00:00:00 para garantir timezone local (GMT-3 para Brasil)
       if (data.end_date && data.start_date) {
-        return new Date(data.end_date + 'T00:00:00') >= new Date(data.start_date + 'T00:00:00')
+        return parseLocalDate(data.end_date) >= parseLocalDate(data.start_date)
       }
       return true
     },
