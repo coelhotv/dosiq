@@ -1,4 +1,16 @@
-// Placeholder intencional da Fase 1 (Wave H1).
-// Config loaders por plataforma serao criados na Fase 3.
+/**
+ * @meus-remedios/config — Config Management (Fase 3: H3.2)
+ *
+ * Platform-agnostic config validation and factory.
+ * Desacoplado de import.meta.env, process.env, ou qualquer source específico.
+ * Config é sempre injetada pelo app-specific bootstrap.
+ *
+ * Usage:
+ *   import { createPublicAppConfig, validatePublicAppConfig } from '@meus-remedios/config'
+ *   const config = createPublicAppConfig({ supabaseUrl: '...', supabaseAnonKey: '...' })
+ *   const result = validatePublicAppConfig(config)
+ */
 
-export {}
+export { assertPublicAppConfig } from './contracts.js'
+export { createPublicAppConfig } from './createPublicAppConfig.js'
+export { validatePublicAppConfig, checkRequiredFields } from './validateConfig.js'
