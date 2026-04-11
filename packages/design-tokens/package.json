@@ -1,0 +1,25 @@
+{
+  "name": "@meus-remedios/design-tokens",
+  "version": "0.0.0-phase2",
+  "private": true,
+  "description": "Design system tokens for Meus Remédios (Sanctuary Design System)",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./colors": "./src/colors.js",
+    "./spacing": "./src/spacing.js",
+    "./radii": "./src/radii.js",
+    "./typography": "./src/typography.js"
+  },
+  "keywords": [
+    "design-tokens",
+    "design-system",
+    "sanctuary",
+    "colors",
+    "spacing",
+    "typography"
+  ],
+  "author": "Meus Remédios Team",
+  "license": "MIT"
+}
