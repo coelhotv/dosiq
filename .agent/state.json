@@ -16,31 +16,31 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h2_phase2_protocols_utils",
-    "started_at": "2026-04-11T03:15:00Z",
+    "id": "session_2026W15_h2_phase2_design_tokens",
+    "started_at": "2026-04-11T01:30:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "H2.4 — Auditoria e deduplicação: src/features/protocols/utils/** (Fase 2, Wave H2)",
-    "goal_type": "refactor",
+    "status": "in_review",
+    "goal": "H2.3 — Design Tokens Extraction: packages/design-tokens (Fase 2, Wave H2)",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "✅ Remove duplicate titrationUtils from src/features/protocols/utils/",
-      "✅ Redirect import in Protocols.jsx to canonical source (packages/core)",
+      "✅ Create packages/design-tokens with colors, spacing, radii, typography JS/JSON exports",
+      "✅ Extract tokens from src/shared/styles/tokens/ (source of truth = web)",
+      "✅ Zero npm dependencies",
+      "✅ Platform-agnostic structure (Web + Mobile + Server)",
       "✅ All quality gates pass (lint, test:critical, build)",
-      "✅ No breaking changes to contracts",
       "✅ PR merged with explicit human approval"
     ],
     "active_wave": {
       "name": "Wave H2 — Core Pure Extraction (Fase 2)",
       "phase": 2,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md",
-      "sprint": "H2 Complete",
-      "status": "merged",
+      "sprint": "H2.3 Design Tokens",
+      "status": "in_progress",
       "started_at": "2026-04-10T23:50:00Z",
-      "completed_at": "2026-04-11T04:20:00Z",
+      "current_pr": "#461",
       "completed_prs": ["#459", "#460"],
-      "merge_commits": ["4dd4b93", "58dbd16"],
-      "branch": "feature/hybrid-h2/protocols-utils-dedup",
-      "notes": "H2.1 (workspaces), H2.2 (schemas), H2.3 (utils), H2.4 (dedup audit) all merged. packages/core fully populated. Ready for Wave H3 (Adapters & Shared Data)."
+      "branch": "feature/hybrid-h2/design-tokens",
+      "notes": "H2.1 (workspaces), H2.2 (schemas extraction) merged. H2.3 Design Tokens in PR review. H2.4 (dedup) completed in PR #460. Ready for H2.5 (Adapters) after H2.3 merge."
     }
   },
   "memory": {
