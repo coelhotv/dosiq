@@ -19,7 +19,7 @@
     "id": "session_2026W15_h2_phase2_design_tokens",
     "started_at": "2026-04-11T01:30:00Z",
     "mode": "coding",
-    "status": "in_review",
+    "status": "completed",
     "goal": "H2.3 — Design Tokens Extraction: packages/design-tokens (Fase 2, Wave H2)",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -35,12 +35,18 @@
       "phase": 2,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md",
       "sprint": "H2.3 Design Tokens",
-      "status": "in_progress",
+      "status": "merged",
       "started_at": "2026-04-10T23:50:00Z",
       "current_pr": "#461",
-      "completed_prs": ["#459", "#460"],
+      "completed_prs": [
+        "#459",
+        "#460",
+        "#461"
+      ],
       "branch": "feature/hybrid-h2/design-tokens",
-      "notes": "H2.1 (workspaces), H2.2 (schemas extraction) merged. H2.3 Design Tokens in PR review. H2.4 (dedup) completed in PR #460. Ready for H2.5 (Adapters) after H2.3 merge."
+      "notes": "H2.1 (workspaces), H2.2 (schemas extraction) merged. H2.3 Design Tokens in PR review. H2.4 (dedup) completed in PR #460. Ready for H2.5 (Adapters) after H2.3 merge.",
+      "merge_commit": "0687b2f",
+      "completed_at": "2026-04-11T03:05:00Z"
     }
   },
   "memory": {
@@ -50,7 +56,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "recent_additions": {
       "decisions": [
         "ADR-026",
