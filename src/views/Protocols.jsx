@@ -7,7 +7,7 @@ import ProtocolForm from '@protocols/components/ProtocolForm'
 import ProtocolCard from '@protocols/components/ProtocolCard'
 import TreatmentPlanForm from '@protocols/components/TreatmentPlanForm'
 import Card from '@shared/components/ui/Card'
-import { calculateTitrationData } from '@protocols/utils/titrationUtils'
+import { calculateTitrationData } from '@utils/titrationUtils'
 import './Protocols.css'
 
 export default function Protocols({ initialParams, onClearParams, onNavigateToStock }) {

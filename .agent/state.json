@@ -16,11 +16,11 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h2_phase2_schemas",
-    "started_at": "2026-04-11T00:40:00Z",
+    "id": "session_2026W15_h2_phase2_protocols_utils",
+    "started_at": "2026-04-11T03:15:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "H2.3 — Extrair src/utils/** para packages/core (Fase 2, Wave H2)",
+    "status": "analysis",
+    "goal": "H2.4 — Auditoria e deduplicação: src/features/protocols/utils/** (Fase 2, Wave H2)",
     "goal_type": "refactor",
     "acceptance_criteria": [
       "✅ root possui 'workspaces' field",
