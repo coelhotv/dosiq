@@ -580,17 +580,20 @@ agent-fix:
 - Comparar com review anterior
 - Reutilizar comentários para linhas não alteradas
 
-### 5. Filtros de Path Inteligentes
+### 5. Filtros de Path Inteligentes (Atualizado P3.2)
 
-**Objetivo:** Focar em código crítico e ignorar arquivos irrelevantes.
+**Objetivo:** Focar em código crítico, ignorar logs e focar no monorepo e memória estruturada.
 
-**Paths a ignorar:**
+**Paths a ignorar (excluded_paths):**
 ```yaml
 ignore:
   - 'docs/archive/**'
   - 'dist/**'
   - '*.md'
   - '.github/**/*.yml'
+  - '.agent/memory/journal/**'  # Append-only records (DEVFLOW)
+  - '.agent/sessions/**'        # Temporary sync locks (DEVFLOW)
+  - 'apps/mobile/.expo/**'      # Cache do Expo
 ```
 
 ### 6. Notificações Slack/Discord
@@ -610,6 +613,13 @@ notify:
         channel-id: 'C0123456789'
         slack-message: '🚨 Critical issues found in PR #${{ needs.detect.outputs.pr_number }}'
 ```
+
+### 7. Suporte a DEVFLOW & Monorepo Híbrido
+
+A configuração do Gemini foi adaptada para o novo contexto arquitetural do projeto:
+
+**DEVFLOW**: O revisor automatizado agora prioriza arquivos como `.agent/memory/*.json` para identificar mudanças em contratos (`CON-NNN`) ou decisões arquiteturais (`ADR-NNN`).
+**Híbrido Web+Native**: A revisão ativamente valida se os diretórios compartilhados (`packages/core`, `packages/shared-data`) contêm contaminações acidentais por dependência de browser (`window`, `localStorage`) ou frameworks nativos, exigindo conformidade rigorosa.
 
 ---
 

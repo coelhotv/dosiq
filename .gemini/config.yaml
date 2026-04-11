@@ -2,6 +2,7 @@
 # Configuração para Gemini Code Assist
 # Refatorado em 2026-02-19 para integração otimizada
 # Atualizado em 2026-02-21 com filtros de path inteligentes (P3.2)
+# Atualizado em 2026-04-11 para suporte a Monorepo Híbrido (Web+Native) e DEVFLOW Memory
 
 $schema: "http://json-schema.org/draft-07/schema#"
 
@@ -41,6 +42,11 @@ code_review:
     - "**/*.min.js"
     - "**/coverage/**"
     - ".vitest-cache*/**"
+    # Tratamento DEVFLOW: ignorar journals pois são logs append-only
+    - ".agent/memory/journal/**"
+    - ".agent/sessions/**"
+    # Tratamento Native App:
+    - "apps/mobile/.expo/**"
   
   # P3.2: Paths com prioridade máxima para review
   critical_paths:
@@ -49,12 +55,22 @@ code_review:
     - "server/bot/**"
     - "api/**"
     - "src/features/**/services/**"
+    # Tratamento Monorepo:
+    - "packages/core/**"
+    - "packages/shared-data/**"
+    - "packages/storage/**"
+    - "packages/config/**"
+    # Tratamento DEVFLOW: monitorar arquivos the estado estruturado
+    - ".agent/memory/*.json"
   
   # Paths adicionais incluídos no review (não-críticos mas relevantes)
   included_paths:
     - "src/**"
     - "server/**"
     - ".github/workflows/**"
+    # Tratamento Monorepo:
+    - "apps/**"
+    - "packages/**"
 
 memory_config:
   disabled: false
@@ -67,3 +83,8 @@ output_config:
   include_suggestions: true
   # Incluir linhas de código afetadas
   include_code_snippets: true
+
+# INSTRUÇÕES PARA AGENTE REVISOR GERADO PELO WORKFLOW:
+custom_instructions: |
+  1. DEVFLOW Compliance: Verify if modifications to core logic, schemas, or storage reflect in updates to .agent/memory/contracts.json or decisions.json.
+  2. Hybrid Architecture (Web + Native): Ensure packages/core and packages/shared-data do NOT use window, document, navigator, or localStorage APIs. Any storage should use the async interfaces from packages/storage.
