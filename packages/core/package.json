@@ -1,9 +1,12 @@
 {
   "name": "@meus-remedios/core",
   "private": true,
-  "version": "0.0.0-phase1",
+  "version": "0.1.0-phase2",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./schemas": "./src/schemas/index.js",
+    "./utils": "./src/utils/index.js",
+    "./protocols-utils": "./src/protocols-utils/index.js"
   }
 }
