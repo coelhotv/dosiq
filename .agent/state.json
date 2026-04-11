@@ -16,12 +16,11 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h2_phase2_core",
-    "started_at": "2026-04-11T00:20:00Z",
+    "id": "session_2026W15_h2_phase2_schemas",
+    "started_at": "2026-04-11T00:40:00Z",
     "mode": "coding",
     "status": "completed",
-    "completed_at": "2026-04-11T00:35:00Z",
-    "goal": "H2.1 — Preparar packages/core para uso real (Fase 2 Wave H2)",
+    "goal": "H2.2 — Extrair src/schemas/** para packages/core (Fase 2, Wave H2)",
     "goal_type": "refactor",
     "acceptance_criteria": [
       "✅ root possui 'workspaces' field",
@@ -56,10 +55,17 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "recent_additions": {
-      "decisions": ["ADR-026", "ADR-027", "ADR-028"],
-      "knowledge": ["K-071", "K-072"],
+      "decisions": [
+        "ADR-026",
+        "ADR-027",
+        "ADR-028"
+      ],
+      "knowledge": [
+        "K-071",
+        "K-072"
+      ],
       "timestamp": "2026-04-10T19:45:00Z"
     }
   },
