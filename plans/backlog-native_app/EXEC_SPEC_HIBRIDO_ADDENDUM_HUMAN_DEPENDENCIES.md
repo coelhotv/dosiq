@@ -41,15 +41,15 @@ Este addendum lista explicitamente o que o maintainer humano deve fazer e quando
 
 | Dependencia | Responsavel | Bloqueante para | Status |
 |-------------|-------------|-----------------|--------|
-| Conta Apple Developer ($99/ano) | Maintainer | Builds iOS, TestFlight | Em aprovação Apple |
-| Conta Google Play Console ($25 one-time) | Maintainer | Builds Android, Internal Testing | Pendente |
-| Conta Expo / EAS | Maintainer | `eas build`, `eas submit` | Pendente |
-| `bundleIdentifier` e `androidPackage` finais | Maintainer | `app.config.js` | Pendente |
-| Certificados de assinatura iOS (Provisioning Profile) | Maintainer | Build iOS | Pendente |
-| Keystore Android | Maintainer ou EAS managed | Build Android | Pendente |
-| Validacao em iOS Simulator | Maintainer | Gate da Fase 4 | Pendente |
-| Validacao em Android Emulator | Maintainer | Gate da Fase 4 | Pendente |
-| EAS Secrets configuradas (SUPABASE_URL, SUPABASE_ANON_KEY) | Maintainer | Build mobile funcional | Pendente |
+| Conta Apple Developer ($99/ano) | Maintainer | Builds iOS, TestFlight | Em validação Apple ⏳ |
+| Conta Google Play Console ($25 one-time) | Maintainer | Builds Android, Internal Testing | Em validação Google ⏳ |
+| Conta Expo / EAS | Maintainer | `eas build`, `eas submit` | Criada ✅ — tokens disponíveis |
+| `bundleIdentifier` e `androidPackage` finais | Maintainer | `app.config.js` | Placeholder `com.coelhotv.meusremedios` — sujeito a mudança pós-aprovação Play Console |
+| Certificados de assinatura iOS (Provisioning Profile) | Maintainer | Build iOS | Aguarda aprovação conta Apple ⏳ |
+| Keystore Android | Maintainer ou EAS managed | Build Android | Aguarda aprovação conta Google ⏳ |
+| Validacao em iOS Simulator | Maintainer | Gate da Fase 4 | Pendente (após scaffold) |
+| Validacao em Android Emulator | Maintainer | Gate da Fase 4 | Pendente (após scaffold) |
+| EAS Secrets configuradas (SUPABASE_URL, SUPABASE_ANON_KEY) | Maintainer | Build mobile funcional | Disponíveis ✅ |
 
 ### 2.4. Fase 5 — MVP Produto
 

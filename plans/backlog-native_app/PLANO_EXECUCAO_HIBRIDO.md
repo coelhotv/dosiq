@@ -189,10 +189,10 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
-| H4.1 | 4.1 + 4.2 | Expo scaffold + app.config.js + eas.json + metro.config.js + babel.config.js | Fase 4 spec + addendum Release Eng |
-| H4.2 | 4.3 + 4.4 | React Navigation basico + bootstrap native (config, storage, SecureStore) | Fase 4 spec |
-| H4.3 | 4.5 + 4.6 | Supabase native + login + persistencia sessao | Fase 4 spec |
-| H4.4 | 4.7 + 4.8 | Smoke screen + Jest setup + validacao plataformas | Fase 4 spec + addendum Testing |
+| H4.1 | 4.1 + 4.2 + 4.3 | Expo scaffold + app.config.js + eas.json + metro.config.js + babel.config.js | Fase 4 spec + addendum Release Eng |
+| H4.2 | 4.4 + 4.5 | Bootstrap native (config, storage, SecureStore) | Fase 4 spec |
+| H4.3 | 4.6 + 4.7 + 4.9 | Supabase native + React Navigation basico + login + persistencia sessao | Fase 4 spec |
+| H4.4 | 4.8 + 4.10 | Smoke screen + Jest setup + validacao plataformas | Fase 4 spec + addendum Testing |
 
 **PRs:** 2 (scaffold+config; depois auth+smoke+testes)
 
@@ -204,7 +204,15 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 - [ ] Jest roda sem erro
 - [ ] `meusremedios://` scheme configurado
 
-**Bloqueio humano:** contas Expo/Apple/Google + validacao em simuladores
+**Bloqueio humano:** validacao em simuladores (contas Expo/EAS ✅ | Apple em validacao ⏳ | Google em validacao ⏳)
+
+**Status das dependencias humanas (2026-04-12):**
+- Expo/EAS: ✅ conta criada, tokens disponíveis
+- Apple Developer: ⏳ conta criada, em processo de validação
+- Google Play Console: ⏳ conta criada, em processo de validação
+- bundleIdentifier: placeholder `com.coelhotv.meusremedios` — pode mudar após aprovação Play Console
+- EAS Secrets (SUPABASE_URL, SUPABASE_ANON_KEY): ✅ disponíveis
+- Validação em simuladores: pendente (gate após scaffold)
 
 ---
 
