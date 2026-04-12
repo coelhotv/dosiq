@@ -16,10 +16,10 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h4_planning",
-    "started_at": "2026-04-12T00:00:00Z",
-    "mode": "planning",
-    "status": "planned",
+    "id": "session_2026W15_h4_scaffold",
+    "started_at": "2026-04-12T01:00:00Z",
+    "mode": "coding",
+    "status": "coding",
     "goal": "Wave H4 — Mobile Scaffold (Fase 4): Expo scaffold, bootstrap nativo, auth, sessao e smoke screen",
     "goal_type": "feature",
     "acceptance_criteria": [
