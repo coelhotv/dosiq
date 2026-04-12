@@ -316,12 +316,8 @@ export function useCachedMutation(mutationFn, options = {}) {
   }
 }
 
-// Re-exporta funções úteis do query cache (via nova engine)
-export function generateCacheKey(baseKey, params = null) {
-  if (!params) return baseKey
-  const suffix = JSON.stringify(params, Object.keys(params).sort())
-  return `${baseKey}:${suffix}`
-}
+// Re-exporta funções úteis do query cache (via pacote centralizado — evita duplicação)
+export { generateCacheKey } from '@meus-remedios/shared-data'
 
 export { invalidateCache }
 

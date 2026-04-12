@@ -1,40 +1,58 @@
 /**
- * Cache Keys — chaves compartilhadas para o query cache
+ * Cache Keys — chaves canônicas do projeto (fonte única de verdade)
  *
- * Todas as chaves de cache do projeto devem ser definidas aqui para
- * evitar colisoes e facilitar invalidacao seletiva.
+ * Todos os callers (cachedServices, hooks, componentes) devem importar daqui.
+ * Chaves identicas em multiplos lugares causam falhas silenciosas de invalidacao.
  *
- * Convencao de nomenclatura: DOMINIO_ENTIDADE_VARIANTE
+ * Valores sao os mesmos que estavam em cachedServices.js — migrados para cá
+ * para centralizar e eliminar duplicacao (H3.3, Wave H3).
  *
  * Uso:
  *   import { CACHE_KEYS } from '@meus-remedios/shared-data'
- *   const key = CACHE_KEYS.MEDICINES_ALL
+ *   const key = CACHE_KEYS.MEDICINES
  */
 
 export const CACHE_KEYS = {
   // Medicamentos
-  MEDICINES_ALL: 'medicines:all',
-  MEDICINES_WITH_STOCK: 'medicines:with-stock',
+  MEDICINES: 'medicines',
+  MEDICINE_BY_ID: 'medicine',
 
   // Protocolos
-  PROTOCOLS_ALL: 'protocols:all',
-  PROTOCOLS_BY_MEDICINE: (medicineId) => `protocols:medicine:${medicineId}`,
+  PROTOCOLS: 'protocols',
+  PROTOCOLS_ACTIVE: 'protocols:active',
+  PROTOCOL_BY_ID: 'protocol',
 
   // Estoque
-  STOCK_ALL: 'stock:all',
-  STOCK_BY_MEDICINE: (medicineId) => `stock:medicine:${medicineId}`,
+  STOCK_BY_MEDICINE: 'stock:medicine',
+  STOCK_TOTAL: 'stock:total',
+  STOCK_SUMMARY: 'stock:summary',
+  STOCK_LOW: 'stock:low',
 
-  // Aderência
-  ADHERENCE_SUMMARY: (days) => `adherence:summary:${days}`,
-  ADHERENCE_DAILY: (days) => `adherence:daily:${days}`,
-  ADHERENCE_PROTOCOL: (protocolId, days) => `adherence:protocol:${protocolId}:${days}`,
-  ADHERENCE_ALL_PROTOCOLS: (days) => `adherence:all-protocols:${days}`,
-  ADHERENCE_STREAK: 'adherence:streak',
+  // Compras
+  PURCHASES_BY_MEDICINE: 'purchases:medicine',
+  PURCHASES_HISTORY: 'purchases:history',
+  PURCHASES_LATEST: 'purchases:latest',
+  PURCHASES_AVG_PRICE: 'purchases:avgPrice',
 
   // Logs
-  LOGS_RECENT: (limit) => `logs:recent:${limit}`,
+  LOGS: 'logs',
+  LOGS_BY_PROTOCOL: 'logs:protocol',
+  LOGS_BY_MONTH: 'logs:month',
+  LOGS_PAGINATED: 'logs:paginated',
+  LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
+  LOGS_DATE_RANGE_SLIM: 'logs:dateRangeSlim',
+  LOGS_BY_MONTH_SLIM: 'logs:monthSlim',
 
-  // Usuário
+  // Planos de tratamento
+  TREATMENT_PLANS: 'treatmentPlans',
+  TREATMENT_PLAN_BY_ID: 'treatmentPlan',
+
+  // Aderência
+  ADHERENCE_SUMMARY: 'adherence:summary',
+  ADHERENCE_DAILY: 'adherence:daily',
+  ADHERENCE_PATTERN: 'adherence:pattern',
+
+  // Usuário / Sessão
   USER_CURRENT: 'user:current',
   USER_SESSION: 'user:session',
 
@@ -44,7 +62,7 @@ export const CACHE_KEYS = {
 
 /**
  * Gera uma chave de cache composta com base em uma chave base e parâmetros.
- * Util para chaves dinâmicas não cobertas pelas constantes acima.
+ * Util para chaves dinâmicas nao cobertas pelas constantes acima.
  *
  * @param {string} baseKey - Chave base
  * @param {Object|null} params - Parâmetros opcionais para compor a chave

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useEffect } from 'react'
-import { useCachedQueries } from '@shared/hooks/useCachedQuery'
-import { invalidateCache } from '@shared/hooks/useCachedQuery'
+import { useCachedQueries, invalidateCache } from '@shared/hooks/useCachedQuery'
+import { CACHE_KEYS } from '@meus-remedios/shared-data'
 import { onAuthStateChange } from '@shared/utils/supabase'
 import {
   calculateAdherenceStats,
@@ -35,11 +35,11 @@ export function DashboardProvider({ children }) {
   const queries = useMemo(
     () => [
       {
-        key: 'medicines:list',
+        key: CACHE_KEYS.MEDICINES,
         fetcher: () => medicineService.getAll(),
       },
       {
-        key: 'protocols:active',
+        key: CACHE_KEYS.PROTOCOLS_ACTIVE,
         fetcher: () => protocolService.getActive(),
       },
       {
@@ -68,8 +68,8 @@ export function DashboardProvider({ children }) {
       data: { subscription },
     } = onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        invalidateCache('medicines:list')
-        invalidateCache('protocols:active')
+        invalidateCache(CACHE_KEYS.MEDICINES)
+        invalidateCache(CACHE_KEYS.PROTOCOLS_ACTIVE)
         invalidateCache('logs:last30d')
         refetchAll({ force: true })
       }
