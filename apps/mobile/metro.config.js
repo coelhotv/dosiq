@@ -1,0 +1,24 @@
+// metro.config.js — resolve workspaces do monorepo
+// Sem esta configuração, @meus-remedios/* não é encontrado pelo bundler
+
+const { getDefaultConfig } = require('expo/metro-config')
+const path = require('path')
+
+const projectRoot = __dirname
+const workspaceRoot = path.resolve(projectRoot, '../..')
+
+const config = getDefaultConfig(projectRoot)
+
+// Observar todos os packages do monorepo
+config.watchFolders = [workspaceRoot]
+
+// Resolver node_modules tanto do mobile quanto da raiz do monorepo
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+]
+
+// Evita que o Metro suba indefinidamente buscando módulos
+config.resolver.disableHierarchicalLookup = true
+
+module.exports = config

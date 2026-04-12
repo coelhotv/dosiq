@@ -2,7 +2,7 @@
   {
     "id": "AP-001",
     "title": "Modify a duplicate file without checking which is actually imported",
-    "summary": "Production bug — fix goes to unused file",
+    "summary": "Production bug \u2014 fix goes to unused file",
     "applies_to": [
       "all"
     ],
@@ -23,7 +23,7 @@
   {
     "id": "AP-004",
     "title": "Declare state after useMemo/useEffect",
-    "summary": "`ReferenceError` — TDZ crash",
+    "summary": "`ReferenceError` \u2014 TDZ crash",
     "applies_to": [
       "all"
     ],
@@ -128,7 +128,7 @@
   {
     "id": "AP-P01",
     "title": "IntersectionObserver sentinel positioned before fold + rootMargin high",
-    "summary": "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becom",
+    "summary": "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open \u2192 lazy load becom",
     "applies_to": [
       "all"
     ],
@@ -192,7 +192,7 @@
   {
     "id": "AP-P09",
     "title": "N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`",
-    "summary": "N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100",
+    "summary": "N queries Supabase simultaneous. With 10 items \u2192 10 round-trips HTTP, each blocking Main Thread. 100",
     "applies_to": [
       "all"
     ],
@@ -214,7 +214,7 @@
   {
     "id": "AP-P10",
     "title": "`select('*')` when only need count",
-    "summary": "All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows × ~500 bytes/row = 1",
+    "summary": "All columns transferred unnecessarily. 90 days logs \u00d7 10 protocols = ~2700 rows \u00d7 ~500 bytes/row = 1",
     "applies_to": [
       "all"
     ],
@@ -235,7 +235,7 @@
   {
     "id": "AP-P11",
     "title": "`useCallback` with state in deps of a ref callback",
-    "summary": "Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` wi",
+    "summary": "Ref callbacks recreated on state change. React calls `old(null)` without cleanup \u2192 `new(element)` wi",
     "applies_to": [
       "all"
     ],
@@ -256,8 +256,8 @@
   },
   {
     "id": "AP-P12",
-    "title": "Mesma query Supabase chamada N vezes em sub-funções paralelas",
-    "summary": "`getAdherenceSummary` chamava 3 sub-funções que cada uma buscava `protocols` independentemente = 3 q",
+    "title": "Mesma query Supabase chamada N vezes em sub-fun\u00e7\u00f5es paralelas",
+    "summary": "`getAdherenceSummary` chamava 3 sub-fun\u00e7\u00f5es que cada uma buscava `protocols` independentemente = 3 q",
     "applies_to": [
       "all"
     ],
@@ -278,7 +278,7 @@
   },
   {
     "id": "AP-P13",
-    "title": "Disparar queries de background imediatamente após `setIsLoading(false)`",
+    "title": "Disparar queries de background imediatamente ap\u00f3s `setIsLoading(false)`",
     "summary": "`setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack fram",
     "applies_to": [
       "all"
@@ -345,7 +345,7 @@
   {
     "id": "AP-W03",
     "title": "Use `screen.getByText('X%')` when the same text appears in multiple elements",
-    "summary": "`\"Found multiple elements with text…\"` test failure",
+    "summary": "`\"Found multiple elements with text\u2026\"` test failure",
     "applies_to": [
       "all"
     ],
@@ -626,7 +626,7 @@
   },
   {
     "id": "AP-W16",
-    "title": "`bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo",
+    "title": "`bail: 1` em vitest.critical.config.js mascara m\u00faltiplas falhas timezone no mesmo arquivo",
     "summary": "CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo fi",
     "applies_to": [
       "all"
@@ -647,8 +647,8 @@
   },
   {
     "id": "AP-W17",
-    "title": "Componente com estado interno inicializado de uma prop (`complexityMode`) não reinicializa quando a prop muda",
-    "summary": "Defaults de expansão de seções ficam presos no valor do primeiro render; UX inconsistente ao mudar c",
+    "title": "Componente com estado interno inicializado de uma prop (`complexityMode`) n\u00e3o reinicializa quando a prop muda",
+    "summary": "Defaults de expans\u00e3o de se\u00e7\u00f5es ficam presos no valor do primeiro render; UX inconsistente ao mudar c",
     "applies_to": [
       "all"
     ],
@@ -715,7 +715,7 @@
   {
     "id": "AP-W20",
     "title": "Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components",
-    "summary": "Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registratio",
+    "summary": "Worse UX: 4 clicks (button \u2192 modal open \u2192 form fill \u2192 confirm) instead of 1-click direct registratio",
     "applies_to": [
       "all"
     ],
@@ -776,8 +776,8 @@
   },
   {
     "id": "AP-W23",
-    "title": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)",
-    "summary": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)",
+    "title": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments \u2014 2026-03-25)",
+    "summary": "Destructuring Wrong Property Name from Hook (Wave 7 Treatments \u2014 2026-03-25)",
     "applies_to": [
       "all"
     ],
@@ -863,8 +863,8 @@
   },
   {
     "id": "AP-D02",
-    "title": "Cartesian product in LEFT JOIN logs ⨝ expected_doses without pre-aggregation",
-    "summary": "12 logs × 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates",
+    "title": "Cartesian product in LEFT JOIN logs \u2a1d expected_doses without pre-aggregation",
+    "summary": "12 logs \u00d7 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates",
     "applies_to": [
       "all"
     ],
@@ -944,8 +944,8 @@
   },
   {
     "id": "AP-D06",
-    "title": "Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria",
-    "summary": "Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria",
+    "title": "Exibir dados de Carlos (bar-pct, quantidade, hist\u00f3rico global) no modo Dona Maria",
+    "summary": "Exibir dados de Carlos (bar-pct, quantidade, hist\u00f3rico global) no modo Dona Maria",
     "applies_to": [
       "all"
     ],
@@ -965,7 +965,7 @@
   {
     "id": "AP-B01",
     "title": "Adicionar `<link rel=\"modulepreload\" href=\"/src/main.jsx\" />` manual em `index.html` no Vite 7",
-    "summary": "Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. ",
+    "summary": "Vite 7 base64-encoda o conte\u00fado raw do JSX e emite `data:text/jsx;base64,...` no `dist/index.html`. ",
     "applies_to": [
       "all"
     ],
@@ -1009,8 +1009,8 @@
   },
   {
     "id": "AP-B03",
-    "title": "Import estático de componente pesado que internamente importa services/vendors grandes",
-    "summary": "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGenera",
+    "title": "Import est\u00e1tico de componente pesado que internamente importa services/vendors grandes",
+    "summary": "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` \u2192 `pdfGenera",
     "applies_to": [
       "all"
     ],
@@ -1072,8 +1072,8 @@
   },
   {
     "id": "AP-P15",
-    "title": "`new Date()` construction em hot loop (>100 iterações)",
-    "summary": "`calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `pa",
+    "title": "`new Date()` construction em hot loop (>100 itera\u00e7\u00f5es)",
+    "summary": "`calculateStreaks()` criava ~2700 Date objects (90 dias \u00d7 N protocolos \u00d7 3 calls). Chrome trace: `pa",
     "applies_to": [
       "all"
     ],
@@ -1095,7 +1095,7 @@
   {
     "id": "AP-P16",
     "title": "Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``",
-    "summary": "Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc",
+    "summary": "Ignora fuso hor\u00e1rio local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc",
     "applies_to": [
       "all"
     ],
@@ -1222,7 +1222,7 @@
   {
     "id": "AP-SL01",
     "title": "Logging estruturado em `server/bot/` em vez de em `api/*.js`",
-    "summary": "Logs não aparecem em Vercel. Função Node.js server context é invisível para Vercel logging (dois pro",
+    "summary": "Logs n\u00e3o aparecem em Vercel. Fun\u00e7\u00e3o Node.js server context \u00e9 invis\u00edvel para Vercel logging (dois pro",
     "applies_to": [
       "all"
     ],
@@ -1244,7 +1244,7 @@
   {
     "id": "AP-SL02",
     "title": "Mock/adapter object com interface incompleta",
-    "summary": "Handler chama `bot.sendChatAction()` que não existe no mock → `\"is not a function\"` error em produçã",
+    "summary": "Handler chama `bot.sendChatAction()` que n\u00e3o existe no mock \u2192 `\"is not a function\"` error em produ\u00e7\u00e3",
     "applies_to": [
       "all"
     ],
@@ -1265,8 +1265,8 @@
   },
   {
     "id": "AP-SL03",
-    "title": "Message router sem fallback para casos não-capturados",
-    "summary": "Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras caem silenciosamente.",
+    "title": "Message router sem fallback para casos n\u00e3o-capturados",
+    "summary": "Listeners espec\u00edficos (com patterns/sess\u00e3o) capturam algumas mensagens, outras caem silenciosamente.",
     "applies_to": [
       "all"
     ],
@@ -1350,7 +1350,7 @@
   {
     "id": "AP-T07",
     "title": "Resolve Promise only after assertion without `finally`",
-    "summary": "If assertion fails, Promise stays pending → Vitest hangs indefinitely",
+    "summary": "If assertion fails, Promise stays pending \u2192 Vitest hangs indefinitely",
     "applies_to": [
       "all"
     ],
@@ -1454,8 +1454,8 @@
   },
   {
     "id": "AP-H02",
-    "title": "Passar IDs ao invés de objetos para treatmentPlanService no LogForm",
-    "summary": "Passar IDs ao invés de objetos para treatmentPlanService no LogForm",
+    "title": "Passar IDs ao inv\u00e9s de objetos para treatmentPlanService no LogForm",
+    "summary": "Passar IDs ao inv\u00e9s de objetos para treatmentPlanService no LogForm",
     "applies_to": [
       "all"
     ],
@@ -1558,7 +1558,7 @@
   {
     "id": "AP-094",
     "title": "Reference handler (useCallback) in useEffect before declaration",
-    "summary": "ReferenceError: Cannot access handler before initialization — TDZ crash",
+    "summary": "ReferenceError: Cannot access handler before initialization \u2014 TDZ crash",
     "applies_to": [
       "react",
       "hooks"
@@ -1628,8 +1628,8 @@
   },
   {
     "id": "AP-97",
-    "title": "CSS token definitions duplicadas/conflitantes em múltiplos arquivos",
-    "summary": "Última definição sobrescreve design system canônico, causando valores legados/opostos em runtime",
+    "title": "CSS token definitions duplicadas/conflitantes em m\u00faltiplos arquivos",
+    "summary": "\u00daltima defini\u00e7\u00e3o sobrescreve design system can\u00f4nico, causando valores legados/opostos em runtime",
     "applies_to": [
       "css",
       "design-system",
@@ -1650,5 +1650,87 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "design-ui"
+  },
+  {
+    "id": "AP-H04",
+    "title": "Monorepo workspace: peer dependency mismatch on new subpackage",
+    "summary": "npm ERESOLVE conflict when adding new workspace package with incompatible peer deps",
+    "applies_to": [
+      "monorepo",
+      "npm",
+      "workspace",
+      "mobile",
+      "build"
+    ],
+    "tags": [
+      "dependency",
+      "monorepo",
+      "npm",
+      "build",
+      "safety"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-158",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api"
+  },
+  {
+    "id": "AP-H05",
+    "title": "Monorepo workspace: lock file out of sync with package.json",
+    "summary": "GitHub Actions npm ci fails when new workspace added but lock file not committed",
+    "applies_to": [
+      "monorepo",
+      "npm",
+      "workspace",
+      "ci-cd",
+      "github-actions"
+    ],
+    "tags": [
+      "dependency",
+      "monorepo",
+      "npm",
+      "ci-cd",
+      "lock-file"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-159",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api"
+  },
+  {
+    "id": "AP-H06",
+    "title": "React and React-DOM version mismatch (range vs exact)",
+    "summary": "Runtime error when React/React-DOM pair doesn't have exact same version (19.2.5 vs 19.2.3)",
+    "applies_to": [
+      "react",
+      "dependency",
+      "npm",
+      "test"
+    ],
+    "tags": [
+      "dependency",
+      "react",
+      "version-mismatch",
+      "test-failure"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-160",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   }
 ]

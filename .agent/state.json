@@ -16,10 +16,10 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h4_planning",
-    "started_at": "2026-04-12T00:00:00Z",
-    "mode": "planning",
-    "status": "planned",
+    "id": "session_2026W15_h4_scaffold",
+    "started_at": "2026-04-12T01:00:00Z",
+    "mode": "coding",
+    "status": "completed",
     "goal": "Wave H4 — Mobile Scaffold (Fase 4): Expo scaffold, bootstrap nativo, auth, sessao e smoke screen",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -44,10 +44,10 @@
       "phase": 4,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md",
       "sprint": "H4.1-H4.10",
-      "status": "planned",
+      "status": "pr_open",
       "planned_at": "2026-04-12T00:00:00Z",
       "branch": "feature/hybrid-h4/mobile-scaffold",
-      "current_pr": null,
+      "current_pr": "#464",
       "completed_prs": [],
       "previous_wave": "H3",
       "notes": "Planning completo. apps/mobile existe mas e stub vazio (package.json + README). Bloqueio humano: contas Expo/Apple/Google + EAS secrets pendentes. O agente pode implementar tudo menos EAS build e validacao em simuladores. Pre-requisito: maintainer deve resolver dependencias do addendum HUMAN_DEPENDENCIES antes de iniciar."
@@ -60,7 +60,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "recent_additions": {
       "decisions": [
         "ADR-026",
