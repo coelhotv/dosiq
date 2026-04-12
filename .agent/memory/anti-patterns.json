@@ -1706,5 +1706,31 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "infra-api"
+  },
+  {
+    "id": "AP-H06",
+    "title": "React and React-DOM version mismatch (range vs exact)",
+    "summary": "Runtime error when React/React-DOM pair doesn't have exact same version (19.2.5 vs 19.2.3)",
+    "applies_to": [
+      "react",
+      "dependency",
+      "npm",
+      "test"
+    ],
+    "tags": [
+      "dependency",
+      "react",
+      "version-mismatch",
+      "test-failure"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-160",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   }
 ]

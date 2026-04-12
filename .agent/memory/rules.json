@@ -2181,5 +2181,31 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "infra-api"
+  },
+  {
+    "id": "R-160",
+    "title": "React and React-DOM: pin to exact same version",
+    "summary": "React/React-DOM pair MUST have identical versions (no ranges), they must match exactly to avoid runtime errors",
+    "applies_to": [
+      "react",
+      "dependency",
+      "npm",
+      "monorepo"
+    ],
+    "tags": [
+      "react",
+      "dependency",
+      "version-mismatch",
+      "npm"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-12",
+    "review_due": "2027-04-12",
+    "status": "active",
+    "related_ap": "AP-H06",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   }
 ]
