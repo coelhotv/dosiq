@@ -2153,5 +2153,33 @@
     "last_referenced": "2026-04-12",
     "status": "active",
     "has_detail": true
+  },
+  {
+    "id": "R-159",
+    "title": "Monorepo workspace changes: always commit updated lock file",
+    "summary": "After adding/modifying workspace packages, commit package-lock.json to keep CI/CD in sync",
+    "applies_to": [
+      "monorepo",
+      "npm",
+      "workspace",
+      "ci-cd",
+      "github-actions"
+    ],
+    "tags": [
+      "dependency",
+      "monorepo",
+      "npm",
+      "ci-cd",
+      "lock-file"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-12",
+    "review_due": "2027-04-12",
+    "status": "active",
+    "related_ap": "AP-H05",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "infra-api"
   }
 ]
