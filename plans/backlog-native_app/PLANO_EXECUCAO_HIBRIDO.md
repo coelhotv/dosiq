@@ -1,7 +1,7 @@
 # Plano de Execucao: Estrategia Hibrida Web + Native
 
-> **Status:** Plano operacional de execucao
-> **Data:** 2026-04-10
+> **Status:** Plano operacional de execucao — H0-H3 COMPLETAS ✅ | H4 proxima (bloqueio humano)
+> **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
 > **Ferramenta:** `/devflow` via Claude Code (Claude Pro)
 > **Projeto:** Meus Remedios v4.0.0
@@ -74,11 +74,12 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 
 ---
 
-## Wave H0 — Alinhamento e Guardrails (Fase 0)
+## Wave H0 — Alinhamento e Guardrails (Fase 0) ✅ COMPLETA
 
 **Estimativa:** 2-3 sessoes | ~1 semana
 **Pre-requisitos humanos:** nenhum tecnico (fase documental)
 **Spec:** `EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
+**PR mergeado:** #457 (commit `441bea7`) — 2026-04-10
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -89,21 +90,22 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 **PR:** 1 unico (docs + ADRs + inventarios + remoção expo)
 
 **Gates:**
-- [ ] `npm run build` passa
-- [ ] `npm run validate:agent` passa
-- [ ] 3 ADRs existem
-- [ ] 2 inventarios existem
-- [ ] `expo` removido do package.json
-- [ ] ADRs registradas no DEVFLOW
+- [x] `npm run build` passa
+- [x] `npm run validate:agent` passa
+- [x] 3 ADRs existem (ADR-026, ADR-027, ADR-028)
+- [x] 2 inventarios existem (EXTRACTION_INVENTORY.md + SHARED_BOUNDARY_MATRIX.md)
+- [x] `expo` removido do package.json
+- [x] ADRs registradas no DEVFLOW (.agent/memory/decisions.json)
 
 ---
 
-## Wave H1 — Workspaces (Fase 1)
+## Wave H1 — Workspaces (Fase 1) ✅ COMPLETA
 
 **Estimativa:** 2 sessoes | ~3-4 dias
 **Pre-requisitos humanos:** validacao visual da web + deploy preview Vercel
 **Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
 **Addendums:** Deploy Vercel Monorepo [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEPLOY_VERCEL_MONOREPO.md`]
+**PR mergeado:** incluido em #457 / wave H0-H1 consolidada — 2026-04-10
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -113,23 +115,24 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 **PR:** 1 unico (workspaces + estrutura vazia)
 
 **Gates:**
-- [ ] `npm run dev` funciona
-- [ ] `npm run build` funciona
-- [ ] `npm run validate:agent` funciona
-- [ ] husky + lint-staged funcionam
-- [ ] Vercel deploy preview funcional
-- [ ] Vitest globs nao capturam packages/
+- [x] `npm run dev` funciona
+- [x] `npm run build` funciona
+- [x] `npm run validate:agent` funciona
+- [x] husky + lint-staged funcionam
+- [x] Vercel deploy preview funcional
+- [x] Vitest globs nao capturam packages/
 
-**Bloqueio humano:** validacao visual web + deploy preview antes de merge
+**Bloqueio humano:** validacao visual web + deploy preview antes de merge ✅ validado
 
 ---
 
-## Wave H2 — Core Puro (Fase 2)
+## Wave H2 — Core Puro (Fase 2) ✅ COMPLETA
 
 **Estimativa:** 3-4 sessoes | ~1-2 semanas
 **Pre-requisitos humanos:** nenhum (fase de codigo puro)
 **Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
 **Addendums:** Design Tokens [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DESIGN_TOKENS.md`]
+**PRs mergeados:** H2.1-H2.2 (schemas+utils) + H2.3 design-tokens (commit `4e6b312`) — 2026-03-25
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -141,18 +144,19 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 **PRs:** 2 (schemas+utils; depois design-tokens+aliases+testes)
 
 **Gates:**
-- [ ] Web compila com imports via @meus-remedios/core
-- [ ] Testes criticos passam
-- [ ] Nenhum browser API em packages/core
-- [ ] Design tokens exportam valores corretos
+- [x] Web compila com imports via @meus-remedios/core
+- [x] Testes criticos passam
+- [x] Nenhum browser API em packages/core
+- [x] Design tokens exportam valores corretos (motionConstants.js + CSS keyframes + useMotion hook)
 
 ---
 
-## Wave H3 — Adapters e Shared Data (Fase 3)
+## Wave H3 — Adapters e Shared Data (Fase 3) ✅ COMPLETA
 
 **Estimativa:** 4-5 sessoes | ~2-3 semanas
 **Pre-requisitos humanos:** nenhum (fase de refactor web)
 **Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
+**PRs mergeados:** #462 (H3.1-H3.2, commit `b4dcb94`) + #463 (H3.3-H3.5, commit `7e10c88`) — 2026-04-12
 
 | Sessao | Sprint | Deliverables | Contexto a carregar |
 |--------|--------|-------------|---------------------|
@@ -165,11 +169,14 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 **PRs:** 2 (contratos+storage+config; depois cache+factories+bootstrap)
 
 **Gates:**
-- [ ] `npm run test:critical` passa
-- [ ] `npm run build` passa
-- [ ] Zero `import.meta.env` em packages/
-- [ ] Zero `localStorage` em packages/
-- [ ] Cache antigo removido apos validacao
+- [x] `npm run test:critical` passa (543/543 OK)
+- [x] `npm run build` passa
+- [x] Zero `import.meta.env` em packages/
+- [x] Zero `localStorage` em packages/
+- [x] Cache antigo removido apos validacao (queryCache.js deletado, 413 linhas)
+
+**Notas:** Gemini Code Assist apontou 4 issues (3 High + 1 Medium) — todos aplicados via commit ee5c4c3 antes do merge.
+CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. generateCacheKey re-exportado do pacote.
 
 ---
 
@@ -282,10 +289,10 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 ## 4. Timeline estimada
 
 ```text
-Semana 1      ─── H0 (Guardrails + ADRs + inventarios)
-Semana 2      ─── H1 (Workspaces)
-Semana 3-4    ─── H2 (Core Puro + Design Tokens)
-Semana 5-7    ─── H3 (Adapters + Shared Data)
+Semana 1      ─── H0 (Guardrails + ADRs + inventarios)     ✅ COMPLETA (PR #457)
+Semana 2      ─── H1 (Workspaces)                          ✅ COMPLETA (consolidada em #457)
+Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (commit 4e6b312)
+Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
 Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
 Semana 10-13  ─── H5 (MVP Produto)
 Semana 14-17  ─── H6 (Push + Beta) ← BLOQUEIO HUMANO: devices + stores
@@ -353,16 +360,16 @@ Template de journal para retomada:
 
 ## 7. Metricas de sucesso por wave
 
-| Wave | Metrica principal | Criterio |
-|------|------------------|----------|
-| H0 | Docs completos e corretos | 3 ADRs + 2 inventarios + expo removido |
-| H1 | Zero regressao web | Todos os scripts passam + Vercel OK |
-| H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback |
-| H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ |
-| H4 | App mobile boots | Login + sessao persistente em 2 plataformas |
-| H5 | MVP funcional | 7 fluxos validados manualmente |
-| H6 | Push operacional | Telegram + push nativo coexistindo |
-| H7 | Monorepo completo | Web + mobile + packages em estrutura final |
+| Wave | Metrica principal | Criterio | Status |
+|------|------------------|----------|--------|
+| H0 | Docs completos e corretos | 3 ADRs + 2 inventarios + expo removido | ✅ COMPLETA |
+| H1 | Zero regressao web | Todos os scripts passam + Vercel OK | ✅ COMPLETA |
+| H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback | ✅ COMPLETA |
+| H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
+| H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ⏳ aguardando contas Expo/Apple/Google |
+| H5 | MVP funcional | 7 fluxos validados manualmente | ⏳ depende de H4 |
+| H6 | Push operacional | Telegram + push nativo coexistindo | ⏳ depende de H5 |
+| H7 | Monorepo completo | Web + mobile + packages em estrutura final | ⏳ condicional |
 
 ---
 
