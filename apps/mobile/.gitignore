@@ -1,0 +1,15 @@
+# Expo generated native directories (managed workflow)
+# Regenerated via: npx expo prebuild
+ios/
+android/
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+
+# Local env
+.env
+.env.local
