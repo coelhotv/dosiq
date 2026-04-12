@@ -36,6 +36,7 @@ module.exports = {
     scheme: 'meusremedios',
     version: '1.0.0',
     orientation: 'portrait',
+    icon: './icon.png',
     userInterfaceStyle: 'automatic',
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
@@ -48,6 +49,7 @@ module.exports = {
       adaptiveIcon: {
         backgroundColor: '#2563eb',
       },
+      edgeToEdgeEnabled: true,
     },
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*
