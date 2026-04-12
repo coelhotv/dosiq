@@ -10,7 +10,10 @@
  * @module cachedServices
  */
 
-import { cachedQuery, invalidateCache, generateCacheKey } from '@shared/utils/queryCache'
+import { CACHE_KEYS, generateCacheKey } from '@meus-remedios/shared-data'
+import { invalidateCache } from '@shared/hooks/useCachedQuery'
+import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
+const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { stockService } from '@stock/services/stockService'
@@ -19,34 +22,9 @@ import { logService } from '@shared/services/api/logService'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { adherenceService } from '@services/api/adherenceService'
 
-// Cache keys namespace
-export const CACHE_KEYS = {
-  MEDICINES: 'medicines',
-  MEDICINE_BY_ID: 'medicine',
-  PROTOCOLS: 'protocols',
-  PROTOCOLS_ACTIVE: 'protocols:active',
-  PROTOCOL_BY_ID: 'protocol',
-  STOCK_BY_MEDICINE: 'stock:medicine',
-  PURCHASES_BY_MEDICINE: 'purchases:medicine',
-  PURCHASES_HISTORY: 'purchases:history',
-  PURCHASES_LATEST: 'purchases:latest',
-  PURCHASES_AVG_PRICE: 'purchases:avgPrice',
-  STOCK_TOTAL: 'stock:total',
-  STOCK_SUMMARY: 'stock:summary',
-  STOCK_LOW: 'stock:low',
-  LOGS: 'logs',
-  LOGS_BY_PROTOCOL: 'logs:protocol',
-  LOGS_BY_MONTH: 'logs:month',
-  LOGS_PAGINATED: 'logs:paginated',
-  LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
-  LOGS_DATE_RANGE_SLIM: 'logs:dateRangeSlim',
-  LOGS_BY_MONTH_SLIM: 'logs:monthSlim',
-  TREATMENT_PLANS: 'treatmentPlans',
-  TREATMENT_PLAN_BY_ID: 'treatmentPlan',
-  ADHERENCE_SUMMARY: 'adherence:summary',
-  ADHERENCE_DAILY: 'adherence:daily',
-  ADHERENCE_PATTERN: 'adherence:pattern',
-}
+// CACHE_KEYS importado de @meus-remedios/shared-data (fonte canônica)
+// Re-exportado para compatibilidade com importadores existentes deste módulo
+export { CACHE_KEYS } from '@meus-remedios/shared-data'
 
 /**
  * Medicine Service com Cache

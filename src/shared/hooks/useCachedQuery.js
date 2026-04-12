@@ -11,7 +11,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { cachedQuery, invalidateCache } from '@shared/utils/queryCache'
+import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
+
+// Aliases locais para a engine — mantem chamadas internas compactas
+const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
+const invalidateCache = (pattern) => webQueryCache.invalidate(pattern)
 
 /**
  * Hook para executar queries com cache SWR
@@ -312,13 +316,27 @@ export function useCachedMutation(mutationFn, options = {}) {
   }
 }
 
-// Re-exporta funções úteis do queryCache
-export {
-  invalidateCache,
-  generateCacheKey,
-  prefetchCache,
-  getCacheStats,
-  clearCache,
-  cancelGarbageCollection,
-  restartGarbageCollection,
-} from '@shared/utils/queryCache'
+// Re-exporta funções úteis do query cache (via pacote centralizado — evita duplicação)
+export { generateCacheKey } from '@meus-remedios/shared-data'
+
+export { invalidateCache }
+
+export function prefetchCache(key, data) {
+  webQueryCache.prefetch(key, data)
+}
+
+export function getCacheStats() {
+  return webQueryCache.getStats()
+}
+
+export function clearCache() {
+  webQueryCache.clear()
+}
+
+export function cancelGarbageCollection() {
+  webQueryCache.cancelGC()
+}
+
+export function restartGarbageCollection() {
+  webQueryCache.restartGC()
+}
