@@ -2207,5 +2207,33 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "react-hooks"
+  },
+  {
+    "id": "R-161",
+    "title": "Mobile Expo development: iCloud repos need file system workarounds",
+    "summary": "Expo start fails in iCloud paths (~/Library/Mobile Documents/) due to Watchman permissions. Workaround: .watchmanconfig or local clone. Simulator validation is maintainer-gated.",
+    "applies_to": [
+      "mobile",
+      "expo",
+      "macos",
+      "development",
+      "icloud"
+    ],
+    "tags": [
+      "mobile",
+      "expo",
+      "icloud",
+      "watchman",
+      "macos"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-12",
+    "review_due": "2027-04-12",
+    "status": "active",
+    "related_ap": "AP-H07",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   }
 ]
