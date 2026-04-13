@@ -26,9 +26,14 @@ export default function Navigation() {
 
   useEffect(() => {
     // Restaurar sessão persistida (SecureStore chunked — R-160)
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s ?? null)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        setSession(s ?? null)
+      })
+      .catch((error) => {
+        console.error('Erro ao restaurar sessão:', error)
+        setSession(null) // null = sem sessão → redirige para LOGIN
+      })
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {

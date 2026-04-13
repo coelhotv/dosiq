@@ -7,19 +7,23 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { signOut } from '../../../platform/auth/authService'
-import { useNavigation } from '@react-navigation/native'
-import { ROUTES } from '../../../navigation/routes'
 
 export default function ProfileScreen() {
-  const navigation = useNavigation()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth.getUser()
+      .then(({ data }) => {
+        setUser(data?.user ?? null)
+      })
+      .catch((error) => {
+        console.error('Erro ao obter utilizador:', error)
+        setUser(null)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
 
   async function handleLogout() {
