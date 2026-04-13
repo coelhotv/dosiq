@@ -3,7 +3,15 @@
   "project": {
     "name": "meus-remedios",
     "slug": "meus-remedios",
-    "stack": ["react", "vite", "supabase", "typescript", "vitest", "framer-motion", "telegram"],
+    "stack": [
+      "react",
+      "vite",
+      "supabase",
+      "typescript",
+      "vitest",
+      "framer-motion",
+      "telegram"
+    ],
     "phase": "initial",
     "current_sprint": "2026-W15"
   },
@@ -40,7 +48,9 @@
       "planned_at": "2026-04-12T00:00:00Z",
       "branch": "feature/hybrid-h4/mobile-scaffold",
       "current_pr": "#464",
-      "completed_prs": ["#464"],
+      "completed_prs": [
+        "#464"
+      ],
       "merged_at": "2026-04-12T19:35:00Z",
       "previous_wave": "H3",
       "notes": "Planning completo. apps/mobile existe mas e stub vazio (package.json + README). Bloqueio humano: contas Expo/Apple/Google + EAS secrets pendentes. O agente pode implementar tudo menos EAS build e validacao em simuladores. Pre-requisito: maintainer deve resolver dependencias do addendum HUMAN_DEPENDENCIES antes de iniciar."
@@ -53,10 +63,20 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "recent_additions": {
-      "rules": ["R-158", "R-159", "R-160", "R-161"],
-      "anti_patterns": ["AP-H04", "AP-H05", "AP-H06", "AP-H07"],
+      "rules": [
+        "R-158",
+        "R-159",
+        "R-160",
+        "R-161"
+      ],
+      "anti_patterns": [
+        "AP-H04",
+        "AP-H05",
+        "AP-H06",
+        "AP-H07"
+      ],
       "timestamp": "2026-04-12T19:40:00Z"
     }
   },
