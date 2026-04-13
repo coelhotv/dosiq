@@ -19,7 +19,7 @@
     "id": "session_2026W15_h5_planning",
     "started_at": "2026-04-12T22:00:00Z",
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "goal": "Wave H5 — MVP Produto Mobile: shell + tabs + 7 telas MVP (Hoje, Tratamentos, Estoque, Perfil, Telegram)",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -57,7 +57,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 16,
     "recent_additions": {
       "rules": [
         "R-158",

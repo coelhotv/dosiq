@@ -18,10 +18,12 @@
     "expo": "^53.0.0",
     "expo-secure-store": "^14.0.1",
     "expo-status-bar": "~2.2.3",
+    "lucide-react-native": "^1.8.0",
     "react": "19.0.0",
     "react-native": "0.79.6",
     "react-native-safe-area-context": "~5.4.0",
-    "react-native-screens": "~4.11.1"
+    "react-native-screens": "~4.11.1",
+    "react-native-svg": "^15.15.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

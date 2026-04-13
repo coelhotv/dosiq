@@ -2,9 +2,10 @@
 // 4 tabs: Hoje | Tratamentos | Estoque | Perfil
 // ADR-028: StyleSheet (não NativeWind)
 // ADR-023: sem font weights < 400
+// Iconografia: lucide-react-native — mesmos ícones do BottomNavRedesign.jsx e Sidebar.jsx web
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Text } from 'react-native'
+import { Calendar, Pill, Package, User } from 'lucide-react-native'
 import { ROUTES } from './routes'
 import TodayScreen from '../features/dashboard/screens/TodayScreen'
 import TreatmentsStack from './TreatmentsStack'
@@ -13,39 +14,42 @@ import ProfileStack from './ProfileStack'
 
 const Tab = createBottomTabNavigator()
 
-// Ícones como texto — simples e sem dependências extras
-// H5.8 pode substituir por @expo/vector-icons se necessário
+// Mesmos ícones do BottomNavRedesign.jsx e Sidebar.jsx da web (lucide-react)
+// Calendar → Hoje | Pill → Tratamentos | Package → Estoque | User → Perfil
 const TAB_ICONS = {
-  [ROUTES.TODAY]: '🗓',
-  [ROUTES.TREATMENTS]: '💊',
-  [ROUTES.STOCK]: '📦',
-  [ROUTES.PROFILE]: '👤',
+  [ROUTES.TODAY]: Calendar,
+  [ROUTES.TREATMENTS]: Pill,
+  [ROUTES.STOCK]: Package,
+  [ROUTES.PROFILE]: User,
 }
 
 export default function RootTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600', // ADR-023: mínimo 400
-        },
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#94a3b8',
-        tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
-          borderTopWidth: 1,
-          paddingBottom: 4,
-          paddingTop: 4,
-          height: 60,
-        },
-        tabBarIcon: ({ color, size }) => (
-          <Text style={{ fontSize: size - 4, color }}>{TAB_ICONS[route.name]}</Text>
-        ),
-      })}
+      screenOptions={({ route }) => {
+        const Icon = TAB_ICONS[route.name]
+        return {
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '600', // ADR-023: mínimo 400
+          },
+          tabBarActiveTintColor: '#2563eb',
+          tabBarInactiveTintColor: '#94a3b8',
+          tabBarStyle: {
+            backgroundColor: '#ffffff',
+            borderTopColor: '#e2e8f0',
+            borderTopWidth: 1,
+            paddingBottom: 4,
+            paddingTop: 4,
+            height: 60,
+          },
+          tabBarIcon: ({ color, size }) => Icon
+            ? <Icon size={size} color={color} strokeWidth={1.75} />
+            : null,
+        }
+      }}
     >
       <Tab.Screen
         name={ROUTES.TODAY}
