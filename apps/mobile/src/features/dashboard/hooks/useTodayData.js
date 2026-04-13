@@ -28,22 +28,41 @@ export function useTodayData() {
     setError(null)
 
     try {
+      console.log('[useTodayData] getUser start')
       const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('[useTodayData] getUser result — user:', user?.id ?? 'null', 'authError:', authError?.message ?? 'none')
       if (authError || !user) throw new Error('Sessão expirada.')
 
       const today = getTodayLocal() // R-020: nunca new Date('YYYY-MM-DD')
-      const [protocols, logs] = await Promise.all([
-        getActiveProtocols(user.id),
-        getTodayLogs(user.id, today),
-      ])
+      console.log('[useTodayData] today:', today)
+
+      console.log('[useTodayData] getActiveProtocols start')
+      let protocols, logs
+      try {
+        protocols = await getActiveProtocols(user.id)
+        console.log('[useTodayData] protocols OK:', protocols.length)
+      } catch (e) {
+        console.error('[useTodayData] getActiveProtocols ERRO:', JSON.stringify(e))
+        throw e
+      }
+
+      try {
+        logs = await getTodayLogs(user.id, today)
+        console.log('[useTodayData] logs OK:', logs.length)
+      } catch (e) {
+        console.error('[useTodayData] getTodayLogs ERRO:', JSON.stringify(e))
+        throw e
+      }
 
       // Enriquecer com nomes dos medicamentos
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
       const medicineNames = await getMedicineNames(medicineIds)
+      console.log('[useTodayData] medicineNames OK:', Object.keys(medicineNames).length)
 
       setData({ protocols, logs, medicineNames })
       setStale(false)
     } catch (err) {
+      console.error('[useTodayData] ERRO FINAL:', err?.message, err?.code, err?.details, err?.hint)
       setError(err.message ?? 'Erro ao carregar dados do dia.')
       // Se há snapshot, marcar como stale em vez de apagar (R5-008)
       if (data !== null) setStale(true)
