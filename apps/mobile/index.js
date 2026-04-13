@@ -1,8 +1,8 @@
 // index.js — Entrypoint do Expo
 // Polyfills globais PRIMEIRO — antes de qualquer lib que dependa deles
 import './polyfills'
-// Polyfill de URL deve vir antes do Supabase — depende de new URL()
-import 'react-native-url-polyfill/auto'
+// react-native-url-polyfill removido: RN 0.79 + Hermes suporta URL nativo
+// O polyfill sobrescrevia URL.searchParams com implementação quebrada (AP-H08)
 import { registerRootComponent } from 'expo'
 import App from './App'
 
