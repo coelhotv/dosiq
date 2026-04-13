@@ -5,12 +5,16 @@
 import { useEffect, useState } from 'react'
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { signOut } from '../../../platform/auth/authService'
+import { ROUTES } from '../../../navigation/routes'
 
 export default function ProfileScreen() {
+  const navigation = useNavigation()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser()
@@ -27,9 +31,13 @@ export default function ProfileScreen() {
   }, [])
 
   async function handleLogout() {
+    setLoggingOut(true)
     const { success } = await signOut()
     if (success) {
-      // onAuthStateChange em Navigation.jsx detecta sessão null e redirige para LOGIN
+      // Navega para o stack raiz (sai do TabNavigator) e substitui por LOGIN
+      navigation.getParent()?.replace(ROUTES.LOGIN)
+    } else {
+      setLoggingOut(false)
     }
   }
 
@@ -51,8 +59,11 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{user?.email ?? '—'}</Text>
         </View>
 
-        <Pressable style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Sair da conta</Text>
+        <Pressable style={[styles.logoutButton, loggingOut && styles.logoutDisabled]} onPress={handleLogout} disabled={loggingOut}>
+          {loggingOut
+            ? <ActivityIndicator size="small" color="#ef4444" />
+            : <Text style={styles.logoutText}>Sair da conta</Text>
+          }
         </Pressable>
       </View>
     </SafeAreaView>
@@ -107,6 +118,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     alignItems: 'center',
+  },
+  logoutDisabled: {
+    opacity: 0.6,
   },
   logoutText: {
     color: '#ef4444',
