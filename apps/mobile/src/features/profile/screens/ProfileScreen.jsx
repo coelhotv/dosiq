@@ -5,39 +5,31 @@
 import { useEffect, useState } from 'react'
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { signOut } from '../../../platform/auth/authService'
-import { ROUTES } from '../../../navigation/routes'
+import { getCurrentUser, logoutUser } from '../services/profileService'
 
 export default function ProfileScreen() {
-  const navigation = useNavigation()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser()
-      .then(({ data }) => {
-        setUser(data?.user ?? null)
-      })
-      .catch((error) => {
-        console.error('Erro ao obter utilizador:', error)
-        setUser(null)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    getCurrentUser().then(({ data, error }) => {
+      if (error) {
+        console.error('Erro ao carregar perfil:', error)
+      }
+      setUser(data)
+      setLoading(false)
+    })
   }, [])
 
   async function handleLogout() {
     setLoggingOut(true)
-    const { success } = await signOut()
-    if (success) {
-      // Navega para o stack raiz (sai do TabNavigator) e substitui por LOGIN
-      navigation.getParent()?.replace(ROUTES.LOGIN)
-    } else {
-      setLoggingOut(false)
+    const { success, error } = await logoutUser()
+    // Com renderização condicional em Navigation.jsx, onAuthStateChange
+    // vai disparar e session vai passar a null, React Navigation renderiza LOGIN
+    if (!success) {
+      console.error('Erro ao fazer logout:', error)
+      setLoggingOut(false) // restabelecer botão se falhar
     }
   }
 
