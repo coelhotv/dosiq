@@ -135,18 +135,140 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   define('username', function () { return '' })
   define('password', function () { return '' })
 
-  // searchParams — getter (URLSearchParams é separado, geralmente funciona)
-  define('searchParams', function () {
-    const qs = parseHref(this.href).search.slice(1)
-    if (typeof URLSearchParams !== 'undefined') return new URLSearchParams(qs)
-    const map = new Map()
-    qs.split('&').forEach(pair => {
-      const idx = pair.indexOf('=')
-      if (idx < 0) return
-      map.set(decodeURIComponent(pair.slice(0, idx)), decodeURIComponent(pair.slice(idx + 1)))
-    })
-    return { get: k => map.get(k) ?? null, has: k => map.has(k) }
+  // searchParams — getter NÃO aplicado aqui; será substituído por LiveURLSearchParams abaixo
+  // (o getter simples criava um objeto desvinculado — mutações via .set/.append eram perdidas)
+})()
+
+// LiveURLSearchParams — vincula mutações de volta a url.href
+// Problema: postgrest-js usa url.searchParams.set/append para construir select, filtros e order.
+// O getter anterior criava um HermesURLSearchParams desvinculado: todas as mutações eram
+// descartadas e a URL chegava ao PostgREST sem parâmetros (→ PGRST125).
+// Solução: cada mutação chama _sync() que reconstrói url.href com os novos parâmetros.
+;(function patchLiveURLSearchParams() {
+  if (typeof URL === 'undefined') return
+
+  // Parse apenas a parte de search + hash do href (sem depender de getters patchados)
+  function splitHref(href) {
+    var qIdx = href.indexOf('?')
+    var hIdx = href.indexOf('#')
+    if (qIdx === -1 && hIdx === -1) return { base: href, search: '', hash: '' }
+    if (qIdx === -1) return { base: href.slice(0, hIdx), search: '', hash: href.slice(hIdx) }
+    if (hIdx === -1) return { base: href.slice(0, qIdx), search: href.slice(qIdx), hash: '' }
+    if (qIdx < hIdx) return { base: href.slice(0, qIdx), search: href.slice(qIdx, hIdx), hash: href.slice(hIdx) }
+    return { base: href.slice(0, hIdx), search: '', hash: href.slice(hIdx) }
+  }
+
+  function parsePairs(qs) {
+    var pairs = []
+    if (!qs) return pairs
+    var parts = qs.split('&')
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue
+      var eq = parts[i].indexOf('=')
+      try {
+        if (eq < 0) {
+          pairs.push([decodeURIComponent(parts[i]), ''])
+        } else {
+          pairs.push([decodeURIComponent(parts[i].slice(0, eq)), decodeURIComponent(parts[i].slice(eq + 1))])
+        }
+      } catch (e) {
+        pairs.push([parts[i].slice(0, eq < 0 ? undefined : eq), eq < 0 ? '' : parts[i].slice(eq + 1)])
+      }
+    }
+    return pairs
+  }
+
+  function LiveURLSearchParams(urlObj) {
+    this._url = urlObj
+    var split = splitHref(urlObj.href)
+    this._pairs = parsePairs(split.search.slice(1)) // remove leading '?'
+  }
+
+  LiveURLSearchParams.prototype._sync = function () {
+    var out = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      out.push(encodeURIComponent(this._pairs[i][0]) + '=' + encodeURIComponent(this._pairs[i][1]))
+    }
+    var newSearch = out.length ? '?' + out.join('&') : ''
+    var split = splitHref(this._url.href)
+    var newHref = split.base + newSearch + split.hash
+    console.log('[live-sp] sync href:', newHref)
+    this._url.href = newHref
+  }
+
+  LiveURLSearchParams.prototype.set = function (name, value) {
+    var k = String(name), v = String(value), found = false, result = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) { if (!found) { result.push([k, v]); found = true } }
+      else { result.push(this._pairs[i]) }
+    }
+    if (!found) result.push([k, v])
+    this._pairs = result
+    this._sync()
+  }
+
+  LiveURLSearchParams.prototype.append = function (name, value) {
+    this._pairs.push([String(name), String(value)])
+    this._sync()
+  }
+
+  LiveURLSearchParams.prototype.delete = function (name) {
+    var k = String(name), result = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] !== k) result.push(this._pairs[i])
+    }
+    this._pairs = result
+    this._sync()
+  }
+
+  LiveURLSearchParams.prototype.get = function (name) {
+    var k = String(name)
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) return this._pairs[i][1]
+    }
+    return null
+  }
+
+  LiveURLSearchParams.prototype.getAll = function (name) {
+    var k = String(name), out = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) out.push(this._pairs[i][1])
+    }
+    return out
+  }
+
+  LiveURLSearchParams.prototype.has = function (name) {
+    var k = String(name)
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) return true
+    }
+    return false
+  }
+
+  LiveURLSearchParams.prototype.toString = function () {
+    var out = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      out.push(encodeURIComponent(this._pairs[i][0]) + '=' + encodeURIComponent(this._pairs[i][1]))
+    }
+    return out.join('&')
+  }
+
+  LiveURLSearchParams.prototype.forEach = function (cb) {
+    for (var i = 0; i < this._pairs.length; i++) {
+      cb(this._pairs[i][1], this._pairs[i][0], this)
+    }
+  }
+
+  // Substitui o getter searchParams em URL.prototype
+  // Cada acesso cria um LiveURLSearchParams inicializado com o search actual
+  // Cada mutação (set/append/delete) propaga-se de volta a url.href via _sync()
+  Object.defineProperty(URL.prototype, 'searchParams', {
+    get: function () { return new LiveURLSearchParams(this) },
+    configurable: true,
+    enumerable: false,
   })
+
+  console.log('[polyfill] URL.prototype.searchParams → LiveURLSearchParams (syncs href)')
 })()
 
 // URLSearchParams patch para Hermes — substituição incondicional + debug logs
