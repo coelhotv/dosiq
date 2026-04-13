@@ -38,7 +38,7 @@ export default function LoginScreen({ navigation }) {
       return
     }
 
-    navigation.replace(ROUTES.HOME)
+    navigation.replace(ROUTES.TABS)
   }
 
   return (
