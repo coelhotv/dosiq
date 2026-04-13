@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 0: Guardrails, ADRs e Inventario
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Objetivo da fase:** preparar a execucao; nao implementar produto native
 > **Resultado esperado:** arquitetura alinhada, escopo congelado, inventario pronto, docs legados controlados
 
@@ -51,15 +51,13 @@ Proibido nesta fase:
 - `expo-secure-store`
 - `AsyncStorage`
 
-**Acao corretiva obrigatoria:** o `package.json` raiz atualmente contem `expo` como dependencia direta sem scaffold correspondente. Esta dependencia deve ser **removida** nesta fase como parte do sprint 0.1. A reintroducao de `expo` ocorrera na Fase 4, dentro de `apps/mobile/package.json`.
-
 ### R0-003. Nenhuma extracao para `packages/*` ainda
 
 Esta fase pode preparar o terreno documental, mas nao deve produzir extracao funcional de codigo ainda.
 
 ### R0-004. Um unico documento manda
 
-`plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` e a master spec.
+`plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` e a master spec.
 
 Todos os documentos escritos nesta fase devem:
 
@@ -239,28 +237,6 @@ rg -n "serviceWorker|manifest\\.json|PushManager|Notification\\.requestPermissio
 rg -n "\\b(window|document|navigator|localStorage|import\\.meta\\.env)\\b" src --glob '!**/__tests__/**'
 ```
 
-### Itens adicionais obrigatorios no inventario (pos-redesign v4.0.0)
-
-O inventario deve classificar explicitamente:
-
-- `framer-motion` → `PLATFORM_WEB` / `DO_NOT_SHARE`
-- `jspdf` + `html2canvas` → `PLATFORM_WEB` / `DO_NOT_SHARE`
-- `groq-sdk` → `PLATFORM_WEB` (por enquanto) / avaliar compartilhamento futuro
-- `react-virtuoso` → `PLATFORM_WEB` / `DO_NOT_SHARE`
-- `src/shared/styles/motionConstants.js` → `PLATFORM_WEB` / `DO_NOT_SHARE`
-- tokens Sanctuary (`src/shared/styles/`) → `SHARED_TOKEN` (via `packages/design-tokens`)
-- path aliases do `vite.config.js` (`@schemas`, `@utils`, `@features`, `@shared`, `@services`, etc.) → documentar no inventario para referencia das fases 2-3
-
-### Acao corretiva: remover `expo` do `package.json`
-
-Incluir no sprint 0.1:
-
-```bash
-npm uninstall expo
-```
-
-Validar que `npm run build` e `npm run validate:agent` continuam verdes apos remocao.
-
 ### Criterio de conclusao
 
 O inventario precisa refletir **codigo real**, nao apenas docs antigos.
@@ -412,12 +388,6 @@ Considerar a fase concluida somente se todos os itens abaixo forem verdadeiros:
 - [ ] docs RN legados foram marcados como supersedidos
 - [ ] nenhuma mudanca estrutural de app foi feita
 - [ ] nenhuma dependencia mobile foi adicionada
-- [ ] `expo` foi removido do `package.json` raiz
-- [ ] inventario inclui dependencias web-only (framer-motion, jspdf, etc.)
-- [ ] inventario inclui path aliases do vite.config.js
-- [ ] tokens Sanctuary classificados como `SHARED_TOKEN`
-- [ ] ADRs foram registradas no `.agent/memory/decisions.json` (DEVFLOW)
-- [ ] checklist de dependencias humanas revisado (ver addendum `HUMAN_DEPENDENCIES.md`)
 - [ ] a web continua compilando
 
 ---

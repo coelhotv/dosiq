@@ -1,7 +1,7 @@
 # Exec Spec Hibrido - Fase 3: Adapters e Shared Data
 
 > **Status:** Exec spec detalhado e prescritivo
-> **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base obrigatoria:** `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 2 concluida
 > **Objetivo da fase:** criar contratos compartilhados e extrair a camada de dados adaptada por injecao, sem ainda construir o app mobile funcional
 
@@ -116,12 +116,6 @@ O app mobile le do ambiente native e injeta.
 Toda mudanca desta fase deve ser validada na web primeiro.
 
 Se a web nao conseguir usar a nova camada sem regressao, a fase falhou.
-
-### R3-007. O bot Telegram nao e afetado nesta fase
-
-`server/bot/tasks.js` e `api/notify.js` usam Supabase diretamente (service_role). Eles nao precisam migrar para os novos contratos nesta fase. A migracao do bot ocorre na Fase 6 (dispatcher multicanal).
-
-Nesta fase, o unico cuidado e: se o singleton Supabase web (`src/shared/utils/supabase.js`) mudar de interface, confirmar que o bot (que tem seu proprio cliente) nao e afetado.
 
 ---
 
@@ -453,27 +447,6 @@ export function createQueryCache({
 ### Regra obrigatoria
 
 `init()` deve ser chamada explicitamente no bootstrap da plataforma.
-
-### Estrategia de coexistencia e rollback
-
-A migracao do query cache e a mudanca de maior risco desta fase porque afeta toda a UX da web.
-
-**Estrategia obrigatoria:**
-
-1. Criar o novo `createQueryCache` em `packages/shared-data`
-2. Criar o bootstrap web em `src/shared/platform/query-cache/webQueryCache.js`
-3. Manter o cache antigo (`src/shared/utils/queryCache.js`) intacto temporariamente
-4. Adaptar `useCachedQuery` para consumir o novo cache via variavel de modulo
-5. Validar com `npm run test:critical` + teste manual de telas com cache
-6. So depois de validado em producao, remover o cache antigo
-
-Se houver regressao na web apos a troca:
-
-- reverter `useCachedQuery` para consumir o cache antigo
-- investigar o problema
-- corrigir no novo cache antes de tentar novamente
-
-**Nao e aceitavel:** remover o cache antigo antes de validar o novo.
 
 Proibido:
 
