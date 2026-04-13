@@ -305,7 +305,7 @@ Semana 1      ─── H0 (Guardrails + ADRs + inventarios)     ✅ COMPLETA (P
 Semana 2      ─── H1 (Workspaces)                          ✅ COMPLETA (consolidada em #457)
 Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (commit 4e6b312)
 Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
-Semana 8-9    ─── H4 (Scaffold Mobile)                         ✅ COMPLETA (PRs #464 + runtime fixes)
+Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
 Semana 10-13  ─── H5 (MVP Produto)
 Semana 14-17  ─── H6 (Push + Beta) ← BLOQUEIO HUMANO: devices + stores
 Semana 18+    ─── H7 (condicional)
