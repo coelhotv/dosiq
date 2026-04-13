@@ -41,7 +41,7 @@
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
       "sprint": "H5.1",
-      "status": "planned",
+      "status": "completed",
       "planned_at": "2026-04-12T22:00:00Z",
       "previous_wave": "H4",
       "prs_planned": 6,
@@ -57,7 +57,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-11T00:15:30Z",
-    "journal_entries_since_distillation": 16,
+    "journal_entries_since_distillation": 17,
     "recent_additions": {
       "rules": [
         "R-158",
@@ -79,8 +79,10 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-11T19:00:00Z",
-    "relevant_rules_loaded_at": "2026-04-11T19:00:00Z"
+    "index_loaded_at": "2026-04-13T21:45:00Z",
+    "relevant_rules_loaded_at": "2026-04-13T21:45:00Z",
+    "h5_1_sprint_validated": true,
+    "h5_1_completed_at": "2026-04-13T21:45:00Z"
   },
   "migration": {
     "status": "complete",
