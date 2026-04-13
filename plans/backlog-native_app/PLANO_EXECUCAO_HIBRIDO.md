@@ -1,6 +1,6 @@
 # Plano de Execucao: Estrategia Hibrida Web + Native
 
-> **Status:** Plano operacional de execucao — H0-H3 COMPLETAS ✅ | H4 proxima (bloqueio humano)
+> **Status:** Plano operacional de execucao — H0-H4 COMPLETAS ✅ | H5 proxima
 > **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
 > **Ferramenta:** `/devflow` via Claude Code (Claude Pro)
@@ -180,31 +180,34 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 
 ---
 
-## Wave H4 — Scaffold Mobile (Fase 4)
+## Wave H4 — Scaffold Mobile (Fase 4) ✅ COMPLETA
 
 **Estimativa:** 3-4 sessoes | ~2 semanas
 **Pre-requisitos humanos:** CRITICO — conta Expo, Apple Dev, Google Play, bundleIdentifier
 **Spec:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
 **Addendums:** Release Engineering [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`], Testing Mobile [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_TESTING_MOBILE.md`], Deploy Vercel [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEPLOY_VERCEL_MONOREPO.md`], Human Dependencies [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_HUMAN_DEPENDENCIES.md`], Privacy [`plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`]
+**PR mergeado:** #464 (commit `7c43cbd`) — 2026-04-12 | Runtime fixes (commits `1ca9952`, `d6a0e3e`) — 2026-04-12
 
-| Sessao | Sprint | Deliverables | Contexto a carregar |
-|--------|--------|-------------|---------------------|
-| H4.1 | 4.1 + 4.2 + 4.3 | Expo scaffold + app.config.js + eas.json + metro.config.js + babel.config.js | Fase 4 spec + addendum Release Eng |
-| H4.2 | 4.4 + 4.5 | Bootstrap native (config, storage, SecureStore) | Fase 4 spec |
-| H4.3 | 4.6 + 4.7 + 4.9 | Supabase native + React Navigation basico + login + persistencia sessao | Fase 4 spec |
-| H4.4 | 4.8 + 4.10 | Smoke screen + Jest setup + validacao plataformas | Fase 4 spec + addendum Testing |
+| Sessao | Sprint | Deliverables | Status |
+|--------|--------|-------------|--------|
+| H4.1 | 4.1 + 4.2 + 4.3 | Expo scaffold + app.config.js + eas.json + metro.config.js + babel.config.js | ✅ |
+| H4.2 | 4.4 + 4.5 | Bootstrap native (config, storage, SecureStore chunked) | ✅ |
+| H4.3 | 4.6 + 4.7 + 4.9 | Supabase native + React Navigation auth-aware + login + persistencia sessao | ✅ |
+| H4.4 | 4.8 + 4.10 | Smoke screen + Jest setup + runtime crash fixes | ✅ |
 
-**PRs:** 2 (scaffold+config; depois auth+smoke+testes)
+**Runtime fixes pos-PR #464 (3h de debugging — 2026-04-12):**
+- AP-H08: `react-native-url-polyfill` incompativel com Hermes/Expo Go SDK 53 — substituido por patch inline
+- AP-H09: `registerRootComponent` activa expo-router automaticamente — corrigido com `AppRegistry` directo + rename `src/app/` → `src/navigation/`
+- AP-H10: sessao nao persiste sem `getSession()` no mount + `initialRouteName` dinamico
+- SecureStore chunked (1800 bytes/chunk) para tokens Supabase >2048 bytes
 
 **Gates:**
-- [ ] App abre em iOS Simulator (validacao humana)
-- [ ] App abre em Android Emulator (validacao humana)
-- [ ] Login funciona
-- [ ] Sessao persiste ao reabrir
-- [ ] Jest roda sem erro
-- [ ] `meusremedios://` scheme configurado
-
-**Bloqueio humano:** validacao em simuladores (contas Expo/EAS ✅ | Apple em validacao ⏳ | Google em validacao ⏳)
+- [x] App abre em iOS Simulator (Expo Go SDK 53) ✅ validado pelo maintainer
+- [ ] App abre em Android Emulator (pendente — gate nao bloqueante para H5)
+- [x] Login funciona ✅
+- [x] Sessao persiste ao reabrir ✅
+- [x] Jest roda sem erro ✅
+- [x] `meusremedios://` scheme configurado ✅
 
 **Status das dependencias humanas (2026-04-12):**
 - Expo/EAS: ✅ conta criada, tokens disponíveis
@@ -212,7 +215,8 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 - Google Play Console: ⏳ conta criada, em processo de validação
 - bundleIdentifier: placeholder `com.coelhotv.meusremedios` — pode mudar após aprovação Play Console
 - EAS Secrets (SUPABASE_URL, SUPABASE_ANON_KEY): ✅ disponíveis
-- Validação em simuladores: pendente (gate após scaffold)
+- Validação iOS Simulator: ✅ confirmado pelo maintainer (Expo Go)
+- Validação Android Emulator: ⏳ pendente
 
 ---
 
@@ -301,7 +305,7 @@ Semana 1      ─── H0 (Guardrails + ADRs + inventarios)     ✅ COMPLETA (P
 Semana 2      ─── H1 (Workspaces)                          ✅ COMPLETA (consolidada em #457)
 Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (commit 4e6b312)
 Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
-Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
+Semana 8-9    ─── H4 (Scaffold Mobile)                         ✅ COMPLETA (PRs #464 + runtime fixes)
 Semana 10-13  ─── H5 (MVP Produto)
 Semana 14-17  ─── H6 (Push + Beta) ← BLOQUEIO HUMANO: devices + stores
 Semana 18+    ─── H7 (condicional)
@@ -374,7 +378,7 @@ Template de journal para retomada:
 | H1 | Zero regressao web | Todos os scripts passam + Vercel OK | ✅ COMPLETA |
 | H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback | ✅ COMPLETA |
 | H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
-| H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ⏳ aguardando contas Expo/Apple/Google |
+| H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS validado (Android pendente) |
 | H5 | MVP funcional | 7 fluxos validados manualmente | ⏳ depende de H4 |
 | H6 | Push operacional | Telegram + push nativo coexistindo | ⏳ depende de H5 |
 | H7 | Monorepo completo | Web + mobile + packages em estrutura final | ⏳ condicional |

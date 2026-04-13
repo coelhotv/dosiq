@@ -1,9 +1,17 @@
 # Exec Spec Hibrido - Fase 4: Mobile Scaffold
 
-> **Status:** Exec spec detalhado e prescritivo
+> **Status:** ✅ COMPLETA — PR #464 (commit `7c43cbd`) + runtime fixes (2026-04-12)
 > **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
-> **Pre-requisito:** Fase 3 concluida
+> **Pre-requisito:** Fase 3 concluida ✅
 > **Objetivo da fase:** subir o app Expo com auth, sessao, navegacao minima e tela de smoke consumindo o compartilhado
+>
+> **Desvios e descobertas pos-implementacao:**
+> - `src/app/` renomeado para `src/navigation/` — Expo SDK 53 reserva `src/app/` para expo-router (AP-H09)
+> - `registerRootComponent` substituido por `AppRegistry.registerComponent` directamente (AP-H09)
+> - `react-native-url-polyfill` removido — incompativel com Hermes/Expo Go; substituido por patch inline em `polyfills.js` (AP-H08)
+> - `secureStoreAuthStorage` implementado com chunking (1800 bytes/chunk) — tokens Supabase excedem limite de 2048 bytes do SecureStore
+> - `Navigation.jsx` implementado com `getSession()` no mount + `useState(undefined)` + `initialRouteName` dinamico para persistencia de sessao (AP-H10)
+> - `index.js` importa `./polyfills` como primeiro import antes de qualquer outro modulo
 
 ---
 
@@ -728,33 +736,41 @@ Erro:
 
 ## 16. Definition of Done da Fase 4
 
-- [ ] `apps/mobile` foi scaffoldado com Expo real
-- [ ] `metro.config.js` resolve workspaces
-- [ ] config native usa `packages/config`
-- [ ] auth storage usa `expo-secure-store`
-- [ ] persistencia geral usa `AsyncStorage`
-- [ ] cliente Supabase native foi criado corretamente
-- [ ] React Navigation minima esta funcionando
-- [ ] smoke screen consome `@meus-remedios/core`
-- [ ] login real funciona
-- [ ] sessao persiste ao reabrir
-- [ ] `app.config.js` esta presente e coerente
-- [ ] `eas.json` esta presente com profiles minimos
-- [ ] web continua compilando
+- [x] `apps/mobile` foi scaffoldado com Expo real ✅
+- [x] `metro.config.js` resolve workspaces ✅
+- [x] config native usa `packages/config` ✅
+- [x] auth storage usa `expo-secure-store` (com chunked storage — tokens >2048 bytes) ✅
+- [x] persistencia geral usa `AsyncStorage` ✅
+- [x] cliente Supabase native foi criado corretamente ✅
+- [x] React Navigation auth-aware esta funcionando (getSession + initialRouteName dinamico) ✅
+- [x] smoke screen consome `@meus-remedios/core` ✅
+- [x] login real funciona ✅
+- [x] sessao persiste ao reabrir ✅ (validado pelo maintainer em iOS Simulator)
+- [x] `app.config.js` esta presente e coerente ✅
+- [x] `eas.json` esta presente com profiles minimos ✅
+- [x] web continua compilando ✅
+- [x] `polyfills.js` com patch Hermes URL (protocolo, hostname, pathname, setters) ✅
+- [x] `index.js` usa `AppRegistry` directamente (nao `registerRootComponent`) ✅
+- [x] navegacao em `src/navigation/` (nao `src/app/` — reservado pelo Expo) ✅
 
 ---
 
 ## 17. Handoff para a Fase 5
 
-O proximo agente deve receber:
+**Estado actual entregue (2026-04-12):**
 
-- app Expo funcional
-- boot e bundling validados
-- auth e sessao validados
-- smoke screen verde
-- base pronta para shell de produto
+- ✅ App Expo funcional em iOS Simulator (Expo Go SDK 53)
+- ✅ Boot e bundling validados (sem crashes)
+- ✅ Auth e sessao validados (login + persistencia confirmada pelo maintainer)
+- ✅ Smoke screen verde (schema `@meus-remedios/core` funcional)
+- ✅ Base pronta para shell de produto
 
-Sem isso, a Fase 5 vira tentativa de construir produto em cima de scaffold instavel.
+**Constrains/alertas para a Fase 5:**
+- Android Emulator nao foi validado — fazê-lo antes de iniciar sprints de produto
+- `src/navigation/` é o nome do directório de navegacao (nao `src/app/`)
+- Todos os polyfills devem manter-se como primeiro import em `index.js`
+- SecureStore chunked ja esta implementado — nao substituir por implementacao directa
+- `getSession()` + `onAuthStateChange` em Navigation.jsx sao obrigatorios — nao simplificar
 
 ---
 
@@ -762,16 +778,16 @@ Sem isso, a Fase 5 vira tentativa de construir produto em cima de scaffold insta
 
 Checklist obrigatorio de ancoragem:
 
-- [ ] Esta fase cria `apps/mobile` funcional
-- [ ] Esta fase usa Expo
-- [ ] Esta fase usa React Navigation
-- [ ] Esta fase usa `expo-secure-store` para auth
-- [ ] Esta fase usa `AsyncStorage` para persistencia nao sensivel
-- [ ] Esta fase nao usa `NativeWind`
-- [ ] Esta fase nao usa `MMKV`
-- [ ] Esta fase nao implementa push native ainda
-- [ ] Esta fase ja nasce alinhada ao addendum de release engineering
-- [ ] Esta fase ja nasce alinhada ao addendum de privacy/permissoes
+- [x] Esta fase cria `apps/mobile` funcional ✅
+- [x] Esta fase usa Expo ✅
+- [x] Esta fase usa React Navigation ✅
+- [x] Esta fase usa `expo-secure-store` para auth (com chunked storage) ✅
+- [x] Esta fase usa `AsyncStorage` para persistencia nao sensivel ✅
+- [x] Esta fase nao usa `NativeWind` ✅
+- [x] Esta fase nao usa `MMKV` ✅
+- [x] Esta fase nao implementa push native ainda ✅
+- [x] Esta fase ja nasce alinhada ao addendum de release engineering ✅
+- [x] Esta fase ja nasce alinhada ao addendum de privacy/permissoes ✅
 - [ ] Esta fase respeita a Fase 4 da master spec
 
 Se qualquer item acima falhar, este documento deve ser corrigido antes da Fase 5.

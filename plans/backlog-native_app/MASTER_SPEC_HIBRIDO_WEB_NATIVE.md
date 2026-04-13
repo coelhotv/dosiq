@@ -1,7 +1,7 @@
 # Exec Spec Definitivo: Estrategia Hibrida Web + Native
 
-> **Status:** Documento autoritativo para a evolucao dual stack do projeto
-> **Data:** 2026-04-10 (rev.1 — atualizado pos-redesign v4.0.0)
+> **Status:** Documento autoritativo | H0-H4 COMPLETAS ✅ | H5 proxima
+> **Data:** 2026-04-10 (rev.1) | **Ultima atualizacao:** 2026-04-12
 > **Escopo:** Meus Remedios v4.0.0
 > **Supersede:** `plans/archive_old/native_app/analise-migracao-pwa-para-react-native.md`, `plans/archive_old/native_app/PLANO_EXECUTIVO_REACT_NATIVE.md`, `plans/archive_old/native_app/ARQUITETURA_RN_MONOREPO.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE1_CORE.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE2_MOBILE.md`
 
@@ -713,7 +713,7 @@ O MVP **nao** existe para atingir paridade total da web.
 
 ## 12. Fases Executaveis
 
-## Fase 0 - Alinhamento e Guardrails
+## Fase 0 - Alinhamento e Guardrails ✅ COMPLETA (PR #457, 2026-04-10)
 
 **Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE0_GUARDRAILS.md`
 
@@ -737,7 +737,7 @@ Criar o terreno correto para a execucao. Nenhum codigo native de produto entra a
 - zero impacto em `npm run validate:agent`
 - nenhum arquivo de app foi movido ainda
 
-## Fase 1 - Workspaces sem mover a web
+## Fase 1 - Workspaces sem mover a web ✅ COMPLETA (PR #457, 2026-04-10)
 
 **Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE1_WORKSPACES.md`
 
@@ -765,7 +765,7 @@ Adicionar estrutura de monorepo sem quebrar o fluxo atual da web.
 - `npm run build` continua buildando a web atual
 - `npm run validate:agent` continua verde
 
-## Fase 2 - Extracao do core puro
+## Fase 2 - Extracao do core puro ✅ COMPLETA (commit 4e6b312, 2026-03-25)
 
 **Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE2_CORE_PURO.md`
 
@@ -791,7 +791,7 @@ Se o modulo exigir `window`, `document`, `navigator`, `localStorage`, `import.me
 - testes criticos passam
 - nenhum service browser-dependent foi extraido por engano
 
-## Fase 3 - Adapters e shared-data
+## Fase 3 - Adapters e shared-data ✅ COMPLETA (PRs #462 + #463, 2026-04-12)
 
 **Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE3_ADAPTERS_SHARED_DATA.md`
 
@@ -816,7 +816,7 @@ Criar contratos compartilhados para storage, config, query cache e acesso a dado
 - mobile ainda nao consome features de produto
 - nao existe mais dependencia estrutural de `localStorage` dentro do compartilhado
 
-## Fase 4 - Scaffold mobile
+## Fase 4 - Scaffold mobile ✅ COMPLETA (PR #464 + runtime fixes, 2026-04-12)
 
 **Exec spec detalhada:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
 
@@ -825,6 +825,13 @@ Criar contratos compartilhados para storage, config, query cache e acesso a dado
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+
+**Descobertas criticas (documentadas em AP-H08/H09/H10):**
+- `src/app/` reservado pelo Expo SDK 53 — usar `src/navigation/`
+- `registerRootComponent` activa expo-router automaticamente — usar `AppRegistry` directamente
+- `react-native-url-polyfill` incompativel com Hermes — usar patch inline em `polyfills.js`
+- SecureStore tem limite de 2048 bytes — chunked storage obrigatorio para tokens Supabase
+- `getSession()` no mount + `initialRouteName` dinamico obrigatorios para persistencia de sessao
 
 ### Objetivo
 
