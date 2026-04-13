@@ -1760,5 +1760,85 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H08",
+    "title": "react-native-url-polyfill incompatível com Hermes/Expo Go SDK 53",
+    "summary": "Todas as versões (v2, v3) causam 'Cannot read property get of undefined' no Hermes. Usar patch inline em polyfills.js em vez de qualquer pacote externo.",
+    "applies_to": [
+      "mobile",
+      "expo",
+      "hermes",
+      "react-native"
+    ],
+    "tags": [
+      "mobile",
+      "expo",
+      "hermes",
+      "url",
+      "polyfill"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-162",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H09",
+    "title": "registerRootComponent do Expo SDK 53 activa expo-router quando src/app/ existe",
+    "summary": "registerRootComponent detecta transform.routerRoot=app no URL do bundle (Expo Go) e tenta inicializar expo-router. Fix: usar AppRegistry.registerComponent('main', () => App) directamente do react-native.",
+    "applies_to": [
+      "mobile",
+      "expo",
+      "expo-go"
+    ],
+    "tags": [
+      "mobile",
+      "expo",
+      "expo-router",
+      "app-registry"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-163",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H10",
+    "title": "Sessão Supabase não persiste em React Native sem auth-aware navigation",
+    "summary": "SecureStore chunked é condição necessária mas não suficiente. Navigation.jsx DEVE chamar getSession() no mount e definir initialRouteName dinamicamente. Sem isso, app sempre recomeça no SmokeScreen mesmo com sessão guardada.",
+    "applies_to": [
+      "mobile",
+      "expo",
+      "supabase",
+      "auth"
+    ],
+    "tags": [
+      "mobile",
+      "expo",
+      "supabase",
+      "auth",
+      "session",
+      "navigation"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-12",
+    "expiry_date": "2027-04-12",
+    "status": "active",
+    "related_rule": "R-164",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   }
 ]
