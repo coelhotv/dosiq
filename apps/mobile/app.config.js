@@ -42,7 +42,7 @@ module.exports = {
       bundleIdentifier: current.iosBundleIdentifier,
       buildNumber: '1',
       supportsTablet: false,
-      jsEngine: BUILD_PROFILE === 'development' ? 'jsc' : 'hermes',
+      jsEngine: 'hermes',
     },
     android: {
       package: current.androidPackage,
