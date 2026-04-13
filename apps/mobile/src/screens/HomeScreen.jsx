@@ -7,7 +7,7 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import { signOut } from '../platform/auth/authService'
-import { ROUTES } from '../app/routes'
+import { ROUTES } from '../navigation/routes'
 
 export default function HomeScreen({ navigation }) {
   const [user, setUser] = useState(null)
