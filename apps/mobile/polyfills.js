@@ -148,3 +148,92 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
     return { get: k => map.get(k) ?? null, has: k => map.has(k) }
   })
 })()
+
+// URLSearchParams patch para Hermes — .set/.append/.delete lançam "not implemented"
+// Supabase usa URLSearchParams.set() para construir query strings internas
+;(function patchURLSearchParams() {
+  if (typeof URLSearchParams === 'undefined') return
+
+  function isNotImplemented(methodName) {
+    try {
+      const p = new URLSearchParams()
+      p[methodName]('_test', '_val')
+      return false
+    } catch (e) {
+      return typeof e.message === 'string' && e.message.includes('not implemented')
+    }
+  }
+
+  // Se .set funciona, os outros métodos também funcionam — nada a fazer
+  if (!isNotImplemented('set')) return
+
+  // Substituir URLSearchParams por implementação pura que funciona no Hermes
+  // A classe nativa existe mas os métodos de mutação não estão implementados.
+  class WorkingURLSearchParams {
+    constructor(init) {
+      this._map = []
+      if (!init) return
+      if (typeof init === 'string') {
+        const qs = init.startsWith('?') ? init.slice(1) : init
+        qs.split('&').forEach(pair => {
+          if (!pair) return
+          const idx = pair.indexOf('=')
+          if (idx < 0) {
+            this._map.push([decodeURIComponent(pair), ''])
+          } else {
+            this._map.push([
+              decodeURIComponent(pair.slice(0, idx)),
+              decodeURIComponent(pair.slice(idx + 1)),
+            ])
+          }
+        })
+      } else if (Array.isArray(init)) {
+        init.forEach(([k, v]) => this._map.push([String(k), String(v)]))
+      } else if (typeof init === 'object') {
+        Object.entries(init).forEach(([k, v]) => this._map.push([String(k), String(v)]))
+      }
+    }
+
+    append(name, value) { this._map.push([String(name), String(value)]) }
+
+    set(name, value) {
+      const k = String(name)
+      const v = String(value)
+      const idx = this._map.findIndex(([key]) => key === k)
+      if (idx >= 0) {
+        this._map[idx] = [k, v]
+        this._map = this._map.filter(([key], i) => key !== k || i === idx)
+      } else {
+        this._map.push([k, v])
+      }
+    }
+
+    get(name) {
+      const entry = this._map.find(([k]) => k === String(name))
+      return entry ? entry[1] : null
+    }
+
+    getAll(name) {
+      return this._map.filter(([k]) => k === String(name)).map(([, v]) => v)
+    }
+
+    has(name) { return this._map.some(([k]) => k === String(name)) }
+
+    delete(name) { this._map = this._map.filter(([k]) => k !== String(name)) }
+
+    toString() {
+      return this._map
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('&')
+    }
+
+    forEach(cb) { this._map.forEach(([k, v]) => cb(v, k, this)) }
+
+    keys() { return this._map.map(([k]) => k)[Symbol.iterator]() }
+    values() { return this._map.map(([, v]) => v)[Symbol.iterator]() }
+    entries() { return this._map[Symbol.iterator]() }
+    [Symbol.iterator]() { return this.entries() }
+  }
+
+  global.URLSearchParams = WorkingURLSearchParams
+})()
