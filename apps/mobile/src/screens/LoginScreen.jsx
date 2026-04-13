@@ -16,7 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { signInWithEmail, signOut } from '../platform/auth/authService'
-import { ROUTES } from '../app/routes'
+import { ROUTES } from '../navigation/routes'
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('')

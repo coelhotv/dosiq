@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { medicineSchema } from '@meus-remedios/core/schemas'
-import { ROUTES } from '../app/routes'
+import { ROUTES } from '../navigation/routes'
 
 export default function SmokeScreen({ navigation }) {
   const [result, setResult] = useState('carregando...')
