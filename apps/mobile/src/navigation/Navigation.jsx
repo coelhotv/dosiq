@@ -55,19 +55,23 @@ export default function Navigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={session ? ROUTES.TABS : ROUTES.LOGIN}
         screenOptions={{ headerShown: false }}
       >
-        {/* Ecrã de diagnóstico — acessível internamente */}
-        <Stack.Screen
-          name={ROUTES.SMOKE}
-          component={SmokeScreen}
-          options={{ headerShown: true, title: 'Smoke Test' }}
-        />
-        {/* Auth */}
-        <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
-        {/* Shell do produto (tabs) */}
-        <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
+        {/* Renderização condicional baseada no estado da sessão */}
+        {session ? (
+          // Utilizador autenticado → renderizar shell do produto (tabs)
+          <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
+        ) : (
+          // Sem sessão → renderizar login e smoke (diag)
+          <>
+            <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+            <Stack.Screen
+              name={ROUTES.SMOKE}
+              component={SmokeScreen}
+              options={{ headerShown: true, title: 'Smoke Test' }}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   )
