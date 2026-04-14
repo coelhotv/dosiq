@@ -18,8 +18,16 @@ export function useStock() {
     else setState(prev => ({ ...prev, loading: true }))
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Sessão expirada')
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      
+      let user = currentSession?.user
+      if (sessionError || !user) {
+        const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
+        if (userError || !verifiedUser) {
+          throw new Error('Sessão expirada')
+        }
+        user = verifiedUser
+      }
 
       const result = await getStockData(user.id)
       
