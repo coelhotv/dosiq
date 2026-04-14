@@ -331,6 +331,10 @@ Como o app exige login, prepare desde cedo o material para revisão:
 - instrução curta de acesso
 - explicação do que o revisor deve fazer para validar o app
 
+Guia dedicado para isso:
+
+- [GUIA_APP_ACCESS_PLAY_CONSOLE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/meus-remedios/plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md)
+
 ### Sugestão prática
 
 Crie uma conta de teste exclusiva para review, com:
