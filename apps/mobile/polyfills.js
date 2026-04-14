@@ -172,6 +172,17 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
     var h = href.indexOf('#')
     var base = q >= 0 ? href.slice(0, q) : (h >= 0 ? href.slice(0, h) : href)
     var hash = h >= 0 ? href.slice(h) : ''
+    // Hermes normaliza URLs adicionando '/' no fim do path (ex: /protocols → /protocols/).
+    // PostgREST rejeita /protocols/?select=... com PGRST125 — só aceita /protocols?select=...
+    // Remover barra final se existir (e não for raiz do host, ex: 'https://host/')
+    if (base.charAt(base.length - 1) === '/') {
+      var afterProto = base.indexOf('//') + 2
+      var firstPathSlash = base.indexOf('/', afterProto)
+      if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
+        base = base.slice(0, -1)
+        console.log('[sp-tostring] removida barra final — base:', base)
+      }
+    }
     var result = base + '?' + qs + hash
     console.log('[sp-tostring] toString:', result)
     return result
