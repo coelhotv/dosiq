@@ -13,21 +13,20 @@
       "telegram"
     ],
     "phase": "initial",
-    "current_sprint": "2026-W15"
+    "current_sprint": "H5.5"
   },
   "session": {
     "id": "session_2026W16_h5_4_treatments",
     "started_at": "2026-04-14T04:32:00Z",
-    "mode": "reviewing",
+    "mode": "waiting",
     "status": "reviewing",
-    "goal": "PR 3 - H5.4: Tratamentos",
+    "goal": "PR 4 - H5.5: Estoque",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "PR #467 (H5.4) criado: https://github.com/coelhotv/meus-remedios/pull/467",
-      "Lista de tratamentos/protocolos ativos exibida no mobile",
-      "P-011 Paridade UX: manter termos da web (Tomar/Tomados)",
-      "Aprovação manual do usuário recebida (Bloqueante R-060)",
-      "Merge realizado pelo usuário ou via comando aprovado"
+      "PR #467 (H5.4) concluída e mergeada",
+      "Listagem de estoque por nível de risco (ADR-018)",
+      "Badges de cores automáticas conforme dias remanescentes",
+      "Conformidade total com a camada de serviços thin (ADR-029)"
     ],
     "active_wave": {
       "name": "Wave H5 — MVP Produto Mobile (Fase 5)",
