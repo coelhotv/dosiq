@@ -16,11 +16,11 @@
     </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="512" height="512" rx="120" fill="#F7F9FB"/>
+  <!-- Background (Full Square for Play Store masking) -->
+  <rect width="512" height="512" fill="#F7F9FB"/>
 
-  <!-- Capsule -->
-  <g transform="rotate(-20 256 256)" filter="url(#softGlow)">
+  <!-- Capsule (Scaled to 1.1 for Android Safe Zone) -->
+  <g transform="translate(256 256) scale(1.1) rotate(-35) translate(-256 -256)" filter="url(#softGlow)">
     <rect x="110" y="180" width="300" height="150" rx="75"
           fill="none"
           stroke="url(#primaryGrad)"
@@ -29,14 +29,14 @@
     <!-- Inner sanctuary flow -->
     <path d="M160 255 Q256 190 352 255"
           fill="none"
-          stroke="#90f4e3"
-          stroke-width="14"
-          opacity="0.9"/>
+          stroke="#7ed4c5ff"
+          stroke-width="16"
+          opacity="1"/>
 
     <path d="M185 285 Q256 230 327 285"
           fill="none"
-          stroke="#90f4e3"
-          stroke-width="10"
-          opacity="0.6"/>
+          stroke="#7ed4c5ff"
+          stroke-width="14"
+          opacity="0.7"/>
   </g>
 </svg>
