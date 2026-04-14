@@ -509,5 +509,33 @@
     "fact": "Shared boundary matrix defines package boundaries: packages/core (Fase 2), packages/design-tokens (Fase 2), packages/storage/config/shared-data (Fase 3). Web stays at root Phases 0-6 (ADR-026).",
     "valid_for": ["general", "architecture"],
     "source": "Wave H0 Fase 0 Guardrails"
+  },
+  {
+    "id": "K-073",
+    "topic": "hermes-polyfill-definitive",
+    "fact": "The custom polyfill in apps/mobile/polyfills.js (387 lines) is the DEFINITIVE URL solution for Hermes/Expo Go SDK 53. Both react-native-url-polyfill (NativeModules.BlobModule crash) and whatwg-url-without-unicode (WebIDL ctorRegistry crash) fail. The custom polyfill patches URL.prototype getters/setters and uses _searchPairs backing store.",
+    "valid_for": ["mobile", "architecture"],
+    "source": "Spike session 2026-04-14 + ARCHITECTURE_REVIEW_H5.md Section 11"
+  },
+  {
+    "id": "K-074",
+    "topic": "hermes-url-crash-chain",
+    "fact": "Two separate crashes prevent standard URL polyfills on Hermes: (1) react-native-url-polyfill wrapper accesses NativeModules.BlobModule.getConstants() which is undefined in Expo Go; (2) whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') which is never initialized by Hermes. Both produce 'Cannot read property get of undefined' but from different sources.",
+    "valid_for": ["mobile", "debugging"],
+    "source": "Spike session 2026-04-14 + AP-H08 + AP-H17"
+  },
+  {
+    "id": "K-075",
+    "topic": "ux-parity-principle",
+    "fact": "P-011: Mobile is a natural extension of web, not a separate app. All user-visible text must match web language (pt-BR coloquial). Glossary: CTA='Tomar', status='Tomada/Tomados', modal='Tomar dose', missed='Perdida', scheduled='Agendada', done='Feito'. Defined in EXEC_SPEC_H5_SPRINT_PLAN.md and MASTER_SPEC (item 12). See R-166.",
+    "valid_for": ["mobile", "ux"],
+    "source": "Maintainer decision 2026-04-14"
+  },
+  {
+    "id": "K-076",
+    "topic": "architecture-review-location",
+    "fact": "Comprehensive architecture review for hybrid project lives in plans/backlog-native_app/ARCHITECTURE_REVIEW_H5.md. Contains 11 sections: executive summary, quantitative evidence, root cause analysis, what's right/wrong, risk matrix, recommendations (A/B/C categories), spike results, and applied fixes. Living document — updated during explorations.",
+    "valid_for": ["mobile", "architecture", "documentation"],
+    "source": "Created 2026-04-14"
   }
 ]
