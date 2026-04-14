@@ -94,9 +94,11 @@ A spec identifica três opções para gerar token de vinculação no mobile:
 | **B** | Endpoint em `api/` (nova rota no router existente) | Média (requer Vercel function) |
 | **C** | Gerar token directamente no client | Baixa (se a lógica for simples) |
 
-**Decisão requerida do maintainer antes de implementar H5.7.**
+**Decisão tomada pelo maintainer (2026-04-14): Opção A (Supabase RPC).**
 
-**Impacto:** H5.1–H5.6 não dependem desta decisão. Se não houver decisão a tempo, H5.7 (Telegram) é adiado para pós-MVP (não bloqueia H5.8–H5.10).
+**Impacto:** H5.1–H5.6 não dependem desta decisão. H5.7 pode avançar com Opção A.
+
+**Contexto:** Gerar token via Supabase RPC mantém menor latência, sem necessidade de nova Vercel function. Token armazenado do lado do servidor para validação pelo bot.
 
 **Recomendação técnica:** Opção A ou B. Gerar token no client (Opção C) não é adequado pois o token deve ser armazenado do lado do servidor para validação posterior pelo bot.
 
@@ -453,12 +455,12 @@ export default function TodayScreen() {
 
 ## 12. Decisões pendentes (requerem input do maintainer)
 
-| # | Decisão | Urgência | Impacto |
-|---|---------|----------|---------|
-| 1 | **Mecanismo Telegram mobile** (Opção A/B/C) | Antes de H5.7 | Sprint 5.7 condicional |
-| 2 | **ADR-029 aprovação** | Antes de H5.2 | Estratégia de serviços |
-| 3 | **ADR-030 aprovação** | Antes de H5.1 | Estrutura de navegação |
-| 4 | **Android Emulator validation** (gate aberto de H4) | Antes de H5 | Non-blocking |
+| # | Decisão | Urgência | Status |
+|---|---------|----------|--------|
+| 1 | **Mecanismo Telegram mobile** (Opção A/B/C) | Antes de H5.7 | ✅ **Opção A (Supabase RPC)** — decidido 2026-04-14 |
+| 2 | **ADR-029 aprovação** | Antes de H5.2 | ✅ **Aprovado implicitamente** — funcionou em H5.2/H5.3 |
+| 3 | **ADR-030 aprovação** | Antes de H5.1 | ✅ **Aprovado implicitamente** — implementado e estável |
+| 4 | **Android Emulator validation** (gate aberto de H4) | Antes de H5 | 🟡 H5.1 ✅ validado; H5.2/H5.3 pendente (WiFi) |
 
 ---
 

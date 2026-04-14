@@ -249,13 +249,12 @@ Esta fase deve respeitar:
 
 ```text
 apps/mobile/src/
-├── app/
+├── navigation/                   ← NUNCA usar src/app/ (R-163, AP-H09: ativa expo-router)
 │   ├── AppRoot.jsx
 │   ├── Navigation.jsx
-│   └── navigation/
-│       ├── RootTabs.jsx
-│       ├── TreatmentStack.jsx
-│       └── ProfileStack.jsx
+│   ├── RootTabs.jsx
+│   ├── TreatmentsStack.jsx
+│   └── ProfileStack.jsx
 ├── features/
 │   ├── dashboard/
 │   │   ├── components/

@@ -30,44 +30,44 @@ export function useTodayData() {
     setError(null)
 
     try {
-      console.log('[useTodayData] getUser start')
+      if (__DEV__) console.log('[useTodayData] getUser start')
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('[useTodayData] getUser result — user:', user?.id ?? 'null', 'authError:', authError?.message ?? 'none')
+      if (__DEV__) console.log('[useTodayData] getUser result — user:', user?.id ?? 'null', 'authError:', authError?.message ?? 'none')
       if (authError || !user) throw new Error('Sessão expirada.')
 
       const today = getTodayLocal() // R-020: nunca new Date('YYYY-MM-DD')
-      console.log('[useTodayData] today:', today)
+      if (__DEV__) console.log('[useTodayData] today:', today)
 
-      console.log('[useTodayData] getActiveProtocols start')
+      if (__DEV__) console.log('[useTodayData] getActiveProtocols start')
       let protocols, logs
       try {
         protocols = await getActiveProtocols(user.id)
-        console.log('[useTodayData] protocols OK:', protocols.length)
+        if (__DEV__) console.log('[useTodayData] protocols OK:', protocols.length)
       } catch (e) {
-        console.error('[useTodayData] getActiveProtocols ERRO:', JSON.stringify(e))
+        if (__DEV__) console.error('[useTodayData] getActiveProtocols ERRO:', JSON.stringify(e))
         throw e
       }
 
       try {
         logs = await getTodayLogs(user.id, today)
-        console.log('[useTodayData] logs OK:', logs.length)
+        if (__DEV__) console.log('[useTodayData] logs OK:', logs.length)
       } catch (e) {
-        console.error('[useTodayData] getTodayLogs ERRO:', JSON.stringify(e))
+        if (__DEV__) console.error('[useTodayData] getTodayLogs ERRO:', JSON.stringify(e))
         throw e
       }
 
       // Enriquecer com nomes dos medicamentos
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
       const medicineNames = await getMedicineNames(medicineIds)
-      console.log('[useTodayData] medicineNames OK:', Object.keys(medicineNames).length)
+      if (__DEV__) console.log('[useTodayData] medicineNames OK:', Object.keys(medicineNames).length)
 
       const newData = { protocols, logs, medicineNames }
       dataRef.current = newData
       setData(newData)
       setStale(false)
     } catch (err) {
-      console.error('[useTodayData] ERRO FINAL:', err?.message, err?.code, err?.details, err?.hint)
-      console.warn('[useTodayData] stale check — data snapshot presente:', dataRef.current !== null)
+      if (__DEV__) console.error('[useTodayData] ERRO FINAL:', err?.message, err?.code, err?.details, err?.hint)
+      if (__DEV__) console.warn('[useTodayData] stale check — data snapshot presente:', dataRef.current !== null)
       setError(err.message ?? 'Erro ao carregar dados do dia.')
       // Se há snapshot, marcar como stale em vez de apagar (R5-008)
       if (dataRef.current !== null) setStale(true)

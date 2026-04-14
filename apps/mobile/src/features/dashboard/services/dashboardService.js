@@ -36,18 +36,22 @@ export async function getActiveProtocols(userId) {
  * @returns {Promise<Array>}
  */
 export async function getTodayLogs(userId, dateStr) {
-  // Meia-noite local → UTC (evita o problema de datas UTC que cruzam a meia-noite local)
-  const startUTC = parseLocalDate(dateStr).toISOString()
-  // Fim do dia local: 23:59:59 → UTC
-  const endUTC = new Date(`${dateStr}T23:59:59`).toISOString()
-  console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
+  // Boundaries UTC derivadas da meia-noite local (R-020: nunca raw new Date('YYYY-MM-DDT...'))
+  // startUTC = meia-noite local do dia → UTC
+  const startLocal = parseLocalDate(dateStr)
+  const startUTC = startLocal.toISOString()
+  // endUTC = meia-noite local do dia seguinte → UTC (exclusive upper boundary)
+  const endLocal = new Date(startLocal)
+  endLocal.setDate(endLocal.getDate() + 1)
+  const endUTC = endLocal.toISOString()
+  if (__DEV__) console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
 
   const { data, error } = await supabase
     .from('medicine_logs')
     .select('id, protocol_id, medicine_id, taken_at, quantity_taken')
     .eq('user_id', userId)
     .gte('taken_at', startUTC)
-    .lte('taken_at', endUTC)
+    .lt('taken_at', endUTC)
 
   if (error) throw error
   return data ?? []

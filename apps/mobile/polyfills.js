@@ -180,11 +180,11 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
       var firstPathSlash = base.indexOf('/', afterProto)
       if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
         base = base.slice(0, -1)
-        console.log('[sp-tostring] removida barra final — base:', base)
+        if (__DEV__) console.log('[sp-tostring] removida barra final — base:', base)
       }
     }
     var result = base + '?' + qs + hash
-    console.log('[sp-tostring] toString:', result)
+    if (__DEV__) console.log('[sp-tostring] toString:', result)
     return result
   }
 
@@ -204,13 +204,13 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
     }
     if (!found) result.push([k, v])
     this._url._searchPairs = result
-    console.log('[sp] set', k, '=', v, '→', result.length, 'pairs total')
+    if (__DEV__) console.log('[sp] set', k, '=', v, '→', result.length, 'pairs total')
   }
 
   DirectSearchParams.prototype.append = function (name, value) {
     var k = String(name), v = String(value)
     this._url._searchPairs.push([k, v])
-    console.log('[sp] append', k, '=', v, '→', this._url._searchPairs.length, 'pairs total')
+    if (__DEV__) console.log('[sp] append', k, '=', v, '→', this._url._searchPairs.length, 'pairs total')
   }
 
   DirectSearchParams.prototype.delete = function (name) {
@@ -271,7 +271,7 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
     enumerable: false,
   })
 
-  console.log('[polyfill] URL: Estratégia A — toString()+_searchPairs (bypass href/search setters)')
+  if (__DEV__) console.log('[polyfill] URL: Estratégia A — toString()+_searchPairs (bypass href/search setters)')
 })()
 
 // URLSearchParams patch para Hermes — substituição incondicional + debug logs
@@ -279,7 +279,7 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
 // lança em uso real pelo Supabase. Solução: substituir sempre por implementação
 // pura ES5 (sem class, sem Symbol.iterator — máxima compatibilidade Hermes).
 ;(function patchURLSearchParams() {
-  console.log('[polyfill] URLSearchParams nativo:', typeof URLSearchParams,
+  if (__DEV__) console.log('[polyfill] URLSearchParams nativo:', typeof URLSearchParams,
     typeof URLSearchParams !== 'undefined' ? typeof URLSearchParams.prototype.set : 'N/A')
 
   function HermesURLSearchParams(init) {
@@ -382,5 +382,5 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   }
 
   global.URLSearchParams = HermesURLSearchParams
-  console.log('[polyfill] URLSearchParams substituído — set:', typeof HermesURLSearchParams.prototype.set)
+  if (__DEV__) console.log('[polyfill] URLSearchParams substituído — set:', typeof HermesURLSearchParams.prototype.set)
 })()
