@@ -677,7 +677,23 @@ Depois de preparar o ambiente, a ordem de leitura recomendada para a frente nati
 
 ---
 
-## 25. Fontes oficiais consultadas
+## 26. Identidade Oficial do Projeto (Aprovada Play Console ✅)
+
+A partir de **2026-04-14**, os identificadores do projeto sao definitivos e oficiais. Utilize estes valores ao configurar novos builds ou ambientes:
+
+| Ambiente | Bundle ID / Android Package | Nome do App |
+|----------|-----------------------------|-------------|
+| **Produção** | `com.coelhotv.meusremedios` | Meus Remédios |
+| **Preview** | `com.coelhotv.meusremedios.preview` | Meus Remédios Preview |
+| **Development** | `com.coelhotv.meusremedios.dev` | Meus Remédios Dev |
+
+### Configuração no `app.config.js`
+
+Estes valores são geridos dinamicamente no `app.config.js` com base na variável `EAS_BUILD_PROFILE`.
+
+---
+
+## 27. Fontes oficiais consultadas
 
 - Expo docs - setup de ambiente: https://docs.expo.dev/get-started/set-up-your-environment
 - React Native docs - setup de ambiente macOS: https://reactnative.dev/docs/set-up-your-environment

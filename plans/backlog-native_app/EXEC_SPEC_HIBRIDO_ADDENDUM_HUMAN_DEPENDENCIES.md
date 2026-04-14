@@ -44,7 +44,7 @@ Este addendum lista explicitamente o que o maintainer humano deve fazer e quando
 | Conta Apple Developer ($99/ano) | Maintainer | Builds iOS, TestFlight | Em validação Apple ⏳ |
 | Conta Google Play Console ($25 one-time) | Maintainer | Builds Android, Internal Testing | Em validação Google ⏳ |
 | Conta Expo / EAS | Maintainer | `eas build`, `eas submit` | Criada ✅ — tokens disponíveis |
-| `bundleIdentifier` e `androidPackage` finais | Maintainer | `app.config.js` | Placeholder `com.coelhotv.meusremedios` — sujeito a mudança pós-aprovação Play Console |
+| `bundleIdentifier` e `androidPackage` oficiais | Maintainer | `app.config.js` | Definido como `com.coelhotv.meusremedios` (Aprovado Play Console ✅) |
 | Certificados de assinatura iOS (Provisioning Profile) | Maintainer | Build iOS | Aguarda aprovação conta Apple ⏳ |
 | Keystore Android | Maintainer ou EAS managed | Build Android | Aguarda aprovação conta Google ⏳ |
 | Validacao em iOS Simulator | Maintainer | Gate da Fase 4 | Pendente (após scaffold) |
