@@ -1,6 +1,6 @@
 # Plano de Execucao: Estrategia Hibrida Web + Native
 
-> **Status:** Plano operacional de execucao — H0-H4 COMPLETAS ✅ | H5 proxima
+> **Status:** Plano operacional de execucao — H0-H5.5 COMPLETAS ✅ | H5.6 proxima
 > **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
 > **Ferramenta:** `/devflow` via Claude Code (Claude Pro)
@@ -203,7 +203,7 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 
 **Gates:**
 - [x] App abre em iOS Simulator (Expo Go SDK 53) ✅ validado pelo maintainer
-- [ ] App abre em Android Emulator (pendente — gate nao bloqueante para H5)
+- [x] App abre em Android Emulator ✅ validado pelo maintainer 2026-04-14
 - [x] Login funciona ✅
 - [x] Sessao persiste ao reabrir ✅
 - [x] Jest roda sem erro ✅
@@ -216,7 +216,7 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 - bundleIdentifier: oficial `com.coelhotv.meusremedios` — aprovado no Play Console em 2026-04-14 ✅
 - EAS Secrets (SUPABASE_URL, SUPABASE_ANON_KEY): ✅ disponíveis
 - Validação iOS Simulator: ✅ confirmado pelo maintainer (Expo Go)
-- Validação Android Emulator: ⏳ pendente
+- Validação Android Emulator: ✅ concluída 2026-04-14
 
 ---
 
@@ -379,7 +379,7 @@ Template de journal para retomada:
 | H1 | Zero regressao web | Todos os scripts passam + Vercel OK | ✅ COMPLETA |
 | H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback | ✅ COMPLETA |
 | H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
-| H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS validado (Android pendente) |
+| H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS + Android validados |
 | H5 | MVP funcional | 7 fluxos validados manualmente | ⏳ depende de H4 |
 | H6 | Push operacional | Telegram + push nativo coexistindo | ⏳ depende de H5 |
 | H7 | Monorepo completo | Web + mobile + packages em estrutura final | ⏳ condicional |

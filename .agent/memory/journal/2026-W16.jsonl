@@ -6,3 +6,4 @@
 {"ts":"2026-04-14T16:44:00Z","type":"sprint_complete","goal":"H5.5 Estoque Mobile","pr":468,"achievements":["Visualização de estoque com 4 níveis (ADR-018)","Priorização por urgência de dias restantes","Seccionamento entre estoque ativo e inativo","Padronização visual com dosage pills"]}
 {"ts":"2026-04-14T16:44:30Z","type":"pattern_discovered","id":"R-170","desc":"Uso de scripts .sh temporários para bypass de instabilidade Pty Host no Antigravity ao usar gh api complexos"}
 {"ts":"2026-04-14T16:45:00Z","type":"ux_decision","desc":"Medicamentos sem estoque e sem protocolo ativo são filtrados da view H5.5 para reduzir ruído visual"}
+{"timestamp":"2026-04-14T17:25:00Z","sprint":"H5.5-Fix","goal":"Estabilização Android + Identidade Oficial","status":"success","details":"Resolvido crash de navegação e race condition de sessão no Android. Confirmado e documentado Bundle ID oficial com approval da Play Console."}

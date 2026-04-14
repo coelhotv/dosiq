@@ -20,7 +20,7 @@
     "started_at": "2026-04-14T15:55:00Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "PR 4 - H5.5: Estoque",
+    "goal": "Implementar Tela Perfil + Integração Telegram (Mobile)",
     "goal_type": "feature",
     "acceptance_criteria": [
       "PR #468 (H5.5) concluída e mergeada",
@@ -54,7 +54,7 @@
     "contracts_count": 16,
     "knowledge_count": 76,
     "last_distillation": "2026-04-14T16:45:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "recent_additions": {
       "rules": [
         "R-166",
