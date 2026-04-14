@@ -37,8 +37,6 @@ export default function LoginScreen({ navigation }) {
       setError(loginError)
       return
     }
-
-    navigation.replace(ROUTES.TABS)
   }
 
   return (

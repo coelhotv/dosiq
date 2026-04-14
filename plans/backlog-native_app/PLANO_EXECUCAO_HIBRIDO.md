@@ -213,7 +213,7 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 - Expo/EAS: ✅ conta criada, tokens disponíveis
 - Apple Developer: ⏳ conta criada, em processo de validação
 - Google Play Console: ⏳ conta criada, em processo de validação
-- bundleIdentifier: placeholder `com.coelhotv.meusremedios` — pode mudar após aprovação Play Console
+- bundleIdentifier: oficial `com.coelhotv.meusremedios` — aprovado no Play Console em 2026-04-14 ✅
 - EAS Secrets (SUPABASE_URL, SUPABASE_ANON_KEY): ✅ disponíveis
 - Validação iOS Simulator: ✅ confirmado pelo maintainer (Expo Go)
 - Validação Android Emulator: ⏳ pendente

@@ -1,5 +1,5 @@
 // app.config.js — identidade do app mobile
-// bundleIdentifier/androidPackage são placeholders e podem mudar após aprovação nas stores
+// bundleIdentifier/androidPackage são OFICIAIS (Aprovados Google Play Console)
 // RE-001: app.config.js é o formato canônico (não app.json)
 // RE-006: identidade estável por variante de ambiente
 
