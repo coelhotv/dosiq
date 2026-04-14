@@ -8,7 +8,7 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
  * @param {{
  *   protocol: Object,
  *   medicineName: string,
- *   takenCount: number,   — quantas vezes foi registado hoje
+ *   takenCount: number,   — quantas doses tomadas hoje
  *   onRegister: Function  — abre o modal de registo
  * }} props
  */
@@ -23,12 +23,12 @@ export default function DoseListItem({ protocol, medicineName, takenCount, onReg
         <Text style={styles.name} numberOfLines={1}>{medicineName}</Text>
         <Text style={styles.schedule}>🕐 {scheduleStr}</Text>
         <Text style={styles.dosage}>
-          {protocol.dosage_per_intake} cp · {takenCount}/{expectedCount} registado{takenCount !== 1 ? 's' : ''}
+          {protocol.dosage_per_intake} cp · {takenCount}/{expectedCount} tomado{takenCount !== 1 ? 's' : ''}
         </Text>
       </View>
       {!isFull && (
         <Pressable style={styles.ctaButton} onPress={() => onRegister(protocol)}>
-          <Text style={styles.ctaText}>Registar</Text>
+          <Text style={styles.ctaText}>Tomar</Text>
         </Pressable>
       )}
       {isFull && (
