@@ -1,9 +1,8 @@
 # Auditoria: Polyfills Hermes × Supabase JS v2 — Sessão H5.2 (2026-04-13/14)
 
-> **Status:** 🟡 Polyfills + refresh + timezone resolvidos — fix totalTaken (`1430d46`), a aguardar resultado de teste  
-> **Branch:** `feature/hybrid-h5/today-dose`  
-> **Último commit:** `1430d46` (totalTaken = logs.length — conta tomadas, não comprimidos)  
-> **Próximo agente:** leia este documento inteiro antes de tocar em `polyfills.js`
+> **Status:** ✅ RESOLVIDO DEFINITIVAMENTE (Sessão H5.3)  
+> **Aviso:** Este documento serviu como histórico da investigação na sessão H5.2. A solução final e a auditoria completa da arquitetura (incluindo o spike de libs externas) estão documentadas em `ARCHITECTURE_REVIEW_H5.md`.
+> **Fonte da Verdade Atual:** Veja a Regra DEVFLOW **R-168**. O polyfill custom (Estratégia A) é a solução definitiva.
 
 ---
 
