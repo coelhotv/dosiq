@@ -62,6 +62,20 @@ Separe estes dados:
 - se o app será gratuito ou pago
 - arquivo `.aab` de produção
 
+### Pré-requisito novo para este projeto
+
+O repositório agora possui um rascunho inicial da política em:
+
+- [POLITICA_DE_PRIVACIDADE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/meus-remedios/docs/legal/POLITICA_DE_PRIVACIDADE.md)
+
+URL pública planejada para a ficha da loja:
+
+- [https://meus-remedios.vercel.app/politica-de-privacidade](https://meus-remedios.vercel.app/politica-de-privacidade)
+
+Contato público definido para suporte e privacidade:
+
+- `contact@coelho.me`
+
 ### Decisão recomendada para o MVP
 
 Para o primeiro lançamento:
@@ -430,7 +444,7 @@ Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 3. internal testing funcionando
 4. ficha principal preenchida
 5. data safety revisada
-6. política de privacidade publicada
+6. política de privacidade publicada em `https://meus-remedios.vercel.app/politica-de-privacidade`
 7. credenciais de review preparadas
 8. estratégia de closed testing definida
 
