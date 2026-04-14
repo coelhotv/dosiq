@@ -17,10 +17,10 @@
   </defs>
 
   <!-- Background -->
-  <rect width="512" height="512" rx="120" fill="#F7F9FB"/>
+  <rect width="512" height="512" rx="80" fill="#F7F9FB"/>
 
   <!-- Capsule -->
-  <g transform="rotate(-20 256 256)" filter="url(#softGlow)">
+  <g transform="translate(256 256) scale(1.4) rotate(-35) translate(-256 -256)" filter="url(#softGlow)">
     <rect x="110" y="180" width="300" height="150" rx="75"
           fill="none"
           stroke="url(#primaryGrad)"
@@ -29,14 +29,14 @@
     <!-- Inner sanctuary flow -->
     <path d="M160 255 Q256 190 352 255"
           fill="none"
-          stroke="#90f4e3"
+          stroke="#7bd2c4ff"
           stroke-width="14"
           opacity="0.9"/>
 
     <path d="M185 285 Q256 230 327 285"
           fill="none"
-          stroke="#90f4e3"
-          stroke-width="10"
+          stroke="#7bd2c4ff"
+          stroke-width="13"
           opacity="0.6"/>
   </g>
 </svg>
