@@ -36,6 +36,7 @@ export default function TodayScreen() {
   const totalTaken = logs.reduce((acc, log) => acc + (log.quantity_taken ?? 0), 0)
 
   function handleRegisterSuccess() {
+    console.log('[TodayScreen] dose registada — a fechar modal e a fazer refresh')
     setModalProtocol(null)
     refresh()
   }
