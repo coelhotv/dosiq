@@ -1,39 +1,125 @@
-// StockScreen.jsx — tela "Estoque" do MVP mobile
-// Sprint H5.5 irá implementar lista com 4 níveis de risco (ADR-018)
+import React, { useMemo } from 'react'
+import { SectionList, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import { useStock } from '../hooks/useStock'
+import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
+import LoadingState from '../../../shared/components/states/LoadingState'
+import EmptyState from '../../../shared/components/states/EmptyState'
+import ErrorState from '../../../shared/components/states/ErrorState'
+import StockItem from '../components/StockItem'
 
-import { View, Text, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-
+/**
+ * Tela principal de Gerenciamento de Estoque (H5.5).
+ */
 export default function StockScreen() {
+  const { data, loading, error, refreshing, refresh } = useStock()
+
+  // Formata os dados no formato esperado pelo SectionList
+  const sections = useMemo(() => {
+    if (!data) return []
+    const list = []
+    
+    if (data.active.length > 0) {
+      list.push({
+        title: 'Estoque em Uso',
+        data: data.active
+      })
+    }
+    
+    if (data.inactive.length > 0) {
+      list.push({
+        title: 'Sem tratamento ativo',
+        data: data.inactive
+      })
+    }
+    
+    return list
+  }, [data])
+
+  if (loading && !refreshing) {
+    return (
+      <ScreenContainer>
+        <LoadingState />
+      </ScreenContainer>
+    )
+  }
+
+  if (error && !data) {
+    return (
+      <ScreenContainer>
+        <ErrorState 
+          message="Não foi possível carregar seu estoque." 
+          onRetry={refresh} 
+        />
+      </ScreenContainer>
+    )
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Estoque</Text>
-        <Text style={styles.subtitle}>Níveis de stock — em breve</Text>
-      </View>
-    </SafeAreaView>
+    <ScreenContainer>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <StockItem medicine={item} />}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
+        )}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={refresh} 
+            tintColor="#6366f1"
+          />
+        }
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.title}>Meu Estoque</Text>
+            <Text style={styles.subtitle}>
+              Acompanhe a disponibilidade dos seus medicamentos
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState 
+            message="Você não possui medicamentos cadastrados ou estoque registrado." 
+          />
+        }
+      />
+    </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
+  listContent: {
+    paddingBottom: 40
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+  header: {
+    padding: 20,
+    backgroundColor: '#fff'
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 4
   },
   subtitle: {
-    fontSize: 15,
-    color: '#64748b',
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20
   },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f9fafb'
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  }
 })
