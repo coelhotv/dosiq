@@ -2,6 +2,7 @@
 // ADR-029: thin local service — chama Supabase directamente via nativeSupabaseClient
 // Schemas de domínio via @meus-remedios/core (nunca duplicar lógica de negócio)
 
+import { z } from 'zod'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { parseLocalDate } from '@meus-remedios/core'
 
@@ -13,6 +14,7 @@ import { parseLocalDate } from '@meus-remedios/core'
  * @returns {Promise<Array>}
  */
 export async function getActiveProtocols(userId) {
+  z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('protocols')
     .select('id, name, medicine_id, frequency, time_schedule, dosage_per_intake, titration_status')
@@ -36,6 +38,8 @@ export async function getActiveProtocols(userId) {
  * @returns {Promise<Array>}
  */
 export async function getTodayLogs(userId, dateStr) {
+  z.string().uuid().parse(userId)
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(dateStr)
   // Boundaries UTC derivadas da meia-noite local (R-020: nunca raw new Date('YYYY-MM-DDT...'))
   // startUTC = meia-noite local do dia → UTC
   const startLocal = parseLocalDate(dateStr)
@@ -58,24 +62,31 @@ export async function getTodayLogs(userId, dateStr) {
 }
 
 /**
- * Busca os nomes dos medicamentos referenciados pelos protocolos.
+ * Busca os dados dos medicamentos referenciados pelos protocolos.
  * Usado para enriquecer a lista de doses na tela Hoje.
  *
  * @param {string[]} medicineIds
- * @returns {Promise<Record<string, string>>} — map de id → name
+ * @returns {Promise<Record<string, Object>>} — map de id → { name, dosage_per_pill, dosage_unit }
  */
-export async function getMedicineNames(medicineIds) {
+export async function getMedicinesData(medicineIds) {
+  // Validação conforme regra de camada de serviço (R-125)
+  z.array(z.string().uuid()).parse(medicineIds)
+
   if (!medicineIds.length) return {}
 
   const { data, error } = await supabase
     .from('medicines')
-    .select('id, name')
+    .select('id, name, dosage_per_pill, dosage_unit')
     .in('id', medicineIds)
 
   if (error) throw error
 
   return (data ?? []).reduce((acc, m) => {
-    acc[m.id] = m.name
+    acc[m.id] = {
+      name: m.name,
+      dosage_per_pill: m.dosage_per_pill,
+      dosage_unit: m.dosage_unit
+    }
     return acc
   }, {})
 }
