@@ -30,10 +30,21 @@ export function useTodayData() {
     setError(null)
 
     try {
-      if (__DEV__) console.log('[useTodayData] getUser start')
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (__DEV__) console.log('[useTodayData] getUser result — user:', user?.id ?? 'null', 'authError:', authError?.message ?? 'none')
-      if (authError || !user) throw new Error('Sessão expirada.')
+      if (__DEV__) console.log('[useTodayData] session check start')
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      
+      let user = currentSession?.user
+      if (sessionError || !user) {
+        if (__DEV__) console.warn('[useTodayData] getSession failed or null, trying getUser as fallback')
+        const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
+        if (userError || !verifiedUser) {
+          throw new Error('Sessão expirada ou inválida.')
+        }
+        // Fallback bem sucedido
+        user = verifiedUser
+      }
+
+      if (__DEV__) console.log('[useTodayData] auth OK — user:', user.id)
 
       const today = getTodayLocal() // R-020: nunca new Date('YYYY-MM-DD')
       if (__DEV__) console.log('[useTodayData] today:', today)
