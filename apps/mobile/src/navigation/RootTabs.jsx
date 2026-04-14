@@ -5,6 +5,8 @@
 // Iconografia: lucide-react-native — mesmos ícones do BottomNavRedesign.jsx e Sidebar.jsx web
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Calendar, Pill, Package, User } from 'lucide-react-native'
 import { ROUTES } from './routes'
 import TodayScreen from '../features/dashboard/screens/TodayScreen'
@@ -25,6 +27,8 @@ const TAB_ICONS = {
 }
 
 export default function RootTabs() {
+  const insets = useSafeAreaInsets()
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
@@ -42,9 +46,10 @@ export default function RootTabs() {
             backgroundColor: colors.tab.bgDefault,
             borderTopColor: colors.border.default,
             borderTopWidth: 1,
-            paddingBottom: 4,
-            paddingTop: 4,
-            height: 60,
+            // R4-H01: ajustar padding/height para Edge-to-Edge (Android) e Home Indicator (iOS)
+            paddingBottom: Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 12),
+            paddingTop: 8,
+            height: Platform.OS === 'ios' ? 60 + insets.bottom : 72 + insets.bottom,
           },
           tabBarIcon: ({ color, size }) => Icon
             ? <Icon size={size} color={color} strokeWidth={1.75} />
