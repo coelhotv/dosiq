@@ -1,8 +1,8 @@
 # Auditoria: Polyfills Hermes × Supabase JS v2 — Sessão H5.2 (2026-04-13/14)
 
-> **Status:** 🟡 PGRST125 activo — Passo 1 em execução (diagnóstico setter href/search)  
+> **Status:** 🟡 PGRST125 activo — Estratégia A implementada (`3fd9af6`), a aguardar resultado de teste  
 > **Branch:** `feature/hybrid-h5/today-dose`  
-> **Último commit:** `2f12a27` (diagnóstico P1 — aguardar resultado)  
+> **Último commit:** `3fd9af6` (Estratégia A — toString()+_searchPairs)  
 > **Próximo agente:** leia este documento inteiro antes de tocar em `polyfills.js`
 
 ---
@@ -350,22 +350,19 @@ let res = _fetch(this.url.toString(), {...})
 
 ---
 
-## 8. Hipótese de Trabalho do Próximo Agente
+## 8. Hipótese de Trabalho — RESOLVIDA ✅
 
-**Hipótese principal (90% de confiança):** O setter `url.href = newValue` em objectos `URL` do Hermes não persiste quando chamado externamente. O Hermes provavelmente trata `href` como uma propriedade interna gerida pelo engine C++, não por JS. Atribuir via JS é um no-op (silencioso).
+**Hipótese A confirmada (Passo 1, commit `2f12a27`, 2026-04-14):**
 
-**Prova adicional necessária:**
-```js
-// Adicionar este teste no início de polyfills.js para confirmar:
-var _testUrl = new URL('https://example.com/path')
-console.log('[debug] href antes:', _testUrl.href)
-_testUrl.href = 'https://changed.com/newpath'
-console.log('[debug] href depois:', _testUrl.href)
-// Se "depois" = "https://example.com/path" → setter href é silenciosamente ignorado ✅ hipótese confirmada
-// Se "depois" = "https://changed.com/newpath" → setter funciona, bug está noutro lado
+```
+[diag-href] before: https://example.com/path/
+[diag-href] after:  https://example.com/path/   ← INALTERADO — setter href ignorado
+[diag-search] after search setter: https://example.com/path/  ← INALTERADO — setter search também ignorado
 ```
 
-**Se hipótese confirmada:** Implementar Estratégia A (interceptar `toString()` por instância).
+Ambos `url.href = x` e `url.search = x` são **no-ops silenciosos** no Hermes (Expo Go SDK 53, iOS Simulator).
+
+**Acção tomada:** Implementar Estratégia A (commit `3fd9af6`) — ver Secção 5 para detalhes.
 
 ---
 
@@ -534,7 +531,8 @@ Portanto o PGRST125 **não é** causado por nome de coluna inválido — é caus
 | `079776f` | Gemini fixes: stale closure + parseFloat vírgula | ✅ aplicado |
 | `3c98a9d` | Gemini fixes: totalTaken quantity + pct >= 100 | ✅ aplicado |
 | `387e65f` | Auditoria + memória DEVFLOW AP-H11/H12/R-165 | ✅ documentação |
-| `2f12a27` | **P1 DIAGNÓSTICO**: logs setter href e search | 🟡 aguardar resultado |
+| `2f12a27` | **P1 DIAGNÓSTICO**: logs setter href e search | ✅ confirmou: ambos os setters ignorados |
+| `3fd9af6` | **Estratégia A**: toString()+_searchPairs | 🟡 aguardar resultado de teste |
 
 **Branch:** `feature/hybrid-h5/today-dose`
 
