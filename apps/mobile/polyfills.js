@@ -3,6 +3,23 @@
 // SharedArrayBuffer não existe em Hermes/JSC no ambiente React Native
 global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
 
+// ─── DIAGNÓSTICO P1: confirmar se url.href setter persiste no Hermes ───────
+// Auditoria Passo 1 — resultado esperado nos logs:
+//   "after" == "example.com/path" → setter href IGNORADO → confirma hipótese A → implementar Estratégia A
+//   "after" == "changed.com/newpath" → setter funciona → bug está noutro lado → investigar Passo 2b
+;(function diagHrefSetter() {
+  if (typeof URL === 'undefined') { console.log('[diag-href] URL undefined — skip'); return }
+  var u = new URL('https://example.com/path')
+  console.log('[diag-href] before:', u.href)
+  u.href = 'https://changed.com/newpath'
+  console.log('[diag-href] after:', u.href)
+  // Teste adicional: setter search
+  var u2 = new URL('https://example.com/path')
+  u2.search = '?foo=bar'
+  console.log('[diag-search] after search setter:', u2.href)
+})()
+// ────────────────────────────────────────────────────────────────────────────
+
 // URL patch para Hermes RN/Expo Go: new URL() existe mas getters como
 // .protocol, .hostname, etc. lançam "not implemented" (Hermes parcial).
 // Supabase usa esses getters E setters (Realtime faz url.protocol = 'wss:').
