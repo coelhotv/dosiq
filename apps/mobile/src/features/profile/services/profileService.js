@@ -8,12 +8,20 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
  */
 export async function getCurrentUser() {
   try {
-    const { data, error } = await supabase.auth.getUser()
-    if (error) {
-      console.error('Erro ao obter utilizador:', error)
-      return { data: null, error: error.message }
+    // R-020: Usar getSession() primeiro para evitar race conditions em mobile
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    let user = session?.user
+    if (sessionError || !user) {
+      const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        console.error('Erro ao obter utilizador via getUser:', userError)
+        return { data: null, error: userError.message }
+      }
+      user = verifiedUser
     }
-    return { data: data?.user ?? null, error: null }
+    
+    return { data: user ?? null, error: null }
   } catch (err) {
     console.error('Erro ao obter utilizador:', err)
     return { data: null, error: err.message }
@@ -27,7 +35,13 @@ export async function getCurrentUser() {
 export async function logoutUser() {
   try {
     const { error } = await supabase.auth.signOut()
+    
+    // Se a sessão já não existe, o logout foi tecnicamente bem sucedido localmente
     if (error) {
+      if (error.message?.includes('session missing') || error.__isAuthError) {
+        console.warn('Logout: sessão já estava ausente, considerando sucesso.')
+        return { success: true, error: null }
+      }
       console.error('Erro ao fazer logout:', error)
       return { success: false, error: error.message }
     }
