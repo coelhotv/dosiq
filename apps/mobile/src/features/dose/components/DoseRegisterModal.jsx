@@ -42,7 +42,7 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
     setLoading(true)
     setError(null)
 
-    const qty = parseFloat(quantity || defaultQty)
+    const qty = parseFloat((quantity ?? defaultQty).toString().replace(',', '.'))
     if (!qty || qty <= 0) {
       setError('Quantidade deve ser maior que zero.')
       setLoading(false)

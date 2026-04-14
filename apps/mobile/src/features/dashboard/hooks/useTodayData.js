@@ -63,13 +63,14 @@ export function useTodayData() {
       setStale(false)
     } catch (err) {
       console.error('[useTodayData] ERRO FINAL:', err?.message, err?.code, err?.details, err?.hint)
+      console.warn('[useTodayData] stale check — data snapshot presente:', data !== null)
       setError(err.message ?? 'Erro ao carregar dados do dia.')
       // Se há snapshot, marcar como stale em vez de apagar (R5-008)
       if (data !== null) setStale(true)
     } finally {
       setLoading(false)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data]) // data na dep array para evitar stale closure ao verificar snapshot (R5-008)
 
   useEffect(() => {
     load()
