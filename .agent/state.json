@@ -16,12 +16,12 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W16_h5_today_dose",
-    "started_at": "2026-04-14T00:00:00Z",
+    "id": "session_2026W16_h5_today_dose_debug",
+    "started_at": "2026-04-14T01:00:00Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "PR2 - H5.2 + H5.3: TodayScreen (dados reais) + DoseRegisterModal",
-    "goal_type": "feature",
+    "goal": "PR#466 debug + merge: PGRST125, stack overflow, trailing slash, loop infinito, timezone, totalTaken",
+    "goal_type": "fix",
     "acceptance_criteria": [
       "Shell + tabs (Hoje/Tratamentos/Estoque/Perfil) funcionando",
       "TodayScreen com resumo do dia e CTA de registo de dose",
@@ -40,7 +40,7 @@
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.2",
+      "sprint": "H5.3",
       "status": "completed",
       "planned_at": "2026-04-12T22:00:00Z",
       "previous_wave": "H4",
@@ -52,12 +52,12 @@
   },
   "memory": {
     "rules_count": 112,
-    "anti_patterns_count": 81,
+    "anti_patterns_count": 89,
     "decisions_count": 28,
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-13T21:50:00Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 3,
     "recent_additions": {
       "rules": [
         "R-158",

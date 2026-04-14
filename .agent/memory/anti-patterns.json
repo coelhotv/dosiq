@@ -1872,5 +1872,53 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H13",
+    "title": "Read this.href inside URL.prototype.toString override on Hermes",
+    "summary": "No Hermes, o getter nativo href chama toString() internamente. Substituir toString() e ler this.href dentro cria recursão infinita → RangeError: Maximum call stack size exceeded.",
+    "applies_to": ["apps/mobile/polyfills.js"],
+    "tags": ["mobile", "expo", "hermes", "polyfill", "recursion"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-14",
+    "expiry_date": "2027-04-14",
+    "status": "active",
+    "related_rule": "R-165",
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H14",
+    "title": "Use raw YYYY-MM-DDT00:00:00 boundaries for UTC timestamptz queries",
+    "summary": "getTodayLogs com boundaries '2026-04-13T00:00:00' (sem timezone) é tratado como UTC puro pelo PostgREST. Doses gravadas às 22:30 local (01:30 UTC do dia seguinte) ficam fora do intervalo → logs OK: 0. Usar parseLocalDate(dateStr).toISOString() para boundaries UTC correctas.",
+    "applies_to": ["apps/mobile/src/features/dashboard/services/dashboardService.js"],
+    "tags": ["mobile", "timezone", "supabase", "postgrest", "date"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-14",
+    "expiry_date": "2027-04-14",
+    "status": "active",
+    "related_rule": "R-020",
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H15",
+    "title": "Use useCallback with state in deps when effect depends on the callback",
+    "summary": "useCallback com state no deps array + useEffect([callback]) cria loop infinito: state muda → novo callback → effect re-executa → novo fetch → state muda → ... Usar useRef para valores que precisam de ser lidos no callback sem causar re-renders.",
+    "applies_to": ["apps/mobile/src/features/dashboard/hooks/useTodayData.js"],
+    "tags": ["mobile", "react", "hooks", "useCallback", "useEffect", "loop"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-14",
+    "expiry_date": "2027-04-14",
+    "status": "active",
+    "related_rule": null,
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "react-hooks"
   }
 ]
