@@ -31,6 +31,7 @@ const current = variants[BUILD_PROFILE] || variants.development
 module.exports = {
   expo: {
     name: current.name,
+    owner: 'coelhotv',
     slug: current.slug,
     // DL-001: scheme canônico do projeto
     scheme: 'meusremedios',
@@ -58,6 +59,10 @@ module.exports = {
       appEnv: process.env.EXPO_PUBLIC_APP_ENV || BUILD_PROFILE,
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      eas: {
+        projectId: '7169f55a-6de7-465f-b007-f5eb6034c8e6',
+      },
+      owner: "coelhotv"
     },
   },
 }
