@@ -152,17 +152,22 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
 ;(function patchSearchParamsViaToString() {
   if (typeof URL === 'undefined') return
 
+  // CRÍTICO: capturar toString nativo ANTES de o substituir.
+  // No Hermes, o getter href chama toString() internamente (spec WHATWG: href = serialize URL).
+  // Se não capturarmos, toString() → this.href → Hermes invoca toString() → loop infinito (stack overflow).
+  var _nativeToString = URL.prototype.toString
+
   // toString() sobreescrito: constrói URL com _searchPairs se existirem
-  // Extrai base do href directamente (indexOf, sem depender de getters)
+  // Usa _nativeToString para obter href base (evita recursão via href getter nativo)
   URL.prototype.toString = function () {
-    if (!this._searchPairs || !this._searchPairs.length) return this.href
+    var href = _nativeToString.call(this)   // href nativo, sem passar por este override
+    if (!this._searchPairs || !this._searchPairs.length) return href
     var pairs = this._searchPairs
     var qs = ''
     for (var i = 0; i < pairs.length; i++) {
       if (i) qs += '&'
       qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
     }
-    var href = this.href
     var q = href.indexOf('?')
     var h = href.indexOf('#')
     var base = q >= 0 ? href.slice(0, q) : (h >= 0 ? href.slice(0, h) : href)
