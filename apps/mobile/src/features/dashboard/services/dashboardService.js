@@ -58,24 +58,28 @@ export async function getTodayLogs(userId, dateStr) {
 }
 
 /**
- * Busca os nomes dos medicamentos referenciados pelos protocolos.
+ * Busca os dados dos medicamentos referenciados pelos protocolos.
  * Usado para enriquecer a lista de doses na tela Hoje.
  *
  * @param {string[]} medicineIds
- * @returns {Promise<Record<string, string>>} — map de id → name
+ * @returns {Promise<Record<string, Object>>} — map de id → { name, dosage_per_pill, dosage_unit }
  */
-export async function getMedicineNames(medicineIds) {
+export async function getMedicinesData(medicineIds) {
   if (!medicineIds.length) return {}
 
   const { data, error } = await supabase
     .from('medicines')
-    .select('id, name')
+    .select('id, name, dosage_per_pill, dosage_unit')
     .in('id', medicineIds)
 
   if (error) throw error
 
   return (data ?? []).reduce((acc, m) => {
-    acc[m.id] = m.name
+    acc[m.id] = {
+      name: m.name,
+      dosage_per_pill: m.dosage_per_pill,
+      dosage_unit: m.dosage_unit
+    }
     return acc
   }, {})
 }
