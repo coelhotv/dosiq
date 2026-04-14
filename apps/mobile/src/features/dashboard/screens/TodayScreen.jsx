@@ -29,7 +29,7 @@ export default function TodayScreen() {
 
   const protocols = data?.protocols ?? []
   const logs = data?.logs ?? []
-  const medicineNames = data?.medicineNames ?? {}
+  const medicines = data?.medicines ?? {}
 
   // Calcular totais para o card de resumo
   const totalExpected = protocols.reduce((sum, p) => sum + (p.time_schedule?.length ?? 1), 0)
@@ -73,7 +73,7 @@ export default function TodayScreen() {
           <UpcomingDosesList
             protocols={protocols}
             logs={logs}
-            medicineNames={medicineNames}
+            medicines={medicines}
             onRegister={setModalProtocol}
           />
         )}
@@ -82,7 +82,7 @@ export default function TodayScreen() {
       <DoseRegisterModal
         visible={modalProtocol !== null}
         protocol={modalProtocol}
-        medicineName={modalProtocol ? (medicineNames[modalProtocol.medicine_id] ?? 'Medicamento') : ''}
+        medicineName={modalProtocol ? (medicines[modalProtocol.medicine_id]?.name ?? 'Medicamento') : ''}
         onClose={() => setModalProtocol(null)}
         onSuccess={handleRegisterSuccess}
       />

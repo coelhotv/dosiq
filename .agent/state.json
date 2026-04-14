@@ -16,33 +16,35 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W16_h5_arch_review",
-    "started_at": "2026-04-14T03:30:00Z",
+    "id": "session_2026W16_h5_4_treatments",
+    "started_at": "2026-04-14T04:32:00Z",
     "mode": "reviewing",
-    "status": "completed",
-    "goal": "Architecture review H5 + polyfill spike + UX parity hotfix + DEVFLOW memory update",
-    "goal_type": "review",
+    "status": "reviewing",
+    "goal": "PR 3 - H5.4: Tratamentos",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "Architecture review document (ARCHITECTURE_REVIEW_H5.md) created and committed",
-      "Quick fixes applied: __DEV__ guards, timezone R-020, spec src/app→navigation",
-      "whatwg-url spike completed and documented (FAIL — WebIDL ctorRegistry)",
-      "UX parity hotfix: Registar→Tomar, registados→tomados (P-011)",
-      "Sprint plan decisions #1-4 resolved",
-      "DEVFLOW memory updated: R-166..168, AP-H16..17, K-073..076"
+      "PR #467 (H5.4) criado: https://github.com/coelhotv/meus-remedios/pull/467",
+      "Lista de tratamentos/protocolos ativos exibida no mobile",
+      "P-011 Paridade UX: manter termos da web (Tomar/Tomados)",
+      "Aprovação manual do usuário recebida (Bloqueante R-060)",
+      "Merge realizado pelo usuário ou via comando aprovado"
     ],
     "active_wave": {
       "name": "Wave H5 — MVP Produto Mobile (Fase 5)",
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.3",
-      "status": "completed",
+      "sprint": "H5.4",
+      "status": "in-progress",
       "planned_at": "2026-04-12T22:00:00Z",
-      "previous_wave": "H4",
+      "previous_wave": "H5.3",
       "prs_planned": 6,
-      "blocking_decision": null,
-      "adrs_proposed": ["ADR-029", "ADR-030"],
-      "notes": "H5.3 COMPLETED. Architecture review done. Polyfill confirmed as definitive (spike FAIL). UX parity P-011 established. All sprint plan decisions resolved: Telegram=Option A, ADR-029/030=approved, Android H5.1=validated. Ready for H5.4 (Tratamentos). CRITICO: nunca criar apps/mobile/src/app/ (AP-H09 + R-163). Polyfill custom é definitivo (R-168 + AP-H17)."
+      "blocking_decision": "Aprovação da PR H5.4 (Tratamentos)",
+      "adrs_proposed": [
+        "ADR-029",
+        "ADR-030"
+      ],
+      "notes": "H5.4 IMPLEMENTADA NA BRANCH. AGUARDANDO REVISÃO. Falha anterior de merge direto corrigida via git reset --force."
     }
   },
   "memory": {

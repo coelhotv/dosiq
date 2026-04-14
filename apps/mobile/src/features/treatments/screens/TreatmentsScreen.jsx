@@ -1,39 +1,76 @@
 // TreatmentsScreen.jsx — tela "Tratamentos" do MVP mobile
-// Sprint H5.4 irá implementar lista de protocolos activos
+// Exibe a lista de protocolos ativos do usuário
 
-import { View, Text, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { FlatList, View, Text, StyleSheet } from 'react-native'
+import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
+import LoadingState from '../../../shared/components/states/LoadingState'
+import ErrorState from '../../../shared/components/states/ErrorState'
+import EmptyState from '../../../shared/components/states/EmptyState'
+import TreatmentCard from '../components/TreatmentCard'
+import { useTreatments } from '../hooks/useTreatments'
+import { colors, spacing } from '../../../shared/styles/tokens'
 
 export default function TreatmentsScreen() {
+  const { data, loading, error, refresh } = useTreatments()
+
+  if (loading && !data) {
+    return (
+      <ScreenContainer>
+        <LoadingState message="Carregando seus tratamentos..." />
+      </ScreenContainer>
+    )
+  }
+
+  if (error && !data) {
+    return (
+      <ScreenContainer>
+        <ErrorState message={error} onRetry={refresh} />
+      </ScreenContainer>
+    )
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Tratamentos</Text>
-        <Text style={styles.subtitle}>Lista de protocolos activos — em breve</Text>
-      </View>
-    </SafeAreaView>
+    <ScreenContainer>
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <TreatmentCard treatment={item} />}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.title}>Meus Tratamentos</Text>
+            <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState 
+            title="Nenhum tratamento ativo"
+            message="Você não possui protocolos de tratamento configurados no momento."
+          />
+        }
+        refreshing={loading}
+        onRefresh={refresh}
+      />
+    </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
+  listContent: {
+    padding: spacing[4],
+    paddingBottom: spacing[10],
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+  header: {
+    marginBottom: spacing[6],
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: colors.text.primary,
+    marginBottom: spacing[1],
   },
   subtitle: {
     fontSize: 15,
-    color: '#64748b',
+    color: colors.text.secondary,
   },
 })

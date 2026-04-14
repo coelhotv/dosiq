@@ -537,5 +537,12 @@
     "fact": "Comprehensive architecture review for hybrid project lives in plans/backlog-native_app/ARCHITECTURE_REVIEW_H5.md. Contains 11 sections: executive summary, quantitative evidence, root cause analysis, what's right/wrong, risk matrix, recommendations (A/B/C categories), spike results, and applied fixes. Living document — updated during explorations.",
     "valid_for": ["mobile", "architecture", "documentation"],
     "source": "Created 2026-04-14"
+  },
+  {
+    "id": "K-077",
+    "topic": "project-path-preference",
+    "fact": "Use ~/git-icloud/meus-remedios/ as the primary project path for shell commands and file references. It is a symlink to the iCloud path and easier to read/write.",
+    "valid_for": ["general", "ops"],
+    "source": "User request 2026-04-14"
   }
 ]
