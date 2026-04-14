@@ -1,5 +1,5 @@
-import React from 'react'
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import React, { useMemo } from 'react'
+import { SectionList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useStock } from '../hooks/useStock'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
@@ -12,6 +12,28 @@ import StockItem from '../components/StockItem'
  */
 export default function StockScreen() {
   const { data, loading, error, refreshing, refresh } = useStock()
+
+  // Formata os dados no formato esperado pelo SectionList
+  const sections = useMemo(() => {
+    if (!data) return []
+    const list = []
+    
+    if (data.active.length > 0) {
+      list.push({
+        title: 'Estoque em Uso',
+        data: data.active
+      })
+    }
+    
+    if (data.inactive.length > 0) {
+      list.push({
+        title: 'Sem tratamento ativo',
+        data: data.inactive
+      })
+    }
+    
+    return list
+  }, [data])
 
   if (loading && !refreshing) {
     return (
@@ -34,10 +56,15 @@ export default function StockScreen() {
 
   return (
     <ScreenContainer>
-      <FlatList
-        data={data}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <StockItem medicine={item} />}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
+        )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl 
@@ -66,14 +93,11 @@ export default function StockScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingBottom: 20
+    paddingBottom: 40
   },
   header: {
     padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    marginBottom: 10
+    backgroundColor: '#fff'
   },
   title: {
     fontSize: 24,
@@ -85,5 +109,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     lineHeight: 20
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f9fafb'
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
   }
 })

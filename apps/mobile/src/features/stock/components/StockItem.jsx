@@ -13,7 +13,8 @@ export default function StockItem({ medicine }) {
     totalQuantity, 
     dosage_unit, 
     status, 
-    daysRemaining 
+    daysRemaining,
+    hasActiveProtocol
   } = medicine
 
   return (
@@ -29,13 +30,15 @@ export default function StockItem({ medicine }) {
             </Text>
           </View>
           
-          <StockLevelBadge 
-            status={status} 
-            daysRemaining={daysRemaining} 
-          />
+          {hasActiveProtocol && (
+            <StockLevelBadge 
+              status={status} 
+              daysRemaining={daysRemaining} 
+            />
+          )}
         </View>
 
-        {daysRemaining !== Infinity && (
+        {hasActiveProtocol && daysRemaining !== Infinity && (
           <Text style={styles.helperText}>
             Estimativa baseada nos seus protocolos ativos.
           </Text>

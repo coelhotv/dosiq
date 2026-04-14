@@ -25,13 +25,14 @@ export function useStock() {
       
       if (!result.success) throw new Error(result.error)
 
-      // Processamento dos dados para ADR-018
-      const processedData = result.data.map(item => {
+      // 1. Processamento base e cálculo ADR-018
+      const processed = result.data.map(item => {
         const totalQuantity = item.medicine_stock_summary?.[0]?.total_quantity || 0
         
-        // Cálculo do consumo diário baseado nos protocolos ativos
-        // Nota: Assumindo frequência diária conforme simplificação atual (H5.5)
-        const dailyConsumption = (item.protocols || []).reduce((acc, p) => {
+        // Protocolos ativos vinculados
+        const activeProtocols = (item.protocols || []).filter(p => p.active)
+        
+        const dailyConsumption = activeProtocols.reduce((acc, p) => {
           const intakesPerDay = (p.time_schedule || []).length || 1
           return acc + (Number(p.dosage_per_intake) * intakesPerDay)
         }, 0)
@@ -43,20 +44,20 @@ export function useStock() {
         // Classificação conforme ADR-018
         let status = 'HIGH'
         let statusLabel = 'Bom'
-        let color = '#3b82f6' // Blue
+        let color = '#3b82f6'
 
         if (daysRemaining < 7) {
           status = 'CRITICAL'
           statusLabel = 'Crítico'
-          color = '#ef4444' // Red
+          color = '#ef4444'
         } else if (daysRemaining < 14) {
           status = 'LOW'
           statusLabel = 'Baixo'
-          color = '#f59e0b' // Orange
+          color = '#f59e0b'
         } else if (daysRemaining < 30) {
           status = 'NORMAL'
           statusLabel = 'Normal'
-          color = '#22c55e' // Green
+          color = '#22c55e'
         }
 
         return {
@@ -66,12 +67,25 @@ export function useStock() {
           daysRemaining,
           status,
           statusLabel,
-          color
+          color,
+          hasActiveProtocol: activeProtocols.length > 0
         }
       })
 
+      // 2. Filtragem: Remover quem não tem estoque E não tem protocolo ativo
+      const filtered = processed.filter(item => item.totalQuantity > 0 || item.hasActiveProtocol)
+
+      // 3. Categorização e Ordenação
+      const active = filtered
+        .filter(item => item.hasActiveProtocol)
+        .sort((a, b) => a.daysRemaining - b.daysRemaining) // Urgência primeiro
+
+      const inactive = filtered
+        .filter(item => !item.hasActiveProtocol)
+        .sort((a, b) => a.name.localeCompare(b.name))
+
       setState({
-        data: processedData,
+        data: { active, inactive },
         loading: false,
         error: null,
         refreshing: false
