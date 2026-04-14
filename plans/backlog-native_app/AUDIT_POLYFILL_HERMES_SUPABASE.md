@@ -1,8 +1,8 @@
 # Auditoria: Polyfills Hermes × Supabase JS v2 — Sessão H5.2 (2026-04-13/14)
 
-> **Status:** 🔴 PGRST125 ainda activo na última tentativa  
+> **Status:** 🟡 PGRST125 activo — Passo 1 em execução (diagnóstico setter href/search)  
 > **Branch:** `feature/hybrid-h5/today-dose`  
-> **Último commit relevante:** `6c959fc` (LiveURLSearchParams)  
+> **Último commit:** `2f12a27` (diagnóstico P1 — aguardar resultado)  
 > **Próximo agente:** leia este documento inteiro antes de tocar em `polyfills.js`
 
 ---
@@ -527,10 +527,14 @@ Portanto o PGRST125 **não é** causado por nome de coluna inválido — é caus
 
 ## 13. Commits Relevantes
 
-| Hash | Descrição |
-|------|-----------|
-| `1605c31` | Logs granulares em useTodayData + supabase-init (diagnóstico) |
-| `6c959fc` | LiveURLSearchParams v1 (falhou — href setter ignorado no Hermes) |
+| Hash | Descrição | Resultado |
+|------|-----------|-----------|
+| `1605c31` | Logs granulares em useTodayData + supabase-init | ✅ confirmou PGRST125 |
+| `6c959fc` | LiveURLSearchParams v1 — _sync via url.href | ❌ falhou — href setter ignorado |
+| `079776f` | Gemini fixes: stale closure + parseFloat vírgula | ✅ aplicado |
+| `3c98a9d` | Gemini fixes: totalTaken quantity + pct >= 100 | ✅ aplicado |
+| `387e65f` | Auditoria + memória DEVFLOW AP-H11/H12/R-165 | ✅ documentação |
+| `2f12a27` | **P1 DIAGNÓSTICO**: logs setter href e search | 🟡 aguardar resultado |
 
 **Branch:** `feature/hybrid-h5/today-dose`
 
