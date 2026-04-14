@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Política de Privacidade | Meus Remédios</title>
+    <meta
+      name="description"
+      content="Política de Privacidade do Meus Remédios para app web e app mobile."
+    />
+    <meta name="robots" content="index,follow" />
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: rgba(255, 255, 255, 0.82);
+        --surface-strong: #ffffff;
+        --text: #17313b;
+        --muted: #53666f;
+        --line: rgba(23, 49, 59, 0.12);
+        --brand: #1d6c63;
+        --brand-2: #c67f45;
+        --shadow: 0 24px 80px rgba(23, 49, 59, 0.12);
+        --radius-xl: 28px;
+        --radius-lg: 18px;
+        --max: 920px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "Avenir Next", "Nunito Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(29, 108, 99, 0.12), transparent 28%),
+          radial-gradient(circle at top right, rgba(198, 127, 69, 0.16), transparent 24%),
+          linear-gradient(180deg, #fcfaf6 0%, var(--bg) 100%);
+      }
+
+      a {
+        color: var(--brand);
+      }
+
+      .shell {
+        width: min(calc(100% - 32px), var(--max));
+        margin: 0 auto;
+      }
+
+      .hero {
+        padding: 56px 0 28px;
+      }
+
+      .hero-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72));
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        padding: 32px;
+        backdrop-filter: blur(12px);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(29, 108, 99, 0.1);
+        color: var(--brand);
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      h1 {
+        margin: 18px 0 12px;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        line-height: 0.96;
+        letter-spacing: -0.04em;
+      }
+
+      .lede {
+        max-width: 64ch;
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .meta span {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(23, 49, 59, 0.06);
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      main {
+        padding: 12px 0 64px;
+      }
+
+      .section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 12px 36px rgba(23, 49, 59, 0.06);
+        padding: 28px;
+        margin-bottom: 18px;
+      }
+
+      .section h2 {
+        margin: 0 0 14px;
+        font-size: 1.35rem;
+        letter-spacing: -0.03em;
+      }
+
+      .section h3 {
+        margin: 22px 0 10px;
+        font-size: 1rem;
+      }
+
+      .section p,
+      .section li {
+        color: var(--muted);
+        line-height: 1.72;
+      }
+
+      .section ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .callout {
+        border-left: 4px solid var(--brand-2);
+        background: rgba(198, 127, 69, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-top: 16px;
+      }
+
+      .contact-card {
+        background: var(--surface-strong);
+        border: 1px dashed rgba(29, 108, 99, 0.35);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      footer {
+        padding: 0 0 48px;
+      }
+
+      .footer-card {
+        padding: 20px 22px;
+        border-radius: 20px;
+        background: rgba(23, 49, 59, 0.06);
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      @media (max-width: 640px) {
+        .hero {
+          padding-top: 28px;
+        }
+
+        .hero-card,
+        .section {
+          padding: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="shell">
+        <div class="hero-card">
+          <div class="eyebrow">Privacidade e Proteção de Dados</div>
+          <h1>Política de Privacidade</h1>
+          <p class="lede">
+            Esta política explica como o Meus Remédios trata dados pessoais no app web e no app
+            mobile, com foco em transparência, minimização de dados e cuidado com informações de
+            saúde.
+          </p>
+          <div class="meta">
+            <span>Produto: Meus Remédios</span>
+            <span>Versão do documento: 0.1</span>
+            <span>Última atualização: 14/04/2026</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="shell">
+        <section class="section">
+          <h2>1. Introdução</h2>
+          <p>
+            O <strong>Meus Remédios</strong> é um aplicativo para organização da rotina de
+            medicamentos, acompanhamento de tratamentos, registro de doses e controle de estoque.
+          </p>
+          <p>
+            Esta Política de Privacidade explica quais dados podem ser tratados pelo aplicativo,
+            para quais finalidades, como esses dados são protegidos e quais escolhas e direitos o
+            usuário possui.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>2. Responsável pelo tratamento dos dados</h2>
+          <div class="contact-card">
+            <p><strong>Responsável pelo aplicativo:</strong> Meus Remédios</p>
+            <p><strong>Contato de suporte e privacidade:</strong> contact@coelho.me</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>3. Quais dados podem ser tratados</h2>
+          <h3>3.1. Dados de cadastro e autenticação</h3>
+          <ul>
+            <li>e-mail</li>
+            <li>identificador interno de usuário</li>
+            <li>informações necessárias para autenticação e manutenção de sessão</li>
+          </ul>
+
+          <h3>3.2. Dados de saúde e rotina informados pelo usuário</h3>
+          <ul>
+            <li>nomes de medicamentos</li>
+            <li>tratamentos e protocolos cadastrados</li>
+            <li>doses, horários e frequências</li>
+            <li>registros de doses tomadas</li>
+            <li>informações de estoque dos medicamentos</li>
+          </ul>
+
+          <p>
+            Esses dados podem ser considerados <strong>dados pessoais sensíveis</strong>, nos
+            termos da LGPD, por estarem relacionados à saúde.
+          </p>
+
+          <h3>3.3. Dados técnicos mínimos de funcionamento</h3>
+          <ul>
+            <li>informações básicas de sessão</li>
+            <li>identificadores técnicos necessários para funcionamento da conta</li>
+            <li>dados necessários para segurança, autenticação e integridade da aplicação</li>
+          </ul>
+
+          <h3>3.4. O que o app não faz por padrão</h3>
+          <ul>
+            <li>não vende dados pessoais</li>
+            <li>não compartilha dados de saúde com anunciantes</li>
+            <li>não usa rastreamento publicitário como finalidade principal do produto</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>4. Para que usamos esses dados</h2>
+          <ul>
+            <li>permitir login e acesso seguro à conta</li>
+            <li>mostrar a rotina diária de medicamentos</li>
+            <li>registrar doses e acompanhar adesão ao tratamento</li>
+            <li>exibir tratamentos ativos</li>
+            <li>controlar estoque de medicamentos</li>
+            <li>manter sincronização entre dispositivos, quando aplicável</li>
+            <li>oferecer suporte ao usuário</li>
+            <li>cumprir obrigações legais e de segurança, quando necessário</li>
+          </ul>
+          <p>
+            O app não substitui acompanhamento médico, diagnóstico, prescrição ou atendimento de
+            urgência.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>5. Base legal e princípios de privacidade</h2>
+          <p>
+            O tratamento de dados pessoais é realizado com fundamento nas bases legais aplicáveis,
+            incluindo execução dos serviços solicitados pelo usuário, segurança da aplicação,
+            cumprimento de obrigações legais e, quando necessário, consentimento para tratamentos
+            específicos.
+          </p>
+          <p>O Meus Remédios busca seguir os princípios da LGPD, especialmente:</p>
+          <ul>
+            <li>finalidade</li>
+            <li>necessidade</li>
+            <li>transparência</li>
+            <li>segurança</li>
+            <li>prevenção</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>6. Armazenamento e infraestrutura</h2>
+          <p>
+            O Meus Remédios pode utilizar infraestrutura própria e de terceiros para operar a
+            aplicação, incluindo autenticação, banco de dados, hospedagem e serviços necessários ao
+            funcionamento do produto.
+          </p>
+          <p>
+            No estado atual do projeto, parte central da persistência e autenticação é operada com
+            apoio de infraestrutura Supabase.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>7. Compartilhamento de dados</h2>
+          <p>Os dados não são compartilhados com terceiros para venda de informações pessoais.</p>
+          <p>O compartilhamento pode ocorrer apenas nas seguintes hipóteses:</p>
+          <ul>
+            <li>com provedores de infraestrutura necessários para operar o aplicativo</li>
+            <li>quando houver obrigação legal ou ordem de autoridade competente</li>
+            <li>quando o usuário solicitar ou autorizar uma integração específica</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>8. Segurança das informações</h2>
+          <p>
+            São adotadas medidas razoáveis para proteger os dados pessoais contra acesso não
+            autorizado, uso indevido, alteração, divulgação ou destruição indevida.
+          </p>
+          <ul>
+            <li>autenticação de usuário</li>
+            <li>controle de acesso por conta</li>
+            <li>segregação lógica de dados</li>
+            <li>uso de infraestrutura com mecanismos adequados de segurança</li>
+          </ul>
+          <p>
+            Ainda assim, nenhum sistema é totalmente invulnerável. Por isso, também é importante
+            que o usuário proteja suas credenciais de acesso.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>9. Direitos do usuário</h2>
+          <p>Nos termos da legislação aplicável, o usuário pode solicitar:</p>
+          <ul>
+            <li>confirmação da existência de tratamento</li>
+            <li>acesso aos próprios dados</li>
+            <li>correção de dados incompletos, inexatos ou desatualizados</li>
+            <li>anonimização, bloqueio ou eliminação, quando cabível</li>
+            <li>portabilidade, quando aplicável</li>
+            <li>informações sobre compartilhamento</li>
+            <li>revogação de consentimento, quando essa for a base legal aplicável</li>
+            <li>solicitação de exclusão de conta e dados, conforme limites legais e operacionais</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>10. Exclusão de conta e dados</h2>
+          <p>
+            No período de MVP e beta, o processo de exclusão de conta pode ocorrer inicialmente por
+            solicitação ao suporte.
+          </p>
+          <div class="contact-card">
+            <p><strong>Canal de solicitação:</strong> contact@coelho.me</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>11. Retenção de dados</h2>
+          <p>Os dados podem ser mantidos pelo tempo necessário para:</p>
+          <ul>
+            <li>executar as funcionalidades do app</li>
+            <li>atender solicitações do usuário</li>
+            <li>cumprir obrigações legais e regulatórias</li>
+            <li>preservar segurança e integridade do serviço</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>12. Crianças e adolescentes</h2>
+          <p>
+            O Meus Remédios não é direcionado intencionalmente a crianças sem supervisão de
+            responsável. Se o uso envolver dados de menores de idade, devem ser observados os
+            requisitos legais aplicáveis.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>13. Transferência internacional</h2>
+          <p>
+            Dependendo dos provedores de infraestrutura utilizados, alguns dados podem ser
+            processados em servidores localizados fora do Brasil. Quando isso ocorrer, serão
+            buscados fornecedores com padrões adequados de segurança e proteção de dados.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>14. Alterações desta política</h2>
+          <p>
+            Esta Política de Privacidade poderá ser atualizada periodicamente para refletir evolução
+            do produto, mudanças legais ou alterações técnicas relevantes. A versão atualizada
+            passará a ser disponibilizada no canal oficial do produto.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="shell">
+        <div class="footer-card">
+          Meus Remédios • Política de Privacidade • Documento público para ficha de loja e canais
+          oficiais do produto.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
