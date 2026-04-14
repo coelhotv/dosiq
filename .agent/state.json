@@ -16,10 +16,10 @@
     "current_sprint": "H5.5"
   },
   "session": {
-    "id": "session_2026W16_h5_4_treatments",
-    "started_at": "2026-04-14T04:32:00Z",
-    "mode": "waiting",
-    "status": "reviewing",
+    "id": "session_2026W16_h5_5_stock",
+    "started_at": "2026-04-14T15:55:00Z",
+    "mode": "coding",
+    "status": "analysis",
     "goal": "PR 4 - H5.5: Estoque",
     "goal_type": "feature",
     "acceptance_criteria": [
