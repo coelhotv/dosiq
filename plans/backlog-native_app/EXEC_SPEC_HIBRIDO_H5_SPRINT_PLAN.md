@@ -275,11 +275,11 @@ apps/mobile/src/
 
 ---
 
-### PR 4 — H5.5: Estoque
+### PR 4 — H5.5: Estoque ✅
 
-**Branch:** `feature/hybrid-h5/stock`
+**Branch:** `feature/hybrid-h5/stock` (Merged: PR #468)
 
-**Ficheiros a criar:**
+**Ficheiros criados:**
 - `features/stock/services/stockService.js`
 - `features/stock/hooks/useStock.js`
 - `features/stock/components/StockItem.jsx`
@@ -287,10 +287,12 @@ apps/mobile/src/
 - `features/stock/screens/StockScreen.jsx`
 
 **Critério de aceitação:**
-- Lista de medicamentos com nível de estoque
-- Badge de nível: CRITICAL(vermelho)/LOW(amarelo)/NORMAL(verde)/HIGH(azul) — ADR-018
-- Loading/empty/error
-- Fluxos manuais validados (iOS simulator + Android emulator)
+- Lista de medicamentos com nível de estoque ✅
+- Badge de nível: CRITICAL/LOW/NORMAL/HIGH — ADR-018 ✅
+- Priorização por urgência (daysRemaining) ✅
+- Seccionamento: "Em Uso" vs "Sem tratamento ativo" ✅
+- Loading/empty/error ✅
+- Fluxos manuais validados (iOS simulator + Android emulator) ✅
 
 ---
 
@@ -507,10 +509,10 @@ export default function TodayScreen() {
 - [x] Tela Hoje funcional (resumo do dia + CTA de dose)
 - [x] Fluxo de registo de dose funcional
 - [x] Tela Tratamentos funcional (lista de protocolos)
-- [ ] Tela Estoque funcional (4 níveis de risco)
+- [x] Tela Estoque funcional (4 níveis de risco + priorização)
 - [ ] Tela Perfil funcional (email, logout, estado Telegram)
 - [ ] Vinculo Telegram (se decisão tomada) ou adiado explicitamente
-- [ ] Loading/empty/error em todas as telas principais
+- [x] Loading/empty/error em todas as telas principais (H5.1-H5.5)
 - [ ] Stale offline states onde há snapshot local
 - [ ] Fluxos manuais validados (iOS + Android)
 - [ ] Testes unitários para screens e hooks críticos
@@ -520,4 +522,4 @@ export default function TodayScreen() {
 
 ---
 
-*Criado por DEVFLOW Planning — 2026-04-12*
+*Atualizado por DEVFLOW Coding — 2026-04-14 (H5.5 ✅)*
