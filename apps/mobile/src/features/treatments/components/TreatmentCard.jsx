@@ -45,7 +45,18 @@ export default function TreatmentCard({ treatment }) {
 
   return (
     <SectionCard 
-      title={medicine?.name || name}
+      title={
+        <View style={styles.titleWrapper}>
+          <Text style={styles.titleText}>{medicine?.name || name}</Text>
+          {medicine?.dosage_per_pill && (
+            <View style={styles.dosagePill}>
+              <Text style={styles.dosagePillText}>
+                {medicine.dosage_per_pill}{medicine.dosage_unit}
+              </Text>
+            </View>
+          )}
+        </View>
+      }
       headerAction={<StatusBadge label={titration_status} type={getStatusType(titration_status)} />}
     >
       <View style={styles.content}>
@@ -55,8 +66,8 @@ export default function TreatmentCard({ treatment }) {
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Dose:</Text>
-          <Text style={styles.value}>{dosage_per_intake} {medicine?.type || 'unid.'}</Text>
+          <Text style={styles.label}>Dose por tomada:</Text>
+          <Text style={styles.value}>{dosage_per_intake} unidades</Text>
         </View>
 
         {time_schedule && time_schedule.length > 0 && (
@@ -77,6 +88,29 @@ export default function TreatmentCard({ treatment }) {
 }
 
 const styles = StyleSheet.create({
+  titleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  titleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  dosagePill: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  dosagePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.neutral[700],
+  },
   content: {
     gap: spacing[2],
   },

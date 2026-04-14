@@ -17,7 +17,13 @@ export default function SectionCard({ title, children, style, headerAction }) {
     <View style={[styles.container, style]}>
       {(title || headerAction) && (
         <View style={styles.header}>
-          {title && <Text style={styles.title}>{title}</Text>}
+          {title && (
+            typeof title === 'string' ? (
+              <Text style={styles.title}>{title}</Text>
+            ) : (
+              <View style={styles.titleContainer}>{title}</View>
+            )
+          )}
           {headerAction && <View>{headerAction}</View>}
         </View>
       )}
@@ -47,6 +53,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text.primary,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: spacing[2],
   },
   content: {
     // Espaçamento interno extra se necessário

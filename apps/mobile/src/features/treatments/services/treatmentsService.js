@@ -26,7 +26,9 @@ export async function getActiveTreatments(userId) {
         medicine:medicine_id (
           id,
           name,
-          type
+          type,
+          dosage_per_pill,
+          dosage_unit
         )
       `)
       .eq('user_id', userId)
