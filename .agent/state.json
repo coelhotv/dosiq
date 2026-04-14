@@ -16,24 +16,19 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W16_h5_today_dose_debug",
-    "started_at": "2026-04-14T01:00:00Z",
-    "mode": "coding",
+    "id": "session_2026W16_h5_arch_review",
+    "started_at": "2026-04-14T03:30:00Z",
+    "mode": "reviewing",
     "status": "completed",
-    "goal": "PR#466 debug + merge: PGRST125, stack overflow, trailing slash, loop infinito, timezone, totalTaken",
-    "goal_type": "fix",
+    "goal": "Architecture review H5 + polyfill spike + UX parity hotfix + DEVFLOW memory update",
+    "goal_type": "review",
     "acceptance_criteria": [
-      "Shell + tabs (Hoje/Tratamentos/Estoque/Perfil) funcionando",
-      "TodayScreen com resumo do dia e CTA de registo de dose",
-      "Fluxo de registo de dose funcional (modal/sheet)",
-      "TreatmentsScreen com lista de protocolos activos",
-      "StockScreen com 4 niveis de risco (ADR-018)",
-      "ProfileScreen com email, logout, estado Telegram",
-      "Loading/empty/error em todas as telas principais",
-      "Stale offline states onde ha snapshot local",
-      "npm run test:critical passa (543/543 web)",
-      "npm run build passa",
-      "Zero dependencias de componentes web"
+      "Architecture review document (ARCHITECTURE_REVIEW_H5.md) created and committed",
+      "Quick fixes applied: __DEV__ guards, timezone R-020, spec src/app→navigation",
+      "whatwg-url spike completed and documented (FAIL — WebIDL ctorRegistry)",
+      "UX parity hotfix: Registar→Tomar, registados→tomados (P-011)",
+      "Sprint plan decisions #1-4 resolved",
+      "DEVFLOW memory updated: R-166..168, AP-H16..17, K-073..076"
     ],
     "active_wave": {
       "name": "Wave H5 — MVP Produto Mobile (Fase 5)",
@@ -45,33 +40,36 @@
       "planned_at": "2026-04-12T22:00:00Z",
       "previous_wave": "H4",
       "prs_planned": 6,
-      "blocking_decision": "Mecanismo Telegram mobile (Opcao A/B/C) — requerido antes de H5.7",
+      "blocking_decision": null,
       "adrs_proposed": ["ADR-029", "ADR-030"],
-      "notes": "H4 COMPLETA (iOS validado). Estrutura de navegacao: tabs dentro de Stack auth-aware. Servicos mobile em apps/mobile/src/features/*/services/ (thin local, sem expandir shared-data). CRITICO: nunca criar apps/mobile/src/app/ (AP-H09 + R-163). Manter polyfills primeiro em index.js (AP-H08 + R-162). Navigation.jsx com 3 estados nao pode ser simplificada (AP-H10 + R-164)."
+      "notes": "H5.3 COMPLETED. Architecture review done. Polyfill confirmed as definitive (spike FAIL). UX parity P-011 established. All sprint plan decisions resolved: Telegram=Option A, ADR-029/030=approved, Android H5.1=validated. Ready for H5.4 (Tratamentos). CRITICO: nunca criar apps/mobile/src/app/ (AP-H09 + R-163). Polyfill custom é definitivo (R-168 + AP-H17)."
     }
   },
   "memory": {
-    "rules_count": 112,
-    "anti_patterns_count": 89,
+    "rules_count": 115,
+    "anti_patterns_count": 91,
     "decisions_count": 28,
     "contracts_count": 16,
-    "knowledge_count": 72,
+    "knowledge_count": 76,
     "last_distillation": "2026-04-13T21:50:00Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "recent_additions": {
       "rules": [
-        "R-158",
-        "R-159",
-        "R-160",
-        "R-161"
+        "R-166",
+        "R-167",
+        "R-168"
       ],
       "anti_patterns": [
-        "AP-H04",
-        "AP-H05",
-        "AP-H06",
-        "AP-H07"
+        "AP-H16",
+        "AP-H17"
       ],
-      "timestamp": "2026-04-12T19:40:00Z"
+      "knowledge": [
+        "K-073",
+        "K-074",
+        "K-075",
+        "K-076"
+      ],
+      "timestamp": "2026-04-14T04:25:00Z"
     }
   },
   "evolution": {

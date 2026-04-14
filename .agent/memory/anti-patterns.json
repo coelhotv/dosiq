@@ -1920,5 +1920,37 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "react-hooks"
+  },
+  {
+    "id": "AP-H16",
+    "title": "Use pt-EU strings ('Registar', 'registados') in a pt-BR app",
+    "summary": "Mobile code had pt-EU Portuguese (registar/registados) instead of pt-BR (tomar/tomados). Creates cognitive dissonance for Brazilian users who see 'Tomar' on web but 'Registar' on mobile. Always check web component language before writing mobile UI text. See R-166 (P-011).",
+    "applies_to": ["apps/mobile/src/"],
+    "tags": ["mobile", "ux", "i18n", "language"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-14",
+    "expiry_date": "2027-04-14",
+    "status": "active",
+    "related_rule": "R-166",
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "mobile-ux"
+  },
+  {
+    "id": "AP-H17",
+    "title": "Attempt to use whatwg-url-without-unicode directly on Hermes (WebIDL crash)",
+    "summary": "whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') which is never initialized on Hermes. Crash: 'Cannot read property get of undefined' at URL.js line 54 (globalObject[ctorRegistry]['URL']). The custom polyfill in polyfills.js is the only working solution. Spike branch: spike/whatwg-url-polyfill.",
+    "applies_to": ["apps/mobile/polyfills.js"],
+    "tags": ["mobile", "hermes", "polyfill", "url", "webidl"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-14",
+    "expiry_date": "2027-04-14",
+    "status": "active",
+    "related_rule": "R-168",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   }
 ]
