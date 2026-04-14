@@ -161,6 +161,12 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   // Usa _nativeToString para obter href base (evita recursão via href getter nativo)
   URL.prototype.toString = function () {
     var href = _nativeToString.call(this)   // href nativo, sem passar por este override
+    
+    // R-118: Bypass para URLs do Metro/DevServer para não quebrar carregamento de assets
+    if (href.indexOf('192.168.') >= 0 || href.indexOf('localhost') >= 0 || href.indexOf('127.0.0.1') >= 0 || href.indexOf(':8081') >= 0) {
+      return href
+    }
+
     if (!this._searchPairs || !this._searchPairs.length) return href
     var pairs = this._searchPairs
     var qs = ''
