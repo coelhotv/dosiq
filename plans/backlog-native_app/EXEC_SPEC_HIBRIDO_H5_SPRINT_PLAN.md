@@ -70,6 +70,28 @@ NavigationContainer
 **Regra crítica (R-163 + AP-H09):** A directoria `apps/mobile/src/app/` NÃO deve ser criada.
 A spec EXEC_SPEC_FASE5 usa `src/app/` como nome de directoria no exemplo — este nome é reservado pelo Expo SDK 53 e activa expo-router. Manter ficheiros de navegação em `src/navigation/`.
 
+### P-011 — Paridade de linguagem UX entre web e mobile
+
+**Princípio:** A experiência mobile é uma **extensão natural** da web, não uma app separada. Utilizadores multiplataforma não devem ter esforço cognitivo adicional para entender CTAs, labels, ou status no mobile.
+
+**Regra obrigatória:** Antes de escrever qualquer texto visível ao utilizador (CTAs, labels, títulos, status, mensagens de erro) em qualquer componente mobile, o agente **DEVE**:
+1. Localizar o componente web equivalente (ex: `DoseListItem`, `LogForm`, `SummaryCard`)
+2. Copiar a linguagem exacta da web para o mobile (pt-BR coloquial)
+3. Se o componente não existir na web, seguir o glossário abaixo
+
+**Glossário obrigatório (pt-BR coloquial — mantém paridade com a web):**
+
+| Contexto | ✅ Correcto (pt-BR, paridade web) | ❌ Incorrecto |
+|----------|----------------------------------|--------------|
+| CTA para dose | **Tomar** | Registar, Registrar, Register |
+| Status de dose | **Tomada / Tomados** | Registada, Registados |
+| Modal de dose | **Tomar dose** | Registar dose |
+| Dose perdida | **Perdida** | Em falta, Não tomada |
+| Dose agendada | **Agendada** | Programada, Scheduled |
+| Completo | **✓ Feito** | ✓ Completo, Done |
+| Ação de stock | **Adicionar** | Registar entrada |
+| Erro genérico | **Erro ao registrar** (interno) | Erro ao registar |
+
 ---
 
 ## 3. Dependências a instalar (H5.1)

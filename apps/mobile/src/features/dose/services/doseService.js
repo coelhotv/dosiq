@@ -63,6 +63,6 @@ export async function registerDose(logData) {
     if (err.message?.includes('Network') || err.message?.includes('fetch')) {
       return { success: false, error: 'Sem ligação à internet. O registo de dose requer conexão.' }
     }
-    return { success: false, error: err.message ?? 'Erro desconhecido ao registar dose.' }
+    return { success: false, error: err.message ?? 'Erro desconhecido ao registrar dose.' }
   }
 }

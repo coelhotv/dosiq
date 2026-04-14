@@ -1089,6 +1089,7 @@ Todo agente coder deve seguir a ordem abaixo:
 9. nao quebrar Telegram durante push native
 10. validar com testes adequados da fase
 11. ler os addendums transversais aplicaveis antes de implementar detalhes operacionais
+12. **P-011 — paridade UX:** antes de escrever qualquer texto visivel ao utilizador no mobile (CTAs, labels, titulos, status), localizar o componente web equivalente e copiar a linguagem exacta. A experiencia mobile e uma extensao natural da web — mesmo idioma (pt-BR coloquial), mesmos verbos ("Tomar" em vez de "Registar"), mesmo modelo mental. Utilizadores multiplataforma nao devem sentir que estao em apps diferentes.
 
 ### Validacao minima por PR
 
