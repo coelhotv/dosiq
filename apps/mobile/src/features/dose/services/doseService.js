@@ -25,14 +25,14 @@ export async function registerDose(logData) {
   // A separação é garantida pelo fallback no catch abaixo.
 
   // R-121: validar com Zod antes de enviar ao Supabase
-  console.log('[doseService] registerDose — input:', JSON.stringify(logData))
+  if (__DEV__) console.log('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
   if (!parsed.success) {
-    console.warn('[doseService] Zod validation FAILED:', JSON.stringify(parsed.error.issues[0]))
+    if (__DEV__) console.warn('[doseService] Zod validation FAILED:', JSON.stringify(parsed.error.issues[0]))
     const firstError = parsed.error.issues[0]
     return { success: false, error: firstError.message }
   }
-  console.log('[doseService] Zod OK — parsed:', JSON.stringify(parsed.data))
+  if (__DEV__) console.log('[doseService] Zod OK — parsed:', JSON.stringify(parsed.data))
 
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -40,7 +40,7 @@ export async function registerDose(logData) {
       return { success: false, error: 'Sessão expirada. Faça login novamente.' }
     }
 
-    console.log('[doseService] insert start — user:', user.id)
+    if (__DEV__) console.log('[doseService] insert start — user:', user.id)
     const { data, error } = await supabase
       .from('medicine_logs')
       .insert({ ...parsed.data, user_id: user.id })
@@ -48,7 +48,7 @@ export async function registerDose(logData) {
       .single()
 
     if (error) {
-      console.error('[doseService] insert ERRO:', JSON.stringify(error))
+      if (__DEV__) console.error('[doseService] insert ERRO:', JSON.stringify(error))
       // Detectar erro de rede (R5-008: mensagem clara offline)
       if (error.message?.includes('fetch') || error.message?.includes('network') || error.code === 'PGRST301') {
         return { success: false, error: 'Sem ligação à internet. O registo de dose requer conexão.' }
@@ -56,7 +56,7 @@ export async function registerDose(logData) {
       return { success: false, error: error.message }
     }
 
-    console.log('[doseService] insert OK — id:', data?.id, 'taken_at:', data?.taken_at)
+    if (__DEV__) console.log('[doseService] insert OK — id:', data?.id, 'taken_at:', data?.taken_at)
     return { success: true, data }
   } catch (err) {
     // Captura erros de rede não estruturados do fetch
