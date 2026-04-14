@@ -1,8 +1,8 @@
 # Auditoria: Polyfills Hermes × Supabase JS v2 — Sessão H5.2 (2026-04-13/14)
 
-> **Status:** 🟡 PGRST125 activo — Estratégia A implementada (`3fd9af6`), a aguardar resultado de teste  
+> **Status:** 🟡 Polyfills resolvidos — loop infinito de refresh fixado (`7caa082`), a aguardar resultado de teste  
 > **Branch:** `feature/hybrid-h5/today-dose`  
-> **Último commit:** `3fd9af6` (Estratégia A — toString()+_searchPairs)  
+> **Último commit:** `7caa082` (useRef para snapshot stale — quebrar loop useCallback+useEffect)  
 > **Próximo agente:** leia este documento inteiro antes de tocar em `polyfills.js`
 
 ---
@@ -63,7 +63,7 @@ Confirmado pelo log: `[polyfill] URLSearchParams substituído — set: function`
 
 ---
 
-### 2.2 Erro 2: PGRST125 `Invalid path specified in request URL` (🔴 AINDA ACTIVO)
+### 2.2 Erro 2: PGRST125 `Invalid path specified in request URL` (🟡 EM PROGRESSO — Estratégia A v2 a aguardar teste)
 
 **Quando apareceu:** Imediatamente após resolver o Erro 1
 
@@ -77,6 +77,100 @@ LOG  [live-sp] sync href: https://kwqjtdsqkkbebfiaxubb.supabase.co/rest/v1/proto
 LOG  [live-sp] sync href: https://kwqjtdsqkkbebfiaxubb.supabase.co/rest/v1/protocols/?order=name.asc
 ERROR  [useTodayData] getActiveProtocols ERRO: {"code":"PGRST125","details":null,"hint":null,"message":"Invalid path specified in request URL"}
 ```
+
+---
+
+### 2.3 Erro 3: `Maximum call stack size exceeded` (RESOLVIDO ✅ — commit `3e46e41`)
+
+**Quando apareceu:** Imediatamente ao testar a Estratégia A (`3fd9af6`)
+
+**Mensagem:** `[runtime not ready]: RangeError: Maximum call stack size exceeded (native stack depth)`
+
+**Log do Expo:**
+```
+LOG  [polyfill] URL: Estratégia A — toString()+_searchPairs (bypass href/search setters)
+LOG  [polyfill] URLSearchParams nativo: function function
+LOG  [polyfill] URLSearchParams substituído — set: function
+LOG  [supabase-init] URL: https://kwqjtdsqkkbebfiaxubb.supabase.co
+LOG  [supabase-init] URLSearchParams.set type: function
+ERROR  [runtime not ready]: RangeError: Maximum call stack size exceeded (native stack depth), js engine: hermes
+```
+
+**Stack trace revelou:** A recursão começa em `URL` (linha 53151, `SupabaseClient`), alternando infinitamente entre `anonymous` e `get` — ambos no mesmo bundle comprimido.
+
+**Causa raiz confirmada:** No Hermes, o getter nativo de `href` chama `toString()` internamente (comportamento WHATWG: `href` = "serialize URL" = `toString()`). A implementação da Estratégia A fazia:
+
+```js
+URL.prototype.toString = function () {
+  // ...
+  var href = this.href    // ← this.href chama toString() nativo do Hermes
+                          //   que agora é o NOSSO override → loop infinito
+}
+```
+
+Fluxo da recursão:
+```
+SupabaseClient: new URL('https://...supabase.co')
+  → toString() nosso
+    → this.href
+      → Hermes getter href = chama toString() (que agora é o nosso override)
+        → this.href
+          → Hermes getter href = chama toString()
+            → ... (stack overflow)
+```
+
+**Fix (commit `3e46e41`):** Capturar o `toString` nativo **antes** de o substituir e usá-lo exclusivamente para obter o href base:
+
+```js
+;(function patchSearchParamsViaToString() {
+  if (typeof URL === 'undefined') return
+
+  // CRÍTICO: capturar antes de substituir — evita recursão infinita
+  var _nativeToString = URL.prototype.toString
+
+  URL.prototype.toString = function () {
+    var href = _nativeToString.call(this)   // ← nativo, não passa pelo nosso override
+    if (!this._searchPairs || !this._searchPairs.length) return href
+    // ... constrói query string a partir de _searchPairs
+  }
+})()
+```
+
+**Lição aprendida (AP-H13 — a registar no DEVFLOW):**
+> Ao substituir `URL.prototype.toString`, NUNCA ler `this.href` dentro do override. No Hermes, `href` getter chama `toString()` internamente. Sempre capturar o `toString` nativo **antes** de o substituir.
+
+---
+
+### 2.4 Erro 4: PGRST125 persiste após Estratégia A — trailing slash no path (🟡 A AGUARDAR TESTE — commit `22cfbae`)
+
+**Quando apareceu:** Após corrigir o stack overflow (`3e46e41`), ao testar Estratégia A
+
+**O que funcionou ✅:** Acumulação de 4 pares em `_searchPairs`:
+```
+LOG  [sp] set select = id,name,... → 1 pairs total
+LOG  [sp] append user_id = eq.... → 2 pairs total
+LOG  [sp] append active = eq.true → 3 pairs total
+LOG  [sp] set order = name.asc → 4 pairs total
+LOG  [sp-tostring] toString: https://...supabase.co/rest/v1/protocols/?select=...
+```
+
+**O que ainda falhou:** URL gerada tem `/protocols/` (com barra final) em vez de `/protocols`.
+
+**Causa raiz:** O Hermes normaliza `new URL('https://host/path')` adicionando `/` no fim do path component → `https://host/path/`. O PostgREST rejeita `/protocols/?select=...` com PGRST125 — só aceita `/protocols?select=...`.
+
+**Fix (commit `22cfbae`):** No `toString()` override, remover barra final do `base` antes de acrescentar `?` se não for a raiz do host:
+```js
+if (base.charAt(base.length - 1) === '/') {
+  var afterProto = base.indexOf('//') + 2
+  var firstPathSlash = base.indexOf('/', afterProto)
+  if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
+    base = base.slice(0, -1)   // /protocols/ → /protocols
+  }
+}
+```
+
+**Lição aprendida (AP-H14 — a registar no DEVFLOW):**
+> Hermes normaliza URLs adicionando `/` ao final do path em `new URL('https://host/table')`. PostgREST rejeita paths com trailing slash. Ao construir URLs para PostgREST no Hermes, sempre remover barra final antes de acrescentar query params.
 
 ---
 
@@ -314,39 +408,45 @@ let res = _fetch(this.url.toString(), {...})
 
 ---
 
-## 7. Estado Actual do `polyfills.js`
+## 7. Estado Actual do `polyfills.js` (após commit `3e46e41`)
 
 ### Ordem das IIFEs (deve ser mantida)
 
 ```
-1. patchHermesURL()            — Linhas 10–140
+1. patchHermesURL()              — Linhas 10–140
    - Patcha URL.prototype: protocol, hostname, port, host, pathname, search, hash, origin, username, password
-   - NÃO patcha searchParams (propositadamente — LiveURLSearchParams faz isso)
-   - Usa needsPatch() para aplicar só se necessário (esta detecção funciona para getters)
+   - NÃO patcha searchParams (propositadamente — patchSearchParamsViaToString assume controlo)
+   - Usa needsPatch() para aplicar só se necessário (detecção funciona para getters)
 
-2. patchLiveURLSearchParams()  — Linhas 142–272  ← PROBLEMA AQUI
-   - Define URL.prototype.searchParams com getter que retorna new LiveURLSearchParams(this)
-   - Cada mutação chama _sync() que tenta this._url.href = newHref
-   - _sync() FALHA silenciosamente — setter href não persiste no Hermes
+2. patchSearchParamsViaToString() — Linhas 152–260  ← ESTRATÉGIA A (activa)
+   - Captura _nativeToString = URL.prototype.toString ANTES de substituir (evita recursão)
+   - Define URL.prototype.toString para construir URL a partir de url._searchPairs
+   - Define URL.prototype.searchParams com getter que retorna DirectSearchParams(this)
+   - DirectSearchParams muta url._searchPairs directamente (sem tocar em href)
+   - NUNCA chama this.href dentro do override (causaria stack overflow no Hermes)
 
-3. patchURLSearchParams()      — Linhas 274–383
+3. patchURLSearchParams()        — Linhas 262–371
    - Substitui global.URLSearchParams incondicionalmente por HermesURLSearchParams ES5 puro
-   - FUNCIONA ✅ — confirma que global.URLSearchParams = X funciona
-   - Este patch é para uso standalone de URLSearchParams (ex: new URLSearchParams('foo=bar'))
-   - NÃO resolve o problema do url.searchParams dentro do postgrest-js
+   - FUNCIONA ✅ — para uso standalone (new URLSearchParams('foo=bar'))
+   - NÃO relacionado com url.searchParams do postgrest-js (esse é tratado na IIFE 2)
 ```
 
-### Logs de confirmação de cada IIFE (verificar por esta ordem no console)
+### Logs esperados se a Estratégia A funcionar
 
 ```
-[polyfill] URL.prototype.searchParams → LiveURLSearchParams (syncs href)  ← IIFE 2
-[polyfill] URLSearchParams nativo: function function                        ← IIFE 3 início
-[polyfill] URLSearchParams substituído — set: function                     ← IIFE 3 fim
-[supabase-init] URL: https://kwqjtdsqkkbebfiaxubb.supabase.co              ← nativeSupabaseClient
-[supabase-init] URLSearchParams.set type: function                         ← nativeSupabaseClient
+LOG  [polyfill] URL: Estratégia A — toString()+_searchPairs (bypass href/search setters)
+LOG  [polyfill] URLSearchParams nativo: function function
+LOG  [polyfill] URLSearchParams substituído — set: function
+LOG  [supabase-init] URL: https://kwqjtdsqkkbebfiaxubb.supabase.co
+LOG  [supabase-init] URLSearchParams.set type: function
+LOG  [sp] set select = id,name,... → 1 pairs total
+LOG  [sp] append user_id = eq.b0c9746c... → 2 pairs total
+LOG  [sp] append active = eq.true → 3 pairs total
+LOG  [sp] set order = name.asc → 4 pairs total
+LOG  [sp-tostring] toString: https://...supabase.co/rest/v1/protocols?select=...&user_id=...&active=...&order=...
 ```
 
-**Nota:** A IIFE 2 aparece ANTES da IIFE 3 porque `patchLiveURLSearchParams` é definida antes de `patchURLSearchParams` no ficheiro. Depois do `patchURLSearchParams` correr, `global.URLSearchParams` é substituído pelo `HermesURLSearchParams`. O getter `URL.prototype.searchParams` continua a usar `LiveURLSearchParams` (definida na IIFE 2), não o `HermesURLSearchParams` global.
+**Sinal crítico de sucesso:** 4 pares acumulados (não apenas 1 por acesso) + `[sp-tostring]` mostrando URL completa com todos os params.
 
 ---
 
@@ -532,7 +632,10 @@ Portanto o PGRST125 **não é** causado por nome de coluna inválido — é caus
 | `3c98a9d` | Gemini fixes: totalTaken quantity + pct >= 100 | ✅ aplicado |
 | `387e65f` | Auditoria + memória DEVFLOW AP-H11/H12/R-165 | ✅ documentação |
 | `2f12a27` | **P1 DIAGNÓSTICO**: logs setter href e search | ✅ confirmou: ambos os setters ignorados |
-| `3fd9af6` | **Estratégia A**: toString()+_searchPairs | 🟡 aguardar resultado de teste |
+| `3fd9af6` | **Estratégia A**: toString()+_searchPairs | ❌ falhou — stack overflow (href→toString recursão) |
+| `3e46e41` | fix stack overflow: capturar _nativeToString antes | ❌ falhou — PGRST125 persiste, trailing slash |
+| `22cfbae` | **fix trailing slash**: remover '/' final do base | ✅ PGRST125 resolvido — queries OK |
+| `7caa082` | **fix loop**: useRef para snapshot, deps=[] no useCallback | 🟡 aguardar resultado de teste |
 
 **Branch:** `feature/hybrid-h5/today-dose`
 
