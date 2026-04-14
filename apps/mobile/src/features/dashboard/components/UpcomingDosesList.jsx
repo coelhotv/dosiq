@@ -9,11 +9,11 @@ import DoseListItem from './DoseListItem'
  * @param {{
  *   protocols: Array,
  *   logs: Array,
- *   medicineNames: Record<string, string>,
+ *   medicines: Record<string, Object>,
  *   onRegister: Function,
  * }} props
  */
-export default function UpcomingDosesList({ protocols, logs, medicineNames, onRegister }) {
+export default function UpcomingDosesList({ protocols, logs, medicines, onRegister }) {
   if (!protocols.length) return null
 
   // Contar quantas vezes cada protocolo foi tomado hoje
@@ -31,7 +31,7 @@ export default function UpcomingDosesList({ protocols, logs, medicineNames, onRe
         <DoseListItem
           key={protocol.id}
           protocol={protocol}
-          medicineName={medicineNames[protocol.medicine_id] ?? 'Medicamento'}
+          medicine={medicines[protocol.medicine_id]}
           takenCount={takenByProtocol[protocol.id] ?? 0}
           onRegister={onRegister}
         />

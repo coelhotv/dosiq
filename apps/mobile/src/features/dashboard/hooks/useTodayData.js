@@ -9,11 +9,11 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
   getActiveProtocols,
   getTodayLogs,
-  getMedicineNames,
+  getMedicinesData,
 } from '../services/dashboardService'
 
 /**
- * @typedef {{ protocols: Array, logs: Array, medicineNames: Record<string,string> }} TodayData
+ * @typedef {{ protocols: Array, logs: Array, medicines: Record<string,Object> }} TodayData
  * @returns {{ data: TodayData|null, loading: boolean, error: string|null, stale: boolean, refresh: Function }}
  */
 export function useTodayData() {
@@ -56,12 +56,12 @@ export function useTodayData() {
         throw e
       }
 
-      // Enriquecer com nomes dos medicamentos
+      // Enriquecer com nomes e dosagens dos medicamentos
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
-      const medicineNames = await getMedicineNames(medicineIds)
-      if (__DEV__) console.log('[useTodayData] medicineNames OK:', Object.keys(medicineNames).length)
+      const medicines = await getMedicinesData(medicineIds)
+      if (__DEV__) console.log('[useTodayData] medicines OK:', Object.keys(medicines).length)
 
-      const newData = { protocols, logs, medicineNames }
+      const newData = { protocols, logs, medicines }
       dataRef.current = newData
       setData(newData)
       setStale(false)

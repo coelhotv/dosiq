@@ -7,12 +7,12 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 /**
  * @param {{
  *   protocol: Object,
- *   medicineName: string,
+ *   medicine: Object,
  *   takenCount: number,   — quantas doses tomadas hoje
  *   onRegister: Function  — abre o modal de registo
  * }} props
  */
-export default function DoseListItem({ protocol, medicineName, takenCount, onRegister }) {
+export default function DoseListItem({ protocol, medicine, takenCount, onRegister }) {
   const scheduleStr = protocol.time_schedule?.join(', ') ?? '—'
   const expectedCount = protocol.time_schedule?.length ?? 1
   const isFull = takenCount >= expectedCount
@@ -20,10 +20,19 @@ export default function DoseListItem({ protocol, medicineName, takenCount, onReg
   return (
     <View style={[styles.card, isFull && styles.cardDone]}>
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{medicineName}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.name} numberOfLines={1}>{medicine?.name ?? 'Medicamento'}</Text>
+          {medicine?.dosage_per_pill && (
+            <View style={styles.dosagePill}>
+              <Text style={styles.dosagePillText}>
+                {medicine.dosage_per_pill}{medicine.dosage_unit}
+              </Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.schedule}>🕐 {scheduleStr}</Text>
         <Text style={styles.dosage}>
-          {protocol.dosage_per_intake} cp · {takenCount}/{expectedCount} tomado{takenCount !== 1 ? 's' : ''}
+          {protocol.dosage_per_intake} unidade{protocol.dosage_per_intake !== 1 ? 's' : ''} · {takenCount}/{expectedCount} tomado{takenCount !== 1 ? 's' : ''}
         </Text>
       </View>
       {!isFull && (
@@ -59,10 +68,29 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
   name: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
+    flexShrink: 1,
+  },
+  dosagePill: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  dosagePillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.neutral[600],
   },
   schedule: {
     fontSize: 13,

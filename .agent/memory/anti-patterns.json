@@ -882,6 +882,12 @@
     "pack": "process-hygiene"
   },
   {
+    "id": "AP-H18",
+    "anti_pattern": "Linting entire monorepo packages from root ('npx eslint apps/mobile/...') often fails due to global ignore patterns.",
+    "solution": "Lint specific feature directories or files directly, or check package-specific lint scripts.",
+    "pack": "process-hygiene"
+  },
+  {
     "id": "AP-D03",
     "title": "Using `COUNT(*)` to count expected dose opportunities in heatmap when `COUNT(DISTINCT protocol_id)` is semantically needed",
     "summary": "After CROSS JOIN LATERAL jsonb_array_elements_text (expands doses), `COUNT(*)` correctly counts all ",
