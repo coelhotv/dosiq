@@ -1,8 +1,8 @@
 # Auditoria: Polyfills Hermes × Supabase JS v2 — Sessão H5.2 (2026-04-13/14)
 
-> **Status:** 🟡 Polyfills + loop resolvidos — boundaries UTC correctas em getTodayLogs (`3bdc982`), a aguardar resultado de teste  
+> **Status:** 🟡 Polyfills + refresh + timezone resolvidos — fix totalTaken (`1430d46`), a aguardar resultado de teste  
 > **Branch:** `feature/hybrid-h5/today-dose`  
-> **Último commit:** `aa68528` (taken_at em hora local sem UTC offset — filter do dia apanha a dose)  
+> **Último commit:** `1430d46` (totalTaken = logs.length — conta tomadas, não comprimidos)  
 > **Próximo agente:** leia este documento inteiro antes de tocar em `polyfills.js`
 
 ---
