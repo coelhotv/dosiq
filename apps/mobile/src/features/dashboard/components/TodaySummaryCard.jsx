@@ -17,7 +17,7 @@ export default function TodaySummaryCard({ totalExpected, totalTaken }) {
   let statusLabel = 'Sem tratamentos activos'
   let statusColor = colors.text.muted
   if (totalExpected > 0) {
-    if (pct === 100) { statusLabel = 'Dia completo 🎉'; statusColor = colors.status.success }
+    if (pct >= 100) { statusLabel = 'Dia completo 🎉'; statusColor = colors.status.success }
     else if (pct >= 70) { statusLabel = 'Tratamento em dia'; statusColor = colors.status.success }
     else if (pct >= 40) { statusLabel = 'Algumas doses em falta'; statusColor = colors.status.warning }
     else { statusLabel = 'Várias doses em falta'; statusColor = colors.status.error }

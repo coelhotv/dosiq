@@ -33,7 +33,7 @@ export default function TodayScreen() {
 
   // Calcular totais para o card de resumo
   const totalExpected = protocols.reduce((sum, p) => sum + (p.time_schedule?.length ?? 1), 0)
-  const totalTaken = logs.length
+  const totalTaken = logs.reduce((acc, log) => acc + (log.quantity_taken ?? 0), 0)
 
   function handleRegisterSuccess() {
     setModalProtocol(null)
