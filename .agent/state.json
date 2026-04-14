@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.",
+  "schema_version": "1.0.0",
   "project": {
     "name": "meus-remedios",
     "slug": "meus-remedios",
@@ -13,19 +13,20 @@
       "telegram"
     ],
     "phase": "initial",
-    "current_sprint": "H5.5"
+    "current_sprint": "H5.6"
   },
   "session": {
     "id": "session_2026W16_h5_5_stock",
     "started_at": "2026-04-14T15:55:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "goal": "PR 4 - H5.5: Estoque",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "PR #467 (H5.4) concluída e mergeada",
+      "PR #468 (H5.5) concluída e mergeada",
       "Listagem de estoque por nível de risco (ADR-018)",
       "Badges de cores automáticas conforme dias remanescentes",
+      "UX Refinement: Priorização por urgência e seccionamento ativado",
       "Conformidade total com a camada de serviços thin (ADR-029)"
     ],
     "active_wave": {
@@ -33,32 +34,33 @@
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.4",
-      "status": "in-progress",
+      "sprint": "H5.5",
+      "status": "completed",
       "planned_at": "2026-04-12T22:00:00Z",
-      "previous_wave": "H5.3",
+      "previous_wave": "H5.4",
       "prs_planned": 6,
-      "blocking_decision": "Aprovação da PR H5.4 (Tratamentos)",
+      "blocking_decision": "Nenhuma (H5.5 finalizada)",
       "adrs_proposed": [
         "ADR-029",
         "ADR-030"
       ],
-      "notes": "H5.4 IMPLEMENTADA NA BRANCH. AGUARDANDO REVISÃO. Falha anterior de merge direto corrigida via git reset --force."
+      "notes": "H5.5 CONCLUÍDA E MERGEADA (PR #468). UX refinado com seccionamento e priorização."
     }
   },
   "memory": {
-    "rules_count": 115,
+    "rules_count": 116,
     "anti_patterns_count": 91,
     "decisions_count": 28,
     "contracts_count": 16,
     "knowledge_count": 76,
-    "last_distillation": "2026-04-13T21:50:00Z",
-    "journal_entries_since_distillation": 4,
+    "last_distillation": "2026-04-14T16:45:00Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "rules": [
         "R-166",
         "R-167",
-        "R-168"
+        "R-168",
+        "R-170"
       ],
       "anti_patterns": [
         "AP-H16",
@@ -70,7 +72,7 @@
         "K-075",
         "K-076"
       ],
-      "timestamp": "2026-04-14T04:25:00Z"
+      "timestamp": "2026-04-14T16:45:00Z"
     }
   },
   "evolution": {
@@ -78,10 +80,10 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-13T21:45:00Z",
-    "relevant_rules_loaded_at": "2026-04-13T21:45:00Z",
+    "index_loaded_at": "2026-04-14T15:55:00Z",
+    "relevant_rules_loaded_at": "2026-04-14T15:55:00Z",
     "h5_1_sprint_validated": true,
-    "h5_1_completed_at": "2026-04-13T21:45:00Z"
+    "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
   "migration": {
     "status": "complete",
