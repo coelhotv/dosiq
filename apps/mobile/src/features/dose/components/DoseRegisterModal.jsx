@@ -1,4 +1,4 @@
-// DoseRegisterModal.jsx — modal nativo para registo de dose
+// DoseRegisterModal.jsx — modal nativo para registo de dose tomada
 // UX: modal simples com protocolo pré-seleccionado + quantidade + confirmação
 // R5-003: menor fricção possível — mínimo de toques
 // R5-008: online-first — doseService retorna erro claro se offline
@@ -94,7 +94,7 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
-          <Text style={styles.title}>Registar dose</Text>
+          <Text style={styles.title}>Tomar dose</Text>
           <Text style={styles.medicineName}>{medicineName}</Text>
 
           <Text style={styles.label}>Quantidade (comprimidos)</Text>

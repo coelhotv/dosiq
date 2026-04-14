@@ -16,7 +16,7 @@ import DoseListItem from './DoseListItem'
 export default function UpcomingDosesList({ protocols, logs, medicineNames, onRegister }) {
   if (!protocols.length) return null
 
-  // Contar quantas vezes cada protocolo foi registado hoje
+  // Contar quantas vezes cada protocolo foi tomado hoje
   const takenByProtocol = logs.reduce((acc, log) => {
     if (log.protocol_id) {
       acc[log.protocol_id] = (acc[log.protocol_id] ?? 0) + 1
