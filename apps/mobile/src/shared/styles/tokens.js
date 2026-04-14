@@ -2,43 +2,52 @@
 // Alinhado com Sanctuary Terapêutico redesign (Wave 4-5)
 
 export const colors = {
-  // Primária
-  primary: '#2563eb',
-  primaryLight: '#3b82f6',
-  primaryDark: '#1e40af',
+  // Escala primária (Tailwind-like)
+  primary: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    900: '#1e3a8a',
+  },
 
   // Neutral (grays)
-  white: '#ffffff',
-  gray50: '#f8fafc',
-  gray100: '#f1f5f9',
-  gray200: '#e2e8f0',
-  gray300: '#cbd5e1',
-  gray400: '#94a3b8',
-  gray500: '#64748b',
-  gray600: '#475569',
-  gray700: '#334155',
-  gray800: '#1e293b',
-  black: '#0f172a',
+  neutral: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    300: '#cbd5e1',
+    400: '#94a3b8',
+    500: '#64748b',
+    600: '#475569',
+    700: '#334155',
+    800: '#1e293b',
+    900: '#0f172a',
+  },
 
-  // Status
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  errorLight: '#fca5a5',
-  info: '#0ea5e9',
+  // Status semântico
+  status: {
+    success: '#22c55e',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    errorLight: '#fca5a5',
+    info: '#0ea5e9',
+  },
 
-  // Text
+  // Text semântico
   text: {
     primary: '#1e293b',
     secondary: '#64748b',
-    tertiary: '#94a3b8',
+    muted: '#94a3b8',
     inverse: '#ffffff',
   },
 
-  // Backgrounds
+  // Backgrounds semântico
   bg: {
-    default: '#f8fafc',
-    surface: '#ffffff',
+    screen: '#f8fafc',
+    card: '#ffffff',
     overlay: 'rgba(15, 23, 42, 0.5)',
   },
 
@@ -57,13 +66,18 @@ export const colors = {
   },
 }
 
+// Escala numérica de espaçamento (Tailwind-like: 1 = 4px)
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  1: 4,
+  2: 8,
+  3: 12,
+  4: 16,
+  5: 20,
+  6: 24,
+  7: 28,
+  8: 32,
+  10: 40,
+  12: 48,
 }
 
 export const borderRadius = {
@@ -72,6 +86,7 @@ export const borderRadius = {
   md: 8,
   lg: 12,
   xl: 16,
+  xxl: 24,
   full: 9999,
 }
 

@@ -1840,5 +1840,37 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H11",
+    "title": "Use detection probe to detect Hermes URLSearchParams bugs",
+    "summary": "Hermes não lança 'not implemented' em testes sintéticos — só lança em uso real pelo Supabase. Detection probe passa mas prod falha.",
+    "applies_to": ["apps/mobile/polyfills.js"],
+    "tags": ["mobile", "expo", "hermes", "polyfill", "supabase"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-13",
+    "expiry_date": "2027-04-13",
+    "status": "active",
+    "related_rule": "R-165",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H12",
+    "title": "Use url.searchParams getter as a mutable accessor in Hermes/RN",
+    "summary": "url.searchParams cria um HermesURLSearchParams desvinculado a cada acesso. Mutações (.set/.append/.delete) são descartadas; URL chega ao PostgREST sem params → PGRST125.",
+    "applies_to": ["apps/mobile/polyfills.js"],
+    "tags": ["mobile", "expo", "hermes", "polyfill", "supabase", "postgrest"],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-13",
+    "expiry_date": "2027-04-13",
+    "status": "active",
+    "related_rule": "R-165",
+    "has_detail": true,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "adherence-reporting-mobile"
   }
 ]

@@ -16,11 +16,11 @@
     "current_sprint": "2026-W15"
   },
   "session": {
-    "id": "session_2026W15_h5_distillation",
-    "started_at": "2026-04-13T21:50:00Z",
-    "mode": "distillation",
-    "status": "distilled",
-    "goal": "Wave H5 — MVP Produto Mobile: shell + tabs + 7 telas MVP (Hoje, Tratamentos, Estoque, Perfil, Telegram)",
+    "id": "session_2026W16_h5_today_dose",
+    "started_at": "2026-04-14T00:00:00Z",
+    "mode": "coding",
+    "status": "completed",
+    "goal": "PR2 - H5.2 + H5.3: TodayScreen (dados reais) + DoseRegisterModal",
     "goal_type": "feature",
     "acceptance_criteria": [
       "Shell + tabs (Hoje/Tratamentos/Estoque/Perfil) funcionando",
@@ -40,7 +40,7 @@
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.1",
+      "sprint": "H5.2",
       "status": "completed",
       "planned_at": "2026-04-12T22:00:00Z",
       "previous_wave": "H4",
@@ -57,7 +57,7 @@
     "contracts_count": 16,
     "knowledge_count": 72,
     "last_distillation": "2026-04-13T21:50:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "recent_additions": {
       "rules": [
         "R-158",
