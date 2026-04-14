@@ -3,6 +3,7 @@
 // Schemas de domínio via @meus-remedios/core (nunca duplicar lógica de negócio)
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { parseLocalDate } from '@meus-remedios/core'
 
 /**
  * Busca protocolos activos do utilizador.
@@ -25,20 +26,28 @@ export async function getActiveProtocols(userId) {
 
 /**
  * Busca os logs de medicação de um dia específico.
- * Intervalo: início do dia local até ao fim do dia local.
- * R-020: nunca usar new Date('YYYY-MM-DD') — concatenar T00:00:00 / T23:59:59 garante timezone correcto.
+ * Boundaries em UTC derivadas da meia-noite local (parseLocalDate).
+ * Padrão do projecto: todos os timestamps no DB são UTC (R-020).
+ * parseLocalDate('2026-04-13') → new Date('2026-04-13T00:00:00') → meia-noite local
+ * .toISOString() → '2026-04-13T03:00:00.000Z' (para UTC-3) — boundary correcta.
  *
  * @param {string} userId
  * @param {string} dateStr  — formato YYYY-MM-DD
  * @returns {Promise<Array>}
  */
 export async function getTodayLogs(userId, dateStr) {
+  // Meia-noite local → UTC (evita o problema de datas UTC que cruzam a meia-noite local)
+  const startUTC = parseLocalDate(dateStr).toISOString()
+  // Fim do dia local: 23:59:59 → UTC
+  const endUTC = new Date(`${dateStr}T23:59:59`).toISOString()
+  console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
+
   const { data, error } = await supabase
     .from('medicine_logs')
     .select('id, protocol_id, medicine_id, taken_at, quantity_taken')
     .eq('user_id', userId)
-    .gte('taken_at', `${dateStr}T00:00:00`)
-    .lte('taken_at', `${dateStr}T23:59:59`)
+    .gte('taken_at', startUTC)
+    .lte('taken_at', endUTC)
 
   if (error) throw error
   return data ?? []

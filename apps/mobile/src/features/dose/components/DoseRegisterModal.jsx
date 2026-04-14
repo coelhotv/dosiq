@@ -49,14 +49,9 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
       return
     }
 
-    // R-020: usar data/hora local sem offset UTC
-    // new Date().toISOString() dá UTC — em Brasil às 22:30 local seria 2026-04-14T01:30Z
-    // O filtro getTodayLogs usa '2026-04-13T23:59:59' (sem timezone = UTC no PostgREST)
-    // → dose fora do intervalo → logs OK: 0 após refresh.
-    // Solução: formatar como YYYY-MM-DDTHH:mm:ss sem 'Z' (hora local, sem offset).
-    const _now = new Date()
-    const _pad = (n) => String(n).padStart(2, '0')
-    const takenAt = `${_now.getFullYear()}-${_pad(_now.getMonth() + 1)}-${_pad(_now.getDate())}T${_pad(_now.getHours())}:${_pad(_now.getMinutes())}:${_pad(_now.getSeconds())}`
+    // Padrão do projecto: timestamps sempre em UTC (new Date().toISOString())
+    // O filtro do dashboard usa boundaries UTC derivadas do dia local (não raw YYYY-MM-DDT00:00:00)
+    const takenAt = new Date().toISOString()
 
     const result = await registerDose({
       protocol_id: protocol.id,
