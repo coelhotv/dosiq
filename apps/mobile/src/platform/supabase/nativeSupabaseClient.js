@@ -8,6 +8,9 @@ import { nativePublicAppConfig } from '../config/nativePublicAppConfig'
 import { secureStoreAuthStorage } from '../auth/secureStoreAuthStorage'
 
 function createNativeSupabaseClient() {
+  // Debug: confirmar URL e que URLSearchParams está patchado antes do createClient
+  console.log('[supabase-init] URL:', nativePublicAppConfig.supabaseUrl)
+  console.log('[supabase-init] URLSearchParams.set type:', typeof global.URLSearchParams?.prototype?.set)
   const supabase = createClient(
     nativePublicAppConfig.supabaseUrl,
     nativePublicAppConfig.supabaseAnonKey,

@@ -3,6 +3,7 @@
 // SharedArrayBuffer não existe em Hermes/JSC no ambiente React Native
 global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
 
+
 // URL patch para Hermes RN/Expo Go: new URL() existe mas getters como
 // .protocol, .hostname, etc. lançam "not implemented" (Hermes parcial).
 // Supabase usa esses getters E setters (Realtime faz url.protocol = 'wss:').
@@ -135,16 +136,251 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   define('username', function () { return '' })
   define('password', function () { return '' })
 
-  // searchParams — getter (URLSearchParams é separado, geralmente funciona)
-  define('searchParams', function () {
-    const qs = parseHref(this.href).search.slice(1)
-    if (typeof URLSearchParams !== 'undefined') return new URLSearchParams(qs)
-    const map = new Map()
-    qs.split('&').forEach(pair => {
-      const idx = pair.indexOf('=')
-      if (idx < 0) return
-      map.set(decodeURIComponent(pair.slice(0, idx)), decodeURIComponent(pair.slice(idx + 1)))
-    })
-    return { get: k => map.get(k) ?? null, has: k => map.has(k) }
+  // searchParams — getter NÃO aplicado aqui; patchSearchParamsViaToString abaixo assume controlo
+})()
+
+// Estratégia A — patchSearchParamsViaToString
+//
+// DIAGNÓSTICO P1 confirmou: url.href setter e url.search setter são no-ops silenciosos no Hermes.
+// LiveURLSearchParams (tentativa anterior) falhava porque _sync() escrevia url.href = newHref
+// e o Hermes ignorava silenciosamente → cada novo acesso ao getter recomeçava com _pairs vazio.
+//
+// Solução: guardar os params directamente na instância URL como url._searchPairs (array JS puro).
+// Sobreescrever URL.prototype.toString() para construir a query string a partir de _searchPairs.
+// O postgrest-js lê a URL via url.toString() (PostgrestBuilder.ts:122) — único ponto de leitura.
+// Nenhum setter de href/search é chamado. Os pares acumulam-se na instância e persistem.
+;(function patchSearchParamsViaToString() {
+  if (typeof URL === 'undefined') return
+
+  // CRÍTICO: capturar toString nativo ANTES de o substituir.
+  // No Hermes, o getter href chama toString() internamente (spec WHATWG: href = serialize URL).
+  // Se não capturarmos, toString() → this.href → Hermes invoca toString() → loop infinito (stack overflow).
+  var _nativeToString = URL.prototype.toString
+
+  // toString() sobreescrito: constrói URL com _searchPairs se existirem
+  // Usa _nativeToString para obter href base (evita recursão via href getter nativo)
+  URL.prototype.toString = function () {
+    var href = _nativeToString.call(this)   // href nativo, sem passar por este override
+    if (!this._searchPairs || !this._searchPairs.length) return href
+    var pairs = this._searchPairs
+    var qs = ''
+    for (var i = 0; i < pairs.length; i++) {
+      if (i) qs += '&'
+      qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
+    }
+    var q = href.indexOf('?')
+    var h = href.indexOf('#')
+    var base = q >= 0 ? href.slice(0, q) : (h >= 0 ? href.slice(0, h) : href)
+    var hash = h >= 0 ? href.slice(h) : ''
+    // Hermes normaliza URLs adicionando '/' no fim do path (ex: /protocols → /protocols/).
+    // PostgREST rejeita /protocols/?select=... com PGRST125 — só aceita /protocols?select=...
+    // Remover barra final se existir (e não for raiz do host, ex: 'https://host/')
+    if (base.charAt(base.length - 1) === '/') {
+      var afterProto = base.indexOf('//') + 2
+      var firstPathSlash = base.indexOf('/', afterProto)
+      if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
+        base = base.slice(0, -1)
+        console.log('[sp-tostring] removida barra final — base:', base)
+      }
+    }
+    var result = base + '?' + qs + hash
+    console.log('[sp-tostring] toString:', result)
+    return result
+  }
+
+  // DirectSearchParams — muta url._searchPairs directamente, sem tocar em href
+  function DirectSearchParams(urlObj) {
+    this._url = urlObj
+    if (!urlObj._searchPairs) urlObj._searchPairs = []
+    // NÃO inicializar de href — postgrest-js começa com URL limpa e adiciona params sequencialmente
+  }
+
+  DirectSearchParams.prototype.set = function (name, value) {
+    var k = String(name), v = String(value), found = false, result = []
+    var pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i][0] === k) { if (!found) { result.push([k, v]); found = true } }
+      else { result.push(pairs[i]) }
+    }
+    if (!found) result.push([k, v])
+    this._url._searchPairs = result
+    console.log('[sp] set', k, '=', v, '→', result.length, 'pairs total')
+  }
+
+  DirectSearchParams.prototype.append = function (name, value) {
+    var k = String(name), v = String(value)
+    this._url._searchPairs.push([k, v])
+    console.log('[sp] append', k, '=', v, '→', this._url._searchPairs.length, 'pairs total')
+  }
+
+  DirectSearchParams.prototype.delete = function (name) {
+    var k = String(name), result = []
+    var pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i][0] !== k) result.push(pairs[i])
+    }
+    this._url._searchPairs = result
+  }
+
+  DirectSearchParams.prototype.get = function (name) {
+    var k = String(name), pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i][0] === k) return pairs[i][1]
+    }
+    return null
+  }
+
+  DirectSearchParams.prototype.getAll = function (name) {
+    var k = String(name), out = [], pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i][0] === k) out.push(pairs[i][1])
+    }
+    return out
+  }
+
+  DirectSearchParams.prototype.has = function (name) {
+    var k = String(name), pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i][0] === k) return true
+    }
+    return false
+  }
+
+  DirectSearchParams.prototype.toString = function () {
+    var out = [], pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      out.push(encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1]))
+    }
+    return out.join('&')
+  }
+
+  DirectSearchParams.prototype.forEach = function (cb) {
+    var pairs = this._url._searchPairs
+    for (var i = 0; i < pairs.length; i++) {
+      cb(pairs[i][1], pairs[i][0], this)
+    }
+  }
+
+  // Getter searchParams: inicializa _searchPairs na instância e devolve DirectSearchParams
+  Object.defineProperty(URL.prototype, 'searchParams', {
+    get: function () {
+      if (!this._searchPairs) this._searchPairs = []
+      return new DirectSearchParams(this)
+    },
+    configurable: true,
+    enumerable: false,
   })
+
+  console.log('[polyfill] URL: Estratégia A — toString()+_searchPairs (bypass href/search setters)')
+})()
+
+// URLSearchParams patch para Hermes — substituição incondicional + debug logs
+// O detection probe anterior falhou: Hermes não lança em teste sintético mas
+// lança em uso real pelo Supabase. Solução: substituir sempre por implementação
+// pura ES5 (sem class, sem Symbol.iterator — máxima compatibilidade Hermes).
+;(function patchURLSearchParams() {
+  console.log('[polyfill] URLSearchParams nativo:', typeof URLSearchParams,
+    typeof URLSearchParams !== 'undefined' ? typeof URLSearchParams.prototype.set : 'N/A')
+
+  function HermesURLSearchParams(init) {
+    this._pairs = []
+    if (!init) return
+    if (typeof init === 'string') {
+      var qs = init.charAt(0) === '?' ? init.slice(1) : init
+      var parts = qs.split('&')
+      for (var i = 0; i < parts.length; i++) {
+        var part = parts[i]
+        if (!part) continue
+        var eq = part.indexOf('=')
+        if (eq < 0) {
+          this._pairs.push([decodeURIComponent(part), ''])
+        } else {
+          this._pairs.push([
+            decodeURIComponent(part.slice(0, eq)),
+            decodeURIComponent(part.slice(eq + 1)),
+          ])
+        }
+      }
+    } else if (Array.isArray(init)) {
+      for (var j = 0; j < init.length; j++) {
+        this._pairs.push([String(init[j][0]), String(init[j][1])])
+      }
+    } else if (init && typeof init === 'object') {
+      var keys = Object.keys(init)
+      for (var k = 0; k < keys.length; k++) {
+        this._pairs.push([String(keys[k]), String(init[keys[k]])])
+      }
+    }
+  }
+
+  HermesURLSearchParams.prototype.append = function (name, value) {
+    this._pairs.push([String(name), String(value)])
+  }
+
+  HermesURLSearchParams.prototype.set = function (name, value) {
+    var k = String(name)
+    var v = String(value)
+    var found = false
+    var result = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) {
+        if (!found) { result.push([k, v]); found = true }
+      } else {
+        result.push(this._pairs[i])
+      }
+    }
+    if (!found) result.push([k, v])
+    this._pairs = result
+  }
+
+  HermesURLSearchParams.prototype.get = function (name) {
+    var k = String(name)
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) return this._pairs[i][1]
+    }
+    return null
+  }
+
+  HermesURLSearchParams.prototype.getAll = function (name) {
+    var k = String(name)
+    var out = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) out.push(this._pairs[i][1])
+    }
+    return out
+  }
+
+  HermesURLSearchParams.prototype.has = function (name) {
+    var k = String(name)
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] === k) return true
+    }
+    return false
+  }
+
+  HermesURLSearchParams.prototype.delete = function (name) {
+    var k = String(name)
+    var result = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      if (this._pairs[i][0] !== k) result.push(this._pairs[i])
+    }
+    this._pairs = result
+  }
+
+  HermesURLSearchParams.prototype.toString = function () {
+    var out = []
+    for (var i = 0; i < this._pairs.length; i++) {
+      out.push(encodeURIComponent(this._pairs[i][0]) + '=' + encodeURIComponent(this._pairs[i][1]))
+    }
+    return out.join('&')
+  }
+
+  HermesURLSearchParams.prototype.forEach = function (cb) {
+    for (var i = 0; i < this._pairs.length; i++) {
+      cb(this._pairs[i][1], this._pairs[i][0], this)
+    }
+  }
+
+  global.URLSearchParams = HermesURLSearchParams
+  console.log('[polyfill] URLSearchParams substituído — set:', typeof HermesURLSearchParams.prototype.set)
 })()
