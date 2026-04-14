@@ -513,3 +513,73 @@ graph TD
 - ✅ `npm run lint` — passa (0 errors, 1 warning pré-existente)
 - ✅ `npm run build` — web compila (3.24s)
 - ⬜ Mobile validation — pendente sync via `gsync-native.sh` + teste no simulador
+
+---
+
+## 11. Spike: whatwg-url-without-unicode (2026-04-14 01:00)
+
+### Hipótese
+
+O crash do `react-native-url-polyfill` v3 (AP-H08) era do **wrapper** `js/URL.js` que acessa `NativeModules.BlobModule`, não do `whatwg-url-without-unicode` em si. Se importarmos a lib diretamente, deveria funcionar.
+
+### Resultado: ❌ FAIL
+
+O `whatwg-url-without-unicode` também crasha no Hermes — mas por uma razão **diferente** do wrapper:
+
+```
+TypeError: Cannot read property 'get' of undefined
+```
+
+### Causa raiz (detalhada)
+
+O `whatwg-url-without-unicode` usa **WebIDL constructor registries** — um mecanismo de binding entre JavaScript e APIs web spec-compliant:
+
+```javascript
+// whatwg-url-without-unicode/lib/utils.js
+const ctorRegistrySymbol = Symbol.for("[webidl2js]  constructor registry");
+
+// whatwg-url-without-unicode/lib/URL.js (linha 50-54)
+if (globalObject[ctorRegistry] === undefined) {
+  // NÃO inicializa — assume que .install() já foi chamado
+}
+const ctor = globalObject[ctorRegistry]["URL"];
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ undefined → crash
+```
+
+O Hermes não tem o registry `Symbol.for("[webidl2js] constructor registry")` inicializado no `globalThis`. No Node.js/browsers, a lib init configura isso. No Hermes, não existe e crasharia mesmo sem o wrapper do BlobModule.
+
+### Cadeia de dependências problemáticas
+
+```
+whatwg-url-without-unicode@8.0.0-3
+├── webidl-conversions@5.x  ← JS puro, mas assume WebIDL environment
+├── buffer@5.x              ← OK
+└── punycode@2.x            ← OK
+                              ↑
+                              O problema é a lib URL.js que usa
+                              ctorRegistry via Symbol.for() — 
+                              não é um problema de deps externas,
+                              é do design interno da lib.
+```
+
+### Veredicto
+
+**O polyfill custom (Estratégia A) é a solução correta para este projeto.**
+
+As alternativas não funcionam:
+- `react-native-url-polyfill` → crash por `NativeModules.BlobModule` (AP-H08)
+- `whatwg-url-without-unicode` direto → crash por WebIDL `ctorRegistry` (este spike)
+- `whatwg-url` (versão completa) → mesmo problema + deps mais pesadas
+
+O polyfill custom no `polyfills.js` é o **menor código que funciona** porque:
+1. Não tenta substituir a classe `URL` — apenas patch os getters/setters em falta
+2. Usa `_searchPairs` como backing store em vez de tentar mutar `href`
+3. Override de `toString()` que o postgrest-js usa para ler a URL final
+
+### Recomendação atualizada
+
+A recomendação B1 (testes para polyfills) sobe de **média** para **ALTA prioridade**. Como o polyfill custom é a solução definitiva (não temporária), ele precisa de testes automatizados.
+
+### Branch do spike
+
+`spike/whatwg-url-polyfill` (preservado no GitHub para referência futura, não deve ser merged).
