@@ -290,6 +290,7 @@ apps/mobile/src/
 - Lista de medicamentos com nível de estoque
 - Badge de nível: CRITICAL(vermelho)/LOW(amarelo)/NORMAL(verde)/HIGH(azul) — ADR-018
 - Loading/empty/error
+- Fluxos manuais validados (iOS simulator + Android emulator)
 
 ---
 
@@ -302,27 +303,41 @@ apps/mobile/src/
 - `features/profile/hooks/useProfile.js`
 - `features/profile/components/TelegramLinkCard.jsx`
 - `features/profile/screens/ProfileScreen.jsx` — email, logout, estado Telegram
-- `features/profile/screens/TelegramLinkScreen.jsx` — (se H5.7 for implementado)
+- `features/profile/screens/TelegramLinkScreen.jsx` — (opção A decidida)
 
-**H5.7 condicional:** Só implementar se maintainer decidir mecanismo de vinculação (Opção A/B/C).
-Se não decidido → ProfileScreen mostra estado Telegram (conectado/desconectado) mas sem botão de vincular.
+**Critério de aceitação:**
+- Email do utilizador
+- Botão de logout
+- Estado Telegram (conectado/desconectado)
+- Fluxos manuais validados (iOS simulator + Android emulator)
 
 ---
 
-### PR 6 — H5.8-H5.10: Estados transversais + Testes + Hardening
+### PR 6 — H5.8: Estados transversais 
 
-**Branch:** `feature/hybrid-h5/polish-tests`
+**Branch:** `feature/hybrid-h5/stale-states`
 
 **Ficheiros a criar/modificar:**
 - `shared/hooks/useOnlineStatus.js` — estado de conectividade
 - `shared/theme/colors.js` — tokens de `@meus-remedios/design-tokens`
 - Stale offline states em TodayScreen/TreatmentsScreen/StockScreen
+
+**Critério de aceitação:**
+- Todas as telas: loading + empty + error
+- Telas online-first: stale state ao ficar offline
+- Fluxos manuais validados (iOS simulator + Android emulator)
+
+---
+
+### PR 7 — H5.9 e H5.10: Testes + Hardening
+
+**Branch:** `feature/hybrid-h5/tests-hardening`
+
+**Ficheiros a criar/modificar:**
 - Testes: `*.test.js` para screens e hooks críticos
 - Remoção de componentes fora de escopo
 
 **Critério de aceitação (Definition of Done da Fase 5):**
-- Todas as telas: loading + empty + error
-- Telas online-first: stale state ao ficar offline
 - Testes unitários criados
 - Zero dependências de componentes web
 - Fluxos manuais validados (iOS simulator + Android emulator)
@@ -488,9 +503,9 @@ export default function TodayScreen() {
 
 ## 13. Definition of Done da Fase H5
 
-- [ ] Shell + tabs funcionando (Hoje/Tratamentos/Estoque/Perfil)
-- [ ] Tela Hoje funcional (resumo do dia + CTA de dose)
-- [ ] Fluxo de registo de dose funcional
+- [x] Shell + tabs funcionando (Hoje/Tratamentos/Estoque/Perfil)
+- [x] Tela Hoje funcional (resumo do dia + CTA de dose)
+- [x] Fluxo de registo de dose funcional
 - [x] Tela Tratamentos funcional (lista de protocolos)
 - [ ] Tela Estoque funcional (4 níveis de risco)
 - [ ] Tela Perfil funcional (email, logout, estado Telegram)
