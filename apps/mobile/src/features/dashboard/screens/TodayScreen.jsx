@@ -33,7 +33,9 @@ export default function TodayScreen() {
 
   // Calcular totais para o card de resumo
   const totalExpected = protocols.reduce((sum, p) => sum + (p.time_schedule?.length ?? 1), 0)
-  const totalTaken = logs.reduce((acc, log) => acc + (log.quantity_taken ?? 0), 0)
+  // totalTaken = nº de eventos de registo (tomadas), não soma de comprimidos
+  // quantity_taken é comprimidos por tomada; totalExpected é nº de tomadas agendadas
+  const totalTaken = logs.length
 
   function handleRegisterSuccess() {
     console.log('[TodayScreen] dose registada — a fechar modal e a fazer refresh')
