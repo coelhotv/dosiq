@@ -55,6 +55,13 @@ export const colors = {
     card: '#ffffff',
     overlay: 'rgba(26, 28, 29, 0.4)',
   },
+
+  // Tab navigation
+  tab: {
+    activeTint: '#005db6', // primary.600
+    inactiveTint: '#8e9199', // neutral.400
+    bgDefault: '#ffffff',
+  },
 }
 
 export const spacing = {
