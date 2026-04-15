@@ -122,11 +122,7 @@ export default function Emergency({ onNavigate }) {
           </div>
         ) : (
           <div className="er-edit">
-            <EmergencyCardForm
-              initialData={cardData}
-              onSave={handleSave}
-              onCancel={handleCancel}
-            />
+            <EmergencyCardForm initialData={cardData} onSave={handleSave} onCancel={handleCancel} />
           </div>
         )}
       </div>
