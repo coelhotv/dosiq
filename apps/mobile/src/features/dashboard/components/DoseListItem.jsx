@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, AlertCircle } from 'lucide-react-native'
+import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
  * DoseListItem - Item de dose individual (Splitted)
@@ -43,11 +44,11 @@ export default function DoseListItem({ dose, onRegister }) {
         <Text style={[styles.timeText, isTaken && styles.textMuted]}>{displayTime}</Text>
         <View style={[styles.statusIcon, isTaken ? styles.bgTaken : isMissed ? styles.bgMissed : styles.bgScheduled]}>
           {isTaken ? (
-            <Check size={14} color="#fff" />
+            <Check size={14} color={colors.bg.card} />
           ) : isMissed ? (
-            <AlertCircle size={14} color="#fff" />
+            <AlertCircle size={14} color={colors.bg.card} />
           ) : (
-            <Clock size={14} color="#005db6" />
+            <Clock size={14} color={colors.primary[600]} />
           )}
         </View>
       </View>
@@ -74,7 +75,7 @@ export default function DoseListItem({ dose, onRegister }) {
  
       {isTaken && (
         <View style={styles.doneBadge}>
-          <Check size={18} color="#4fb3a4" />
+          <Check size={18} color={colors.status.success} />
         </View>
       )}
     </View>
@@ -85,28 +86,27 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[3],
     // Ambient Shadow
-    shadowColor: '#000',
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    gap: 16,
+    gap: spacing[4],
   },
   cardTaken: {
-    opacity: 0.5,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.neutral[50], 
     elevation: 0,
     shadowOpacity: 0,
   },
   cardMissed: {
     borderLeftWidth: 4,
-    borderLeftColor: '#ba1a1a', // Error
+    borderLeftColor: colors.status.error,
   },
   timeContainer: {
     alignItems: 'center',
@@ -115,8 +115,8 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1a1c1e',
-    marginBottom: 4,
+    color: colors.text.primary,
+    marginBottom: spacing[1],
   },
   statusIcon: {
     width: 24,
@@ -125,9 +125,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bgTaken: { backgroundColor: '#4fb3a4' },
-  bgMissed: { backgroundColor: '#ba1a1a' },
-  bgScheduled: { backgroundColor: '#e0e2ec' }, // Secondary container
+  bgTaken: { backgroundColor: colors.status.success },
+  bgMissed: { backgroundColor: colors.status.error },
+  bgScheduled: { backgroundColor: colors.neutral[100] }, 
   info: {
     flex: 1,
     gap: 2,
@@ -135,26 +135,26 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1c1e',
+    color: colors.text.primary,
   },
   dosage: {
     fontSize: 13,
-    color: '#44474e',
+    color: colors.text.secondary,
   },
   textMuted: {
-    color: '#8e9199',
+    color: colors.text.muted,
   },
   ctaButton: {
-    backgroundColor: '#005db6',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.md,
   },
   ctaMissed: {
-    backgroundColor: '#ba1a1a',
+    backgroundColor: colors.status.error,
   },
   ctaText: {
-    color: '#fff',
+    color: colors.bg.card,
     fontSize: 13,
     fontWeight: '700',
   },
