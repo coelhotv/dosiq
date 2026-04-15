@@ -13,13 +13,25 @@ export default function DoseListItem({ dose, onRegister }) {
   const medicine = dose.medicine
   const protocol = dose.protocol
   const scheduledTime = dose.scheduledTime
-  const registeredAt = dose.registeredAt || dose.taken_at
+  const takenAt = dose.taken_at || dose.registeredAt
   
-  // Se for dose extra ou tomada fora de janela, usamos o horário real do registro para o visor
-  const displayTime = scheduledTime || (registeredAt ? new Date(registeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--')
-
-  const isTaken = dose.status === 'taken' || !!registeredAt
+  const isTaken = dose.status === 'done' || !!takenAt
   const isMissed = dose.status === 'missed'
+
+  // Formatação do horário: Concluídas mostram hora real, Agendadas mostram hora prevista
+  const formatTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const displayTime = isTaken && takenAt ? formatTime(takenAt) : (scheduledTime || '--:--')
+
+  // Verificação de janela para o botão Tomar (+/- 2h)
+  const isWithinWindow = React.useMemo(() => {
+    if (!scheduledTime || isTaken) return false
+    const [h, m] = scheduledTime.split(':').map(Number)
+    const scheduledDate = new Date()
+    scheduledDate.setHours(h, m, 0, 0)
+    const now = new Date()
+    const diffHours = Math.abs(now - scheduledDate) / (1000 * 60 * 60)
+    return diffHours <= 2
+  }, [scheduledTime, isTaken])
 
   return (
     <View style={[
@@ -39,29 +51,30 @@ export default function DoseListItem({ dose, onRegister }) {
           )}
         </View>
       </View>
-
+ 
       <View style={styles.info}>
         <Text style={[styles.name, isTaken && styles.textMuted]} numberOfLines={1}>
-          {medicine?.name ?? 'Medicamento'}
+          {medicine?.name ?? protocol?.name ?? 'Medicamento'}
         </Text>
         <Text style={[styles.dosage, isTaken && styles.textMuted]}>
-          {protocol?.dosage_per_intake} {medicine?.dosage_unit || 'unidade(s)'}
+          {protocol?.dosage_per_intake || 1} un. 
+          {medicine?.dosage_per_pill ? ` de ${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'}` : ''}
         </Text>
       </View>
-
-      {!isTaken && (
+ 
+      {!isTaken && (isWithinWindow || isMissed) && (
         <TouchableOpacity 
           style={[styles.ctaButton, isMissed && styles.ctaMissed]} 
-          onPress={() => !isTaken && onRegister(protocol, scheduledTime)}
+          onPress={() => onRegister(protocol, scheduledTime)}
           activeOpacity={0.7}
         >
           <Text style={styles.ctaText}>{isMissed ? 'Registrar' : 'Tomar'}</Text>
         </TouchableOpacity>
       )}
-
+ 
       {isTaken && (
         <View style={styles.doneBadge}>
-          <Check size={16} color="#4fb3a4" />
+          <Check size={18} color="#4fb3a4" />
         </View>
       )}
     </View>
