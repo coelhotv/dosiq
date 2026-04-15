@@ -26,8 +26,8 @@ export default function TodayScreen() {
   const zones = data?.zones ?? { late: [], now: [], upcoming: [], done: [] }
   const stockAlerts = data?.stockAlerts ?? []
 
-  // Dose prioritária: a primeira da zona 'now' ou a primeira 'late'
-  const priorityDose = zones.now[0] || zones.late[0]
+  // Doses prioritárias: Agrupar até 3 medicamentos (Late + Now) conforme Spec H5.7.5
+  const priorityDoses = [...zones.late, ...zones.now].slice(0, 3)
 
   function handleOpenRegister(protocol, scheduledTime) {
     setModalProtocol(protocol)
@@ -66,10 +66,10 @@ export default function TodayScreen() {
 
         <StockAlertInline alerts={stockAlerts} />
 
-        {priorityDose && (
+        {priorityDoses.length > 0 && (
           <PriorityActionCard 
-            dose={priorityDose} 
-            onPress={() => handleOpenRegister(priorityDose.protocol, priorityDose.scheduledTime)} 
+            doses={priorityDoses} 
+            onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime)} 
           />
         )}
 
