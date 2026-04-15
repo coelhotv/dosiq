@@ -3,7 +3,7 @@
 > **Status:** Plano operacional de execucao — H0-H5.5 COMPLETAS ✅ | H5.6 proxima
 > **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
-> **Ferramenta:** `/devflow` via Claude Code (Claude Pro)
+> **Ferramenta:** `/devflow` via Agentes IA
 > **Projeto:** Meus Remedios v4.0.0
 
 ---
