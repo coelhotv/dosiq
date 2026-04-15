@@ -331,7 +331,32 @@ apps/mobile/src/
 
 ---
 
-### PR 7 — H5.9 e H5.10: Testes + Hardening
+---
+
+### PR 8 — H5.7.5: Dashboard Evolution (Premium) ✅
+
+**Branch:** `feature/hybrid-h5/dashboard-evolution` (H5.7.5)
+
+**Ficheiros a criar/modificar:**
+- `features/dashboard/hooks/useTodayData.js` — Core integration + Zones + Stock Alerts
+- `features/dashboard/components/AdherenceRing.jsx` — NEW (SVG)
+- `features/dashboard/components/PriorityActionCard.jsx` — NEW (UX Premium)
+- `features/dashboard/components/StockAlertInline.jsx` — PORTED from Web
+- `features/dashboard/components/TodaySummaryCard.jsx` — Refactor (Ring integration)
+- `features/dashboard/components/DoseListItem.jsx` — Refactor (Splitting)
+- `features/dashboard/components/UpcomingDosesList.jsx` — Refactor (Zoned Timeline)
+- `features/dose/components/DoseRegisterModal.jsx` — Enhanced (Time badge)
+
+**Critério de aceitação:**
+- Ring Gauge exibe adesão do dia ✅
+- PriorityActionCard destaca doses urgentes (Now/Late) ✅
+- Lista de doses dividida por zonas cronológicas ✅
+- Alertas de estoque visíveis no dashboard ✅
+- Ambient Shadows e layout premium ✅
+
+---
+
+### PR 9 — H5.9 e H5.10: Testes + Hardening
 
 **Branch:** `feature/hybrid-h5/tests-hardening`
 
@@ -522,4 +547,4 @@ export default function TodayScreen() {
 
 ---
 
-*Atualizado por DEVFLOW Coding — 2026-04-15 (H5.7 ✅)*
+*Atualizado por DEVFLOW Coding — 2026-04-15 (H5.7.5 ✅ Dashboard Evolution Delivered)*
