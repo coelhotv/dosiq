@@ -114,9 +114,15 @@ export function useTodayData() {
       stats.score = (stats.taken / stats.expected) * 100
     }
 
-    // PAC (Priority Action Card) foca nas doses agendadas próximas ou atrasadas
+    // 1.5 Ordenar listas cronologicamente (00:00 -> 23:59)
+    const sortByTime = (a, b) => {
+      const timeA = a.scheduledTime || (a.taken_at ? new Date(a.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
+      const timeB = b.scheduledTime || (b.taken_at ? new Date(b.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
+      return timeA.localeCompare(timeB)
+    }
+
     const zones = {
-      late: missedDoses,
+      late: missedDoses.sort(sortByTime),
       now: scheduledDoses.filter(d => {
         const [h, m] = d.scheduledTime.split(':').map(Number)
         const scheduledDate = new Date()
@@ -124,9 +130,9 @@ export function useTodayData() {
         const now = new Date()
         const diffHours = (now - scheduledDate) / (1000 * 60 * 60)
         return diffHours >= -0.5 && diffHours <= 2
-      }),
-      upcoming: scheduledDoses,
-      done: takenDoses
+      }).sort(sortByTime),
+      upcoming: scheduledDoses.sort(sortByTime),
+      done: takenDoses.sort(sortByTime)
     }
 
     // 3. Calcular alertas de estoque
