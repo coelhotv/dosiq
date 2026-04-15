@@ -2443,5 +2443,66 @@
     "layer": "hot",
     "pack": "process-hygiene",
     "bootstrap_default": true
+  },
+  {
+    "id": "R-171",
+    "title": "Dashboard Chronological Sorting",
+    "summary": "Doses splitted (DoseListItem) MUST be ordered chronologically (00:00 -> 23:59) within their zones, regardless of DB insertion order.",
+    "applies_to": [
+      "mobile/dashboard"
+    ],
+    "tags": [
+      "ux",
+      "sorting",
+      "dashboard"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-15",
+    "review_due": "2027-04-15",
+    "status": "active",
+    "has_detail": false,
+    "layer": "warm",
+    "pack": "mobile-ux"
+  },
+  {
+    "id": "R-172",
+    "title": "Clinical Safety window (+/- 2h)",
+    "summary": "The 'Take/Register' action in mobile MUST be restricted to a +/- 2h window from the scheduled time to encourage adherence.",
+    "applies_to": [
+      "mobile/dashboard",
+      "mobile/dosage"
+    ],
+    "tags": [
+      "safety",
+      "clinical",
+      "adherence"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-15",
+    "review_due": "2027-04-15",
+    "status": "active",
+    "has_detail": false,
+    "layer": "warm",
+    "pack": "mobile-safety"
+  },
+  {
+    "id": "R-173",
+    "title": "Mobile Metadata Enrichment",
+    "summary": "When processing raw logs via Core logic, agents MUST ensure medicine and protocol objects are injected BEFORE rendering to avoid generic names.",
+    "applies_to": [
+      "mobile/services",
+      "packages/core"
+    ],
+    "tags": [
+      "data-integrity",
+      "consistency"
+    ],
+    "incident_count": 1,
+    "last_referenced": "2026-04-15",
+    "review_due": "2027-04-15",
+    "status": "active",
+    "has_detail": false,
+    "layer": "warm",
+    "pack": "mobile-data"
   }
 ]

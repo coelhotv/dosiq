@@ -1,6 +1,6 @@
 # Spec H5.7.5 — Evolução UX Dashboard Mobile
-
-> **Status:** Planejamento (Aguardando aprovação)
+ 
+> **Status:** Concluído ✅ (Merged em 2026-04-15)
 > **Sprint:** H5.7.5
 > **Objectivo:** Elevar a estética da `TodayScreen` para o padrão Premium (Design System) e optimizar a hierarquia de acções.
 > **Base:** `plans/DESIGN-SYSTEM.md` + `packages/core/src/utils/adherenceLogic.js`
