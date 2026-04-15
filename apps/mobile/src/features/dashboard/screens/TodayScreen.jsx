@@ -1,8 +1,3 @@
-// TodayScreen.jsx — tela principal do MVP mobile (H5.2 + H5.3)
-// Padrão: loading → error (sem cache) → dados (com stale banner se offline)
-// R5-003: registo de dose é o CTA principal
-// R5-008: stale state visível quando refresh falha com snapshot local
-
 import { useState } from 'react'
 import { ScrollView, View, Text, RefreshControl, StyleSheet } from 'react-native'
 import { useTodayData } from '../hooks/useTodayData'
@@ -12,40 +7,41 @@ import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import TodaySummaryCard from '../components/TodaySummaryCard'
 import UpcomingDosesList from '../components/UpcomingDosesList'
+import PriorityActionCard from '../components/PriorityActionCard'
+import StockAlertInline from '../components/StockAlertInline'
 import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
-import { colors, spacing } from '../../../shared/styles/tokens'
 
 export default function TodayScreen() {
-  // States primeiro (R-010)
   const [modalProtocol, setModalProtocol] = useState(null)
+  const [modalScheduledTime, setModalScheduledTime] = useState(null)
 
   const { data, loading, error, stale, refresh } = useTodayData()
 
-  // Carregamento inicial sem snapshot
   if (loading && !data) return <LoadingState message="A carregar o seu dia..." />
-
-  // Erro sem nenhum snapshot em cache
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
   const protocols = data?.protocols ?? []
-  const logs = data?.logs ?? []
   const medicines = data?.medicines ?? {}
+  const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
+  const zones = data?.zones ?? { late: [], now: [], upcoming: [], done: [] }
+  const stockAlerts = data?.stockAlerts ?? []
 
-  // Calcular totais para o card de resumo
-  const totalExpected = protocols.reduce((sum, p) => sum + (p.time_schedule?.length ?? 1), 0)
-  // totalTaken = nº de eventos de registo (tomadas), não soma de comprimidos
-  // quantity_taken é comprimidos por tomada; totalExpected é nº de tomadas agendadas
-  const totalTaken = logs.length
+  // Dose prioritária: a primeira da zona 'now' ou a primeira 'late'
+  const priorityDose = zones.now[0] || zones.late[0]
+
+  function handleOpenRegister(protocol, scheduledTime) {
+    setModalProtocol(protocol)
+    setModalScheduledTime(scheduledTime)
+  }
 
   function handleRegisterSuccess() {
-    console.log('[TodayScreen] dose registada — a fechar modal e a fazer refresh')
     setModalProtocol(null)
+    setModalScheduledTime(null)
     refresh()
   }
 
   return (
     <ScreenContainer>
-      {/* Banner de dados antigos (stale) */}
       {stale && (
         <View style={styles.staleBanner}>
           <Text style={styles.staleText}>⚠️ Sem ligação — a mostrar dados anteriores</Text>
@@ -58,11 +54,24 @@ export default function TodayScreen() {
           <RefreshControl
             refreshing={loading && !!data}
             onRefresh={refresh}
-            tintColor={colors.primary[600]}
+            tintColor="#005db6"
           />
         }
       >
-        <TodaySummaryCard totalExpected={totalExpected} totalTaken={totalTaken} />
+        <TodaySummaryCard 
+          totalExpected={stats.expected} 
+          totalTaken={stats.taken} 
+          score={stats.score} 
+        />
+
+        <StockAlertInline alerts={stockAlerts} />
+
+        {priorityDose && (
+          <PriorityActionCard 
+            dose={priorityDose} 
+            onPress={() => handleOpenRegister(priorityDose.protocol, priorityDose.scheduledTime)} 
+          />
+        )}
 
         {protocols.length === 0 ? (
           <EmptyState
@@ -71,10 +80,8 @@ export default function TodayScreen() {
           />
         ) : (
           <UpcomingDosesList
-            protocols={protocols}
-            logs={logs}
-            medicines={medicines}
-            onRegister={setModalProtocol}
+            zones={zones}
+            onRegister={handleOpenRegister}
           />
         )}
       </ScrollView>
@@ -82,8 +89,12 @@ export default function TodayScreen() {
       <DoseRegisterModal
         visible={modalProtocol !== null}
         protocol={modalProtocol}
+        scheduledTime={modalScheduledTime}
         medicineName={modalProtocol ? (medicines[modalProtocol.medicine_id]?.name ?? 'Medicamento') : ''}
-        onClose={() => setModalProtocol(null)}
+        onClose={() => {
+          setModalProtocol(null)
+          setModalScheduledTime(null)
+        }}
         onSuccess={handleRegisterSuccess}
       />
     </ScreenContainer>
@@ -92,20 +103,20 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   scroll: {
-    padding: spacing[4],
-    paddingBottom: spacing[8],
+    paddingVertical: 20,
+    paddingBottom: 40,
   },
   staleBanner: {
-    backgroundColor: colors.status.warning + '22',
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[4],
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.status.warning + '44',
+    borderBottomColor: 'rgba(255, 152, 0, 0.2)',
   },
   staleText: {
     fontSize: 12,
-    color: colors.status.warning,
+    color: '#904d00',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
 })
