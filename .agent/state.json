@@ -13,36 +13,36 @@
       "telegram"
     ],
     "phase": "initial",
-    "current_sprint": "H5.8"
+    "current_sprint": "H5.7.5"
   },
   "session": {
-    "id": "session_2026W16_h5_6_profile",
-    "started_at": "2026-04-15T12:59:00Z",
+    "id": "session_2026W16_h5_7_5_dashboard_evolution",
+    "started_at": "2026-04-15T15:22:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "PR 5 - H5.6 + H5.7: Perfil (email, logout, status) + Telegram (linking via Supabase RPC)",
+    "status": "coding",
+    "goal": "Evolução UX Dashboard Mobile (RingGauge, PAC, Dose Splitting/Sorting, StockAlert)",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "Branch feature/hybrid-h5/profile-telegram criada",
-      "Tela Perfil funcional (email, logout)",
-      "Service/Hook de profile integrando user_settings",
-      "Estado do Telegram (conectado/desconectado) funcional",
-      "Geracao de token Telegram via Supabase RPC (Opcao A)",
-      "UX Parity (R-166) e ScreenContainer (R-169) aplicados"
+      "Integração de @core/adherenceLogic finalizada",
+      "RingGaugeRedesign funcional (SVG)",
+      "PriorityActionCard implementado no topo",
+      "Doses separadas e ordenadas por horário",
+      "StockAlertInline funcional no dashboard",
+      "Design System apply (Ambient Shadows, No Borders)"
     ],
     "active_wave": {
       "name": "Wave H5 \u2014 MVP Produto Mobile (Fase 5)",
       "phase": 5,
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_7_5_DASHBOARD_EVOLUTION.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.6/H5.7",
-      "status": "completed",
-      "planned_at": "2026-04-15T09:45:00Z",
-      "previous_wave": "H5.5",
+      "sprint": "H5.7.5",
+      "status": "analysis",
+      "planned_at": "2026-04-15T12:05:00Z",
+      "previous_wave": "H5.7",
       "prs_planned": 1,
-      "blocking_decision": "Nenhuma (Op\u00e7\u00e3o A confirmada)",
+      "blocking_decision": "Nenhuma",
       "adrs_proposed": [],
-      "notes": "PR #469 mergeado com sucesso. Inclui Perfil, Telegram e corre\u00e7\u00e3o de estoque."
+      "notes": "Iniciando implementa\u00e7\u00e3o baseada no redesign web e core logic."
     }
   },
   "memory": {
