@@ -79,8 +79,6 @@ export default function ProfileScreen() {
 
         <TelegramLinkCard 
           settings={settings} 
-          onGenerateToken={handleGenerateToken}
-          isGenerating={isGenerating}
         />
 
         <View style={styles.logoutSection}>

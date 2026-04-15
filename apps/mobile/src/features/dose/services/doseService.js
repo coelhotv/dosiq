@@ -67,17 +67,29 @@ export async function registerDose(logData) {
     })
 
     if (stockError) {
-      if (__DEV__) console.error('[doseService] erro ao consumir stock:', JSON.stringify(stockError))
+      // R-170: Logar erro de estoque para depuração conforme padrão do projeto
+      console.warn('[doseService] erro ao consumir stock:', stockError)
       
-      // ROLLBACK: remover o log inserido se não for possível consumir o stock (ex: insuficiente)
-      await supabase.from('medicine_logs').delete().eq('id', logEntry.id)
+      // ROLLBACK: remover o log inserido se não for possível consumir o stock
+      const { error: rollbackError } = await supabase
+        .from('medicine_logs')
+        .delete()
+        .eq('id', logEntry.id)
+      
+      if (rollbackError) {
+        console.error('[doseService] erro crítico no rollback:', rollbackError)
+        return { 
+          success: false, 
+          error: 'Erro crítico: falha ao atualizar estoque pós-registro. Contacte o suporte.' 
+        }
+      }
       
       // Traduções amigáveis para erros comuns de stock
       if (stockError.message?.includes('Estoque insuficiente')) {
         return { success: false, error: 'Estoque insuficiente para registrar esta dose.' }
       }
       
-      return { success: false, error: 'Dose registada, mas erro ao consumir stock: ' + stockError.message }
+      return { success: false, error: 'Não foi possível registrar a dose: erro ao processar estoque.' }
     }
 
     if (__DEV__) console.log('[doseService] stock consumido com sucesso')
