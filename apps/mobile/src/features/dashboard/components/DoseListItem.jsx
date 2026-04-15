@@ -1,17 +1,3 @@
-// DoseListItem.jsx — item de protocolo/dose na lista da tela Hoje
-// Mostra: nome do medicamento, horários, se já foi tomado hoje
-
-import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
-
-/**
- * @param {{
- *   protocol: Object,
- *   medicine: Object,
- *   takenCount: number,   — quantas doses tomadas hoje
- *   onRegister: Function  — abre o modal de registo
- * }} props
- */
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, AlertCircle } from 'lucide-react-native'
