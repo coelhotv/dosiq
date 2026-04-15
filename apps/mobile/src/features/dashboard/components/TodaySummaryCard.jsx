@@ -51,12 +51,12 @@ const styles = StyleSheet.create({
     padding: 24,
     marginHorizontal: 16,
     marginBottom: 16,
-    // Ambient Shadow (R-166)
+    // Sanctuary Ambient Shadow (lg)
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   mainRow: {
     flexDirection: 'row',
@@ -65,30 +65,34 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flex: 1,
-    gap: 12,
+    gap: 16,
   },
   statItem: {
     flexDirection: 'column',
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1a1c1e', // On Surface
+    fontSize: 32, // Maior para destaque premium
+    fontWeight: '800',
+    color: '#1a1c1e', // neutral.800
+    letterSpacing: -1,
   },
   statLabel: {
     fontSize: 13,
-    color: '#44474e', // Variant
+    fontWeight: '600',
+    color: '#44474e', // neutral.600
+    marginTop: -2,
   },
   footer: {
-    marginTop: 16,
+    marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f1f1f1',
+    borderTopColor: '#f1f4f9', // neutral.100
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#44474e',
     textAlign: 'center',
     fontStyle: 'italic',
+    fontWeight: '500',
   },
 })
