@@ -16,8 +16,7 @@ import { parseLocalDate } from '@meus-remedios/core'
 export async function getActiveProtocols(userId) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
-    .from('protocols')
-    .select('id, name, medicine_id, frequency, time_schedule, dosage_per_intake, titration_status')
+    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, unit, start_date, end_date, titration_status')
     .eq('user_id', userId)
     .eq('active', true)
     .order('name')

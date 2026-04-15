@@ -446,9 +446,9 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
 
       case 'personalizado':
       case 'custom':
-        // Para frequência personalizada, verificar se há lógica específica
-        // Por padrão, assume-se que não há dose
-        return false
+        // Para frequência personalizada, se houver cronograma de horários, 
+        // assumimos que deve aparecer no dashboard
+        return protocol.time_schedule && protocol.time_schedule.length > 0
 
       case 'quando_necessário':
       case 'when_needed':

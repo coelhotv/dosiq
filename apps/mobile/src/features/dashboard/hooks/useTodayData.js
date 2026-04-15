@@ -64,7 +64,13 @@ export function useTodayData() {
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
       const medicines = await getMedicinesData(medicineIds)
 
-      const newData = { protocols, logs, medicines }
+      // Injetar objeto medicine em cada protocolo para o calculateDosesByDate poder enriquecer as doses
+      const enrichedProtocols = protocols.map(p => ({
+        ...p,
+        medicine: medicines[p.medicine_id] || null
+      }))
+
+      const newData = { protocols: enrichedProtocols, logs, medicines }
       dataRef.current = newData
       setData(newData)
       setStale(false)
