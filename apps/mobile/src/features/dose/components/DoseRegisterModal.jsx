@@ -23,12 +23,20 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
  * @param {{
  *   visible: boolean,
  *   protocol: Object|null,       — protocolo seleccionado
+ *   scheduledTime: string|null,  — horário agendado da dose
  *   medicineName: string,
  *   onClose: Function,
  *   onSuccess: Function,         — chamado após registo bem-sucedido
  * }} props
  */
-export default function DoseRegisterModal({ visible, protocol, medicineName, onClose, onSuccess }) {
+export default function DoseRegisterModal({ 
+  visible, 
+  protocol, 
+  scheduledTime, 
+  medicineName, 
+  onClose, 
+  onSuccess 
+}) {
   // States primeiro (R-010)
   const [quantity, setQuantity] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,7 +58,6 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
     }
 
     // Padrão do projecto: timestamps sempre em UTC (new Date().toISOString())
-    // O filtro do dashboard usa boundaries UTC derivadas do dia local (não raw YYYY-MM-DDT00:00:00)
     const takenAt = new Date().toISOString()
 
     const result = await registerDose({
@@ -58,6 +65,8 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
       medicine_id: protocol.medicine_id,
       taken_at: takenAt,
       quantity_taken: qty,
+      // Nota: o schema logSchema ainda não suporta scheduled_time explicitamente, 
+      // mas podemos passar para serviços futuros se necessário.
     })
 
     setLoading(false)
@@ -94,8 +103,17 @@ export default function DoseRegisterModal({ visible, protocol, medicineName, onC
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
-          <Text style={styles.title}>Tomar dose</Text>
-          <Text style={styles.medicineName}>{medicineName}</Text>
+          <View style={styles.header}>
+            <View style={styles.titleCol}>
+              <Text style={styles.title}>Tomar dose</Text>
+              <Text style={styles.medicineName}>{medicineName}</Text>
+            </View>
+            {scheduledTime && (
+              <View style={styles.timeBadge}>
+                <Text style={styles.timeBadgeText}>{scheduledTime}</Text>
+              </View>
+            )}
+          </View>
 
           <Text style={styles.label}>Quantidade (comprimidos)</Text>
           <TextInput
@@ -158,6 +176,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: spacing[2],
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing[2],
+  },
+  titleCol: {
+    flex: 1,
+    gap: 2,
+  },
   title: {
     fontSize: 18,
     fontWeight: '700',
@@ -166,7 +194,19 @@ const styles = StyleSheet.create({
   medicineName: {
     fontSize: 15,
     color: colors.text.secondary,
-    marginTop: -spacing[2],
+  },
+  timeBadge: {
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+  },
+  timeBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary[700],
   },
   label: {
     fontSize: 13,
