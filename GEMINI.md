@@ -1,6 +1,6 @@
 # 💊 Meus Remédios - Gemini CLI Context
 
-Este arquivo serve como guia de contexto para interações com o **Gemini CLI** neste repositório. Ele consolida as diretrizes de `CLAUDE.md`, `ARQUITETURA.md` e os arquivos de memória em `.memory/`.
+Guia de contexto para o **Gemini CLI**. Consolida as invariantes do projeto e aponta para a memória viva **DEVFLOW**.
 
 ## 🎯 Visão Geral do Projeto
 **Meus Remédios** é um PWA (Progressive Web App) brasileiro para gerenciamento de medicamentos, protocolos de tratamento e estoque.
@@ -89,4 +89,4 @@ Ao final de cada tarefa, execute o protocolo **DEVFLOW C5**:
 > Fontes canônicas: `.agent/memory/rules.json` (96 regras ativas) + `.agent/memory/anti-patterns.json` (54 APs ativos)
 
 ---
-*Última atualização: 2026-04-08*
+*Última atualização: 2026-04-15*
