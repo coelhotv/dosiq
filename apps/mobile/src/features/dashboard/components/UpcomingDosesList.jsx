@@ -13,43 +13,54 @@ import DoseListItem from './DoseListItem'
  *   onRegister: Function,
  * }} props
  */
-export default function UpcomingDosesList({ protocols, logs, medicines, onRegister }) {
-  if (!protocols.length) return null
+/**
+ * @param {{
+ *   zones: { late: Array, now: Array, upcoming: Array, done: Array },
+ *   onRegister: Function,
+ * }} props
+ */
+export default function UpcomingDosesList({ zones, onRegister }) {
+  if (!zones) return null
 
-  // Contar quantas vezes cada protocolo foi tomado hoje
-  const takenByProtocol = logs.reduce((acc, log) => {
-    if (log.protocol_id) {
-      acc[log.protocol_id] = (acc[log.protocol_id] ?? 0) + 1
-    }
-    return acc
-  }, {})
+  const renderSection = (title, doses) => {
+    if (!doses || doses.length === 0) return null
+    return (
+      <View style={styles.section} key={title}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {doses.map((dose) => (
+          <DoseListItem
+            key={dose.id}
+            dose={dose}
+            onRegister={onRegister}
+          />
+        ))}
+      </View>
+    )
+  }
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Doses de hoje</Text>
-      {protocols.map((protocol) => (
-        <DoseListItem
-          key={protocol.id}
-          protocol={protocol}
-          medicine={medicines[protocol.medicine_id]}
-          takenCount={takenByProtocol[protocol.id] ?? 0}
-          onRegister={onRegister}
-        />
-      ))}
+    <View style={styles.container}>
+      {renderSection('Em Atraso', zones.late)}
+      {renderSection('Próximas Doses', zones.upcoming)}
+      {renderSection('Concluídas Hoje', zones.done)}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 40,
+  },
   section: {
-    gap: spacing[1],
+    marginTop: 20,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text.muted,
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#8e9199', // Variant
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing[2],
+    letterSpacing: 1.5,
+    marginBottom: 12,
+    marginHorizontal: 20,
   },
 })
