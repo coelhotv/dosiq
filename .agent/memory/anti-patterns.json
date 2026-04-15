@@ -1958,5 +1958,74 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "adherence-reporting-mobile"
+  },
+  {
+    "id": "AP-H19",
+    "title": "Removing core React Native imports during style refactor",
+    "summary": "Accidentally removing View, Text, StyleSheet from imports when replacing them with semantic tokens. Causes ReferenceError in runtime.",
+    "applies_to": [
+      "mobile",
+      "refactor"
+    ],
+    "tags": [
+      "safety",
+      "ui",
+      "tokens"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-15",
+    "expiry_date": "2027-04-15",
+    "status": "active",
+    "related_rule": null,
+    "has_detail": false,
+    "layer": "hot",
+    "bootstrap_default": true,
+    "pack": "mobile-ux"
+  },
+  {
+    "id": "AP-H20",
+    "title": "Relying on iCloud to sync .git metadata before running gsync-native",
+    "summary": "iCloud sync delay can cause localized git commands (like reset --hard) to not reflect in other worktrees if metadada isn't synced, causing unwanted pushes of pending commits.",
+    "applies_to": [
+      "process",
+      "sync",
+      "icloud"
+    ],
+    "tags": [
+      "process",
+      "safe-sync",
+      "tooling"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-15",
+    "expiry_date": "2027-04-15",
+    "status": "active",
+    "related_rule": "R-170",
+    "has_detail": false,
+    "layer": "warm",
+    "bootstrap_default": false,
+    "pack": "process-hygiene"
+  },
+  {
+    "id": "AP-H21",
+    "title": "Confusing dosage per intake with medicine dosage per pill",
+    "summary": "Showing '1 mg' when it should be '1 un. of 50mg'. Mixing protocol quantity (how many) with medicine concentration (strength).",
+    "applies_to": [
+      "mobile/dashboard",
+      "ux"
+    ],
+    "tags": [
+      "ux",
+      "clinical",
+      "accuracy"
+    ],
+    "trigger_count": 1,
+    "last_triggered": "2026-04-15",
+    "expiry_date": "2027-04-15",
+    "status": "active",
+    "related_rule": null,
+    "has_detail": false,
+    "layer": "warm",
+    "pack": "mobile-ux"
   }
 ]

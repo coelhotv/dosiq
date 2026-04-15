@@ -544,5 +544,35 @@
     "fact": "Use ~/git-icloud/meus-remedios/ as the primary project path for shell commands and file references. It is a symlink to the iCloud path and easier to read/write.",
     "valid_for": ["general", "ops"],
     "source": "User request 2026-04-14"
+  },
+  {
+    "id": "K-078",
+    "topic": "priority-action-card-grouping",
+    "fact": "The Priority Action Card (PAC) MUST group up to 3 medication doses simultaneously to manage ingestion peaks without alert fatigue. It appears at the top of the TodayScreen when doses are in the +/- 2h window.",
+    "valid_for": [
+      "mobile",
+      "ux"
+    ],
+    "source": "Spec H5.7.5 Section 4"
+  },
+  {
+    "id": "K-079",
+    "topic": "hermes-url-recursion-trap",
+    "fact": "In Hermes, the native 'href' getter calls toString() internally. Overriding toString() and accessing 'this.href' inside it causes infinite recursion and a RangeError. Always use a raw backing store or captured native method for property access inside overrides.",
+    "valid_for": [
+      "mobile",
+      "debugging"
+    ],
+    "source": "Session 2026-04-15 debugging"
+  },
+  {
+    "id": "K-080",
+    "topic": "hermes-url-trailing-slash",
+    "fact": "The Hermes URL motor automatically appends a trailing slash to paths (e.g., /api results in /api/). This can break PostgREST queries if not sanitized before appending query parameters. The custom polyfill in polyfills.js handles this normalization.",
+    "valid_for": [
+      "mobile",
+      "networking"
+    ],
+    "source": "Session 2026-04-15 debugging"
   }
 ]
