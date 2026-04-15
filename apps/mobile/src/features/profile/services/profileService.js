@@ -1,5 +1,4 @@
-// profileService.js — Thin local service para Profile feature (H5)
-// ADR-029: Supabase Auth chamadas encapsuladas em services, não em componentes
+import { z } from 'zod'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -60,6 +59,9 @@ export async function getUserSettings() {
   try {
     const { data: user, error: userError } = await getCurrentUser()
     if (userError || !user) throw new Error(userError || 'Utilizador não encontrado')
+
+    // R-121/R-125: Validar userId antes de realizar consulta ao Supabase
+    z.string().uuid().parse(user.id)
 
     const { data, error } = await supabase
       .from('user_settings')

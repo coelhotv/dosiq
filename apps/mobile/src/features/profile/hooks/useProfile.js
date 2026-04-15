@@ -39,10 +39,6 @@ export function useProfile() {
     }
   }, [])
 
-  useEffect(() => {
-    loadProfile()
-  }, [loadProfile])
-
   /**
    * Gerar novo token de vinculação Telegram
    */
@@ -62,6 +58,10 @@ export function useProfile() {
       throw err
     }
   }
+
+  useEffect(() => {
+    loadProfile()
+  }, [loadProfile])
 
   return {
     ...state,
