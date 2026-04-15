@@ -171,13 +171,24 @@ Para este projeto, comece com:
 
 ### Sugestão prática
 
-Use valores assim:
+No dashboard do Expo, você deve criar as variáveis e associá-las aos **Environments** específicos. Garanta que:
 
-- `development` -> `development`
-- `preview` -> `preview`
-- `production` -> `production`
+- `development` (Environment) -> `EXPO_PUBLIC_APP_ENV = development`
+- `preview` (Environment) -> `EXPO_PUBLIC_APP_ENV = preview`
+- `production` (Environment) -> `EXPO_PUBLIC_APP_ENV = production`
 
-### Passo 2 - documentar quem aponta para quê
+### Passo 2 - Documentar o mapeamento no eas.json
+
+Para garantir que o `app.config.js` detecte o perfil corretamente, o `eas.json` deve injetar explicitamente a variável `EAS_BUILD_PROFILE`:
+
+```json
+"production": {
+  "autoIncrement": true,
+  "env": {
+    "EAS_BUILD_PROFILE": "production"
+  }
+}
+```
 
 Registre internamente:
 
@@ -522,7 +533,16 @@ Correção:
 }
 ```
 
-## 12.8. Watchman ou fluxo local ficam instáveis porque o repositório está no iCloud Drive
+## 12.9. App sobe com nome ou Package Name de "Dev" em perfil de Produção
+
+Causa provável:
+- O `app.config.js` falhou ao detectar o perfil e caiu no fallback `development`.
+
+Correção:
+- Verifique se o `eas.json` possui o bloco `env` com `EAS_BUILD_PROFILE` para o perfil em questão.
+- Verifique se você não tem um arquivo `.env` local sobrescrevendo essas variáveis durante o disparo do build.
+
+## 12.10. Watchman ou fluxo local ficam instáveis porque o repositório está no iCloud Drive
 
 Causa provável:
 

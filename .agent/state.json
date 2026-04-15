@@ -16,33 +16,27 @@
     "current_sprint": "H5.7.5"
   },
   "session": {
-    "id": "session_2026W16_h5_7_5_dashboard_evolution",
-    "started_at": "2026-04-15T15:22:00Z",
+    "id": "session_2026W16_h5_publishing_prep",
+    "started_at": "2026-04-15T20:20:00Z",
     "mode": "coding",
-    "status": "delivered",
-    "goal": "Evolução UX Dashboard Mobile (RingGauge, PAC, Dose Splitting/Sorting, StockAlert)",
-    "goal_type": "feature",
+    "status": "coding",
+    "goal": "Configuração de Identidade Visual (v0.1.0) e Preparação para Google Play",
+    "goal_type": "chore",
     "acceptance_criteria": [
-      "Integração de @core/adherenceLogic finalizada",
-      "RingGaugeRedesign funcional (SVG)",
-      "PriorityActionCard implementado no topo",
-      "Doses separadas e ordenadas por horário",
-      "StockAlertInline funcional no dashboard",
-      "Design System apply (Ambient Shadows, No Borders)"
+      "Logotipo mobile configurado com Safe Zone correta (Android Adaptive)",
+      "Splash Screen com fundo harmonizado (#E9F3EA)",
+      "Configuração EAS Build estabilizada (appVersionSource: remote)",
+      "Versão do projeto alinhada para v0.1.0 (MVP Preview)",
+      "Primeiro build de produção (.aab) disparado no EAS"
     ],
     "active_wave": {
       "name": "Wave H5 \u2014 MVP Produto Mobile (Fase 5)",
       "phase": 5,
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_7_5_DASHBOARD_EVOLUTION.md",
-      "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.7.5",
-      "status": "completed",
-      "planned_at": "2026-04-15T12:05:00Z",
-      "previous_wave": "H5.7",
-      "prs_planned": 1,
-      "blocking_decision": "Nenhuma",
-      "adrs_proposed": [],
-      "notes": "Sprint concluída. Dashboard evolucionado para UI Sanctuary Premium."
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
+      "sprint": "H5.8 (Publishing)",
+      "status": "in-progress",
+      "planned_at": "2026-04-15T17:20:00Z",
+      "notes": "Foco em identidade visual, assets da loja e submissão do primeiro release para testes internos."
     }
   },
   "memory": {
