@@ -44,6 +44,20 @@ Our palette balances the "Verde Saúde" (Trust) and "Azul Clínico" (Seriousness
 *   **The Glass & Gradient Rule:** Floating elements (like navigation bars or emergency FABs) must use **Glassmorphism**. Apply `surface` with 80% opacity and a `backdrop-blur(12px)`. 
 *   **Signature Texture:** Primary actions should use a subtle linear gradient from `primary` (#006a5e) to `primary_container` (#008577) at a 135-degree angle. This adds "visual weight" and a premium tactile feel.
 
+#### Primary Palette
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `primary` | `#006a5e` | Primary CTAs, active nav, ring track fill, gradient start |
+| `primary-container` | `#008577` | Gradient end for primary actions (135° linear) |
+| `primary-fixed` | `#90f4e3` | Ring gauge progress stroke, highlight badges, "taken" indicator |
+| `secondary` | `#005db6` | Supporting actions, ring track background, secondary progress |
+| `secondary-fixed` | `#d6e3ff` | Icon container backgrounds, list leading circles |
+| `tertiary` | `#ffdea8` | Warm highlights, "Novo" badges, positive status |
+| `error` | `#ba1a1a` | Critical alerts, low-stock bars (<20%), emergency CTAs |
+
+
+
 ---
 
 ### 3. Typography: The Editorial Voice
