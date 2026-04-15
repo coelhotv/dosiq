@@ -1,42 +1,59 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Primary gradient -->
-    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#006a5e"/>
-      <stop offset="100%" stop-color="#008577"/>
-    </linearGradient>
+<svg viewBox="0 0 100 100" width="500" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pílula (cápsula) -->
+  <rect x="10" y="30" width="80" height="40" rx="20"
+        fill="none" stroke="#006a5e" stroke-width="5"
+        transform="rotate(-45 50 50)" />
 
-    <!-- Soft glow -->
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
+  <!-- IC Body (corpo do chip) -->
+  <rect x="38" y="38" width="24" height="24" rx="2"
+        fill="none" stroke="#006a5e" stroke-width="1.2" />
 
-  <!-- Background (Full Square for Play Store masking) -->
-  <rect width="512" height="512" fill="#F7F9FB"/>
+  <!-- Pino superior central com zigzag até borda -->
+  <line x1="50" y1="38" x2="50" y2="32" stroke="#006a5e" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 50 32 L 50 20 L 49 20"
+        stroke="#006a5e" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" />
 
-  <!-- Capsule (Scaled to 1.1 for Android Safe Zone) -->
-  <g transform="translate(256 256) scale(1.1) rotate(-35) translate(-256 -256)" filter="url(#softGlow)">
-    <rect x="110" y="180" width="300" height="150" rx="75"
-          fill="none"
-          stroke="url(#primaryGrad)"
-          stroke-width="22"/>
+  <!-- Pino inferior central com zigzag até borda -->
+  <line x1="50" y1="62" x2="50" y2="68" stroke="#006a5e" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 50 68 L 50 80 L 47 80"
+        stroke="#006a5e" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" />
 
-    <!-- Inner sanctuary flow -->
-    <path d="M160 255 Q256 190 352 255"
-          fill="none"
-          stroke="#7ed4c5ff"
-          stroke-width="16"
-          opacity="1"/>
+  <!-- Pino esquerdo com zigzag até borda -->
+  <line x1="38" y1="50" x2="32" y2="50" stroke="#006a5e" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 32 50 L 20 50 L 21 48"
+        stroke="#006a5e" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" />
 
-    <path d="M185 285 Q256 230 327 285"
-          fill="none"
-          stroke="#7ed4c5ff"
-          stroke-width="14"
-          opacity="0.7"/>
-  </g>
+  <!-- Pino direito com zigzag até borda -->
+  <line x1="62" y1="50" x2="68" y2="50" stroke="#006a5e" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 68 50 L 80 50 L 80 47"
+        stroke="#006a5e" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Pinos superiores laterais (simples) -->
+  <line x1="42" y1="38" x2="42" y2="32" stroke="#006a5e" stroke-width="1.2" stroke-linecap="round" />
+  <line x1="58" y1="38" x2="58" y2="32" stroke="#006a5e" stroke-width="1.2" stroke-linecap="round" />
+
+  <!-- Pinos inferiores laterais (simples) -->
+  <line x1="42" y1="62" x2="42" y2="68" stroke="#006a5e" stroke-width="1.2" stroke-linecap="round" />
+  <line x1="58" y1="62" x2="58" y2="68" stroke="#006a5e" stroke-width="1.2" stroke-linecap="round" />
+
+  <!-- Pino esquerdo inferior -->
+  <line x1="38" y1="56" x2="32" y2="56" stroke="#006a5e" stroke-width="1.1" stroke-linecap="round" />
+
+  <!-- Pino direito inferior -->
+  <line x1="62" y1="56" x2="68" y2="56" stroke="#006a5e" stroke-width="1.1" stroke-linecap="round" />
+
+  <!-- Pino esquerdo superior -->
+  <line x1="38" y1="44" x2="32" y2="44" stroke="#006a5e" stroke-width="1.1" stroke-linecap="round" />
+
+  <!-- Pino direito superior -->
+  <line x1="62" y1="44" x2="68" y2="44" stroke="#006a5e" stroke-width="1.1" stroke-linecap="round" />
+
+  <!-- Detalhe interno: ponto de referência (cavidade do IC real) -->
+  <circle cx="42" cy="42" r="1.5" fill="#006a5e" />
+
+  <!-- Linhas de circuito internas -->
+  <line x1="46" y1="44" x2="54" y2="44" stroke="#006a5e" stroke-width="0.8" opacity="0.6" />
+  <line x1="46" y1="50" x2="54" y2="50" stroke="#006a5e" stroke-width="0.8" opacity="0.6" />
+  <line x1="46" y1="56" x2="54" y2="56" stroke="#006a5e" stroke-width="0.8" opacity="0.6" />
+  <line x1="50" y1="44" x2="50" y2="56" stroke="#006a5e" stroke-width="0.8" opacity="0.6" />
 </svg>
