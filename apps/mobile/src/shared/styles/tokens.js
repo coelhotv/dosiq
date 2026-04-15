@@ -35,11 +35,25 @@ export const colors = {
     info: '#005db6',
   },
 
+  // Text semântico (Aliases para retrocompatibilidade e semântica)
+  text: {
+    primary: '#1a1c1e', // neutral.800
+    secondary: '#44474e', // neutral.600
+    muted: '#8e9199', // neutral.400
+    inverse: '#ffffff',
+  },
+
+  // Borders
+  border: {
+    default: '#e1e3e8', // neutral.200
+    light: '#f1f4f9', // neutral.100
+  },
+
   // Backgrounds semântico
   bg: {
     screen: '#f8fafb', // Sanctuary Surface
     card: '#ffffff',
-    overlay: 'rgba(26, 28, 30, 0.4)',
+    overlay: 'rgba(26, 28, 29, 0.4)',
   },
 }
 
