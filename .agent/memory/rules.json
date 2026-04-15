@@ -2422,5 +2422,26 @@
     "layer": "warm",
     "bootstrap_default": false,
     "pack": "design-ui"
+  },
+  {
+    "id": "R-170",
+    "title": "Bypass Pty Host via .sh scripts",
+    "summary": "Use temporary .sh scripts to bypass Pty Host instability when using complex gh api commands with multiple pipes/parses.",
+    "applies_to": [
+      "all"
+    ],
+    "tags": [
+      "process",
+      "tooling",
+      "safety"
+    ],
+    "incident_count": 2,
+    "last_referenced": "2026-04-15",
+    "review_due": "2027-04-15",
+    "status": "active",
+    "has_detail": true,
+    "layer": "hot",
+    "pack": "process-hygiene",
+    "bootstrap_default": true
   }
 ]

@@ -162,35 +162,46 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   URL.prototype.toString = function () {
     var href = _nativeToString.call(this)   // href nativo, sem passar por este override
     
-    // R-118: Bypass para URLs do Metro/DevServer para não quebrar carregamento de assets
+    // R-118: Bypass para URLs do Metro/DevServer
     if (href.indexOf('192.168.') >= 0 || href.indexOf('localhost') >= 0 || href.indexOf('127.0.0.1') >= 0 || href.indexOf(':8081') >= 0) {
       return href
     }
 
-    if (!this._searchPairs || !this._searchPairs.length) return href
-    var pairs = this._searchPairs
-    var qs = ''
-    for (var i = 0; i < pairs.length; i++) {
-      if (i) qs += '&'
-      qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
-    }
     var q = href.indexOf('?')
     var h = href.indexOf('#')
     var base = q >= 0 ? href.slice(0, q) : (h >= 0 ? href.slice(0, h) : href)
+    var search = q >= 0 ? (h >= 0 ? href.slice(q, h) : href.slice(q)) : ''
     var hash = h >= 0 ? href.slice(h) : ''
-    // Hermes normaliza URLs adicionando '/' no fim do path (ex: /protocols → /protocols/).
-    // PostgREST rejeita /protocols/?select=... com PGRST125 — só aceita /protocols?select=...
-    // Remover barra final se existir (e não for raiz do host, ex: 'https://host/')
+
+    // R-168: Hermes normaliza URLs adicionando '/' no fim do path (ex: /protocols → /protocols/).
+    // PostgREST rejeita /protocols/?select=... ou /rpc/func/ com PGRST125.
+    // Remover barra final do Path se existir (e não for raiz do host).
     if (base.charAt(base.length - 1) === '/') {
       var afterProto = base.indexOf('//') + 2
       var firstPathSlash = base.indexOf('/', afterProto)
       if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
         base = base.slice(0, -1)
-        if (__DEV__) console.log('[sp-tostring] removida barra final — base:', base)
       }
     }
-    var result = base + '?' + qs + hash
-    if (__DEV__) console.log('[sp-tostring] toString:', result)
+
+    // Se temos pares acumulados, reconstruímos o search a partir de _searchPairs
+    if (this._searchPairs && this._searchPairs.length) {
+      var pairs = this._searchPairs
+      var qs = ''
+      for (var i = 0; i < pairs.length; i++) {
+        if (i) qs += '&'
+        qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
+      }
+      search = '?' + qs
+    }
+
+    var result = base + search + hash
+    if (__DEV__) {
+      // Logar URLs do Supabase para debug de PGRST125
+      if (result.indexOf('supabase.co') >= 0) {
+        console.log('[sp-tostring] result:', result)
+      }
+    }
     return result
   }
 

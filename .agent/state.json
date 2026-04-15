@@ -16,35 +16,33 @@
     "current_sprint": "H5.6"
   },
   "session": {
-    "id": "session_2026W16_h5_5_stock",
-    "started_at": "2026-04-14T15:55:00Z",
+    "id": "session_2026W16_h5_6_profile",
+    "started_at": "2026-04-15T12:59:00Z",
     "mode": "coding",
-    "status": "analysis",
-    "goal": "H5.5 Stabilize Production Release + Play Store Metadata",
+    "status": "review",
+    "goal": "PR 5 - H5.6 + H5.7: Perfil (email, logout, status) + Telegram (linking via Supabase RPC)",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "PR #468 (H5.5) conclu\u00edda e mergeada",
-      "Listagem de estoque por n\u00edvel de risco (ADR-018)",
-      "Badges de cores autom\u00e1ticas conforme dias remanescentes",
-      "UX Refinement: Prioriza\u00e7\u00e3o por urg\u00eancia e seccionamento ativado",
-      "Conformidade total com a camada de servi\u00e7os thin (ADR-029)"
+      "Branch feature/hybrid-h5/profile-telegram criada",
+      "Tela Perfil funcional (email, logout)",
+      "Service/Hook de profile integrando user_settings",
+      "Estado do Telegram (conectado/desconectado) funcional",
+      "Geracao de token Telegram via Supabase RPC (Opcao A)",
+      "UX Parity (R-166) e ScreenContainer (R-169) aplicados"
     ],
     "active_wave": {
       "name": "Wave H5 \u2014 MVP Produto Mobile (Fase 5)",
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md",
       "sprint_plan": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.5",
-      "status": "completed",
-      "planned_at": "2026-04-12T22:00:00Z",
-      "previous_wave": "H5.4",
-      "prs_planned": 6,
-      "blocking_decision": "Nenhuma (H5.5 finalizada)",
-      "adrs_proposed": [
-        "ADR-029",
-        "ADR-030"
-      ],
-      "notes": "H5.5 CONCLU\u00cdDA E MERGEADA (PR #468). UX refinado com seccionamento e prioriza\u00e7\u00e3o."
+      "sprint": "H5.6/H5.7",
+      "status": "review",
+      "planned_at": "2026-04-15T09:45:00Z",
+      "previous_wave": "H5.5",
+      "prs_planned": 1,
+      "blocking_decision": "Nenhuma (Op\u00e7\u00e3o A confirmada)",
+      "adrs_proposed": [],
+      "notes": "PR #469 criado para revisão. Inclui Perfil, Telegram e correção de estoque."
     }
   },
   "memory": {
@@ -54,7 +52,7 @@
     "contracts_count": 16,
     "knowledge_count": 76,
     "last_distillation": "2026-04-14T16:45:00Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "recent_additions": {
       "rules": [
         "R-166",

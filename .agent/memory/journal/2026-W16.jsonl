@@ -7,3 +7,4 @@
 {"ts":"2026-04-14T16:44:30Z","type":"pattern_discovered","id":"R-170","desc":"Uso de scripts .sh temporários para bypass de instabilidade Pty Host no Antigravity ao usar gh api complexos"}
 {"ts":"2026-04-14T16:45:00Z","type":"ux_decision","desc":"Medicamentos sem estoque e sem protocolo ativo são filtrados da view H5.5 para reduzir ruído visual"}
 {"timestamp":"2026-04-14T17:25:00Z","sprint":"H5.5-Fix","goal":"Estabilização Android + Identidade Oficial","status":"success","details":"Resolvido crash de navegação e race condition de sessão no Android. Confirmado e documentado Bundle ID oficial com approval da Play Console."}
+{"timestamp": "2026-04-15T14:02:40Z", "event": "pr_created", "sprint": "H5.6/H5.7", "pr": "#469", "goal": "Perfil + Telegram + Fix Stock Mobile", "outcomes": ["H5.6 ProfileScreen implemented", "H5.7 Telegram linking implemented via RPC Option A", "PGRST125 URL polyfill fix for Hermes included", "Stock consumption logic fixed in doseService"]}
