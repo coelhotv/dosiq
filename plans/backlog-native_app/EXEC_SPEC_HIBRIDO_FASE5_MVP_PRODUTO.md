@@ -851,13 +851,13 @@ Erro:
 
 ## 20. Definition of Done da Fase 5
 
-- [ ] shell + tabs do produto funcionando
-- [ ] tela `Hoje` funcional e util
-- [ ] fluxo de registro de dose funcional
-- [ ] tela `Tratamentos` funcional
-- [ ] tela `Estoque` funcional
-- [ ] tela `Perfil` funcional
-- [ ] fluxo de vinculo Telegram funcional
+- [x] shell + tabs do produto funcionando
+- [x] tela `Hoje` funcional e util
+- [x] fluxo de registro de dose funcional
+- [x] tela `Tratamentos` funcional
+- [x] tela `Estoque` funcional
+- [x] tela `Perfil` funcional
+- [x] fluxo de vinculo Telegram funcional
 - [ ] estados loading/empty/error presentes nas telas principais
 - [ ] stale/offline states coerentes existem onde houver snapshot local
 - [ ] fluxos principais validados manualmente
@@ -891,13 +891,13 @@ So entao faz sentido adicionar:
 
 Checklist obrigatorio de ancoragem:
 
-- [ ] Esta fase entrega shell + tabs
-- [ ] Esta fase entrega `Hoje`
-- [ ] Esta fase entrega registro de dose
-- [ ] Esta fase entrega `Tratamentos`
-- [ ] Esta fase entrega `Estoque`
-- [ ] Esta fase entrega `Perfil / Settings`
-- [ ] Esta fase entrega vinculo Telegram
+- [x] Esta fase entrega shell + tabs
+- [x] Esta fase entrega `Hoje`
+- [x] Esta fase entrega registro de dose
+- [x] Esta fase entrega `Tratamentos`
+- [x] Esta fase entrega `Estoque`
+- [x] Esta fase entrega `Perfil / Settings`
+- [x] Esta fase entrega vinculo Telegram
 - [ ] Esta fase nao implementa push native ainda
 - [ ] Esta fase nao implementa PDF/chatbot/calendar/emergency avancado/admin
 - [ ] Esta fase segue os addendums de deep links e offline/sync
