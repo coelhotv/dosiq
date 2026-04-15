@@ -42,7 +42,7 @@ module.exports = {
     splash: {
       image: './assets/icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#E9F3EA',
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
@@ -55,7 +55,7 @@ module.exports = {
       versionCode: 1,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#2563eb',
+        backgroundColor: '#E9F3EA',
       },
       edgeToEdgeEnabled: true,
     },
