@@ -2,71 +2,47 @@
 // Alinhado com Sanctuary Terapêutico redesign (Wave 4-5)
 
 export const colors = {
-  // Escala primária (Tailwind-like)
+  // Sanctuary Palette (Redesign Wave 6)
   primary: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    500: '#3b82f6',
-    600: '#2563eb',
-    700: '#1d4ed8',
-    900: '#1e3a8a',
+    50: '#f0fdf9',
+    100: '#ccfbf1',
+    200: '#99f6e4',
+    500: '#14b8a6', // Teal/Emerald
+    600: '#005db6', // Deep Blue (Brand)
+    700: '#0f766e',
+    900: '#134e4a',
   },
 
-  // Neutral (grays)
+  // Neutral (grays/surfaces)
   neutral: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    300: '#cbd5e1',
-    400: '#94a3b8',
-    500: '#64748b',
-    600: '#475569',
-    700: '#334155',
-    800: '#1e293b',
-    900: '#0f172a',
+    50: '#f8fafb', // Surface
+    100: '#f1f4f9',
+    200: '#e1e3e8',
+    300: '#c1c7ce',
+    400: '#8e9199',
+    500: '#71777f',
+    600: '#44474e',
+    700: '#2e3036',
+    800: '#1a1c1e', // On Surface
+    900: '#000000',
   },
 
   // Status semântico
   status: {
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    errorLight: '#fca5a5',
-    info: '#0ea5e9',
-  },
-
-  // Text semântico
-  text: {
-    primary: '#1e293b',
-    secondary: '#64748b',
-    muted: '#94a3b8',
-    inverse: '#ffffff',
+    success: '#4fb3a4',
+    warning: '#904d00',
+    error: '#ba1a1a',
+    info: '#005db6',
   },
 
   // Backgrounds semântico
   bg: {
-    screen: '#f8fafc',
+    screen: '#f8fafb', // Sanctuary Surface
     card: '#ffffff',
-    overlay: 'rgba(15, 23, 42, 0.5)',
-  },
-
-  // Borders
-  border: {
-    default: '#e2e8f0',
-    light: '#f1f5f9',
-    dark: '#cbd5e1',
-  },
-
-  // Tab navigation
-  tab: {
-    activeTint: '#2563eb',
-    inactiveTint: '#94a3b8',
-    bgDefault: '#ffffff',
+    overlay: 'rgba(26, 28, 30, 0.4)',
   },
 }
 
-// Escala numérica de espaçamento (Tailwind-like: 1 = 4px)
 export const spacing = {
   1: 4,
   2: 8,
@@ -74,42 +50,49 @@ export const spacing = {
   4: 16,
   5: 20,
   6: 24,
-  7: 28,
   8: 32,
   10: 40,
   12: 48,
 }
 
 export const borderRadius = {
-  xs: 2,
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
   xxl: 24,
   full: 9999,
 }
 
 export const shadows = {
+  // Ambient Shadows (Spec H5.7.5)
   xs: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
     elevation: 4,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24, // Ambient Shadow diffusion
+    elevation: 8,
   },
 }
