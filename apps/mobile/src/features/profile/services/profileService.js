@@ -23,7 +23,7 @@ export async function getCurrentUser() {
     
     return { data: user ?? null, error: null }
   } catch (err) {
-    console.error('Erro ao obter utilizador:', err)
+    if (__DEV__) console.error('Erro ao obter utilizador:', err)
     return { data: null, error: err.message }
   }
 }
@@ -39,15 +39,56 @@ export async function logoutUser() {
     // Se a sessão já não existe, o logout foi tecnicamente bem sucedido localmente
     if (error) {
       if (error.message?.includes('session missing') || error.__isAuthError) {
-        console.warn('Logout: sessão já estava ausente, considerando sucesso.')
+        if (__DEV__) console.warn('Logout: sessão já estava ausente, considerando sucesso.')
         return { success: true, error: null }
       }
-      console.error('Erro ao fazer logout:', error)
+      if (__DEV__) console.error('Erro ao fazer logout:', error)
       return { success: false, error: error.message }
     }
     return { success: true, error: null }
   } catch (err) {
-    console.error('Erro ao fazer logout:', err)
+    if (__DEV__) console.error('Erro ao fazer logout:', err)
     return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Buscar as configurações do usuário atual (inclui telegram_chat_id)
+ * @returns {Promise<{data: any, error: string|null}>}
+ */
+export async function getUserSettings() {
+  try {
+    const { data: user, error: userError } = await getCurrentUser()
+    if (userError || !user) throw new Error(userError || 'Utilizador não encontrado')
+
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('user_id, telegram_chat_id, verification_token')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (error) throw error
+    
+    return { data: data || { user_id: user.id, telegram_chat_id: null }, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('Erro ao buscar definições (profileService):', err)
+    return { data: null, error: err.message }
+  }
+}
+
+/**
+ * Gerar token de verificação via Supabase RPC (Opção A)
+ * @returns {Promise<{token: string|null, error: string|null}>}
+ */
+export async function generateTelegramToken() {
+  try {
+    // Opção A decidida conforme EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md
+    const { data, error } = await supabase.rpc('generate_telegram_token')
+    
+    if (error) throw error
+    return { token: data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('Erro ao gerar token Telegram:', err)
+    return { token: null, error: err.message }
   }
 }
