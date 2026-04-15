@@ -14,13 +14,13 @@ const variants = {
   },
   preview: {
     name: 'Meus Remedios Preview',
-    slug: 'meus-remedios-preview',
+    slug: 'meus-remedios-dev',
     iosBundleIdentifier: 'com.coelhotv.meusremedios.preview',
     androidPackage: 'com.coelhotv.meusremedios.preview',
   },
   production: {
     name: 'Meus Remedios',
-    slug: 'meus-remedios',
+    slug: 'meus-remedios-dev',
     iosBundleIdentifier: 'com.coelhotv.meusremedios',
     androidPackage: 'com.coelhotv.meusremedios',
   },
