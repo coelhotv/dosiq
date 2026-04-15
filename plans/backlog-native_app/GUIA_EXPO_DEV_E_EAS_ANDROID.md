@@ -44,9 +44,9 @@ O app mobile já possui base suficiente para subir no ecossistema Expo:
 
 ### Leitura correta desses perfis
 
-- `development`: uso local com dev client
-- `preview`: distribuição interna para testes reais
-- `production`: build `.aab` voltada para Google Play
+- `development`: gera um **APK** para uso local/manual com dev client. Não serve para a Play Store.
+- `preview`: distribuição interna para testes reais (pode gerar APK ou AAB).
+- `production`: gera obrigatoriamente um **Android App Bundle (.aab)**, formato exigido pela Google Play Console para publicação.
 
 ---
 
@@ -245,9 +245,9 @@ npx eas-cli@latest build --platform android --profile production
 
 ### O que esperar
 
-- build Android para distribuição
-- incremento automático de versão no perfil `production`
-- artefato apropriado para submissão na Google Play
+- build Android para distribuição (.aab)
+- incremento automático de versão no perfil `production` (via EAS Remote)
+- artefato pronto para upload na Google Play Console
 
 ### Regra simples
 
@@ -318,7 +318,7 @@ Pense assim:
 ## 9. Checklist de validação antes do primeiro build de produção
 
 - `app.config.js` com `android.package = com.coelhotv.meusremedios`
-- `version = 1.0.0` coerente com o MVP inicial
+- `version = 0.1.0` coerente com o estágio MVP Preview
 - `android.versionCode` pronto para começar em `1`
 - `icon.png` aceitável para loja e launcher
 - login funcionando
@@ -506,7 +506,23 @@ emulator -list-avds
 emulator -avd NOME_DO_SEU_AVD
 ```
 
-## 12.7. Watchman ou fluxo local ficam instáveis porque o repositório está no iCloud Drive
+## 12.7. Warning: "cli.appVersionSource is not set"
+
+Causa provável:
+- O EAS agora exige que você defina se a versão é controlada localmente ou remotamente para evitar conflitos em builds de CI.
+
+Correção:
+- No `eas.json`, adicione o bloco no topo:
+```json
+{
+  "cli": {
+    "appVersionSource": "remote"
+  },
+  "build": { ... }
+}
+```
+
+## 12.8. Watchman ou fluxo local ficam instáveis porque o repositório está no iCloud Drive
 
 Causa provável:
 
