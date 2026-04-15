@@ -83,8 +83,8 @@ Use este texto como base para os campos internos da sua documentação ou quando
 O app exige autenticação para acesso às funcionalidades principais.
 
 Credenciais de teste:
-E-mail: REVIEW_EMAIL
-Senha: REVIEW_PASSWORD
+E-mail: 'review@coelho.me'
+Senha: 'APPreview'
 
 Passos para acesso:
 1. Abra o app.
@@ -108,8 +108,8 @@ Este é o texto mais útil para colar na Google Play Console, porque a revisão 
 This app requires authentication to access its main features.
 
 Test credentials:
-Email: REVIEW_EMAIL
-Password: REVIEW_PASSWORD
+Email: review@coelho.me
+Password: APPreview
 
 Steps to access the app:
 1. Open the app.
@@ -127,14 +127,12 @@ Notes:
 
 ## 7. Versão adaptada para colar diretamente na Play Console
 
-Substitua apenas `REVIEW_EMAIL` e `REVIEW_PASSWORD`.
-
 ```text
 This app requires login to access its core functionality.
 
 Review account:
-Email: REVIEW_EMAIL
-Password: REVIEW_PASSWORD
+Email: review@coelho.mr
+Password: APPreview
 
 Review steps:
 1. Open the app.
@@ -187,8 +185,8 @@ Se você quiser uma versão curta, eu recomendo usar esta:
 This app requires login to access its main features.
 
 Test account:
-Email: REVIEW_EMAIL
-Password: REVIEW_PASSWORD
+Email: review@coelho.me
+Password: APPreview
 
 Steps:
 1. Open the app.

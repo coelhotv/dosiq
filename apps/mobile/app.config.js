@@ -37,8 +37,13 @@ module.exports = {
     scheme: 'meusremedios',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './icon.png',
+    icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
+    splash: {
+      image: './assets/icon.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
       buildNumber: '1',
@@ -49,6 +54,7 @@ module.exports = {
       package: current.androidPackage,
       versionCode: 1,
       adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#2563eb',
       },
       edgeToEdgeEnabled: true,
