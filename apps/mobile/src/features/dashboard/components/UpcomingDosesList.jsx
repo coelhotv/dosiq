@@ -1,18 +1,6 @@
-// UpcomingDosesList.jsx — lista de doses/protocolos do dia
-// Calcula quantas vezes cada protocolo foi tomado e exibe cada item
-
 import { View, Text, StyleSheet } from 'react-native'
-import { colors, spacing } from '../../../shared/styles/tokens'
 import DoseListItem from './DoseListItem'
 
-/**
- * @param {{
- *   protocols: Array,
- *   logs: Array,
- *   medicines: Record<string, Object>,
- *   onRegister: Function,
- * }} props
- */
 /**
  * @param {{
  *   zones: { late: Array, now: Array, upcoming: Array, done: Array },
