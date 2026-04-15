@@ -6,20 +6,14 @@ customModes:
     description: Implementa qualquer task de UX/UI do Meus Remedios seguindo specs em plans/
     customInstructions: |-
       ANTES de comecar qualquer task UX:
-      1. Ler CLAUDE.md (raiz) — regras globais, path aliases, convencoes
-      2. Ler .memory/rules.md e .memory/anti-patterns.md — licoes aprendidas
-      3. Ler plans/UX_VISION_EXPERIENCIA_PACIENTE.md — principios de UX
-      4. Ler SKILLS/ui-design-brain/SKILL.md — referencia de decisao visual (usar sempre que a spec tiver lacuna visual)
-      5. Localizar e ler o arquivo de spec da task em plans/ (perguntar ao usuario se nao estiver claro)
-      6. Buscar duplicatas: find src -name "*NomeComponente*" -type f
+      1. Ler AGENTS.md (raiz) — regras de ouro e invariantes.
+      2. Ler Sparse Indexes em .agent/memory/ (RULES_INDEX.md, ANTI_PATTERNS_INDEX.md).
+      3. Ler plans/UX_VISION_EXPERIENCIA_PACIENTE.md — principios de UX.
+      4. Localizar a spec da task em plans/.
+      5. Buscar duplicatas: find src -name "*NomeComponente*" -type f.
 
       REGRA DE OURO: Se nao esta na spec, NAO implementar.
-
-      ARMADILHAS CRITICAS:
-      - Datas: SEMPRE usar parseLocalDate()/formatLocalDate() — nunca new Date('YYYY-MM-DD') ou toISOString().split('T')[0]
-      - useCachedQuery: assinatura POSICIONAL (key, fetcher, options) — nunca objeto como 1o arg
-      - Variaveis orfas: ao remover JSX, grep imediatamente pelas variaveis que o alimentavam
-      - CSS: sempre var(--token), nunca hex direto
+      CONTROLE DE MODO: Nunca avance modos DEVFLOW automaticamente. Aguarde instrucao humana.
     groups:
       - read
       - - edit
