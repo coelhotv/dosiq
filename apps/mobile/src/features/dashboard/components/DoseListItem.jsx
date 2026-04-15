@@ -45,7 +45,7 @@ export default function DoseListItem({ dose, onRegister }) {
           {medicine?.name ?? 'Medicamento'}
         </Text>
         <Text style={[styles.dosage, isTaken && styles.textMuted]}>
-          {protocol?.dosage_per_intake} {protocol?.unit || 'unidade(s)'}
+          {protocol?.dosage_per_intake} {medicine?.dosage_unit || 'unidade(s)'}
         </Text>
       </View>
 
