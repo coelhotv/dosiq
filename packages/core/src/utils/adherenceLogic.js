@@ -505,6 +505,9 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
         ...matchedLog,
         scheduledTime: expectedDose.scheduledTime,
         expectedQuantity: expectedDose.expectedQuantity,
+        protocol: expectedDose.protocol,
+        medicine: expectedDose.medicine,
+        status: 'done',
       })
     } else {
       // Dose não tomada - verificar se é perdida (passado) ou agendada (futuro)
@@ -548,11 +551,15 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
   // Logs restantes que não correspondem a nenhuma dose esperada
   // (doses extras, fora do horário, etc.) - adicionar como takenDoses
   unmatchedLogs.forEach((log) => {
+    const protocol = protocols.find((p) => p.id === log.protocol_id)
     takenDoses.push({
       ...log,
       scheduledTime: null,
       expectedQuantity: log.quantity_taken || 1,
       isExtra: true,
+      protocol: protocol || null,
+      medicine: protocol?.medicine || null,
+      status: 'done',
     })
   })
 
