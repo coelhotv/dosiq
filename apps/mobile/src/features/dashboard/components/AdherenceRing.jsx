@@ -39,17 +39,17 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#005db6" // Secondary (conforme spec mobile)
+            stroke="#e1e3e8" // Neutral 200 (mais visível mas sutil)
             strokeWidth={strokeWidth}
             fill="transparent"
-            strokeOpacity={0.15}
+            strokeOpacity={0.4}
           />
           {/* Progress (Adesão) */}
           <AnimatedCircle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#90f4e3" // Primary Fixed (Design System)
+            stroke="#14b8a6" // Emerald 500 (Primary Fixed)
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeDasharray={`${circumference} ${circumference}`}

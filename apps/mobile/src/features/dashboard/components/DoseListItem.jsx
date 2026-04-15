@@ -13,7 +13,12 @@ export default function DoseListItem({ dose, onRegister }) {
   const medicine = dose.medicine
   const protocol = dose.protocol
   const scheduledTime = dose.scheduledTime
-  const isTaken = dose.status === 'taken' || dose.registeredAt
+  const registeredAt = dose.registeredAt || dose.taken_at
+  
+  // Se for dose extra ou tomada fora de janela, usamos o horário real do registro para o visor
+  const displayTime = scheduledTime || (registeredAt ? new Date(registeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--')
+
+  const isTaken = dose.status === 'taken' || !!registeredAt
   const isMissed = dose.status === 'missed'
 
   return (
@@ -23,7 +28,7 @@ export default function DoseListItem({ dose, onRegister }) {
       isMissed && styles.cardMissed
     ]}>
       <View style={styles.timeContainer}>
-        <Text style={[styles.timeText, isTaken && styles.textMuted]}>{scheduledTime || '--:--'}</Text>
+        <Text style={[styles.timeText, isTaken && styles.textMuted]}>{displayTime}</Text>
         <View style={[styles.statusIcon, isTaken ? styles.bgTaken : isMissed ? styles.bgMissed : styles.bgScheduled]}>
           {isTaken ? (
             <Check size={14} color="#fff" />

@@ -87,11 +87,7 @@ export function useTodayData() {
 
     const todayStr = getTodayLocal()
     
-    // 1. Calcular estatísticas de adesão (Hoje)
-    // Usamos a lógica canônica do core para garantir paridade total
-    const stats = calculateAdherenceStats(data.logs, data.protocols, 1)
-
-    // 2. Classificar doses em zonas para o Dashboard (Splitting)
+    // 1. Classificar doses em zonas para o Dashboard (Splitting)
     // Conforme Spec H5.7.5: late, now, upcoming, done
     const { takenDoses, missedDoses, scheduledDoses } = calculateDosesByDate(
       todayStr,
@@ -99,18 +95,29 @@ export function useTodayData() {
       data.protocols
     )
 
+    // 2. Calcular estatísticas de adesão (Hoje)
+    // Para o Dashboard diário, garantimos que os números batam com a UI visível
+    const stats = {
+      expected: missedDoses.length + scheduledDoses.length + takenDoses.length,
+      taken: takenDoses.length,
+      score: 0
+    }
+    
+    // Score diário simples: (tomadas / esperadas) * 100
+    if (stats.expected > 0) {
+      stats.score = (stats.taken / stats.expected) * 100
+    }
+
     // PAC (Priority Action Card) foca nas doses agendadas próximas ou atrasadas
-    // No mobile, simplificamos as zonas para a UI:
     const zones = {
-      late: missedDoses,      // Atrasadas hoje
+      late: missedDoses,
       now: scheduledDoses.filter(d => {
-        // Agora: Doses cuja janela de tolerância de 2h ainda inclui o momento atual
         const [h, m] = d.scheduledTime.split(':').map(Number)
         const scheduledDate = new Date()
         scheduledDate.setHours(h, m, 0, 0)
         const now = new Date()
         const diffHours = (now - scheduledDate) / (1000 * 60 * 60)
-        return diffHours >= -0.5 && diffHours <= 2 // 30min antes até 2h depois
+        return diffHours >= -0.5 && diffHours <= 2
       }),
       upcoming: scheduledDoses,
       done: takenDoses
