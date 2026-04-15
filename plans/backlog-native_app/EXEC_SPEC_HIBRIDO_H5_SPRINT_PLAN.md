@@ -510,9 +510,9 @@ export default function TodayScreen() {
 - [x] Fluxo de registo de dose funcional
 - [x] Tela Tratamentos funcional (lista de protocolos)
 - [x] Tela Estoque funcional (4 níveis de risco + priorização)
-- [ ] Tela Perfil funcional (email, logout, estado Telegram)
-- [ ] Vinculo Telegram (se decisão tomada) ou adiado explicitamente
-- [x] Loading/empty/error em todas as telas principais (H5.1-H5.5)
+- [x] Tela Perfil funcional (email, logout, estado Telegram)
+- [x] Vinculo Telegram (se decisão tomada) ou adiado explicitamente
+- [x] Loading/empty/error em todas as telas principais (H5.1-H5.7)
 - [ ] Stale offline states onde há snapshot local
 - [ ] Fluxos manuais validados (iOS + Android)
 - [ ] Testes unitários para screens e hooks críticos
@@ -522,4 +522,4 @@ export default function TodayScreen() {
 
 ---
 
-*Atualizado por DEVFLOW Coding — 2026-04-14 (H5.5 ✅)*
+*Atualizado por DEVFLOW Coding — 2026-04-15 (H5.7 ✅)*
