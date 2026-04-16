@@ -315,7 +315,7 @@ apps/mobile/src/
 
 ---
 
-### PR 8 — H5.7.5: Dashboard Evolution (Premium) ✅
+### PR 6 — H5.7.5: Dashboard Evolution (Premium) ✅
 
 **Branch:** `feature/hybrid-h5/dashboard-evolution` (H5.7.5)
 
@@ -338,7 +338,7 @@ apps/mobile/src/
 
 ---
 
-### PR 6 — H5.8: Estados transversais 
+### PR 7 — H5.8: Estados transversais 
 
 **Branch:** `feature/hybrid-h5/stale-states`
 
@@ -354,7 +354,7 @@ apps/mobile/src/
 
 ---
 
-### PR 9 — H5.9 e H5.10: Testes + Hardening
+### PR 8 — H5.9 e H5.10: Testes + Hardening
 
 **Branch:** `feature/hybrid-h5/tests-hardening`
 
