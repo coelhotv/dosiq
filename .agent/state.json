@@ -19,7 +19,7 @@
     "id": "session_2026W16_h5_stale_offline",
     "started_at": "2026-04-16T12:50:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "coding",
     "goal": "H5.8: Stale states + offline policy",
     "goal_type": "feature",
     "acceptance_criteria": [

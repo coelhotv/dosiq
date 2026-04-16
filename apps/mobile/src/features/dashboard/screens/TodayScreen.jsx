@@ -10,12 +10,13 @@ import UpcomingDosesList from '../components/UpcomingDosesList'
 import PriorityActionCard from '../components/PriorityActionCard'
 import StockAlertInline from '../components/StockAlertInline'
 import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
+import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
 export default function TodayScreen() {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
 
-  const { data, loading, error, stale, refresh } = useTodayData()
+  const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
   if (loading && !data) return <LoadingState message="A carregar o seu dia..." />
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />
@@ -42,11 +43,7 @@ export default function TodayScreen() {
 
   return (
     <ScreenContainer>
-      {stale && (
-        <View style={styles.staleBanner}>
-          <Text style={styles.staleText}>⚠️ Sem ligação — a mostrar dados anteriores</Text>
-        </View>
-      )}
+      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
 
       <ScrollView
         contentContainerStyle={styles.scroll}

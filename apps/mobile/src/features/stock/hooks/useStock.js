@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
+
+const STOCK_CACHE_KEY = '@meus-remedios/stock-snapshot'
 
 /**
  * Hook para gerenciar e calcular dados de estoque conforme ADR-018.
@@ -10,12 +13,13 @@ export function useStock() {
     data: null,
     loading: true,
     error: null,
+    stale: false,
     refreshing: false
   })
 
   const loadStock = useCallback(async (isRefreshing = false) => {
-    if (isRefreshing) setState(prev => ({ ...prev, refreshing: true }))
-    else setState(prev => ({ ...prev, loading: true }))
+    if (isRefreshing) setState(prev => ({ ...prev, refreshing: true, error: null }))
+    else setState(prev => ({ ...prev, loading: true, error: null }))
 
     try {
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
@@ -23,9 +27,7 @@ export function useStock() {
       let user = currentSession?.user
       if (sessionError || !user) {
         const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
-        if (userError || !verifiedUser) {
-          throw new Error('Sessão expirada')
-        }
+        if (userError || !verifiedUser) throw new Error('Sessão expirada')
         user = verifiedUser
       }
 
@@ -36,8 +38,6 @@ export function useStock() {
       // 1. Processamento base e cálculo ADR-018
       const processed = result.data.map(item => {
         const totalQuantity = item.medicine_stock_summary?.[0]?.total_quantity || 0
-        
-        // Protocolos ativos vinculados
         const activeProtocols = (item.protocols || []).filter(p => p.active)
         
         const dailyConsumption = activeProtocols.reduce((acc, p) => {
@@ -49,7 +49,6 @@ export function useStock() {
           ? totalQuantity / dailyConsumption 
           : Infinity
 
-        // Classificação conforme ADR-018
         let status = 'HIGH'
         let statusLabel = 'Bom'
         let color = '#3b82f6'
@@ -66,6 +65,10 @@ export function useStock() {
           status = 'NORMAL'
           statusLabel = 'Normal'
           color = '#22c55e'
+        } else {
+          status = 'HIGH'
+          statusLabel = 'Bom'
+          color = '#3b82f6'
         }
 
         return {
@@ -80,32 +83,58 @@ export function useStock() {
         }
       })
 
-      // 2. Filtragem: Remover quem não tem estoque E não tem protocolo ativo
       const filtered = processed.filter(item => item.totalQuantity > 0 || item.hasActiveProtocol)
+      const active = filtered.filter(item => item.hasActiveProtocol).sort((a, b) => a.daysRemaining - b.daysRemaining)
+      const inactive = filtered.filter(item => !item.hasActiveProtocol).sort((a, b) => a.name.localeCompare(b.name))
 
-      // 3. Categorização e Ordenação
-      const active = filtered
-        .filter(item => item.hasActiveProtocol)
-        .sort((a, b) => a.daysRemaining - b.daysRemaining) // Urgência primeiro
+      const newData = { active, inactive }
+      const snapshot = {
+        data: newData,
+        capturedAt: new Date().toISOString()
+      }
 
-      const inactive = filtered
-        .filter(item => !item.hasActiveProtocol)
-        .sort((a, b) => a.name.localeCompare(b.name))
+      await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))
 
       setState({
-        data: { active, inactive },
+        data: newData,
         loading: false,
         error: null,
+        stale: false,
         refreshing: false
       })
     } catch (err) {
-      console.error('[useStock] Erro:', err)
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        refreshing: false,
-        error: err.message
-      }))
+      if (__DEV__) console.warn('[useStock] Fetch failed, checking cache:', err.message)
+      
+      try {
+        const cached = await AsyncStorage.getItem(STOCK_CACHE_KEY)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          const capturedAt = new Date(parsed.capturedAt)
+          const now = new Date()
+          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+
+          if (diffHours < 24) {
+            setState({
+              data: parsed.data,
+              loading: false,
+              error: null,
+              stale: true,
+              refreshing: false
+            })
+          } else {
+            throw new Error('Cache expirado')
+          }
+        } else {
+          throw err
+        }
+      } catch (cacheErr) {
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          refreshing: false,
+          error: err.message
+        }))
+      }
     }
   }, [])
 

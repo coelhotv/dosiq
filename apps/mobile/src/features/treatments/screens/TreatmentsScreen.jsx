@@ -9,9 +9,10 @@ import EmptyState from '../../../shared/components/states/EmptyState'
 import TreatmentCard from '../components/TreatmentCard'
 import { useTreatments } from '../hooks/useTreatments'
 import { colors, spacing } from '../../../shared/styles/tokens'
+import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
 export default function TreatmentsScreen() {
-  const { data, loading, error, refresh } = useTreatments()
+  const { data, loading, error, stale, refresh } = useTreatments()
 
   if (loading && !data) {
     return (
@@ -31,6 +32,7 @@ export default function TreatmentsScreen() {
 
   return (
     <ScreenContainer>
+      {stale && <StaleBanner />}
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}

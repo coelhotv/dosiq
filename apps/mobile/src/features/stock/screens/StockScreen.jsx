@@ -6,12 +6,13 @@ import LoadingState from '../../../shared/components/states/LoadingState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import StockItem from '../components/StockItem'
+import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).
  */
 export default function StockScreen() {
-  const { data, loading, error, refreshing, refresh } = useStock()
+  const { data, loading, error, stale, refreshing, refresh } = useStock()
 
   // Formata os dados no formato esperado pelo SectionList
   const sections = useMemo(() => {
@@ -56,6 +57,7 @@ export default function StockScreen() {
 
   return (
     <ScreenContainer>
+      {stale && <StaleBanner />}
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}

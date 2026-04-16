@@ -17,6 +17,7 @@ import SmokeScreen from '../screens/SmokeScreen'
 import LoginScreen from '../screens/LoginScreen'
 import RootTabs from './RootTabs'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const Stack = createNativeStackNavigator()
 
@@ -36,12 +37,21 @@ export default function Navigation() {
       })
 
     // Actualizar em tempo real quando auth muda (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      if (event === 'SIGNED_OUT') {
+        if (__DEV__) console.log('[Navigation] User signed out, clearing caches...')
+        await AsyncStorage.multiRemove([
+          '@meus-remedios/today-snapshot',
+          '@meus-remedios/treatments-snapshot',
+          '@meus-remedios/stock-snapshot'
+        ])
+      }
       setSession(s ?? null)
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
 
   // Aguarda verificação inicial — evita flash de ecrã errado
   if (session === undefined) {
