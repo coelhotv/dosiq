@@ -6,6 +6,10 @@
 
 ---
 
+### 13.5. Status de Validação
+- **Ambiente Validado**: Mac M2 (Sequoia) usando Bash. ✅
+- **Resultado Estável**: Build de produção gerado localmente em ~5-8 min e aceito pela Google Play Console sem erros de assinatura ou package.
+
 ## 1. O que este guia resolve
 
 Este documento foi escrito para um cenário de primeiro app publicado.
@@ -170,6 +174,10 @@ Use primeiro para validar upload, instalação e fluxo principal.
 3. criar lista de testers
 4. adicionar seus próprios e-mails e pessoas de confiança
 5. criar a primeira release interna
+
+### Status Atual (v0.1.0) ✅
+- **Convite (Email List):** [Link de Opt-in](https://play.google.com/apps/internaltest/4701693465152183629)
+- **Download App:** [Play Store Internal](https://play.google.com/store/apps/details?id=com.coelhotv.meusremedios)
 
 ## 7.3. Closed testing
 

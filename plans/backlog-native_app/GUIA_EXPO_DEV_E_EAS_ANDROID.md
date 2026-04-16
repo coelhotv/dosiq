@@ -545,14 +545,53 @@ Correção:
 ## 12.10. Watchman ou fluxo local ficam instáveis porque o repositório está no iCloud Drive
 
 Causa provável:
-
-- o projeto está em `~/Library/Mobile Documents/...`
-- esse caminho costuma gerar problemas com Watchman e tooling React Native/Expo
+- O iCloud Drive pode tentar sincronizar arquivos enquanto o Watchman está tentando ler, causando conflitos de permissão ou CPU.
 
 Correção:
+- Idealmente, mova o projeto para fora do iCloud (ex: `~/Developer/`).
+- Se precisar manter no iCloud, use o comando `git push` manualmente e evite sincronização automática durante builds pesados.
 
-- preferir EAS Build quando possível
-- se o fluxo local ficar instável, considerar uma cópia de trabalho fora do iCloud para desenvolvimento mobile
+---
+
+## 13. Build Local (Fugindo da Fila) ⚡️
+
+Se você não quer esperar os 100+ minutos na fila da Expo (Free Tier) ou ultrapassar o limite de 30 builds por mês, você pode construir o binário usando o seu próprio processador M2.
+
+### 13.1. Pré-requisitos
+- **Java JDK 17** (Zulu ou OpenJDK).
+- **Android Studio** instalado.
+- **Variáveis de Ambiente**:
+  Certifique-se que o seu terminal enxerga as ferramentas do Android. Adicione ao seu `~/.zshrc` ou `~/.bashrc`:
+  ```bash
+  export ANDROID_HOME=$HOME/Library/Android/sdk
+  export PATH=$PATH:$ANDROID_HOME/emulator
+  export PATH=$PATH:$ANDROID_HOME/platform-tools
+  ```
+
+### 13.2. Comandos para Build Local
+Para rodar localmente, basta adicionar a flag `--local` ao final de qualquer comando EAS:
+
+**Build de Produção (.aab):**
+```bash
+npx eas build --platform android --profile production --local
+```
+
+**Build de Preview/Testes (.apk):**
+```bash
+npx eas build --platform android --profile preview --local
+```
+
+**Build de Desenvolvimento (Dev Client):**
+```bash
+npx eas build --platform android --profile development --local
+```
+
+### 13.3. Onde os arquivos aparecem?
+Ao contrário da nuvem, o build local deixará o arquivo final (`.apk` ou `.aab`) na raiz da pasta `apps/mobile` ou em uma subpasta build gerada pelo processo.
+
+### 13.5. Status de Validação
+- **Ambiente Validado**: Mac M2 (Sequoia) usando Bash. ✅
+- **Resultado Estável**: Build de produção gerado localmente em ~5-8 min e aceito pela Google Play Console sem erros de assinatura ou package.
 
 ## 12.8. Tentação de configurar push agora
 
