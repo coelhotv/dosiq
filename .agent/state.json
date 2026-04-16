@@ -16,27 +16,27 @@
     "current_sprint": "H5.7.5"
   },
   "session": {
-    "id": "session_2026W16_h5_publishing_prep",
-    "started_at": "2026-04-15T20:20:00Z",
+    "id": "session_2026W16_h5_stale_offline",
+    "started_at": "2026-04-16T12:50:00Z",
     "mode": "coding",
-    "status": "distilled",
-    "goal": "Substituir logo na landing page",
-    "goal_type": "chore",
+    "status": "analysis",
+    "goal": "H5.8: Stale states + offline policy",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "Logotipo mobile configurado com Safe Zone correta (Android Adaptive)",
-      "Splash Screen com fundo harmonizado (#E9F3EA)",
-      "Configuração EAS Build estabilizada (appVersionSource: remote)",
-      "Versão do projeto alinhada para v0.1.0 (MVP Preview)",
-      "Primeiro build de produção (.aab) disparado no EAS"
+      "Indicador de estado 'stale' (offline) nas telas Hoje, Tratamentos e Estoque",
+      "Hook useOnlineStatus funcional e integrado",
+      "Persistência de snapshots locais para visualização offline básica",
+      "Banner de aviso offline visível quando sem conectividade",
+      "Zero crash ao tentar carregar dados sem rede"
     ],
     "active_wave": {
-      "name": "Wave H5 \u2014 MVP Produto Mobile (Fase 5)",
+      "name": "Wave H5 — MVP Produto Mobile (Fase 5)",
       "phase": 5,
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "H5.8 (Publishing)",
+      "sprint": "H5.8 (Stale States)",
       "status": "in-progress",
-      "planned_at": "2026-04-15T17:20:00Z",
-      "notes": "Foco em identidade visual, assets da loja e submissão do primeiro release para testes internos."
+      "planned_at": "2026-04-16T12:50:00Z",
+      "notes": "Foco em resiliência offline e feedback visual de conectividade."
     }
   },
   "memory": {
