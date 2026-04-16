@@ -354,18 +354,19 @@ apps/mobile/src/
 
 ---
 
-### PR 8 — H5.9 e H5.10: Testes + Hardening
+### PR 8 — H5.9 e H5.10: Testes + Hardening ✅
 
-**Branch:** `feature/hybrid-h5/tests-hardening`
+**Branch:** `feature/hybrid-h5/tests-hardening` (Merged: local validation OK)
 
-**Ficheiros a criar/modificar:**
-- Testes: `*.test.js` para screens e hooks críticos
-- Remoção de componentes fora de escopo
+**Ficheiros criados/modificados:**
+- Testes unitários para telas principais e hooks críticos ✅
+- Testes de fumaça (Smoke) para Supabase e Polyfills (Hermes URL) ✅
+- Pinagem de dependências e proteção de logs `__DEV__` ✅
 
 **Critério de aceitação (Definition of Done da Fase 5):**
-- Testes unitários criados
-- Zero dependências de componentes web
-- Fluxos manuais validados (iOS simulator + Android emulator)
+- Testes unitários criados ✅
+- Zero dependências de componentes web ✅
+- Fluxos manuais validados (iOS simulator + Android emulator) ✅
 
 ---
 
@@ -536,13 +537,13 @@ export default function TodayScreen() {
 - [x] Tela Perfil funcional (email, logout, estado Telegram)
 - [x] Vinculo Telegram (se decisão tomada) ou adiado explicitamente
 - [x] Loading/empty/error em todas as telas principais (H5.1-H5.7)
-- [ ] Stale offline states onde há snapshot local
-- [ ] Fluxos manuais validados (iOS + Android)
-- [ ] Testes unitários para screens e hooks críticos
-- [ ] `npm run test:critical` passa (543/543)
-- [ ] `npm run build` passa
-- [ ] Zero dependências de componentes web
+- [x] Stale offline states onde há snapshot local
+- [x] Fluxos manuais validados (iOS + Android)
+- [x] Testes unitários para screens e hooks críticos
+- [x] `npm run test:critical` passa (543/543)
+- [x] `npm run build` passa
+- [x] Zero dependências de componentes web
 
 ---
 
-*Atualizado por DEVFLOW Coding — 2026-04-15 (H5.7.5 ✅ Dashboard Evolution Delivered)*
+*Atualizado por DEVFLOW Coding — 2026-04-16 (H5.10 ✅ MVP Hardened & Tested)*
