@@ -16,5 +16,12 @@ module.exports = {
     '^@stock/(.*)$': '<rootDir>/src/features/stock/$1',
     '^@dashboard/(.*)$': '<rootDir>/src/features/dashboard/$1',
     '^@meus-remedios/core$': '<rootDir>/../../packages/core/src/index.js',
+    '^@meus-remedios/core/(.*)$': '<rootDir>/../../packages/core/src/$1',
+    '^@meus-remedios/shared-data$': '<rootDir>/../../packages/shared-data/src/index.js',
+    '^@meus-remedios/shared-data/(.*)$': '<rootDir>/../../packages/shared-data/src/$1',
+    '^@meus-remedios/storage$': '<rootDir>/../../packages/storage/src/index.js',
+    '^@meus-remedios/storage/(.*)$': '<rootDir>/../../packages/storage/src/$1',
+    '^@meus-remedios/config$': '<rootDir>/../../packages/config/src/index.js',
+    '^@meus-remedios/config/(.*)$': '<rootDir>/../../packages/config/src/$1',
   },
 }
