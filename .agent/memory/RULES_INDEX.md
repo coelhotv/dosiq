@@ -63,6 +63,8 @@
 - **[R-166]** Before writing any user-visible text in mobile components, locate the web equiva... -> [`rules/mobile_and_platform/R-166.md`](./rules/mobile_and_platform/R-166.md)
 - **[R-167]** All debug logging in React Native must be wrapped in 'if (__DEV__)' guard. This ... -> [`rules/mobile_and_platform/R-167.md`](./rules/mobile_and_platform/R-167.md)
 - **[R-168]** The 387-line custom polyfill in polyfills.js is NOT temporary. Both react-native... -> [`rules/mobile_and_platform/R-168.md`](./rules/mobile_and_platform/R-168.md)
+- **[R-174]** Force Metro to use a single instance of React and React Native fixed in the mobile workspace... -> [`rules/mobile_and_platform/R-174.md`](./rules/mobile_and_platform/R-174.md)
+
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)

@@ -104,3 +104,4 @@
 - **[AP-W23]** Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25) -> [`anti-patterns/react_and_ui/AP-W23.md`](./anti-patterns/react_and_ui/AP-W23.md)
 - **[AP-W24]** FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido -> [`anti-patterns/react_and_ui/AP-W24.md`](./anti-patterns/react_and_ui/AP-W24.md)
 - **[AP-W25]** Usar componente Button com className custom causa conflito de estilos no mobile -> [`anti-patterns/react_and_ui/AP-W25.md`](./anti-patterns/react_and_ui/AP-W25.md)
+- **[AP-H22]** "TypeError: Cannot read property 'useState' of null" crash caused by Metro bundling multiple versions of React. -> [`anti-patterns/react_and_ui/AP-H22.md`](./anti-patterns/react_and_ui/AP-H22.md)
