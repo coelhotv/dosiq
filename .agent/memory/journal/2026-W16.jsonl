@@ -1,0 +1,24 @@
+{
+  "sprint": "H5.8",
+  "goal": "Resiliência Offline e Stale States",
+  "timestamp": "2026-04-16T13:10:00Z",
+  "summary": "Implementação de disparadores de estado offline, cache de snapshots via AsyncStorage e políticas de expiração de 24h para as funcionalidades principais (Hoje, Tratamentos, Estoque).",
+  "achievements": [
+    "Instalação e integração do @react-native-community/netinfo",
+    "Criação do hook useOnlineStatus e componente StaleBanner",
+    "Implementação de snapshots persistentes com política de expiração de 24h",
+    "Correção de bug crítico de timezone na segregação de logs (UTC vs Local)",
+    "Bloqueio de escrita offline no DoseRegisterModal com feedback visual",
+    "Configuração do ambiente de teste mobile com Jest-Native e path mappings de monorepo"
+  ],
+  "learnings": [
+    "K-081: Snapshots offline devem salvar 'localDay' explicitamente para evitar bugs de virada de dia causados por UTC.",
+    "R-175: Sempre usar local-to-local comparison em lógicas de segregação de data.",
+    "AP-H18: Em monorepos, mapeamentos Jest devem usar regex (.*) para suportar subcaminhos de pacotes internos.",
+    "R-170: O uso de scripts temporários (.sh) para comandos 'gh' é vital para evitar travamentos de stream no Pty Host."
+  ],
+  "pending": [
+    "Merge da PR #473 após aprovação humana",
+    "Validação manual em dispositivos reais (Airplane Mode test)"
+  ]
+}
