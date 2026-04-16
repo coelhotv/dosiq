@@ -235,8 +235,8 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 | H5.4 | 5.4 | Tela Tratamentos | Fase 5 spec |
 | H5.5 | 5.5 | Tela Estoque | Fase 5 spec |
 | H5.6 | 5.6 e 5.7 | Tela Perfil / Configuracoes + Vinculo Telegram | Fase 5 spec |
-| H5.7 | 5.8 | Stale states + offline policy | Fase 5 spec + addendum Offline |
-| H5.8 | 5.9 e 5.10 | Suite de testes + validacao | Fase 5 spec + addendum Testes mobile + Architecture Review H5 |
+| H5.8 | 5.8 | Stale states + offline policy | Fase 5 spec + addendum Offline |
+| H5.9 | 5.9 e 5.10 | Suite de testes + validacao | Fase 5 spec + addendum Testes mobile + Architecture Review H5 |
 
 
 **PRs:** 6-8 (shell+tabs; dashboard+dose; tratamentos+estoque; perfil+telegram; stale; testes)
