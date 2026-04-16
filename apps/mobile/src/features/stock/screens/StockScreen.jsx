@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { SectionList, RefreshControl, StyleSheet, Text, View } from 'react-native'
-import { useStock } from '../hooks/useStock'
+import { useStock } from '@stock/hooks/useStock'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import EmptyState from '../../../shared/components/states/EmptyState'
@@ -19,14 +19,14 @@ export default function StockScreen() {
     if (!data) return []
     const list = []
     
-    if (data.active.length > 0) {
+    if (data?.active?.length > 0) {
       list.push({
         title: 'Estoque em Uso',
         data: data.active
       })
     }
     
-    if (data.inactive.length > 0) {
+    if (data?.inactive?.length > 0) {
       list.push({
         title: 'Sem tratamento ativo',
         data: data.inactive
