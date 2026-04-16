@@ -21,12 +21,114 @@ function PrototypeIcon({ children, className = '', size = 20, viewBox = '0 0 24 
   )
 }
 
-function HeartPulseIcon({ className = '', size = 20 }) {
+function LogoMark({ className = '', size = 24 }) {
   return (
-    <PrototypeIcon className={className} size={size}>
-      <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
-      <path d="M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" />
-    </PrototypeIcon>
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Pílula (cápsula) */}
+      <rect
+        x="10"
+        y="30"
+        width="80"
+        height="40"
+        rx="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="5"
+        transform="rotate(-45 50 50)"
+      />
+
+      {/* IC Body (corpo do chip) */}
+      <rect
+        x="38"
+        y="38"
+        width="24"
+        height="24"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+
+      {/* Pino superior central com zigzag até borda */}
+      <line x1="50" y1="38" x2="50" y2="32" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M 50 32 L 50 20 L 49 20"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Pino inferior central com zigzag até borda */}
+      <line x1="50" y1="62" x2="50" y2="68" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M 50 68 L 50 80 L 47 80"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Pino esquerdo com zigzag até borda */}
+      <line x1="38" y1="50" x2="32" y2="50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M 32 50 L 20 50 L 21 48"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Pino direito com zigzag até borda */}
+      <line x1="62" y1="50" x2="68" y2="50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M 68 50 L 80 50 L 80 47"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Pinos superiores laterais (simples) */}
+      <line x1="42" y1="38" x2="42" y2="32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="58" y1="38" x2="58" y2="32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+
+      {/* Pinos inferiores laterais (simples) */}
+      <line x1="42" y1="62" x2="42" y2="68" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="58" y1="62" x2="58" y2="68" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+
+      {/* Pino esquerdo inferior */}
+      <line x1="38" y1="56" x2="32" y2="56" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+
+      {/* Pino direito inferior */}
+      <line x1="62" y1="56" x2="68" y2="56" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+
+      {/* Pino esquerdo superior */}
+      <line x1="38" y1="44" x2="32" y2="44" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+
+      {/* Pino direito superior */}
+      <line x1="62" y1="44" x2="68" y2="44" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+
+      {/* Detalhe interno: ponto de referência (cavidade do IC real) */}
+      <circle cx="42" cy="42" r="1.5" fill="currentColor" />
+
+      {/* Linhas de circuito internas */}
+      <line x1="46" y1="44" x2="54" y2="44" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      <line x1="46" y1="50" x2="54" y2="50" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      <line x1="46" y1="56" x2="54" y2="56" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      <line x1="50" y1="44" x2="50" y2="56" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+    </svg>
   )
 }
 
@@ -179,7 +281,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
           <div className="lp-shell lp-header__inner">
             <div className="lp-brand">
               <div className="lp-brand__mark">
-                <HeartPulseIcon size={24} />
+                <LogoMark size={32} />
               </div>
               <span className="lp-brand__text">Meus Remédios</span>
             </div>
@@ -194,7 +296,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <span className="lp-header__free">100% Gratuito</span>
               {!isAuthenticated ? (
                 <button className="lp-btn lp-btn--header" onClick={onOpenAuth}>
-                  Instalar App
+                  Começar Agora
                 </button>
               ) : (
                 <button className="lp-btn lp-btn--header" onClick={onContinue}>
@@ -260,7 +362,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                     </div>
                     <div className="lp-proof">
                       <LockIcon className="lp-proof__icon lp-proof__icon--green" />
-                      <span>Privacy-First (Local Only)</span>
+                      <span>Código Aberto</span>
                     </div>
                   </div>
                 </div>
@@ -374,7 +476,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-card__eyebrow">Sempre Grátis</div>
                   <h3>100% Gratuito</h3>
                   <p>
-                    Funcionalidades essenciais ilimitadas. Sem paywalls, sem versões
+                    Funcionalidades essenciais ilimitadas. Sem travas, sem versões
                     &apos;Pro&apos;. Nosso compromisso é com a sua saúde.
                   </p>
                 </div>
@@ -386,7 +488,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-card__eyebrow">Dados Oficiais</div>
                   <h3>Base ANVISA</h3>
                   <p>
-                    Autocomplete com mais de 10.000 medicamentos registrados. Preenchimento
+                    Autocompletar com mais de 10.000 medicamentos registrados. Preenchimento
                     automático de dosagens e apresentações.
                   </p>
                 </div>
@@ -418,10 +520,10 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                 </div>
 
                 <div className="lp-info-card">
-                  <p className="lp-info-card__title">Inteligência Local</p>
+                  <p className="lp-info-card__title">Transparência Total</p>
                   <p className="lp-info-card__text">
-                    Previsão de estoque e score de risco calculados diretamente no seu aparelho.
-                    Privacidade total.
+                    Projeto de código aberto focado na segurança e no controle do paciente.
+                    Seus dados protegidos, sem letras miúdas.
                   </p>
                 </div>
               </div>
@@ -452,7 +554,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-feature__icon">
                     <ActivityIcon size={20} />
                   </div>
-                  <h4>Score de Adesão</h4>
+                  <h4>Escore de Adesão</h4>
                   <p>Acompanhe sua evolução com gráficos de tendências e streaks.</p>
                 </div>
                 <div className="lp-feature">
@@ -480,8 +582,8 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-feature__icon">
                     <LockIcon size={20} />
                   </div>
-                  <h4>Analytics Privado</h4>
-                  <p>Sem telemetria externa. Seus dados de uso ficam apenas no seu celular.</p>
+                  <h4>Sem Rastreadores</h4>
+                  <p>Não vendemos seus dados nem exibimos anúncios. Nosso foco é sua saúde.</p>
                 </div>
               </div>
             </div>
@@ -494,13 +596,14 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                 <div>
                   <div className="lp-pill lp-pill--dark">
                     <LockIcon size={16} />
-                    <span>Privacidade em Primeiro Lugar</span>
+                    <span>Dados Protegidos, Nunca Vendidos</span>
                   </div>
-                  <h2>Seus dados são apenas seus.</h2>
+                  <h2>Seu histórico sob seu controle.</h2>
                   <p className="lp-dark-copy">
-                    Diferente de outros apps, o <b>Meus Remédios</b> não armazena suas informações
-                    em servidores centrais. Tudo é processado e guardado localmente no seu
-                    dispositivo (localStorage).
+                    Acreditamos que dados de saúde não devem ser mercadoria. Por isso, usamos 
+                    criptografia <b>HTTPS</b> e proteção por <b>Row Level Security (RLS)</b> para 
+                    garantir que seu histórico permaneça privado e inacessível a qualquer pessoa, 
+                    incluindo nossa equipe.
                   </p>
 
                   <ul className="lp-check-list">
@@ -514,11 +617,11 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                     </li>
                     <li>
                       <CircleCheckIcon className="lp-text-green" size={18} />
-                      Sem necessidade de criar conta com senha
+                      Arquitetura técnica segura (HTTPS e RLS)
                     </li>
                     <li>
                       <CircleCheckIcon className="lp-text-green" size={18} />
-                      Exportação completa de dados garantida
+                      Exportação completa (CSV/JSON)
                     </li>
                   </ul>
                 </div>
@@ -529,15 +632,15 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                       <ShieldCheckIcon className="lp-text-blue-light" size={24} />
                     </div>
                     <div>
-                      <p className="lp-quote-card__title">Segurança Offline</p>
-                      <p className="lp-quote-card__subtitle">Arquitetura Privacy-First</p>
+                      <p className="lp-quote-card__title">Ética por Padrão</p>
+                      <p className="lp-quote-card__subtitle">Transparência Técnica</p>
                     </div>
                   </div>
 
                   <p className="lp-quote-card__text">
-                    &quot;Acreditamos que dados de saúde são sagrados. Por isso, construímos uma
-                    ferramenta onde a inteligência acontece no seu navegador, garantindo que ninguém
-                    — nem mesmo nós — tenha acesso ao que você toma.&quot;
+                    &quot;Acreditamos que informações de saúde são sensíveis e sagradas.
+                    Construímos uma ferramenta auditável e segura, garantindo que a tecnologia
+                    sirva ao paciente, e não o contrário.&quot;
                   </p>
                 </div>
               </div>
@@ -552,7 +655,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                 <div className="lp-final-cta__actions">
                   {!isAuthenticated ? (
                     <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onOpenAuth}>
-                      Instalar Agora
+                      Começar Agora
                     </button>
                   ) : (
                     <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onContinue}>
@@ -576,7 +679,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
           <div className="lp-shell lp-footer__inner">
             <div className="lp-brand lp-brand--small">
               <div className="lp-brand__mark lp-brand__mark--small">
-                <HeartPulseIcon size={18} />
+                <LogoMark size={25} />
               </div>
               <span className="lp-brand__text lp-brand__text--small">Meus Remédios</span>
             </div>
@@ -584,7 +687,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
             <div className="lp-footer__links">
               <a href="#funcionalidades">Base ANVISA</a>
               <a href="#solucoes">Telegram Bot</a>
-              <a href="https://github.com/coelhotv/meus-remedios/issues">Código Aberto</a>
+              <a href="https://github.com/coelhotv/meus-remedios/">Código Aberto</a>
             </div>
 
             <p className="lp-footer__copy">© 2026 Meus Remédios. Desenvolvido para o bem comum.</p>

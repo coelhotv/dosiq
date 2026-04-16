@@ -19,9 +19,8 @@
     "id": "session_2026W16_h5_publishing_prep",
     "started_at": "2026-04-15T20:20:00Z",
     "mode": "coding",
-    "status": "delivered",
-    "goal": "Configuração de Identidade Visual (v0.1.0) e Publicação na Google Play",
-    "outcome": "App publicado com sucesso em Teste Interno na Google Play Console.",
+    "status": "completed",
+    "goal": "Substituir logo na landing page",
     "goal_type": "chore",
     "acceptance_criteria": [
       "Logotipo mobile configurado com Safe Zone correta (Android Adaptive)",
@@ -47,7 +46,7 @@
     "contracts_count": 16,
     "knowledge_count": 80,
     "last_distillation": "2026-04-14T16:45:00Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "recent_additions": {
       "rules": [
         "R-166",

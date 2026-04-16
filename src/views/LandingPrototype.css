@@ -90,7 +90,7 @@
   width: 40px;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: var(--radius-card-sm);
   background: var(--lp-green-600);
   color: var(--lp-white);
   box-shadow: 0 12px 30px rgba(156, 241, 225, 0.4);
@@ -893,7 +893,7 @@
 .lp-brand--small .lp-brand__mark {
   height: 32px;
   width: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius-1-5);
   box-shadow: none;
 }
 
