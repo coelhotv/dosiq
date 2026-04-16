@@ -315,24 +315,6 @@ apps/mobile/src/
 
 ---
 
-### PR 6 — H5.8: Estados transversais 
-
-**Branch:** `feature/hybrid-h5/stale-states`
-
-**Ficheiros a criar/modificar:**
-- `shared/hooks/useOnlineStatus.js` — estado de conectividade
-- `shared/theme/colors.js` — tokens de `@meus-remedios/design-tokens`
-- Stale offline states em TodayScreen/TreatmentsScreen/StockScreen
-
-**Critério de aceitação:**
-- Todas as telas: loading + empty + error
-- Telas online-first: stale state ao ficar offline
-- Fluxos manuais validados (iOS simulator + Android emulator)
-
----
-
----
-
 ### PR 8 — H5.7.5: Dashboard Evolution (Premium) ✅
 
 **Branch:** `feature/hybrid-h5/dashboard-evolution` (H5.7.5)
@@ -353,6 +335,22 @@ apps/mobile/src/
 - Lista de doses dividida por zonas cronológicas ✅
 - Alertas de estoque visíveis no dashboard ✅
 - Ambient Shadows e layout premium ✅
+
+---
+
+### PR 6 — H5.8: Estados transversais 
+
+**Branch:** `feature/hybrid-h5/stale-states`
+
+**Ficheiros a criar/modificar:**
+- `shared/hooks/useOnlineStatus.js` — estado de conectividade
+- `shared/theme/colors.js` — tokens de `@meus-remedios/design-tokens`
+- Stale offline states em TodayScreen/TreatmentsScreen/StockScreen
+
+**Critério de aceitação:**
+- Todas as telas: loading + empty + error
+- Telas online-first: stale state ao ficar offline
+- Fluxos manuais validados (iOS simulator + Android emulator)
 
 ---
 
