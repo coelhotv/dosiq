@@ -18,7 +18,7 @@
     "test:smoke": "vitest run --config vitest.smoke.config.js",
     "test:critical": "vitest run --config vitest.critical.config.js",
     "test:unit": "vitest run --config vitest.config.js",
-    "test:changed": "vitest run --changed=main",
+    "test:changed": "vitest run --changed HEAD --bail=1",
     "test:coverage": "vitest run --config vitest.ci.config.js",
     "test:components": "vitest run src/components src/shared/components",
     "test:services": "vitest run src/services src/features",

@@ -1,7 +1,7 @@
 module.exports = {
-  // Testes apenas dos arquivos em staged - rápido
+  // Testes apenas dos arquivos em staged - máximo isolamento e agilidade
   "src/**/*.{js,jsx}": [
-    "vitest run --changed --passWithNoTests"
+    "vitest related --run --passWithNoTests"
   ],
 
   // Lint em todos os arquivos staged JS/JSX (incluindo subdiretórios)
