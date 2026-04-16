@@ -207,7 +207,7 @@ apps/mobile/src/
 
 ## 6. Plano de sprints e PRs
 
-### PR 1 — H5.1: Shell + Tabs
+### PR 1 — H5.1: Shell + Tabs ✅
 
 **Branch:** `feature/hybrid-h5/shell-tabs`
 
@@ -230,7 +230,7 @@ apps/mobile/src/
 
 ---
 
-### PR 2 — H5.2 + H5.3: Hoje + Registo de Dose
+### PR 2 — H5.2 + H5.3: Hoje + Registo de Dose ✅
 
 **Branch:** `feature/hybrid-h5/today-dose`
 
@@ -296,7 +296,7 @@ apps/mobile/src/
 
 ---
 
-### PR 5 — H5.6 + H5.7: Perfil + Telegram (condicional)
+### PR 5 — H5.6 + H5.7: Perfil + Telegram (Opção A) ✅
 
 **Branch:** `feature/hybrid-h5/profile-telegram`
 
@@ -338,7 +338,7 @@ apps/mobile/src/
 
 ---
 
-### PR 7 — H5.8: Estados transversais 
+### PR 7 — H5.8: Estados transversais ✅
 
 **Branch:** `feature/hybrid-h5/stale-states`
 
@@ -523,7 +523,7 @@ export default function TodayScreen() {
 | 1 | **Mecanismo Telegram mobile** (Opção A/B/C) | Antes de H5.7 | ✅ **Opção A (Supabase RPC)** — decidido 2026-04-14 |
 | 2 | **ADR-029 aprovação** | Antes de H5.2 | ✅ **Aprovado implicitamente** — funcionou em H5.2/H5.3 |
 | 3 | **ADR-030 aprovação** | Antes de H5.1 | ✅ **Aprovado implicitamente** — implementado e estável |
-| 4 | **Android Emulator validation** (gate aberto de H4) | Antes de H5 | 🟡 H5.1 ✅ validado; H5.2/H5.3 pendente (WiFi) |
+| 4 | **Android Emulator validation** (gate aberto de H4) | Antes de H5 | ✅ **Validado totalmente** (Simulador + Aparelho Físico via Play Console) |
 
 ---
 

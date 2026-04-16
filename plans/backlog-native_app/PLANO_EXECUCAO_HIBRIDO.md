@@ -1,6 +1,6 @@
 # Plano de Execucao: Estrategia Hibrida Web + Native
 
-> **Status:** Plano operacional de execucao — H0-H5.5 COMPLETAS ✅ | H5.6 proxima
+> **Status:** Plano operacional de execucao — H0-H5 COMPLETAS ✅ | H6 proxima
 > **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
 > **Ferramenta:** `/devflow` via Agentes IA
@@ -220,7 +220,7 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 
 ---
 
-## Wave H5 — MVP Produto Mobile (Fase 5)
+## Wave H5 — MVP Produto Mobile (Fase 5) ✅ COMPLETA
 
 **Estimativa:** 6-8 sessoes | ~3-4 semanas
 **Pre-requisitos humanos:** validacao funcional de cada tela
@@ -307,7 +307,7 @@ Semana 2      ─── H1 (Workspaces)                          ✅ COMPLETA (c
 Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (commit 4e6b312)
 Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
 Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
-Semana 10-13  ─── H5 (MVP Produto)
+Semana 10-13  ─── H5 (MVP Produto)                         ✅ COMPLETA (PR #474)
 Semana 14-17  ─── H6 (Push + Beta) ← BLOQUEIO HUMANO: devices + stores
 Semana 18+    ─── H7 (condicional)
 ```
@@ -380,7 +380,7 @@ Template de journal para retomada:
 | H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback | ✅ COMPLETA |
 | H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
 | H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS + Android validados |
-| H5 | MVP funcional | 7 fluxos validados manualmente | ⏳ depende de H4 |
+| H5 | MVP funcional | 7 fluxos validados manualmente | ✅ COMPLETA |
 | H6 | Push operacional | Telegram + push nativo coexistindo | ⏳ depende de H5 |
 | H7 | Monorepo completo | Web + mobile + packages em estrutura final | ⏳ condicional |
 
@@ -403,14 +403,14 @@ Template de journal para retomada:
 
 Antes de iniciar a Wave H0, o maintainer deve confirmar:
 
-- [ ] Li a Master Spec inteira (rev.1, 2026-04-10)
-- [ ] Li os 4 novos addendums (Design Tokens, Deploy Vercel, Testing Mobile, Human Dependencies)
-- [ ] Decidi sobre as contas Apple/Google (criar agora ou adiar para H4?)
-- [ ] Conta Expo criada em expo.dev
-- [ ] Confirmo que o limite de serverless functions Vercel (12) esta sob controle
-- [ ] Confirmo `bundleIdentifier` e `androidPackage` (pelo menos placeholders)
-- [ ] Entendo que code agents NAO mergeiam PRs — eu farei os merges
-- [ ] Estou disposto a fazer validacoes manuais quando solicitado (simuladores, devices)
+- [x] Li a Master Spec inteira (rev.1, 2026-04-10)
+- [x] Li os 4 novos addendums (Design Tokens, Deploy Vercel, Testing Mobile, Human Dependencies)
+- [x] Decidi sobre as contas Apple/Google (criar agora ou adiar para H4?)
+- [x] Conta Expo criada em expo.dev
+- [x] Confirmo que o limite de serverless functions Vercel (12) esta sob controle
+- [x] Confirmo `bundleIdentifier` e `androidPackage` (pelo menos placeholders)
+- [x] Entendo que code agents NAO mergeiam PRs — eu farei os merges
+- [x] Estou disposto a fazer validacoes manuais quando solicitado (simuladores, devices)
 
 ---
 

@@ -22,3 +22,25 @@
     "Validação manual em dispositivos reais (Airplane Mode test)"
   ]
 }
+{
+  "sprint": "H5.9/H5.10",
+  "goal": "Testes de Hardening e Conclusão de Fase 5",
+  "timestamp": "2026-04-16T22:42:44Z",
+  "summary": "Estabilização total da suíte de testes mobile (32/32 tests passing) e hardening do ambiente nativo, finalizando a Wave H5 - MVP Mobile.",
+  "achievements": [
+    "Resolução de instabilidade em StockScreen.test.jsx via Proxy mock dinâmico para ícones Lucide",
+    "Estabilização de mocks Supabase com definições externas ao factory (profileService.test.js)",
+    "Implementação de testes de fumaça (Smoke) para Polyfills críticos de URL/Hermes",
+    "Sincronização de aliases entre Babel/Metro e Jest para path mapping de monorepo",
+    "Adoção definitiva da regra R-170 para automação via scripts .sh temporários no gh CLI",
+    "Merge e conclusão da Wave H5 (PR #474)"
+  ],
+  "learnings": [
+    "K-082: Ícones Lucide-React-Native devem ser mockados via Proxy para evitar Element type is invalid ao adicionar novos ícones.",
+    "R-176: Mocks de Supabase em Jest devem ter referências de funções fora do jest.mock para controle granular de estado.",
+    "K-083: Aliases de monorepo exigem sincronia entre module-resolver (Babel) e moduleNameMapper (Jest)."
+  ],
+  "pending": [
+    "Planejamento da Wave H6 (Push Notifications & Beta Dist)"
+  ]
+}

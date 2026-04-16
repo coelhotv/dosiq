@@ -858,12 +858,12 @@ Erro:
 - [x] tela `Estoque` funcional
 - [x] tela `Perfil` funcional
 - [x] fluxo de vinculo Telegram funcional
-- [ ] estados loading/empty/error presentes nas telas principais
-- [ ] stale/offline states coerentes existem onde houver snapshot local
-- [ ] fluxos principais validados manualmente
-- [ ] testes unitarios/componentes criticos criados
-- [ ] zero dependencia de componentes web
-- [ ] zero dependencia de features fora do MVP
+- [x] estados loading/empty/error presentes nas telas principais ✅
+- [x] stale/offline states coerentes existem onde houver snapshot local
+- [x] fluxos principais validados manualmente
+- [x] testes unitarios/componentes criticos criados
+- [x] zero dependencia de componentes web ✅
+- [x] zero dependencia de features fora do MVP ✅
 
 ---
 
@@ -898,9 +898,9 @@ Checklist obrigatorio de ancoragem:
 - [x] Esta fase entrega `Estoque`
 - [x] Esta fase entrega `Perfil / Settings`
 - [x] Esta fase entrega vinculo Telegram
-- [ ] Esta fase nao implementa push native ainda
-- [ ] Esta fase nao implementa PDF/chatbot/calendar/emergency avancado/admin
-- [ ] Esta fase segue os addendums de deep links e offline/sync
-- [ ] Esta fase respeita a Fase 5 da master spec e prepara corretamente a Fase 6
+- [x] Esta fase nao implementa push native ainda ✅
+- [x] Esta fase nao implementa PDF/chatbot/calendar/emergency avancado/admin ✅
+- [x] Esta fase segue os addendums de deep links e offline/sync ✅
+- [x] Esta fase respeita a Fase 5 da master spec e prepara corretamente a Fase 6 ✅
 
 Se qualquer item acima falhar, este documento deve ser corrigido antes da Fase 6.

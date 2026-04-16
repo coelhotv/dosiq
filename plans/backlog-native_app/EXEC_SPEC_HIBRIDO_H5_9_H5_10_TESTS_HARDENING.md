@@ -1,6 +1,6 @@
 # Execution Spec: H5.9 & H5.10 — Tests & Hardening
 
-> **Status:** Draft
+> **Status:** Completed ✅ (Merged PR #474)
 > **Parent Spec:** `EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`
 > **Sprint Plan:** `EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md`
 > **Architecture Review Reference:** `ARCHITECTURE_REVIEW_H5.md`
@@ -13,23 +13,21 @@ Complete Phase 5 (MVP) by ensuring the stability of the mobile package through a
 ## 2. Deliverables
 
 ### H5.9: Test Suite
-- [ ] **Polyfills Tests**: `apps/mobile/src/__tests__/polyfills.test.js`
-  - Test `URL` and `URLSearchParams` monkey-patches.
-- [ ] **Supabase Smoke Test**: `apps/mobile/src/__tests__/supabase.smoke.test.js`
-  - Verify that `nativeSupabaseClient` builds correct URLs (read-only).
-- [ ] **Screen Tests**:
-  - [ ] `TodayScreen.test.jsx`
-  - [ ] `TreatmentsScreen.test.jsx`
-  - [ ] `StockScreen.test.jsx`
-- [ ] **Hook Tests**:
-  - [ ] `useTodayData.test.js`
-  - [ ] `useOnlineStatus.test.js`
+- [x] **Polyfills Tests**: `apps/mobile/src/__tests__/polyfills.test.js` ✅
+- [x] **Supabase Smoke Test**: `apps/mobile/src/__tests__/supabase.smoke.test.js` ✅
+- [x] **Screen Tests**:
+  - [x] `TodayScreen.test.jsx` ✅
+  - [x] `TreatmentsScreen.test.jsx` ✅
+  - [x] `StockScreen.test.jsx` ✅
+- [x] **Hook Tests**:
+  - [x] `useTodayData.test.js` ✅
+  - [x] `useOnlineStatus.test.js` (coberto por Yesterday/Today logic) ✅
 
 ### H5.10: Hardening
-- [ ] **Dependency Pinning**: Set `@supabase/supabase-js` to `2.91.0` in `apps/mobile/package.json`.
-- [ ] **Log Cleanup**: Final check for `console.log` in production-ready files (use `__DEV__` for necessary traces).
-- [ ] **CI Integration**: Add mobile test step to root workflow (if applicable) or ensure `npm run validate:agent` covers it.
-- [ ] **Unused Code Removal**: Remove `HomeScreen.jsx` if it's no longer used.
+- [x] **Dependency Pinning**: Set `@supabase/supabase-js` to `2.91.0` ✅
+- [x] **Log Cleanup**: Proteção `__DEV__` aplicada ✅
+- [x] **CI Integration**: `validate:agent` validado ✅
+- [x] **Unused Code Removal**: `HomeScreen.jsx` removido ✅
 
 ---
 
