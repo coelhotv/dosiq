@@ -4,6 +4,7 @@
 // stale=true quando há snapshot em cache mas a última refresh falhou (R5-008)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal } from '@meus-remedios/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
@@ -13,15 +14,18 @@ import {
   getMedicinesData,
 } from '../services/dashboardService'
 
+const TODAY_CACHE_KEY = '@meus-remedios/today-snapshot'
+
 /**
  * @typedef {{ 
  *   protocols: Array, 
  *   logs: Array, 
  *   medicines: Record<string,Object>,
  *   stats: Object,
- *   zones: Object 
+ *   zones: Object,
+ *   capturedAt?: string
  * }} TodayData
- * @returns {{ data: TodayData|null, loading: boolean, error: string|null, stale: boolean, refresh: Function }}
+ * @returns {{ data: TodayData|null, loading: boolean, error: string|null, stale: boolean, isDaySegregated: boolean, refresh: Function }}
  */
 export function useTodayData() {
   // States primeiro (R-010)
@@ -29,6 +33,8 @@ export function useTodayData() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
+  const [isDaySegregated, setIsDaySegregated] = useState(false)
+  
   // Ref para snapshot check sem entrar nos deps do useCallback
   const dataRef = useRef(null)
 
@@ -37,47 +43,85 @@ export function useTodayData() {
     setError(null)
 
     try {
-      if (__DEV__) console.log('[useTodayData] session check start')
+      if (__DEV__) console.log('[useTodayData] fetch start')
+      
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
       
       let user = currentSession?.user
       if (sessionError || !user) {
-        if (__DEV__) console.warn('[useTodayData] getSession failed or null, trying getUser as fallback')
         const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
-        if (userError || !verifiedUser) {
-          throw new Error('Sessão expirada ou inválida.')
-        }
+        if (userError || !verifiedUser) throw new Error('Sessão expirada')
         user = verifiedUser
       }
 
-      if (__DEV__) console.log('[useTodayData] auth OK — user:', user.id)
-
-      const today = getTodayLocal() // R-020: nunca new Date('YYYY-MM-DD')
+      const today = getTodayLocal()
       
-      // Carregar dados brutos em paralelo
+      // Fetch online (primary)
       const [protocols, logs] = await Promise.all([
         getActiveProtocols(user.id),
         getTodayLogs(user.id, today)
       ])
 
-      // Enriquecer com nomes e dosagens dos medicamentos
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
       const medicines = await getMedicinesData(medicineIds)
 
-      // Injetar objeto medicine em cada protocolo para o calculateDosesByDate poder enriquecer as doses
       const enrichedProtocols = protocols.map(p => ({
         ...p,
         medicine: medicines[p.medicine_id] || null
       }))
 
-      const newData = { protocols: enrichedProtocols, logs, medicines }
+      const newData = { 
+        protocols: enrichedProtocols, 
+        logs, 
+        medicines,
+        capturedAt: new Date().toISOString()
+      }
+
+      // Salvar em cache para uso offline posterior
+      await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
+
       dataRef.current = newData
       setData(newData)
       setStale(false)
+      setIsDaySegregated(false)
     } catch (err) {
-      if (__DEV__) console.error('[useTodayData] ERRO FINAL:', err?.message)
-      setError(err.message ?? 'Erro ao carregar dados do dia.')
-      if (dataRef.current !== null) setStale(true)
+      if (__DEV__) console.warn('[useTodayData] Fetch failed, trying cache:', err.message)
+      
+      try {
+        const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          const capturedAt = new Date(parsed.capturedAt)
+          const now = new Date()
+          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+
+          // Regra: < 24h
+          if (diffHours < 24) {
+            const today = getTodayLocal()
+            const snapshotDay = parsed.capturedAt.split('T')[0]
+            
+            // Regra H5.8: Se dia diferente, limpar logs (Agenda Stale)
+            if (snapshotDay !== today) {
+              if (__DEV__) console.log('[useTodayData] Day mismatch, segregating logs')
+              parsed.logs = []
+              setIsDaySegregated(true)
+            } else {
+              setIsDaySegregated(false)
+            }
+
+            setData(parsed)
+            dataRef.current = parsed
+            setStale(true)
+            setError(null) // Silencia o erro se carregou cache útil
+          } else {
+            throw new Error('Cache expirado (> 24h)')
+          }
+        } else {
+          throw err // Re-throw original se não houver cache
+        }
+      } catch (cacheErr) {
+        setError(err.message ?? 'Erro ao carregar dados.')
+      }
     } finally {
       setLoading(false)
     }
