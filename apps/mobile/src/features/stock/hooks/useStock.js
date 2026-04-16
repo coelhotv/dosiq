@@ -65,6 +65,10 @@ export function useStock() {
           status = 'NORMAL'
           statusLabel = 'Normal'
           color = '#22c55e'
+        } else {
+          status = 'HIGH'
+          statusLabel = 'Bom'
+          color = '#3b82f6'
         }
 
         return {

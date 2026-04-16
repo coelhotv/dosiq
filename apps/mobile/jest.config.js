@@ -3,7 +3,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)',
   ],
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/jest-setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
@@ -15,5 +15,6 @@ module.exports = {
     '^@protocols/(.*)$': '<rootDir>/src/features/protocols/$1',
     '^@stock/(.*)$': '<rootDir>/src/features/stock/$1',
     '^@dashboard/(.*)$': '<rootDir>/src/features/dashboard/$1',
+    '^@meus-remedios/core$': '<rootDir>/../../packages/core/src/index.js',
   },
 }

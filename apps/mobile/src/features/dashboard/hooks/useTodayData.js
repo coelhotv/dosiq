@@ -74,7 +74,8 @@ export function useTodayData() {
         protocols: enrichedProtocols, 
         logs, 
         medicines,
-        capturedAt: new Date().toISOString()
+        capturedAt: new Date().toISOString(),
+        localDay: today // R-114 fix: save explicit local day string
       }
 
       // Salvar em cache para uso offline posterior
@@ -98,11 +99,11 @@ export function useTodayData() {
           // Regra: < 24h
           if (diffHours < 24) {
             const today = getTodayLocal()
-            // R-114 fix: use parseLocalDate for robust comparison
-            const capturedAtIso = parsed.capturedAt ?? ''
-            const snapshotDay = capturedAtIso.split('T')[0]
             
-            // Regra H5.8: Se dia diferente, limpar logs (Agenda Stale)
+            // R-114: Prefer explicit localDay from snapshot, fallback to ISO split
+            const snapshotDay = parsed.localDay || (parsed.capturedAt ?? '').split('T')[0]
+            
+            // Regra H5.8: Se dia diferente (comparação local-local), limpar logs
             if (snapshotDay && snapshotDay !== today) {
               if (__DEV__) console.log('[useTodayData] Day mismatch, segregating logs')
               parsed.logs = Array.isArray(parsed.logs) ? [] : []
