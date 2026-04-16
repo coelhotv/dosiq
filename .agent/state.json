@@ -19,7 +19,7 @@
     "id": "session_2026W16_h5_publishing_prep",
     "started_at": "2026-04-15T20:20:00Z",
     "mode": "coding",
-    "status": "completed",
+    "status": "distilled",
     "goal": "Substituir logo na landing page",
     "goal_type": "chore",
     "acceptance_criteria": [
@@ -45,8 +45,8 @@
     "decisions_count": 28,
     "contracts_count": 16,
     "knowledge_count": 80,
-    "last_distillation": "2026-04-14T16:45:00Z",
-    "journal_entries_since_distillation": 15,
+    "last_distillation": "2026-04-16T12:35:00Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "rules": [
         "R-166",
