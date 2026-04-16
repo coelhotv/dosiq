@@ -18,6 +18,7 @@ import {
 import { getTodayLocal } from '@meus-remedios/core'
 import { registerDose } from '../services/doseService'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { useOnlineStatus } from '../../../shared/hooks/useOnlineStatus'
 
 /**
  * @param {{
@@ -41,12 +42,19 @@ export default function DoseRegisterModal({
   const [quantity, setQuantity] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  const { isOnline } = useOnlineStatus()
 
   if (!protocol) return null
 
   const defaultQty = String(protocol.dosage_per_intake ?? 1)
 
   async function handleConfirm() {
+    if (!isOnline) {
+      setError('Não é possível registar sem ligação à internet.')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
