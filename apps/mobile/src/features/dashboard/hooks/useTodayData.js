@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal } from '@meus-remedios/core'
+import { getTodayLocal, parseLocalDate } from '@meus-remedios/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
@@ -98,21 +98,31 @@ export function useTodayData() {
           // Regra: < 24h
           if (diffHours < 24) {
             const today = getTodayLocal()
-            const snapshotDay = parsed.capturedAt.split('T')[0]
+            // R-114 fix: use parseLocalDate for robust comparison
+            const capturedAtIso = parsed.capturedAt ?? ''
+            const snapshotDay = capturedAtIso.split('T')[0]
             
             // Regra H5.8: Se dia diferente, limpar logs (Agenda Stale)
-            if (snapshotDay !== today) {
+            if (snapshotDay && snapshotDay !== today) {
               if (__DEV__) console.log('[useTodayData] Day mismatch, segregating logs')
-              parsed.logs = []
+              parsed.logs = Array.isArray(parsed.logs) ? [] : []
               setIsDaySegregated(true)
             } else {
               setIsDaySegregated(false)
             }
 
-            setData(parsed)
-            dataRef.current = parsed
+            // Safety gate: garantir que parsed tem o formato esperado
+            const safeData = {
+              protocols: Array.isArray(parsed.protocols) ? parsed.protocols : [],
+              logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+              medicines: parsed.medicines || {},
+              capturedAt: parsed.capturedAt
+            }
+
+            setData(safeData)
+            dataRef.current = safeData
             setStale(true)
-            setError(null) // Silencia o erro se carregou cache útil
+            setError(null) 
           } else {
             throw new Error('Cache expirado (> 24h)')
           }
@@ -204,6 +214,7 @@ export function useTodayData() {
     loading, 
     error, 
     stale, 
+    isDaySegregated,
     refresh: load 
   }
 }

@@ -49,13 +49,22 @@ export function useStock() {
           ? totalQuantity / dailyConsumption 
           : Infinity
 
-        let status = 'HIGH', statusLabel = 'Bom', color = '#3b82f6'
+        let status = 'HIGH'
+        let statusLabel = 'Bom'
+        let color = '#3b82f6'
+
         if (daysRemaining < 7) {
-          status = 'CRITICAL'; statusLabel = 'Crítico'; color = '#ef4444'
+          status = 'CRITICAL'
+          statusLabel = 'Crítico'
+          color = '#ef4444'
         } else if (daysRemaining < 14) {
-          status = 'LOW'; statusLabel = 'Baixo'; color = '#f59e0b'
+          status = 'LOW'
+          statusLabel = 'Baixo'
+          color = '#f59e0b'
         } else if (daysRemaining < 30) {
-          status = 'NORMAL'; statusLabel = 'Normal'; color = '#22c55e'
+          status = 'NORMAL'
+          statusLabel = 'Normal'
+          color = '#22c55e'
         }
 
         return {
