@@ -10,7 +10,7 @@ const workspaceRoot = path.resolve(projectRoot, '../..')
 const config = getDefaultConfig(projectRoot)
 
 // Observar todos os packages do monorepo
-config.watchFolders = [workspaceRoot]
+config.watchFolders.push(workspaceRoot)
 
 // Resolver node_modules tanto do mobile quanto da raiz do monorepo
 config.resolver.nodeModulesPaths = [
@@ -18,7 +18,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-// Evita que o Metro suba indefinidamente buscando módulos
-config.resolver.disableHierarchicalLookup = true
+// Permite o lookup hierárquico padrão (solicitado pelo Expo Doctor)
+config.resolver.disableHierarchicalLookup = false
 
 module.exports = config
