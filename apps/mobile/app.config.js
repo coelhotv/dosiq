@@ -52,6 +52,7 @@ module.exports = {
     },
     android: {
       package: current.androidPackage,
+      googleServicesFile: `./google-services-${BUILD_PROFILE}.json`,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#E9F3EA',
