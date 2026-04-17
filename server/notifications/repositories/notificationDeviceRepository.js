@@ -3,11 +3,23 @@
 // Rastreia Expo tokens, info do dispositivo e status de ativação
 
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
+
+const upsertSchema = z.object({
+  userId: z.string().uuid(),
+  appKind: z.enum(['native', 'pwa']),
+  platform: z.enum(['ios', 'android', 'web']),
+  provider: z.enum(['expo', 'webpush']),
+  pushToken: z.string().min(1),
+  deviceName: z.string().optional(),
+  deviceFingerprint: z.string().optional(),
+  appVersion: z.string().optional(),
+})
 
 export const notificationDeviceRepository = {
   // Lista dispositivos ativos de um usuário para um provedor específico
@@ -33,7 +45,8 @@ export const notificationDeviceRepository = {
   },
 
   // Insere ou atualiza dispositivo (upsert por provider+push_token)
-  // Atualiza last_seen_at sempre que é chamado
+  // Atualiza last_seen_at e updated_at sempre que é chamado
+  // Aceita parâmetro `now` opcional para facilitar testes determinísticos
   async upsert({
     userId,
     appKind,
@@ -43,7 +56,13 @@ export const notificationDeviceRepository = {
     deviceName,
     deviceFingerprint,
     appVersion,
+    now = new Date(),
   }) {
+    const parsed = upsertSchema.safeParse({ userId, appKind, platform, provider, pushToken, deviceName, deviceFingerprint, appVersion })
+    if (!parsed.success) {
+      throw new Error(`[notificationDeviceRepository.upsert] Invalid input: ${parsed.error.message}`)
+    }
+
     const { error } = await supabase.from('notification_devices').upsert(
       {
         user_id: userId,
@@ -55,7 +74,8 @@ export const notificationDeviceRepository = {
         device_fingerprint: deviceFingerprint,
         app_version: appVersion,
         is_active: true,
-        last_seen_at: new Date().toISOString(),
+        last_seen_at: now.toISOString(),
+        updated_at: now.toISOString(),
       },
       {
         onConflict: 'provider,push_token',
