@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase/nativeSupabaseClient'
+import { supabase } from '../../supabase/nativeSupabaseClient'
 
 /**
  * Hook para acessar autenticação e dados do usuário (H6)
