@@ -49,6 +49,7 @@ module.exports = {
       buildNumber: '1',
       supportsTablet: false,
       jsEngine: 'hermes',
+      minimumOSVersion: '15.5',
     },
     android: {
       package: current.androidPackage,
