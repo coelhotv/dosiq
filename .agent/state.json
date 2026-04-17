@@ -21,26 +21,24 @@
     "id": "session_2026W16_h6_sprint6.3",
     "started_at": "2026-04-17T14:30:00Z",
     "mode": "coding",
-    "status": "coding",
-    "goal": "Sprint 6.3 — Integração Mobile: device registration, push permissions, notification preferences screen",
-    "goal_type": "feature",
+    "status": "completed",
+    "goal": "UX.1 — Docs e baseline do Native App UX Revamp",
+    "goal_type": "docs",
     "acceptance_criteria": [
-      "Device real gera linha em notification_devices com provider = 'expo'",
-      "Preferência pode ser alterada pela tela de perfil",
-      "Retorno ao app atualiza last_seen_at",
-      "Logout tenta desativação remota, mas não bloqueia se falhar",
-      "Tap em notificação (foreground/background/cold start) navega corretamente",
-      "npm run validate:agent verde (web)",
-      "Testes mobile passam no workspace apps/mobile"
+      "Corpus documental do Native App UX Revamp congelado em plans/native_app_ux_revamp/",
+      "Referências visuais locais estão ancoradas nos docs centrais e no sprint plan",
+      "Baseline real do mobile e dependências da iniciativa estão explícitas e rastreáveis",
+      "Sprint UX.1 fecha sem conflito com MASTER_SPEC_HIBRIDO_WEB_NATIVE.md",
+      "Execução futura por agentes consegue iniciar por README.md sem depender do histórico da conversa"
     ],
     "active_wave": {
-      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.3)",
-      "phase": 6,
-      "sprint": "6.3",
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
-      "status": "in_progress",
+      "name": "Native App UX Revamp (Sprint UX.1)",
+      "phase": "ux-revamp",
+      "sprint": "UX.1",
+      "spec": "plans/native_app_ux_revamp/EXEC_SPEC_NATIVE_APP_UX_SPRINT_PLAN.md",
+      "status": "completed",
       "started_at": "2026-04-17T14:30:00Z",
-      "notes": "Sprint 6.1 CONCLUÍDO (PR #475 merged). Sprint 6.2 CONCLUÍDO (PR #476 merged). Sprint 6.3: Mobile push integration — registerPushPermission, getExpoPushToken, syncNotificationDevice, unregisterNotificationDevice, NotificationPreferencesScreen."
+      "notes": "Sprint UX.1: congelar corpus documental, baseline validada, referências visuais locais e ponto de entrada operacional para agentes via /devflow."
     }
   },
   "memory": {
@@ -50,7 +48,7 @@
     "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "recent_additions": {
       "rules": [
         "R-175",
@@ -72,8 +70,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-17T06:00:00Z",
-    "relevant_rules_loaded_at": "2026-04-17T06:00:00Z",
+    "index_loaded_at": "2026-04-17T21:31:42Z",
+    "relevant_rules_loaded_at": "2026-04-17T21:31:42Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
