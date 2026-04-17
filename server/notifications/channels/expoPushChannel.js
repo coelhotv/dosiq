@@ -53,8 +53,8 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 async function normalizeExpoResult({ devices, tickets, repositories, correlationId, userId }) {
   let delivered = 0
   let failed = 0
-  const deactivatedTokens = []
   const errors = []
+  const tokensToDeactivate = []
 
   for (let i = 0; i < tickets.length; i++) {
     const ticket = tickets[i]
@@ -68,21 +68,24 @@ async function normalizeExpoResult({ devices, tickets, repositories, correlation
       errors.push({ token: device.push_token, code: errorCode, message: ticket.message })
 
       if (errorCode && shouldDeactivateDevice(errorCode)) {
-        try {
-          await repositories.devices.deactivateByToken(device.push_token)
-          deactivatedTokens.push(device.push_token)
-          console.info('[expoPushChannel] token desativado', { correlationId, userId, token: device.push_token, reason: errorCode })
-        } catch (deactivateError) {
-          console.error('[expoPushChannel] falha ao desativar token', {
-            correlationId,
-            userId,
-            token: device.push_token,
-            error: deactivateError.message,
-          })
-        }
+        tokensToDeactivate.push(device.push_token)
       }
     }
   }
+
+  // Desativa tokens inválidos em paralelo (permanent errors apenas)
+  const deactivationResults = await Promise.allSettled(
+    tokensToDeactivate.map((token) => repositories.devices.deactivateByToken(token))
+  )
+
+  const deactivatedTokens = tokensToDeactivate.filter((_, i) => {
+    if (deactivationResults[i].status === 'rejected') {
+      console.error('[expoPushChannel] falha ao desativar token', { correlationId, userId, token: tokensToDeactivate[i], error: deactivationResults[i].reason?.message })
+      return false
+    }
+    console.info('[expoPushChannel] token desativado', { correlationId, userId, token: tokensToDeactivate[i] })
+    return true
+  })
 
   console.info('[expoPushChannel] resultado', { correlationId, userId, attempted: devices.length, delivered, failed, deactivatedTokens })
 
