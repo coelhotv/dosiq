@@ -5,7 +5,7 @@ import { requestPushPermission } from '../../../platform/notifications/requestPu
 import { getExpoPushToken } from '../../../platform/notifications/getExpoPushToken'
 import { syncNotificationDevice } from '../../../platform/notifications/syncNotificationDevice'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import { colors, spacing, borderRadius, typography } from '../../../shared/styles/tokens'
+import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 // Cópia dos labels da web conforme R-166
 const PREFERENCE_LABELS = {
@@ -214,38 +214,41 @@ export default function NotificationPreferencesScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing[6],
+    paddingHorizontal: spacing[4],
   },
   headerTitle: {
-    fontSize: typography.headings.h1.size,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing[6],
+    marginTop: spacing[2],
   },
   section: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing[6],
   },
   sectionTitle: {
-    fontSize: typography.headings.h3.size,
+    fontSize: 16,
     fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.md,
+    color: colors.text.secondary,
+    marginBottom: spacing[2],
+    marginLeft: spacing[1],
   },
   card: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.bg.card,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
+    padding: spacing[4],
   },
   descriptionText: {
-    fontSize: typography.body.md.size,
+    fontSize: 14,
     lineHeight: 20,
     color: colors.text.secondary,
   },
   statusBadge: {
     backgroundColor: colors.status.success + '20',
     borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    padding: spacing[4],
+    marginBottom: spacing[6],
     borderLeftWidth: 4,
     borderLeftColor: colors.status.success,
   },
@@ -254,25 +257,25 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.status.warning,
   },
   statusText: {
-    fontSize: typography.body.sm.size,
+    fontSize: 12,
     fontWeight: '500',
     color: colors.status.success,
   },
   statusTextWarning: {
-    fontSize: typography.body.sm.size,
+    fontSize: 12,
     fontWeight: '500',
     color: colors.status.warning,
   },
   buttonsContainer: {
-    gap: spacing.md,
+    gap: spacing[3],
   },
   button: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[6],
     borderRadius: borderRadius.md,
     borderWidth: 2,
-    borderColor: colors.border.subtle,
-    backgroundColor: colors.background.tertiary,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.screen,
     alignItems: 'center',
   },
   buttonActive: {
@@ -280,41 +283,41 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[600],
   },
   buttonText: {
-    fontSize: typography.body.md.size,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
   },
   buttonTextActive: {
-    color: colors.background.primary,
+    color: colors.text.inverse,
   },
   settingsButton: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[6],
     borderRadius: borderRadius.md,
     backgroundColor: colors.primary[500],
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing[3],
   },
   settingsButtonText: {
-    fontSize: typography.body.md.size,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.background.primary,
+    color: colors.text.inverse,
   },
   settingsHint: {
-    fontSize: typography.body.sm.size,
+    fontSize: 12,
     color: colors.text.secondary,
     lineHeight: 18,
   },
   errorContainer: {
     backgroundColor: colors.status.error + '20',
     borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginTop: spacing.lg,
+    padding: spacing[4],
+    marginTop: spacing[6],
     borderLeftWidth: 4,
     borderLeftColor: colors.status.error,
   },
   errorText: {
-    fontSize: typography.body.sm.size,
+    fontSize: 12,
     color: colors.status.error,
   },
 })

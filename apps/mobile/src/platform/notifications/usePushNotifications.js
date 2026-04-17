@@ -84,23 +84,16 @@ export function usePushNotifications({ supabase, session }) {
     }
   }, [supabase, session])
 
-  // Cleanup durante logout
+  // Cleanup durante logout: executa imediatamente quando session torna-se null,
+  // não como cleanup da próxima renderização (que só correria no unmount)
   useEffect(() => {
-    if (session) return // continuar se ainda há sessão
-
-    return () => {
-      // Logout: desativar device remotamente
-      ;(async () => {
-        const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY)
-        if (token && supabase) {
-          await unregisterNotificationDevice({
-            supabase,
-            userId: session?.user?.id,
-            token,
-          })
-          await AsyncStorage.removeItem(PUSH_TOKEN_KEY)
-        }
-      })()
-    }
+    if (session) return
+    ;(async () => {
+      const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY)
+      if (token && supabase) {
+        await unregisterNotificationDevice({ supabase, userId: null, token })
+        await AsyncStorage.removeItem(PUSH_TOKEN_KEY)
+      }
+    })()
   }, [session, supabase])
 }
