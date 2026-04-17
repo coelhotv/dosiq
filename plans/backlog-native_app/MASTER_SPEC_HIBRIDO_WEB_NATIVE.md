@@ -45,6 +45,7 @@ Os documentos oficiais e ativos deste projeto hybrid/native passam a ser:
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DESIGN_TOKENS.md`
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEPLOY_VERCEL_MONOREPO.md`
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_TESTING_MOBILE.md`
+- `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_SERVICE_VALIDATION.md`
 - `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_HUMAN_DEPENDENCIES.md`
 - `plans/backlog-native_app/PLANO_EXECUCAO_HIBRIDO.md`
 
