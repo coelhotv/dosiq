@@ -21,7 +21,7 @@
     "id": "session_2026W16_h6_sprint6.1",
     "started_at": "2026-04-17T00:30:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "goal": "Sprint 6.1 — Banco e Contratos: migrations SQL, repositories, resolveChannelsForUser",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -45,10 +45,10 @@
     "rules_count": 124,
     "anti_patterns_count": 96,
     "decisions_count": 28,
-    "contracts_count": 16,
+    "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "recent_additions": {
       "rules": [
         "R-175",
