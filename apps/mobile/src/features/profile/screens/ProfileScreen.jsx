@@ -81,10 +81,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <TelegramLinkCard
-          settings={settings}
-        />
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notificações</Text>
           <TouchableOpacity
@@ -99,6 +95,10 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
         </View>
+
+        <TelegramLinkCard
+          settings={settings}
+        />
 
         <View style={styles.logoutSection}>
           <TouchableOpacity 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native'
+import { Send, MessageSquareDot, TrendingUpDown, MessageSquareOff, ArrowLeft } from 'lucide-react-native'
 import { useAuth } from '../../../platform/auth/hooks/useAuth'
 import { requestPushPermission } from '../../../platform/notifications/requestPushPermission'
 import { getExpoPushToken } from '../../../platform/notifications/getExpoPushToken'
@@ -15,7 +16,7 @@ const PREFERENCE_LABELS = {
   none: 'Desativar notificações',
 }
 
-export default function NotificationPreferencesScreen() {
+export default function NotificationPreferencesScreen({ navigation }) {
   const { supabase, user } = useAuth()
   const [preference, setPreference] = useState('telegram') // default
   const [hasPermission, setHasPermission] = useState(false)
@@ -128,26 +129,53 @@ export default function NotificationPreferencesScreen() {
     }
   }
 
-  const PreferenceButton = ({ value }) => (
+  const getIcon = (value) => {
+    const iconProps = { size: 20, strokeWidth: 2, style: { marginRight: spacing[2] } }
+    const iconColor = preference === value ? colors.text.inverse : colors.primary[600]
+
+    switch (value) {
+      case 'telegram':
+        return <Send {...iconProps} color={iconColor} />
+      case 'mobile_push':
+        return <MessageSquareDot {...iconProps} color={iconColor} />
+      case 'both':
+        return <TrendingUpDown {...iconProps} color={iconColor} />
+      case 'none':
+        return <MessageSquareOff {...iconProps} color={iconColor} />
+      default:
+        return null
+    }
+  }
+
+  const PreferenceButton = ({ value, isDangerous }) => (
     <TouchableOpacity
       style={[
         styles.button,
         preference === value && styles.buttonActive,
+        isDangerous && preference === value && styles.buttonDangerous,
       ]}
       onPress={() => handlePreferenceChange(value)}
       disabled={loading}
       activeOpacity={0.7}
     >
-      <Text style={[styles.buttonText, preference === value && styles.buttonTextActive]}>
-        {PREFERENCE_LABELS[value]}
-      </Text>
+      <View style={styles.buttonContent}>
+        {getIcon(value)}
+        <Text style={[styles.buttonText, preference === value && styles.buttonTextActive]}>
+          {PREFERENCE_LABELS[value]}
+        </Text>
+      </View>
     </TouchableOpacity>
   )
 
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.headerTitle}>Preferências de Notificação</Text>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <ArrowLeft size={24} color={colors.primary[600]} strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Preferências de Notificação</Text>
+        </View>
 
         {/* Pre-prompt */}
         {!hasPermission && (
@@ -182,8 +210,12 @@ export default function NotificationPreferencesScreen() {
             <PreferenceButton value="telegram" />
             <PreferenceButton value="mobile_push" />
             <PreferenceButton value="both" />
-            <PreferenceButton value="none" />
           </View>
+        </View>
+
+        {/* Botão desativar separado */}
+        <View style={styles.section}>
+          <PreferenceButton value="none" isDangerous />
         </View>
 
         {/* Botão para abrir Configurações (se permissão negada) */}
@@ -217,12 +249,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[6],
     paddingHorizontal: spacing[4],
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing[6],
+    gap: spacing[3],
+  },
+  backButton: {
+    padding: spacing[2],
+    marginLeft: -spacing[2],
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: spacing[6],
-    marginTop: spacing[2],
+    flex: 1,
   },
   section: {
     marginBottom: spacing[6],
@@ -281,6 +322,15 @@ const styles = StyleSheet.create({
   buttonActive: {
     backgroundColor: colors.primary[600],
     borderColor: colors.primary[600],
+  },
+  buttonDangerous: {
+    backgroundColor: colors.status.error,
+    borderColor: colors.status.error,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     fontSize: 14,
