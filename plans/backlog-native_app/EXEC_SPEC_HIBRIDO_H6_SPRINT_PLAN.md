@@ -33,8 +33,8 @@ Este arquivo é o ponto de entrada para agentes coders que executam `/devflow co
 
 | Sprint | Título | Status | Branch | PR |
 |--------|--------|--------|--------|----|
-| 6.1 | Banco e Contratos | ⏳ Pendente | `feature/fase6/sprint-6.1-banco-contratos` | — |
-| 6.2 | Dispatcher e Canais | ⏳ Pendente | `feature/fase6/sprint-6.2-dispatcher` | — |
+| 6.1 | Banco e Contratos | ✅ Completo | merged | #475 |
+| 6.2 | Dispatcher e Canais | ✅ Completo | merged | #476 |
 | 6.3 | Integração Mobile | ⏳ Pendente | `feature/fase6/sprint-6.3-mobile-push` | — |
 | 6.4 | Migração dos Jobs | ⏳ Pendente | `feature/fase6/sprint-6.4-jobs-dispatcher` | — |
 | 6.5 | Beta Interno e Hardening | ⏳ Pendente | `feature/fase6/sprint-6.5-beta` | — |
