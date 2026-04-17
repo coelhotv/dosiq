@@ -225,22 +225,22 @@ export default function NotificationPreferencesScreen({ navigation }) {
           </View>
         )}
 
-        {/* Status atual da preferência */}
+        {/* Status atual da preferência — 3 estados com cores diferentes */}
         {preference === 'none' && (
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>✓ Notificações desativadas</Text>
+          <View style={[styles.statusBadge, styles.statusBadgeDisabled]}>
+            <Text style={[styles.statusText, styles.statusTextDisabled]}>✓ Notificações desativadas</Text>
           </View>
         )}
 
         {hasPermission && preference && preference !== 'none' && (
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>✓ Notificações habilitadas</Text>
+          <View style={[styles.statusBadge, styles.statusBadgeEnabled]}>
+            <Text style={[styles.statusText, styles.statusTextEnabled]}>✓ Notificações habilitadas</Text>
           </View>
         )}
 
         {!hasPermission && preference !== 'none' && (
-          <View style={[styles.statusBadge, styles.statusBadgeWarning]}>
-            <Text style={styles.statusTextWarning}>⚠ Permissão não concedida</Text>
+          <View style={[styles.statusBadge, styles.statusBadgeUnauthorized]}>
+            <Text style={[styles.statusText, styles.statusTextUnauthorized]}>⚠ Permissão não concedida</Text>
           </View>
         )}
 
@@ -327,26 +327,35 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   statusBadge: {
-    backgroundColor: colors.status.success + '20',
     borderRadius: borderRadius.md,
     padding: spacing[4],
     marginBottom: spacing[6],
     borderLeftWidth: 4,
+  },
+  statusBadgeEnabled: {
+    backgroundColor: colors.status.success + '20',
     borderLeftColor: colors.status.success,
   },
-  statusBadgeWarning: {
-    backgroundColor: colors.status.warning + '20',
-    borderLeftColor: colors.status.warning,
+  statusBadgeDisabled: {
+    backgroundColor: colors.text.secondary + '15',
+    borderLeftColor: colors.text.secondary,
+  },
+  statusBadgeUnauthorized: {
+    backgroundColor: colors.status.error + '20',
+    borderLeftColor: colors.status.error,
   },
   statusText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  statusTextEnabled: {
     color: colors.status.success,
   },
-  statusTextWarning: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.status.warning,
+  statusTextDisabled: {
+    color: colors.text.secondary,
+  },
+  statusTextUnauthorized: {
+    color: colors.status.error,
   },
   buttonsContainer: {
     gap: spacing[3],
