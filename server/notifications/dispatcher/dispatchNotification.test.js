@@ -20,9 +20,9 @@ const mockRepositories = {
   devices: { listActiveByUser: vi.fn(), deactivateByToken: vi.fn() },
 }
 
-// Supabase é importado internamente em telegramChannel — mockamos o módulo
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({
+// Supabase centralizado importado em telegramChannel — mockamos o módulo centralizado
+vi.mock('../../services/supabase.js', () => ({
+  supabase: {
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -30,7 +30,7 @@ vi.mock('@supabase/supabase-js', () => ({
         }),
       }),
     }),
-  }),
+  },
 }))
 
 afterEach(() => {
