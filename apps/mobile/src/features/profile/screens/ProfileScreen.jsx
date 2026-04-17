@@ -1,16 +1,20 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { Bell } from 'lucide-react-native'
 import { useProfile } from '../hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import TelegramLinkCard from '../components/TelegramLinkCard'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
+import { ROUTES } from '../../../navigation/routes'
 
 /**
  * Tela de Perfil do MVP mobile (H5.6)
  * Exibe dados da conta, integração Telegram e logout.
  */
 export default function ProfileScreen() {
+  const navigation = useNavigation()
   const { user, settings, loading, error, refresh, generateToken } = useProfile()
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -77,9 +81,24 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <TelegramLinkCard 
-          settings={settings} 
+        <TelegramLinkCard
+          settings={settings}
         />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notificações</Text>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.notificationRow}>
+              <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
+              <Text style={styles.notificationLabel}>Preferências de Notificação</Text>
+              <Text style={styles.arrow}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.logoutSection}>
           <TouchableOpacity 
@@ -173,5 +192,20 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     fontSize: 12,
     textAlign: 'center',
-  }
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+  },
+  notificationLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  arrow: {
+    fontSize: 20,
+    color: colors.text.secondary,
+  },
 })
