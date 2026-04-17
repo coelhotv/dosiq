@@ -14,31 +14,31 @@
       "expo",
       "react-native"
     ],
-    "phase": "h6-planning",
+    "phase": "h6-sprint-6.1",
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_planning",
-    "started_at": "2026-04-16T23:00:00Z",
-    "mode": "planning",
-    "status": "planned",
-    "goal": "Fase 6 — Push Native e Beta Interno: planejamento dos sprints 6.1–6.5",
+    "id": "session_2026W16_h6_sprint6.1",
+    "started_at": "2026-04-17T00:30:00Z",
+    "mode": "coding",
+    "status": "analysis",
+    "goal": "Sprint 6.1 — Banco e Contratos: migrations SQL, repositories, resolveChannelsForUser",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "Sprint breakdown 6.1–6.5 documentado com DoD verificável",
-      "ADRs relevantes identificados e verificados",
-      "Contratos de interface do dispatcher definidos",
-      "Riscos e flags de rollback especificados",
-      "Ordem de implementação prescrita e validada contra master spec"
+      "Migrations aplicam sem erro em DB local/staging",
+      "Leitura/escrita autenticada de devices funciona via RLS",
+      "resolveChannelsForUser passa todos os 9 casos de teste",
+      "npm run validate:agent verde",
+      "Nenhum arquivo de envio de push criado neste sprint"
     ],
     "active_wave": {
-      "name": "Fase 6 — Push Native e Beta Interno",
+      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.1)",
       "phase": 6,
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md",
-      "sprint": "6.1-6.5",
-      "status": "planned",
-      "planned_at": "2026-04-16T23:15:00Z",
-      "notes": "Sprints 6.1–6.5 planejados. ADR-029 (dispatcher multicanal) e ADR-030 (rollback flag) pendentes de criação antes do Sprint 6.1 merge. Contratos CON-017 a CON-020 a formalizar durante coding."
+      "sprint": "6.1",
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
+      "status": "in-progress",
+      "started_at": "2026-04-17T00:30:00Z",
+      "notes": "Sprint 6.1: Banco e Contratos. Antes do C2 GATE, ADR-029 e ADR-030 precisam estar criados/aprovados."
     }
   },
   "memory": {
@@ -70,8 +70,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-16T23:00:00Z",
-    "relevant_rules_loaded_at": "2026-04-16T23:00:00Z",
+    "index_loaded_at": "2026-04-17T00:30:00Z",
+    "relevant_rules_loaded_at": "2026-04-17T00:30:00Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
