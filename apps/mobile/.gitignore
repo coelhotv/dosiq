@@ -13,3 +13,7 @@ dist/
 # Local env
 .env
 .env.local
+
+# Firebase credentials (nunca commitar — contêm chaves privadas)
+google-services*.json
+GoogleService-Info*.plist
