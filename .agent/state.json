@@ -36,9 +36,10 @@
       "phase": 6,
       "sprint": "6.1",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
-      "status": "in-progress",
+      "status": "completed",
       "started_at": "2026-04-17T00:30:00Z",
-      "notes": "Sprint 6.1: Banco e Contratos. Antes do C2 GATE, ADR-029 e ADR-030 precisam estar criados/aprovados."
+      "completed_at": "2026-04-17T05:50:00Z",
+      "notes": "Sprint 6.1 CONCLUÍDO: Banco (migrations + RLS) + Repositórios (Zod validated) + Policy (9 testes). PR #475 merged. Migrations executadas em Supabase. Próximo: Sprint 6.2 (Dispatcher + Canais)"
     }
   },
   "memory": {
