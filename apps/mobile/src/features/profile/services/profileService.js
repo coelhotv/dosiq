@@ -74,7 +74,7 @@ export async function getUserSettings() {
 
     const { data, error } = await supabase
       .from('user_settings')
-      .select('user_id, telegram_chat_id, verification_token')
+      .select('user_id, telegram_chat_id, verification_token, notification_preference')
       .eq('user_id', user.id)
       .maybeSingle()
 

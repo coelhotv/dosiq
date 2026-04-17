@@ -23,4 +23,5 @@ export const ROUTES = {
   // Sub-rotas de Perfil
   PROFILE_MAIN: 'ProfileMain',
   TELEGRAM_LINK: 'TelegramLink',
+  NOTIFICATION_PREFERENCES: 'NotificationPreferences',
 }

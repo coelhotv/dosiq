@@ -18,27 +18,29 @@
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_sprint6.2",
-    "started_at": "2026-04-17T06:00:00Z",
+    "id": "session_2026W16_h6_sprint6.3",
+    "started_at": "2026-04-17T14:30:00Z",
     "mode": "coding",
-    "status": "analysis",
-    "goal": "Sprint 6.2 — Dispatcher e Canais: dispatchNotification, telegramChannel, expoPushChannel, buildNotificationPayload, normalizeChannelResults, shouldDeactivateDevice",
+    "status": "coding",
+    "goal": "Sprint 6.3 — Integração Mobile: device registration, push permissions, notification preferences screen",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "Teste 'both' simula coexistência de canais (Telegram + push)",
-      "Falha de expoPushChannel não cancela telegramChannel",
-      "shouldDeactivateDevice('DeviceNotRegistered') retorna true",
-      "Logs de dispatch incluem correlationId, userId, kind, canais tentados/entregues",
-      "npm run validate:agent verde"
+      "Device real gera linha em notification_devices com provider = 'expo'",
+      "Preferência pode ser alterada pela tela de perfil",
+      "Retorno ao app atualiza last_seen_at",
+      "Logout tenta desativação remota, mas não bloqueia se falhar",
+      "Tap em notificação (foreground/background/cold start) navega corretamente",
+      "npm run validate:agent verde (web)",
+      "Testes mobile passam no workspace apps/mobile"
     ],
     "active_wave": {
-      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.2)",
+      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.3)",
       "phase": 6,
-      "sprint": "6.2",
+      "sprint": "6.3",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
       "status": "in_progress",
-      "started_at": "2026-04-17T06:00:00Z",
-      "notes": "Sprint 6.1 CONCLUÍDO (PR #475 merged). Sprint 6.2: Dispatcher Multicanal + Canais. ADR-029 e ADR-030 accepted."
+      "started_at": "2026-04-17T14:30:00Z",
+      "notes": "Sprint 6.1 CONCLUÍDO (PR #475 merged). Sprint 6.2 CONCLUÍDO (PR #476 merged). Sprint 6.3: Mobile push integration — registerPushPermission, getExpoPushToken, syncNotificationDevice, unregisterNotificationDevice, NotificationPreferencesScreen."
     }
   },
   "memory": {

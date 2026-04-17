@@ -18,12 +18,16 @@ import LoginScreen from '../screens/LoginScreen'
 import RootTabs from './RootTabs'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 
 const Stack = createNativeStackNavigator()
 
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
   const [session, setSession] = useState(undefined)
+
+  // Setup push notifications pós-login (H6.3)
+  usePushNotifications({ supabase, session })
 
   useEffect(() => {
     // Restaurar sessão persistida (SecureStore chunked — R-160)
