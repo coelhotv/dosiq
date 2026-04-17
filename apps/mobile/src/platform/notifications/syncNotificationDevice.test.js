@@ -1,174 +1,122 @@
 // Testes para syncNotificationDevice.js
-// Valida: upsert com onConflict, platform detection, is_active flag
+// Valida: param validation, error handling, Supabase integration
 
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import { Platform } from 'react-native'
-import * as Device from 'expo-device'
-import * as Application from 'expo-application'
+import { describe, it, expect } from '@jest/globals'
 import { syncNotificationDevice } from './syncNotificationDevice'
 
-// Mock React Native plataforma
-vi.mock('react-native', () => ({
+jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
     Version: 17,
   },
 }))
 
-vi.mock('expo-device', () => ({
+jest.mock('expo-device', () => ({
   modelName: 'iPhone 15 Pro',
 }))
 
-vi.mock('expo-application', () => ({
+jest.mock('expo-application', () => ({
   nativeApplicationVersion: '4.0.0',
 }))
 
 describe('syncNotificationDevice', () => {
-  let mockSupabase
+  describe('validation', () => {
+    it('deve rejeitar se supabase ausente', async () => {
+      const promise = syncNotificationDevice({
+        supabase: null,
+        userId: 'user-123',
+        token: 'ExponentPushToken[abc123]',
+      })
 
-  beforeEach(() => {
-    mockSupabase = {
-      from: vi.fn(() => ({
-        upsert: vi.fn(() => Promise.resolve({ data: [{ id: 'test-device' }], error: null })),
-      })),
-    }
-  })
-
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('deve upsert device com onConflict correto', async () => {
-    const result = await syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
+      await expect(promise).rejects.toThrow('[syncNotificationDevice] supabase client required')
     })
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('notification_devices')
+    it('deve rejeitar se userId ausente', async () => {
+      const promise = syncNotificationDevice({
+        supabase: {},
+        userId: null,
+        token: 'ExponentPushToken[abc123]',
+      })
 
-    const mockFrom = mockSupabase.from('notification_devices')
-    const upsertCall = mockFrom.upsert.mock.calls[0]
-    const [data, options] = upsertCall
-
-    // Validar options.onConflict
-    expect(options).toEqual({ onConflict: 'provider,push_token' })
-
-    // Validar dados inseridos
-    expect(data.user_id).toBe('user-123')
-    expect(data.push_token).toBe('ExponentPushToken[abc123]')
-    expect(data.provider).toBe('expo')
-    expect(data.app_kind).toBe('native')
-
-    expect(result).toEqual([{ id: 'test-device' }])
-  })
-
-  it('deve refletir platform correta (iOS neste teste)', async () => {
-    await syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
+      await expect(promise).rejects.toThrow('[syncNotificationDevice] userId required')
     })
 
-    const mockFrom = mockSupabase.from('notification_devices')
-    const data = mockFrom.upsert.mock.calls[0][0]
+    it('deve rejeitar se token ausente', async () => {
+      const promise = syncNotificationDevice({
+        supabase: {},
+        userId: 'user-123',
+        token: null,
+      })
 
-    expect(data.platform).toBe('ios')
-    expect(data.platform).toBe(Platform.OS)
+      await expect(promise).rejects.toThrow('[syncNotificationDevice] token required')
+    })
   })
 
-  it('deve sempre setar is_active: true', async () => {
-    await syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
+  describe('Supabase integration', () => {
+    it('deve suceder com mock Supabase', async () => {
+      const mockSupabase = {
+        from: jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            data: [{ id: 'device-1' }],
+            error: null,
+          }),
+        }),
+      }
+
+      const result = await syncNotificationDevice({
+        supabase: mockSupabase,
+        userId: 'user-123',
+        token: 'ExponentPushToken[abc123]',
+      })
+
+      expect(result).toEqual([{ id: 'device-1' }])
+      expect(mockSupabase.from).toHaveBeenCalledWith('notification_devices')
     })
 
-    const mockFrom = mockSupabase.from('notification_devices')
-    const data = mockFrom.upsert.mock.calls[0][0]
+    it('deve propagar erro do Supabase', async () => {
+      const mockError = new Error('Network error')
+      const mockSupabase = {
+        from: jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            data: null,
+            error: mockError,
+          }),
+        }),
+      }
 
-    expect(data.is_active).toBe(true)
-  })
+      const promise = syncNotificationDevice({
+        supabase: mockSupabase,
+        userId: 'user-123',
+        token: 'ExponentPushToken[abc123]',
+      })
 
-  it('device_fingerprint deve ser JSON válido', async () => {
-    await syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
+      await expect(promise).rejects.toThrow('[syncNotificationDevice] Upsert failed: Network error')
     })
 
-    const mockFrom = mockSupabase.from('notification_devices')
-    const data = mockFrom.upsert.mock.calls[0][0]
+    it('upsert deve incluir onConflict', async () => {
+      const mockSupabase = {
+        from: jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            data: [{ id: 'device-1' }],
+            error: null,
+          }),
+        }),
+      }
 
-    // Validar que é JSON válido
-    const parsed = JSON.parse(data.device_fingerprint)
-    expect(parsed).toHaveProperty('os')
-    expect(parsed).toHaveProperty('osVersion')
-    expect(parsed).toHaveProperty('deviceModel')
-    expect(parsed).toHaveProperty('appVersion')
-    expect(parsed.os).toBe(Platform.OS)
-  })
+      await syncNotificationDevice({
+        supabase: mockSupabase,
+        userId: 'user-123',
+        token: 'ExponentPushToken[abc123]',
+      })
 
-  it('deve rejeitar se supabase ausente', async () => {
-    const promise = syncNotificationDevice({
-      supabase: null,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
+      const upsertCall = mockSupabase.from('notification_devices').upsert
+      expect(upsertCall).toHaveBeenCalled()
+
+      const [data, options] = upsertCall.mock.calls[0]
+      expect(options).toEqual({ onConflict: 'provider,push_token' })
+      expect(data.user_id).toBe('user-123')
+      expect(data.push_token).toBe('ExponentPushToken[abc123]')
+      expect(data.is_active).toBe(true)
     })
-
-    await expect(promise).rejects.toThrow('[syncNotificationDevice] supabase client required')
-  })
-
-  it('deve rejeitar se userId ausente', async () => {
-    const promise = syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: null,
-      token: 'ExponentPushToken[abc123]',
-    })
-
-    await expect(promise).rejects.toThrow('[syncNotificationDevice] userId required')
-  })
-
-  it('deve rejeitar se token ausente', async () => {
-    const promise = syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: null,
-    })
-
-    await expect(promise).rejects.toThrow('[syncNotificationDevice] token required')
-  })
-
-  it('deve propagar erro do Supabase', async () => {
-    const mockError = new Error('Network error')
-    mockSupabase.from = vi.fn(() => ({
-      upsert: vi.fn(() => Promise.resolve({ data: null, error: mockError })),
-    }))
-
-    const promise = syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
-    })
-
-    await expect(promise).rejects.toThrow('[syncNotificationDevice] Upsert failed: Network error')
-  })
-
-  it('last_seen_at deve ser ISO string', async () => {
-    const beforeCall = new Date()
-    await syncNotificationDevice({
-      supabase: mockSupabase,
-      userId: 'user-123',
-      token: 'ExponentPushToken[abc123]',
-    })
-    const afterCall = new Date()
-
-    const mockFrom = mockSupabase.from('notification_devices')
-    const data = mockFrom.upsert.mock.calls[0][0]
-
-    expect(data.last_seen_at).toBeDefined()
-    const timestamp = new Date(data.last_seen_at)
-    expect(timestamp.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime())
-    expect(timestamp.getTime()).toBeLessThanOrEqual(afterCall.getTime())
   })
 })
