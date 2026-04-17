@@ -10,9 +10,12 @@ node_modules/
 .expo/
 dist/
 
-# Local env
+# Local env — NUNCA commitar (contêm credenciais sensíveis)
 .env
 .env.local
+.env.development
+.env.preview
+.env.production
 
 # Firebase credentials (nunca commitar — contêm chaves privadas)
 google-services*.json
