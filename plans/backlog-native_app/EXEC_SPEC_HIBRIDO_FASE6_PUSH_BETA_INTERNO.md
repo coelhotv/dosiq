@@ -914,7 +914,40 @@ Exemplos:
 - 5xx do provider
 - indisponibilidade temporaria
 
-## 11.4. Deduplicacao
+## 11.4. DLQ Multicanal — Gap Identificado (2026-04-17)
+
+O DLQ existente (`server/services/deadLetterQueue.js`) foi projetado exclusivamente para Telegram:
+- `ErrorCategories` mapeia apenas erros HTTP Telegram (400, 401, 403, 429, etc.)
+- `enqueue()` e chamado em `tasks.js` apos falha de `bot.sendMessage`
+- `sendDLQDigest()` notifica o admin via Telegram
+
+O `dispatchNotification` implementado no Sprint 6.2 **nao integra com o DLQ**. Consequencias:
+
+| Tipo de falha | Tratamento atual | Correto? |
+|---|---|---|
+| `DeviceNotRegistered` (Expo permanente) | Token desativado via `deactivateByToken` | Sim |
+| Timeout de Expo (transitorio) | `failed: 1` no resultado, sem retry | Gap — sem retry |
+| Telegram timeout via canal novo (transitorio) | `failed: 1` no resultado, sem retry | Gap — sem retry |
+| Telegram legado em `tasks.js` | `enqueue()` chamado, retry disponivel | Sim (path legado) |
+
+**O risco nao existe nos Sprints 6.1-6.3** porque o dispatcher nao e chamado por jobs em producao.
+O gap se torna real no Sprint 6.4, quando os jobs forem migrados para o dispatcher.
+
+**Caminhos de solucao — decidir no Sprint 6.4 antes de implementar:**
+
+Opcao A (recomendada): Estender o DLQ atual
+- Adicionar ao `ErrorCategories`: `EXPO_RATE_LIMIT`, `EXPO_TRANSIENT`, `EXPO_UNKNOWN`
+- Integrar `enqueue()` no `dispatchNotification` para resultados com `success: false` e erro nao-permanente
+- Estender `sendDLQDigest` para incluir falhas push (via Telegram admin — ja existente)
+- Custo estimado: ~2h
+
+Opcao B: DLQ separado para push
+- Nova tabela `failed_push_queue` com schema Expo-especifico
+- Operacionaliza dois DLQs distintos
+- Custo estimado: ~4h + nova migration SQL
+- Recomendado apenas se Opcao A criar conflito de schema irreconciliavel
+
+## 11.5. Deduplicacao
 
 Se um mesmo job puder disparar duplicado no mesmo minuto, criar deduplicacao minima por:
 

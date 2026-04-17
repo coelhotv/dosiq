@@ -14,32 +14,31 @@
       "expo",
       "react-native"
     ],
-    "phase": "h6-sprint-6.1",
+    "phase": "h6-sprint-6.2",
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_sprint6.1",
-    "started_at": "2026-04-17T00:30:00Z",
+    "id": "session_2026W16_h6_sprint6.2",
+    "started_at": "2026-04-17T06:00:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "Sprint 6.1 — Banco e Contratos: migrations SQL, repositories, resolveChannelsForUser",
+    "status": "analysis",
+    "goal": "Sprint 6.2 — Dispatcher e Canais: dispatchNotification, telegramChannel, expoPushChannel, buildNotificationPayload, normalizeChannelResults, shouldDeactivateDevice",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "Migrations aplicam sem erro em DB local/staging",
-      "Leitura/escrita autenticada de devices funciona via RLS",
-      "resolveChannelsForUser passa todos os 9 casos de teste",
-      "npm run validate:agent verde",
-      "Nenhum arquivo de envio de push criado neste sprint"
+      "Teste 'both' simula coexistência de canais (Telegram + push)",
+      "Falha de expoPushChannel não cancela telegramChannel",
+      "shouldDeactivateDevice('DeviceNotRegistered') retorna true",
+      "Logs de dispatch incluem correlationId, userId, kind, canais tentados/entregues",
+      "npm run validate:agent verde"
     ],
     "active_wave": {
-      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.1)",
+      "name": "Fase 6 — Push Native e Beta Interno (Sprint 6.2)",
       "phase": 6,
-      "sprint": "6.1",
+      "sprint": "6.2",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
-      "status": "completed",
-      "started_at": "2026-04-17T00:30:00Z",
-      "completed_at": "2026-04-17T05:50:00Z",
-      "notes": "Sprint 6.1 CONCLUÍDO: Banco (migrations + RLS) + Repositórios (Zod validated) + Policy (9 testes). PR #475 merged. Migrations executadas em Supabase. Próximo: Sprint 6.2 (Dispatcher + Canais)"
+      "status": "in_progress",
+      "started_at": "2026-04-17T06:00:00Z",
+      "notes": "Sprint 6.1 CONCLUÍDO (PR #475 merged). Sprint 6.2: Dispatcher Multicanal + Canais. ADR-029 e ADR-030 accepted."
     }
   },
   "memory": {
@@ -71,8 +70,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-17T00:30:00Z",
-    "relevant_rules_loaded_at": "2026-04-17T00:30:00Z",
+    "index_loaded_at": "2026-04-17T06:00:00Z",
+    "relevant_rules_loaded_at": "2026-04-17T06:00:00Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },

@@ -410,6 +410,23 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
 - CON-018: `dispatchNotification({userId, kind, payload, channels, context, repositories, expoClient})` → `{success, channels, totalDelivered, totalFailed}`
 - CON-019: `telegramChannel` e `expoPushChannel` → shape de retorno padronizado
 
+### ⚠️ Gap identificado: DLQ Multicanal (não bloqueante para este sprint)
+
+**Situação:** O DLQ existente (`server/services/deadLetterQueue.js`) é exclusivamente Telegram-aware. O `dispatchNotification` implementado neste sprint **não integra com o DLQ** — falhas transitórias de Telegram ou Expo via nova arquitetura se perdem sem retry.
+
+**Por que não é risco neste sprint:** O dispatcher ainda não é chamado por nenhum job em produção. O DLQ atual continua cobrindo o caminho Telegram legado (`tasks.js`) enquanto a feature flag `USE_NOTIFICATION_DISPATCHER` não estiver ativa nos jobs.
+
+**O risco se torna real no Sprint 6.4**, quando os jobs forem migrados. Tratar neste momento.
+
+**Caminhos de solução para Sprint 6.4 (decidir antes de implementar):**
+
+| Opção | Descrição | Custo | Recomendação |
+|-------|-----------|-------|--------------|
+| **A** | Estender o DLQ atual — adicionar `ErrorCategories` Expo, integrar `enqueue()` no `dispatchNotification` para erros não-permanentes | ~2h | ✅ Preferida |
+| **B** | DLQ separado para push — nova tabela `failed_push_queue` com schema Expo-específico | ~4h + nova migration | Alternativa se A criar conflito de schema |
+
+**Erros permanentes Expo** (ex: `DeviceNotRegistered`) são tratados imediatamente via `shouldDeactivateDevice` + `deactivateByToken` — **não precisam de DLQ** ✅
+
 ---
 
 ## Sprint 6.3 — Integração Mobile
@@ -619,6 +636,12 @@ Ligar o cron e os jobs mais importantes ao dispatcher. Telegram continua funcion
 
 Esta é a mudança mais arriscada — jobs em produção que enviam lembretes reais.
 **Obrigatório:** feature flag de rollback ativa antes de qualquer deploy.
+
+### ⚠️ Pré-condição adicional: decidir estratégia do DLQ multicanal
+
+Antes de implementar este sprint, o agente deve escolher e implementar a integração do DLQ com o dispatcher (gap identificado no Sprint 6.2). Ver detalhes na seção "Gap identificado" ao final do Sprint 6.2.
+
+**Decisão mínima obrigatória:** qual `ErrorCategory` usar para falhas transitórias de Expo e como integrar `enqueue()` no `dispatchNotification`.
 
 ### Branch
 
