@@ -129,12 +129,14 @@ export default function NotificationPreferencesScreen({ navigation }) {
     }
   }
 
-  const getIcon = (value) => {
+  const getIcon = (value, isDangerous) => {
     const iconProps = { size: 20, strokeWidth: 2, style: { marginRight: spacing[2] } }
     let iconColor = colors.primary[600]
 
-    if (preference === value) {
-      iconColor = value === 'none' ? colors.status.error : colors.text.inverse
+    if (isDangerous) {
+      iconColor = colors.status.error
+    } else if (preference === value) {
+      iconColor = colors.text.inverse
     }
 
     switch (value) {
@@ -153,7 +155,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
   const PreferenceButton = ({ value, isDangerous }) => {
     const isActive = preference === value
-    const isDeactivateButton = isDangerous && isActive
+    const isDeactivateButton = isDangerous
 
     return (
       <TouchableOpacity
@@ -167,7 +169,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
         activeOpacity={0.7}
       >
         <View style={styles.buttonContent}>
-          {getIcon(value)}
+          {getIcon(value, isDangerous)}
           <Text style={[
             styles.buttonText,
             isActive && !isDeactivateButton && styles.buttonTextActive,
