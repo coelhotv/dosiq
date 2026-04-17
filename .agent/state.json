@@ -10,32 +10,35 @@
       "typescript",
       "vitest",
       "framer-motion",
-      "telegram"
+      "telegram",
+      "expo",
+      "react-native"
     ],
-    "phase": "h5-completed",
-    "current_sprint": null
+    "phase": "h6-planning",
+    "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h5_concluded",
-    "started_at": "2026-04-16T22:40:00Z",
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Conclusão da Wave H5 - MVP Mobile",
-    "goal_type": "maintenance",
+    "id": "session_2026W16_h6_planning",
+    "started_at": "2026-04-16T23:00:00Z",
+    "mode": "planning",
+    "status": "planned",
+    "goal": "Fase 6 — Push Native e Beta Interno: planejamento dos sprints 6.1–6.5",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "PR #474 mergeado e branch deletada",
-      "Documentação de specs H5 atualizada para concluída",
-      "Journal DEVFLOW atualizado com achievements e learnings",
-      "State do agente atualizado para h5-completed"
+      "Sprint breakdown 6.1–6.5 documentado com DoD verificável",
+      "ADRs relevantes identificados e verificados",
+      "Contratos de interface do dispatcher definidos",
+      "Riscos e flags de rollback especificados",
+      "Ordem de implementação prescrita e validada contra master spec"
     ],
     "active_wave": {
-      "name": "Wave H5 — MVP Produto Mobile (Fase 5)",
-      "phase": 5,
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md",
-      "sprint": "Completed",
-      "status": "completed",
-      "planned_at": "2026-04-12T10:00:00Z",
-      "notes": "MVP Mobile totalmente funcional com 7 telas, resiliência offline e suite de testes robusta."
+      "name": "Fase 6 — Push Native e Beta Interno",
+      "phase": 6,
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE6_PUSH_BETA_INTERNO.md",
+      "sprint": "6.1-6.5",
+      "status": "planned",
+      "planned_at": "2026-04-16T23:15:00Z",
+      "notes": "Sprints 6.1–6.5 planejados. ADR-029 (dispatcher multicanal) e ADR-030 (rollback flag) pendentes de criação antes do Sprint 6.1 merge. Contratos CON-017 a CON-020 a formalizar durante coding."
     }
   },
   "memory": {
@@ -45,7 +48,7 @@
     "contracts_count": 16,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "recent_additions": {
       "rules": [
         "R-175",
@@ -67,8 +70,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-15T21:05:00Z",
-    "relevant_rules_loaded_at": "2026-04-15T21:05:00Z",
+    "index_loaded_at": "2026-04-16T23:00:00Z",
+    "relevant_rules_loaded_at": "2026-04-16T23:00:00Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
