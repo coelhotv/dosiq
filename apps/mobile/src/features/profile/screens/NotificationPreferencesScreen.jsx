@@ -225,14 +225,20 @@ export default function NotificationPreferencesScreen({ navigation }) {
           </View>
         )}
 
-        {/* Status atual da permissão */}
-        {hasPermission && (
+        {/* Status atual da preferência */}
+        {preference === 'none' && (
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>✓ Notificações desativadas</Text>
+          </View>
+        )}
+
+        {hasPermission && preference && preference !== 'none' && (
           <View style={styles.statusBadge}>
             <Text style={styles.statusText}>✓ Notificações habilitadas</Text>
           </View>
         )}
 
-        {!hasPermission && (
+        {!hasPermission && preference !== 'none' && (
           <View style={[styles.statusBadge, styles.statusBadgeWarning]}>
             <Text style={styles.statusTextWarning}>⚠ Permissão não concedida</Text>
           </View>
