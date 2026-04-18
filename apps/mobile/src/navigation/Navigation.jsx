@@ -8,7 +8,7 @@
 //   se montarmos o Navigator antes de getSession() resolver,
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -19,15 +19,25 @@ import RootTabs from './RootTabs'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
+import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 
 const Stack = createNativeStackNavigator()
 
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
   const [session, setSession] = useState(undefined)
+  const navigationRef = useRef(null)
 
   // Setup push notifications pós-login (H6.3)
   usePushNotifications({ supabase, session })
+
+  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
+  const handleNavigationStateChange = () => {
+    const routeName = navigationRef.current?.getCurrentRoute?.()?.name
+    if (routeName) {
+      logScreenView(routeName)
+    }
+  }
 
   useEffect(() => {
     // Restaurar sessão persistida (SecureStore chunked — R-160)
@@ -67,7 +77,10 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onStateChange={handleNavigationStateChange}
+    >
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
       >

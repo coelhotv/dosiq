@@ -5,6 +5,8 @@
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { logSchema } from '@meus-remedios/core'
+import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
+import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 /**
  * Regista uma dose tomada.
@@ -93,6 +95,7 @@ export async function registerDose(logData) {
     }
 
     if (__DEV__) console.log('[doseService] stock consumido com sucesso')
+    await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
     return { success: true, data: logEntry }
   } catch (err) {
     if (__DEV__) console.error('[doseService] erro catastrófico:', err)

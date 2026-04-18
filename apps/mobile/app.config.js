@@ -60,6 +60,9 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
     },
+    plugins: [
+      '@react-native-firebase/app',
+    ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*
       // Pacotes compartilhados NÃO leem estas vars diretamente
