@@ -59,8 +59,10 @@ async function handleTakeDose(bot, callbackQuery) {
 
     if (logError) throw logError;
 
-    // 3. Decrementar Estoque via RPC FIFO
+    // 3. Decrementar Estoque via RPC FIFO (overload server-side com p_user_id explícito)
+    // Bot usa service_role → auth.uid() = NULL → usar overload de 4 parâmetros
     const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+      p_user_id: userId,
       p_medicine_id: medicineId,
       p_quantity: parseFloat(quantity),
       p_medicine_log_id: createdLogs.id
