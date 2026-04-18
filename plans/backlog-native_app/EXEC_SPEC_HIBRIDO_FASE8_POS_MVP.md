@@ -1,12 +1,27 @@
-# Exec Spec Híbrido - Fase 8: Notification Inbox (Central de Avisos)
+# Exec Spec Híbrido - Fase 8: Especulativo (Pós-MVP)
 
-> **Status:** Backlog Curto Prazo (Aguardando conclusão do Beta - Fase 6/7)
+> **Status:** Documento Vivo (Backlog Pós-Beta Interno)
 > **Base obrigatória:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
-> **Objetivo:** Munir o usuário com um histórico In-App de notificações, resolvendo o problema da efemeridade do Push e do Telegram e elevando a confiança do paciente no sistema.
+> **Objetivo:** Acumular e detalhar features avançadas que ficarão fora do escopo do Beta Inicial (Fases 5, 6 e 7). Este documento pode ir recebendo incrementos de design enquanto a equipe finaliza as sprints anteriores.
 
 ---
 
-## 1. Contexto Clínico e de Produto
+## 1. Visão Geral da Fase 8
+
+A Fase 8 concentra todas as implementações que refinam e exploram as capacidades plenas da plataforma nativa, sem serem impeditivas para o MVP original. As Features listadas aqui podem ser implementadas como "Mini-Sprints" independentes após a estabilidade do monorepo e do mobile root.
+
+**Placeholder de Features Planejadas (Conforme Master Spec):**
+- ✅ **Notification Inbox (Central de Avisos)** - *Especificada abaixo*
+- ⏳ Biometria Avançada
+- ⏳ Persistência de Alta Performance (MMKV)
+- ⏳ Integrações Nativas de Saúde (HealthKit / Google Fit)
+- ⏳ Geração de PDF Nativo Refinado
+- ⏳ Emergency Card Avançado
+- ⏳ Chatbot Nativo (Interface Mobile Otimizada)
+
+---
+
+## Epic 1: Notification Inbox (Central de Avisos)
 
 Notificações push em smartphones são efêmeras. Se o usuário as descarta (swipe) acidentalmente, ele perde um lembrete no qual a adesão ao tratamento dependia. O mesmo ocorre no Telegram se a mensagem se "perder" no histórico de chats da pessoa.
 
