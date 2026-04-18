@@ -78,6 +78,7 @@ module.exports = {
           useModularHeaders: true,
         },
       }],
+      './withFirebaseFix.js'
     ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*

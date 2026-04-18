@@ -49,6 +49,7 @@
 - **[AP-P18]** Title/patient overlap, clipped headers, and layout churn every time content leng... -> [`anti-patterns/mobile_and_platform/AP-P18.md`](./anti-patterns/mobile_and_platform/AP-P18.md)
 - **[AP-P20]** The consultation PDF loses clinical usefulness and makes it harder to distinguis... -> [`anti-patterns/mobile_and_platform/AP-P20.md`](./anti-patterns/mobile_and_platform/AP-P20.md)
 - **[AP-P21]** A protocol with multiple time slots per day counts the same day several times, i... -> [`anti-patterns/mobile_and_platform/AP-P21.md`](./anti-patterns/mobile_and_platform/AP-P21.md)
+- **[AP-H26]** Falha de Regex do plugin Firebase v21+ no AppDelegate.swift do Expo 53 -> [`anti-patterns/mobile_and_platform/AP-H26.md`](./anti-patterns/mobile_and_platform/AP-H26.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[AP-001]** Production bug — fix goes to unused file -> [`anti-patterns/process_and_testing/AP-001.md`](./anti-patterns/process_and_testing/AP-001.md)
