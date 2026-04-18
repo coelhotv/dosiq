@@ -279,8 +279,8 @@ Build de beta nao pode nascer de comando improvisado e nao reproduzivel.
 - inbox de notificacoes
 - centro de notificacoes no app
 - web push
-- analytics sofisticado de abertura
-- segmentacao complexa por tipo de evento
+- analytics sofisticado de abertura de notificacao (inbox, centro de notificacoes)
+- segmentacao complexa por tipo de evento (BigQuery, Data Studio)
 - multiplos providers de push alem de Expo
 
 ---
@@ -312,6 +312,10 @@ apps/mobile/src/
       getExpoPushToken.js
       syncNotificationDevice.js
       unregisterNotificationDevice.js
+    analytics/
+      firebaseAnalytics.js
+      analyticsEvents.js
+      useScreenTracking.js
   features/
     profile/
       screens/
@@ -1024,6 +1028,169 @@ Fazer o app mobile registrar o device e manter o token sincronizado.
 - device real gera linha em `notification_devices`
 - preferencia do usuario pode ser alterada
 - retorno ao app atualiza `last_seen_at`
+
+## Sprint 6.3.5 - Firebase Analytics
+
+### Objetivo
+
+Integrar Firebase Analytics ao app mobile para acompanhar comportamento de usuarios de teste, metricas de retencao e eventos de conversao. Dados alimentam decisoes de produto e validam o beta interno.
+
+### Motivacao
+
+O `analyticsService.js` web e local/privacy-first e nao oferece visibilidade de sessoes, retencao ou funil entre sessoes. Com o beta ativo em Android, o time precisa de metricas reais para iterar: quantos usuarios completam onboarding, voltam no dia seguinte, registram doses, ativam push, etc.
+
+### Decisao de arquitetura
+
+**`@react-native-firebase/analytics`** via Expo config plugin — nao `expo-firebase-analytics` (deprecated).
+
+Justificativa:
+- O projeto ja possui `google-services-*.json` configurado por perfil (development / preview / production)
+- EAS Build ja lê credenciais via `GOOGLE_SERVICES_JSON_PATH` (padrao `build-android.sh`)
+- O config plugin injeta `apply plugin: 'com.google.gms.google-services'` automaticamente no build nativo — sem editar `build.gradle` manualmente
+- Compativel com o fluxo EAS Build ja em uso
+
+> ⚠️ Estes pacotes **nao sao compativeis com Expo Go** — requerem build customizado via EAS (ja em uso).
+
+### Estrutura alvo
+
+```text
+apps/mobile/src/
+  platform/
+    analytics/
+      firebaseAnalytics.js       (wrapper seguro com fallback silencioso)
+      analyticsEvents.js         (catalogo centralizado de nomes de eventos)
+      useScreenTracking.js       (hook para rastreamento automatico de telas)
+```
+
+Modificacoes em arquivos existentes:
+
+```text
+apps/mobile/app.config.js          (adicionar plugin @react-native-firebase/app)
+apps/mobile/src/app/Navigation.jsx (integrar useScreenTracking)
+```
+
+### Catalogo de eventos obrigatorios
+
+O catalogo abaixo define os eventos canonicos da fase. Nenhum evento pode ser disparado fora deste catalogo como string literal.
+
+```js
+// analyticsEvents.js
+export const EVENTS = {
+  // Autenticacao
+  LOGIN:                              'login',             // Firebase reserved — method: 'email'
+  LOGOUT:                             'logout',
+  SIGNUP:                             'sign_up',           // Firebase reserved — alimenta funil de conversao
+
+  // Onboarding
+  ONBOARDING_START:                   'onboarding_start',
+  ONBOARDING_COMPLETE:                'onboarding_complete',
+  ONBOARDING_SKIP:                    'onboarding_skip',
+
+  // Medicamentos
+  MEDICINE_ADDED:                     'medicine_added',
+  MEDICINE_EDITED:                    'medicine_edited',
+  MEDICINE_DELETED:                   'medicine_deleted',
+
+  // Doses
+  DOSE_LOGGED:                        'dose_logged',       // medicine_name (sem PII clinico)
+  DOSE_SKIPPED:                       'dose_skipped',
+
+  // Notificacoes
+  NOTIFICATION_PERMISSION_GRANTED:    'notification_permission_granted',
+  NOTIFICATION_PERMISSION_DENIED:     'notification_permission_denied',
+  NOTIFICATION_PREFERENCE_CHANGED:    'notification_preference_changed', // new_preference
+  PUSH_NOTIFICATION_TAPPED:           'push_notification_tapped',        // kind: dose_reminder | stock_alert
+
+  // Estoque
+  STOCK_ADDED:                        'stock_added',
+  STOCK_LOW_VIEWED:                   'stock_low_viewed',
+
+  // Navegacao (automatico via useScreenTracking)
+  SCREEN_VIEW:                        'screen_view',       // Firebase reserved — screen_name, screen_class
+}
+```
+
+### Regras de privacidade — obrigatorias
+
+1. `setUserId` recebe apenas o UUID interno do usuario — nunca email, nome ou qualquer PII
+2. Nomes de medicamentos podem aparecer apenas como `medicine_name` em eventos de uso direto (`dose_logged`, `medicine_added`) — sem dosagem, sem diagnostico
+3. Nenhum evento deve carregar `user_id` como parametro (ja registrado via `setUserId`)
+4. Propriedades de usuario aceitas: `app_env` (development/preview/production), `notification_preference`
+5. Logs de analytics em `__DEV__` apenas (R-167)
+
+### Wrapper de seguranca — padrao obrigatorio
+
+```js
+// firebaseAnalytics.js
+export async function logEvent(eventName, params = {}) {
+  try {
+    await analytics().logEvent(eventName, params)
+  } catch {
+    // Analytics nunca deve quebrar o fluxo do usuario — falha silenciosa
+  }
+}
+```
+
+O mesmo padrao try/catch silencioso se aplica a `setUserId`, `setUserProperty` e `logScreenView`.
+
+### Eventos de conversao priorizados (instrumentar nesta ordem)
+
+| Prioridade | Localizacao | Evento | Params |
+|------------|-------------|--------|--------|
+| 1 | `useAuth` login | `LOGIN` | `{ method: 'email' }` |
+| 2 | `useAuth` signup | `SIGNUP` | — |
+| 3 | Onboarding final step | `ONBOARDING_COMPLETE` | — |
+| 4 | `syncNotificationDevice` OK | `NOTIFICATION_PERMISSION_GRANTED` | — |
+| 5 | `NotificationPreferencesScreen` save | `NOTIFICATION_PREFERENCE_CHANGED` | `{ new_preference }` |
+| 6 | Push notification tap handler | `PUSH_NOTIFICATION_TAPPED` | `{ kind }` |
+| 7 | `LogForm` submit OK | `DOSE_LOGGED` | `{ medicine_name }` |
+| 8 | Medicine CRUD create | `MEDICINE_ADDED` | — |
+
+### Dependencias humanas obrigatorias (nao executaveis por agente)
+
+- [ ] Firebase Console → projeto `meus-remedios-c509e` → Analytics habilitado
+- [ ] Google Analytics property vinculada ao projeto Firebase
+- [ ] Debug View ativado para validar eventos durante desenvolvimento
+- [ ] Eventos de conversao configurados: `sign_up`, `onboarding_complete`, `dose_logged`
+
+### Pacotes a instalar
+
+```bash
+cd apps/mobile
+npx expo install @react-native-firebase/app @react-native-firebase/analytics
+```
+
+Verificar peer deps e lockfile antes de commitar (R-158).
+
+### Validacao
+
+Habilitar debug mode em device fisico Android:
+
+```bash
+adb shell setprop debug.firebase.analytics.app com.coelhotv.meusremedios.preview
+```
+
+Verificar eventos em tempo real: Firebase Console → Analytics → DebugView.
+
+### Contratos novos
+
+- CON-021: `logEvent(eventName, params)` → void (nunca throw)
+- CON-022: `EVENTS` catalogo e a unica fonte de nomes de eventos no mobile (zero strings literais fora dele)
+
+### DoD do sprint
+
+- `@react-native-firebase/app` e `@react-native-firebase/analytics` instalados sem conflito de peer deps
+- Plugin adicionado em `app.config.js`
+- `firebaseAnalytics.js` com fallback silencioso em todas as funcoes
+- `EVENTS` catalogo centralizado — zero strings literais de evento fora do catalogo
+- `useScreenTracking` integrado na navegacao principal
+- `setUserId` chamado apos login sem PII
+- Ao menos 6 eventos de conversao instrumentados (lista acima)
+- Novo APK preview gerado com EAS Build (plugin compilado)
+- Eventos visiveis no Firebase DebugView em device fisico
+- `npm run validate:agent` verde (app web nao afetado)
+
+---
 
 ## Sprint 6.4 - Migracao dos jobs principais
 
