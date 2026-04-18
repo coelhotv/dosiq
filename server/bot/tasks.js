@@ -319,6 +319,66 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
 }
 
 /**
+ * Check reminders via dispatcher (Sprint 6.4 — ADR-029, ADR-030)
+ * Usa nova arquitetura multicanal. Requer dispatcher já instanciado.
+ */
+async function checkRemindersViaDispatcher(dispatcher, correlationId) {
+  try {
+    const { data: users } = await supabase.from('auth.users').select('id');
+    if (!users || users.length === 0) {
+      logger.debug('No users found for reminder dispatch');
+      return;
+    }
+
+    logger.info(`Checking reminders via dispatcher for ${users.length} users`, { correlationId });
+
+    for (const user of users) {
+      const userId = user.id;
+      try {
+        const { data: protocols } = await supabase
+          .from('protocols')
+          .select('id, name, time_schedule, medicine_id, medicine:medicines(name)')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+        if (!protocols || protocols.length === 0) continue;
+
+        // Usar horário de São Paulo para comparação com time_schedule (bug: new Date() retorna UTC)
+        const spNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+        const currentTime = `${String(spNow.getHours()).padStart(2, '0')}:${String(spNow.getMinutes()).padStart(2, '0')}`;
+
+        for (const protocol of protocols) {
+          const timeSchedule = protocol.time_schedule || [];
+
+          for (const scheduledTime of timeSchedule) {
+            if (scheduledTime === currentTime) {
+              const medicineName = protocol.medicine?.name || 'Medicamento';
+
+              // Usar dispatcher via nova arquitetura
+              await dispatcher.dispatch({
+                userId,
+                kind: 'dose_reminder',
+                data: { medicineName, protocolId: protocol.id, medicineId: protocol.medicine_id },
+                context: { correlationId, jobType: 'dose_reminder_dispatcher' }
+              });
+
+              // Log success (deduplicador ainda é usado se chamado depois)
+              await logSuccessfulNotification(userId, protocol.id, 'dose_reminder', {});
+            }
+          }
+        }
+      } catch (err) {
+        logger.error(`Error checking reminders for user via dispatcher`, err, { userId, correlationId });
+      }
+    }
+
+    logger.info('Reminder dispatch check completed', { correlationId });
+  } catch (err) {
+    logger.error('Error in checkRemindersViaDispatcher', err, { correlationId });
+  }
+}
+
+/**
  * Check reminders for a specific user
  * @param {object} bot - Bot adapter
  * @param {string} userId - User UUID
@@ -638,7 +698,17 @@ async function checkUserReminders(bot, userId, chatId) {
  */
 export async function checkReminders(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
-  
+  const notificationDispatcher = options.notificationDispatcher;
+  const USE_DISPATCHER = process.env.USE_NOTIFICATION_DISPATCHER !== 'false';
+
+  // Se dispatcher está ativo e disponível, usar nova arquitetura
+  if (USE_DISPATCHER && notificationDispatcher) {
+    logger.info('Usando novo dispatcher para reminders (ADR-030)', { correlationId });
+    return checkRemindersViaDispatcher(notificationDispatcher, correlationId);
+  }
+
+  // Fallback para Telegram legado (Sprint 6.4 — mantém compatibilidade por 2 semanas)
+  logger.info('Usando Telegram legado para reminders (fallback)', { correlationId });
   const users = await getAllUsersWithTelegram();
 
   if (users.length === 0) {
@@ -656,6 +726,76 @@ export async function checkReminders(bot, options = {}) {
   }
 
   logger.info('Verificação de lembretes concluída', { correlationId });
+}
+
+/**
+ * Run daily digest via dispatcher (Sprint 6.4 — ADR-029, ADR-030)
+ */
+async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
+  try {
+    const { data: users } = await supabase.from('auth.users').select('id');
+    if (!users || users.length === 0) {
+      logger.debug('No users found for daily digest dispatch');
+      return;
+    }
+
+    logger.info(`Running daily digest via dispatcher for ${users.length} users`, { correlationId });
+
+    for (const user of users) {
+      const userId = user.id;
+      try {
+        const settings = await getUserSettings(userId, true);
+        if (!settings) continue;
+
+        const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
+        if (!shouldSend) {
+          logger.debug(`Daily digest suppressed by deduplication`, { userId, correlationId });
+          continue;
+        }
+
+        const timezone = settings.timezone || 'America/Sao_Paulo';
+        const { data: logs } = await supabase
+          .from('medicine_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('taken_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+        const today = getCurrentDateInTimezone(timezone);
+        const todayLogs = logs?.filter(l => {
+          const logDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at));
+          return logDate === today;
+        }) || [];
+
+        const { data: protocols } = await supabase
+          .from('protocols')
+          .select('time_schedule')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+        const expectedDoses = protocols?.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0) || 0;
+        const takenDoses = todayLogs.length;
+        const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+
+        const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
+        const summary = `${dateStr} — ${takenDoses}/${expectedDoses} doses (${percentage}%)`;
+
+        await dispatcher.dispatch({
+          userId,
+          kind: 'daily_digest',
+          data: { summary },
+          context: { correlationId, jobType: 'daily_digest_dispatcher' }
+        });
+
+        await logSuccessfulNotification(userId, null, 'daily_digest', {});
+      } catch (err) {
+        logger.error(`Error running daily digest for user via dispatcher`, err, { userId, correlationId });
+      }
+    }
+
+    logger.info('Daily digest dispatch completed', { correlationId });
+  } catch (err) {
+    logger.error('Error in runDailyDigestViaDispatcher', err, { correlationId });
+  }
 }
 
 /**
@@ -738,9 +878,17 @@ async function runUserDailyDigest(bot, userId, chatId) {
  */
 export async function runDailyDigest(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
-  
-  logger.info('Iniciando resumo diário para todos os usuários', { correlationId });
+  const notificationDispatcher = options.notificationDispatcher;
+  const USE_DISPATCHER = process.env.USE_NOTIFICATION_DISPATCHER !== 'false';
 
+  // Se dispatcher está ativo e disponível, usar nova arquitetura
+  if (USE_DISPATCHER && notificationDispatcher) {
+    logger.info('Usando novo dispatcher para resumo diário (ADR-030)', { correlationId });
+    return runDailyDigestViaDispatcher(notificationDispatcher, correlationId);
+  }
+
+  // Fallback para Telegram legado (Sprint 6.4 — mantém compatibilidade por 2 semanas)
+  logger.info('Usando Telegram legado para resumo diário (fallback)', { correlationId });
   const users = await getAllUsersWithTelegram();
 
   logger.info(`Enviando resumo diário para ${users.length} usuário(s)`, { correlationId });
@@ -751,6 +899,68 @@ export async function runDailyDigest(bot, options = {}) {
   }
 
   logger.info('Resumo diário concluído', { correlationId });
+}
+
+/**
+ * Check stock alerts via dispatcher (Sprint 6.4 — ADR-029, ADR-030)
+ */
+async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
+  try {
+    const { data: users } = await supabase.from('auth.users').select('id');
+    if (!users || users.length === 0) {
+      logger.debug('No users found for stock alert dispatch');
+      return;
+    }
+
+    logger.info(`Checking stock alerts via dispatcher for ${users.length} users`, { correlationId });
+
+    // Buscar estoques de todos os usuários em uma única query (evita N+1)
+    const userIds = users.map(u => u.id);
+    const { data: allStocks } = await supabase
+      .from('stocks')
+      .select('*, medicine:medicines(name)')
+      .in('user_id', userIds);
+
+    const stocksByUser = {};
+    for (const stock of allStocks || []) {
+      if (!stocksByUser[stock.user_id]) stocksByUser[stock.user_id] = [];
+      stocksByUser[stock.user_id].push(stock);
+    }
+
+    for (const user of users) {
+      const userId = user.id;
+      try {
+        const stocks = stocksByUser[userId] || [];
+
+        if (!stocks.length) continue;
+
+        for (const stock of stocks) {
+          const medicineName = stock.medicine?.name || 'Medicamento';
+          const daysRemaining = stock.quantity > 0
+            ? Math.floor(stock.quantity / (stock.daily_consumption || 1))
+            : 0;
+
+          // Alert thresholds: < 7 days = critical
+          if (daysRemaining < 7) {
+            await dispatcher.dispatch({
+              userId,
+              kind: 'stock_alert',
+              data: { medicineName, medicineId: stock.medicine_id },
+              context: { correlationId, jobType: 'stock_alert_dispatcher' }
+            });
+
+            await logSuccessfulNotification(userId, stock.medicine_id, 'stock_alert', {});
+          }
+        }
+      } catch (err) {
+        logger.error(`Error checking stock alerts for user via dispatcher`, err, { userId, correlationId });
+      }
+    }
+
+    logger.info('Stock alert dispatch check completed', { correlationId });
+  } catch (err) {
+    logger.error('Error in checkStockAlertsViaDispatcher', err, { correlationId });
+  }
 }
 
 /**
@@ -880,9 +1090,17 @@ async function checkUserStockAlerts(bot, userId, chatId) {
  */
 export async function checkStockAlerts(bot, options = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
-  
-  logger.info('Iniciando alertas de estoque para todos os usuários', { correlationId });
+  const notificationDispatcher = options.notificationDispatcher;
+  const USE_DISPATCHER = process.env.USE_NOTIFICATION_DISPATCHER !== 'false';
 
+  // Se dispatcher está ativo e disponível, usar nova arquitetura
+  if (USE_DISPATCHER && notificationDispatcher) {
+    logger.info('Usando novo dispatcher para alertas de estoque (ADR-030)', { correlationId });
+    return checkStockAlertsViaDispatcher(notificationDispatcher, correlationId);
+  }
+
+  // Fallback para Telegram legado (Sprint 6.4 — mantém compatibilidade por 2 semanas)
+  logger.info('Usando Telegram legado para alertas de estoque (fallback)', { correlationId });
   const users = await getAllUsersWithTelegram();
 
   logger.info(`Verificando alertas de estoque para ${users.length} usuário(s)`, { correlationId });
