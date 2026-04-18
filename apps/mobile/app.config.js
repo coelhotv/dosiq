@@ -36,6 +36,9 @@ module.exports = {
     // DL-001: scheme canônico do projeto
     scheme: 'meusremedios',
     version: '0.2.2',
+    cli: {
+      appVersionSource: 'local',
+    },
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
