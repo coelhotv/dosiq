@@ -73,8 +73,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-17T21:31:42Z",
-    "relevant_rules_loaded_at": "2026-04-17T21:31:42Z",
+    "index_loaded_at": "2026-04-18T22:14:55Z",
+    "relevant_rules_loaded_at": "2026-04-18T22:14:55Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
