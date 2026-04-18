@@ -81,3 +81,5 @@
 - **[K-078]** priority-action-card-grouping -> [`knowledge/process_and_testing/K-078.md`](./knowledge/process_and_testing/K-078.md)
 - **[K-079]** hermes-url-recursion-trap -> [`knowledge/process_and_testing/K-079.md`](./knowledge/process_and_testing/K-079.md)
 - **[K-080]** hermes-url-trailing-slash -> [`knowledge/process_and_testing/K-080.md`](./knowledge/process_and_testing/K-080.md)
+- **[K-081]** offline-snapshots-localday -> [`knowledge/process_and_testing/K-081.md`](./knowledge/process_and_testing/K-081.md)
+- **[K-084]** expo-53-firebase-ios-build-fix -> [`knowledge/process_and_testing/K-084.md`](./knowledge/process_and_testing/K-084.md)
