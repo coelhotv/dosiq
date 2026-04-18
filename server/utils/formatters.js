@@ -33,9 +33,9 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
     if (daysRemaining <= 0) {
       status += `⚠️ *SEM ESTOQUE*\n`;
     } else if (daysRemaining <= 7) {
-      status += `⚠️ Acaba em ~${daysRemaining} dias\n`;
+      status += `⚠️ Acaba em ${daysRemaining} dias\n`;
     } else {
-      status += `✅ Acaba em ~${daysRemaining} dias\n`;
+      status += `✅ Acaba em ${daysRemaining} dias\n`;
     }
   }
   
