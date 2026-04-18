@@ -18,6 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { signInWithEmail, signOut } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
+import { supabase } from '../platform/supabase/nativeSupabaseClient'
+import { logEvent, setUserId } from '../platform/analytics/firebaseAnalytics'
+import { EVENTS } from '../platform/analytics/analyticsEvents'
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('')
@@ -39,6 +42,12 @@ export default function LoginScreen({ navigation }) {
       setError(loginError)
       return
     }
+
+    // R-042: setUserId apenas com UUID interno — nunca PII
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.id) await setUserId(user.id)
+
+    await logEvent(EVENTS.LOGIN, { method: 'email' })
   }
 
   return (
