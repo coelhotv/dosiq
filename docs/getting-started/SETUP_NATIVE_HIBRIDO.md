@@ -693,7 +693,47 @@ Estes valores são geridos dinamicamente no `app.config.js` com base na variáve
 
 ---
 
-## 27. Fontes oficiais consultadas
+## 27. Versionamento de Builds (local vs EAS remoto)
+
+### Como funciona o versionCode no Android
+
+O Google Play Console exige que cada upload tenha um `versionCode` inteiro **estritamente crescente**. O `version` semântico (ex: `"0.2.3"`) é o que o utilizador vê na Play Store; o `versionCode` é interno e só o Play Console valida.
+
+### Estratégia adoptada: versionCode derivado da versão semântica
+
+O `app.config.js` usa a fórmula `major * 10000 + minor * 100 + patch`:
+
+```js
+const APP_VERSION = '0.2.3'
+const [major, minor, patch] = APP_VERSION.split('.').map(Number)
+const VERSION_CODE = major * 10000 + minor * 100 + patch
+// 0.2.3 → 203 | 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
+```
+
+Desta forma, ao incrementar `APP_VERSION` numa linha, tanto `version` (Play Store) como `versionCode` (interno) ficam sincronizados automaticamente.
+
+### appVersionSource: 'local'
+
+O campo `cli.appVersionSource: 'local'` instrui o Expo a **não** gerir o versionCode remotamente (modo EAS automático). Com isto, o controlo é explícito e vive no `app.config.js`. Cada novo upload ao Play Console requer incrementar `APP_VERSION`.
+
+### Tabela de versões lançadas
+
+| Versão | versionCode | Data | Notas |
+|--------|-------------|------|-------|
+| 0.1.0  | 1           | 2026-04-15 | Primeiro build EAS (modo remoto) |
+| 0.1.0  | 2           | 2026-04-15 | Build production EAS (modo remoto) |
+| 0.2.3  | 203         | 2026-04-18 | Firebase Analytics — primeiro build local |
+
+### Fluxo para cada novo release
+
+1. Incrementar `APP_VERSION` em `app.config.js`
+2. Gerar build: `./build-android.sh production`
+3. Fazer upload do `.aab` no Play Console
+4. Atualizar a tabela acima
+
+---
+
+## 28. Fontes oficiais consultadas
 
 - Expo docs - setup de ambiente: https://docs.expo.dev/get-started/set-up-your-environment
 - React Native docs - setup de ambiente macOS: https://reactnative.dev/docs/set-up-your-environment

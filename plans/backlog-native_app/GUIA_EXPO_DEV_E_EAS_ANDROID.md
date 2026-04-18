@@ -257,7 +257,7 @@ npx eas-cli@latest build --platform android --profile production
 ### O que esperar
 
 - build Android para distribuição (.aab)
-- incremento automático de versão no perfil `production` (via EAS Remote)
+- `versionCode` derivado da versão em `app.config.js` (modo `local` — não há incremento automático)
 - artefato pronto para upload na Google Play Console
 
 ### Regra simples
@@ -329,8 +329,8 @@ Pense assim:
 ## 9. Checklist de validação antes do primeiro build de produção
 
 - `app.config.js` com `android.package = com.coelhotv.meusremedios`
-- `version = 0.1.0` coerente com o estágio MVP Preview
-- `android.versionCode` pronto para começar em `1`
+- `version = APP_VERSION` definido em `app.config.js` com a fórmula semântica (ver secção 6.4)
+- `android.versionCode = VERSION_CODE` derivado automaticamente — nunca editar manualmente
 - `icon.png` aceitável para loja e launcher
 - login funcionando
 - tela Hoje funcionando
@@ -520,18 +520,25 @@ emulator -avd NOME_DO_SEU_AVD
 ## 12.7. Warning: "cli.appVersionSource is not set"
 
 Causa provável:
-- O EAS agora exige que você defina se a versão é controlada localmente ou remotamente para evitar conflitos em builds de CI.
+- O EAS exige que você defina se a versão é controlada localmente ou remotamente para evitar conflitos em builds de CI.
+
+**Estratégia adoptada neste projecto:** `"local"` — o `versionCode` é gerido manualmente no `app.config.js` usando uma fórmula derivada da versão semântica (ver secção 6.4).
 
 Correção:
-- No `eas.json`, adicione o bloco no topo:
-```json
-{
-  "cli": {
-    "appVersionSource": "remote"
-  },
-  "build": { ... }
+- No `app.config.js`, adicione o bloco `cli`:
+```js
+module.exports = {
+  expo: {
+    version: APP_VERSION,
+    cli: {
+      appVersionSource: 'local',
+    },
+    // ...
+  }
 }
 ```
+
+> **Não use `"remote"` neste projecto** — escolhemos `"local"` para ter controlo explícito sobre o `versionCode` e evitar inconsistências entre builds locais e builds EAS na nuvem.
 
 ## 12.9. App sobe com nome ou Package Name de "Dev" em perfil de Produção
 
@@ -550,6 +557,37 @@ Causa provável:
 Correção:
 - Idealmente, mova o projeto para fora do iCloud (ex: `~/Developer/`).
 - Se precisar manter no iCloud, use o comando `git push` manualmente e evite sincronização automática durante builds pesados.
+
+## 6.4. Gestão de versão para uploads no Play Console
+
+O Google Play Console exige que cada upload tenha um `versionCode` inteiro **estritamente crescente**. Neste projecto, o `versionCode` é derivado automaticamente da versão semântica:
+
+```js
+// app.config.js
+const APP_VERSION = '0.2.3'
+const [major, minor, patch] = APP_VERSION.split('.').map(Number)
+const VERSION_CODE = major * 10000 + minor * 100 + patch
+// 0.2.3 → 203 | 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
+
+module.exports = {
+  expo: {
+    version: APP_VERSION,
+    android: {
+      versionCode: VERSION_CODE,
+    }
+  }
+}
+```
+
+**Regra:** para cada novo upload ao Play Console, incremente `APP_VERSION` em `app.config.js`. Tudo o resto (versionCode, versionName) deriva automaticamente.
+
+### Histórico de versões lançadas
+
+| Versão | versionCode | Data | Notas |
+|--------|-------------|------|-------|
+| 0.1.0  | 1           | 2026-04-15 | Primeiro build EAS (modo remoto antigo) |
+| 0.1.0  | 2           | 2026-04-15 | Build production EAS (modo remoto antigo) |
+| 0.2.3  | 203         | 2026-04-18 | Firebase Analytics — primeiro build local |
 
 ---
 

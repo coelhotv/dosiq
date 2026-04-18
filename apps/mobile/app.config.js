@@ -5,6 +5,12 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'development'
 
+const APP_VERSION = '0.2.3'
+const [major, minor, patch] = APP_VERSION.split('.').map(Number)
+// versionCode derivado da versão semântica: major*10000 + minor*100 + patch
+// 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
+const VERSION_CODE = major * 10000 + minor * 100 + patch
+
 const variants = {
   development: {
     name: 'Meus Remedios Dev',
@@ -35,7 +41,7 @@ module.exports = {
     slug: current.slug,
     // DL-001: scheme canônico do projeto
     scheme: 'meusremedios',
-    version: '0.2.3',
+    version: APP_VERSION,
     cli: {
       appVersionSource: 'local',
     },
@@ -49,13 +55,14 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
-      buildNumber: '1',
+      buildNumber: '2',
       supportsTablet: false,
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
     },
     android: {
       package: current.androidPackage,
+      versionCode: VERSION_CODE,
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services-${BUILD_PROFILE}.json`,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
