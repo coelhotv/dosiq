@@ -36,6 +36,7 @@ Este arquivo é o ponto de entrada para agentes coders que executam `/devflow co
 | 6.1 | Banco e Contratos | ✅ Completo | merged | #475 |
 | 6.2 | Dispatcher e Canais | ✅ Completo | merged | #476 |
 | 6.3 | Integração Mobile | ⏳ Pendente | `feature/fase6/sprint-6.3-mobile-push` | — |
+| 6.3.5 | Firebase Analytics | ⏳ Pendente | `feature/fase6/sprint-6.3.5-analytics` | — |
 | 6.4 | Migração dos Jobs | ⏳ Pendente | `feature/fase6/sprint-6.4-jobs-dispatcher` | — |
 | 6.5 | Beta Interno e Hardening | ⏳ Pendente | `feature/fase6/sprint-6.5-beta` | — |
 
@@ -622,6 +623,261 @@ Tela acessível via Perfil/Settings. Conteúdo mínimo:
 
 ---
 
+## Sprint 6.3.5 — Firebase Analytics
+
+### Pré-requisito
+
+Sprint 6.3 mergeado ✅ (device registration + push funcionando)
+
+### Objetivo
+
+Integrar Firebase Analytics ao app mobile para acompanhar comportamento de usuários de teste, métricas de retenção e eventos de conversão. Dados alimentam decisões de produto e validam o beta interno.
+
+### Motivação
+
+O `analyticsService.js` web é local/privacy-first e não oferece visibilidade de sessões, retenção ou funil. Com o beta em Android, o time precisa de métricas reais para iterar: quantos usuários completam onboarding, voltam no dia seguinte, registram doses, etc.
+
+### Branch
+
+```
+feature/fase6/sprint-6.3.5-analytics
+```
+
+Criada a partir de `main` (após merge do 6.3).
+
+### Decisão de arquitetura
+
+**Firebase Analytics via `@react-native-firebase`** — não `expo-firebase-analytics` (deprecated).
+
+O projeto já possui `google-services-*.json` configurado por perfil (development / preview / production), e EAS Build já lê credenciais via `GOOGLE_SERVICES_JSON_PATH`. A integração Firebase segue o mesmo padrão.
+
+**Plugin Expo necessário:** `@react-native-firebase/app` usa config plugin que injetará `google-services.json` no build nativo automaticamente — sem editar `build.gradle` manualmente.
+
+### Pacotes a instalar
+
+```bash
+cd apps/mobile
+npx expo install @react-native-firebase/app @react-native-firebase/analytics
+```
+
+> ⚠️ Estes pacotes **não são compatíveis com Expo Go** — requerem build customizado via EAS (já em uso).
+
+Verificar peer deps e lockfile antes de commitar (R-158).
+
+### Arquivos a criar
+
+```
+apps/mobile/src/platform/analytics/firebaseAnalytics.js
+apps/mobile/src/platform/analytics/analyticsEvents.js
+apps/mobile/src/platform/analytics/useScreenTracking.js
+```
+
+### Arquivos a modificar
+
+```
+apps/mobile/app.config.js          (adicionar plugin @react-native-firebase/app)
+apps/mobile/src/app/Navigation.jsx (integrar useScreenTracking)
+```
+
+### Implementação — ordem obrigatória (C3)
+
+**Passo 1: Plugin no `app.config.js`**
+
+```js
+// apps/mobile/app.config.js — seção plugins
+plugins: [
+  '@react-native-firebase/app',
+],
+```
+
+O plugin injeta automaticamente `apply plugin: 'com.google.gms.google-services'` e as dependências no `build.gradle`. **Não editar `build.gradle` manualmente.**
+
+**Passo 2: `analyticsEvents.js` — catálogo de eventos**
+
+```js
+// apps/mobile/src/platform/analytics/analyticsEvents.js
+// Catálogo centralizado de eventos — nunca usar strings literais fora deste arquivo
+
+export const EVENTS = {
+  // Onboarding
+  ONBOARDING_START: 'onboarding_start',
+  ONBOARDING_COMPLETE: 'onboarding_complete',
+  ONBOARDING_SKIP: 'onboarding_skip',
+
+  // Autenticação
+  LOGIN: 'login',                   // method: 'email' | 'google'
+  LOGOUT: 'logout',
+  SIGNUP: 'sign_up',                // Firebase reserved — mapeia para funil de conversão
+
+  // Medicamentos
+  MEDICINE_ADDED: 'medicine_added',
+  MEDICINE_EDITED: 'medicine_edited',
+  MEDICINE_DELETED: 'medicine_deleted',
+
+  // Doses
+  DOSE_LOGGED: 'dose_logged',       // protocol_id, medicine_name
+  DOSE_SKIPPED: 'dose_skipped',
+
+  // Notificações
+  NOTIFICATION_PERMISSION_GRANTED: 'notification_permission_granted',
+  NOTIFICATION_PERMISSION_DENIED: 'notification_permission_denied',
+  NOTIFICATION_PREFERENCE_CHANGED: 'notification_preference_changed', // new_preference
+  PUSH_NOTIFICATION_TAPPED: 'push_notification_tapped', // kind: dose_reminder | stock_alert
+
+  // Estoque
+  STOCK_ADDED: 'stock_added',
+  STOCK_LOW_VIEWED: 'stock_low_viewed',
+
+  // Engajamento
+  SCREEN_VIEW: 'screen_view',       // Firebase reserved — screen_name, screen_class
+}
+```
+
+**Passo 3: `firebaseAnalytics.js` — wrapper seguro**
+
+```js
+// apps/mobile/src/platform/analytics/firebaseAnalytics.js
+import analytics from '@react-native-firebase/analytics'
+
+export async function logEvent(eventName, params = {}) {
+  try {
+    await analytics().logEvent(eventName, params)
+  } catch {
+    // Analytics nunca deve quebrar o fluxo do usuário — falha silenciosa
+  }
+}
+
+export async function setUserId(userId) {
+  try {
+    await analytics().setUserId(userId)
+  } catch { /* silent */ }
+}
+
+export async function setUserProperty(name, value) {
+  try {
+    await analytics().setUserProperty(name, String(value))
+  } catch { /* silent */ }
+}
+
+export async function logScreenView(screenName, screenClass) {
+  try {
+    await analytics().logScreenView({ screen_name: screenName, screen_class: screenClass })
+  } catch { /* silent */ }
+}
+```
+
+**Passo 4: `useScreenTracking.js` — hook automático de telas**
+
+```js
+// apps/mobile/src/platform/analytics/useScreenTracking.js
+import { useEffect } from 'react'
+import { logScreenView } from './firebaseAnalytics'
+
+export function useScreenTracking(screenName, screenClass = screenName) {
+  useEffect(() => {
+    logScreenView(screenName, screenClass)
+  }, [screenName, screenClass])
+}
+```
+
+Integrar em `Navigation.jsx`: chamar `useScreenTracking(currentView)` quando a view mudar.
+
+**Passo 5: Identificação do usuário pós-login**
+
+No hook `useAuth` ou no fluxo pós-login, após obter `user`:
+
+```js
+import { setUserId, setUserProperty } from '@/platform/analytics/firebaseAnalytics'
+
+// Após login bem-sucedido:
+await setUserId(user.id)
+await setUserProperty('app_env', process.env.EXPO_PUBLIC_APP_ENV || 'development')
+```
+
+> Privacy note: `setUserId` envia hash interno ao Firebase — **nunca passar email ou nome**.
+
+**Passo 6: Instrumentar eventos críticos de conversão**
+
+Adicionar `logEvent` nos pontos de conversão mais importantes (prioridade decrescente):
+
+| Localização | Evento | Params |
+|-------------|--------|--------|
+| Onboarding final step | `ONBOARDING_COMPLETE` | — |
+| `useAuth` login | `LOGIN` | `{ method: 'email' }` |
+| `useAuth` signup | `SIGNUP` | — |
+| `syncNotificationDevice` OK | `NOTIFICATION_PERMISSION_GRANTED` | — |
+| `NotificationPreferencesScreen` save | `NOTIFICATION_PREFERENCE_CHANGED` | `{ new_preference }` |
+| Push notification tap handler | `PUSH_NOTIFICATION_TAPPED` | `{ kind }` |
+| `LogForm` submit OK | `DOSE_LOGGED` | `{ medicine_name }` |
+| Medicine CRUD create | `MEDICINE_ADDED` | — |
+
+**Não instrumentar PII**: não logar `dosage`, `medicine_name` com dados sensíveis de saúde além do nome. Não logar `userId` como param de evento (já via `setUserId`).
+
+### Configuração Firebase Console
+
+Os passos abaixo são **dependências humanas** — o agente não pode executá-los:
+
+- [ ] Firebase Console → projeto `meus-remedios-c509e` → Analytics habilitado
+- [ ] Google Analytics property vinculada ao projeto Firebase
+- [ ] Debug View habilitado para validar eventos durante desenvolvimento
+- [ ] Eventos de conversão configurados: `sign_up`, `onboarding_complete`, `dose_logged`
+
+### Builds necessários
+
+Após implementação, gerar novo APK preview para ter o plugin Firebase compilado:
+
+```bash
+cd apps/mobile
+./build-android.sh preview
+```
+
+O build de desenvolvimento também precisa ser regeerado para usar com `expo-dev-client` (não Expo Go).
+
+### Validação
+
+**Firebase DebugView (desenvolvimento):**
+
+```bash
+# Habilitar debug mode no device físico (Android)
+adb shell setprop debug.firebase.analytics.app com.coelhotv.meusremedios.preview
+```
+
+Verificar eventos aparecendo em tempo real: Firebase Console → Analytics → DebugView.
+
+**Checklist de validação manual:**
+
+1. [ ] Fazer login → evento `login` aparece no DebugView
+2. [ ] Navegar entre telas → `screen_view` disparado por tela
+3. [ ] Conceder permissão de push → `notification_permission_granted`
+4. [ ] Registrar dose → `dose_logged`
+5. [ ] Mudar preferência de notificação → `notification_preference_changed`
+
+### Regras a aplicar
+
+- R-167: Nenhum `console.log` de analytics fora de `if (__DEV__)`
+- R-042: `setUserId` apenas com UUID interno — nunca PII
+- R-158: Verificar peer deps antes de `npm install` em workspace mobile
+
+### DoD verificável
+
+- [ ] `@react-native-firebase/app` e `@react-native-firebase/analytics` instalados sem conflito de peer deps
+- [ ] Plugin adicionado em `app.config.js`
+- [ ] `firebaseAnalytics.js` com fallback silencioso (nunca throw)
+- [ ] `EVENTS` catálogo centralizado — zero strings literais fora do catálogo
+- [ ] `useScreenTracking` integrado na navegação
+- [ ] `setUserId` chamado após login (sem PII)
+- [ ] Ao menos 6 eventos de conversão instrumentados (lista do Passo 6)
+- [ ] Novo APK preview gerado com build EAS
+- [ ] Eventos visíveis no Firebase DebugView em device físico
+- [ ] `npm run validate:agent` verde (web não afetado)
+
+### Contratos novos a formalizar após sprint
+
+- CON-021: `logEvent(eventName, params)` → void (nunca throw)
+- CON-022: `EVENTS` catálogo é a única fonte de nomes de eventos no mobile
+
+---
+
 ## Sprint 6.4 — Migração dos Jobs Principais
 
 ### Pré-requisito
@@ -789,10 +1045,10 @@ Criada a partir de `main` (após merge do 6.4).
 
 Antes de iniciar este sprint, confirmar com o maintainer:
 - [ ] Apple Developer Program membership ativa
-- [ ] TestFlight app instalado no device iOS de teste
-- [ ] Conta Google Play Console com internal testing track configurado
-- [ ] Device físico iOS disponível para testes
-- [ ] Device físico Android disponível para testes
+- [x] TestFlight app instalado no device iOS de teste
+- [x] Conta Google Play Console com internal testing track configurado
+- [x] Device físico iOS disponível para testes
+- [x] Device físico Android disponível para testes
 - [ ] EAS credentials configuradas para `preview` profile
 - [ ] `EXPO_PUSH_TOKEN` (ou equivalente Expo) configurado em ambiente EAS
 
