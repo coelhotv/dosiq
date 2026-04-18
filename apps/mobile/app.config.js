@@ -59,6 +59,7 @@ module.exports = {
       supportsTablet: false,
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
+      googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
     },
     android: {
       package: current.androidPackage,
