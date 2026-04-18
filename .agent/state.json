@@ -18,27 +18,31 @@
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_sprint6.3",
-    "started_at": "2026-04-17T14:30:00Z",
+    "id": "session_2026W16_h6_sprint6.3.5",
+    "started_at": "2026-04-17T22:15:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "UX.1 — Docs e baseline do Native App UX Revamp",
-    "goal_type": "docs",
+    "status": "analysis",
+    "goal": "Sprint 6.3.5 — Firebase Analytics",
+    "goal_type": "feature",
     "acceptance_criteria": [
-      "Corpus documental do Native App UX Revamp congelado em plans/native_app_ux_revamp/",
-      "Referências visuais locais estão ancoradas nos docs centrais e no sprint plan",
-      "Baseline real do mobile e dependências da iniciativa estão explícitas e rastreáveis",
-      "Sprint UX.1 fecha sem conflito com MASTER_SPEC_HIBRIDO_WEB_NATIVE.md",
-      "Execução futura por agentes consegue iniciar por README.md sem depender do histórico da conversa"
+      "Plugin @react-native-firebase/app adicionado ao app.config.js",
+      "Catálogo EVENTS centralizado sem strings literais fora dele",
+      "Wrapper firebaseAnalytics.js com fallback silencioso em todas as funções",
+      "useScreenTracking integrado na navegação",
+      "setUserId chamado pós-login sem PII",
+      "Ao menos 6 eventos de conversão instrumentados",
+      "Novo APK preview gerado via EAS Build",
+      "Eventos visíveis no Firebase DebugView em device físico",
+      "npm run validate:agent verde (web não afetado)"
     ],
     "active_wave": {
-      "name": "Native App UX Revamp (Sprint UX.1)",
-      "phase": "ux-revamp",
-      "sprint": "UX.1",
-      "spec": "plans/native_app_ux_revamp/EXEC_SPEC_NATIVE_APP_UX_SPRINT_PLAN.md",
-      "status": "completed",
-      "started_at": "2026-04-17T14:30:00Z",
-      "notes": "Sprint UX.1: congelar corpus documental, baseline validada, referências visuais locais e ponto de entrada operacional para agentes via /devflow."
+      "name": "Fase 6: Push Native e Analytics",
+      "phase": "h6-push-native",
+      "sprint": "6.3.5",
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
+      "status": "in-progress",
+      "started_at": "2026-04-17T22:15:00Z",
+      "notes": "Sprint 6.3.5: integrar Firebase Analytics para acompanhar retenção e eventos de conversão do beta interno."
     }
   },
   "memory": {
