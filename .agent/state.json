@@ -14,36 +14,34 @@
       "expo",
       "react-native"
     ],
-    "phase": "h6-sprint-6.2",
+    "phase": "h6-sprint-6.4",
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_sprint6.3.5",
-    "started_at": "2026-04-17T22:15:00Z",
-    "completed_at": "2026-04-18T03:32:00Z",
+    "id": "session_2026W16_h6_sprint6.4",
+    "started_at": "2026-04-18T03:33:00Z",
+    "completed_at": "2026-04-18T05:15:00Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Sprint 6.3.5 — Firebase Analytics",
+    "goal": "Sprint 6.4 — Migração dos Jobs Principais",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "Plugin @react-native-firebase/app adicionado ao app.config.js",
-      "Catálogo EVENTS centralizado sem strings literais fora dele",
-      "Wrapper firebaseAnalytics.js com fallback silencioso em todas as funções",
-      "useScreenTracking integrado na navegação",
-      "setUserId chamado pós-login sem PII",
-      "Ao menos 6 eventos de conversão instrumentados",
-      "Novo APK preview gerado via EAS Build",
-      "Eventos visíveis no Firebase DebugView em device físico",
-      "npm run validate:agent verde (web não afetado)"
+      "Reminders chegam por Telegram com dispatcher ativo (USE_NOTIFICATION_DISPATCHER=true, preference='telegram')",
+      "Push chega no device com preference='mobile_push'",
+      "Modo 'both' entrega em ambos Telegram e push",
+      "Modo 'none' não entrega nada",
+      "USE_NOTIFICATION_DISPATCHER=false faz fallback para Telegram legado",
+      "Logs de dispatch visíveis no Vercel (não apenas em server/bot/)",
+      "npm run validate:agent verde"
     ],
     "active_wave": {
       "name": "Fase 6: Push Native e Analytics",
       "phase": "h6-push-native",
-      "sprint": "6.3.5",
+      "sprint": "6.4",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
       "status": "in-progress",
-      "started_at": "2026-04-17T22:15:00Z",
-      "notes": "Sprint 6.3.5: integrar Firebase Analytics para acompanhar retenção e eventos de conversão do beta interno."
+      "started_at": "2026-04-18T03:33:00Z",
+      "notes": "Sprint 6.4: Migrar checkReminders, checkStockAlerts, runDailyDigest para o dispatcher multicanal com feature flag de rollback."
     }
   },
   "memory": {
@@ -53,7 +51,7 @@
     "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "recent_additions": {
       "rules": [
         "R-175",
