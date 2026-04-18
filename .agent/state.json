@@ -20,8 +20,9 @@
   "session": {
     "id": "session_2026W16_h6_sprint6.3.5",
     "started_at": "2026-04-17T22:15:00Z",
+    "completed_at": "2026-04-18T03:32:00Z",
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "goal": "Sprint 6.3.5 — Firebase Analytics",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -52,7 +53,7 @@
     "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "recent_additions": {
       "rules": [
         "R-175",
