@@ -73,6 +73,11 @@ module.exports = {
     },
     plugins: [
       '@react-native-firebase/app',
+      ['expo-build-properties', {
+        ios: {
+          useModularHeaders: true,
+        },
+      }],
     ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*
