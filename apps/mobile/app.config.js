@@ -35,7 +35,7 @@ module.exports = {
     slug: current.slug,
     // DL-001: scheme canônico do projeto
     scheme: 'meusremedios',
-    version: '0.2.0',
+    version: '0.2.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
