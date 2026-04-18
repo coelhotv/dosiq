@@ -31,12 +31,11 @@ export default function Navigation() {
   // Setup push notifications pós-login (H6.3)
   usePushNotifications({ supabase, session })
 
-  // Handler para rastrear mudanças de tela (Analytics)
+  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
-    const state = navigationRef?.current?.getRootState?.()
-    const routeName = state?.routes?.[state.index]?.name
+    const routeName = navigationRef.current?.getCurrentRoute?.()?.name
     if (routeName) {
-      logScreenView(routeName, routeName)
+      logScreenView(routeName)
     }
   }
 
