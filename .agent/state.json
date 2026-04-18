@@ -46,12 +46,12 @@
   },
   "memory": {
     "rules_count": 124,
-    "anti_patterns_count": 96,
+    "anti_patterns_count": 99,
     "decisions_count": 28,
     "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "recent_additions": {
       "rules": [
         "R-175",

@@ -105,3 +105,6 @@
 - **[AP-W24]** FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido -> [`anti-patterns/react_and_ui/AP-W24.md`](./anti-patterns/react_and_ui/AP-W24.md)
 - **[AP-W25]** Usar componente Button com className custom causa conflito de estilos no mobile -> [`anti-patterns/react_and_ui/AP-W25.md`](./anti-patterns/react_and_ui/AP-W25.md)
 - **[AP-H22]** "TypeError: Cannot read property 'useState' of null" crash caused by Metro bundling multiple versions of React. -> [`anti-patterns/react_and_ui/AP-H22.md`](./anti-patterns/react_and_ui/AP-H22.md)
+- **[AP-H23]** @react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+) — Firebase não inicializa; usar v21+ -> [`anti-patterns/mobile_and_platform/AP-H23.md`](./anti-patterns/mobile_and_platform/AP-H23.md)
+- **[AP-H24]** FirebaseCoreInternal/GoogleUtilities quebra pod install sem useModularHeaders — instalar expo-build-properties com `ios.useModularHeaders: true` -> [`anti-patterns/mobile_and_platform/AP-H24.md`](./anti-patterns/mobile_and_platform/AP-H24.md)
+- **[AP-H25]** googleServicesFile iOS ausente no app.config.js — sempre configurar `ios.googleServicesFile` além do Android -> [`anti-patterns/mobile_and_platform/AP-H25.md`](./anti-patterns/mobile_and_platform/AP-H25.md)
