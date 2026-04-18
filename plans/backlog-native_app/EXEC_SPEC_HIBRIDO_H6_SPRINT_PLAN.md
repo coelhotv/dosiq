@@ -35,10 +35,10 @@ Este arquivo é o ponto de entrada para agentes coders que executam `/devflow co
 |--------|--------|--------|--------|----|
 | 6.1 | Banco e Contratos | ✅ Completo | merged | #475 |
 | 6.2 | Dispatcher e Canais | ✅ Completo | merged | #476 |
-| 6.3 | Integração Mobile | ⏳ Pendente | `feature/fase6/sprint-6.3-mobile-push` | — |
-| 6.3.5 | Firebase Analytics | ⏳ Pendente | `feature/fase6/sprint-6.3.5-analytics` | — |
-| 6.4 | Migração dos Jobs | ⏳ Pendente | `feature/fase6/sprint-6.4-jobs-dispatcher` | — |
-| 6.5 | Beta Interno e Hardening | ⏳ Pendente | `feature/fase6/sprint-6.5-beta` | — |
+| 6.3 | Integração Mobile | ✅ Completo | merged | #477 |
+| 6.3.5 | Firebase Analytics | ✅ Completo | merged | #478 |
+| 6.4 | Migração dos Jobs | ✅ Completo | merged | #479 |
+| 6.5 | Beta Interno e Hardening | 🏗️ Em execução | `main` | — |
 
 **Atualizar esta tabela após cada sprint ser mergeado.**
 
@@ -48,10 +48,10 @@ Este arquivo é o ponto de entrada para agentes coders que executam `/devflow co
 
 Antes de qualquer sprint começar, verificar:
 
-- [ ] ADR-029 rascunhado e aprovado pelo maintainer (arquitetura dispatcher multicanal)
-- [ ] ADR-030 rascunhado e aprovado pelo maintainer (feature flag rollback `USE_NOTIFICATION_DISPATCHER`)
-- [ ] `npm run validate:agent` verde na branch `main`
-- [ ] `npm run build` verde na branch `main`
+- [x] ADR-029 rascunhado e aprovado pelo maintainer (arquitetura dispatcher multicanal)
+- [x] ADR-030 rascunhado e aprovado pelo maintainer (feature flag rollback `USE_NOTIFICATION_DISPATCHER`)
+- [x] `npm run validate:agent` verde na branch `main`
+- [x] `npm run build` verde na branch `main`
 
 **ADR-029 — Dispatcher Multicanal de Notificações (a criar)**
 
