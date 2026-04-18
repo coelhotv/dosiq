@@ -605,15 +605,17 @@ module.exports = {
 
 ```javascript
 // app.config.js
-android: {
-  package: current.androidPackage,
   googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services-${BUILD_PROFILE}.json`,
+},
+ios: {
+  bundleIdentifier: current.iosBundleIdentifier,
+  googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
 }
 ```
 
-### 13.2. Script Wrapper: `build-android.sh`
+### 13.2. Script Wrapper: `build-android.sh` (e iOS)
 
-Crie `apps/mobile/build-android.sh`:
+Crie `apps/mobile/build-android.sh` (que também servirá de base para iOS):
 
 ```bash
 #!/bin/bash
@@ -701,7 +703,18 @@ Ao contrário da nuvem, o build local deixará o arquivo final (`.apk` ou `.aab`
 ### 14.4. Status de Validação
 - **Ambiente Validado**: Mac M2 (Sequoia) com Xcode 26.3 usando Bash. ✅
 - **Resultado Estável**: Build de preview gerado localmente em ~5-10 min com script wrapper `build-android.sh`. ✅
-- **Firebase**: Credenciais passadas via `GOOGLE_SERVICES_JSON_PATH` funcionam corretamente. ✅
+- **Firebase**: Credenciais passadas via `GOOGLE_SERVICES_JSON_PATH` (Android) e `GOOGLE_SERVICES_PLIST_PATH` (iOS) funcionam corretamente. ✅
+- **Expo 53 Fix**: O plugin local `withFirebaseFix.js` é obrigatório para inicializar o Firebase no `AppDelegate.swift` e resolver conflitos de modular headers no iOS. ✅
+
+## 14.5. Problemas Específicos do iOS no Expo 53
+
+Ao rodar `npx expo prebuild` para iOS no SDK 53, o plugin oficial do Firebase pode avisar que não encontrou o ponto de inserção. O projeto utiliza um plugin customizado (`withFirebaseFix.js`) para contornar isso.
+
+Sintoma de falha (sem o fix):
+`» ios: @react-native-firebase/app: Unable to determine correct Firebase insertion point in AppDelegate.swift.`
+
+Solução integrada:
+O arquivo `app.config.js` já carrega `./withFirebaseFix.js` que automatiza a correção no `AppDelegate.swift` e no `Podfile`.
 
 ## 12.8. Tentação de configurar push agora
 
