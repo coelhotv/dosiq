@@ -112,7 +112,9 @@
       "Read(//Users/coelhotv/git-icloud/meus-remedios/plans/**)",
       "Read(//Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/plans/**)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(gh api repos/coelhotv/meus-remedios/pulls/420/comments --paginate --jq '.[] | select\\(.user.login == \"\"\"\"gemini-code-assist\"\"\"\"\\) |:*)"
+      "Bash(gh api repos/coelhotv/meus-remedios/pulls/420/comments --paginate --jq '.[] | select\\(.user.login == \"\"\"\"gemini-code-assist\"\"\"\"\\) |:*)",
+      "Bash(ls -la .env*)",
+      "Bash(ls -la apps/web/.env*)"
     ],
     "additionalDirectories": [
       "/tmp",
