@@ -1,11 +1,17 @@
 // Wrapper seguro para Firebase Analytics — nunca quebra o fluxo do usuário
 // CON-021: logEvent nunca lança exceção
 // Falha silenciosa quando módulos nativos não estão disponíveis (ex: Expo Go, dev client sem Firebase)
-import analytics from '@react-native-firebase/analytics'
+import { 
+  getAnalytics, 
+  logEvent as firebaseLogEvent, 
+  setUserId as firebaseSetUserId, 
+  setUserProperty as firebaseSetUserProperty, 
+  logScreenView as firebaseLogScreenView 
+} from '@react-native-firebase/analytics'
 
-function getAnalytics() {
+function getAnalyticsInstance() {
   try {
-    return analytics()
+    return getAnalytics()
   } catch {
     // Módulo nativo Firebase não disponível neste build (ex: Expo Go)
     return null
@@ -14,9 +20,9 @@ function getAnalytics() {
 
 export async function logEvent(eventName, params = {}) {
   try {
-    const a = getAnalytics()
+    const a = getAnalyticsInstance()
     if (!a) return
-    await a.logEvent(eventName, params)
+    await firebaseLogEvent(a, eventName, params)
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logEvent error:', error.message)
   }
@@ -25,9 +31,9 @@ export async function logEvent(eventName, params = {}) {
 export async function setUserId(userId) {
   try {
     // R-042: setUserId apenas com UUID interno — nunca PII
-    const a = getAnalytics()
+    const a = getAnalyticsInstance()
     if (!a) return
-    await a.setUserId(userId)
+    await firebaseSetUserId(a, userId)
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] setUserId error:', error.message)
   }
@@ -35,9 +41,9 @@ export async function setUserId(userId) {
 
 export async function setUserProperty(name, value) {
   try {
-    const a = getAnalytics()
+    const a = getAnalyticsInstance()
     if (!a) return
-    await a.setUserProperty(name, String(value))
+    await firebaseSetUserProperty(a, name, String(value))
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] setUserProperty error:', error.message)
   }
@@ -45,9 +51,9 @@ export async function setUserProperty(name, value) {
 
 export async function logScreenView(screenName, screenClass = screenName) {
   try {
-    const a = getAnalytics()
+    const a = getAnalyticsInstance()
     if (!a) return
-    await a.logScreenView({ screen_name: screenName, screen_class: screenClass })
+    await firebaseLogScreenView(a, { screen_name: screenName, screen_class: screenClass })
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logScreenView error:', error.message)
   }
