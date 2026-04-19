@@ -14,7 +14,7 @@
       "expo",
       "react-native"
     ],
-    "phase": "h7-planning",
+    "phase": "h7-completed",
     "current_sprint": "2026-W16"
   },
   "session": {
@@ -23,7 +23,7 @@
     "completed_at": null,
     "mode": "coding",
     "status": "completed",
-    "goal": "Sprint 7.4 — Compatibilidade Root e Automações",
+    "goal": "Sprint 7.5 — Documentação Final e Entrega da Fase 7",
     "goal_type": "chore",
     "acceptance_criteria": [
       "apps/web/ criado com package.json próprio",
@@ -39,11 +39,11 @@
     "active_wave": {
       "name": "Fase 7: Migração Web para apps/web",
       "phase": "h7-monorepo-web",
-      "sprint": "7.4",
+      "sprint": "7.5",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md",
       "status": "completed",
       "started_at": "2026-04-19T00:00:00Z",
-      "notes": "Sprints 7.1–7.4 COMPLETOS. 7.1=análise, 7.2=workspaces+package.json, 7.3=git mv src/public/vite+5configs, 7.4=docs CLAUDE.md+MOBILE_PERFORMANCE. vercel.json atualizado (7.5 antecipado). AP-H27 documentado. 543 testes verdes. PR #480 aberto em feature/fase7-web-migration."
+      "notes": "Sprints 7.1–7.5 TODOS COMPLETOS. 7.1=análise, 7.2=workspaces+package.json, 7.3=git mv src/public/vite+5configs, 7.4=docs CLAUDE.md+MOBILE_PERFORMANCE, 7.5=specs+docs finais marcados entregues. vercel.json atualizado. AP-H27 documentado. 543 testes verdes. PR #480 aberto aguardando merge humano."
     }
   },
   "memory": {
