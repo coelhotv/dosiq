@@ -1,7 +1,7 @@
 # Guia Pratico - Google Play Console para o MVP Android
 
-> **Contexto:** Meus Remedios hybrid/native | Fase 5 MVP de produto
-> **Data:** 2026-04-14
+> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Objetivo:** configurar a Google Play Console do zero para o primeiro envio Android do projeto
 
 ---

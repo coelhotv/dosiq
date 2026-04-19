@@ -1,6 +1,6 @@
 # Exec Spec Hibrido - Fase 6: Push Native e Beta Interno
 
-> **Status:** Exec spec detalhado e prescritivo
+> **Status:** Exec spec detalhado e prescritivo | 🏗️ Em execução (Sprint 6.5)
 > **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 5 concluida
 > **Objetivo da fase:** adicionar notificacoes mobile nativas sem quebrar Telegram, introduzindo arquitetura multicanal real e distribuicao beta interna controlada
