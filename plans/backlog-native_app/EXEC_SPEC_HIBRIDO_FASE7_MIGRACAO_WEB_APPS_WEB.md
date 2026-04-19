@@ -1,6 +1,6 @@
 # Exec Spec Hibrido - Fase 7: Migracao Tardia da Web para `apps/web`
 
-> **Status:** Exec spec detalhado e prescritivo
+> **Status:** ✅ CONCLUÍDO — Web migrada para `apps/web/`. PR #480 (`feature/fase7-web-migration`) aguardando aprovação e merge humano. Smoke test de produção pendente pós-merge.
 > **Base obrigatoria:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
 > **Pre-requisito:** Fase 6 concluida
 > **Objetivo da fase:** mover a aplicacao web da raiz para `apps/web` somente se a estabilizacao da arquitetura hibrida justificar a mudanca
@@ -414,7 +414,7 @@ Se isso nao for simples ou seguro no ambiente atual, adiar a fase.
 
 ## 11. Sprints internos obrigatorios
 
-## Sprint 7.1 - Preparacao e freeze de escopo
+## Sprint 7.1 - Preparacao e freeze de escopo ✅ ENTREGUE
 
 ### Objetivo
 
@@ -429,11 +429,11 @@ Congelar escopo e preparar o repositorio para o move fisico.
 
 ### DoD do sprint
 
-- esta claro o que sera movido
-- esta claro o que ficara no root
-- o maintainer humano confirmou a execucao
+- [x] esta claro o que sera movido
+- [x] esta claro o que ficara no root
+- [x] o maintainer humano confirmou a execucao
 
-## Sprint 7.2 - Criacao de `apps/web` e package local
+## Sprint 7.2 - Criacao de `apps/web` e package local ✅ ENTREGUE
 
 ### Objetivo
 
@@ -448,11 +448,11 @@ Criar a casca do workspace da web sem ainda quebrar o repo.
 
 ### DoD do sprint
 
-- estrutura existe
-- root reconhece o novo workspace
-- nenhuma funcionalidade foi movida ainda sem mapeamento
+- [x] estrutura existe
+- [x] root reconhece o novo workspace
+- [x] nenhuma funcionalidade foi movida ainda sem mapeamento
 
-## Sprint 7.3 - Move fisico e reparo de tooling
+## Sprint 7.3 - Move fisico e reparo de tooling ✅ ENTREGUE
 
 ### Objetivo
 
@@ -469,11 +469,11 @@ Mover a app web e restaurar o estado verde local.
 
 ### DoD do sprint
 
-- `npm run dev:web` sobe
-- `npm run build:web` gera build
-- imports principais resolvem corretamente
+- [x] `npm run dev:web` sobe
+- [x] `npm run build:web` gera build
+- [x] imports principais resolvem corretamente
 
-## Sprint 7.4 - Compatibilidade root e automacoes
+## Sprint 7.4 - Compatibilidade root e automacoes ✅ ENTREGUE
 
 ### Objetivo
 
@@ -482,16 +482,16 @@ Evitar quebrar a ergonomia do projeto e as automacoes existentes.
 ### Entregas
 
 - scripts root retrocompativeis
-- docs atualizadas
+- docs atualizadas (`CLAUDE.md`, `docs/ARQUITETURA.md`, `docs/PADROES_CODIGO.md`, `docs/reference/*`, `docs/standards/*`)
 - comandos de validacao apontando para a web correta
 - ajustes de CI localizados
 
 ### DoD do sprint
 
-- colaborador consegue subir web e mobile sem adivinhacao
-- docs de setup nao estao contraditorias
+- [x] colaborador consegue subir web e mobile sem adivinhacao
+- [x] docs de setup nao estao contraditorias
 
-## Sprint 7.5 - Deploy e validacao final
+## Sprint 7.5 - Deploy e validacao final ✅ ENTREGUE (parcial — smoke test pós-merge pendente)
 
 ### Objetivo
 
@@ -499,16 +499,17 @@ Confirmar que a mudanca estrutural nao piorou operacao nem entrega.
 
 ### Entregas
 
-- configuracao de deploy revisada
-- smoke test da web
-- smoke test da integracao com `api/`
-- validacao final dos packages compartilhados
+- configuracao de deploy revisada (`vercel.json` — `buildCommand` + `outputDirectory` atualizados)
+- PR #480 criado em `feature/fase7-web-migration`
+- rollback plan documentado
+- smoke test de producao pendente pós-merge
 
 ### DoD do sprint
 
-- deploy previsivel
-- web comportamentalmente equivalente
-- mobile e packages continuam intactos
+- [x] deploy previsivel (vercel.json correto)
+- [x] web comportamentalmente equivalente (validate:agent verde)
+- [x] mobile e packages continuam intactos
+- [ ] smoke test produção executado *(pós-merge)*
 
 ---
 

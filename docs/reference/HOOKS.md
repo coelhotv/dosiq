@@ -13,7 +13,7 @@ Documentação completa dos hooks customizados do projeto.
 
 ## useCachedQuery
 
-Local: [`src/shared/hooks/useCachedQuery.js`](../../src/shared/hooks/useCachedQuery.js)
+Local: [`apps/web/src/shared/hooks/useCachedQuery.js`](../../apps/web/src/shared/hooks/useCachedQuery.js)
 
 Hook React para integração com o sistema de cache SWR.
 
@@ -249,7 +249,7 @@ useCachedQuery(`data`, ...) // Muito genérico
 
 ## useOnboarding
 
-Local: [`src/shared/components/onboarding/OnboardingProvider.jsx`](../../src/shared/components/onboarding/OnboardingProvider.jsx)
+Local: [`apps/web/src/shared/components/onboarding/OnboardingProvider.jsx`](../../apps/web/src/shared/components/onboarding/OnboardingProvider.jsx)
 
 Hook para controle do wizard de onboarding.
 

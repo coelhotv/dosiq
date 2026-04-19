@@ -119,8 +119,8 @@ npm run validate:quick  # Lint + testes alterados
 
 ```bash
 # Stage related files
-git add src/components/MedicineForm.jsx
-git add src/components/MedicineForm.css
+git add apps/web/src/features/medications/components/MedicineForm.jsx
+git add apps/web/src/features/medications/components/MedicineForm.css
 
 # Commit with semantic message (in Portuguese)
 git commit -m "feat(medicine): adicionar validação de dosagem"
@@ -268,8 +268,8 @@ git push origin --delete feature/wave-X/nome-descritivo
 #### Estrutura Feature-Based (F4.6)
 
 ```
-src/
-├── features/              # Domínios de negócio (novo em v2.8.0)
+apps/web/src/
+├── features/              # Domínios de negócio
 │   ├── adherence/         # Adesão ao tratamento
 │   │   ├── components/    # Componentes específicos
 │   │   ├── hooks/         # Hooks do domínio
@@ -280,7 +280,7 @@ src/
 │   ├── protocols/         # Protocolos e titulação
 │   └── stock/             # Estoque
 │
-├── shared/                # Recursos compartilhados (novo em v2.8.0)
+├── shared/                # Recursos compartilhados
 │   ├── components/        # Componentes reutilizáveis
 │   │   ├── ui/           # UI atômicos (Button, Card, Modal)
 │   │   ├── log/          # LogEntry, LogForm
@@ -289,12 +289,11 @@ src/
 │   │   └── pwa/          # PushPermission, InstallPrompt
 │   ├── hooks/            # Hooks customizados
 │   ├── services/         # Services com cache SWR
-│   ├── constants/        # Schemas Zod
 │   ├── utils/            # Utilitários puros
 │   └── styles/           # CSS tokens e temas
 │
-├── views/                 # Páginas/Views
-└── [legacy folders]       # Em migração para features/shared
+├── schemas/               # Schemas Zod (localização canônica)
+└── views/                 # Páginas/Views
 ```
 
 #### Path Aliases (Vite + ESLint)
@@ -309,11 +308,13 @@ import { medicineService } from '@features/medications/services/medicineService'
 import { Button } from '../../../shared/components/ui/Button'
 ```
 
-**Aliases configurados:**
-- `@` → `src/`
-- `@features` → `src/features/`
-- `@shared` → `src/shared/`
+**Aliases configurados** (em `apps/web/vite.config.js`):
+- `@` → `apps/web/src/`
+- `@features` → `apps/web/src/features/`
+- `@shared` → `apps/web/src/shared/`
+- `@schemas` → `apps/web/src/schemas/`
 - `@dashboard`, `@medications`, `@protocols`, `@stock`, `@adherence`
+- `@design-tokens` → `packages/design-tokens/src/`
 
 ### 5. Scripts Obrigatórios
 
@@ -335,16 +336,14 @@ import { Button } from '../../../shared/components/ui/Button'
 
 ```
 ✅ BOM:
-src/
-├── components/
-│   ├── medicine/
-│   │   ├── MedicineCard.jsx      # PascalCase
-│   │   ├── MedicineCard.css      # Mesmo nome do componente
-│   │   └── MedicineCard.test.jsx # Teste do componente
-│   └── ui/
-│       └── Button/
-│           ├── Button.jsx
-│           └── Button.css
+apps/web/src/
+├── features/medications/components/
+│   ├── MedicineCard.jsx      # PascalCase
+│   ├── MedicineCard.css      # Mesmo nome do componente
+│   └── __tests__/
+│       └── MedicineCard.test.jsx
+├── shared/components/ui/
+│   └── Button.jsx
 
 ❌ EVITAR:
 ├── components/
@@ -356,13 +355,13 @@ src/
 ### Organização por Domínio
 
 ```
-src/components/
-├── ui/              # Componentes genéricos (Button, Card, Modal)
-├── medicine/        # Domínio: Medicamentos
-├── protocol/        # Domínio: Protocolos
-├── stock/           # Domínio: Estoque
-├── log/             # Domínio: Registros
-└── onboarding/      # Domínio: Onboarding
+apps/web/src/
+├── features/medications/components/   # Componentes do domínio Medicamentos
+├── features/protocols/components/     # Domínio: Protocolos
+├── features/stock/components/         # Domínio: Estoque
+├── shared/components/ui/              # Componentes genéricos (Button, Card, Modal)
+├── shared/components/log/             # LogEntry, LogForm
+└── shared/components/onboarding/      # OnboardingWizard, Steps
 ```
 
 ---
@@ -1011,7 +1010,7 @@ Execute `npm run lint` antes de commitar.
 | Anti-Pattern | Consequência | Prevenção |
 |--------------|--------------|-----------|
 | **Lógica de negócio em componentes** | Dificuldade de testar, reuso impedido | Extrair para services |
-| **Schemas de validação duplicados** | Inconsistência de dados | Centralizar em `src/schemas/` |
+| **Schemas de validação duplicados** | Inconsistência de dados | Centralizar em `apps/web/src/schemas/` |
 | **Importar hooks/componentes de arquivos com múltiplas exportações** | Fast Refresh quebrado | Separar em arquivos dedicados |
 
 ---
@@ -1354,7 +1353,7 @@ function MedicineForm({
 
 ### MedicineForm
 
-**Local:** [`src/components/medicine/MedicineForm.jsx`](src/components/medicine/MedicineForm.jsx)
+**Local:** `apps/web/src/features/medications/components/MedicineForm.jsx`
 
 ```jsx
 <MedicineForm
@@ -1372,7 +1371,7 @@ function MedicineForm({
 
 ### ProtocolForm
 
-**Local:** [`src/components/protocol/ProtocolForm.jsx`](src/components/protocol/ProtocolForm.jsx)
+**Local:** `apps/web/src/features/protocols/components/ProtocolForm.jsx`
 
 ```jsx
 <ProtocolForm
@@ -1394,7 +1393,7 @@ function MedicineForm({
 
 ### Calendar
 
-**Local:** [`src/components/ui/Calendar.jsx`](src/components/ui/Calendar.jsx)
+**Local:** `apps/web/src/shared/components/ui/Calendar.jsx`
 
 ```jsx
 <Calendar
@@ -1411,7 +1410,7 @@ function MedicineForm({
 
 ### AlertList
 
-**Local:** [`src/components/ui/AlertList.jsx`](src/components/ui/AlertList.jsx)
+**Local:** `apps/web/src/shared/components/ui/AlertList.jsx`
 
 ```jsx
 <AlertList
@@ -1429,7 +1428,7 @@ function MedicineForm({
 
 ### LogForm
 
-**Local:** [`src/components/log/LogForm.jsx`](src/components/log/LogForm.jsx)
+**Local:** `apps/web/src/shared/components/log/LogForm.jsx`
 
 ```jsx
 <LogForm

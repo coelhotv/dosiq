@@ -8,6 +8,18 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:smoke": "vitest run --config vitest.smoke.config.js",
+    "test:critical": "vitest run --config vitest.critical.config.js --bail=1",
+    "test:unit": "vitest run --config vitest.config.js",
+    "test:changed": "vitest run --changed HEAD --bail=1",
+    "test:coverage": "vitest run --config vitest.ci.config.js --coverage",
+    "test:components": "vitest run \"src/features/**/components\" \"src/shared/components\"",
+    "test:services": "vitest run \"src/features/**/services\"",
+    "test:fast": "vitest run",
+    "test:lowram": "vitest run --config vitest.lowram.config.js",
+    "validate:quick": "node ../../scripts/run-tests-with-timeout.mjs 300 npx vitest run --changed HEAD --bail=1",
+    "validate:agent": "node ../../scripts/run-tests-with-timeout.mjs 600 npx vitest run --config vitest.critical.config.js --bail=1",
+    "validate:full": "node ../../scripts/run-tests-with-timeout.mjs 900 npx vitest run --config vitest.ci.config.js && npm run build"
   }
 }

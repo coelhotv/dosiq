@@ -7,9 +7,8 @@
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
-> - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes (substitui `.roo/`)
-> - **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
-> - **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
+> - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes
+> - **[`.agent/memory/`](../.agent/memory/)** - Memória canônica DEVFLOW (rules.json, anti-patterns.json, K-NNN)
 > - **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções de código detalhadas
 
 ---
@@ -19,8 +18,8 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 | Documento | Conteúdo | Público |
 |-----------|----------|---------|
 | [`CLAUDE.md`](../CLAUDE.md) | Regras canônicas do projeto, checklist pré/pós-código | Todos os agentes |
-| [`.memory/rules.md`](../.memory/rules.md) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
-| [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
+| [`.agent/memory/rules.json`](../.agent/memory/rules.json) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
+| [`.agent/memory/anti-patterns.json`](../.agent/memory/anti-patterns.json) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
 | [`PADROES_CODIGO.md`](./PADROES_CODIGO.md) | Convenções detalhadas de código | Desenvolvedores |
 | [`standards/MOBILE_PERFORMANCE.md`](./standards/MOBILE_PERFORMANCE.md) | Standards de performance mobile (lazy, code-split, auth cache) | Agentes de performance |
 
@@ -92,7 +91,7 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 
 | Marco | Componente | Descrição |
 |-------|------------|-----------|
-| **F4.6** | Feature Org | `src/features/` + `src/shared/` + path aliases |
+| **F4.6** | Feature Org | `apps/web/src/features/` + `apps/web/src/shared/` + path aliases |
 | **F4.7** | Bot Resilient v3.0 | Sistema de notificações com retry/DLQ/métricas |
 | **F5.6** | ANVISA Base | Database de medicamentos + busca fuzzy |
 | **F5.10** | Cost Analysis | Dashboard de custo de tratamento |
@@ -169,8 +168,8 @@ Responsabilidade: Renderização visual e interação do usuário.
 #### Nova Estrutura (F4.6)
 
 ```
-src/
-├── features/              # 🆕 NOVO: Organização por domínio (F4.6)
+apps/web/src/
+├── features/              # Organização por domínio (F4.6)
 │   ├── adherence/
 │   │   ├── components/    # AdherenceWidget, AdherenceProgress, StreakBadge
 │   │   ├── hooks/         # useAdherenceTrend
@@ -190,13 +189,13 @@ src/
 │       ├── components/    # StockCard, StockForm, StockIndicator
 │       └── services/      # stockService
 │
-├── shared/                # 🆕 NOVO: Recursos compartilhados (F4.6)
+├── shared/                # Recursos compartilhados (F4.6)
 │   ├── components/
 │   │   ├── ui/            # Button, Card, Modal, Loading, AlertList
 │   │   ├── log/           # LogEntry, LogForm
 │   │   ├── gamification/  # BadgeDisplay, MilestoneCelebration
 │   │   ├── onboarding/    # OnboardingWizard, FirstMedicineStep, etc
-│   │   └── pwa/           # 🆕 PushPermission, InstallPrompt (F4.2/F4.3)
+│   │   └── pwa/           # PushPermission, InstallPrompt (F4.2/F4.3)
 │   ├── hooks/             # useCachedQuery, useTheme, usePushSubscription
 │   ├── services/          # cachedServices, analyticsService
 │   ├── constants/         # Schemas Zod (medicine, protocol, stock, log)
@@ -209,7 +208,7 @@ src/
 #### Path Aliases (Vite Config)
 
 ```javascript
-// vite.config.js
+// apps/web/vite.config.js  (__dirname = apps/web/)
 resolve: {
   alias: {
     '@': path.resolve(__dirname, './src'),
@@ -220,6 +219,7 @@ resolve: {
     '@protocols': path.resolve(__dirname, './src/features/protocols'),
     '@stock': path.resolve(__dirname, './src/features/stock'),
     '@adherence': path.resolve(__dirname, './src/features/adherence'),
+    '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
   }
 }
 ```
@@ -257,7 +257,7 @@ src/shared/components/pwa/
 Responsabilidade: Regras de negócio, validação e comunicação com API.
 
 ```
-src/services/
+apps/web/src/services/
 ├── api/
 │   ├── cachedServices.js      # Wrapper SWR
 │   ├── medicineService.js     # CRUD Medicamentos
@@ -280,7 +280,7 @@ Component → Service → Zod Validation → Supabase → PostgreSQL
 ### 2. **Business Logic Layer** (Services) - v2.8.0
 
 ```
-src/shared/services/
+apps/web/src/shared/services/
 ├── cachedServices.js        # Wrappers SWR com invalidação automática
 ├── api/
 │   ├── medicineService.js
@@ -289,10 +289,10 @@ src/shared/services/
 │   ├── logService.js
 │   ├── treatmentPlanService.js
 │   └── index.js
-└── analyticsService.js      # 🆕 Analytics privacy-first (F4.4)
+└── analyticsService.js      # Analytics privacy-first (F4.4)
 
 // Feature-specific services
-src/features/{domain}/services/
+apps/web/src/features/{domain}/services/
 ├── adherenceService.js
 └── ...
 ```
@@ -302,14 +302,14 @@ src/features/{domain}/services/
 Responsabilidade: Abstração de acesso a dados e cache.
 
 ```
-src/shared/utils/
+apps/web/src/shared/utils/
 ├── supabase.js       # Cliente Supabase configurado
 └── queryCache.js     # Implementação SWR
 
-src/shared/hooks/
+apps/web/src/shared/hooks/
 └── useCachedQuery.js # Hook React para cache
 
-src/shared/constants/
+apps/web/src/schemas/
 ├── medicineSchema.js    # Validação Zod
 ├── protocolSchema.js
 ├── stockSchema.js
@@ -480,7 +480,7 @@ public/
 ├── manifest.json          # PWA manifest
 └── icons/                 # Ícones em 8 tamanhos (72x72 a 512x512)
 
-src/shared/components/pwa/
+apps/web/src/shared/components/pwa/
 ├── InstallPrompt.jsx      # Custom install prompt
 ├── PushPermission.jsx     # Permission UI
 └── pwaUtils.js           # Platform detection
@@ -622,13 +622,14 @@ Dashboard
 
 ```
 Testes Unitários (Vitest 4)
-├── src/shared/lib/__tests__/        # Cache SWR
-├── src/shared/constants/__tests__/  # Validação Zod
-├── src/shared/services/__tests__/   # Services
-├── src/features/**/__tests__/       # Feature tests
-└── src/shared/components/**/__tests__/ # Componentes
+├── apps/web/src/shared/lib/__tests__/        # Cache SWR
+├── apps/web/src/schemas/__tests__/           # Validação Zod
+├── apps/web/src/shared/services/__tests__/   # Services
+├── apps/web/src/features/**/__tests__/       # Feature tests
+├── apps/web/src/shared/components/**/__tests__/ # Componentes
+└── server/**/__tests__/                      # Bot/server tests
 
-Cobertura: 539+ testes
+Cobertura: 543+ testes
 ```
 
 ### Test Command Matrix
@@ -719,8 +720,8 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 ### Documentação de Governança
 
 - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas para agentes (fonte da verdade)
-- **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
-- **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
+- **[`.agent/memory/rules.json`](../.agent/memory/rules.json)** - Regras positivas R-NNN (DEVFLOW)
+- **[`.agent/memory/anti-patterns.json`](../.agent/memory/anti-patterns.json)** - Anti-patterns AP-NNN (DEVFLOW)
 - **[`PADROES_CODIGO.md`](./PADROES_CODIGO.md)** - Convenções detalhadas de código
 - **[`standards/MOBILE_PERFORMANCE.md`](./standards/MOBILE_PERFORMANCE.md)** - Standards de performance mobile
 
@@ -745,4 +746,4 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 
 ---
 
-*Última atualização: 02/04/2026 — v4.0.0: refactor de estoque/purchases, rollout redesign-first, integração ANVISA (`regulatory_category`) e paridade do Telegram com RPCs transacionais.*
+*Última atualização: 19/04/2026 — v4.0.0 + Fase 7 (monorepo): web app movido para `apps/web/`, paths atualizados, workspaces npm configurados. Histórico anterior: refactor de estoque/purchases, redesign, ANVISA, Telegram RPCs.*
