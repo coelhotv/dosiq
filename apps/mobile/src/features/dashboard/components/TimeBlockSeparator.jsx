@@ -1,3 +1,5 @@
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { Moon, Sun, CloudSun } from 'lucide-react-native'
 
 /**
