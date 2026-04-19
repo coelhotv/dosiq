@@ -240,8 +240,23 @@ export default async function handler(req, res) {
       try {
         const payload = buildNotificationPayload({ kind, data });
         const channels = await resolveChannelsForUser({ userId, repositories: { preferences: preferencesRepo, devices: devicesRepo } });
+        
+        logger.info('[notificationDispatcher] Canais resolvidos', { 
+          userId, 
+          kind, 
+          channels, 
+          correlationId: context?.correlationId 
+        });
 
-        return await dispatchNotification({
+        if (channels.length === 0) {
+          logger.warn('[notificationDispatcher] Nenhum canal disponível para este usuário', { 
+            userId, 
+            kind,
+            correlationId: context?.correlationId 
+          });
+        }
+
+        const result = await dispatchNotification({
           userId,
           kind,
           payload,
@@ -251,6 +266,17 @@ export default async function handler(req, res) {
           bot,
           expoClient
         });
+
+        logger.info('[notificationDispatcher] Resultado do envio', { 
+          userId, 
+          kind, 
+          success: result.success,
+          totalDelivered: result.totalDelivered,
+          totalFailed: result.totalFailed,
+          correlationId: context?.correlationId 
+        });
+
+        return result;
       } catch (error) {
         logger.error('[notificationDispatcher] Erro ao enviar notificação', error, { userId, kind, correlationId: context?.correlationId });
         return { success: false, channels: [], totalDelivered: 0, totalFailed: 1, deactivatedTokens: [], errors: [{ message: error.message }] };
