@@ -103,7 +103,7 @@ docs/                # Documentacao do projeto
 
 ## Path Aliases (apps/web/vite.config.js)
 
-Aliases definidos em `apps/web/vite.config.js` — resolvem relativos a `apps/web/`:
+Aliases definidos em `apps/web/vite.config.js` — os caminhos abaixo são relativos à raiz do monorepo:
 
 ```
 @           -> apps/web/src/
