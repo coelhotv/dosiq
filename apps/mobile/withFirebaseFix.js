@@ -28,27 +28,7 @@ const withFirebaseFix = (config) => {
     return config;
   });
 
-  // 2. Garante que o useModularHeaders: true e use_modular_headers! fiquem no Podfile
-  // já que o expo-build-properties pode estar falhando
-  config = withDangerousMod(config, [
-    'ios',
-    async (config) => {
-      const podfilePath = path.join(config.modRequest.platformProjectRoot, 'Podfile');
-      
-      if (fs.existsSync(podfilePath)) {
-        let contents = await fs.promises.readFile(podfilePath, 'utf-8');
-        
-        if (!contents.includes('use_modular_headers!')) {
-          contents = contents.replace(
-            /(prepare_react_native_project!)/,
-            `$1\n\nuse_modular_headers!\n`
-          );
-          await fs.promises.writeFile(podfilePath, contents);
-        }
-      }
-      return config;
-    },
-  ]);
+  // Removido o bloco que injeta use_modular_headers! pois conflita com Hermes e RN 0.76+
 
   return config;
 };
