@@ -1,13 +1,13 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, XCircle } from 'lucide-react-native'
 
 /**
  * DoseTimelineCard - Item de dose para a Timeline (Epic 2)
  * @param {Object} props
  * @param {Object} props.dose - Objeto de dose com timelineStatus
+ * @param {Function} props.onRegister - Handler para registrar dose
  */
-export default function DoseTimelineCard({ dose }) {
+export default function DoseTimelineCard({ dose, onRegister }) {
   const { timelineStatus, scheduledTime, medicine, protocol } = dose
   const isTaken = timelineStatus === 'TOMADA'
   const isMissed = timelineStatus === 'PERDIDA'
@@ -44,7 +44,17 @@ export default function DoseTimelineCard({ dose }) {
       </View>
 
       <View style={styles.statusAction}>
-        {getStatusIcon()}
+        {(isAtrasada || isProxima) ? (
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => onRegister && onRegister(protocol, scheduledTime)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionButtonText}>Tomar</Text>
+          </TouchableOpacity>
+        ) : (
+          getStatusIcon()
+        )}
       </View>
     </View>
   )
@@ -98,9 +108,20 @@ const styles = StyleSheet.create({
     color: '#74777f',
   },
   statusAction: {
-    width: 40,
+    width: 70, // Maior para caber o botão
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionButton: {
+    backgroundColor: '#006a5e',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   radioOutline: {
     width: 20,

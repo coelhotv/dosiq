@@ -1,5 +1,4 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { Moon, Sun, CloudSun } from 'lucide-react-native'
 
 /**
  * TimeBlockSeparator - Divisor de turnos para a Timeline (Epic 2)
@@ -7,13 +6,13 @@ import { View, Text, StyleSheet } from 'react-native'
  * @param {'Manhã'|'Tarde'|'Noite'|'Madrugada'} type - Turno do dia
  */
 export default function TimeBlockSeparator({ type = 'Manhã' }) {
-  const getIcon = (t) => {
+  const renderIcon = (t) => {
     switch (t) {
-      case 'Madrugada': return '🌙'
-      case 'Manhã': return '☀️'
-      case 'Tarde': return '🌤️'
-      case 'Noite': return '🌙'
-      default: return '📅'
+      case 'Madrugada': return <Moon size={18} color="#74777f" />
+      case 'Manhã': return <Sun size={18} color="#f9a825" />
+      case 'Tarde': return <CloudSun size={18} color="#fb8c00" />
+      case 'Noite': return <Moon size={18} color="#3f51b5" />
+      default: return <Sun size={18} color="#74777f" />
     }
   }
 
@@ -22,7 +21,7 @@ export default function TimeBlockSeparator({ type = 'Manhã' }) {
       {/* Linha vertical superior (opcional, depende da posição na lista) */}
       <View style={styles.timelineRow}>
         <View style={styles.dotContainer}>
-          <Text style={styles.icon}>{getIcon(type)}</Text>
+          {renderIcon(type)}
         </View>
         <Text style={styles.text}>{type}</Text>
       </View>

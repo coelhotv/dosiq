@@ -1,9 +1,9 @@
-import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { TrendingUp } from 'lucide-react-native'
 import AdherenceRing from './AdherenceRing'
 
 /**
- * AdherenceDayCard - Card de status diário para o Dashboard (Epic 2)
+ * AdherenceDayCard - Card de status diário/semanal para o Dashboard (Epic 2)
  * @param {Object} props
  * @param {number} props.score - Percentual de adesão 0-100
  * @param {string} props.trend - Ex: "10% acima da média"
@@ -20,12 +20,12 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
     <View style={styles.card}>
       <View style={styles.content}>
         <View style={styles.left}>
-          <Text style={styles.title}>Adesão Diária</Text>
+          <Text style={styles.title}>Adesão (Últimos 7 dias)</Text>
           <Text style={styles.description}>{getMotivationalText(score)}</Text>
           
           {trend ? (
             <View style={styles.trendContainer}>
-              <Text style={styles.trendIcon}>📈</Text>
+              <TrendingUp size={16} color="#006a5e" style={styles.trendIcon} />
               <Text style={styles.trendText}>{trend}</Text>
             </View>
           ) : null}
@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   trendIcon: {
-    fontSize: 14,
     marginRight: 4,
   },
   trendText: {

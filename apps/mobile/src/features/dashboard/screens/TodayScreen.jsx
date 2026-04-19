@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ScrollView, View, Text, RefreshControl, StyleSheet } from 'react-native'
+import { Pill } from 'lucide-react-native'
 import { useTodayData } from '../hooks/useTodayData'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
@@ -26,7 +27,6 @@ export default function TodayScreen() {
   const protocols = data?.protocols ?? []
   const medicines = data?.medicines ?? {}
   const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
-  const zones = data?.zones ?? { late: [], now: [], upcoming: [], done: [] }
   const timeline = data?.timeline ?? []
   const stockAlerts = data?.stockAlerts ?? []
 
@@ -40,10 +40,15 @@ export default function TodayScreen() {
 
   const shifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite'].filter(s => groupedTimeline[s])
 
-  // Doses prioritárias (Hero): Categorias PROXIMA e ATRASADA do evaluateDoseTimelineState
+  // Doses prioritárias (Hero)
   const priorityDoses = timeline
     .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
     .slice(0, 3)
+
+  // Dados do Cabeçalho (Personalização H8.7)
+  const userName = data?.user?.name || data?.user?.email?.split('@')[0] || 'Usuário'
+  const todayFormatted = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const greeting = `Olá, ${userName}`
 
   function handleOpenRegister(protocol, scheduledTime) {
     setModalProtocol(protocol)
@@ -70,6 +75,11 @@ export default function TodayScreen() {
           />
         }
       >
+        <View style={styles.header}>
+          <Text style={styles.greeting}>{greeting}</Text>
+          <Text style={styles.date}>{todayFormatted}</Text>
+        </View>
+
         <AdherenceDayCard 
           score={stats.score} 
           trend="Dados sincronizados" // Placeholder por enquanto
@@ -90,7 +100,7 @@ export default function TodayScreen() {
 
         {protocols.length === 0 ? (
           <EmptyState
-            icon="💊"
+            icon={<Pill size={48} color="#006a5e" />}
             message={'Sem tratamentos activos.\nAdicione protocolos na versão web.'}
           />
         ) : (
@@ -101,6 +111,7 @@ export default function TodayScreen() {
                 <DoseTimelineCard 
                   key={`${dose.id}-${idx}`} 
                   dose={dose} 
+                  onRegister={handleOpenRegister}
                 />
               ))}
             </View>
@@ -127,6 +138,23 @@ const styles = StyleSheet.create({
   scroll: {
     paddingVertical: 10,
     paddingBottom: 40,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1a1c1e',
+    letterSpacing: -0.5,
+  },
+  date: {
+    fontSize: 16,
+    color: '#74777f',
+    textTransform: 'capitalize',
+    marginTop: 4,
   },
   agendaHeader: {
     paddingHorizontal: 16,
