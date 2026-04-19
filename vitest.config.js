@@ -55,7 +55,7 @@ export default defineConfig({
     teardownTimeout: 5000,
 
     // Incluir TODOS os testes (incluindo components/ e features/)
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{js,jsx}', 'server/**/*.test.{js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
