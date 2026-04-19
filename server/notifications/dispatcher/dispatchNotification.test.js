@@ -14,7 +14,7 @@ const mockPayload = {
 const makeContext = () => ({ correlationId: 'test-corr-123' })
 
 const mockBot = { sendMessage: vi.fn() }
-const mockExpoClient = { send: vi.fn() }
+const mockExpoClient = { sendPushNotificationsAsync: vi.fn() }
 const mockRepositories = {
   preferences: { getByUserId: vi.fn(), hasTelegramChat: vi.fn() },
   devices: { listActiveByUser: vi.fn(), deactivateByToken: vi.fn() },
@@ -41,7 +41,7 @@ describe('dispatchNotification', () => {
   // Caso 1: both com Telegram OK + push OK → ambos entregues
   it('caso 1: both — Telegram e push entregues', async () => {
     mockBot.sendMessage.mockResolvedValue({ message_id: 1 })
-    mockExpoClient.send.mockResolvedValue([{ status: 'ok' }])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
     mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[abc]' }])
 
     const result = await dispatchNotification({
@@ -63,7 +63,7 @@ describe('dispatchNotification', () => {
   // Caso 2: both com push falhando → Telegram entrega, push falha sem cancelar Telegram
   it('caso 2: both — Telegram entregue, push falha isoladamente', async () => {
     mockBot.sendMessage.mockResolvedValue({ message_id: 2 })
-    mockExpoClient.send.mockRejectedValue(new Error('Expo service unavailable'))
+    mockExpoClient.sendPushNotificationsAsync.mockRejectedValue(new Error('Expo service unavailable'))
     mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[def]' }])
 
     const result = await dispatchNotification({
@@ -89,7 +89,7 @@ describe('dispatchNotification', () => {
   it('caso 3: DeviceNotRegistered desativa o token', async () => {
     mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[bad]' }])
     mockRepositories.devices.deactivateByToken.mockResolvedValue()
-    mockExpoClient.send.mockResolvedValue([
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([
       { status: 'error', message: 'DeviceNotRegistered', details: { error: 'DeviceNotRegistered' } },
     ])
 
@@ -125,7 +125,7 @@ describe('dispatchNotification', () => {
     expect(result.totalDelivered).toBe(0)
     expect(result.totalFailed).toBe(0)
     expect(mockBot.sendMessage).not.toHaveBeenCalled()
-    expect(mockExpoClient.send).not.toHaveBeenCalled()
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
   })
 
   // Caso 5: usuário sem devices push → attempted 0
@@ -145,6 +145,6 @@ describe('dispatchNotification', () => {
 
     expect(result.channels[0].attempted).toBe(0)
     expect(result.totalDelivered).toBe(0)
-    expect(mockExpoClient.send).not.toHaveBeenCalled()
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
   })
 })
