@@ -5,8 +5,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { dispatchNotification } from './dispatchNotification.js'
 
 const mockPayload = {
-  title: '💊 Lembrete de Medicamento',
-  body: 'Olá! Está na hora de tomar Medicamento Teste conforme agendado.',
+  title: '💊 Lembrete de nova dose',
+  body: 'Está na hora de tomar 1x de Medicamento Teste. Não deixe para depois!',
   deeplink: 'meusremedios://today?protocolId=prot-123',
   metadata: { protocolId: 'prot-123' }
 }
