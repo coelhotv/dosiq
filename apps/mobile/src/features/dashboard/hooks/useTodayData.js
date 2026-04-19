@@ -5,13 +5,14 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate } from '@meus-remedios/core'
+import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState } from '@meus-remedios/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
   getActiveProtocols,
-  getTodayLogs,
+  getLogsForPeriod,
   getMedicinesData,
+  getUserSettings,
 } from '../services/dashboardService'
 
 const TODAY_CACHE_KEY = '@meus-remedios/today-snapshot'
@@ -23,6 +24,7 @@ const TODAY_CACHE_KEY = '@meus-remedios/today-snapshot'
  *   medicines: Record<string,Object>,
  *   stats: Object,
  *   zones: Object,
+ *   user: Object|null,
  *   capturedAt?: string
  * }} TodayData
  * @returns {{ data: TodayData|null, loading: boolean, error: string|null, stale: boolean, isDaySegregated: boolean, refresh: Function }}
@@ -57,9 +59,10 @@ export function useTodayData() {
       const today = getTodayLocal()
       
       // Fetch online (primary)
-      const [protocols, logs] = await Promise.all([
+      const [protocols, logs, userSettings] = await Promise.all([
         getActiveProtocols(user.id),
-        getTodayLogs(user.id, today)
+        getLogsForPeriod(user.id, 7), // 7 dias de logs para adesão diluída
+        getUserSettings(user.id)
       ])
 
       const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
@@ -74,6 +77,11 @@ export function useTodayData() {
         protocols: enrichedProtocols, 
         logs, 
         medicines,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: userSettings?.display_name || null
+        },
         capturedAt: new Date().toISOString(),
         localDay: today // R-114 fix: save explicit local day string
       }
@@ -117,6 +125,7 @@ export function useTodayData() {
               protocols: Array.isArray(parsed.protocols) ? parsed.protocols : [],
               logs: Array.isArray(parsed.logs) ? parsed.logs : [],
               medicines: parsed.medicines || {},
+              user: parsed.user || null,
               capturedAt: parsed.capturedAt
             }
 
@@ -148,28 +157,36 @@ export function useTodayData() {
 
     const todayStr = getTodayLocal()
     
-    // 1. Classificar doses em zonas para o Dashboard (Splitting)
-    // Conforme Spec H5.7.5: late, now, upcoming, done
+    // 1. Filtrar logs de hoje para a Timeline
+    const todayLogs = data.logs.filter(l => {
+      const logDate = new Date(l.taken_at)
+      const lYear = logDate.getFullYear()
+      const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
+      const lDay = String(logDate.getDate()).padStart(2, '0')
+      return `${lYear}-${lMonth}-${lDay}` === todayStr
+    })
+
+    // 2. Classificar doses em zonas para o Dashboard
     const { takenDoses, missedDoses, scheduledDoses } = calculateDosesByDate(
       todayStr,
-      data.logs,
+      todayLogs,
       data.protocols
     )
 
-    // 2. Calcular estatísticas de adesão (Hoje)
-    // Para o Dashboard diário, garantimos que os números batam com a UI visível
+    // 3. Calcular estatísticas de adesão (Últimos 7 dias - Diluído conforme feedback H8.7)
+    const { score, expected, taken } = calculateAdherenceStats(
+      data.logs,
+      data.protocols,
+      7
+    )
+
     const stats = {
-      expected: missedDoses.length + scheduledDoses.length + takenDoses.length,
-      taken: takenDoses.length,
-      score: 0
-    }
-    
-    // Score diário simples: (tomadas / esperadas) * 100
-    if (stats.expected > 0) {
-      stats.score = (stats.taken / stats.expected) * 100
+      expected,
+      taken,
+      score
     }
 
-    // 1.5 Ordenar listas cronologicamente (00:00 -> 23:59)
+    // Ordenar listas cronologicamente (00:00 -> 23:59)
     const sortByTime = (a, b) => {
       const timeA = a.scheduledTime || (a.taken_at ? new Date(a.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
       const timeB = b.scheduledTime || (b.taken_at ? new Date(b.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
@@ -190,7 +207,14 @@ export function useTodayData() {
       done: takenDoses.sort(sortByTime)
     }
 
-    // 3. Calcular alertas de estoque
+    // 4. Nova Timeline Tática (Epic 2 Fase 8)
+    const timeline = evaluateDoseTimelineState(todayStr, {
+      takenDoses,
+      missedDoses,
+      scheduledDoses
+    })
+
+    // 5. Calcular alertas de estoque
     const stockAlerts = Object.values(data.medicines || {})
       .filter(m => {
         const daysRemaining = m.daysRemaining ?? Infinity
@@ -206,6 +230,7 @@ export function useTodayData() {
       ...data,
       stats,
       zones,
+      timeline,
       stockAlerts
     }
   }, [data])

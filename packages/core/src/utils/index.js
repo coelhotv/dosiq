@@ -15,6 +15,7 @@ export {
   getYesterdayLocal,
   addDays,
   daysDifference,
+  getPeriodFromTime,
 } from './dateUtils.js'
 
 // Adherence logic and calculations
@@ -29,6 +30,7 @@ export {
   calculateDailyIntake,
   calculateDaysRemaining,
   calculateDosesByDate,
+  evaluateDoseTimelineState,
 } from './adherenceLogic.js'
 
 // Form utilities

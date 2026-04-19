@@ -101,3 +101,16 @@ export function daysDifference(date1, date2) {
   const diffTime = d2.getTime() - d1.getTime()
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
+/**
+ * Retorna o nome do período/turno baseado no horário HH:mm
+ * @param {string} timeStr - Horário no formato HH:mm
+ * @returns {'Madrugada'|'Manhã'|'Tarde'|'Noite'}
+ */
+export function getPeriodFromTime(timeStr) {
+  if (!timeStr) return 'Manhã'
+  const [h] = timeStr.split(':').map(Number)
+  if (h >= 5 && h < 12) return 'Manhã'
+  if (h >= 12 && h < 18) return 'Tarde'
+  if (h >= 18 && h <= 23) return 'Noite'
+  return 'Madrugada'
+}
