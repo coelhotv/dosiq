@@ -31,16 +31,19 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
     outputRange: [circumference, 0],
   })
 
-  // Interpolação de cor baseada no score (Thresholds H5.7.3 / R-129)
+  // Interpolação de cor baseada no score (5 escalas pastéis)
   const strokeColor = animatedValue.interpolate({
-    inputRange: [0, 69, 70, 89, 90, 100],
+    inputRange: [0, 1, 49, 50, 69, 70, 89, 90, 100],
     outputRange: [
-      colors.status.error,    // < 70% (Risco)
-      colors.status.error,
-      '#f59e0b',              // 70-89% (Alerta/Médio)
-      '#f59e0b',
-      colors.primary[500],    // >= 90% (Excelente)
-      colors.primary[500],
+      colors.neutral[300], // 0% (Cinza)
+      '#ef9a9a',           // 1-49% (Vermelho Pastel)
+      '#ef9a9a',
+      '#ffd54f',           // 50-69% (Amarelo Pastel)
+      '#ffd54f',
+      '#64b5f6',           // 70-89% (Azul Pastel)
+      '#64b5f6',
+      colors.status.success, // > 90% (Verde Suave)
+      colors.status.success,
     ],
   })
 
