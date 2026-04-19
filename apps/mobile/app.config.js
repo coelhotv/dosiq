@@ -51,7 +51,7 @@ module.exports = {
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#005db6',
+      backgroundColor: '#E9F3EA',
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
