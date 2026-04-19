@@ -136,7 +136,7 @@ export default function LogForm({
           protocol_id: formData.protocol_id,
           medicine_id: protocol.medicine_id,
           quantity_taken: formData.quantity_taken
-            ? parseFloat(formData.quantity_taken)
+            ? parseFloat(String(formData.quantity_taken).replace(',', '.'))
             : protocol.dosage_per_intake,
           taken_at: new Date(formData.taken_at).toISOString(),
           notes: formData.notes.trim() || null,
@@ -270,7 +270,9 @@ export default function LogForm({
           <div className="form-group">
             <label htmlFor="quantity_taken">Quantidade Tomada</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
               id="quantity_taken"
               name="quantity_taken"
               value={
@@ -278,8 +280,6 @@ export default function LogForm({
                 (selectedProtocol ? selectedProtocol.dosage_per_intake : '')
               }
               onChange={handleChange}
-              step="0.1"
-              min="0.1"
               required
             />
           </div>
