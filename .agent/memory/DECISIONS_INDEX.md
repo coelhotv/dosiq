@@ -35,6 +35,7 @@
 - **[ADR-028]** StyleSheet + AsyncStorage no MVP (Fase 4-5) -> [`decisions/mobile_and_platform/ADR-028.md`](./decisions/mobile_and_platform/ADR-028.md)
 - **[ADR-029]** Dispatcher Multicanal de Notificações -> [`decisions/mobile_and_platform/ADR-029.md`](./decisions/mobile_and_platform/ADR-029.md)
 - **[ADR-030]** Feature Flag USE_NOTIFICATION_DISPATCHER para Rollback -> [`decisions/mobile_and_platform/ADR-030.md`](./decisions/mobile_and_platform/ADR-030.md)
+- **[ADR-031]** Usar user_settings (public schema) em Jobs Serverless — não auth.users -> [`decisions/mobile_and_platform/ADR-031.md`](./decisions/mobile_and_platform/ADR-031.md)
 
 ## ⚛️ React & Ui (`react_and_ui`)
 - **[ADR-024]** Lucide-React Icons Always Paired with Text Labels -> [`decisions/react_and_ui/ADR-024.md`](./decisions/react_and_ui/ADR-024.md)
