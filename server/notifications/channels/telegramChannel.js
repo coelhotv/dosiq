@@ -51,11 +51,33 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
   }
 
   const message = formatMessage(payload)
+  const isDoseReminder = payload.title?.includes('remedia') || payload.deeplink?.includes('protocolId')
+
+  // P1: Re-ativa os botões interativos (Sprint 6.4)
+  const options = { parse_mode: 'MarkdownV2' }
+  
+  if (isDoseReminder && payload.metadata?.protocolId) {
+    const { protocolId, dosage } = payload.metadata
+    options.reply_markup = {
+      inline_keyboard: [
+        [
+          { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage || 1}` },
+          { text: '⏰ Adiar', callback_data: `snooze_:${protocolId}` },
+          { text: '⏭️ Pular', callback_data: `skip_:${protocolId}` }
+        ]
+      ]
+    }
+  }
 
   try {
-    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' })
+    await bot.sendMessage(chatId, message, options)
 
-    console.info('[telegramChannel] entregue', { correlationId, userId, chatId })
+    console.info('[telegramChannel] entregue', { 
+      correlationId, 
+      userId, 
+      chatId,
+      withButtons: !!options.reply_markup 
+    })
 
     return {
       channel: 'telegram',
