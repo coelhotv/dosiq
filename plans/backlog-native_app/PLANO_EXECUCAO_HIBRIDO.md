@@ -271,12 +271,12 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 **PRs:** 4-5 (migrations+dispatcher; mobile push integration; job migration; beta build)
 
 **Gates:**
-- [ ] Telegram continua funcionando
+- [x] Telegram continua funcionando
 - [ ] Push nativo funciona em iOS (device real — humano)
-- [ ] Push nativo funciona em Android (device real — humano)
-- [ ] Tap em notificacao leva para rota segura
-- [ ] Flag de rollback testada
-- [ ] Beta interno distribuido
+- [x] Push nativo funciona em Android (device real — humano)
+- [x] Tap em notificacao leva para rota segura
+- [x] Flag de rollback testada
+- [x] Beta interno distribuido
 
 **Bloqueio humano:** APNs/FCM config, migracao SQL, teste em device real, TestFlight upload
 
