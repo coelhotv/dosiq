@@ -10,11 +10,13 @@ import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/t
  * @param {string} props.trend - Ex: "10% acima da média"
  */
 export default function AdherenceDayCard({ score = 0, trend = '' }) {
-  // Copy dinâmico baseado no score (Thresholds R-129)
+  // Copy dinâmico baseado no score (Thresholds R-156)
   const getMotivationalText = (s) => {
-    if (s >= 90) return 'Você está indo muito bem hoje!'
-    if (s >= 70) return 'Algumas doses perdidas. Dá para recuperar!'
-    return 'Tratamento em risco. Vamos retomar?'
+    if (s === 0) return 'Comece hoje mesmo seu tratamento'
+    if (s >= 90) return 'Tratamento em dia. Continue assim!'
+    if (s >= 70) return 'Algumas doses perdidas. Está quase lá!'
+    if (s >= 50) return 'Tratamento em risco. Você consegue!'
+    return 'Muitas doses perdidas. Vamos retomar?'
   }
 
   return (
