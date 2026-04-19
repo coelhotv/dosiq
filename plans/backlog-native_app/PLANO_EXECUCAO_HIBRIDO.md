@@ -308,8 +308,8 @@ Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (c
 Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
 Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
 Semana 10-13  ─── H5 (MVP Produto)                         ✅ COMPLETA (PR #474)
-Semana 14-17  ─── H6 (Push + Beta)                         🏗️ Em execução
-Semana 18+    ─── H7 (condicional)
+Semana 14-17  ─── H6 (Push + Beta)                         ✅ COMPLETA (PR #479)
+Semana 18+    ─── H7 (condicional)                         ✅ COMPLETA (PR #480)
 ```
 
 **Total estimado:** 4-5 meses (H0-H6), sem contar bloqueios humanos.
