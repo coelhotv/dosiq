@@ -33,7 +33,7 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   let tickets
   try {
-    tickets = await expoClient.send(messages)
+    tickets = await expoClient.sendPushNotificationsAsync(messages)
   } catch (error) {
     console.error('[expoPushChannel] falha ao enviar para Expo', { correlationId, userId, error: error.message })
     return {
