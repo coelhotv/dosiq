@@ -1,636 +1,477 @@
 # 🗄️ Esquema do Banco de Dados
 
-O banco de dados do **Meus Remédios** é hospedado no Supabase (PostgreSQL) e utiliza Row-Level Security (RLS) para garantir a privacidade dos dados de cada usuário.
+O banco de dados do **Meus Remédios** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
 
-> **Última atualização**: 2026-04-02
-> **Fonte**: Exportação real do Supabase (produção) + migration `20260402_stock_purchases_refactor.sql`
+> **Última atualização**: 2026-04-19
+> **Fonte**: exportação real do schema atual do Supabase (DDL colado manualmente)
+> **Escopo desta documentação**: tabelas, colunas, FKs e `CHECK constraints` presentes no DDL. Índices, triggers, políticas RLS, views e funções não foram incluídos porque não aparecem no SQL de origem desta revisão.
 
-## Diagrama de Tabelas
+## Visão Geral
+
+### Schema `auth`
+
+- `auth.users`: tabela padrão do Supabase para autenticação. Todas as referências `user_id` apontam para `auth.users(id)` quando a FK existe.
+
+### Schema `public`
 
 ```mermaid
 erDiagram
-    users ||--o{ medicines : "cadastra"
-    users ||--o{ purchases : "compra"
-    users ||--o{ protocols : "configura"
-    users ||--o{ stock : "possui"
-    users ||--o{ stock_adjustments : "ajusta"
-    users ||--o{ stock_consumptions : "consome"
-    users ||--o{ medicine_logs : "registra"
-    users ||--o{ treatment_plans : "organiza"
-    users ||--|| user_settings : "define"
-    users ||--o{ notification_log : "recebe"
-    users ||--o{ failed_notification_queue : "falhas"
-    users ||--o{ gemini_reviews : "revisões"
-    users ||--o{ push_subscriptions : "assinaturas"
-    users ||--o{ push_notification_logs : "logs push"
-    users ||--o{ bot_sessions : "sessões bot"
+    auth_users ||--|| user_settings : "possui"
+    auth_users ||--o{ bot_sessions : "abre"
+    auth_users ||--o{ failed_notification_queue : "acumula"
+    auth_users ||--o{ gemini_reviews : "cria"
+    auth_users ||--o{ gemini_reviews : "resolve"
+    auth_users ||--o{ notification_devices : "registra"
+    auth_users ||--o{ notification_log : "recebe"
+    auth_users ||--o{ purchases : "realiza"
+    auth_users ||--o{ push_subscriptions : "assina"
+    auth_users ||--o{ push_notification_logs : "recebe"
+    auth_users ||--o{ stock_adjustments : "executa"
+    auth_users ||--o{ stock_consumptions : "consome"
+    auth_users ||--o{ treatment_plans : "organiza"
 
-    medicines ||--o{ protocols : "usado em"
-    medicines ||--o{ purchases : "tem compras"
-    medicines ||--o{ stock : "tem estoque"
-    medicines ||--o{ stock_adjustments : "tem ajustes"
-    medicines ||--o{ stock_consumptions : "tem consumos"
-    medicines ||--o{ medicine_logs : "logado como"
+    medicines ||--o{ protocols : "base de"
+    medicines ||--o{ purchases : "comprado em"
+    medicines ||--o{ stock : "gera lotes"
+    medicines ||--o{ medicine_logs : "registrado em"
+    medicines ||--o{ stock_adjustments : "ajustado em"
+    medicines ||--o{ stock_consumptions : "consumido em"
 
     treatment_plans ||--o{ protocols : "agrupa"
-    protocols ||--o{ medicine_logs : "gera logs"
-    medicine_logs ||--o{ stock_consumptions : "consome lotes"
-    purchases ||--o{ stock : "origina lotes"
-    protocols ||--o{ notification_log : "gera notificações"
-    protocols ||--o{ failed_notification_queue : "falhas de notificação"
+    protocols ||--o{ medicine_logs : "gera"
+    protocols ||--o{ notification_log : "notifica"
+    protocols ||--o{ failed_notification_queue : "falha"
 
-    push_subscriptions ||--o{ push_notification_logs : "gera logs"
+    purchases ||--o{ stock : "origina"
+    stock ||--o{ stock_consumptions : "baixa"
+    stock ||--o{ stock_adjustments : "ajusta"
+    medicine_logs ||--o{ stock_consumptions : "consome"
+    push_subscriptions ||--o{ push_notification_logs : "loga"
 ```
 
----
+## Resumo por Domínio
 
-## Tabelas do Sistema de Notificações (v3.0.0)
+| Domínio | Tabelas |
+|--------|---------|
+| Usuário e preferências | `user_settings`, `bot_sessions` |
+| Catálogo e tratamento | `medicines`, `treatment_plans`, `protocols`, `medicine_logs` |
+| Compras e estoque | `purchases`, `stock`, `stock_adjustments`, `stock_consumptions` |
+| Notificações | `notification_devices`, `notification_log`, `failed_notification_queue`, `push_subscriptions`, `push_notification_logs` |
+| Revisão de código | `gemini_reviews`, `gemini_reviews_backup_20260222` |
 
-### `notification_log`
+## Tabelas
 
-Tabela principal para rastrear todas as notificações enviadas.
+### `user_settings`
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único do registro |
-| `user_id` | uuid (FK) | Usuário destinatário |
-| `protocol_id` | uuid (FK) | Protocolo relacionado |
-| `notification_type` | text | Tipo: 'dose_reminder', 'soft_reminder', 'stock_alert', 'daily_digest', etc. |
-| `sent_at` | timestamptz | Data/hora do envio |
-| `created_at` | timestamptz | Data de criação do registro |
-| `status` | varchar (default: 'enviada') | Status: 'pendente', 'enviada', 'falhou', 'entregue' |
-| `telegram_message_id` | bigint | ID da mensagem no Telegram |
-| `mensagem_erro` | text | Mensagem de erro (se falhou) |
+Preferências globais do usuário, onboarding, vínculo com Telegram e metadados pessoais.
 
-**Check Constraint:**
-```sql
-CHECK (status::text = ANY (ARRAY['pendente'::character varying, 'enviada'::character varying, 'falhou'::character varying, 'entregue'::character varying]::text[]))
-```
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `uuid_generate_v4()` |
+| `user_id` | uuid | `NOT NULL`, `UNIQUE` |
+| `telegram_chat_id` | text | Nullable |
+| `created_at` | timestamptz | default `now()` |
+| `updated_at` | timestamptz | default `now()` |
+| `timezone` | text | default `'America/Sao_Paulo'` |
+| `verification_token` | text | Nullable |
+| `onboarding_completed` | boolean | default `false` |
+| `emergency_card` | jsonb | Nullable |
+| `display_name` | text | Nullable |
+| `birth_date` | date | Nullable |
+| `city` | text | Nullable |
+| `state` | text | Nullable |
+| `notification_preference` | text | default `'telegram'`; `telegram`, `mobile_push`, `both`, `none` |
 
-**Índices:**
-- `idx_notif_log_user`: Para buscas por usuário
-- `idx_notif_log_protocol`: Para buscas por protocolo
-- `idx_notif_log_status`: Para filtrar por status
-- `idx_notif_log_sent_at`: Para buscar notificações recentes
-
----
-
-### `failed_notification_queue` (Dead Letter Queue)
-
-Tabela para notificações que falharam após todas as tentativas de retry.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Usuário destinatário |
-| `protocol_id` | uuid (FK) | Protocolo relacionado (nullable) |
-| `correlation_id` | uuid | ID de correlação para rastreamento |
-| `notification_type` | varchar(50) | Tipo da notificação |
-| `notification_payload` | jsonb | Dados completos da notificação |
-| `error_code` | varchar(50) | Código do erro |
-| `error_message` | text | Mensagem de erro |
-| `error_category` | varchar(50) | Categoria: 'network_error', 'rate_limit', 'invalid_chat', 'telegram_api_error', 'unknown' (default) |
-| `retry_count` | integer | Tentativas realizadas (default: 0) |
-| `max_retries` | integer | Máximo de tentativas (default: 3) |
-| `status` | varchar(20) | Status: 'failed' (default), 'pending', 'retrying', 'resolved', 'discarded' |
-| `resolution_notes` | text | Notas de resolução (quando resolvido) |
-| `created_at` | timestamptz | Data de criação |
-| `updated_at` | timestamptz | Data de atualização |
-| `resolved_at` | timestamptz | Data de resolução |
-
-**Check Constraint:**
-```sql
-CHECK (status::text = ANY (ARRAY['failed'::character varying, 'pending'::character varying, 'retrying'::character varying, 'resolved'::character varying, 'discarded'::character varying]::text[]))
-```
-
-**Índices:**
-- `idx_failed_notif_user`: Por usuário
-- `idx_failed_notif_status`: Por status (apenas failed/pending)
-- `idx_failed_notif_correlation`: Por correlation ID
-- `idx_failed_notif_created_at`: Por data de criação
-- `idx_failed_notif_unique_pending`: Único por (user, protocolo, tipo) quando pending
-
-**Políticas RLS:**
-- Usuários veem apenas suas próprias notificações falhas
-- Service role pode gerenciar tudo
-
----
-
-### `push_subscriptions`
-
-Assinaturas de notificações push para o PWA.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Usuário |
-| `endpoint` | text (NOT NULL) | Endpoint do serviço push |
-| `keys_p256dh` | text (NOT NULL) | Chave pública |
-| `keys_auth` | text (NOT NULL) | Chave de autenticação |
-| `device_info` | jsonb (default: '{}') | Informações do dispositivo |
-| `created_at` | timestamptz | Data de criação |
-| `updated_at` | timestamptz | Data de atualização |
-
----
-
-### `push_notification_logs`
-
-Logs de notificações push enviadas.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK) | Usuário destinatário |
-| `subscription_id` | uuid (FK) | Assinatura push |
-| `notification_type` | text (NOT NULL) | Tipo da notificação |
-| `title` | text (NOT NULL) | Título da notificação |
-| `body` | text (NOT NULL) | Corpo da notificação |
-| `sent_at` | timestamptz (default: now()) | Data de envio |
-| `delivered` | boolean (default: false) | Se foi entregue |
-| `error_message` | text | Mensagem de erro |
+**Observação:** no DDL colado, `user_settings` não explicita FK para `auth.users(id)`, embora `user_id` seja tratado pela aplicação como referência ao usuário autenticado.
 
 ---
 
 ### `bot_sessions`
 
-Sessões conversacionais do bot Telegram com TTL (Time To Live).
+Sessões conversacionais do bot Telegram com contexto serializado e expiração.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único da sessão |
-| `user_id` | uuid (FK) | Referência ao usuário |
-| `chat_id` | bigint (Unique, NOT NULL) | ID do chat do Telegram |
-| `context` | jsonb (default: '{}') | Estado da conversa |
-| `expires_at` | timestamptz (NOT NULL) | Timestamp de expiração |
-| `created_at` | timestamptz (default: now()) | Data de criação |
-| `updated_at` | timestamptz (default: now()) | Data da última atualização |
-
-**Índices:**
-- `idx_sessions_chat`: Índice em `chat_id` para buscas rápidas
-- `idx_sessions_expires`: Índice em `expires_at` para cleanup eficiente
-- `idx_sessions_user`: Índice em `user_id` para consultas por usuário
-
-**Cleanup:**
-Sessões expiradas são removidas automaticamente via função `cleanup_expired_bot_sessions()`.
-
----
-
-## Tabelas Principais
-
-### `auth.users` (Supabase Default)
-
-Tabela interna do Supabase para gerenciamento de contas. O `id` do usuário é referenciado em todas as outras tabelas como `user_id`.
-
----
-
-### `user_settings`
-
-Configurações globais e integração com o Telegram.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único da configuração |
-| `user_id` | uuid (FK, Unique, NOT NULL) | Referência ao usuário |
-| `telegram_chat_id` | text | ID do chat do Telegram |
-| `verification_token` | text | Token temporário para vinculação |
-| `timezone` | text (default: 'America/Sao_Paulo') | Fuso horário |
-| `onboarding_completed` | boolean (default: false) | Se o onboarding foi concluído |
-| `created_at` | timestamptz (default: now()) | Data de criação |
-| `updated_at` | timestamptz (default: now()) | Data da última atualização |
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `chat_id` | bigint | `NOT NULL`, `UNIQUE` |
+| `context` | jsonb | `NOT NULL`, default `'{}'::jsonb` |
+| `expires_at` | timestamptz | `NOT NULL` |
+| `created_at` | timestamptz | default `now()` |
+| `updated_at` | timestamptz | default `now()` |
 
 ---
 
 ### `medicines`
 
-Cadastro básico de medicamentos e suplementos.
+Cadastro base de medicamentos e suplementos.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
-| `name` | text (NOT NULL) | Nome comercial |
-| `laboratory` | text | Laboratório/Marca |
-| `active_ingredient` | text | Princípio ativo |
-| `dosage_per_pill` | numeric | Dosagem por unidade (ex: 50.0) |
-| `price_paid` | numeric | Preço pago |
-| `dosage_unit` | text (default: 'mg') | Unidade (mg, mcg, ml, etc) |
-| `type` | text (default: 'medicine') | 'medicamento' ou 'suplemento' |
-| `therapeutic_class` | text | Classe terapêutica (ex: 'Antidepressivo', 'Anti-inflamatório') |
-| `regulatory_category` | text | Categoria ANVISA: `Genérico`, `Similar` ou `Novo` |
-| `created_at` | timestamptz (default: now()) | Data de criação |
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `name` | text | `NOT NULL` |
+| `laboratory` | text | Nullable |
+| `active_ingredient` | text | Nullable |
+| `dosage_per_pill` | numeric | Nullable |
+| `price_paid` | numeric | Nullable |
+| `created_at` | timestamptz | default `now()` |
+| `user_id` | uuid | `NOT NULL`, default `00000000-0000-0000-0000-000000000001` |
+| `type` | text | default `'medicine'`; `CHECK` aceita apenas `medicamento` ou `suplemento` |
+| `dosage_unit` | text | default `'mg'` |
+| `therapeutic_class` | text | Nullable |
+| `regulatory_category` | text | Nullable |
 
-**Check Constraint:**
-```sql
-CHECK (type = ANY (ARRAY['medicamento'::text, 'suplemento'::text]))
-```
-
-> ⚠️ **Inconsistência no DB**: `type` tem `DEFAULT 'medicine'` no banco, mas o CHECK exige `'medicamento'` ou `'suplemento'`. O default nunca é acionado porque o Zod schema (com `.default('medicamento')`) sempre envia o valor. Não corrigir no banco sem migração.
+**Inconsistência atual do schema:** `type` tem default `'medicine'`, mas o `CHECK` aceita apenas `'medicamento'` e `'suplemento'`. Na prática, a aplicação precisa sempre preencher esse campo explicitamente.
 
 ---
 
 ### `treatment_plans`
 
-Agrupadores de protocolos (ex: "Protocolo Anti-Inflamatório").
+Agrupadores de protocolos de tratamento.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK, default: uuid_generate_v4()) | ID único |
-| `name` | text (NOT NULL) | Nome do plano |
-| `description` | text | Descrição detalhada |
-| `objective` | text | Objetivo do tratamento |
-| `emoji` | text (default: '💊') | Emoji visual do plano (Wave 3) |
-| `color` | text (default: '#6366f1') | Cor hex do badge do plano (Wave 3) |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
-| `created_at` | timestamptz (default: now()) | Data de criação |
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `uuid_generate_v4()` |
+| `name` | text | `NOT NULL` |
+| `description` | text | Nullable |
+| `objective` | text | Nullable |
+| `created_at` | timestamptz | default `now()` |
+| `user_id` | uuid | `NOT NULL` |
+| `emoji` | text | default `'💊'` |
+| `color` | text | default `'#6366f1'` |
+
+**Observação:** no DDL colado, `treatment_plans.user_id` não traz FK explícita para `auth.users(id)`.
 
 ---
 
 ### `protocols`
 
-Dita como o medicamento deve ser tomado.
+Define a prescrição operacional: frequência, agenda, titulação e vínculo opcional com plano de tratamento.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `medicine_id` | uuid (FK) | Referência ao medicamento |
-| `treatment_plan_id` | uuid (FK) | Referência ao plano de tratamento |
-| `name` | text (NOT NULL) | Nome do protocolo |
-| `frequency` | text | 'diário', 'dias_alternados', 'semanal', 'personalizado', 'quando_necessário' |
-| `time_schedule` | jsonb | Array de horários (ex: `["08:00", "20:00"]`) |
-| `dosage_per_intake` | numeric | Quantidade por tomada |
-| `target_dosage` | numeric | Dosagem alvo (para titulação) |
-| `titration_status` | text (default: 'estável') | 'estável', 'titulando', 'alvo_atingido' — sem CHECK constraint no banco; validado via Zod |
-| `titration_schedule` | jsonb (default: '[]') | Estágios da titulação |
-| `current_stage_index` | integer (default: 0) | Índice do estágio atual |
-| `stage_started_at` | timestamptz | Data de início do estágio |
-| `start_date` | date (NOT NULL) | Data de início do protocolo - Usado para cálculo de adesão |
-| `end_date` | date | Data de término do protocolo - NULL se ativo indefinidamente |
-| `last_notified_at` | timestamptz | Última notificação enviada |
-| `last_soft_reminder_at` | timestamptz | Último lembrete suave |
-| `status_ultima_notificacao` | varchar | Status da última notificação: 'pendente', 'enviada', 'falhou', 'tentando_novamente' |
-| `active` | boolean (default: true) | Se o protocolo está ativo |
-| `notes` | text | Observações gerais |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
-| `created_at` | timestamptz (default: now()) | Data de criação |
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `medicine_id` | uuid | FK `medicines(id)` |
+| `name` | text | `NOT NULL` |
+| `frequency` | text | `diário`, `dias_alternados`, `semanal`, `personalizado`, `quando_necessário` |
+| `time_schedule` | jsonb | Nullable |
+| `dosage_per_intake` | numeric | Nullable |
+| `notes` | text | Nullable |
+| `active` | boolean | default `true` |
+| `created_at` | timestamptz | default `now()` |
+| `user_id` | uuid | `NOT NULL`, default `00000000-0000-0000-0000-000000000001` |
+| `treatment_plan_id` | uuid | FK `treatment_plans(id)` |
+| `target_dosage` | numeric | Nullable |
+| `titration_status` | text | default `'estável'` |
+| `titration_schedule` | jsonb | default `'[]'::jsonb` |
+| `current_stage_index` | integer | default `0` |
+| `stage_started_at` | timestamptz | Nullable |
+| `last_notified_at` | timestamptz | Nullable |
+| `last_soft_reminder_at` | timestamptz | Nullable |
+| `status_ultima_notificacao` | varchar | `pendente`, `enviada`, `falhou`, `tentando_novamente` |
+| `start_date` | date | `NOT NULL` |
+| `end_date` | date | Nullable |
 
-**Check Constraints:**
-```sql
-CHECK (frequency = ANY (ARRAY['diário'::text, 'dias_alternados'::text, 'semanal'::text, 'personalizado'::text, 'quando_necessário'::text]))
-```
-
-```sql
-CHECK (status_ultima_notificacao::text = ANY (ARRAY['pendente'::character varying, 'enviada'::character varying, 'falhou'::character varying, 'tentando_novamente'::character varying]::text[]))
-```
-
----
-
-### `stock`
-
-Controle de inventário por lote remanescente. Em `v4.0.0`, `stock` deixou de ser histórico de compra e passou a representar apenas o saldo corrente por lote.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `medicine_id` | uuid (FK) | Referência ao medicamento |
-| `quantity` | numeric (NOT NULL) | Quantidade em unidades |
-| `purchase_date` | date | Data da compra |
-| `expiration_date` | date | Data de validade |
-| `unit_price` | numeric (default: 0) | Preço por unidade |
-| `notes` | text | Observações |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
-| `purchase_id` | uuid (FK) | Compra de origem do lote |
-| `original_quantity` | numeric | Quantidade original do lote |
-| `entry_type` | text | `purchase`, `adjustment` ou `legacy_unrecoverable` |
-| `created_at` | timestamptz (default: now()) | Data de criação |
-| `updated_at` | timestamptz (default: now()) | Data da última atualização |
-
-**Check Constraint:**
-```sql
-CHECK (entry_type IN ('purchase', 'adjustment', 'legacy_unrecoverable'))
-```
-
----
-
-### `purchases`
-
-Histórico imutável de compras. É a fonte canônica para histórico de compras, última compra e custo médio.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
-| `medicine_id` | uuid (FK, NOT NULL) | Medicamento comprado |
-| `quantity_bought` | numeric (NOT NULL) | Quantidade comprada |
-| `unit_price` | numeric(10,2) | Preço unitário |
-| `purchase_date` | date (NOT NULL) | Data da compra |
-| `expiration_date` | date | Data de validade |
-| `pharmacy` | text | Farmácia de origem |
-| `laboratory` | text | Laboratório da compra |
-| `notes` | text | Observações da compra |
-| `legacy_stock_id` | uuid | Linha legacy de `stock` usada no backfill |
-| `created_at` | timestamptz | Data de criação |
-
----
-
-### `stock_adjustments`
-
-Auditoria de ajustes e restaurações que não representam uma compra nova.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
-| `medicine_id` | uuid (FK, NOT NULL) | Medicamento afetado |
-| `stock_id` | uuid (FK) | Lote afetado |
-| `quantity_delta` | numeric (NOT NULL) | Variação aplicada, nunca zero |
-| `reason` | text | Motivo do ajuste |
-| `reference_id` | uuid | Referência opcional ao evento de origem |
-| `notes` | text | Observações |
-| `created_at` | timestamptz | Data de criação |
-
----
-
-### `stock_consumptions`
-
-Rastreia exatamente quais lotes foram consumidos por cada `medicine_log`.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro |
-| `medicine_log_id` | uuid (FK, NOT NULL) | Log de dose associado |
-| `medicine_id` | uuid (FK, NOT NULL) | Medicamento consumido |
-| `stock_id` | uuid (FK, NOT NULL) | Lote consumido |
-| `quantity_consumed` | numeric (NOT NULL) | Quantidade retirada do lote |
-| `reversed_at` | timestamptz | Marca reversões idempotentes |
-| `created_at` | timestamptz | Data de criação |
+**Observação:** `protocols.user_id` não aparece com FK explícita no DDL colado.
 
 ---
 
 ### `medicine_logs`
 
-Histórico de doses tomadas.
+Histórico de doses registradas.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único |
-| `protocol_id` | uuid (FK) | Referência ao protocolo |
-| `medicine_id` | uuid (FK) | Referência ao medicamento |
-| `taken_at` | timestamptz (default: now()) | Data/hora real da tomada |
-| `quantity_taken` | numeric (NOT NULL) | Quantidade tomada |
-| `notes` | text | Observações |
-| `user_id` | uuid (FK, NOT NULL) | Dono do registro (default: '00000000-0000-0000-0000-000000000001') |
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `protocol_id` | uuid | FK `protocols(id)` |
+| `medicine_id` | uuid | FK `medicines(id)` |
+| `taken_at` | timestamptz | default `now()` |
+| `quantity_taken` | numeric | `NOT NULL` |
+| `notes` | text | Nullable |
+| `user_id` | uuid | `NOT NULL`, default `00000000-0000-0000-0000-000000000001` |
 
-> ⚠️ **Colunas que NÃO existem em `medicine_logs`**: `status`, `treatment_plan_id`. Não inclua estas colunas em queries SELECT — causam HTTP 400. O `treatment_plan_id` é uma coluna de `protocols`, não de `medicine_logs`.
+**Observação:** `medicine_logs.user_id` não traz FK explícita no DDL colado.
 
 ---
 
-## Tabelas do Sistema Gemini Reviews (v3.0.0)
+### `purchases`
+
+Histórico imutável de compras.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `medicine_id` | uuid | `NOT NULL`, FK `medicines(id)` |
+| `quantity_bought` | numeric | `NOT NULL`, `CHECK > 0` |
+| `unit_price` | numeric | `NOT NULL`, default `0`, `CHECK >= 0` |
+| `purchase_date` | date | `NOT NULL` |
+| `expiration_date` | date | Nullable |
+| `pharmacy` | text | Nullable |
+| `laboratory` | text | Nullable |
+| `notes` | text | Nullable |
+| `legacy_stock_id` | uuid | `UNIQUE`, nullable |
+| `created_at` | timestamptz | `NOT NULL`, default `now()` |
+
+---
+
+### `stock`
+
+Saldo de estoque por lote, hoje vinculado opcionalmente a uma compra.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `medicine_id` | uuid | FK `medicines(id)` |
+| `quantity` | numeric | `NOT NULL` |
+| `purchase_date` | date | Nullable |
+| `expiration_date` | date | Nullable |
+| `created_at` | timestamptz | default `now()` |
+| `user_id` | uuid | `NOT NULL`, default `00000000-0000-0000-0000-000000000001` |
+| `unit_price` | numeric | default `0` |
+| `notes` | text | Nullable |
+| `purchase_id` | uuid | FK `purchases(id)` |
+| `original_quantity` | numeric | Nullable |
+| `entry_type` | text | `purchase`, `adjustment`, `legacy_unrecoverable` |
+| `updated_at` | timestamptz | default `now()` |
+
+**Observação:** `stock.user_id` não aparece com FK explícita no DDL colado.
+
+---
+
+### `stock_adjustments`
+
+Auditoria de ajustes manuais ou sistêmicos de estoque.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `medicine_id` | uuid | `NOT NULL`, FK `medicines(id)` |
+| `stock_id` | uuid | FK `stock(id)` |
+| `quantity_delta` | numeric | `NOT NULL`, `CHECK <> 0` |
+| `reason` | text | `NOT NULL` |
+| `reference_id` | uuid | Nullable |
+| `notes` | text | Nullable |
+| `created_at` | timestamptz | `NOT NULL`, default `now()` |
+
+---
+
+### `stock_consumptions`
+
+Rastreia a baixa de estoque por lote a partir de um log de tomada.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `medicine_log_id` | uuid | `NOT NULL`, FK `medicine_logs(id)` |
+| `medicine_id` | uuid | `NOT NULL`, FK `medicines(id)` |
+| `stock_id` | uuid | `NOT NULL`, FK `stock(id)` |
+| `quantity_consumed` | numeric | `NOT NULL`, `CHECK > 0` |
+| `reversed_at` | timestamptz | Nullable |
+| `created_at` | timestamptz | `NOT NULL`, default `now()` |
+
+---
+
+### `notification_devices`
+
+Cadastro de dispositivos habilitados para push, com suporte a app nativo e PWA.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `app_kind` | text | `NOT NULL`; `native`, `pwa` |
+| `platform` | text | `NOT NULL`; `ios`, `android`, `web` |
+| `provider` | text | `NOT NULL`; `expo`, `webpush` |
+| `push_token` | text | `NOT NULL` |
+| `device_name` | text | Nullable |
+| `device_fingerprint` | text | Nullable |
+| `app_version` | text | Nullable |
+| `is_active` | boolean | `NOT NULL`, default `true` |
+| `last_seen_at` | timestamptz | `NOT NULL`, default `now()` |
+| `created_at` | timestamptz | `NOT NULL`, default `now()` |
+| `updated_at` | timestamptz | `NOT NULL`, default `now()` |
+
+---
+
+### `notification_log`
+
+Log das notificações operacionais vinculadas a protocolos.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `protocol_id` | uuid | `NOT NULL`, FK `protocols(id)` |
+| `notification_type` | text | `NOT NULL` |
+| `sent_at` | timestamptz | default `now()` |
+| `created_at` | timestamptz | default `now()` |
+| `status` | varchar | default `'enviada'`; `pendente`, `enviada`, `falhou`, `entregue` |
+| `telegram_message_id` | bigint | Nullable |
+| `mensagem_erro` | text | Nullable |
+
+---
+
+### `failed_notification_queue`
+
+Dead Letter Queue para notificações que falharam e precisam de retry, descarte ou resolução manual.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL`, FK `auth.users(id)` |
+| `protocol_id` | uuid | FK `protocols(id)` |
+| `correlation_id` | uuid | `NOT NULL`, `UNIQUE` |
+| `notification_type` | varchar | `NOT NULL` |
+| `notification_payload` | jsonb | `NOT NULL` |
+| `error_code` | varchar | Nullable |
+| `error_message` | text | Nullable |
+| `error_category` | varchar | `NOT NULL`, default `'unknown'` |
+| `retry_count` | integer | default `0` |
+| `max_retries` | integer | default `3` |
+| `created_at` | timestamptz | default `now()` |
+| `updated_at` | timestamptz | default `now()` |
+| `resolved_at` | timestamptz | Nullable |
+| `status` | varchar | `NOT NULL`, default `'failed'`; `failed`, `pending`, `retrying`, `resolved`, `discarded` |
+| `resolution_notes` | text | Nullable |
+
+---
+
+### `push_subscriptions`
+
+Assinaturas Web Push legadas/complementares, separadas do catálogo mais novo de `notification_devices`.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | FK `auth.users(id)` |
+| `endpoint` | text | `NOT NULL` |
+| `keys_p256dh` | text | `NOT NULL` |
+| `keys_auth` | text | `NOT NULL` |
+| `device_info` | jsonb | default `'{}'::jsonb` |
+| `created_at` | timestamptz | default `now()` |
+| `updated_at` | timestamptz | default `now()` |
+
+---
+
+### `push_notification_logs`
+
+Histórico de envios Web Push.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | FK `auth.users(id)` |
+| `subscription_id` | uuid | FK `push_subscriptions(id)` |
+| `notification_type` | text | `NOT NULL` |
+| `title` | text | `NOT NULL` |
+| `body` | text | `NOT NULL` |
+| `sent_at` | timestamptz | default `now()` |
+| `delivered` | boolean | default `false` |
+| `error_message` | text | Nullable |
+
+---
 
 ### `gemini_reviews`
 
-Tabela para armazenar revisões de código geradas pela integração com Gemini Code Assist.
+Persistência das revisões automatizadas de código.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | uuid (PK) | ID único da revisão |
-| `pr_number` | integer (NOT NULL) | Número do Pull Request |
-| `commit_sha` | text (NOT NULL) | SHA do commit |
-| `file_path` | text (NOT NULL) | Caminho do arquivo revisado |
-| `line_start` | integer | Linha inicial do problema |
-| `line_end` | integer | Linha final do problema |
-| `issue_hash` | text (NOT NULL) | Hash único do problema (para deduplicação) |
-| `title` | text | Título do problema |
-| `description` | text | Descrição detalhada |
-| `suggestion` | text | Sugestão de correção |
-| `created_at` | timestamptz (default: now()) | Data de criação |
-| `updated_at` | timestamptz (default: now()) | Data da última atualização |
-| `resolved_at` | timestamptz | Data de resolução |
-| `resolved_by` | uuid (FK) | Usuário que resolveu |
-| `user_id` | uuid (FK) | Usuário que criou |
-| `status` | text | Status: 'detected', 'reported', 'assigned', 'resolved', 'partial', 'wontfix', 'duplicate', 'pendente', 'em_progresso', 'corrigido', 'descartado' |
-| `priority` | text | Prioridade: 'critica', 'alta', 'media', 'baixa' |
-| `category` | text | Categoria: 'estilo', 'bug', 'seguranca', 'performance', 'manutenibilidade' |
-| `github_issue_number` | integer | Número da issue no GitHub |
-| `resolution_type` | text | Tipo de resolução aplicada |
-
-**Check Constraints:**
-```sql
-CHECK (status = ANY (ARRAY['detected'::text, 'reported'::text, 'assigned'::text, 'resolved'::text, 'partial'::text, 'wontfix'::text, 'duplicate'::text, 'pendente'::text, 'em_progresso'::text, 'corrigido'::text, 'descartado'::text]))
-```
-
-```sql
-CHECK (priority IS NULL OR (priority = ANY (ARRAY['critica'::text, 'alta'::text, 'media'::text, 'baixa'::text])))
-```
-
-```sql
-CHECK (category IS NULL OR (category = ANY (ARRAY['estilo'::text, 'bug'::text, 'seguranca'::text, 'performance'::text, 'manutenibilidade'::text])))
-```
-
-**Foreign Keys:**
-- `resolved_by` → `auth.users(id)`
-- `user_id` → `auth.users(id)`
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `pr_number` | integer | `NOT NULL` |
+| `commit_sha` | text | `NOT NULL` |
+| `file_path` | text | `NOT NULL` |
+| `line_start` | integer | Nullable |
+| `line_end` | integer | Nullable |
+| `issue_hash` | text | `NOT NULL` |
+| `title` | text | Nullable |
+| `description` | text | Nullable |
+| `suggestion` | text | Nullable |
+| `created_at` | timestamptz | default `now()` |
+| `updated_at` | timestamptz | default `now()` |
+| `resolved_at` | timestamptz | Nullable |
+| `resolved_by` | uuid | FK `auth.users(id)` |
+| `user_id` | uuid | FK `auth.users(id)` |
+| `status` | text | `detected`, `reported`, `assigned`, `resolved`, `partial`, `wontfix`, `duplicate`, `pendente`, `em_progresso`, `corrigido`, `descartado` |
+| `priority` | text | `critica`, `alta`, `media`, `baixa` |
+| `category` | text | `estilo`, `bug`, `seguranca`, `performance`, `manutenibilidade` |
+| `github_issue_number` | integer | Nullable |
+| `resolution_type` | text | Nullable |
 
 ---
 
 ### `gemini_reviews_backup_20260222`
 
-Tabela de backup da `gemini_reviews` (criada em 2026-02-22).
+Backup histórico da tabela `gemini_reviews`, criado em **2026-02-22**.
 
-> **Nota**: Esta é uma tabela de backup histórico e não possui constraints. Usada apenas para referência e recuperação de dados.
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | Sem PK no DDL colado |
+| `pr_number` | integer | Nullable |
+| `commit_sha` | text | Nullable |
+| `file_path` | text | Nullable |
+| `line_start` | integer | Nullable |
+| `line_end` | integer | Nullable |
+| `issue_hash` | text | Nullable |
+| `title` | text | Nullable |
+| `description` | text | Nullable |
+| `suggestion` | text | Nullable |
+| `created_at` | timestamptz | Nullable |
+| `updated_at` | timestamptz | Nullable |
+| `resolved_at` | timestamptz | Nullable |
+| `resolved_by` | uuid | Nullable |
+| `user_id` | uuid | Nullable |
+| `status` | text | Nullable |
+| `priority` | text | Nullable |
+| `category` | text | Nullable |
 
----
+## Constraints Relevantes
 
-## Views e Funções
+### Enums e `CHECK` do schema atual
 
-### `medicine_stock_summary` (View Materializada)
+| Tabela | Campo | Valores aceitos |
+|--------|-------|-----------------|
+| `failed_notification_queue` | `status` | `failed`, `pending`, `retrying`, `resolved`, `discarded` |
+| `medicines` | `type` | `medicamento`, `suplemento` |
+| `notification_devices` | `app_kind` | `native`, `pwa` |
+| `notification_devices` | `platform` | `ios`, `android`, `web` |
+| `notification_devices` | `provider` | `expo`, `webpush` |
+| `notification_log` | `status` | `pendente`, `enviada`, `falhou`, `entregue` |
+| `protocols` | `frequency` | `diário`, `dias_alternados`, `semanal`, `personalizado`, `quando_necessário` |
+| `protocols` | `status_ultima_notificacao` | `pendente`, `enviada`, `falhou`, `tentando_novamente` |
+| `purchases` | `quantity_bought` | `> 0` |
+| `purchases` | `unit_price` | `>= 0` |
+| `stock` | `entry_type` | `purchase`, `adjustment`, `legacy_unrecoverable` |
+| `stock_adjustments` | `quantity_delta` | `<> 0` |
+| `stock_consumptions` | `quantity_consumed` | `> 0` |
+| `user_settings` | `notification_preference` | `telegram`, `mobile_push`, `both`, `none` |
+| `gemini_reviews` | `status` | `detected`, `reported`, `assigned`, `resolved`, `partial`, `wontfix`, `duplicate`, `pendente`, `em_progresso`, `corrigido`, `descartado` |
+| `gemini_reviews` | `priority` | `critica`, `alta`, `media`, `baixa` |
+| `gemini_reviews` | `category` | `estilo`, `bug`, `seguranca`, `performance`, `manutenibilidade` |
 
-View materializada para otimização de consultas de estoque.
+## Observações Arquiteturais
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `medicine_id` | uuid | Referência ao medicamento |
-| `user_id` | uuid | Dono do dado (para RLS) |
-| `total_quantity` | numeric | Quantidade total disponível |
-| `stock_entries_count` | bigint | Número de entradas ativas |
-| `oldest_entry_date` | date | Data da entrada mais antiga |
-| `newest_entry_date` | date | Data da entrada mais recente |
+- Existem dois modelos de push no schema atual: `push_subscriptions`/`push_notification_logs` e o modelo mais novo `notification_devices`. Eles coexistem e a documentação precisa preservar essa distinção.
+- Algumas tabelas de domínio ainda usam `user_id` com default para UUID fixo sem FK explícita no DDL (`medicines`, `protocols`, `medicine_logs`, `stock`). Isso é importante para evitar assumir constraints que não estão realmente aplicadas no banco.
+- `treatment_plans` e `user_settings` também não exibem FK explícita no SQL colado, apesar de semanticamente dependerem do usuário autenticado.
+- Esta revisão removeu referências antigas a objetos não presentes no DDL atual, como view materializada `medicine_stock_summary` e função `get_dlq_stats()`.
 
----
+## Sincronização com a Aplicação
 
-### `get_dlq_stats()` (Função PostgreSQL)
+Ao alterar esse schema, revisar em conjunto:
 
-Função otimizada para obter estatísticas da Dead Letter Queue.
+- [`src/schemas`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/schemas)
+- [`src/features`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/features)
+- [`src/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/services)
+- [`src/shared/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/shared/services)
 
-```sql
-SELECT * FROM get_dlq_stats();
--- Retorna: status, count, error_category, oldest_failure
-```
+Regras DEVFLOW mais relevantes para mudanças de schema:
 
----
-
-## Relacionamento entre Tabelas
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    auth.users                               │
-│                      (PK: id)                                │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-         ┌───────────────┼────────────────┬────────────────┐
-         │               │                │                │
-         ▼               ▼                ▼                ▼
-┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│  user_settings │ │   medicines   │ │   protocols   │ │ gemini_reviews │
-│   (FK: user)  │ │   (FK: user) │ │   (FK: user) │ │   (FK: user)  │
-└───────────────┘ └───────────────┘ └───────┬───────┘ └───────────────┘
-                                            │
-         ┌──────────────────────────────────┼───────────────┐
-         │                                  │               │
-         ▼                                  ▼               ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
-│ medicine_logs │─────▶│stock_consumpt.│─────▶│     stock     │
-│ (FK: protocol)│      │ (FK: log)     │      │  (FK: med)    │
-└───────────────┘      └───────────────┘      └───────▲───────┘
-         ▲                                  ┌─────────┘
-         │                                  │
-         └─────────────── protocols         │
-                                            │
-                                    ┌───────┴───────┐
-                                    │   purchases   │
-                                    │  (FK: med)    │
-                                    └───────────────┘
-                                                      ┌───────────────┐
-                                                      │notification_log│
-                                                      │(FK: user,prot)│
-                                                      └───────────────┘
-                                                           │
-                                                           ▼
-                                                  ┌───────────────────┐
-                                                  │failed_notif_queue │
-                                                  │ (FK: user, prot)  │
-                                                  └───────────────────┘
-```
-
----
-
-## Sincronização com Schemas Zod
-
-Para garantir a consistência entre o banco de dados e a aplicação, consulte também:
-- [`src/schemas/logSchema.js`](../src/schemas/logSchema.js)
-- [`src/schemas/medicineSchema.js`](../src/schemas/medicineSchema.js)
-- [`src/schemas/protocolSchema.js`](../src/schemas/protocolSchema.js)
-- [`src/schemas/stockSchema.js`](../src/schemas/stockSchema.js)
-- [`src/schemas/costAnalysisSchema.js`](../src/schemas/costAnalysisSchema.js)
-- [`src/schemas/geminiReviewSchema.js`](../src/schemas/geminiReviewSchema.js) *(se existir)*
-
-> ⚠️ **Nota**: Sempre que alterar o schema do banco, atualize os schemas Zod correspondentes e esta documentação.
-
----
-
-## Migrações
-
-### Migrações de Notificações (v3.0.0)
-
-1. **`.migrations/add_notification_status.sql`**
-   - Adiciona coluna `status_ultima_notificacao` em `protocols`
-   - Cria tabela `notification_logs`
-
-2. **`.migrations/add_dead_letter_queue.sql`**
-   - Cria tabela `failed_notification_queue`
-   - Adiciona índices e políticas RLS
-   - Cria função `get_dlq_stats()` para estatísticas
-
-### Migrações Gemini Integration (v3.0.0)
-
-3. **`.migrations/add_gemini_reviews.sql`**
-   - Cria tabela `gemini_reviews`
-   - Adiciona CHECK constraints para status, priority e category
-   - Adiciona Foreign Keys para `resolved_by` e `user_id`
-
-### Migração de Estoque/Purchases (v4.0.0)
-
-4. **`docs/migrations/20260402_stock_purchases_refactor.sql`**
-   - Adiciona `medicines.regulatory_category`
-   - Cria `purchases`, `stock_adjustments` e `stock_consumptions`
-   - Evolui `stock` com `purchase_id`, `original_quantity`, `entry_type` e `updated_at`
-   - Implementa backfill idempotente do modelo legado
-   - Cria RPCs transacionais para compra, consumo FIFO, restauração e ajuste manual
-
----
-
-## Considerações de Performance
-
-### Índices Críticos para Notificações
-
-```sql
--- Para busca de protocolos por horário
-CREATE INDEX idx_protocols_active_user
-  ON protocols(active, user_id)
-  WHERE active = true;
-
--- Para logs de notificações recentes
-CREATE INDEX idx_notif_log_sent_user
-  ON notification_logs(sent_at DESC, user_id);
-
--- Para DLQ com filtros
-CREATE INDEX idx_dlq_status_user
-  ON failed_notification_queue(status, user_id)
-  WHERE status IN ('failed', 'pending');
-
--- Para Gemini Reviews por PR
-CREATE INDEX idx_gemini_reviews_pr
-  ON gemini_reviews(pr_number, file_path);
-
--- Para Gemini Reviews por status
-CREATE INDEX idx_gemini_reviews_status
-  ON gemini_reviews(status, created_at DESC);
-```
-
-### Exemplo de Query Otimizada
-
-```sql
--- Buscar protocolos que precisam de notificação HOJE
-SELECT p.*, m.name as medicine_name
-FROM protocols p
-JOIN medicines m ON p.medicine_id = m.id
-WHERE p.active = true
-  AND p.user_id = 'usuario-uuid-aqui'
-  AND p.time_schedule::text LIKE '%20:30%'
-  AND p.last_notified_at < CURRENT_DATE;
-
--- Buscar revisões pendentes do Gemini por arquivo
-SELECT *
-FROM gemini_reviews
-WHERE file_path = 'src/components/Button.jsx'
-  AND status IN ('pendente', 'detected', 'reported')
-ORDER BY priority DESC, created_at DESC;
-```
-
----
-
-## Schema SQL Completo (Referência)
-
-> **Aviso**: O SQL abaixo é para referência e contexto. A ordem das tabelas e constraints pode não ser válida para execução direta.
-
-```sql
--- Tabelas principais
-CREATE TABLE public.medicines (...);
-CREATE TABLE public.treatment_plans (...);
-CREATE TABLE public.protocols (...);
-CREATE TABLE public.stock (...);
-CREATE TABLE public.medicine_logs (...);
-CREATE TABLE public.user_settings (...);
-
--- Tabelas de notificação
-CREATE TABLE public.notification_log (...);
-CREATE TABLE public.failed_notification_queue (...);
-CREATE TABLE public.push_subscriptions (...);
-CREATE TABLE public.push_notification_logs (...);
-CREATE TABLE public.bot_sessions (...);
-
--- Tabelas do sistema Gemini
-CREATE TABLE public.gemini_reviews (...);
-```
-
-*Consulte o arquivo de exportação completo do Supabase para o schema exato com todas as constraints, índices e políticas RLS.*
+- `R-020`: tratar datas locais corretamente
+- `R-021`: enums Zod em português
+- `R-022`: `quantity_taken` em unidades/pílulas, não em mg
+- `R-082`: manter Zod e banco sincronizados
+- `R-089`: verificar colunas reais antes de escrever queries/INSERTs
