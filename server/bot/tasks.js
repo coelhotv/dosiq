@@ -372,7 +372,12 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
             const result = await dispatcher.dispatch({
               userId,
               kind: 'dose_reminder',
-              data: { medicineName, protocolId: protocol.id, medicineId: protocol.medicine_id },
+              data: { 
+                medicineName, 
+                protocolId: protocol.id, 
+                medicineId: protocol.medicine_id,
+                dosage: protocol.dosage_per_intake ?? 1
+              },
               context: { correlationId, jobType: 'dose_reminder_dispatcher' }
             });
 
