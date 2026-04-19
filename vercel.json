@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "cd apps/web && npx vite build",
+  "outputDirectory": "apps/web/dist",
+  "installCommand": "npm install",
   "functions": {
     "api/notify.js": { "maxDuration": 60 },
     "api/telegram.js": { "maxDuration": 10 }

@@ -54,8 +54,8 @@ export default defineConfig({
     hookTimeout: 10000,
     teardownTimeout: 5000,
 
-    // Incluir TODOS os testes (incluindo components/ e features/)
-    include: ['src/**/*.test.{js,jsx}', 'server/**/*.test.{js,jsx}'],
+    // Incluir TODOS os testes (incluindo components/ e features/ e server/ na raiz do monorepo)
+    include: ['src/**/*.test.{js,jsx}', '../../server/**/*.test.{js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

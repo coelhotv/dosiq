@@ -7,7 +7,7 @@ const mockState = {
 }
 
 // Mock all dependencies at module level - use mutable reference
-vi.mock('../../../../server/services/supabase.js', () => ({
+vi.mock('../../../../../../server/services/supabase.js', () => ({
   supabase: {
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
@@ -17,7 +17,7 @@ vi.mock('../../../../server/services/supabase.js', () => ({
   },
 }))
 
-vi.mock('../../../../server/bot/logger.js', () => ({
+vi.mock('../../../../../../server/bot/logger.js', () => ({
   createLogger: vi.fn(() => ({
     info: vi.fn(),
     warn: vi.fn(),
@@ -26,13 +26,13 @@ vi.mock('../../../../server/bot/logger.js', () => ({
   })),
 }))
 
-vi.mock('../../../../server/services/protocolCache.js', () => ({
+vi.mock('../../../../../../server/services/protocolCache.js', () => ({
   getAllUsersWithTelegram: vi.fn(),
   getUserSettings: vi.fn().mockResolvedValue({ timezone: 'America/Sao_Paulo' }),
   getActiveProtocols: vi.fn().mockResolvedValue([]),
 }))
 
-vi.mock('../../../../server/utils/formatters.js', () => ({
+vi.mock('../../../../../../server/utils/formatters.js', () => ({
   // Use the mutable reference
   calculateDaysRemaining: (...args) => mockState.calculateDaysRemaining(...args),
   escapeMarkdownV2: vi.fn(
@@ -40,13 +40,13 @@ vi.mock('../../../../server/utils/formatters.js', () => ({
   ),
 }))
 
-vi.mock('../../../../server/services/notificationDeduplicator.js', () => ({
+vi.mock('../../../../../../server/services/notificationDeduplicator.js', () => ({
   // Use the mutable reference
   shouldSendNotification: (...args) => mockState.shouldSendNotification(...args),
   logSuccessfulNotification: vi.fn().mockResolvedValue(true),
 }))
 
-vi.mock('../../../../server/bot/correlationLogger.js', () => ({
+vi.mock('../../../../../../server/bot/correlationLogger.js', () => ({
   getCurrentCorrelationId: vi.fn(() => 'test-correlation-id'),
   getOrGenerateCorrelationId: vi.fn(() => 'test-correlation-id'),
 }))
@@ -64,17 +64,17 @@ describe('Proactive Stock Alerts (F5.5-T1)', () => {
 
     // Import the mocked modules
     const { getAllUsersWithTelegram: mockGetUsers } =
-      await import('../../../../server/services/protocolCache.js')
+      await import('../../../../../../server/services/protocolCache.js')
     getAllUsersWithTelegram = mockGetUsers
     getAllUsersWithTelegram.mockResolvedValue([
       { user_id: 'user-test-1', telegram_chat_id: 'chat-test-1' },
     ])
 
-    const { supabase: mockSupabase } = await import('../../../../server/services/supabase.js')
+    const { supabase: mockSupabase } = await import('../../../../../../server/services/supabase.js')
     supabase = mockSupabase
 
     // Import the function under test
-    const tasks = await import('../../../../server/bot/tasks.js')
+    const tasks = await import('../../../../../../server/bot/tasks.js')
     checkStockAlerts = tasks.checkStockAlerts
   })
 

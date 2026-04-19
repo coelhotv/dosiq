@@ -14,16 +14,16 @@
       "expo",
       "react-native"
     ],
-    "phase": "h7-planning",
+    "phase": "h7-completed",
     "current_sprint": "2026-W16"
   },
   "session": {
     "id": "session_2026W16_fase7_planning",
     "started_at": "2026-04-19T00:00:00Z",
     "completed_at": null,
-    "mode": "distillation",
-    "status": "distilled",
-    "goal": "compress and distill project memory",
+    "mode": "coding",
+    "status": "completed",
+    "goal": "Sprint 7.5 — Documentação Final e Entrega da Fase 7",
     "goal_type": "chore",
     "acceptance_criteria": [
       "apps/web/ criado com package.json próprio",
@@ -39,11 +39,11 @@
     "active_wave": {
       "name": "Fase 7: Migração Web para apps/web",
       "phase": "h7-monorepo-web",
-      "sprint": "7.1",
+      "sprint": "7.5",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md",
-      "status": "in-progress",
+      "status": "completed",
       "started_at": "2026-04-19T00:00:00Z",
-      "notes": "Sprint 7.1 COMPLETO (análise). Sprint 7.2 PRÓXIMO — criar apps/web/package.json, adicionar workspaces, rodar npm install. Achados: 5 vitest configs a mover, alias @design-tokens muda path, vercel.json sem buildCommand explícito, ESLint glob genérico OK mas 'dist' ignore pode precisar ajuste."
+      "notes": "Sprints 7.1–7.5 TODOS COMPLETOS. 7.1=análise, 7.2=workspaces+package.json, 7.3=git mv src/public/vite+5configs, 7.4=docs CLAUDE.md+MOBILE_PERFORMANCE, 7.5=specs+docs finais marcados entregues. vercel.json atualizado. AP-H27 documentado. 543 testes verdes. PR #480 aberto aguardando merge humano."
     }
   },
   "memory": {
@@ -53,7 +53,7 @@
     "contracts_count": 17,
     "knowledge_count": 85,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 5,
     "recent_additions": {
       "rules": [],
       "anti_patterns": ["AP-H23", "AP-H24", "AP-H25", "AP-H26"],
@@ -67,8 +67,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-19T10:05:00Z",
-    "relevant_rules_loaded_at": "2026-04-19T10:05:00Z",
+    "index_loaded_at": "2026-04-19T13:00:00Z",
+    "relevant_rules_loaded_at": "2026-04-19T13:00:00Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },

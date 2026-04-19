@@ -81,7 +81,7 @@ Esta convenção foi escolhida porque:
 ### Estrutura de Exemplo
 
 ```
-src/
+apps/web/src/
   services/
     api/
       medicineService.js
@@ -97,12 +97,12 @@ src/
     adherenceLogic.js
     __tests__/
       adherenceLogic.test.js
-  hooks/
+  shared/hooks/
     useCachedQuery.js
     __tests__/
       useCachedQuery.test.jsx
-  components/
-    medicine/
+  shared/components/
+    ui/
       MedicineCard.jsx
       __tests__/
         MedicineCard.test.jsx
@@ -164,7 +164,7 @@ server/
 
 **Exemplo**:
 ```javascript
-// src/schemas/__tests__/medicineSchema.smoke.test.js
+// apps/web/src/schemas/__tests__/medicineSchema.smoke.test.js
 import { describe, it, expect } from 'vitest'
 import { medicineSchema, validateMedicine } from '../medicineSchema'
 
@@ -202,7 +202,7 @@ describe('medicineSchema - Smoke', () => {
 
 **Exemplo**:
 ```javascript
-// src/schemas/__tests__/medicineSchema.test.js
+// apps/web/src/schemas/__tests__/medicineSchema.test.js
 import { describe, it, expect } from 'vitest'
 import { validateMedicine } from '../medicineSchema'
 
@@ -239,7 +239,7 @@ describe('medicineSchema', () => {
 
 **Objetivo**: Verificar renderização de componente, tratamento de props, interações do usuário.
 
-**Escopo**: Todos os componentes em `src/components/` e `src/shared/components/`
+**Escopo**: Todos os componentes em `apps/web/src/shared/components/`
 
 **Regras**:
 - Usar `@testing-library/react` exclusivamente (sem `enzyme`, sem DOM direto)
@@ -250,7 +250,7 @@ describe('medicineSchema', () => {
 
 **Exemplo**:
 ```javascript
-// src/components/ui/__tests__/Button.test.jsx
+// apps/web/src/shared/components/ui/__tests__/Button.test.jsx
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import Button from '../Button'
@@ -288,7 +288,7 @@ describe('Button', () => {
 
 **Exemplo**:
 ```javascript
-// src/services/api/__tests__/logService.integration.test.js
+// apps/web/src/services/api/__tests__/logService.integration.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { logService } from '../logService'
 import { stockService } from '../stockService'
@@ -406,9 +406,10 @@ O projeto usa 3 configurações principais:
 
 ### 1. `vitest.config.js` (Padrão - Todos os Testes)
 
-Executa TODOS os testes sob `src/`.
+Executa TODOS os testes sob `apps/web/src/` e `server/`.
 
 ```javascript
+// apps/web/vitest.config.js
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -425,8 +426,8 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 10000,
     
-    // Incluir tudo em src/, incluindo features/
-    include: ['src/**/*.test.{js,jsx}'],
+    // src/ relativo a apps/web/ + server/ na raiz do monorepo
+    include: ['src/**/*.test.{js,jsx}', '../../server/**/*.test.{js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

@@ -101,14 +101,14 @@ manualChunks: {
   'vendor-supabase': ['@supabase/supabase-js'],
   'vendor-virtuoso': ['react-virtuoso'],
   'vendor-pdf': ['jspdf', 'html2canvas'],       // só carrega ao exportar
-  'feature-medicines-db': ['./src/features/medications/data/medicineDatabase.json'], // 819KB
+  'feature-medicines-db': ['./apps/web/src/features/medications/data/medicineDatabase.json'], // 819KB
   'feature-history': [                          // Saúde + dependências
-    './src/views/HealthHistory.jsx',
-    './src/features/adherence/components/AdherenceHeatmap.jsx',
-    './src/features/adherence/services/adherencePatternService.js',
+    './apps/web/src/views/HealthHistory.jsx',
+    './apps/web/src/features/adherence/components/AdherenceHeatmap.jsx',
+    './apps/web/src/features/adherence/services/adherencePatternService.js',
   ],
-  'feature-stock': ['./src/views/Stock.jsx'],
-  'feature-landing': ['./src/views/Landing.jsx'],
+  'feature-stock': ['./apps/web/src/views/Stock.jsx'],
+  'feature-landing': ['./apps/web/src/views/Landing.jsx'],
 }
 ```
 

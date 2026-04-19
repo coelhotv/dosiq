@@ -19,6 +19,7 @@
 - **[AP-W16]** CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes... -> [`anti-patterns/data_and_schema/AP-W16.md`](./anti-patterns/data_and_schema/AP-W16.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[AP-H27]** Import relativo cross-boundary quebra após git mv em monorepo — tests em src/ com `../../../../server/` falham -> [`anti-patterns/infra_and_deploy/AP-H27.md`](./anti-patterns/infra_and_deploy/AP-H27.md)
 - **[AP-096]** CSS Deletion Without Verifying className Usage in JSX -> [`anti-patterns/infra_and_deploy/AP-096.md`](./anti-patterns/infra_and_deploy/AP-096.md)
 - **[AP-H04]** npm ERESOLVE conflict when adding new workspace package with incompatible peer d... -> [`anti-patterns/infra_and_deploy/AP-H04.md`](./anti-patterns/infra_and_deploy/AP-H04.md)
 - **[AP-H05]** GitHub Actions npm ci fails when new workspace added but lock file not committed -> [`anti-patterns/infra_and_deploy/AP-H05.md`](./anti-patterns/infra_and_deploy/AP-H05.md)

@@ -8,7 +8,7 @@
 
 ## Visão Geral
 
-Este projeto usa **Zod** para validação de dados em runtime. Todos os schemas estão centralizados em **`src/schemas/`**.
+Este projeto usa **Zod** para validação de dados em runtime. Todos os schemas estão centralizados em **`apps/web/src/schemas/`**.
 
 ### Princípios
 
@@ -23,7 +23,7 @@ Este projeto usa **Zod** para validação de dados em runtime. Todos os schemas 
 
 ### Medicine Schema
 
-**Localização**: `src/schemas/medicineSchema.js`
+**Localização**: `apps/web/src/schemas/medicineSchema.js`
 
 ```javascript
 import { z } from 'zod'
@@ -50,7 +50,7 @@ export const medicineSchema = z.object({
 
 ### Protocol Schema
 
-**Localização**: `src/schemas/protocolSchema.js`
+**Localização**: `apps/web/src/schemas/protocolSchema.js`
 
 ```javascript
 import { z } from 'zod'
@@ -93,7 +93,7 @@ export const protocolSchema = z.object({
 
 ### Log Schema
 
-**Localização**: `src/schemas/logSchema.js`
+**Localização**: `apps/web/src/schemas/logSchema.js`
 
 ```javascript
 import { z } from 'zod'
@@ -115,7 +115,7 @@ export const logSchema = z.object({
 
 ### Stock Schema
 
-**Localização**: `src/schemas/stockSchema.js`
+**Localização**: `apps/web/src/schemas/stockSchema.js`
 
 ```javascript
 import { z } from 'zod'
@@ -145,7 +145,7 @@ export const stockSchema = z.object({
 ### Pattern de Validação
 
 ```javascript
-// src/features/{feature}/services/{feature}Service.js
+// apps/web/src/features/{feature}/services/{feature}Service.js
 import { validateMedicineCreate } from '@schemas/medicineSchema'
 
 export const medicineService = {
@@ -257,7 +257,7 @@ z.string().min(2, 'Name must be at least 2 characters')
 
 - [Zod Documentation](https://zod.dev/)
 - [`docs/architecture/DATABASE.md`](../architecture/DATABASE.md) — Schema real do banco (fonte de verdade)
-- [`src/schemas/`](../../src/schemas/) — Implementação atual dos schemas
+- [`apps/web/src/schemas/`](../../apps/web/src/schemas/) — Implementação atual dos schemas
 
 ---
 
