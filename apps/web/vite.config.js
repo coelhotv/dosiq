@@ -24,10 +24,12 @@ export default defineConfig({
       '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      '@design-tokens': path.resolve(__dirname, './packages/design-tokens/src'),
+      '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
     },
   },
   build: {
+    outDir: path.resolve(__dirname, 'dist'),
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
