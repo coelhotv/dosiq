@@ -13,6 +13,8 @@ import './SmartAlertsRedesign.css'
  * @param {Boolean} props.isComplex - Se true, exibe até 5 alertas; se false, máximo 2
  * @param {Function} props.onSnooze - Callback ao silenciar: (alertId) => void
  */
+const severityOrder = { critical: 0, warning: 1, info: 2 }
+
 export default function SmartAlertsRedesign({
   alerts = [],
   onAction,
@@ -25,7 +27,6 @@ export default function SmartAlertsRedesign({
   const maxVisible = isComplex ? 5 : 2
 
   // Memos — ordenação e filtragem
-  const severityOrder = { critical: 0, warning: 1, info: 2 }
   const sorted = useMemo(
     () => [...alerts].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]),
     [alerts]
