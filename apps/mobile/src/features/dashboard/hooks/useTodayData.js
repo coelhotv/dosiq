@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate } from '@meus-remedios/core'
+import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState } from '@meus-remedios/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
@@ -190,6 +190,13 @@ export function useTodayData() {
       done: takenDoses.sort(sortByTime)
     }
 
+    // 4. Nova Timeline Tática (Epic 2 Fase 8)
+    const timeline = evaluateDoseTimelineState(todayStr, {
+      takenDoses,
+      missedDoses,
+      scheduledDoses
+    })
+
     // 3. Calcular alertas de estoque
     const stockAlerts = Object.values(data.medicines || {})
       .filter(m => {
@@ -206,6 +213,7 @@ export function useTodayData() {
       ...data,
       stats,
       zones,
+      timeline,
       stockAlerts
     }
   }, [data])
