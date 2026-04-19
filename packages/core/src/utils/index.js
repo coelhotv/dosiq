@@ -29,6 +29,7 @@ export {
   calculateDailyIntake,
   calculateDaysRemaining,
   calculateDosesByDate,
+  evaluateDoseTimelineState,
 } from './adherenceLogic.js'
 
 // Form utilities

@@ -565,3 +565,61 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
 
   return { takenDoses, missedDoses, scheduledDoses }
 }
+
+/**
+ * Avalia o estado tático de uma dose na linha do tempo (Epic 2 Fase 8)
+ * Classifica doses em 5 estados: TOMADA, ATRASADA, PERDIDA, PROXIMA, PLANEJADA.
+ * 
+ * @param {string} date - Data de referência YYYY-MM-DD
+ * @param {Object} dosesObj - Retorno de calculateDosesByDate { takenDoses, missedDoses, scheduledDoses }
+ * @param {Date} now - Hora atual de referência
+ * @returns {Array} Array único e ordenado de doses com a propriedade timelineStatus
+ */
+export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
+  const { takenDoses = [], missedDoses = [], scheduledDoses = [] } = dosesObj
+  const toleranceMs = 2 * 60 * 60 * 1000 // 2 horas
+  const nowMs = now.getTime()
+
+  // Helper para criar Date consistente
+  const createScheduledDate = (timeStr) => {
+    const [h, m] = timeStr.split(':').map(Number)
+    const d = parseLocalDate(date)
+    d.setHours(h, m, 0, 0)
+    return d
+  }
+
+  const allDoses = [
+    // 1. TOMADAS (Independente do horário)
+    ...takenDoses.map((d) => ({ ...d, timelineStatus: 'TOMADA' })),
+
+    // 2. MISSES (No passado)
+    ...missedDoses.map((d) => {
+      const scheduledDate = createScheduledDate(d.scheduledTime)
+      const diffMs = nowMs - scheduledDate.getTime()
+
+      // Se passou menos de 2h do horário agendado, ainda é ATRASADA
+      // Se passou mais de 2h, é PERDIDA
+      const timelineStatus = diffMs <= toleranceMs ? 'ATRASADA' : 'PERDIDA'
+      return { ...d, timelineStatus }
+    }),
+
+    // 3. SCHEDULED (No futuro)
+    ...scheduledDoses.map((d) => {
+      const scheduledDate = createScheduledDate(d.scheduledTime)
+      const diffMs = scheduledDate.getTime() - nowMs
+
+      // Se falta menos de 2h para o horário agendado, é PROXIMA (Aviso prévio)
+      // Se falta mais de 2h, é PLANEJADA
+      const timelineStatus = diffMs <= toleranceMs ? 'PROXIMA' : 'PLANEJADA'
+      return { ...d, timelineStatus }
+    }),
+  ]
+
+  // Ordenar por horário agendado (cronológico)
+  return allDoses.sort((a, b) => {
+    const timeA = a.scheduledTime || '00:00'
+    const timeB = b.scheduledTime || '00:00'
+    return timeA.localeCompare(timeB)
+  })
+}
+
