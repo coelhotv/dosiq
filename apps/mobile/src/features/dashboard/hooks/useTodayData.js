@@ -80,7 +80,7 @@ export function useTodayData() {
         user: {
           id: user.id,
           email: user.email,
-          name: userSettings?.name || null
+          name: userSettings?.display_name || null
         },
         capturedAt: new Date().toISOString(),
         localDay: today // R-114 fix: save explicit local day string

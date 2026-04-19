@@ -100,7 +100,7 @@ export async function getUserSettings(userId) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('user_settings')
-    .select('name, timezone')
+    .select('display_name, timezone')
     .eq('user_id', userId)
     .single()
 
