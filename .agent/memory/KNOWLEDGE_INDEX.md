@@ -82,4 +82,7 @@
 - **[K-079]** hermes-url-recursion-trap -> [`knowledge/process_and_testing/K-079.md`](./knowledge/process_and_testing/K-079.md)
 - **[K-080]** hermes-url-trailing-slash -> [`knowledge/process_and_testing/K-080.md`](./knowledge/process_and_testing/K-080.md)
 - **[K-081]** offline-snapshots-localday -> [`knowledge/process_and_testing/K-081.md`](./knowledge/process_and_testing/K-081.md)
+- **[K-082]** lucide-react-native-jest-proxy-mock -> [`knowledge/process_and_testing/K-082.md`](./knowledge/process_and_testing/K-082.md)
+- **[K-083]** monorepo-jest-alias-sync -> [`knowledge/process_and_testing/K-083.md`](./knowledge/process_and_testing/K-083.md)
 - **[K-084]** expo-53-firebase-ios-build-fix -> [`knowledge/process_and_testing/K-084.md`](./knowledge/process_and_testing/K-084.md)
+- **[K-085]** mobile-cache-invalidation-logs -> [`knowledge/process_and_testing/K-085.md`](./knowledge/process_and_testing/K-085.md)

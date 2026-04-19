@@ -21,10 +21,10 @@
     "id": "session_2026W16_fase7_planning",
     "started_at": "2026-04-19T00:00:00Z",
     "completed_at": null,
-    "mode": "planning",
-    "status": "planned",
-    "goal": "Fase 7 — Migração Web para apps/web (Monorepo Tardio)",
-    "goal_type": "refactor",
+    "mode": "distillation",
+    "status": "distilled",
+    "goal": "compress and distill project memory",
+    "goal_type": "chore",
     "acceptance_criteria": [
       "apps/web/ criado com package.json próprio",
       "src/, public/, index.html, vite.config.js movidos para apps/web/",
@@ -41,9 +41,9 @@
       "phase": "h7-monorepo-web",
       "sprint": "7.1",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md",
-      "status": "planned",
+      "status": "in-progress",
       "started_at": "2026-04-19T00:00:00Z",
-      "notes": "Planejamento completo. ADR-032 criado (proposed). Aguardando aprovação humana explícita antes de qualquer execução. Pré-condições 1-4 e 8 verificadas OK. 5-6 a verificar pré-Sprint 7.3. 7 PENDENTE."
+      "notes": "Sprint 7.1 COMPLETO (análise). Sprint 7.2 PRÓXIMO — criar apps/web/package.json, adicionar workspaces, rodar npm install. Achados: 5 vitest configs a mover, alias @design-tokens muda path, vercel.json sem buildCommand explícito, ESLint glob genérico OK mas 'dist' ignore pode precisar ajuste."
     }
   },
   "memory": {
@@ -52,14 +52,14 @@
     "decisions_count": 29,
     "contracts_count": 17,
     "knowledge_count": 85,
-    "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 14,
+    "last_distillation": "2026-04-19T12:00:00Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "rules": [],
-      "anti_patterns": [],
-      "knowledge": [],
-      "decisions": ["ADR-032"],
-      "timestamp": "2026-04-19T10:05:00Z"
+      "anti_patterns": ["AP-H23", "AP-H24", "AP-H25", "AP-H26"],
+      "knowledge": ["K-082", "K-083", "K-085"],
+      "decisions": ["ADR-031", "ADR-032"],
+      "timestamp": "2026-04-19T12:00:00Z"
     }
   },
   "evolution": {
