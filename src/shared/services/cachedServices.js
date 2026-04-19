@@ -261,6 +261,7 @@ const _invalidateAllLogsCache = () => {
   invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED}*`)
   invalidateCache(`${CACHE_KEYS.LOGS_PAGINATED_SLIM}*`)
   invalidateCache('logs:dateRange*')
+  invalidateCache('logs:last30d*') // Garante invalidação da chave manual usada no Dashboard
   invalidateCache(`${CACHE_KEYS.LOGS_DATE_RANGE_SLIM}*`)
   _invalidateAdherenceCache()
 }
