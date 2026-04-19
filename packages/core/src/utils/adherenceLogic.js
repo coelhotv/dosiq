@@ -10,6 +10,11 @@ import { isProtocolActiveOnDate, parseLocalDate } from './dateUtils.js'
 // Re-export para manter compatibilidade com imports existentes
 export { isProtocolActiveOnDate }
 
+// Invariantes de Negócio (R-022, R-129)
+const TOLERANCE_WINDOW_HOURS = 2
+const TOLERANCE_WINDOW_MS = TOLERANCE_WINDOW_HOURS * 60 * 60 * 1000
+const TOLERANCE_WINDOW_MINUTES = TOLERANCE_WINDOW_HOURS * 60
+
 /**
  * Calcula doses esperadas para um conjunto de protocolos em um período.
  * Considera start_date e end_date para calcular dias efetivos de cada protocolo.
@@ -232,9 +237,8 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
   scheduledDate.setHours(sH, sM, 0, 0)
 
   const diffMs = Math.abs(takenDate.getTime() - scheduledDate.getTime())
-  const twoHoursInMs = 2 * 60 * 60 * 1000
 
-  return diffMs <= twoHoursInMs
+  return diffMs <= TOLERANCE_WINDOW_MS
 }
 
 /**
@@ -260,7 +264,7 @@ export function getNextDoseTime(protocol) {
     .sort((a, b) => a - b)
 
   // Janela de tolerância: 2 horas (120 minutos)
-  const toleranceWindowMinutes = 2 * 60
+  const toleranceWindowMinutes = TOLERANCE_WINDOW_MINUTES
 
   // Encontra o próximo horário hoje (incluindo janela de 2h de tolerância)
   // Uma dose é considerada "ativa" até 2 horas após o horário agendado
@@ -291,7 +295,7 @@ export function getNextDoseWindowEnd(nextDoseTime) {
   }
 
   const [hours, minutes] = nextDoseTime.split(':').map(Number)
-  const windowEndMinutes = hours * 60 + minutes + 2 * 60 // +2 horas
+  const windowEndMinutes = hours * 60 + minutes + TOLERANCE_WINDOW_MINUTES // +2 horas
 
   const endHours = String(Math.floor(windowEndMinutes / 60) % 24).padStart(2, '0')
   const endMinutes = String(windowEndMinutes % 60).padStart(2, '0')
@@ -313,8 +317,7 @@ export function isInToleranceWindow(nextDoseTime) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   const [hours, minutes] = nextDoseTime.split(':').map(Number)
-  const doseMinutes = hours * 60 + minutes
-  const toleranceWindowMinutes = 2 * 60
+  const toleranceWindowMinutes = TOLERANCE_WINDOW_MINUTES
 
   // Está dentro da janela se o horário atual for maior que o agendado
   // mas menor que o agendado + 2 horas
@@ -577,7 +580,6 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
  */
 export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
   const { takenDoses = [], missedDoses = [], scheduledDoses = [] } = dosesObj
-  const toleranceMs = 2 * 60 * 60 * 1000 // 2 horas
   const nowMs = now.getTime()
 
   // Helper para criar Date consistente
@@ -599,7 +601,7 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
 
       // Se passou menos de 2h do horário agendado, ainda é ATRASADA
       // Se passou mais de 2h, é PERDIDA
-      const timelineStatus = diffMs <= toleranceMs ? 'ATRASADA' : 'PERDIDA'
+      const timelineStatus = diffMs <= TOLERANCE_WINDOW_MS ? 'ATRASADA' : 'PERDIDA'
       return { ...d, timelineStatus }
     }),
 
@@ -610,16 +612,15 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
 
       // Se falta menos de 2h para o horário agendado, é PROXIMA (Aviso prévio)
       // Se falta mais de 2h, é PLANEJADA
-      const timelineStatus = diffMs <= toleranceMs ? 'PROXIMA' : 'PLANEJADA'
+      const timelineStatus = diffMs <= TOLERANCE_WINDOW_MS ? 'PROXIMA' : 'PLANEJADA'
       return { ...d, timelineStatus }
     }),
   ]
 
   // Ordenar por horário agendado (cronológico)
   return allDoses.sort((a, b) => {
-    const timeA = a.scheduledTime || '00:00'
-    const timeB = b.scheduledTime || '00:00'
-    return timeA.localeCompare(timeB)
+    const getTime = (d) => d.scheduledTime || (d.taken_at ? new Date(d.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '00:00')
+    return getTime(a).localeCompare(getTime(b))
   })
 }
 

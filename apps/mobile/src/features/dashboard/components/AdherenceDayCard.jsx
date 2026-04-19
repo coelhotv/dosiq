@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { TrendingUp } from 'lucide-react-native'
 import AdherenceRing from './AdherenceRing'
+import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
 
 /**
  * AdherenceDayCard - Card de status diário/semanal para o Dashboard (Epic 2)
@@ -25,7 +26,7 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
           
           {trend ? (
             <View style={styles.trendContainer}>
-              <TrendingUp size={16} color="#006a5e" style={styles.trendIcon} />
+              <TrendingUp size={16} color={colors.primary[500]} style={styles.trendIcon} />
               <Text style={styles.trendText}>{trend}</Text>
             </View>
           ) : null}
@@ -41,17 +42,12 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff', // surface_container_lowest
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    // Ambient Shadow
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[4],
+    ...shadows.sm,
   },
   content: {
     flexDirection: 'row',
@@ -60,7 +56,7 @@ const styles = StyleSheet.create({
   },
   left: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: spacing[3],
   },
   right: {
     width: 80,
@@ -70,25 +66,25 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1c1e',
-    marginBottom: 4,
+    color: colors.text.primary,
+    marginBottom: spacing[1],
   },
   description: {
     fontSize: 14,
-    color: '#44474e',
+    color: colors.text.secondary,
     lineHeight: 20,
   },
   trendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: spacing[2],
   },
   trendIcon: {
-    marginRight: 4,
+    marginRight: spacing[1],
   },
   trendText: {
     fontSize: 13,
-    color: '#006a5e', // primary
+    color: colors.primary[500],
     fontWeight: '600',
   },
 })

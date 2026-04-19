@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ScrollView, View, Text, RefreshControl, StyleSheet } from 'react-native'
 import { Pill } from 'lucide-react-native'
 import { useTodayData } from '../hooks/useTodayData'
@@ -30,15 +30,18 @@ export default function TodayScreen() {
   const timeline = data?.timeline ?? []
   const stockAlerts = data?.stockAlerts ?? []
 
-  // Agrupamento da Timeline por Turnos (Epic 2)
-  const groupedTimeline = timeline.reduce((acc, dose) => {
-    const shift = getPeriodFromTime(dose.scheduledTime)
-    if (!acc[shift]) acc[shift] = []
-    acc[shift].push(dose)
-    return acc
-  }, {})
-
-  const shifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite'].filter(s => groupedTimeline[s])
+  // Agrupamento da Timeline por Turnos (Epic 2) - Memoized (Ref Gemini review)
+  const { groupedTimeline, shifts } = useMemo(() => {
+    const grouped = timeline.reduce((acc, dose) => {
+      const shift = getPeriodFromTime(dose.scheduledTime)
+      if (!acc[shift]) acc[shift] = []
+      acc[shift].push(dose)
+      return acc
+    }, {})
+    
+    const activeShifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite'].filter(s => grouped[s])
+    return { groupedTimeline: grouped, shifts: activeShifts }
+  }, [timeline])
 
   // Doses prioritárias (Hero)
   const priorityDoses = timeline
@@ -108,9 +111,9 @@ export default function TodayScreen() {
           shifts.map(shift => (
             <View key={shift}>
               <TimeBlockSeparator type={shift} />
-              {groupedTimeline[shift].map((dose, idx) => (
+              {groupedTimeline[shift].map((dose) => (
                 <DoseTimelineCard 
-                  key={`${dose.id}-${idx}`} 
+                  key={dose.id} 
                   dose={dose} 
                   onRegister={handleOpenRegister}
                 />
