@@ -12,6 +12,7 @@ A Fase 8 concentra todas as implementações que refinam e exploram as capacidad
 
 **Placeholder de Features Planejadas (Conforme Master Spec):**
 - ✅ **Notification Inbox (Central de Avisos)** - *Especificada abaixo*
+- ✅ **Redesign Nativo do Dashboard ("Santuário Terapêutico")** - *Concluído*
 - ⏳ Biometria Avançada
 - ⏳ Persistência de Alta Performance (MMKV)
 - ⏳ Integrações Nativas de Saúde (HealthKit / Google Fit)
@@ -119,17 +120,17 @@ Esta fase insere um agrupamento de itens baseados em "Turnos" (Manhã, Tarde, No
 ### 2.3 Roteiro de Sprints (Prescritivo)
 
 #### Sprint 8.4: Data Binding e Util de Linha do Tempo
-- **Tarefa**: Codificar e testar nativamente a máquina de estados `evaluateDoseTimelineState(dosesArray)`.
-- **Quality Gate**: Escrever Vitest focado que rode simulações (vi.useFakeTimers) no Brasil/GMT-3 e confira que a janela +2h de facto chaveie "ATRASADA" -> "PERDIDA".
-- **Artefato**: Sem código em Views! Somente manipulação em data / helpers.
+- [x] **Tarefa**: Codificar e testar nativamente a máquina de estados `evaluateDoseTimelineState(dosesArray)`.
+- [x] **Quality Gate**: Escrever Vitest focado que rode simulações (vi.useFakeTimers) no Brasil/GMT-3 e confira que a janela +2h de facto chaveie "ATRASADA" -> "PERDIDA".
+- [x] **Artefato**: Sem código em Views! Somente manipulação em data / helpers.
 
 #### Sprint 8.5: Adherence Card & TimeBlock Container
-- **Tarefa**: Criar no Mobile UI os subcomponentes `<AdherenceDayCard />` e o `<TimeBlockSeparator />` (turnos).
-- **Quality Gate**: O Adherence Metric usa `useDashboardContext` já provido ou equivalente. Teste local renderizando perfeitamente independente da plataforma.
+- [x] **Tarefa**: Criar no Mobile UI os subcomponentes `<AdherenceDayCard />` e o `<TimeBlockSeparator />` (turnos).
+- [x] **Quality Gate**: O Adherence Metric usa `useDashboardContext` já provido ou equivalente. Teste local renderizando perfeitamente independente da plataforma.
 
 #### Sprint 8.6: Dose Cards, Assemble UI e Acesso ao Botão de Confirmação.
-- **Tarefa**: Desenvolver as implementações de visualização do card `HeroActionableCard` vs `StandardVisualCard` e montar do `DashboardNativeScreen`.
-- **Quality Gate**: Ao clicar "Confirmar Uso", ele chama exatamente as mesmas signatures via payload do que quando apertavamos do botão nativo MVP antigo.
+- [x] **Tarefa**: Desenvolver as implementações de visualização do card `HeroActionableCard` vs `StandardVisualCard` e montar do `DashboardNativeScreen`.
+- [x] **Quality Gate**: Ao clicar "Confirmar Uso", ele chama exatamente as mesmas signatures via payload do que quando apertavamos do botão nativo MVP antigo.
 
 ---
 
@@ -137,9 +138,9 @@ Esta fase insere um agrupamento de itens baseados em "Turnos" (Manhã, Tarde, No
 > **Aprovação mandatória antes do PR:** Ao integrar Sprint 8.6, o Code Agent deverá expor log verde do runner de testes local (`npm run validate:agent`) e **parar categoricamente (HALT)**. O analista de produtos (Agente Humano) assumirá a máquina local, executará o emulador (Expo/iOS ou Android) e testará tátil/manualmente os estados antes de autorizar o Merge ou Code Review.
 
 **Requisitos Finais (DoD):**
-- [ ] Timeline visivelmente fatiada em 3 blocos (Manhã, Tarde, Noite).
-- [ ] Ring Gauge percentual exibe total diário fidedigno aos logs do BD.
-- [ ] Componente Desktop/PWA abre em build isolado e não sofreu 1 pixel de quebra por contaminações de escopo cruzado.
-- [ ] CTAs (Confirmar Uso) só reagem dentro da janela de `+/- 2h`.
-- [ ] O app compila livre de `eslint/no-restricted-imports` nativo cruzados (ex: SVGs puros importados no Root Native).
-- [ ] Assinatura Humana presencial em emulador autorizando a funcionalidade 100%.
+- [x] Timeline visivelmente fatiada em 3 blocos (Manhã, Tarde, Noite).
+- [x] Ring Gauge percentual exibe total diário fidedigno aos logs do BD.
+- [x] Componente Desktop/PWA abre em build isolado e não sofreu 1 pixel de quebra por contaminações de escopo cruzado.
+- [x] CTAs (Confirmar Uso) só reagem dentro da janela de `+/- 2h`.
+- [x] O app compila livre de `eslint/no-restricted-imports` nativo cruzados (ex: SVGs puros importados no Root Native).
+- [x] Assinatura Humana presencial em emulador autorizando a funcionalidade 100%.
