@@ -135,4 +135,5 @@
 - **[R-156]** Em isComplex=false, usar AdherenceLabel (não AdherenceBar7d). Thresholds: >90% '... -> [`rules/react_and_ui/R-156.md`](./rules/react_and_ui/R-156.md)
 - **[R-160]** React/React-DOM pair MUST have identical versions (no ranges), they must match e... -> [`rules/react_and_ui/R-160.md`](./rules/react_and_ui/R-160.md)
 - **[R-169]** Every screen component in apps/mobile/src/features/*/screens/ MUST be wrapped in... -> [`rules/react_and_ui/R-169.md`](./rules/react_and_ui/R-169.md)
-- **[R-177]** Ao criar novos diretórios (ex: server/), garantir que testes e lint capturem os novos caminhos... -> [`rules_detail/R-177.md`](./rules_detail/R-177.md)
+- **[R-175]** Snapshots offline segregados por dia DEVEM incluir localDay via getTodayLocal()... -> [`rules/mobile_and_platform/R-175.md`](./rules/mobile_and_platform/R-175.md)
+- **[R-178]** Ao criar novos diretórios (ex: server/), garantir que testes e lint capturem os novos caminhos... -> [`rules/process_and_testing/R-178.md`](./rules/process_and_testing/R-178.md)

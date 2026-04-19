@@ -109,4 +109,3 @@
 - **[AP-H23]** @react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+) — Firebase não inicializa; usar v21+ -> [`anti-patterns/mobile_and_platform/AP-H23.md`](./anti-patterns/mobile_and_platform/AP-H23.md)
 - **[AP-H24]** FirebaseCoreInternal/GoogleUtilities quebra pod install sem useModularHeaders — instalar expo-build-properties com `ios.useModularHeaders: true` -> [`anti-patterns/mobile_and_platform/AP-H24.md`](./anti-patterns/mobile_and_platform/AP-H24.md)
 - **[AP-H25]** googleServicesFile iOS ausente no app.config.js — sempre configurar `ios.googleServicesFile` além do Android -> [`anti-patterns/mobile_and_platform/AP-H25.md`](./anti-patterns/mobile_and_platform/AP-H25.md)
-- **[AP-T05]** Silent Test Debt: Criar testes em novas pastas sem integrar na suíte global de testes... -> [`anti-patterns_detail/AP-T05.md`](./anti-patterns_detail/AP-T05.md)

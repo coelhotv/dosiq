@@ -47,8 +47,8 @@
     }
   },
   "memory": {
-    "rules_count": 125,
-    "anti_patterns_count": 100,
+    "rules_count": 126,
+    "anti_patterns_count": 99,
     "decisions_count": 28,
     "contracts_count": 17,
     "knowledge_count": 85,
