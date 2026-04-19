@@ -90,3 +90,50 @@ export async function getMedicinesData(medicineIds) {
     return acc
   }, {})
 }
+
+/**
+ * Busca as configurações do usuário, incluindo o nome.
+ * @param {string} userId
+ * @returns {Promise<Object|null>}
+ */
+export async function getUserSettings(userId) {
+  z.string().uuid().parse(userId)
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('display_name, timezone')
+    .eq('user_id', userId)
+    .single()
+
+  if (error && error.code !== 'PGRST116') return null
+  if (error) throw error
+  return data
+}
+
+/**
+ * Busca logs para um período de dias (histórico).
+ * @param {string} userId
+ * @param {number} days
+ * @returns {Promise<Array>}
+ */
+export async function getLogsForPeriod(userId, days = 7) {
+  z.string().uuid().parse(userId)
+  
+  // boundaries UTC baseadas na meia-noite local
+  const startLocal = parseLocalDate(new Date().toISOString().split('T')[0])
+  startLocal.setDate(startLocal.getDate() - (days - 1))
+  const startUTC = startLocal.toISOString()
+  
+  const endLocal = parseLocalDate(new Date().toISOString().split('T')[0])
+  endLocal.setDate(endLocal.getDate() + 1)
+  const endUTC = endLocal.toISOString()
+  
+  const { data, error } = await supabase
+    .from('medicine_logs')
+    .select('id, protocol_id, medicine_id, taken_at, quantity_taken')
+    .eq('user_id', userId)
+    .gte('taken_at', startUTC)
+    .lt('taken_at', endUTC)
+    
+  if (error) throw error
+  return data ?? []
+}

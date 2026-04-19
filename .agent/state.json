@@ -18,12 +18,12 @@
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_fase8_epic2_planning",
-    "started_at": "2026-04-19T00:00:00Z",
+    "id": "session_2026W16_fase8_epic2_coding",
+    "started_at": "2026-04-19T20:50:00Z",
     "completed_at": "",
-    "mode": "planning",
-    "status": "planned",
-    "goal": "Especificação do Redesign do Dashboard (Epic 2, Fase 8)",
+    "mode": "coding",
+    "status": "analysis",
+    "goal": "Implementação do Redesign do Dashboard Native (Epic 2, Fase 8)",
     "goal_type": "feature",
     "acceptance_criteria": [
       "apps/web/ criado com package.json próprio",
