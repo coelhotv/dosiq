@@ -14,15 +14,15 @@
       "expo",
       "react-native"
     ],
-    "phase": "h6-sprint-6.4",
+    "phase": "h6-sprint-6.5",
     "current_sprint": "2026-W16"
   },
   "session": {
     "id": "session_2026W16_h6_sprint6.5_beta",
     "started_at": "2026-04-18T22:19:00Z",
-    "completed_at": null,
+    "completed_at": "2026-04-18T22:30:00Z",
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "goal": "Sprint 6.5 — Beta Interno e Hardening",
     "goal_type": "feature",
     "acceptance_criteria": [
@@ -41,9 +41,9 @@
       "phase": "h6-push-native",
       "sprint": "6.5",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
-      "status": "in-progress",
+      "status": "completed",
       "started_at": "2026-04-18T22:19:00Z",
-      "notes": "Sprint 6.5: Distribuir builds reais em iOS e Android e validar em hardware físico + docs ops."
+      "notes": "Sprint 6.5 concluído: Builds reais (Android validado pelo usuário), push e tap navigation operacionais + documentação finalizada."
     }
   },
   "memory": {
@@ -53,7 +53,7 @@
     "contracts_count": 17,
     "knowledge_count": 83,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "recent_additions": {
       "rules": [
         "R-175",
