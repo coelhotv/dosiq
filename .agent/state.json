@@ -14,36 +14,36 @@
       "expo",
       "react-native"
     ],
-    "phase": "h7-completed",
+    "phase": "fase8-epic2-completed",
     "current_sprint": "2026-W16"
   },
   "session": {
     "id": "session_2026W16_fase8_epic2_coding",
     "started_at": "2026-04-19T20:50:00Z",
-    "completed_at": "",
+    "completed_at": "2026-04-19T22:21:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "goal": "Implementação do Redesign do Dashboard Native (Epic 2, Fase 8)",
     "goal_type": "feature",
     "acceptance_criteria": [
-      "apps/web/ criado com package.json próprio",
-      "src/, public/, index.html, vite.config.js movidos para apps/web/",
-      "Aliases Vite reconfigurados em apps/web/vite.config.js",
-      "npm run dev:web e npm run build:web funcionam",
-      "Testes web continuam sendo descobertos pelo runner",
-      "Deploy Vercel configurado para apps/web como root",
-      "api/ e server/ permanecem no root sem alterações",
-      "apps/mobile/ continua intacto e inicializando corretamente",
-      "npm run validate:agent verde após a migração"
+      "Timeline agrupada por turnos (Manhã, Tarde, Noite)",
+      "Uso de HeroDoseCard para doses ATRASADA/PROXIMA",
+      "Uso de DoseTimelineCard para listagem cronológica",
+      "Integração do display_name e saudação personalizada",
+      "Adesão de 7 dias no AdherenceDayCard",
+      "Cores e espaçamentos seguindo design tokens nativos",
+      "Filtro de CTAs para janela de +/- 2h",
+      "Aprovação humana tátil em emulador realizada",
+      "PR #481 mergeado com sucesso"
     ],
     "active_wave": {
-      "name": "Fase 7: Migração Web para apps/web",
-      "phase": "h7-monorepo-web",
-      "sprint": "7.5",
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md",
+      "name": "Fase 8: Especulativo (Pós-MVP) - Epic 2",
+      "phase": "h8-redesign-dashboard",
+      "sprint": "8.6",
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md",
       "status": "completed",
-      "started_at": "2026-04-19T00:00:00Z",
-      "notes": "Sprints 7.1–7.5 TODOS COMPLETOS. 7.1=análise, 7.2=workspaces+package.json, 7.3=git mv src/public/vite+5configs, 7.4=docs CLAUDE.md+MOBILE_PERFORMANCE, 7.5=specs+docs finais marcados entregues. vercel.json atualizado. AP-H27 documentado. 543 testes verdes. PR #480 aberto aguardando merge humano."
+      "started_at": "2026-04-19T18:00:00Z",
+      "notes": "Epic 2 COMPLETA. Redesign do dashboard nativo implementado com timeline tática, hero cards, e visual 'Therapeutic Sanctuary'. 100% testado e validado via emulador. PR #481 mergeado."
     }
   },
   "memory": {
@@ -53,7 +53,7 @@
     "contracts_count": 17,
     "knowledge_count": 85,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "recent_additions": {
       "rules": [],
       "anti_patterns": ["AP-H23", "AP-H24", "AP-H25", "AP-H26"],
