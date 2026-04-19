@@ -350,7 +350,7 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
           .from('protocols')
           .select('id, name, time_schedule, medicine_id, medicine:medicines(name)')
           .eq('user_id', userId)
-          .eq('is_active', true);
+          .eq('active', true);
 
         if (protError) throw protError;
         if (!protocols || protocols.length === 0) continue;
