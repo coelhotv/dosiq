@@ -4,12 +4,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { dispatchNotification } from './dispatchNotification.js'
 
-const makePayload = () => ({
-  title: 'Hora do seu remédio',
-  body: 'Tome Losartana agora',
-  deeplink: 'meusremedios://today',
-  metadata: {},
-})
+const mockPayload = {
+  title: '💊 Lembrete de Medicamento',
+  body: 'Olá! Está na hora de tomar Medicamento Teste conforme agendado.',
+  deeplink: 'meusremedios://today?protocolId=prot-123',
+  metadata: { protocolId: 'prot-123' }
+}
 
 const makeContext = () => ({ correlationId: 'test-corr-123' })
 

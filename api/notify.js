@@ -48,8 +48,8 @@ function buildNotificationPayload({ kind, data }) {
   switch (kind) {
     case 'dose_reminder':
       return {
-        title: 'Hora do seu remédio',
-        body: `Tome ${data.medicineName} agora`,
+        title: '💊 Lembrete de Medicamento',
+        body: `Olá! Está na hora de tomar ${data.medicineName} conforme agendado.`,
         deeplink: `meusremedios://today?protocolId=${data.protocolId}`,
         metadata: { 
           protocolId: data.protocolId, 
