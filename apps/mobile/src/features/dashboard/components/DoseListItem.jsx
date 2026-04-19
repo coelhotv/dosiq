@@ -69,7 +69,7 @@ export default function DoseListItem({ dose, onRegister }) {
           onPress={() => onRegister(protocol, scheduledTime)}
           activeOpacity={0.7}
         >
-          <Text style={styles.ctaText}>{isMissed ? 'Registrar' : 'Tomar'}</Text>
+          <Text style={styles.ctaText}>Tomar</Text>
         </TouchableOpacity>
       )}
  

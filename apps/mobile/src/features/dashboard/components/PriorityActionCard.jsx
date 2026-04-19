@@ -43,7 +43,7 @@ export default function PriorityActionCard({ doses, onPress }) {
         >
           <Check size={20} color={colors.primary[600]} />
           <Text style={styles.buttonText}>
-            {isMultiple ? 'Ver Urgências' : 'Confirmar Ingestão'}
+            {isMultiple ? 'Ver Urgências' : 'Confirmar Agora'}
           </Text>
         </TouchableOpacity>
       </View>
