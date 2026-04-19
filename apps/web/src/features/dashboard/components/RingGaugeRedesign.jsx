@@ -21,6 +21,17 @@ export default function RingGaugeRedesign({
   const offset = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE
   const isClickable = Boolean(onClick)
 
+  // Helper para determinar a cor semântica do stroke (Fase 8 Refinement)
+  const getStrokeColor = (s) => {
+    if (s === 0) return 'var(--color-gray-300)'
+    if (s >= 90) return 'var(--color-score-good)'
+    if (s >= 70) return 'var(--color-score-excellent)'
+    if (s >= 50) return 'var(--color-score-medium)'
+    return 'var(--color-score-critical)'
+  }
+
+  const strokeColor = getStrokeColor(score)
+
   return (
     <div
       className={`ring-gauge-redesign ring-gauge-redesign--${size}${className ? ` ${className}` : ''}`}
@@ -67,12 +78,14 @@ export default function RingGaugeRedesign({
           cy="60"
           r={RADIUS}
           fill="none"
-          stroke="var(--color-primary-fixed, #90f4e3)"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           initial={{ strokeDashoffset: CIRCUMFERENCE }}
-          animate={{ strokeDashoffset: offset }}
+          animate={{ 
+            strokeDashoffset: offset,
+            stroke: strokeColor 
+          }}
           transition={
             prefersReducedMotion
               ? { duration: 0 }

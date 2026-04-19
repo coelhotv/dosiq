@@ -73,3 +73,9 @@
   "pr": "481",
   "summary": "Implementação completa do redesign tático do Dashboard Mobile. Introduzida timeline por turnos, Hero Cards para doses prioritárias, métricas de adesão de 7 dias e personalização de saudação. Refatorada lógica de estados de dose em adherenceLogic.js com cobertura de testes 100%. Resolvidos os comentários de revisão sobre memoização, chaves React e tokens de design."
 }
+{
+  "timestamp": "2026-04-19T23:22:36Z",
+  "goal": "Refinamento do Dashboard Nativo e Protocolos de Interação",
+  "status": "COMPLETED",
+  "summary": "Implementação de novas escalas de adesão (5 níveis com tons pastéis e mensagens granulares) nos componentes AdherenceRing e AdherenceDayCard. Estabelecimento e codificação dos protocolos globais de interação Agente-Humano em GLOBAL_RULES.md e R-064 para garantir fluxo de aprovação transparente. Corrigidas regressões de Hook Order no TodayScreen.jsx."
+}
