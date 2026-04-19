@@ -5,8 +5,10 @@ import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
-import TodaySummaryCard from '../components/TodaySummaryCard'
-import UpcomingDosesList from '../components/UpcomingDosesList'
+import { getPeriodFromTime } from '@meus-remedios/core'
+import AdherenceDayCard from '../components/AdherenceDayCard'
+import TimeBlockSeparator from '../components/TimeBlockSeparator'
+import DoseListItem from '../components/DoseListItem'
 import PriorityActionCard from '../components/PriorityActionCard'
 import StockAlertInline from '../components/StockAlertInline'
 import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
@@ -25,10 +27,23 @@ export default function TodayScreen() {
   const medicines = data?.medicines ?? {}
   const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
   const zones = data?.zones ?? { late: [], now: [], upcoming: [], done: [] }
+  const timeline = data?.timeline ?? []
   const stockAlerts = data?.stockAlerts ?? []
 
-  // Doses prioritárias: Agrupar até 3 medicamentos (Late + Now) conforme Spec H5.7.5
-  const priorityDoses = [...zones.late, ...zones.now].slice(0, 3)
+  // Agrupamento da Timeline por Turnos (Epic 2)
+  const groupedTimeline = timeline.reduce((acc, dose) => {
+    const shift = getPeriodFromTime(dose.scheduledTime)
+    if (!acc[shift]) acc[shift] = []
+    acc[shift].push(dose)
+    return acc
+  }, {})
+
+  const shifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite'].filter(s => groupedTimeline[s])
+
+  // Doses prioritárias (Hero): Categorias PROXIMA e ATRASADA do evaluateDoseTimelineState
+  const priorityDoses = timeline
+    .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
+    .slice(0, 3)
 
   function handleOpenRegister(protocol, scheduledTime) {
     setModalProtocol(protocol)
@@ -51,14 +66,13 @@ export default function TodayScreen() {
           <RefreshControl
             refreshing={loading && !!data}
             onRefresh={refresh}
-            tintColor="#005db6"
+            tintColor="#006a5e"
           />
         }
       >
-        <TodaySummaryCard 
-          totalExpected={stats.expected} 
-          totalTaken={stats.taken} 
+        <AdherenceDayCard 
           score={stats.score} 
+          trend="Dados sincronizados" // Placeholder por enquanto
         />
 
         <StockAlertInline alerts={stockAlerts} />
@@ -70,16 +84,28 @@ export default function TodayScreen() {
           />
         )}
 
+        <View style={styles.agendaHeader}>
+          <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
+        </View>
+
         {protocols.length === 0 ? (
           <EmptyState
             icon="💊"
             message={'Sem tratamentos activos.\nAdicione protocolos na versão web.'}
           />
         ) : (
-          <UpcomingDosesList
-            zones={zones}
-            onRegister={handleOpenRegister}
-          />
+          shifts.map(shift => (
+            <View key={shift}>
+              <TimeBlockSeparator type={shift} />
+              {groupedTimeline[shift].map((dose, idx) => (
+                <DoseListItem 
+                  key={`${dose.id}-${idx}`} 
+                  dose={dose} 
+                  onRegister={handleOpenRegister} 
+                />
+              ))}
+            </View>
+          ))
         )}
       </ScrollView>
 
@@ -100,8 +126,18 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   scroll: {
-    paddingVertical: 20,
+    paddingVertical: 10,
     paddingBottom: 40,
+  },
+  agendaHeader: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 0,
+  },
+  agendaTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1c1e',
   },
   staleBanner: {
     backgroundColor: 'rgba(255, 152, 0, 0.1)',
