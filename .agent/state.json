@@ -51,7 +51,7 @@
     "contracts_count": 17,
     "knowledge_count": 85,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "recent_additions": {
       "rules": ["R-064"],
       "anti_patterns": ["AP-H23", "AP-H24", "AP-H25", "AP-H26"],
