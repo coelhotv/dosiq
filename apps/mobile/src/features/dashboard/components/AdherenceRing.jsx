@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated } from 'react-native'
 import Svg, { Circle, G } from 'react-native-svg'
+import { colors } from '../../../shared/styles/tokens'
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
@@ -20,7 +21,7 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
     Animated.timing(animatedValue, {
       toValue: score,
       duration: 1000,
-      useNativeDriver: true, // Animando strokeDashoffset em SVG não suporta native driver em todas versões, mas vamos tentar
+      useNativeDriver: false, // Color interpolation doesn't work with native driver for SVG props
     }).start()
   }, [score])
 
@@ -28,6 +29,19 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
   const strokeDashoffset = animatedValue.interpolate({
     inputRange: [0, 100],
     outputRange: [circumference, 0],
+  })
+
+  // Interpolação de cor baseada no score (Thresholds H5.7.3 / R-129)
+  const strokeColor = animatedValue.interpolate({
+    inputRange: [0, 69, 70, 89, 90, 100],
+    outputRange: [
+      colors.status.error,    // < 70% (Risco)
+      colors.status.error,
+      '#f59e0b',              // 70-89% (Alerta/Médio)
+      '#f59e0b',
+      colors.primary[500],    // >= 90% (Excelente)
+      colors.primary[500],
+    ],
   })
 
   return (
@@ -39,7 +53,7 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#e1e3e8" // Neutral 200 (mais visível mas sutil)
+            stroke={colors.neutral[200]}
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeOpacity={0.4}
@@ -49,7 +63,7 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#14b8a6" // Emerald 500 (Primary Fixed)
+            stroke={strokeColor}
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeDasharray={`${circumference} ${circumference}`}
@@ -81,12 +95,12 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1a1c1e', // On Surface
-    fontFamily: 'System', // Ideal: Outfit/Lexend se disponível
+    color: colors.text.primary,
+    fontFamily: 'System',
   },
   label: {
     fontSize: 12,
-    color: '#44474e', // Variant
+    color: colors.text.secondary,
     marginTop: -2,
   },
 })
