@@ -74,6 +74,9 @@ module.exports = {
     plugins: [
       '@react-native-firebase/app',
       ['expo-build-properties', {
+        ios: {
+          useFrameworks: 'static'
+        }
       }],
       './withFirebaseFix.js'
     ],
