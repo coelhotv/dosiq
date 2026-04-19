@@ -84,7 +84,7 @@ O app exige autenticação para acesso às funcionalidades principais.
 
 Credenciais de teste:
 E-mail: 'review@coelho.me'
-Senha: 'APPreview'
+Senha: [senha secreta]
 
 Passos para acesso:
 1. Abra o app.
@@ -109,7 +109,7 @@ This app requires authentication to access its main features.
 
 Test credentials:
 Email: review@coelho.me
-Password: APPreview
+Password: [senha secreta]
 
 Steps to access the app:
 1. Open the app.
@@ -186,7 +186,7 @@ This app requires login to access its main features.
 
 Test account:
 Email: review@coelho.me
-Password: APPreview
+Password: [senha secreta]
 
 Steps:
 1. Open the app.
