@@ -51,7 +51,11 @@ function buildNotificationPayload({ kind, data }) {
         title: 'Hora do seu remédio',
         body: `Tome ${data.medicineName} agora`,
         deeplink: `meusremedios://today?protocolId=${data.protocolId}`,
-        metadata: { protocolId: data.protocolId, medicineId: data.medicineId }
+        metadata: { 
+          protocolId: data.protocolId, 
+          medicineId: data.medicineId,
+          dosage: data.dosage || 1
+        }
       };
     case 'stock_alert':
       return {
