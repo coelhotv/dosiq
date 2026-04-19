@@ -317,6 +317,7 @@ export function isInToleranceWindow(nextDoseTime) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   const [hours, minutes] = nextDoseTime.split(':').map(Number)
+  const doseMinutes = hours * 60 + minutes
   const toleranceWindowMinutes = TOLERANCE_WINDOW_MINUTES
 
   // Está dentro da janela se o horário atual for maior que o agendado
