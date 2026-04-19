@@ -49,9 +49,9 @@ module.exports = {
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
     splash: {
-      image: './assets/icon.png',
+      image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#E9F3EA',
+      backgroundColor: '#005db6',
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,

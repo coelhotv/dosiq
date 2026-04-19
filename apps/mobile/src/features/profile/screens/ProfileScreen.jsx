@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Bell } from 'lucide-react-native'
+import Constants from 'expo-constants'
 import { useProfile } from '../hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import TelegramLinkCard from '../components/TelegramLinkCard'
@@ -110,6 +111,12 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.versionSection}>
+          <Text style={styles.versionText}>
+            Versão {Constants.expoConfig?.version || '0.0.0'} (Build {Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || '1'})
+          </Text>
+        </View>
+
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Erro ao carregar dados: {error}</Text>
@@ -207,5 +214,15 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 20,
     color: colors.text.secondary,
+  },
+  versionSection: {
+    paddingVertical: spacing[4],
+    alignItems: 'center',
+    opacity: 0.5,
+  },
+  versionText: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontFamily: 'Courier', // Estilo técnico
   },
 })
