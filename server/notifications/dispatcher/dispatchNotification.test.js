@@ -47,7 +47,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-1',
       kind: 'dose_reminder',
-      payload: makePayload(),
+      payload: mockPayload,
       channels: ['telegram', 'mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -69,7 +69,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-2',
       kind: 'dose_reminder',
-      payload: makePayload(),
+      payload: mockPayload,
       channels: ['telegram', 'mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -96,7 +96,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-3',
       kind: 'dose_reminder',
-      payload: makePayload(),
+      payload: mockPayload,
       channels: ['mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -113,7 +113,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-4',
       kind: 'dose_reminder',
-      payload: makePayload(),
+      payload: mockPayload,
       channels: [],
       context: makeContext(),
       repositories: mockRepositories,
@@ -135,7 +135,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-5',
       kind: 'dose_reminder',
-      payload: makePayload(),
+      payload: mockPayload,
       channels: ['mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
