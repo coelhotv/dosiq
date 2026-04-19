@@ -32,26 +32,31 @@ Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 
 ## Estrutura do Projeto
 
 ```
-src/
-  features/          # Feature modules (fonte canonica)
-    adherence/       # Streaks, trends, widgets de adesao
-    dashboard/       # Dashboard principal, analytics, insights, widgets
-    medications/     # CRUD de medicamentos
-    protocols/       # Protocolos de tratamento, titulacao
-    stock/           # Controle de estoque
-  schemas/           # Schemas Zod (UNICO local para schemas)
-  services/api/      # Services compartilhados (adherenceService, dlq)
-  shared/
-    components/ui/   # Componentes reutilizaveis (Button, Card, Modal, AlertList, Calendar)
-    components/log/  # Componentes de registro de doses
-    components/pwa/  # InstallPrompt, PushPermission
-    components/onboarding/
-    hooks/           # useCachedQuery, useTheme, usePushSubscription
-    services/        # queryCache, analytics, shared services
-    utils/           # supabase client, dateUtils, queryCache
-    styles/          # CSS tokens, temas
-  utils/             # adherenceLogic, dateUtils
-  views/             # View wrappers (Dashboard, Medicines, Stock, etc.)
+apps/web/            # Web app (workspace @meus-remedios/web)
+  src/
+    features/          # Feature modules (fonte canonica)
+      adherence/       # Streaks, trends, widgets de adesao
+      dashboard/       # Dashboard principal, analytics, insights, widgets
+      medications/     # CRUD de medicamentos
+      protocols/       # Protocolos de tratamento, titulacao
+      stock/           # Controle de estoque
+    schemas/           # Schemas Zod (UNICO local para schemas)
+    services/api/      # Services compartilhados (adherenceService, dlq)
+    shared/
+      components/ui/   # Componentes reutilizaveis (Button, Card, Modal, AlertList, Calendar)
+      components/log/  # Componentes de registro de doses
+      components/pwa/  # InstallPrompt, PushPermission
+      components/onboarding/
+      hooks/           # useCachedQuery, useTheme, usePushSubscription
+      services/        # queryCache, analytics, shared services
+      utils/           # supabase client, dateUtils, queryCache
+      styles/          # CSS tokens, temas
+    utils/             # adherenceLogic, dateUtils
+    views/             # View wrappers (Dashboard, Medicines, Stock, etc.)
+  vite.config.js       # Aliases, manualChunks, build config
+  vitest.config.js     # (+ critical/smoke/lowram/ci variants)
+  package.json         # @meus-remedios/web — scripts locais
+apps/mobile/         # React Native / Expo app (workspace @meus-remedios/mobile)
 api/                 # Vercel serverless functions
   gemini-reviews/    # Integracao Gemini Code Assist
   health/            # Health checks
@@ -96,20 +101,23 @@ docs/                # Documentacao do projeto
 
 ---
 
-## Path Aliases (vite.config.js)
+## Path Aliases (apps/web/vite.config.js)
+
+Aliases definidos em `apps/web/vite.config.js` — resolvem relativos a `apps/web/`:
 
 ```
-@           -> src/
-@features   -> src/features/
-@shared     -> src/shared/
-@services   -> src/services/
-@dashboard  -> src/features/dashboard/
-@medications -> src/features/medications/
-@protocols  -> src/features/protocols/
-@stock      -> src/features/stock/
-@adherence  -> src/features/adherence/
-@schemas    -> src/schemas/
-@utils      -> src/utils/
+@           -> apps/web/src/
+@features   -> apps/web/src/features/
+@shared     -> apps/web/src/shared/
+@services   -> apps/web/src/services/
+@dashboard  -> apps/web/src/features/dashboard/
+@medications -> apps/web/src/features/medications/
+@protocols  -> apps/web/src/features/protocols/
+@stock      -> apps/web/src/features/stock/
+@adherence  -> apps/web/src/features/adherence/
+@schemas    -> apps/web/src/schemas/
+@utils      -> apps/web/src/utils/
+@design-tokens -> packages/design-tokens/src/
 ```
 
 SEMPRE use aliases nos imports. NUNCA use caminhos relativos longos.
@@ -437,7 +445,7 @@ const Medicines = lazy(() => import('./views/Medicines'))
 </Suspense>
 ```
 
-**ViewSkeleton component:** Skeleton loading screen (src/App.jsx, lines 23-35) que exibe placeholder durante carregamento de chunks grandes (jsPDF, medicineDatabase, etc). Resultado: FCP melhorado ~500ms no mobile.
+**ViewSkeleton component:** Skeleton loading screen (apps/web/src/App.jsx, lines 23-35) que exibe placeholder durante carregamento de chunks grandes (jsPDF, medicineDatabase, etc). Resultado: FCP melhorado ~500ms no mobile.
 
 Navegacao via `setCurrentView()` + `BottomNav` component.
 `DashboardProvider` wrapa toda a app (context compartilhado).
