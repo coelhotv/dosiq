@@ -26,6 +26,7 @@
 - **[ADR-022]** LLM Responses Forbidden from Using Markdown Syntax -> [`decisions/infra_and_deploy/ADR-022.md`](./decisions/infra_and_deploy/ADR-022.md)
 - **[ADR-023]** No Font Weights Below 400 (Elderly Accessibility) -> [`decisions/infra_and_deploy/ADR-023.md`](./decisions/infra_and_deploy/ADR-023.md)
 - **[ADR-026]** Web Permanece na Raiz nas Fases 0-6 -> [`decisions/infra_and_deploy/ADR-026.md`](./decisions/infra_and_deploy/ADR-026.md)
+- **[ADR-032]** ⏳ PROPOSED — Executar Fase 7: Migração Web para apps/web (aguarda aprovação maintainer) -> [`decisions/infra_and_deploy/ADR-032.md`](./decisions/infra_and_deploy/ADR-032.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[ADR-004]** Structured Logging for Telegram Bot Debugging -> [`decisions/mobile_and_platform/ADR-004.md`](./decisions/mobile_and_platform/ADR-004.md)

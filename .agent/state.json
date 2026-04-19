@@ -14,62 +14,52 @@
       "expo",
       "react-native"
     ],
-    "phase": "h6-sprint-6.5",
+    "phase": "h7-planning",
     "current_sprint": "2026-W16"
   },
   "session": {
-    "id": "session_2026W16_h6_sprint6.5_beta",
-    "started_at": "2026-04-18T22:19:00Z",
-    "completed_at": "2026-04-18T22:30:00Z",
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Sprint 6.5 — Beta Interno e Hardening",
-    "goal_type": "feature",
+    "id": "session_2026W16_fase7_planning",
+    "started_at": "2026-04-19T00:00:00Z",
+    "completed_at": null,
+    "mode": "planning",
+    "status": "planned",
+    "goal": "Fase 7 — Migração Web para apps/web (Monorepo Tardio)",
+    "goal_type": "refactor",
     "acceptance_criteria": [
-      "Ao menos 1 device iOS validado com push real",
-      "Ao menos 1 device Android validado com push real",
-      "preference='none' respeitado em device real",
-      "preference='both' entrega em ambos em device real",
-      "Tap em notificação cold start navega corretamente",
-      "Falha permanente (DeviceNotRegistered) desativa token em notification_devices",
-      "Logs de dispatch visíveis no Vercel com correlationId",
-      "docs/operations/PUSH_NOTIFICATIONS.md criado",
-      "npm run validate:agent verde"
+      "apps/web/ criado com package.json próprio",
+      "src/, public/, index.html, vite.config.js movidos para apps/web/",
+      "Aliases Vite reconfigurados em apps/web/vite.config.js",
+      "npm run dev:web e npm run build:web funcionam",
+      "Testes web continuam sendo descobertos pelo runner",
+      "Deploy Vercel configurado para apps/web como root",
+      "api/ e server/ permanecem no root sem alterações",
+      "apps/mobile/ continua intacto e inicializando corretamente",
+      "npm run validate:agent verde após a migração"
     ],
     "active_wave": {
-      "name": "Fase 6: Push Native e Analytics",
-      "phase": "h6-push-native",
-      "sprint": "6.5",
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_H6_SPRINT_PLAN.md",
-      "status": "completed",
-      "started_at": "2026-04-18T22:19:00Z",
-      "notes": "Sprint 6.5 concluído: Builds reais (Android validado pelo usuário), push e tap navigation operacionais + documentação finalizada."
+      "name": "Fase 7: Migração Web para apps/web",
+      "phase": "h7-monorepo-web",
+      "sprint": "7.1",
+      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE7_MIGRACAO_WEB_APPS_WEB.md",
+      "status": "planned",
+      "started_at": "2026-04-19T00:00:00Z",
+      "notes": "Planejamento completo. ADR-032 criado (proposed). Aguardando aprovação humana explícita antes de qualquer execução. Pré-condições 1-4 e 8 verificadas OK. 5-6 a verificar pré-Sprint 7.3. 7 PENDENTE."
     }
   },
   "memory": {
     "rules_count": 126,
     "anti_patterns_count": 99,
-    "decisions_count": 28,
+    "decisions_count": 29,
     "contracts_count": 17,
     "knowledge_count": 85,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "recent_additions": {
-      "rules": [
-        "R-175",
-        "R-176"
-      ],
-      "anti_patterns": [
-        "AP-H18"
-      ],
-      "knowledge": [
-        "K-084",
-        "K-085"
-      ],
-      "decisions": [
-        "ADR-031"
-      ],
-      "timestamp": "2026-04-19T05:10:00Z"
+      "rules": [],
+      "anti_patterns": [],
+      "knowledge": [],
+      "decisions": ["ADR-032"],
+      "timestamp": "2026-04-19T10:05:00Z"
     }
   },
   "evolution": {
@@ -77,8 +67,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-18T22:14:55Z",
-    "relevant_rules_loaded_at": "2026-04-18T22:14:55Z",
+    "index_loaded_at": "2026-04-19T10:05:00Z",
+    "relevant_rules_loaded_at": "2026-04-19T10:05:00Z",
     "h5_1_sprint_validated": true,
     "h5_5_completed_at": "2026-04-14T16:45:00Z"
   },
