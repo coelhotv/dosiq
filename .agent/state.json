@@ -51,9 +51,9 @@
     "anti_patterns_count": 99,
     "decisions_count": 28,
     "contracts_count": 17,
-    "knowledge_count": 83,
+    "knowledge_count": 85,
     "last_distillation": "2026-04-16T22:42:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "recent_additions": {
       "rules": [
         "R-175",
@@ -63,11 +63,13 @@
         "AP-H18"
       ],
       "knowledge": [
-        "K-081",
-        "K-082",
-        "K-083"
+        "K-084",
+        "K-085"
       ],
-      "timestamp": "2026-04-16T22:42:00Z"
+      "decisions": [
+        "ADR-031"
+      ],
+      "timestamp": "2026-04-19T05:10:00Z"
     }
   },
   "evolution": {
