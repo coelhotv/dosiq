@@ -324,57 +324,73 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
  */
 async function checkRemindersViaDispatcher(dispatcher, correlationId) {
   try {
-    const { data: users } = await supabase.from('auth.users').select('id');
+    // R-111: Buscar apenas usuários ativos (evita queries em massa na auth.users)
+    const { data: users, error: userError } = await supabase
+      .from('user_settings')
+      .select('user_id, timezone');
+      
+    if (userError) throw userError;
+
     if (!users || users.length === 0) {
-      logger.debug('No users found for reminder dispatch');
+      logger.info('Nenhum usuário encontrado em user_settings para dispatch', { correlationId });
       return;
     }
 
-    logger.info(`Checking reminders via dispatcher for ${users.length} users`, { correlationId });
+    logger.info(`Iniciando verificação de lembretes para ${users.length} usuários (Dispatcher)`, { correlationId });
 
     for (const user of users) {
-      const userId = user.id;
+      const userId = user.user_id;
+      const timezone = user.timezone || 'America/Sao_Paulo';
+      
       try {
-        const { data: protocols } = await supabase
+        // Usar utilitário central de timezone (R-020)
+        const currentHHMM = getCurrentTimeInTimezone(timezone);
+
+        const { data: protocols, error: protError } = await supabase
           .from('protocols')
           .select('id, name, time_schedule, medicine_id, medicine:medicines(name)')
           .eq('user_id', userId)
           .eq('is_active', true);
 
+        if (protError) throw protError;
         if (!protocols || protocols.length === 0) continue;
-
-        // Usar horário de São Paulo para comparação com time_schedule (bug: new Date() retorna UTC)
-        const spNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-        const currentTime = `${String(spNow.getHours()).padStart(2, '0')}:${String(spNow.getMinutes()).padStart(2, '0')}`;
 
         for (const protocol of protocols) {
           const timeSchedule = protocol.time_schedule || [];
 
-          for (const scheduledTime of timeSchedule) {
-            if (scheduledTime === currentTime) {
-              const medicineName = protocol.medicine?.name || 'Medicamento';
+          if (timeSchedule.includes(currentHHMM)) {
+            const medicineName = protocol.medicine?.name || 'Medicamento';
+            
+            logger.info(`Dose encontrada! DisparandoDispatcher`, { 
+              userId, 
+              medicineName, 
+              scheduledTime: currentHHMM,
+              correlationId 
+            });
 
-              // Usar dispatcher via nova arquitetura
-              await dispatcher.dispatch({
-                userId,
-                kind: 'dose_reminder',
-                data: { medicineName, protocolId: protocol.id, medicineId: protocol.medicine_id },
-                context: { correlationId, jobType: 'dose_reminder_dispatcher' }
-              });
+            // Usar dispatcher via nova arquitetura
+            const result = await dispatcher.dispatch({
+              userId,
+              kind: 'dose_reminder',
+              data: { medicineName, protocolId: protocol.id, medicineId: protocol.medicine_id },
+              context: { correlationId, jobType: 'dose_reminder_dispatcher' }
+            });
 
-              // Log success (deduplicador ainda é usado se chamado depois)
+            if (result.success) {
               await logSuccessfulNotification(userId, protocol.id, 'dose_reminder', {});
+            } else {
+              logger.error(`Falha no dispatch da dose`, null, { userId, protocolId: protocol.id, errors: result.errors });
             }
           }
         }
       } catch (err) {
-        logger.error(`Error checking reminders for user via dispatcher`, err, { userId, correlationId });
+        logger.error(`Erro ao processar lembretes do usuário via dispatcher`, err, { userId, correlationId });
       }
     }
 
-    logger.info('Reminder dispatch check completed', { correlationId });
+    logger.info('CheckReminders (Dispatcher) concluído', { correlationId });
   } catch (err) {
-    logger.error('Error in checkRemindersViaDispatcher', err, { correlationId });
+    logger.error('Erro crítico em checkRemindersViaDispatcher', err, { correlationId });
   }
 }
 
