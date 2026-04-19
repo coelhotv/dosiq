@@ -1,7 +1,7 @@
 # Plano de Execucao: Estrategia Hibrida Web + Native
 
-> **Status:** Plano operacional de execucao — H0-H5 COMPLETAS ✅ | H6 proxima
-> **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-12
+> **Status:** Plano operacional de execucao — H0-H5 COMPLETAS ✅ | H6 em curso 🏗️
+> **Data:** 2026-04-10 | **Ultima atualizacao:** 2026-04-18
 > **Base:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (rev.1)
 > **Ferramenta:** `/devflow` via Agentes IA
 > **Projeto:** Meus Remedios v4.0.0
@@ -242,16 +242,16 @@ CACHE_KEYS centralizados em packages/shared-data com 25 chaves canonicas. genera
 **PRs:** 6-8 (shell+tabs; dashboard+dose; tratamentos+estoque; perfil+telegram; stale; testes)
 
 **Gates:**
-- [ ] 7 fluxos MVP validados manualmente (humano)
-- [ ] Testes unitarios de componentes criticos
-- [ ] Zero dependencia de componentes web
-- [ ] Design tokens Sanctuary aplicados
+- [x] 7 fluxos MVP validados manualmente (humano)
+- [x] Testes unitarios de componentes criticos
+- [x] Zero dependencia de componentes web
+- [x] Design tokens Sanctuary aplicados
 
 **Bloqueio humano:** validacao funcional de cada tela em device/simulator
 
 ---
 
-## Wave H6 — Push Native e Beta (Fase 6)
+## Wave H6 — Push Native e Beta (Fase 6) 🏗️ Em execução
 
 **Estimativa:** 5-7 sessoes | ~3-4 semanas
 **Pre-requisitos humanos:** CRITICO — APNs key, FCM, migracao SQL, device real, TestFlight
@@ -308,7 +308,7 @@ Semana 3-4    ─── H2 (Core Puro + Design Tokens)           ✅ COMPLETA (c
 Semana 5-7    ─── H3 (Adapters + Shared Data)              ✅ COMPLETA (PRs #462 + #463)
 Semana 8-9    ─── H4 (Scaffold Mobile) ← BLOQUEIO HUMANO: contas
 Semana 10-13  ─── H5 (MVP Produto)                         ✅ COMPLETA (PR #474)
-Semana 14-17  ─── H6 (Push + Beta) ← BLOQUEIO HUMANO: devices + stores
+Semana 14-17  ─── H6 (Push + Beta)                         🏗️ Em execução
 Semana 18+    ─── H7 (condicional)
 ```
 
@@ -381,7 +381,7 @@ Template de journal para retomada:
 | H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
 | H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS + Android validados |
 | H5 | MVP funcional | 7 fluxos validados manualmente | ✅ COMPLETA |
-| H6 | Push operacional | Telegram + push nativo coexistindo | ⏳ depende de H5 |
+| H6 | Push operacional | Telegram + push nativo coexistindo | 🏗️ Em execução |
 | H7 | Monorepo completo | Web + mobile + packages em estrutura final | ⏳ condicional |
 
 ---

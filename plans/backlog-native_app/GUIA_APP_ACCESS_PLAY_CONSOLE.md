@@ -1,7 +1,7 @@
 # Guia Pratico - App Access para Google Play Console
 
-> **Contexto:** Meus Remedios hybrid/native | Android review
-> **Data:** 2026-04-14
+> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Objetivo:** deixar pronto o material que a Google Play pode pedir para autenticação e revisão do app
 
 ---
@@ -131,7 +131,7 @@ Notes:
 This app requires login to access its core functionality.
 
 Review account:
-Email: review@coelho.mr
+Email: review@coelho.me
 Password: APPreview
 
 Review steps:

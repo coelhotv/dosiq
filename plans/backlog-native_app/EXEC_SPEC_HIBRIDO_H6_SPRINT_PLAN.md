@@ -1108,7 +1108,7 @@ Conteúdo mínimo:
 - [ ] Tap em notificação cold start navega corretamente
 - [ ] Falha permanente (`DeviceNotRegistered`) desativa token em `notification_devices`
 - [ ] Logs de dispatch visíveis no Vercel com `correlationId`
-- [ ] `docs/operations/PUSH_NOTIFICATIONS.md` criado
+- [x] `docs/operations/PUSH_NOTIFICATIONS.md` criado
 - [ ] `npm run validate:agent` verde
 
 ---

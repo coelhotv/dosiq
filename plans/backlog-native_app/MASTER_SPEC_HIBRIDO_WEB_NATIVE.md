@@ -1,7 +1,7 @@
 # Exec Spec Definitivo: Estrategia Hibrida Web + Native
 
-> **Status:** Documento autoritativo | H0-H4 COMPLETAS ✅ | H5 proxima
-> **Data:** 2026-04-10 (rev.1) | **Ultima atualizacao:** 2026-04-12
+> **Status:** Documento autoritativo | H0-H5 COMPLETAS ✅ | H6 em curso 🏗️
+> **Data:** 2026-04-10 (rev.1) | **Ultima atualizacao:** 2026-04-18
 > **Escopo:** Meus Remedios v4.0.0
 > **Supersede:** `plans/archive_old/native_app/analise-migracao-pwa-para-react-native.md`, `plans/archive_old/native_app/PLANO_EXECUTIVO_REACT_NATIVE.md`, `plans/archive_old/native_app/ARQUITETURA_RN_MONOREPO.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE1_CORE.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE2_MOBILE.md`
 

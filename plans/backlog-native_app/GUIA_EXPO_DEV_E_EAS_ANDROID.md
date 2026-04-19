@@ -1,7 +1,7 @@
 # Guia Pratico - Expo.dev e EAS para Android
 
-> **Contexto:** Meus Remedios hybrid/native | Fase 5 MVP de produto
-> **Data:** 2026-04-14
+> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Escopo deste guia:** configurar o projeto no `expo.dev`, validar o setup real do repositório e gerar builds Android para testes e publicação na Google Play
 
 ---
@@ -21,7 +21,7 @@ Este guia **não cobre**:
 - `expo-notifications`
 - iOS/App Store Connect
 
-Isso é intencional: pela `EXEC_SPEC_HIBRIDO_FASE5_MVP_PRODUTO.md`, o MVP da Fase 5 ainda não inclui push nativo operacional.
+Isso é intencional: até a Fase 5 o MVP não incluía push; a Fase 6 agora completa esta funcionalidade, mas as instruções de build base permanecem as mesmas.
 
 ---
 
