@@ -21,14 +21,11 @@ export default function TodayScreen() {
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
-  if (loading && !data) return <LoadingState message="A carregar o seu dia..." />
-  if (error && !data) return <ErrorState message={error} onRetry={refresh} />
-
+  const timeline = data?.timeline ?? []
+  const stockAlerts = data?.stockAlerts ?? []
   const protocols = data?.protocols ?? []
   const medicines = data?.medicines ?? {}
   const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
-  const timeline = data?.timeline ?? []
-  const stockAlerts = data?.stockAlerts ?? []
 
   // Agrupamento da Timeline por Turnos (Epic 2) - Memoized (Ref Gemini review)
   const { groupedTimeline, shifts } = useMemo(() => {
@@ -42,6 +39,10 @@ export default function TodayScreen() {
     const activeShifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite'].filter(s => grouped[s])
     return { groupedTimeline: grouped, shifts: activeShifts }
   }, [timeline])
+
+
+  if (loading && !data) return <LoadingState message="A carregar o seu dia..." />
+  if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
   // Doses prioritárias (Hero)
   const priorityDoses = timeline
