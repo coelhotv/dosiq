@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState } from '@meus-remedios/core'
+import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@meus-remedios/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
@@ -60,7 +60,7 @@ export function useTodayData() {
       
       // Fetch online (primary)
       const [protocols, logs, userSettings] = await Promise.all([
-        getActiveProtocols(user.id),
+        getActiveProtocols(user.id, today),
         getLogsForPeriod(user.id, 7), // 7 dias de logs para adesão diluída
         getUserSettings(user.id)
       ])
@@ -157,6 +157,10 @@ export function useTodayData() {
 
     const todayStr = getTodayLocal()
     
+    // 0. Resiliência de Cache: Filtrar validade do protocolo para HOJE (GMT-3)
+    // Isso protege a UI caso o snapshot no AsyncStorage tenha dados obsoletos.
+    const validProtocols = data.protocols.filter(p => isProtocolActiveOnDate(p, todayStr))
+
     // 1. Filtrar logs de hoje para a Timeline
     const todayLogs = data.logs.filter(l => {
       const logDate = new Date(l.taken_at)
@@ -170,13 +174,13 @@ export function useTodayData() {
     const { takenDoses, missedDoses, scheduledDoses } = calculateDosesByDate(
       todayStr,
       todayLogs,
-      data.protocols
+      validProtocols
     )
 
     // 3. Calcular estatísticas de adesão (Últimos 7 dias - Diluído conforme feedback H8.7)
     const { score, expected, taken } = calculateAdherenceStats(
       data.logs,
-      data.protocols,
+      validProtocols,
       7
     )
 

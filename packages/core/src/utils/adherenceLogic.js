@@ -5,7 +5,7 @@
  * @module adherenceLogic
  */
 
-import { isProtocolActiveOnDate, parseLocalDate } from './dateUtils.js'
+import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getTodayLocal } from './dateUtils.js'
 
 // Re-export para manter compatibilidade com imports existentes
 export { isProtocolActiveOnDate }
@@ -107,17 +107,9 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
  * @returns {Object}
  */
 export function calculateAdherenceStats(logs, protocols, days = 30) {
-  const toLocalDateString = (date) => {
-    const d = new Date(date)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
   const logsByDay = new Map()
   logs.forEach((log) => {
-    const dayKey = toLocalDateString(log.taken_at)
+    const dayKey = formatLocalDate(new Date(log.taken_at))
     if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, [])
     logsByDay.get(dayKey).push(log)
   })
@@ -126,12 +118,12 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
   let totalFollowed = 0
   let totalTakenAnytime = 0
   let currentStreak = 0
-  const todayStr = toLocalDateString(new Date())
+  const todayStr = getTodayLocal()
 
   for (let i = 0; i < days; i++) {
     const date = new Date()
     date.setDate(date.getDate() - i)
-    const dateStr = toLocalDateString(date)
+    const dateStr = formatLocalDate(date)
     const dayLogs = logsByDay.get(dateStr) || []
 
     let dayExpected = 0
@@ -205,11 +197,7 @@ export function isProtocolFollowed(scheduledTime, logs, dateStr) {
 
   return logs.some((log) => {
     // 1. Verificar se o log é do mesmo dia local
-    const logDate = new Date(log.taken_at)
-    const lYear = logDate.getFullYear()
-    const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
-    const lDay = String(logDate.getDate()).padStart(2, '0')
-    const logDateStr = `${lYear}-${lMonth}-${lDay}`
+    const logDateStr = formatLocalDate(new Date(log.taken_at))
 
     if (logDateStr !== dateStr) return false
 
@@ -382,13 +370,14 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
 
     // Verificar se o protocolo já começou
     if (protocol.start_date) {
-      const startDate = new Date(protocol.start_date)
+      const startDate = parseLocalDate(protocol.start_date)
       if (targetDate < startDate) return false
     }
 
     // Verificar se o protocolo já terminou
     if (protocol.end_date) {
-      const endDate = new Date(protocol.end_date)
+      const endDate = parseLocalDate(protocol.end_date)
+      // Ajuste: inclusive hoje (se targetDate === endDate, deve retornar true)
       if (targetDate > endDate) return false
     }
 
@@ -439,7 +428,7 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
       case 'alternating':
         // Calcular dias desde a data de início
         if (protocol.start_date) {
-          const startDate = new Date(protocol.start_date)
+          const startDate = parseLocalDate(protocol.start_date)
           const diffTime = targetDate.getTime() - startDate.getTime()
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
           // Dia sim, dia não: dias pares = dose, ímpares = sem dose
@@ -450,9 +439,9 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
 
       case 'personalizado':
       case 'custom':
-        // Para frequência personalizada, se houver cronograma de horários, 
-        // assumimos que deve aparecer no dashboard
-        return protocol.time_schedule && protocol.time_schedule.length > 0
+        // Frequência personalizada não gera doses esperadas por padrão 
+        // (usuário deve registrar manualmente ou aguardar suporte a ciclos complexos)
+        return false
 
       case 'quando_necessário':
       case 'when_needed':

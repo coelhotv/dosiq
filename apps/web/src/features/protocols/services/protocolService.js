@@ -1,5 +1,6 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { validateProtocolCreate, validateProtocolUpdate } from '@schemas/protocolSchema'
+import { getTodayLocal } from '@utils/dateUtils'
 
 /**
  * Protocol Service - CRUD operations for protocols
@@ -30,9 +31,10 @@ export const protocolService = {
   },
 
   /**
-   * Get active protocols only
+   * Get active protocols only (filtered by validity dates)
+   * @param {string} date - Data de referência (YYYY-MM-DD)
    */
-  async getActive() {
+  async getActive(date = getTodayLocal()) {
     const { data, error } = await supabase
       .from('protocols')
       .select(
@@ -44,6 +46,8 @@ export const protocolService = {
       )
       .eq('user_id', await getUserId())
       .eq('active', true)
+      .lte('start_date', date)
+      .or(`end_date.is.null,end_date.gte.${date}`)
       .order('created_at', { ascending: false })
 
     if (error) throw error
