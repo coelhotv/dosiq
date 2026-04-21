@@ -423,75 +423,129 @@ Verificar e atualizar:
 
 ## 7. Ambiente Local
 
-### 7.1 Clonar o Repositório no Novo Caminho
+> A abordagem aqui é **clone novo** em pastas novas — não renomear as existentes.
+> Isso garante um ambiente limpo e mantém o repo antigo intacto como fallback durante a transição.
 
-Após o rename do GitHub (Seção 6.1), clonar para o novo path canônico:
+### 7.1 Clonar nos Dois Diretórios
 
 ```bash
+# iCloud (sync / fonte canônica)
 git clone git@github.com:coelhotv/dosiq.git /Users/coelhotv/git-icloud/dosiq
-cd /Users/coelhotv/git-icloud/dosiq
-npm install
+
+# Bridge local fora do iCloud (builds e desenvolvimento)
+git clone git@github.com:coelhotv/dosiq.git /Users/coelhotv/local-git/dosiq
 ```
 
-### 7.2 Migrar Arquivos Sensíveis
+> **Sobre o bare repo em iCloud (`git_server/`):** o clone normal cria um `.git` folder padrão — sem vínculo com o bare repo antigo. Se quiser recriar o mesmo padrão de gitdir separado para o novo repo, faça um `git clone --bare` para `git_server/dosiq.git` e reconfigure os working trees manualmente. Para um setup mais simples, os clones normais acima são suficientes.
 
-Os arquivos abaixo **não estão no repositório** (estão no `.gitignore`). Copiar manualmente do diretório antigo:
+### 7.2 Instalar Dependências
 
 ```bash
-# .env e .env.local na raiz
-cp /Users/coelhotv/git-icloud/meus-remedios/.env \
-   /Users/coelhotv/git-icloud/dosiq/.env
+cd /Users/coelhotv/git-icloud/dosiq && npm install
+cd /Users/coelhotv/local-git/dosiq && npm install
+```
 
-cp /Users/coelhotv/git-icloud/meus-remedios/.env.local \
-   /Users/coelhotv/git-icloud/dosiq/.env.local 2>/dev/null || true
+### 7.3 Copiar Arquivos Não Versionados
 
-# Google Services Android (2 arquivos — preview usa o mesmo de development)
+Os arquivos abaixo estão no `.gitignore` e **não existem no clone novo**. Todos precisam ser copiados ou recriados manualmente.
+
+#### Variáveis de ambiente — raiz
+
+```bash
+OLD=/Users/coelhotv/git-icloud/meus-remedios
+NEW=/Users/coelhotv/git-icloud/dosiq
+
+cp "$OLD/.env"       "$NEW/.env"
+cp "$OLD/.env.local" "$NEW/.env.local" 2>/dev/null || true
+```
+
+#### Variáveis de ambiente — web
+
+```bash
+cp "$OLD/apps/web/.env"       "$NEW/apps/web/.env"       2>/dev/null || true
+cp "$OLD/apps/web/.env.local" "$NEW/apps/web/.env.local" 2>/dev/null || true
+```
+
+#### Variáveis de ambiente — mobile
+
+```bash
+cp "$OLD/apps/mobile/.env.development" "$NEW/apps/mobile/.env.development" 2>/dev/null || true
+cp "$OLD/apps/mobile/.env.preview"     "$NEW/apps/mobile/.env.preview"     2>/dev/null || true
+```
+
+> Revisar os valores após copiar — algumas variáveis podem conter URLs ou nomes com `meus-remedios` que precisam ser atualizados para `dosiq`.
+
+#### Firebase Android (2 arquivos — baixar do novo Firebase Console)
+
+```bash
+# Estes devem ser os downloads do projeto Firebase novo (com.coelhotv.dosiq)
+# NÃO copiar do repo antigo — os arquivos antigos referenciam com.coelhotv.meusremedios
 cp "$ICLOUD_MOBILE/google-services.json" \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/google-services.json
+   "$NEW/apps/mobile/google-services.json"
 
 cp "$ICLOUD_MOBILE/google-services-development.json" \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/google-services-development.json
+   "$NEW/apps/mobile/google-services-development.json"
 
-# GoogleService-Info iOS (2 arquivos — preview usa o mesmo de development)
-cp "$ICLOUD_MOBILE/GoogleService-Info.plist" \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/GoogleService-Info.plist
-
-cp "$ICLOUD_MOBILE/GoogleService-Info-development.plist" \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/GoogleService-Info-development.plist
+# google-services-preview.json não existe mais — preview usa o arquivo de development
 ```
 
-> Esses arquivos devem ser os **novos downloads** do Firebase Console para os apps `com.coelhotv.dosiq` e `com.coelhotv.dosiq.dev`. Não copie os arquivos do repo antigo — eles referenciam o projeto Firebase antigo (`com.coelhotv.meusremedios`).
->
-> `google-services-preview.json` e `GoogleService-Info-preview.plist` **não existem mais** — `build-android.sh` e o EAS usam os arquivos de `-development` para o perfil preview.
-
-### 7.3 Atualizar o `.vercel/project.json`
+#### Firebase iOS (2 arquivos — baixar do novo Firebase Console)
 
 ```bash
-# No novo diretório dosiq/
-cat > .vercel/project.json << 'EOF'
+cp "$ICLOUD_MOBILE/GoogleService-Info.plist" \
+   "$NEW/apps/mobile/GoogleService-Info.plist"
+
+cp "$ICLOUD_MOBILE/GoogleService-Info-development.plist" \
+   "$NEW/apps/mobile/GoogleService-Info-development.plist"
+
+# GoogleService-Info-preview.plist não existe mais — preview usa o arquivo de development
+```
+
+> O arquivo `apps/mobile/ios/MeusRemediosDev/GoogleService-Info.plist` dentro do diretório `ios/` é gerado pelo EAS durante o build — não precisa ser copiado manualmente.
+
+#### `.vercel/project.json`
+
+O diretório `.vercel/` é ignorado pelo git. Recriar no novo clone:
+
+```bash
+mkdir -p "$NEW/.vercel"
+cat > "$NEW/.vercel/project.json" << 'EOF'
 {"projectId":"prj_yQIAbiPJEgZxv4CKGnBrAG6HipPN","orgId":"team_zkyqhzaNOyNUKklyuPi8dPNA","projectName":"dosiq"}
 EOF
 ```
 
-### 7.4 Atualizar o Workspace do VSCode
-
-O arquivo `meus-remedios.code-workspace` na raiz pode ser renomeado:
+#### `.agent/sessions/` (estado DEVFLOW da sessão atual)
 
 ```bash
-mv meus-remedios.code-workspace dosiq.code-workspace
+# Opcional — copiar apenas se quiser preservar o histórico de eventos da sessão atual
+cp "$OLD/.agent/sessions/events.jsonl" "$NEW/.agent/sessions/events.jsonl" 2>/dev/null || true
 ```
 
-Em seguida, abrir o VSCode com `File → Open Workspace from File` apontando para `dosiq.code-workspace` no novo diretório.
+### 7.4 Vincular ao Novo Projeto EAS
 
-### 7.5 Atualizar Aliases de Terminal (zsh/bash)
+```bash
+cd /Users/coelhotv/git-icloud/dosiq/apps/mobile
+eas init --id 7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba
+git add app.config.js
+git commit -m "chore(mobile): vincular ao novo projeto EAS dosiq (7d1f6cb7)"
+git push
+```
 
-Se você tiver aliases no `~/.zshrc` ou `~/.bashrc` apontando para o diretório antigo:
+### 7.5 Abrir o Workspace no VSCode
+
+```bash
+# O arquivo já existe no novo clone com o nome atualizado
+code /Users/coelhotv/git-icloud/dosiq/dosiq.code-workspace
+```
+
+### 7.6 Atualizar Aliases de Terminal (zsh/bash)
 
 ```bash
 grep -n "meus-remedios\|meus_remedios" ~/.zshrc ~/.bashrc 2>/dev/null
 ```
 
-Substituir qualquer ocorrência:
+Atualizar qualquer alias encontrado:
+
 ```bash
 # Antes:
 alias mr="cd ~/git-icloud/meus-remedios"
