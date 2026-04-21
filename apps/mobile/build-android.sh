@@ -3,7 +3,8 @@
 # Uso: bash build-android.sh [preview|development|production]
 
 PROFILE="${1:-preview}"
-ICLOUD_MOBILE="/Users/coelhotv/git-icloud/meus-remedios/apps/mobile"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ICLOUD_MOBILE="$SCRIPT_DIR"
 
 # production usa google-services.json (sem sufixo), demais usam google-services-{profile}.json
 if [ "$PROFILE" = "production" ]; then
