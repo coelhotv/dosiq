@@ -39,3 +39,4 @@
 
 ## ⚛️ React & Ui (`react_and_ui`)
 - **[ADR-024]** Lucide-React Icons Always Paired with Text Labels -> [`decisions/react_and_ui/ADR-024.md`](./decisions/react_and_ui/ADR-024.md)
+- **[ADR-033]** Resiliência de Cache 'Post-Load' no Frontend -> [`decisions/react_and_ui/ADR-033.md`](./decisions/react_and_ui/ADR-033.md)

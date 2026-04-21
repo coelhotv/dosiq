@@ -18,48 +18,26 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_migration_fase5",
-    "started_at": "2026-04-21T15:42:22Z",
-    "completed_at": "2026-04-21T15:45:41Z",
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Dosiq - Fase 5",
-    "goal_type": "refactor",
-    "acceptance_criteria": [
-      "README/CLAUDE/GEMINI/AGENTS/CHANGELOG/RELEASE_NOTES sem branding legado no contexto atual",
-      "plans ativos (fora archive_old e fora dosiq-migration) alinhados para Dosiq",
-      "memoria DEVFLOW atualizada e JSON valido (.agent/memory/rules.json e knowledge.json)",
-      "state/journal/eventos DEVFLOW atualizados para fase 5",
-      "script gsync-native.sh ajustado para ambiente Dosiq/native local"
-    ],
-    "active_wave": {
-      "name": "Dosiq Rebranding Migration",
-      "phase": "dosiq-migration-fase-5",
-      "sprint": "refactor-2026-W17",
-      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_5.md",
-      "status": "completed",
-      "started_at": "2026-04-21T15:42:22Z",
-      "notes": "Fase 5 concluida: docs/devflow/specs atualizados para Dosiq + ajuste do gsync-native.sh para bridge/native com fallback."
-    }
+    "id": "session_2026W17_distillation",
+    "started_at": "2026-04-21T18:35:00Z",
+    "completed_at": "2026-04-21T18:50:00Z",
+    "mode": "distillation",
+    "status": "distilled",
+    "goal": "compress and distill project memory"
   },
   "memory": {
-    "rules_count": 127,
-    "anti_patterns_count": 99,
-    "decisions_count": 30,
-    "contracts_count": 17,
-    "knowledge_count": 86,
-    "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 16,
+    "rules_count": 129,
+    "anti_patterns_count": 102,
+    "decisions_count": 33,
+    "contracts_count": 19,
+    "knowledge_count": 87,
+    "last_distillation": "2026-04-21T18:50:00Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "rules": [],
-      "anti_patterns": [],
-      "knowledge": [
-        "K-086"
-      ],
-      "decisions": [
-        "ADR-033"
-      ],
-      "timestamp": "2026-04-20T21:23:00Z"
+      "anti_patterns": ["AP-H27"],
+      "knowledge": ["K-086"],
+      "decisions": ["ADR-031", "ADR-032", "ADR-033"]
     }
   },
   "evolution": {
@@ -67,19 +45,12 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-21T15:45:41Z",
-    "relevant_rules_loaded_at": "2026-04-21T15:45:41Z",
-    "h5_1_sprint_validated": true,
-    "h8_7_completed_at": "2026-04-20T21:23:00Z"
+    "index_loaded_at": "2026-04-21T18:50:00Z"
   },
   "migration": {
     "status": "complete",
     "completed_at": "2026-04-08",
     "primary_memory": ".agent/memory/",
-    "global_base_exported": true,
-    "global_base_path": "~/.devflow/global_base/",
-    "global_base_export_at": "2026-04-08T00:32:56Z",
-    "global_base_rules_count": 69,
-    "global_base_aps_count": 64
+    "global_base_exported": true
   }
 }
