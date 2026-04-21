@@ -26,6 +26,15 @@ const PERIOD_OPTIONS = [
   { value: 'all', label: 'Todo o período' },
 ]
 
+function getPeriodLabel(selectedPeriod) {
+  return PERIOD_OPTIONS.find((opt) => opt.value === selectedPeriod)?.label || selectedPeriod
+}
+
+function buildConsultationReportFilename(selectedPeriod) {
+  const periodLabel = getPeriodLabel(selectedPeriod)
+  return `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+}
+
 /**
  * Formata a data atual para o nome do arquivo.
  * @returns {string} Data formatada como YYYY-MM-DD.
@@ -162,7 +171,7 @@ export default function ReportGenerator() {
           dailyAdherence: resolvedDailyAdherence,
         },
         period,
-        title: 'Dosiq - Consulta Medica',
+        title: 'Dosiq - Consulta Médica',
       })
       setPdfBlob(blob)
 
@@ -191,8 +200,7 @@ export default function ReportGenerator() {
   const handleDownload = useCallback(() => {
     if (!pdfBlob) return
 
-    const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-    const filename = `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+    const filename = buildConsultationReportFilename(period)
 
     downloadBlob(pdfBlob, filename)
 
@@ -217,8 +225,7 @@ export default function ReportGenerator() {
     setCopied(false)
 
     try {
-      const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-      const filename = `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+      const filename = buildConsultationReportFilename(period)
 
       const result = await shareReport(pdfBlob, { filename, expiresInHours: 72 })
       setShareUrl(result.url)
