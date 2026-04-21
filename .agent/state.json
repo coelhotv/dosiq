@@ -20,7 +20,7 @@
   "session": {
     "id": "session_2026W17_dashboard_protocol_filtering",
     "started_at": "2026-04-20T20:45:00Z",
-    "completed_at": "2026-04-20T21:23:00Z",
+    "completed_at": "2026-04-21T05:10:00Z",
     "mode": "coding",
     "status": "completed",
     "goal": "Filtro de Protocolos por Vigência e Resiliência de Cache",
@@ -31,7 +31,8 @@
       "Implementação de resiliência de cache no frontend (defensive filtering)",
       "Correção de fuso horário brasileiro (GMT-3) em todas as camadas",
       "Validação global com validate:agent e lint",
-      "Journal atualizado com ADR sobre Cache Resilience"
+      "Journal atualizado com ADR sobre Cache Resilience",
+      "PR #482 mergeado e branch deletada"
     ],
     "active_wave": {
       "name": "Fase 8: Especulativo (Pós-MVP) - Estabilidade",
@@ -40,7 +41,7 @@
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md",
       "status": "completed",
       "started_at": "2026-04-20T20:45:00Z",
-      "notes": "Estabilização crítica da base de dados do dashboard. Protocolos agora respeitam vigência e são resilientes a cache obsoleto."
+      "notes": "Estabilização concluída. Protocolos agora respeitam vigência e são resilientes a cache obsoleto (Merge PR #482)."
     }
   },
   "memory": {
