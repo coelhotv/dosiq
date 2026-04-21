@@ -1040,7 +1040,7 @@ export function buildPatientContext({ medicines, protocols, logs, stocks, adhere
  */
 export function buildSystemPrompt(patientContext) {
   return [
-    'Voce e um assistente virtual do app Meus Remedios.',
+    'Voce e um assistente virtual do app Dosiq.',
     'Voce ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
     'REGRAS ABSOLUTAS:',
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',

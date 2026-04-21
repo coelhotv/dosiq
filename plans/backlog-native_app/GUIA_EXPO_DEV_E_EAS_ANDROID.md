@@ -82,7 +82,7 @@ Pacotes compartilhados não devem ler `process.env` diretamente. A leitura públ
 ### Passo 1 - entrar na pasta correta
 
 ```bash
-cd "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/apps/mobile"
+cd "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile"
 ```
 
 ### Passo 2 - instalar dependências do mobile
@@ -623,7 +623,7 @@ Crie `apps/mobile/build-android.sh` (que também servirá de base para iOS):
 # Uso: bash build-android.sh [preview|development|production]
 
 PROFILE="${1:-preview}"
-ICLOUD_MOBILE="/Users/coelhotv/git-icloud/meus-remedios/apps/mobile"
+ICLOUD_MOBILE="/Users/coelhotv/git-icloud/dosiq/apps/mobile"
 
 # production usa google-services.json (sem sufixo), demais usam google-services-{profile}.json
 if [ "$PROFILE" = "production" ]; then

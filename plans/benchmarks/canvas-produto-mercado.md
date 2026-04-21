@@ -1,4 +1,4 @@
-# CANVAS DE PRODUTO: Meus Remédios — Plataforma de Adesão Terapêutica para o Mercado Brasileiro
+# CANVAS DE PRODUTO: Dosiq — Plataforma de Adesão Terapêutica para o Mercado Brasileiro
 
 > **Documento vivo** — adaptado a partir do brainstorming estratégico `brainstorming-canvas-produto.md`,
 > ancorado na realidade técnica atual do produto (v3.1.0) e seu roadmap até a Fase 8.
@@ -11,8 +11,8 @@
 
 ### 1.1. Nome e identidade
 
-**Nome atual:** Meus Remédios (produto pessoal em evolução para plataforma)
-**Naming estratégico:** Avaliar rebranding para mercado (ex: CuidaMed, AdereMed, MedPlan) ao escalar além do uso pessoal. O nome "Meus Remédios" é familiar e direto — pode funcionar no mercado consumer; rebranding só se expandir para B2B.
+**Nome atual:** Dosiq (produto pessoal em evolução para plataforma)
+**Naming estratégico:** Avaliar rebranding para mercado (ex: CuidaMed, AdereMed, MedPlan) ao escalar além do uso pessoal. O nome "Dosiq" é familiar e direto — pode funcionar no mercado consumer; rebranding só se expandir para B2B.
 
 ### 1.2. Visão de produto
 
@@ -20,7 +20,7 @@
 
 ### 1.3. Posicionamento
 
-Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dificuldade em manter adesão a tratamentos complexos**, Meus Remédios é uma **plataforma PWA de adesão terapêutica inteligente** que **combina lembretes multicanal (push + Telegram + WhatsApp), inteligência preditiva client-side, portabilidade clínica (PDF/cartão de emergência) e modo cuidador via WhatsApp**, diferentemente de **apps globais (Medisafe, MyTherapy) que ignoram o ecossistema brasileiro** e **apps locais genéricos que oferecem apenas alarmes simples sem inteligência ou portabilidade**.
+Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dificuldade em manter adesão a tratamentos complexos**, Dosiq é uma **plataforma PWA de adesão terapêutica inteligente** que **combina lembretes multicanal (push + Telegram + WhatsApp), inteligência preditiva client-side, portabilidade clínica (PDF/cartão de emergência) e modo cuidador via WhatsApp**, diferentemente de **apps globais (Medisafe, MyTherapy) que ignoram o ecossistema brasileiro** e **apps locais genéricos que oferecem apenas alarmes simples sem inteligência ou portabilidade**.
 
 **Vantagem estrutural única:** Custo operacional R$0 (Vercel Hobby + Supabase free tier) permite produto 100% gratuito para o paciente sem paywall, sem trial e sem freemium frustrante — algo que nenhum player global consegue sustentar no longo prazo para usuários individuais.
 

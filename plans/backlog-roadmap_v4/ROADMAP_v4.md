@@ -1,4 +1,4 @@
-# Roadmap 2026 — Meus Remedios (v4.0)
+# Roadmap 2026 — Dosiq (v4.0)
 
 **Versao:** 5.0 (Atualizado apos Mobile Perf M0-M8 + P1-P4 + D0-D3 + Fase 6 sprints 1,2,4,5 CONCLUIDOS)
 **Data:** 20/03/2026
@@ -258,7 +258,7 @@ Features que dependem de gatilhos de usuarios, receita ou demanda validada:
 
 ```mermaid
 gantt
-    title Roadmap 2026 - Meus Remedios v4.0
+    title Roadmap 2026 - Dosiq v4.0
     dateFormat YYYY-MM-DD
 
     section Entregue

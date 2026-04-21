@@ -70,11 +70,11 @@ Separe estes dados:
 
 O repositório agora possui um rascunho inicial da política em:
 
-- [POLITICA_DE_PRIVACIDADE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/meus-remedios/docs/legal/POLITICA_DE_PRIVACIDADE.md)
+- [POLITICA_DE_PRIVACIDADE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/dosiq/docs/legal/POLITICA_DE_PRIVACIDADE.md)
 
 URL pública planejada para a ficha da loja:
 
-- [https://meus-remedios.vercel.app/politica-de-privacidade](https://meus-remedios.vercel.app/politica-de-privacidade)
+- [https://dosiq.vercel.app/politica-de-privacidade](https://dosiq.vercel.app/politica-de-privacidade)
 
 Contato público definido para suporte e privacidade:
 
@@ -341,7 +341,7 @@ Como o app exige login, prepare desde cedo o material para revisão:
 
 Guia dedicado para isso:
 
-- [GUIA_APP_ACCESS_PLAY_CONSOLE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/meus-remedios/plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md)
+- [GUIA_APP_ACCESS_PLAY_CONSOLE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/dosiq/plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md)
 
 ### Sugestão prática
 
@@ -456,7 +456,7 @@ Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 3. internal testing funcionando
 4. ficha principal preenchida
 5. data safety revisada
-6. política de privacidade publicada em `https://meus-remedios.vercel.app/politica-de-privacidade`
+6. política de privacidade publicada em `https://dosiq.vercel.app/politica-de-privacidade`
 7. credenciais de review preparadas
 8. estratégia de closed testing definida
 

@@ -1,4 +1,4 @@
-# Changelog - Meus Remédios
+# Changelog - Dosiq
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 

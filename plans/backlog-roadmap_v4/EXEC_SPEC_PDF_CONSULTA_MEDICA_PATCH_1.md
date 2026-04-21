@@ -19,7 +19,7 @@ O pipeline novo do PDF clinico ja substituiu o fluxo antigo e trouxe ganhos reai
 - separacao por secoes clinicas;
 - remocao dos graficos antigos ilegiveis.
 
-Porem, a primeira rodada de validacao do arquivo real `meus-remedios-consulta-medica-Últimos-7-dias-2026-03-24.pdf` mostrou bugs e lacunas que impedem considerar a entrega como polida e clinicamente confiavel.
+Porem, a primeira rodada de validacao do arquivo real `dosiq-consulta-medica-Últimos-7-dias-2026-03-24.pdf` mostrou bugs e lacunas que impedem considerar a entrega como polida e clinicamente confiavel.
 
 Este patch existe para fechar esses gaps sem reabrir a discussao arquitetural principal.
 

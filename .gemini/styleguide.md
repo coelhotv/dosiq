@@ -1,4 +1,4 @@
-# Style Guide: Meus Remédios
+# Style Guide: Dosiq
 
 Este documento contém as diretrizes e convenções de código que o Gemini Code Assist deve seguir ao revisar Pull Requests para este repositório.
 

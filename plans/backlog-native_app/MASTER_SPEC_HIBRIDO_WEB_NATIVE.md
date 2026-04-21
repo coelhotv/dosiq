@@ -2,7 +2,7 @@
 
 > **Status:** Documento autoritativo | H0-H5 COMPLETAS ✅ | H6 em curso 🏗️
 > **Data:** 2026-04-10 (rev.1) | **Ultima atualizacao:** 2026-04-18
-> **Escopo:** Meus Remedios v4.0.0
+> **Escopo:** Dosiq v4.0.0
 > **Supersede:** `plans/archive_old/native_app/analise-migracao-pwa-para-react-native.md`, `plans/archive_old/native_app/PLANO_EXECUTIVO_REACT_NATIVE.md`, `plans/archive_old/native_app/ARQUITETURA_RN_MONOREPO.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE1_CORE.md`, `plans/archive_old/native_app/EXEC_SPEC_RN_FASE2_MOBILE.md`
 
 ---
@@ -252,7 +252,7 @@ Depois:
 ### Etapa A - Arquitetura transicional
 
 ```text
-meus-remedios/
+dosiq/
 ├── src/                       # web continua na raiz
 ├── public/
 ├── index.html
@@ -273,7 +273,7 @@ meus-remedios/
 ### Etapa B - Arquitetura alvo tardia
 
 ```text
-meus-remedios/
+dosiq/
 ├── apps/
 │   ├── web/
 │   └── mobile/
@@ -854,7 +854,7 @@ Subir o app Expo com auth, sessao, navegacao e tela de smoke.
 - app abre em Android emulator
 - login funciona
 - sessao persiste ao reabrir
-- `scheme` `meusremedios://` esta configurado
+- `scheme` `dosiq://` esta configurado
 - `development` e `preview` existem como build profiles
 
 ## Fase 5 - MVP de produto mobile

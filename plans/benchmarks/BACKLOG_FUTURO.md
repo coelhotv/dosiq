@@ -1,4 +1,4 @@
-# Backlog Futuro — Meus Remedios
+# Backlog Futuro — Dosiq
 
 **Data:** 06/03/2026
 **Status:** Backlog — sem prazo definido

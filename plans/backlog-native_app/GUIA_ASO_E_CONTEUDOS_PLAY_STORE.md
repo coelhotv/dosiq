@@ -387,7 +387,7 @@ Se fosse para publicar hoje, eu usaria este conjunto:
 ### App name
 
 ```text
-Meus Remedios
+Dosiq
 ```
 
 ### Short description

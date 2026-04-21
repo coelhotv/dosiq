@@ -145,7 +145,7 @@ Criar componentes base, scaffold e tokens semanticos antes do redesign das telas
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -192,7 +192,7 @@ Transformar `TodayScreen` em command center diario sem quebrar o fluxo de regist
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -238,7 +238,7 @@ Evoluir a leitura de protocolos para um formato editorial e mais escaneavel.
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -285,7 +285,7 @@ Transformar a leitura de estoque em decisao de risco e reposicao.
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -330,7 +330,7 @@ Transformar a tela de perfil em hub utilitario pessoal.
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -375,7 +375,7 @@ Inserir slots, flags e contratos de ads sem ativacao real do provider.
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 
@@ -418,7 +418,7 @@ Fechar ajustes globais de consistencia, estados, acessibilidade e regressao.
 
 ### Comandos de validacao
 
-- `npm run test --workspace=@meus-remedios/mobile`
+- `npm run test --workspace=@dosiq/mobile`
 
 ### Testes obrigatorios
 

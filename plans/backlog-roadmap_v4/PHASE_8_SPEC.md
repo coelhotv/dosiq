@@ -11,7 +11,7 @@
 
 ## 1. Filosofia
 
-Esta fase NAO e sobre monetizacao. E sobre entregar **conveniencia**, **encorajamento** e **fator wow** que fidelizam o paciente. O diferencial competitivo do Meus Remedios nao esta em cobrar por features premium — esta em oferecer gratuitamente o que ninguem mais oferece.
+Esta fase NAO e sobre monetizacao. E sobre entregar **conveniencia**, **encorajamento** e **fator wow** que fidelizam o paciente. O diferencial competitivo do Dosiq nao esta em cobrar por features premium — esta em oferecer gratuitamente o que ninguem mais oferece.
 
 ---
 

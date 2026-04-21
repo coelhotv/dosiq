@@ -1,9 +1,9 @@
-# 💊 Meus Remédios - Gemini CLI Context
+# 💊 Dosiq - Gemini CLI Context
 
 Guia de contexto para o **Gemini CLI**. Consolida as invariantes do projeto e aponta para a memória viva **DEVFLOW**.
 
 ## 🎯 Visão Geral do Projeto
-**Meus Remédios** é um PWA (Progressive Web App) brasileiro para gerenciamento de medicamentos, protocolos de tratamento e estoque.
+**Dosiq** é um PWA (Progressive Web App) brasileiro para gerenciamento de medicamentos, protocolos de tratamento e estoque.
 - **Frontend:** React 19 + Vite 7 (ES Modules).
 - **Backend:** Supabase (PostgreSQL + Auth + RLS).
 - **Infra:** Vercel (Hosting + Serverless Functions + Cron).

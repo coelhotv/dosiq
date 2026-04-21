@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
   "project": {
-    "name": "meus-remedios",
-    "slug": "meus-remedios",
+    "name": "dosiq",
+    "slug": "dosiq",
     "stack": [
       "react",
       "vite",
@@ -18,31 +18,28 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_migration_fase4",
-    "started_at": "2026-04-21T15:05:00Z",
-    "completed_at": "2026-04-21T15:39:59Z",
-    "mode": "delivery",
+    "id": "session_2026W17_dosiq_migration_fase5",
+    "started_at": "2026-04-21T15:42:22Z",
+    "completed_at": "2026-04-21T15:45:41Z",
+    "mode": "coding",
     "status": "completed",
-    "goal": "Dosiq - Fase 4",
+    "goal": "Dosiq - Fase 5",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "start.js com texto de onboarding para Dosiq",
-      "ajuda.js com fallback do bot dosiq_bot",
-      "buildNotificationPayload.js com deeplinks dosiq://",
-      "api/notify.js com deeplinks dosiq://",
-      "fixtures .github atualizadas para dosiq/vercel novo",
-      "zero ocorrencias meusremedios:// e meus_remedios_bot em api/ e server/",
-      "npm run test:critical passando",
-      "npm run validate:agent passando"
+      "README/CLAUDE/GEMINI/AGENTS/CHANGELOG/RELEASE_NOTES sem branding legado no contexto atual",
+      "plans ativos (fora archive_old e fora dosiq-migration) alinhados para Dosiq",
+      "memoria DEVFLOW atualizada e JSON valido (.agent/memory/rules.json e knowledge.json)",
+      "state/journal/eventos DEVFLOW atualizados para fase 5",
+      "script gsync-native.sh ajustado para ambiente Dosiq/native local"
     ],
     "active_wave": {
       "name": "Dosiq Rebranding Migration",
-      "phase": "dosiq-migration-fase-4",
+      "phase": "dosiq-migration-fase-5",
       "sprint": "refactor-2026-W17",
-      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_4.md",
-      "status": "merged",
-      "started_at": "2026-04-21T15:05:00Z",
-      "notes": "Fase 4 concluida e merged (PR #486) com squash+delete em 2026-04-21."
+      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_5.md",
+      "status": "completed",
+      "started_at": "2026-04-21T15:42:22Z",
+      "notes": "Fase 5 concluida: docs/devflow/specs atualizados para Dosiq + ajuste do gsync-native.sh para bridge/native com fallback."
     }
   },
   "memory": {
@@ -52,7 +49,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
@@ -70,8 +67,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-21T15:22:47.346Z",
-    "relevant_rules_loaded_at": "2026-04-21T15:22:47.346Z",
+    "index_loaded_at": "2026-04-21T15:45:41Z",
+    "relevant_rules_loaded_at": "2026-04-21T15:45:41Z",
     "h5_1_sprint_validated": true,
     "h8_7_completed_at": "2026-04-20T21:23:00Z"
   },

@@ -69,8 +69,8 @@ Separe estes dados:
 
 - nome do app: `Dosik`
 - bundle id de produção: `com.coelhotv.dosik`
-- domínio público: `https://meus-remedios.vercel.app`
-- política de privacidade: `https://meus-remedios.vercel.app/politica-de-privacidade`
+- domínio público: `https://dosiq.vercel.app`
+- política de privacidade: `https://dosiq.vercel.app/politica-de-privacidade`
 - e-mail público: `contact@coelho.me`
 - categoria inicial sugerida: `Health & Fitness`
 - idioma principal da ficha: `Portuguese (Brazil)` ou inglês base com conteúdo em pt-BR, conforme a UI disponível
@@ -103,7 +103,7 @@ Use sempre **App ID explícito**, nunca wildcard.
 
 ## 5.2. Quais capabilities selecionar
 
-Para o estado atual do Meus Remédios, a recomendação é conservadora.
+Para o estado atual do Dosiq, a recomendação é conservadora.
 
 ### Selecionar agora
 
@@ -264,7 +264,7 @@ Preencha primeiro:
 - Name: `Dosik`
 - Subtitle: algo curto como `Controle doses e estoque`
 - Category: `Health & Fitness`
-- Privacy Policy URL: `https://meus-remedios.vercel.app/politica-de-privacidade`
+- Privacy Policy URL: `https://dosiq.vercel.app/politica-de-privacidade`
 
 ## 8.2. Age Rating
 
@@ -485,7 +485,7 @@ Se eu estivesse configurando o projeto hoje, eu faria assim:
 
 - criar app iOS com nome `Dosik`
 - categoria inicial `Health & Fitness`
-- política de privacidade apontando para `https://meus-remedios.vercel.app/politica-de-privacidade`
+- política de privacidade apontando para `https://dosiq.vercel.app/politica-de-privacidade`
 - conta de review pronta antes de qualquer submissão
 
 ### TestFlight

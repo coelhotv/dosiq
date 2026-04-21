@@ -1,14 +1,14 @@
-# Experiência do Paciente — Meus Remédios
+# Experiência do Paciente — Dosiq
 
 **Versão:** 1.0 (SSOT pós-entrega)
 **Última atualização:** 08/03/2026
 **Status:** Documento vivo — referência canônica de UX
 
-> Este documento descreve a experiência **que o Meus Remédios já oferece**, não o que vai oferecer. É o norte criativo para qualquer desenvolvimento futuro de interface. Antes de tocar em UI, leia este documento e use a skill `.claude/skills/ui-design-brain/`.
+> Este documento descreve a experiência **que o Dosiq já oferece**, não o que vai oferecer. É o norte criativo para qualquer desenvolvimento futuro de interface. Antes de tocar em UI, leia este documento e use a skill `.claude/skills/ui-design-brain/`.
 
 ---
 
-## 1. O que é o Meus Remédios
+## 1. O que é o Dosiq
 
 Um PWA de gerenciamento pessoal de medicamentos. O paciente registra seus remédios, configura protocolos de dosagem, controla estoque e acompanha sua adesão ao tratamento. Simples de descrever. Difícil de acertar.
 
@@ -156,7 +156,7 @@ Override manual: Perfil > Configurações > "Densidade da interface" (Confortáv
 
 ## 5. Biblioteca de Componentes Visuais
 
-Estes são os componentes de design construídos para o Meus Remédios. Todo desenvolvimento futuro de UI deve **usar esses componentes** ou **evoluí-los** — nunca criar paralelos.
+Estes são os componentes de design construídos para o Dosiq. Todo desenvolvimento futuro de UI deve **usar esses componentes** ou **evoluí-los** — nunca criar paralelos.
 
 Ao construir UI, use a skill **`.claude/skills/ui-design-brain/`** para tomar decisões de design intencionais antes de escrever código.
 

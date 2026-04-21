@@ -1,13 +1,13 @@
-# Relatório de Benchmark – Meus Remédios vs Apps de Lembrete de Medicamentos
+# Relatório de Benchmark – Dosiq vs Apps de Lembrete de Medicamentos
 
 ## 1. Contexto e objetivo do produto
 
-O **Meus Remédios** é um app simples de controle e lembrete de medicamentos, pensado para uso rápido no dia a dia, com foco em:
+O **Dosiq** é um app simples de controle e lembrete de medicamentos, pensado para uso rápido no dia a dia, com foco em:
 - Cadastro rápido de remédios, horários e dosagens.
 - Lembretes confiáveis para não perder doses.
 - Visão clara do que tomar hoje e nos próximos dias.
 
-Objetivo do benchmark: entender como líderes globais (MyTherapy, Medisafe, Pillo) estruturam proposta de valor, features core e monetização, e identificar oportunidades de diferenciação para o Meus Remédios, especialmente no contexto Brasil.
+Objetivo do benchmark: entender como líderes globais (MyTherapy, Medisafe, Pillo) estruturam proposta de valor, features core e monetização, e identificar oportunidades de diferenciação para o Dosiq, especialmente no contexto Brasil.
 
 ---
 
@@ -24,7 +24,7 @@ Objetivo do benchmark: entender como líderes globais (MyTherapy, Medisafe, Pill
 - Medisafe: app focado em pill reminder, com alarmes configuráveis e visual de "caixa de remédio", além de suporte a regimes complexos.[web:22][web:30]
 - Pillo: alarmes persistentes, snooze inteligente, múltiplos tipos de agendamento (PRN, dias específicos, múltiplas doses por dia).[web:24][web:25]
 
-O Meus Remédios deve, no mínimo, competir em confiabilidade do lembrete (não perder notificações, funcionar bem em modo economia de bateria, UX de confirmação de dose simples) e simplicidade de configuração (criar um medicamento com poucos toques).
+O Dosiq deve, no mínimo, competir em confiabilidade do lembrete (não perder notificações, funcionar bem em modo economia de bateria, UX de confirmação de dose simples) e simplicidade de configuração (criar um medicamento com poucos toques).
 
 ### JTBD 2 – "Quero acompanhar se estou seguindo o tratamento"
 
@@ -37,7 +37,7 @@ O Meus Remédios deve, no mínimo, competir em confiabilidade do lembrete (não 
 - Medisafe: histórico de doses, relatórios e algumas visualizações para adesão (no plano premium).[web:22][web:30]
 - Pillo: logbook com status (tomada, perdida, atrasada), streaks de adesão e possibilidade de exportar/compartilhar.[web:24][web:25]
 
-Aqui o Meus Remédios pode oferecer uma visão mais "orientada ao médico brasileiro": export rápido (PDF/WhatsApp) com tratamentos, adesão e observações, em vez de dashboards super complexos.
+Aqui o Dosiq pode oferecer uma visão mais "orientada ao médico brasileiro": export rápido (PDF/WhatsApp) com tratamentos, adesão e observações, em vez de dashboards super complexos.
 
 ### JTBD 3 – "Não quero ficar sem medicamento em casa"
 
@@ -50,7 +50,7 @@ Aqui o Meus Remédios pode oferecer uma visão mais "orientada ao médico brasil
 - Pillo: controle de estoque, contagem de comprimidos e alertas de refill.[web:24][web:25]
 - Medisafe: refill reminders presentes no pacote pago/premium em muitos mercados.[web:22][web:24][web:30]
 
-O Meus Remédios pode diferenciar conectando o refill ao contexto brasileiro: lembrar da renovação de receita, agendamento em posto/UBS, e eventualmente integrar com Farmácia Popular ou farmácias parceiras.
+O Dosiq pode diferenciar conectando o refill ao contexto brasileiro: lembrar da renovação de receita, agendamento em posto/UBS, e eventualmente integrar com Farmácia Popular ou farmácias parceiras.
 
 ### JTBD 4 – "Quero ajudar alguém a tomar os remédios"
 
@@ -62,7 +62,7 @@ O Meus Remédios pode diferenciar conectando o refill ao contexto brasileiro: le
 - Pillo: opção de adicionar caregiver que recebe alerta se a dose é perdida.[web:25]
 - MyTherapy / Medisafe: em geral suporte a múltiplos perfis, relatórios e, em algumas versões, compartilhamento com familiares/médicos.[web:18][web:22][web:30]
 
-No Brasil, isso é um ponto fortíssimo para diferenciação se o Meus Remédios oferecer uma UX ótima para "família" (multi-perfil, compartilhamento via WhatsApp, etc.).
+No Brasil, isso é um ponto fortíssimo para diferenciação se o Dosiq oferecer uma UX ótima para "família" (multi-perfil, compartilhamento via WhatsApp, etc.).
 
 ---
 
@@ -100,7 +100,7 @@ No Brasil, isso é um ponto fortíssimo para diferenciação se o Meus Remédios
    - Pillo: app gratuito, ad-supported com upgrades opcionais; foco em manter core "medication reminder" totalmente funcional sem assinatura obrigatória.[web:24][web:25]  
    - Outros apps menores: vendem upgrades pontuais (remover anúncios, tema escuro, export avançado) por tickets de ~US$ 1,99–25,99 dependendo do bundle (inclusive lifetime).[web:22][web:25][web:28][web:30]
 
-### Possíveis estratégias para o Meus Remédios
+### Possíveis estratégias para o Dosiq
 
 - **Posicionamento ético em saúde**: manter o core (lembretes ilimitados, multi-medicamento, histórico básico) totalmente gratuito, sem bloqueio de funcionalidades que impactam diretamente a saúde.
 - **Monetização via extras de conveniência**, por exemplo:
@@ -142,7 +142,7 @@ No Brasil, isso é um ponto fortíssimo para diferenciação se o Meus Remédios
 ### 5.5. Simplicidade versus "super apps" de saúde
 
 - MyTherapy e similares atacam muitos casos: múltiplas métricas, sintomas, atividades, etc.[web:17][web:18][web:21]  
-- O Meus Remédios pode ser "o app que só faz uma coisa e faz muito bem": lembrar remédios da família, com foco em confiabilidade, UX simples e contexto Brasil.
+- O Dosiq pode ser "o app que só faz uma coisa e faz muito bem": lembrar remédios da família, com foco em confiabilidade, UX simples e contexto Brasil.
 
 ---
 
@@ -177,7 +177,7 @@ No Brasil, isso é um ponto fortíssimo para diferenciação se o Meus Remédios
 
 - O espaço de apps de lembrete de medicação é maduro globalmente, mas ainda pouco adaptado ao contexto brasileiro.
 - Players como MyTherapy, Medisafe e Pillo focam em amplitude de features, monetização via assinatura e/ou B2B, e em alguns casos passaram a restringir os planos gratuitos.[web:18][web:22][web:24][web:25][web:26][web:29][web:30]
-- Há espaço para um produto como Meus Remédios se posicionar como:
+- Há espaço para um produto como Dosiq se posicionar como:
   - App extremamente simples e confiável para lembretes de medicação.
   - Otimizado para famílias e cuidadores brasileiros.
   - Com monetização que respeita o caráter crítico de saúde (core gratuito, upsell em conveniência e serviços, e explorações B2B no médio prazo).

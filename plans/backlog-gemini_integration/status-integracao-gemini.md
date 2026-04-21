@@ -32,20 +32,20 @@ Criar um pipeline automatizado de revisão de código usando o Gemini Code Assis
 
 | # | Descrição | Sprint | Status |
 |---|-----------|--------|--------|
-| [#108](https://github.com/coelhotv/meus-remedios/pull/108) | Setup inicial | 5 | ✅ Mergeado |
-| [#113](https://github.com/coelhotv/meus-remedios/pull/113) | Labels automáticas | 5 | ✅ Mergeado |
-| [#114](https://github.com/coelhotv/meus-remedios/pull/114) | Resumos inteligentes | 5 | ✅ Mergeado |
-| [#115](https://github.com/coelhotv/meus-remedios/pull/115) | Criação de issues | 5 | ✅ Mergeado |
-| [#116](https://github.com/coelhotv/meus-remedios/pull/116) | Reply a comments | 5 | ✅ Mergeado |
-| [#124](https://github.com/coelhotv/meus-remedios/pull/124) | Migration SQL | 6 | ✅ Mergeado |
-| [#131](https://github.com/coelhotv/meus-remedios/pull/131) | Persistência de reviews | 6 | ✅ Mergeado |
-| [#132](https://github.com/coelhotv/meus-remedios/pull/132) | Create-issues refatorado | 6 | ✅ Mergeado |
-| [#135](https://github.com/coelhotv/meus-remedios/pull/135) | Correções CI | 6 | ✅ Mergeado |
-| [#136](https://github.com/coelhotv/meus-remedios/pull/136) | Check-resolutions expandido | 6 | ✅ Mergeado |
-| [#138](https://github.com/coelhotv/meus-remedios/pull/138) | Hotfix workflow | 6 | ✅ Mergeado |
-| [#139](https://github.com/coelhotv/meus-remedios/pull/139) | Completar entregáveis | 6 | ✅ Mergeado |
-| [#140](https://github.com/coelhotv/meus-remedios/pull/140) | 3 Endpoints Vercel + Segurança | Nova Arquitetura | ✅ Mergeado |
-| [#141](https://github.com/coelhotv/meus-remedios/pull/141) | Atualização do Workflow | Nova Arquitetura | ✅ Mergeado |
+| [#108](https://github.com/coelhotv/dosiq/pull/108) | Setup inicial | 5 | ✅ Mergeado |
+| [#113](https://github.com/coelhotv/dosiq/pull/113) | Labels automáticas | 5 | ✅ Mergeado |
+| [#114](https://github.com/coelhotv/dosiq/pull/114) | Resumos inteligentes | 5 | ✅ Mergeado |
+| [#115](https://github.com/coelhotv/dosiq/pull/115) | Criação de issues | 5 | ✅ Mergeado |
+| [#116](https://github.com/coelhotv/dosiq/pull/116) | Reply a comments | 5 | ✅ Mergeado |
+| [#124](https://github.com/coelhotv/dosiq/pull/124) | Migration SQL | 6 | ✅ Mergeado |
+| [#131](https://github.com/coelhotv/dosiq/pull/131) | Persistência de reviews | 6 | ✅ Mergeado |
+| [#132](https://github.com/coelhotv/dosiq/pull/132) | Create-issues refatorado | 6 | ✅ Mergeado |
+| [#135](https://github.com/coelhotv/dosiq/pull/135) | Correções CI | 6 | ✅ Mergeado |
+| [#136](https://github.com/coelhotv/dosiq/pull/136) | Check-resolutions expandido | 6 | ✅ Mergeado |
+| [#138](https://github.com/coelhotv/dosiq/pull/138) | Hotfix workflow | 6 | ✅ Mergeado |
+| [#139](https://github.com/coelhotv/dosiq/pull/139) | Completar entregáveis | 6 | ✅ Mergeado |
+| [#140](https://github.com/coelhotv/dosiq/pull/140) | 3 Endpoints Vercel + Segurança | Nova Arquitetura | ✅ Mergeado |
+| [#141](https://github.com/coelhotv/dosiq/pull/141) | Atualização do Workflow | Nova Arquitetura | ✅ Mergeado |
 
 ### Arquitetura Implementada
 

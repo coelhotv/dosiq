@@ -9,7 +9,7 @@
 
 ## 🎯 Resumo Executivo
 
-A versão **2.5.0** marca a maior evolução na interface do "Meus Remédios" desde seu lançamento. O dashboard deixa de ser uma lista passiva e torna-se o **Health Command Center**: um assistente proativo que utiliza algoritmos inteligentes para motivar a adesão e facilitar o registro de doses através de interações modernas (Swipe).
+A versão **2.5.0** marca a maior evolução na interface do "Dosiq" desde seu lançamento. O dashboard deixa de ser uma lista passiva e torna-se o **Health Command Center**: um assistente proativo que utiliza algoritmos inteligentes para motivar a adesão e facilitar o registro de doses através de interações modernas (Swipe).
 
 ---
 

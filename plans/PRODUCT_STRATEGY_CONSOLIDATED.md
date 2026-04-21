@@ -1,4 +1,4 @@
-# Product Strategy — Meus Remédios (Consolidated)
+# Product Strategy — Dosiq (Consolidated)
 
 > Source of truth for all visual, narrative, and motion decisions. This document consolidates the best of both strategy proposals, creating a single, actionable blueprint.
 > Read this before designing or coding any screen. Reference it when validating pages.
@@ -391,7 +391,7 @@ This is a **product UI, not a marketing site.** Imagery is UI, not decoration.
 - No full-bleed photography in app surfaces. Use illustration-style icons and SVG visuals.
 - App surfaces use color blocks, progress visualizations, and tonal cards — not photographs.
 - Landing page (if applicable): warm, documentary-style photography of real people managing health. Never stock images with forced smiles or sterile hospital environments.
-- Logo mark: Blue pill box + white heartbeat graph — paired with "Meus Remédios" wordmark in Public Sans.
+- Logo mark: Blue pill box + white heartbeat graph — paired with "Dosiq" wordmark in Public Sans.
 
 ### Icon System
 

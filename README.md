@@ -1,4 +1,4 @@
-# 💊 Meus Remédios
+# 💊 Dosiq
 
 **Aplicativo de gerenciamento de medicamentos em português brasileiro**
 
