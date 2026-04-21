@@ -238,18 +238,28 @@ Neste caso, a migração de identidade no Play Console exige criar um novo app:
 
 `Google Cloud Console → Firebase Console → Project Settings → Your apps`
 
-Se criou um novo projeto Firebase para o app `com.coelhotv.dosiq`:
+O projeto Firebase precisa de **2 apps Android** (não 3 — preview compartilha as credenciais de development):
 
-1. Adicionar o app Android com package `com.coelhotv.dosiq`
-2. Baixar o `google-services.json` novo
-3. Copiar para `apps/mobile/google-services.json` (e variantes `*-development.json`, `*-preview.json`)
-4. Adicionar SHA-1 e SHA-256 do keystore de produção em `Firebase Console → App → Add fingerprint`
+| App Firebase | Package name | Arquivo gerado |
+|---|---|---|
+| Dosiq (production) | `com.coelhotv.dosiq` | `google-services.json` |
+| Dosiq Dev | `com.coelhotv.dosiq.dev` | `google-services-development.json` |
 
-Para obter o SHA do keystore via EAS:
+> `google-services-preview.json` **não existe mais** — o `build-android.sh` foi atualizado para usar `google-services-development.json` tanto para `development` quanto para `preview`.
+
+**Passos:**
+
+1. No Firebase Console, criar os 2 apps Android acima (se ainda não existirem)
+2. Baixar cada `google-services.json` e renomear conforme a tabela
+3. Salvar em `$ICLOUD_MOBILE/` (caminho lido pelo `build-android.sh`)
+4. Adicionar SHA-1 e SHA-256 de **cada perfil** no app Firebase correspondente:
 
 ```bash
-eas credentials --platform android
-# O painel exibe SHA-1 e SHA-256 do keystore gerenciado pelo EAS
+# SHA do keystore de produção
+eas credentials --platform android --profile production
+
+# SHA do keystore de development (usado também pelo preview)
+eas credentials --platform android --profile development
 ```
 
 ---
@@ -277,17 +287,27 @@ eas credentials --platform android
 5. Bundle ID: `com.coelhotv.dosiq` (deve estar registrado em Developer Portal primeiro)
 6. SKU: `dosiq` (identificador interno único)
 
-### 5.2 Registrar o Bundle ID no Apple Developer Portal
+### 5.2 Registrar os Bundle IDs no Apple Developer Portal
 
 > URL: [developer.apple.com/account/resources/identifiers](https://developer.apple.com/account/resources/identifiers)
 
-Se `com.coelhotv.dosiq` ainda não estiver registrado:
+Registrar **2 App IDs** (não 3 — preview usa o mesmo bundle ID de development):
 
-1. `Identifiers → (+)` → App IDs → App
-2. Description: `Dosiq`
-3. Bundle ID: `com.coelhotv.dosiq` (Explicit)
-4. Capabilities: habilitar as mesmas do app antigo (Push Notifications, Associated Domains, etc.)
-5. Registrar
+| App ID | Bundle ID | Uso |
+|---|---|---|
+| Dosiq | `com.coelhotv.dosiq` | Production (App Store) |
+| Dosiq Dev | `com.coelhotv.dosiq.dev` | Development + Preview (TestFlight / instalação direta) |
+
+Para cada um: `Identifiers → (+) → App IDs → App`, preencher Description e Bundle ID (Explicit), habilitar as capabilities necessárias (Push Notifications, Associated Domains, etc.) e registrar.
+
+**Firebase iOS:** Criar os mesmos 2 apps no Firebase Console e baixar os plists:
+
+| App Firebase | Bundle ID | Arquivo |
+|---|---|---|
+| Dosiq (production) | `com.coelhotv.dosiq` | `GoogleService-Info.plist` |
+| Dosiq Dev | `com.coelhotv.dosiq.dev` | `GoogleService-Info-development.plist` |
+
+> `GoogleService-Info-preview.plist` não é mais necessário — preview usa `GoogleService-Info-development.plist`.
 
 ### 5.3 Atualizar Assets da Listagem
 
@@ -384,28 +404,24 @@ cp /Users/coelhotv/git-icloud/meus-remedios/.env \
 cp /Users/coelhotv/git-icloud/meus-remedios/.env.local \
    /Users/coelhotv/git-icloud/dosiq/.env.local 2>/dev/null || true
 
-# Google Services Android (3 arquivos)
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/google-services.json \
+# Google Services Android (2 arquivos — preview usa o mesmo de development)
+cp "$ICLOUD_MOBILE/google-services.json" \
    /Users/coelhotv/git-icloud/dosiq/apps/mobile/google-services.json
 
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/google-services-development.json \
+cp "$ICLOUD_MOBILE/google-services-development.json" \
    /Users/coelhotv/git-icloud/dosiq/apps/mobile/google-services-development.json
 
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/google-services-preview.json \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/google-services-preview.json
-
-# GoogleService-Info iOS (3 arquivos)
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/GoogleService-Info.plist \
+# GoogleService-Info iOS (2 arquivos — preview usa o mesmo de development)
+cp "$ICLOUD_MOBILE/GoogleService-Info.plist" \
    /Users/coelhotv/git-icloud/dosiq/apps/mobile/GoogleService-Info.plist
 
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/GoogleService-Info-development.plist \
+cp "$ICLOUD_MOBILE/GoogleService-Info-development.plist" \
    /Users/coelhotv/git-icloud/dosiq/apps/mobile/GoogleService-Info-development.plist
-
-cp /Users/coelhotv/git-icloud/meus-remedios/apps/mobile/GoogleService-Info-preview.plist \
-   /Users/coelhotv/git-icloud/dosiq/apps/mobile/GoogleService-Info-preview.plist
 ```
 
-> **Nota:** Se você criou novos projetos Firebase/Google para `com.coelhotv.dosiq`, substitua esses arquivos pelos **novos downloads** do Firebase Console, não pelos arquivos copiados acima.
+> Esses arquivos devem ser os **novos downloads** do Firebase Console para os apps `com.coelhotv.dosiq` e `com.coelhotv.dosiq.dev`. Não copie os arquivos do repo antigo — eles referenciam o projeto Firebase antigo (`com.coelhotv.meusremedios`).
+>
+> `google-services-preview.json` e `GoogleService-Info-preview.plist` **não existem mais** — `build-android.sh` e o EAS usam os arquivos de `-development` para o perfil preview.
 
 ### 7.3 Atualizar o `.vercel/project.json`
 
@@ -493,18 +509,18 @@ Checklist completo para confirmar que a migração está 100% concluída:
 - [ ] Push notifications vinculadas ao novo bundle ID
 
 ### Google Play Console
-- [ ] App name atualizado para `Dosiq`
-- [ ] Descrições atualizadas
-- [ ] Screenshots sem o nome antigo
-- [ ] `google-services*.json` baixados para o novo app Firebase (se aplicável)
-- [ ] SHA-1/SHA-256 adicionados no Firebase Console
+- [ ] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview não vão à loja)
+- [ ] App name, descrições e screenshots atualizados
+- [ ] Firebase Android: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
+- [ ] `google-services.json` e `google-services-development.json` baixados e salvos em `$ICLOUD_MOBILE/`
+- [ ] SHA-1/SHA-256 adicionados no Firebase para cada app
 
 ### App Store Connect
-- [ ] App name atualizado para `Dosiq`
-- [ ] Bundle ID `com.coelhotv.dosiq` registrado no Developer Portal
+- [ ] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview via TestFlight/instalação direta)
+- [ ] Bundle IDs registrados no Developer Portal: `com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`
+- [ ] Firebase iOS: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
+- [ ] `GoogleService-Info.plist` e `GoogleService-Info-development.plist` baixados e salvos em `$ICLOUD_MOBILE/`
 - [ ] Descrição e keywords atualizadas
-- [ ] Screenshots sem o nome antigo
-- [ ] `GoogleService-Info*.plist` baixados para o novo app Firebase (se aplicável)
 - [ ] Build gerado com `eas build --platform ios --profile production`
 
 ### GitHub
@@ -514,7 +530,7 @@ Checklist completo para confirmar que a migração está 100% concluída:
 
 ### Ambiente Local
 - [ ] Repositório clonado em `/Users/coelhotv/git-icloud/dosiq`
-- [ ] Arquivos sensíveis copiados (`.env`, `google-services*.json`, `GoogleService-Info*.plist`)
+- [ ] Arquivos Firebase baixados do console novo e salvos em `$ICLOUD_MOBILE/` (2 Android + 2 iOS)
 - [ ] `.vercel/project.json` com `projectName: "dosiq"`
 - [ ] `npm install` executado sem erros
 - [ ] `npm run validate:agent` passando
