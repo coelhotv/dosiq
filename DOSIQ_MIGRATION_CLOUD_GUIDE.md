@@ -58,7 +58,7 @@ dosiq://
 
 Atualizar de:
 ```
-https://dosiq.vercel.app
+https://meus-remedios.vercel.app
 ```
 Para:
 ```
@@ -142,16 +142,48 @@ Confirmar que os três ambientes foram criados (ou criar caso não existam):
 
 > O `app.config.js` já foi atualizado nas Fases 1–2 para usar `slug: 'dosiq-app'`. Confirme que o slug no painel bate com o do config.
 
-### 3.2 EAS Project ID
+### 3.2 EAS Project ID (novo projeto criado no expo.dev)
 
-O `EAS_PROJECT_ID` (`7169f55a-6de7-465f-b007-f5eb6034c8e6`) **não muda** — é o identificador interno do EAS e está vinculado ao `eas.json` e ao `app.config.js`. Não altere.
+Um novo projeto foi criado no expo.dev para ter o slug correto (`dosiq-app`), gerando um **novo Project ID**: `7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba`.
+
+O campo `extra.eas.projectId` em `apps/mobile/app.config.js` (linha 90) ainda aponta para o ID antigo. Após clonar o novo repositório, vincule ao projeto novo com:
+
+```bash
+# 1. Instalar o EAS CLI globalmente (se ainda não tiver)
+npm install --global eas-cli
+
+# 2. Navegar até o subpacote mobile — IMPORTANTE: rodar dentro de apps/mobile/, não na raiz
+cd /Users/coelhotv/git-icloud/dosiq/apps/mobile
+
+# 3. Fazer login (se necessário)
+eas login
+
+# 4. Vincular ao novo projeto — atualiza automaticamente o projectId em app.config.js
+eas init --id 7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba
+```
+
+O `eas init --id` faz exatamente uma coisa: atualiza o campo `extra.eas.projectId` no `app.config.js` para o novo ID. Após esse comando, commite a alteração:
+
+```bash
+# De volta à raiz do repo
+cd /Users/coelhotv/git-icloud/dosiq
+git add apps/mobile/app.config.js
+git commit -m "chore(mobile): vincular ao novo projeto EAS dosiq (7d1f6cb7)"
+git push
+```
+
+> **O que muda e o que não muda:**
+> - ✅ `extra.eas.projectId` → atualizado pelo `eas init`
+> - ✅ Painel expo.dev → builds e updates passam a aparecer no projeto `dosiq-app`
+> - ❌ `eas.json` → não precisa alterar (sem referência ao Project ID)
+> - ❌ Bundle IDs iOS/Android → não mudam (já são `com.coelhotv.dosiq` desde a Fase 2)
 
 ### 3.3 Credenciais (Keystore Android + Provisioning iOS)
 
-Execute localmente após o rename do bundle identifier estar no ar:
+Execute localmente **após** o `eas init` acima:
 
 ```bash
-cd /Users/coelhotv/git-icloud/dosiq   # ou o caminho atual do repo
+cd /Users/coelhotv/git-icloud/dosiq/apps/mobile
 eas credentials
 ```
 
