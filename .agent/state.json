@@ -18,29 +18,33 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_migration_fase2",
-    "started_at": "2026-04-21T07:23:39Z",
-    "completed_at": "2026-04-21T07:25:16Z",
+    "id": "session_2026W17_dosiq_migration_fase3",
+    "started_at": "2026-04-21T07:53:00Z",
+    "completed_at": "2026-04-21T08:19:13.989Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Dosiq Migration Fase 2: App Hibrido Mobile & Expo",
+    "goal": "Dosiq - Fase 3",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "app.config.js com nomes/slug/bundle ids Dosiq por variante",
-      "scheme alterado para dosiq",
-      "EAS projectId preservado",
-      "ocorrencias legadas removidas do escopo mobile",
-      "expo config publico sem erro",
-      "lint e validacoes passando"
+      "<title> do apps/web/index.html atualizado para Dosiq",
+      "politica-de-privacidade sem referencias legadas",
+      "manifest (se existir) com name/short_name Dosiq",
+      "pwaUtils getInstallInstructions com Dosiq",
+      "copy legado removido em Landing/Auth/WelcomeStep/Sidebar/Settings/EmergencyQRCode e correlatos",
+      "pdfGeneratorService com titulo Dosiq",
+      "chatbotConfig com cabecalho Dosiq",
+      "zero URLs meus-remedios.vercel.app hardcoded no escopo web",
+      "npm run build --workspace @dosiq/web passando",
+      "npm run validate:agent passando"
     ],
     "active_wave": {
       "name": "Dosiq Rebranding Migration",
-      "phase": "dosiq-migration-fase-2",
+      "phase": "dosiq-migration-fase-3",
       "sprint": "refactor-2026-W17",
-      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_2.md",
-      "status": "completed",
-      "started_at": "2026-04-21T07:23:39Z",
-      "notes": "Fase 2: rebranding de identidade mobile Expo (name/slug/scheme/bundle IDs), copy e scripts."
+      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_3.md",
+      "status": "in_progress",
+      "started_at": "2026-04-21T07:53:00Z",
+      "notes": "Fase 3: rebranding web (SEO, PWA, copy e URLs publicas)."
     }
   },
   "memory": {
@@ -50,7 +54,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
@@ -68,8 +72,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-21T07:25:16Z",
-    "relevant_rules_loaded_at": "2026-04-21T07:24:26Z",
+    "index_loaded_at": "2026-04-21T08:19:13.989Z",
+    "relevant_rules_loaded_at": "2026-04-21T08:19:13.989Z",
     "h5_1_sprint_validated": true,
     "h8_7_completed_at": "2026-04-20T21:23:00Z"
   },
