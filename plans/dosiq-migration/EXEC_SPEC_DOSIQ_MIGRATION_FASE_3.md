@@ -4,6 +4,7 @@
 > **Pré-requisito:** Fase 1 merged e `main` atualizado
 > **Duração estimada:** 30–45 min
 > **Impacto:** SEO, identidade PWA, copy de UI e links públicos do app web
+> **Status:** CONCLUÍDA ✅ — PR #485 merged em 2026-04-21
 
 ---
 
@@ -167,16 +168,16 @@ git commit -m "refactor(web): renomear copy e referencias de 'Meus Remedios' par
 
 ## 4. Critérios de Aceitação do PR
 
-- [ ] `<title>` do `index.html` é "Dosiq"
-- [ ] `politica-de-privacidade.html` sem referências ao nome legado
-- [ ] `manifest.webmanifest` (se existir): `name: "Dosiq"`, `short_name: "Dosiq"`
-- [ ] `pwaUtils.js`: step de instalação corrigido
-- [ ] `Landing.jsx`, `Auth.jsx`, `WelcomeStep.jsx`, `Sidebar.jsx`, `Settings.jsx` sem texto legado
-- [ ] `pdfGeneratorService.js`: título do relatório corrigido
-- [ ] `chatbotConfig.js`: comentário de cabeçalho corrigido
-- [ ] Zero URLs `meus-remedios.vercel.app` hardcodadas
-- [ ] `npm run build` passando sem erros
-- [ ] `npm run validate:agent` passando
+- [x] `<title>` do `index.html` é "Dosiq"
+- [x] `politica-de-privacidade.html` sem referências ao nome legado
+- [x] `manifest.webmanifest` (se existir): `name: "Dosiq"`, `short_name: "Dosiq"` (não aplicável no escopo atual; arquivo não encontrado)
+- [x] `pwaUtils.js`: step de instalação corrigido
+- [x] `Landing.jsx`, `Auth.jsx`, `WelcomeStep.jsx`, `Sidebar.jsx`, `Settings.jsx` sem texto legado
+- [x] `pdfGeneratorService.js`: título do relatório corrigido
+- [x] `chatbotConfig.js`: comentário de cabeçalho corrigido
+- [x] Zero URLs `meus-remedios.vercel.app` hardcodadas
+- [x] `npm run build` passando sem erros
+- [x] `npm run validate:agent` passando
 
 
 ## 1. Escopo de Arquivos Modificados
