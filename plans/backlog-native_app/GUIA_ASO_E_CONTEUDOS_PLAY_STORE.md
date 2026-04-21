@@ -1,6 +1,6 @@
 # Guia Pratico - ASO e Conteudos da Play Store
 
-> **Contexto:** Dosik hybrid/native | Android first
+> **Contexto:** Dosiq hybrid/native | Android first
 > **Data:** 2026-04-14
 > **Objetivo:** deixar prontos os textos-base da loja e um posicionamento inicial de ASO para o lançamento do MVP
 
@@ -24,7 +24,7 @@ Como o app ainda está em Fase 5 e o Apple Developer não foi aprovado, o foco a
 
 O erro mais comum no primeiro app é tentar parecer “grande demais” logo na primeira versão.
 
-Para o Dosik, o posicionamento inicial mais forte é:
+Para o Dosiq, o posicionamento inicial mais forte é:
 
 > app para organizar tratamentos, registrar doses e acompanhar estoque de remédios no dia a dia
 
@@ -65,20 +65,20 @@ A Google Play trabalha com nome curto, então o ideal é usar marca limpa e memo
 ### Recomendação principal
 
 ```text
-Dosik
+Dosiq
 ```
 
 ### Alternativas válidas, se quiser testar depois
 
 ```text
-Dosik: Doses
-Dosik Diario
-Dosik Estoque
+Dosiq: Doses
+Dosiq Diario
+Dosiq Estoque
 ```
 
 ### Minha recomendação
 
-Fique com `Dosik` no lançamento inicial.
+Fique com `Dosiq` no lançamento inicial.
 
 Vantagens:
 
@@ -123,7 +123,7 @@ Ela é:
 ## 4.1. Descrição completa - versão principal
 
 ```text
-Dosik ajuda voce a organizar sua rotina de medicamentos de forma simples, clara e pratica.
+Dosiq ajuda voce a organizar sua rotina de medicamentos de forma simples, clara e pratica.
 
 Com o app, voce pode acompanhar o que precisa tomar hoje, registrar doses rapidamente, visualizar seus tratamentos ativos e controlar o estoque dos seus remedios em um unico lugar.
 
@@ -150,7 +150,7 @@ Acompanhe seus medicamentos e identifique com antecedencia quando um item estive
 - Perfil e configuracoes
 Gerencie informacoes essenciais da sua conta e acompanhe o status de integracoes disponiveis.
 
-Para quem o Dosik foi pensado:
+Para quem o Dosiq foi pensado:
 
 - pacientes em uso recorrente de medicamentos
 - pessoas que cuidam da propria rotina de tratamento
@@ -159,7 +159,7 @@ Para quem o Dosik foi pensado:
 Nosso foco e ajudar voce a manter consistencia, clareza e previsibilidade no cuidado com os medicamentos.
 
 Importante:
-O Dosik e um app de organizacao e acompanhamento da rotina de medicamentos. Ele nao substitui orientacao medica, diagnostico, acompanhamento profissional ou atendimento de urgencia.
+O Dosiq e um app de organizacao e acompanhamento da rotina de medicamentos. Ele nao substitui orientacao medica, diagnostico, acompanhamento profissional ou atendimento de urgencia.
 ```
 
 ## 4.2. Descrição completa - versão mais “ASO forte”
@@ -167,11 +167,11 @@ O Dosik e um app de organizacao e acompanhamento da rotina de medicamentos. Ele 
 Use esta alternativa se quiser uma linguagem um pouco mais orientada a busca, sem exagerar:
 
 ```text
-Dosik e um app para controle de medicamentos, registro de doses e acompanhamento de estoque.
+Dosiq e um app para controle de medicamentos, registro de doses e acompanhamento de estoque.
 
 Se voce precisa organizar remedios, lembrar sua rotina de tratamento e ter mais clareza sobre o que tomar ao longo do dia, o app foi feito para simplificar esse processo.
 
-Com o Dosik, voce pode:
+Com o Dosiq, voce pode:
 
 - organizar seus medicamentos em um so lugar
 - registrar doses tomadas com rapidez
