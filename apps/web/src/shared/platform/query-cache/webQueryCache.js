@@ -14,7 +14,7 @@
  * - useCachedQuery.js importa daqui (nao mais de queryCache.js legado)
  * - queryCache.js legado removido apos validacao bem-sucedida
  */
-import { createQueryCache } from '@meus-remedios/shared-data'
+import { createQueryCache } from '@dosiq/shared-data'
 import { webStorageAdapter } from '@shared/platform/storage/webStorageAdapter'
 
 const logger = {

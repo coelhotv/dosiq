@@ -10,7 +10,7 @@ import { getExpoPushToken } from './getExpoPushToken'
 import { syncNotificationDevice } from './syncNotificationDevice'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
 
-const PUSH_TOKEN_KEY = '@meus-remedios/expo-push-token'
+const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
 
 export function usePushNotifications({ supabase, session }) {
   useEffect(() => {

@@ -15,7 +15,7 @@
  * - Example: '0.5rem' = 8px; '1px' = 1 pixel
  * - Mobile should strip unit suffix and use numeric value directly
  *
- * @module @meus-remedios/design-tokens/radii
+ * @module @dosiq/design-tokens/radii
  */
 
 // ============================================

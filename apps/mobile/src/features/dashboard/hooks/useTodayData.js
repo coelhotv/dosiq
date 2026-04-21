@@ -5,8 +5,8 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@meus-remedios/core'
-import { calculateAdherenceStats, calculateDosesByDate } from '@meus-remedios/core'
+import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@dosiq/core'
+import { calculateAdherenceStats, calculateDosesByDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
   getActiveProtocols,
@@ -15,7 +15,7 @@ import {
   getUserSettings,
 } from '../services/dashboardService'
 
-const TODAY_CACHE_KEY = '@meus-remedios/today-snapshot'
+const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
 /**
  * @typedef {{ 

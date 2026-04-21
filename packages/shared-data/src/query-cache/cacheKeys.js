@@ -8,7 +8,7 @@
  * para centralizar e eliminar duplicacao (H3.3, Wave H3).
  *
  * Uso:
- *   import { CACHE_KEYS } from '@meus-remedios/shared-data'
+ *   import { CACHE_KEYS } from '@dosiq/shared-data'
  *   const key = CACHE_KEYS.MEDICINES
  */
 

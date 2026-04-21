@@ -5,6 +5,6 @@
  * Unico local na web onde window.localStorage e acessado diretamente.
  * packages/storage NAO acessa window — apenas este arquivo de bootstrap.
  */
-import { createWebStorageAdapter } from '@meus-remedios/storage'
+import { createWebStorageAdapter } from '@dosiq/storage'
 
 export const webStorageAdapter = createWebStorageAdapter(window.localStorage)
