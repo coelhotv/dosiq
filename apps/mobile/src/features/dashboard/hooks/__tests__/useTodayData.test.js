@@ -46,6 +46,12 @@ describe('useTodayData', () => {
     expect(result.current.data.protocols).toHaveLength(1);
     expect(result.current.data.medicines['m1'].name).toBe('Pills');
     expect(result.current.stale).toBe(false);
+
+    // Verificar se salvou no cache
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      '@meus-remedios/today-snapshot',
+      expect.stringContaining('"localDay"')
+    );
   });
 
   it('fails online and loads from cache (stale mode)', async () => {
@@ -66,5 +72,17 @@ describe('useTodayData', () => {
 
     expect(result.current.stale).toBe(true);
     expect(result.current.data.protocols).toHaveLength(1);
+  });
+
+  it('returns error when both online and cache fail', async () => {
+    supabase.auth.getSession.mockRejectedValue(new Error('Network error'));
+    AsyncStorage.getItem.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useTodayData());
+
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
+
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.data).toBeNull();
   });
 });

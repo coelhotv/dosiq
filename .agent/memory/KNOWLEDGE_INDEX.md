@@ -86,3 +86,5 @@
 - **[K-083]** monorepo-jest-alias-sync -> [`knowledge/process_and_testing/K-083.md`](./knowledge/process_and_testing/K-083.md)
 - **[K-084]** expo-53-firebase-ios-build-fix -> [`knowledge/process_and_testing/K-084.md`](./knowledge/process_and_testing/K-084.md)
 - **[K-085]** mobile-cache-invalidation-logs -> [`knowledge/process_and_testing/K-085.md`](./knowledge/process_and_testing/K-085.md)
+- **[K-086]** timezone-and-protocol-validity -> [`knowledge/process_and_testing/K-086.md`](./knowledge/process_and_testing/K-086.md)
+- **[K-087]** test-user-review-account -> [`knowledge/process_and_testing/K-087.md`](./knowledge/process_and_testing/K-087.md)

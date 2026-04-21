@@ -5,10 +5,12 @@
  * @module adherenceLogic
  */
 
-import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getTodayLocal } from './dateUtils.js'
-
-// Re-export para manter compatibilidade com imports existentes
-export { isProtocolActiveOnDate }
+import { 
+  parseLocalDate, 
+  formatLocalDate, 
+  getTodayLocal, 
+  isProtocolActiveOnDate as isProtocolInPeriod 
+} from './dateUtils.js'
 
 // Invariantes de Negócio (R-022, R-129)
 const TOLERANCE_WINDOW_HOURS = 2
@@ -364,95 +366,7 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
   const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
 
   // Filtrar protocolos aplicáveis para esta data
-  const applicableProtocols = protocols.filter((protocol) => {
-    // Protocolo deve estar ativo
-    if (!protocol.active) return false
-
-    // Verificar se o protocolo já começou
-    if (protocol.start_date) {
-      const startDate = parseLocalDate(protocol.start_date)
-      if (targetDate < startDate) return false
-    }
-
-    // Verificar se o protocolo já terminou
-    if (protocol.end_date) {
-      const endDate = parseLocalDate(protocol.end_date)
-      // Ajuste: inclusive hoje (se targetDate === endDate, deve retornar true)
-      if (targetDate > endDate) return false
-    }
-
-    // Verificar frequência
-    const frequency = (protocol.frequency || 'diário').toLowerCase()
-
-    switch (frequency) {
-      case 'diário':
-      case 'diariamente':
-      case 'daily':
-        return true
-
-      case 'semanal':
-      case 'semanalmente':
-      case 'weekly':
-        // Verificar se o dia da semana está nos dias configurados
-        if (protocol.days && Array.isArray(protocol.days)) {
-          // Mapear nomes de dias para números (0-6)
-          const dayMap = {
-            domingo: 0,
-            sunday: 0,
-            segunda: 1,
-            'segunda-feira': 1,
-            monday: 1,
-            terça: 2,
-            'terça-feira': 2,
-            tuesday: 2,
-            quarta: 3,
-            'quarta-feira': 3,
-            wednesday: 3,
-            quinta: 4,
-            'quinta-feira': 4,
-            thursday: 4,
-            sexta: 5,
-            'sexta-feira': 5,
-            friday: 5,
-            sábado: 6,
-            sabado: 6,
-            saturday: 6,
-          }
-          return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
-        }
-        return false
-
-      case 'dia_sim_dia_nao':
-      case 'dia sim, dia não':
-      case 'every_other_day':
-      case 'alternating':
-        // Calcular dias desde a data de início
-        if (protocol.start_date) {
-          const startDate = parseLocalDate(protocol.start_date)
-          const diffTime = targetDate.getTime() - startDate.getTime()
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-          // Dia sim, dia não: dias pares = dose, ímpares = sem dose
-          return diffDays % 2 === 0
-        }
-        // Se não tiver data de início, assumir que começa hoje (dia 0 = dose)
-        return true
-
-      case 'personalizado':
-      case 'custom':
-        // Frequência personalizada não gera doses esperadas por padrão 
-        // (usuário deve registrar manualmente ou aguardar suporte a ciclos complexos)
-        return false
-
-      case 'quando_necessário':
-      case 'when_needed':
-      case 'prn':
-        // Doses "quando necessário" não são esperadas
-        return false
-
-      default:
-        return true
-    }
-  })
+  const applicableProtocols = protocols.filter((p) => isProtocolActiveOnDate(p, date))
 
   // Gerar slots de doses esperados para cada protocolo aplicável
   const expectedDoses = []
@@ -614,3 +528,76 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
   })
 }
 
+/**
+ * Verifica se um protocolo está "vigente" para uma data específica.
+ * Vigente significa:
+ * 1. O protocolo está marcado como ativo
+ * 2. A data alvo está dentro do intervalo [start_date, end_date]
+ * 3. A frequência do protocolo (diário, semanal, dia-sim-dia-nao) cai na data alvo
+ * 
+ * @param {Object} protocol - Protocolo
+ * @param {string|Date} date - Data alvo (YYYY-MM-DD ou Date object)
+ * @returns {boolean}
+ */
+export function isProtocolActiveOnDate(protocol, date) {
+  const dateStr = typeof date === 'string' ? date : formatLocalDate(date)
+  const targetDate = parseLocalDate(dateStr)
+  const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
+
+  // 1. Verificar se o registro está ativo
+  if (protocol.active === false) return false
+
+  // 2. Verificar período de validade (Usa isProtocolInPeriod do dateUtils)
+  if (!isProtocolInPeriod(protocol, dateStr)) return false
+
+  // 3. Verificar frequência
+  const frequency = (protocol.frequency || 'diário').toLowerCase()
+
+  switch (frequency) {
+    case 'diário':
+    case 'diariamente':
+    case 'daily':
+      return true
+
+    case 'semanal':
+    case 'semanalmente':
+    case 'weekly':
+      // Verificar se o dia da semana está nos dias configurados
+      if (protocol.days && Array.isArray(protocol.days)) {
+        const dayMap = {
+          domingo: 0, sunday: 0,
+          segunda: 1, 'segunda-feira': 1, monday: 1,
+          terça: 2, 'terça-feira': 2, tuesday: 2,
+          quarta: 3, 'quarta-feira': 3, wednesday: 3,
+          quinta: 4, 'quinta-feira': 4, thursday: 4,
+          sexta: 5, 'sexta-feira': 5, friday: 5,
+          sábado: 6, sabado: 6, saturday: 6,
+        }
+        return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
+      }
+      return false
+
+    case 'dia_sim_dia_nao':
+    case 'dia sim, dia não':
+    case 'every_other_day':
+    case 'alternating':
+      // Calcular dias desde a data de início (dia 0 = dose)
+      if (protocol.start_date) {
+        const startDate = parseLocalDate(protocol.start_date)
+        const diffTime = targetDate.getTime() - startDate.getTime()
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+        return diffDays % 2 === 0
+      }
+      return true // Sem data de início, assume início hoje
+
+    case 'personalizado':
+    case 'custom':
+    case 'quando_necessário':
+    case 'when_needed':
+    case 'prn':
+      return false
+
+    default:
+      return true
+  }
+}
