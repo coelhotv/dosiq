@@ -130,7 +130,7 @@ describe('ReportGenerator', () => {
             dailyAdherence: expect.any(Array),
           }),
           period: '30d',
-          title: 'Dosiq - Consulta Medica',
+          title: 'Dosiq - Consulta Médica',
         })
       )
     })

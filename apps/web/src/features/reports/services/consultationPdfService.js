@@ -772,7 +772,7 @@ function renderTitrationPage(doc, autoTable, pdfData) {
  * @param {Object} options.consultationData - Dados consolidados do modo consulta.
  * @param {Object} options.dashboardData - Dados brutos do dashboard.
  * @param {string} [options.period='30d'] - Periodo do relatorio.
- * @param {string} [options.title='Dosiq - Consulta Medica'] - Titulo do documento.
+ * @param {string} [options.title='Dosiq - Consulta Médica'] - Titulo do documento.
  * @returns {Promise<Blob>} Blob do PDF.
  */
 export async function generateConsultationPDF(options = {}) {
@@ -780,7 +780,7 @@ export async function generateConsultationPDF(options = {}) {
     consultationData,
     dashboardData,
     period = '30d',
-    title = 'Dosiq - Consulta Medica',
+    title = 'Dosiq - Consulta Médica',
   } = options
 
   const pdfData = buildConsultationPdfData({
