@@ -535,7 +535,7 @@ function prepareStockChartData(protocols, stockSummaries) {
  * Gera um relatório PDF completo.
  *
  * @param {Object} options - Opções de geração do relatório.
- * @param {string} [options.title='Meus Remédios - Relatório'] - Título do relatório.
+ * @param {string} [options.title='Dosiq - Relatório'] - Título do relatório.
  * @param {string} [options.period='30d'] - Período do relatório ('7d', '30d', '90d').
  * @param {boolean} [options.includeCharts=true] - Se deve incluir gráficos.
  * @param {boolean} [options.includeProtocols=true] - Se deve incluir tabela de protocolos.
@@ -565,7 +565,7 @@ function prepareStockChartData(protocols, stockSummaries) {
 export async function generatePDF(options = {}) {
   const startTime = Date.now()
   const {
-    title = 'Meus Remédios - Relatório',
+    title = 'Dosiq - Relatório',
     period = '30d',
     includeCharts = true,
     includeProtocols = true,

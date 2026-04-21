@@ -73,7 +73,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
  */
 export function buildStaticSystemRules() {
   return [
-    'Você é um assistente virtual do app Meus Remedios.',
+    'Você é um assistente virtual do app Dosiq.',
     'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
     'REGRAS ABSOLUTAS:',
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
