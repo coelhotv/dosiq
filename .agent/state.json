@@ -18,33 +18,31 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_migration_fase3",
-    "started_at": "2026-04-21T07:53:00Z",
-    "completed_at": "2026-04-21T08:19:13.989Z",
+    "id": "session_2026W17_dosiq_migration_fase4",
+    "started_at": "2026-04-21T15:05:00Z",
+    "completed_at": "2026-04-21T15:22:47.346Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Dosiq - Fase 3",
+    "goal": "Dosiq - Fase 4",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "<title> do apps/web/index.html atualizado para Dosiq",
-      "politica-de-privacidade sem referencias legadas",
-      "manifest (se existir) com name/short_name Dosiq",
-      "pwaUtils getInstallInstructions com Dosiq",
-      "copy legado removido em Landing/Auth/WelcomeStep/Sidebar/Settings/EmergencyQRCode e correlatos",
-      "pdfGeneratorService com titulo Dosiq",
-      "chatbotConfig com cabecalho Dosiq",
-      "zero URLs meus-remedios.vercel.app hardcoded no escopo web",
-      "npm run build --workspace @dosiq/web passando",
+      "start.js com texto de onboarding para Dosiq",
+      "ajuda.js com fallback do bot dosiq_bot",
+      "buildNotificationPayload.js com deeplinks dosiq://",
+      "api/notify.js com deeplinks dosiq://",
+      "fixtures .github atualizadas para dosiq/vercel novo",
+      "zero ocorrencias meusremedios:// e meus_remedios_bot em api/ e server/",
+      "npm run test:critical passando",
       "npm run validate:agent passando"
     ],
     "active_wave": {
       "name": "Dosiq Rebranding Migration",
-      "phase": "dosiq-migration-fase-3",
+      "phase": "dosiq-migration-fase-4",
       "sprint": "refactor-2026-W17",
-      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_3.md",
-      "status": "in_progress",
-      "started_at": "2026-04-21T07:53:00Z",
-      "notes": "Fase 3: rebranding web (SEO, PWA, copy e URLs publicas)."
+      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_4.md",
+      "status": "completed",
+      "started_at": "2026-04-21T15:05:00Z",
+      "notes": "Fase 4: rebranding bot/API/deeplinks e fixtures de CI."
     }
   },
   "memory": {
@@ -54,7 +52,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
@@ -72,8 +70,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-21T08:19:13.989Z",
-    "relevant_rules_loaded_at": "2026-04-21T08:19:13.989Z",
+    "index_loaded_at": "2026-04-21T15:22:47.346Z",
+    "relevant_rules_loaded_at": "2026-04-21T15:22:47.346Z",
     "h5_1_sprint_validated": true,
     "h8_7_completed_at": "2026-04-20T21:23:00Z"
   },

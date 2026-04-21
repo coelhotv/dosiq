@@ -37,7 +37,7 @@ A função \`escapeMarkdownV2\` não está escapando os caracteres \`(\` e \`)\`
   return text.replace(specialChars, '\\\\$&')
 \`\`\``,
     user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-    html_url: 'https://github.com/coelhotv/meus-remedios/pull/25#discussion_r2810440263'
+    html_url: 'https://github.com/coelhotv/dosiq/pull/25#discussion_r2810440263'
   },
   
   // Comentário HIGH priority (formato real do PR #25)
@@ -53,7 +53,7 @@ O ponto final \`.\` é um caractere reservado no MarkdownV2 e deve ser escapado 
     message += \`\\n📅 Planeje seu próximo repostamento\\\\.\`
 \`\`\``,
     user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-    html_url: 'https://github.com/coelhotv/meus-remedios/pull/25#discussion_r2810635778'
+    html_url: 'https://github.com/coelhotv/dosiq/pull/25#discussion_r2810635778'
   },
   
   // Comentário MEDIUM priority (formato real do PR #25)
@@ -65,7 +65,7 @@ O ponto final \`.\` é um caractere reservado no MarkdownV2 e deve ser escapado 
 
 A função \`escapeMarkdownSafe\` é atualmente idêntica à \`escapeMarkdownV2\`. Se a intenção é manter parênteses legíveis, a \`escapeMarkdownV2\` deveria ser corrigida para incluir parênteses (como sugerido acima) e esta função deveria ser a versão que os omite. Caso contrário, trata-se de código redundante que deve ser removido para melhorar a manutenibilidade.`,
     user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-    html_url: 'https://github.com/coelhotv/meus-remedios/pull/25#discussion_r2810635780'
+    html_url: 'https://github.com/coelhotv/dosiq/pull/25#discussion_r2810635780'
   },
   
   // Comentário MEDIUM (auto-fixable - formatting)
@@ -81,7 +81,7 @@ O uso de \`new RegExp\` com chaves de objeto não escapadas pode causar erros se
     message = message.split(\`{{\${key}}}\`).join(escapedValue)
 \`\`\``,
     user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-    html_url: 'https://github.com/coelhotv/meus-remedios/pull/25#discussion_r2810635781'
+    html_url: 'https://github.com/coelhotv/dosiq/pull/25#discussion_r2810635781'
   }
 ];
 

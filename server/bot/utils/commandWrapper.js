@@ -28,7 +28,7 @@ export function createCommandHandler(handler) {
         return await bot.sendMessage(chatId,
           '⚠️ *Conta não vinculada*\n\n' +
           'Você precisa conectar sua conta primeiro:\n\n' +
-          '1. Abra o app Meus Remédios\n' +
+          '1. Abra o app Dosiq\n' +
           '2. Vá em *Configurações > Integração Telegram*\n' +
           '3. Clique em "Gerar Código"\n' +
           '4. Envie o código aqui: `/start SEU_CODIGO`',

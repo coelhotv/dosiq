@@ -7,7 +7,7 @@ import { sendExpoPushNotification } from './expoPushChannel.js'
 const makePayload = () => ({
   title: 'Estoque baixo',
   body: 'Losartana está acabando',
-  deeplink: 'meusremedios://stock',
+  deeplink: 'dosiq://stock',
   metadata: { medicineId: 'med-1' },
 })
 

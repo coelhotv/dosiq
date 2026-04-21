@@ -50,7 +50,7 @@ function buildNotificationPayload({ kind, data }) {
       return {
         title: '💊 Lembrete de nova dose',
         body: `Está na hora de tomar ${data.dosage || 1}x de ${data.medicineName}. Não deixe para depois!`,
-        deeplink: `meusremedios://today?protocolId=${data.protocolId}`,
+        deeplink: `dosiq://today?protocolId=${data.protocolId}`,
         metadata: { 
           protocolId: data.protocolId, 
           medicineId: data.medicineId,
@@ -61,14 +61,14 @@ function buildNotificationPayload({ kind, data }) {
       return {
         title: 'Estoque baixo',
         body: `${data.medicineName} está acabando`,
-        deeplink: `meusremedios://stock`,
+        deeplink: `dosiq://stock`,
         metadata: { medicineId: data.medicineId }
       };
     case 'daily_digest':
       return {
         title: 'Resumo do dia',
         body: data.summary || 'Veja seu resumo diário',
-        deeplink: `meusremedios://today`,
+        deeplink: `dosiq://today`,
         metadata: {}
       };
     default:
