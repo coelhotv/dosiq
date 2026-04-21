@@ -1,6 +1,6 @@
 # Guia Pratico - App Access para Google Play Console
 
-> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
 > **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Objetivo:** deixar pronto o material que a Google Play pode pedir para autenticação e revisão do app
 
@@ -14,7 +14,7 @@ Use este guia quando a Google Play Console pedir instruções de acesso ao app p
 - parte relevante do conteúdo fica atrás de autenticação
 - o revisor precisa conseguir navegar sem bloqueios
 
-Para o Meus Remédios, este material deve ser tratado como obrigatório.
+Para o Dosik, este material deve ser tratado como obrigatório.
 
 ---
 
@@ -88,8 +88,8 @@ Senha: [senha secreta]
 
 Passos para acesso:
 1. Abra o app.
-2. Toque em "Entrar".
-3. Faça login com as credenciais informadas acima.
+2. Faça login com as credenciais informadas acima.
+3. Toque em "Entrar".
 4. Após o login, o app abrirá a área principal com o resumo do dia.
 5. Navegue pelas seções Hoje, Tratamentos, Estoque e Perfil.
 
@@ -113,8 +113,8 @@ Password: [senha secreta]
 
 Steps to access the app:
 1. Open the app.
-2. Tap "Entrar" on the login screen.
-3. Sign in using the test credentials above.
+2. Sign in using the test credentials above.
+3. Tap "Entrar" on the login screen.
 4. After login, the app will open the main area with the daily summary.
 5. Review the main sections: Hoje, Tratamentos, Estoque, and Perfil.
 
@@ -136,8 +136,8 @@ Password: [senha secreta]
 
 Review steps:
 1. Open the app.
-2. Tap "Entrar".
-3. Log in with the credentials above.
+2. Log in with the credentials above.
+3. Tap "Entrar".
 4. After login, the app opens the main dashboard with the daily medication summary.
 5. You can review the following sections: Hoje, Tratamentos, Estoque, and Perfil.
 
@@ -146,7 +146,7 @@ The review account already contains sample data. No invitation code or special a
 
 ---
 
-## 8. Como preencher para o Meus Remédios
+## 8. Como preencher para o Dosik
 
 ### Estrutura recomendada
 
@@ -190,8 +190,8 @@ Password: [senha secreta]
 
 Steps:
 1. Open the app.
-2. Tap "Entrar".
-3. Log in using the credentials above.
+2. Log in using the credentials above.
+3. Tap "Entrar".
 4. After login, review the main sections: Hoje, Tratamentos, Estoque, and Perfil.
 
 The test account already includes sample data. No invitation code or additional approval is required.

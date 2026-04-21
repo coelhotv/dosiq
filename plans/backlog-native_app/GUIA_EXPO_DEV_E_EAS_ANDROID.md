@@ -1,6 +1,6 @@
 # Guia Pratico - Expo.dev e EAS para Android
 
-> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
 > **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Escopo deste guia:** configurar o projeto no `expo.dev`, validar o setup real do repositório e gerar builds Android para testes e publicação na Google Play
 
@@ -38,9 +38,9 @@ O app mobile já possui base suficiente para subir no ecossistema Expo:
 
 | Perfil | Nome | Slug | Android package |
 |---|---|---|---|
-| `development` | `Meus Remedios Dev` | `meus-remedios-dev` | `com.coelhotv.meusremedios.dev` |
-| `preview` | `Meus Remedios Preview` | `meus-remedios-preview` | `com.coelhotv.meusremedios.preview` |
-| `production` | `Meus Remedios` | `meus-remedios` | `com.coelhotv.meusremedios` |
+| `development` | `Dosik Dev` | `dosik-dev` | `com.coelhotv.dosik.dev` |
+| `preview` | `Dosik Preview` | `dosik-preview` | `com.coelhotv.dosik.preview` |
+| `production` | `Dosik` | `dosik` | `com.coelhotv.dosik` |
 
 ### Leitura correta desses perfis
 
@@ -129,7 +129,7 @@ O comportamento esperado:
 npx eas-cli@latest project:info
 ```
 
-Você deve ver um projeto com nome coerente com `Meus Remedios` e ligado ao diretório `apps/mobile`.
+Você deve ver um projeto com nome coerente com `Dosik` e ligado ao diretório `apps/mobile`.
 
 ### Passo 6 - revisar o `app.config.js`
 
@@ -238,7 +238,7 @@ Use quando:
 
 ### O que esperar no emulador
 
-Ao final do build, a CLI pode oferecer instalar e abrir o app no emulador. Se você responder que sim, o `Meus Remedios Preview` abre como um app Android normal.
+Ao final do build, a CLI pode oferecer instalar e abrir o app no emulador. Se você responder que sim, o `Dosik Preview` abre como um app Android normal.
 
 Importante:
 
@@ -294,7 +294,7 @@ Se você gerou um `preview build`, abriu no emulador, fechou tudo e depois quis 
 
 1. abra o Android Emulator
 2. espere o Android iniciar
-3. procure o app `Meus Remedios Preview`
+3. procure o app `Dosik Preview`
 4. toque no ícone para abrir
 
 Nesse caso, você não precisa rodar novo build.
@@ -328,7 +328,7 @@ Pense assim:
 
 ## 9. Checklist de validação antes do primeiro build de produção
 
-- `app.config.js` com `android.package = com.coelhotv.meusremedios`
+- `app.config.js` com `android.package = com.coelhotv.dosik`
 - `version = APP_VERSION` definido em `app.config.js` com a fórmula semântica (ver secção 6.4)
 - `android.versionCode = VERSION_CODE` derivado automaticamente — nunca editar manualmente
 - `icon.png` aceitável para loja e launcher
@@ -507,7 +507,7 @@ npx eas-cli@latest build --platform android --profile development
 Correção:
 
 1. abrir o emulador novamente
-2. procurar `Meus Remedios Preview` ou `Meus Remedios Dev`
+2. procurar `Dosik Preview` ou `Dosik Dev`
 3. abrir manualmente pelo launcher
 
 Se quiser abrir o emulador por terminal:
@@ -692,7 +692,7 @@ Antes de rodar qualquer build, garanta que os arquivos Firebase existem em `apps
 
 - ✅ `google-services-development.json` (para perfil development)
 - ✅ `google-services-preview.json` (para perfil preview)
-- ✅ `google-services.json` (para perfil production — download do Firebase Console do app `com.coelhotv.meusremedios`)
+- ✅ `google-services.json` (para perfil production — download do Firebase Console do app `com.coelhotv.dosik`)
 
 **Nunca commitar esses arquivos** — eles estão corretamente no `.gitignore`.
 

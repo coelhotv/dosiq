@@ -1,14 +1,14 @@
-# Política de Privacidade - Meus Remédios
+# Política de Privacidade - Dosik
 
 > **Status:** Rascunho operacional para MVP/beta
 > **Data:** 2026-04-14
-> **Aplicável a:** app web e app mobile Meus Remédios
+> **Aplicável a:** app web e app mobile Dosik
 
 ---
 
 ## 1. Introdução
 
-O **Meus Remédios** é um aplicativo para organização da rotina de medicamentos, acompanhamento de tratamentos, registro de doses e controle de estoque.
+O **Dosik** é um aplicativo para organização da rotina de medicamentos, acompanhamento de tratamentos, registro de doses e controle de estoque.
 
 Esta Política de Privacidade explica, em linguagem simples:
 
@@ -17,7 +17,7 @@ Esta Política de Privacidade explica, em linguagem simples:
 - como eles são protegidos
 - quais escolhas e direitos você possui
 
-Ao usar o Meus Remédios, você declara estar ciente desta Política de Privacidade.
+Ao usar o Dosik, você declara estar ciente desta Política de Privacidade.
 
 ---
 
@@ -34,7 +34,7 @@ Enquanto estes campos não forem substituídos pelos dados oficiais do responsá
 
 ## 3. Quais dados o app pode tratar
 
-Dependendo da forma como você usa o Meus Remédios, o app pode tratar as seguintes categorias de dados:
+Dependendo da forma como você usa o Dosik, o app pode tratar as seguintes categorias de dados:
 
 ### 3.1. Dados de cadastro e autenticação
 
@@ -106,7 +106,7 @@ Como o app pode lidar com informações de saúde, tratamos esse tema com cuidad
 
 ## 6. Onde os dados podem ser armazenados
 
-O Meus Remédios pode utilizar infraestrutura própria e de terceiros para operar a aplicação, incluindo serviços de autenticação, banco de dados e armazenamento necessários ao funcionamento do produto.
+O Dosik pode utilizar infraestrutura própria e de terceiros para operar a aplicação, incluindo serviços de autenticação, banco de dados e armazenamento necessários ao funcionamento do produto.
 
 No estado atual do projeto, o serviço principal de backend e persistência é operado com apoio de infraestrutura Supabase.
 
@@ -192,7 +192,7 @@ Quando os dados deixarem de ser necessários, eles poderão ser eliminados ou an
 
 ## 12. Crianças e adolescentes
 
-O Meus Remédios não é direcionado intencionalmente a crianças sem supervisão de responsável.
+O Dosik não é direcionado intencionalmente a crianças sem supervisão de responsável.
 
 Caso o uso envolva dados de menores de idade, o tratamento deve observar os requisitos legais aplicáveis, incluindo participação do responsável legal quando necessário.
 

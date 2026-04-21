@@ -1,6 +1,6 @@
 # Guia Pratico - Google Play Console para o MVP Android
 
-> **Contexto:** Meus Remedios hybrid/native | Fase 6 Push Native e Beta Interno
+> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
 > **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
 > **Objetivo:** configurar a Google Play Console do zero para o primeiro envio Android do projeto
 
@@ -43,13 +43,13 @@ Para o primeiro app publicado, mantenha uma regra rígida:
 No caso deste projeto, o package de produção já está definido em `apps/mobile/app.config.js`:
 
 ```text
-com.coelhotv.meusremedios
+com.coelhotv.dosik
 ```
 
 ### Não crie o app com estes packages
 
-- `com.coelhotv.meusremedios.dev`
-- `com.coelhotv.meusremedios.preview`
+- `com.coelhotv.dosik.dev`
+- `com.coelhotv.dosik.preview`
 
 Esses ficam para builds internas e ambientes auxiliares.
 
@@ -59,7 +59,7 @@ Esses ficam para builds internas e ambientes auxiliares.
 
 Separe estes dados:
 
-- nome do app: `Meus Remedios`
+- nome do app: `Dosik`
 - e-mail de suporte que ficará público
 - link da política de privacidade
 - país inicial de distribuição
@@ -113,7 +113,7 @@ Na home da Play Console:
 Use:
 
 ```text
-Meus Remedios
+Dosik
 ```
 
 Evite adicionar:
@@ -124,8 +124,8 @@ Evite adicionar:
 
 Exemplos a evitar:
 
-- `Meus Remedios Controle de Medicamentos e Lembretes`
-- `Meus Remedios Brasil Oficial`
+- `Dosik Controle de Medicamentos e Lembretes`
+- `Dosik Brasil Oficial`
 
 ---
 
@@ -175,9 +175,9 @@ Use primeiro para validar upload, instalação e fluxo principal.
 4. adicionar seus próprios e-mails e pessoas de confiança
 5. criar a primeira release interna
 
-### Status Atual (v0.1.0) ✅
-- **Convite (Email List):** [Link de Opt-in](https://play.google.com/apps/internaltest/4701693465152183629)
-- **Download App:** [Play Store Internal](https://play.google.com/store/apps/details?id=com.coelhotv.meusremedios)
+### Status Atual (legado) ⚠️
+- **Convite (Email List):** o link anterior precisa ser substituído depois da recriação do app com o novo package.
+- **Download App:** atualizar após recriação do app com o novo package `com.coelhotv.dosik`.
 
 ## 7.3. Closed testing
 
@@ -293,7 +293,7 @@ Se o posicionamento for mais clínico/institucional:
 
 - avalie `Medical`
 
-Para o MVP do Meus Remedios, eu recomendo começar por `Health & Fitness`, porque tende a comunicar melhor uso cotidiano e reduzir expectativa de ferramenta clínica profissional.
+Para o MVP do Dosik, eu recomendo começar por `Health & Fitness`, porque tende a comunicar melhor uso cotidiano e reduzir expectativa de ferramenta clínica profissional.
 
 ---
 
@@ -301,7 +301,7 @@ Para o MVP do Meus Remedios, eu recomendo começar por `Health & Fitness`, porqu
 
 Todo app publicado no Google Play precisa tratar com seriedade a seção de Data safety. Em testes internos o impacto é menor, mas para trilhas mais amplas e produção esse preenchimento passa a ser parte real do caminho de publicação.
 
-### Como pensar no caso do Meus Remedios
+### Como pensar no caso do Dosik
 
 O app provavelmente envolve pelo menos:
 
@@ -411,7 +411,7 @@ Se possível, use device frames consistentes e texto em pt-BR.
 Certo:
 
 ```text
-com.coelhotv.meusremedios
+com.coelhotv.dosik
 ```
 
 Errado:
@@ -451,7 +451,7 @@ Se o revisor não conseguir entrar, o processo trava.
 
 Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 
-1. app criado com `com.coelhotv.meusremedios`
+1. app criado com `com.coelhotv.dosik`
 2. assinatura configurada
 3. internal testing funcionando
 4. ficha principal preenchida

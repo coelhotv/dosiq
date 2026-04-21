@@ -13,13 +13,15 @@ import { parseLocalDate } from '@meus-remedios/core'
  * @param {string} userId
  * @returns {Promise<Array>}
  */
-export async function getActiveProtocols(userId) {
+export async function getActiveProtocols(userId, dateStr) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('protocols')
     .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, start_date, end_date, titration_status')
     .eq('user_id', userId)
     .eq('active', true)
+    .lte('start_date', dateStr)
+    .or(`end_date.is.null,end_date.gte.${dateStr}`)
     .order('name')
 
   if (error) throw error
