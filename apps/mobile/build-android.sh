@@ -4,7 +4,7 @@
 
 PROFILE="${1:-preview}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ICLOUD_MOBILE="$SCRIPT_DIR"
+APP_DIR="$SCRIPT_DIR"
 
 # production usa google-services.json (sem sufixo), demais usam google-services-{profile}.json
 if [ "$PROFILE" = "production" ]; then
