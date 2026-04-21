@@ -4,6 +4,7 @@
 > **Pré-requisito:** Fases 1, 2, 3 e 4 todas merged em `main`
 > **Duração estimada:** 30–45 min
 > **Impacto:** Memória persistente dos agentes, manuais e documentação do repositório
+> **Status:** PENDENTE ⏳ — aguardando conclusão da Fase 4 (Fases 1–3 já merged)
 
 ---
 
