@@ -287,7 +287,7 @@ export function buildServerContext({ medicines, protocols, logs, stockSummary, s
  */
 export function buildStaticSystemRules() {
   return [
-    'Você é um assistente virtual do app Meus Remedios no Telegram.',
+    'Você é um assistente virtual do app Dosiq no Telegram.',
     'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
     'REGRAS ABSOLUTAS:',
     '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',

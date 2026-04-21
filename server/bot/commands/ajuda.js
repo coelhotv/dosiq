@@ -1,7 +1,7 @@
 export async function handleAjuda(bot, msg) {
   const chatId = msg.chat.id;
   
-    let botUsername = 'meus_remedios_bot';
+    let botUsername = 'dosiq_bot';
     try {
       const me = await bot.getMe();
       if (me && me.username) botUsername = me.username;

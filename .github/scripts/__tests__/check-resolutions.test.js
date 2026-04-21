@@ -35,7 +35,7 @@ Função não está tratando erro corretamente.
   }
 \`\`\``,
   user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-  html_url: 'https://github.com/coelhotv/meus-remedios/pull/117#discussion_r1234567890',
+  html_url: 'https://github.com/coelhotv/dosiq/pull/117#discussion_r1234567890',
   created_at: '2026-02-22T10:00:00Z'
 };
 
@@ -49,7 +49,7 @@ TODO: Melhorar tratamento de erro nesta função no futuro.
 
 Considerar usar um pattern mais robusto.`,
   user: { login: 'gemini-code-assist[bot]', type: 'Bot' },
-  html_url: 'https://github.com/coelhotv/meus-remedios/pull/117#discussion_r1234567891',
+  html_url: 'https://github.com/coelhotv/dosiq/pull/117#discussion_r1234567891',
   created_at: '2026-02-22T10:00:00Z'
 };
 
@@ -96,7 +96,7 @@ function createMockGithub(overrides = {}) {
           data: {
             id: 9999999999,
             body,
-            html_url: 'https://github.com/coelhotv/meus-remedios/pull/117#discussion_r9999999999'
+            html_url: 'https://github.com/coelhotv/dosiq/pull/117#discussion_r9999999999'
           }
         })
       },
@@ -112,7 +112,7 @@ function createMockGithub(overrides = {}) {
 const mockContext = {
   repo: {
     owner: 'coelhotv',
-    repo: 'meus-remedios'
+    repo: 'dosiq'
   }
 };
 
