@@ -348,7 +348,7 @@ export default function Dashboard({ onNavigate }) {
     <div
       className="page-container"
       style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}
-      aria-label="Dashboard — Meus Remédios"
+      aria-label="Dashboard — Dosiq"
     >
       {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
       {smartAlerts.length > 0 && (

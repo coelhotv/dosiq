@@ -283,7 +283,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <div className="lp-brand__mark">
                 <LogoMark size={32} />
               </div>
-              <span className="lp-brand__text">Meus Remédios</span>
+              <span className="lp-brand__text">Dosiq</span>
             </div>
 
             <nav className="lp-nav">
@@ -681,16 +681,16 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <div className="lp-brand__mark lp-brand__mark--small">
                 <LogoMark size={25} />
               </div>
-              <span className="lp-brand__text lp-brand__text--small">Meus Remédios</span>
+              <span className="lp-brand__text lp-brand__text--small">Dosiq</span>
             </div>
 
             <div className="lp-footer__links">
               <a href="#funcionalidades">Base ANVISA</a>
               <a href="#solucoes">Telegram Bot</a>
-              <a href="https://github.com/coelhotv/meus-remedios/">Código Aberto</a>
+              <a href="https://github.com/coelhotv/dosiq/">Código Aberto</a>
             </div>
 
-            <p className="lp-footer__copy">© 2026 Meus Remédios. Desenvolvido para o bem comum.</p>
+            <p className="lp-footer__copy">© 2026 Dosiq. Desenvolvido para o bem comum.</p>
           </div>
         </footer>
       </div>

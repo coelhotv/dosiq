@@ -162,7 +162,7 @@ export default function ReportGenerator() {
           dailyAdherence: resolvedDailyAdherence,
         },
         period,
-        title: 'Meus Remedios - Consulta Medica',
+        title: 'Dosiq - Consulta Medica',
       })
       setPdfBlob(blob)
 
@@ -192,7 +192,7 @@ export default function ReportGenerator() {
     if (!pdfBlob) return
 
     const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-    const filename = `meus-remedios-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+    const filename = `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
 
     downloadBlob(pdfBlob, filename)
 
@@ -218,7 +218,7 @@ export default function ReportGenerator() {
 
     try {
       const periodLabel = PERIOD_OPTIONS.find((opt) => opt.value === period)?.label || period
-      const filename = `meus-remedios-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
+      const filename = `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
 
       const result = await shareReport(pdfBlob, { filename, expiresInHours: 72 })
       setShareUrl(result.url)
