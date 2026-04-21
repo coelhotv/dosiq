@@ -1,6 +1,6 @@
-# Documento de Referência: Meus Remédios
+# Documento de Referência: Dosiq
 
-Este documento serve como guia para o desenvolvedor que irá implementar as funcionalidades do aplicativo "Meus Remédios".
+Este documento serve como guia para o desenvolvedor que irá implementar as funcionalidades do aplicativo "Dosiq".
 
 ## 1. Visão Geral
 O aplicativo é uma ferramenta de adesão medicamentosa **100% gratuita**, focada em privacidade (Privacy-First) e portabilidade clínica.

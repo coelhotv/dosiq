@@ -1,6 +1,6 @@
 # Architecture Analysis: Sparkline Drill-Down Feature
 
-**Project:** Meus Remédios - Medication Adherence Application  
+**Project:** Dosiq - Medication Adherence Application  
 **Analysis Date:** 2026-02-11  
 **Objective:** Document codebase architecture to inform drill-down functionality implementation for the adherence sparkline
 

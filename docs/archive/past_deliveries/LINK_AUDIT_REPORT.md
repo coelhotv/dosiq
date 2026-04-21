@@ -56,8 +56,8 @@ plans/
 ├── ROADMAP_CONSOLIDADO_FINAL.md
 ├── TELEGRAM_BOT_PHASE_1_2.md
 ├── TELEGRAM_BOT_PHASE_2.2_4.md
-├── meus-remedios-upgrade-plan-v2.md
-└── meus-remedios-upgrade-plan.md
+├── dosiq-upgrade-plan-v2.md
+└── dosiq-upgrade-plan.md
 ```
 
 ### Raiz (3 arquivos)

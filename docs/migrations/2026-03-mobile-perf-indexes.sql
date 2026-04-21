@@ -1,6 +1,6 @@
 -- Sprint M3: Índices + View de Pré-Agregação Completa
 -- Aplicado em: 2026-03-13
--- Supabase projeto: meus-remedios
+-- Supabase projeto: dosiq
 -- Referência: plans/EXEC_SPEC_MOBILE_PERFORMANCE.md
 --
 -- OBJETIVO: Tirar TODA carga de processamento da main-thread do mobile

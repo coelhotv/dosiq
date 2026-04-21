@@ -1,4 +1,4 @@
-# Spec de Execução — Evolução UX Meus Remédios
+# Spec de Execução — Evolução UX Dosiq
 
 **Data:** 04/03/2026
 **Versão:** 1.0
@@ -22,7 +22,7 @@
 ## 1. Resumo Executivo
 
 ### O que estamos construindo
-Evolução da UX do Meus Remédios: de navegação por entidade (Remédios, Protocolos, Estoque, Histórico) para navegação por atividade (Hoje, Tratamento, Estoque, Perfil). Inclui componentes visuais novos, zonas temporais deslizantes, progressive disclosure, e reorganização de navegação.
+Evolução da UX do Dosiq: de navegação por entidade (Remédios, Protocolos, Estoque, Histórico) para navegação por atividade (Hoje, Tratamento, Estoque, Perfil). Inclui componentes visuais novos, zonas temporais deslizantes, progressive disclosure, e reorganização de navegação.
 
 ### Números
 - **3 ondas** de execução

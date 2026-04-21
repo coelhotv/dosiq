@@ -1,4 +1,4 @@
-# 💻 API dos Services - Meus Remédios
+# 💻 API dos Services - Dosiq
 
 **Versão:** 4.0.0
 **Data:** 2026-04-02

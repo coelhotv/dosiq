@@ -360,7 +360,7 @@ Substitua **apenas o bloco `return (...)`** (linhas 107–243 do arquivo atual).
     <div
       className="page-container"
       style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}
-      aria-label="Dashboard — Meus Remédios"
+      aria-label="Dashboard — Dosiq"
     >
       {/* ─── Grid responsivo: 1-col em mobile, 2-col em desktop ≥1024px ─── */}
       <div className="grid-dashboard">
@@ -611,7 +611,7 @@ O CSS já define `gap: 1.5rem` (mobile) e `gap: 2rem` (desktop). Inline style so
 A ordem `States → Memos → Effects → Handlers → return` é mandatória (R-010). Este sprint altera APENAS o `return`.
 
 ### ❌ NÃO remova o `aria-label` do `div.page-container`
-O `aria-label="Dashboard — Meus Remédios"` no wrapper externo é necessário para acessibilidade. Manter.
+O `aria-label="Dashboard — Dosiq"` no wrapper externo é necessário para acessibilidade. Manter.
 
 ### ❌ NÃO use `className="page-container grid-dashboard"` em um único `div`
 `page-container` deve ser o wrapper externo com `paddingTop/paddingBottom`. `grid-dashboard` deve ser o `div` filho imediato, sem padding extra — ele gerencia apenas a grid de colunas. Separação de responsabilidades.
@@ -981,7 +981,7 @@ Substituir a estrutura do `return` (conforme especificada em Sprint 6.5.3) para 
 
 ```jsx
 return (
-  <div className="page-container" style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }} aria-label="Dashboard — Meus Remédios">
+  <div className="page-container" style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }} aria-label="Dashboard — Dosiq">
 
     {/* ─── Alerta de estoque: modo complexo → topo (antes do grid), modo simples → col. direita ─── */}
     {complexityMode === 'complex' && criticalStockItems.length > 0 && (

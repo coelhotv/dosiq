@@ -5,7 +5,7 @@
 **Status:** Produção  
 **Entregas:** PRs #19, #20, #21, #22
 
-Documentação completa do sistema resiliente de notificações do bot Telegram do Meus Remédios.
+Documentação completa do sistema resiliente de notificações do bot Telegram do Dosiq.
 
 ---
 

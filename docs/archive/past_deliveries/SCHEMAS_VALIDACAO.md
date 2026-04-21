@@ -1,4 +1,4 @@
-# 📋 Schemas de Validação Zod - Meus Remédios
+# 📋 Schemas de Validação Zod - Dosiq
 
 Documentação completa dos schemas de validação implementados com Zod para garantir integridade dos dados.
 

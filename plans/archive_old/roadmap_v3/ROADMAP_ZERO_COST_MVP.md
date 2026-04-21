@@ -1,5 +1,5 @@
 # 🎯 Roadmap Técnico Revisado - Zero Cost MVP
-## Meus Remédios - Validação com Custo Operacional R$ 0
+## Dosiq - Validação com Custo Operacional R$ 0
 
 **Versão:** 1.0  
 **Data:** 04/02/2026  
@@ -27,7 +27,7 @@
 
 ```mermaid
 gantt
-    title Status de Entregas Meus Remédios - 04/02/2026
+    title Status de Entregas Dosiq - 04/02/2026
     dateFormat  YYYY-MM-DD
     
     section Wave 1 (Fundação) ✅ v2.3.0

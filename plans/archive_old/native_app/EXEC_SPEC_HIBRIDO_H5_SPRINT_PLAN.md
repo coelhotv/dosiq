@@ -34,7 +34,7 @@ screens/
 - `@react-navigation/native`, `@react-navigation/native-stack`
 - `expo-secure-store`, `@react-native-async-storage/async-storage`
 - `react-native-safe-area-context`, `react-native-screens`
-- `@meus-remedios/core`, `@meus-remedios/shared-data`, `@meus-remedios/design-tokens`
+- `@dosiq/core`, `@dosiq/shared-data`, `@dosiq/design-tokens`
 
 ---
 
@@ -44,7 +44,7 @@ screens/
 
 **Contexto:** shared-data exporta `createQueryCache`, `createSupabaseDependencies`, `createUserSessionRepository`. Não exporta serviços de protocols, stock, medicines, ou logs.
 
-**Decisão proposta:** H5 cria thin local services em `apps/mobile/src/features/*/services/` que chamam Supabase directamente via `nativeSupabaseClient`. Schemas e cálculos de domínio continuam a vir de `@meus-remedios/core`. Migração de serviços para shared-data é diferida para H6+.
+**Decisão proposta:** H5 cria thin local services em `apps/mobile/src/features/*/services/` que chamam Supabase directamente via `nativeSupabaseClient`. Schemas e cálculos de domínio continuam a vir de `@dosiq/core`. Migração de serviços para shared-data é diferida para H6+.
 
 **Alternativa rejeitada:** Expandir shared-data durante H5 — aumenta scope, risco de regression na web, fora do princípio "H5 não toca packages/".
 
@@ -198,7 +198,7 @@ apps/mobile/src/
 │   ├── hooks/
 │   │   └── useOnlineStatus.js        — detectar conectividade
 │   └── theme/
-│       └── colors.js                 — tokens de cor (de @meus-remedios/design-tokens)
+│       └── colors.js                 — tokens de cor (de @dosiq/design-tokens)
 └── platform/                         (EXISTS — não tocar em H5)
     screens/                          (EXISTS — LoginScreen/SmokeScreen ficam aqui)
 ```
@@ -344,7 +344,7 @@ apps/mobile/src/
 
 **Ficheiros a criar/modificar:**
 - `shared/hooks/useOnlineStatus.js` — estado de conectividade
-- `shared/theme/colors.js` — tokens de `@meus-remedios/design-tokens`
+- `shared/theme/colors.js` — tokens de `@dosiq/design-tokens`
 - Stale offline states em TodayScreen/TreatmentsScreen/StockScreen
 
 **Critério de aceitação:**
@@ -405,7 +405,7 @@ export async function getTodayLogs(userId, dateStr) {
 
 **Regras:**
 - Usar sempre `nativeSupabaseClient` (nunca import da web)
-- Schemas de validação de `@meus-remedios/core` quando aplicável
+- Schemas de validação de `@dosiq/core` quando aplicável
 - Lançar error, não retornar null — hooks tratam os erros
 
 ---
@@ -417,7 +417,7 @@ export async function getTodayLogs(userId, dateStr) {
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getActiveProtocols, getTodayLogs } from '../services/dashboardService'
-import { formatLocalDate } from '@meus-remedios/core'
+import { formatLocalDate } from '@dosiq/core'
 
 export function useTodayData() {
   const [state, setState] = useState({ data: null, loading: true, error: null, stale: false })

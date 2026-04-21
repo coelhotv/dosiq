@@ -1,4 +1,4 @@
-# Roadmap 2026 — Meus Remédios (v3.2)
+# Roadmap 2026 — Dosiq (v3.2)
 
 **Versão:** 3.2
 **Data:** 21/02/2026
@@ -143,7 +143,7 @@
 
 ### Posicionamento Competitivo
 
-Nenhuma solução de saúde digital no mercado brasileiro oferece inteligência preditiva client-side sem custo. Isso posiciona o Meus Remédios como a solução mais inteligente da categoria no Brasil.
+Nenhuma solução de saúde digital no mercado brasileiro oferece inteligência preditiva client-side sem custo. Isso posiciona o Dosiq como a solução mais inteligente da categoria no Brasil.
 
 **Dependências:** Fase 5 concluída; usuários com >= 14 dias de histórico de uso
 **Esforço Total:** ~31 SP
@@ -254,7 +254,7 @@ O bot Telegram já existe com lógica modular (`tasks.js`, `alerts.js`, `schedul
 
 ```mermaid
 gantt
-    title Roadmap 2026 - Meus Remédios v3.2
+    title Roadmap 2026 - Dosiq v3.2
     dateFormat YYYY-MM-DD
 
     section Entregue

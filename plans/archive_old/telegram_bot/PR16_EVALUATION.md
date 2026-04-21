@@ -1,6 +1,6 @@
 # PR #16 Evaluation Report
 
-**PR:** [#16 - Correções críticas do sistema de notificações Telegram](https://github.com/coelhotv/meus-remedios/pull/16)  
+**PR:** [#16 - Correções críticas do sistema de notificações Telegram](https://github.com/coelhotv/dosiq/pull/16)  
 **Branch:** `fix/telegram-notifications-phase-1`  
 **Date:** 2026-02-13  
 **Evaluator:** Architect Mode  

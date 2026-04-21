@@ -10,8 +10,8 @@
 ## 🏗️ 0. Arquitetura e Lógica Compartilhada (ZOD-RDS-Core)
 
 O mobile DEVE reutilizar as funções puras do pacote corporativo para evitar drifts de lógica (R5-004):
-- **Adherence Score:** Utilizar `calculateAdherenceStats` do `@meus-remedios/core`.
-- **Dose Status:** Utilizar `calculateDosesByDate` do `@meus-remedios/core` para classificar itens em `takenDoses`, `missedDoses` e `scheduledDoses`.
+- **Adherence Score:** Utilizar `calculateAdherenceStats` do `@dosiq/core`.
+- **Dose Status:** Utilizar `calculateDosesByDate` do `@dosiq/core` para classificar itens em `takenDoses`, `missedDoses` e `scheduledDoses`.
 - **Janela de Tolerância:** Padrão fixo de **+/- 2 horas** para paridade com a web.
 
 ## 🎨 1. Design System & Estética (Material 3 Hybrid)

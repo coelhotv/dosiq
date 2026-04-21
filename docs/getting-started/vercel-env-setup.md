@@ -30,7 +30,7 @@ openssl rand -base64 32
 
 **Via UI (Recomendado para primeira vez):**
 
-1. Acesse: `https://github.com/SEU_USUARIO/meus-remedios/settings/secrets/actions`
+1. Acesse: `https://github.com/SEU_USUARIO/dosiq/settings/secrets/actions`
 2. Clique em "New repository secret"
 3. Name: `VERCEL_GITHUB_ACTIONS_SECRET`
 4. Value: Cole o valor gerado acima
@@ -54,7 +54,7 @@ gh secret set VERCEL_GITHUB_ACTIONS_SECRET < secret.txt
 **Via Dashboard:**
 
 1. Acesse: `https://vercel.com/dashboard`
-2. Selecione o projeto `meus-remedios`
+2. Selecione o projeto `dosiq`
 3. Vá em "Settings" → "Environment Variables"
 4. Adicione:
    - Name: `VERCEL_GITHUB_ACTIONS_SECRET`

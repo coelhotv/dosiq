@@ -53,7 +53,7 @@ Se qualquer item falhar → **PARAR e reportar ao maintainer antes de prosseguir
 ## Estrutura alvo ao final da Fase 7
 
 ```
-meus-remedios/              ← root do monorepo (sem mudança de localização)
+dosiq/              ← root do monorepo (sem mudança de localização)
   apps/
     web/                    ← NOVO — web migrada para cá
       src/                  ← movido de ./src/
@@ -155,7 +155,7 @@ apps/web/package.json
 
 ```json
 {
-  "name": "@meus-remedios/web",
+  "name": "@dosiq/web",
   "version": "3.3.0",
   "private": true,
   "type": "module",
@@ -177,10 +177,10 @@ Adicionar ao `scripts`:
 
 ```json
 {
-  "dev:web": "npm run dev --workspace @meus-remedios/web",
-  "build:web": "npm run build --workspace @meus-remedios/web",
-  "preview:web": "npm run preview --workspace @meus-remedios/web",
-  "test:web": "npm run test --workspace @meus-remedios/web"
+  "dev:web": "npm run dev --workspace @dosiq/web",
+  "build:web": "npm run build --workspace @dosiq/web",
+  "preview:web": "npm run preview --workspace @dosiq/web",
+  "test:web": "npm run test --workspace @dosiq/web"
 }
 ```
 
@@ -205,7 +205,7 @@ Verificar se `workspaces` já inclui `"apps/*"`. Se não incluir, adicionar:
 
 ### DoD do Sprint 7.2
 
-- [x] `apps/web/package.json` existe com name `@meus-remedios/web`
+- [x] `apps/web/package.json` existe com name `@dosiq/web`
 - [x] `npm install` roda sem ERESOLVE
 - [x] `npm run build` na raiz ainda gera `dist/` corretamente
 - [x] `npm run build:web` falha com mensagem inteligível (esperado — ainda não há `vite.config.js` em `apps/web/`)
@@ -217,7 +217,7 @@ Verificar se `workspaces` já inclui `"apps/*"`. Se não incluir, adicionar:
 ```bash
 # Gate 1 — Workspace criado
 cat apps/web/package.json | grep '"name"'
-# esperado: "@meus-remedios/web"
+# esperado: "@dosiq/web"
 
 # Gate 2 — npm install sem conflito
 npm install
@@ -359,11 +359,11 @@ Atualizar os scripts que ainda apontam para raiz:
 ```json
 {
   "scripts": {
-    "dev":          "npm run dev --workspace @meus-remedios/web",
-    "build":        "npm run build --workspace @meus-remedios/web",
-    "preview":      "npm run preview --workspace @meus-remedios/web",
-    "validate:agent": "npm run validate:agent --workspace @meus-remedios/web",
-    "lint":         "npm run lint --workspace @meus-remedios/web"
+    "dev":          "npm run dev --workspace @dosiq/web",
+    "build":        "npm run build --workspace @dosiq/web",
+    "preview":      "npm run preview --workspace @dosiq/web",
+    "validate:agent": "npm run validate:agent --workspace @dosiq/web",
+    "lint":         "npm run lint --workspace @dosiq/web"
   }
 }
 ```
@@ -553,7 +553,7 @@ Executar no deploy preview antes do merge:
 - [ ] Endpoint `GET /api/health` responde 200
 - [ ] Endpoint `POST /api/telegram` responde (mesmo que sem token válido, deve dar 4xx não 5xx de infra)
 - [ ] `apps/mobile/app.config.js` ainda resolve (verificar com `cat apps/mobile/app.config.js`)
-- [ ] `apps/mobile` ainda inicializa via workspace (`npm run start --workspace @meus-remedios/mobile`)
+- [ ] `apps/mobile` ainda inicializa via workspace (`npm run start --workspace @dosiq/mobile`)
 
 ### Rollback plan
 

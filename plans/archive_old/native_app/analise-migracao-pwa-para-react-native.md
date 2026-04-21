@@ -11,7 +11,7 @@
 
 ## Sumário Executivo
 
-A versão atual do Meus Remédios é uma PWA funcional com custo operacional R$0, cobertura cross-platform razoável e features avançadas já entregues. A migração para React Native é tecnicamente viável e reutilizaria aproximadamente **40-50% do código atual** (lógica de negócio, schemas, serviços), mas exigiria **reescrita completa da camada de UI** (~50-60% do esforço) e introduziria **custos recorrentes reais** (App Store, EAS Build, infraestrutura de backend desacoplada).
+A versão atual do Dosiq é uma PWA funcional com custo operacional R$0, cobertura cross-platform razoável e features avançadas já entregues. A migração para React Native é tecnicamente viável e reutilizaria aproximadamente **40-50% do código atual** (lógica de negócio, schemas, serviços), mas exigiria **reescrita completa da camada de UI** (~50-60% do esforço) e introduziria **custos recorrentes reais** (App Store, EAS Build, infraestrutura de backend desacoplada).
 
 **A migração não é uma questão de "se" mas de "quando" e "com que escopo"**, e a resposta é diretamente mapeada pelos gatilhos de produto do canvas: o ponto de inflexão racional é **200-500 MAU**, quando as limitações concretas da PWA (iOS push confiável, distribuição via App Store, HealthKit/Google Fit) se tornam friccão de crescimento mensurável — não antes.
 
@@ -135,7 +135,7 @@ Duas estratégias possíveis: **mono-repo** ou **repositório separado**.
 #### Opção A: Mono-repo (recomendada para este projeto)
 
 ```
-meus-remedios/                    (raiz — repo atual)
+dosiq/                    (raiz — repo atual)
 ├── apps/
 │   ├── web/                      (PWA atual — src/ atual movido para cá)
 │   └── native/                   (React Native / Expo)
@@ -163,7 +163,7 @@ meus-remedios/                    (raiz — repo atual)
 #### Opção B: Repositório separado
 
 ```
-meus-remedios-native/             (novo repo)
+dosiq-native/             (novo repo)
 ├── src/
 │   ├── screens/                  (equivalente a views/)
 │   ├── components/               (componentes RN)

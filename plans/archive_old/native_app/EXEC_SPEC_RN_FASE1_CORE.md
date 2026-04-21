@@ -3,7 +3,7 @@
 > **SUPERSEDIDO EM 2026-03-29:** Este exec spec foi substituído por `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`. Não executar esta fase isoladamente sem reconciliar com o documento definitivo.
 
 ## Contexto e Objetivo
-Garantir a transformação da aplicação PWA existente (Vite) em um Monorepo gerenciado pelo Turborepo, isolando as lógicas de backend, domínio (`schemas`), tipagens e serviços Supabase no pacote `@meus-remedios/core`.
+Garantir a transformação da aplicação PWA existente (Vite) em um Monorepo gerenciado pelo Turborepo, isolando as lógicas de backend, domínio (`schemas`), tipagens e serviços Supabase no pacote `@dosiq/core`.
 
 A PWA continuará com build ativo sem downtime na Vercel ao fim desta fase. NENHUM recurso React Native será embarcado aqui. Tudo é focado estruturalmente em Node/JS para suporte das próximas fases.
 
@@ -38,7 +38,7 @@ O `turbo.json` deve estar explícito na raiz do repositório, mapeando e cachean
 Substituir cirurgicamente o `package.json` raiz para hospedar workspace packages:
 ```json
 {
-  "name": "meus-remedios-monorepo",
+  "name": "dosiq-monorepo",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
@@ -82,10 +82,10 @@ mv apps/web/src/features/*/services/*.js packages/core/src/services/
 ```
 *(Critério Agent-AI: Analisar em loop `grep` qualquer import interno quebrado pelas mudanças de subdiretório).*
 
-### 3. O `.json` Central do Core (`@meus-remedios/core`)
+### 3. O `.json` Central do Core (`@dosiq/core`)
 ```json
 {
-  "name": "@meus-remedios/core",
+  "name": "@dosiq/core",
   "version": "1.0.0",
   "main": "src/index.js",
   "dependencies": {
@@ -99,11 +99,11 @@ mv apps/web/src/features/*/services/*.js packages/core/src/services/
 ---
 
 ## Sprint 1.3: Linkagem e Validação Automática
-**Meta:** A PWA (`apps/web`) deve ler os hooks globalmente como `@meus-remedios/core` via alias/symlink.
+**Meta:** A PWA (`apps/web`) deve ler os hooks globalmente como `@dosiq/core` via alias/symlink.
 
 ### 1. Refatorar Alias Absolutos do Vite
 No arquivo `apps/web/vite.config.js`, o `resolve.alias` (como `@schemas`) não apontará para seu diretório `./src` interior, mas importará o módulo compartilhado do NPM symlink.
-Mapeamentos de script (`sed`) em toda branch Web (`apps/web/src/**/*.jsx`) devem substituir os paths `import X from "../../schemas/x"` para consumirem a sub-interface via pacote npm: `import { X } from '@meus-remedios/core/schemas'`.
+Mapeamentos de script (`sed`) em toda branch Web (`apps/web/src/**/*.jsx`) devem substituir os paths `import X from "../../schemas/x"` para consumirem a sub-interface via pacote npm: `import { X } from '@dosiq/core/schemas'`.
 
 ### 2. Revalidação Critica do Command
 **Critério de Sucesso do Robô:**

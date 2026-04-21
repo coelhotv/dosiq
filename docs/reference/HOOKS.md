@@ -1,4 +1,4 @@
-# 🪝 Hooks Customizados - Meus Remédios
+# 🪝 Hooks Customizados - Dosiq
 
 Documentação completa dos hooks customizados do projeto.
 

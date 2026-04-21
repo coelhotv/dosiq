@@ -182,7 +182,7 @@ function generateAuthHeaders(payload, secret) {
 const payload = JSON.stringify(reviewData);
 const headers = generateAuthHeaders(payload, process.env.VERCEL_GITHUB_ACTIONS_SECRET);
 
-const response = await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/persist', {
+const response = await fetch('https://dosiq.vercel.app/api/gemini-reviews/persist', {
   method: 'POST',
   headers,
   body: payload
@@ -474,7 +474,7 @@ jobs:
     if: always() && needs.parse.result == 'success'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: ${{ vars.VERCEL_API_URL }}  # https://meus-remedios.vercel.app
+      VERCEL_API_URL: ${{ vars.VERCEL_API_URL }}  # https://dosiq.vercel.app
     
     steps:
       - name: Checkout

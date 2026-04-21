@@ -1,5 +1,5 @@
 # Wave 14.5 — Tratamentos: CRUD Completo & Usabilidade
-## Spec de Execução — Meus Remédios Redesign
+## Spec de Execução — Dosiq Redesign
 
 **Versão:** 1.0
 **Data:** 2026-04-02

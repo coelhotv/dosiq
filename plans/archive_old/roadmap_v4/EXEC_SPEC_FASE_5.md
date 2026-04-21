@@ -439,7 +439,7 @@ Finalização ─ Docs + Deploy + Smoke Test
 | **Input** | `pdfGeneratorService.js`, componentes UI existentes |
 | **Output** | `src/features/reports/components/ReportGenerator.jsx`, `ReportGenerator.css` |
 | **Descrição** | Componente com botão "Gerar Relatório", seletor de período, estado de loading, botão "Baixar". Acessível do Dashboard (CTA) e Settings. |
-| **Critérios de aceite** | (1) Loading animation durante geração, (2) Error handling com mensagem amigável, (3) Nome do arquivo: `meus-remedios-relatorio-{periodo}-{data}.pdf`, (4) Analytics event trackeado |
+| **Critérios de aceite** | (1) Loading animation durante geração, (2) Error handling com mensagem amigável, (3) Nome do arquivo: `dosiq-relatorio-{periodo}-{data}.pdf`, (4) Analytics event trackeado |
 | **Arquivos modificar** | `src/views/Settings.jsx`, `src/views/Dashboard.jsx` |
 | **Dependências** | F5.1-2 |
 

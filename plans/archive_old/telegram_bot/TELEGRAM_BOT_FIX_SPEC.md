@@ -2,7 +2,7 @@
 
 > **Document Version:** 1.0  
 > **Date:** 2026-02-13  
-> **Project:** Meus Remédios v2.7.0  
+> **Project:** Dosiq v2.7.0  
 > **Status:** Draft - Pending Review
 
 ---

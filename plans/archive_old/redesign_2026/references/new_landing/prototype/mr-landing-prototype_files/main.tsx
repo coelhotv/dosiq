@@ -5,11 +5,11 @@ import App from "/src/App.tsx";
 import "/src/index.css";
 createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxDEV(StrictMode, { children: /* @__PURE__ */ jsxDEV(App, {}, void 0, false, {
-    fileName: "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/public/mr-landing_page/src/main.tsx",
+    fileName: "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/public/mr-landing_page/src/main.tsx",
     lineNumber: 8,
     columnNumber: 5
   }, this) }, void 0, false, {
-    fileName: "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/public/mr-landing_page/src/main.tsx",
+    fileName: "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/public/mr-landing_page/src/main.tsx",
     lineNumber: 7,
     columnNumber: 3
   }, this)

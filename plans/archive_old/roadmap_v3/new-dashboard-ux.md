@@ -1,10 +1,10 @@
-# Meus Remédios: UX Revamp
+# Dosiq: UX Revamp
 
 ## A. Cenário Atual
 
 ### Função Principal da Aplicação
 
-A aplicação "Meus Remédios" é um sistema de gerenciamento de medicamentos pessoais que permite:
+A aplicação "Dosiq" é um sistema de gerenciamento de medicamentos pessoais que permite:
 - Cadastro e controle de medicamentos
 - Gestão de estoque com alertas
 - Protocolos de tratamento com titulação inteligente

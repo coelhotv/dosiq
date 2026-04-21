@@ -1,5 +1,5 @@
 # Wave 16 — Accessibility & Polish
-## Spec de Execução — Meus Remédios Redesign
+## Spec de Execução — Dosiq Redesign
 
 **Versão:** 1.0
 **Data:** 2026-04-02
@@ -1090,5 +1090,5 @@ W15 é a **última wave de conteúdo**. Após merge de W15:
 
 ---
 
-*Spec autorizada por: Arquitetura Meus Remédios v3.3+*
+*Spec autorizada por: Arquitetura Dosiq v3.3+*
 *Modelos alvo: claude-sonnet-4-6 (execução recomendada — ARIA requer reasoning mais profundo), claude-haiku-4-5 (aceitável para sprints mecânicos: S15.3, S15.6)*

@@ -78,7 +78,7 @@ Mas nao ha extracao real ainda.
 ## 3. Estrutura alvo obrigatoria ao fim da fase
 
 ```text
-meus-remedios/
+dosiq/
 ├── src/                      # permanece
 ├── public/                   # permanece
 ├── index.html                # permanece
@@ -213,7 +213,7 @@ Usar manifest minimo:
 
 ```json
 {
-  "name": "@meus-remedios/mobile",
+  "name": "@dosiq/mobile",
   "private": true,
   "version": "0.0.0-phase1",
   "type": "module"
@@ -224,7 +224,7 @@ Usar manifest minimo:
 
 ```json
 {
-  "name": "@meus-remedios/core",
+  "name": "@dosiq/core",
   "private": true,
   "version": "0.0.0-phase1",
   "type": "module",
@@ -236,9 +236,9 @@ Usar manifest minimo:
 
 Replicar o mesmo padrao para:
 
-- `@meus-remedios/shared-data`
-- `@meus-remedios/storage`
-- `@meus-remedios/config`
+- `@dosiq/shared-data`
+- `@dosiq/storage`
+- `@dosiq/config`
 
 ### `src/index.js` placeholder
 
@@ -278,7 +278,7 @@ Cada workspace deve ter um `README.md` com:
 ### Exemplo para `packages/core/README.md`
 
 ```md
-# @meus-remedios/core
+# @dosiq/core
 
 Responsabilidade: codigo puro compartilhado.
 
@@ -299,7 +299,7 @@ Implementacao real: Fase 2.
 ### Exemplo para `apps/mobile/README.md`
 
 ```md
-# @meus-remedios/mobile
+# @dosiq/mobile
 
 Placeholder da Fase 1.
 

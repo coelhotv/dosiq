@@ -1,10 +1,10 @@
-# 🗺️ Meus Remédios - Roadmap Consolidado Final
+# 🗺️ Dosiq - Roadmap Consolidado Final
 
 **Data:** 03 de Fevereiro de 2026  
 **Versão:** 3.0 Final  
 **Status:** Documento Mestre para Execução por Agentes IA  
 
-> Este documento consolida todos os planos anteriores (`meus-remedios-upgrade-plan.md`, `IMPLEMENTATION_SUMMARY.md`, `meus-remedios-upgrade-plan-v2.md`, `ANALISE_APP_E_ROADMAP_EVOLUCAO.md`) em uma fonte única de verdade para desenvolvimento futuro.
+> Este documento consolida todos os planos anteriores (`dosiq-upgrade-plan.md`, `IMPLEMENTATION_SUMMARY.md`, `dosiq-upgrade-plan-v2.md`, `ANALISE_APP_E_ROADMAP_EVOLUCAO.md`) em uma fonte única de verdade para desenvolvimento futuro.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### Visão Geral
 
-O **Meus Remédios** é uma aplicação web brasileira para gerenciamento de medicamentos com foco em:
+O **Dosiq** é uma aplicação web brasileira para gerenciamento de medicamentos com foco em:
 - Protocolos complexos com **titulação de dose**
 - Controle de estoque com **PEPS** (Primeiro que Entra, Primeiro que Sai)
 - Integração completa com **Telegram** para lembretes e registro de doses
@@ -140,7 +140,7 @@ src/services/api/
 
 ---
 
-## ⏳ Pendências do Plano Original (meus-remedios-upgrade-plan.md)
+## ⏳ Pendências do Plano Original (dosiq-upgrade-plan.md)
 
 As seguintes tarefas do plano original ainda não foram implementadas:
 
@@ -192,7 +192,7 @@ As seguintes tarefas do plano original ainda não foram implementadas:
 
 ### Value Proposition Statement (Revisado)
 
-> *Para pessoas que gerenciam medicamentos de uso contínuo, especialmente protocolos complexos com titulação de dose, o **Meus Remédios** é uma solução brasileira gratuita que combina controle de estoque PEPS, lembretes inteligentes via Telegram e tracking de adesão - tudo com custo zero e dados seguros via RLS.*
+> *Para pessoas que gerenciam medicamentos de uso contínuo, especialmente protocolos complexos com titulação de dose, o **Dosiq** é uma solução brasileira gratuita que combina controle de estoque PEPS, lembretes inteligentes via Telegram e tracking de adesão - tudo com custo zero e dados seguros via RLS.*
 
 ### Pilares do Valor
 
@@ -222,7 +222,7 @@ As seguintes tarefas do plano original ainda não foram implementadas:
 
 ```mermaid
 gantt
-    title Roadmap Meus Remédios - Fev/Mar 2026
+    title Roadmap Dosiq - Fev/Mar 2026
     dateFormat  YYYY-MM-DD
     
     section Onda 1 - Fundação
@@ -471,7 +471,7 @@ WITH CHECK (true);
 **Prioridade:** 🟠 Média
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 2.3
+**Origem:** `dosiq-upgrade-plan.md` - Item 2.3
 
 **Contexto:**
 Dashboard faz 5+ chamadas API em paralelo a cada load. Implementar request deduplication e stale-while-revalidate.
@@ -522,7 +522,7 @@ export async function cachedQuery(key, fetcher) {
 **Prioridade:** 🟡 Baixa
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 2.4
+**Origem:** `dosiq-upgrade-plan.md` - Item 2.4
 
 **Contexto:**
 Stock quantity requer query de agregação toda vez. Criar view materializada para performance.
@@ -712,7 +712,7 @@ export default async function handler(req, res) {
 **Prioridade:** 🟠 Média
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 3.2
+**Origem:** `dosiq-upgrade-plan.md` - Item 3.2
 
 **Contexto:**
 Dashboard mostra dados mas falta insights acionáveis. Adicionar widgets de engajamento.
@@ -760,7 +760,7 @@ Dashboard mostra dados mas falta insights acionáveis. Adicionar widgets de enga
 **Prioridade:** 🟡 Baixa
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 3.3b
+**Origem:** `dosiq-upgrade-plan.md` - Item 3.3b
 
 **Contexto:**
 Botão "Pular" do bot não pede confirmação. Usuário pode pular dose acidentalmente.
@@ -804,7 +804,7 @@ async function handleSkipDose(bot, callbackQuery) {
 **Prioridade:** 🟡 Baixa
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 3.3c
+**Origem:** `dosiq-upgrade-plan.md` - Item 3.3c
 
 **Contexto:**
 Mensagens de notificação do bot são básicas. Adicionar mais contexto.
@@ -960,7 +960,7 @@ export function useHashRouter() {
 **Prioridade:** 🟡 Baixa
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 4.2
+**Origem:** `dosiq-upgrade-plan.md` - Item 4.2
 
 **Contexto:**
 Padrões inconsistentes entre os command handlers do bot. Criar abstração `createCommand`.
@@ -1017,7 +1017,7 @@ export const handleStatus = createCommand('status', async (bot, msg, { userId })
 **Prioridade:** 🟡 Baixa
 **Modo:** Code
 **Custo:** R$ 0
-**Origem:** `meus-remedios-upgrade-plan.md` - Item 4.3
+**Origem:** `dosiq-upgrade-plan.md` - Item 4.3
 
 **Contexto:**
 Componentes em estrutura flat por tipo. Reorganizar por feature para melhor coesão.
@@ -1245,9 +1245,9 @@ ONDA 3 - EXPANSÃO (6 tarefas)
 
 | Documento | Status | Conteúdo | Pendências Migradas |
 |-----------|--------|----------|---------------------|
-| `meus-remedios-upgrade-plan.md` | 🔄 ~70% Implementado | Bug fixes, arquitetura, UX | Hash Router, SWR, DB View, Skip/Rich Bot, Handler/Component refactor |
+| `dosiq-upgrade-plan.md` | 🔄 ~70% Implementado | Bug fixes, arquitetura, UX | Hash Router, SWR, DB View, Skip/Rich Bot, Handler/Component refactor |
 | `IMPLEMENTATION_SUMMARY.md` | ✅ Completo | Relatório de PRs 1-4 | - |
-| `meus-remedios-upgrade-plan-v2.md` | 🔄 Parcial | Adesão, stock, titulação | Adesão widget, Timeline |
+| `dosiq-upgrade-plan-v2.md` | 🔄 Parcial | Adesão, stock, titulação | Adesão widget, Timeline |
 | `ANALISE_APP_E_ROADMAP_EVOLUCAO.md` | 🔄 Parcial | IA, PDF, cuidador | Chatbot IA, PDF, Cuidador, PWA |
 | **Este documento** | 📌 Documento Mestre | Consolidação final + todas pendências | - |
 
@@ -1255,7 +1255,7 @@ ONDA 3 - EXPANSÃO (6 tarefas)
 
 ## 📋 Resumo de Pendências por Origem
 
-### Do `meus-remedios-upgrade-plan.md` (9 pendências)
+### Do `dosiq-upgrade-plan.md` (9 pendências)
 
 | Item | Tarefa Consolidada |
 |------|-------------------|
@@ -1267,7 +1267,7 @@ ONDA 3 - EXPANSÃO (6 tarefas)
 | 4.2 Bot Handler Standardization | Tarefa 3.5 |
 | 4.3 Component Organization | Tarefa 3.6 |
 
-### Do `meus-remedios-upgrade-plan-v2.md` (3 pendências)
+### Do `dosiq-upgrade-plan-v2.md` (3 pendências)
 
 | Item | Tarefa Consolidada |
 |------|-------------------|
@@ -1287,7 +1287,7 @@ ONDA 3 - EXPANSÃO (6 tarefas)
 
 ## 🎯 Conclusão
 
-O **Meus Remédios** está bem posicionado como solução única no mercado brasileiro para gerenciamento de medicamentos complexos. Com as melhorias planejadas:
+O **Dosiq** está bem posicionado como solução única no mercado brasileiro para gerenciamento de medicamentos complexos. Com as melhorias planejadas:
 
 1. **Onda 1 (Fundação):** Testes, validação, cache, onboarding - robustez técnica
 2. **Onda 2 (Inteligência):** Adesão, IA, engagement - diferenciação de valor

@@ -817,7 +817,7 @@ Adicionar `logEvent` nos pontos de conversão mais importantes (prioridade decre
 
 Os passos abaixo são **dependências humanas** — o agente não pode executá-los:
 
-- [ ] Firebase Console → projeto `meus-remedios-c509e` → Analytics habilitado
+- [ ] Firebase Console → projeto `dosiq-c509e` → Analytics habilitado
 - [ ] Google Analytics property vinculada ao projeto Firebase
 - [ ] Debug View habilitado para validar eventos durante desenvolvimento
 - [ ] Eventos de conversão configurados: `sign_up`, `onboarding_complete`, `dose_logged`

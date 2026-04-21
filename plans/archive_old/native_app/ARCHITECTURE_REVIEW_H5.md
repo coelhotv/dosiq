@@ -1,4 +1,4 @@
-# 🔬 Revisão Arquitetural: Projeto Híbrido Meus Remédios
+# 🔬 Revisão Arquitetural: Projeto Híbrido Dosiq
 
 > **Data:** 2026-04-14 | **Escopo:** Avaliação completa H0–H5.3 + projeção H5.4–H8
 > **Solicitante:** Maintainer (PO)
@@ -109,7 +109,7 @@ O Hermes engine (padrão no Expo SDK 53) tem implementação parcial de `URL` e 
 
 ### 3.2 Causa #2: Ambiente iCloud + Watchman
 
-O repositório vive em `~/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios`. O Watchman do Expo não tem permissão para observar paths dentro de iCloud Drive (AP-H07).
+O repositório vive em `~/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq`. O Watchman do Expo não tem permissão para observar paths dentro de iCloud Drive (AP-H07).
 
 **Impacto:** erros intermitentes que parecem bugs de código mas são bugs de ambiente. Tempo gasto diagnosticando falsos positivos.
 
@@ -138,7 +138,7 @@ A separação em `packages/core`, `packages/shared-data`, `packages/storage`, `p
 - `core` é puro (sem deps de plataforma) — **confirmado no código**: exporta schemas + utils
 - `storage` + `config` usam injeção de dependências — correto
 - `design-tokens` é agnóstico — correto
-- Mobile consome `@meus-remedios/core` para `parseLocalDate`, `getTodayLocal`, `logSchema` — correto
+- Mobile consome `@dosiq/core` para `parseLocalDate`, `getTodayLocal`, `logSchema` — correto
 
 ### ✅ 4.2 Master Spec e princípios P-001..P-010
 
@@ -155,7 +155,7 @@ A decisão de criar services locais em `apps/mobile/src/features/*/services/` qu
 - Evita expandir shared-data durante H5
 - Mantém scope controlado
 - Services são pequenos (69-78 linhas) e bem documentados
-- Usam `@meus-remedios/core` para schemas e cálculos
+- Usam `@dosiq/core` para schemas e cálculos
 
 ### ✅ 4.4 Navegação auth-aware (`Navigation.jsx`)
 
@@ -248,11 +248,11 @@ O Sprint Plan (EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md) está correto (`navigation/`
 ### ❌ 5.6 Design tokens não estão sendo consumidos no mobile
 
 ```
-grep -r "from '@meus-remedios/design-tokens" apps/mobile/src/
+grep -r "from '@dosiq/design-tokens" apps/mobile/src/
 → 0 resultados
 ```
 
-O mobile usa `shared/styles/tokens.js` local em vez de consumir de `@meus-remedios/design-tokens`. Isso viola o princípio de single source of truth para tokens.
+O mobile usa `shared/styles/tokens.js` local em vez de consumir de `@dosiq/design-tokens`. Isso viola o princípio de single source of truth para tokens.
 
 ### ❌ 5.7 Sem validation gate mobile no workflow de PR
 
@@ -369,11 +369,11 @@ Pin exato até que os testes de polyfill (B1) estejam verdes. Depois, qualquer b
 
 ### Categoria C — Estratégicos (médio prazo)
 
-#### C1. Consumir `@meus-remedios/design-tokens` no mobile
+#### C1. Consumir `@dosiq/design-tokens` no mobile
 
 **Prioridade:** Média | **Esforço:** 30 min | **Impacto:** Single source of truth
 
-Substituir `shared/styles/tokens.js` local por imports de `@meus-remedios/design-tokens`.
+Substituir `shared/styles/tokens.js` local por imports de `@dosiq/design-tokens`.
 
 #### C2. Adicionar mobile gate no CI
 

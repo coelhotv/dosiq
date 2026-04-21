@@ -418,7 +418,7 @@ const geminiReviewComments = reviewComments.filter(c => {
 
 - [`.github/workflows/gemini-review.yml`](../.github/workflows/gemini-review.yml)
 - [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md)
-- [PR #223](https://github.com/coelhotv/meus-remedios/pull/223)
+- [PR #223](https://github.com/coelhotv/dosiq/pull/223)
 - [`.github/scripts/check-critical-issues.cjs`](../.github/scripts/check-critical-issues.cjs)
 - [GitHub API: List review threads](https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#list-review-comments-on-a-pull-request)
 

@@ -136,7 +136,7 @@ Usar algo deste tipo:
 
 ```json
 {
-  "name": "@meus-remedios/core",
+  "name": "@dosiq/core",
   "private": true,
   "version": "0.1.0-phase2",
   "type": "module",
@@ -309,7 +309,7 @@ Se `@utils` atual ja e usado para `src/utils`, repontar o alias e uma forma segu
 Nao abrir uma PR que:
 
 - move os arquivos
-- reescreve todos os imports do projeto para `@meus-remedios/core/*`
+- reescreve todos os imports do projeto para `@dosiq/core/*`
 - mexe em services e hooks ao mesmo tempo
 
 ### Se houver testes/imports relativos

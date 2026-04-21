@@ -24,7 +24,7 @@ A auditoria completa identificou **140 ocorrências** de strings legadas distrib
 | Cache key localStorage | `meus_remedios_query_cache` | `dosiq_query_cache` |
 | Slug Expo | `meus-remedios-dev` | `dosiq-dev` |
 | Bundle IDs iOS/Android | `com.coelhotv.meusremedios.*` | `com.coelhotv.dosiq` + variantes |
-| URL Vercel | `meus-remedios.vercel.app` | `dosiq.vercel.app` |
+| URL Vercel | `dosiq.vercel.app` | `dosiq.vercel.app` |
 | Bot username fallback | `meus_remedios_bot` | `dosiq_bot` |
 | scheme Expo | `meusremedios` | `dosiq` |
 | GitHub URL (hardcodadas) | `coelhotv/meus-remedios` | Manter até rename do repo; atualizar nas Fases 4 e 5 |

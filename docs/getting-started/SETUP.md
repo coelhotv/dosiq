@@ -1,4 +1,4 @@
-# Meus Remédios - Guia de Configuração
+# Dosiq - Guia de Configuração
 
 Este guia vai te ajudar a configurar todos os serviços necessários para rodar o projeto.
 
@@ -242,7 +242,7 @@ Após o deploy no Vercel, você precisa avisar ao Telegram para onde enviar as m
 1. Copie a URL gerada pelo Vercel (ex: `https://seu-app.vercel.app`)
 2. Execute o seguinte comando no seu terminal local (substituindo a URL e o TOKEN se não tiver o .env configurado):
    ```bash
-   curl "https://api.telegram.org/bot$(grep TELEGRAM_BOT_TOKEN .env | cut -d '=' -f2)/setWebhook?url=https://meus-remedios.vercel.app/api/telegram"
+   curl "https://api.telegram.org/bot$(grep TELEGRAM_BOT_TOKEN .env | cut -d '=' -f2)/setWebhook?url=https://dosiq.vercel.app/api/telegram"
    ```
 3. No Telegram, abra seu bot e envie o comando `/start`.
 

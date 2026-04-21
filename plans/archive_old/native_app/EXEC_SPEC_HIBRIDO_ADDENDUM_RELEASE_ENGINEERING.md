@@ -164,19 +164,19 @@ Exemplo prescritivo:
 const APP_VARIANTS = {
   development: {
     appName: 'Meus Remedios Dev',
-    slug: 'meus-remedios-dev',
+    slug: 'dosiq-dev',
     iosBundleId: 'com.coelhotv.meusremedios.dev',
     androidPackage: 'com.coelhotv.meusremedios.dev',
   },
   preview: {
     appName: 'Meus Remedios Preview',
-    slug: 'meus-remedios-preview',
+    slug: 'dosiq-preview',
     iosBundleId: 'com.coelhotv.meusremedios.preview',
     androidPackage: 'com.coelhotv.meusremedios.preview',
   },
   production: {
     appName: 'Meus Remedios',
-    slug: 'meus-remedios',
+    slug: 'dosiq',
     iosBundleId: 'com.coelhotv.meusremedios',
     androidPackage: 'com.coelhotv.meusremedios',
   },
@@ -225,19 +225,19 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'development'
 const variants = {
   development: {
     name: 'Meus Remedios Dev',
-    slug: 'meus-remedios-dev',
+    slug: 'dosiq-dev',
     iosBundleIdentifier: 'com.coelhotv.meusremedios.dev',
     androidPackage: 'com.coelhotv.meusremedios.dev',
   },
   preview: {
     name: 'Meus Remedios Preview',
-    slug: 'meus-remedios-preview',
+    slug: 'dosiq-preview',
     iosBundleIdentifier: 'com.coelhotv.meusremedios.preview',
     androidPackage: 'com.coelhotv.meusremedios.preview',
   },
   production: {
     name: 'Meus Remedios',
-    slug: 'meus-remedios',
+    slug: 'dosiq',
     iosBundleIdentifier: 'com.coelhotv.meusremedios',
     androidPackage: 'com.coelhotv.meusremedios',
   },

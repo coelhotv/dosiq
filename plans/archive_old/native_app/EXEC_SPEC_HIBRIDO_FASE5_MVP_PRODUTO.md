@@ -78,7 +78,7 @@ Seguir o addendum `TESTING_MOBILE.md` secao 4.2. A cobertura obrigatoria inclui 
 
 ### Design tokens no MVP
 
-O mobile deve consumir tokens de `@meus-remedios/design-tokens` para cores e spacing. Seguir addendum `DESIGN_TOKENS.md` secao 4.2.
+O mobile deve consumir tokens de `@dosiq/design-tokens` para cores e spacing. Seguir addendum `DESIGN_TOKENS.md` secao 4.2.
 
 ---
 
@@ -144,8 +144,8 @@ Se houver qualquer trade-off entre "mostrar muitos dados" e "registrar dose rapi
 
 Nesta fase, o app mobile deve consumir:
 
-- `@meus-remedios/core`
-- `@meus-remedios/shared-data`
+- `@dosiq/core`
+- `@dosiq/shared-data`
 - bootstrap native da Fase 4
 
 E proibido:
@@ -365,7 +365,7 @@ O app mobile nao vira nova fonte de verdade.
 
 O app mobile deve:
 
-- usar repositories/factories vindos de `@meus-remedios/shared-data`
+- usar repositories/factories vindos de `@dosiq/shared-data`
 - usar cliente Supabase native da Fase 4
 - reutilizar schemas e utils puros
 

@@ -96,14 +96,14 @@ module.exports = {
   preset: 'jest-expo',
   setupFilesAfterSetup: ['./jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@meus-remedios/.*)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@dosiq/.*)',
   ],
   moduleNameMapper: {
-    '^@meus-remedios/core(.*)$': '<rootDir>/../../packages/core/src$1',
-    '^@meus-remedios/shared-data(.*)$': '<rootDir>/../../packages/shared-data/src$1',
-    '^@meus-remedios/storage(.*)$': '<rootDir>/../../packages/storage/src$1',
-    '^@meus-remedios/config(.*)$': '<rootDir>/../../packages/config/src$1',
-    '^@meus-remedios/design-tokens(.*)$': '<rootDir>/../../packages/design-tokens/src$1',
+    '^@dosiq/core(.*)$': '<rootDir>/../../packages/core/src$1',
+    '^@dosiq/shared-data(.*)$': '<rootDir>/../../packages/shared-data/src$1',
+    '^@dosiq/storage(.*)$': '<rootDir>/../../packages/storage/src$1',
+    '^@dosiq/config(.*)$': '<rootDir>/../../packages/config/src$1',
+    '^@dosiq/design-tokens(.*)$': '<rootDir>/../../packages/design-tokens/src$1',
   },
 }
 ```
@@ -171,7 +171,7 @@ Adicionar na Fase 4:
 ```json
 {
   "scripts": {
-    "test:mobile": "npm test --workspace=@meus-remedios/mobile",
+    "test:mobile": "npm test --workspace=@dosiq/mobile",
     "test:all": "npm run test:critical && npm run test:mobile"
   }
 }

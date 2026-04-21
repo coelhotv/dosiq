@@ -1,6 +1,6 @@
 # Arquitetura — Chatbot IA Multi-Canal (F8.1)
 
-> **Primeira integração de IA no projeto Meus Remédios**
+> **Primeira integração de IA no projeto Dosiq**
 > **Status:** ✅ Entregue Sprint 8.3 + Bugfix 8.3.1 + Sprint 8.4 (History Persistence)
 > **Versão:** 1.2 | **Data:** 2026-03-20
 > **Modelo:** Groq `llama-3.3-70b-versatile` → `groq/compound` (seleção inteligente)
@@ -412,7 +412,7 @@ Implementação de **Groq Prompt Caching** para otimizar custo e latência em co
 │ PARTE ESTÁTICA (reutilizável)       │  ← Cacheada a cada request
 │ - Instruções de sistema             │  ← 50% desconto em tokens
 │ - Regras absolutas                  │
-│ - Contexto de app (Meus Remédios)   │
+│ - Contexto de app (Dosiq)   │
 └─────────────────────────────────────┘
                 ↓
 ┌─────────────────────────────────────┐

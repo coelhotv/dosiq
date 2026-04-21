@@ -8,7 +8,7 @@
 
 ## 🎯 Resumo
 
-Este documento registra todos os arquivos que foram modificados localmente durante o desenvolvimento da **Onda 1** do projeto Meus Remédios, mas que não foram commitados nas branches individuais de cada feature. Estas alterações incluem correções em testes, integrações entre features, e builds de validação.
+Este documento registra todos os arquivos que foram modificados localmente durante o desenvolvimento da **Onda 1** do projeto Dosiq, mas que não foram commitados nas branches individuais de cada feature. Estas alterações incluem correções em testes, integrações entre features, e builds de validação.
 
 ---
 

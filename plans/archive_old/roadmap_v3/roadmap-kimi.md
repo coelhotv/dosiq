@@ -4,7 +4,7 @@ Aqui está o pacote completo de entrega:
 
 ---
 
-# 📋 ESPECIFICAÇÃO DE EXPERIÊNCIA - MEUS REMÉDIOS 2.0
+# 📋 ESPECIFICAÇÃO DE EXPERIÊNCIA - Dosiq 2.0
 **Versão:** 1.0 | **Data:** 04/02/2026 | **Autor:** Product Strategy
 
 ## 1. WIREFRAMES DE BAIXA FIDELIDADE

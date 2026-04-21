@@ -1148,7 +1148,7 @@ O mesmo padrao try/catch silencioso se aplica a `setUserId`, `setUserProperty` e
 
 ### Dependencias humanas obrigatorias (nao executaveis por agente)
 
-- [ ] Firebase Console → projeto `meus-remedios-c509e` → Analytics habilitado
+- [ ] Firebase Console → projeto `dosiq-c509e` → Analytics habilitado
 - [ ] Google Analytics property vinculada ao projeto Firebase
 - [ ] Debug View ativado para validar eventos durante desenvolvimento
 - [ ] Eventos de conversao configurados: `sign_up`, `onboarding_complete`, `dose_logged`

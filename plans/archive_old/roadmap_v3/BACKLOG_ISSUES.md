@@ -14,17 +14,17 @@ Este documento lista todas as issues de backlog criadas durante o desenvolviment
 
 | Issue | Título | Labels | Criada em |
 |-------|--------|--------|-----------|
-| [#46](https://github.com/accoelho/meus-remedios/issues/46) | Auditar JSDoc de todo o projeto | - | 2026-02-17 |
+| [#46](https://github.com/accoelho/dosiq/issues/46) | Auditar JSDoc de todo o projeto | - | 2026-02-17 |
 
 ### Prioridade Média
 
 | Issue | Título | Labels | Criada em |
 |-------|--------|--------|-----------|
-| [#33](https://github.com/accoelho/meus-remedios/issues/33) | Traduzir JSDoc de escapeMarkdownV2 | - | 2026-02-17 |
-| [#34](https://github.com/accoelho/meus-remedios/issues/34) | Otimizar escapeMarkdownV2 com regex única | - | 2026-02-17 |
-| [#39](https://github.com/accoelho/meus-remedios/issues/39) | Refatorar testes para it.each | - | 2026-02-17 |
-| [#43](https://github.com/accoelho/meus-remedios/issues/43) | Usar escapeMarkdownV2 em tasks.js | - | 2026-02-17 |
-| [#45](https://github.com/accoelho/meus-remedios/issues/45) | Traduzir JSDoc de formatStockStatus e formatProtocol | - | 2026-02-17 |
+| [#33](https://github.com/accoelho/dosiq/issues/33) | Traduzir JSDoc de escapeMarkdownV2 | - | 2026-02-17 |
+| [#34](https://github.com/accoelho/dosiq/issues/34) | Otimizar escapeMarkdownV2 com regex única | - | 2026-02-17 |
+| [#39](https://github.com/accoelho/dosiq/issues/39) | Refatorar testes para it.each | - | 2026-02-17 |
+| [#43](https://github.com/accoelho/dosiq/issues/43) | Usar escapeMarkdownV2 em tasks.js | - | 2026-02-17 |
+| [#45](https://github.com/accoelho/dosiq/issues/45) | Traduzir JSDoc de formatStockStatus e formatProtocol | - | 2026-02-17 |
 
 ---
 

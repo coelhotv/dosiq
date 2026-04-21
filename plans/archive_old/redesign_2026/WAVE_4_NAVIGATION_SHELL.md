@@ -229,7 +229,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
-        <span className="sidebar-brand-title">Meus Remédios</span>
+        <span className="sidebar-brand-title">Dosiq</span>
         <span className="sidebar-brand-subtitle">Santuário Terapêutico</span>
       </div>
 
@@ -401,7 +401,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
 - [ ] `Sidebar.css` criado em `src/shared/components/ui/`
 - [ ] Oculto em mobile (display: none), visível em ≥768px (display: flex)
 - [ ] Largura: 16rem (256px)
-- [ ] Brand com título "Meus Remédios" (Public Sans bold, primary) + subtítulo
+- [ ] Brand com título "Dosiq" (Public Sans bold, primary) + subtítulo
 - [ ] 4 nav items com ícones Lucide + labels
 - [ ] Item ativo: bg primary + text white + shadow
 - [ ] Botão "Adicionar Med." com gradient primary no rodapé

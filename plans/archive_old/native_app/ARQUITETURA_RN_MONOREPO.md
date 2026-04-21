@@ -2,7 +2,7 @@
 
 > **SUPERSEDIDO EM 2026-03-29:** Este documento foi substituído por `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`. Consultar este arquivo apenas como referência histórica complementar.
 
-> **Contexto:** Este manual arquitetural é a a **Única Fonte da Verdade** para como a aplicação Meus Remédios lidará com o desenvolvimento simultâneo de Dual Stack (Web e Mobile Nativo).
+> **Contexto:** Este manual arquitetural é a a **Única Fonte da Verdade** para como a aplicação Dosiq lidará com o desenvolvimento simultâneo de Dual Stack (Web e Mobile Nativo).
 > **Atenção Agentes IA:** É mandatório ler este guia antes de qualquer decisão de arquitetura sobre onde alocar novos arquivos de negócio ou UI.
 
 ---
@@ -12,31 +12,31 @@
 O projeto fará uso nativo do **npm workspaces** e do orquestrador **Turborepo** para cacheamento de builds.
 
 ```ascii
-meus-remedios/ 
+dosiq/ 
 ├── package.json               # Root manifest (workspaces: ["apps/*", "packages/*"])
 ├── turbo.json                 # Orquestração de tarefas (build, lint, test)
 │
 ├── apps/
 │   ├── web/                   # A PWA Atual
-│   │   ├── package.json       # { "name": "@meus-remedios/web" }
+│   │   ├── package.json       # { "name": "@dosiq/web" }
 │   │   ├── vite.config.js     # Configuração nativa PWA (CSS Modules)
 │   │   └── src/               # UI restrita à Web
 │   │
 │   └── mobile/                # Novo app React Native
-│       ├── package.json       # { "name": "@meus-remedios/mobile" }
+│       ├── package.json       # { "name": "@dosiq/mobile" }
 │       ├── app.json           # Manifesto Expo / App Stores
 │       ├── metro.config.js    # Bundler resolverá pacotes Symlink (CRITICAL!)
 │       └── app/               # UI restrita ao Mobile (NativeWind + Primitivos)
 │
 ├── packages/
 │   ├── core/                  # Cérebro da aplicação (Livre de UI/DOM)
-│   │   ├── package.json       # { "name": "@meus-remedios/core" }
+│   │   ├── package.json       # { "name": "@dosiq/core" }
 │   │   ├── src/schemas/       # Zod Rulesets
 │   │   ├── src/services/      # Conexões Supabase Genéricas
 │   │   └── src/utils/         # Logicas puras de negócio (adherenceLogic)
 │   │
 │   ├── storage/               # O adaptador de cache
-│   │   ├── package.json       # { "name": "@meus-remedios/storage" }
+│   │   ├── package.json       # { "name": "@dosiq/storage" }
 │   │   └── src/index.js       # Export da Storage Interface
 │   │
 │   └── config/                # Centralização de Tooling
@@ -50,7 +50,7 @@ meus-remedios/
 
 ## 2. Regras de Ouro: Acoplamento e Injeção
 
-### 2.1. O que vive em `@meus-remedios/core`?
+### 2.1. O que vive em `@dosiq/core`?
 O pacote **Core** tem proibições agressivas. O package.json dele **NÃO PODE CONTER**:
 - `react`, `react-dom`, `react-native`
 - Qualquer dependência baseada em Web APIs intrínsecas (`window`, `document`) (Salvo testes Mocks).
@@ -92,7 +92,7 @@ export function getStorage() {
 
 **Como a Web PWA Boota o Storage (`apps/web/src/main.jsx`):**
 ```javascript
-import { initializeStorage } from '@meus-remedios/storage';
+import { initializeStorage } from '@dosiq/storage';
 
 // Injeta Native browser localStorage
 initializeStorage({
@@ -104,7 +104,7 @@ initializeStorage({
 
 **Como o Mobile Boota o Storage (`apps/mobile/app/_layout.jsx`):**
 ```javascript
-import { initializeStorage } from '@meus-remedios/storage';
+import { initializeStorage } from '@dosiq/storage';
 import { MMKV } from 'react-native-mmkv';
 
 const mmkvStore = new MMKV();
@@ -175,4 +175,4 @@ Recomendação: O estado visual permanecerá nas suas próprias camadas (`useSta
 O `useCachedQuery` original será reescrito dentro do `packages/core` para importar o novo `StorageAdapter` abstrato, suportando chamadas síncronas/assíncronas depedendo do Adapter.
 
 ## 5. Próximos Passos Invariaveis
-Quaisquer atualizações que violem essas primitivas de separação e purismo do `@meus-remedios/core` causarão falhas instantâneas de Build nativo no Metro Bundler (que não tolera APIs HTML). Todos os agentes estão incumbidos de blindar este Core Component.
+Quaisquer atualizações que violem essas primitivas de separação e purismo do `@dosiq/core` causarão falhas instantâneas de Build nativo no Metro Bundler (que não tolera APIs HTML). Todos os agentes estão incumbidos de blindar este Core Component.

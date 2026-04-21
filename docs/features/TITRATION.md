@@ -1,6 +1,6 @@
 # Guia Completo: Cadastro e Gerenciamento de Protocolos em Titulação
 
-Este guia explica como cadastrar medicamentos em regime de titulação e registrar suas doses no sistema **Meus Remédios**.
+Este guia explica como cadastrar medicamentos em regime de titulação e registrar suas doses no sistema **Dosiq**.
 
 ## 📊 Entendendo o Sistema de Titulação
 

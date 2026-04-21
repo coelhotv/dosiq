@@ -73,11 +73,11 @@ module.exports = function (api) {
 }
 ```
 
-A resolucao de `@meus-remedios/*` packages e feita pelo Metro (via `metro.config.js` com `watchFolders`), nao pelo Babel. O `babel.config.js` precisa apenas do preset Expo.
+A resolucao de `@dosiq/*` packages e feita pelo Metro (via `metro.config.js` com `watchFolders`), nao pelo Babel. O `babel.config.js` precisa apenas do preset Expo.
 
 ### Zod no contexto Metro
 
-O projeto usa Zod v4 com ESM. Metro precisa transpilar `@meus-remedios/core` (que depende de `zod`). Confirmar que `zod` esta em `transformIgnorePatterns` correto no `metro.config.js` e no `jest.config.js` mobile.
+O projeto usa Zod v4 com ESM. Metro precisa transpilar `@dosiq/core` (que depende de `zod`). Confirmar que `zod` esta em `transformIgnorePatterns` correto no `metro.config.js` e no `jest.config.js` mobile.
 
 ---
 
@@ -113,10 +113,10 @@ Separacao obrigatoria:
 
 O app mobile pode importar:
 
-- `@meus-remedios/core`
-- `@meus-remedios/shared-data`
-- `@meus-remedios/storage`
-- `@meus-remedios/config`
+- `@dosiq/core`
+- `@dosiq/shared-data`
+- `@dosiq/storage`
+- `@dosiq/config`
 
 Mas esses pacotes nao podem importar nada de:
 
@@ -240,7 +240,7 @@ Exemplo:
 
 ```json
 {
-  "name": "@meus-remedios/mobile",
+  "name": "@dosiq/mobile",
   "private": true,
   "main": "expo/AppEntry.js",
   "scripts": {
@@ -279,19 +279,19 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'development'
 const variants = {
   development: {
     name: 'Meus Remedios Dev',
-    slug: 'meus-remedios-dev',
+    slug: 'dosiq-dev',
     iosBundleIdentifier: 'com.coelhotv.meusremedios.dev',
     androidPackage: 'com.coelhotv.meusremedios.dev',
   },
   preview: {
     name: 'Meus Remedios Preview',
-    slug: 'meus-remedios-preview',
+    slug: 'dosiq-preview',
     iosBundleIdentifier: 'com.coelhotv.meusremedios.preview',
     androidPackage: 'com.coelhotv.meusremedios.preview',
   },
   production: {
     name: 'Meus Remedios',
-    slug: 'meus-remedios',
+    slug: 'dosiq',
     iosBundleIdentifier: 'com.coelhotv.meusremedios',
     androidPackage: 'com.coelhotv.meusremedios',
   }
@@ -397,7 +397,7 @@ Consumir `packages/config` no mobile sem quebrar a regra de injecao.
 ### Exemplo
 
 ```js
-import { createPublicAppConfig } from '@meus-remedios/config'
+import { createPublicAppConfig } from '@dosiq/config'
 
 export const nativePublicAppConfig = createPublicAppConfig({
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -581,7 +581,7 @@ Provar que Metro resolve workspaces, que o app abre e que o `core` esta acessive
 ```js
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { medicineSchema } from '@meus-remedios/core/schemas'
+import { medicineSchema } from '@dosiq/core/schemas'
 
 export default function SmokeScreen() {
   const [result, setResult] = useState('loading')
@@ -743,7 +743,7 @@ Erro:
 - [x] persistencia geral usa `AsyncStorage` ✅
 - [x] cliente Supabase native foi criado corretamente ✅
 - [x] React Navigation auth-aware esta funcionando (getSession + initialRouteName dinamico) ✅
-- [x] smoke screen consome `@meus-remedios/core` ✅
+- [x] smoke screen consome `@dosiq/core` ✅
 - [x] login real funciona ✅
 - [x] sessao persiste ao reabrir ✅ (validado pelo maintainer em iOS Simulator)
 - [x] `app.config.js` esta presente e coerente ✅
@@ -762,7 +762,7 @@ Erro:
 - ✅ App Expo funcional em iOS Simulator (Expo Go SDK 53)
 - ✅ Boot e bundling validados (sem crashes)
 - ✅ Auth e sessao validados (login + persistencia confirmada pelo maintainer)
-- ✅ Smoke screen verde (schema `@meus-remedios/core` funcional)
+- ✅ Smoke screen verde (schema `@dosiq/core` funcional)
 - ✅ Base pronta para shell de produto
 
 **Constrains/alertas para a Fase 5:**

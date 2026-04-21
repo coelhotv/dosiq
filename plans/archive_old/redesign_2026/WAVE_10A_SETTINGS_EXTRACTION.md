@@ -144,7 +144,7 @@ const [complexityOverride, setComplexityOverride] = useState(
   │           🚪 Sair da Conta                  │  ← Botão proeminente
   └─────────────────────────────────────────────┘
 
-           MEUS REMÉDIOS V3.3.0 • 2026            ← Footer com versão
+           Dosiq V3.3.0 • 2026            ← Footer com versão
 ```
 
 #### Regras de Layout
@@ -154,7 +154,7 @@ const [complexityOverride, setComplexityOverride] = useState(
 - Header fixo no topo com ← back + título "Configurações"
 - Seções empilhadas com gap 1rem
 - Botão "Sair da Conta" full-width, estilo outlined-danger
-- Footer com versão: `MEUS REMÉDIOS V${version} • ${year}`
+- Footer com versão: `Dosiq V${version} • ${year}`
 
 **Desktop (≥ 768px):**
 - Centralizado, max-width 640px

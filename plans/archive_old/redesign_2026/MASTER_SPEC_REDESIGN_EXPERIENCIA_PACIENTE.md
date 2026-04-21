@@ -1403,7 +1403,7 @@ const navItems = [
 **Design (desktop only, hidden on mobile):**
 ```
 ┌──────────────────────┐
-│ Meus Remédios        │  ← Logo + wordmark, Public Sans bold, primary
+│ Dosiq        │  ← Logo + wordmark, Public Sans bold, primary
 │ Santuário Terapêutico│  ← subtitle, outline color, label-sm
 │                      │
 │ ▶ Hoje               │  ← active: bg primary, text white, shadow
@@ -1750,7 +1750,7 @@ Esta é a wave mais complexa. O Dashboard é o coração do app.
 **Layout futuro (mobile):**
 ```
 ┌──────────────────────────────────────┐
-│  Meus Remédios            🔔   👤    │  ← TopBar (mobile only)
+│  Dosiq            🔔   👤    │  ← TopBar (mobile only)
 ├──────────────────────────────────────┤
 │                                      │
 │     ADESÃO DIÁRIA                    │
@@ -2213,7 +2213,7 @@ Design: "flat utility layout, no visual drama" (PRODUCT_STRATEGY)
 │  ❓ Ajuda e Suporte           >      │
 ├──────────────────────────────────────┤
 │  [Sair da Conta]                     │
-│  Versão 3.3.0 • Meus Remédios        │
+│  Versão 3.3.0 • Dosiq        │
 └──────────────────────────────────────┘
 ```
 
@@ -2624,7 +2624,7 @@ Hoje o Calendar tem tema neon independente. As views redesenhadas (HealthHistory
 **Arquivo:** `src/shared/components/pwa/InstallPrompt.jsx` + CSS
 
 - Banner bottom: sanctuary card style, glass background
-- Ícone app + "Instalar Meus Remédios"
+- Ícone app + "Instalar Dosiq"
 - CTA "Instalar": primary gradient, 56px
 - Dismiss: ghost button "Agora não"
 - Respeitar redesign tokens

@@ -144,7 +144,7 @@ Definir como executar a estrategia hibrida web+native usando sessoes de agente C
 **PRs:** 2 (schemas+utils; depois design-tokens+aliases+testes)
 
 **Gates:**
-- [x] Web compila com imports via @meus-remedios/core
+- [x] Web compila com imports via @dosiq/core
 - [x] Testes criticos passam
 - [x] Nenhum browser API em packages/core
 - [x] Design tokens exportam valores corretos (motionConstants.js + CSS keyframes + useMotion hook)
@@ -377,7 +377,7 @@ Template de journal para retomada:
 |------|------------------|----------|--------|
 | H0 | Docs completos e corretos | 3 ADRs + 2 inventarios + expo removido | ✅ COMPLETA |
 | H1 | Zero regressao web | Todos os scripts passam + Vercel OK | ✅ COMPLETA |
-| H2 | Packages core funcionais | Imports via @meus-remedios/core sem fallback | ✅ COMPLETA |
+| H2 | Packages core funcionais | Imports via @dosiq/core sem fallback | ✅ COMPLETA |
 | H3 | Web sobre novos contratos | Zero localStorage/import.meta.env em packages/ | ✅ COMPLETA |
 | H4 | App mobile boots | Login + sessao persistente em 2 plataformas | ✅ iOS + Android validados |
 | H5 | MVP funcional | 7 fluxos validados manualmente | ✅ COMPLETA |

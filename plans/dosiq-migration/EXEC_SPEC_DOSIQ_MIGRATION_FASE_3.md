@@ -120,9 +120,9 @@ Corrigir para:
 
 ### 1.8 URLs de Produção Hardcodadas
 
-Verificar e corrigir todas as URL `meus-remedios.vercel.app` no código web:
+Verificar e corrigir todas as URL `dosiq.vercel.app` no código web:
 ```bash
-grep -rn "meus-remedios.vercel.app\|meus-remedios\.vercel" \
+grep -rn "dosiq.vercel.app\|meus-remedios\.vercel" \
   --include="*.js" --include="*.jsx" --include="*.html" \
   apps/web/
 # Corrigir todas para dosiq.vercel.app
@@ -175,7 +175,7 @@ git commit -m "refactor(web): renomear copy e referencias de 'Meus Remedios' par
 - [x] `Landing.jsx`, `Auth.jsx`, `WelcomeStep.jsx`, `Sidebar.jsx`, `Settings.jsx` sem texto legado
 - [x] `pdfGeneratorService.js`: título do relatório corrigido
 - [x] `chatbotConfig.js`: comentário de cabeçalho corrigido
-- [x] Zero URLs `meus-remedios.vercel.app` hardcodadas
+- [x] Zero URLs `dosiq.vercel.app` hardcodadas
 - [x] `npm run build` passando sem erros
 - [x] `npm run validate:agent` passando
 
@@ -205,7 +205,7 @@ git commit -m "refactor(web): renomear copy e referencias de 'Meus Remedios' par
     - `Sidebar.jsx` (Tipografia abaixo da logo se ela existir).
 
 ### 2.4. URLs Externas Públicas
-- Trocar chamadas a `meus-remedios.vercel.app` para `dosiq.vercel.app`.
+- Trocar chamadas a `dosiq.vercel.app` para `dosiq.vercel.app`.
 
 ## 3. Validation Gate do Agente
 - Rodar `npm run build` atrelado ao `apps/web` e garantir zero errors de bundle/compilation na substituição.

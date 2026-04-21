@@ -42,7 +42,7 @@
 - [x] Tabelas com quebra de página automática (jspdf-autotable)
 - [x] Disclaimer presente no rodapé
 - [x] Funciona offline (dados do cache SWR)
-- [x] Nome do arquivo: `meus-remedios-relatorio-{periodo}-{data}.pdf`
+- [x] Nome do arquivo: `dosiq-relatorio-{periodo}-{data}.pdf`
 - [x] jsPDF lazy loaded (dynamic import)
 
 **Dependências:** jspdf ✅, jspdf-autotable ✅, adherenceService ✅

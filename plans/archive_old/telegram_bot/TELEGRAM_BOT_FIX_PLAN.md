@@ -187,7 +187,7 @@ vercel --prod
 vercel logs --follow
 
 # Test the notify endpoint
-curl -X GET "https://meus-remedios.vercel.app/api/notify" \
+curl -X GET "https://dosiq.vercel.app/api/notify" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 

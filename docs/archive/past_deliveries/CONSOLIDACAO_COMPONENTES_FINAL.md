@@ -10,7 +10,7 @@
 
 ### Objetivo do Projeto
 
-Consolidar e unificar componentes React duplicados ou fragmentados no aplicativo Meus Remédios, eliminando inconsistências de UI/UX, reduzindo a base de código e estabelecendo padrões reutilizáveis para futuro desenvolvimento.
+Consolidar e unificar componentes React duplicados ou fragmentados no aplicativo Dosiq, eliminando inconsistências de UI/UX, reduzindo a base de código e estabelecendo padrões reutilizáveis para futuro desenvolvimento.
 
 ### Escopo das Mudanças
 

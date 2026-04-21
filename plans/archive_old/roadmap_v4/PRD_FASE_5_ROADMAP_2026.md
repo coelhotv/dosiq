@@ -12,7 +12,7 @@
 
 ## 1. Visão Geral e Objetivos Estratégicos
 
-A Fase 5 posiciona o Meus Remédios como ferramenta clínica séria, não apenas um lembrete de doses. Vai além da exportação básica de dados para entregar valor real nas situações que mais importam: consultas médicas, emergências hospitalares, controle de prescrições vencendo e consciência de custo do tratamento.
+A Fase 5 posiciona o Dosiq como ferramenta clínica séria, não apenas um lembrete de doses. Vai além da exportação básica de dados para entregar valor real nas situações que mais importam: consultas médicas, emergências hospitalares, controle de prescrições vencendo e consciência de custo do tratamento.
 
 **Relação com Fase 5.5:** A Fase 5 alimenta a Fase 5.5 (Inteligência Preditiva). O calendário visual (F5.4) e os dados de doses coletados aqui são a base do heatmap de padrões (I02) e do score de risco por protocolo (I04) da próxima fase. O `unit_price` do estoque coletado em F5.10 é a fonte da análise de custo inteligente (I05).
 
@@ -100,7 +100,7 @@ Gerar relatórios PDF completos no client-side usando jsPDF, contendo dados de a
 - [ ] Disclaimer presente no rodapé de todas as páginas
 - [ ] Preview disponível antes de gerar/baixar
 - [ ] Funciona offline (dados do cache SWR — PWA já configurado)
-- [ ] Nome do arquivo: `meus-remedios-relatorio-{periodo}-{data}.pdf`
+- [ ] Nome do arquivo: `dosiq-relatorio-{periodo}-{data}.pdf`
 - [ ] jsPDF lazy loaded (dynamic import — não impacta bundle inicial 762KB)
 
 **Dependências:** jsPDF, adherenceService, Hash Router (✅ já entregue)
@@ -288,7 +288,7 @@ Gera em 1 toque um resumo otimizado para apresentar ao médico: adesão dos últ
 **Estrutura do Resumo (1 página A4):**
 
 ```
-MEUS REMÉDIOS — Resumo para Consulta
+Dosiq — Resumo para Consulta
 Gerado em: [data e hora]
 
 📊 ADESÃO (últimos 30 dias): 87% | Streak: 12 dias consecutivos

@@ -107,7 +107,7 @@ packages/design-tokens/
 
 ```json
 {
-  "name": "@meus-remedios/design-tokens",
+  "name": "@dosiq/design-tokens",
   "private": true,
   "version": "0.0.0-phase2",
   "type": "module",
@@ -144,8 +144,8 @@ A web ja tem CSS custom properties do Sanctuary. Dois caminhos validos:
 O mobile importa tokens JS e usa em `StyleSheet`:
 
 ```js
-import { colors } from '@meus-remedios/design-tokens/colors'
-import { spacing } from '@meus-remedios/design-tokens/spacing'
+import { colors } from '@dosiq/design-tokens/colors'
+import { spacing } from '@dosiq/design-tokens/spacing'
 import { StyleSheet } from 'react-native'
 
 const styles = StyleSheet.create({

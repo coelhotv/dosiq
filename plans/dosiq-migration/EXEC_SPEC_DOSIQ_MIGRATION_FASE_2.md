@@ -165,7 +165,7 @@ git commit -m "refactor(mobile): renomear identidade Expo para Dosiq (slug, sche
 - Field `scheme`: Modificar de `meusremedios` para `dosiq`. (Isso afeta deep linking, então redobrar atenção).
 
 ### 2.2. nativePublicAppConfig.js
-- Localizar a constante que aponta URLs de ambiente web (se houver fallbacks) e atualizar `meus-remedios.vercel.app` para `dosiq.vercel.app`.
+- Localizar a constante que aponta URLs de ambiente web (se houver fallbacks) e atualizar `dosiq.vercel.app` para `dosiq.vercel.app`.
 
 ### 2.3. Resquícios de Texto Mobile
 - Procurar chamadas globais de `Meus Remédios` entre os headers das views do aplicativo: `MedicinesScreen`, `TodayScreen`, `SmokeScreen`.

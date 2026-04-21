@@ -1,5 +1,5 @@
 # 📋 Product Requirements Document (PRD) Expandido
-## Meus Remédios - Evolução Zero Cost MVP
+## Dosiq - Evolução Zero Cost MVP
 
 **Versão:** 2.0  
 **Data:** 04/02/2026  

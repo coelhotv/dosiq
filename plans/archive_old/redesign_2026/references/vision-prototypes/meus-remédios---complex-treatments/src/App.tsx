@@ -42,7 +42,7 @@ const Sidebar = ({ currentView, setView }: { currentView: View; setView: (v: Vie
   return (
     <aside className="hidden md:flex flex-col h-screen w-72 border-r border-outline-variant bg-surface-container-low py-8 px-4 gap-2 sticky top-0">
       <div className="mb-8 px-4">
-        <h1 className="text-xl font-bold text-primary font-headline tracking-tight">Meus Remédios</h1>
+        <h1 className="text-xl font-bold text-primary font-headline tracking-tight">Dosiq</h1>
         <p className="text-xs text-outline mt-1 font-medium">Gestão de Saúde</p>
       </div>
       

@@ -31,7 +31,7 @@
 
 ### 4. Ao criar issues automáticas para cada revisão, o workflow está publicando comentários na 'timeline' da PR com a referência da issue.
 
-**Exemplo do problema:** ([Issue#169 no PR#168](https://github.com/coelhotv/meus-remedios/pull/168#issuecomment-3959261129))
+**Exemplo do problema:** ([Issue#169 no PR#168](https://github.com/coelhotv/dosiq/pull/168#issuecomment-3959261129))
 
 **Comportamento esperado:**
 - Após criar issue automática o workflow deveria responder inline diretamente ao comentário/ revisão específico do Gemini com a referência da issue criada, iniciando sua resposta com "@gemini-code-assist" para que o revisor receba notificação do comentário.
@@ -39,7 +39,7 @@
 
 ### 5. A cada novo commit e re-review do Gemini o workflow edita o resumo e tabela de issues duplicando os mesmos comentários e linhas com problemas, gerando ruído no sumário.
 
-**Exemplo do problema:** ([PR#168](https://github.com/coelhotv/meus-remedios/pull/168#issuecomment-3959223712))
+**Exemplo do problema:** ([PR#168](https://github.com/coelhotv/dosiq/pull/168#issuecomment-3959223712))
 
 **Comportamento esperado:**
 - A cada nova execução do workflow, ele deveria verificar quais linhas já haviam sido reportadas e contabilizadas e não duplicar a sua contagem.

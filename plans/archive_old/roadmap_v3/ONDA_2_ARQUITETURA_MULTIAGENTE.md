@@ -1,6 +1,6 @@
 # 🏗️ Blueprint de Arquitetura Multiagente Hierárquica
 
-## Onda 2 - Inteligência | Meus Remédios
+## Onda 2 - Inteligência | Dosiq
 
 **Versão:** 1.0  
 **Data:** 03 de Fevereiro de 2026  
@@ -11,7 +11,7 @@
 
 ## 📋 Sumário Executivo
 
-Este blueprint define uma arquitetura multiagente hierárquica para execução autônoma da **Onda 2 - Inteligência** do projeto Meus Remédios. A arquitetura organiza agentes especializados em setores funcionais, estabelece protocolos de orquestração e define um workflow de aprovação em 2 etapas para transição do estado DORMANT para ACTIVE.
+Este blueprint define uma arquitetura multiagente hierárquica para execução autônoma da **Onda 2 - Inteligência** do projeto Dosiq. A arquitetura organiza agentes especializados em setores funcionais, estabelece protocolos de orquestração e define um workflow de aprovação em 2 etapas para transição do estado DORMANT para ACTIVE.
 
 ### Características da Arquitetura
 

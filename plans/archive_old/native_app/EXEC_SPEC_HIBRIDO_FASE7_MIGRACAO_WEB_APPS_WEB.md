@@ -62,7 +62,7 @@ Se qualquer item acima falhar, a Fase 7 deve ser abortada ou adiada.
 Ao fim da fase, a web deve sair de:
 
 ```text
-meus-remedios/
+dosiq/
   src/
   public/
   index.html
@@ -73,7 +73,7 @@ meus-remedios/
 Para:
 
 ```text
-meus-remedios/
+dosiq/
   apps/
     web/
       src/
@@ -249,7 +249,7 @@ Exemplo minimo:
 
 ```json
 {
-  "name": "@meus-remedios/web",
+  "name": "@dosiq/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -275,9 +275,9 @@ Exemplo:
 ```json
 {
   "scripts": {
-    "dev:web": "npm run dev --workspace @meus-remedios/web",
-    "build:web": "npm run build --workspace @meus-remedios/web",
-    "dev:mobile": "npm run start --workspace @meus-remedios/mobile",
+    "dev:web": "npm run dev --workspace @dosiq/web",
+    "build:web": "npm run build --workspace @dosiq/web",
+    "dev:mobile": "npm run start --workspace @dosiq/mobile",
     "build": "npm run build:web"
   }
 }
@@ -334,7 +334,7 @@ Se a web ja consome `packages/*`, os aliases ou imports devem passar a apontar p
 Exemplo:
 
 ```js
-import { someSchema } from '@meus-remedios/core'
+import { someSchema } from '@dosiq/core'
 ```
 
 E nao:
@@ -542,10 +542,10 @@ Se mover a web antes de preparar workspace e scripts, o repositorio entra em est
 {
   "scripts": {
     "dev": "npm run dev:web",
-    "dev:web": "npm run dev --workspace @meus-remedios/web",
+    "dev:web": "npm run dev --workspace @dosiq/web",
     "build": "npm run build:web",
-    "build:web": "npm run build --workspace @meus-remedios/web",
-    "preview:web": "npm run preview --workspace @meus-remedios/web"
+    "build:web": "npm run build --workspace @dosiq/web",
+    "preview:web": "npm run preview --workspace @dosiq/web"
   }
 }
 ```
@@ -564,7 +564,7 @@ Se mover a web antes de preparar workspace e scripts, o repositorio entra em est
 ## 13.3. Import correto de pacote compartilhado
 
 ```js
-import { protocolSchema } from '@meus-remedios/core'
+import { protocolSchema } from '@dosiq/core'
 ```
 
 ### E nao

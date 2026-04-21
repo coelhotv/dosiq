@@ -280,7 +280,7 @@ Before starting Sprint 17.0:
 
 **Date:** 2026-04-09  
 **Branch:** `feature/wave-17/s17.9.5-neon-token-migration`  
-**PR:** [#455](https://github.com/coelhotv/meus-remedios/pull/455) — Awaiting Gemini Code Assist review
+**PR:** [#455](https://github.com/coelhotv/dosiq/pull/455) — Awaiting Gemini Code Assist review
 
 ### Deliverables Completed (S17.9 + S17.9.5)
 
@@ -393,7 +393,7 @@ grep -r "tokens.redesign\|layout.redesign\|components.redesign" src/ --include="
 **Arquivo:** `package.json`
 ```json
 {
-  "name": "meus-remedios",
+  "name": "dosiq",
   "version": "4.0.0",  // ← Mudar de 3.3.0
   ...
 }
@@ -526,8 +526,8 @@ grep -r "tokens.redesign\|layout.redesign\|components.redesign" src/ --include="
 ## Quick Start
 
 ```bash
-git clone https://github.com/coelhotv/meus-remedios.git
-cd meus-remedios
+git clone https://github.com/coelhotv/dosiq.git
+cd dosiq
 npm install
 npm run dev  # http://localhost:5173
 ```
@@ -702,7 +702,7 @@ gh release create v4.0.0 \
 
 ```bash
 # Verify production deployment
-curl https://meus-remedios.vercel.app/package.json  # Should show v4.0.0
+curl https://dosiq.vercel.app/package.json  # Should show v4.0.0
 
 # Verify Lighthouse scores
 npm run preview  # Then manual Lighthouse audit

@@ -1,4 +1,4 @@
-# 📱 Plano de Performance Mobile v2.0 — Meus Remédios
+# 📱 Plano de Performance Mobile v2.0 — Dosiq
 **Data:** 2026-03-09 (inicial) | **Atualização:** 2026-03-13
 **Baseado em:** Leitura linha a linha de `HealthHistory.jsx` e `adherencePatternService.js`
 

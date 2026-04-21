@@ -1,16 +1,16 @@
-# 🤖 Bot Telegram - Meus Remédios
+# 🤖 Bot Telegram - Dosiq
 
 **Versão:** 4.0.0  
 **Última atualização:** 2026-04-02  
 **Status:** Produção
 
-Documentação consolidada do bot Telegram do Meus Remédios, incluindo arquitetura, comandos, sistema de notificações e desenvolvimentos recentes.
+Documentação consolidada do bot Telegram do Dosiq, incluindo arquitetura, comandos, sistema de notificações e desenvolvimentos recentes.
 
 ---
 
 ## 📋 Visão Geral
 
-O bot Telegram do Meus Remédios é uma interface de comunicação que permite aos usuários gerenciar seus medicamentos, receber lembretes de doses e monitorar estoque diretamente pelo Telegram.
+O bot Telegram do Dosiq é uma interface de comunicação que permite aos usuários gerenciar seus medicamentos, receber lembretes de doses e monitorar estoque diretamente pelo Telegram.
 
 > Em `v4.0.0`, os fluxos de compra e consumo de estoque do bot passaram a usar os mesmos RPCs transacionais da aplicação web (`create_purchase_with_stock` e `consume_stock_fifo`), eliminando a mutação manual de `stock` no cliente do bot.
 

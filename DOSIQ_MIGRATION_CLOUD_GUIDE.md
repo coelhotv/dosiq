@@ -50,7 +50,7 @@ https://dosiq.vercel.app/**
 dosiq://
 ```
 
-> Mantenha as URLs antigas (`meus-remedios.vercel.app`) durante o período de transição para não quebrar sessões ativas. Remova-as somente após confirmar que o domínio novo está funcional.
+> Mantenha as URLs antigas (`dosiq.vercel.app`) durante o período de transição para não quebrar sessões ativas. Remova-as somente após confirmar que o domínio novo está funcional.
 
 ### 1.3 Site URL
 
@@ -58,7 +58,7 @@ dosiq://
 
 Atualizar de:
 ```
-https://meus-remedios.vercel.app
+https://dosiq.vercel.app
 ```
 Para:
 ```
@@ -85,7 +85,7 @@ Alterar o nome de exibição para `Dosiq`.
 
 Alterar de `meus-remedios` para `dosiq`.
 
-> Após renomear, o domínio automático muda de `meus-remedios.vercel.app` para `dosiq.vercel.app`. Confirme que o deploy está funcional antes de continuar.
+> Após renomear, o domínio automático muda de `dosiq.vercel.app` para `dosiq.vercel.app`. Confirme que o deploy está funcional antes de continuar.
 
 ### 2.2 Atualizar Variáveis de Ambiente
 
@@ -96,8 +96,8 @@ Verificar e atualizar as variáveis relacionadas ao branding:
 | Variável | Valor atual | Valor novo |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | token do `meus_remedios_bot` | token do `dosiq_bot` |
-| `NEXT_PUBLIC_APP_URL` (se existir) | `https://meus-remedios.vercel.app` | `https://dosiq.vercel.app` |
-| `VITE_APP_URL` (se existir) | `https://meus-remedios.vercel.app` | `https://dosiq.vercel.app` |
+| `NEXT_PUBLIC_APP_URL` (se existir) | `https://dosiq.vercel.app` | `https://dosiq.vercel.app` |
+| `VITE_APP_URL` (se existir) | `https://dosiq.vercel.app` | `https://dosiq.vercel.app` |
 
 > As variáveis `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` **não mudam** — o banco Supabase é o mesmo.
 
@@ -317,7 +317,7 @@ Verificar e atualizar:
 |---|---|
 | `VERCEL_PROJECT_ID` | ID do projeto antigo |
 | `TELEGRAM_BOT_TOKEN` | Token do bot antigo |
-| Qualquer secret com URL | URL antiga `meus-remedios.vercel.app` |
+| Qualquer secret com URL | URL antiga `dosiq.vercel.app` |
 
 ### 6.4 Atualizar Descrição e Topics do Repositório
 

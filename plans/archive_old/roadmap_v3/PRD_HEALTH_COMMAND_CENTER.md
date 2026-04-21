@@ -9,7 +9,7 @@
 
 ## 1. Visão Geral e Objetivos Estratégicos
 
-O **Health Command Center** é a evolução do dashboard do "Meus Remédios", transicionando de um repositório passivo de dados para um **assistente proativo inteligente**. O objetivo central é maximizar a aderência terapêutica através da redução da carga cognitiva e do reforço positivo.
+O **Health Command Center** é a evolução do dashboard do "Dosiq", transicionando de um repositório passivo de dados para um **assistente proativo inteligente**. O objetivo central é maximizar a aderência terapêutica através da redução da carga cognitiva e do reforço positivo.
 
 ### Objetivos Estratégicos:
 - **Redução de Fricção:** Registro de doses em menos de 2 segundos via gestos (Swipe).

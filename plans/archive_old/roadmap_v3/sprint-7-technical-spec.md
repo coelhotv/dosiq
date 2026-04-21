@@ -44,7 +44,7 @@ check-resolutions:
   if: always() && needs.parse.result == 'success' && github.event_name == 'pull_request' && github.event.action == 'synchronize'
   env:
     VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-    VERCEL_API_URL: 'https://meus-remedios.vercel.app'
+    VERCEL_API_URL: 'https://dosiq.vercel.app'
 ```
 
 ### Problemas Identificados

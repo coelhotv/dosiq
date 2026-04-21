@@ -1,5 +1,5 @@
 # 📊 Resumo Executivo - Análise Crítica do Roadmap
-## Meus Remédios: Otimização para Validação Zero-Cost MVP
+## Dosiq: Otimização para Validação Zero-Cost MVP
 
 **Data:** 04/02/2026  
 **Analista:** Architect Mode  

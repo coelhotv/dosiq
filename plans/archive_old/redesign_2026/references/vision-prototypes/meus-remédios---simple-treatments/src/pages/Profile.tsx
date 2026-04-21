@@ -66,7 +66,7 @@ const Profile = ({ onLogout }: ProfileProps) => {
           Sair da Conta
         </button>
         <p className="text-center text-on-surface/20 text-xs mt-8 font-bold italic">
-          Versão 1.0.4 • Meus Remédios Santuário Clínico
+          Versão 1.0.4 • Dosiq Santuário Clínico
         </p>
       </section>
     </div>

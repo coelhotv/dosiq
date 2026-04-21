@@ -1,7 +1,7 @@
 
 ## 1. Cabeçalho e Metadados
 
-**Produto:** Meus Remédios (Web + Bot Telegram)  
+**Produto:** Dosiq (Web + Bot Telegram)  
 **Tipo de documento:** Product Requirements Document (PRD)  
 **Versão:** 1.1  
 **Data:** 2026-02-03  
@@ -38,7 +38,7 @@
 
 ## 2. Visão Geral do Produto
 
-O **Meus Remédios** é uma aplicação web (mobile-first) com integração ao **Telegram** para lembretes e registro rápido de doses. O produto atende um problema recorrente: manter **adesão ao tratamento** e **organização** (protocolos, titulação, estoque), reduzindo esquecimento, erros e ansiedade com relação a horários, consumo e reposição.
+O **Dosiq** é uma aplicação web (mobile-first) com integração ao **Telegram** para lembretes e registro rápido de doses. O produto atende um problema recorrente: manter **adesão ao tratamento** e **organização** (protocolos, titulação, estoque), reduzindo esquecimento, erros e ansiedade com relação a horários, consumo e reposição.
 
 O roadmap consolida uma evolução em três ondas: (1) **Fundação** para elevar qualidade e estabilidade; (2) **Inteligência** para transformar dados de uso em feedback acionável e suporte (incluindo IA); (3) **Expansão** para novos cenários (relatórios para médicos, cuidador, PWA/push, melhorias estruturais). Visão por ondas e priorização: [`plans/ROADMAP_CONSOLIDADO_FINAL.md:224`](plans/ROADMAP_CONSOLIDADO_FINAL.md:224).
 

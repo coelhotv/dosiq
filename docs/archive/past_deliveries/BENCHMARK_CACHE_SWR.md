@@ -2,7 +2,7 @@
 
 ## Resumo da Implementação
 
-Implementação de cache SWR (Stale-While-Revalidate) para o Dashboard do Meus Remédios, reduzindo significativamente o tempo de carregamento em visitas subsequentes.
+Implementação de cache SWR (Stale-While-Revalidate) para o Dashboard do Dosiq, reduzindo significativamente o tempo de carregamento em visitas subsequentes.
 
 ## Arquivos Criados/Modificados
 

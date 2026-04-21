@@ -107,7 +107,7 @@ check-resolutions:
             .sign(secret);
           
           // Chamar endpoint
-          const response = await fetch('https://meus-remedios.vercel.app/api/gemini-reviews/update-status', {
+          const response = await fetch('https://dosiq.vercel.app/api/gemini-reviews/update-status', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${jwt}` },
             body: JSON.stringify({ pr_number: prNumber })

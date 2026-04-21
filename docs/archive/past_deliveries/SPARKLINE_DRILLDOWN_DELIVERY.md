@@ -1,6 +1,6 @@
 # Relatório de Entrega: Sparkline Drill-Down Enhancement
 
-**Projeto:** Meus Remédios - Sistema de Gestão de Medicamentos  
+**Projeto:** Dosiq - Sistema de Gestão de Medicamentos  
 **Versão:** 2.7.0  
 **Data:** 2026-02-12  
 **Branch:** `feat/sparkline-drilldown`  

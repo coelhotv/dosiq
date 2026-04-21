@@ -1,5 +1,5 @@
 # ESPECIFICAÇÃO TÉCNICA DE UX/UI
-## Meus Remédios 2.0 - Redesign da Dashboard
+## Dosiq 2.0 - Redesign da Dashboard
 
 **Versão:** 1.0  
 **Data:** 04/02/2026  

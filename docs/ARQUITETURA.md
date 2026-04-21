@@ -1,4 +1,4 @@
-# 🏗️ Arquitetura do Meus Remédios
+# 🏗️ Arquitetura do Dosiq
 
 **Versão:** 4.0.0
 **Data:** 2026-04-02

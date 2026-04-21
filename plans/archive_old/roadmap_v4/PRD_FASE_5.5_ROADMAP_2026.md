@@ -13,7 +13,7 @@
 
 A Fase 5.5 transforma dados históricos já acumulados pelo app em insights acionáveis e previsões inteligentes — sem nenhuma chamada a API externa. O diferencial competitivo é claro: o app deixa de ser um "lembrador de doses" e passa a ser um "assistente de tratamento" que aprende com o comportamento do usuário.
 
-**Premissa técnica:** O Meus Remédios já acumula dados ricos:
+**Premissa técnica:** O Dosiq já acumula dados ricos:
 - `medication_logs.taken_at` — timestamps reais de doses (quando a dose foi tomada de fato)
 - `protocols.time_schedule` — horários programados pelo usuário
 - `stock_entries.quantity + unit_price` — volume e custo de compras
@@ -285,7 +285,7 @@ UI adaptativa: se dados insuficientes, exibe placeholder com progresso ("Faltam 
 
 | App | Inteligência Preditiva | Canal BR | Voz | Custo Operacional |
 |-----|----------------------|---------|-----|-------------------|
-| **Meus Remédios (v3.5)** | ✅ Client-side, 5 features | WhatsApp + Telegram | Em planejamento | R$ 0 |
+| **Dosiq (v3.5)** | ✅ Client-side, 5 features | WhatsApp + Telegram | Em planejamento | R$ 0 |
 | MyTherapy | ❌ Básico | ❌ Apenas push | ❌ | Freemium pago |
 | Medisafe | ❌ Básico | ❌ Apenas push | ❌ | Freemium pago |
 | Soluções BR existentes | ❌ Nenhuma | ❌ Variável | ❌ | Variável |

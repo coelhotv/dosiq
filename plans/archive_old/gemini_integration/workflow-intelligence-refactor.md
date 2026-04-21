@@ -2323,10 +2323,10 @@ async function migrateLegacyReviews() {
 
 ### Issues de Referência
 
-- [Issue #121](https://github.com/coelhotv/meus-remedios/issues/121) - Schema UUID
-- [Issue #122](https://github.com/coelhotv/meus-remedios/issues/122) - Validação JSON Schema
-- [Issue #123](https://github.com/coelhotv/meus-remedios/issues/123) - Duplicação
-- [PR #120](https://github.com/coelhotv/meus-remedios/pull/120) - Documentação P4.2
+- [Issue #121](https://github.com/coelhotv/dosiq/issues/121) - Schema UUID
+- [Issue #122](https://github.com/coelhotv/dosiq/issues/122) - Validação JSON Schema
+- [Issue #123](https://github.com/coelhotv/dosiq/issues/123) - Duplicação
+- [PR #120](https://github.com/coelhotv/dosiq/pull/120) - Documentação P4.2
 
 ---
 
@@ -2372,5 +2372,5 @@ flowchart TB
 
 ---
 
-*Documento mantido pela equipe de Arquitetura Meus Remédios*  
+*Documento mantido pela equipe de Arquitetura Dosiq*  
 *Para dúvidas, consultar Tech Lead ou abrir issue com label `architect-question`*

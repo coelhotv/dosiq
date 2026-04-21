@@ -2,7 +2,7 @@
 
 ## Sumário Executivo
 
-Este documento detalha as recomendações de melhoria de performance para a aplicação 'Meus Remédios', com base na análise de dois relatórios Lighthouse: um sem throttling e outro simulando uma conexão 4G boa. A comparação reforça a criticidade das otimizações de JavaScript e CSS, especialmente sob condições de rede variadas.
+Este documento detalha as recomendações de melhoria de performance para a aplicação 'Dosiq', com base na análise de dois relatórios Lighthouse: um sem throttling e outro simulando uma conexão 4G boa. A comparação reforça a criticidade das otimizações de JavaScript e CSS, especialmente sob condições de rede variadas.
 
 ## Comparativo de Métricas de Performance (Sem Throttling vs. Com Throttling - 4G)
 
@@ -112,11 +112,11 @@ Este documento detalha as recomendações de melhoria de performance para a apli
 
 ---
 
-Espero que estas recomendações detalhadas ajudem a melhorar significativamente a performance da aplicação 'Meus Remédios' em produção.
+Espero que estas recomendações detalhadas ajudem a melhorar significativamente a performance da aplicação 'Dosiq' em produção.
 
 ## Sumário Executivo
 
-Este documento detalha as recomendações de melhoria de performance para a aplicação 'Meus Remédios', com base na análise do relatório Lighthouse. As principais áreas de foco incluem otimização de recursos críticos, execução de JavaScript, CSS, e experiência do usuário, visando melhorar métricas como FCP, LCP, Speed Index e TTI.
+Este documento detalha as recomendações de melhoria de performance para a aplicação 'Dosiq', com base na análise do relatório Lighthouse. As principais áreas de foco incluem otimização de recursos críticos, execução de JavaScript, CSS, e experiência do usuário, visando melhorar métricas como FCP, LCP, Speed Index e TTI.
 
 ## Métricas de Performance Chave
 
@@ -224,4 +224,4 @@ Este documento detalha as recomendações de melhoria de performance para a apli
 
 --- 
 
-Espero que estas recomendações detalhadas ajudem a melhorar significativamente a performance da aplicação 'Meus Remédios' em produção.
+Espero que estas recomendações detalhadas ajudem a melhorar significativamente a performance da aplicação 'Dosiq' em produção.

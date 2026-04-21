@@ -562,7 +562,7 @@ jobs:
     if: always() && needs.parse.result == 'success' && needs.upload-to-blob.result == 'success'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://meus-remedios.vercel.app'
+      VERCEL_API_URL: 'https://dosiq.vercel.app'
     
     steps:
       - name: Checkout
@@ -1092,7 +1092,7 @@ jobs:
     if: false
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://meus-remedios.vercel.app'
+      VERCEL_API_URL: 'https://dosiq.vercel.app'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -1219,7 +1219,7 @@ jobs:
     if: always() && needs.persist.result == 'success'
     env:
       VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://meus-remedios.vercel.app'
+      VERCEL_API_URL: 'https://dosiq.vercel.app'
 
     steps:
       - name: Checkout

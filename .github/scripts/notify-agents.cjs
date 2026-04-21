@@ -76,7 +76,7 @@ function shouldNotify(reviewData, notifyMode = 'critical') {
  * @param {string} [apiBaseUrl] - URL base da API
  * @returns {Object} Payload formatado
  */
-function formatWebhookPayload(reviewData, prNumber, branch, commitSha, apiBaseUrl = 'https://api.meus-remedios.vercel.app') {
+function formatWebhookPayload(reviewData, prNumber, branch, commitSha, apiBaseUrl = 'https://api.dosiq.vercel.app') {
   const timestamp = new Date().toISOString();
   
   const summary = reviewData.summary || {};

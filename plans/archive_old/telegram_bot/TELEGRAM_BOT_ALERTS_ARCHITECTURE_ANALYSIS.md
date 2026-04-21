@@ -2,7 +2,7 @@
 
 > **Date:** 2026-02-13  
 > **Analyst:** AI Code Assistant  
-> **Project:** Meus Remédios v2.7.0
+> **Project:** Dosiq v2.7.0
 
 ---
 

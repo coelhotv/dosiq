@@ -24,7 +24,7 @@ Os pacotes nativos Expo serão linkados e expostos no root resolver.
 No arquivo `apps/mobile/package.json`, assegurar conformidade do nome e importações em asterisco para pacotes da home (`packages`):
 ```json
 {
-  "name": "@meus-remedios/mobile",
+  "name": "@dosiq/mobile",
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -35,8 +35,8 @@ No arquivo `apps/mobile/package.json`, assegurar conformidade do nome e importa�
     "expo": "~52.0.0",
     "react": "18.3.1",
     "react-native": "0.76.0",
-    "@meus-remedios/core": "*",
-    "@meus-remedios/storage": "*"
+    "@dosiq/core": "*",
+    "@dosiq/storage": "*"
   }
 }
 ```
@@ -46,8 +46,8 @@ Incluir identificadores nativos reais de bundle no arquivo `/apps/mobile/app.jso
 ```json
 {
   "expo": {
-    "name": "Meus Remédios",
-    "slug": "meus-remedios-app",
+    "name": "Dosiq",
+    "slug": "dosiq-app",
     "scheme": "meusremedios",
     "ios": { "bundleIdentifier": "com.coelhotv.meusremedios" },
     "android": { "package": "com.coelhotv.meusremedios" }
@@ -104,10 +104,10 @@ A instalação de um motor velocista é vital:
 ```bash
 cd apps/mobile && npm install react-native-mmkv
 ```
-A Engine central do App (`apps/mobile/App.js` raiz) executará obrigatoriamente na linha 1 a Injection Interface Global contida em `@meus-remedios/storage`:
+A Engine central do App (`apps/mobile/App.js` raiz) executará obrigatoriamente na linha 1 a Injection Interface Global contida em `@dosiq/storage`:
 ```javascript
 import { MMKV } from 'react-native-mmkv';
-import { initializeStorage } from '@meus-remedios/storage'; // Interface vinda da Fase 1
+import { initializeStorage } from '@dosiq/storage'; // Interface vinda da Fase 1
 
 const storage = new MMKV();
 initializeStorage({
@@ -125,7 +125,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 // Validando a Resolução de Symlinks Nativos do Metro Builder!
-import { medicineSchema } from '@meus-remedios/core/schemas'; 
+import { medicineSchema } from '@dosiq/core/schemas'; 
 
 export default function App() {
   const [isValid, setIsValid] = useState(null);

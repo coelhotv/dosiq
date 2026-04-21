@@ -146,8 +146,8 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 1.  **Clone o repositório**:
     ```bash
-    git clone https://github.com/SEU-USUARIO/meu-remedio.git
-    cd meu-remedio
+    git clone https://github.com/SEU-USUARIO/dosiq.git
+    cd dosiq
     ```
 
 2.  **Instale as dependências**:

@@ -931,7 +931,7 @@ P4.2 (Protocolo) é transversal - todos usam
 **Exemplo:**
 1. Faz push de código
 2. Recebe email: "Gemini encontrou 3 issues no seu PR #71"
-3. Clica link para `https://meus-remedios.app/admin/gemini-reviews/71`
+3. Clica link para `https://dosiq.app/admin/gemini-reviews/71`
 4. Vê dashboard com cards coloridos (🔴 🟠 🟢)
 5. Clica no issue e vê explicação em português
 6. Aplica correção sugerida
@@ -1983,7 +1983,7 @@ O Gemini Code Assist é um GitHub App que pode enviar webhooks para URLs configu
 **1. GitHub App Settings:**
 ```
 GitHub Repository → Settings → Webhooks → Add webhook
-Payload URL: https://meus-remedios.vercel.app/api/github-webhook
+Payload URL: https://dosiq.vercel.app/api/github-webhook
 Content type: application/json
 Secret: ${GITHUB_WEBHOOK_SECRET}
 Events: Pull requests, Pull request reviews

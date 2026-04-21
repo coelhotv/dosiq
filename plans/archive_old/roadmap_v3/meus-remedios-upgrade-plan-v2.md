@@ -885,6 +885,6 @@ Meus Remedios will become an indispensable tool for users managing complex medic
 ---
 
 **Document Version**: 2.0  
-**Previous Version**: [meus-remedios-upgrade-plan.md](./meus-remedios-upgrade-plan.md)  
+**Previous Version**: [dosiq-upgrade-plan.md](./dosiq-upgrade-plan.md)  
 **Date**: February 2, 2026  
 **Status**: Ready for Implementation

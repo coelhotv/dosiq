@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-Este documento analisa a configuração atual do Gemini Code Assist no projeto Meus Remédios, implementada no PR #24, para identificar oportunidades de melhoria.
+Este documento analisa a configuração atual do Gemini Code Assist no projeto Dosiq, implementada no PR #24, para identificar oportunidades de melhoria.
 
 ---
 
@@ -297,7 +297,7 @@ Mas o workflow atual não se integra com ele de forma efetiva.
 
 - [Gemini Code Assist Documentation](https://cloud.google.com/gemini/docs/codeassist)
 - [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
-- [PR #24 - Gemini Code Reviewer Integration](https://github.com/coelhotv/meus-remedios/pull/24)
+- [PR #24 - Gemini Code Reviewer Integration](https://github.com/coelhotv/dosiq/pull/24)
 
 ---
 

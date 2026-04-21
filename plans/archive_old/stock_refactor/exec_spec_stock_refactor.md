@@ -1,6 +1,6 @@
 # EXEC_SPEC_STOCK_REFACTOR
 
-**Projeto:** Meus Remédios  
+**Projeto:** Dosiq  
 **Tipo:** Especificação de execução detalhada  
 **Data:** 2026-04-02  
 **Status:** Desenvolvido no PR#443  

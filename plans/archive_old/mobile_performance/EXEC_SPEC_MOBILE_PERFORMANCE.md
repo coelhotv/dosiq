@@ -1,4 +1,4 @@
-# EXEC SPEC — Meus Remédios: Performance Mobile
+# EXEC SPEC — Dosiq: Performance Mobile
 **Versão:** 2.0 | **Data:** 2026-03-12
 **Plano-base:** `plans/PLAN_MOBILE_PERFORMANCE_v2.md`
 **Skill de entrega:** `/deliver-sprint`
@@ -995,7 +995,7 @@ Localizar `index.html` na raiz do projeto. Adicionar preload:
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Meus Remédios</title>
+    <title>Dosiq</title>
     <!-- Preload: instrui browser a buscar o chunk principal antes do parser chegar ao <script> -->
     <link rel="modulepreload" href="/src/main.jsx" />
   </head>
@@ -1063,7 +1063,7 @@ git commit -m "feat(app): code splitting completo — lazy views + jsPDF dinâmi
 Após merge, **iniciar** `docs/standards/MOBILE_PERFORMANCE.md` com as seções 1 e 2:
 
 ```markdown
-# Guia de Performance Mobile — Meus Remédios
+# Guia de Performance Mobile — Dosiq
 
 > Documento vivo. Construído incrementalmente nos sprints M2–M6.
 > Leia ANTES de adicionar qualquer view, componente pesado ou biblioteca.
@@ -2300,7 +2300,7 @@ Execute antes de criar qualquer PR que modifique views, componentes ou configura
 - [ ] Tap em botões: sem flash, resposta imediata
 - [ ] Scroll de listas: sem rubber-band no container pai
 
-**Source:** Sprints M0–M6 — Performance Mobile Meus Remédios
+**Source:** Sprints M0–M6 — Performance Mobile Dosiq
 ```
 
 ---

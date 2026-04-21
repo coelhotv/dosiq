@@ -84,7 +84,7 @@ Este protocolo aplica-se a:
 
 ## 🔌 Endpoints da API
 
-Base URL: `https://api.meus-remedios.app/api`
+Base URL: `https://api.dosiq.app/api`
 
 ### 1. Listar Reviews
 
@@ -378,7 +378,7 @@ Quando uma review é finalizada (status `corrigido`), a resolução descreve o r
 ### 1. Listar Reviews Pendentes (cURL)
 
 ```bash
-curl -X GET "https://api.meus-remedios.app/api/gemini-reviews?status=pendente&priority=alta" \
+curl -X GET "https://api.dosiq.app/api/gemini-reviews?status=pendente&priority=alta" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
   -H "Accept: application/json"
@@ -419,7 +419,7 @@ curl -X GET "https://api.meus-remedios.app/api/gemini-reviews?status=pendente&pr
 ### 2. Obter Review Específica (cURL)
 
 ```bash
-curl -X GET "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
+curl -X GET "https://api.dosiq.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
   -H "Accept: application/json"
@@ -457,7 +457,7 @@ curl -X GET "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41d4
 ### 3. Atualizar Status - Issue Corrigida (cURL)
 
 ```bash
-curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
+curl -X PATCH "https://api.dosiq.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
   -H "Accept: application/json" \
@@ -490,7 +490,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
 ### 4. Descartar Review - Falso Positivo (cURL)
 
 ```bash
-curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
+curl -X PATCH "https://api.dosiq.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
   -H "Accept: application/json" \
@@ -525,7 +525,7 @@ curl -X PATCH "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41
 ```javascript
 // Listar reviews pendentes
 const response = await fetch(
-  'https://api.meus-remedios.app/api/gemini-reviews?status=pendente',
+  'https://api.dosiq.app/api/gemini-reviews?status=pendente',
   {
     method: 'GET',
     headers: {
@@ -615,7 +615,7 @@ Disparado quando uma nova review do Gemini é criada e está disponível para pr
     "priority": "alta",
     "category": "bug",
     "title": "Possível null pointer exception",
-    "url": "https://api.meus-remedios.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000"
+    "url": "https://api.dosiq.app/api/gemini-reviews/550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
@@ -709,5 +709,5 @@ Para sugerir melhorias a este protocolo:
 
 ---
 
-*Documentação mantida pela equipe Meus Remédios*  
+*Documentação mantida pela equipe Dosiq*  
 *Para dúvidas, consulte a equipe de arquitetura*

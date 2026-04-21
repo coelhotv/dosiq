@@ -1,4 +1,4 @@
-# 📊 Análise da Aplicação Meus Remédios e Roadmap de Evolução
+# 📊 Análise da Aplicação Dosiq e Roadmap de Evolução
 
 **Data:** 03 de Fevereiro de 2026  
 **Versão Analisada:** 2.2.1  
@@ -21,7 +21,7 @@
 
 ## 🎯 Resumo Executivo
 
-O **Meus Remédios** é uma aplicação web brasileira para gerenciamento de medicamentos, protocolos de tratamento e estoque. A aplicação se destaca por:
+O **Dosiq** é uma aplicação web brasileira para gerenciamento de medicamentos, protocolos de tratamento e estoque. A aplicação se destaca por:
 
 - **Público-alvo:** Pessoas que tomam medicamentos de uso contínuo, especialmente protocolos complexos com titulação de dose
 - **Diferencial:** Integração nativa com Telegram para lembretes e registro de doses
@@ -94,13 +94,13 @@ O **Meus Remédios** é uma aplicação web brasileira para gerenciamento de med
 
 ### Value Proposition Statement
 
-> *Para pessoas que precisam tomar medicamentos de uso contínuo, especialmente protocolos complexos com titulação, o Meus Remédios é uma solução gratuita que simplifica o gerenciamento de doses, estoque e adesão através de uma interface web intuitiva e lembretes inteligentes via Telegram, diferentemente de apps genéricos de lembretes que não entendem a complexidade de protocolos médicos.*
+> *Para pessoas que precisam tomar medicamentos de uso contínuo, especialmente protocolos complexos com titulação, o Dosiq é uma solução gratuita que simplifica o gerenciamento de doses, estoque e adesão através de uma interface web intuitiva e lembretes inteligentes via Telegram, diferentemente de apps genéricos de lembretes que não entendem a complexidade de protocolos médicos.*
 
 ### Pilares do Valor
 
 ```mermaid
 mindmap
-  root{{Meus Remédios}}
+  root{{Dosiq}}
     Simplicidade
       Interface em português
       Custo zero
@@ -208,7 +208,7 @@ mindmap
 
 ```mermaid
 gantt
-    title Roadmap Meus Remédios - Fev 2026
+    title Roadmap Dosiq - Fev 2026
     dateFormat  YYYY-MM-DD
     
     section Qualidade
@@ -836,7 +836,7 @@ Para manter o **custo zero** que é um diferencial da aplicação:
 
 ## 📝 Conclusão
 
-O **Meus Remédios** é uma aplicação madura com forte diferenciação no mercado brasileiro. A proposta de valor é sólida (7.4/10) mas pode evoluir para 9/10 com:
+O **Dosiq** é uma aplicação madura com forte diferenciação no mercado brasileiro. A proposta de valor é sólida (7.4/10) mas pode evoluir para 9/10 com:
 
 1. **Qualidade:** Mais testes e validação robusta
 2. **UX:** Onboarding e acessibilidade

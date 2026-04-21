@@ -1,4 +1,4 @@
-# Guia de Testing - Meus Remédios
+# Guia de Testing - Dosiq
 
 > Guia prático para desenvolvedores - Como executar testes de forma eficiente no projeto
 

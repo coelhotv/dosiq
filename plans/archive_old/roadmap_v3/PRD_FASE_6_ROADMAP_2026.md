@@ -405,7 +405,7 @@ Alternativa mais simples ao Modo Cuidador: o usuário escolhe alguém (familiar,
 
 **Critérios de Aceitação:**
 - [ ] Usuário cadastra parceiro pelo número de telefone
-- [ ] Parceiro não precisa ter conta no Meus Remédios
+- [ ] Parceiro não precisa ter conta no Dosiq
 - [ ] Resumo semanal enviado toda segunda às 9h pelo canal configurado
 - [ ] Usuário pode desativar a qualquer momento
 - [ ] Parceiro pode responder "PARAR" para sair da lista

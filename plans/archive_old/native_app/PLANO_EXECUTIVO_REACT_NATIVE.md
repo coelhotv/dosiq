@@ -1,8 +1,8 @@
-# Plano Executivo de Evolução: Meus Remédios PWA → React Native + Web PWA (Dual Stack)
+# Plano Executivo de Evolução: Dosiq PWA → React Native + Web PWA (Dual Stack)
 
 > **SUPERSEDIDO EM 2026-03-29:** Antes de usar este documento, ler `plans/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`. Este arquivo permanece como contexto histórico e não deve ser seguido isoladamente.
 
-> **Contexto:** Este plano define o roteiro acionável para escalar o **Meus Remédios** habilitando o ecossistema mobile nativo (App Store, Notificações Apple/Google, Biometria, HealthKit) de forma **adicional e simultânea** à PWA Web/Desktop atual.
+> **Contexto:** Este plano define o roteiro acionável para escalar o **Dosiq** habilitando o ecossistema mobile nativo (App Store, Notificações Apple/Google, Biometria, HealthKit) de forma **adicional e simultânea** à PWA Web/Desktop atual.
 > **Diretrizes Principais:** Arquitetura via **Monorepo (Turborepo)** e **Desacoplamento de UI** (O Web mantém seu desenvolvimento PWA intocado, enquanto o Native constrói do zero com primitivos nativos).
 > **Audiência:** Este plano foi elaborado para orientar os *Sprints* de orquestradores e Agentes de IA Codificadores encarregados da execução.
 
@@ -13,7 +13,7 @@
 Para garantir consistência vital do negócio (Regras Zod, chamadas ao Supabase, cálculos médicos) através de duas aplicações visuais totalmente distintas, a única arquitetura escalável é transformando a base de código num Monorepo gerido via **Turborepo**.
 
 ```ascii
-meus-remedios/ (raiz Turborepo)
+dosiq/ (raiz Turborepo)
 ├── apps/
 │   ├── web/                # O código fonte ATUAL da PWA (~40% esforço futuro)
 │   │                       # React 19 + Vite 7 + CSS Modules

@@ -385,7 +385,7 @@ Leitura de `import.meta.env` deve ficar no app web, por exemplo:
 
 ```js
 // src/shared/platform/config/publicAppConfig.js
-import { createPublicAppConfig } from '@meus-remedios/config'
+import { createPublicAppConfig } from '@dosiq/config'
 
 export const publicAppConfig = createPublicAppConfig({
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
@@ -534,7 +534,7 @@ Fazer a web usar os novos contratos antes do mobile existir.
 ### `webStorageAdapter.js`
 
 ```js
-import { createWebStorageAdapter } from '@meus-remedios/storage'
+import { createWebStorageAdapter } from '@dosiq/storage'
 
 export const webStorageAdapter = createWebStorageAdapter(window.localStorage)
 ```

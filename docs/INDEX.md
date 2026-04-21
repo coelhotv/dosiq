@@ -1,4 +1,4 @@
-# Documentação - Meus Remédios
+# Documentação - Dosiq
 
 **Versão:** 4.0.0  
 **Última Atualização:** 2026-04-02  

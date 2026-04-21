@@ -9,7 +9,7 @@
 
 ## Summary
 
-This report documents six critical improvements and bug fixes implemented after Fase 4 completion. These enhancements address user experience gaps, fix production issues, and improve the overall reliability of the Meus Remédios application.
+This report documents six critical improvements and bug fixes implemented after Fase 4 completion. These enhancements address user experience gaps, fix production issues, and improve the overall reliability of the Dosiq application.
 
 **Key Achievements:**
 - Fixed Telegram bot scheduler silent failures

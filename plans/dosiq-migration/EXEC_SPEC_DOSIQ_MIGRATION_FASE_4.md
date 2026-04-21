@@ -132,7 +132,7 @@ grep -rn "meus.remedios\|meusremedios\|Meus Rem" --include="*.js" api/
 
 ```js
 // .github/scripts/__tests__/check-resolutions.e2e.test.js linha 25:
-const API_BASE_URL = 'https://meus-remedios.vercel.app/api/gemini-reviews';
+const API_BASE_URL = 'https://dosiq.vercel.app/api/gemini-reviews';
 
 // Vários arquivos de teste contêm:
 html_url: 'https://github.com/coelhotv/meus-remedios/pull/100#...'

@@ -598,7 +598,7 @@ export default async function handler(req, res) {
 
 ```bash
 # UptimeRobot / Pingdom
-curl https://meus-remedios.vercel.app/api/health/notifications
+curl https://dosiq.vercel.app/api/health/notifications
 
 # Response when healthy
 {
@@ -1141,7 +1141,7 @@ export default async function handler(req, res) {
 ```
 
 **Configure on cron-job.org:**
-- URL: `https://meus-remedios.vercel.app/api/alerts/check`
+- URL: `https://dosiq.vercel.app/api/alerts/check`
 - Schedule: Every 5 minutes
 - Method: POST
 - Headers: `Authorization: Bearer ${CRON_SECRET}`

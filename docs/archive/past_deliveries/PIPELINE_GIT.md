@@ -6,7 +6,7 @@
 
 ## 📋 Visão Geral
 
-Este documento descreve a estrutura Git criada para a Onda 1 do projeto Meus Remédios, seguindo as diretrizes do [COMMIT_STRATEGY.md](../COMMIT_STRATEGY.md).
+Este documento descreve a estrutura Git criada para a Onda 1 do projeto Dosiq, seguindo as diretrizes do [COMMIT_STRATEGY.md](../COMMIT_STRATEGY.md).
 
 ---
 
@@ -461,4 +461,4 @@ Seguir [Conventional Commits](https://www.conventionalcommits.org/):
 ---
 
 *Documento gerado em: 2026-02-03*
-*Onda 1 - Meus Remédios*
+*Onda 1 - Dosiq*
