@@ -1,10 +1,10 @@
 // dashboardService.js — serviço thin para dados do dashboard mobile
 // ADR-029: thin local service — chama Supabase directamente via nativeSupabaseClient
-// Schemas de domínio via @meus-remedios/core (nunca duplicar lógica de negócio)
+// Schemas de domínio via @dosiq/core (nunca duplicar lógica de negócio)
 
 import { z } from 'zod'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { parseLocalDate } from '@meus-remedios/core'
+import { parseLocalDate } from '@dosiq/core'
 
 /**
  * Busca protocolos activos do utilizador.

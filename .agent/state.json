@@ -18,30 +18,33 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dashboard_protocol_filtering",
-    "started_at": "2026-04-20T20:45:00Z",
-    "completed_at": "2026-04-21T05:10:00Z",
+    "id": "session_2026W17_dosiq_migration_fase1",
+    "started_at": "2026-04-21T06:53:00Z",
+    "completed_at": "2026-04-21T07:05:00Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Filtro de Protocolos por Vigência e Resiliência de Cache",
+    "goal": "Dosiq Migration Fase 1: Monorepo, NPM Packages & Tooling",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "Unificação da lógica de adesão no @meus-remedios/core",
-      "Filtragem de start_date/end_date no Supabase (Web e Mobile)",
-      "Implementação de resiliência de cache no frontend (defensive filtering)",
-      "Correção de fuso horário brasileiro (GMT-3) em todas as camadas",
-      "Validação global com validate:agent e lint",
-      "Journal atualizado com ADR sobre Cache Resilience",
-      "PR #482 mergeado e branch deletada"
+      "package.json raiz: name=dosiq, scripts com @dosiq/web",
+      "7 packages internos renomeados para @dosiq/*",
+      "3 imports funcionais @meus-remedios/* corrigidos",
+      "Comentários JSDoc em packages/* atualizados",
+      "Cache key meus_remedios_query_cache → dosiq_query_cache",
+      "Alias vite.config.js @meus-remedios/core → @dosiq/core",
+      "Comentário metro.config.js atualizado",
+      "npm install sem erros + package-lock.json regenerado",
+      "npm run lint passando",
+      "npm run validate:agent passando"
     ],
     "active_wave": {
-      "name": "Fase 8: Especulativo (Pós-MVP) - Estabilidade",
-      "phase": "h8-stabilization",
-      "sprint": "8.7",
-      "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md",
-      "status": "completed",
-      "started_at": "2026-04-20T20:45:00Z",
-      "notes": "Estabilização concluída. Protocolos agora respeitam vigência e são resilientes a cache obsoleto (Merge PR #482)."
+      "name": "Dosiq Rebranding Migration",
+      "phase": "dosiq-migration-fase-1",
+      "sprint": "refactor-2026-W17",
+      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_1.md",
+      "status": "pr_created",
+      "started_at": "2026-04-21T06:53:00Z",
+      "notes": "Fase 1: refatoração de todos os package.json, imports e aliases do monorepo."
     }
   },
   "memory": {
@@ -51,7 +54,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],

@@ -4,7 +4,7 @@
 // R-121: validação Zod antes de qualquer mutação
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { logSchema } from '@meus-remedios/core'
+import { logSchema } from '@dosiq/core'
 import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 

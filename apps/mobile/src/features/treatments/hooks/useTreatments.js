@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getActiveTreatments } from '../services/treatmentsService'
 
-const TREATMENTS_CACHE_KEY = '@meus-remedios/treatments-snapshot'
+const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
 
 /**
  * @typedef {{ id: string, name: string, frequency: string, time_schedule: string[], dosage_per_intake: number, titration_status: string, medicine: { name: string, type: string } }} Treatment

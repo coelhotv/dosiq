@@ -1,5 +1,5 @@
 /**
- * @meus-remedios/core — Codigo Puro Compartilhado
+ * @dosiq/core — Codigo Puro Compartilhado
  *
  * Fase 2: Estrutura de exportacao preparada.
  * Schemas e utils serao migrados em sprints 2.2-2.3.

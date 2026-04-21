@@ -9,7 +9,7 @@
  * - Web (CSS custom properties)
  * - Mobile (React Native typography / text styles)
  *
- * @module @meus-remedios/design-tokens/typography
+ * @module @dosiq/design-tokens/typography
  */
 
 // ============================================

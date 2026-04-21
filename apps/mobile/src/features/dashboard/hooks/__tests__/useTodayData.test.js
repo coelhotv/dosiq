@@ -49,7 +49,7 @@ describe('useTodayData', () => {
 
     // Verificar se salvou no cache
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      '@meus-remedios/today-snapshot',
+      '@dosiq/today-snapshot',
       expect.stringContaining('"localDay"')
     );
   });

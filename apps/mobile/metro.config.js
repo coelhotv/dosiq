@@ -1,5 +1,5 @@
 // metro.config.js — resolve workspaces do monorepo
-// Sem esta configuração, @meus-remedios/* não é encontrado pelo bundler
+// Sem esta configuração, @dosiq/* não é encontrado pelo bundler
 
 const { getDefaultConfig } = require('expo/metro-config')
 const path = require('path')

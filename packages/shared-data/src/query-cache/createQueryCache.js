@@ -13,17 +13,17 @@
  * @module createQueryCache
  */
 
-import { setJSON, getJSON } from '@meus-remedios/storage'
+import { setJSON, getJSON } from '@dosiq/storage'
 
 /**
  * Cria uma instancia de query cache com dependencias injetadas.
  *
  * @param {Object} options
- * @param {import('@meus-remedios/storage').StorageAdapter} options.storage - Adapter de storage async
+ * @param {import('@dosiq/storage').StorageAdapter} options.storage - Adapter de storage async
  * @param {Object} [options.logger] - Logger opcional com metodo log/warn/error
  * @param {number} [options.staleTime=30000] - Tempo (ms) antes de um entry ficar stale
  * @param {number} [options.maxEntries=200] - Maximo de entradas no cache (LRU eviction)
- * @param {string} [options.persistKey='meus_remedios_query_cache'] - Chave de persistencia
+ * @param {string} [options.persistKey='dosiq_query_cache'] - Chave de persistencia
  * @returns {QueryCache} Instancia do cache
  */
 export function createQueryCache({
@@ -31,7 +31,7 @@ export function createQueryCache({
   logger = null,
   staleTime = 30_000,
   maxEntries = 200,
-  persistKey = 'meus_remedios_query_cache',
+  persistKey = 'dosiq_query_cache',
 } = {}) {
   if (!storage) throw new Error('createQueryCache: storage adapter is required')
 
