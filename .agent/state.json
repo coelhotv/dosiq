@@ -20,9 +20,9 @@
   "session": {
     "id": "session_2026W17_dosiq_migration_fase1",
     "started_at": "2026-04-21T06:53:00Z",
-    "completed_at": null,
+    "completed_at": "2026-04-21T07:05:00Z",
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "goal": "Dosiq Migration Fase 1: Monorepo, NPM Packages & Tooling",
     "goal_type": "refactor",
     "acceptance_criteria": [
@@ -42,7 +42,7 @@
       "phase": "dosiq-migration-fase-1",
       "sprint": "refactor-2026-W17",
       "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_1.md",
-      "status": "in_progress",
+      "status": "pr_created",
       "started_at": "2026-04-21T06:53:00Z",
       "notes": "Fase 1: refatoração de todos os package.json, imports e aliases do monorepo."
     }
@@ -54,7 +54,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
