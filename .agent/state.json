@@ -18,33 +18,29 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_migration_fase1",
-    "started_at": "2026-04-21T06:53:00Z",
-    "completed_at": "2026-04-21T07:05:00Z",
+    "id": "session_2026W17_dosiq_migration_fase2",
+    "started_at": "2026-04-21T07:23:39Z",
+    "completed_at": "2026-04-21T07:25:16Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Dosiq Migration Fase 1: Monorepo, NPM Packages & Tooling",
+    "goal": "Dosiq Migration Fase 2: App Hibrido Mobile & Expo",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "package.json raiz: name=dosiq, scripts com @dosiq/web",
-      "7 packages internos renomeados para @dosiq/*",
-      "3 imports funcionais @meus-remedios/* corrigidos",
-      "Comentários JSDoc em packages/* atualizados",
-      "Cache key meus_remedios_query_cache → dosiq_query_cache",
-      "Alias vite.config.js @meus-remedios/core → @dosiq/core",
-      "Comentário metro.config.js atualizado",
-      "npm install sem erros + package-lock.json regenerado",
-      "npm run lint passando",
-      "npm run validate:agent passando"
+      "app.config.js com nomes/slug/bundle ids Dosiq por variante",
+      "scheme alterado para dosiq",
+      "EAS projectId preservado",
+      "ocorrencias legadas removidas do escopo mobile",
+      "expo config publico sem erro",
+      "lint e validacoes passando"
     ],
     "active_wave": {
       "name": "Dosiq Rebranding Migration",
-      "phase": "dosiq-migration-fase-1",
+      "phase": "dosiq-migration-fase-2",
       "sprint": "refactor-2026-W17",
-      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_1.md",
-      "status": "pr_created",
-      "started_at": "2026-04-21T06:53:00Z",
-      "notes": "Fase 1: refatoração de todos os package.json, imports e aliases do monorepo."
+      "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_2.md",
+      "status": "completed",
+      "started_at": "2026-04-21T07:23:39Z",
+      "notes": "Fase 2: rebranding de identidade mobile Expo (name/slug/scheme/bundle IDs), copy e scripts."
     }
   },
   "memory": {
@@ -54,12 +50,16 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
-      "knowledge": ["K-086"],
-      "decisions": ["ADR-033"],
+      "knowledge": [
+        "K-086"
+      ],
+      "decisions": [
+        "ADR-033"
+      ],
       "timestamp": "2026-04-20T21:23:00Z"
     }
   },
@@ -68,8 +68,8 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-20T20:45:00Z",
-    "relevant_rules_loaded_at": "2026-04-20T20:45:00Z",
+    "index_loaded_at": "2026-04-21T07:25:16Z",
+    "relevant_rules_loaded_at": "2026-04-21T07:24:26Z",
     "h5_1_sprint_validated": true,
     "h8_7_completed_at": "2026-04-20T21:23:00Z"
   },
