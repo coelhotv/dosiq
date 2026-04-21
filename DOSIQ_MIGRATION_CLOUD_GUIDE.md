@@ -348,21 +348,57 @@ eas submit --platform ios --latest
 
 ### 6.2 Atualizar Remote Local
 
-O projeto usa dois diretórios distintos — atualizar o remote em **ambos**:
+O projeto usa um bare repo local em iCloud como `.git` físico, mais dois working trees. A ordem de operações importa:
+
+#### Passo 1 — Renomear o bare repo
 
 ```bash
-# 1. Repositório iCloud (fonte canônica / sync)
-cd /Users/coelhotv/git-icloud/meus-remedios   # ou dosiq, se já renomeado
-git remote set-url origin git@github.com:coelhotv/dosiq.git
-git remote -v   # confirmar
+mv "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git_server/meus-remedios.git" \
+   "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git_server/dosiq.git"
+```
 
-# 2. Bridge local fora do iCloud (builds e desenvolvimento)
-cd /Users/coelhotv/local-git/meus-remedios   # ajustar se o nome da pasta mudou
+#### Passo 2 — Atualizar o remote GitHub dentro do bare repo
+
+```bash
+cd "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git_server/dosiq.git"
 git remote set-url origin git@github.com:coelhotv/dosiq.git
 git remote -v   # confirmar
 ```
 
-> O GitHub redireciona o remote antigo automaticamente, então pulls e pushes continuam funcionando mesmo sem atualizar — mas manter o remote correto evita confusão e avisos do git.
+#### Passo 3 — Atualizar o ponteiro `.git` em cada working tree
+
+Cada working directory tem um arquivo `.git` (não pasta) com o caminho absoluto para o bare repo. Verificar e corrigir em ambos:
+
+```bash
+# iCloud working tree
+cat "/Users/coelhotv/git-icloud/meus-remedios/.git"
+# Deve conter algo como: gitdir: /Users/coelhotv/Library/Mobile Documents/.../meus-remedios.git
+
+# Atualizar para o novo caminho
+echo "gitdir: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git_server/dosiq.git" \
+  > "/Users/coelhotv/git-icloud/meus-remedios/.git"
+
+# Bridge local working tree
+cat "/Users/coelhotv/local-git/meus-remedios/.git"
+# Mesmo processo:
+echo "gitdir: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git_server/dosiq.git" \
+  > "/Users/coelhotv/local-git/meus-remedios/.git"
+```
+
+#### Passo 4 — Verificar que tudo funciona
+
+```bash
+# Testar em cada working tree
+cd /Users/coelhotv/git-icloud/meus-remedios
+git status        # deve funcionar normalmente
+git remote -v     # deve mostrar github.com/coelhotv/dosiq
+
+cd /Users/coelhotv/local-git/meus-remedios
+git status
+git remote -v
+```
+
+> **Sobre o rename das pastas de trabalho (`meus-remedios` → `dosiq`):** não é obrigatório — git não depende do nome da pasta. Renomeie se quiser consistência visual, mas atualize aliases de terminal e o workspace do VSCode depois.
 
 ### 6.3 Atualizar Secrets do GitHub Actions (se houver CI/CD)
 
