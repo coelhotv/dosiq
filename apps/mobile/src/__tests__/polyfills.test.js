@@ -58,8 +58,8 @@ describe('Hermes Polyfills Implementation', () => {
     });
 
     it('should correctly parsing and return hostname', () => {
-      const url = new URL('https://api.meus-remedios.com/v1');
-      expect(url.hostname).toBe('api.meus-remedios.com');
+      const url = new URL('https://api.dosiq.com/v1');
+      expect(url.hostname).toBe('api.dosiq.com');
     });
 
     it('should handle URL with port in toString() correctly', () => {
