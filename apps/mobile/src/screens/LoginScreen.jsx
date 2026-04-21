@@ -56,7 +56,7 @@ export default function LoginScreen({ navigation }) {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.title}>Meus Remédios</Text>
+        <Text style={styles.title}>Dosiq</Text>
         <Text style={styles.subtitle}>Entre na sua conta</Text>
 
         <TextInput

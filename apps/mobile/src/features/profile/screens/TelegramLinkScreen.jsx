@@ -27,7 +27,7 @@ export default function TelegramLinkScreen({ navigation }) {
   }
 
   const handleOpenBot = async () => {
-    const url = `https://t.me/meus_remedios_bot?start=${token || ''}`
+    const url = `https://t.me/dosiq_bot?start=${token || ''}`
     const supported = await Linking.canOpenURL(url)
     if (supported) {
       await Linking.openURL(url)
