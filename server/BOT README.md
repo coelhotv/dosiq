@@ -1,4 +1,4 @@
-# Telegram Bot - Meus Remédios
+# Telegram Bot - Dosiq
 
 ## Architecture
 

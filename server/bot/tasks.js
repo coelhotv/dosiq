@@ -1621,7 +1621,7 @@ async function checkUserPrescriptionAlerts(bot, userId, chatId) {
           [
             { 
               text: '📋 Ver Protocolo', 
-              url: `https://meusremedios.app/#/protocolos/${protocol.id}` 
+              url: `https://dosiq.vercel.app/#/protocolos/${protocol.id}` 
             }
           ]
         ]

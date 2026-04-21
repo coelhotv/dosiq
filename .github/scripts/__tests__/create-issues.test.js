@@ -31,7 +31,7 @@ const mockReviewData = {
       suggestion: 'Consolidar funções em um único módulo',
       auto_fixable: false,
       category: 'refactoring',
-      url: 'https://github.com/coelhotv/meus-remedios/pull/100#discussion_r1'
+      url: 'https://github.com/coelhotv/dosiq/pull/100#discussion_r1'
     },
     {
       id: 2,
@@ -42,7 +42,7 @@ const mockReviewData = {
       suggestion: 'Extrair funções menores com responsabilidade única',
       auto_fixable: false,
       category: 'logic',
-      url: 'https://github.com/coelhotv/meus-remedios/pull/100#discussion_r2'
+      url: 'https://github.com/coelhotv/dosiq/pull/100#discussion_r2'
     },
     {
       id: 3,
@@ -53,7 +53,7 @@ const mockReviewData = {
       suggestion: 'Add semicolon',
       auto_fixable: true, // Este deve ser ignorado
       category: 'style',
-      url: 'https://github.com/coelhotv/meus-remedios/pull/100#discussion_r3'
+      url: 'https://github.com/coelhotv/dosiq/pull/100#discussion_r3'
     },
     {
       id: 4,
@@ -64,7 +64,7 @@ const mockReviewData = {
       suggestion: 'Adicionar validação Zod',
       auto_fixable: false,
       category: 'security',
-      url: 'https://github.com/coelhotv/meus-remedios/pull/100#discussion_r4'
+      url: 'https://github.com/coelhotv/dosiq/pull/100#discussion_r4'
     }
   ]
 };
@@ -73,7 +73,7 @@ const mockReviewData = {
 const mockContext = {
   repo: {
     owner: 'coelhotv',
-    repo: 'meus-remedios'
+    repo: 'dosiq'
   }
 };
 

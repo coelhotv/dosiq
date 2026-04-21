@@ -22,7 +22,7 @@ const __dirname = dirname(__filename);
 // CONSTANTES
 // ==========================================
 
-const API_BASE_URL = 'https://meus-remedios.vercel.app/api/gemini-reviews';
+const API_BASE_URL = 'https://dosiq.vercel.app/api/gemini-reviews';
 const UPDATE_STATUS_ENDPOINT = `${API_BASE_URL}/update-status`;
 
 // UUIDs válidos para testes (formato UUID v4)

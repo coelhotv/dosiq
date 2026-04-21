@@ -18,7 +18,7 @@ export async function handleStart(bot, msg) {
       } else {
         await bot.sendMessage(chatId, 
           'Olá! 👋 Para conectar o bot à sua conta:\n\n' +
-          '1. Abra o app Meus Remédios\n' +
+          '1. Abra o app Dosiq\n' +
           '2. Vá em **Configurações > Integração Telegram**\n' +
           '3. Clique em "Gerar Código"\n' +
           '4. Envie o código aqui: `/start SEU_CODIGO`',

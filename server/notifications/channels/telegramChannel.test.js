@@ -7,7 +7,7 @@ import { sendTelegramNotification } from './telegramChannel.js'
 const makePayload = () => ({
   title: 'Hora do remédio',
   body: 'Tome Losartana agora',
-  deeplink: 'meusremedios://today',
+  deeplink: 'dosiq://today',
   metadata: {},
 })
 
