@@ -1,6 +1,6 @@
 # 🗄️ Esquema do Banco de Dados
 
-O banco de dados do **Meus Remédios** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
+O banco de dados do **Dosiq** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
 
 > **Última atualização**: 2026-04-19
 > **Fonte**: exportação real do schema atual do Supabase (DDL colado manualmente)
@@ -463,10 +463,10 @@ Backup histórico da tabela `gemini_reviews`, criado em **2026-02-22**.
 
 Ao alterar esse schema, revisar em conjunto:
 
-- [`src/schemas`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/schemas)
-- [`src/features`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/features)
-- [`src/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/services)
-- [`src/shared/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/meus-remedios/src/shared/services)
+- [`src/schemas`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/schemas)
+- [`src/features`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/features)
+- [`src/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/services)
+- [`src/shared/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/shared/services)
 
 Regras DEVFLOW mais relevantes para mudanças de schema:
 

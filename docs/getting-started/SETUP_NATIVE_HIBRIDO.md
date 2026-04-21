@@ -683,9 +683,9 @@ A partir de **2026-04-14**, os identificadores do projeto sao definitivos e ofic
 
 | Ambiente | Bundle ID / Android Package | Nome do App |
 |----------|-----------------------------|-------------|
-| **Produção** | `com.coelhotv.meusremedios` | Meus Remédios |
-| **Preview** | `com.coelhotv.meusremedios.preview` | Meus Remédios Preview |
-| **Development** | `com.coelhotv.meusremedios.dev` | Meus Remédios Dev |
+| **Produção** | `com.coelhotv.meusremedios` | Dosiq |
+| **Preview** | `com.coelhotv.meusremedios.preview` | Dosiq Preview |
+| **Development** | `com.coelhotv.meusremedios.dev` | Dosiq Dev |
 
 ### Configuração no `app.config.js`
 

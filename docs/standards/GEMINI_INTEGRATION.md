@@ -7,7 +7,7 @@
 
 ## 📋 Visão Geral
 
-O projeto **Meus Remédios** utiliza o [Gemini Code Assist](https://cloud.google.com/gemini/docs/codeassist) para revisão automática de código em Pull Requests. Esta integração foi projetada para:
+O projeto **Dosiq** utiliza o [Gemini Code Assist](https://cloud.google.com/gemini/docs/codeassist) para revisão automática de código em Pull Requests. Esta integração foi projetada para:
 
 - **Automatizar** a revisão de código com feedback em tempo real
 - **Estruturar** os comentários do Gemini para consumo por agentes de IA

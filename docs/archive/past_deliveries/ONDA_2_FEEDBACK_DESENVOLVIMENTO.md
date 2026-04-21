@@ -528,7 +528,7 @@ alerts.js        scheduler.js
 
 ### 8.3 Releases
 
-- **Tag:** [`v2.4.0`](https://github.com/coelhotv/meus-remedios/releases/tag/v2.4.0)
+- **Tag:** [`v2.4.0`](https://github.com/coelhotv/dosiq/releases/tag/v2.4.0)
 - **Data:** 04/02/2026
 - **Mensagem:** "Onda 2 - Fases A e B: Engajamento e Adesão"
 
@@ -709,8 +709,8 @@ Usar **Props drilling** para 2-3 níveis de profundidade.
 
 ### Links Externos
 
-- **Repositório:** https://github.com/coelhotv/meus-remedios
-- **Release v2.4.0:** https://github.com/coelhotv/meus-remedios/releases/tag/v2.4.0
+- **Repositório:** https://github.com/coelhotv/dosiq
+- **Release v2.4.0:** https://github.com/coelhotv/dosiq/releases/tag/v2.4.0
 
 ---
 

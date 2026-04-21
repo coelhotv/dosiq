@@ -1,4 +1,4 @@
-# 🔧 Refatoração do Bot Telegram - Meus Remédios
+# 🔧 Refatoração do Bot Telegram - Dosiq
 
 ## 📋 Resumo da Análise
 

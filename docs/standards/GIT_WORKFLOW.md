@@ -1,4 +1,4 @@
-# Git Workflow - Meus Remédios
+# Git Workflow - Dosiq
 
 **Versão:** 1.0  
 **Última Atualização:** 2026-02-17  
@@ -138,7 +138,7 @@ git push origin feature/wave-X/nome-descritivo
 #### Using GitHub CLI
 
 ```bash
-gh pr create --repo coelhotv/meus-remedios \
+gh pr create --repo coelhotv/dosiq \
              --head feature/wave-X/nome-descritivo \
              --title "feat: descrição resumida" \
              --body-file docs/standards/PULL_REQUEST_TEMPLATE.md
@@ -146,7 +146,7 @@ gh pr create --repo coelhotv/meus-remedios \
 
 #### Using GitHub Web
 
-1. Go to: https://github.com/coelhotv/meus-remedios/pulls
+1. Go to: https://github.com/coelhotv/dosiq/pulls
 2. Click "New Pull Request"
 3. Select: `main` ← `feature/wave-X/nome-descritivo`
 4. **USE TEMPLATE:** Copy from [`docs/standards/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)

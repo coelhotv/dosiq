@@ -1,4 +1,4 @@
-# 🎉 Meus Remédios - Início Rápido
+# 🎉 Dosiq - Início Rápido
 
 ## ✅ O que já está pronto
 

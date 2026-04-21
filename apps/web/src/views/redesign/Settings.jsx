@@ -397,7 +397,7 @@ export default function Settings({ onNavigate }) {
 
       {/* ═══ FOOTER ═══ */}
       <footer className="sr-footer">
-        MEUS REMÉDIOS V{import.meta.env.VITE_APP_VERSION || '4.0.0'} • {currentYear}
+        Dosiq V{import.meta.env.VITE_APP_VERSION || '4.0.0'} • {currentYear}
       </footer>
     </div>
   )

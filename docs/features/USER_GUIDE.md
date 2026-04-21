@@ -1,6 +1,6 @@
 # 📖 Guia do Usuário
 
-Bem-vindo ao **Meus Remédios**! Este guia explica como utilizar as principais funcionalidades do aplicativo.
+Bem-vindo ao **Dosiq**! Este guia explica como utilizar as principais funcionalidades do aplicativo.
 
 ## 🔑 1. Autenticação e Perfil
 

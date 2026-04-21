@@ -1,4 +1,4 @@
-# Arquitetura CSS - Meus Remédios
+# Arquitetura CSS - Dosiq
 
 **Versão:** 1.1
 **Data:** 2026-02-10
@@ -8,7 +8,7 @@
 
 ## Visão Geral
 
-Este documento descreve a arquitetura CSS do projeto Meus Remédios, incluindo tokens de design, estrutura de arquivos, convenções de nomenclatura e estratégias de implementação.
+Este documento descreve a arquitetura CSS do projeto Dosiq, incluindo tokens de design, estrutura de arquivos, convenções de nomenclatura e estratégias de implementação.
 
 ## Estrutura de Arquivos
 src/

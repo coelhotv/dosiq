@@ -1,6 +1,6 @@
 # Especificação Técnica: Sparkline Drill-Down
 
-**Projeto:** Meus Remédios - Sistema de Gestão de Medicamentos  
+**Projeto:** Dosiq - Sistema de Gestão de Medicamentos  
 **Versão:** 1.0.0  
 **Data:** 2026-02-11  
 **Status:** Pronto para Implementação

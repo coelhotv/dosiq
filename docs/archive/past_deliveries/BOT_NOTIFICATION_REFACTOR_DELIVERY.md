@@ -9,7 +9,7 @@
 
 ## 📋 Resumo Executivo
 
-Implementação completa do sistema resiliente de notificações do bot Telegram do Meus Remédios. A nova arquitetura elimina falhas silenciosas, adiciona retry inteligente, e fornece observabilidade completa.
+Implementação completa do sistema resiliente de notificações do bot Telegram do Dosiq. A nova arquitetura elimina falhas silenciosas, adiciona retry inteligente, e fornece observabilidade completa.
 
 ### Principais Melhorias
 

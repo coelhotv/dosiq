@@ -1,4 +1,4 @@
-# Guia de Performance Mobile — Meus Remédios
+# Guia de Performance Mobile — Dosiq
 
 > Documento vivo. Construído incrementalmente nos sprints M0–M8, P1–P4, D0–D3.
 > **Última atualização:** 2026-03-20 — seções 3 (CSS/Assets) e 4 (HTTP/2, Auth Cache, Barrel Exports) adicionadas.

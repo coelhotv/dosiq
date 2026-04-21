@@ -2,7 +2,7 @@
 ## Upgrade Plan Execution Report
 
 **Date**: February 2, 2026  
-**Repository**: coelhotv/meus-remedios  
+**Repository**: coelhotv/dosiq  
 
 ---
 
@@ -20,7 +20,7 @@ Successfully implemented all 4 phases of the comprehensive upgrade plan, address
 
 ## Phase 1: Critical Bug Fixes ✅
 
-**PR**: [#1](https://github.com/coelhotv/meus-remedios/pull/1) - MERGED  
+**PR**: [#1](https://github.com/coelhotv/dosiq/pull/1) - MERGED  
 **Branch**: `feature/fix-critical-bugs`  
 **Impact**: +65 additions, -39 deletions across 5 files
 
@@ -101,7 +101,7 @@ return dLog.getUTCFullYear() === dayDate.getFullYear() &&
 
 ## Phase 2: Bot Architecture Refactor ✅
 
-**PR**: [#2](https://github.com/coelhotv/meus-remedios/pull/2) - MERGED  
+**PR**: [#2](https://github.com/coelhotv/dosiq/pull/2) - MERGED  
 **Branch**: `feature/bot-architecture-refactor`  
 **Impact**: +335 additions, -63 deletions across 8 files
 
@@ -182,7 +182,7 @@ export async function handleCommand(bot, msg) {
 
 ## Phase 3: UX Enhancements ✅
 
-**PR**: [#3](https://github.com/coelhotv/meus-remedios/pull/3) - MERGED  
+**PR**: [#3](https://github.com/coelhotv/dosiq/pull/3) - MERGED  
 **Branch**: `feature/ux-enhancements`  
 **Impact**: +196 additions, -9 deletions across 4 files
 
@@ -292,7 +292,7 @@ Uses dynamic imports to avoid circular dependencies.
 
 ## Phase 4: API Service Modularization ✅
 
-**PR**: [#4](https://github.com/coelhotv/meus-remedios/pull/4) - MERGED  
+**PR**: [#4](https://github.com/coelhotv/dosiq/pull/4) - MERGED  
 **Branch**: `feature/api-modularization`  
 **Impact**: +836 additions, -796 deletions across 8 files
 
@@ -653,6 +653,6 @@ All 4 phases of the Meus Remedios upgrade plan have been successfully implemente
 
 The codebase is now production-ready with a solid foundation for future enhancements.
 
-**Repository**: coelhotv/meus-remedios  
+**Repository**: coelhotv/dosiq  
 **Final State**: All changes in main branch  
 **Documentation**: This summary + inline code comments

@@ -1,4 +1,4 @@
-# Guia de Testes - Meus Remédios
+# Guia de Testes - Dosiq
 
 **Versão:** 1.0  
 **Última Atualização:** 2026-02-17  

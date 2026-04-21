@@ -1,4 +1,4 @@
-# Framework Arquitetural - Meus Remédios
+# Framework Arquitetural - Dosiq
 
 **Versão:** 1.0  
 **Data:** 04/02/2026  
@@ -792,4 +792,4 @@ const userId = await getUserIdByChatId(chatId)
 
 ---
 
-*Este documento é a fonte autoritativa de governança técnica do projeto Meus Remédios. Toda decisão arquitetural deve estar em conformidade com as diretrizes aqui estabelecidas.*
+*Este documento é a fonte autoritativa de governança técnica do projeto Dosiq. Toda decisão arquitetural deve estar em conformidade com as diretrizes aqui estabelecidas.*

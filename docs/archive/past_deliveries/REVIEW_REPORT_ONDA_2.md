@@ -1,4 +1,4 @@
-# 📋 Relatório de Revisão de Código - Meus Remédios
+# 📋 Relatório de Revisão de Código - Dosiq
 
 **Data da Revisão:** 2026-02-03  
 **Revisor:** Agente Fase 2 - Validador e Revisor  

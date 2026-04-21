@@ -32,7 +32,7 @@ git tag -a v2.3.0 -m "Onda 1 - Fundação: Testes, Validação, Cache, Onboardin
 git push origin v2.3.0
 ```
 
-**Tag:** [`v2.3.0`](https://github.com/coelhotv/meus-remedios/releases/tag/v2.3.0)  
+**Tag:** [`v2.3.0`](https://github.com/coelhotv/dosiq/releases/tag/v2.3.0)  
 **Mensagem:** Onda 1 - Fundação: Testes, Validação, Cache, Onboarding
 
 ---
@@ -155,4 +155,4 @@ git push origin v2.3.0
 
 **Relatório gerado em:** 2026-02-03  
 **Por:** Agente de Integração Fase 3  
-**Projeto:** Meus Remédios v2.3.0
+**Projeto:** Dosiq v2.3.0

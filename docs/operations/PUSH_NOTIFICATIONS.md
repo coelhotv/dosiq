@@ -3,7 +3,7 @@
 > **Status:** Operacional (Fase 6)
 > **Stack:** Expo Push Service + Multi-channel Dispatcher (Server-side)
 
-Este documento descreve como operar, diagnosticar e mitigar problemas no sistema de notificações push do Meus Remédios.
+Este documento descreve como operar, diagnosticar e mitigar problemas no sistema de notificações push do Dosiq.
 
 ---
 

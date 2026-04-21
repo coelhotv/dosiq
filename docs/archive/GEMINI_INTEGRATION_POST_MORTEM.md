@@ -265,13 +265,13 @@ Após a implementação do logger estruturado (PR #148), o tempo para identifica
 
 | # | Título | Descrição Real | Commits | Arquivos |
 |---|--------|----------------|---------|----------|
-| [#145](https://github.com/coelhotv/meus-remedios/pull/145) | feat(sprint-7): adiciona dependência do persist no check-resolutions | Atualiza `needs: [detect, parse]` → `needs: [detect, parse, persist]` no workflow; cria testes E2E | 3 | 3 |
-| [#146](https://github.com/coelhotv/meus-remedios/pull/146) | fix(api): corrige erros 500 nos endpoints gemini-reviews | Adiciona `user_id`, remove `review_data`, corrige category default | 2 | 2 |
-| [#148](https://github.com/coelhotv/meus-remedios/pull/148) | feat(api): logging detalhado para debug de erros 500 | Cria `shared/logger.js`, adiciona logging em todos os endpoints | 2 | 6 |
-| [#149](https://github.com/coelhotv/meus-remedios/pull/149) | test: validação do fluxo de integração Gemini (Round 2) | Adiciona fallback `VITE_SUPABASE_URL` em todos os endpoints | 4 | 6 |
-| [#150](https://github.com/coelhotv/meus-remedios/pull/150) | test: validação do fluxo de integração Gemini (Round 3) | Adiciona `BLOB_READ_WRITE_TOKEN` e header Authorization | 4 | 3 |
-| [#151](https://github.com/coelhotv/meus-remedios/pull/151) | fix: corrige validação de suggestion nullable nos endpoints | Altera `suggestion` para `nullable()`, adiciona `commit_sha` ao workflow | 6 | 3 |
-| [#152](https://github.com/coelhotv/meus-remedios/pull/152) | test: validação final do fluxo de integração Gemini | Cria migration para status constraint, corrige response headers | 4 | 6 |
+| [#145](https://github.com/coelhotv/dosiq/pull/145) | feat(sprint-7): adiciona dependência do persist no check-resolutions | Atualiza `needs: [detect, parse]` → `needs: [detect, parse, persist]` no workflow; cria testes E2E | 3 | 3 |
+| [#146](https://github.com/coelhotv/dosiq/pull/146) | fix(api): corrige erros 500 nos endpoints gemini-reviews | Adiciona `user_id`, remove `review_data`, corrige category default | 2 | 2 |
+| [#148](https://github.com/coelhotv/dosiq/pull/148) | feat(api): logging detalhado para debug de erros 500 | Cria `shared/logger.js`, adiciona logging em todos os endpoints | 2 | 6 |
+| [#149](https://github.com/coelhotv/dosiq/pull/149) | test: validação do fluxo de integração Gemini (Round 2) | Adiciona fallback `VITE_SUPABASE_URL` em todos os endpoints | 4 | 6 |
+| [#150](https://github.com/coelhotv/dosiq/pull/150) | test: validação do fluxo de integração Gemini (Round 3) | Adiciona `BLOB_READ_WRITE_TOKEN` e header Authorization | 4 | 3 |
+| [#151](https://github.com/coelhotv/dosiq/pull/151) | fix: corrige validação de suggestion nullable nos endpoints | Altera `suggestion` para `nullable()`, adiciona `commit_sha` ao workflow | 6 | 3 |
+| [#152](https://github.com/coelhotv/dosiq/pull/152) | test: validação final do fluxo de integração Gemini | Cria migration para status constraint, corrige response headers | 4 | 6 |
 
 ### Detalhamento por PR
 
@@ -363,7 +363,7 @@ Os PRs #148, #149, #150, #151, #152 continham **arquivos de teste com erros inte
 
 | # | Descrição | Status |
 |---|-----------|--------|
-| [#153](https://github.com/coelhotv/meus-remedios/pull/153) | test: validação round 6 - após correções de database e headers | 🔓 Aberto (deve ser fechado) |
+| [#153](https://github.com/coelhotv/dosiq/pull/153) | test: validação round 6 - após correções de database e headers | 🔓 Aberto (deve ser fechado) |
 
 ---
 
@@ -465,7 +465,7 @@ vercel env ls
 psql $DATABASE_URL -c "SELECT * FROM gemini_reviews LIMIT 1;"
 
 # 3. Testar endpoint de health
-curl https://meus-remedios.vercel.app/api/health/notifications
+curl https://dosiq.vercel.app/api/health/notifications
 
 # 4. Validar workflow
 gh workflow view gemini-review.yml

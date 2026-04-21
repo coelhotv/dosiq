@@ -1,4 +1,4 @@
-# Meus Remédios v4.0.0 Release Guide
+# Dosiq v4.0.0 Release Guide
 
 > **Santuário Terapêutico Complete — Healthcare Redesign + Accessibility + Performance**
 >
@@ -183,7 +183,7 @@ grep -r "--neon-" src/
 ```bash
 git push origin main
 # Vercel auto-deploys on push to main
-# Check deployments: https://vercel.com/coelhotv/meus-remedios
+# Check deployments: https://vercel.com/coelhotv/dosiq
 ```
 
 ### Local Testing
@@ -217,7 +217,7 @@ npm run preview       # Preview production build locally
 4. **Performance complaints:** Try on 4G mobile to see actual improvements
 
 ### Report Issues
-- GitHub Issues: https://github.com/coelhotv/meus-remedios/issues
+- GitHub Issues: https://github.com/coelhotv/dosiq/issues
 - Email: coelhotv@gmail.com
 
 ---

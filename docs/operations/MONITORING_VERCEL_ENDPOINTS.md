@@ -39,7 +39,7 @@ Esta documentação descreve como monitorar os endpoints Vercel da nova arquitet
 
 ### Acesso
 
-**URL:** https://vercel.com/coelhotv/meus-remedios
+**URL:** https://vercel.com/coelhotv/dosiq
 
 #### Navegação para Logs
 
@@ -192,7 +192,7 @@ Dashboard → Functions → [Execução com erro] → Aba "Errors"
 
 #### Via Web (GitHub)
 
-1. Acesse: `https://github.com/coelhotv/meus-remedios/actions`
+1. Acesse: `https://github.com/coelhotv/dosiq/actions`
 2. Filtre por workflow: **"Gemini Code Review Parser"**
 3. Clique no run desejado
 
@@ -281,7 +281,7 @@ Notification: Email/Slack
 **Verificação manual:**
 ```bash
 # Contar erros nas últimas 100 execuções
-vercel logs meus-remedios --path=/api/gemini-reviews/persist --limit=100 | grep -c "Status: 5"
+vercel logs dosiq --path=/api/gemini-reviews/persist --limit=100 | grep -c "Status: 5"
 ```
 
 ### Latência Média > 3 Segundos
@@ -396,7 +396,7 @@ Retry-After: 60
 **Diagnóstico:**
 ```bash
 # Verificar quantidade de requisições recentes
-vercel logs meus-remedios --path=/api/gemini-reviews/ --limit=200 | grep -c "POST"
+vercel logs dosiq --path=/api/gemini-reviews/ --limit=200 | grep -c "POST"
 ```
 
 **Resolução:**
@@ -497,19 +497,19 @@ Error: FUNCTION_INVOCATION_TIMEOUT
 
 ```bash
 # Ver logs em tempo real
-vercel logs meus-remedios --follow
+vercel logs dosiq --follow
 
 # Filtrar por path específico
-vercel logs meus-remedios --path=/api/gemini-reviews/persist
+vercel logs dosiq --path=/api/gemini-reviews/persist
 
 # Ver logs das últimas 24 horas
-vercel logs meus-remedios --since=24h
+vercel logs dosiq --since=24h
 
 # Ver apenas erros
-vercel logs meus-remedios --level=error
+vercel logs dosiq --level=error
 
 # Ver logs de deploy específico
-vercel logs meus-remedios --deployment=DEPLOYMENT_ID
+vercel logs dosiq --deployment=DEPLOYMENT_ID
 ```
 
 ### GitHub CLI
@@ -538,7 +538,7 @@ gh run rerun RUN_ID --debug
 
 ```bash
 # Testar endpoint persist (com auth)
-curl -X POST https://meus-remedios.vercel.app/api/gemini-reviews/persist \
+curl -X POST https://dosiq.vercel.app/api/gemini-reviews/persist \
   -H "Authorization: Bearer $VERCEL_GITHUB_ACTIONS_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -549,12 +549,12 @@ curl -X POST https://meus-remedios.vercel.app/api/gemini-reviews/persist \
   -v
 
 # Testar sem auth (deve retornar 401)
-curl -X POST https://meus-remedios.vercel.app/api/gemini-reviews/persist \
+curl -X POST https://dosiq.vercel.app/api/gemini-reviews/persist \
   -H "Content-Type: application/json" \
   -d '{}'
 
 # Ver headers de rate limit
-curl -I https://meus-remedios.vercel.app/api/gemini-reviews/persist
+curl -I https://dosiq.vercel.app/api/gemini-reviews/persist
 ```
 
 ### Scripts de Monitoramento
@@ -568,11 +568,11 @@ echo ""
 
 # Verificar últimas falhas
 echo "1. Últimas falhas (última hora):"
-vercel logs meus-remedios --path=/api/gemini-reviews/ --since=1h | grep -E "(Status: [45]|Error)" | head -10
+vercel logs dosiq --path=/api/gemini-reviews/ --since=1h | grep -E "(Status: [45]|Error)" | head -10
 
 echo ""
 echo "2. Status codes (últimos 100 logs):"
-vercel logs meus-remedios --path=/api/gemini-reviews/ --limit=100 | grep -oE "Status: [0-9]+" | sort | uniq -c | sort -rn
+vercel logs dosiq --path=/api/gemini-reviews/ --limit=100 | grep -oE "Status: [0-9]+" | sort | uniq -c | sort -rn
 
 echo ""
 echo "3. Último run do GitHub Actions:"
@@ -580,7 +580,7 @@ gh run list --workflow=gemini-review.yml --limit 1 --json status,conclusion,crea
 
 echo ""
 echo "4. Cold starts (últimos 50):"
-vercel logs meus-remedios --path=/api/gemini-reviews/ --limit=50 | grep -c "Cold Start: Yes"
+vercel logs dosiq --path=/api/gemini-reviews/ --limit=50 | grep -c "Cold Start: Yes"
 ```
 
 ### Verificação de Saúde
@@ -588,7 +588,7 @@ vercel logs meus-remedios --path=/api/gemini-reviews/ --limit=50 | grep -c "Cold
 ```bash
 # Verificar todos os endpoints
 check_endpoints() {
-  local base="https://meus-remedios.vercel.app"
+  local base="https://dosiq.vercel.app"
   local token="$VERCEL_GITHUB_ACTIONS_SECRET"
   
   for endpoint in persist create-issues update-status; do
@@ -620,8 +620,8 @@ check_endpoints
 
 | Recurso | URL |
 |---------|-----|
-| Dashboard Vercel | https://vercel.com/coelhotv/meus-remedios |
-| Actions GitHub | https://github.com/coelhotv/meus-remedios/actions |
+| Dashboard Vercel | https://vercel.com/coelhotv/dosiq |
+| Actions GitHub | https://github.com/coelhotv/dosiq/actions |
 | Supabase Dashboard | https://app.supabase.com/project/_/editor |
 
 ### Comandos de Emergência
