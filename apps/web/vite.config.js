@@ -25,6 +25,7 @@ export default defineConfig({
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
+      '@meus-remedios/core': path.resolve(__dirname, '../../packages/core/src'),
     },
   },
   build: {

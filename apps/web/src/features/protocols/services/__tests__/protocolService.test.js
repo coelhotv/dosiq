@@ -6,8 +6,12 @@ const mockSupabase = {
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          lte: vi.fn().mockReturnValue({
+            or: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
         }),
       }),
     }),
@@ -48,8 +52,12 @@ describe('protocolService', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            lte: vi.fn().mockReturnValue({
+              or: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+                single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
           }),
         }),
       }),
@@ -118,14 +126,22 @@ describe('protocolService', () => {
         { id: '1', name: 'Protocolo Ativo', active: true, medicine: { name: 'Med 1' } },
       ]
 
-      const mockEq = vi.fn().mockReturnValue({
+      const mockOr = vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+      })
+
+      const mockLte = vi.fn().mockReturnValue({
+        or: mockOr,
+      })
+
+      const mockEqActive = vi.fn().mockReturnValue({
+        lte: mockLte,
       })
 
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: mockEq,
+            eq: mockEqActive,
           }),
         }),
       })

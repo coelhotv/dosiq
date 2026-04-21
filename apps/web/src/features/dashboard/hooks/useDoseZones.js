@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { parseLocalDate, getTodayLocal } from '@utils/dateUtils'
+import { parseLocalDate, getTodayLocal, isProtocolActiveOnDate } from '@utils/dateUtils'
 
 /**
  * Tipo DoseItem — Representa uma dose individual expandida de um protocolo.
@@ -117,9 +117,16 @@ export function classifyDose(
  */
 export function expandProtocolsToDoses(protocols, todayLogs) {
   const doses = []
+  const todayStr = getTodayLocal()
+
   for (const protocol of protocols) {
-    // Excluir protocolos "quando_necessario"
+    // 1. Excluir protocolos "quando_necessario"
     if (protocol.frequency === 'quando_necessario') continue
+
+    // 2. Resiliência de Cache: Filtrar validade do protocolo para HOJE (GMT-3)
+    // Isso protege a UI caso o cache SWR tenha dados obsoletos.
+    if (!isProtocolActiveOnDate(protocol, todayStr)) continue
+
     const times = protocol.time_schedule || []
     for (const time of times) {
       const registrationTime = findRegistrationTime(protocol.id, time, todayLogs)

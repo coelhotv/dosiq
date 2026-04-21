@@ -5,10 +5,12 @@
  * @module adherenceLogic
  */
 
-import { isProtocolActiveOnDate, parseLocalDate } from './dateUtils.js'
-
-// Re-export para manter compatibilidade com imports existentes
-export { isProtocolActiveOnDate }
+import { 
+  parseLocalDate, 
+  formatLocalDate, 
+  getTodayLocal, 
+  isProtocolActiveOnDate as isProtocolInPeriod 
+} from './dateUtils.js'
 
 // Invariantes de Negócio (R-022, R-129)
 const TOLERANCE_WINDOW_HOURS = 2
@@ -107,17 +109,9 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
  * @returns {Object}
  */
 export function calculateAdherenceStats(logs, protocols, days = 30) {
-  const toLocalDateString = (date) => {
-    const d = new Date(date)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
   const logsByDay = new Map()
   logs.forEach((log) => {
-    const dayKey = toLocalDateString(log.taken_at)
+    const dayKey = formatLocalDate(new Date(log.taken_at))
     if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, [])
     logsByDay.get(dayKey).push(log)
   })
@@ -126,12 +120,12 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
   let totalFollowed = 0
   let totalTakenAnytime = 0
   let currentStreak = 0
-  const todayStr = toLocalDateString(new Date())
+  const todayStr = getTodayLocal()
 
   for (let i = 0; i < days; i++) {
     const date = new Date()
     date.setDate(date.getDate() - i)
-    const dateStr = toLocalDateString(date)
+    const dateStr = formatLocalDate(date)
     const dayLogs = logsByDay.get(dateStr) || []
 
     let dayExpected = 0
@@ -205,11 +199,7 @@ export function isProtocolFollowed(scheduledTime, logs, dateStr) {
 
   return logs.some((log) => {
     // 1. Verificar se o log é do mesmo dia local
-    const logDate = new Date(log.taken_at)
-    const lYear = logDate.getFullYear()
-    const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
-    const lDay = String(logDate.getDate()).padStart(2, '0')
-    const logDateStr = `${lYear}-${lMonth}-${lDay}`
+    const logDateStr = formatLocalDate(new Date(log.taken_at))
 
     if (logDateStr !== dateStr) return false
 
@@ -371,99 +361,8 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
   const missedDoses = []
   const scheduledDoses = []
 
-  // Converter data string para objeto Date (meia-noite local)
-  const targetDate = new Date(date + 'T00:00:00')
-  const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
-
   // Filtrar protocolos aplicáveis para esta data
-  const applicableProtocols = protocols.filter((protocol) => {
-    // Protocolo deve estar ativo
-    if (!protocol.active) return false
-
-    // Verificar se o protocolo já começou
-    if (protocol.start_date) {
-      const startDate = new Date(protocol.start_date)
-      if (targetDate < startDate) return false
-    }
-
-    // Verificar se o protocolo já terminou
-    if (protocol.end_date) {
-      const endDate = new Date(protocol.end_date)
-      if (targetDate > endDate) return false
-    }
-
-    // Verificar frequência
-    const frequency = (protocol.frequency || 'diário').toLowerCase()
-
-    switch (frequency) {
-      case 'diário':
-      case 'diariamente':
-      case 'daily':
-        return true
-
-      case 'semanal':
-      case 'semanalmente':
-      case 'weekly':
-        // Verificar se o dia da semana está nos dias configurados
-        if (protocol.days && Array.isArray(protocol.days)) {
-          // Mapear nomes de dias para números (0-6)
-          const dayMap = {
-            domingo: 0,
-            sunday: 0,
-            segunda: 1,
-            'segunda-feira': 1,
-            monday: 1,
-            terça: 2,
-            'terça-feira': 2,
-            tuesday: 2,
-            quarta: 3,
-            'quarta-feira': 3,
-            wednesday: 3,
-            quinta: 4,
-            'quinta-feira': 4,
-            thursday: 4,
-            sexta: 5,
-            'sexta-feira': 5,
-            friday: 5,
-            sábado: 6,
-            sabado: 6,
-            saturday: 6,
-          }
-          return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
-        }
-        return false
-
-      case 'dia_sim_dia_nao':
-      case 'dia sim, dia não':
-      case 'every_other_day':
-      case 'alternating':
-        // Calcular dias desde a data de início
-        if (protocol.start_date) {
-          const startDate = new Date(protocol.start_date)
-          const diffTime = targetDate.getTime() - startDate.getTime()
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-          // Dia sim, dia não: dias pares = dose, ímpares = sem dose
-          return diffDays % 2 === 0
-        }
-        // Se não tiver data de início, assumir que começa hoje (dia 0 = dose)
-        return true
-
-      case 'personalizado':
-      case 'custom':
-        // Para frequência personalizada, se houver cronograma de horários, 
-        // assumimos que deve aparecer no dashboard
-        return protocol.time_schedule && protocol.time_schedule.length > 0
-
-      case 'quando_necessário':
-      case 'when_needed':
-      case 'prn':
-        // Doses "quando necessário" não são esperadas
-        return false
-
-      default:
-        return true
-    }
-  })
+  const applicableProtocols = protocols.filter((p) => isProtocolActiveOnDate(p, date))
 
   // Gerar slots de doses esperados para cada protocolo aplicável
   const expectedDoses = []
@@ -625,3 +524,76 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
   })
 }
 
+/**
+ * Verifica se um protocolo está "vigente" para uma data específica.
+ * Vigente significa:
+ * 1. O protocolo está marcado como ativo
+ * 2. A data alvo está dentro do intervalo [start_date, end_date]
+ * 3. A frequência do protocolo (diário, semanal, dia-sim-dia-nao) cai na data alvo
+ * 
+ * @param {Object} protocol - Protocolo
+ * @param {string|Date} date - Data alvo (YYYY-MM-DD ou Date object)
+ * @returns {boolean}
+ */
+export function isProtocolActiveOnDate(protocol, date) {
+  const dateStr = typeof date === 'string' ? date : formatLocalDate(date)
+  const targetDate = parseLocalDate(dateStr)
+  const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
+
+  // 1. Verificar se o registro está ativo
+  if (protocol.active === false) return false
+
+  // 2. Verificar período de validade (Usa isProtocolInPeriod do dateUtils)
+  if (!isProtocolInPeriod(protocol, dateStr)) return false
+
+  // 3. Verificar frequência
+  const frequency = (protocol.frequency || 'diário').toLowerCase()
+
+  switch (frequency) {
+    case 'diário':
+    case 'diariamente':
+    case 'daily':
+      return true
+
+    case 'semanal':
+    case 'semanalmente':
+    case 'weekly':
+      // Verificar se o dia da semana está nos dias configurados
+      if (protocol.days && Array.isArray(protocol.days)) {
+        const dayMap = {
+          domingo: 0, sunday: 0,
+          segunda: 1, 'segunda-feira': 1, monday: 1,
+          terça: 2, 'terça-feira': 2, tuesday: 2,
+          quarta: 3, 'quarta-feira': 3, wednesday: 3,
+          quinta: 4, 'quinta-feira': 4, thursday: 4,
+          sexta: 5, 'sexta-feira': 5, friday: 5,
+          sábado: 6, sabado: 6, saturday: 6,
+        }
+        return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
+      }
+      return false
+
+    case 'dia_sim_dia_nao':
+    case 'dia sim, dia não':
+    case 'every_other_day':
+    case 'alternating':
+      // Calcular dias desde a data de início (dia 0 = dose)
+      if (protocol.start_date) {
+        const startDate = parseLocalDate(protocol.start_date)
+        const diffTime = targetDate.getTime() - startDate.getTime()
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+        return diffDays % 2 === 0
+      }
+      return true // Sem data de início, assume início hoje
+
+    case 'personalizado':
+    case 'custom':
+    case 'quando_necessário':
+    case 'when_needed':
+    case 'prn':
+      return false
+
+    default:
+      return true
+  }
+}

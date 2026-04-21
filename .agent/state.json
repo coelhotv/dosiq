@@ -14,50 +14,49 @@
       "expo",
       "react-native"
     ],
-    "phase": "fase8-epic2-completed",
-    "current_sprint": "2026-W16"
+    "phase": "fase8-dashboard-protocols-stabilized",
+    "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W16_fase8_epic2_refinement",
-    "started_at": "2026-04-19T22:30:00Z",
-    "completed_at": "2026-04-19T23:23:00Z",
+    "id": "session_2026W17_dashboard_protocol_filtering",
+    "started_at": "2026-04-20T20:45:00Z",
+    "completed_at": "2026-04-20T21:23:00Z",
     "mode": "coding",
     "status": "completed",
-    "goal": "Refinamento do Dashboard e Protocolos de Interação",
+    "goal": "Filtro de Protocolos por Vigência e Resiliência de Cache",
     "goal_type": "refactor",
     "acceptance_criteria": [
-      "Implementação de 5 escalas pastéis no AdherenceRing",
-      "Mensagens motivacionais granulares no AdherenceDayCard",
-      "Correção de Hook Order no TodayScreen",
-      "Criação de protocolo de interação GLOBAL_RULES.md",
-      "Criação da regra R-064 no projeto",
-      "Merge/Push autorizado pelo usuário",
-      "Journal atualizado"
+      "Unificação da lógica de adesão no @meus-remedios/core",
+      "Filtragem de start_date/end_date no Supabase (Web e Mobile)",
+      "Implementação de resiliência de cache no frontend (defensive filtering)",
+      "Correção de fuso horário brasileiro (GMT-3) em todas as camadas",
+      "Validação global com validate:agent e lint",
+      "Journal atualizado com ADR sobre Cache Resilience"
     ],
     "active_wave": {
-      "name": "Fase 8: Especulativo (Pós-MVP) - Epic 2 (Refinement)",
-      "phase": "h8-redesign-dashboard",
-      "sprint": "8.6",
+      "name": "Fase 8: Especulativo (Pós-MVP) - Estabilidade",
+      "phase": "h8-stabilization",
+      "sprint": "8.7",
       "spec": "plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md",
       "status": "completed",
-      "started_at": "2026-04-19T18:00:00Z",
-      "notes": "Redesign do dashboard refinado com feedback do usuário. Protocolos de interação estabelecidos."
+      "started_at": "2026-04-20T20:45:00Z",
+      "notes": "Estabilização crítica da base de dados do dashboard. Protocolos agora respeitam vigência e são resilientes a cache obsoleto."
     }
   },
   "memory": {
     "rules_count": 127,
     "anti_patterns_count": 99,
-    "decisions_count": 29,
+    "decisions_count": 30,
     "contracts_count": 17,
-    "knowledge_count": 85,
+    "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "recent_additions": {
-      "rules": ["R-064"],
-      "anti_patterns": ["AP-H23", "AP-H24", "AP-H25", "AP-H26"],
-      "knowledge": ["K-082", "K-083", "K-085"],
-      "decisions": ["ADR-031", "ADR-032"],
-      "timestamp": "2026-04-19T23:23:00Z"
+      "rules": [],
+      "anti_patterns": [],
+      "knowledge": ["K-086"],
+      "decisions": ["ADR-033"],
+      "timestamp": "2026-04-20T21:23:00Z"
     }
   },
   "evolution": {
@@ -65,10 +64,10 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-19T13:00:00Z",
-    "relevant_rules_loaded_at": "2026-04-19T13:00:00Z",
+    "index_loaded_at": "2026-04-20T20:45:00Z",
+    "relevant_rules_loaded_at": "2026-04-20T20:45:00Z",
     "h5_1_sprint_validated": true,
-    "h5_5_completed_at": "2026-04-14T16:45:00Z"
+    "h8_7_completed_at": "2026-04-20T21:23:00Z"
   },
   "migration": {
     "status": "complete",
