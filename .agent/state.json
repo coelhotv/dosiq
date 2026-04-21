@@ -20,8 +20,8 @@
   "session": {
     "id": "session_2026W17_dosiq_migration_fase4",
     "started_at": "2026-04-21T15:05:00Z",
-    "completed_at": "2026-04-21T15:22:47.346Z",
-    "mode": "coding",
+    "completed_at": "2026-04-21T15:39:59Z",
+    "mode": "delivery",
     "status": "completed",
     "goal": "Dosiq - Fase 4",
     "goal_type": "refactor",
@@ -40,9 +40,9 @@
       "phase": "dosiq-migration-fase-4",
       "sprint": "refactor-2026-W17",
       "spec": "plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_FASE_4.md",
-      "status": "completed",
+      "status": "merged",
       "started_at": "2026-04-21T15:05:00Z",
-      "notes": "Fase 4: rebranding bot/API/deeplinks e fixtures de CI."
+      "notes": "Fase 4 concluida e merged (PR #486) com squash+delete em 2026-04-21."
     }
   },
   "memory": {
@@ -52,7 +52,7 @@
     "contracts_count": 17,
     "knowledge_count": 86,
     "last_distillation": "2026-04-19T12:00:00Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "recent_additions": {
       "rules": [],
       "anti_patterns": [],
