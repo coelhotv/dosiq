@@ -587,34 +587,34 @@ Checklist completo para confirmar que a migração está 100% concluída:
 - [x] Docs e memória DEVFLOW: atualizados
 
 ### Supabase
-- [ ] Templates de e-mail atualizados (5 templates)
-- [ ] Site URL atualizada para `dosiq.vercel.app`
-- [ ] Redirect URLs incluem `dosiq.vercel.app` e `dosiq://`
-- [ ] Nome do projeto (opcional) atualizado
+- [x] Templates de e-mail atualizados (5 templates)
+- [x] Site URL atualizada para `dosiq.vercel.app`
+- [x] Redirect URLs incluem `dosiq.vercel.app` e `dosiq://`
+- [x] Nome do projeto (opcional) atualizado
 
 ### Vercel
-- [ ] Projeto renomeado para `dosiq`
-- [ ] Deploy funcional em `dosiq.vercel.app`
-- [ ] `TELEGRAM_BOT_TOKEN` atualizado (se bot foi renomeado)
-- [ ] `.vercel/project.json` local atualizado
+- [x] Projeto renomeado para `dosiq`
+- [x] Deploy funcional em `dosiq.vercel.app`
+- [x] `TELEGRAM_BOT_TOKEN` atualizado (se bot foi renomeado)
+- [x] `.vercel/project.json` local atualizado
 
 ### Expo EAS
-- [ ] Slugs confirmados no painel expo.dev
+- [x] Slugs confirmados no painel expo.dev
 - [ ] `eas credentials` executado para cada perfil
 - [ ] Push notifications vinculadas ao novo bundle ID
 
 ### Google Play Console
-- [ ] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview não vão à loja)
+- [x] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview não vão à loja)
 - [ ] App name, descrições e screenshots atualizados
-- [ ] Firebase Android: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
-- [ ] `google-services.json` e `google-services-development.json` baixados e salvos em `$ICLOUD_MOBILE/`
+- [x] Firebase Android: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
+- [x] `google-services.json` e `google-services-development.json` baixados e salvos em `$ICLOUD_MOBILE/`
 - [ ] SHA-1/SHA-256 adicionados no Firebase para cada app
 
 ### App Store Connect
-- [ ] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview via TestFlight/instalação direta)
-- [ ] Bundle IDs registrados no Developer Portal: `com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`
-- [ ] Firebase iOS: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
-- [ ] `GoogleService-Info.plist` e `GoogleService-Info-development.plist` baixados e salvos em `$ICLOUD_MOBILE/`
+- [x] App `com.coelhotv.dosiq` criado (1 app apenas — dev/preview via TestFlight/instalação direta)
+- [x] Bundle IDs registrados no Developer Portal: `com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`
+- [x] Firebase iOS: 2 apps criados (`com.coelhotv.dosiq` + `com.coelhotv.dosiq.dev`)
+- [x] `GoogleService-Info.plist` e `GoogleService-Info-development.plist` baixados e salvos em `$ICLOUD_MOBILE/`
 - [ ] Descrição e keywords atualizadas
 - [ ] Build gerado com `eas build --platform ios --profile production`
 
