@@ -21,8 +21,8 @@ const variants = {
   preview: {
     name: 'Dosiq Preview',
     slug: 'dosiq-app',
-    iosBundleIdentifier: 'com.coelhotv.dosiq.preview',
-    androidPackage: 'com.coelhotv.dosiq.preview',
+    iosBundleIdentifier: 'com.coelhotv.dosiq.development',
+    androidPackage: 'com.coelhotv.dosiq.development',
   },
   production: {
     name: 'Dosiq',
@@ -55,7 +55,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
-      buildNumber: '2',
+      buildNumber: '1',
       supportsTablet: false,
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
@@ -87,7 +87,7 @@ module.exports = {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
       eas: {
-        projectId: '7169f55a-6de7-465f-b007-f5eb6034c8e6',
+        projectId: '7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba',
       },
       owner: "coelhotv"
     },
