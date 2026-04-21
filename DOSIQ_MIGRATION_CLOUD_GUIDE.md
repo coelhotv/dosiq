@@ -348,16 +348,21 @@ eas submit --platform ios --latest
 
 ### 6.2 Atualizar Remote Local
 
-Após o rename no GitHub, atualizar o remote do repositório local:
+O projeto usa dois diretórios distintos — atualizar o remote em **ambos**:
 
 ```bash
+# 1. Repositório iCloud (fonte canônica / sync)
+cd /Users/coelhotv/git-icloud/meus-remedios   # ou dosiq, se já renomeado
 git remote set-url origin git@github.com:coelhotv/dosiq.git
+git remote -v   # confirmar
 
-# Verificar
-git remote -v
-# Esperado: origin  git@github.com:coelhotv/dosiq.git (fetch)
-#           origin  git@github.com:coelhotv/dosiq.git (push)
+# 2. Bridge local fora do iCloud (builds e desenvolvimento)
+cd /Users/coelhotv/local-git/meus-remedios   # ajustar se o nome da pasta mudou
+git remote set-url origin git@github.com:coelhotv/dosiq.git
+git remote -v   # confirmar
 ```
+
+> O GitHub redireciona o remote antigo automaticamente, então pulls e pushes continuam funcionando mesmo sem atualizar — mas manter o remote correto evita confusão e avisos do git.
 
 ### 6.3 Atualizar Secrets do GitHub Actions (se houver CI/CD)
 
@@ -369,7 +374,7 @@ Verificar e atualizar:
 |---|---|
 | `VERCEL_PROJECT_ID` | ID do projeto antigo |
 | `TELEGRAM_BOT_TOKEN` | Token do bot antigo |
-| Qualquer secret com URL | URL antiga `dosiq.vercel.app` |
+| Qualquer secret com URL | URL antiga `meus-remedios.vercel.app` |
 
 ### 6.4 Atualizar Descrição e Topics do Repositório
 
