@@ -13,22 +13,22 @@ const VERSION_CODE = major * 10000 + minor * 100 + patch
 
 const variants = {
   development: {
-    name: 'Meus Remedios Dev',
-    slug: 'meus-remedios-dev',
-    iosBundleIdentifier: 'com.coelhotv.meusremedios.dev',
-    androidPackage: 'com.coelhotv.meusremedios.dev',
+    name: 'Dosiq Dev',
+    slug: 'dosiq-app',
+    iosBundleIdentifier: 'com.coelhotv.dosiq.development',
+    androidPackage: 'com.coelhotv.dosiq.development',
   },
   preview: {
-    name: 'Meus Remedios Preview',
-    slug: 'meus-remedios-dev',
-    iosBundleIdentifier: 'com.coelhotv.meusremedios.preview',
-    androidPackage: 'com.coelhotv.meusremedios.preview',
+    name: 'Dosiq Preview',
+    slug: 'dosiq-app',
+    iosBundleIdentifier: 'com.coelhotv.dosiq.preview',
+    androidPackage: 'com.coelhotv.dosiq.preview',
   },
   production: {
-    name: 'Meus Remedios',
-    slug: 'meus-remedios-dev',
-    iosBundleIdentifier: 'com.coelhotv.meusremedios',
-    androidPackage: 'com.coelhotv.meusremedios',
+    name: 'Dosiq',
+    slug: 'dosiq-app',
+    iosBundleIdentifier: 'com.coelhotv.dosiq',
+    androidPackage: 'com.coelhotv.dosiq',
   },
 }
 
@@ -40,7 +40,7 @@ module.exports = {
     owner: 'coelhotv',
     slug: current.slug,
     // DL-001: scheme canônico do projeto
-    scheme: 'meusremedios',
+    scheme: 'dosiq',
     version: APP_VERSION,
     cli: {
       appVersionSource: 'local',

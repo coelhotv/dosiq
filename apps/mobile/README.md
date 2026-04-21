@@ -1,4 +1,4 @@
-# @meus-remedios/mobile
+# @dosiq/mobile
 
 Placeholder da Fase 1 (Wave H1).
 
