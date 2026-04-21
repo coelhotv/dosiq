@@ -270,7 +270,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
               <Text style={styles.settingsButtonText}>Abrir Configurações do Dispositivo</Text>
             </TouchableOpacity>
             <Text style={styles.settingsHint}>
-              Navegue para Aplicativos › Meus Remédios › Notificações e ative as notificações.
+              Navegue para Aplicativos › Dosiq › Notificações e ative as notificações.
             </Text>
           </View>
         )}
