@@ -383,7 +383,7 @@ export function buildConsultationPdfData({
   dashboardData = {},
   period = '30d',
   generatedAt = new Date(),
-  title = 'Meus Remedios - Consulta Medica',
+  title = 'Dosiq - Consulta Medica',
   patientEmail = '',
 } = {}) {
   const medicines = dashboardData.medicines || []

@@ -12,7 +12,7 @@ export default function Sidebar({ currentView, setCurrentView, onNewDose }) {
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
-        <span className="sidebar-brand-title">Meus Remédios</span>
+        <span className="sidebar-brand-title">Dosiq</span>
         <span className="sidebar-brand-subtitle">Santuário Terapêutico</span>
       </div>
 

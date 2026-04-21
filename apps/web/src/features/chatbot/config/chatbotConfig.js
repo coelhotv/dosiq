@@ -1,5 +1,5 @@
 /**
- * Configurações centralizadas do Chatbot IA — Meus Remédios.
+ * Configurações centralizadas do Chatbot IA — Dosiq.
  *
  * Fonte canônica para constantes compartilhadas entre:
  * - Web: safetyGuard.js, chatbotService.js
