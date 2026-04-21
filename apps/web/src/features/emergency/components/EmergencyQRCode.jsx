@@ -155,7 +155,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
     try {
       const link = document.createElement('a')
       link.href = qrDataUrl
-      link.download = `cartao-emergencia-${qrPayload?.n?.replace(/\s+/g, '-').toLowerCase() || 'meus-remedios'}.png`
+      link.download = `cartao-emergencia-${qrPayload?.n?.replace(/\s+/g, '-').toLowerCase() || 'dosiq'}.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
