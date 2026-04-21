@@ -6,11 +6,11 @@ PROFILE="${1:-preview}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$SCRIPT_DIR"
 
-# production usa google-services.json (sem sufixo), demais usam google-services-{profile}.json
+# production usa google-services.json; dev e preview compartilham google-services-development.json
 if [ "$PROFILE" = "production" ]; then
   CREDS_FILE="$ICLOUD_MOBILE/google-services.json"
 else
-  CREDS_FILE="$ICLOUD_MOBILE/google-services-${PROFILE}.json"
+  CREDS_FILE="$ICLOUD_MOBILE/google-services-development.json"
 fi
 
 if [ ! -f "$CREDS_FILE" ]; then
