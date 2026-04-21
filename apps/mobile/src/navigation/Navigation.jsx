@@ -55,9 +55,9 @@ export default function Navigation() {
       if (event === 'SIGNED_OUT') {
         if (__DEV__) console.log('[Navigation] User signed out, clearing caches...')
         await AsyncStorage.multiRemove([
-          '@meus-remedios/today-snapshot',
-          '@meus-remedios/treatments-snapshot',
-          '@meus-remedios/stock-snapshot'
+          '@dosiq/today-snapshot',
+          '@dosiq/treatments-snapshot',
+          '@dosiq/stock-snapshot'
         ])
       }
       setSession(s ?? null)

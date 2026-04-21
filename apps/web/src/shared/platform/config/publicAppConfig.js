@@ -5,7 +5,7 @@
  * packages/config NAO le import.meta.env — apenas este arquivo de bootstrap.
  * O objeto validado e exportado para uso no restante da app web.
  */
-import { createPublicAppConfig } from '@meus-remedios/config'
+import { createPublicAppConfig } from '@dosiq/config'
 
 export const publicAppConfig = createPublicAppConfig({
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL,

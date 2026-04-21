@@ -2,7 +2,7 @@
 // Camada de plataforma: único lugar que lê process.env.EXPO_PUBLIC_*
 // Pacotes compartilhados (packages/*) NÃO leem env diretamente — recebem via DI
 
-import { createPublicAppConfig } from '@meus-remedios/config'
+import { createPublicAppConfig } from '@dosiq/config'
 
 export const nativePublicAppConfig = createPublicAppConfig({
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

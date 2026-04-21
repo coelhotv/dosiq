@@ -1,11 +1,11 @@
-// SmokeScreen.jsx — prova que Metro resolve workspaces e @meus-remedios/core está acessível
+// SmokeScreen.jsx — prova que Metro resolve workspaces e @dosiq/core está acessível
 // Critério de sucesso: renderiza "SUCCESS" quando medicineSchema.safeParse passa
 // R4-005: smoke screen é obrigatória antes de construir telas do produto
 
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { medicineSchema } from '@meus-remedios/core/schemas'
+import { medicineSchema } from '@dosiq/core/schemas'
 import { ROUTES } from '../navigation/routes'
 
 export default function SmokeScreen({ navigation }) {
@@ -23,7 +23,7 @@ export default function SmokeScreen({ navigation }) {
 
     if (parsed.success) {
       setResult('SUCCESS')
-      setDetails('@meus-remedios/core resolvido pelo Metro ✓')
+      setDetails('@dosiq/core resolvido pelo Metro ✓')
     } else {
       setResult('ERROR')
       setDetails(JSON.stringify(parsed.error.issues, null, 2))

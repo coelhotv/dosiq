@@ -11,13 +11,13 @@
  * Usage:
  *
  *   // Import all tokens
- *   import { colors, spacing, radii, typography } from '@meus-remedios/design-tokens'
+ *   import { colors, spacing, radii, typography } from '@dosiq/design-tokens'
  *
  *   // Import specific category
- *   import { colors } from '@meus-remedios/design-tokens/colors'
- *   import { spacing } from '@meus-remedios/design-tokens/spacing'
+ *   import { colors } from '@dosiq/design-tokens/colors'
+ *   import { spacing } from '@dosiq/design-tokens/spacing'
  *
- * @module @meus-remedios/design-tokens
+ * @module @dosiq/design-tokens
  */
 
 export { colors } from './colors.js'

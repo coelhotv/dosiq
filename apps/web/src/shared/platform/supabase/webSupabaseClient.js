@@ -11,7 +11,7 @@
  * Novos servicos podem usar este cliente. Migracao completa na H3.5/H3.6.
  */
 import { createClient } from '@supabase/supabase-js'
-import { createSupabaseClient } from '@meus-remedios/shared-data'
+import { createSupabaseClient } from '@dosiq/shared-data'
 import { publicAppConfig } from '@shared/platform/config/publicAppConfig'
 import { webStorageAdapter } from '@shared/platform/storage/webStorageAdapter'
 

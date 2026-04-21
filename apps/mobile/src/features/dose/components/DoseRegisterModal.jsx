@@ -15,7 +15,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { getTodayLocal } from '@meus-remedios/core'
+import { getTodayLocal } from '@dosiq/core'
 import { registerDose } from '../services/doseService'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 import { useOnlineStatus } from '../../../shared/hooks/useOnlineStatus'

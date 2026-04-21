@@ -10,7 +10,7 @@
  * @module cachedServices
  */
 
-import { CACHE_KEYS, generateCacheKey } from '@meus-remedios/shared-data'
+import { CACHE_KEYS, generateCacheKey } from '@dosiq/shared-data'
 import { invalidateCache } from '@shared/hooks/useCachedQuery'
 import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
 const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
@@ -22,9 +22,9 @@ import { logService } from '@shared/services/api/logService'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { adherenceService } from '@services/api/adherenceService'
 
-// CACHE_KEYS importado de @meus-remedios/shared-data (fonte canônica)
+// CACHE_KEYS importado de @dosiq/shared-data (fonte canônica)
 // Re-exportado para compatibilidade com importadores existentes deste módulo
-export { CACHE_KEYS } from '@meus-remedios/shared-data'
+export { CACHE_KEYS } from '@dosiq/shared-data'
 
 /**
  * Medicine Service com Cache

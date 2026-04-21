@@ -8,7 +8,7 @@
  * - Web (CSS custom properties)
  * - Mobile (React Native StyleSheet)
  *
- * @module @meus-remedios/design-tokens/colors
+ * @module @dosiq/design-tokens/colors
  */
 
 // ============================================

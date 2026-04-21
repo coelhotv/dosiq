@@ -317,7 +317,7 @@ export function useCachedMutation(mutationFn, options = {}) {
 }
 
 // Re-exporta funções úteis do query cache (via pacote centralizado — evita duplicação)
-export { generateCacheKey } from '@meus-remedios/shared-data'
+export { generateCacheKey } from '@dosiq/shared-data'
 
 export { invalidateCache }
 

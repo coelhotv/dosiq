@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
 
-const STOCK_CACHE_KEY = '@meus-remedios/stock-snapshot'
+const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
 /**
  * Hook para gerenciar e calcular dados de estoque conforme ADR-018.

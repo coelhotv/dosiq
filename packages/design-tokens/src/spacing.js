@@ -15,7 +15,7 @@
  * - Example: '1rem' = 16 pixels; '0.5rem' = 8 pixels
  * - Mobile StyleSheet should parse: const px = parseFloat(value) * 16 // assuming 16px root
  *
- * @module @meus-remedios/design-tokens/spacing
+ * @module @dosiq/design-tokens/spacing
  */
 
 // ============================================

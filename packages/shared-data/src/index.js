@@ -1,5 +1,5 @@
 /**
- * @meus-remedios/shared-data — Camada de dados compartilhada (platform-agnostic)
+ * @dosiq/shared-data — Camada de dados compartilhada (platform-agnostic)
  *
  * Exporta:
  * - Query cache engine (createQueryCache, CACHE_KEYS, generateCacheKey)
