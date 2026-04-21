@@ -1,4 +1,4 @@
-# Meus Remédios - AI Agent Guide
+# Dosiq - AI Agent Guide
 
 > **Aplicativo de gerenciamento de medicamentos em português brasileiro**
 > **Versão:** 3.3.0 (Fase 5 ✅ + Mobile Perf M0-M8 ✅ + HealthHistory P1-P4 ✅) | React 19 + Vite + Supabase
@@ -7,7 +7,7 @@
 
 ## 📋 Project Identity
 
-**Meus Remédios** is a medication management PWA featuring:
+**Dosiq** is a medication management PWA featuring:
 - Multi-user authentication (Supabase Auth + RLS)
 - Treatment protocols with dose titration
 - Stock management with alerts

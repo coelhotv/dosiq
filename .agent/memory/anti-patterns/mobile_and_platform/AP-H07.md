@@ -59,7 +59,7 @@ Error: std::__1::system_error: open: .../node_modules/expo: Operation not permit
 ~/Library/Mobile Documents/
   └── com~apple~CloudDocs/
       └── git/
-          └── meus-remedios/        ← Repository in iCloud
+          └── dosiq/        ← Repository in iCloud
               └── apps/mobile/
                   └── node_modules/ ← Watchman can't access (permission denied)
 ```
@@ -92,8 +92,8 @@ Error: std::__1::system_error: open: /path/to/node_modules: Operation not permit
 **Option 1: Clone repo locally (recommended)**
 ```bash
 # Clone outside iCloud
-git clone https://github.com/coelhotv/meus-remedios.git ~/local/meus-remedios
-cd ~/local/meus-remedios/apps/mobile
+git clone https://github.com/coelhotv/dosiq.git ~/local/dosiq
+cd ~/local/dosiq/apps/mobile
 npx expo start
 # ✓ Works (Watchman has full access)
 ```

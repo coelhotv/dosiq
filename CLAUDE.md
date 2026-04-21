@@ -1,4 +1,4 @@
-# CLAUDE.md — Meus Remedios
+# CLAUDE.md — Dosiq
 
 > **DEVFLOW é o processo oficial de desenvolvimento deste projeto.**
 > Skill: `/devflow` | Contexto do agente: `.agent/DEVFLOW.md` | Memória canônica: `.agent/memory/`
@@ -13,7 +13,7 @@
 
 ## Projeto
 
-**Meus Remedios** e um PWA de gerenciamento de medicamentos pessoal.
+**Dosiq** e um PWA de gerenciamento de medicamentos pessoal.
 Stack: React 19 + Vite 7 + Supabase (Postgres + Auth + RLS) + Zod 4 + Framer Motion 12 + Vitest 4.
 Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 0.
 
@@ -32,7 +32,7 @@ Deploy: Vercel Hobby (gratis). Bot: Telegram via Node.js. Custo operacional: R$ 
 ## Estrutura do Projeto
 
 ```
-apps/web/            # Web app (workspace @meus-remedios/web)
+apps/web/            # Web app (workspace @dosiq/web)
   src/
     features/          # Feature modules (fonte canonica)
       adherence/       # Streaks, trends, widgets de adesao
@@ -55,8 +55,8 @@ apps/web/            # Web app (workspace @meus-remedios/web)
     views/             # View wrappers (Dashboard, Medicines, Stock, etc.)
   vite.config.js       # Aliases, manualChunks, build config
   vitest.config.js     # (+ critical/smoke/lowram/ci variants)
-  package.json         # @meus-remedios/web — scripts locais
-apps/mobile/         # React Native / Expo app (workspace @meus-remedios/mobile)
+  package.json         # @dosiq/web — scripts locais
+apps/mobile/         # React Native / Expo app (workspace @dosiq/mobile)
 api/                 # Vercel serverless functions
   gemini-reviews/    # Integracao Gemini Code Assist
   health/            # Health checks

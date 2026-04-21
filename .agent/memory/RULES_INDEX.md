@@ -96,7 +96,7 @@
 - **[R-171]** Doses splitted (DoseListItem) MUST be ordered chronologically (00:00 -> 23:59) w... -> [`rules/process_and_testing/R-171.md`](./rules/process_and_testing/R-171.md)
 - **[R-172]** The 'Take/Register' action in mobile MUST be restricted to a +/- 2h window from ... -> [`rules/process_and_testing/R-172.md`](./rules/process_and_testing/R-172.md)
 - **[R-173]** When processing raw logs via Core logic, agents MUST ensure medicine and protoco... -> [`rules/process_and_testing/R-173.md`](./rules/process_and_testing/R-173.md)
-- **[R-177]** Agentes DEVEM usar primariamente o path ~/git-icloud/meus-remedios/ para esse pro... -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
+- **[R-177]** Agentes DEVEM usar primariamente o path ~/git-icloud/dosiq/ para esse pro... -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
 
 ## ⚛️ React & Ui (`react_and_ui`)
