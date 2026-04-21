@@ -180,7 +180,7 @@ export function getInstallInstructions() {
   // Desktop Chrome/Edge
   return {
     title: 'Instalar o App',
-    steps: ['Clique em "Instalar" no prompt', 'Ou use o menu (⋮) > Instalar Meus Remédios'],
+    steps: ['Clique em "Instalar" no prompt', 'Ou use o menu (⋮) > Instalar Dosiq'],
     icon: '💻',
   }
 }

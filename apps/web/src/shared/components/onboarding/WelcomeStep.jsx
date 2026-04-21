@@ -30,7 +30,7 @@ export default function WelcomeStep() {
         </div>
       </div>
 
-      <h2 className="welcome-title">Bem-vindo ao Meus Remédios!</h2>
+      <h2 className="welcome-title">Bem-vindo ao Dosiq!</h2>
 
       <p className="welcome-subtitle">
         Seu assistente pessoal para gerenciar medicamentos de forma simples e eficiente.

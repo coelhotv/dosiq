@@ -155,7 +155,7 @@ function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
 
   doc.setFontSize(CHROME_LAYOUT.headerBrandFontSize)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Meus Remedios', PAGE.margin, CHROME_LAYOUT.headerY)
+  doc.text('Dosiq', PAGE.margin, CHROME_LAYOUT.headerY)
 
   const headerTitle = doc.splitTextToSize(pdfData.title, CHROME_LAYOUT.headerTitleMaxWidth)
   doc.setFontSize(CHROME_LAYOUT.headerTitleFontSize)
@@ -772,7 +772,7 @@ function renderTitrationPage(doc, autoTable, pdfData) {
  * @param {Object} options.consultationData - Dados consolidados do modo consulta.
  * @param {Object} options.dashboardData - Dados brutos do dashboard.
  * @param {string} [options.period='30d'] - Periodo do relatorio.
- * @param {string} [options.title='Meus Remedios - Consulta Medica'] - Titulo do documento.
+ * @param {string} [options.title='Dosiq - Consulta Médica'] - Titulo do documento.
  * @returns {Promise<Blob>} Blob do PDF.
  */
 export async function generateConsultationPDF(options = {}) {
@@ -780,7 +780,7 @@ export async function generateConsultationPDF(options = {}) {
     consultationData,
     dashboardData,
     period = '30d',
-    title = 'Meus Remedios - Consulta Medica',
+    title = 'Dosiq - Consulta Médica',
   } = options
 
   const pdfData = buildConsultationPdfData({
@@ -806,8 +806,8 @@ export async function generateConsultationPDF(options = {}) {
   doc.setProperties({
     title: pdfData.title,
     subject: 'Consulta medica',
-    author: 'Meus Remedios',
-    creator: 'Meus Remedios',
+    author: 'Dosiq',
+    creator: 'Dosiq',
   })
 
   renderSummaryPage(doc, pdfData)

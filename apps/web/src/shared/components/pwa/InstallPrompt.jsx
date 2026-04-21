@@ -146,21 +146,21 @@ export default function InstallPrompt() {
     if (platformInfo.isIOSSafari) {
       return {
         title: 'Adicione à Tela de Início',
-        description: 'Acesse o Meus Remédios rapidamente como um app nativo',
+        description: 'Acesse o Dosiq rapidamente como um app nativo',
         buttonText: 'Ver Como Instalar',
       }
     }
 
     if (platformInfo.isChromeAndroid) {
       return {
-        title: 'Instale o Meus Remédios',
+        title: 'Instale o Dosiq',
         description: 'Acesse rapidamente como um app nativo no seu Android',
         buttonText: 'Instalar Agora',
       }
     }
 
     return {
-      title: 'Instale o Meus Remédios',
+      title: 'Instale o Dosiq',
       description: 'Acesse rapidamente como um app nativo no seu computador',
       buttonText: 'Instalar Agora',
     }
