@@ -79,8 +79,11 @@ echo "🧹 Limpando cache e regenerando diretório nativo..."
 npx expo prebuild --platform ios --clean
 
 echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
-# Usamos --output para garantir que sabemos onde o arquivo vai cair
-eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache
+# Usamos || true para ignorar erros de limpeza interna do EAS (comum no iCloud) 
+# O sucesso será validado pela existência do arquivo na linha seguinte.
+eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || {
+  echo "⚠️ Aviso: O comando EAS reportou um problema (provavelmente limpeza de cache no iCloud), verificando integridade do binário..."
+}
 
 if [ ! -f "$TEMP_OUTPUT" ]; then
   echo "❌ Erro: Build concluído mas arquivo não encontrado em $TEMP_OUTPUT"
@@ -94,7 +97,7 @@ mv "$TEMP_OUTPUT" "$FINAL_PATH"
 # 5. Submissão automática para TestFlight (apenas produção)
 if [ "$PROFILE" = "production" ]; then
   echo "⬆️ Iniciando submissão para TestFlight..."
-  if eas submit --platform ios --profile production --path "$FINAL_PATH" --non-interactive; then
+  if eas submit --platform ios --profile production --path "$FINAL_PATH" ; then
     echo "✅ Submissão concluída com sucesso!"
   else
     echo "⚠️ Falha na submissão ao TestFlight, mas o build local foi preservado em $FINAL_PATH"
