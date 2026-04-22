@@ -67,18 +67,20 @@ export default function TodayScreen() {
   // 2. Heurística de Expansão Inicial
   useEffect(() => {
     if (shifts.length > 0 && Object.keys(expandedShifts).length === 0) {
+      const now = new Date()
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const currentShift = getPeriodFromTime(timeStr)
+
       const initial = {}
       shifts.forEach(shift => {
         const doses = groupedTimeline[shift] || []
-        // Expandir se tiver dose atrasada ou próxima
+        // Regra 1: Expandir se for o turno atual
+        const isCurrent = shift === currentShift
+        // Regra 2: Expandir se tiver dose urgente (Atrasada/Próxima)
         const hasUrgent = doses.some(d => d.timelineStatus === 'ATRASADA' || d.timelineStatus === 'PROXIMA')
-        initial[shift] = hasUrgent
+        
+        initial[shift] = isCurrent || hasUrgent
       })
-      
-      // Fallback: se nada for urgente, expandir o primeiro turno disponível
-      if (!Object.values(initial).some(v => v) && shifts.length > 0) {
-        initial[shifts[0]] = true
-      }
       
       setExpandedShifts(initial)
     }
