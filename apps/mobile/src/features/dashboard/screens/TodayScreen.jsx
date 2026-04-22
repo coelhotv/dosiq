@@ -14,6 +14,7 @@ import HeroDoseCard from '../components/HeroDoseCard'
 import StockAlertInline from '../components/StockAlertInline'
 import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
+import { colors } from '../../../shared/styles/tokens'
 
 export default function TodayScreen() {
   const [modalProtocol, setModalProtocol] = useState(null)
@@ -156,12 +157,12 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1a1c1e',
+    color: colors.text.primary,
     letterSpacing: -0.5,
   },
   date: {
     fontSize: 16,
-    color: '#74777f',
+    color: colors.text.secondary,
     textTransform: 'capitalize',
     marginTop: 4,
   },
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   agendaTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1a1c1e',
+    color: colors.text.primary,
   },
   staleBanner: {
     backgroundColor: 'rgba(255, 152, 0, 0.1)',

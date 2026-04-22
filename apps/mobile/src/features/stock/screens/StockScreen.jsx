@@ -7,6 +7,7 @@ import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import StockItem from '../components/StockItem'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
+import { colors, spacing } from '../../../shared/styles/tokens'
 
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).
