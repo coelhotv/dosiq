@@ -317,6 +317,14 @@ Revise antes:
 - Firebase, se estiver embutido em iOS
 - qualquer SDK terceiro
 
+## 9.1. App Tracking Transparency (ATT) ⚠️
+
+**CRÍTICO:** Se o seu app coleta User ID ou Device ID e você pretende exibir anúncios ou usar dados para rastreamento (roadmap de monetização), a Apple EXIGE o pop-up de permissão.
+
+- Se marcou "Sim" para Tracking no questionário, o app DEVE implementar `expo-tracking-transparency`.
+- Se não implementou o pop-up, marque "Não" para Tracking no questionário (mesmo coletando IDs para Analytics).
+- Rejeição Comum: **Guideline 5.1.2(i)**. Resolva implementando o ATT no código ou ajustando o formulário para "Não Rastreia para fins publicitários".
+
 ---
 
 ## 10. App Access e conta de review
@@ -355,9 +363,31 @@ Depois do setup de Apple Developer + App Store Connect, o fluxo normal será:
 3. esperar processamento
 4. usar o build em TestFlight
 
-### Regra prática
+## 11.1. Regra de Versão vs. Build
 
-O build iOS precisa ter:
+No App Store Connect, você verá dois campos de versão:
+- **Versão da Loja (Marketing):** O "nome" da versão que o usuário vê (ex: 1.0). Edite no portal para bater com seu código.
+- **Versão do Binário (Build):** O valor real do `app.config.js` (ex: 0.1.1).
+
+## 11.2. Como fazer o Upload do Binário (.ipa)
+
+Diferente do Google, a Apple **não possui botão de upload de arquivo no navegador**. Use um destes métodos:
+
+### Método A: EAS Submit (Recomendado)
+Use a CLI do Expo para enviar o arquivo gerado localmente:
+```bash
+npx eas-cli submit --platform ios --path ./apps/mobile/build-xyz.ipa
+```
+
+### Método B: App Transporter (Visual)
+1. Baixe o app **Transporter** na Mac App Store.
+2. Faça login com sua conta Apple Developer.
+3. Arraste o arquivo `.ipa` para dentro do app e clique em **Entregar**.
+
+### Método C: Xcode
+Se estiver buildando via Xcode, use o menu `Product > Archive` e depois `Distribute App`.
+
+---
 
 - bundle identifier igual ao app criado no App Store Connect
 - versão coerente
