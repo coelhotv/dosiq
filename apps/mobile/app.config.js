@@ -61,7 +61,8 @@ module.exports = {
       minimumOSVersion: '15.5',
       googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
       infoPlist: {
-        ITSAppUsesNonExemptEncryption: false
+        ITSAppUsesNonExemptEncryption: false,
+        NSUserTrackingUsageDescription: 'Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app.'
       },
     },
     android: {
