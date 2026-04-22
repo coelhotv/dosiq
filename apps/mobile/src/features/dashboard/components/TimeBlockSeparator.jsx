@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Moon, Sun, CloudSun, ChevronDown, ChevronUp } from 'lucide-react-native'
-import { colors, spacing, typography } from '../../../shared/constants/tokens'
+import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
 /**
  * TimeBlockSeparator - Divisor de turnos para a Timeline (Epic 2)
