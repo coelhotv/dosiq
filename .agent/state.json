@@ -27,15 +27,15 @@
   },
   "memory": {
     "rules_count": 130,
-    "anti_patterns_count": 102,
+    "anti_patterns_count": 103,
     "decisions_count": 33,
     "contracts_count": 20,
     "knowledge_count": 87,
     "last_distillation": "2026-04-21T18:50:00Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "recent_additions": {
       "rules": ["R-180"],
-      "anti_patterns": ["AP-H27"],
+      "anti_patterns": ["AP-H27", "AP-H26"],
       "knowledge": ["K-086"],
       "decisions": ["ADR-031", "ADR-032", "ADR-033"],
       "contracts": ["CON-018"]
