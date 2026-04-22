@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold || 'System',
   },
   shiftContainer: {
-    marginBottom: 4,
+    marginBottom: spacing[4],
   },
   dosesList: {
     marginTop: 4,

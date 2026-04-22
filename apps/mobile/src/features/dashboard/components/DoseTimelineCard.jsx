@@ -20,9 +20,9 @@ export default function DoseTimelineCard({ dose, onRegister }) {
   const isMuted = isTaken || isMissed
 
   const getStatusIcon = () => {
-    if (isTaken) return <Check size={18} color="#006a5e" />
-    if (isMissed) return <XCircle size={18} color="#ba1a1a" />
-    return <View style={styles.radioOutline} />
+    if (isTaken) return <Check size={18} color={colors.status.success} />
+    if (isMissed) return <XCircle size={18} color={colors.status.error} />
+    return <Clock size={18} color={colors.neutral[300]} />
   }
 
   return (

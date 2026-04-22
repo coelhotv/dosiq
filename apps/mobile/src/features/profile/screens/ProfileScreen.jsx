@@ -7,7 +7,7 @@ import { useProfile } from '../hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import TelegramLinkCard from '../components/TelegramLinkCard'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
+import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
 import { ROUTES } from '../../../navigation/routes'
 
 /**
@@ -136,10 +136,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text.primary,
     letterSpacing: -0.5,
-    paddingHorizontal: spacing[1], // Dá um pequeno respiro
+    paddingHorizontal: 20,
     paddingVertical: 16,
     marginBottom: 8,
-    marginTop: spacing[2],
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   section: {
     marginBottom: spacing[6],
