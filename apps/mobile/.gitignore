@@ -2,6 +2,7 @@
 # Regenerated via: npx expo prebuild
 ios/
 android/
+credentials/
 
 # Dependencies
 node_modules/
@@ -20,3 +21,4 @@ dist/
 # Firebase credentials (nunca commitar — contêm chaves privadas)
 google-services*.json
 GoogleService-Info*.plist
+credentials.json
