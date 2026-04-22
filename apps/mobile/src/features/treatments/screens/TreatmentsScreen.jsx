@@ -8,7 +8,7 @@ import ErrorState from '../../../shared/components/states/ErrorState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import TreatmentCard from '../components/TreatmentCard'
 import { useTreatments } from '../hooks/useTreatments'
-import { colors, spacing } from '../../../shared/styles/tokens'
+import { colors, spacing, typography } from '../../../shared/styles/tokens'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
 export default function TreatmentsScreen() {
@@ -59,20 +59,24 @@ export default function TreatmentsScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    padding: spacing[4],
     paddingBottom: spacing[10],
   },
   header: {
-    marginBottom: spacing[6],
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing[1],
+    letterSpacing: -0.5,
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.text.secondary,
+    marginTop: 4,
+    fontFamily: typography.fontFamily.medium || 'System',
   },
 })

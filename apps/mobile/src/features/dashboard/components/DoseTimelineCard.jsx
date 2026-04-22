@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, XCircle } from 'lucide-react-native'
+import { colors, spacing, typography, shadows } from '../../../shared/styles/tokens'
 
 /**
  * DoseTimelineCard - Item de dose para a Timeline (Epic 2)
@@ -20,9 +21,9 @@ export default function DoseTimelineCard({ dose, onRegister }) {
   const isMuted = isTaken || isMissed
 
   const getStatusIcon = () => {
-    if (isTaken) return <Check size={18} color="#006a5e" />
-    if (isMissed) return <XCircle size={18} color="#ba1a1a" />
-    return <View style={styles.radioOutline} />
+    if (isTaken) return <Check size={18} color={colors.status.success} />
+    if (isMissed) return <XCircle size={18} color={colors.status.error} />
+    return <Clock size={18} color={colors.neutral[300]} />
   }
 
   return (
@@ -65,20 +66,16 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.bg.card,
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 8,
     // Sombra sutil
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 2,
-    elevation: 1,
+    ...shadows.xs,
   },
   cardMuted: {
-    backgroundColor: '#f1f1f1',
+    backgroundColor: colors.border.light,
     opacity: 0.6,
   },
   timeLineContainer: {
@@ -87,7 +84,8 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1c1e',
+    color: colors.text.primary,
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   info: {
     flex: 1,
@@ -96,17 +94,19 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1c1e',
+    color: colors.text.primary,
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   strikethrough: {
     textDecorationLine: 'line-through',
   },
   dosage: {
     fontSize: 13,
-    color: '#44474e',
+    color: colors.text.secondary,
+    fontFamily: typography.fontFamily.regular || 'System',
   },
   mutedText: {
-    color: '#74777f',
+    color: colors.text.muted,
   },
   statusAction: {
     width: 70, // Maior para caber o botão
@@ -114,21 +114,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionButton: {
-    backgroundColor: '#006a5e',
+    backgroundColor: colors.primary[600],
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
   actionButtonText: {
-    color: '#ffffff',
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: typography.fontFamily.bold || 'System',
   },
-  radioOutline: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#c4c6cf',
-  }
 })

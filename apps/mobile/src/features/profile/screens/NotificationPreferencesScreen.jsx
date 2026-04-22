@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native'
-import { Send, MessageSquareDot, TrendingUpDown, MessageSquareOff, ArrowLeft } from 'lucide-react-native'
+import { Send, MessageSquareDot, TrendingUpDown, MessageSquareOff } from 'lucide-react-native'
 import { useAuth } from '../../../platform/auth/hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { requestPushPermission } from '../../../platform/notifications/requestPushPermission'
@@ -207,7 +207,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ArrowLeft size={24} color={colors.primary[600]} strokeWidth={2} />
+            <Text style={styles.backButtonText}>← Voltar</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Preferências de Notificação</Text>
         </View>
@@ -291,20 +291,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: spacing[4],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
     marginBottom: spacing[6],
-    gap: spacing[3],
   },
   backButton: {
-    padding: spacing[2],
-    marginLeft: -spacing[2],
+    marginBottom: spacing[4],
+  },
+  backButtonText: {
+    color: colors.primary[600],
+    fontSize: 16,
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text.primary,
-    flex: 1,
   },
   section: {
     marginBottom: spacing[6],

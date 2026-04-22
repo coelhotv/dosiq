@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
-import { TrendingUp } from 'lucide-react-native'
+import { TrendingUp, TrendingDown } from 'lucide-react-native'
 import AdherenceRing from './AdherenceRing'
 import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
 
@@ -28,8 +28,18 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
           
           {trend ? (
             <View style={styles.trendContainer}>
-              <TrendingUp size={16} color={colors.primary[500]} style={styles.trendIcon} />
-              <Text style={styles.trendText}>{trend}</Text>
+              {trend.includes('-') ? (
+                <TrendingDown size={16} color={colors.status.error} style={styles.trendIcon} />
+              ) : !trend.includes('Mantendo') ? (
+                <TrendingUp size={16} color={colors.primary[500]} style={styles.trendIcon} />
+              ) : null}
+              <Text style={[
+                styles.trendText, 
+                trend.includes('-') && { color: colors.status.error },
+                trend.includes('Mantendo') && { color: colors.text.secondary }
+              ]}>
+                {trend}
+              </Text>
             </View>
           ) : null}
         </View>

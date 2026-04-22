@@ -4,7 +4,7 @@
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native'
 import { colors } from '../../styles/tokens'
 
-export default function LoadingState({ message = 'A carregar...' }) {
+export default function LoadingState({ message = 'Carregando...' }) {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary[600]} />

@@ -7,8 +7,8 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { parseLocalDate } from '@dosiq/core'
 
 /**
- * Busca protocolos activos do utilizador.
- * Selecciona apenas colunas necessárias para o dashboard (R-127: slim select).
+ * Busca protocolos ativos do utilizador.
+ * Seleciona apenas colunas necessárias para o dashboard (R-127: slim select).
  *
  * @param {string} userId
  * @returns {Promise<Array>}
