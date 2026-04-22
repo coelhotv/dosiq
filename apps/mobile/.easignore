@@ -1,0 +1,24 @@
+# Expo generated native directories (managed workflow)
+# Regenerated via: npx expo prebuild
+ios/
+android/
+credentials/
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+
+# Local env — NUNCA commitar (contêm credenciais sensíveis)
+.env
+.env.local
+.env.development
+.env.preview
+.env.production
+
+# Para builds locais no EAS_BUILD_PROFILE development/production, 
+# nós NÃO ignoramos os plist/json do firebase no .easignore 
+# (pois precisamos empacotá-los no zip que vai para o builder local). 
+credentials.json
