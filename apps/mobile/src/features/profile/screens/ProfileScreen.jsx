@@ -64,7 +64,9 @@ export default function ProfileScreen() {
           />
         }
       >
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Perfil</Text>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Minha Conta</Text>
@@ -129,16 +131,18 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: spacing[4],
+    paddingBottom: 40,
   },
-  headerTitle: {
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
+  },
+  title: {
     fontSize: 28,
     fontWeight: '800',
     color: colors.text.primary,
     letterSpacing: -0.5,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 8,
     fontFamily: typography.fontFamily.bold || 'System',
   },
   section: {
@@ -149,12 +153,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.secondary,
     marginBottom: spacing[2],
-    marginLeft: spacing[1],
+    paddingHorizontal: 20,
   },
   card: {
     backgroundColor: colors.bg.card,
     borderRadius: borderRadius.lg,
     padding: spacing[4],
+    marginHorizontal: 16,
     ...shadows.sm,
   },
   infoRow: {
@@ -178,6 +183,7 @@ const styles = StyleSheet.create({
   logoutSection: {
     marginTop: spacing[4],
     marginBottom: spacing[8],
+    marginHorizontal: 16,
   },
   logoutButton: {
     borderWidth: 1,

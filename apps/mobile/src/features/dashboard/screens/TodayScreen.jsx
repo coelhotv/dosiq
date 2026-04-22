@@ -241,9 +241,9 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium || 'System',
   },
   agendaHeader: {
-    paddingHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 0,
+    paddingHorizontal: 20,
+    marginTop: spacing[6],
+    marginBottom: spacing[3],
   },
   agendaTitle: {
     fontSize: 22,
