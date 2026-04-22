@@ -30,6 +30,8 @@
 - **[R-132]** Estruturar logs no entry point api/*.js, NÃO em server/bot/**. Node.js server co... -> [`rules/infra_and_deploy/R-132.md`](./rules/infra_and_deploy/R-132.md)
 - **[R-158]** Avoid peer dep conflicts (ERESOLVE) by aligning with root + dev tool peer requir... -> [`rules/infra_and_deploy/R-158.md`](./rules/infra_and_deploy/R-158.md)
 - **[R-159]** After adding/modifying workspace packages, commit package-lock.json to keep CI/C... -> [`rules/infra_and_deploy/R-159.md`](./rules/infra_and_deploy/R-159.md)
+- **[R-180]** In monorepos using local EAS builds, .easignore at the root MUST explicitly incl... -> [`rules/infra_and_deploy/R-180.md`](./rules/infra_and_deploy/R-180.md)
+
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[R-024]** In the clinical PDF daily table, count completed vs expected dose events per day... -> [`rules/mobile_and_platform/R-024.md`](./rules/mobile_and_platform/R-024.md)
@@ -64,6 +66,9 @@
 - **[R-167]** All debug logging in React Native must be wrapped in 'if (__DEV__)' guard. This ... -> [`rules/mobile_and_platform/R-167.md`](./rules/mobile_and_platform/R-167.md)
 - **[R-168]** The 387-line custom polyfill in polyfills.js is NOT temporary. Both react-native... -> [`rules/mobile_and_platform/R-168.md`](./rules/mobile_and_platform/R-168.md)
 - **[R-174]** Force Metro to use a single instance of React and React Native fixed in the mobile workspace... -> [`rules/mobile_and_platform/R-174.md`](./rules/mobile_and_platform/R-174.md)
+- **[R-181]** iOS apps claiming user tracking in App Store Connect privacy labels MUST implemen... -> [`rules/mobile_and_platform/R-181.md`](./rules/mobile_and_platform/R-181.md)
+- **[R-182]** Maintain absolute version consistency between platforms by using a shared formul... -> [`rules/mobile_and_platform/R-182.md`](./rules/mobile_and_platform/R-182.md)
+
 
 
 ## 🛡️ Process & Testing (`process_and_testing`)

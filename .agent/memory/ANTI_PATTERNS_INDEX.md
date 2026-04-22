@@ -71,6 +71,8 @@
 - **[AP-W01]** Edit goes to wrong file; bug remains; spec can have stale paths -> [`anti-patterns/process_and_testing/AP-W01.md`](./anti-patterns/process_and_testing/AP-W01.md)
 - **[AP-W03]** `"Found multiple elements with text…"` test failure -> [`anti-patterns/process_and_testing/AP-W03.md`](./anti-patterns/process_and_testing/AP-W03.md)
 - **[AP-H28]** Modificar dados reais de produção para fins de teste de UI. -> [`anti-patterns/process_and_testing/AP-H28.md`](./anti-patterns/process_and_testing/AP-H28.md)
+- **[AP-055]** App Store Connect Manual Binary Upload Myth. No "Upload" button for .ipa files... -> [`anti-patterns/process_and_testing/AP-055.md`](./anti-patterns/process_and_testing/AP-055.md)
+
 
 ## ⚛️ React & Ui (`react_and_ui`)
 - **[AP-004]** `ReferenceError` — TDZ crash -> [`anti-patterns/react_and_ui/AP-004.md`](./anti-patterns/react_and_ui/AP-004.md)
