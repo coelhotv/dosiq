@@ -18,12 +18,12 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_dosiq_cleanup",
-    "started_at": "2026-04-22T07:00:00Z",
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Cleanup final da migração Dosiq (resíduos em comentários, README e settings)",
-    "goal_type": "refactor"
+    "id": "session_2026W17_native_ui_tweaks",
+    "started_at": "2026-04-22T14:17:00Z",
+    "mode": "planning",
+    "status": "planning",
+    "goal": "Native App UI Tweaks (Fase 8 Post-MVP)",
+    "goal_type": "feature"
   },
   "memory": {
     "rules_count": 129,
