@@ -34,6 +34,7 @@ export default function TodayScreen() {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
   const [expandedShifts, setExpandedShifts] = useState({})
+  const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
@@ -66,7 +67,11 @@ export default function TodayScreen() {
 
   // 2. Heurística de Expansão Inicial
   useEffect(() => {
-    if (shifts.length > 0 && Object.keys(expandedShifts).length === 0) {
+    const currentDay = data?.localDay
+    const dayChanged = lastHeuristicDay && currentDay && lastHeuristicDay !== currentDay
+    const isFirstLoad = Object.keys(expandedShifts).length === 0
+
+    if (shifts.length > 0 && (isFirstLoad || dayChanged)) {
       const now = new Date()
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
       const currentShift = getPeriodFromTime(timeStr)
@@ -83,8 +88,9 @@ export default function TodayScreen() {
       })
       
       setExpandedShifts(initial)
+      setLastHeuristicDay(currentDay)
     }
-  }, [shifts, groupedTimeline])
+  }, [shifts, groupedTimeline, data?.localDay, lastHeuristicDay])
 
   const toggleShift = useCallback((shift) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)

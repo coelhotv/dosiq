@@ -160,7 +160,8 @@ export function useTodayData() {
       const now = new Date()
       // Meia-noite local do dia seguinte
       const nextMidnight = new Date(now)
-      nextMidnight.setHours(24, 0, 0, 0)
+      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      nextMidnight.setHours(0, 0, 0, 0)
       
       const msUntilMidnight = nextMidnight.getTime() - now.getTime()
       
