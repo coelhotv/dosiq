@@ -30,10 +30,14 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
             <View style={styles.trendContainer}>
               {trend.includes('-') ? (
                 <TrendingDown size={16} color={colors.status.error} style={styles.trendIcon} />
-              ) : (
+              ) : !trend.includes('Mantendo') ? (
                 <TrendingUp size={16} color={colors.primary[500]} style={styles.trendIcon} />
-              )}
-              <Text style={[styles.trendText, trend.includes('-') && { color: colors.status.error }]}>
+              ) : null}
+              <Text style={[
+                styles.trendText, 
+                trend.includes('-') && { color: colors.status.error },
+                trend.includes('Mantendo') && { color: colors.text.secondary }
+              ]}>
                 {trend}
               </Text>
             </View>

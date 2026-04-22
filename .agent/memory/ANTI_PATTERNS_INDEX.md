@@ -51,6 +51,7 @@
 - **[AP-P20]** The consultation PDF loses clinical usefulness and makes it harder to distinguis... -> [`anti-patterns/mobile_and_platform/AP-P20.md`](./anti-patterns/mobile_and_platform/AP-P20.md)
 - **[AP-P21]** A protocol with multiple time slots per day counts the same day several times, i... -> [`anti-patterns/mobile_and_platform/AP-P21.md`](./anti-patterns/mobile_and_platform/AP-P21.md)
 - **[AP-H26]** Falha de Regex do plugin Firebase v21+ no AppDelegate.swift do Expo 53 -> [`anti-patterns/mobile_and_platform/AP-H26.md`](./anti-patterns/mobile_and_platform/AP-H26.md)
+- **[AP-W28]** Cálculo de meia-noite frágil usando .setHours(24) em vez de .setDate(+1). -> [`anti-patterns/mobile_and_platform/AP-W28.md`](./anti-patterns/mobile_and_platform/AP-W28.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[AP-001]** Production bug — fix goes to unused file -> [`anti-patterns/process_and_testing/AP-001.md`](./anti-patterns/process_and_testing/AP-001.md)
@@ -111,6 +112,7 @@
 - **[AP-W25]** Usar componente Button com className custom causa conflito de estilos no mobile -> [`anti-patterns/react_and_ui/AP-W25.md`](./anti-patterns/react_and_ui/AP-W25.md)
 - **[AP-W26]** Flicker de interface no mount causado por animações concorrentes com LoadingState. -> [`anti-patterns/react_and_ui/AP-W26.md`](./anti-patterns/react_and_ui/AP-W26.md)
 - **[AP-W27]** Typography e FontWeights fixos (hardcoded) em vez de usar tokens compartilhados. -> [`anti-patterns/react_and_ui/AP-W27.md`](./anti-patterns/react_and_ui/AP-W27.md)
+- **[AP-W29]** Heurística de expansão de UI não re-avaliada na virada de dia local. -> [`anti-patterns/react_and_ui/AP-W29.md`](./anti-patterns/react_and_ui/AP-W29.md)
 - **[AP-H22]** "TypeError: Cannot read property 'useState' of null" crash caused by Metro bundling multiple versions of React. -> [`anti-patterns/react_and_ui/AP-H22.md`](./anti-patterns/react_and_ui/AP-H22.md)
 - **[AP-H26]** ReferenceError: 'colors' is not defined. Falta de import de tokens ao padronizar UI nativa. -> [`anti-patterns/react_and_ui/AP-H26.md`](./anti-patterns/react_and_ui/AP-H26.md)
 - **[AP-H23]** @react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+) — Firebase não inicializa; usar v21+ -> [`anti-patterns/mobile_and_platform/AP-H23.md`](./anti-patterns/mobile_and_platform/AP-H23.md)

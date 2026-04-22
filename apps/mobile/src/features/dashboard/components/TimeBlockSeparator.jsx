@@ -31,7 +31,7 @@ export default function TimeBlockSeparator({
       case 'Noite': 
         return <Moon size={iconSize} color={baseColor || '#3f51b5'} />
       default: 
-        return <Sun size={iconSize} color={baseColor || colors.text.secondary} />
+        return <Sun size={iconSize} color={baseColor || '#74777f'} />
     }
   }
 
