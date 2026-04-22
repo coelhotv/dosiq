@@ -8,9 +8,9 @@ APP_DIR="$SCRIPT_DIR"
 
 # production usa google-services.json; dev e preview compartilham google-services-development.json
 if [ "$PROFILE" = "production" ]; then
-  CREDS_FILE="$ICLOUD_MOBILE/google-services.json"
+  CREDS_FILE="$APP_DIR/google-services.json"
 else
-  CREDS_FILE="$ICLOUD_MOBILE/google-services-development.json"
+  CREDS_FILE="$APP_DIR/google-services-development.json"
 fi
 
 if [ ! -f "$CREDS_FILE" ]; then

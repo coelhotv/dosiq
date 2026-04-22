@@ -3,7 +3,7 @@
 // RE-001: app.config.js é o formato canônico (não app.json)
 // RE-006: identidade estável por variante de ambiente
 
-const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'development'
+const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
 const APP_VERSION = '0.1.0'
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
@@ -32,7 +32,7 @@ const variants = {
   },
 }
 
-const current = variants[BUILD_PROFILE] || variants.development
+const current = variants[BUILD_PROFILE] || variants.production
 
 module.exports = {
   expo: {
