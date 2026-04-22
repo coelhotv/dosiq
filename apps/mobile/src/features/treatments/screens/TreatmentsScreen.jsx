@@ -59,7 +59,6 @@ export default function TreatmentsScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    padding: spacing[4],
     paddingBottom: spacing[10],
   },
   header: {

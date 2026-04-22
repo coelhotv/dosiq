@@ -218,7 +218,6 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   scroll: {
-    paddingVertical: 10,
     paddingBottom: 40,
   },
   header: {
