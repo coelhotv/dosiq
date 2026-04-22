@@ -47,5 +47,60 @@ echo "🔐 Exportando credencial Firebase: $PLIST_FILE"
 export GOOGLE_SERVICES_PLIST_PATH="$PLIST_FILE"
 export EAS_BUILD_PROFILE="$PROFILE"
 
-echo "🚀 Iniciando build iOS ($PROFILE)..."
-eas build --local --platform ios --profile "$PROFILE"
+# 1. Extrair versão do app.config.js
+APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
+echo "📦 Versão detectada: v$APP_VERSION"
+
+# 2. Preparar diretório de saída
+TARGET_DIR="$HOME/local/dev-builds"
+mkdir -p "$TARGET_DIR"
+
+# 3. Definir nome e extensão do arquivo
+if [ "$PROFILE" = "production" ]; then
+  EXT="ipa"
+else
+  EXT="app"
+fi
+
+TEMP_OUTPUT="$SCRIPT_DIR/build-temp.$EXT"
+FINAL_NAME="dosiq-v$APP_VERSION-$PROFILE.$EXT"
+FINAL_PATH="$TARGET_DIR/$FINAL_NAME"
+
+echo ""
+echo "📱 --- RESUMO DO PROCESSO ---"
+echo "👤 Perfil:  $PROFILE"
+echo "📦 Versão:  v$APP_VERSION"
+echo "📂 Destino: $FINAL_PATH"
+echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight ✈️)" || echo "NÃO (Apenas Local 💾)" )"
+echo "-----------------------------"
+read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
+
+echo "🧹 Limpando cache e regenerando diretório nativo..."
+npx expo prebuild --platform ios --clean
+
+echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
+# Usamos --output para garantir que sabemos onde o arquivo vai cair
+eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache
+
+if [ ! -f "$TEMP_OUTPUT" ]; then
+  echo "❌ Erro: Build concluído mas arquivo não encontrado em $TEMP_OUTPUT"
+  exit 1
+fi
+
+# 4. Mover e renomear
+echo "💾 Movendo build para: $FINAL_PATH"
+mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+# 5. Submissão automática para TestFlight (apenas produção)
+if [ "$PROFILE" = "production" ]; then
+  echo "⬆️ Iniciando submissão para TestFlight..."
+  if eas submit --platform ios --profile production --path "$FINAL_PATH" --non-interactive; then
+    echo "✅ Submissão concluída com sucesso!"
+  else
+    echo "⚠️ Falha na submissão ao TestFlight, mas o build local foi preservado em $FINAL_PATH"
+    exit 1
+  fi
+fi
+
+echo "✨ Processo finalizado com sucesso!"
+echo "📂 Arquivo disponível em: $FINAL_PATH"
