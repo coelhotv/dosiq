@@ -13,19 +13,19 @@ const VERSION_CODE = major * 10000 + minor * 100 + patch
 
 const variants = {
   development: {
-    name: 'Dosiq Dev',
+    name: 'dosiq dev',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq.development',
     androidPackage: 'com.coelhotv.dosiq.development',
   },
   preview: {
-    name: 'Dosiq Preview',
+    name: 'dosiq preview',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq.development',
     androidPackage: 'com.coelhotv.dosiq.development',
   },
   production: {
-    name: 'Dosiq',
+    name: 'dosiq',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq',
