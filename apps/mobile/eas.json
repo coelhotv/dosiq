@@ -9,11 +9,17 @@
       }
     },
     "preview": {
+      "ios": {
+        "image": "latest"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "ios": {
+        "image": "latest"
+      },
       "android": {
         "buildType": "app-bundle"
       }
