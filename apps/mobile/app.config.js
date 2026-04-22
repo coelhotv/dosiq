@@ -60,6 +60,9 @@ module.exports = {
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
       googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      },
     },
     android: {
       package: current.androidPackage,
