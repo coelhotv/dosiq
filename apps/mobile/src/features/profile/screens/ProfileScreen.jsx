@@ -133,9 +133,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing[6],
+    letterSpacing: -0.5,
+    paddingHorizontal: spacing[1], // Dá um pequeno respiro
+    paddingVertical: 16,
+    marginBottom: 8,
     marginTop: spacing[2],
   },
   section: {

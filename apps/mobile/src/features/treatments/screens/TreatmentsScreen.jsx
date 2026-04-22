@@ -63,16 +63,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[10],
   },
   header: {
-    marginBottom: spacing[6],
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing[1],
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.text.secondary,
+    marginTop: 4,
   },
 })
