@@ -4,6 +4,7 @@
 // stale=true quando há snapshot em cache mas a última refresh falhou (R5-008)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@dosiq/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@dosiq/core'
@@ -149,6 +150,48 @@ export function useTodayData() {
 
   useEffect(() => {
     load()
+  }, [load])
+
+  // Lógica de Refresh de Meia-Noite e AppState (R5-008, R-020)
+  useEffect(() => {
+    let midnightTimer
+
+    const scheduleMidnightRefresh = () => {
+      const now = new Date()
+      // Meia-noite local do dia seguinte
+      const nextMidnight = new Date(now)
+      nextMidnight.setHours(24, 0, 0, 0)
+      
+      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
+      
+      clearTimeout(midnightTimer)
+      midnightTimer = setTimeout(() => {
+        if (__DEV__) console.log('[useTodayData] Meia-noite detectada: Refreshing...')
+        load()
+        scheduleMidnightRefresh() // Agendar próxima
+      }, msUntilMidnight + 1000) // +1s para garantir que passou o boundary
+    }
+
+    scheduleMidnightRefresh()
+
+    // Listener para quando o app volta do background (Device Lock ou App Switch)
+    const handleStateChange = (nextState) => {
+      if (nextState === 'active') {
+        const today = getTodayLocal()
+        // Se mudou o dia enquanto estava em background, forçar reload
+        if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
+          if (__DEV__) console.log('[useTodayData] Dia alterado via background: Refreshing...')
+          load()
+        }
+      }
+    }
+
+    const subscription = AppState.addEventListener('change', handleStateChange)
+
+    return () => {
+      subscription.remove()
+      clearTimeout(midnightTimer)
+    }
   }, [load])
 
   // Derivar estatísticas e zonas (Performance: memoized)

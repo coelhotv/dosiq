@@ -163,7 +163,19 @@ export default function TodayScreen() {
             icon={<Pill size={48} color={colors.status.success} />}
             message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
           />
+        ) : !isComplex ? (
+          /* MODO SIMPLE: Dona Maria (Lista direta cronológica) */
+          <View style={styles.simpleList}>
+            {timeline.map((dose) => (
+              <DoseTimelineCard 
+                key={dose.id} 
+                dose={dose} 
+                onRegister={handleOpenRegister}
+              />
+            ))}
+          </View>
         ) : (
+          /* MODO COMPLEX: Carlos (Agrupado por turnos com Accordion) */
           shifts.map(shift => {
             const doses = groupedTimeline[shift] || []
             const isExpanded = expandedShifts[shift]
