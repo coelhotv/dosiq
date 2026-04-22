@@ -62,7 +62,6 @@ module.exports = {
       googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSUserTrackingUsageDescription: 'Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app.'
       },
     },
     android: {
@@ -82,6 +81,12 @@ module.exports = {
           useFrameworks: 'static'
         }
       }],
+      [
+        'expo-tracking-transparency',
+        {
+          "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
+        }
+      ],
       './withFirebaseFix.js'
     ],
     extra: {
