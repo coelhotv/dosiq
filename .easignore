@@ -1,0 +1,13 @@
+# EAS Ignore para Monorepo
+node_modules/
+.git/
+
+# Forçar inclusão dos arquivos de configuração mobile para builds locais
+!apps/mobile/GoogleService-Info-development.plist
+!apps/mobile/GoogleService-Info-production.plist
+!apps/mobile/GoogleService-Info.plist
+!apps/mobile/google-services-development.json
+!apps/mobile/google-services-production.json
+!apps/mobile/google-services.json
+
+# Se houver outros pacotes mobile no futuro, adicionar aqui
