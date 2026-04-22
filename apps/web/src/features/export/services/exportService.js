@@ -400,7 +400,7 @@ export async function exportAsJSON(options = {}) {
   // Download
   downloadFile(
     jsonContent,
-    generateFilename('meus_remedios_export', 'json'),
+    generateFilename('dosiq_export', 'json'),
     'application/json;charset=utf-8'
   )
 }
@@ -491,7 +491,7 @@ export async function exportAsCSV(options = {}) {
   // Download
   downloadFile(
     csvContent,
-    generateFilename('meus_remedios_export', 'csv'),
+    generateFilename('dosiq_export', 'csv'),
     'text/csv;charset=utf-8'
   )
 }

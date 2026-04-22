@@ -18,12 +18,12 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_distillation",
-    "started_at": "2026-04-21T18:35:00Z",
-    "completed_at": "2026-04-21T18:50:00Z",
-    "mode": "distillation",
-    "status": "distilled",
-    "goal": "compress and distill project memory"
+    "id": "session_2026W17_dosiq_cleanup",
+    "started_at": "2026-04-22T07:00:00Z",
+    "mode": "coding",
+    "status": "completed",
+    "goal": "Cleanup final da migração Dosiq (resíduos em comentários, README e settings)",
+    "goal_type": "refactor"
   },
   "memory": {
     "rules_count": 129,
@@ -32,7 +32,7 @@
     "contracts_count": 19,
     "knowledge_count": 87,
     "last_distillation": "2026-04-21T18:50:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "recent_additions": {
       "rules": [],
       "anti_patterns": ["AP-H27"],

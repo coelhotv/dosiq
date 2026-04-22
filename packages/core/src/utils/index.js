@@ -1,5 +1,5 @@
 /**
- * Utilitarios Puros Compartilhados - Meus Remedios
+ * Utilitarios Puros Compartilhados - Dosiq
  *
  * Este modulo exporta funcoes utilitarias puras que nao dependem de APIs do navegador,
  * variaveis de ambiente ou estado global. Seguro para uso em qualquer contexto:
