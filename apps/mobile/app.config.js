@@ -7,9 +7,9 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
 const APP_VERSION = '0.1.1'
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
-// versionCode derivado da versão semântica: major*10000 + minor*100 + patch
+// buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
-const VERSION_CODE = major * 10000 + minor * 100 + patch
+const BUILD_NUMBER = String(major * 10000 + minor * 100 + patch)
 
 const variants = {
   development: {
@@ -55,7 +55,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
-      buildNumber: '1',
+      buildNumber: BUILD_NUMBER,
       supportsTablet: false,
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
@@ -67,7 +67,7 @@ module.exports = {
     },
     android: {
       package: current.androidPackage,
-      versionCode: VERSION_CODE,
+      versionCode: Number(BUILD_NUMBER),
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services-${BUILD_PROFILE}.json`,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
