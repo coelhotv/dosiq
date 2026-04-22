@@ -1,5 +1,4 @@
-# Expo generated native directories (managed workflow)
-# Regenerated via: npx expo prebuild
+# Expo generated native directories
 ios/
 android/
 credentials/
@@ -11,14 +10,21 @@ node_modules/
 .expo/
 dist/
 
-# Local env — NUNCA commitar (contêm credenciais sensíveis)
+# Local env
 .env
 .env.local
 .env.development
 .env.preview
 .env.production
 
-# Para builds locais no EAS_BUILD_PROFILE development/production, 
-# nós NÃO ignoramos os plist/json do firebase no .easignore 
-# (pois precisamos empacotá-los no zip que vai para o builder local). 
+# FORÇAR inclusão de arquivos do Firebase para o builder local
+# (Embora ignorados no git, o EAS CLI precisa deles no tarball local)
+!GoogleService-Info-development.plist
+!GoogleService-Info-production.plist
+!GoogleService-Info.plist
+!google-services-development.json
+!google-services-production.json
+!google-services.json
+
+# Nunca enviar chaves privadas de credenciais
 credentials.json
