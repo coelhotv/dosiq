@@ -236,7 +236,7 @@ export default function Settings({ onNavigate }) {
                     </code>
                   </p>
                   <a
-                    href="https://t.me/meus_remedios_bot"
+                    href="https://t.me/dosiq_bot"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="sr-telegram__link"

@@ -30,7 +30,7 @@ export const webQueryCache = createQueryCache({
   logger,
   staleTime: 30_000,
   maxEntries: 200,
-  persistKey: 'meus_remedios_query_cache',
+  persistKey: 'dosiq_query_cache',
 })
 
 // Hidratacao automatica no bootstrap web.

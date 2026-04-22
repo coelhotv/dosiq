@@ -213,7 +213,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 ## 🏗️ Estrutura do Projeto (v2.8.0 - Feature-Based)
 
 ```
-meu-remedio/
+dosiq/
 ├── src/
 │   ├── features/            # 🆕 NOVO: Organização por feature (F4.6)
 │   │   ├── adherence/       # Componentes, hooks, services, utils de adesão
@@ -437,5 +437,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Versão**: 2.8.0 (Phase 4: Instalabilidade e Navegação)
-**Última atualização**: 12 Fevereiro 2026
+**Versão**: 3.3.0 (Phase 5: Brand Migration Complete)
+**Última atualização**: 22 Abril 2026

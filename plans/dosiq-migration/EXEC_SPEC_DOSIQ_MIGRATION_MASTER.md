@@ -2,7 +2,7 @@
 
 > **Referência:** `plans/dosiq-migration/EXEC_SPEC_DOSIQ_MIGRATION_MASTER.md`
 > **Versão:** 2.0 (pós-auditoria completa do repositório — 140 ocorrências mapeadas)
-> **Status:** EM EXECUÇÃO — Fases 1, 2, 3 e 4 concluídas; Fase 5 pendente
+> **Status:** CONCLUÍDA ✅ — Todas as 5 fases finalizadas e validadas
 > **Backup:** `/Users/coelhotv/meus-remedios-backup-before-dosiq.tar.gz` ✅ já criado
 
 ---
@@ -121,7 +121,7 @@ grep -rn "meus.remedios\|meusremedios\|Meus Rem\|@meus-remedios" \
 | 2 | App Híbrido Mobile & Expo (Concluída ✅ — PR #484) | `EXEC_SPEC_DOSIQ_MIGRATION_FASE_2.md` | `refactor/dosiq-migration-fase-2` | Fase 1 merged |
 | 3 | Web App, SEO & PWA (Concluída ✅ — PR #485) | `EXEC_SPEC_DOSIQ_MIGRATION_FASE_3.md` | `refactor/dosiq-migration-fase-3` | Fase 1 merged |
 | 4 | Bot, API Serverless & Notificações (Concluída ✅ — PR #486) | `EXEC_SPEC_DOSIQ_MIGRATION_FASE_4.md` | `refactor/dosiq-migration-fase-4` | Fase 1 merged |
-| 5 | Documentação, Devflow & Specs | `EXEC_SPEC_DOSIQ_MIGRATION_FASE_5.md` | `refactor/dosiq-migration-fase-5` | Fases 1–4 merged |
+| 5 | Documentação, Devflow & Specs (Concluída ✅) | `EXEC_SPEC_DOSIQ_MIGRATION_FASE_5.md` | `refactor/dosiq-migration-fase-5` | Fases 1–4 merged |
 
 ### 5.1 Status Atual da Sprint (2026-04-21)
 
@@ -129,7 +129,7 @@ grep -rn "meus.remedios\|meusremedios\|Meus Rem\|@meus-remedios" \
 - [x] Fase 2 concluída e merged — PR #484 (`2026-04-21`)
 - [x] Fase 3 concluída e merged — PR #485 (`2026-04-21`)
 - [x] Fase 4 concluída e merged — PR #486 (`2026-04-21`)
-- [ ] Fase 5 pendente de execução/merge
+- [x] Fase 5 concluída e merged — PR #487 (`2026-04-22`)
 
 ---
 

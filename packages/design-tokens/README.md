@@ -1,4 +1,4 @@
-# @meus-remedios/design-tokens
+# @dosiq/design-tokens
 
 Design system tokens for Meus Remédios (Sanctuary Design System).
 
@@ -20,7 +20,7 @@ npm install
 ### Import all tokens
 
 ```javascript
-import { colors, spacing, radii, typography } from '@meus-remedios/design-tokens'
+import { colors, spacing, radii, typography } from '@dosiq/design-tokens'
 
 const bgColor = colors.background.bgPrimary
 const padding = spacing.named.md
@@ -32,16 +32,16 @@ const fontSize = typography.fontSizes.base
 
 ```javascript
 // Colors only
-import { colors } from '@meus-remedios/design-tokens/colors'
+import { colors } from '@dosiq/design-tokens/colors'
 
 // Spacing only
-import { spacing } from '@meus-remedios/design-tokens/spacing'
+import { spacing } from '@dosiq/design-tokens/spacing'
 
 // Radii only
-import { radii } from '@meus-remedios/design-tokens/radii'
+import { radii } from '@dosiq/design-tokens/radii'
 
 // Typography only
-import { typography } from '@meus-remedios/design-tokens/typography'
+import { typography } from '@dosiq/design-tokens/typography'
 ```
 
 ## Token Structure
@@ -169,7 +169,7 @@ This package has **zero npm dependencies**. All tokens are pure data structures.
 Use tokens to generate CSS custom properties:
 
 ```javascript
-import { colors, spacing } from '@meus-remedios/design-tokens'
+import { colors, spacing } from '@dosiq/design-tokens'
 
 // In a CSS-in-JS or Vite plugin:
 const cssVars = Object.entries(colors.brand).reduce(
@@ -186,7 +186,7 @@ const cssVars = Object.entries(colors.brand).reduce(
 Use tokens directly in React Native StyleSheet:
 
 ```javascript
-import { colors, spacing } from '@meus-remedios/design-tokens'
+import { colors, spacing } from '@dosiq/design-tokens'
 import { StyleSheet } from 'react-native'
 
 const styles = StyleSheet.create({

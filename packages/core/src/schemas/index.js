@@ -1,5 +1,5 @@
 /**
- * Schemas de Validação Zod - Meus Remédios
+ * Schemas de Validação Zod - Dosiq
  *
  * Este módulo exporta todos os schemas de validação e helpers
  * para validação de dados da aplicação.

@@ -1,7 +1,7 @@
 /**
  * Sanctuary Design System Tokens — Main Export
  *
- * Pure JavaScript/JSON design tokens for the Meus Remédios design system.
+ * Pure JavaScript/JSON design tokens for the Dosiq design system.
  * Provides platform-agnostic token values for consumption by:
  * - Web (React + CSS)
  * - Mobile (React Native)

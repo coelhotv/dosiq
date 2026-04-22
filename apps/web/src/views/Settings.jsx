@@ -192,7 +192,7 @@ export default function Settings({ onNavigate }) {
                 <p>Envie este comando para o bot:</p>
                 <div className="code-box">/start {telegramToken}</div>
                 <a
-                  href={`https://t.me/meus_remedios_bot?start=${telegramToken}`}
+                  href={`https://t.me/dosiq_bot?start=${telegramToken}`}
                   target="_blank"
                   rel="noreferrer"
                   className="telegram-link"

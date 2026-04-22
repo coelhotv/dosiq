@@ -2,7 +2,7 @@
   "name": "@dosiq/design-tokens",
   "version": "0.0.0-phase2",
   "private": true,
-  "description": "Design system tokens for Meus Remédios (Sanctuary Design System)",
+  "description": "Design system tokens for Dosiq (Sanctuary Design System)",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
@@ -20,6 +20,6 @@
     "spacing",
     "typography"
   ],
-  "author": "Meus Remédios Team",
+  "author": "Dosiq Team",
   "license": "MIT"
 }
