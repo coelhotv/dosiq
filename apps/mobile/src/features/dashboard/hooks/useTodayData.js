@@ -61,7 +61,7 @@ export function useTodayData() {
       // Fetch online (primary)
       const [protocols, logs, userSettings] = await Promise.all([
         getActiveProtocols(user.id, today),
-        getLogsForPeriod(user.id, 7), // 7 dias de logs para adesão diluída
+        getLogsForPeriod(user.id, 14), // 14 dias de logs para tendências comparativas
         getUserSettings(user.id)
       ])
 
@@ -178,16 +178,27 @@ export function useTodayData() {
     )
 
     // 3. Calcular estatísticas de adesão (Últimos 7 dias - Diluído conforme feedback H8.7)
-    const { score, expected, taken } = calculateAdherenceStats(
+    const stats = calculateAdherenceStats(
       data.logs,
       validProtocols,
-      7
+      7,
+      0 // Janela atual (D0 a D7)
     )
 
-    const stats = {
-      expected,
-      taken,
-      score
+    // 4. Calcular estatísticas do período anterior para tendência (+5% vs semana passada)
+    const statsPrevious = calculateAdherenceStats(
+      data.logs,
+      validProtocols,
+      7,
+      7 // Janela anterior (D7 a D14)
+    )
+
+    const scoreTrend = statsPrevious.expected > 0 ? (stats.score - statsPrevious.score) : 0
+
+    const statsWithTrend = {
+      ...stats,
+      trend: scoreTrend,
+      hasPreviousData: statsPrevious.expected > 0
     }
 
     // Ordenar listas cronologicamente (00:00 -> 23:59)
@@ -232,7 +243,7 @@ export function useTodayData() {
 
     return {
       ...data,
-      stats,
+      stats: statsWithTrend,
       zones,
       timeline,
       stockAlerts

@@ -41,7 +41,7 @@ export default function TodayScreen() {
   }, [timeline])
 
 
-  if (loading && !data) return <LoadingState message="A carregar o seu dia..." />
+  if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
   // Doses prioritárias (Hero)
@@ -87,7 +87,11 @@ export default function TodayScreen() {
 
         <AdherenceDayCard 
           score={stats.score} 
-          trend="Dados sincronizados" // Placeholder por enquanto
+          trend={
+            stats.hasPreviousData 
+              ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
+              : "Mantendo a média"
+          }
         />
 
         <StockAlertInline alerts={stockAlerts} />
@@ -106,7 +110,7 @@ export default function TodayScreen() {
         {protocols.length === 0 ? (
           <EmptyState
             icon={<Pill size={48} color="#006a5e" />}
-            message={'Sem tratamentos activos.\nAdicione protocolos na versão web.'}
+            message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
           />
         ) : (
           shifts.map(shift => (
