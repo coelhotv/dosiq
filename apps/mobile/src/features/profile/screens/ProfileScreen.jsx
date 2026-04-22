@@ -7,7 +7,8 @@ import { useProfile } from '../hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import TelegramLinkCard from '../components/TelegramLinkCard'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
+import LoadingState from '../../../shared/components/states/LoadingState'
+import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
 import { ROUTES } from '../../../navigation/routes'
 
 /**
@@ -51,6 +52,14 @@ export default function ProfileScreen() {
     }
   }
 
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <LoadingState message="Carregando perfil..." />
+      </ScreenContainer>
+    )
+  }
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -64,7 +73,9 @@ export default function ProfileScreen() {
           />
         }
       >
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Perfil</Text>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Minha Conta</Text>
@@ -129,14 +140,19 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: spacing[4],
+    paddingBottom: 40,
   },
-  headerTitle: {
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
+  },
+  title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing[6],
-    marginTop: spacing[2],
+    letterSpacing: -0.5,
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   section: {
     marginBottom: spacing[6],
@@ -146,12 +162,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.secondary,
     marginBottom: spacing[2],
-    marginLeft: spacing[1],
+    paddingHorizontal: 20,
   },
   card: {
     backgroundColor: colors.bg.card,
     borderRadius: borderRadius.lg,
     padding: spacing[4],
+    marginHorizontal: 16,
     ...shadows.sm,
   },
   infoRow: {
@@ -175,6 +192,7 @@ const styles = StyleSheet.create({
   logoutSection: {
     marginTop: spacing[4],
     marginBottom: spacing[8],
+    marginHorizontal: 16,
   },
   logoutButton: {
     borderWidth: 1,

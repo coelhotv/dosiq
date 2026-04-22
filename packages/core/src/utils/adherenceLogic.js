@@ -108,7 +108,7 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
  * @param {number} days
  * @returns {Object}
  */
-export function calculateAdherenceStats(logs, protocols, days = 30) {
+export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays = 0) {
   const logsByDay = new Map()
   logs.forEach((log) => {
     const dayKey = formatLocalDate(new Date(log.taken_at))
@@ -122,7 +122,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30) {
   let currentStreak = 0
   const todayStr = getTodayLocal()
 
-  for (let i = 0; i < days; i++) {
+  for (let i = offsetDays; i < offsetDays + days; i++) {
     const date = new Date()
     date.setDate(date.getDate() - i)
     const dateStr = formatLocalDate(date)

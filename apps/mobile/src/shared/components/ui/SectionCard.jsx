@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.card,
     borderRadius: borderRadius.lg,
     padding: spacing[4],
+    marginHorizontal: 16,
     marginBottom: spacing[4],
     borderWidth: 1,
     borderColor: colors.border.default,

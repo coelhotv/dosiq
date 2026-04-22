@@ -17,6 +17,7 @@
 - **[CON-014]** Button component props -> [`contracts/infra_and_deploy/CON-014.md`](./contracts/infra_and_deploy/CON-014.md)
 - **[CON-015]** logSchema (Zod) -> [`contracts/infra_and_deploy/CON-015.md`](./contracts/infra_and_deploy/CON-015.md)
 - **[CON-016]** useRedesign() -> [`contracts/infra_and_deploy/CON-016.md`](./contracts/infra_and_deploy/CON-016.md)
+- **[CON-018]** calculateAdherenceStats(logs, protocols, days, offsetDays) -> [`contracts/infra_and_deploy/CON-018.md`](./contracts/infra_and_deploy/CON-018.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[CON-017]** resolveChannelsForUser({ userId, repositories }) -> `string[]` -> [`contracts/mobile_and_platform/CON-017.md`](./contracts/mobile_and_platform/CON-017.md)

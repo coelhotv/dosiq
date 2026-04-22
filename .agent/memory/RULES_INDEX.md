@@ -3,6 +3,7 @@
 ## 📦 Data & Schema (`data_and_schema`)
 - **[R-020]** ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('... -> [`rules/data_and_schema/R-020.md`](./rules/data_and_schema/R-020.md)
 - **[R-021]** All Zod schema enum values must be in Portuguese. Always export labels for UI di... -> [`rules/data_and_schema/R-021.md`](./rules/data_and_schema/R-021.md)
+- **[R-H27]** Native Adaptive Complexity (Persona Logic) -> [`rules/data_and_schema/R-H27.md`](./rules/data_and_schema/R-H27.md)
 - **[R-022]** quantity_taken must be in pills (Zod limit: 100), never in milligrams. -> [`rules/data_and_schema/R-022.md`](./rules/data_and_schema/R-022.md)
 - **[R-023]** Always follow Validate → Record → Decrement for dose registration. Never decreme... -> [`rules/data_and_schema/R-023.md`](./rules/data_and_schema/R-023.md)
 - **[R-082]** Zod schemas and DB schemas MUST be synchronized. Any CHECK/NOT NULL/enum in DB m... -> [`rules/data_and_schema/R-082.md`](./rules/data_and_schema/R-082.md)
@@ -68,6 +69,8 @@
 - **[R-174]** Force Metro to use a single instance of React and React Native fixed in the mobile workspace... -> [`rules/mobile_and_platform/R-174.md`](./rules/mobile_and_platform/R-174.md)
 - **[R-181]** iOS apps claiming user tracking in App Store Connect privacy labels MUST implemen... -> [`rules/mobile_and_platform/R-181.md`](./rules/mobile_and_platform/R-181.md)
 - **[R-182]** Maintain absolute version consistency between platforms by using a shared formul... -> [`rules/mobile_and_platform/R-182.md`](./rules/mobile_and_platform/R-182.md)
+- **[R-183]** Threshold de Complexidade Adaptativa (Modo Simple vs Complex) -> [`rules/mobile_and_platform/R-183.md`](./rules/mobile_and_platform/R-183.md)
+- **[R-184]** Protocolo de Auto-Refresh de Meia-Noite + AppState Foreground Refresh -> [`rules/mobile_and_platform/R-184.md`](./rules/mobile_and_platform/R-184.md)
 
 
 
@@ -143,3 +146,5 @@
 - **[R-169]** Every screen component in apps/mobile/src/features/*/screens/ MUST be wrapped in... -> [`rules/react_and_ui/R-169.md`](./rules/react_and_ui/R-169.md)
 - **[R-175]** Snapshots offline segregados por dia DEVEM incluir localDay via getTodayLocal()... -> [`rules/mobile_and_platform/R-175.md`](./rules/mobile_and_platform/R-175.md)
 - **[R-178]** Ao criar novos diretórios (ex: server/), garantir que testes e lint capturem os novos caminhos... -> [`rules/process_and_testing/R-178.md`](./rules/process_and_testing/R-178.md)
+- **[R-180]** Native Header Standardization (Santuário Pattern): Títulos (28/800), spacing e navegação ← Voltar (Telegram) -> [`rules/react_and_ui/R-180.md`](./rules/react_and_ui/R-180.md)
+- **[R-185]** Consistência de estados de carregamento nativo e animações sincronizadas. -> [`rules/react_and_ui/R-185.md`](./rules/react_and_ui/R-185.md)

@@ -4,6 +4,7 @@
 // stale=true quando há snapshot em cache mas a última refresh falhou (R5-008)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@dosiq/core'
 import { calculateAdherenceStats, calculateDosesByDate } from '@dosiq/core'
@@ -61,7 +62,7 @@ export function useTodayData() {
       // Fetch online (primary)
       const [protocols, logs, userSettings] = await Promise.all([
         getActiveProtocols(user.id, today),
-        getLogsForPeriod(user.id, 7), // 7 dias de logs para adesão diluída
+        getLogsForPeriod(user.id, 14), // 14 dias de logs para tendências comparativas
         getUserSettings(user.id)
       ])
 
@@ -151,6 +152,49 @@ export function useTodayData() {
     load()
   }, [load])
 
+  // Lógica de Refresh de Meia-Noite e AppState (R5-008, R-020)
+  useEffect(() => {
+    let midnightTimer
+
+    const scheduleMidnightRefresh = () => {
+      const now = new Date()
+      // Meia-noite local do dia seguinte
+      const nextMidnight = new Date(now)
+      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      nextMidnight.setHours(0, 0, 0, 0)
+      
+      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
+      
+      clearTimeout(midnightTimer)
+      midnightTimer = setTimeout(() => {
+        if (__DEV__) console.log('[useTodayData] Meia-noite detectada: Refreshing...')
+        load()
+        scheduleMidnightRefresh() // Agendar próxima
+      }, msUntilMidnight + 1000) // +1s para garantir que passou o boundary
+    }
+
+    scheduleMidnightRefresh()
+
+    // Listener para quando o app volta do background (Device Lock ou App Switch)
+    const handleStateChange = (nextState) => {
+      if (nextState === 'active') {
+        const today = getTodayLocal()
+        // Se mudou o dia enquanto estava em background, forçar reload
+        if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
+          if (__DEV__) console.log('[useTodayData] Dia alterado via background: Refreshing...')
+          load()
+        }
+      }
+    }
+
+    const subscription = AppState.addEventListener('change', handleStateChange)
+
+    return () => {
+      subscription.remove()
+      clearTimeout(midnightTimer)
+    }
+  }, [load])
+
   // Derivar estatísticas e zonas (Performance: memoized)
   const enhancedData = useMemo(() => {
     if (!data) return null
@@ -178,16 +222,27 @@ export function useTodayData() {
     )
 
     // 3. Calcular estatísticas de adesão (Últimos 7 dias - Diluído conforme feedback H8.7)
-    const { score, expected, taken } = calculateAdherenceStats(
+    const stats = calculateAdherenceStats(
       data.logs,
       validProtocols,
-      7
+      7,
+      0 // Janela atual (D0 a D7)
     )
 
-    const stats = {
-      expected,
-      taken,
-      score
+    // 4. Calcular estatísticas do período anterior para tendência (+5% vs semana passada)
+    const statsPrevious = calculateAdherenceStats(
+      data.logs,
+      validProtocols,
+      7,
+      7 // Janela anterior (D7 a D14)
+    )
+
+    const scoreTrend = statsPrevious.expected > 0 ? (stats.score - statsPrevious.score) : 0
+
+    const statsWithTrend = {
+      ...stats,
+      trend: scoreTrend,
+      hasPreviousData: statsPrevious.expected > 0
     }
 
     // Ordenar listas cronologicamente (00:00 -> 23:59)
@@ -232,7 +287,7 @@ export function useTodayData() {
 
     return {
       ...data,
-      stats,
+      stats: statsWithTrend,
       zones,
       timeline,
       stockAlerts

@@ -7,6 +7,7 @@ import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import StockItem from '../components/StockItem'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
+import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).
@@ -98,19 +99,22 @@ const styles = StyleSheet.create({
     paddingBottom: 40
   },
   header: {
-    padding: 20,
-    backgroundColor: '#fff'
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
-    color: '#1a1a1a',
-    marginBottom: 4
+    color: colors.text.primary,
+    letterSpacing: -0.5,
+    fontFamily: typography.fontFamily.bold || 'System',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20
+    fontSize: 16,
+    color: colors.text.secondary,
+    marginTop: 4,
+    fontFamily: typography.fontFamily.medium || 'System',
   },
   sectionHeader: {
     paddingHorizontal: 20,

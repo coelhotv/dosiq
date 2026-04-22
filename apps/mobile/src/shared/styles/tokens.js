@@ -117,3 +117,11 @@ export const shadows = {
     elevation: 8,
   },
 }
+
+export const typography = {
+  fontFamily: {
+    bold: 'System',
+    medium: 'System',
+    regular: 'System',
+  },
+}
