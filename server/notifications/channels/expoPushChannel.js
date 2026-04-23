@@ -35,15 +35,36 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
   try {
     tickets = await expoClient.sendPushNotificationsAsync(messages)
   } catch (error) {
-    console.error('[expoPushChannel] falha ao enviar para Expo', { correlationId, userId, error: error.message })
-    return {
-      channel: 'mobile_push',
-      success: false,
-      attempted: devices.length,
-      delivered: 0,
-      failed: devices.length,
-      deactivatedTokens: [],
-      errors: [{ message: error.message }],
+    // Se falhar o lote inteiro por conflito de projeto (comum em migrações de marca),
+    // tentamos o envio individual para permitir que os tokens do projeto novo passem 
+    // e os antigos sejam identificados/desativados.
+    if (error.message.includes('All push notification messages in the same request must be for the same project')) {
+      console.warn('[expoPushChannel] conflito de projeto detectado, tentando envio individual...', { correlationId, userId })
+      tickets = []
+      for (const msg of messages) {
+        try {
+          const [ticket] = await expoClient.sendPushNotificationsAsync([msg])
+          tickets.push(ticket)
+        } catch (individualError) {
+          // Se falhou individualmente, simulamos um ticket de erro para ser tratado no normalize
+          tickets.push({
+            status: 'error',
+            message: individualError.message,
+            details: { error: 'DeviceNotRegistered' } // Forçamos desativação se o projeto não bate
+          })
+        }
+      }
+    } else {
+      console.error('[expoPushChannel] falha fatal ao enviar para Expo', { correlationId, userId, error: error.message })
+      return {
+        channel: 'mobile_push',
+        success: false,
+        attempted: devices.length,
+        delivered: 0,
+        failed: devices.length,
+        deactivatedTokens: [],
+        errors: [{ message: error.message }],
+      }
     }
   }
 
