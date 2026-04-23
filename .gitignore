@@ -91,9 +91,6 @@ GPT-5.2 Prompting Guide.md
 check_review_*.json
 SKILLS
 
-# Migration guide (temporary)
-DOSIQ_MIGRATION_CLOUD_GUIDE.md
-
 # Xcode workspace user data
 *.xcuserstate
 xcuserdata/
