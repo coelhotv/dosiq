@@ -81,7 +81,7 @@ export default function TimeBlockSeparator({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing[4],
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countsText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.text.secondary,
     marginRight: spacing.xs,
