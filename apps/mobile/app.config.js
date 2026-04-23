@@ -62,6 +62,7 @@ module.exports = {
       googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        UIBackgroundModes: ['remote-notification'],
       },
     },
     android: {
@@ -76,6 +77,7 @@ module.exports = {
     },
     plugins: [
       '@react-native-firebase/app',
+      'expo-notifications',
       ['expo-build-properties', {
         ios: {
           useFrameworks: 'static'
