@@ -21,7 +21,7 @@ const variants = {
   preview: {
     name: 'Dosiq preview',
     slug: 'dosiq-app',
-    iosBundleIdentifier: 'com.coelhotv.dosiq.development',
+    iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq.development',
   },
   production: {
