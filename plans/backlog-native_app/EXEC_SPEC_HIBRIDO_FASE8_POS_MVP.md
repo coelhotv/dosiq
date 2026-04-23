@@ -187,23 +187,54 @@ Garantir que a agenda "vire" automaticamente à meia-noite sem necessidade de in
 
 ---
 
-## Epic 4: UX Evolution & Interações Avançadas (Próxima)
+## Epic 4: Alinhamento de Validade & Excelência em UX (v0.1.5)
+
+Foco em paridade funcional rigorosa com a web, resiliência de cache para uso offline e organização lógica de dados complexos.
+
+### 4.1. Alinhamento de Validade Temporal
+- Sincronização rigorosa da validade dos protocolos (`start_date`/`end_date`) entre Web e Mobile.
+- Implementação de filtragem temporal na camada de serviço (`protocols` e `stock`) para garantir que apenas tratamentos vigentes hoje sejam exibidos.
+- **Status**: ✅ Concluído.
+
+### 4.2. Resiliência de Cache (Regra R-175)
+- Camada de filtragem redundante em nível de UI (Hooks `useTreatments`, `useStock`, `useTodayData`).
+- Proteção contra "dados fantasma" vindos do AsyncStorage: a UI re-valida as datas no momento do render, mesmo que o snapshot do cache seja de um dia anterior.
+- **Status**: ✅ Concluído.
+
+### 4.3. Agrupamento por Planos de Tratamento 
+- Replicação da arquitetura visual de "Modo Complexo" da Web na aba Tratamentos.
+- Agrupamento inteligente: Prioridade 1 (Plano de Tratamento), Prioridade 2 (Classe Terapêutica), Prioridade 3 (Geral).
+- Accordions interativos com suporte a Emojis e cores dinâmicas dos planos da web.
+- **Status**: ✅ Concluído.
+
+### 4.4. Heurística de Complexidade Adaptativa (Treatments)
+- Transição automática baseada no volume de carga medicamentosa (>3 protocolos ativos).
+- **Simple Mode**: Lista direta cronológica (Dona Maria).
+- **Complex Mode**: Agrupamento por planos com accordions (Carlos).
+- **Status**: ✅ Concluído.
+
+### 4.5. Automação de Build iOS (Simulator)
+- Script `build-ios.sh` otimizado para extração automática de bundles `.tar.gz` para pastas `.app`.
+- Redução do atrito manual para instalação e teste no simulador de desenvolvimento.
+- **Status**: ✅ Concluído.
+
+---
+
+## Epic 5: Interações Avançadas & Hardening (Próxima)
 
 Foco em deleite do usuário, micro-interações e profundidade visual (Wave 11-12).
 
-### 4.1. Haptic Feedback & Som
+### 5.1. Haptic Feedback & Som
 - Reforço sensorial ao confirmar doses (Feedback de sucesso).
 - Vibração diferenciada para doses críticas em atraso.
 
-### 4.2. Gráficos de Adesão Evoluídos
+### 5.2. Gráficos de Adesão Evoluídos
 - Visualização de "Heatmap" de adesão mensal (estilo GitHub).
-- Detalhamento de interações medicamentosas (se disponível no core).
 
-### 4.3. Biometria & Lock Screen
+### 5.3. Biometria & Lock Screen
 - Proteção da agenda via FaceID/TouchID (Opcional por usuário).
-- Implementação de Deep Links contextuais para Widgets (iOS/Android).
 
-### 4.4. Refinamento de Micro-animações (Framer Motion Native)
+### 5.4. Refinamento de Micro-animações
 - Transições de estado entre "Planejada" -> "Tomada" com animação de check celebrativo.
 - Skeleton UI aprimorado para carregamento de dados lento.
 
