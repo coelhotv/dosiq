@@ -3,6 +3,7 @@
 // ADR-029: chama Supabase directamente usando nativeSupabaseClient
 
 import { z } from 'zod'
+import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -17,7 +18,7 @@ export async function getActiveTreatments(userId) {
 
     if (__DEV__) console.log('[treatmentsService] Buscando tratamentos ativos para:', userId)
 
-    const { data, error } = await nativeSupabaseClient
+    const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
       .select(`
         id,
@@ -27,6 +28,8 @@ export async function getActiveTreatments(userId) {
         dosage_per_intake,
         titration_status,
         active,
+        start_date,
+        end_date,
         medicine:medicine_id (
           id,
           name,
@@ -44,7 +47,12 @@ export async function getActiveTreatments(userId) {
       return { success: false, error: error.message }
     }
 
-    return { success: true, data }
+    // Filtro de validade temporal (Wave v0.1.5)
+    // Garantimos que o usuário só veja o que está tomando HOJE na fase Read-Only
+    const today = getTodayLocal()
+    const validData = (rawData || []).filter(p => isProtocolActiveOnDate(p, today))
+
+    return { success: true, data: validData }
   } catch (err) {
     console.error('[treatmentsService] Erro inesperado:', err)
     return { success: false, error: 'Erro ao carregar tratamentos ativos.' }
