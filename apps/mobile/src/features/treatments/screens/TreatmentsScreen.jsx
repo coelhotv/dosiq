@@ -21,6 +21,14 @@ export default function TreatmentsScreen() {
   const { data: groups, loading, error, stale, refresh } = useTreatments()
   const [expandedGroups, setExpandedGroups] = useState({})
 
+  // Heurística de Complexidade Adaptativa (Wave 10A)
+  const { isComplex, flatData } = useMemo(() => {
+    if (!groups) return DEFAULT_COMPLEXITY
+    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
+    const flat = groups.flatMap(g => g.protocols)
+    return { isComplex: total > 3, flatData: flat }
+  }, [groups])
+
   const toggleGroup = useCallback((groupId) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setExpandedGroups(prev => {
@@ -32,14 +40,6 @@ export default function TreatmentsScreen() {
       }
     })
   }, [])
-
-  // Heurística de Complexidade Adaptativa (Wave 10A)
-  const { isComplex, flatData } = useMemo(() => {
-    if (!groups) return DEFAULT_COMPLEXITY
-    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
-    const flat = groups.flatMap(g => g.protocols)
-    return { isComplex: total > 3, flatData: flat }
-  }, [groups])
 
   if (loading && !groups) {
     return (

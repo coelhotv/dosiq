@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
@@ -17,6 +18,9 @@ export function useStock() {
     stale: false,
     refreshing: false
   })
+
+  // Ref para verificação de snapshot (R-184)
+  const dataRef = useRef(null)
 
   const loadStock = useCallback(async (isRefreshing = false) => {
     if (isRefreshing) setState(prev => ({ ...prev, refreshing: true, error: null }))
@@ -97,7 +101,11 @@ export function useStock() {
         .sort((a, b) => a.daysRemaining - b.daysRemaining)
 
       // Nota: Não mostramos a lista de inativos no Read-Only mobile por enquanto (reduzir ruído)
-      const newData = { active, inactive: [] }
+      const newData = { 
+        active, 
+        inactive: [],
+        localDay: today // R-114 fix: salvar dia local explícito
+      }
       const snapshot = {
         data: newData,
         capturedAt: new Date().toISOString(),
@@ -106,6 +114,7 @@ export function useStock() {
 
       await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))
 
+      dataRef.current = newData
       setState({
         data: newData,
         loading: false,
@@ -125,6 +134,7 @@ export function useStock() {
           const diffHours = (now - capturedAt) / (1000 * 60 * 60)
 
           if (diffHours < 24) {
+            dataRef.current = parsed.data
             setState({
               data: parsed.data,
               loading: false,
@@ -151,6 +161,45 @@ export function useStock() {
 
   useEffect(() => {
     loadStock()
+  }, [loadStock])
+
+  // Lógica de Refresh de Meia-Noite e AppState (R-184)
+  useEffect(() => {
+    let midnightTimer
+
+    const scheduleMidnightRefresh = () => {
+      const now = new Date()
+      const nextMidnight = new Date(now)
+      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      nextMidnight.setHours(0, 0, 0, 0)
+      
+      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
+      
+      clearTimeout(midnightTimer)
+      midnightTimer = setTimeout(() => {
+        if (__DEV__) console.log('[useStock] Meia-noite detectada: Refreshing...')
+        loadStock()
+        scheduleMidnightRefresh()
+      }, msUntilMidnight + 1000)
+    }
+
+    scheduleMidnightRefresh()
+
+    const handleStateChange = (nextState) => {
+      if (nextState === 'active') {
+        const today = getTodayLocal()
+        if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
+          if (__DEV__) console.log('[useStock] Dia alterado via background: Refreshing...')
+          loadStock()
+        }
+      }
+    }
+
+    const subscription = AppState.addEventListener('change', handleStateChange)
+    return () => {
+      subscription.remove()
+      clearTimeout(midnightTimer)
+    }
   }, [loadStock])
 
   // Resilience layer (Rule R-175): Double-check validity on the active list

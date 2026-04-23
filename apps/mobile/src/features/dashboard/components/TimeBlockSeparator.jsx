@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium || 'System',
   },
   countsTextDisabled: {
-    color: colors.text.secondary,
     opacity: 0.5,
   }
 })

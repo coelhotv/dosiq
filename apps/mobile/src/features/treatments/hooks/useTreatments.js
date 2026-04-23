@@ -2,6 +2,7 @@
 // Padrão: { data, loading, error, stale, refresh }
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
@@ -37,7 +38,8 @@ export function useTreatments() {
       const newData = result.data
       const snapshot = {
         data: newData,
-        capturedAt: new Date().toISOString()
+        capturedAt: new Date().toISOString(),
+        localDay: today // R-114 fix
       }
 
       await AsyncStorage.setItem(TREATMENTS_CACHE_KEY, JSON.stringify(snapshot))
@@ -77,6 +79,45 @@ export function useTreatments() {
 
   useEffect(() => {
     load()
+  }, [load])
+
+  // Lógica de Refresh de Meia-Noite e AppState (R-184)
+  useEffect(() => {
+    let midnightTimer
+
+    const scheduleMidnightRefresh = () => {
+      const now = new Date()
+      const nextMidnight = new Date(now)
+      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      nextMidnight.setHours(0, 0, 0, 0)
+      
+      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
+      
+      clearTimeout(midnightTimer)
+      midnightTimer = setTimeout(() => {
+        if (__DEV__) console.log('[useTreatments] Meia-noite detectada: Refreshing...')
+        load()
+        scheduleMidnightRefresh()
+      }, msUntilMidnight + 1000)
+    }
+
+    scheduleMidnightRefresh()
+
+    const handleStateChange = (nextState) => {
+      if (nextState === 'active') {
+        const today = getTodayLocal()
+        if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
+          if (__DEV__) console.log('[useTreatments] Dia alterado via background: Refreshing...')
+          load()
+        }
+      }
+    }
+
+    const subscription = AppState.addEventListener('change', handleStateChange)
+    return () => {
+      subscription.remove()
+      clearTimeout(midnightTimer)
+    }
   }, [load])
 
   // Resilience layer (Rule R-175): Filtrar validade para HOJE local.
