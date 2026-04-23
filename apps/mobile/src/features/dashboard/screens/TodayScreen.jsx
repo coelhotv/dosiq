@@ -189,9 +189,11 @@ export default function TodayScreen() {
             const isExpanded = expandedShifts[shift]
             const isEmpty = doses.length === 0
 
-            // Cálculo do progresso do turno (v0.1.5)
-            const totalCount = doses.length
-            const takenCount = doses.filter(d => d.isRegistered).length
+            // Cálculo do progresso do turno (v0.1.5) - Memoizado para performance
+            const { totalCount, takenCount } = useMemo(() => ({
+              totalCount: doses.length,
+              takenCount: doses.filter(d => d.isRegistered).length
+            }), [doses])
 
             return (
               <View key={shift} style={styles.shiftContainer}>

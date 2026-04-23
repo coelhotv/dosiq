@@ -117,25 +117,27 @@ echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
 
 # 4.1 Extração automática para Simulador (Wave v0.1.5)
-# Se não for produção e o output for um arquivo comum (tar.gz), descompactamos para uma pasta.
 if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
-  echo "📦 Detectado pacote comprimido ($FINAL_PATH). Iniciando extração automática para simulador..."
-  
-  # Renomeamos temporariamente para evitar conflito de nome arquivo vs pasta
-  TAR_TEMP="${FINAL_PATH}.tar.gz"
-  mv "$FINAL_PATH" "$TAR_TEMP"
-  
-  # Criamos a pasta com o nome original do build
-  mkdir -p "$FINAL_PATH"
-  
-  # Extraímos para dentro dessa pasta
-  if tar -xvzf "$TAR_TEMP" -C "$FINAL_PATH" ; then
-    rm "$TAR_TEMP"
-    echo "✅ Extração concluída com sucesso!"
-    echo "📂 Pasta pronta para o simulador: $FINAL_PATH"
+  # Verifica se é um arquivo comprimido (tar.gz)
+  if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
+    echo "📦 Detectado pacote comprimido. Iniciando extração para simulador..."
+    
+    # Criamos um diretório temporário para extração segura
+    EXTRACT_TMP=$(mktemp -d)
+    
+    if tar -xvzf "$FINAL_PATH" -C "$EXTRACT_TMP" ; then
+      # Após extrair, removemos o tarball e movemos a pasta .app para o lugar dele
+      rm "$FINAL_PATH"
+      mkdir -p "$FINAL_PATH"
+      cp -R "$EXTRACT_TMP/"* "$FINAL_PATH/"
+      rm -rf "$EXTRACT_TMP"
+      echo "✅ Extração concluída com sucesso em: $FINAL_PATH"
+    else
+      echo "❌ Erro ao extrair pacote. Mantendo arquivo original."
+      rm -rf "$EXTRACT_TMP"
+    fi
   else
-    echo "❌ Erro ao extrair pacote. Mantendo arquivo original."
-    mv "$TAR_TEMP" "$FINAL_PATH"
+    echo "ℹ️  O arquivo em $FINAL_PATH não parece estar comprimido. Pulando extração."
   fi
 fi
 
