@@ -8,14 +8,6 @@
         "buildType": "apk"
       }
     },
-    "preview": {
-      "ios": {
-        "image": "latest"
-      },
-      "android": {
-        "buildType": "app-bundle"
-      }
-    },
     "production": {
       "ios": {
         "image": "latest"

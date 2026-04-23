@@ -1,6 +1,6 @@
 #!/bin/bash
 # build-android.sh — Prepara credenciais e roda eas build local para Android
-# Uso: bash build-android.sh [development|preview|production]
+# Uso: bash build-android.sh [development|production]
 
 set -euo pipefail
 

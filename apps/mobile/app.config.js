@@ -18,12 +18,6 @@ const variants = {
     iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq',
   },
-  preview: {
-    name: 'Dosiq preview',
-    slug: 'dosiq-app',
-    iosBundleIdentifier: 'com.coelhotv.dosiq',
-    androidPackage: 'com.coelhotv.dosiq',
-  },
   production: {
     name: 'Dosiq',
     slug: 'dosiq-app',

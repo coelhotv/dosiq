@@ -1,6 +1,6 @@
 #!/bin/bash
-# build-ios.sh — Valida certificado no keychain e roda eas build local para iOS
-# Uso: bash build-ios.sh [development|preview|production]
+# build-ios.sh — Prepara certificados e roda eas build local
+# Uso: bash build-ios.sh [development|production]
 
 set -euo pipefail
 
