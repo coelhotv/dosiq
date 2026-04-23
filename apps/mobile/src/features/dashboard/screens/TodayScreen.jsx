@@ -48,11 +48,20 @@ export default function TodayScreen() {
   const isComplex = useMemo(() => Object.keys(medicines).length > 3, [medicines])
 
   // Agrupamento da Timeline por Turnos (Epic 2) - Memoized
-  const { groupedTimeline, shifts } = useMemo(() => {
+  const { groupedTimeline, shifts, countsByShift } = useMemo(() => {
+    const counts = {}
     const grouped = timeline.reduce((acc, dose) => {
       const shift = getPeriodFromTime(dose.scheduledTime)
-      if (!acc[shift]) acc[shift] = []
+      if (!acc[shift]) {
+        acc[shift] = []
+        counts[shift] = { total: 0, taken: 0 }
+      }
       acc[shift].push(dose)
+      
+      // Acumular contadores (Wave v0.1.5 Otimizada)
+      counts[shift].total += 1
+      if (dose.isRegistered) counts[shift].taken += 1
+      
       return acc
     }, {})
     
@@ -62,7 +71,7 @@ export default function TodayScreen() {
       ? allShifts 
       : allShifts.filter(s => grouped[s] && grouped[s].length > 0)
     
-    return { groupedTimeline: grouped, shifts: activeShifts }
+    return { groupedTimeline: grouped, shifts: activeShifts, countsByShift: counts }
   }, [timeline, isComplex])
 
   // 2. Heurística de Expansão Inicial
@@ -188,6 +197,7 @@ export default function TodayScreen() {
             const doses = groupedTimeline[shift] || []
             const isExpanded = expandedShifts[shift]
             const isEmpty = doses.length === 0
+            const shiftCounts = countsByShift[shift] || { total: 0, taken: 0 }
 
             return (
               <View key={shift} style={styles.shiftContainer}>
@@ -196,6 +206,7 @@ export default function TodayScreen() {
                   isExpanded={isExpanded}
                   onToggle={() => toggleShift(shift)}
                   isDisabled={isEmpty}
+                  counts={shiftCounts.total > 0 ? shiftCounts : null}
                 />
                 
                 {isExpanded && (
@@ -277,8 +288,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   emptyShiftContainer: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing[6],
+    paddingHorizontal: spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
   },

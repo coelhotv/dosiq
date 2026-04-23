@@ -1036,43 +1036,43 @@ jobs:
   # o mantenedor deve comentar `/gemini review` no PR para forçar
   # re-avaliação manual.
   # ==========================================
-  trigger-rereview:
-    name: Trigger Re-review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # trigger-rereview:
+  #   name: Trigger Re-review
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
       
-      - name: Check and Trigger Re-review
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { shouldTriggerRereview, triggerRereview } = require('./.github/scripts/trigger-re-review.cjs');
+  #     - name: Check and Trigger Re-review
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const { shouldTriggerRereview, triggerRereview } = require('./.github/scripts/trigger-re-review.cjs');
             
-            const shouldTrigger = await shouldTriggerRereview(
-              context.payload.pull_request.number,
-              github,
-              context
-            );
+  #           const shouldTrigger = await shouldTriggerRereview(
+  #             context.payload.pull_request.number,
+  #             github,
+  #             context
+  #           );
             
-            if (shouldTrigger) {
-              console.log('Alterações significativas detectadas, solicitando re-review...');
-              await triggerRereview(
-                context.payload.pull_request.number,
-                github,
-                context
-              );
+  #           if (shouldTrigger) {
+  #             console.log('Alterações significativas detectadas, solicitando re-review...');
+  #             await triggerRereview(
+  #               context.payload.pull_request.number,
+  #               github,
+  #               context
+  #             );
               
-              // 📝 NOTA: O workflow continuará com dados antigos do review.
-              // Se havia issues CRITICAL que foram corrigidos, o mantenedor
-              // deve executar `/gemini review` manualmente após o novo
-              // review ser postado pelo Gemini.
-              console.log('⚠️ IMPORTANTE: Se havia issues CRITICAL corrigidos,');
-              console.log('   comente "/gemini review" no PR após 60-90s para re-avaliação.');
-            } else {
-              console.log('Alterações menores, sem necessidade de re-review');
-            }
+  #             // 📝 NOTA: O workflow continuará com dados antigos do review.
+  #             // Se havia issues CRITICAL que foram corrigidos, o mantenedor
+  #             // deve executar `/gemini review` manualmente após o novo
+  #             // review ser postado pelo Gemini.
+  #             console.log('⚠️ IMPORTANTE: Se havia issues CRITICAL corrigidos,');
+  #             console.log('   comente "/gemini review" no PR após 60-90s para re-avaliação.');
+  #           } else {
+  #             console.log('Alterações menores, sem necessidade de re-review');
+  #           }
 
   # ==========================================
   # JOB 9: Criar Issues para Refactoring (P2.3)

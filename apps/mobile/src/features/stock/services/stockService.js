@@ -2,6 +2,7 @@
 // R-125: validação Zod na camada de serviço (R-NNN sugerido em review PR #467)
 
 import { z } from 'zod'
+import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -21,7 +22,7 @@ export async function getStockData(userId) {
     // 1. Quantidade total (da view medicine_stock_summary)
     // 2. Protocolos ativos (para calcular consumo diário)
     // Nota: O join com medicine_stock_summary usa a relação automática baseada em medicine_id
-    const { data, error } = await nativeSupabaseClient
+    const { data: rawData, error } = await nativeSupabaseClient
       .from('medicines')
       .select(`
         id,
@@ -37,7 +38,9 @@ export async function getStockData(userId) {
           dosage_per_intake,
           time_schedule,
           frequency,
-          active
+          active,
+          start_date,
+          end_date
         )
       `)
       .eq('user_id', userId)
@@ -49,7 +52,16 @@ export async function getStockData(userId) {
       return { success: false, error: 'Erro ao carregar dados de estoque' }
     }
 
-    return { success: true, data }
+    // Filtro de validade de protocolos (Wave v0.1.5)
+    // Na fase Read-Only, só mostramos estoque do que tem tratamento "rodando" hoje.
+    const today = getTodayLocal()
+    const validData = (rawData || []).filter(m => {
+      // Verifica se existe pelo menos um protocolo vinculado que seja válido para hoje
+      const hasValidProtocol = (m.protocols || []).some(p => isProtocolActiveOnDate(p, today))
+      return hasValidProtocol
+    })
+
+    return { success: true, data: validData }
   } catch (err) {
     console.error('[stockService] Erro inesperado:', err)
     return { success: false, error: err.message }
