@@ -11,16 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
 echo "📦 Versão detectada: v$APP_VERSION"
 
-# 2. Configurar credenciais
-# Segue a convenção do app.config.js: google-services-${PROFILE}.json
-CREDS_FILE="$SCRIPT_DIR/google-services-${PROFILE}.json"
-
-# Fallback para o nome genérico google-services.json se o específico não existir para produção
-if [ ! -f "$CREDS_FILE" ] && [ "$PROFILE" = "production" ]; then
-  if [ -f "$SCRIPT_DIR/google-services.json" ]; then
-    CREDS_FILE="$SCRIPT_DIR/google-services.json"
-  fi
-fi
+# 2. Configurar credenciais (Arquivo único)
+CREDS_FILE="$SCRIPT_DIR/google-services.json"
 
 if [ ! -f "$CREDS_FILE" ]; then
   echo "❌ Credencial não encontrada: $CREDS_FILE"

@@ -7,14 +7,9 @@ set -euo pipefail
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Bundle ID único (reflete o app.config.js)
+# Bundle ID e Credenciais unificados
 BUNDLE_ID="com.coelhotv.dosiq"
-
-if [ "$PROFILE" = "production" ]; then
-  PLIST_FILE="$SCRIPT_DIR/GoogleService-Info-production.plist"
-else
-  PLIST_FILE="$SCRIPT_DIR/GoogleService-Info-development.plist"
-fi
+PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
 echo "🔍 Verificando Distribution Certificate no keychain..."
 
