@@ -15,14 +15,14 @@ const variants = {
   development: {
     name: 'Dosiq dev',
     slug: 'dosiq-app',
-    iosBundleIdentifier: 'com.coelhotv.dosiq.development',
-    androidPackage: 'com.coelhotv.dosiq.development',
+    iosBundleIdentifier: 'com.coelhotv.dosiq',
+    androidPackage: 'com.coelhotv.dosiq',
   },
   preview: {
     name: 'Dosiq preview',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq',
-    androidPackage: 'com.coelhotv.dosiq.development',
+    androidPackage: 'com.coelhotv.dosiq',
   },
   production: {
     name: 'Dosiq',
