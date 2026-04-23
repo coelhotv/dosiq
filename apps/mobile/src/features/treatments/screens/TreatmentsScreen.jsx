@@ -27,6 +27,14 @@ export default function TreatmentsScreen() {
     }))
   }, [])
 
+  // Heurística de Complexidade Adaptativa (Wave 10A)
+  const { isComplex, flatData } = useMemo(() => {
+    if (!groups) return { isComplex: false, flatData: [] }
+    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
+    const flat = groups.flatMap(g => g.protocols)
+    return { isComplex: total > 3, flatData: flat }
+  }, [groups])
+
   if (loading && !groups) {
     return (
       <ScreenContainer>
@@ -70,9 +78,20 @@ export default function TreatmentsScreen() {
             title="Nenhum tratamento ativo"
             message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
           />
+        ) : !isComplex ? (
+          /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
+          <View style={styles.simpleList}>
+            {flatData.map(protocol => (
+              <TreatmentCard 
+                key={protocol.id} 
+                treatment={protocol} 
+              />
+            ))}
+          </View>
         ) : (
+          /* MODO COMPLEX: Carlos (Agrupado por planos/classes) */
           groups.map(group => {
-            const isExpanded = expandedGroups[group.id] !== false // Abre todos por padrão no mobile para facilitar
+            const isExpanded = expandedGroups[group.id] !== false
             
             return (
               <View key={group.id} style={styles.groupContainer}>
@@ -131,5 +150,8 @@ const styles = StyleSheet.create({
   },
   protocolsList: {
     marginTop: spacing[1],
+  },
+  simpleList: {
+    paddingTop: spacing[2],
   },
 })

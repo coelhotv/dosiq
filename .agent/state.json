@@ -18,12 +18,12 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_adherence_cache_resilience",
-    "started_at": "2026-04-23T21:55:00Z",
+    "id": "session_2026W17_treatments_complexity_heuristic",
+    "started_at": "2026-04-23T22:23:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "Adherence Cache Resilience (UI-level filtering)",
-    "goal_type": "fix"
+    "status": "analysis",
+    "goal": "Adaptive Complexity Heuristic (Treatments)",
+    "goal_type": "ux"
   },
   "memory": {
     "rules_count": 133,
