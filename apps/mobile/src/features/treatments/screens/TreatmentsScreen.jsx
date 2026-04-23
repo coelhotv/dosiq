@@ -1,20 +1,47 @@
-// TreatmentsScreen.jsx — tela "Tratamentos" do MVP mobile
-// Exibe a lista de protocolos ativos do usuário
-
-import { FlatList, View, Text, StyleSheet } from 'react-native'
+import { useState, useCallback, useMemo } from 'react'
+import { ScrollView, View, Text, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import TreatmentCard from '../components/TreatmentCard'
+import TreatmentPlanHeader from '../components/TreatmentPlanHeader'
 import { useTreatments } from '../hooks/useTreatments'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
-export default function TreatmentsScreen() {
-  const { data, loading, error, stale, refresh } = useTreatments()
+// Habilitar animações no Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
+}
 
-  if (loading && !data) {
+const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
+
+export default function TreatmentsScreen() {
+  const { data: groups, loading, error, stale, refresh } = useTreatments()
+  const [expandedGroups, setExpandedGroups] = useState({})
+
+  // Heurística de Complexidade Adaptativa (Wave 10A)
+  const { isComplex, flatData } = useMemo(() => {
+    if (!groups) return DEFAULT_COMPLEXITY
+    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
+    const flat = groups.flatMap(g => g.protocols)
+    return { isComplex: total > 3, flatData: flat }
+  }, [groups])
+
+  const toggleGroup = useCallback((groupId) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpandedGroups(prev => {
+      // Se for undefined (estado inicial), tratamos como true (aberto), então o toggle inverte para false.
+      const isCurrentlyExpanded = prev[groupId] !== false
+      return {
+        ...prev,
+        [groupId]: !isCurrentlyExpanded
+      }
+    })
+  }, [])
+
+  if (loading && !groups) {
     return (
       <ScreenContainer>
         <LoadingState message="Carregando seus tratamentos..." />
@@ -22,7 +49,7 @@ export default function TreatmentsScreen() {
     )
   }
 
-  if (error && !data) {
+  if (error && !groups) {
     return (
       <ScreenContainer>
         <ErrorState message={error} onRetry={refresh} />
@@ -30,35 +57,80 @@ export default function TreatmentsScreen() {
     )
   }
 
+  // Se não houver grupos, mostrar EmptyState
+  const isEmpty = !groups || groups.length === 0
+
   return (
     <ScreenContainer>
       {stale && <StaleBanner />}
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TreatmentCard treatment={item} />}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Meus Tratamentos</Text>
-            <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
-          </View>
-        }
-        ListEmptyComponent={
-          <EmptyState 
-            title="Nenhum tratamento ativo"
-            message="Você não possui protocolos de tratamento configurados no momento."
+      
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading && !!groups}
+            onRefresh={refresh}
+            tintColor={colors.status.success}
           />
         }
-        refreshing={loading}
-        onRefresh={refresh}
-      />
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Meus Tratamentos</Text>
+          <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
+        </View>
+
+        {isEmpty ? (
+          <EmptyState 
+            title="Nenhum tratamento ativo"
+            message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
+          />
+        ) : !isComplex ? (
+          /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
+          <View style={styles.simpleList}>
+            {flatData.map(protocol => (
+              <TreatmentCard 
+                key={protocol.id} 
+                treatment={protocol} 
+              />
+            ))}
+          </View>
+        ) : (
+          /* MODO COMPLEX: Carlos (Agrupado por planos/classes) */
+          groups.map(group => {
+            const isExpanded = expandedGroups[group.id] !== false
+            
+            return (
+              <View key={group.id} style={styles.groupContainer}>
+                <TreatmentPlanHeader 
+                  title={group.title}
+                  emoji={group.emoji}
+                  color={group.color}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleGroup(group.id)}
+                  count={group.protocols.length}
+                />
+                
+                {isExpanded && (
+                  <View style={styles.protocolsList}>
+                    {group.protocols.map(protocol => (
+                      <TreatmentCard 
+                        key={protocol.id} 
+                        treatment={protocol} 
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            )
+          })
+        )}
+      </ScrollView>
     </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  listContent: {
+  scroll: {
     paddingBottom: spacing[10],
   },
   header: {
@@ -78,5 +150,14 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 4,
     fontFamily: typography.fontFamily.medium || 'System',
+  },
+  groupContainer: {
+    marginBottom: spacing[2],
+  },
+  protocolsList: {
+    marginTop: spacing[1],
+  },
+  simpleList: {
+    paddingTop: spacing[2],
   },
 })

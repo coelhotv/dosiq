@@ -11,23 +11,25 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUNDLE_ID="com.coelhotv.dosiq"
 PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
-echo "🔍 Verificando Distribution Certificate no keychain..."
+if [ "$PROFILE" = "production" ]; then
+  echo "🔍 Verificando Distribution Certificate no keychain..."
+  CERT=$(security find-identity -v -p codesigning | grep "iPhone Distribution" | grep "$BUNDLE_ID\|Antonio Coelho" | head -1)
 
-CERT=$(security find-identity -v -p codesigning | grep "iPhone Distribution" | grep "$BUNDLE_ID\|Antonio Coelho" | head -1)
-
-if [ -z "$CERT" ]; then
-  echo ""
-  echo "❌ Distribution Certificate não encontrado no keychain."
-  echo ""
-  echo "   Para instalar:"
-  echo "   1. eas credentials --platform ios"
-  echo "   2. Build Credentials → Distribution Certificate → Download"
-  echo "   3. Clique duplo no .p12 baixado para instalar no Keychain Access"
-  echo "   4. Rode este script novamente"
-  exit 1
+  if [ -z "$CERT" ]; then
+    echo ""
+    echo "❌ Distribution Certificate não encontrado no keychain (Necessário para Production)."
+    echo ""
+    echo "   Para instalar:"
+    echo "   1. eas credentials --platform ios"
+    echo "   2. Build Credentials → Distribution Certificate → Download"
+    echo "   3. Clique duplo no .p12 baixado para instalar no Keychain Access"
+    echo "   4. Rode este script novamente"
+    exit 1
+  fi
+  echo "   ✅ Certificado encontrado: $CERT"
+else
+  echo "ℹ️  Simulador detectado (perfil $PROFILE): Pulando verificação de certificado de distribuição."
 fi
-
-echo "   ✅ Certificado encontrado: $CERT"
 
 echo "🔐 Desbloqueando keychain..."
 security unlock-keychain ~/Library/Keychains/login.keychain-db
@@ -70,24 +72,78 @@ echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight �
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
-echo "🧹 Limpando cache e regenerando diretório nativo..."
-npx expo prebuild --platform ios --clean
+echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
+# Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
+rm -rf "$SCRIPT_DIR/ios"
+rm -rf "$SCRIPT_DIR/android"
+
+# Prebuild sem instalar pacotes nativos automaticamente (evita erro de path com espaços no iCloud)
+if npx expo prebuild --platform ios --no-install ; then
+  echo "✅ Código nativo regenerado com sucesso."
+else
+  echo "❌ Erro ao regenerar código nativo. Verifique logs."
+  exit 1
+fi
+
+# Instalação manual de Pods (mais resiliente a caminhos com espaços)
+echo "📦 Instalando dependências nativas (CocoaPods)..."
+cd "$SCRIPT_DIR/ios"
+if pod install ; then
+  cd "$SCRIPT_DIR"
+  echo "✅ CocoaPods concluído."
+else
+  echo "⚠️ Erro no pod install automático, tentando forçar com repo update..."
+  pod install --repo-update || {
+    echo "❌ Falha crítica no CocoaPods. Verifique o caminho iCloud para conflitos."
+    exit 1
+  }
+  cd "$SCRIPT_DIR"
+fi
+
+rm -f "$TEMP_OUTPUT"
 
 echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
-# Usamos || true para ignorar erros de limpeza interna do EAS (comum no iCloud) 
-# O sucesso será validado pela existência do arquivo na linha seguinte.
-eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || {
-  echo "⚠️ Aviso: O comando EAS reportou um problema (provavelmente limpeza de cache no iCloud), verificando integridade do binário..."
-}
+# Build local via EAS
+if eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache ; then
+  echo "✅ EAS build concluído com sucesso."
+else
+  echo "❌ Erro crítico no EAS build. Verifique os logs acima."
+  exit 1
+fi
 
-if [ ! -f "$TEMP_OUTPUT" ]; then
-  echo "❌ Erro: Build concluído mas arquivo não encontrado em $TEMP_OUTPUT"
+if [ ! -e "$TEMP_OUTPUT" ]; then
+  echo "❌ Erro: Arquivos de saída não encontrados em $TEMP_OUTPUT"
   exit 1
 fi
 
 # 4. Mover e renomear
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+# 4.1 Extração automática para Simulador (Wave v0.1.5)
+if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
+  # Verifica se é um arquivo comprimido (tar.gz)
+  if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
+    echo "📦 Detectado pacote comprimido. Iniciando extração para simulador..."
+    
+    # Criamos um diretório temporário para extração segura
+    EXTRACT_TMP=$(mktemp -d)
+    
+    if tar -xvzf "$FINAL_PATH" -C "$EXTRACT_TMP" ; then
+      # Após extrair, removemos o tarball e movemos a pasta .app para o lugar dele
+      rm "$FINAL_PATH"
+      mkdir -p "$FINAL_PATH"
+      cp -R "$EXTRACT_TMP/"* "$FINAL_PATH/"
+      rm -rf "$EXTRACT_TMP"
+      echo "✅ Extração concluída com sucesso em: $FINAL_PATH"
+    else
+      echo "❌ Erro ao extrair pacote. Mantendo arquivo original."
+      rm -rf "$EXTRACT_TMP"
+    fi
+  else
+    echo "ℹ️  O arquivo em $FINAL_PATH não parece estar comprimido. Pulando extração."
+  fi
+fi
 
 # 5. Submissão automática para TestFlight (apenas produção)
 if [ "$PROFILE" = "production" ]; then

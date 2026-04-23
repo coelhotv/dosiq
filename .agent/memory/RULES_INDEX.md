@@ -71,6 +71,8 @@
 - **[R-182]** Maintain absolute version consistency between platforms by using a shared formul... -> [`rules/mobile_and_platform/R-182.md`](./rules/mobile_and_platform/R-182.md)
 - **[R-183]** Threshold de Complexidade Adaptativa (Modo Simple vs Complex) -> [`rules/mobile_and_platform/R-183.md`](./rules/mobile_and_platform/R-183.md)
 - **[R-184]** Protocolo de Auto-Refresh de Meia-Noite + AppState Foreground Refresh -> [`rules/mobile_and_platform/R-184.md`](./rules/mobile_and_platform/R-184.md)
+- **[R-185]** Redundant UI-Level Temporal Filtering (R-175 Extension) -> [`rules/mobile_and_platform/R-185.md`](./rules/mobile_and_platform/R-185.md)
+- **[R-186]** Accordion Toggle Integrity (Default Open Handling) -> [`rules/mobile_and_platform/R-186.md`](./rules/mobile_and_platform/R-186.md)
 
 
 

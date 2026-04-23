@@ -18,12 +18,12 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_ux_headers_unification",
-    "started_at": "2026-04-22T18:23:19Z",
-    "mode": "reviewing",
+    "id": "session_2026W17_treatments_complexity_heuristic",
+    "started_at": "2026-04-23T22:23:00Z",
+    "mode": "coding",
     "status": "completed",
-    "goal": "Check Review PR #487",
-    "goal_type": "maintenance"
+    "goal": "Adaptive Complexity Heuristic (Treatments)",
+    "goal_type": "ux"
   },
   "memory": {
     "rules_count": 133,
@@ -34,11 +34,27 @@
     "last_distillation": "2026-04-21T18:50:00Z",
     "journal_entries_since_distillation": 8,
     "recent_additions": {
-      "rules": ["R-183", "R-184", "R-185"],
-      "anti_patterns": ["AP-W28", "AP-W29"],
-      "knowledge": ["K-088", "K-089"],
-      "decisions": ["ADR-031", "ADR-032", "ADR-033"],
-      "contracts": ["CON-018"]
+      "rules": [
+        "R-183",
+        "R-184",
+        "R-185"
+      ],
+      "anti_patterns": [
+        "AP-W28",
+        "AP-W29"
+      ],
+      "knowledge": [
+        "K-088",
+        "K-089"
+      ],
+      "decisions": [
+        "ADR-031",
+        "ADR-032",
+        "ADR-033"
+      ],
+      "contracts": [
+        "CON-018"
+      ]
     }
   },
   "evolution": {
@@ -53,5 +69,6 @@
     "completed_at": "2026-04-08",
     "primary_memory": ".agent/memory/",
     "global_base_exported": true
-  }
+  },
+  "journal_entries_since_distillation": 1
 }

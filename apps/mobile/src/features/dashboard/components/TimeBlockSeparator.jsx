@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { Moon, Sun, CloudSun, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { Moon, Sun, CloudSun, ChevronRight, ChevronUp } from 'lucide-react-native'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
 /**
@@ -10,12 +10,14 @@ import { colors, spacing, typography } from '../../../shared/styles/tokens'
  * @param {boolean} isExpanded - Estado de expansão do turno
  * @param {Function} onToggle - Callback para alternar expansão
  * @param {boolean} isDisabled - Se o turno deve ser renderizado em estado "desabilitado" (vazio)
+ * @param {{taken: number, total: number}} counts - Contador de doses (tomadas/total)
  */
 export default function TimeBlockSeparator({ 
   type = 'Manhã', 
   isExpanded = true, 
   onToggle, 
-  isDisabled = false 
+  isDisabled = false,
+  counts = null
 }) {
   const renderIcon = (t) => {
     const iconSize = 18
@@ -54,12 +56,22 @@ export default function TimeBlockSeparator({
         </Text>
         
         {onToggle && (
-          <View style={styles.chevronContainer}>
-            {isExpanded ? (
-              <ChevronUp size={20} color={colors.text.secondary} />
-            ) : (
-              <ChevronDown size={20} color={colors.text.secondary} />
+          <View style={styles.rightContent}>
+            {counts && counts.total > 0 && (
+              <Text style={[
+                styles.countsText,
+                isDisabled && styles.countsTextDisabled
+              ]}>
+                ({counts.taken}/{counts.total})
+              </Text>
             )}
+            <View style={styles.chevronContainer}>
+              {isExpanded ? (
+                <ChevronUp size={20} color={colors.text.secondary} />
+              ) : (
+                <ChevronRight size={20} color={colors.text.secondary} />
+              )}
+            </View>
           </View>
         )}
       </View>
@@ -69,9 +81,9 @@ export default function TimeBlockSeparator({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xs,
+    marginHorizontal: spacing[4],
+    marginTop: spacing[6],
+    marginBottom: spacing[1],
   },
   timelineRow: {
     flexDirection: 'row',
@@ -80,7 +92,7 @@ const styles = StyleSheet.create({
   dotContainer: {
     width: 32,
     alignItems: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacing[2],
   },
   text: {
     fontSize: 18,
@@ -93,7 +105,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chevronContainer: {
-    marginLeft: 'auto',
     paddingRight: 4,
+  },
+  rightContent: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countsText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginRight: spacing[1],
+    fontFamily: typography.fontFamily.medium || 'System',
+  },
+  countsTextDisabled: {
+    opacity: 0.5,
   }
 })
