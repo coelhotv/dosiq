@@ -1,16 +1,25 @@
 #!/bin/bash
-# build-android.sh — Prepara credenciais e roda eas build local
-# Uso: bash build-android.sh [preview|development|production]
+# build-android.sh — Prepara credenciais e roda eas build local para Android
+# Uso: bash build-android.sh [development|preview|production]
 
-PROFILE="${1:-preview}"
+set -euo pipefail
+
+PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_DIR="$SCRIPT_DIR"
 
-# production usa google-services.json; dev e preview compartilham google-services-development.json
-if [ "$PROFILE" = "production" ]; then
-  CREDS_FILE="$APP_DIR/google-services.json"
-else
-  CREDS_FILE="$APP_DIR/google-services-development.json"
+# 1. Extrair versão do app.config.js
+APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
+echo "📦 Versão detectada: v$APP_VERSION"
+
+# 2. Configurar credenciais
+# Segue a convenção do app.config.js: google-services-${PROFILE}.json
+CREDS_FILE="$SCRIPT_DIR/google-services-${PROFILE}.json"
+
+# Fallback para o nome genérico google-services.json se o específico não existir para produção
+if [ ! -f "$CREDS_FILE" ] && [ "$PROFILE" = "production" ]; then
+  if [ -f "$SCRIPT_DIR/google-services.json" ]; then
+    CREDS_FILE="$SCRIPT_DIR/google-services.json"
+  fi
 fi
 
 if [ ! -f "$CREDS_FILE" ]; then
@@ -19,8 +28,51 @@ if [ ! -f "$CREDS_FILE" ]; then
   exit 1
 fi
 
+# 3. Preparar diretório de saída
+TARGET_DIR="$HOME/local/dev-builds"
+mkdir -p "$TARGET_DIR"
+
+# No Android, production gera .aab e o restante gera .apk (conforme eas.json)
+if [ "$PROFILE" = "production" ]; then
+  EXT="aab"
+else
+  EXT="apk"
+fi
+
+TEMP_OUTPUT="$SCRIPT_DIR/build-temp.$EXT"
+FINAL_NAME="dosiq-v$APP_VERSION-$PROFILE.$EXT"
+FINAL_PATH="$TARGET_DIR/$FINAL_NAME"
+
+echo ""
+echo "📱 --- RESUMO DO PROCESSO ANDROID ---"
+echo "👤 Perfil:  $PROFILE"
+echo "📦 Versão:  v$APP_VERSION"
+echo "📂 Destino: $FINAL_PATH"
+echo "🚀 Formato: $EXT"
+echo "------------------------------------"
+read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
+
 echo "🔐 Exportando credencial Firebase: $CREDS_FILE"
 export GOOGLE_SERVICES_JSON_PATH="$CREDS_FILE"
+export EAS_BUILD_PROFILE="$PROFILE"
 
-echo "🚀 Iniciando build ($PROFILE)..."
-eas build --local --platform android --profile "$PROFILE"
+echo "🧹 Limpando cache e regenerando diretório nativo..."
+npx expo prebuild --platform android --clean
+
+echo "🚀 Iniciando build Android ($PROFILE) para v$APP_VERSION..."
+# Usamos || true para ignorar erros de limpeza interna do EAS (comum no iCloud) 
+eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || {
+  echo "⚠️ Aviso: O comando EAS reportou um problema (provavelmente limpeza de cache no iCloud), verificando integridade do binário..."
+}
+
+if [ ! -f "$TEMP_OUTPUT" ]; then
+  echo "❌ Erro: Build concluído mas arquivo não encontrado em $TEMP_OUTPUT"
+  exit 1
+fi
+
+# 4. Mover e renomear
+echo "💾 Movendo build para: $FINAL_PATH"
+mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+echo "✨ Processo finalizado com sucesso!"
+echo "📂 Arquivo disponível em: $FINAL_PATH"

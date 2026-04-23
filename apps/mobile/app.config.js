@@ -13,19 +13,19 @@ const BUILD_NUMBER = String(major * 10000 + minor * 100 + patch)
 
 const variants = {
   development: {
-    name: 'dosiq dev',
+    name: 'Dosiq dev',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq.development',
     androidPackage: 'com.coelhotv.dosiq.development',
   },
   preview: {
-    name: 'dosiq preview',
+    name: 'Dosiq preview',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq.development',
     androidPackage: 'com.coelhotv.dosiq.development',
   },
   production: {
-    name: 'dosiq',
+    name: 'Dosiq',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq',
