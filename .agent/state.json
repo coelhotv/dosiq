@@ -21,7 +21,7 @@
     "id": "session_2026W17_treatments_complexity_heuristic",
     "started_at": "2026-04-23T22:23:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "goal": "Adaptive Complexity Heuristic (Treatments)",
     "goal_type": "ux"
   },

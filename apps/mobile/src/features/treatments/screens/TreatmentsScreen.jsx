@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { ScrollView, View, Text, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
