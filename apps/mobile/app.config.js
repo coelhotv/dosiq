@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.1.3'
+const APP_VERSION = '0.1.4'
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
