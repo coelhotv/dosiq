@@ -104,7 +104,7 @@ export async function setSession(chatId, context) {
       // Cache is already updated, session survives in memory even if DB fails
     } else {
       const duration = Date.now() - startTime;
-      if (duration > 100) {
+      if (duration > 300) {
         console.warn(`[SessionManager] Slow write detected: ${duration}ms for chat ${chatId}`);
       }
     }
@@ -160,7 +160,7 @@ export async function getSession(chatId) {
     updateCache(chatIdStr, data.context);
 
     const duration = Date.now() - startTime;
-    if (duration > 100) {
+    if (duration > 300) {
       console.warn(`[SessionManager] Slow read detected: ${duration}ms for chat ${chatId}`);
     }
 
