@@ -1,8 +1,9 @@
 // useTreatments.js — hook para listagem de tratamentos
 // Padrão: { data, loading, error, stale, refresh }
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getActiveTreatments } from '../services/treatmentsService'
 
@@ -20,6 +21,7 @@ export function useTreatments() {
   const dataRef = useRef(null)
 
   const load = useCallback(async () => {
+    // ... codigo de load ...
     setLoading(true)
     setError(null)
 
@@ -77,5 +79,13 @@ export function useTreatments() {
     load()
   }, [load])
 
-  return { data, loading, error, stale, refresh: load }
+  // Resilience layer (Rule R-175): Filtrar validade para HOJE local.
+  // Garante que mesmo que o snapshot no cache tenha dados de ontem, a UI oculte os expirados.
+  const filteredData = useMemo(() => {
+    if (!data) return null
+    const today = getTodayLocal()
+    return data.filter(p => isProtocolActiveOnDate(p, today))
+  }, [data])
+
+  return { data: filteredData, loading, error, stale, refresh: load }
 }

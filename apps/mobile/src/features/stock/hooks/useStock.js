@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
 
@@ -32,13 +33,18 @@ export function useStock() {
       }
 
       const result = await getStockData(user.id)
+      const today = getTodayLocal()
       
       if (!result.success) throw new Error(result.error)
 
       // 1. Processamento base e cálculo ADR-018
       const processed = result.data.map(item => {
         const totalQuantity = item.medicine_stock_summary?.[0]?.total_quantity || 0
-        const activeProtocols = (item.protocols || []).filter(p => p.active)
+        
+        // Filtro de validade temporal (Wave v0.1.5)
+        const activeProtocols = (item.protocols || []).filter(p => 
+          p.active && isProtocolActiveOnDate(p, today)
+        )
         
         const dailyConsumption = activeProtocols.reduce((acc, p) => {
           const intakesPerDay = (p.time_schedule || []).length || 1
@@ -79,18 +85,23 @@ export function useStock() {
           status,
           statusLabel,
           color,
-          hasActiveProtocol: activeProtocols.length > 0
+          hasActiveProtocol: activeProtocols.length > 0,
+          // Mantemos os protocolos para garantir que o snapshot contenha as datas para re-processamento se necessário
+          activeProtocols 
         }
       })
 
-      const filtered = processed.filter(item => item.totalQuantity > 0 || item.hasActiveProtocol)
-      const active = filtered.filter(item => item.hasActiveProtocol).sort((a, b) => a.daysRemaining - b.daysRemaining)
-      const inactive = filtered.filter(item => !item.hasActiveProtocol).sort((a, b) => a.name.localeCompare(b.name))
+      // Na fase Read-Only Mobile, filtramos RIGOROSAMENTE para mostrar apenas o que tem protocolo hoje
+      const active = processed
+        .filter(item => item.hasActiveProtocol)
+        .sort((a, b) => a.daysRemaining - b.daysRemaining)
 
-      const newData = { active, inactive }
+      // Nota: Não mostramos a lista de inativos no Read-Only mobile por enquanto (reduzir ruído)
+      const newData = { active, inactive: [] }
       const snapshot = {
         data: newData,
-        capturedAt: new Date().toISOString()
+        capturedAt: new Date().toISOString(),
+        rawData: result.data // Salvamos o raw para resiliência de cache total se o dia mudar
       }
 
       await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))
@@ -142,8 +153,30 @@ export function useStock() {
     loadStock()
   }, [loadStock])
 
+  // Resilience layer (Rule R-175): Double-check validity on the active list
+  // Isso protege contra o caso do cache ter sido gerado às 23:59 de ontem e carregado às 00:01 de hoje.
+  const refinedData = useMemo(() => {
+    if (!state.data?.active) return state.data
+    const today = getTodayLocal()
+    
+    const refinedActive = state.data.active.filter(item => {
+      // Se o item já foi processado e tem activeProtocols salvos:
+      if (item.activeProtocols) {
+        return item.activeProtocols.some(p => isProtocolActiveOnDate(p, today))
+      }
+      // Fallback para protocols originais
+      return (item.protocols || []).some(p => p.active && isProtocolActiveOnDate(p, today))
+    })
+
+    return { 
+      ...state.data, 
+      active: refinedActive 
+    }
+  }, [state.data])
+
   return {
     ...state,
+    data: refinedData,
     refresh: () => loadStock(true)
   }
 }

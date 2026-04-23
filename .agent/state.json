@@ -18,12 +18,12 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "id": "session_2026W17_accordion_progress_counts",
-    "started_at": "2026-04-23T20:26:00Z",
+    "id": "session_2026W17_adherence_cache_resilience",
+    "started_at": "2026-04-23T21:55:00Z",
     "mode": "coding",
-    "status": "completed",
-    "goal": "Accordion Progress Counts (v0.1.5)",
-    "goal_type": "feature"
+    "status": "analysis",
+    "goal": "Adherence Cache Resilience (UI-level filtering)",
+    "goal_type": "fix"
   },
   "memory": {
     "rules_count": 133,
