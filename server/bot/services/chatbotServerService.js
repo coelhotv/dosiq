@@ -27,7 +27,7 @@ import {
   CHATBOT_BLOCKED_PATTERNS,
   CHATBOT_DISCLAIMER,
   CHATBOT_HEALTH_KEYWORDS,
-} from '../../../src/features/chatbot/config/chatbotConfig.js'
+} from '../../../apps/web/src/features/chatbot/config/chatbotConfig.js'
 
 const logger = createLogger('ChatbotServerService')
 
