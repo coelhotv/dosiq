@@ -21,7 +21,7 @@
     "id": "session_2026W17_adherence_cache_resilience",
     "started_at": "2026-04-23T21:55:00Z",
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "goal": "Adherence Cache Resilience (UI-level filtering)",
     "goal_type": "fix"
   },

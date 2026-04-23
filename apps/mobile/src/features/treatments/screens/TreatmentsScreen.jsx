@@ -1,21 +1,33 @@
-// TreatmentsScreen.jsx — tela "Tratamentos" do MVP mobile
-// Exibe a lista de protocolos ativos do usuário
-
-import { FlatList, View, Text, StyleSheet, RefreshControl } from 'react-native'
+import { useState, useCallback } from 'react'
+import { ScrollView, View, Text, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-// ... (restante dos imports)
 import LoadingState from '../../../shared/components/states/LoadingState'
 import ErrorState from '../../../shared/components/states/ErrorState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import TreatmentCard from '../components/TreatmentCard'
+import TreatmentPlanHeader from '../components/TreatmentPlanHeader'
 import { useTreatments } from '../hooks/useTreatments'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 
-export default function TreatmentsScreen() {
-  const { data, loading, error, stale, refresh } = useTreatments()
+// Habilitar animações no Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
+}
 
-  if (loading && !data) {
+export default function TreatmentsScreen() {
+  const { data: groups, loading, error, stale, refresh } = useTreatments()
+  const [expandedGroups, setExpandedGroups] = useState({})
+
+  const toggleGroup = useCallback((groupId) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }))
+  }, [])
+
+  if (loading && !groups) {
     return (
       <ScreenContainer>
         <LoadingState message="Carregando seus tratamentos..." />
@@ -23,7 +35,7 @@ export default function TreatmentsScreen() {
     )
   }
 
-  if (error && !data) {
+  if (error && !groups) {
     return (
       <ScreenContainer>
         <ErrorState message={error} onRetry={refresh} />
@@ -31,40 +43,69 @@ export default function TreatmentsScreen() {
     )
   }
 
+  // Se não houver grupos, mostrar EmptyState
+  const isEmpty = !groups || groups.length === 0
+
   return (
     <ScreenContainer>
       {stale && <StaleBanner />}
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TreatmentCard treatment={item} />}
-        contentContainerStyle={styles.listContent}
+      
+      <ScrollView
+        contentContainerStyle={styles.scroll}
         refreshControl={
           <RefreshControl
-            refreshing={loading && !!data}
+            refreshing={loading && !!groups}
             onRefresh={refresh}
             tintColor={colors.status.success}
           />
         }
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Meus Tratamentos</Text>
-            <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
-          </View>
-        }
-        ListEmptyComponent={
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Meus Tratamentos</Text>
+          <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
+        </View>
+
+        {isEmpty ? (
           <EmptyState 
             title="Nenhum tratamento ativo"
             message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
           />
-        }
-      />
+        ) : (
+          groups.map(group => {
+            const isExpanded = expandedGroups[group.id] !== false // Abre todos por padrão no mobile para facilitar
+            
+            return (
+              <View key={group.id} style={styles.groupContainer}>
+                <TreatmentPlanHeader 
+                  title={group.title}
+                  emoji={group.emoji}
+                  color={group.color}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleGroup(group.id)}
+                  count={group.protocols.length}
+                />
+                
+                {isExpanded && (
+                  <View style={styles.protocolsList}>
+                    {group.protocols.map(protocol => (
+                      <TreatmentCard 
+                        key={protocol.id} 
+                        treatment={protocol} 
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            )
+          })
+        )}
+      </ScrollView>
     </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  listContent: {
+  scroll: {
     paddingBottom: spacing[10],
   },
   header: {
@@ -84,5 +125,11 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 4,
     fontFamily: typography.fontFamily.medium || 'System',
+  },
+  groupContainer: {
+    marginBottom: spacing[2],
+  },
+  protocolsList: {
+    marginTop: spacing[1],
   },
 })

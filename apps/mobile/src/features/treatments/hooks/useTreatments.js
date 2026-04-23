@@ -81,18 +81,65 @@ export function useTreatments() {
 
   // Resilience layer (Rule R-175): Filtrar validade para HOJE local.
   // Garante que mesmo que o snapshot no cache tenha dados de ontem, a UI oculte os expirados.
-  const filteredData = useMemo(() => {
+  // Resilience layer + Grouping (Rule R-175): Organizar por Planos/Classes
+  const groupedData = useMemo(() => {
     if (!data) return null
     const today = getTodayLocal()
     
-    return data
+    // 1. Filtrar ativos para hoje e ordenar por horário da primeira dose
+    const validProtocols = data
       .filter(p => isProtocolActiveOnDate(p, today))
       .sort((a, b) => {
         const timeA = (a.time_schedule && a.time_schedule[0]) || '99:99'
         const timeB = (b.time_schedule && b.time_schedule[0]) || '99:99'
         return timeA.localeCompare(timeB)
       })
+
+    // 2. Agrupar
+    const groupsMap = {}
+    
+    validProtocols.forEach(p => {
+      let groupId, groupName, groupEmoji, groupColor
+      
+      if (p.treatment_plan) {
+        // Via Plano de Tratamento (Prioridade 1)
+        groupId = p.treatment_plan.id
+        groupName = p.treatment_plan.name
+        groupEmoji = p.treatment_plan.emoji
+        groupColor = p.treatment_plan.color
+      } else if (p.medicine?.therapeutic_class) {
+        // Via Classe Terapêutica (Prioridade 2 - Fallback)
+        groupId = `class-${p.medicine.therapeutic_class}`
+        groupName = p.medicine.therapeutic_class
+        groupEmoji = '🧪'
+        groupColor = '#94a3b8' 
+      } else {
+        // Outros (Prioridade 3)
+        groupId = 'general'
+        groupName = 'Outros Tratamentos'
+        groupEmoji = '💊'
+        groupColor = '#cbd5e1'
+      }
+
+      if (!groupsMap[groupId]) {
+        groupsMap[groupId] = {
+          id: groupId,
+          title: groupName,
+          emoji: groupEmoji,
+          color: groupColor,
+          protocols: []
+        }
+      }
+      groupsMap[groupId].protocols.push(p)
+    })
+
+    // Converter para array e ordenar grupos (Planos primeiro, depois alfabético)
+    return Object.values(groupsMap).sort((a, b) => {
+      if (a.id === 'general') return 1
+      if (b.id === 'general') return -1
+      return a.title.localeCompare(b.title)
+    })
   }, [data])
 
-  return { data: filteredData, loading, error, stale, refresh: load }
+  return { data: groupedData, loading, error, stale, refresh: load }
 }

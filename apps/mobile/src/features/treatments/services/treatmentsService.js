@@ -30,12 +30,19 @@ export async function getActiveTreatments(userId) {
         active,
         start_date,
         end_date,
+        treatment_plan:treatment_plan_id (
+          id,
+          name,
+          emoji,
+          color
+        ),
         medicine:medicine_id (
           id,
           name,
           type,
           dosage_per_pill,
-          dosage_unit
+          dosage_unit,
+          therapeutic_class
         )
       `)
       .eq('user_id', userId)
