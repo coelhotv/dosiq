@@ -53,7 +53,7 @@ module.exports = {
       supportsTablet: false,
       jsEngine: 'hermes',
       minimumOSVersion: '15.5',
-      googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info-${BUILD_PROFILE}.plist`,
+      googleServicesFile: process.env.GOOGLE_SERVICES_PLIST_PATH || `./GoogleService-Info.plist`,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ['remote-notification'],
@@ -62,7 +62,7 @@ module.exports = {
     android: {
       package: current.androidPackage,
       versionCode: Number(BUILD_NUMBER),
-      googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services-${BUILD_PROFILE}.json`,
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services.json`,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#E9F3EA',
