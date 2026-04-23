@@ -7,12 +7,12 @@ set -euo pipefail
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Bundle ID por perfil (deve refletir app.config.js)
+# Bundle ID único (reflete o app.config.js)
+BUNDLE_ID="com.coelhotv.dosiq"
+
 if [ "$PROFILE" = "production" ]; then
-  BUNDLE_ID="com.coelhotv.dosiq"
   PLIST_FILE="$SCRIPT_DIR/GoogleService-Info-production.plist"
 else
-  BUNDLE_ID="com.coelhotv.dosiq.development"
   PLIST_FILE="$SCRIPT_DIR/GoogleService-Info-development.plist"
 fi
 
