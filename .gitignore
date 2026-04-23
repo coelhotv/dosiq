@@ -18,7 +18,6 @@ build/
 target/
 ts-config.json
 tsconfig.tsbuildinfo
-node_modules/
 
 # Environment variables
 .env
@@ -55,9 +54,76 @@ tmp/
 
 # Run outputs
 run/
+
 # DEVFLOW runtime files (not versioned)
 .agent/sessions/.lock
 .agent/sessions/events.jsonl
 
 # DEVFLOW skill (symlink to master — not versioned)
 .agent/DEVFLOW.md
+
+# ──────────────────────────────────────────────
+#  NEW RULES (added 2026-04-23 — repo cleanup)
+# ──────────────────────────────────────────────
+
+# DEVFLOW memory — keep only indices
+.agent/memory/anti-patterns/
+.agent/memory/rules/
+.agent/memory/journal/
+.agent/memory/knowledge/
+.agent/memory/decisions/
+.agent/memory/contracts/
+.agent/snapshots/
+.agent/evolution/
+.agent/synthesis/
+
+# AI tool configs — agent-specific, not shared
+CLAUDE.md
+GEMINI.md
+.claude/settings.local.json
+.kilocode
+.kilocodemodes
+.roomodes
+.roo/
+GPT-5.2 Prompting Guide.md
+
+# Temporary review/skill artifacts
+check_review_*.json
+SKILLS
+
+# Migration guide (temporary)
+DOSIQ_MIGRATION_CLOUD_GUIDE.md
+
+# Xcode workspace user data
+*.xcuserstate
+xcuserdata/
+dosiq.xcworkspace/
+
+# Watchman
+.watchman-*
+.watchmanconfig
+
+# Backup files
+*.backup
+*.bak
+
+# Binary builds — distribute via Google Play Console
+*.apk
+*.aab
+*.ipa
+
+# Plans archive (historical, not active)
+plans/archive_old/
+
+# Public assets — whitelist essentials via negation
+apps/web/public/*
+!apps/web/public/app-icons/
+!apps/web/public/favicon.ico
+!apps/web/public/favicon.svg
+!apps/web/public/logo-new.png
+!apps/web/public/logo-new.svg
+!apps/web/public/desktop.jpg
+!apps/web/public/mobile.jpg
+!apps/web/public/tablet.jpg
+!apps/web/public/politica-de-privacidade.html
+!apps/web/public/gemini-svg.svg
