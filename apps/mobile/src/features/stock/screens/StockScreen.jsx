@@ -80,7 +80,7 @@ export default function StockScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Meu Estoque</Text>
             <Text style={styles.subtitle}>
-              Acompanhe a disponibilidade dos seus medicamentos
+              Acompanhe o estoque de seus remédios
             </Text>
           </View>
         }
