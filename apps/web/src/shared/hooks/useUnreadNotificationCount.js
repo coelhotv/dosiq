@@ -16,7 +16,10 @@ export function useUnreadNotificationCount(notifications) {
   const lastSeen = useMemo(() => {
     try {
       return localStorage.getItem(STORAGE_KEY)
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to get notification last seen time from localStorage:', err)
+      }
       return null
     }
   }, [])
@@ -34,8 +37,10 @@ export function useUnreadNotificationCount(notifications) {
   const markAllRead = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY, new Date().toISOString())
-    } catch {
-      // silencioso — não crítico
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to set notification last seen time in localStorage:', err)
+      }
     }
   }, [])
 

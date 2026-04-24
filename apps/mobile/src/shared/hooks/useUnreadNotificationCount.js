@@ -4,7 +4,7 @@
  * Persiste último acesso via AsyncStorage para sobreviver reinicializações.
  * R-187: chave contém userId para evitar vazamento entre contas.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const getStorageKey = (userId) =>
@@ -21,10 +21,14 @@ export function useUnreadNotificationCount(notifications, userId) {
   useEffect(() => {
     AsyncStorage.getItem(getStorageKey(userId))
       .then((val) => setLastSeen(val))
-      .catch(() => {})
+      .catch((err) => {
+        if (__DEV__) {
+          console.error('Failed to get notification last seen time:', err)
+        }
+      })
   }, [userId])
 
-  const unreadCount = (() => {
+  const unreadCount = useMemo(() => {
     if (!notifications?.length) return 0
     if (!lastSeen) return notifications.length
     const lastSeenTime = new Date(lastSeen).getTime()
@@ -32,13 +36,17 @@ export function useUnreadNotificationCount(notifications, userId) {
       if (!n.sent_at) return false
       return new Date(n.sent_at).getTime() > lastSeenTime
     }).length
-  })()
+  }, [notifications, lastSeen])
 
   const markAllRead = useCallback(() => {
     const now = new Date().toISOString()
     AsyncStorage.setItem(getStorageKey(userId), now)
       .then(() => setLastSeen(now))
-      .catch(() => {})
+      .catch((err) => {
+        if (__DEV__) {
+          console.error('Failed to set notification last seen time:', err)
+        }
+      })
   }, [userId])
 
   return { unreadCount, markAllRead }

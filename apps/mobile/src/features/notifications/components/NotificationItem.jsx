@@ -34,7 +34,7 @@ export default function NotificationItem({ notification, onNavigate }) {
   const IconComponent = ICON_MAP[iconName] ?? Bell
   const relativeTime  = formatRelativeTime(sent_at)
   const preview       = provider_metadata?.message ?? null
-  const isFailed      = status === 'falhou' || status === 'failed'
+  const isFailed      = ['falhou', 'failed'].includes(status?.toLowerCase())
   const hasAction     = deepLinkAction && !!onNavigate
 
   const content = (

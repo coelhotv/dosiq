@@ -36,7 +36,7 @@ export default function NotificationCard({ notification, onNavigate, index = 0 }
   const IconComponent = ICON_MAP[iconName] ?? Bell
   const relativeTime  = formatRelativeTime(sent_at)
   const preview       = provider_metadata?.message ?? null
-  const isFailed      = status === 'falhou' || status === 'failed'
+  const isFailed      = ['falhou', 'failed'].includes(status?.toLowerCase())
 
   return (
     <motion.article
