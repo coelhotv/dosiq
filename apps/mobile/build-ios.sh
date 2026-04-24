@@ -72,11 +72,12 @@ echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight �
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
-echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
+# echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
 # Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
-rm -rf "$SCRIPT_DIR/ios"
-rm -rf "$SCRIPT_DIR/android"
+# rm -rf "$SCRIPT_DIR/ios"
+# rm -rf "$SCRIPT_DIR/android"
 
+echo "Gerando prebuild pro iOS..."
 # Prebuild sem instalar pacotes nativos automaticamente (evita erro de path com espaços no iCloud)
 if npx expo prebuild --platform ios --no-install ; then
   echo "✅ Código nativo regenerado com sucesso."
@@ -86,19 +87,19 @@ else
 fi
 
 # Instalação manual de Pods (mais resiliente a caminhos com espaços)
-echo "📦 Instalando dependências nativas (CocoaPods)..."
-cd "$SCRIPT_DIR/ios"
-if pod install ; then
-  cd "$SCRIPT_DIR"
-  echo "✅ CocoaPods concluído."
-else
-  echo "⚠️ Erro no pod install automático, tentando forçar com repo update..."
-  pod install --repo-update || {
-    echo "❌ Falha crítica no CocoaPods. Verifique o caminho iCloud para conflitos."
-    exit 1
-  }
-  cd "$SCRIPT_DIR"
-fi
+# echo "📦 Instalando dependências nativas (CocoaPods)..."
+# cd "$SCRIPT_DIR/ios"
+# if pod install ; then
+#   cd "$SCRIPT_DIR"
+#   echo "✅ CocoaPods concluído."
+# else
+#   echo "⚠️ Erro no pod install automático, tentando forçar com repo update..."
+#   pod install --repo-update || {
+#     echo "❌ Falha crítica no CocoaPods. Verifique o caminho iCloud para conflitos."
+#     exit 1
+#   }
+#   cd "$SCRIPT_DIR"
+# fi
 
 rm -f "$TEMP_OUTPUT"
 
