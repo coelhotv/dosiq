@@ -1,8 +1,9 @@
 # Exec Spec — Sprint 8.3: Notification Inbox UX (Web & Mobile)
 
-> **Status:** PLANEJADO — aguardando aprovação de design (ui-design-brain)
+> **Status:** APROVADO — Design Spec gerada (`plans/backlog-native_app/DESIGN_SPEC_SPRINT_8_3_NOTIFICATION_INBOX.md`) 
 > **Sprint:** 2026-W17
 > **Meta doc:** `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md` — Epic 1, Sprint 8.3
+> **Design Spec:** `plans/backlog-native_app/DESIGN_SPEC_SPRINT_8_3_NOTIFICATION_INBOX.md`
 > **Pré-requisito:** Sprint 8.1 ✅ (migration + dispatcher) | Sprint 8.2 ✅ (hook + repositório)
 
 ---
@@ -157,9 +158,11 @@ O acesso à Inbox no mobile será via **ProfileScreen** (não nova tab — para 
 |----------|---------|-----------|
 | **CRIAR** | `packages/core/src/utils/notificationIconMapper.js` | Shared |
 | **CRIAR** | `apps/web/src/features/notifications/components/NotificationList.jsx` | Web |
+| **CRIAR** | `apps/web/src/features/notifications/components/NotificationList.css` | Web |
 | **CRIAR** | `apps/web/src/features/notifications/components/NotificationCard.jsx` | Web |
-| **CRIAR** | `apps/web/src/features/notifications/components/NotificationInbox.css` | Web |
+| **CRIAR** | `apps/web/src/features/notifications/components/NotificationCard.css` | Web |
 | **CRIAR** | `apps/web/src/views/redesign/NotificationInbox.jsx` | Web |
+| **CRIAR** | `apps/web/src/views/redesign/NotificationInbox.css` | Web |
 | **CRIAR** | `apps/web/src/shared/hooks/useUnreadNotificationCount.js` | Web |
 | **CRIAR** | `apps/mobile/src/features/notifications/screens/NotificationInboxScreen.jsx` | Mobile |
 | **CRIAR** | `apps/mobile/src/features/notifications/components/NotificationItem.jsx` | Mobile |
@@ -188,10 +191,12 @@ O acesso à Inbox no mobile será via **ProfileScreen** (não nova tab — para 
 
 | ADR | Relevância |
 |-----|-----------|
+| ADR-010 | Status badges com fills muted (10% opacity) — nunca saturados ✅ |
+| ADR-012 | border-radius mínimo 0.75rem em todos os cards/componentes ✅ |
+| ADR-023 | Sem font-weight < 400 nos componentes ✅ |
+| ADR-024 | Ícones SEMPRE acompanhados de texto label ✅ |
 | ADR-029 | Dispatcher Multicanal — dados já persistidos na `notification_log` ✅ |
 | ADR-030 | Feature flag não necessária para UI read-only ✅ |
-| ADR-023 | Sem font-weight < 400 nos componentes mobile ✅ |
-| ADR-024 | Ícones sempre acompanhados de texto label ✅ |
 | ADR-033 | Resiliência de cache post-load aplicada no hook mobile ✅ |
 
 **Novo ADR necessário?** NÃO — a decisão de acesso via ProfileScreen no mobile (em vez de nova tab) é uma escolha de UX de baixo impacto, não arquitetural.
@@ -211,6 +216,7 @@ O acesso à Inbox no mobile será via **ProfileScreen** (não nova tab — para 
 | R-151 | Usar Modal compartilhado se necessário |
 | R-167 | `if (__DEV__)` nos console.log mobile |
 | R-169 | Screens mobile DEVEM ter SafeAreaView |
+| R-180 | Header mobile padrão Santuário: fontSize 28, fontWeight 800, letterSpacing -0.5 |
 | R-187 | Cache keys dinâmicas por userId (já implementado no hook) |
 | R-188 | Fetcher memoizado (já implementado no hook web) |
 | AP-056 | Unstable fetcher loop — mitigado com `useCallback` memoizado |
@@ -222,7 +228,7 @@ O acesso à Inbox no mobile será via **ProfileScreen** (não nova tab — para 
 - [ ] **DoD-1:** Usuário acessa Central de Avisos pela nav (web: ícone 🔔 / mobile: ProfileScreen → "Central de Avisos")
 - [ ] **DoD-2:** Lista exibe notificações ordenadas do mais novo para o mais antigo
 - [ ] **DoD-3:** Cards mostram ícone por tipo, label, data relativa e status
-- [ ] **DoD-4:** Deep link "Ver doses" navega para dashboard; "Ver estoque" navega para stock
+- [ ] **DoD-4:** Deep links funcionam: "Ver doses" → dashboard, "Ver estoque" → stock, "Ver histórico" → history
 - [ ] **DoD-5:** Badge 🔔 exibe contagem de não-lidas; ao acessar a tela, a contagem é zerada
 - [ ] **DoD-6:** Estado vazio com mensagem amigável quando não há notificações
 - [ ] **DoD-7:** Mobile exibe banner "dados offline" quando `stale === true`

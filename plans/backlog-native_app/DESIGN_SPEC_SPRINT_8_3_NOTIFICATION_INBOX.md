@@ -2,8 +2,8 @@
 
 > **Gerado por:** `/ui-design-brain` + DEVFLOW Planning P3
 > **Sprint:** 2026-W17
-> **Status:** APROVADO PARA IMPLEMENTAÇÃO (aguarda go do operador)
-> **Exec Spec base:** `plans/EXEC_SPEC_SPRINT_8_3_NOTIFICATION_INBOX.md`
+> **Status:** APROVADO PARA IMPLEMENTAÇÃO
+> **Exec Spec base:** `plans/backlog-native_app/EXEC_SPEC_SPRINT_8_3_NOTIFICATION_INBOX.md`
 
 ---
 
