@@ -57,9 +57,8 @@ export function createNotificationLogRepository({ supabase }) {
     try {
       return z.array(notificationLogSchema).parse(data || [])
     } catch (validationError) {
-      console.warn('[NotificationLogRepository] Data validation warning:', validationError.errors)
-      // R-130: Integridade estrita - se os dados falharem na validação, 
-      // retornamos vazio para evitar que dados corrompidos atinjam a UI.
+      // Zod v4 usa .issues (não .errors como no v3)
+      console.warn('[NotificationLogRepository] Data validation warning:', validationError.issues ?? validationError.message)
       return []
     }
   }

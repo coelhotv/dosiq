@@ -161,9 +161,9 @@ export const geminiReviewSchema = z.object({
   resolution_type: z.enum(RESOLUTION_TYPES).nullable().optional(),
 
   // Timestamps
-  created_at: z.string().datetime().optional(),
-  updated_at: z.string().datetime().optional(),
-  resolved_at: z.string().datetime().nullable().optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
+  updated_at: z.string().datetime({ offset: true }).optional(),
+  resolved_at: z.string().datetime({ offset: true }).nullable().optional(),
 
   // Referência ao usuário
   resolved_by: z.string().uuid().nullable().optional(),
@@ -197,7 +197,7 @@ export const geminiReviewStatusUpdateSchema = z.object({
   }),
   resolution_type: z.enum(RESOLUTION_TYPES).nullable().optional(),
   resolved_by: z.string().uuid().nullable().optional(),
-  resolved_at: z.string().datetime().nullable().optional(),
+  resolved_at: z.string().datetime({ offset: true }).nullable().optional(),
 })
 
 /**

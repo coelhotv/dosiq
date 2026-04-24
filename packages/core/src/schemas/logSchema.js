@@ -67,8 +67,8 @@ export const logUpdateSchema = logSchema.partial()
 export const logFullSchema = logSchema.extend({
   id: z.string().uuid('ID do log deve ser um UUID válido'),
   user_id: z.string().uuid('ID do usuário deve ser um UUID válido'),
-  created_at: z.string().datetime().optional(),
-  updated_at: z.string().datetime().optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
+  updated_at: z.string().datetime({ offset: true }).optional(),
 })
 
 /**

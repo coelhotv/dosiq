@@ -11,7 +11,7 @@ const logSchema = z.object({
   medicine_id: z.string().uuid(),
   protocol_id: z.string().uuid().nullable().optional(),
   quantity_taken: z.number().positive().max(100),
-  taken_at: z.string().datetime(),
+  taken_at: z.string().datetime({ offset: true }),
 })
 
 // Estrutura de um protocolo

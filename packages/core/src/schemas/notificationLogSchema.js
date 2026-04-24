@@ -5,7 +5,7 @@ const baseSchema = {
   protocol_id: z.string().uuid().optional().nullable(),
   notification_type: z.string(),
   status: z.string().default('enviada'),
-  sent_at: z.string().datetime().optional(),
+  sent_at: z.string().datetime({ offset: true }).optional(),
   telegram_message_id: z.number().nullable().optional(),
   mensagem_erro: z.string().nullable().optional(),
   provider_metadata: z.record(z.string(), z.unknown()).default({}),
@@ -13,7 +13,7 @@ const baseSchema = {
 
 export const notificationLogSchema = z.object({
   id: z.string().uuid().optional(),
-  created_at: z.string().datetime().optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
   ...baseSchema,
 });
 
