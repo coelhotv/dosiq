@@ -121,7 +121,7 @@ fi
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
 
-# 4.1 Extração automática para Simulador (Wave v0.1.5)
+# 4.1 Extração automática para Simulador
 if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
   # Verifica se é um arquivo comprimido (tar.gz)
   if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
@@ -131,24 +131,23 @@ if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
     EXTRACT_TMP=$(mktemp -d)
     
     if tar -xvzf "$FINAL_PATH" -C "$EXTRACT_TMP" ; then
-      # Identifica o bundle .app extraído (evita o aninhamento anterior)
+      # Identifica o bundle .app extraído
       EXTRACTED_APP=$(find "$EXTRACT_TMP" -name "*.app" -type d -maxdepth 1 | head -1)
       
       if [ -n "$EXTRACTED_APP" ]; then
-        echo "📂 Bundle identificado: $(basename "$EXTRACTED_APP")"
-        # Remove o tarball e move o bundle renomeando para o padrão desejado
+        APP_NAME=$(basename "$EXTRACTED_APP")
+        echo "📂 Bundle identificado: $APP_NAME"
         rm "$FINAL_PATH"
         mv "$EXTRACTED_APP" "$FINAL_PATH"
         echo "✅ Extração e renomeação concluídas em: $FINAL_PATH"
       else
-        echo "⚠️ Nenhum bundle .app detectado no nível raiz. Criando pacote fallback..."
+        echo "⚠️ Nenhum bundle .app detectado. Usando fallback..."
         rm "$FINAL_PATH"
         mv "$EXTRACT_TMP" "$FINAL_PATH"
       fi
-      
       rm -rf "$EXTRACT_TMP"
     else
-      echo "❌ Erro ao extrair pacote. Mantendo arquivo original."
+      echo "❌ Erro ao extrair pacote."
       rm -rf "$EXTRACT_TMP"
     fi
   else
@@ -162,7 +161,7 @@ if [ "$PROFILE" = "production" ]; then
   if eas submit --platform ios --profile production --path "$FINAL_PATH" ; then
     echo "✅ Submissão concluída com sucesso!"
   else
-    echo "⚠️ Falha na submissão ao TestFlight, mas o build local foi preservado em $FINAL_PATH"
+    echo "⚠️ Falha na submissão, mas o build foi preservado em $FINAL_PATH"
     exit 1
   fi
 fi
