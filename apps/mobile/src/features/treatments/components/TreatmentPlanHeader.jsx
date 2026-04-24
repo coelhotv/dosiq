@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 import { ChevronRight, ChevronUp } from 'lucide-react-native'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
@@ -34,7 +34,7 @@ export default function TreatmentPlanHeader({
         
         <View style={styles.textContainer}>
           <Text style={styles.title} numberOfLines={1}>{title}</Text>
-          <Text style={styles.subtitle}>{count} {count === 1 ? 'protocolo' : 'protocolos'}</Text>
+          <Text style={styles.subtitle}>{count} {count === 1 ? 'tratamento' : 'tratamentos'}</Text>
         </View>
         
         <View style={styles.chevronContainer}>
@@ -52,8 +52,8 @@ export default function TreatmentPlanHeader({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing[4],
-    marginTop: spacing[4],
-    marginBottom: spacing[2],
+    marginTop: spacing[2],
+    marginBottom: spacing[1],
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: spacing[3],
@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 22,
+    // Forçar fonte nativa de emojis no iOS para evitar falha do FontParser do sistema
+    fontFamily: Platform.OS === 'ios' ? 'Apple Color Emoji' : 'System',
   },
   textContainer: {
     flex: 1,

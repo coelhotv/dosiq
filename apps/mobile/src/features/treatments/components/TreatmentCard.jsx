@@ -1,4 +1,4 @@
-// TreatmentCard.jsx — card de exibição de um tratamento/protocolo
+// TreatmentCard.jsx — card de exibição de um tratamento
 // R-166: UX Parity P-011
 
 import { View, Text, StyleSheet } from 'react-native'

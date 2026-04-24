@@ -492,7 +492,7 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
 
   const allDoses = [
     // 1. TOMADAS (Independente do horário)
-    ...takenDoses.map((d) => ({ ...d, timelineStatus: 'TOMADA' })),
+    ...takenDoses.map((d) => ({ ...d, timelineStatus: 'TOMADA', isRegistered: true })),
 
     // 2. MISSES (No passado)
     ...missedDoses.map((d) => {
@@ -502,7 +502,7 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
       // Se passou menos de 2h do horário agendado, ainda é ATRASADA
       // Se passou mais de 2h, é PERDIDA
       const timelineStatus = diffMs <= TOLERANCE_WINDOW_MS ? 'ATRASADA' : 'PERDIDA'
-      return { ...d, timelineStatus }
+      return { ...d, timelineStatus, isRegistered: false }
     }),
 
     // 3. SCHEDULED (No futuro)
@@ -513,7 +513,7 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
       // Se falta menos de 2h para o horário agendado, é PROXIMA (Aviso prévio)
       // Se falta mais de 2h, é PLANEJADA
       const timelineStatus = diffMs <= TOLERANCE_WINDOW_MS ? 'PROXIMA' : 'PLANEJADA'
-      return { ...d, timelineStatus }
+      return { ...d, timelineStatus, isRegistered: false }
     }),
   ]
 

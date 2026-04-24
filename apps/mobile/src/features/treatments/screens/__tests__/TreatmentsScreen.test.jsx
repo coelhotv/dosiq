@@ -28,6 +28,6 @@ describe('TreatmentsScreen', () => {
   it('renders empty state when no treatments', () => {
     useTreatments.mockReturnValue({ loading: false, data: [] });
     const { getByText } = render(<TreatmentsScreen />);
-    expect(getByText(/Você não possui protocolos/i)).toBeTruthy();
+    expect(getByText(/Nenhum tratamento ativo/i)).toBeTruthy();
   });
 });

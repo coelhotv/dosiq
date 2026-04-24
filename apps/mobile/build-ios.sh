@@ -130,12 +130,22 @@ if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
     EXTRACT_TMP=$(mktemp -d)
     
     if tar -xvzf "$FINAL_PATH" -C "$EXTRACT_TMP" ; then
-      # Após extrair, removemos o tarball e movemos a pasta .app para o lugar dele
-      rm "$FINAL_PATH"
-      mkdir -p "$FINAL_PATH"
-      cp -R "$EXTRACT_TMP/"* "$FINAL_PATH/"
+      # Identifica o bundle .app extraído (evita o aninhamento anterior)
+      EXTRACTED_APP=$(find "$EXTRACT_TMP" -name "*.app" -type d -maxdepth 1 | head -1)
+      
+      if [ -n "$EXTRACTED_APP" ]; then
+        echo "📂 Bundle identificado: $(basename "$EXTRACTED_APP")"
+        # Remove o tarball e move o bundle renomeando para o padrão desejado
+        rm "$FINAL_PATH"
+        mv "$EXTRACTED_APP" "$FINAL_PATH"
+        echo "✅ Extração e renomeação concluídas em: $FINAL_PATH"
+      else
+        echo "⚠️ Nenhum bundle .app detectado no nível raiz. Criando pacote fallback..."
+        rm "$FINAL_PATH"
+        mv "$EXTRACT_TMP" "$FINAL_PATH"
+      fi
+      
       rm -rf "$EXTRACT_TMP"
-      echo "✅ Extração concluída com sucesso em: $FINAL_PATH"
     else
       echo "❌ Erro ao extrair pacote. Mantendo arquivo original."
       rm -rf "$EXTRACT_TMP"

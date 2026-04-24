@@ -7,7 +7,7 @@ import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
- * Busca todos os protocolos ativos do usuário com dados de medicamento
+ * Busca todos os tratamentos ativos do usuário com dados de medicamento
  * @param {string} userId
  * @returns {Promise<{success: boolean, data?: any[], error?: string}>}
  */

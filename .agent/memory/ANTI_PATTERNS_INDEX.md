@@ -6,6 +6,7 @@
 - **[AP-B02]** HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afet... -> [`anti-patterns/data_and_schema/AP-B02.md`](./anti-patterns/data_and_schema/AP-B02.md)
 - **[AP-D01]** Protocol A with ["08:00", "20:00"] = 2 doses expected. `COUNT(DISTINCT)` returns... -> [`anti-patterns/data_and_schema/AP-D01.md`](./anti-patterns/data_and_schema/AP-D01.md)
 - **[AP-D03]** After CROSS JOIN LATERAL jsonb_array_elements_text (expands doses), `COUNT(*)` c... -> [`anti-patterns/data_and_schema/AP-D03.md`](./anti-patterns/data_and_schema/AP-D03.md)
+- **[AP-D07]** Core-Mobile Adherence Parity Gap -> [`anti-patterns/data_and_schema/AP-D07.md`](./anti-patterns/data_and_schema/AP-D07.md)
 - **[AP-P15]** `calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls... -> [`anti-patterns/data_and_schema/AP-P15.md`](./anti-patterns/data_and_schema/AP-P15.md)
 - **[AP-P16]** Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00... -> [`anti-patterns/data_and_schema/AP-P16.md`](./anti-patterns/data_and_schema/AP-P16.md)
 - **[AP-P17]** HTTP 400 Bad Request silencioso. UI mostra "Erro ao carregar dados" sem mensagem... -> [`anti-patterns/data_and_schema/AP-P17.md`](./anti-patterns/data_and_schema/AP-P17.md)

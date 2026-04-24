@@ -80,6 +80,7 @@
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)
+- **[R-190]** Mandatory Devflow Bootstrap (Hard Stop) [HOT] -> [`rules/process_and_testing/R-190.md`](./rules/process_and_testing/R-190.md)
 - **[R-002]** Always verify path aliases in vite.config.js before assuming @feature/x resolves... -> [`rules/process_and_testing/R-002.md`](./rules/process_and_testing/R-002.md)
 - **[R-003]** Never import files that do not exist; validate with npm run build before pushing... -> [`rules/process_and_testing/R-003.md`](./rules/process_and_testing/R-003.md)
 - **[R-050]** All JSDoc comments must be in Portuguese from the first commit. -> [`rules/process_and_testing/R-050.md`](./rules/process_and_testing/R-050.md)

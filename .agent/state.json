@@ -20,8 +20,8 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Sprint 8.3 — Notification Inbox UX Web & Mobile",
-    "goal_type": "feature"
+    "goal": "Ajuste de copy UI: Substituir 'Protocolo' por 'Tratamento'",
+    "goal_type": "fix"
   },
   "memory": {
     "rules_count": 134,

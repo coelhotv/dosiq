@@ -178,7 +178,7 @@ export default function TodayScreen() {
         {protocols.length === 0 ? (
           <EmptyState
             icon={<Pill size={48} color={colors.status.success} />}
-            message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
+            message={'Sem tratamentos ativos.\nAdicione tratamentos na versão web.'}
           />
         ) : !isComplex ? (
           /* MODO SIMPLE: Dona Maria (Lista direta cronológica) */

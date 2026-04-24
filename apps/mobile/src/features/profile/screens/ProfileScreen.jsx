@@ -130,9 +130,12 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TelegramLinkCard
-          settings={settings}
-        />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Bot Telegram</Text>
+          <TelegramLinkCard
+            settings={settings}
+          />
+        </View>
 
         <View style={styles.logoutSection}>
           <TouchableOpacity 

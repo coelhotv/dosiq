@@ -76,13 +76,13 @@ export default function TreatmentsScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Meus Tratamentos</Text>
-          <Text style={styles.subtitle}>Acompanhe seus protocolos ativos</Text>
+          <Text style={styles.subtitle}>Acompanhe seus tratamentos ativos</Text>
         </View>
 
         {isEmpty ? (
           <EmptyState 
             title="Nenhum tratamento ativo"
-            message={'Sem tratamentos ativos.\nAdicione protocolos na versão web.'}
+            message={'Sem tratamentos ativos.\nAdicione tratamentos na versão web.'}
           />
         ) : !isComplex ? (
           /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium || 'System',
   },
   groupContainer: {
-    marginBottom: spacing[2],
+    marginBottom: spacing[1],
   },
   protocolsList: {
     marginTop: spacing[1],
