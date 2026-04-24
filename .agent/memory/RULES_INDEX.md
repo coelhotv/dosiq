@@ -73,6 +73,7 @@
 - **[R-184]** Protocolo de Auto-Refresh de Meia-Noite + AppState Foreground Refresh -> [`rules/mobile_and_platform/R-184.md`](./rules/mobile_and_platform/R-184.md)
 - **[R-185]** Redundant UI-Level Temporal Filtering (R-175 Extension) -> [`rules/mobile_and_platform/R-185.md`](./rules/mobile_and_platform/R-185.md)
 - **[R-186]** Accordion Toggle Integrity (Default Open Handling) -> [`rules/mobile_and_platform/R-186.md`](./rules/mobile_and_platform/R-186.md)
+- **[R-187]** Dynamic User-Specific Cache Keys (Mobile Persistence Security) -> [`rules/mobile_and_platform/R-187.md`](./rules/mobile_and_platform/R-187.md)
 
 
 
@@ -150,3 +151,4 @@
 - **[R-178]** Ao criar novos diretórios (ex: server/), garantir que testes e lint capturem os novos caminhos... -> [`rules/process_and_testing/R-178.md`](./rules/process_and_testing/R-178.md)
 - **[R-180]** Native Header Standardization (Santuário Pattern): Títulos (28/800), spacing e navegação ← Voltar (Telegram) -> [`rules/react_and_ui/R-180.md`](./rules/react_and_ui/R-180.md)
 - **[R-185]** Consistência de estados de carregamento nativo e animações sincronizadas. -> [`rules/react_and_ui/R-185.md`](./rules/react_and_ui/R-185.md)
+- **[R-188]** SWR Fetcher Memoization (Infinite Render Loop Prevention) -> [`rules/react_and_ui/R-188.md`](./rules/react_and_ui/R-188.md)
