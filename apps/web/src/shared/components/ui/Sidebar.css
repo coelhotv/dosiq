@@ -127,3 +127,27 @@
 .sidebar-add-btn:active {
   transform: scale(0.98);
 }
+
+.sidebar-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: var(--color-error, #dc2626);
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}

@@ -48,3 +48,9 @@ export {
 export {
   calculateTitrationData,
 } from './titrationUtils.js'
+
+// Notification utilities
+export {
+  getNotificationIcon,
+  formatRelativeTime,
+} from './notificationIconMapper.js'

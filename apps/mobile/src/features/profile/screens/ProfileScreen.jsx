@@ -10,6 +10,8 @@ import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
 import { ROUTES } from '../../../navigation/routes'
+import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
+import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
 
 /**
  * Tela de Perfil do MVP mobile (H5.6)
@@ -19,6 +21,9 @@ export default function ProfileScreen() {
   const navigation = useNavigation()
   const { user, settings, loading, error, refresh, generateToken } = useProfile()
   const [isGenerating, setIsGenerating] = useState(false)
+
+  const { data: notifData } = useNotificationLog({ userId: user?.id, limit: 30, enabled: !!user?.id })
+  const { unreadCount } = useUnreadNotificationCount(notifData, user?.id)
 
   const handleLogout = async () => {
     Alert.alert(
@@ -103,6 +108,23 @@ export default function ProfileScreen() {
             <View style={styles.notificationRow}>
               <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
               <Text style={styles.notificationLabel}>Preferências de Notificação</Text>
+              <Text style={styles.arrow}>›</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.card, { marginTop: spacing[2] }]}
+            onPress={() => navigation.navigate(ROUTES.NOTIFICATION_INBOX, { userId: user?.id })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.notificationRow}>
+              <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
+              <Text style={styles.notificationLabel}>Central de Avisos</Text>
+              {unreadCount > 0 && (
+                <View style={styles.inboxBadge}>
+                  <Text style={styles.inboxBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
               <Text style={styles.arrow}>›</Text>
             </View>
           </TouchableOpacity>
@@ -232,6 +254,20 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 20,
     color: colors.text.secondary,
+  },
+  inboxBadge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 100,
+    backgroundColor: colors.status.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inboxBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   versionSection: {
     paddingVertical: spacing[4],

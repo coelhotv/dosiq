@@ -2,6 +2,8 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { BotMessageSquare } from 'lucide-react'
 import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
+import { useNotificationLog } from '@shared/hooks/useNotificationLog'
+import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
 import '@shared/styles/index.css'
 import appStyles from './App.module.css'
 import Auth from './views/Auth'
@@ -20,6 +22,7 @@ const Profile = lazy(() => import('./views/redesign/Profile'))
 const Consultation = lazy(() => import('./views/redesign/Consultation'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
+const NotificationInbox = lazy(() => import('./views/redesign/NotificationInbox'))
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -64,6 +67,9 @@ function AppInner() {
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
+
+  const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
+  const { unreadCount } = useUnreadNotificationCount(notifData)
 
   useEffect(() => {
     // Check initial session
@@ -217,6 +223,16 @@ function AppInner() {
             <DLQAdmin />
           </Suspense>
         )
+      case 'notifications':
+        return (
+          <Suspense fallback={<ViewSkeleton />}>
+            <NotificationInbox
+              userId={session?.id}
+              onNavigate={setCurrentView}
+              onBack={() => setCurrentView('dashboard')}
+            />
+          </Suspense>
+        )
       case 'dashboard':
       default: {
         const dashboardNavigate = (view, params) => {
@@ -252,6 +268,7 @@ function AppInner() {
                 currentView={currentView}
                 setCurrentView={setCurrentView}
                 onNewDose={() => setIsDoseModalOpen(true)}
+                unreadCount={unreadCount}
               />
             </Suspense>
           )}
@@ -289,7 +306,7 @@ function AppInner() {
           {/* BottomNav — redesign version */}
           {isAuthenticated && (
             <Suspense fallback={null}>
-              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} />
+              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
           )}
 
