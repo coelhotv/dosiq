@@ -68,7 +68,7 @@ function AppInner() {
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
 
-  const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30 })
+  const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
 
   useEffect(() => {

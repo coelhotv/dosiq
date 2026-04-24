@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const { user, settings, loading, error, refresh, generateToken } = useProfile()
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const { data: notifData } = useNotificationLog({ userId: user?.id, limit: 30 })
+  const { data: notifData } = useNotificationLog({ userId: user?.id, limit: 30, enabled: !!user?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData, user?.id)
 
   const handleLogout = async () => {

@@ -11,10 +11,19 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, Bell, WifiOff } from 'lucide-react-native'
+import { ROUTES } from '../../../navigation/routes'
 import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
 import NotificationItem from '../components/NotificationItem'
 import { colors } from '../../../shared/styles/tokens'
+
+// Mapa estático fora do componente — evita recriação por render (perf) e usa constantes canônicas de rota
+const DEEP_LINK_TARGETS = {
+  dashboard: ROUTES.TODAY,
+  stock:     ROUTES.STOCK,
+  treatment: ROUTES.TREATMENTS,
+  history:   ROUTES.TODAY, // Mobile não tem tela de histórico — fallback para Hoje
+}
 
 export default function NotificationInboxScreen({ navigation, route }) {
   const userId = route?.params?.userId
@@ -30,9 +39,8 @@ export default function NotificationInboxScreen({ navigation, route }) {
     <NotificationItem
       notification={item}
       onNavigate={(view) => {
-        const tabMap = { dashboard: 'Hoje', stock: 'Estoque', treatment: 'Tratamentos' }
-        const tabName = tabMap[view]
-        if (tabName) navigation.navigate(tabName)
+        const target = DEEP_LINK_TARGETS[view]
+        if (target) navigation.navigate(target)
       }}
     />
   ), [navigation])
