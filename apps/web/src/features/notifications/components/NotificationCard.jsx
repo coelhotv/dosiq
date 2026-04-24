@@ -79,8 +79,8 @@ export default function NotificationCard({
   // Título: sempre resolve pelo tipo (medicine_name, protocol_name, etc.)
   const displayTitle = resolveTitle(notification, label)
 
-  // Corpo: usa body do banco; fallback para title se body ausente e title é diferente do displayTitle
-  const displayBody = body ?? (title !== displayTitle ? title : null)
+  // Corpo: body do banco (tabela foi zerada antes do deploy v1 — sem registros legados)
+  const displayBody = body ?? null
 
   // CTA
   const cta = CTA_MAP[notification_type] ?? null
