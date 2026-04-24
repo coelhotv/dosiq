@@ -9,35 +9,35 @@ export function getNotificationIcon(type) {
   const map = {
     dose_reminder: {
       iconName: 'Clock',
-      color: 'var(--color-primary, #006a5e)',
+      color: '#006a5e',
       bgColor: 'rgba(0, 106, 94, 0.10)',
       label: 'Lembrete de dose',
       deepLinkAction: 'dashboard',
     },
     stock_alert: {
       iconName: 'Package',
-      color: 'var(--color-warning, #d97706)',
+      color: '#d97706',
       bgColor: 'rgba(217, 119, 6, 0.10)',
       label: 'Alerta de estoque',
       deepLinkAction: 'stock',
     },
     missed_dose: {
       iconName: 'AlertTriangle',
-      color: 'var(--color-error, #dc2626)',
+      color: '#dc2626',
       bgColor: 'rgba(220, 38, 38, 0.10)',
       label: 'Dose perdida',
       deepLinkAction: 'history',
     },
     daily_digest: {
       iconName: 'BarChart2',
-      color: 'var(--color-info, #0284c7)',
+      color: '#0284c7',
       bgColor: 'rgba(2, 132, 199, 0.10)',
       label: 'Resumo diário',
       deepLinkAction: null,
     },
     titration_update: {
       iconName: 'TrendingUp',
-      color: 'var(--color-success, #16a34a)',
+      color: '#16a34a',
       bgColor: 'rgba(22, 163, 74, 0.10)',
       label: 'Atualização de titulação',
       deepLinkAction: 'treatment',
@@ -45,7 +45,7 @@ export function getNotificationIcon(type) {
   }
   return map[type] ?? {
     iconName: 'Bell',
-    color: 'var(--color-text-muted, #6b7280)',
+    color: '#6b7280',
     bgColor: 'rgba(107, 114, 128, 0.10)',
     label: 'Notificação',
     deepLinkAction: null,
