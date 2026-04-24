@@ -14,8 +14,7 @@ export default function TelegramLinkCard({ settings }) {
 
   return (
     <View style={styles.card}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Integração Telegram</Text>
+      <View style={styles.badgeRow}>
         <View style={[
           styles.badge, 
           isConnected ? styles.badgeConnected : styles.badgeDisconnected
@@ -55,12 +54,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.card,
     borderRadius: borderRadius.lg,
     padding: spacing[4],
+    marginHorizontal: 16,
     ...shadows.sm,
     marginBottom: spacing[4],
   },
-  headerRow: {
+  badgeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     marginBottom: spacing[2],
   },
