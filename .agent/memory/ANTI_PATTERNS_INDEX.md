@@ -123,3 +123,4 @@
 - **[AP-H23]** @react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+) — Firebase não inicializa; usar v21+ -> [`anti-patterns/mobile_and_platform/AP-H23.md`](./anti-patterns/mobile_and_platform/AP-H23.md)
 - **[AP-H24]** FirebaseCoreInternal/GoogleUtilities quebra pod install sem useModularHeaders — instalar expo-build-properties com `ios.useModularHeaders: true` -> [`anti-patterns/mobile_and_platform/AP-H24.md`](./anti-patterns/mobile_and_platform/AP-H24.md)
 - **[AP-H25]** googleServicesFile iOS ausente no app.config.js — sempre configurar `ios.googleServicesFile` além do Android -> [`anti-patterns/mobile_and_platform/AP-H25.md`](./anti-patterns/mobile_and_platform/AP-H25.md)
+- **[AP-059]** CSS var(--token) em pacotes compartilhados web+mobile — RN não resolve custom properties; usar hex direto ou tokens JS -> [`anti-patterns/mobile_and_platform/AP-059.md`](./anti-patterns/mobile_and_platform/AP-059.md)
