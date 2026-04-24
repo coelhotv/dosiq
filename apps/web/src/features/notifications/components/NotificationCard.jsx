@@ -65,7 +65,6 @@ export default function NotificationCard({
     notification_type,
     status,
     sent_at,
-    title,
     body,
   } = notification
 
