@@ -64,7 +64,7 @@ export default function NotificationInbox({ userId, onNavigate, onBack }) {
 
       <main className="notif-inbox__content">
         <NotificationList
-          data={data}
+          notifications={data}
           isLoading={isLoading}
           error={error}
           onNavigate={onNavigate}

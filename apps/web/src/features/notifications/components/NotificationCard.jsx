@@ -76,11 +76,11 @@ export default function NotificationCard({
   const isDailyDigest = notification_type === 'daily_digest'
   const isDoseReminder = notification_type === 'dose_reminder'
 
-  // Texto exibido: usa title do banco se existir, senão resolve pela lógica de tipo
-  const displayTitle = title ?? resolveTitle(notification, label)
+  // Título: sempre resolve pelo tipo (medicine_name, protocol_name, etc.)
+  const displayTitle = resolveTitle(notification, label)
 
-  // Texto do corpo: usa body do banco
-  const displayBody = body ?? null
+  // Corpo: usa body do banco; fallback para title se body ausente e title é diferente do displayTitle
+  const displayBody = body ?? (title !== displayTitle ? title : null)
 
   // CTA
   const cta = CTA_MAP[notification_type] ?? null
