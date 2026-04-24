@@ -42,7 +42,8 @@ export function usePushNotifications({ supabase, session }) {
         // Configurar handlers (conforme spec Passo 5)
         Notifications.setNotificationHandler({
           handleNotification: async () => ({
-            shouldShowAlert: true,
+            shouldShowBanner: true,
+            shouldShowList: true,
             shouldPlaySound: true,
             shouldSetBadge: false,
           }),
