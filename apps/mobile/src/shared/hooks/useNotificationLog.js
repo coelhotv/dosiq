@@ -7,11 +7,18 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { AppState } from 'react-native'
+import { getTodayLocal } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createNotificationLogRepository } from '@dosiq/shared-data'
 import { supabase } from '../../platform/supabase/nativeSupabaseClient'
 
-const NOTIF_LOG_CACHE_KEY = '@dosiq/notif-log-snapshot'
+/**
+ * Gera chave de cache dinâmica por usuário para evitar vazamento de dados (Security Fix)
+ * @param {string} userId 
+ * @returns {string}
+ */
+const getCacheKey = (userId) => `@dosiq/notif-log-snapshot:${userId}`
 
 // Repositório singleton para a plataforma mobile
 const repo = createNotificationLogRepository({ supabase })
@@ -50,13 +57,15 @@ export function useNotificationLog(options = {}) {
 
       const logs = await repo.listByUserId(userId, { limit, offset })
 
+      const cacheKey = getCacheKey(userId)
       const snapshot = {
         logs,
         capturedAt: new Date().toISOString(),
+        localDay: getTodayLocal(), // R-114 compat
       }
 
       // Persiste para uso offline
-      await AsyncStorage.setItem(NOTIF_LOG_CACHE_KEY, JSON.stringify(snapshot))
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(snapshot))
 
       if (isMounted.current) {
         setData(logs)
@@ -67,7 +76,8 @@ export function useNotificationLog(options = {}) {
       if (__DEV__) console.warn('[useNotificationLog] Fetch failed, checking cache:', err.message)
 
       try {
-        const cached = await AsyncStorage.getItem(NOTIF_LOG_CACHE_KEY)
+        const cacheKey = getCacheKey(userId)
+        const cached = await AsyncStorage.getItem(cacheKey)
         if (cached && isMounted.current) {
           const { logs } = JSON.parse(cached)
           setData(logs)
@@ -89,6 +99,45 @@ export function useNotificationLog(options = {}) {
     load()
     return () => {
       isMounted.current = false
+    }
+  }, [load])
+
+  // Lógica de Refresh de Meia-Noite e AppState (R-184)
+  // Garante que logs fiquem atualizados quando o dia muda ou app volta do background
+  useEffect(() => {
+    let midnightTimer
+
+    const scheduleMidnightRefresh = () => {
+      const now = new Date()
+      const nextMidnight = new Date(now)
+      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      nextMidnight.setHours(0, 0, 0, 0)
+      
+      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
+      
+      clearTimeout(midnightTimer)
+      midnightTimer = setTimeout(() => {
+        if (__DEV__) console.log('[useNotificationLog] Meia-noite: Refreshing...')
+        load()
+        scheduleMidnightRefresh()
+      }, msUntilMidnight + 1000)
+    }
+
+    scheduleMidnightRefresh()
+
+    const handleStateChange = (nextState) => {
+      if (nextState === 'active') {
+        // Forçar um refresh leve ao voltar, opcionalmente checar se o dia mudou
+        if (__DEV__) console.log('[useNotificationLog] App active: Refreshing...')
+        load()
+      }
+    }
+
+    const subscription = AppState.addEventListener('change', handleStateChange)
+
+    return () => {
+      subscription.remove()
+      clearTimeout(midnightTimer)
     }
   }, [load])
 
