@@ -8,7 +8,7 @@ const baseSchema = {
   sent_at: z.string().datetime().optional(),
   telegram_message_id: z.number().nullable().optional(),
   mensagem_erro: z.string().nullable().optional(),
-  provider_metadata: z.record(z.any()).default({}),
+  provider_metadata: z.record(z.string(), z.unknown()).default({}),
 };
 
 export const notificationLogSchema = z.object({
