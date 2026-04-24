@@ -20,6 +20,11 @@ export const notificationLogRepository = {
       .from('notification_log')
       .insert({
         user_id: parsed.data.user_id,
+        title: parsed.data.title ?? null,
+        body: parsed.data.body ?? null,
+        medicine_name: parsed.data.medicine_name ?? null,
+        protocol_name: parsed.data.protocol_name ?? null,
+        channels: parsed.data.channels ?? [],
         protocol_id: parsed.data.protocol_id,
         notification_type: parsed.data.notification_type,
         status: parsed.data.status,

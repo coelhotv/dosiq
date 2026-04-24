@@ -1,12 +1,14 @@
 /**
- * NotificationInboxScreen — Central de Avisos (Mobile Native).
+ * NotificationInboxScreen — Central de Avisos v1 (Mobile).
  *
+ * SectionList com agrupamento temporal (Hoje / Ontem / Esta semana / Mais antigos).
+ * Cruza dose_reminder com medicine_logs para exibir "✓ Tomada" sem navegação extra.
  * R-169: SafeAreaView obrigatório. R-180: header 28/800 padrão Santuário.
- * R-184: auto-refresh já no useNotificationLog. R-187: cache key por userId no hook.
+ * R-184: auto-refresh no useNotificationLog. R-187: cache key por userId.
  */
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity,
+  View, Text, SectionList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -14,16 +16,60 @@ import { ArrowLeft, Bell, WifiOff } from 'lucide-react-native'
 import { ROUTES } from '../../../navigation/routes'
 import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import NotificationItem from '../components/NotificationItem'
 import { colors } from '../../../shared/styles/tokens'
 
-// Mapa estático fora do componente — evita recriação por render (perf) e usa constantes canônicas de rota
 const DEEP_LINK_TARGETS = {
   dashboard: ROUTES.TODAY,
   stock:     ROUTES.STOCK,
   treatment: ROUTES.TREATMENTS,
-  history:   ROUTES.TODAY, // Mobile não tem tela de histórico — fallback para Hoje
+  history:   ROUTES.TODAY,
 }
+
+// ─── Agrupamento temporal ──────────────────────────────────────────────────────
+
+function groupByDay(notifications) {
+  const now              = new Date()
+  const startOfToday     = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfYesterday = new Date(startOfToday - 86_400_000)
+  const startOfWeek      = new Date(startOfToday - 6 * 86_400_000)
+
+  const buckets = [
+    { title: 'Hoje',         data: [] },
+    { title: 'Ontem',        data: [] },
+    { title: 'Esta semana',  data: [] },
+    { title: 'Mais antigos', data: [] },
+  ]
+
+  for (const n of notifications) {
+    const d = new Date(n.sent_at)
+    if      (d >= startOfToday)     buckets[0].data.push(n)
+    else if (d >= startOfYesterday) buckets[1].data.push(n)
+    else if (d >= startOfWeek)      buckets[2].data.push(n)
+    else                            buckets[3].data.push(n)
+  }
+
+  return buckets.filter(b => b.data.length > 0)
+}
+
+// ─── Cruzamento dose tomada ────────────────────────────────────────────────────
+
+function buildWasTakenMap(notifications, doseLogs) {
+  if (!doseLogs?.length) return {}
+  const map = {}
+  for (const n of notifications) {
+    if (n.notification_type !== 'dose_reminder' || !n.protocol_id) continue
+    map[n.id] = doseLogs.some(
+      log =>
+        log.protocol_id === n.protocol_id &&
+        new Date(log.taken_at) > new Date(n.sent_at)
+    )
+  }
+  return map
+}
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function NotificationInboxScreen({ navigation, route }) {
   const userId = route?.params?.userId
@@ -31,19 +77,50 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const { data, loading, error, stale, refresh } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data, userId)
 
+  // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders
+  const [doseLogs, setDoseLogs] = useState([])
+  useEffect(() => {
+    if (!userId) return
+    const since = new Date(Date.now() - 7 * 86_400_000).toISOString()
+    supabase
+      .from('medicine_logs')
+      .select('id, protocol_id, taken_at')
+      .eq('user_id', userId)
+      .gte('taken_at', since)
+      .then(({ data: logs }) => { if (logs) setDoseLogs(logs) })
+  }, [userId])
+
+  // Marca tudo como lido ao abrir
   useEffect(() => {
     if (!loading && data) markAllRead()
   }, [loading, data, markAllRead])
 
+  const sections = useMemo(
+    () => groupByDay(data ?? []),
+    [data]
+  )
+
+  const wasTakenMap = useMemo(
+    () => buildWasTakenMap(data ?? [], doseLogs),
+    [data, doseLogs]
+  )
+
   const renderItem = useCallback(({ item }) => (
     <NotificationItem
       notification={item}
+      wasTaken={wasTakenMap[item.id]}
       onNavigate={(view) => {
         const target = DEEP_LINK_TARGETS[view]
         if (target) navigation.navigate(target)
       }}
     />
-  ), [navigation])
+  ), [navigation, wasTakenMap])
+
+  const renderSectionHeader = useCallback(({ section }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+    </View>
+  ), [])
 
   const renderSeparator = useCallback(() => <View style={styles.separator} />, [])
 
@@ -56,7 +133,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
         </View>
         <Text style={styles.emptyTitle}>Nenhuma notificação ainda</Text>
         <Text style={styles.emptyBody}>
-          Quando você receber lembretes ou alertas, eles aparecerão aqui.
+          Seus lembretes de dose, alertas de estoque e resumos diários aparecerão aqui.
         </Text>
       </View>
     )
@@ -105,12 +182,14 @@ export default function NotificationInboxScreen({ navigation, route }) {
       )}
 
       {(!loading || data) && !error && (
-        <FlatList
-          data={data ?? []}
+        <SectionList
+          sections={sections}
           keyExtractor={(item, i) => item.id ?? String(i)}
           renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
           ItemSeparatorComponent={renderSeparator}
           ListEmptyComponent={renderEmpty}
+          stickySectionHeadersEnabled={false}
           refreshControl={
             <RefreshControl
               refreshing={loading && !!data}
@@ -118,7 +197,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
               tintColor={colors.primary?.[600] ?? '#006a5e'}
             />
           }
-          contentContainerStyle={data?.length === 0 ? styles.emptyList : styles.listContent}
+          contentContainerStyle={sections.length === 0 ? styles.emptyList : styles.listContent}
           showsVerticalScrollIndicator={false}
           accessibilityRole="list"
           accessibilityLabel="Lista de notificações"
@@ -140,10 +219,12 @@ const styles = StyleSheet.create({
   offlineText:      { fontSize: 13, fontWeight: '500', color: colors.status?.warning ?? '#d97706' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorContainer:   { margin: 20, padding: 16, borderRadius: 12, backgroundColor: 'rgba(220, 38, 38, 0.06)' },
-  errorText:        { fontSize: 14, color: colors.status?.error ?? '#dc2626', fontWeight: '400' },
-  listContent:      { paddingTop: 8, paddingBottom: 40 },
-  emptyList:        { flex: 1 },
+  errorText:        { fontSize: 14, color: colors.status?.error ?? '#dc2626' },
+  sectionHeader:    { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 6 },
+  sectionTitle:     { fontSize: 12, fontWeight: '600', color: colors.text?.muted ?? '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8 },
   separator:        { height: 1, marginHorizontal: 20, backgroundColor: colors.border?.light ?? '#e5e7eb' },
+  listContent:      { paddingBottom: 40 },
+  emptyList:        { flex: 1 },
   emptyContainer:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 60, gap: 12 },
   emptyIconWrap:    { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.bg?.card ?? '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   emptyTitle:       { fontSize: 18, fontWeight: '700', color: colors.text?.primary ?? '#111827', textAlign: 'center' },
