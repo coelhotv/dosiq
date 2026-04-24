@@ -36,6 +36,7 @@ export function useTreatments() {
       if (!result.success) throw new Error(result.error)
 
       const newData = result.data
+      const today = getTodayLocal()
       const snapshot = {
         data: newData,
         capturedAt: new Date().toISOString(),
@@ -44,7 +45,7 @@ export function useTreatments() {
 
       await AsyncStorage.setItem(TREATMENTS_CACHE_KEY, JSON.stringify(snapshot))
 
-      dataRef.current = newData
+      dataRef.current = { data: newData, localDay: today }
       setData(newData)
       setStale(false)
     } catch (err) {
@@ -60,7 +61,7 @@ export function useTreatments() {
 
           if (diffHours < 24) {
             setData(parsed.data)
-            dataRef.current = parsed.data
+            dataRef.current = { data: parsed.data, localDay: parsed.localDay }
             setStale(true)
             setError(null)
           } else {
