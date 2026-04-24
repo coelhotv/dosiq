@@ -19,8 +19,8 @@
   },
   "session": {
     "mode": "planning",
-    "status": "pending",
-    "goal": "Epic 1: Notification Inbox (Sprint 8.3 - UX Web & Mobile)",
+    "status": "planned",
+    "goal": "Sprint 8.3 — Notification Inbox UX Web & Mobile",
     "goal_type": "feature"
   },
   "memory": {
@@ -57,7 +57,7 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-24T00:18:00Z"
+    "index_loaded_at": "2026-04-23T12:00:00Z"
   },
   "migration": {
     "status": "complete",
