@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 import { ChevronRight, ChevronUp } from 'lucide-react-native'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 22,
+    // Forçar fonte nativa de emojis no iOS para evitar falha do FontParser do sistema
+    fontFamily: Platform.OS === 'ios' ? 'Apple Color Emoji' : 'System',
   },
   textContainer: {
     flex: 1,
