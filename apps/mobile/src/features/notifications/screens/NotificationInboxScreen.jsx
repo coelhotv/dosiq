@@ -9,16 +9,25 @@
 import { useEffect, useCallback, useMemo, useState } from 'react'
 import {
   View, Text, SectionList, StyleSheet, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, AppState,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, Bell, WifiOff } from 'lucide-react-native'
+import { z } from 'zod'
+import { getTodayLocal } from '@dosiq/core'
 import { ROUTES } from '../../../navigation/routes'
 import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import NotificationItem from '../components/NotificationItem'
 import { colors } from '../../../shared/styles/tokens'
+
+// Schema para validar medicine_logs (R-010)
+const doseLogSchema = z.array(z.object({
+  id:          z.string(),
+  protocol_id: z.string().nullable(),
+  taken_at:    z.string(),
+}))
 
 const DEEP_LINK_TARGETS = {
   dashboard: ROUTES.TODAY,
@@ -77,18 +86,50 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const { data, loading, error, stale, refresh } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data, userId)
 
-  // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders
-  const [doseLogs, setDoseLogs] = useState([])
+  // localDay: detecta virada de dia via AppState + timer de meia-noite (R5-008)
+  const [localDay, setLocalDay] = useState(getTodayLocal)
   useEffect(() => {
+    let midnightTimer
+    const schedule = () => {
+      const now = new Date()
+      const next = new Date(now)
+      next.setDate(next.getDate() + 1)
+      next.setHours(0, 0, 0, 0)
+      midnightTimer = setTimeout(() => {
+        setLocalDay(getTodayLocal())
+        schedule()
+      }, next.getTime() - now.getTime() + 1000)
+    }
+    schedule()
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setLocalDay(getTodayLocal())
+    })
+    return () => { sub.remove(); clearTimeout(midnightTimer) }
+  }, [])
+
+  // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders (R-010, R-028)
+  const [doseLogs, setDoseLogs] = useState([])
+  const loadDoseLogs = useCallback(async () => {
     if (!userId) return
     const since = new Date(Date.now() - 7 * 86_400_000).toISOString()
-    supabase
+    const { data: rows, error: fetchErr } = await supabase
       .from('medicine_logs')
       .select('id, protocol_id, taken_at')
       .eq('user_id', userId)
       .gte('taken_at', since)
-      .then(({ data: logs }) => { if (logs) setDoseLogs(logs) })
+    if (fetchErr) {
+      if (__DEV__) console.warn('[NotificationInboxScreen] doseLogs fetch error', fetchErr.message)
+      return
+    }
+    const parsed = doseLogSchema.safeParse(rows ?? [])
+    setDoseLogs(parsed.success ? parsed.data : [])
   }, [userId])
+
+  useEffect(() => { loadDoseLogs() }, [loadDoseLogs])
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([refresh(), loadDoseLogs()])
+  }, [refresh, loadDoseLogs])
 
   // Marca tudo como lido ao abrir
   useEffect(() => {
@@ -97,7 +138,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
   const sections = useMemo(
     () => groupByDay(data ?? []),
-    [data]
+    [data, localDay]
   )
 
   const wasTakenMap = useMemo(
@@ -193,7 +234,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
           refreshControl={
             <RefreshControl
               refreshing={loading && !!data}
-              onRefresh={refresh}
+              onRefresh={refreshAll}
               tintColor={colors.primary?.[600] ?? '#006a5e'}
             />
           }

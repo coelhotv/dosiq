@@ -6,7 +6,7 @@
  * Agrupa notificações por dia (Hoje / Ontem / Esta semana / Mais antigos).
  * Calcula wasTaken para cada dose_reminder e passa para NotificationCard.
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { Bell } from 'lucide-react'
 import NotificationCard from './NotificationCard'
@@ -118,6 +118,21 @@ function EmptyState() {
  * @param {Array}       props.doseLogs — medicine_logs para calcular wasTaken
  */
 export default function NotificationList({ notifications, isLoading, error, onNavigate, doseLogs }) {
+  // localDay: re-avalia groupByDay quando o dia muda (visibilitychange + midnight timer)
+  const [localDay, setLocalDay] = useState(() => new Date().toDateString())
+  useEffect(() => {
+    let timer
+    const schedule = () => {
+      const now = new Date()
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      timer = setTimeout(() => { setLocalDay(new Date().toDateString()); schedule() }, next - now + 1000)
+    }
+    const onVisibility = () => { if (!document.hidden) setLocalDay(new Date().toDateString()) }
+    schedule()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility) }
+  }, [])
+
   // Monta lista plana com grupos intercalados (para Virtuoso e para lista simples)
   const flatItems = useMemo(() => {
     if (!notifications?.length) return []
@@ -130,7 +145,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
       }
     }
     return items
-  }, [notifications])
+  }, [notifications, localDay])
 
   // ---- Estados especiais ----
   if (isLoading) {
