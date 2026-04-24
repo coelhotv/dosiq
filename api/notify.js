@@ -51,8 +51,9 @@ function buildNotificationPayload({ kind, data }) {
         title: '💊 Lembrete de nova dose',
         body: `Está na hora de tomar ${data.dosage || 1}x de ${data.medicineName}. Não deixe para depois!`,
         deeplink: `dosiq://today?protocolId=${data.protocolId}`,
-        metadata: { 
-          protocolId: data.protocolId, 
+        metadata: {
+          protocolId: data.protocolId,
+          protocolName: data.protocolName ?? null,
           medicineId: data.medicineId,
           dosage: data.dosage || 1
         }

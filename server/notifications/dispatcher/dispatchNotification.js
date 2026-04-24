@@ -72,55 +72,58 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
     .filter(Boolean)
 
   const normalized = normalizeChannelResults(results);
-  
-  // Sprint 8.1: Persistência em notification_log (Assíncrona / Fire-and-forget)
-  // Fazemos isso sem travar o retorno da função para o cron/request original
-  (async () => {
+
+  // Sprint 8.4: Um único log por evento (não por canal) — evita duplicatas na inbox
+  // Fire-and-forget: não trava o retorno para o cron/request original
+  ;(async () => {
     try {
-      const logPromises = results.map(async (res) => {
-        // Só logamos se houve tentativa ou falha explícita (evita logar "nenhum dispositivo")
-        if (res.attempted === 0 && !res.errors.length) return
+      // Filtra canais sem tentativa e sem erro (ex: nenhum device registrado)
+      const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
+      if (activeResults.length === 0) return
 
-        const status = res.success ? 'enviada' : 'falhou'
-        const protocolId = payload.metadata?.protocolId
-        
-        // Se não houver protocolId (ex: stock_alert), ainda logamos, mas sem o vínculo opcional
-        if (!protocolId && kind === 'dose_reminder') {
-          console.warn('[dispatchNotification] Dose reminder sem protocolId no metadata', { correlationId, kind })
-        }
+      const protocolId = payload.metadata?.protocolId ?? null
+      if (!protocolId && kind === 'dose_reminder') {
+        console.warn('[dispatchNotification] dose_reminder sem protocolId no metadata', { correlationId, kind })
+      }
 
-        const providerMetadata = {}
-        if (res.channel === 'telegram' && res.messageId) {
-          providerMetadata.telegram_message_id = res.messageId
-        }
-        if (res.channel === 'mobile_push' && res.tickets) {
-          providerMetadata.tickets = res.tickets
-        }
+      // Consolida canais num único array para o log
+      const channels = activeResults.map((res) => ({
+        channel:    res.channel,
+        status:     res.success ? 'enviada' : 'falhou',
+        message_id: res.channel === 'telegram' ? (res.messageId ?? null) : null,
+        tickets:    res.channel === 'mobile_push' ? (res.tickets ?? null) : null,
+      }))
 
-        try {
-          await notificationLogRepository.create({
-            user_id: userId,
-            protocol_id: protocolId, // Pode ser null para alertas de estoque
-            notification_type: kind,
-            status,
-            telegram_message_id: res.channel === 'telegram' ? res.messageId : null,
-            mensagem_erro: res.errors?.[0]?.message,
-            provider_metadata: providerMetadata
-          })
-        } catch (logErr) {
-          console.error('[dispatchNotification] Falha crítica ao persistir log no DB', { 
-            correlationId, 
-            userId, 
-            error: logErr.message 
-          })
-        }
-      })
+      // Status geral: enviada se ao menos um canal teve sucesso
+      const overallStatus = activeResults.some(r => r.success) ? 'enviada' : 'falhou'
+      const firstError = activeResults.find(r => !r.success)?.errors?.[0]?.message ?? null
 
-      await Promise.allSettled(logPromises)
+      try {
+        await notificationLogRepository.create({
+          user_id:           userId,
+          protocol_id:       protocolId,
+          notification_type: kind,
+          title:             payload.title ?? null,
+          body:              payload.body ?? null,
+          medicine_name:     payload.metadata?.medicineName ?? null,
+          protocol_name:     payload.metadata?.protocolName ?? null,
+          status:            overallStatus,
+          channels,
+          telegram_message_id: channels.find(c => c.channel === 'telegram')?.message_id ?? null,
+          mensagem_erro:     firstError,
+          provider_metadata: {},
+        })
+      } catch (logErr) {
+        console.error('[dispatchNotification] Falha ao persistir log no DB', {
+          correlationId,
+          userId,
+          error: logErr.message,
+        })
+      }
     } catch (err) {
-      console.error('[dispatchNotification] Erro inesperado na rotina de log', { 
-        correlationId, 
-        error: err.message 
+      console.error('[dispatchNotification] Erro inesperado na rotina de log', {
+        correlationId,
+        error: err.message,
       })
     }
   })()
