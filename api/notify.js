@@ -52,10 +52,11 @@ function buildNotificationPayload({ kind, data }) {
         body: `Está na hora de tomar ${data.dosage || 1}x de ${data.medicineName}. Não deixe para depois!`,
         deeplink: `dosiq://today?protocolId=${data.protocolId}`,
         metadata: {
-          protocolId: data.protocolId,
+          protocolId:   data.protocolId,
+          medicineName: data.medicineName ?? null,
           protocolName: data.protocolName ?? null,
-          medicineId: data.medicineId,
-          dosage: data.dosage || 1
+          medicineId:   data.medicineId,
+          dosage:       data.dosage || 1
         }
       };
     case 'stock_alert':
@@ -63,7 +64,7 @@ function buildNotificationPayload({ kind, data }) {
         title: 'Estoque baixo',
         body: `${data.medicineName} está acabando`,
         deeplink: `dosiq://stock`,
-        metadata: { medicineId: data.medicineId }
+        metadata: { medicineId: data.medicineId, medicineName: data.medicineName ?? null }
       };
     case 'daily_digest':
       return {

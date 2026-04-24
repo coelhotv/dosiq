@@ -381,11 +381,10 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
               context: { correlationId, jobType: 'dose_reminder_dispatcher' }
             });
 
-            if (result.success) {
-              await logSuccessfulNotification(userId, protocol.id, 'dose_reminder', {});
-            } else {
+            if (!result.success) {
               logger.error(`Falha no dispatch da dose`, null, { userId, protocolId: protocol.id, errors: result.errors });
             }
+            // Log já persistido pelo dispatchNotification — sem logSuccessfulNotification aqui (evita duplicata)
           }
         }
       } catch (err) {
