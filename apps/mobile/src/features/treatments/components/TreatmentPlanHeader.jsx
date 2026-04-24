@@ -52,7 +52,7 @@ export default function TreatmentPlanHeader({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing[4],
-    marginTop: spacing[4],
+    marginTop: spacing[2],
     marginBottom: spacing[1],
     backgroundColor: '#fff',
     borderRadius: 12,
