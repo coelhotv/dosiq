@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium || 'System',
   },
   groupContainer: {
-    marginBottom: spacing[2],
+    marginBottom: spacing[1],
   },
   protocolsList: {
     marginTop: spacing[1],

@@ -20,7 +20,7 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Ajuste de contadores de doses (taken/total) no Dashboard Nativo",
+    "goal": "Ajuste de espaçamento (padding) na TreatmentsScreen (Complex)",
     "goal_type": "fix"
   },
   "memory": {
