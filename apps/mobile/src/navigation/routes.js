@@ -24,4 +24,5 @@ export const ROUTES = {
   PROFILE_MAIN: 'ProfileMain',
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
+  NOTIFICATION_INBOX: 'NotificationInbox',
 }

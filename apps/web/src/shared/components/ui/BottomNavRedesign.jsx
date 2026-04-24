@@ -1,14 +1,15 @@
-import { Calendar, Pill, Package, User } from 'lucide-react'
+import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
 import './BottomNavRedesign.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Hoje', Icon: Calendar },
   { id: 'treatment', label: 'Tratamento', Icon: Pill },
   { id: 'stock', label: 'Estoque', Icon: Package },
+  { id: 'notifications', label: 'Avisos', Icon: Bell },
   { id: 'profile', label: 'Perfil', Icon: User },
 ]
 
-export default function BottomNavRedesign({ currentView, setCurrentView }) {
+export default function BottomNavRedesign({ currentView, setCurrentView, unreadCount = 0 }) {
   return (
     <div
       className="bottom-nav-redesign-container"
@@ -23,9 +24,16 @@ export default function BottomNavRedesign({ currentView, setCurrentView }) {
             className={`bnr-item${currentView === id ? ' bnr-item--active' : ''}`}
             onClick={() => setCurrentView(id)}
             aria-current={currentView === id ? 'page' : undefined}
-            aria-label={label}
+            aria-label={id === 'notifications' && unreadCount > 0 ? `${label} — ${unreadCount} não lidas` : label}
           >
-            <Icon size={28} aria-hidden="true" />
+            <span className="bnr-icon-wrap">
+              <Icon size={28} aria-hidden="true" />
+              {id === 'notifications' && unreadCount > 0 && (
+                <span className="bnr-badge" aria-hidden="true">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </span>
             <span className="bnr-label">{label}</span>
           </button>
         ))}

@@ -73,3 +73,27 @@
   letter-spacing: var(--tracking-wider, 0.05em);
   line-height: 1;
 }
+
+.bnr-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bnr-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: var(--color-error, #dc2626);
+  color: #fff;
+  font-family: var(--font-body, 'Lexend', sans-serif);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}

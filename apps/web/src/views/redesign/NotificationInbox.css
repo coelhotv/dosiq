@@ -1,0 +1,100 @@
+.notif-inbox {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-surface, #f9fafb);
+}
+
+.notif-inbox__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 14px;
+  background: var(--color-surface, #f9fafb);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.notif-inbox__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-surface-raised, #f3f4f6);
+  color: var(--color-text-primary, #111827);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.notif-inbox__back:hover           { background: var(--color-border, #e5e7eb); }
+.notif-inbox__back:active          { transform: scale(0.93); }
+.notif-inbox__back:focus-visible   { outline: 2px solid var(--color-primary, #006a5e); outline-offset: 2px; }
+
+.notif-inbox__title-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-inbox__title {
+  font-family: var(--font-display, 'Public Sans', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #111827);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.notif-inbox__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 100px;
+  background: var(--color-error, #dc2626);
+  color: #fff;
+  font-family: var(--font-body, 'Lexend', sans-serif);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.notif-inbox__header-icon {
+  color: var(--color-text-muted, #9ca3af);
+  flex-shrink: 0;
+}
+
+.notif-inbox__content {
+  flex: 1;
+  padding: 16px 16px 0;
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .notif-inbox__content {
+    padding: 24px 0 0;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .notif-inbox__header {
+    padding: 20px 24px 16px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-inbox__back { transition: none; }
+}
