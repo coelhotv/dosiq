@@ -74,6 +74,7 @@
 - **[R-185]** Redundant UI-Level Temporal Filtering (R-175 Extension) -> [`rules/mobile_and_platform/R-185.md`](./rules/mobile_and_platform/R-185.md)
 - **[R-186]** Accordion Toggle Integrity (Default Open Handling) -> [`rules/mobile_and_platform/R-186.md`](./rules/mobile_and_platform/R-186.md)
 - **[R-187]** Dynamic User-Specific Cache Keys (Mobile Persistence Security) -> [`rules/mobile_and_platform/R-187.md`](./rules/mobile_and_platform/R-187.md)
+- **[R-189]** expo-notifications: usar shouldShowBanner + shouldShowList em vez do depreciado shouldShowAlert (SDK 53+) -> [`rules/mobile_and_platform/R-189.md`](./rules/mobile_and_platform/R-189.md)
 
 
 

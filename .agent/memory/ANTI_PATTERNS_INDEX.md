@@ -1,6 +1,7 @@
 # DEVFLOW Anti-Patterns Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[AP-058]** z.record() argumento único quebra parse em Zod v4 — TypeError '_zod' com objetos não-vazios -> [`anti-patterns/data_and_schema/AP-058.md`](./anti-patterns/data_and_schema/AP-058.md)
 - **[AP-005]** UTC midnight = wrong day in GMT-3 -> [`anti-patterns/data_and_schema/AP-005.md`](./anti-patterns/data_and_schema/AP-005.md)
 - **[AP-B02]** HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afet... -> [`anti-patterns/data_and_schema/AP-B02.md`](./anti-patterns/data_and_schema/AP-B02.md)
 - **[AP-D01]** Protocol A with ["08:00", "20:00"] = 2 doses expected. `COUNT(DISTINCT)` returns... -> [`anti-patterns/data_and_schema/AP-D01.md`](./anti-patterns/data_and_schema/AP-D01.md)
