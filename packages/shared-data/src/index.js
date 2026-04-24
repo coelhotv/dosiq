@@ -22,3 +22,4 @@ export { createSupabaseClient } from './supabase/createSupabaseClient.js'
 
 // Service factories
 export { createUserSessionRepository } from './services/createUserSessionRepository.js'
+export { createNotificationLogRepository } from './services/createNotificationLogRepository.js'

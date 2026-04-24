@@ -56,6 +56,10 @@ export const CACHE_KEYS = {
   USER_CURRENT: 'user:current',
   USER_SESSION: 'user:session',
 
+  // Notificações
+  NOTIFICATIONS: 'notifications',
+  NOTIFICATIONS_PAGINATED: 'notifications:paginated',
+
   // Dashboard
   DASHBOARD_INSIGHTS: 'dashboard:insights',
 }
