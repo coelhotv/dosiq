@@ -82,7 +82,7 @@ export default function TimeBlockSeparator({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing[4],
-    marginTop: spacing[4],
+    marginTop: spacing[3],
     marginBottom: spacing[1],
   },
   timelineRow: {
