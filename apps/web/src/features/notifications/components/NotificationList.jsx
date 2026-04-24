@@ -21,8 +21,8 @@ import './NotificationList.css'
  * @param {Array} notifications
  * @returns {Array<{title: string, items: Array}>}
  */
-function groupByDay(notifications) {
-  const now = new Date()
+function groupByDay(notifications, today = new Date()) {
+  const now = today
   const startOfToday     = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfYesterday = new Date(startOfToday - 86400000)
   const startOfWeek      = new Date(startOfToday - 6 * 86400000)
@@ -136,7 +136,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
   // Monta lista plana com grupos intercalados (para Virtuoso e para lista simples)
   const flatItems = useMemo(() => {
     if (!notifications?.length) return []
-    const groups = groupByDay(notifications)
+    const groups = groupByDay(notifications, new Date(localDay))
     const items = []
     for (const group of groups) {
       items.push({ type: 'header', title: group.title })
