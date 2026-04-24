@@ -58,7 +58,7 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const isDoseReminder = notification_type === 'dose_reminder'
 
   const displayTitle = resolveTitle(notification, label)
-  const displayBody  = body ?? (title !== displayTitle ? title : null)
+  const displayBody  = body ?? null
   const cta          = CTA_MAP[notification_type] ?? null
   const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true)
 
