@@ -118,5 +118,7 @@ async function normalizeExpoResult({ devices, tickets, repositories, correlation
     failed,
     deactivatedTokens,
     errors,
+    tickets: tickets.map(t => ({ id: t.id, status: t.status })),
+    providerMetadata: { expo_tickets: tickets }
   }
 }

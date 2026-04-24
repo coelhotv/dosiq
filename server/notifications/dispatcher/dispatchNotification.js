@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { sendTelegramNotification } from '../channels/telegramChannel.js'
 import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
 import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
+import { notificationLogRepository } from '../repositories/notificationLogRepository.js'
 
 const dispatchInputSchema = z.object({
   userId: z.string().min(1),
@@ -70,7 +71,59 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
     })
     .filter(Boolean)
 
-  const normalized = normalizeChannelResults(results)
+  const normalized = normalizeChannelResults(results);
+  
+  // Sprint 8.1: Persistência em notification_log (Assíncrona / Fire-and-forget)
+  // Fazemos isso sem travar o retorno da função para o cron/request original
+  (async () => {
+    try {
+      const logPromises = results.map(async (res) => {
+        // Só logamos se houve tentativa ou falha explícita (evita logar "nenhum dispositivo")
+        if (res.attempted === 0 && !res.errors.length) return
+
+        const status = res.success ? 'enviada' : 'falhou'
+        const protocolId = payload.metadata?.protocolId
+        
+        // Se não houver protocolId (ex: stock_alert), ainda logamos, mas sem o vínculo opcional
+        if (!protocolId && kind === 'dose_reminder') {
+          console.warn('[dispatchNotification] Dose reminder sem protocolId no metadata', { correlationId, kind })
+        }
+
+        const providerMetadata = {}
+        if (res.channel === 'telegram' && res.messageId) {
+          providerMetadata.telegram_message_id = res.messageId
+        }
+        if (res.channel === 'mobile_push' && res.tickets) {
+          providerMetadata.tickets = res.tickets
+        }
+
+        try {
+          await notificationLogRepository.create({
+            user_id: userId,
+            protocol_id: protocolId, // Pode ser null para alertas de estoque
+            notification_type: kind,
+            status,
+            telegram_message_id: res.channel === 'telegram' ? res.messageId : null,
+            mensagem_erro: res.errors?.[0]?.message,
+            provider_metadata: providerMetadata
+          })
+        } catch (logErr) {
+          console.error('[dispatchNotification] Falha crítica ao persistir log no DB', { 
+            correlationId, 
+            userId, 
+            error: logErr.message 
+          })
+        }
+      })
+
+      await Promise.allSettled(logPromises)
+    } catch (err) {
+      console.error('[dispatchNotification] Erro inesperado na rotina de log', { 
+        correlationId, 
+        error: err.message 
+      })
+    }
+  })()
 
   console.info('[dispatchNotification] concluído', {
     correlationId,

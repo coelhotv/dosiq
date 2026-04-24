@@ -91,5 +91,10 @@ export {
   REVIEW_CATEGORY_LABELS,
 } from './geminiReviewSchema.js'
 
+export {
+  notificationLogSchema,
+  notificationLogCreateSchema,
+} from './notificationLogSchema.js'
+
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper.js'
