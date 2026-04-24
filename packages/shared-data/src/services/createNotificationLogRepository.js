@@ -58,9 +58,9 @@ export function createNotificationLogRepository({ supabase }) {
       return z.array(notificationLogSchema).parse(data || [])
     } catch (validationError) {
       console.warn('[NotificationLogRepository] Data validation warning:', validationError.errors)
-      // Em produção, podemos decidir se retornamos os dados 'as is' ou falhamos.
-      // Aqui seguimos o R-130 sendo estrito, mas permitindo fallback silencioso se for apenas excessos de campos.
-      return data || []
+      // R-130: Integridade estrita - se os dados falharem na validação, 
+      // retornamos vazio para evitar que dados corrompidos atinjam a UI.
+      return []
     }
   }
 
