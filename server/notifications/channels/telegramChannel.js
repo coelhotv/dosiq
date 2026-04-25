@@ -79,7 +79,7 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
       withButtons: !!options.reply_markup 
     })
 
-    const messageId = sentMessage?.message_id;
+    const messageId = sentMessage?.messageId ?? sentMessage?.message_id;
     if (!messageId) {
       console.error('[telegramChannel] Resposta do bot sem message_id', { correlationId, userId, result: sentMessage });
     }
