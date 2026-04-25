@@ -468,7 +468,7 @@ async function handleTakeList(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
 
-  const [_, type, hhmm] = data.split(':');
+  const [_, _type, hhmm] = data.split(':');
 
   try {
     const userId = await getUserIdByChatId(chatId);
