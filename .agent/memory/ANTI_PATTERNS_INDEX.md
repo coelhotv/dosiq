@@ -56,6 +56,7 @@
 - **[AP-W28]** Cálculo de meia-noite frágil usando .setHours(24) em vez de .setDate(+1). -> [`anti-patterns/mobile_and_platform/AP-W28.md`](./anti-patterns/mobile_and_platform/AP-W28.md)
 - **[AP-110]** The Stale Cache Ghost (Obsolete offline data display) -> [`anti-patterns/mobile_and_platform/AP-110.md`](./anti-patterns/mobile_and_platform/AP-110.md)
 - **[AP-112]** 1 push por protocolo — envia N notificações simultâneas para o mesmo usuário em vez de 1 bloco semântico agrupado -> [`anti-patterns/mobile_and_platform/AP-112.md`](./anti-patterns/mobile_and_platform/AP-112.md)
+- **[AP-113]** `new Date().getHours()` como fallback em código de notificações — usa relógio do servidor (UTC) em vez do timezone do usuário, gerando emojis/saudações incorretos -> [`anti-patterns/mobile_and_platform/AP-113.md`](./anti-patterns/mobile_and_platform/AP-113.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[AP-001]** Production bug — fix goes to unused file -> [`anti-patterns/process_and_testing/AP-001.md`](./anti-patterns/process_and_testing/AP-001.md)
