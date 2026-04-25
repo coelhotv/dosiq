@@ -14,6 +14,7 @@ import {
   formatTimeInTimezone
 } from '../utils/timezone.js';
 import { calculateDaysRemaining, escapeMarkdownV2 } from '../utils/formatters.js';
+import { partitionDoses } from './utils/partitionDoses.js';
 
 const logger = createLogger('Tasks');
 
@@ -319,8 +320,14 @@ async function sendDoseNotification(bot, chatId, p, scheduledTime) {
 }
 
 /**
- * Check reminders via dispatcher (Sprint 6.4 — ADR-029, ADR-030)
- * Usa nova arquitetura multicanal. Requer dispatcher já instanciado.
+ * Check reminders via dispatcher com agrupamento por treatment_plan (Wave N1).
+ *
+ * Substitui o loop "1 dispatch por protocolo" por partição semântica:
+ *   - 1 dispatch por plano com ≥2 doses (dose_reminder_by_plan)
+ *   - 1 dispatch consolidado para sobra ≥2 sem plano (dose_reminder_misc)
+ *   - 1 dispatch individual para dose única (dose_reminder)
+ *
+ * ADR-029, ADR-030. R-031 (escapeMarkdownV2). R-030 (callback_data <64 bytes).
  */
 async function checkRemindersViaDispatcher(dispatcher, correlationId) {
   try {
@@ -328,7 +335,7 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     const { data: users, error: userError } = await supabase
       .from('user_settings')
       .select('user_id, timezone');
-      
+
     if (userError) throw userError;
 
     if (!users || users.length === 0) {
@@ -341,54 +348,107 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     for (const user of users) {
       const userId = user.user_id;
       const timezone = user.timezone || 'America/Sao_Paulo';
-      
-      try {
-        // Usar utilitário central de timezone (R-020)
-        const currentHHMM = getCurrentTimeInTimezone(timezone);
 
+      try {
+        // R-020: Usar utilitário central de timezone
+        const currentHHMM = getCurrentTimeInTimezone(timezone);
+        const currentHour = parseInt(currentHHMM.split(':')[0], 10);
+
+        // JOIN com treatment_plans para obter nome do plano por protocolo
         const { data: protocols, error: protError } = await supabase
           .from('protocols')
-          .select('id, name, time_schedule, medicine_id, medicine:medicines(name)')
+          .select(`
+            id,
+            name,
+            time_schedule,
+            medicine_id,
+            dosage_per_intake,
+            treatment_plan_id,
+            medicine:medicines(name),
+            treatment_plan:treatment_plans(id, name)
+          `)
           .eq('user_id', userId)
           .eq('active', true);
 
         if (protError) throw protError;
         if (!protocols || protocols.length === 0) continue;
 
-        for (const protocol of protocols) {
-          const timeSchedule = protocol.time_schedule || [];
+        // Coletar doses ativas neste minuto
+        const dosesNow = protocols
+          .filter(p => (p.time_schedule || []).includes(currentHHMM))
+          .map(p => ({
+            protocolId: p.id,
+            protocolName: p.name,
+            medicineName: p.medicine?.name || 'Medicamento',
+            treatmentPlanId: p.treatment_plan_id ?? null,
+            treatmentPlanName: p.treatment_plan?.name ?? null,
+            dosagePerIntake: p.dosage_per_intake ?? 1,
+            medicineId: p.medicine_id,
+          }));
 
-          if (timeSchedule.includes(currentHHMM)) {
-            const medicineName = protocol.medicine?.name || 'Medicamento';
-            
-            logger.info(`Dose encontrada! DisparandoDispatcher`, { 
-              userId, 
-              medicineName, 
+        if (dosesNow.length === 0) continue;
+
+        // Particionar em blocos semânticos (cenários A–I)
+        const blocks = partitionDoses(dosesNow);
+
+        logger.info(`${dosesNow.length} dose(s) → ${blocks.length} bloco(s) para userId=${userId} às ${currentHHMM}`, {
+          correlationId,
+          userId,
+          blockKinds: blocks.map(b => b.kind),
+        });
+
+        for (const block of blocks) {
+          let kind, data;
+
+          if (block.kind === 'by_plan') {
+            kind = 'dose_reminder_by_plan';
+            data = {
+              planId: block.planId,
+              planName: block.planName,
               scheduledTime: currentHHMM,
-              correlationId 
-            });
+              hour: currentHour,
+              doses: block.doses,
+              protocolIds: block.doses.map(d => d.protocolId),
+            };
+          } else if (block.kind === 'misc') {
+            kind = 'dose_reminder_misc';
+            data = {
+              scheduledTime: currentHHMM,
+              hour: currentHour,
+              doses: block.doses,
+              protocolIds: block.doses.map(d => d.protocolId),
+            };
+          } else {
+            // individual
+            const dose = block.doses[0];
+            kind = 'dose_reminder';
+            data = {
+              medicineName: dose.medicineName,
+              protocolId: dose.protocolId,
+              medicineId: dose.medicineId,
+              dosage: dose.dosagePerIntake,
+            };
+          }
 
-            // Usar dispatcher via nova arquitetura
-            const result = await dispatcher.dispatch({
+          const result = await dispatcher.dispatch({
+            userId,
+            kind,
+            data,
+            context: { correlationId, jobType: 'dose_reminder_dispatcher' },
+          });
+
+          if (!result.success) {
+            logger.error('Falha no dispatch do bloco de dose', null, {
               userId,
-              kind: 'dose_reminder',
-              data: { 
-                medicineName, 
-                protocolId: protocol.id, 
-                medicineId: protocol.medicine_id,
-                dosage: protocol.dosage_per_intake ?? 1
-              },
-              context: { correlationId, jobType: 'dose_reminder_dispatcher' }
+              kind,
+              planId: block.planId,
+              errors: result.errors,
+              correlationId,
             });
-
-            if (!result.success) {
-              logger.error(`Falha no dispatch da dose`, null, { userId, protocolId: protocol.id, errors: result.errors });
-            }
-            // Log já persistido pelo dispatchNotification — sem logSuccessfulNotification aqui (evita duplicata)
           }
         }
       } catch (err) {
-        logger.error(`Erro ao processar lembretes do usuário via dispatcher`, err, { userId, correlationId });
+        logger.error('Erro ao processar lembretes do usuário via dispatcher', err, { userId, correlationId });
       }
     }
 
