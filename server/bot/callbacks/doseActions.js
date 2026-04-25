@@ -1,22 +1,33 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
+import { medicineLogService } from '../../services/medicineLogService.js';
 import { calculateDaysRemaining, calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
+import { partitionDoses } from '../utils/partitionDoses.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 
 export async function handleCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
     const { data } = callbackQuery;
+    console.log(`[doseActions] callback_query received: ${data}`);
 
     if (data.startsWith('take_')) {
+      console.log('[doseActions] Routing to handleTakeDose');
       await handleTakeDose(bot, callbackQuery);
     } else if (data.startsWith('skip_')) {
+      console.log('[doseActions] Routing to handleSkipDose');
       await handleSkipDose(bot, callbackQuery);
     } else if (data.startsWith('confirm_skip_')) {
       await handleConfirmSkipDose(bot, callbackQuery);
     } else if (data.startsWith('cancel_skip_')) {
       await handleCancelSkipDose(bot, callbackQuery);
+    } else if (data.startsWith('takeplan:')) {
+      console.log('[doseActions] Routing to handleTakePlan');
+      await handleTakePlan(bot, callbackQuery);
+    } else if (data.startsWith('takelist:')) {
+      console.log('[doseActions] Routing to handleTakeList');
+      await handleTakeList(bot, callbackQuery);
     }
   });
 }
@@ -380,3 +391,143 @@ async function handleSkipTimeout(bot, chatId, messageId) {
     console.error('Erro no timeout de skip:', err);
   }
 }
+
+async function handleTakePlan(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  console.log(`[handleTakePlan] data: ${data}`);
+
+  const [_, planIdShort, hhmm] = data.split(':');
+
+  try {
+    const userId = await getUserIdByChatId(chatId);
+    console.log(`[handleTakePlan] userId: ${userId}`);
+
+    const q = supabase
+      .from('protocols')
+      .select('id, medicine_id, dosage_per_intake, treatment_plan_id, time_schedule, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
+      .eq('user_id', userId)
+      .eq('active', true)
+      .not('treatment_plan_id', 'is', null);
+    
+    console.log('[handleTakePlan] awaiting supabase');
+    const { data: allActive, error: protocolsError } = await q;
+
+    if (protocolsError) {
+        console.error('[handleTakePlan] Supabase error:', protocolsError);
+        throw protocolsError;
+    }
+    console.log(`[handleTakePlan] allActive: ${allActive?.length || 0}`);
+    
+    // Filter matching the start of planId and HHMM
+    const validProtocols = (allActive || []).filter(p => 
+      p.treatment_plan_id?.startsWith(planIdShort) &&
+      p.time_schedule?.includes(hhmm)
+    );
+    console.log(`[handleTakePlan] validProtocols: ${validProtocols.length}`);
+
+
+    if (!validProtocols.length) {
+      await bot.answerCallbackQuery(id, { text: 'Nenhuma dose pendente encontrada para este plano e horário.', show_alert: true });
+      return;
+    }
+
+    const planName = validProtocols[0].treatment_plan?.name || 'Plano';
+
+    const logsToSave = validProtocols.map((p) => ({
+      protocol_id: p.id,
+      medicine_id: p.medicine_id,
+      quantity_taken: p.dosage_per_intake,
+      taken_at: new Date().toISOString(),
+      notes: `[Plano: ${planName}] Registrar agora (Telegram)`
+    }));
+
+    const result = await medicineLogService.createMany(userId, logsToSave);
+
+    if (!result.success) throw new Error('Falha ao registrar doses do plano');
+
+    const confirmMsg = `✅ *${result.count} doses* do plano *${escapeMarkdownV2(planName)}* registradas\\!`;
+
+    await bot.editMessageText(confirmMsg, {
+      chat_id: chatId,
+      message_id: message.message_id,
+      parse_mode: 'MarkdownV2',
+      reply_markup: { inline_keyboard: [] }
+    });
+    
+    await bot.answerCallbackQuery(id, { text: `✅ ${validProtocols.length} doses registradas!` });
+  } catch (err) {
+    console.error('Erro ao registrar takeplan:', err);
+    try {
+      await bot.answerCallbackQuery(id, { text: 'Erro ao registrar doses.', show_alert: true });
+    } catch { /* ignore */ }
+  }
+}
+
+async function handleTakeList(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+
+  const [_, type, hhmm] = data.split(':');
+
+  try {
+    const userId = await getUserIdByChatId(chatId);
+
+    const { data: allActive, error: protocolsError } = await supabase
+      .from('protocols')
+      .select('id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
+      .eq('user_id', userId)
+      .eq('active', true);
+
+    if (protocolsError) throw protocolsError;
+    
+    const dosesNow = allActive
+      .filter(p => (p.time_schedule || []).includes(hhmm))
+      .map(p => ({
+        protocolId: p.id,
+        protocolName: p.name,
+        medicineName: p.medicine?.name || 'Medicamento',
+        treatmentPlanId: p.treatment_plan_id ?? null,
+        treatmentPlanName: p.treatment_plan?.name ?? null,
+        dosagePerIntake: p.dosage_per_intake ?? 1,
+        medicineId: p.medicine_id,
+      }));
+
+    const blocks = partitionDoses(dosesNow);
+    const miscBlock = blocks.find(b => b.kind === 'misc');
+
+    if (!miscBlock || !miscBlock.doses.length) {
+      await bot.answerCallbackQuery(id, { text: 'Nenhuma dose pendente encontrada para esta lista.', show_alert: true });
+      return;
+    }
+
+    const logsToSave = miscBlock.doses.map((p) => ({
+      protocol_id: p.protocolId,
+      medicine_id: p.medicineId,
+      quantity_taken: p.dosagePerIntake,
+      taken_at: new Date().toISOString(),
+      notes: 'Doses avulsas registradas via Telegram'
+    }));
+
+    const result = await medicineLogService.createMany(userId, logsToSave);
+
+    if (!result.success) throw new Error('Falha ao registrar doses avulsas');
+
+    const confirmMsg = `✅ *${result.count} doses* avulsas registradas\\!`;
+
+    await bot.editMessageText(confirmMsg, {
+      chat_id: chatId,
+      message_id: message.message_id,
+      parse_mode: 'MarkdownV2',
+      reply_markup: { inline_keyboard: [] }
+    });
+    
+    await bot.answerCallbackQuery(id, { text: `✅ ${miscBlock.doses.length} doses registradas!` });
+  } catch (err) {
+    console.error('Erro ao registrar takelist:', err);
+    try {
+      await bot.answerCallbackQuery(id, { text: 'Erro ao registrar doses.', show_alert: true });
+    } catch { /* ignore */ }
+  }
+}
+
