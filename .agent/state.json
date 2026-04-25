@@ -20,27 +20,27 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Wave N1 Sprint 1.1 — Backend: partição de doses + formatters (tasks.js + notify.js)",
+    "goal": "Wave N1 Sprint 1.2 — Backend: callback handlers takeplan/takelist",
     "goal_type": "feature"
   },
   "memory": {
-    "rules_count": 135,
-    "anti_patterns_count": 109,
+    "rules_count": 137,
+    "anti_patterns_count": 111,
     "decisions_count": 33,
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-23T23:58:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 11,
     "recent_additions": {
       "rules": [
-        "R-189",
         "R-190",
-        "R-191"
+        "R-191",
+        "R-192"
       ],
       "anti_patterns": [
-        "AP-110",
-        "AP-111",
-        "AP-112"
+        "AP-112",
+        "AP-113",
+        "AP-114"
       ],
       "knowledge": [
         "K-088",
