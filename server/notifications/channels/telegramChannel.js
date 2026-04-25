@@ -111,7 +111,7 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
     const { protocolId, dosage } = payload.metadata
     options.reply_markup = {
       inline_keyboard: [[
-        { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage || 1}` },
+        { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage ?? 1}` },
         { text: '⏰ Adiar', callback_data: `snooze_:${protocolId}` },
         { text: '⏭️ Pular', callback_data: `skip_:${protocolId}` }
       ]]
