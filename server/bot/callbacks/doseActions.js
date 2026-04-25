@@ -10,23 +10,18 @@ const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 export async function handleCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
     const { data } = callbackQuery;
-    console.log(`[doseActions] callback_query received: ${data}`);
 
     if (data.startsWith('take_')) {
-      console.log('[doseActions] Routing to handleTakeDose');
       await handleTakeDose(bot, callbackQuery);
     } else if (data.startsWith('skip_')) {
-      console.log('[doseActions] Routing to handleSkipDose');
       await handleSkipDose(bot, callbackQuery);
     } else if (data.startsWith('confirm_skip_')) {
       await handleConfirmSkipDose(bot, callbackQuery);
     } else if (data.startsWith('cancel_skip_')) {
       await handleCancelSkipDose(bot, callbackQuery);
     } else if (data.startsWith('takeplan:')) {
-      console.log('[doseActions] Routing to handleTakePlan');
       await handleTakePlan(bot, callbackQuery);
     } else if (data.startsWith('takelist:')) {
-      console.log('[doseActions] Routing to handleTakeList');
       await handleTakeList(bot, callbackQuery);
     }
   });
@@ -476,9 +471,8 @@ async function handleTakeList(bot, callbackQuery) {
       .contains('time_schedule', [hhmm]);
 
     if (protocolsError) throw protocolsError;
-    
+
     const dosesNow = allActive
-      .filter(p => (p.time_schedule || []).includes(hhmm))
       .map(p => ({
         protocolId: p.id,
         protocolName: p.name,
