@@ -75,7 +75,7 @@ function buildNotificationPayload({ kind, data }) {
 
     case 'dose_reminder_by_plan': {
       const count = data.doses?.length ?? 0;
-      const hour = data.hour ?? new Date().getHours();
+      const hour = data.hour ?? 0;
       return {
         title: `${data.planName || 'Plano de tratamento'} (${count})`,
         body: `${count} medicamento${count !== 1 ? 's' : ''} agora — ${data.scheduledTime}`,
@@ -102,7 +102,7 @@ function buildNotificationPayload({ kind, data }) {
 
     case 'dose_reminder_misc': {
       const count = data.doses?.length ?? 0;
-      const hour = data.hour ?? new Date().getHours();
+      const hour = data.hour ?? 0;
       return {
         title: getTimeOfDayGreeting(hour),
         body: `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} — ${data.scheduledTime}`,

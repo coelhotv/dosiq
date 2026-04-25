@@ -40,7 +40,7 @@ export function getTimeOfDayEmoji(hour) {
  * @param {number} hour - Hora para emoji
  * @returns {string} Mensagem MarkdownV2
  */
-export function formatDoseGroupedByPlanMessage(planName, doses, scheduledTime, hour = new Date().getHours()) {
+export function formatDoseGroupedByPlanMessage(planName, doses, scheduledTime, hour = 0) {
   const emoji = getTimeOfDayEmoji(hour);
   const safePlanName = escapeMarkdownV2(planName || 'Plano de tratamento');
   const safeTime = escapeMarkdownV2(scheduledTime);
@@ -80,7 +80,7 @@ export function formatDoseGroupedByPlanMessage(planName, doses, scheduledTime, h
  * @param {number} hour - Hora para emoji
  * @returns {string} Mensagem MarkdownV2
  */
-export function formatDoseGroupedMiscMessage(doses, scheduledTime, hour = new Date().getHours()) {
+export function formatDoseGroupedMiscMessage(doses, scheduledTime, hour = 0) {
   const emoji = getTimeOfDayEmoji(hour);
   const safeTime = escapeMarkdownV2(scheduledTime);
   const count = doses.length;
