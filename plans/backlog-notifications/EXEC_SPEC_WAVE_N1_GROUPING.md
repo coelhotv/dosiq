@@ -78,7 +78,9 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ---
 
-### Sprint 1.2 — Backend: callback handlers `takeplan` / `takelist`
+### Sprint 1.2 — Backend: callback handlers `takeplan` / `takelist` ✅
+
+**Status:** CONCLUÍDO (PR #1)
 
 **Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
 
