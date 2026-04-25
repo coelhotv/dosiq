@@ -5,6 +5,10 @@
 
 import { supabase } from '../../services/supabase.js'
 import { escapeMarkdownV2 } from '../../utils/formatters.js'
+import {
+  formatDoseGroupedByPlanMessage,
+  formatDoseGroupedMiscMessage,
+} from '../../bot/utils/doseFormatters.js'
 
 // Retorna telegram_chat_id do usuário ou null se não configurado
 async function getTelegramChatId(userId) {
@@ -22,8 +26,32 @@ async function getTelegramChatId(userId) {
   return data?.telegram_chat_id || null
 }
 
-// Converte payload canônico em texto MarkdownV2 para Telegram
+/**
+ * Converte payload canônico em texto MarkdownV2 para Telegram.
+ * Kinds by_plan e misc usam formatters ricos com lista de doses.
+ * @param {object} payload - Payload normalizado por buildNotificationPayload
+ * @returns {string} Mensagem MarkdownV2
+ */
 function formatMessage(payload) {
+  const { metadata } = payload
+
+  if (payload.kind === 'dose_reminder_by_plan' && metadata?.doses) {
+    return formatDoseGroupedByPlanMessage(
+      metadata.planName,
+      metadata.doses,
+      metadata.scheduledTime,
+      metadata.hour,
+    )
+  }
+
+  if (payload.kind === 'dose_reminder_misc' && metadata?.doses) {
+    return formatDoseGroupedMiscMessage(
+      metadata.doses,
+      metadata.scheduledTime,
+      metadata.hour,
+    )
+  }
+
   const title = escapeMarkdownV2(payload.title)
   const body = escapeMarkdownV2(payload.body)
   return `*${title}*\n${body}`
@@ -50,22 +78,43 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
     return EMPTY_RESULT
   }
 
-  const message = formatMessage(payload)
-  const isDoseReminder = payload.title?.includes('remedia') || payload.deeplink?.includes('protocolId')
+  // Inferir kind via metadata (explícito do dispatcher) ou deeplink como fallback
+  const kind = payload.metadata?.kind ?? (payload.deeplink?.includes('plan=') ? 'dose_reminder_by_plan' :
+                                          payload.deeplink?.includes('misc=1') ? 'dose_reminder_misc' :
+                                          'dose_reminder')
 
-  // P1: Re-ativa os botões interativos (Sprint 6.4)
+  const message = formatMessage({ ...payload, kind })
+
+  // Botões interativos por kind (R-030: callback_data < 64 bytes)
   const options = { parse_mode: 'MarkdownV2' }
-  
-  if (isDoseReminder && payload.metadata?.protocolId) {
+
+  if (kind === 'dose_reminder_by_plan' && payload.metadata?.planId) {
+    // Sprint 1.2: planIdx será adicionado quando callbacks forem implementados
+    // Por ora, usar planId truncado para manter < 64 bytes
+    const planIdShort = String(payload.metadata.planId).slice(0, 8)
+    const hhmm = payload.metadata.scheduledTime ?? '00:00'
+    options.reply_markup = {
+      inline_keyboard: [[
+        { text: '✅ Registrar este plano', callback_data: `takeplan:${planIdShort}:${hhmm}` },
+        { text: '📋 Detalhes', callback_data: `details:plan:${planIdShort}` },
+      ]]
+    }
+  } else if (kind === 'dose_reminder_misc' && payload.metadata?.protocolIds?.length) {
+    const hhmm = payload.metadata.scheduledTime ?? '00:00'
+    options.reply_markup = {
+      inline_keyboard: [[
+        { text: '✅ Registrar todos', callback_data: `takelist:misc:${hhmm}` },
+        { text: '📋 Detalhes', callback_data: `details:misc:${hhmm}` },
+      ]]
+    }
+  } else if (payload.metadata?.protocolId) {
     const { protocolId, dosage } = payload.metadata
     options.reply_markup = {
-      inline_keyboard: [
-        [
-          { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage || 1}` },
-          { text: '⏰ Adiar', callback_data: `snooze_:${protocolId}` },
-          { text: '⏭️ Pular', callback_data: `skip_:${protocolId}` }
-        ]
-      ]
+      inline_keyboard: [[
+        { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage || 1}` },
+        { text: '⏰ Adiar', callback_data: `snooze_:${protocolId}` },
+        { text: '⏭️ Pular', callback_data: `skip_:${protocolId}` }
+      ]]
     }
   }
 
