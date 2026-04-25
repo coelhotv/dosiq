@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { validateLogBulkArray } from '../../packages/core/src/schemas/logSchema.js';
 
 /**
  * medicineLogService
@@ -12,12 +13,20 @@ export const medicineLogService = {
    * @param {Array} logs - Lista de logs (protocol_id, medicine_id, quantity_taken, taken_at, notes)
    */
   async createMany(userId, logs) {
-    if (!logs || logs.length === 0) return { success: true, count: 0 };
+    // 0. Validar entrada (Golden Rule #10)
+    const validation = validateLogBulkArray(logs);
+    if (!validation.success) {
+      console.error('[medicineLogService.createMany] Validation failed:', validation.errors);
+      throw new Error(`Dados de log inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
+    }
+
+    const validLogs = validation.data;
+    if (validLogs.length === 0) return { success: true, count: 0 };
 
     // 1. Inserir logs
     const { data: createdLogs, error: logError } = await supabase
       .from('medicine_logs')
-      .insert(logs.map(l => ({ ...l, user_id: userId })))
+      .insert(validLogs.map(l => ({ ...l, user_id: userId })))
       .select('id, medicine_id, quantity_taken');
 
     if (logError) {
