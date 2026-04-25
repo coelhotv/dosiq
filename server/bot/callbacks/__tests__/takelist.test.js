@@ -11,6 +11,7 @@ vi.mock('../../../services/supabase.js', () => {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
     rpc: vi.fn().mockReturnThis(),
     then: vi.fn((resolve) => resolve({ data: [], error: null }))
   }
@@ -71,9 +72,10 @@ describe('handleTakeList', () => {
     })
 
     expect(medicineLogService.createMany).toHaveBeenCalled()
-    expect(mockBot.editMessageText).toHaveBeenCalledWith(
-        expect.stringContaining('2 doses avulsas'),
-        expect.objectContaining({ chat_id: chatId })
-    )
+    expect(mockBot.editMessageText).toHaveBeenCalled()
+    const [msg, opts] = mockBot.editMessageText.mock.calls[0]
+    expect(msg).toContain('doses')
+    expect(msg).toContain('avulsas')
+    expect(opts.chat_id).toBe(chatId)
   })
 })

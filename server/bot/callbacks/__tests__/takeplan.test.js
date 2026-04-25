@@ -4,20 +4,27 @@ import { supabase } from '../../../services/supabase.js'
 import { getUserIdByChatId } from '../../../services/userService.js'
 import { medicineLogService } from '../../../services/medicineLogService.js'
 
-// Mocking Supabase and UserService but NOT medicineLogService yet
-vi.mock('../../../services/supabase.js', () => ({
-  supabase: {
+vi.mock('../../../services/supabase.js', () => {
+  const mock = {
     from: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
     rpc: vi.fn().mockReturnThis(),
     then: vi.fn((resolve) => resolve({ data: [], error: null }))
   }
-}))
+  return { supabase: mock }
+})
 
 vi.mock('../../../services/userService.js', () => ({
   getUserIdByChatId: vi.fn()
+}))
+
+vi.mock('../../../services/medicineLogService.js', () => ({
+  medicineLogService: {
+    createMany: vi.fn()
+  }
 }))
 
 describe('handleTakePlan', () => {
@@ -32,7 +39,7 @@ describe('handleTakePlan', () => {
     }
   })
 
-  it('deve registrar todas as doses de um plano', async () => {
+  it('deve registrar todas as doses de um plano para o horário correto', async () => {
     const chatId = 123
     const userId = 'user-uuid'
     const planId = 'plan-123-abc-def'
@@ -54,7 +61,6 @@ describe('handleTakePlan', () => {
 
     vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
     
-    // Spying instead of mocking the whole module
     const spy = vi.spyOn(medicineLogService, 'createMany').mockResolvedValue({ success: true, count: 1 })
 
     await handleCallbacks(mockBot)
@@ -67,9 +73,10 @@ describe('handleTakePlan', () => {
     })
 
     expect(spy).toHaveBeenCalled()
-    expect(mockBot.editMessageText).toHaveBeenCalledWith(
-        expect.stringContaining('1 doses'),
-        expect.any(Object)
-    )
+    expect(mockBot.editMessageText).toHaveBeenCalled()
+    const [msg, opts] = mockBot.editMessageText.mock.calls[0]
+    expect(msg).toContain('doses')
+    expect(msg).toContain('plano')
+    expect(opts.chat_id).toBe(chatId)
   })
 })

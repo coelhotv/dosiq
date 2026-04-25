@@ -395,36 +395,26 @@ async function handleSkipTimeout(bot, chatId, messageId) {
 async function handleTakePlan(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
-  console.log(`[handleTakePlan] data: ${data}`);
 
   const [_, planIdShort, hhmm] = data.split(':');
 
   try {
     const userId = await getUserIdByChatId(chatId);
-    console.log(`[handleTakePlan] userId: ${userId}`);
 
-    const q = supabase
+    const { data: allActive, error: protocolsError } = await supabase
       .from('protocols')
       .select('id, medicine_id, dosage_per_intake, treatment_plan_id, time_schedule, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
       .eq('user_id', userId)
       .eq('active', true)
+      .contains('time_schedule', [hhmm])
       .not('treatment_plan_id', 'is', null);
-    
-    console.log('[handleTakePlan] awaiting supabase');
-    const { data: allActive, error: protocolsError } = await q;
 
-    if (protocolsError) {
-        console.error('[handleTakePlan] Supabase error:', protocolsError);
-        throw protocolsError;
-    }
-    console.log(`[handleTakePlan] allActive: ${allActive?.length || 0}`);
+    if (protocolsError) throw protocolsError;
     
-    // Filter matching the start of planId and HHMM
+    // Filter matching the start of planId
     const validProtocols = (allActive || []).filter(p => 
-      p.treatment_plan_id?.startsWith(planIdShort) &&
-      p.time_schedule?.includes(hhmm)
+      p.treatment_plan_id?.startsWith(planIdShort)
     );
-    console.log(`[handleTakePlan] validProtocols: ${validProtocols.length}`);
 
 
     if (!validProtocols.length) {
@@ -477,7 +467,8 @@ async function handleTakeList(bot, callbackQuery) {
       .from('protocols')
       .select('id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
       .eq('user_id', userId)
-      .eq('active', true);
+      .eq('active', true)
+      .contains('time_schedule', [hhmm]);
 
     if (protocolsError) throw protocolsError;
     
