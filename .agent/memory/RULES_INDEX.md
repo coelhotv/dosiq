@@ -75,6 +75,7 @@
 - **[R-186]** Accordion Toggle Integrity (Default Open Handling) -> [`rules/mobile_and_platform/R-186.md`](./rules/mobile_and_platform/R-186.md)
 - **[R-187]** Dynamic User-Specific Cache Keys (Mobile Persistence Security) -> [`rules/mobile_and_platform/R-187.md`](./rules/mobile_and_platform/R-187.md)
 - **[R-189]** expo-notifications: usar shouldShowBanner + shouldShowList em vez do depreciado shouldShowAlert (SDK 53+) -> [`rules/mobile_and_platform/R-189.md`](./rules/mobile_and_platform/R-189.md)
+- **[R-191]** Agrupar doses do mesmo minuto em blocos semânticos (by_plan/misc/individual) via partitionDoses() antes de disparar notificações — 1 push por bloco, nunca 1 push por protocolo -> [`rules/mobile_and_platform/R-191.md`](./rules/mobile_and_platform/R-191.md)
 
 
 
