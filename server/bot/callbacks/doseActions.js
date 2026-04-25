@@ -409,12 +409,16 @@ async function handleTakePlan(bot, callbackQuery) {
       .contains('time_schedule', [hhmm])
       .not('treatment_plan_id', 'is', null);
 
-    if (protocolsError) throw protocolsError;
+    if (protocolsError) {
+      console.error('[handleTakePlan] Supabase error:', protocolsError);
+      throw protocolsError;
+    }
     
     // Filter matching the start of planId
     const validProtocols = (allActive || []).filter(p => 
       p.treatment_plan_id?.startsWith(planIdShort)
     );
+    console.log(`[handleTakePlan] validProtocols: ${validProtocols.length}`);
 
 
     if (!validProtocols.length) {
@@ -433,6 +437,7 @@ async function handleTakePlan(bot, callbackQuery) {
     }));
 
     const result = await medicineLogService.createMany(userId, logsToSave);
+    console.log(`[handleTakePlan] success: ${result.count} doses registered for user ${userId}`);
 
     if (!result.success) throw new Error('Falha ao registrar doses do plano');
 
@@ -501,6 +506,7 @@ async function handleTakeList(bot, callbackQuery) {
     }));
 
     const result = await medicineLogService.createMany(userId, logsToSave);
+    console.log(`[handleTakeList] success: ${result.count} doses registradas para user ${userId}`);
 
     if (!result.success) throw new Error('Falha ao registrar doses avulsas');
 
