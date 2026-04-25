@@ -345,6 +345,33 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     logger.info(`Iniciando verificação de lembretes para ${users.length} usuários (Dispatcher)`, { correlationId });
 
+    // Busca bulk: todos os protocolos ativos de todos os usuários em uma query (evita N+1)
+    const userIds = users.map(u => u.user_id);
+    const { data: allProtocols, error: bulkError } = await supabase
+      .from('protocols')
+      .select(`
+        id,
+        user_id,
+        name,
+        time_schedule,
+        medicine_id,
+        dosage_per_intake,
+        treatment_plan_id,
+        medicine:medicines(name),
+        treatment_plan:treatment_plans(id, name)
+      `)
+      .in('user_id', userIds)
+      .eq('active', true);
+
+    if (bulkError) throw bulkError;
+
+    // Agrupar por user_id em memória
+    const protocolsByUser = {};
+    for (const p of allProtocols || []) {
+      if (!protocolsByUser[p.user_id]) protocolsByUser[p.user_id] = [];
+      protocolsByUser[p.user_id].push(p);
+    }
+
     for (const user of users) {
       const userId = user.user_id;
       const timezone = user.timezone || 'America/Sao_Paulo';
@@ -354,24 +381,8 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
         const currentHHMM = getCurrentTimeInTimezone(timezone);
         const currentHour = parseInt(currentHHMM.split(':')[0], 10);
 
-        // JOIN com treatment_plans para obter nome do plano por protocolo
-        const { data: protocols, error: protError } = await supabase
-          .from('protocols')
-          .select(`
-            id,
-            name,
-            time_schedule,
-            medicine_id,
-            dosage_per_intake,
-            treatment_plan_id,
-            medicine:medicines(name),
-            treatment_plan:treatment_plans(id, name)
-          `)
-          .eq('user_id', userId)
-          .eq('active', true);
-
-        if (protError) throw protError;
-        if (!protocols || protocols.length === 0) continue;
+        const protocols = protocolsByUser[userId] || [];
+        if (protocols.length === 0) continue;
 
         // Coletar doses ativas neste minuto
         const dosesNow = protocols
