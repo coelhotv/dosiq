@@ -19,28 +19,28 @@
   },
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "goal": "Wave N1 Sprint 1.1 — Backend: partição de doses + formatters (tasks.js + notify.js)",
     "goal_type": "feature"
   },
   "memory": {
-    "rules_count": 134,
-    "anti_patterns_count": 108,
+    "rules_count": 135,
+    "anti_patterns_count": 109,
     "decisions_count": 33,
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-23T23:58:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "recent_additions": {
       "rules": [
-        "R-187",
-        "R-188",
-        "R-189"
+        "R-189",
+        "R-190",
+        "R-191"
       ],
       "anti_patterns": [
-        "AP-056",
-        "AP-057",
-        "AP-058"
+        "AP-110",
+        "AP-111",
+        "AP-112"
       ],
       "knowledge": [
         "K-088",
