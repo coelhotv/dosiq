@@ -16,6 +16,8 @@
 - **[R-129]** Em loops com >100 iterações sobre datas YYYY-MM-DD, usar comparação de strings (... -> [`rules/data_and_schema/R-129.md`](./rules/data_and_schema/R-129.md)
 - **[R-130]** Não validar apenas métodos de escrita. Métodos de leitura (get/list/getByRange) ... -> [`rules/data_and_schema/R-130.md`](./rules/data_and_schema/R-130.md)
 - **[R-131]** Queries Supabase com filtros de data DEVEM converter datas locais para UTC via p... -> [`rules/data_and_schema/R-131.md`](./rules/data_and_schema/R-131.md)
+- **[R-192]** Supabase: Utilizar .contains('<coluna>', [<valor>]) para arrays em vez de filtrar em memória -> [`rules/data_and_schema/R-192.md`](./rules/data_and_schema/R-192.md)
+
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
 - **[R-040]** Always add explicit rewrites in vercel.json for new API routes. Catch-all must b... -> [`rules/infra_and_deploy/R-040.md`](./rules/infra_and_deploy/R-040.md)
