@@ -19,8 +19,8 @@
   },
   "session": {
     "mode": "coding",
-    "status": "finished",
-    "goal": "Wave N1 Sprint 2.1 — Mobile Native: Tap Handler + Adherence Tracker Sync",
+    "status": "completed",
+    "goal": "Wave N1 Sprint 1.2 — Backend: callback handlers takeplan/takelist",
     "goal_type": "feature"
   },
   "memory": {

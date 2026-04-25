@@ -45,27 +45,27 @@ describe('handleTakePlan', () => {
     const planId = 'plan-123-abc-def'
     const planIdShort = planId.slice(0, 8)
     const hhmm = '08:00'
-    
+
     vi.mocked(getUserIdByChatId).mockResolvedValue(userId)
-    
+
     const mockProtocols = [
-      { 
-        id: 'p1', 
-        medicine_id: 'm1', 
-        dosage_per_intake: 1, 
-        treatment_plan_id: planId, 
+      {
+        id: 'p1',
+        medicine_id: 'm1',
+        dosage_per_intake: 1,
+        treatment_plan_id: planId,
         time_schedule: ['08:00'],
         treatment_plan: { id: planId, name: 'Plano A' }
       }
     ]
 
     vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
-    
+
     const spy = vi.spyOn(medicineLogService, 'createMany').mockResolvedValue({ success: true, count: 1 })
 
     await handleCallbacks(mockBot)
     const callbackHandler = mockBot.on.mock.calls.find(c => c[0] === 'callback_query')[1]
-    
+
     await callbackHandler({
       data: `takeplan:${planIdShort}:${hhmm}`,
       message: { chat: { id: chatId }, message_id: 456 },
@@ -78,5 +78,58 @@ describe('handleTakePlan', () => {
     expect(msg).toContain('doses')
     expect(msg).toContain('plano')
     expect(opts.chat_id).toBe(chatId)
+  })
+
+  it('deve manter isolamento cross-plan — filtrar apenas protocolos do plano correspondente', async () => {
+    const chatId = 123
+    const userId = 'user-uuid'
+    const planIdA = 'plan-aaa-bbb-ccc'
+    const planIdZ = 'plan-zzz-yyy-xxx'
+    const planIdAShort = planIdA.slice(0, 8)
+    const hhmm = '08:00'
+
+    vi.mocked(getUserIdByChatId).mockResolvedValue(userId)
+
+    // Dois protocolos de planos diferentes
+    const mockProtocols = [
+      {
+        id: 'p1',
+        medicine_id: 'm1',
+        dosage_per_intake: 1,
+        treatment_plan_id: planIdA,
+        time_schedule: ['08:00'],
+        treatment_plan: { id: planIdA, name: 'Plano A' }
+      },
+      {
+        id: 'p2',
+        medicine_id: 'm2',
+        dosage_per_intake: 2,
+        treatment_plan_id: planIdZ,
+        time_schedule: ['08:00'],
+        treatment_plan: { id: planIdZ, name: 'Plano Z' }
+      }
+    ]
+
+    vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
+
+    const spy = vi.spyOn(medicineLogService, 'createMany').mockResolvedValue({ success: true, count: 1 })
+
+    await handleCallbacks(mockBot)
+    const callbackHandler = mockBot.on.mock.calls.find(c => c[0] === 'callback_query')[1]
+
+    await callbackHandler({
+      data: `takeplan:${planIdAShort}:${hhmm}`,
+      message: { chat: { id: chatId }, message_id: 456 },
+      id: 'query-id'
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const callArgs = spy.mock.calls[0]
+    const logsToSave = callArgs[1]
+
+    // Verificar que apenas o protocolo de plan-aaa foi incluído
+    expect(logsToSave).toHaveLength(1)
+    expect(logsToSave[0].protocol_id).toBe('p1')
+    expect(logsToSave[0].medicine_id).toBe('m1')
   })
 })
