@@ -43,6 +43,19 @@ const devicesRepo = {
   }
 };
 
+/**
+ * Retorna saudação por horário do dia para o título do push (Wave N1).
+ * @param {number} hour - Hora local (0–23)
+ * @returns {string}
+ */
+function getTimeOfDayGreeting(hour) {
+  if (hour >= 5 && hour < 11) return '🌅 Hora dos medicamentos da manhã';
+  if (hour >= 11 && hour < 14) return '🍽️ Hora dos medicamentos do almoço';
+  if (hour >= 14 && hour < 18) return '☕ Hora dos medicamentos da tarde';
+  if (hour >= 18 && hour < 23) return '🌆 Hora dos medicamentos da noite';
+  return '🌙 Hora dos medicamentos';
+}
+
 // Normaliza evento de domínio em payload de notificação
 function buildNotificationPayload({ kind, data }) {
   switch (kind) {
@@ -59,6 +72,58 @@ function buildNotificationPayload({ kind, data }) {
           dosage:       data.dosage || 1
         }
       };
+
+    case 'dose_reminder_by_plan': {
+      const count = data.doses?.length ?? 0;
+      const hour = data.hour ?? new Date().getHours();
+      return {
+        title: `${data.planName || 'Plano de tratamento'} (${count})`,
+        body: `${count} medicamento${count !== 1 ? 's' : ''} agora — ${data.scheduledTime}`,
+        deeplink: `dosiq://today?at=${data.scheduledTime}&plan=${data.planId}`,
+        tag: `dose-${data.scheduledTime}-plan-${data.planId}`,
+        metadata: {
+          planId:        data.planId ?? null,
+          planName:      data.planName ?? null,
+          protocolIds:   data.protocolIds ?? [],
+          scheduledTime: data.scheduledTime,
+          hour,
+          navigation: {
+            screen: 'bulk-plan',
+            params: {
+              at: data.scheduledTime,
+              planId: data.planId,
+              treatmentPlanName: data.planName,
+              protocolIds: data.protocolIds ?? [],
+            },
+          },
+        },
+      };
+    }
+
+    case 'dose_reminder_misc': {
+      const count = data.doses?.length ?? 0;
+      const hour = data.hour ?? new Date().getHours();
+      return {
+        title: getTimeOfDayGreeting(hour),
+        body: `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} — ${data.scheduledTime}`,
+        deeplink: `dosiq://today?at=${data.scheduledTime}&misc=1`,
+        tag: `dose-${data.scheduledTime}-misc`,
+        metadata: {
+          protocolIds:   data.protocolIds ?? [],
+          scheduledTime: data.scheduledTime,
+          hour,
+          navigation: {
+            screen: 'bulk-misc',
+            params: {
+              at: data.scheduledTime,
+              misc: true,
+              protocolIds: data.protocolIds ?? [],
+            },
+          },
+        },
+      };
+    }
+
     case 'stock_alert':
       return {
         title: 'Estoque baixo',
