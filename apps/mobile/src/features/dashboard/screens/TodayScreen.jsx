@@ -22,6 +22,7 @@ import DoseTimelineCard from '../components/DoseTimelineCard'
 import HeroDoseCard from '../components/HeroDoseCard'
 import StockAlertInline from '../components/StockAlertInline'
 import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
+import BulkDoseRegisterModal from '../../dose/components/BulkDoseRegisterModal'
 import StaleBanner from '../../../shared/components/feedback/StaleBanner'
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
@@ -30,9 +31,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
-export default function TodayScreen() {
+export default function TodayScreen({ route, navigation }) {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
+  // null | { mode, planId?, protocolIds?, scheduledTime, treatmentPlanName? }
+  const [bulkModal, setBulkModal] = useState(null)
   const [expandedShifts, setExpandedShifts] = useState({})
   const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
 
@@ -74,7 +77,30 @@ export default function TodayScreen() {
     return { groupedTimeline: grouped, shifts: activeShifts, countsByShift: counts }
   }, [timeline, isComplex])
 
-  // 2. Heurística de Expansão Inicial
+  // 2. Deeplink params de push notification (N1.4 → N1.5)
+  // Abre BulkDoseRegisterModal automaticamente quando a tela é navegada via push tap
+  useEffect(() => {
+    const params = route?.params
+    if (!params?.screen) return
+    if (params.screen === 'bulk-plan' && params.planId) {
+      setBulkModal({
+        mode: 'plan',
+        planId: params.planId,
+        scheduledTime: params.at ?? '',
+        treatmentPlanName: params.treatmentPlanName,
+      })
+    } else if (params.screen === 'bulk-misc') {
+      setBulkModal({
+        mode: 'misc',
+        protocolIds: params.protocolIds ?? [],
+        scheduledTime: params.at ?? '',
+      })
+    }
+    // Limpar params após consumo para evitar re-abertura em back-navigate
+    navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
+  }, [route?.params])
+
+  // 3. Heurística de Expansão Inicial
   useEffect(() => {
     const currentDay = data?.localDay
     const dayChanged = lastHeuristicDay && currentDay && lastHeuristicDay !== currentDay
@@ -242,6 +268,22 @@ export default function TodayScreen() {
           setModalScheduledTime(null)
         }}
         onSuccess={handleRegisterSuccess}
+      />
+
+      <BulkDoseRegisterModal
+        visible={bulkModal !== null}
+        mode={bulkModal?.mode ?? 'plan'}
+        planId={bulkModal?.planId}
+        protocolIds={bulkModal?.protocolIds}
+        scheduledTime={bulkModal?.scheduledTime ?? ''}
+        treatmentPlanName={bulkModal?.treatmentPlanName}
+        userId={data?.user?.id ?? ''}
+        onClose={() => setBulkModal(null)}
+        onSuccess={({ successCount }) => {
+          setBulkModal(null)
+          refresh()
+          if (__DEV__) console.log('[TodayScreen] BulkDoseRegisterModal — sucesso:', successCount)
+        }}
       />
     </ScreenContainer>
   )
