@@ -18,9 +18,9 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Wave N1 Sprint 1.4 — Mobile: deeplink real em usePushNotifications",
+    "mode": "planning",
+    "status": "planned",
+    "goal": "Wave N1 Sprint 1.5 — Mobile: BulkDoseRegisterModal.jsx",
     "goal_type": "feature"
   },
   "memory": {
