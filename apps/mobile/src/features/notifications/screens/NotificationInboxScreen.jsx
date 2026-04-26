@@ -30,10 +30,12 @@ const doseLogSchema = z.array(z.object({
 }))
 
 const DEEP_LINK_TARGETS = {
-  dashboard: ROUTES.TODAY,
-  stock:     ROUTES.STOCK,
-  treatment: ROUTES.TREATMENTS,
-  history:   ROUTES.TODAY,
+  dashboard:  ROUTES.TODAY,
+  stock:      ROUTES.STOCK,
+  treatment:  ROUTES.TREATMENTS,
+  history:    ROUTES.TODAY,
+  'bulk-plan': ROUTES.TODAY,
+  'bulk-misc': ROUTES.TODAY,
 }
 
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
@@ -68,12 +70,27 @@ function buildWasTakenMap(notifications, doseLogs) {
   if (!doseLogs?.length) return {}
   const map = {}
   for (const n of notifications) {
-    if (n.notification_type !== 'dose_reminder' || !n.protocol_id) continue
-    map[n.id] = doseLogs.some(
-      log =>
-        log.protocol_id === n.protocol_id &&
-        new Date(log.taken_at) > new Date(n.sent_at)
-    )
+    if (n.notification_type === 'dose_reminder') {
+      if (!n.protocol_id) continue
+      map[n.id] = doseLogs.some(
+        log =>
+          log.protocol_id === n.protocol_id &&
+          new Date(log.taken_at) > new Date(n.sent_at)
+      )
+    } else if (
+      n.notification_type === 'dose_reminder_by_plan' ||
+      n.notification_type === 'dose_reminder_misc'
+    ) {
+      const protocolIds = n.provider_metadata?.protocol_ids ?? []
+      if (!protocolIds.length) continue
+      const taken = protocolIds.filter(pid =>
+        doseLogs.some(
+          log => log.protocol_id === pid &&
+                 new Date(log.taken_at) > new Date(n.sent_at)
+        )
+      ).length
+      map[n.id] = { taken, total: protocolIds.length }
+    }
   }
   return map
 }
@@ -152,7 +169,21 @@ export default function NotificationInboxScreen({ navigation, route }) {
       wasTaken={wasTakenMap[item.id]}
       onNavigate={(view) => {
         const target = DEEP_LINK_TARGETS[view]
-        if (target) navigation.navigate(target)
+        if (!target) return
+        const params = {}
+        if (item.notification_type === 'dose_reminder_by_plan') {
+          params.bulkMode = 'plan'
+          params.planId = item.treatment_plan_id
+          params.treatmentPlanName = item.treatment_plan_name
+          const d = new Date(item.sent_at)
+          params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        } else if (item.notification_type === 'dose_reminder_misc') {
+          params.bulkMode = 'misc'
+          params.protocolIds = item.provider_metadata?.protocol_ids ?? []
+          const d = new Date(item.sent_at)
+          params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        }
+        navigation.navigate(target, params)
       }}
     />
   ), [navigation, wasTakenMap])
