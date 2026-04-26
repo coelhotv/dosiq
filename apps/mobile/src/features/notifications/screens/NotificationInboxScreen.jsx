@@ -70,12 +70,13 @@ function buildWasTakenMap(notifications, doseLogs) {
   if (!doseLogs?.length) return {}
   const map = {}
   for (const n of notifications) {
+    const sentAtTime = new Date(n.sent_at).getTime()
     if (n.notification_type === 'dose_reminder') {
       if (!n.protocol_id) continue
       map[n.id] = doseLogs.some(
         log =>
           log.protocol_id === n.protocol_id &&
-          new Date(log.taken_at) > new Date(n.sent_at)
+          new Date(log.taken_at).getTime() > sentAtTime
       )
     } else if (
       n.notification_type === 'dose_reminder_by_plan' ||
@@ -86,7 +87,7 @@ function buildWasTakenMap(notifications, doseLogs) {
       const taken = protocolIds.filter(pid =>
         doseLogs.some(
           log => log.protocol_id === pid &&
-                 new Date(log.taken_at) > new Date(n.sent_at)
+                 new Date(log.taken_at).getTime() > sentAtTime
         )
       ).length
       map[n.id] = { taken, total: protocolIds.length }
@@ -171,17 +172,17 @@ export default function NotificationInboxScreen({ navigation, route }) {
         const target = DEEP_LINK_TARGETS[view]
         if (!target) return
         const params = {}
-        if (item.notification_type === 'dose_reminder_by_plan') {
-          params.bulkMode = 'plan'
-          params.planId = item.treatment_plan_id
-          params.treatmentPlanName = item.treatment_plan_name
+        if (item.notification_type.startsWith('dose_reminder_')) {
           const d = new Date(item.sent_at)
           params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-        } else if (item.notification_type === 'dose_reminder_misc') {
-          params.bulkMode = 'misc'
-          params.protocolIds = item.provider_metadata?.protocol_ids ?? []
-          const d = new Date(item.sent_at)
-          params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          if (item.notification_type === 'dose_reminder_by_plan') {
+            params.bulkMode = 'plan'
+            params.planId = item.treatment_plan_id
+            params.treatmentPlanName = item.treatment_plan_name
+          } else {
+            params.bulkMode = 'misc'
+            params.protocolIds = item.provider_metadata?.protocol_ids ?? []
+          }
         }
         navigation.navigate(target, params)
       }}
