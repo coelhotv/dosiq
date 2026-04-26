@@ -447,7 +447,7 @@ source ~/.bashrc && gsync
 13. /devflow distill se journal_entries >= 15
 ```
 
-**REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs.
+**REGRA ABSOLUTA:** Code agents NUNCA mergeiam seus proprios PRs. Para agente realizar merge, precisa de aprovação humana EXPLICITA.
 **Qualidade > Velocidade:** Um PR bem revisado > 3 PRs apressados.
 
 ### Tipos de Commit
