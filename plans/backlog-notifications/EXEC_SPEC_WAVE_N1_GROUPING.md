@@ -1,10 +1,10 @@
 # Exec Spec — Wave N1: Agrupamento por Treatment Plan + Bulk Mobile
 
-> **Status:** PRONTO PARA EXECUÇÃO
+> **Status:** EM EXECUÇÃO — 4/8 sprints concluídos (N1.1 pendente, N1.2–N1.5 ✅)
 > **Master Plan:** [`MASTER_PLAN_NOTIFICATIONS_REVAMP.md`](./MASTER_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Idea Plan:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md) — §Wave N1
-> **PR alvo:** PR #1 da reforma
-> **Estimativa:** ~3 dias úteis · 8 sprints
+> **PRs:** #496 (N1.1+N1.2, backend), #498 (N1.3+N1.4, mobile deeplink), #499 (N1.4 fixes), #500 (N1.5 bulk modal) — todos mergeados ✅
+> **Estimativa:** ~3 dias úteis · 8 sprints · Início: 2026-W17
 
 ---
 
@@ -44,7 +44,9 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ## 4. Sprints
 
-### Sprint 1.1 — Backend: partição de doses + formatters (`tasks.js` + `notify.js`)
+### Sprint 1.1 — Backend: partição de doses + formatters (`tasks.js` + `notify.js`) ✅
+
+**Status:** CONCLUÍDO (PR #496) ✅
 
 **Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
 
@@ -109,7 +111,9 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ---
 
-### Sprint 1.3 — Backend: dedup keys + `expoPushChannel` payload data
+### Sprint 1.3 — Backend: dedup keys + `expoPushChannel` payload data ✅
+
+**Status:** CONCLUÍDO (PR #498) ✅
 
 **Agente recomendado**: 🟡 **Rápido** (Haiku/Fast/Mini)
 
@@ -141,7 +145,9 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ---
 
-### Sprint 1.4 — Mobile: deeplink real em `usePushNotifications` (cold start + foreground)
+### Sprint 1.4 — Mobile: deeplink real em `usePushNotifications` (cold start + foreground) ✅
+
+**Status:** CONCLUÍDO (PRs #498 + #499) ✅
 
 **Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
 
@@ -180,7 +186,9 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ---
 
-### Sprint 1.5 — Mobile: `BulkDoseRegisterModal.jsx` (NOVO)
+### Sprint 1.5 — Mobile: `BulkDoseRegisterModal.jsx` (NOVO) ✅
+
+**Status:** CONCLUÍDO (PR #500) ✅
 
 **Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
 
@@ -315,16 +323,16 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ## 5. Tabela Resumo de Alocação
 
-| Sprint | Descrição | Agente | Estimativa |
-|--------|-----------|--------|------------|
-| **1.1** | Backend: partição + formatters | 🟢 Avançado | ~4h |
-| **1.2** | Backend: callbacks `takeplan`/`takelist` | 🟢 Avançado | ~3h |
-| **1.3** | Backend: dedup + payload Expo | 🟡 Rápido | ~1h |
-| **1.4** | Mobile: deeplink real | 🟢 Avançado | ~3h |
-| **1.5** | Mobile: `BulkDoseRegisterModal` | 🟢 Avançado | ~4h |
-| **1.6** | Mobile: estender Inbox | 🟡 Rápido | ~2h |
-| **1.7** | Web: deeplink Today + SW tag | 🟡 Rápido | ~1.5h |
-| **1.8** | Validação + DEVFLOW C5 | ⚪ Humano | ~2h |
+| Sprint | Descrição | Agente | Estimativa | Status |
+|--------|-----------|--------|------------|--------|
+| **1.1** | Backend: partição + formatters | 🟢 Avançado | ~4h | ✅ PR #496 |
+| **1.2** | Backend: callbacks `takeplan`/`takelist` | 🟢 Avançado | ~3h | ✅ PR #496 |
+| **1.3** | Backend: dedup + payload Expo | 🟡 Rápido | ~1h | ✅ PR #498 |
+| **1.4** | Mobile: deeplink real | 🟢 Avançado | ~3h | ✅ PRs #498 + #499 |
+| **1.5** | Mobile: `BulkDoseRegisterModal` | 🟢 Avançado | ~4h | ✅ PR #500 |
+| **1.6** | Mobile: estender Inbox | 🟡 Rápido | ~2h | 🔲 Próximo |
+| **1.7** | Web: deeplink Today + SW tag | 🟡 Rápido | ~1.5h | 🔲 Pendente |
+| **1.8** | Validação + DEVFLOW C5 | ⚪ Humano | ~2h | 🔲 Pendente |
 
 **Total**: ~20.5h trabalho. **5 sprints 🟢 (~14h)** + **3 sprints 🟡 (~4.5h)** + **1 sprint ⚪ (~2h)**.
 

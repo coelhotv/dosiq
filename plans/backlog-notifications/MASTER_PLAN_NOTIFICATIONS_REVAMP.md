@@ -1,12 +1,12 @@
 # Master Plan — Notifications Revamp
 
-> **Status:** APROVADO — pronto para derivação em Exec Specs por wave
-> **Sprint-alvo de início:** 2026-W17 (a confirmar pelo time)
+> **Status:** EM EXECUÇÃO — Wave N1 5/8 sprints ✅ (N1.1–N1.5 mergeados, N1.6–N1.8 pendentes)
+> **Sprint início:** 2026-W17 · **Último merge:** PR #500 (N1.5) — 2026-04-26
 > **Idea Plan origem:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Exec Specs derivados:**
-> - [`EXEC_SPEC_WAVE_N1_GROUPING.md`](./EXEC_SPEC_WAVE_N1_GROUPING.md) — agrupamento por treatment_plan + bulk register mobile
-> - [`EXEC_SPEC_WAVE_N2_QUIET_HOURS.md`](./EXEC_SPEC_WAVE_N2_QUIET_HOURS.md) — quiet hours + digest mode
-> - [`EXEC_SPEC_WAVE_N3_COPY_METRICS.md`](./EXEC_SPEC_WAVE_N3_COPY_METRICS.md) — copy variável + métricas de engajamento
+> - [`EXEC_SPEC_WAVE_N1_GROUPING.md`](./EXEC_SPEC_WAVE_N1_GROUPING.md) — agrupamento por treatment_plan + bulk register mobile · **EM EXECUÇÃO (5/8)**
+> - [`EXEC_SPEC_WAVE_N2_QUIET_HOURS.md`](./EXEC_SPEC_WAVE_N2_QUIET_HOURS.md) — quiet hours + digest mode · **Não iniciado**
+> - [`EXEC_SPEC_WAVE_N3_COPY_METRICS.md`](./EXEC_SPEC_WAVE_N3_COPY_METRICS.md) — copy variável + métricas de engajamento · **Não iniciado**
 
 ---
 
