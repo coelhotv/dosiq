@@ -410,16 +410,17 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
         for (const block of blocks) {
           // Verificar deduplicação para blocos agrupados
-          if (block.kind === 'by_plan') {
-            const shouldSend = await shouldSendGroupedNotification(userId, 'dose_reminder_by_plan', { planId: block.planId });
+          const normalizedKind = block.kind?.toLowerCase();
+          if (['by_plan', 'misc'].includes(normalizedKind)) {
+            const notificationType = 'dose_reminder_' + normalizedKind;
+            const options = normalizedKind === 'by_plan' ? { planId: block.planId } : {};
+            const shouldSend = await shouldSendGroupedNotification(userId, notificationType, options);
             if (!shouldSend) {
-              logger.debug('Dose reminder by_plan suprimido por deduplicação', { userId, correlationId, planId: block.planId });
-              continue;
-            }
-          } else if (block.kind === 'misc') {
-            const shouldSend = await shouldSendGroupedNotification(userId, 'dose_reminder_misc', {});
-            if (!shouldSend) {
-              logger.debug('Dose reminder misc suprimido por deduplicação', { userId, correlationId });
+              const logContext = { userId, correlationId };
+              if (block.planId) {
+                logContext.planId = block.planId;
+              }
+              logger.debug('Dose reminder ' + normalizedKind + ' suprimido por deduplicação', logContext);
               continue;
             }
           }
