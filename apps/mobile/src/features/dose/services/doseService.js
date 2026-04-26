@@ -163,7 +163,8 @@ export async function registerDoseMany(logsData) {
       if (stockError) {
         console.warn('[doseService] registerDoseMany stock ERRO para', logEntry.id, stockError)
         // Rollback individual — não interrompe os demais
-        await supabase.from('medicine_logs').delete().eq('id', logEntry.id)
+        const { error: rollbackError } = await supabase.from('medicine_logs').delete().eq('id', logEntry.id)
+        if (rollbackError && __DEV__) console.error('[doseService] Erro crítico no rollback do batch:', rollbackError)
         const errMsg = stockError.message?.includes('Estoque insuficiente')
           ? 'Estoque insuficiente.'
           : 'Erro ao processar estoque.'
