@@ -5,6 +5,6 @@
 - [x] 5. Deploy Subagent (Pro Low): Refactor `notificationDeviceRepository` and `dlqService` in backend to support `webpush` provider. Include VAPID checks or stubs.
 - [x] 6. Deploy Subagent (Flash): Refactor `pwaUtils` and `InstallPrompt.jsx` for the frontend to include PushSubscription permission checks, and an API POST request to the backend.
 - [x] 7. Deploy Subagent (Pro Low): Create Serverless routine (`api/register-webpush`) for creating rows via the new repository.
-- [ ] 8. Review all chunks and assert tests pass.
-- [ ] 9. Final Code Review / Squash commits organically.
-- [ ] 10. Update memory and state.json (C5).
+- [x] 8. Review all chunks and assert tests pass.
+- [x] 9. Final Code Review / Squash commits organically.
+- [x] 10. Update memory and state.json (C5).

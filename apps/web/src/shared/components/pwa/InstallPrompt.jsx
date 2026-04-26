@@ -178,7 +178,7 @@ export default function InstallPrompt() {
     if (platformInfo.isChromeAndroid) {
       return {
         title: 'Instale o Dosiq',
-        description: 'Acesse rapidamente como um app nativo no seu Android',
+        description: 'Acesse rapidamente como um app instalado no seu Android',
         buttonText: 'Instalar Agora',
       }
     }
