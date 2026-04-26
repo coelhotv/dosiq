@@ -88,11 +88,15 @@ A notificação pode (e deve) **espelhar essa modelagem** — uma notif por plan
 
 ### Wave N2 — Quiet Hours + Digest Mode
 
-**Objetivo**: Dar controle ao usuário sobre **quando** ser interrompido. Adicionar `quiet_hours_start`, `quiet_hours_end`, `notification_mode` (`realtime` / `digest_morning` / `silent`), `digest_time` em `user_settings`. UI Settings nas duas pontas (web + mobile com `DateTimePicker`).
+**Objetivo**: Dar controle ao usuário sobre **quando** ser interrompido. Adicionar `quiet_hours_start`, `quiet_hours_end`, `notification_mode` (`realtime` / `digest_morning` / `silent`), `digest_time` em `user_settings`. UI Settings nas duas pontas (web + mobile com `DateTimePicker`). Digest matinal com formato simples funcional — enriquecimento estético pelo formatter de N3.
 
-### Wave N3 — Copy Variável + Métricas
+**Dependência**: apenas N1. Independente de N3. Pode executar em paralelo com N3.
 
-**Objetivo**: Combater fadiga (variação contextual de copy) e **fechar o loop de aprendizado** (tracking de abertura e ação). Refactor de `dispatchNotification.js` para 2-fase (`createPending` → `dispatch` → `markSent`). Pool de copy contextual em `server/bot/notificationCopy.js`.
+### Wave N3 — Copy Variável + Métricas + Formatter Digest
+
+**Objetivo**: Combater fadiga (variação contextual de copy + formatter enriquecido do digest agrupado por bloco temporal) e **fechar o loop de aprendizado** (tracking de abertura e ação). Refactor de `dispatchNotification.js` para 2-fase (`createPending` → `dispatch` → `markSent`). Pool de copy contextual em `server/bot/notificationCopy.js`.
+
+**Dependência**: apenas N1. Independente de N2. Pode executar em paralelo com N2.
 
 ---
 
@@ -215,11 +219,14 @@ Cada wave gera registros canônicos em `.agent/memory/`:
 
 ## 9. Cronograma de Execução
 
-| Wave | Sprints internos | Estimativa | PR |
-|------|-----------------|------------|----|
-| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | ~3 dias úteis | PR #1 |
-| **N2** — Quiet Hours + Digest | 7 sprints (`2.1` a `2.7`) | ~3 dias úteis | PR #2 |
-| **N3** — Copy + Métricas | 9 sprints (`3.1` a `3.9`) | ~3 dias úteis | PR #3 |
+| Wave | Sprints internos | Estimativa | PR | Dependência |
+|------|-----------------|------------|----|-------------|
+| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | ~3 dias úteis | PR #1 | — |
+| **N2** — Quiet Hours + Digest (gates) | 6 sprints (`2.1` a `2.7`) | ~2.5 dias úteis | PR #2 | N1 |
+| **N3** — Copy + Métricas + Formatter Digest | 9 sprints (`3.1` a `3.9`) | ~3.5 dias úteis | PR #3 | N1 |
+
+> **N2 e N3 são independentes entre si** — podem executar em paralelo após N1. Formatter enriquecido
+> do digest foi movido de N2 Sprint 2.3 para N3 Sprint 3.4 (2026-04-26).
 
 Detalhamento sprint-a-sprint, com **alocação de agente coder por sprint** (avançado vs. rápido) para gestão de tokens, está nos Exec Specs por wave.
 

@@ -3,9 +3,14 @@
 > **Status:** PRONTO PARA EXECUÇÃO (após N1 mergeado)
 > **Master Plan:** [`MASTER_PLAN_NOTIFICATIONS_REVAMP.md`](./MASTER_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Idea Plan:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md) — §Wave N2
-> **Pré-requisito:** Wave N1 mergeado (PR #1)
+> **Pré-requisito:** Wave N1 mergeado (PR #1) · **independente de N3**
 > **PR alvo:** PR #2 da reforma
-> **Estimativa:** ~3 dias úteis · 7 sprints
+> **Estimativa:** ~2.5 dias úteis · 6 sprints
+>
+> **Nota de design (2026-04-26):** O formatter enriquecido do digest (`formatDailyDigestMessage` com
+> agrupamento por bloco temporal + copy variável) foi movido para **N3 Sprint 3.4** — separação de
+> responsabilidades: N2 = *quando* enviar (gates), N3 = *o que* enviar (conteúdo + copy).
+> Sprint 2.3 aqui entrega apenas o **trigger do digest com formato simples** (placeholder funcional).
 
 ---
 
@@ -113,41 +118,38 @@ Dar controle ao usuário sobre **quando** ser interrompido. Adicionar quiet hour
 
 ---
 
-### Sprint 2.3 — Server: digest matinal enriquecido (agrupado por bloco temporal + plano)
+### Sprint 2.3 — Server: trigger do digest matinal (formato simples — enriquecimento em N3)
 
-**Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
+**Agente recomendado**: 🟡 **Rápido** (Haiku/Fast/Mini)
 
-**Justificativa**: Formatter não-trivial agrupando agenda do dia por bloco temporal (manhã/tarde/noite) e por plano dentro de cada bloco. Reutiliza Wave N1 mas com nova dimensão. Edge cases (dias com poucas/muitas doses, plano com doses em vários horários).
+**Justificativa**: Mecânico — apenas conectar modo `digest_morning` ao cron existente com formato
+simples funcional. O formatter enriquecido por bloco temporal + copy variável é responsabilidade de
+**N3 Sprint 3.4** (separação de responsabilidades). Downgrade de 🟢 para 🟡.
 
 **Entregas**:
 
 1. Em `server/bot/tasks.js` (`runDailyDigest`):
    - Quando `notification_mode === 'digest_morning'` e `currentHHMM === user.digest_time`:
      - Buscar `protocols` do user com `time_schedule` não-vazio
-     - Expandir em `dosesToday[] = { protocol, planId, planName, scheduledTime }`
-     - Agrupar por bloco temporal (manhã ≤10:59, almoço 11–13:59, tarde 14–17:59, noite 18–22:59, madrugada 23–04:59)
-     - Dentro de cada bloco, agrupar por plano (reutilizar lógica de Wave N1)
-   - Criar `formatDailyDigestMessage(blocksByTime)`:
-     ```
-     ☀️ *Sua agenda de hoje*
+     - Contar total de doses do dia
+     - Disparar **1 push** via `dispatcher.dispatch()` com formato simples:
+       ```
+       ☀️ Sua agenda de hoje — X doses programadas
+       ```
+     - Body: lista flat de horários e nomes (sem agrupamento por bloco — isso vem em N3)
+   - Usar `kind = 'daily_digest'` já existente no dispatcher
 
-     🌅 *Manhã*
-       08:00 — Quarteto Fantástico (4 medicamentos)
-       09:00 — Trimebutina
-
-     🍽️ *Almoço*
-       12:00 — Olmesartana
-
-     🌆 *Noite*
-       20:00 — Ansiolíticos TAG (2 medicamentos)
-     ```
-
-2. Tests:
-   - `formatDailyDigestMessage.test.js` com fixtures de agenda completa, agenda esparsa, sem doses.
+2. Test:
+   - `runDailyDigest.test.js` — valida que 1 único push é disparado no horário configurado,
+     e que fora do horário nada é enviado.
 
 **Critério de aceite**:
-- Digest agrupa corretamente por bloco e plano.
-- Renderização válida em MarkdownV2 (Telegram) e plain text (push body).
+- 1 push enviado no `digest_time` configurado para usuários com `notification_mode = 'digest_morning'`.
+- Corpo contém contagem total de doses.
+- Renderização válida em MarkdownV2 (sem caracteres não-escapados).
+
+> **Nota**: O formato ficará simples até N3 ser mergeado. Após N3, o mesmo push passará a usar
+> `formatDailyDigestMessage` enriquecido com agrupamento por bloco + copy variável.
 
 ---
 
@@ -256,13 +258,13 @@ Dar controle ao usuário sobre **quando** ser interrompido. Adicionar quiet hour
 |--------|-----------|--------|------------|
 | **2.1** | Migration + Zod schema | 🟡 Rápido | ~1h |
 | **2.2** | Server: gate + supressão | 🟢 Avançado | ~3h |
-| **2.3** | Server: digest enriquecido | 🟢 Avançado | ~3h |
+| **2.3** | Server: trigger digest simples *(formatter enriquecido → N3)* | 🟡 Rápido | ~1h |
 | **2.4** | Web Settings UI | 🟡 Rápido | ~2h |
 | **2.5** | Mobile Settings UI | 🟡 Rápido | ~2.5h |
 | **2.6** | `userSettingsService` updates | 🟡 Rápido | ~1h |
-| **2.7** | Validação + DEVFLOW C5 | ⚪ Humano | ~2h (mas E2E quiet hours leva 24h calendário) |
+| **2.7** | Validação + DEVFLOW C5 | ⚪ Humano | ~2h (E2E quiet hours leva 24h calendário) |
 
-**Total**: ~14.5h trabalho. **2 sprints 🟢 (~6h)** + **4 sprints 🟡 (~6.5h)** + **1 sprint ⚪ (~2h)**.
+**Total**: ~12.5h trabalho *(era 14.5h — -2h movidas para N3)*. **1 sprint 🟢 (~3h)** + **5 sprints 🟡 (~7.5h)** + **1 sprint ⚪ (~2h)**.
 
 ---
 
@@ -271,9 +273,11 @@ Dar controle ao usuário sobre **quando** ser interrompido. Adicionar quiet hour
 - **🟢 Avançado** (2.2, 2.3): ~25k–50k tokens cada.
 - **🟡 Rápido** (2.1, 2.4, 2.5, 2.6): ~5k–15k tokens cada.
 
-Wave N2 estimado: **50k–100k tokens em modelos avançados** + **20k–60k em modelos rápidos**.
+Wave N2 estimado: **25k–50k tokens em modelos avançados** + **25k–75k em modelos rápidos**.
 
-> **Observação**: Wave N2 tem peso maior em sprints 🟡 do que N1. Boa wave para usar quota residual de modelos rápidos no orçamento semanal.
+> **Observação**: Com o formatter enriquecido movido para N3, N2 é agora dominantemente 🟡.
+> Excelente para usar quota residual de modelos rápidos — apenas Sprint 2.2 (gate cross-midnight)
+> requer raciocínio mais cuidadoso.
 
 ---
 
@@ -284,7 +288,7 @@ PR #2 pode ser mergeado quando:
 - ✅ Todos os 7 sprints concluídos
 - ✅ Migration aplicada em staging e validada (rollback testado se necessário)
 - ✅ Quiet hours validado em device físico por janela completa de 24h
-- ✅ Modo `digest_morning` valida 1 push às 07:00 com agenda agrupada
+- ✅ Modo `digest_morning` valida 1 push às 07:00 com contagem de doses do dia (formato simples — enriquecimento vem com N3)
 - ✅ Settings cross-platform sync funcional
 - ✅ Gemini review aprovado
 - ✅ `npm run validate:agent` + `npm run lint` passando

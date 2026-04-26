@@ -1,11 +1,16 @@
 # Exec Spec — Wave N3: Copy Variável + Métricas de Engajamento
 
-> **Status:** PRONTO PARA EXECUÇÃO (após N2 mergeado)
+> **Status:** PRONTO PARA EXECUÇÃO (após N1 mergeado) · **independente de N2**
 > **Master Plan:** [`MASTER_PLAN_NOTIFICATIONS_REVAMP.md`](./MASTER_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Idea Plan:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md) — §Wave N3
-> **Pré-requisito:** Waves N1 e N2 mergeadas (PR #1 e PR #2)
+> **Pré-requisito:** Wave N1 mergeado (PR #1) · N2 **não é pré-requisito**
 > **PR alvo:** PR #3 da reforma
-> **Estimativa:** ~3 dias úteis · 9 sprints
+> **Estimativa:** ~3.5 dias úteis · 9 sprints
+>
+> **Nota de design (2026-04-26):** N3 absorveu o formatter enriquecido do digest (`formatDailyDigestMessage`
+> com agrupamento por bloco temporal + copy variável) que estava em N2 Sprint 2.3.
+> Separação: N2 = *quando* enviar (gates), N3 = *o que* enviar (conteúdo + copy).
+> Sprint 3.4 expandido para incluir criação do formatter enriquecido + copy variável.
 
 ---
 
@@ -20,7 +25,8 @@
 
 | Item | Estado |
 |------|--------|
-| Waves N1 + N2 mergeadas | ⏳ |
+| Wave N1 mergeada | ⏳ — único pré-requisito |
+| Wave N2 mergeada | ✅ não necessário — N2 e N3 são independentes após N1 |
 | `dispatchNotification.js` fire-and-forget | ✅ — precisa **refactor para 2-fase** (`createPending` → `dispatch` → `markSent`) |
 | `notification_log` tabela | ✅ — precisa **migration** para adicionar 3 colunas |
 | Streak service (`adherenceService.getCurrentStreak`) | ✅ |
@@ -163,27 +169,58 @@
 
 ---
 
-### Sprint 3.4 — Substituir copy hard-coded em formatters
+### Sprint 3.4 — Formatter enriquecido do digest + copy variável em todos os formatters
 
-**Agente recomendado**: 🟡 **Rápido** (Haiku/Fast/Mini)
+**Agente recomendado**: 🟢 **Avançado** (Sonnet/Pro/Codex)
 
-**Justificativa**: Edits cirúrgicos — substituir strings literais pelos picks. Spec exata.
+**Justificativa**: Sprint expandido — absorveu o formatter enriquecido que era N2 Sprint 2.3 (🟢).
+Dois entregáveis: (a) criar `formatDailyDigestMessage` com agrupamento por bloco temporal + plano,
+(b) substituir copy hard-coded em todos os formatters existentes via picks de `notificationCopy.js`.
+Ambos tocam `tasks.js` profundamente e têm edge cases não-triviais de MarkdownV2.
 
 **Entregas**:
 
-1. Em `api/notify.js` (`buildNotificationPayload`):
-   - Substituir title hard-coded por `pickGreeting(hour, userId, today) + contexto`.
+1. **Criar `formatDailyDigestMessage(blocksByTime, pickGreeting, pickStreakLine)`** em `server/bot/tasks.js`:
+   - Agrupar `dosesToday[]` por bloco temporal (manhã ≤10:59, almoço 11–13:59, tarde 14–17:59, noite 18–22:59, madrugada 23–04:59)
+   - Dentro de cada bloco, agrupar por plano (reutilizar `partitionDoses` de Wave N1)
+   - Output com greeting variável no cabeçalho e streak line opcional:
+     ```
+     ☀️ *Bom dia!*  ← pickGreeting(hour, userId, today)
+     🔥 *7º dia em sequência*  ← pickStreakLine (opcional, omitir se streak < 7)
 
-2. Em `server/bot/tasks.js` (formatters de Wave N1):
-   - `formatDoseGroupedByPlanMessage` — incluir streak line opcional via `pickStreakLine`.
-   - Soft reminder + daily digest — incluir greeting variável.
+     *Sua agenda de hoje*
 
-3. Tests:
-   - Snapshot tests com seed fixa para garantir output determinístico.
+     🌅 *Manhã*
+       08:00 — Quarteto Fantástico (4 medicamentos)
+       09:00 — Trimebutina
+
+     🍽️ *Almoço*
+       12:00 — Olmesartana
+
+     🌆 *Noite*
+       20:00 — Ansiolíticos TAG (2 medicamentos)
+     ```
+   - Em `runDailyDigest`: substituir o formato simples de N2 Sprint 2.3 por este formatter.
+     (Se N2 não estiver mergeado ainda, `runDailyDigest` ainda não existe — criar junto.)
+
+2. **Substituir copy hard-coded nos formatters existentes de N1** em `api/notify.js` + `server/bot/tasks.js`:
+   - `buildNotificationPayload`: title hard-coded → `pickGreeting(hour, userId, today) + contexto`.
+   - `formatDoseGroupedByPlanMessage`: incluir streak line opcional via `pickStreakLine`.
+   - Soft reminder + daily digest: incluir greeting variável.
+
+3. **Tests**:
+   - `formatDailyDigestMessage.test.js`: fixtures de agenda completa, esparsa, sem doses, com streak.
+   - Snapshot tests com seed fixa para output determinístico dos outros formatters.
 
 **Critério de aceite**:
-- Ainda gera MarkdownV2 válido.
-- Output muda entre dias para mesmo user.
+- Digest agrupa corretamente por bloco e plano com copy variável.
+- Renderização válida em MarkdownV2 (sem caracteres não-escapados).
+- Output dos formatters muda entre dias para mesmo user (seed diferente por dia).
+- Se N2 já estiver mergeado: `runDailyDigest` usa `formatDailyDigestMessage` enriquecido.
+- Se N2 não estiver mergeado: formatter existe em código mas ainda não é acionado (sem efeito colateral).
+
+> **Compatibilidade com N2**: Se N2 for mergeado depois de N3, a única ação necessária é confirmar
+> que `runDailyDigest` chama `formatDailyDigestMessage` (já garantido por este sprint). Sem retrabalho.
 
 ---
 
@@ -304,14 +341,14 @@
 | **3.1** | Migration `notification_log` + Zod | 🟡 Rápido | ~1h |
 | **3.2** | Refactor dispatcher 2-fase | 🟢 Avançado | ~4h |
 | **3.3** | `notificationCopy.js` library | 🟢 Avançado | ~3h |
-| **3.4** | Substituir copy nos formatters | 🟡 Rápido | ~1.5h |
+| **3.4** | Formatter enriquecido digest + copy variável *(absorvido de N2)* | 🟢 Avançado | ~3.5h |
 | **3.5** | Endpoint tracking + RLS | 🟡 Rápido | ~1.5h |
 | **3.6** | Web router `?notif=id` | 🟡 Rápido | ~1h |
 | **3.7** | Mobile `opened_at` | 🟡 Rápido | ~1h |
 | **3.8** | Telegram `action_taken_at` | 🟡 Rápido | ~0.5h |
 | **3.9** | Validação + DEVFLOW (+insight card opcional) | ⚪ Humano + 🟡 | ~2h (+1h opcional) |
 
-**Total**: ~15.5h trabalho. **2 sprints 🟢 (~7h)** + **6 sprints 🟡 (~6.5h)** + **1 sprint ⚪ (~2h)**.
+**Total**: ~17.5h trabalho *(+2h absorvidas de N2)*. **3 sprints 🟢 (~10.5h)** + **5 sprints 🟡 (~5h)** + **1 sprint ⚪ (~2h)**.
 
 ---
 
@@ -348,10 +385,16 @@ PR #3 pode ser mergeado quando:
 | Wave | 🟢 Sprints | 🟡 Sprints | ⚪ Sprints | Tokens 🟢 | Tokens 🟡 |
 |------|-----------|-----------|-----------|-----------|-----------|
 | N1 | 4 (~14h) | 3 (~4.5h) | 1 (~2h) | 120k–240k | 15k–45k |
-| N2 | 2 (~6h) | 4 (~6.5h) | 1 (~2h) | 50k–100k | 20k–60k |
-| N3 | 2 (~7h) | 6 (~6.5h) | 1 (~2h) | 60k–120k | 35k–105k |
-| **Total** | **8 (~27h)** | **13 (~17.5h)** | **3 (~6h)** | **230k–460k 🟢** | **70k–210k 🟡** |
+| N2 | 1 (~3h) ↓ | 5 (~7.5h) ↑ | 1 (~2h) | 25k–50k ↓ | 25k–75k ↑ |
+| N3 | 3 (~10.5h) ↑ | 5 (~5h) ↓ | 1 (~2h) | 90k–180k ↑ | 25k–75k ↓ |
+| **Total** | **8 (~27.5h)** | **13 (~17h)** | **3 (~6h)** | **235k–470k 🟢** | **65k–195k 🟡** |
 
-**Trabalho útil**: ~50.5h de implementação + validação distribuídas em 3 PRs.
+*(Totais globais estáveis — trabalho apenas redistribuído de N2.3 para N3.4)*
 
-**Recomendação de orçamento**: alocar quota generosa de modelo avançado para N1 (sprints 1.1, 1.2, 1.4, 1.5 são pilares) e usar modelos rápidos como default em N2 e N3 onde a spec é mais prescritiva.
+**Trabalho útil**: ~50.5h de implementação + validação distribuídas em 3 PRs — igual ao original.
+
+**Recomendação de orçamento (revisada 2026-04-26)**:
+- N1: quota generosa de 🟢 (sprints 1.1, 1.2, 1.4, 1.5 são pilares)
+- N2: agora majoritariamente 🟡 — ótima wave para usar quota residual de modelos rápidos
+- N3: mais pesada em 🟢 (3 sprints avançados: 3.2 dispatcher, 3.3 copy library, 3.4 formatter digest)
+- N2 e N3 podem ser executadas **em paralelo por equipes diferentes** após N1 mergeado
