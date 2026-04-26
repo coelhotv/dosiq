@@ -11,7 +11,7 @@ import { notificationLogRepository } from '../repositories/notificationLogReposi
 
 const dispatchInputSchema = z.object({
   userId: z.string().min(1),
-  kind: z.enum(['dose_reminder', 'stock_alert', 'daily_digest']),
+  kind: z.enum(['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc', 'stock_alert', 'daily_digest']),
   channels: z.array(z.string()).default([]),
 })
 
@@ -81,7 +81,8 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
       const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
       if (activeResults.length === 0) return
 
-      const protocolId = payload.metadata?.protocolId ?? null
+      const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
+      const protocolId = isGroupedKind ? null : (payload.metadata?.protocolId ?? null)
       if (!protocolId && kind === 'dose_reminder') {
         console.warn('[dispatchNotification] dose_reminder sem protocolId no metadata', { correlationId, kind })
       }
@@ -111,7 +112,10 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
           channels,
           telegram_message_id: channels.find(c => c.channel === 'telegram')?.message_id ?? null,
           mensagem_erro:     firstError,
-          provider_metadata: {},
+          provider_metadata: {
+            ...(payload.metadata?.protocolIds ? { protocol_ids: payload.metadata.protocolIds } : {}),
+            ...(payload.metadata?.planId ? { treatment_plan_id: payload.metadata.planId } : {}),
+          },
         })
       } catch (logErr) {
         console.error('[dispatchNotification] Falha ao persistir log no DB', {
