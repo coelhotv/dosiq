@@ -731,6 +731,7 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 - [SERVICES.md](./reference/SERVICES.md) - Documentação das APIs
 - [LINT_COVERAGE.md](./archive/LINT_COVERAGE.md) - Configurações ESLint e boas práticas
 - [OTIMIZACAO_TESTES_ESTRATEGIA.md](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia completa de testes
+- [PWA_WEB_PUSH.md](./architecture/PWA_WEB_PUSH.md) - Arquitetura e Fluxos do Web Push Nativo e Service Workers
 - [HOOKS.md](./reference/HOOKS.md) - Hooks customizados
 
 ### Templates

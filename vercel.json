@@ -49,6 +49,10 @@
       "destination": "/api/chatbot.js"
     },
     {
+      "source": "/api/register-webpush",
+      "destination": "/api/register-webpush.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
