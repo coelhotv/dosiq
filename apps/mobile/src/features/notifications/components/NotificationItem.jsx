@@ -66,7 +66,8 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const displayTitle = resolveTitle(notification, label)
   const displayBody  = body ?? null
   const cta          = CTA_MAP[notification_type] ?? null
-  const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true)
+  const groupedComplete = isDoseReminder && typeof wasTaken === 'object' && wasTaken.taken === wasTaken.total
+  const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true) && !groupedComplete
 
   const inner = (
     <View style={styles.row}>
@@ -117,12 +118,15 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
         <View style={styles.footer}>
           {isDoseReminder && wasTaken === true ? (
             <Text style={styles.takenLabel}>✓ Tomada</Text>
-          ) : isDoseReminder && wasTaken && typeof wasTaken === 'object' ? (
-            <Text style={[styles.takenLabel, wasTaken.taken === wasTaken.total && styles.takenFull]}>
+          ) : groupedComplete ? (
+            <Text style={[styles.takenLabel, styles.takenFull]}>
               {wasTaken.taken}/{wasTaken.total} tomadas
             </Text>
           ) : hasNavAction ? (
             <View style={styles.actionLabel}>
+              {typeof wasTaken === 'object' && (
+                <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
+              )}
               <Text style={styles.actionText}>{cta.label}</Text>
               <ChevronRight size={13} color={colors.primary?.[600] ?? '#006a5e'} strokeWidth={2.5} />
             </View>
