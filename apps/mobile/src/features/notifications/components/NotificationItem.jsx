@@ -16,11 +16,13 @@ import { colors } from '../../../shared/styles/tokens'
 const ICON_MAP = { Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell }
 
 const CTA_MAP = {
-  dose_reminder:    { label: 'Registrar dose',    action: 'dashboard' },
-  stock_alert:      { label: 'Ver estoque',        action: 'stock' },
-  missed_dose:      { label: 'Registrar atrasada', action: 'history' },
-  titration_update: { label: 'Ver tratamento',     action: 'treatment' },
-  daily_digest:     null,
+  dose_reminder:         { label: 'Registrar dose',    action: 'dashboard' },
+  dose_reminder_by_plan: { label: 'Registrar plano',   action: 'bulk-plan' },
+  dose_reminder_misc:    { label: 'Registrar doses',   action: 'bulk-misc' },
+  stock_alert:           { label: 'Ver estoque',        action: 'stock' },
+  missed_dose:           { label: 'Registrar atrasada', action: 'history' },
+  titration_update:      { label: 'Ver tratamento',     action: 'treatment' },
+  daily_digest:          null,
 }
 
 function resolveTitle(notification, label) {
@@ -34,6 +36,10 @@ function resolveTitle(notification, label) {
       return protocol_name ?? label
     case 'daily_digest':
       return 'Resumo do dia'
+    case 'dose_reminder_by_plan':
+      return notification.treatment_plan_name ?? 'Plano de tratamento'
+    case 'dose_reminder_misc':
+      return 'Doses agora'
     default:
       return label
   }
@@ -55,12 +61,13 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const relativeTime   = formatRelativeTime(sent_at)
   const isFailed       = ['falhou', 'failed'].includes(status?.toLowerCase())
   const isDailyDigest  = notification_type === 'daily_digest'
-  const isDoseReminder = notification_type === 'dose_reminder'
+  const isDoseReminder = ['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'].includes(notification_type)
 
   const displayTitle = resolveTitle(notification, label)
   const displayBody  = body ?? null
   const cta          = CTA_MAP[notification_type] ?? null
-  const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true)
+  const groupedComplete = isDoseReminder && typeof wasTaken === 'object' && wasTaken.taken === wasTaken.total
+  const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true) && !groupedComplete
 
   const inner = (
     <View style={styles.row}>
@@ -111,8 +118,15 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
         <View style={styles.footer}>
           {isDoseReminder && wasTaken === true ? (
             <Text style={styles.takenLabel}>✓ Tomada</Text>
+          ) : groupedComplete ? (
+            <Text style={[styles.takenLabel, styles.takenFull]}>
+              {wasTaken.taken}/{wasTaken.total} tomadas
+            </Text>
           ) : hasNavAction ? (
             <View style={styles.actionLabel}>
+              {typeof wasTaken === 'object' && (
+                <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
+              )}
               <Text style={styles.actionText}>{cta.label}</Text>
               <ChevronRight size={13} color={colors.primary?.[600] ?? '#006a5e'} strokeWidth={2.5} />
             </View>
@@ -152,6 +166,7 @@ const styles = StyleSheet.create({
   expandBtn:   { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280', marginTop: 2 },
   footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 },
   takenLabel:  { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280' },
+  takenFull:   { color: colors.primary?.[600] ?? '#006a5e' },
   actionLabel: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   actionText:  { fontSize: 13, fontWeight: '600', color: colors.primary?.[600] ?? '#006a5e' },
 })

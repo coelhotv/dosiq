@@ -42,6 +42,20 @@ export function getNotificationIcon(type) {
       label: 'Atualização de titulação',
       deepLinkAction: 'treatment',
     },
+    dose_reminder_by_plan: {
+      iconName: 'Package',
+      color: '#006a5e',
+      bgColor: 'rgba(0, 106, 94, 0.10)',
+      label: 'Lembrete de plano',
+      deepLinkAction: 'bulk-plan',
+    },
+    dose_reminder_misc: {
+      iconName: 'Clock',
+      color: '#006a5e',
+      bgColor: 'rgba(0, 106, 94, 0.10)',
+      label: 'Doses agora',
+      deepLinkAction: 'bulk-misc',
+    },
   }
   return map[type] ?? {
     iconName: 'Bell',
