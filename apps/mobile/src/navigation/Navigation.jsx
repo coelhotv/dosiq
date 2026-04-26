@@ -8,7 +8,7 @@
 //   se montarmos o Navigator antes de getSession() resolver,
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, createRef } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -23,10 +23,12 @@ import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 
 const Stack = createNativeStackNavigator()
 
+// Ref de nível de módulo — permite importação externa para deeplink (R-164, N1.4)
+export const navigationRef = createRef()
+
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
   const [session, setSession] = useState(undefined)
-  const navigationRef = useRef(null)
 
   // Setup push notifications pós-login (H6.3)
   usePushNotifications({ supabase, session })
