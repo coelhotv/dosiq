@@ -1,18 +1,46 @@
 // Hook para setup de push notifications pós-login
 // Configura: permissão, token registration, notification handlers
 // Cleanup automático em logout (via dependencies)
+// N1.4: deeplink real via navigationRef (foreground/background tap + cold start)
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { requestPushPermission } from './requestPushPermission'
 import { getExpoPushToken } from './getExpoPushToken'
 import { syncNotificationDevice } from './syncNotificationDevice'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
+import { navigationRef } from '../../navigation/Navigation'
+import { ROUTES } from '../../navigation/routes'
 
 const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
 
+// Mapa de screen names do payload para rotas do navigator
+const SCREEN_TO_ROUTE = {
+  'bulk-plan': ROUTES.TODAY,
+  'bulk-misc': ROUTES.TODAY,
+  'dose-individual': ROUTES.TODAY,
+}
+
+// Navega para a tela correta a partir de um tap em push notification.
+// createNavigationContainerRef enfileira ações automaticamente — sem listener fallback necessário.
+function navigateFromPush(navigationData) {
+  const screen = navigationData?.screen
+  const params = navigationData?.params ?? {}
+  const targetRoute = (screen && SCREEN_TO_ROUTE[screen]) ?? ROUTES.TODAY
+
+  navigationRef.navigate(targetRoute, params)
+
+  if (__DEV__) {
+    console.log('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
+  }
+}
+
 export function usePushNotifications({ supabase, session }) {
+  // Flag para garantir que o cold start seja processado apenas uma vez por ciclo de vida do app,
+  // mesmo que o useEffect re-execute em logout+login sem fechar o app.
+  const coldStartProcessed = useRef(false)
+
   useEffect(() => {
     if (!session || !supabase) return
 
@@ -21,6 +49,16 @@ export function usePushNotifications({ supabase, session }) {
 
     async function setupPush() {
       try {
+        // Cold start: processar resposta pendente apenas uma vez por ciclo de vida do app
+        if (!coldStartProcessed.current) {
+          coldStartProcessed.current = true
+          const lastResponse = await Notifications.getLastNotificationResponseAsync()
+          if (lastResponse && isMounted) {
+            const navigationData = lastResponse.notification.request.content.data?.navigation
+            navigateFromPush(navigationData)
+          }
+        }
+
         const { granted } = await requestPushPermission()
 
         if (!granted) {
@@ -49,21 +87,11 @@ export function usePushNotifications({ supabase, session }) {
           }),
         })
 
-        // Handler de tap em notificação (background/cold start)
+        // Handler de tap em notificação (foreground / background)
         notificationSubscription = Notifications.addNotificationResponseReceivedListener(
           (response) => {
-            const navigation = response.notification.request.content.data?.navigation
-            if (navigation?.screen) {
-              // Navegar para tela especificada (seria via event emitter ou context)
-              if (__DEV__) {
-                console.log('[usePushNotifications] Notificação tap:', navigation.screen)
-              }
-            } else {
-              // Fallback obrigatório (spec §10.5)
-              if (__DEV__) {
-                console.log('[usePushNotifications] Navegar para Today (fallback)')
-              }
-            }
+            const navigationData = response.notification.request.content.data?.navigation
+            navigateFromPush(navigationData)
           }
         )
 

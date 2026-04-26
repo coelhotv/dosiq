@@ -158,3 +158,4 @@
 - **[R-185]** Consistência de estados de carregamento nativo e animações sincronizadas. -> [`rules/react_and_ui/R-185.md`](./rules/react_and_ui/R-185.md)
 - **[R-188]** SWR Fetcher Memoization (Infinite Render Loop Prevention) -> [`rules/react_and_ui/R-188.md`](./rules/react_and_ui/R-188.md)
 - **[R-193]** Ao adicionar novo notification kind: atualizar enum Zod em dispatchInputSchema + shouldSendGroupedNotification para novos tipos agrupados -> [`rules/mobile_and_platform/R-193.md`](./rules/mobile_and_platform/R-193.md)
+- **[R-194]** Usar createNavigationContainerRef (não createRef) para refs de NavigationContainer globais — enfileiramento automático eliminando listener fallback manual -> [`rules/mobile_and_platform/R-194.md`](./rules/mobile_and_platform/R-194.md)
