@@ -97,7 +97,7 @@ export default function TodayScreen({ route, navigation }) {
       })
     }
     // Limpar params após consumo para evitar re-abertura em back-navigate
-    navigation?.setParams(undefined)
+    navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
   }, [route?.params])
 
   // 3. Heurística de Expansão Inicial
