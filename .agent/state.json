@@ -20,7 +20,7 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Wave N1 Sprint 1.2 — Backend: callback handlers takeplan/takelist",
+    "goal": "Wave N1 Sprint 1.3 — Backend: dedup keys + expoPushChannel payload data",
     "goal_type": "feature"
   },
   "memory": {
@@ -30,7 +30,7 @@
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-23T23:58:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "recent_additions": {
       "rules": [
         "R-190",
