@@ -262,9 +262,13 @@ Substituir o "1 push por protocolo" por **1 push por bloco semântico**, preserv
 
 ---
 
-### Sprint 1.7 — Web: deeplink Today + service worker tag
+### Sprint 1.7 — Web: deeplink Today + service worker tag ⛔ BLOQUEADA
 
-**Agente recomendado**: 🟡 **Rápido** (Haiku/Fast/Mini)
+**Status:** BLOQUEADA — push web nunca implementado (sem `sw.js`, sem view `Today`). Adiada para quando push web for desenvolvido (fora do escopo da Wave N1).
+
+> **Análise C1 (2026-04-26):** `apps/web/public/` não tem `sw.js`; App.jsx usa sistema view-based sem React Router; push web não existe. A sprint dependia de infra inexistente. `GlobalDoseModal` e `LogForm` já suportam `type='plan'` — o mecanismo de deeplink pode ser plugado quando push web for implementado.
+
+**Agente recomendado**: 🟡 **Rápido** (Haiku/Fast/Mini) — quando desbloqueada
 
 **Justificativa**: `LogForm type='plan'` já existe. Apenas conectar URL params → abrir form pré-configurado. SW tag é one-line.
 

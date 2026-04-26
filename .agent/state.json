@@ -19,8 +19,8 @@
   },
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "goal": "N1.6 — Mobile: estender Inbox (NotificationItem + NotificationInboxScreen + useNotificationLog)",
+    "status": "analysis",
+    "goal": "N1.7 — Web: deeplink Today + service worker tag",
     "goal_type": "feature"
   },
   "memory": {
@@ -44,7 +44,7 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-26T06:30:00Z"
+    "index_loaded_at": "2026-04-26T20:25:00Z"
   },
   "migration": {
     "status": "complete",
