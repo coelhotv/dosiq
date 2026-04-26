@@ -18,19 +18,19 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Wave N1 Sprint 1.5 — Mobile: BulkDoseRegisterModal.jsx",
-    "goal_type": "feature"
+    "mode": "distillation",
+    "status": "distilled",
+    "goal": "Journal compression & rule lifecycle review — Wave N1.1-N1.5 phase complete",
+    "goal_type": "chore"
   },
   "memory": {
-    "rules_count": 137,
-    "anti_patterns_count": 111,
+    "rules_count": 141,
+    "anti_patterns_count": 116,
     "decisions_count": 33,
     "contracts_count": 20,
     "knowledge_count": 89,
-    "last_distillation": "2026-04-23T23:58:00Z",
-    "journal_entries_since_distillation": 15,
+    "last_distillation": "2026-04-26T05:15:00Z",
+    "journal_entries_since_distillation": 0,
     "recent_additions": {
       "rules": [
         "R-193",
