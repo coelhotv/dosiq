@@ -28,7 +28,10 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
     sound: 'default',
     title: payload.title,
     body: payload.body,
-    data: payload.metadata ?? {},
+    data: {
+      ...(payload.metadata ?? {}),
+      notificationLogId: payload.metadata?.notificationLogId ?? null,
+    },
   }))
 
   let tickets

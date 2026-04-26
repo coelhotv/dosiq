@@ -144,3 +144,52 @@ export async function cleanupOldNotificationLogs() {
     console.log('[Deduplicator] Limpeza concluída');
   }
 }
+
+/**
+ * Verifica deduplicação para notificações agrupadas (dose_reminder_by_plan / dose_reminder_misc).
+ * Para by_plan: discrimina por treatment_plan_id no provider_metadata.
+ * Para misc: só verifica tipo + user + janela de 5min.
+ * @param {string} userId - UUID do usuário
+ * @param {string} notificationType - 'dose_reminder_by_plan' | 'dose_reminder_misc'
+ * @param {object} [options] - { planId?: string }
+ * @returns {Promise<boolean>} true se deve enviar, false se duplicado
+ */
+export async function shouldSendGroupedNotification(userId, notificationType, { planId } = {}) {
+  if (!userId) {
+    console.error('[Deduplicator] shouldSendGroupedNotification chamado sem userId');
+    return true; // Fail open
+  }
+
+  const cutoffTime = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+  try {
+    let query = supabase
+      .from('notification_log')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('notification_type', notificationType)
+      .gte('sent_at', cutoffTime)
+      .limit(1);
+
+    if (planId) {
+      query = query.filter('provider_metadata->>treatment_plan_id', 'eq', planId);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Deduplicator] Erro ao verificar grouped notification:', error);
+      return true; // Fail open
+    }
+
+    if (data) {
+      console.log(`[Deduplicator] Ignorando duplicata grouped ${notificationType} para userId ${userId}${planId ? ` planId ${planId}` : ''}`);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Erro inesperado em shouldSendGroupedNotification:', err);
+    return true; // Fail open
+  }
+}

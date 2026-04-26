@@ -7,7 +7,7 @@ import {
   getUserSettings,
   getAllUsersWithTelegram
 } from '../services/protocolCache.js';
-import { shouldSendNotification, logSuccessfulNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification, logSuccessfulNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
 import {
   getCurrentTimeInTimezone,
   getCurrentDateInTimezone,
@@ -409,6 +409,22 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
         });
 
         for (const block of blocks) {
+          // Verificar deduplicação para blocos agrupados
+          const normalizedKind = block.kind?.toLowerCase();
+          if (['by_plan', 'misc'].includes(normalizedKind)) {
+            const notificationType = 'dose_reminder_' + normalizedKind;
+            const options = normalizedKind === 'by_plan' ? { planId: block.planId } : {};
+            const shouldSend = await shouldSendGroupedNotification(userId, notificationType, options);
+            if (!shouldSend) {
+              const logContext = { userId, correlationId };
+              if (block.planId) {
+                logContext.planId = block.planId;
+              }
+              logger.debug('Dose reminder ' + normalizedKind + ' suprimido por deduplicação', logContext);
+              continue;
+            }
+          }
+
           let kind, data;
 
           if (block.kind === 'by_plan') {
