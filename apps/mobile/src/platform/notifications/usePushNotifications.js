@@ -3,7 +3,7 @@
 // Cleanup automático em logout (via dependencies)
 // N1.4: deeplink real via navigationRef (foreground/background tap + cold start)
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { requestPushPermission } from './requestPushPermission'
@@ -22,24 +22,14 @@ const SCREEN_TO_ROUTE = {
   'dose-individual': ROUTES.TODAY,
 }
 
-// Navega para a tela correta a partir de um tap em push notification
-function navigateFromPush(navigation) {
-  if (!navigation?.screen) {
-    // Fallback obrigatório (spec §10.5): sem screen definida → Today sem params
-    navigation = { screen: 'dose-individual', params: {} }
-  }
-  const { screen, params } = navigation
-  const targetRoute = SCREEN_TO_ROUTE[screen] ?? ROUTES.TODAY
+// Navega para a tela correta a partir de um tap em push notification.
+// createNavigationContainerRef enfileira ações automaticamente — sem listener fallback necessário.
+function navigateFromPush(navigationData) {
+  const screen = navigationData?.screen
+  const params = navigationData?.params ?? {}
+  const targetRoute = (screen && SCREEN_TO_ROUTE[screen]) ?? ROUTES.TODAY
 
-  if (navigationRef.current?.isReady()) {
-    navigationRef.current.navigate(targetRoute, params)
-  } else {
-    // Navigator ainda não montado (cold start tardio — raro mas possível)
-    const unsubscribe = navigationRef.current?.addListener?.('state', () => {
-      navigationRef.current.navigate(targetRoute, params)
-      unsubscribe?.()
-    })
-  }
+  navigationRef.navigate(targetRoute, params)
 
   if (__DEV__) {
     console.log('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
@@ -47,6 +37,10 @@ function navigateFromPush(navigation) {
 }
 
 export function usePushNotifications({ supabase, session }) {
+  // Flag para garantir que o cold start seja processado apenas uma vez por ciclo de vida do app,
+  // mesmo que o useEffect re-execute em logout+login sem fechar o app.
+  const coldStartProcessed = useRef(false)
+
   useEffect(() => {
     if (!session || !supabase) return
 
@@ -55,11 +49,14 @@ export function usePushNotifications({ supabase, session }) {
 
     async function setupPush() {
       try {
-        // Cold start: verificar se havia resposta de notificação pendente ao abrir o app
-        const lastResponse = await Notifications.getLastNotificationResponseAsync()
-        if (lastResponse && isMounted) {
-          const navigation = lastResponse.notification.request.content.data?.navigation
-          navigateFromPush(navigation)
+        // Cold start: processar resposta pendente apenas uma vez por ciclo de vida do app
+        if (!coldStartProcessed.current) {
+          coldStartProcessed.current = true
+          const lastResponse = await Notifications.getLastNotificationResponseAsync()
+          if (lastResponse && isMounted) {
+            const navigationData = lastResponse.notification.request.content.data?.navigation
+            navigateFromPush(navigationData)
+          }
         }
 
         const { granted } = await requestPushPermission()
@@ -93,8 +90,8 @@ export function usePushNotifications({ supabase, session }) {
         // Handler de tap em notificação (foreground / background)
         notificationSubscription = Notifications.addNotificationResponseReceivedListener(
           (response) => {
-            const navigation = response.notification.request.content.data?.navigation
-            navigateFromPush(navigation)
+            const navigationData = response.notification.request.content.data?.navigation
+            navigateFromPush(navigationData)
           }
         )
 

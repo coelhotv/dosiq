@@ -8,9 +8,9 @@
 //   se montarmos o Navigator antes de getSession() resolver,
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
-import { useEffect, useState, createRef } from 'react'
+import { useEffect, useState } from 'react'
 import { View, ActivityIndicator } from 'react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ROUTES } from './routes'
 import SmokeScreen from '../screens/SmokeScreen'
@@ -24,7 +24,8 @@ import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 const Stack = createNativeStackNavigator()
 
 // Ref de nível de módulo — permite importação externa para deeplink (R-164, N1.4)
-export const navigationRef = createRef()
+// createNavigationContainerRef enfileira ações automaticamente se o navigator não estiver pronto
+export const navigationRef = createNavigationContainerRef()
 
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa

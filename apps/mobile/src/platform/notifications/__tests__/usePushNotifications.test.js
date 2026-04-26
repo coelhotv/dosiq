@@ -1,23 +1,23 @@
 // Testes para usePushNotifications.js — deeplink real (N1.4)
-// Cobre: foreground tap, cold start, fallback sem screen, navigationRef não pronto
+// Cobre: foreground tap, cold start, fallback sem screen, cold start uma vez só (fix review Gemini)
 //
-// NOTA: jest.mock é hoisted para o topo do arquivo pelo Babel — as factories não
-// podem referenciar variáveis declaradas no escopo do módulo. As funções mock
-// são definidas inline e acessadas via require() após o mock.
+// Após review do Gemini (#499): navigationRef usa createNavigationContainerRef —
+// navigate() é chamado diretamente no ref (sem .current), e o React Navigation
+// enfileira automaticamente se o navigator não estiver pronto (sem listener fallback).
+//
+// NOTA: jest.mock é hoisted pelo Babel — factories não podem referenciar vars externas.
+// Usar require() após jest.mock para acessar as funções mock.
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react-native'
 import { ROUTES } from '../../../navigation/routes'
 
-// --- Mocks de módulo (factories inline — evitar referência a vars externas) ---
+// --- Mocks de módulo ---
 
+// createNavigationContainerRef retorna um objeto com navigate() diretamente (sem .current)
 jest.mock('../../../navigation/Navigation', () => ({
   navigationRef: {
-    current: {
-      isReady: jest.fn(() => true),
-      navigate: jest.fn(),
-      addListener: jest.fn(),
-    },
+    navigate: jest.fn(),
   },
 }))
 
@@ -49,7 +49,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(() => Promise.resolve()),
 }))
 
-// --- Acesso às funções mock via require (após as declarações de mock) ---
+// Acesso às funções mock via require (após as declarações de mock)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { navigationRef } = require('../../../navigation/Navigation')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -80,10 +80,7 @@ function makeResponse(screen, params = { at: '08:00' }) {
 describe('usePushNotifications — deeplink (N1.4)', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    // Restaurar estado padrão do navigationRef
-    navigationRef.current.isReady.mockReturnValue(true)
-    navigationRef.current.navigate.mockReset()
-    navigationRef.current.addListener.mockReset()
+    navigationRef.navigate.mockReset()
     Notifications.getLastNotificationResponseAsync.mockResolvedValue(null)
     Notifications.addNotificationResponseReceivedListener.mockReturnValue({ remove: jest.fn() })
   })
@@ -114,7 +111,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-plan', { planId: 'plan-1', at: '08:00' }))
     })
 
-    expect(navigationRef.current.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-1', at: '08:00' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-1', at: '08:00' })
     unmount()
   })
 
@@ -138,7 +135,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-misc', { misc: 1, at: '14:00' }))
     })
 
-    expect(navigationRef.current.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { misc: 1, at: '14:00' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { misc: 1, at: '14:00' })
     unmount()
   })
 
@@ -162,7 +159,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('dose-individual', { protocolId: 'proto-1' }))
     })
 
-    expect(navigationRef.current.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { protocolId: 'proto-1' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { protocolId: 'proto-1' })
     unmount()
   })
 
@@ -188,7 +185,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       })
     })
 
-    expect(navigationRef.current.navigate).toHaveBeenCalledWith(ROUTES.TODAY, {})
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, {})
     unmount()
   })
 
@@ -207,7 +204,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(Notifications.getLastNotificationResponseAsync).toHaveBeenCalled()
-    expect(navigationRef.current.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-cold' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-cold' })
     unmount()
   })
 
@@ -224,36 +221,40 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(Notifications.getLastNotificationResponseAsync).toHaveBeenCalled()
-    // navigate pode ser chamado apenas pelo listener de tap — não pelo cold start
-    // O mock de addNotificationResponseReceivedListener não dispara automaticamente
-    expect(navigationRef.current.navigate).not.toHaveBeenCalled()
+    expect(navigationRef.navigate).not.toHaveBeenCalled()
     unmount()
   })
 
-  // Cenário 7: navigationRef não pronto → usa addListener('state', ...)
-  it('navigationRef não pronto usa addListener state como fallback', async () => {
-    navigationRef.current.isReady.mockReturnValue(false)
+  // Cenário 7: cold start processa apenas uma vez — re-execução do useEffect (logout+login) não re-navega
+  it('cold start processa apenas uma vez mesmo com re-execução do useEffect', async () => {
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(
+      makeResponse('bulk-plan', { planId: 'plan-cold' })
+    )
 
-    const capturedHandler = { fn: null }
-    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
-      capturedHandler.fn = fn
-      return { remove: jest.fn() }
-    })
-
-    const { unmount } = renderHook(() =>
-      usePushNotifications({ supabase: {}, session: makeSession() })
+    // Primeira sessão
+    const { unmount, rerender } = renderHook(
+      ({ session }) => usePushNotifications({ supabase: {}, session }),
+      { initialProps: { session: makeSession() } }
     )
 
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 20))
     })
 
-    act(() => {
-      capturedHandler.fn(makeResponse('bulk-plan', { planId: 'plan-x' }))
+    expect(navigationRef.navigate).toHaveBeenCalledTimes(1)
+    navigationRef.navigate.mockClear()
+
+    // Simular logout + novo login (re-executa o useEffect)
+    rerender({ session: null })
+    await act(async () => { await new Promise((r) => setTimeout(r, 5)) })
+
+    rerender({ session: makeSession() })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20))
     })
 
-    expect(navigationRef.current.navigate).not.toHaveBeenCalled()
-    expect(navigationRef.current.addListener).toHaveBeenCalledWith('state', expect.any(Function))
+    // Cold start NÃO deve navegar novamente
+    expect(navigationRef.navigate).not.toHaveBeenCalled()
     unmount()
   })
 })
