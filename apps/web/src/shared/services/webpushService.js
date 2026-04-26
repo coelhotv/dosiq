@@ -29,8 +29,7 @@ export const webpushService = {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    const parsedData = JSON.parse(JSON.stringify(subscription))
-    const pushToken = JSON.stringify(parsedData)
+    const pushToken = JSON.stringify(subscription)
 
     // Detecção simplificada do tipo de app. Como Web Push no Dosiq foca no PWA, usaremos 'pwa'
     // E o provider é 'webpush'

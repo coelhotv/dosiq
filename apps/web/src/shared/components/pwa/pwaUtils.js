@@ -223,7 +223,7 @@ export function getPWAState() {
     supportsWebPush: supportsWebPush(),
     isPushPermissionGranted: isPushPermissionGranted(),
     wasDismissed: wasPromptDismissed() && !isDismissalExpired(),
-    canShowPrompt: !isStandalone() && (!wasPromptDismissed() || isDismissalExpired()),
+    canShowPrompt: (!isStandalone() || (supportsWebPush() && !isPushPermissionGranted())) && (!wasPromptDismissed() || isDismissalExpired()),
   }
 }
 
