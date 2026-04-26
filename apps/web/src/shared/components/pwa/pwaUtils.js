@@ -186,7 +186,31 @@ export function getInstallInstructions() {
 }
 
 /**
- * Detecção completa do estado PWA
+ * Verifica se o navegador suporta Web Push Notifications
+ * @returns {boolean} Verdadeiro se PushManager for suportado
+ */
+export function supportsWebPush() {
+  return 'serviceWorker' in navigator && 'PushManager' in window
+}
+
+/**
+ * Retorna a chave pública VAPID das variáveis de ambiente
+ * @returns {string} Chave VAPID pública
+ */
+export function getVapidPublicKey() {
+  return import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
+}
+
+/**
+ * Verifica se o usuário já concedeu permissão para notificações
+ * @returns {boolean} Verdadeiro se e permissão for 'granted'
+ */
+export function isPushPermissionGranted() {
+  return 'Notification' in window && Notification.permission === 'granted'
+}
+
+/**
+ * Detecção completa do estado PWA e Push
  * @returns {Object} Informações completas sobre o estado PWA atual
  */
 export function getPWAState() {
@@ -196,7 +220,10 @@ export function getPWAState() {
     isChromeAndroid: isChromeAndroid(),
     isDesktopChrome: isDesktopChrome(),
     supportsBeforeInstallPrompt: supportsBeforeInstallPrompt(),
+    supportsWebPush: supportsWebPush(),
+    isPushPermissionGranted: isPushPermissionGranted(),
     wasDismissed: wasPromptDismissed() && !isDismissalExpired(),
-    canShowPrompt: !isStandalone() && (!wasPromptDismissed() || isDismissalExpired()),
+    canShowPrompt: (!isStandalone() || (supportsWebPush() && !isPushPermissionGranted())) && (!wasPromptDismissed() || isDismissalExpired()),
   }
 }
+

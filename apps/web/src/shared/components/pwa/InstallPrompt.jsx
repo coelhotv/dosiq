@@ -12,7 +12,10 @@ import {
   dismissPrompt,
   isDismissalExpired,
   getInstallInstructions,
+  isPushPermissionGranted,
+  supportsWebPush
 } from './pwaUtils'
+import { webpushService } from '../../services/webpushService'
 
 /**
  * Componente de Prompt de Instalação PWA
@@ -37,8 +40,8 @@ export default function InstallPrompt() {
   // Detecta plataforma e verifica se o prompt deve ser exibido
   useEffect(() => {
     const checkVisibility = () => {
-      // Não exibir se já estiver em modo standalone
-      if (isStandalone()) {
+      // Não exibir se já estiver em modo standalone E já tem permissões (ou não suporta Push)
+      if (isStandalone() && (!supportsWebPush() || isPushPermissionGranted())) {
         setIsVisible(false)
         return
       }
@@ -59,10 +62,12 @@ export default function InstallPrompt() {
         isChromeAndroid: isAndroid,
         isDesktopChrome: isDesktop,
         canShowNativePrompt: canShowNativePrompt(),
+        isStandalone: isStandalone(),
       })
 
-      // Exibe o prompt para plataformas suportadas
-      const shouldShow = isIOS || isAndroid || isDesktop
+      // Exibe o prompt para plataformas suportadas, ou se já está standalone e falta permissão Push
+      const needsPush = isStandalone() && supportsWebPush() && !isPushPermissionGranted()
+      const shouldShow = (!isStandalone() && (isIOS || isAndroid || isDesktop)) || needsPush
       setIsVisible(shouldShow)
     }
 
@@ -120,6 +125,17 @@ export default function InstallPrompt() {
       return
     }
 
+    // Se já é standalone e suporta Web Push, mas não concedeu ainda, tentar assinar
+    if (platformInfo.isStandalone && supportsWebPush() && !isPushPermissionGranted()) {
+      try {
+        await webpushService.subscribe()
+        setIsVisible(false)
+      } catch (error) {
+        console.error('Falha ao assinar Web Push:', error)
+      }
+      return
+    }
+
     // Chrome Android sem prompt adiado - exibe instruções manuais
     if (platformInfo.isChromeAndroid) {
       setShowIOSInstructions(true) // Reutiliza o modal de instruções
@@ -143,10 +159,18 @@ export default function InstallPrompt() {
 
   // Retorna texto adequado conforme a plataforma
   const getPromptText = () => {
+    if (platformInfo.isStandalone) {
+      return {
+        title: 'Habilitar Notificações',
+        description: 'Receba lembretes importantes do seu tratamento no seu dispositivo',
+        buttonText: 'Habilitar',
+      }
+    }
+
     if (platformInfo.isIOSSafari) {
       return {
         title: 'Adicione à Tela de Início',
-        description: 'Acesse o Dosiq rapidamente como um app nativo',
+        description: 'Acesse o Dosiq rapidamente como um app instalado',
         buttonText: 'Ver Como Instalar',
       }
     }
@@ -154,7 +178,7 @@ export default function InstallPrompt() {
     if (platformInfo.isChromeAndroid) {
       return {
         title: 'Instale o Dosiq',
-        description: 'Acesse rapidamente como um app nativo no seu Android',
+        description: 'Acesse rapidamente como um app instalado no seu Android',
         buttonText: 'Instalar Agora',
       }
     }

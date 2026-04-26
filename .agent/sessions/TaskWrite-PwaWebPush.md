@@ -1,0 +1,10 @@
+- [ ] 1. Create a tracking file to manage Subagent execution and integration points.
+- [x] 2. Create the feature branch (`feature/pwa-webpush`).
+- [x] 3. Deploy Subagent (Flash): Configure `vite-plugin-pwa` in `apps/web/vite.config.js` and generate default `manifest.json`.
+- [x] 4. Deploy Subagent (Pro Low): Create `apps/web/src/service-worker.js` (Workbox) with Push event listeners mapped to the expected payload format.
+- [x] 5. Deploy Subagent (Pro Low): Refactor `notificationDeviceRepository` and `dlqService` in backend to support `webpush` provider. Include VAPID checks or stubs.
+- [x] 6. Deploy Subagent (Flash): Refactor `pwaUtils` and `InstallPrompt.jsx` for the frontend to include PushSubscription permission checks, and an API POST request to the backend.
+- [x] 7. Deploy Subagent (Pro Low): Create Serverless routine (`api/register-webpush`) for creating rows via the new repository.
+- [x] 8. Review all chunks and assert tests pass.
+- [x] 9. Final Code Review / Squash commits organically.
+- [x] 10. Update memory and state.json (C5).
