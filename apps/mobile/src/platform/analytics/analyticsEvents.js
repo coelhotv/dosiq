@@ -19,6 +19,7 @@ export const EVENTS = {
 
   // Doses
   DOSE_LOGGED: 'dose_logged',                  // medicine_name (sem PII clínico)
+  DOSE_LOGGED_BULK: 'dose_logged_bulk',         // count: número de doses registradas em batch
   DOSE_SKIPPED: 'dose_skipped',
 
   // Notificações
