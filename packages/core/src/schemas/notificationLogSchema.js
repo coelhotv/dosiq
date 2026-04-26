@@ -10,6 +10,8 @@ const baseSchema = {
   body:              z.string().optional().nullable(),
   medicine_name:     z.string().optional().nullable(),
   protocol_name:     z.string().optional().nullable(),
+  treatment_plan_id:   z.string().uuid().nullable().optional(),
+  treatment_plan_name: z.string().nullable().optional(),
   channels:          z.array(z.object({
     channel:    z.string(),
     status:     z.string(),
