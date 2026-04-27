@@ -19,6 +19,7 @@
 - **[AP-W12]** `dosage_per_intake = 0` becomes `1`; incorrect dose recorded -> [`anti-patterns/data_and_schema/AP-W12.md`](./anti-patterns/data_and_schema/AP-W12.md)
 - **[AP-W14]** Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local h... -> [`anti-patterns/data_and_schema/AP-W14.md`](./anti-patterns/data_and_schema/AP-W14.md)
 - **[AP-W16]** CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes... -> [`anti-patterns/data_and_schema/AP-W16.md`](./anti-patterns/data_and_schema/AP-W16.md)
+- **[AP-115]** Enum Zod do dispatcher não atualizado ao adicionar novos kinds — novos notification types são rejeitados silenciosamente antes de chegar aos canais -> [`anti-patterns/data_and_schema/AP-115.md`](./anti-patterns/data_and_schema/AP-115.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
 - **[AP-H27]** Import relativo cross-boundary quebra após git mv em monorepo — tests em src/ com `../../../../server/` falham -> [`anti-patterns/infra_and_deploy/AP-H27.md`](./anti-patterns/infra_and_deploy/AP-H27.md)
@@ -129,7 +130,6 @@
 - **[AP-H24]** FirebaseCoreInternal/GoogleUtilities quebra pod install sem useModularHeaders — instalar expo-build-properties com `ios.useModularHeaders: true` -> [`anti-patterns/mobile_and_platform/AP-H24.md`](./anti-patterns/mobile_and_platform/AP-H24.md)
 - **[AP-H25]** googleServicesFile iOS ausente no app.config.js — sempre configurar `ios.googleServicesFile` além do Android -> [`anti-patterns/mobile_and_platform/AP-H25.md`](./anti-patterns/mobile_and_platform/AP-H25.md)
 - **[AP-059]** CSS var(--token) em pacotes compartilhados web+mobile — RN não resolve custom properties; usar hex direto ou tokens JS -> [`anti-patterns/mobile_and_platform/AP-059.md`](./anti-patterns/mobile_and_platform/AP-059.md)
-- **[AP-115]** Enum Zod do dispatcher não atualizado ao adicionar novos kinds — novos notification types são rejeitados silenciosamente antes de chegar aos canais -> [`anti-patterns/mobile_and_platform/AP-115.md`](./anti-patterns/mobile_and_platform/AP-115.md)
 - **[AP-116]** getLastNotificationResponseAsync dentro de useEffect com session como dep — re-executa em logout+login causando navegação de cold start espúria -> [`anti-patterns/mobile_and_platform/AP-116.md`](./anti-patterns/mobile_and_platform/AP-116.md)
 - **[AP-117]** Params de navegação sem contrato tipado entre emissor e receptor — mismatch silencioso (ex: `bulkMode` vs `screen`) faz a modal nunca abrir -> [`anti-patterns/mobile_and_platform/AP-117.md`](./anti-patterns/mobile_and_platform/AP-117.md)
 - **[AP-118]** Repository INSERT não espelhando campos do dispatcher/schema após adição tardia — dados descartados silenciosamente no banco mesmo com schema e dispatcher corretos -> [`anti-patterns/mobile_and_platform/AP-118.md`](./anti-patterns/mobile_and_platform/AP-118.md)
