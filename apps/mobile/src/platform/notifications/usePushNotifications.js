@@ -29,7 +29,8 @@ function navigateFromPush(navigationData) {
   const params = navigationData?.params ?? {}
   const targetRoute = (screen && SCREEN_TO_ROUTE[screen]) ?? ROUTES.TODAY
 
-  navigationRef.navigate(targetRoute, params)
+  // Incluir screen nos params para que TodayScreen identifique qual modal abrir
+  navigationRef.navigate(targetRoute, screen ? { screen, ...params } : params)
 
   if (__DEV__) {
     console.log('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)

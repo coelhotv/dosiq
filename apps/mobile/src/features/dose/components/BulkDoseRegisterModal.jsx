@@ -50,6 +50,7 @@ export default function BulkDoseRegisterModal({
     mode,
     planId,
     protocolIds,
+    scheduledTime,
     userId,
   })
 
