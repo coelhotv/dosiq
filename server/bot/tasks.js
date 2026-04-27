@@ -854,13 +854,29 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
         const settings = await getUserSettings(userId, true);
         if (!settings) continue;
 
+        // Filtro 1: Somente enviar se notification_mode === 'digest_morning'
+        const notificationMode = settings.notification_mode || 'realtime';
+        if (notificationMode !== 'digest_morning') {
+          logger.debug(`Daily digest skipped: user not in digest_morning mode`, { userId, notificationMode, correlationId });
+          continue;
+        }
+
+        const timezone = settings.timezone || 'America/Sao_Paulo';
+        const digestTime = settings.digest_time || '07:00';
+        const currentHHMM = getCurrentTimeInTimezone(timezone);
+
+        // Filtro 2: Somente enviar se currentHHMM === digest_time
+        if (currentHHMM !== digestTime) {
+          logger.debug(`Daily digest skipped: not at digest time`, { userId, currentHHMM, digestTime, correlationId });
+          continue;
+        }
+
         const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
         if (!shouldSend) {
           logger.debug(`Daily digest suppressed by deduplication`, { userId, correlationId });
           continue;
         }
 
-        const timezone = settings.timezone || 'America/Sao_Paulo';
         const { data: logs } = await supabase
           .from('medicine_logs')
           .select('*')
@@ -875,7 +891,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 
         const { data: protocols } = await supabase
           .from('protocols')
-          .select('time_schedule')
+          .select('*, medicine:medicines(name)')
           .eq('user_id', userId)
           .eq('is_active', true);
 
@@ -886,10 +902,26 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
         const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
         const summary = `${dateStr} — ${takenDoses}/${expectedDoses} doses (${percentage}%)`;
 
+        // Gerar lista plana de horários e nomes de medicamentos
+        const scheduleLines = (protocols || [])
+          .flatMap(p => (p.time_schedule || []).map(t => `${t} — ${p.medicine?.name || 'Medicamento'}`))
+          .sort()
+          .slice(0, 10); // Limitar a 10 linhas para não extrapolar limites de push
+
+        const scheduleBody = scheduleLines.length > 0
+          ? scheduleLines.join('\n')
+          : 'Verifique sua agenda no app.';
+
         await dispatcher.dispatch({
           userId,
           kind: 'daily_digest',
-          data: { summary },
+          data: {
+            summary,
+            scheduleLines,
+            expectedDoses,
+            takenDoses,
+            scheduleBody
+          },
           context: { correlationId, jobType: 'daily_digest_dispatcher' }
         });
 
