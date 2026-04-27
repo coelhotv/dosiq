@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { BotMessageSquare } from 'lucide-react'
-import { getCurrentUser, onAuthStateChange } from '@shared/utils/supabase'
+import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supabase'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
 import '@shared/styles/index.css'
@@ -86,7 +86,14 @@ function AppInner() {
     // Listen for changes
     const {
       data: { subscription },
-    } = onAuthStateChange((_event, session) => {
+    } = onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        // Refresh token pode ter falhado por race condition (PWA + aba do browser concorrentes).
+        // Verificar se outro contexto já renovou a sessão antes de deslogar o usuário.
+        const { data: { session: latestSession } } = await supabase.auth.getSession()
+        setSession(latestSession?.user ?? null)
+        return
+      }
       setSession(session?.user ?? null)
     })
 

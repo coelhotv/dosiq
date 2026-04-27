@@ -67,13 +67,18 @@ export const getCurrentUser = async () => {
 }
 
 // Invalida cache ao mudar estado de autenticação
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
-    // Força re-fetch no próximo getUserId/getCurrentUser (novo usuário pode ter dados diferentes)
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    // Limpa cache para forçar re-fetch com tokens atualizados
     _cachedUserId = null
     _userIdPromise = null
     _cachedUser = null
     _currentUserPromise = null
+  }
+  // Re-popula o cache imediatamente quando há sessão ativa (evita roundtrip extra)
+  if (session?.user && event !== 'SIGNED_OUT') {
+    _cachedUserId = session.user.id
+    _cachedUser = session.user
   }
 })
 
