@@ -24,19 +24,21 @@ const ICON_MAP = { Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell }
 
 // Mapeamento de tipo → CTA
 const CTA_MAP = {
-  dose_reminder:    { label: 'Registrar dose',    action: 'dashboard' },
-  stock_alert:      { label: 'Ver estoque',        action: 'stock' },
-  missed_dose:      { label: 'Registrar atrasada', action: 'history' },
-  titration_update: { label: 'Ver tratamento',     action: 'treatment' },
-  daily_digest:     null,
+  dose_reminder:         { label: 'Registrar dose',    action: 'dashboard' },
+  dose_reminder_by_plan: { label: 'Registrar plano',   action: 'dashboard' },
+  dose_reminder_misc:    { label: 'Registrar doses',   action: 'dashboard' },
+  stock_alert:           { label: 'Ver estoque',        action: 'stock' },
+  missed_dose:           { label: 'Registrar atrasada', action: 'history' },
+  titration_update:      { label: 'Ver tratamento',     action: 'treatment' },
+  daily_digest:          null,
 }
 
 /**
  * Resolve o título do card de acordo com o tipo da notificação.
- * Prioriza medicine_name / protocol_name sobre o label genérico.
+ * Prioriza medicine_name / protocol_name / treatment_plan_name sobre o label genérico.
  */
 function resolveTitle(notification, label) {
-  const { notification_type, medicine_name, protocol_name } = notification
+  const { notification_type, medicine_name, protocol_name, treatment_plan_name } = notification
   switch (notification_type) {
     case 'dose_reminder':
     case 'stock_alert':
@@ -46,6 +48,10 @@ function resolveTitle(notification, label) {
       return protocol_name ?? label
     case 'daily_digest':
       return 'Resumo do dia'
+    case 'dose_reminder_by_plan':
+      return treatment_plan_name ?? 'Plano de tratamento'
+    case 'dose_reminder_misc':
+      return 'Doses agendadas'
     default:
       return label
   }
@@ -78,8 +84,8 @@ export default function NotificationCard({
   // Título: sempre resolve pelo tipo (medicine_name, protocol_name, etc.)
   const displayTitle = resolveTitle(notification, label)
 
-  // Corpo: body do banco (tabela foi zerada antes do deploy v1 — sem registros legados)
   const displayBody = body ?? null
+  const doses       = notification.doses ?? null
 
   // CTA
   const cta = CTA_MAP[notification_type] ?? null
@@ -127,7 +133,15 @@ export default function NotificationCard({
         </div>
 
         {/* Corpo */}
-        {displayBody && (
+        {doses?.length > 0 ? (
+          <ul className="notif-card__dose-list">
+            {doses.map((dose, i) => (
+              <li key={i} className="notif-card__dose-item">
+                {`${dose.dosage}x ${dose.medicineName}`}
+              </li>
+            ))}
+          </ul>
+        ) : displayBody ? (
           <>
             <p
               className="notif-card__preview"
@@ -150,7 +164,7 @@ export default function NotificationCard({
               </button>
             )}
           </>
-        )}
+        ) : null}
 
         {/* Rodapé: CTA */}
         <div className="notif-card__footer">

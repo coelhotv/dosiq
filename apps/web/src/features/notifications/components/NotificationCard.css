@@ -111,6 +111,23 @@
 .notif-card__action:hover        { opacity: 0.75; gap: 5px; }
 .notif-card__action:focus-visible { outline: 2px solid var(--color-primary, #006a5e); outline-offset: 2px; border-radius: 4px; }
 
+.notif-card__dose-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-card__dose-item {
+  font-family: var(--font-body, 'Lexend', sans-serif);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--color-text-secondary, #4b5563);
+  line-height: 1.5;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .notif-card, .notif-card__action { transition: none; }
 }
