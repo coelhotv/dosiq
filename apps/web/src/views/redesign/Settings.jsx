@@ -13,6 +13,7 @@ import {
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { validatePasswordChange } from '@schemas/authSchema'
+import { userSettingsNotificationSchema } from '@schemas/userSettingsSchema'
 import { webpushService } from '@shared/services/webpushService'
 import Button from '@shared/components/ui/Button'
 import './settings/SettingsRedesign.css'
@@ -206,6 +207,8 @@ export default function Settings({ onNavigate }) {
 
   const handleModeChange = useCallback(
     async (mode) => {
+      const v = userSettingsNotificationSchema.shape.notification_mode.safeParse(mode)
+      if (!v.success) { setError('Modo inválido'); return }
       setSavingNotification(true)
       try {
         const userId = await getUserId()
@@ -235,6 +238,11 @@ export default function Settings({ onNavigate }) {
     if (quietHoursEnabled && (!quietHoursStart || !quietHoursEnd)) {
       setError('Preencha os horários')
       return
+    }
+    if (quietHoursEnabled) {
+      const v = userSettingsNotificationSchema.pick({ quiet_hours_start: true, quiet_hours_end: true })
+        .safeParse({ quiet_hours_start: quietHoursStart, quiet_hours_end: quietHoursEnd })
+      if (!v.success) { setError(v.error.errors[0]?.message ?? 'Horário inválido'); return }
     }
     try {
       const userId = await getUserId()

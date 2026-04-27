@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { userSettingsNotificationSchema } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -105,6 +106,11 @@ export async function getUserSettings() {
 export async function updateNotificationSettings(userId, settings) {
   try {
     z.string().uuid().parse(userId)
+
+    const parsed = userSettingsNotificationSchema.partial().safeParse(settings)
+    if (!parsed.success) {
+      throw new Error(parsed.error.errors.map(e => e.message).join(', '))
+    }
 
     const { error } = await supabase
       .from('user_settings')
