@@ -391,7 +391,9 @@ async function handleTakePlan(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
 
-  const [_, planIdShort, hhmm] = data.split(':');
+  const parts = data.split(':');
+  const planIdShort = parts[1];
+  const hhmm = parts.slice(2).join(':'); // '23:15' contém ':', split produz 4 partes
 
   try {
     const userId = await getUserIdByChatId(chatId);
