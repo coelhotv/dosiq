@@ -16,8 +16,8 @@
   --color-primary-container: #008577;
   --color-primary-fixed: #90f4e3;
   --color-primary-light: #4db6ac;
-  --color-primary-dark: #004d40;
-  --color-primary-bg: #e0f2f1;
+  --color-primary-dark: #005047;
+  --color-primary-bg: rgba(0, 106, 94, 0.05);
   --color-primary-hover: #005047;
 
   /* Aliases for compatibility */
@@ -181,7 +181,14 @@
    GLASSMORPHISM LEVELS
    (Removido: O Santuário Terapêutico usa glass apenas em elementos flutuantes
     cujas variáveis estão definidas em sanctuary.css)
+   Aliases temporários para evitar quebra de views antigas:
    ============================================ */
+:root {
+  --glass-bg-light: var(--bg-secondary);
+  --glass-bg-heavy: var(--bg-tertiary);
+  --glass-border-light: var(--border-light);
+  --glass-border-heavy: var(--border-default);
+}
 
 /* ============================================
    GRADIENT BACKGROUNDS
@@ -276,7 +283,7 @@
   /* Gradient Backgrounds - Dark Mode */
   --gradient-primary: linear-gradient(
     135deg,
-    var(--color-primary-fixed) 0%,
+    var(--color-primary) 0%,
     var(--color-primary-container) 100%
   );
 

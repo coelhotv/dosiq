@@ -92,10 +92,7 @@
    ============================================ */
 
 [data-theme='dark'] body::before {
-  background:
-    radial-gradient(circle at 20% 50%, rgba(144, 244, 227, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(214, 227, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(144, 244, 227, 0.15) 0%, transparent 50%);
+  background: none;
 }
 
 /* ============================================
