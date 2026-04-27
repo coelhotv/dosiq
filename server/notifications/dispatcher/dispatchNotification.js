@@ -108,6 +108,8 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
           body:                 payload.body ?? null,
           medicine_name:        payload.metadata?.medicineName ?? null,
           protocol_name:        payload.metadata?.protocolName ?? null,
+          treatment_plan_id:    payload.metadata?.planId ?? null,
+          treatment_plan_name:  payload.metadata?.planName ?? null,
           status:               overallStatus,
           channels,
           telegram_message_id:  channels.find(c => c.channel === 'telegram')?.message_id ?? null,
