@@ -20,22 +20,22 @@
   "session": {
     "mode": "planning",
     "status": "planned",
-    "goal": "Wave N2 — Quiet Hours + redesign UX de notificações nativas",
+    "goal": "Wave 2 — Quiet Hours + redesign UX de notificações nativas",
     "goal_type": "feature"
   },
   "memory": {
     "rules_count": 142,
     "anti_patterns_count": 118,
-    "decisions_count": 33,
+    "decisions_count": 34,
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "recent_additions": {
       "rules": ["R-194", "R-195"],
       "anti_patterns": ["AP-116", "AP-117", "AP-118"],
       "knowledge": ["K-088", "K-089"],
-      "decisions": ["ADR-033"],
+      "decisions": ["ADR-033", "ADR-034"],
       "contracts": ["CON-018"]
     }
   },
@@ -44,7 +44,7 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-27T21:09:17Z"
+    "index_loaded_at": "2026-04-27T21:13:31Z"
   },
   "migration": {
     "status": "complete",

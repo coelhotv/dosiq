@@ -115,7 +115,7 @@ Não criar nova tab. O acesso continua pelo Perfil para manter a navegação pri
 
 **Entregas**:
 
-1. Criar migration em `supabase/migrations/`:
+1. Criar migration em `docs/migrations/`:
    ```sql
    ALTER TABLE user_settings
      ADD COLUMN quiet_hours_start TIME,
@@ -155,7 +155,7 @@ Não criar nova tab. O acesso continua pelo Perfil para manter a navegação pri
    ```
 
 3. Confirmar source of truth:
-   - Preferir `packages/core/src/schemas/userSettingsSchema.js` se já existir ou se a wave criar o compartilhamento.
+   - Preferir `packages/core/src/schemas/userSettingsSchema.js` se a wave criar o compartilhamento.
    - Se web e mobile ainda usam schemas separados, documentar a duplicação na própria spec de implementação e sincronizar ambos.
    - Manter `notification_preference` como campo legado/backcompat nesta wave, mas a UI nova deve ler/gravar os booleans de canal.
 
@@ -415,7 +415,7 @@ Não criar nova tab. O acesso continua pelo Perfil para manter a navegação pri
 
 **Entregas**:
 
-1. Em `apps/web/src/features/settings/...`:
+1. Em `apps/web/src/views/redesign/Settings.jsx` e `apps/web/src/views/redesign/settings/SettingsRedesign.css`:
    - Adicionar seção "Canais" com:
      - App (push nativo): status informativo se houver device Expo ativo; edição principal no app nativo.
      - Web (PWA): switch funcional.
@@ -431,8 +431,8 @@ Não criar nova tab. O acesso continua pelo Perfil para manter a navegação pri
    - Adicionar "Não me incomode" com switch + inputs `type="time"`.
    - Adicionar "Hora do resumo" visível em `digest_morning`.
 
-2. Persistir via `userSettingsService.update`.
-   - `userSettingsService.update` deve aceitar os booleans de canal e os campos de quiet hours/digest.
+2. Persistir via helper local extraído da própria view ou serviço dedicado, se criado.
+   - O checkout atual não possui `userSettingsService`; se a implementação criar esse serviço, ele deve aceitar os booleans de canal e os campos de quiet hours/digest.
    - Não usar apenas `notification_preference` para representar canais.
 
 3. Client-side validation:
@@ -501,7 +501,7 @@ Não criar nova tab. O acesso continua pelo Perfil para manter a navegação pri
 ### Backend / Schema
 
 ```
-supabase/migrations/*_notification_quiet_hours.sql
+docs/migrations/*_notification_quiet_hours.sql
 server/bot/utils/notificationGate.js
 server/bot/utils/__tests__/notificationGate.test.js
 server/bot/tasks.js
@@ -527,9 +527,10 @@ apps/mobile/src/navigation/routes.js                    (somente se rota nova fo
 ### Web
 
 ```
-apps/web/src/features/settings/**/*
+apps/web/src/views/redesign/Settings.jsx
+apps/web/src/views/redesign/settings/SettingsRedesign.css
 apps/web/src/shared/services/webpushService.js          (usar `subscribe()` de N1.7)
-apps/web/src/services/userSettingsService.js            (ou local canônico)
+apps/web/src/services/userSettingsService.js            (somente se criado; hoje não existe)
 apps/web/src/schemas/userSettingsSchema.js              (se não migrar para core)
 ```
 

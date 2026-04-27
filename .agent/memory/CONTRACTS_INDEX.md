@@ -20,4 +20,4 @@
 - **[CON-018]** calculateAdherenceStats(logs, protocols, days, offsetDays) -> [`contracts/infra_and_deploy/CON-018.md`](./contracts/infra_and_deploy/CON-018.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
-- **[CON-017]** resolveChannelsForUser({ userId, repositories }) -> `string[]` -> [`contracts/mobile_and_platform/CON-017.md`](./contracts/mobile_and_platform/CON-017.md)
+- **[CON-017]** resolveChannelsForUser({ userId, repositories }) -> `string[]` canais App/Telegram/Web -> [`contracts/mobile_and_platform/CON-017.md`](./contracts/mobile_and_platform/CON-017.md)
