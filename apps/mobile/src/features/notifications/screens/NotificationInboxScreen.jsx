@@ -30,12 +30,13 @@ const doseLogSchema = z.array(z.object({
 }))
 
 const DEEP_LINK_TARGETS = {
-  dashboard:  ROUTES.TODAY,
-  stock:      ROUTES.STOCK,
-  treatment:  ROUTES.TREATMENTS,
-  history:    ROUTES.TODAY,
-  'bulk-plan': ROUTES.TODAY,
-  'bulk-misc': ROUTES.TODAY,
+  dashboard:        ROUTES.TODAY,
+  stock:            ROUTES.STOCK,
+  treatment:        ROUTES.TREATMENTS,
+  history:          ROUTES.TODAY,
+  'bulk-plan':      ROUTES.TODAY,
+  'bulk-misc':      ROUTES.TODAY,
+  'dose-individual': ROUTES.TODAY,
 }
 
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
@@ -172,9 +173,15 @@ export default function NotificationInboxScreen({ navigation, route }) {
         const target = DEEP_LINK_TARGETS[view]
         if (!target) return
         const params = {}
-        if (item.notification_type.startsWith('dose_reminder_')) {
-          const d = new Date(item.sent_at)
-          params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        const d = new Date(item.sent_at)
+        const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+        if (item.notification_type === 'dose_reminder' && item.protocol_id) {
+          params.screen = 'dose-individual'
+          params.protocolId = item.protocol_id
+          params.at = hhmm
+        } else if (item.notification_type.startsWith('dose_reminder_')) {
+          params.at = hhmm
           if (item.notification_type === 'dose_reminder_by_plan') {
             params.screen = 'bulk-plan'
             params.planId = item.treatment_plan_id
