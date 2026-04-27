@@ -19,9 +19,9 @@
   },
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "goal": "N1.7 — Web: deeplink Today + SW tag (BLOQUEADA — push web não existe)",
-    "goal_type": "feature"
+    "status": "analysis",
+    "goal": "N1.8 — Validação manual + DEVFLOW C5",
+    "goal_type": "chore"
   },
   "memory": {
     "rules_count": 141,
@@ -44,7 +44,7 @@
     "pending_mutations": []
   },
   "quality_gates": {
-    "index_loaded_at": "2026-04-26T20:40:00Z"
+    "index_loaded_at": "2026-04-27T00:00:00Z"
   },
   "migration": {
     "status": "complete",
