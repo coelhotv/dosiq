@@ -65,6 +65,7 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
 
   const displayTitle = resolveTitle(notification, label)
   const displayBody  = body ?? null
+  const doses        = notification.doses ?? null
   const cta          = CTA_MAP[notification_type] ?? null
   const groupedComplete = isDoseReminder && typeof wasTaken === 'object' && wasTaken.taken === wasTaken.total
   const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true) && !groupedComplete
@@ -93,7 +94,15 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
         </View>
 
         {/* Corpo */}
-        {displayBody ? (
+        {doses?.length > 0 ? (
+          <View style={styles.doseList}>
+            {doses.map((dose, i) => (
+              <Text key={i} style={styles.doseItem}>
+                {`${dose.dosage}x ${dose.medicineName}`}
+              </Text>
+            ))}
+          </View>
+        ) : displayBody ? (
           <>
             <Text
               style={styles.preview}
@@ -169,4 +178,6 @@ const styles = StyleSheet.create({
   takenFull:   { color: colors.primary?.[600] ?? '#006a5e' },
   actionLabel: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   actionText:  { fontSize: 13, fontWeight: '600', color: colors.primary?.[600] ?? '#006a5e' },
+  doseList:    { gap: 2, marginTop: 2 },
+  doseItem:    { fontSize: 13, fontWeight: '400', color: colors.text?.secondary ?? '#4b5563', lineHeight: 19 },
 })
