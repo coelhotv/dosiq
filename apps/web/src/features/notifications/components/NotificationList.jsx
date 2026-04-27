@@ -117,7 +117,7 @@ function EmptyState() {
  * @param {function(string):void} props.onNavigate
  * @param {Array}       props.doseLogs — medicine_logs para calcular wasTaken
  */
-export default function NotificationList({ notifications, isLoading, error, onNavigate, doseLogs }) {
+export default function NotificationList({ notifications, isLoading, error, onNavigate, onOpenDoseModal, doseLogs }) {
   // localDay: re-avalia groupByDay quando o dia muda (visibilitychange + midnight timer)
   const [localDay, setLocalDay] = useState(() => new Date().toDateString())
   useEffect(() => {
@@ -180,6 +180,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
               key={item.notif.id ?? i}
               notification={item.notif}
               onNavigate={onNavigate}
+              onOpenDoseModal={onOpenDoseModal}
               index={i}
               wasTaken={
                 item.notif.notification_type === 'dose_reminder'
@@ -209,6 +210,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
               key={item.notif.id ?? index}
               notification={item.notif}
               onNavigate={onNavigate}
+              onOpenDoseModal={onOpenDoseModal}
               index={index}
               wasTaken={
                 item.notif.notification_type === 'dose_reminder'

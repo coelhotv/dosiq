@@ -63,6 +63,7 @@ function AppInner() {
   const [currentView, setCurrentView] = useState('dashboard')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
+  const [doseModalInitialValues, setDoseModalInitialValues] = useState(null)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
@@ -237,6 +238,10 @@ function AppInner() {
               userId={session?.id}
               onNavigate={setCurrentView}
               onBack={() => setCurrentView('dashboard')}
+              onOpenDoseModal={(initialValues) => {
+                setDoseModalInitialValues(initialValues)
+                setIsDoseModalOpen(true)
+              }}
             />
           </Suspense>
         )
@@ -349,7 +354,11 @@ function AppInner() {
           {/* Modal global de registro de dose */}
           {isAuthenticated && isDoseModalOpen && (
             <Suspense fallback={null}>
-              <GlobalDoseModal isOpen={isDoseModalOpen} onClose={() => setIsDoseModalOpen(false)} />
+              <GlobalDoseModal
+                isOpen={isDoseModalOpen}
+                initialValues={doseModalInitialValues}
+                onClose={() => { setIsDoseModalOpen(false); setDoseModalInitialValues(null) }}
+              />
             </Suspense>
           )}
 

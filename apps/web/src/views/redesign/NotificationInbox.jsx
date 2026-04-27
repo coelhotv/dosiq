@@ -18,7 +18,7 @@ import './NotificationInbox.css'
  * @param {function(string):void} props.onNavigate - Navega para outra view
  * @param {function():void} props.onBack - Volta para a view anterior
  */
-export default function NotificationInbox({ userId, onNavigate, onBack }) {
+export default function NotificationInbox({ userId, onNavigate, onBack, onOpenDoseModal }) {
   const { data, isLoading, error } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data)
 
@@ -68,6 +68,7 @@ export default function NotificationInbox({ userId, onNavigate, onBack }) {
           isLoading={isLoading}
           error={error}
           onNavigate={onNavigate}
+          onOpenDoseModal={onOpenDoseModal}
         />
       </main>
     </motion.div>

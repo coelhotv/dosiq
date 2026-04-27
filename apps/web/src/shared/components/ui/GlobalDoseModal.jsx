@@ -19,7 +19,7 @@ import LogForm from '@shared/components/log/LogForm'
  * @param {boolean} props.isOpen - Controla visibilidade do modal
  * @param {Function} props.onClose - Callback para fechar o modal
  */
-export default function GlobalDoseModal({ isOpen, onClose }) {
+export default function GlobalDoseModal({ isOpen, onClose, initialValues = null }) {
   const { protocols, refresh } = useDashboard()
   const [treatmentPlans, setTreatmentPlans] = useState([])
   const [plansError, setPlansError] = useState(null)
@@ -65,7 +65,7 @@ export default function GlobalDoseModal({ isOpen, onClose }) {
       <LogForm
         protocols={protocols}
         treatmentPlans={treatmentPlans}
-        initialValues={null}
+        initialValues={initialValues}
         onSave={handleSave}
         onCancel={onClose}
       />

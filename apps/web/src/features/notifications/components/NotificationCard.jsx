@@ -60,6 +60,7 @@ function resolveTitle(notification, label) {
 export default function NotificationCard({
   notification,
   onNavigate,
+  onOpenDoseModal,
   index = 0,
   wasTaken,
 }) {
@@ -175,10 +176,21 @@ export default function NotificationCard({
             >
               ✓ Tomada
             </span>
-          ) : cta && onNavigate ? (
+          ) : cta && (onNavigate || onOpenDoseModal) ? (
             <button
               className="notif-card__action"
-              onClick={() => onNavigate(cta.action)}
+              onClick={() => {
+                const isPlan = notification_type === 'dose_reminder_by_plan'
+                const isMisc = notification_type === 'dose_reminder_misc'
+                if ((isPlan || isMisc) && onOpenDoseModal) {
+                  onOpenDoseModal({
+                    type: isPlan ? 'plan' : 'protocol',
+                    treatment_plan_id: notification.treatment_plan_id ?? '',
+                  })
+                } else {
+                  onNavigate(cta.action)
+                }
+              }}
               aria-label={`${cta.label} — ${displayTitle}`}
             >
               {cta.label}
