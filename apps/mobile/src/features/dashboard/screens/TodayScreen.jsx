@@ -95,6 +95,12 @@ export default function TodayScreen({ route, navigation }) {
         protocolIds: params.protocolIds ?? [],
         scheduledTime: params.at ?? '',
       })
+    } else if (params.screen === 'dose-individual' && params.protocolId) {
+      const protocol = protocols.find(p => p.id === params.protocolId)
+      if (protocol) {
+        setModalProtocol(protocol)
+        setModalScheduledTime(params.at ?? null)
+      }
     }
     // Limpar params após consumo para evitar re-abertura em back-navigate
     navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
