@@ -26,6 +26,8 @@ export const notificationLogRepository = {
         protocol_name: parsed.data.protocol_name ?? null,
         channels: parsed.data.channels ?? [],
         protocol_id: parsed.data.protocol_id,
+        treatment_plan_id:   parsed.data.treatment_plan_id ?? null,
+        treatment_plan_name: parsed.data.treatment_plan_name ?? null,
         notification_type: parsed.data.notification_type,
         status: parsed.data.status,
         sent_at: parsed.data.sent_at || new Date().toISOString(),

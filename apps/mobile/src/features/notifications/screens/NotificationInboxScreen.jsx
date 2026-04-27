@@ -176,11 +176,11 @@ export default function NotificationInboxScreen({ navigation, route }) {
           const d = new Date(item.sent_at)
           params.at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
           if (item.notification_type === 'dose_reminder_by_plan') {
-            params.bulkMode = 'plan'
+            params.screen = 'bulk-plan'
             params.planId = item.treatment_plan_id
             params.treatmentPlanName = item.treatment_plan_name
           } else {
-            params.bulkMode = 'misc'
+            params.screen = 'bulk-misc'
             params.protocolIds = item.provider_metadata?.protocol_ids ?? []
           }
         }
