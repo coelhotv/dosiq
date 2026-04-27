@@ -82,8 +82,10 @@ function buildNotificationPayload({ kind, data }) {
         deeplink: `dosiq://today?at=${data.scheduledTime}&plan=${data.planId}`,
         tag: `dose-${data.scheduledTime}-plan-${data.planId}`,
         metadata: {
+          kind:          'dose_reminder_by_plan',
           planId:        data.planId ?? null,
           planName:      data.planName ?? null,
+          doses:         data.doses ?? [],
           protocolIds:   data.protocolIds ?? [],
           scheduledTime: data.scheduledTime,
           hour,
@@ -109,6 +111,8 @@ function buildNotificationPayload({ kind, data }) {
         deeplink: `dosiq://today?at=${data.scheduledTime}&misc=1`,
         tag: `dose-${data.scheduledTime}-misc`,
         metadata: {
+          kind:          'dose_reminder_misc',
+          doses:         data.doses ?? [],
           protocolIds:   data.protocolIds ?? [],
           scheduledTime: data.scheduledTime,
           hour,
