@@ -159,3 +159,4 @@
 - **[R-188]** SWR Fetcher Memoization (Infinite Render Loop Prevention) -> [`rules/react_and_ui/R-188.md`](./rules/react_and_ui/R-188.md)
 - **[R-193]** Ao adicionar novo notification kind: atualizar enum Zod em dispatchInputSchema + shouldSendGroupedNotification para novos tipos agrupados -> [`rules/mobile_and_platform/R-193.md`](./rules/mobile_and_platform/R-193.md)
 - **[R-194]** Usar createNavigationContainerRef (não createRef) para refs de NavigationContainer globais — enfileiramento automático eliminando listener fallback manual -> [`rules/mobile_and_platform/R-194.md`](./rules/mobile_and_platform/R-194.md)
+- **[R-195]** Enrichment relacional no hook (`useNotificationLog`) — nunca duplicar dados relacionais em `notification_log`; buscar via queries paralelas no hook de leitura -> [`rules/mobile_and_platform/R-195.md`](./rules/mobile_and_platform/R-195.md)
