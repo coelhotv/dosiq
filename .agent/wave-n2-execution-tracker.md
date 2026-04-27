@@ -1,7 +1,8 @@
 # Wave N2 — Execution Tracker (DEVFLOW)
 
 > **Gerado em:** 2026-04-27  
-> **Branch:** `feature/wave-n2/quiet-hours-redesign`  
+> **Atualizado em:** 2026-04-27 — C4 concluído: 543 testes passando, 0 falhas, 36 testes server (notificationGate + resolveChannels)  
+> **Branch:** `feature/wave-n2/quiet-hours-redesign` — 12 commits, aguardando PR  
 > **Spec:** `plans/backlog-notifications/EXEC_SPEC_WAVE_N2_QUIET_HOURS.md`  
 > **C1 completo:** `.agent/wave-n2-c1-extraction.md`
 
@@ -11,14 +12,14 @@
 
 | Sprint | Descrição | Agente | Status | Commit |
 |--------|-----------|--------|--------|--------|
-| **2.1** | Migration SQL + Zod schema | 🟡 Haiku | ⬜ Pendente | — |
-| **2.2** | Server: notificationGate + resolveChannels | 🟢 Sonnet | ⬜ Pendente | — |
-| **2.3** | Server: digest trigger simples | 🟡 Haiku | ⬜ Pendente | — |
-| **2.4** | Mobile ProfileScreen redesign | 🟢 Sonnet | ⬜ Pendente | — |
-| **2.5** | Mobile NotificationInboxScreen redesign | 🟢 Sonnet | ⬜ Pendente | — |
-| **2.6** | Mobile NotificationPreferencesScreen redesign | 🟢 Sonnet | ⬜ Pendente | — |
-| **2.7** | Mobile TelegramLinkScreen redesign | 🟡 Haiku | ⬜ Pendente | — |
-| **2.8** | Web Settings canais + quiet hours + digest | 🟡 Haiku | ⬜ Pendente | — |
+| **2.1** | Migration SQL + Zod schema | 🟡 Haiku | ✅ Completo | 53d19e62 |
+| **2.2** | Server: notificationGate + resolveChannels | 🟢 Sonnet | ✅ Completo | 71850a0a + 5b28c190 + 6d7ff115 |
+| **2.3** | Server: digest trigger simples | 🟡 Haiku | ✅ Completo | 23478b95 |
+| **2.4** | Mobile ProfileScreen redesign | 🟢 Sonnet | ✅ Completo | 59c103ab |
+| **2.5** | Mobile NotificationInboxScreen redesign | 🟢 Sonnet | ✅ Completo | 3de1b872 |
+| **2.6** | Mobile NotificationPreferencesScreen redesign | 🟢 Sonnet | ✅ Completo | 0ac9812b |
+| **2.7** | Mobile TelegramLinkScreen redesign | 🟡 Haiku | ✅ Completo | 133d2bc6 |
+| **2.8** | Web Settings canais + quiet hours + digest | 🟡 Haiku | ✅ Completo | e87dc8b7 |
 | **2.9** | Validação manual + DEVFLOW C5 | ⚪ Humano | ⬜ Pendente | — |
 
 **Legenda:** ⬜ Pendente · 🔄 Em progresso · ✅ Completo · ❌ Bloqueado
@@ -28,7 +29,7 @@
 ## Sprint 2.1 — Migration + Zod schema
 
 **Agente:** 🟡 Haiku  
-**Status:** ⬜ Pendente
+**Status:** ✅ Completo
 
 ### Arquivos alvo
 - [ ] `docs/migrations/20260427_notification_quiet_hours.sql` — CRIAR
@@ -52,7 +53,7 @@
 ## Sprint 2.2 — Server: gate + supressão
 
 **Agente:** 🟢 Sonnet  
-**Status:** ⬜ Pendente  
+**Status:** ✅ Completo  
 **Depende de:** 2.1 (campos em `user_settings`)
 
 ### Arquivos alvo
@@ -84,7 +85,7 @@
 ## Sprint 2.3 — Server: digest trigger
 
 **Agente:** 🟡 Haiku  
-**Status:** ⬜ Pendente  
+**Status:** ✅ Completo  
 **Depende de:** 2.1 (campo `notification_mode`, `digest_time`)
 
 ### Arquivos alvo
@@ -108,7 +109,7 @@
 ## Sprint 2.4 — Mobile ProfileScreen redesign
 
 **Agente:** 🟢 Sonnet  
-**Status:** ⬜ Pendente
+**Status:** ✅ Completo
 
 ### Arquivos alvo
 - [ ] `apps/mobile/src/features/profile/screens/ProfileScreen.jsx` — MODIFICAR
@@ -132,7 +133,7 @@
 ## Sprint 2.5 — Mobile NotificationInboxScreen redesign
 
 **Agente:** 🟢 Sonnet  
-**Status:** ⬜ Pendente  
+**Status:** ✅ Completo  
 **Depende de:** 2.4 (navegação do Perfil para o Inbox)
 
 ### Arquivos alvo
@@ -155,7 +156,7 @@
 ## Sprint 2.6 — Mobile NotificationPreferencesScreen redesign
 
 **Agente:** 🟢 Sonnet  
-**Status:** ⬜ Pendente  
+**Status:** ✅ Completo  
 **Depende de:** 2.1 (novos campos), 2.4 (navegação)
 
 ### Arquivos alvo
@@ -180,7 +181,7 @@
 ## Sprint 2.7 — Mobile TelegramLinkScreen redesign
 
 **Agente:** 🟡 Haiku  
-**Status:** ⬜ Pendente
+**Status:** ✅ Completo
 
 ### Arquivos alvo
 - [ ] `apps/mobile/src/features/profile/screens/TelegramLinkScreen.jsx` — MODIFICAR
@@ -202,7 +203,7 @@
 ## Sprint 2.8 — Web Settings UI
 
 **Agente:** 🟡 Haiku  
-**Status:** ⬜ Pendente  
+**Status:** ✅ Completo  
 **Depende de:** 2.1 (novos campos)
 
 ### Arquivos alvo
