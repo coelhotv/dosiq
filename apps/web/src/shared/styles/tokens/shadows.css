@@ -180,48 +180,6 @@
 }
 
 /* ============================================
-   GLOW EFFECTS (using box-shadow for neon effects)
+   GLOW EFFECTS 
+   (Removido: O Santuário Terapêutico descarta o uso de neon. Usar elevação de shadows.)
    ============================================ */
-:root {
-  /* Colored glows */
-  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
-  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
-  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
-  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
-  --glow-success: var(--glow-green);
-  --glow-warning: 0 0 10px rgba(245, 158, 11, 0.5);
-  --glow-error: 0 0 10px rgba(239, 68, 68, 0.5);
-  --glow-info: 0 0 10px rgba(59, 130, 246, 0.5);
-  --glow-primary: var(--glow-pink);
-  --glow-secondary: var(--glow-cyan);
-
-  /* Intense glows */
-  --glow-cyan-intense: 0 0 20px rgba(6, 182, 212, 0.7);
-  --glow-pink-intense: 0 0 20px rgba(236, 72, 153, 0.7);
-  --glow-magenta-intense: 0 0 20px rgba(217, 70, 239, 0.7);
-  --glow-green-intense: 0 0 20px rgba(16, 185, 129, 0.7);
-
-  /* Subtle glows */
-  --glow-cyan-subtle: 0 0 5px rgba(6, 182, 212, 0.3);
-  --glow-pink-subtle: 0 0 5px rgba(236, 72, 153, 0.3);
-  --glow-magenta-subtle: 0 0 5px rgba(217, 70, 239, 0.3);
-}
-
-/* ============================================
-   DARK MODE GLOW EFFECTS
-   ============================================ */
-[data-theme='dark'] {
-  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
-  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
-  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
-  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
-  --glow-success: var(--glow-green);
-  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
-  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
-  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
-  --glow-primary: var(--glow-pink);
-  --glow-secondary: var(--glow-cyan);
-
-  --glow-cyan-intense: 0 0 30px rgba(34, 211, 238, 0.8);
-  --glow-pink-intense: 0 0 30px rgba(244, 114, 182, 0.8);
-}

@@ -8,14 +8,17 @@
  */
 
 /* ============================================
-   BRAND COLORS - Primary (Pink/Rosa)
+   BRAND COLORS - Primary (Verde Saúde)
    ============================================ */
 :root {
-  --color-primary: #ec4899;
-  --color-primary-light: #f472b6;
-  --color-primary-dark: #db2777;
-  --color-primary-bg: #fdf2f8;
-  --color-primary-hover: #be185d;
+  --color-primary: #006a5e;
+  --primary-rgb: 0, 106, 94;
+  --color-primary-container: #008577;
+  --color-primary-fixed: #90f4e3;
+  --color-primary-light: #4db6ac;
+  --color-primary-dark: #005047;
+  --color-primary-bg: rgba(0, 106, 94, 0.05);
+  --color-primary-hover: #005047;
 
   /* Aliases for compatibility */
   --brand-primary: var(--color-primary);
@@ -24,18 +27,30 @@
 }
 
 /* ============================================
-   BRAND COLORS - Secondary (Cyan)
+   BRAND COLORS - Secondary (Azul Clínico)
    ============================================ */
 :root {
-  --color-secondary: #06b6d4;
-  --color-secondary-light: #22d3ee;
-  --color-secondary-dark: #0891b2;
-  --color-secondary-bg: #ecfeff;
+  --color-secondary: #005db6;
+  --secondary-rgb: 0, 93, 182;
+  --color-secondary-fixed: #d6e3ff;
+  --color-secondary-light: #42a5f5;
+  --color-secondary-dark: #003c8f;
+  --color-secondary-bg: #e3f2fd;
 
   /* Aliases for compatibility */
   --brand-secondary: var(--color-secondary);
   --brand-secondary-light: var(--color-secondary-light);
   --brand-secondary-dark: var(--color-secondary-dark);
+}
+
+/* ============================================
+   BRAND COLORS - Tertiary (Warm Sun)
+   ============================================ */
+:root {
+  --color-tertiary: #ffdea8;
+  --color-tertiary-light: #fff3e0;
+  --color-tertiary-dark: #ffb74d;
+  --color-tertiary-bg: #fff8e1;
 }
 
 /* ============================================
@@ -50,26 +65,24 @@
   --color-warning-light: #fbbf24;
   --color-warning-bg: #fffbeb;
 
-  --color-error: #ef4444;
-  --color-error-light: #f87171;
-  --color-error-bg: #fef2f2;
+  --color-error: #ba1a1a;
+  --color-error-light: #ff897d;
+  --color-error-bg: #ffdad6;
 
-  --color-info: #3b82f6;
-  --color-info-light: #60a5fa;
+  --color-info: #005db6;
+  --color-info-light: #d6e3ff;
   --color-info-bg: #eff6ff;
 }
 
 /* ============================================
-   BACKGROUND COLORS
+   BACKGROUND COLORS (Surfaces)
    ============================================ */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-tertiary: #f3f4f6;
+  --bg-primary: #f8fafb;
+  --bg-secondary: #f2f4f5;
+  --bg-tertiary: #e9ecef;
   --bg-card: #ffffff;
   --bg-overlay: rgba(0, 0, 0, 0.5);
-  --bg-glass: rgba(255, 255, 255, 0.8);
-  --bg-glass-dark: rgba(17, 24, 39, 0.8);
 
   /* Aliases for compatibility */
   --color-bg-primary: var(--bg-primary);
@@ -82,11 +95,11 @@
    TEXT COLORS
    ============================================ */
 :root {
-  --text-primary: #111827;
+  --text-primary: #191c1d;
   --text-secondary: #4b5563;
   --text-tertiary: #6b7280;
   --text-inverse: #ffffff;
-  --text-link: #ec4899;
+  --text-link: #005db6;
 
   /* Aliases for compatibility */
   --color-text-primary: var(--text-primary);
@@ -140,57 +153,17 @@
   --color-score-excellent: var(--score-excellent);
 }
 
-/* ============================================
-   GLOW EFFECTS
-   ============================================ */
-:root {
-  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.5);
-  --glow-pink: 0 0 10px rgba(236, 72, 153, 0.5);
-  --glow-magenta: 0 0 10px rgba(217, 70, 239, 0.5);
-  --glow-green: 0 0 10px rgba(16, 185, 129, 0.5);
-  --glow-success: var(--glow-green);
-  --glow-warning: 0 0 10px rgba(245, 158, 11, 0.5);
-  --glow-error: 0 0 10px rgba(239, 68, 68, 0.5);
-  --glow-info: 0 0 10px rgba(59, 130, 246, 0.5);
-}
-
-/* ============================================
-   CONTEXTUAL GLOW EFFECTS - P2
-   ============================================ */
-:root {
-  /* Hover glow - Para elementos interativos */
-  --glow-hover-primary: 0 0 20px rgba(236, 72, 153, 0.3);
-  --glow-hover-secondary: 0 0 20px rgba(6, 182, 212, 0.3);
-  --glow-hover-success: 0 0 20px rgba(16, 185, 129, 0.3);
-  --glow-hover-warning: 0 0 20px rgba(245, 158, 11, 0.3);
-  --glow-hover-critical: 0 0 25px rgba(239, 68, 68, 0.4);
-
-  /* Focus glow - Para acessibilidade */
-  --glow-focus-primary: 0 0 15px rgba(236, 72, 153, 0.4);
-  --glow-focus-secondary: 0 0 15px rgba(6, 182, 212, 0.4);
-  --glow-focus-success: 0 0 15px rgba(16, 185, 129, 0.4);
-
-  /* Active glow - Para elementos pressionados */
-  --glow-active-primary: 0 0 10px rgba(236, 72, 153, 0.3);
-  --glow-active-secondary: 0 0 10px rgba(6, 182, 212, 0.3);
-  --glow-active-success: 0 0 10px rgba(16, 185, 129, 0.3);
-
-  /* State-specific glow - Para estados especiais */
-  --glow-critical: 0 0 25px rgba(239, 68, 68, 0.4);
-  --glow-success: 0 0 20px rgba(16, 185, 129, 0.4);
-  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.3);
-  --glow-info: 0 0 20px rgba(6, 182, 212, 0.3);
-}
+/* GLOW EFFECTS REMOVIDOS - Santuário Terapêutico não usa Glow */
 
 /* ============================================
    STATE COLORS
    ============================================ */
 :root {
-  --state-hover: rgba(236, 72, 153, 0.1);
-  --state-active: rgba(236, 72, 153, 0.2);
-  --state-focus: rgba(236, 72, 153, 0.3);
+  --state-hover: rgba(0, 106, 94, 0.1);
+  --state-active: rgba(0, 106, 94, 0.2);
+  --state-focus: rgba(0, 106, 94, 0.3);
   --state-disabled: rgba(0, 0, 0, 0.1);
-  --state-loading: rgba(236, 72, 153, 0.5);
+  --state-loading: rgba(0, 106, 94, 0.5);
 }
 
 /* ============================================
@@ -206,52 +179,47 @@
 
 /* ============================================
    GLASSMORPHISM LEVELS
+   (Removido: O Santuário Terapêutico usa glass apenas em elementos flutuantes
+    cujas variáveis estão definidas em sanctuary.css)
+   Aliases temporários para evitar quebra de views antigas:
    ============================================ */
 :root {
-  /* Glass leve - Para elementos secundários */
-  --glass-bg-light: rgba(255, 255, 255, 0.03);
-  --glass-border-light: rgba(255, 255, 255, 0.05);
-  --glass-blur-light: blur(8px);
-
-  /* Glass padrão - Para cards comuns */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: blur(12px);
-
-  /* Glass intenso - Para elementos destacados */
-  --glass-bg-heavy: rgba(255, 255, 255, 0.08);
-  --glass-border-heavy: rgba(255, 255, 255, 0.15);
-  --glass-blur-heavy: blur(16px);
-
-  /* Glass hero - Para seções principais */
-  --glass-bg-hero: rgba(255, 255, 255, 0.1);
-  --glass-border-hero: rgba(255, 255, 255, 0.2);
-  --glass-blur-hero: blur(20px);
+  --glass-bg-light: var(--bg-secondary);
+  --glass-bg-heavy: var(--bg-tertiary);
+  --glass-border-light: var(--border-light);
+  --glass-border-heavy: var(--border-default);
 }
 
 /* ============================================
    GRADIENT BACKGROUNDS
    ============================================ */
 :root {
+  /* Gradiente Primary - Para botões e CTAs */
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-container) 100%
+  );
+
   /* Gradiente sutil - Para cards de insight */
   --gradient-insight: linear-gradient(
     135deg,
-    rgba(6, 182, 212, 0.1) 0%,
-    rgba(176, 0, 255, 0.1) 100%
+    rgba(0, 93, 182, 0.1) 0%,
+    rgba(0, 106, 94, 0.1) 100%
   );
 
   /* Gradiente hero - Para seções principais */
   --gradient-hero: linear-gradient(
     135deg,
-    rgba(236, 72, 153, 0.15) 0%,
-    rgba(6, 182, 212, 0.15) 100%
+    rgba(0, 106, 94, 0.15) 0%,
+    rgba(0, 93, 182, 0.15) 100%
   );
 
   /* Gradiente alert - Para alertas críticos */
   --gradient-alert-critical: linear-gradient(
     135deg,
-    rgba(239, 68, 68, 0.1) 0%,
-    rgba(239, 68, 68, 0.05) 100%
+    rgba(186, 26, 26, 0.1) 0%,
+    rgba(186, 26, 26, 0.05) 100%
   );
 
   /* Gradiente success - Para elementos positivos */
@@ -267,13 +235,11 @@
    ============================================ */
 [data-theme='dark'] {
   /* Background Colors */
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --bg-tertiary: #374151;
-  --bg-card: #1f2937;
+  --bg-primary: #191c1d;
+  --bg-secondary: #202425;
+  --bg-tertiary: #2a2e2f;
+  --bg-card: #202425;
   --bg-overlay: rgba(0, 0, 0, 0.7);
-  --bg-glass: rgba(31, 41, 55, 0.8);
-  --bg-glass-dark: rgba(17, 24, 39, 0.9);
 
   /* Aliases */
   --color-bg-primary: var(--bg-primary);
@@ -282,11 +248,11 @@
   --color-bg-card: var(--bg-card);
 
   /* Text Colors - Enhanced Contrast for Dark Mode */
-  --text-primary: #f9fafb; /* Enhanced from #f3f4f6 */
-  --text-secondary: #d1d5db; /* Enhanced from #e5e7eb */
-  --text-tertiary: #9ca3af; /* Enhanced from #9ca3af */
-  --text-muted: #6b7280; /* Enhanced from #6b7280 */
-  --text-link: #f472b6;
+  --text-primary: #e0e3e3;
+  --text-secondary: #bfc8c9;
+  --text-tertiary: #899394;
+  --text-muted: #6f797a;
+  --text-link: #90f4e3;
 
   /* Aliases */
   --color-text-primary: var(--text-primary);
@@ -296,9 +262,9 @@
   --color-text-link: var(--text-link);
 
   /* Border Colors */
-  --border-light: #1f2937;
-  --border-default: #374151;
-  --border-dark: #4b5563;
+  --border-light: #202425;
+  --border-default: #3f484a;
+  --border-dark: #6f797a;
 
   /* Aliases */
   --color-border-light: var(--border-light);
@@ -307,66 +273,29 @@
   --border: var(--border-default);
   --border-color: var(--border);
 
-  /* Glow Effects - More intense in dark mode */
-  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
-  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
-  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
-  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
-  --glow-success: var(--glow-green);
-  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
-  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
-  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
-
-  /* Contextual Glow Effects - Dark Mode - P2 */
-  --glow-hover-primary: 0 0 25px rgba(244, 114, 182, 0.4);
-  --glow-hover-secondary: 0 0 25px rgba(34, 211, 238, 0.4);
-  --glow-hover-success: 0 0 25px rgba(52, 211, 153, 0.4);
-  --glow-hover-warning: 0 0 25px rgba(251, 191, 36, 0.4);
-  --glow-hover-critical: 0 0 30px rgba(248, 113, 113, 0.5);
-
-  --glow-focus-primary: 0 0 20px rgba(244, 114, 182, 0.5);
-  --glow-focus-secondary: 0 0 20px rgba(34, 211, 238, 0.5);
-  --glow-focus-success: 0 0 20px rgba(52, 211, 153, 0.5);
-
-  --glow-active-primary: 0 0 15px rgba(244, 114, 182, 0.4);
-  --glow-active-secondary: 0 0 15px rgba(34, 211, 238, 0.4);
-  --glow-active-success: 0 0 15px rgba(52, 211, 153, 0.4);
-
-  --glow-critical: 0 0 30px rgba(248, 113, 113, 0.5);
-  --glow-success: 0 0 25px rgba(52, 211, 153, 0.5);
-  --glow-warning: 0 0 25px rgba(251, 191, 36, 0.4);
-  --glow-info: 0 0 25px rgba(34, 211, 238, 0.4);
-
   /* State Colors - Brighter in dark mode */
-  --state-hover: rgba(244, 114, 182, 0.15);
-  --state-active: rgba(244, 114, 182, 0.25);
-  --state-focus: rgba(244, 114, 182, 0.35);
+  --state-hover: rgba(144, 244, 227, 0.15);
+  --state-active: rgba(144, 244, 227, 0.25);
+  --state-focus: rgba(144, 244, 227, 0.35);
   --state-disabled: rgba(255, 255, 255, 0.1);
-  --state-loading: rgba(244, 114, 182, 0.7);
-
-  /* Glassmorphism Levels - Dark Mode */
-  --glass-bg-light: rgba(255, 255, 255, 0.02);
-  --glass-border-light: rgba(255, 255, 255, 0.03);
-
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-
-  --glass-bg-heavy: rgba(255, 255, 255, 0.08);
-  --glass-border-heavy: rgba(255, 255, 255, 0.15);
-
-  --glass-bg-hero: rgba(255, 255, 255, 0.1);
-  --glass-border-hero: rgba(255, 255, 255, 0.2);
+  --state-loading: rgba(144, 244, 227, 0.7);
 
   /* Gradient Backgrounds - Dark Mode */
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-container) 100%
+  );
+
   --gradient-insight: linear-gradient(
     135deg,
-    rgba(34, 211, 238, 0.15) 0%,
-    rgba(232, 121, 249, 0.15) 100%
+    rgba(214, 227, 255, 0.15) 0%,
+    rgba(144, 244, 227, 0.15) 100%
   );
 
   --gradient-hero: linear-gradient(
     135deg,
-    rgba(244, 114, 182, 0.2) 0%,
-    rgba(34, 211, 238, 0.2) 100%
+    rgba(144, 244, 227, 0.2) 0%,
+    rgba(214, 227, 255, 0.2) 100%
   );
 }

@@ -15,13 +15,11 @@
 
 [data-theme='dark'] {
   /* Background Colors */
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --bg-tertiary: #374151;
-  --bg-card: #1f2937;
+  --bg-primary: #191c1d;
+  --bg-secondary: #202425;
+  --bg-tertiary: #2a2e2f;
+  --bg-card: #202425;
   --bg-overlay: rgba(0, 0, 0, 0.7);
-  --bg-glass: rgba(31, 41, 55, 0.8);
-  --bg-glass-dark: rgba(17, 24, 39, 0.9);
 
   /* Aliases */
   --color-bg-primary: var(--bg-primary);
@@ -32,11 +30,11 @@
 
 /* Text Colors */
 [data-theme='dark'] {
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --text-tertiary: #9ca3af;
-  --text-inverse: #ffffff;
-  --text-link: #f472b6;
+  --text-primary: #e0e3e3;
+  --text-secondary: #bfc8c9;
+  --text-tertiary: #899394;
+  --text-inverse: #191c1d;
+  --text-link: #90f4e3;
 
   /* Aliases */
   --color-text-primary: var(--text-primary);
@@ -48,9 +46,9 @@
 
 /* Border Colors */
 [data-theme='dark'] {
-  --border-light: #1f2937;
-  --border-default: #374151;
-  --border-dark: #4b5563;
+  --border-light: #202425;
+  --border-default: #3f484a;
+  --border-dark: #6f797a;
 
   /* Aliases */
   --color-border-light: var(--border-light);
@@ -58,18 +56,6 @@
   --color-border-dark: var(--border-dark);
   --border: var(--border-default);
   --border-color: var(--border);
-}
-
-/* Glow Effects - More intense in dark mode */
-[data-theme='dark'] {
-  --glow-cyan: 0 0 15px rgba(34, 211, 238, 0.6);
-  --glow-pink: 0 0 15px rgba(244, 114, 182, 0.6);
-  --glow-magenta: 0 0 15px rgba(232, 121, 249, 0.6);
-  --glow-green: 0 0 15px rgba(52, 211, 153, 0.6);
-  --glow-success: var(--glow-green);
-  --glow-warning: 0 0 15px rgba(251, 191, 36, 0.6);
-  --glow-error: 0 0 15px rgba(248, 113, 113, 0.6);
-  --glow-info: 0 0 15px rgba(96, 165, 250, 0.6);
 }
 
 /* Shadows - Darker for dark mode */
@@ -82,11 +68,11 @@
 
 /* State Colors - Brighter in dark mode */
 [data-theme='dark'] {
-  --state-hover: rgba(244, 114, 182, 0.15);
-  --state-active: rgba(244, 114, 182, 0.25);
-  --state-focus: rgba(244, 114, 182, 0.35);
+  --state-hover: rgba(144, 244, 227, 0.15);
+  --state-active: rgba(144, 244, 227, 0.25);
+  --state-focus: rgba(144, 244, 227, 0.35);
   --state-disabled: rgba(255, 255, 255, 0.1);
-  --state-loading: rgba(244, 114, 182, 0.7);
+  --state-loading: rgba(144, 244, 227, 0.7);
 }
 
 /* Toggle Colors */
@@ -106,10 +92,7 @@
    ============================================ */
 
 [data-theme='dark'] body::before {
-  background:
-    radial-gradient(circle at 20% 50%, rgba(34, 211, 238, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(232, 121, 249, 0.15) 0%, transparent 50%);
+  background: none;
 }
 
 /* ============================================

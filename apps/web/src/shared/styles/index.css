@@ -239,11 +239,6 @@ body {
     --opacity-backdrop: 1;
   }
 
-  .glass-card {
-    backdrop-filter: none;
-    background: var(--bg-card);
-  }
-
   [data-theme='dark'] body::before {
     display: none;
   }
@@ -447,49 +442,6 @@ body {
    COMPONENT STYLES
    ============================================ */
 
-/* Glass-morphism card */
-.glass-card {
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
-  border: var(--border-width) var(--border-style-solid) var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: var(--card-padding);
-  box-shadow: var(--shadow-md);
-  transition:
-    transform var(--transition-base),
-    box-shadow var(--transition-base);
-}
-
-.glass-card:hover {
-  transform: translateY(calc(var(--space-1) * -1));
-  box-shadow: var(--shadow-lg);
-}
-
-/* Glow effects — Using Sanctuary color tokens */
-.glow-cyan {
-  box-shadow: var(--glow-hover-secondary);
-}
-
-.glow-magenta {
-  box-shadow: var(--glow-hover-primary);
-}
-
-.glow-pink {
-  box-shadow: var(--glow-hover-primary);
-}
-
-.glow-success {
-  box-shadow: var(--glow-hover-success);
-}
-
-.glow-warning {
-  box-shadow: var(--glow-hover-warning);
-}
-
-.glow-error {
-  box-shadow: var(--glow-hover-critical);
-}
-
 /* Gradient text — Using Sanctuary colors */
 .gradient-text {
   background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
@@ -531,9 +483,6 @@ body {
     padding: 0 var(--space-3);
   }
 
-  .glass-card {
-    padding: var(--space-4);
-  }
 }
 
 /* ============================================

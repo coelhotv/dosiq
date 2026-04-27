@@ -133,7 +133,7 @@ export default function Settings({ onNavigate }) {
     <div className="settings-container">
       <h2 className="page-title">Configurações</h2>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Minha Conta</h3>
         <div className="profile-info">
           <div className="info-row">
@@ -163,7 +163,7 @@ export default function Settings({ onNavigate }) {
         </form>
       </div>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Integração Telegram</h3>
         <p className="section-desc">Receba notificações e gerencie seus remédios pelo Telegram.</p>
 
@@ -212,7 +212,7 @@ export default function Settings({ onNavigate }) {
         )}
       </div>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Saúde e Emergência</h3>
         <p className="section-desc">Informações médicas críticas para situações de emergência.</p>
 
@@ -230,7 +230,7 @@ export default function Settings({ onNavigate }) {
         </div>
       </div>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Exportar Dados</h3>
         <p className="section-desc">
           Exporte seus dados em formato CSV ou JSON para backup ou análise.
@@ -243,7 +243,7 @@ export default function Settings({ onNavigate }) {
         </div>
       </div>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Relatórios</h3>
         <p className="section-desc">
           Gere relatórios em PDF com seu histórico de medicamentos e adesão.
@@ -256,7 +256,7 @@ export default function Settings({ onNavigate }) {
         </div>
       </div>
 
-      <div className="settings-section glass-card">
+      <div className="settings-section">
         <h3>Administração</h3>
         <p className="section-desc">Ferramentas administrativas do sistema.</p>
 

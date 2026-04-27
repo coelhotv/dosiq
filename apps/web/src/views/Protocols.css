@@ -55,7 +55,6 @@
 .section-title.active {
   color: var(--color-success);
   border-color: var(--color-success);
-  text-shadow: var(--glow-success);
 }
 
 .section-title.inactive {
@@ -66,7 +65,6 @@
 .section-title.plans {
   color: var(--color-secondary);
   border-color: var(--color-secondary);
-  text-shadow: var(--glow-hover-secondary);
 }
 
 .plans-grid {
@@ -88,7 +86,6 @@
 
 .treatment-plan-card:hover {
   transform: scale(var(--scale-hover));
-  box-shadow: var(--glow-hover-secondary);
   border-color: var(--glass-border-heavy);
 }
 
@@ -109,7 +106,6 @@
   font-size: var(--font-size-xs);
   color: var(--color-warning);
   margin-top: 2px;
-  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.3));
 }
 
 .plan-desc {
@@ -187,14 +183,12 @@
 
 .empty-state:hover {
   transform: scale(var(--scale-hover));
-  box-shadow: var(--glow-hover-secondary);
 }
 
 .empty-icon {
   font-size: 4rem;
   margin-bottom: var(--space-4);
   opacity: 0.5;
-  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.3));
 }
 
 .empty-state h3 {

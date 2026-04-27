@@ -25,7 +25,6 @@
 
 .settings-section:hover {
   transform: scale(var(--scale-hover));
-  box-shadow: var(--glow-hover-primary);
   border-color: var(--glass-border-heavy);
 }
 
@@ -101,7 +100,6 @@
 
 .settings-input:focus {
   border-color: var(--color-primary);
-  box-shadow: var(--glow-focus-primary);
 }
 
 .section-desc {
@@ -136,7 +134,6 @@
   background: rgba(16, 185, 129, 0.2);
   color: var(--color-success);
   border: 1px solid var(--color-success);
-  box-shadow: var(--glow-success);
 }
 
 .status-badge.disconnected {
@@ -168,20 +165,12 @@
   transition: var(--transition-hover);
 }
 
-.code-box:hover {
-  box-shadow: var(--glow-hover-secondary);
-}
-
 .telegram-link {
   display: inline-block;
   margin-top: var(--space-2);
   color: var(--color-primary);
   font-size: var(--font-size-sm);
   transition: var(--transition-hover);
-}
-
-.telegram-link:hover {
-  text-shadow: var(--glow-hover-primary);
 }
 
 .settings-message {
@@ -196,14 +185,12 @@
   background: var(--gradient-success);
   color: var(--color-success);
   border: 1px solid var(--color-success);
-  box-shadow: var(--glow-success);
 }
 
 .settings-message.error {
   background: var(--gradient-alert-critical);
   color: var(--color-error);
   border: 1px solid var(--color-error);
-  box-shadow: var(--glow-critical);
 }
 
 .btn-disconnect {
@@ -217,7 +204,6 @@
 .btn-disconnect:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: #ff453a;
-  box-shadow: var(--glow-critical);
   transform: scale(var(--scale-hover));
 }
 
@@ -254,6 +240,5 @@
 .logout-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: #ff453a;
-  box-shadow: var(--glow-critical);
   transform: scale(var(--scale-hover));
 }

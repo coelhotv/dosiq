@@ -18,7 +18,7 @@ src/
 │   │   ├── typography.css    # Tokens de tipografia (fontes, tamanhos, pesos)
 │   │   ├── spacing.css       # Tokens de espaçamento e breakpoints
 │   │   ├── borders.css       # Tokens de bordas e bordas-radius
-│   │   ├── shadows.css       # Tokens de sombras e efeitos glow
+│   │   ├── shadows.css       # Tokens de sombras e elevação estrutural
 │   │   ├── transitions.css   # Tokens de transições e animações
 │   │   └── z-index.css      # Tokens de z-index (camadas)
 │   ├── themes/
@@ -148,7 +148,7 @@ src/
 | `--text-*` | Texto | `--text-primary`, `--text-lg` |
 | `--bg-*` | Fundo | `--bg-primary`, `--bg-card` |
 | `--border-*` | Bordas | `--border-default`, `--radius-lg` |
-| `--shadow-*` | Sombras | `--shadow-md`, `--glow-cyan` |
+| `--shadow-*` | Sombras | `--shadow-md`, `--shadow-lg` |
 | `--spacing-*` | Espaçamento | `--spacing-md`, `--space-4` |
 | `--font-*` | Tipografia | `--font-size-base`, `--font-weight-bold` |
 | `--z-*` | Camadas | `--z-modal`, `--z-dropdown` |
@@ -278,14 +278,21 @@ function Dashboard() {
 
 ```css
 @media (prefers-reduced-transparency: reduce) {
-  .glass-card {
-    backdrop-filter: none;
-    background: var(--bg-card);
+  :root {
+    --bg-glass: var(--bg-primary);
+    --opacity-overlay: 1;
   }
 }
 ```
 
 ## Atualizações Recentes
+
+### v1.3 - Santuário Terapêutico (2026-04-26)
+
+Adotada a nova linguagem visual **Santuário Terapêutico**, com as seguintes diretrizes absolutas para a arquitetura CSS:
+- **Zero Neon (No-Glow):** É estritamente proibido o uso de `box-shadow` ou `text-shadow` com intenção de simular neon/brilho colorido. Toda hierarquia e destaque devem ser conquistados através de elevação tonal (sombras de profundidade neutras) e tipografia.
+- **Glassmorphism Restrito:** Efeitos de vidro/translucidez (`backdrop-filter`) são restritos única e exclusivamente a elementos que flutuam sobre a interface (modais, sidebars, bottom sheets). A classe global genérica `.glass-card` foi removida da base de código.
+- **Sólido e Tangível:** Cards e containers regulares devem possuir fundos sólidos e bordas simples.
 
 ### v1.2 - Component Consolidation Patterns (2026-02-11)
 
