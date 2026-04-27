@@ -182,7 +182,10 @@ export default function NotificationCard({
               onClick={() => {
                 const isPlan = notification_type === 'dose_reminder_by_plan'
                 const isMisc = notification_type === 'dose_reminder_misc'
-                if ((isPlan || isMisc) && onOpenDoseModal) {
+                const isIndividual = notification_type === 'dose_reminder'
+                if (isIndividual && onOpenDoseModal && notification.protocol_id) {
+                  onOpenDoseModal({ type: 'protocol', protocol_id: notification.protocol_id })
+                } else if ((isPlan || isMisc) && onOpenDoseModal) {
                   onOpenDoseModal({
                     type: isPlan ? 'plan' : 'protocol',
                     treatment_plan_id: notification.treatment_plan_id ?? '',
