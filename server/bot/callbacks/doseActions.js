@@ -403,16 +403,16 @@ async function handleTakePlan(bot, callbackQuery) {
       .select('id, medicine_id, dosage_per_intake, treatment_plan_id, time_schedule, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
       .eq('user_id', userId)
       .eq('active', true)
-      .contains('time_schedule', [hhmm])
       .not('treatment_plan_id', 'is', null);
 
     if (protocolsError) {
       console.error('[handleTakePlan] Supabase error:', protocolsError);
       throw protocolsError;
     }
-    
-    // Filter matching the start of planId
-    const validProtocols = (allActive || []).filter(p => 
+
+    // Filter: horário matches + planId starts with
+    const validProtocols = (allActive || []).filter(p =>
+      (p.time_schedule || []).includes(hhmm) &&
       p.treatment_plan_id?.startsWith(planIdShort)
     );
     console.log(`[handleTakePlan] validProtocols: ${validProtocols.length}`);
@@ -469,12 +469,12 @@ async function handleTakeList(bot, callbackQuery) {
       .from('protocols')
       .select('id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, medicine:medicines(name), treatment_plan:treatment_plans(id, name)')
       .eq('user_id', userId)
-      .eq('active', true)
-      .contains('time_schedule', [hhmm]);
+      .eq('active', true);
 
     if (protocolsError) throw protocolsError;
 
-    const dosesNow = allActive
+    const dosesNow = (allActive || [])
+      .filter(p => (p.time_schedule || []).includes(hhmm))
       .map(p => ({
         protocolId: p.id,
         protocolName: p.name,
