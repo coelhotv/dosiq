@@ -13,12 +13,15 @@ import AdminSection from './settings/sections/AdminSection'
 // Import CSS
 import './settings/SettingsRedesign.css'
 
+import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
+
 /**
  * SettingsRedesign (v10.0) — Orquestrador principal de configurações.
  * Utiliza o Sectional Pattern para modularidade.
  */
 export default function SettingsRedesign({ onNavigate }) {
-  const { complexityMode, setComplexityMode } = useTheme()
+  const { theme, toggleTheme } = useTheme()
+  const { mode: complexityMode, setOverride: setComplexityOverride, overrideMode } = useComplexityMode()
 
   // ── States ──
   const [loading, setLoading] = useState(true)
@@ -36,7 +39,6 @@ export default function SettingsRedesign({ onNavigate }) {
   const [quietHoursStart, setQuietHoursStart] = useState('22:00')
   const [quietHoursEnd, setQuietHoursEnd] = useState('08:00')
   const [digestTime, setDigestTime] = useState('08:30')
-  const [overrideMode, setOverrideMode] = useState(null)
 
   // Web Push
   const [webPushSupported, setWebPushSupported] = useState(false)
@@ -66,20 +68,22 @@ export default function SettingsRedesign({ onNavigate }) {
 
       // Settings
       const { data: settings } = await supabase
-        .from('configuracoes_usuario')
+        .from('user_settings')
         .select('*')
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
         .single()
 
       if (settings) {
         setIsTelegramConnected(!!settings.telegram_chat_id)
         setNotificationMode(settings.notification_mode || 'realtime')
         setQuietHoursEnabled(settings.quiet_hours_enabled || false)
-        setQuietHoursStart(settings.quiet_hours_start || '22:00')
+        setQuietHoursStart(settings.quiet_hours_start || '23:00')
         setQuietHoursEnd(settings.quiet_hours_end || '08:00')
-        setDigestTime(settings.digest_morning_time || '08:30')
-        setOverrideMode(settings.complexity_override || null)
-        setChannelWebPushEnabled(settings.channel_webpush_enabled || false)
+        setDigestTime(settings.digest_time || '09:00')
+        setChannelWebPushEnabled(settings.channel_web_push_enabled || false)
+        if (settings.complexity_override) {
+          setComplexityOverride(settings.complexity_override)
+        }
       }
 
       // Web Push Support
@@ -114,9 +118,9 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
-        .update({ channel_webpush_enabled: newValue })
-        .eq('usuario_id', user.id)
+        .from('user_settings')
+        .update({ channel_web_push_enabled: newValue })
+        .eq('user_id', user.id)
 
       setChannelWebPushEnabled(newValue)
       setMessage({ type: 'success', text: `Notificações Web ${newValue ? 'ativadas' : 'desativadas'}.` })
@@ -135,9 +139,9 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
+        .from('user_settings')
         .update({ notification_mode: mode })
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
 
       setNotificationMode(mode)
       setMessage({ type: 'success', text: 'Modo de notificação atualizado.' })
@@ -155,13 +159,13 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
+        .from('user_settings')
         .update({
           quiet_hours_enabled: quietHoursEnabled,
           quiet_hours_start: quietHoursStart,
           quiet_hours_end: quietHoursEnd,
         })
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
 
       setMessage({ type: 'success', text: 'Período silencioso salvo.' })
     } catch {
@@ -177,9 +181,9 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
-        .update({ digest_morning_time: digestTime })
-        .eq('usuario_id', user.id)
+        .from('user_settings')
+        .update({ digest_time: digestTime })
+        .eq('user_id', user.id)
 
       setMessage({ type: 'success', text: 'Horário do resumo salvo.' })
     } catch {
@@ -198,9 +202,9 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
+        .from('user_settings')
         .update({ telegram_token: token, telegram_token_created_at: new Date().toISOString() })
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
     } catch (err) {
       console.error('Token gen error:', err)
     }
@@ -213,9 +217,9 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
+        .from('user_settings')
         .update({ telegram_chat_id: null })
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
 
       setIsTelegramConnected(false)
       setMessage({ type: 'success', text: 'Telegram desconectado.' })
@@ -234,12 +238,13 @@ export default function SettingsRedesign({ onNavigate }) {
         data: { user },
       } = await supabase.auth.getUser()
       await supabase
-        .from('configuracoes_usuario')
-        .update({ complexity_override: value })
-        .eq('usuario_id', user.id)
+        .from('user_settings')
+        .update({ 
+          complexity_override: value
+        })
+        .eq('user_id', user.id)
 
-      setOverrideMode(value)
-      setComplexityMode(value) // Hook global
+      setComplexityOverride(value)
       setMessage({ type: 'success', text: 'Preferência de visualização atualizada.' })
     } catch {
       setMessage({ type: 'error', text: 'Erro ao salvar preferência.' })

@@ -83,6 +83,8 @@ export async function getUserSettings() {
         notification_mode,
         quiet_hours_start,
         quiet_hours_end,
+        quiet_hours_enabled,
+        complexity_override,
         digest_time,
         channel_mobile_push_enabled,
         channel_web_push_enabled,
