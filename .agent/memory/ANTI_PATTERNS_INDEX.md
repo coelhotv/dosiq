@@ -133,3 +133,4 @@
 - **[AP-116]** getLastNotificationResponseAsync dentro de useEffect com session como dep — re-executa em logout+login causando navegação de cold start espúria -> [`anti-patterns/mobile_and_platform/AP-116.md`](./anti-patterns/mobile_and_platform/AP-116.md)
 - **[AP-117]** Params de navegação sem contrato tipado entre emissor e receptor — mismatch silencioso (ex: `bulkMode` vs `screen`) faz a modal nunca abrir -> [`anti-patterns/mobile_and_platform/AP-117.md`](./anti-patterns/mobile_and_platform/AP-117.md)
 - **[AP-118]** Repository INSERT não espelhando campos do dispatcher/schema após adição tardia — dados descartados silenciosamente no banco mesmo com schema e dispatcher corretos -> [`anti-patterns/mobile_and_platform/AP-118.md`](./anti-patterns/mobile_and_platform/AP-118.md)
+- **[AP-119]** Redundant Derived State Synchronization -> [`anti-patterns/react_and_ui/AP-119.md`](./anti-patterns/react_and_ui/AP-119.md)
