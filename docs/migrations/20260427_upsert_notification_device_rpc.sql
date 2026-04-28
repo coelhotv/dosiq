@@ -32,12 +32,9 @@ BEGIN
     RAISE EXCEPTION 'not authenticated';
   END IF;
 
-  -- Remove qualquer registro anterior com o mesmo token (de qualquer usuário).
-  -- Garante que o token pertença exclusivamente ao usuário atual.
-  DELETE FROM notification_devices
-  WHERE provider = p_provider AND push_token = p_push_token;
-
-  -- Insere o registro para o usuário atual.
+  -- Upsert atômico: insere ou reatribui o token ao usuário atual.
+  -- ON CONFLICT preserva o id do registro (evita fragmentação) e é atômico.
+  -- user_id é sobrescrito para implementar o modelo "último usuário sobrescreve".
   INSERT INTO notification_devices (
     user_id,
     provider,
@@ -48,7 +45,8 @@ BEGIN
     device_fingerprint,
     app_version,
     is_active,
-    last_seen_at
+    last_seen_at,
+    updated_at
   ) VALUES (
     v_user_id,
     p_provider,
@@ -59,8 +57,19 @@ BEGIN
     p_device_fingerprint,
     p_app_version,
     true,
+    now(),
     now()
-  );
+  )
+  ON CONFLICT (provider, push_token) DO UPDATE SET
+    user_id            = EXCLUDED.user_id,
+    platform           = EXCLUDED.platform,
+    app_kind           = EXCLUDED.app_kind,
+    device_name        = EXCLUDED.device_name,
+    device_fingerprint = EXCLUDED.device_fingerprint,
+    app_version        = EXCLUDED.app_version,
+    is_active          = true,
+    last_seen_at       = now(),
+    updated_at         = now();
 END;
 $$;
 
