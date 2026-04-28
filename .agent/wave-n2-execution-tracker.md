@@ -146,7 +146,8 @@
 - [ ] Filtro Doses: `dose_reminder`, `dose_reminder_by_plan`, `dose_reminder_misc`, `missed_dose`, `daily_digest`
 - [ ] Filtro Estoque: `stock_alert`
 - [ ] Filtros sem refetch
-- [ ] Agrupamento temporal preservado (CAIXA ALTA)
+- [x] Ajustar exibição de horas na UI ({HH"h"} ou {HH"AM|PM"})
+- [x] Trocar label "Resumo matinal" para "Resumo diário"
 - [ ] Zero state: "Tudo em dia por aqui" + body; funciona para filtro vazio
 - [ ] CTAs N1 preservados
 - [ ] Unread dot
