@@ -1,9 +1,13 @@
 // Schema Zod para user_settings — campos de notificação (Wave N2)
 import { z } from 'zod'
 
-const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/
+const HH_MM_REGEX = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 
 export const NOTIFICATION_MODES = ['realtime', 'digest_morning', 'silent']
+
+const timeSchema = z.string()
+  .regex(HH_MM_REGEX, 'Formato HH:MM inválido')
+  .transform(v => v?.slice(0, 5))
 
 export const userSettingsNotificationSchema = z.object({
   notification_preference: z
@@ -14,21 +18,15 @@ export const userSettingsNotificationSchema = z.object({
     .enum(['realtime', 'digest_morning', 'silent'])
     .default('realtime'),
 
-  quiet_hours_start: z
-    .string()
-    .regex(HH_MM, 'Formato HH:MM inválido')
+  quiet_hours_start: timeSchema
     .nullable()
     .optional(),
 
-  quiet_hours_end: z
-    .string()
-    .regex(HH_MM, 'Formato HH:MM inválido')
+  quiet_hours_end: timeSchema
     .nullable()
     .optional(),
 
-  digest_time: z
-    .string()
-    .regex(HH_MM, 'Formato HH:MM inválido')
+  digest_time: timeSchema
     .default('07:00'),
 
   channel_mobile_push_enabled: z.boolean().default(true),
