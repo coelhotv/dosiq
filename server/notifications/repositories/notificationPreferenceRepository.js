@@ -81,7 +81,7 @@ export const notificationPreferenceRepository = {
   async getSettingsByUserId(userId) {
     const { data, error } = await supabase
       .from('user_settings')
-      .select('notification_mode, quiet_hours_start, quiet_hours_end, digest_time, timezone')
+      .select('notification_mode, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
       .eq('user_id', userId)
       .single()
 

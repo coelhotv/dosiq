@@ -130,7 +130,7 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
       if (activeResults.length === 0 && !isSuppressed) return
 
       const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
-      const protocolId = isGroupedKind ? null : (payload.metadata?.protocolId ?? null)
+      const protocolId = isGroupedKind ? null : (payload?.metadata?.protocolId ?? null)
       
       // Consolida canais num único array para o log
       const logChannels = activeResults.map((res) => ({
