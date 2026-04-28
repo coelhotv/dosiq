@@ -9,6 +9,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { Bell } from 'lucide-react'
+import { NOTIFICATION_TYPES, DOSE_RELATED_NOTIFICATION_TYPES } from '@schemas'
 import NotificationCard from './NotificationCard'
 import './NotificationList.css'
 
@@ -53,11 +54,26 @@ function groupByDay(notifications, today = new Date()) {
  */
 function calcWasTaken(notification, doseLogs) {
   if (!doseLogs?.length) return false
-  return doseLogs.some(
-    log =>
-      log.protocol_id === notification.protocol_id &&
-      new Date(log.taken_at) > new Date(notification.sent_at),
-  )
+  const { notification_type, protocol_id, treatment_plan_id, sent_at } = notification
+  const sentAtDate = new Date(sent_at)
+
+  return doseLogs.some(log => {
+    const takenAtDate = new Date(log.taken_at)
+    if (takenAtDate <= sentAtDate) return false
+
+    if (notification_type === NOTIFICATION_TYPES.DOSE_REMINDER && protocol_id) {
+      return log.protocol_id === protocol_id
+    }
+    if (notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_BY_PLAN && treatment_plan_id) {
+      return log.treatment_plan_id === treatment_plan_id
+    }
+    if (notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_MISC) {
+      // Para misc, se houver qualquer log posterior, assumimos como parcial ou totalmente registrado
+      // O ideal seria verificar todos os protocolos na lista, mas logs simplificados ajudam na UX
+      return true
+    }
+    return false
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +199,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
               onOpenDoseModal={onOpenDoseModal}
               index={i}
               wasTaken={
-                item.notif.notification_type === 'dose_reminder'
+                DOSE_RELATED_NOTIFICATION_TYPES.includes(item.notif.notification_type)
                   ? calcWasTaken(item.notif, doseLogs)
                   : undefined
               }
@@ -213,7 +229,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
               onOpenDoseModal={onOpenDoseModal}
               index={index}
               wasTaken={
-                item.notif.notification_type === 'dose_reminder'
+                DOSE_RELATED_NOTIFICATION_TYPES.includes(item.notif.notification_type)
                   ? calcWasTaken(item.notif, doseLogs)
                   : undefined
               }

@@ -93,6 +93,20 @@
   padding: 1.25rem;
 }
 
+.sr-section__card-header {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.sr-loading {
+  text-align: center;
+  padding: 2rem;
+  opacity: 0.5;
+  font-size: 0.9rem;
+}
+
 /* ── Telegram ──────────────────────────────────────────────── */
 .sr-telegram__badge {
   font-size: 0.8rem;

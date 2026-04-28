@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldSendNow, isInQuietHours } from '../utils/notificationGate.js';
+import { shouldSendNow, isInQuietHours } from './notificationGate.js';
 
 describe('shouldSendNow', () => {
   test('silent → false', () => {

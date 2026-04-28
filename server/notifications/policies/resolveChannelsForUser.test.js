@@ -2,7 +2,7 @@
 // 9 casos obrigatórios cobrindo todas as preferências e disponibilidades
 
 import { describe, it, expect, vi } from 'vitest'
-import { resolveChannelsForUser } from './resolveChannelsForUser'
+import { resolveChannelsForUser } from './resolveChannelsForUser.js'
 
 describe('resolveChannelsForUser', () => {
   const mockRepositories = {

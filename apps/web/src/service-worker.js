@@ -39,18 +39,28 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
-  const targetUrl = event.notification.data?.url || '/'
+  // Resolve a URL alvo (garante que seja absoluta)
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Se já houver uma aba aberta com a URL, foca nela
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i]
+      // Tenta focar em uma janela já aberta com a mesma URL (ou similar)
+      for (const client of windowClients) {
         if (client.url === targetUrl && 'focus' in client) {
           return client.focus()
         }
       }
-      // Caso contrário, abre uma nova aba/janela
+      
+      // Se não encontrou, tenta focar em qualquer janela do app e navegar
+      if (windowClients.length > 0) {
+        const firstClient = windowClients[0]
+        if ('navigate' in firstClient) {
+          firstClient.navigate(targetUrl)
+          return firstClient.focus()
+        }
+      }
+
+      // Caso contrário, abre uma nova janela
       if (clients.openWindow) {
         return clients.openWindow(targetUrl)
       }

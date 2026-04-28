@@ -25,6 +25,8 @@
   "dependencies": {
     "vite-plugin-pwa": "1.2.0",
     "web-push": "^3.6.7",
+    "workbox-core": "7.4.0",
+    "workbox-precaching": "7.4.0",
     "workbox-window": "7.4.0"
   }
 }
