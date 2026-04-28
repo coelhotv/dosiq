@@ -59,7 +59,7 @@ export default function SettingsRedesign({ onNavigate }) {
       if (!user) return
 
       // Admin check
-      if (user.user_metadata?.role === 'admin' || user.id === 'ADMIN_ID_PLACEHOLDER') {
+      if (user.user_metadata?.role === 'admin') {
         setIsAdmin(true)
         const { count } = await supabase
           .from('dead_letter_queue')
@@ -204,7 +204,9 @@ export default function SettingsRedesign({ onNavigate }) {
 
   // ── Handlers (Integrações) ──
   const generateTelegramToken = async () => {
-    const token = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const array = new Uint32Array(1)
+    window.crypto.getRandomValues(array)
+    const token = array[0].toString(36).substring(0, 6).toUpperCase()
     setTelegramToken(token)
     try {
       const {
@@ -352,7 +354,9 @@ export default function SettingsRedesign({ onNavigate }) {
 
           <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
 
-          <footer className="sr-footer">Dosiq v3.3.0 • Design Santuário</footer>
+          <footer className="sr-footer">
+            Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário
+          </footer>
         </>
       )}
     </main>
