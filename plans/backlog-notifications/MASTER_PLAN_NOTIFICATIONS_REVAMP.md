@@ -1,6 +1,6 @@
 # Master Plan — Notifications Revamp
 
-> **Status:** PROGREDINDO — Wave N1 COMPLETA (8/8) ✅ + Wave N2 COMPLETA (8/8) ✅ + N3 Planejado
+> **Status:** PROGREDINDO — Wave N1 7/8 ✅ (N1.7 PWA desenvolvido, aguarda merge) + Wave N2 COMPLETA (8/8) ✅ + N3 Planejado
 > **Sprint início:** 2026-W17 · **Último merge:** commit `02802bfa` (Wave N2 RLS fix) — 2026-04-28
 > **Idea Plan origem:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Exec Specs derivados:**
@@ -239,18 +239,19 @@ Cada wave gera registros canônicos em `.agent/memory/`:
 
 ## 9. Cronograma de Execução
 
-| Wave | Sprints internos | Status | PR | Entregue |
+| Wave | Sprints internos | Status | PR | Obs |
 |------|-----------------|--------|----|-----------| 
-| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | ✅ COMPLETO | PR #497, #498, #501, #505 | 2026-04-26 |
-| **N2** — Quiet Hours + Native UX Redesign | 8 sprints (`2.1` a `2.8`) | ✅ COMPLETO | PR #506, #507 | 2026-04-28 |
-| **N3** — Copy + Métricas + Formatter Digest | 9 sprints (`3.1` a `3.9`) | 📋 Planejado | — | — |
+| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | 7/8 ✅ (N1.7 pendente) | PR #497, #498, #501, #505 | N1.7 (PWA) desenvolvido, aguarda merge |
+| **N2** — Quiet Hours + Native UX Redesign | 8 sprints (`2.1` a `2.8`) | ✅ COMPLETO | PR #506, #507 | Entregue 2026-04-28 |
+| **N3** — Copy + Métricas + Formatter Digest | 9 sprints (`3.1` a `3.9`) | 📋 Planejado | — | Pode iniciar pós-N1.7 |
 
-### Resumen N1 (2026-W16 a W17)
-- Agrupamento por `treatment_plan_id` ✅
-- Bulk register mobile (BulkDoseRegisterModal) ✅
-- Deeplink mobile funcional ✅
-- NotificationItem + NotificationInbox redesenhados ✅
-- `enrichWithDoses` + relacional dosages ✅
+### Resumo N1 (2026-W16 a W17)
+- Agrupamento por `treatment_plan_id` ✅ (1.1-1.6)
+- Bulk register mobile (BulkDoseRegisterModal) ✅ (1.5)
+- Deeplink mobile funcional ✅ (1.4-1.8)
+- NotificationItem + NotificationInbox redesenhados ✅ (1.6-1.8)
+- `enrichWithDoses` + relacional dosages ✅ (1.8)
+- **N1.7 — PWA Web Push**: Desenvolvido ✅ | Merge pendente 🔄
 
 ### Resumo N2 (2026-W17)
 - Quiet hours com cross-midnight support ✅
