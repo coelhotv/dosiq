@@ -40,6 +40,7 @@ export default function SettingsRedesign({ onNavigate }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('08:00')
   const [digestTime, setDigestTime] = useState('08:30')
 
+
   // Web Push
   const [webPushSupported, setWebPushSupported] = useState(false)
   const [channelWebPushEnabled, setChannelWebPushEnabled] = useState(false)
@@ -71,6 +72,7 @@ export default function SettingsRedesign({ onNavigate }) {
         .from('user_settings')
         .select('*')
         .eq('user_id', user.id)
+
         .single()
 
       if (settings) {
@@ -84,6 +86,7 @@ export default function SettingsRedesign({ onNavigate }) {
         if (settings.complexity_override) {
           setComplexityOverride(settings.complexity_override)
         }
+
       }
 
       // Web Push Support
@@ -93,7 +96,7 @@ export default function SettingsRedesign({ onNavigate }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [setComplexityOverride])
 
   useEffect(() => {
     fetchData()
@@ -121,6 +124,7 @@ export default function SettingsRedesign({ onNavigate }) {
         .from('user_settings')
         .update({ channel_web_push_enabled: newValue })
         .eq('user_id', user.id)
+
 
       setChannelWebPushEnabled(newValue)
       setMessage({ type: 'success', text: `Notificações Web ${newValue ? 'ativadas' : 'desativadas'}.` })
@@ -170,10 +174,12 @@ export default function SettingsRedesign({ onNavigate }) {
       setMessage({ type: 'success', text: 'Período silencioso salvo.' })
     } catch {
       setMessage({ type: 'error', text: 'Erro ao salvar período silencioso.' })
+
     } finally {
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     }
   }
+
 
   const saveDigestTime = async () => {
     try {
@@ -221,6 +227,7 @@ export default function SettingsRedesign({ onNavigate }) {
         .update({ telegram_chat_id: null })
         .eq('user_id', user.id)
 
+
       setIsTelegramConnected(false)
       setMessage({ type: 'success', text: 'Telegram desconectado.' })
     } catch {
@@ -245,6 +252,7 @@ export default function SettingsRedesign({ onNavigate }) {
         .eq('user_id', user.id)
 
       setComplexityOverride(value)
+
       setMessage({ type: 'success', text: 'Preferência de visualização atualizada.' })
     } catch {
       setMessage({ type: 'error', text: 'Erro ao salvar preferência.' })
@@ -326,6 +334,8 @@ export default function SettingsRedesign({ onNavigate }) {
             overrideMode={overrideMode}
             handleComplexityChange={handleComplexityChange}
             getComplexityDisplayMode={getComplexityDisplayMode}
+            theme={theme}
+            toggleTheme={toggleTheme}
           />
 
           <AccountSection

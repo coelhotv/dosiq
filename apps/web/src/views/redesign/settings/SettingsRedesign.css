@@ -172,6 +172,44 @@
   opacity: 0.7;
 }
 
+/* ── Tema (segmented control) ────────────────────────────────── */
+.sr-theme__options {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--color-surface-container-low);
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.sr-theme__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sr-theme__option--selected {
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-ambient);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sr-theme__option:not(.sr-theme__option--selected):hover {
+  background: rgba(var(--color-on-surface-rgb), 0.04);
+}
+
 /* ── Densidade (segmented control) ──────────────────────────── */
 .sr-density__options {
   display: flex;

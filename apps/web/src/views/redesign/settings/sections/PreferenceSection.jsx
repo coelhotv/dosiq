@@ -1,4 +1,4 @@
-import { MonitorCog, Form, Wand2, Grid3x2 } from 'lucide-react'
+import { MonitorCog, Form, Wand2, Grid3x2, Sun, Moon } from 'lucide-react'
 
 /**
  * PreferenceSection — Preferências de interface e experiência de uso.
@@ -7,12 +7,36 @@ export default function PreferenceSection({
   overrideMode,
   handleComplexityChange,
   getComplexityDisplayMode,
+  theme,
+  toggleTheme,
 }) {
   return (
     <section className="sr-section">
       <h3 className="sr-section__title">
         <MonitorCog size={24} /> Preferências
       </h3>
+
+      <div className="sr-section__card">
+        <h3 className="sr-section__card-header">Aparência</h3>
+        <div className="sr-theme__options">
+          <button
+            className={`sr-theme__option ${theme === 'light' ? 'sr-theme__option--selected' : ''}`}
+            onClick={() => theme !== 'light' && toggleTheme()}
+            type="button"
+          >
+            <Sun size={20} />
+            <span>Claro</span>
+          </button>
+          <button
+            className={`sr-theme__option ${theme === 'dark' ? 'sr-theme__option--selected' : ''}`}
+            onClick={() => theme !== 'dark' && toggleTheme()}
+            type="button"
+          >
+            <Moon size={20} />
+            <span>Escuro</span>
+          </button>
+        </div>
+      </div>
 
       <div className="sr-section__card">
         <h3 className="sr-section__card-header">Densidade da Interface</h3>
