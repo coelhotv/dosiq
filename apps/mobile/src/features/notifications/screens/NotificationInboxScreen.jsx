@@ -1,18 +1,20 @@
 /**
- * NotificationInboxScreen — Central de Avisos v1 (Mobile).
+ * NotificationInboxScreen — Central de Avisos v2 (Mobile).
  *
  * SectionList com agrupamento temporal (Hoje / Ontem / Esta semana / Mais antigos).
  * Cruza dose_reminder com medicine_logs para exibir "✓ Tomada" sem navegação extra.
+ * Filtros horizontais: Todos / Não lidos / Doses / Estoque.
  * R-169: SafeAreaView obrigatório. R-180: header 28/800 padrão Santuário.
  * R-184: auto-refresh no useNotificationLog. R-187: cache key por userId.
  */
-import { useEffect, useCallback, useMemo, useState } from 'react'
+import { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import {
   View, Text, SectionList, StyleSheet, TouchableOpacity,
-  RefreshControl, ActivityIndicator, AppState,
+  RefreshControl, ActivityIndicator, AppState, ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, Bell, WifiOff } from 'lucide-react-native'
+import { ArrowLeft, BellOff, Settings, WifiOff } from 'lucide-react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
 import { getTodayLocal } from '@dosiq/core'
 import { ROUTES } from '../../../navigation/routes'
@@ -38,6 +40,27 @@ const DEEP_LINK_TARGETS = {
   'bulk-misc':      ROUTES.TODAY,
   'dose-individual': ROUTES.TODAY,
 }
+
+// Tipos de notificação de dose (para filtro)
+const DOSE_KINDS = [
+  'dose_reminder',
+  'dose_reminder_by_plan',
+  'dose_reminder_misc',
+  'missed_dose',
+  'daily_digest',
+]
+
+// Chips de filtro
+const FILTERS = [
+  { key: 'all',    label: 'Todos' },
+  { key: 'unread', label: 'Não lidos' },
+  { key: 'doses',  label: 'Doses' },
+  { key: 'stock',  label: 'Estoque' },
+]
+
+// Chave AsyncStorage para "último acesso" (R-187)
+const getStorageKey = (userId) =>
+  userId ? `@dosiq/notif-last-seen:${userId}` : '@dosiq/notif-last-seen'
 
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
 
@@ -105,6 +128,20 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const { data, loading, error, stale, refresh } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data, userId)
 
+  // lastSeen local: necessário para filtro "Não lidos" (R-187)
+  const [lastSeen, setLastSeen] = useState(null)
+  useEffect(() => {
+    AsyncStorage.getItem(getStorageKey(userId))
+      .then((val) => setLastSeen(val))
+      .catch((err) => {
+        if (__DEV__) console.warn('[NotificationInboxScreen] lastSeen read error', err)
+      })
+  }, [userId])
+
+  // Filtro ativo
+  const [activeFilter, setActiveFilter] = useState('all')
+  const hasMarkedRead = useRef(false)
+
   // localDay: detecta virada de dia via AppState + timer de meia-noite (R5-008)
   const [localDay, setLocalDay] = useState(getTodayLocal)
   useEffect(() => {
@@ -150,15 +187,45 @@ export default function NotificationInboxScreen({ navigation, route }) {
     await Promise.all([refresh(), loadDoseLogs()])
   }, [refresh, loadDoseLogs])
 
-  // Marca tudo como lido ao abrir
+  // Marca tudo como lido apenas no carregamento inicial (useRef garante execução única)
   useEffect(() => {
-    if (!loading && data) markAllRead()
-  }, [loading, data, markAllRead])
+    if (!loading && data && !hasMarkedRead.current) {
+      hasMarkedRead.current = true
+      markAllRead()
+      AsyncStorage.getItem(getStorageKey(userId))
+        .then((val) => setLastSeen(val))
+        .catch(() => {})
+    }
+  }, [loading, data, markAllRead, userId])
 
+  // Sections sem filtro (agrupamento temporal)
   const sections = useMemo(
     () => groupByDay(data ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, localDay]
   )
+
+  // Sections com filtro aplicado
+  const filteredSections = useMemo(() => {
+    const lastSeenTime = lastSeen ? new Date(lastSeen).getTime() : null
+
+    const filterItem = (item) => {
+      if (activeFilter === 'all')    return true
+      if (activeFilter === 'unread') {
+        if (!item.sent_at) return false
+        // Antes de markAllRead ser persistido, lastSeenTime pode ser null → tudo é não lido
+        if (!lastSeenTime) return true
+        return new Date(item.sent_at).getTime() > lastSeenTime
+      }
+      if (activeFilter === 'doses')  return DOSE_KINDS.includes(item.notification_type)
+      if (activeFilter === 'stock')  return item.notification_type === 'stock_alert'
+      return true
+    }
+
+    return sections
+      .map(s => ({ ...s, data: s.data.filter(filterItem) }))
+      .filter(s => s.data.length > 0)
+  }, [sections, activeFilter, lastSeen])
 
   const wasTakenMap = useMemo(
     () => buildWasTakenMap(data ?? [], doseLogs),
@@ -207,24 +274,27 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const renderEmpty = useCallback(() => {
     if (loading) return null
     return (
-      <View style={styles.emptyContainer}>
-        <View style={styles.emptyIconWrap}>
-          <Bell size={36} color={colors.text?.muted ?? '#9ca3af'} strokeWidth={1.5} />
-        </View>
-        <Text style={styles.emptyTitle}>Nenhuma notificação ainda</Text>
+      <View style={styles.emptyState}>
+        <BellOff size={40} color={colors.text?.muted ?? '#9ca3af'} strokeWidth={1.5} />
+        <Text style={styles.emptyTitle}>Tudo em dia por aqui</Text>
         <Text style={styles.emptyBody}>
-          Seus lembretes de dose, alertas de estoque e resumos diários aparecerão aqui.
+          {activeFilter === 'all'
+            ? 'Quando houver lembretes, alertas de estoque ou resumos, eles aparecem aqui.'
+            : 'Nenhum item nesta categoria.'}
         </Text>
       </View>
     )
-  }, [loading])
+  }, [loading, activeFilter])
+
+  const primaryColor = colors.primary?.[600] ?? '#006a5e'
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={styles.iconButton}
           accessibilityRole="button"
           accessibilityLabel="Voltar"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -232,16 +302,27 @@ export default function NotificationInboxScreen({ navigation, route }) {
           <ArrowLeft size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
         </TouchableOpacity>
 
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Central de Avisos</Text>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>Avisos</Text>
           {unreadCount > 0 && !loading && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-            </View>
+            <Text style={[styles.subtitle, { color: primaryColor }]}>
+              {unreadCount} {unreadCount === 1 ? 'não lida' : 'não lidas'}
+            </Text>
           )}
         </View>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Preferências de notificação"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Settings size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
+        </TouchableOpacity>
       </View>
 
+      {/* ── Banner offline ── */}
       {stale && (
         <View style={styles.offlineBanner}>
           <WifiOff size={14} color={colors.status?.warning ?? '#d97706'} strokeWidth={2} />
@@ -249,9 +330,40 @@ export default function NotificationInboxScreen({ navigation, route }) {
         </View>
       )}
 
+      {/* ── Chips de filtro ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersScroll}
+        contentContainerStyle={styles.filtersContent}
+      >
+        {FILTERS.map((f) => {
+          const isActive = activeFilter === f.key
+          return (
+            <TouchableOpacity
+              key={f.key}
+              onPress={() => setActiveFilter(f.key)}
+              style={[
+                styles.chip,
+                isActive
+                  ? { backgroundColor: primaryColor, borderColor: primaryColor }
+                  : styles.chipInactive,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
+            >
+              <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
+      </ScrollView>
+
+      {/* ── Conteúdo principal ── */}
       {loading && !data && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={colors.primary?.[600] ?? '#006a5e'} size="large" />
+          <ActivityIndicator color={primaryColor} size="large" />
         </View>
       )}
 
@@ -263,7 +375,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
       {(!loading || data) && !error && (
         <SectionList
-          sections={sections}
+          sections={filteredSections}
           keyExtractor={(item, i) => item.id ?? String(i)}
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
@@ -274,10 +386,10 @@ export default function NotificationInboxScreen({ navigation, route }) {
             <RefreshControl
               refreshing={loading && !!data}
               onRefresh={refreshAll}
-              tintColor={colors.primary?.[600] ?? '#006a5e'}
+              tintColor={primaryColor}
             />
           }
-          contentContainerStyle={sections.length === 0 ? styles.emptyList : styles.listContent}
+          contentContainerStyle={filteredSections.length === 0 ? styles.emptyList : styles.listContent}
           showsVerticalScrollIndicator={false}
           accessibilityRole="list"
           accessibilityLabel="Lista de notificações"
@@ -287,26 +399,45 @@ export default function NotificationInboxScreen({ navigation, route }) {
   )
 }
 
+const PRIMARY = colors.primary?.[600] ?? '#006a5e'
+
 const styles = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: colors.bg?.default ?? '#f9fafb' },
-  header:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
-  backButton:       { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bg?.card ?? '#f3f4f6', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  titleRow:         { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+
+  // Header
+  header:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
+  iconButton:       { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bg?.card ?? '#f3f4f6', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  titleBlock:       { flex: 1 },
   title:            { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colors.text?.primary ?? '#111827' },
-  unreadBadge:      { minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: 100, backgroundColor: colors.status?.error ?? '#dc2626', alignItems: 'center', justifyContent: 'center' },
-  unreadBadgeText:  { fontSize: 11, fontWeight: '700', color: '#ffffff' },
+  subtitle:         { fontSize: 13, fontWeight: '500', marginTop: 1 },
+
+  // Banner offline
   offlineBanner:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(251, 191, 36, 0.15)', borderBottomWidth: 1, borderBottomColor: 'rgba(217, 119, 6, 0.20)' },
   offlineText:      { fontSize: 13, fontWeight: '500', color: colors.status?.warning ?? '#d97706' },
+
+  // Chips de filtro
+  filtersScroll:    { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
+  filtersContent:   { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  chip:             { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1 },
+  chipInactive:     { backgroundColor: '#ffffff', borderColor: colors.border?.medium ?? '#d1d5db' },
+  chipText:         { fontSize: 13, fontWeight: '500' },
+  chipTextActive:   { color: '#ffffff' },
+  chipTextInactive: { color: colors.text?.secondary ?? '#374151' },
+
+  // Loading / error
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorContainer:   { margin: 20, padding: 16, borderRadius: 12, backgroundColor: 'rgba(220, 38, 38, 0.06)' },
   errorText:        { fontSize: 14, color: colors.status?.error ?? '#dc2626' },
+
+  // Lista
   sectionHeader:    { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 6 },
   sectionTitle:     { fontSize: 12, fontWeight: '600', color: colors.text?.muted ?? '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8 },
   separator:        { height: 1, marginHorizontal: 20, backgroundColor: colors.border?.light ?? '#e5e7eb' },
   listContent:      { paddingBottom: 40 },
   emptyList:        { flex: 1 },
-  emptyContainer:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 60, gap: 12 },
-  emptyIconWrap:    { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.bg?.card ?? '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  emptyTitle:       { fontSize: 18, fontWeight: '700', color: colors.text?.primary ?? '#111827', textAlign: 'center' },
-  emptyBody:        { fontSize: 14, fontWeight: '400', color: colors.text?.muted ?? '#6b7280', textAlign: 'center', lineHeight: 21 },
+
+  // Zero state
+  emptyState:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  emptyTitle:       { fontSize: 18, fontWeight: '600', color: '#1a1a1a', marginBottom: 8, textAlign: 'center', marginTop: 16 },
+  emptyBody:        { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
 })

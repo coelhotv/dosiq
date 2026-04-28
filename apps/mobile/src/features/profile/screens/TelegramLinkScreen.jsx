@@ -5,14 +5,15 @@ import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
 
 /**
- * Tela de vinculação do Telegram (H5.7)
- * Exibe as instruções de vinculação e gera o token de verificação.
+ * Tela de vinculação do Telegram — Sprint 2.7 Wave N2 Redesign
+ * Fluxo visual: Passo 1 (Abrir bot) → Passo 2 (Enviar código) → Status conectado
  */
 export default function TelegramLinkScreen({ navigation }) {
   const { settings, generateToken } = useProfile()
   const [isGenerating, setIsGenerating] = useState(false)
   const isConnected = !!settings?.telegram_chat_id
   const token = settings?.verification_token
+  const chatIdMasked = isConnected ? String(settings.telegram_chat_id).slice(-4).padStart(7, '*') : null
 
   const handleGenerateToken = async () => {
     setIsGenerating(true)
@@ -36,81 +37,110 @@ export default function TelegramLinkScreen({ navigation }) {
     }
   }
 
+  const handleCopyToken = () => {
+    if (token) {
+      const fullCommand = `/start ${token}`
+      Alert.alert('Código copiado!', fullCommand, [{ text: 'OK' }])
+    }
+  }
+
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Voltar</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Integração Telegram</Text>
       </View>
 
       <View style={styles.content}>
         {isConnected ? (
+          // Estado conectado
           <View style={styles.successContainer}>
             <Text style={styles.successIcon}>✅</Text>
-            <Text style={styles.successTitle}>Bot Vinculado!</Text>
+            <Text style={styles.successTitle}>Conectado</Text>
             <Text style={styles.successMessage}>
-              Sua conta já está conectada ao Telegram. Você receberá notificações de medicamentos lá.
+              Sua conta está vinculada ao Telegram. Você receberá lembretes e poderá registrar doses pelo chat.
             </Text>
+            {chatIdMasked && (
+              <View style={styles.chatIdContainer}>
+                <Text style={styles.chatIdLabel}>Chat ID</Text>
+                <Text style={styles.chatIdValue}>{chatIdMasked}</Text>
+              </View>
+            )}
           </View>
         ) : (
+          // Estado não conectado
           <>
-            <Text style={styles.introText}>
-              Vincule sua conta para receber avisos de doses e gerenciar seu estoque diretamente pelo Telegram.
+            {/* Ícone Telegram grande */}
+            <View style={styles.iconContainer}>
+              <Text style={styles.telegramIcon}>📱</Text>
+            </View>
+
+            {/* Título e descrição */}
+            <Text style={styles.mainTitle}>Conectar ao Telegram</Text>
+            <Text style={styles.mainDescription}>
+              Receba lembretes e registre doses direto pelo chat. Vai levar uns 30 segundos.
             </Text>
 
-            {!token ? (
-              <View style={styles.setupContainer}>
-                <Text style={styles.stepTitle}>Para começar:</Text>
-                <Text style={styles.stepDescription}>
-                  Gere um código de vínculo único para autenticar o bot na sua conta com segurança.
-                </Text>
-                <TouchableOpacity 
-                  style={styles.primaryButton} 
+            {/* Passo 1: Abrir bot */}
+            <View style={styles.stepCard}>
+              <View style={styles.stepHeader}>
+                <Text style={styles.stepNumber}>Passo 1</Text>
+              </View>
+              <Text style={styles.stepTitle}>Abra o bot no Telegram</Text>
+              <TouchableOpacity
+                style={styles.telegramButton}
+                onPress={handleOpenBot}
+              >
+                <Text style={styles.telegramButtonText}>Abrir @dosiq_bot</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Passo 2: Enviar código */}
+            <View style={styles.stepCard}>
+              <View style={styles.stepHeader}>
+                <Text style={styles.stepNumber}>Passo 2</Text>
+              </View>
+              <Text style={styles.stepTitle}>Envie este código no chat</Text>
+
+              {!token ? (
+                <TouchableOpacity
+                  style={styles.generateButton}
                   onPress={handleGenerateToken}
                   disabled={isGenerating}
                 >
                   {isGenerating ? (
-                    <ActivityIndicator color={colors.text.inverse} />
+                    <ActivityIndicator color={colors.primary[600]} size="small" />
                   ) : (
-                    <Text style={styles.primaryButtonText}>Gerar Código de Vínculo</Text>
+                    <Text style={styles.generateButtonText}>Gerar código</Text>
                   )}
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.tokenContainer}>
-                <Text style={styles.stepTitle}>Próximo Passo:</Text>
-                <Text style={styles.stepDescription}>
-                  Abra o nosso bot no Telegram e envie o comando abaixo:
-                </Text>
-                
-                <View style={styles.codeBox}>
-                  <Text style={styles.codeLabel}>COMANDO:</Text>
-                  <Text style={styles.codeText}>/start {token}</Text>
-                </View>
+              ) : (
+                <>
+                  <View style={styles.codeBox}>
+                    <Text style={styles.codeText}>/start {token}</Text>
+                    <TouchableOpacity style={styles.copyButton} onPress={handleCopyToken}>
+                      <Text style={styles.copyButtonText}>copiar</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.regenerateButton}
+                    onPress={handleGenerateToken}
+                    disabled={isGenerating}
+                  >
+                    <Text style={styles.regenerateButtonText}>
+                      {isGenerating ? '...' : 'Gerar novo código'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
 
-                <TouchableOpacity 
-                  style={[styles.primaryButton, { backgroundColor: colors.primary[600] }]} 
-                  onPress={handleOpenBot}
-                >
-                  <Text style={styles.primaryButtonText}>Abrir Bot no Telegram</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.ghostButton} 
-                  onPress={handleGenerateToken}
-                  disabled={isGenerating}
-                >
-                  <Text style={styles.ghostButtonText}>Gerar novo código</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            
-            <View style={styles.noteBox}>
-              <Text style={styles.noteTitle}>Nota de privacidade:</Text>
-              <Text style={styles.noteText}>
-                O bot nunca pedirá sua senha. O vínculo é feito através de um token temporário.
+            {/* Nota de segurança */}
+            <View style={styles.securityNote}>
+              <Text style={styles.securityIcon}>🔒</Text>
+              <Text style={styles.securityText}>
+                O bot nunca pede sua senha. O código é temporário e só serve para vincular sua conta.
               </Text>
             </View>
           </>
@@ -122,109 +152,165 @@ export default function TelegramLinkScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   header: {
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
   },
   backButton: {
-    marginBottom: spacing[4],
+    paddingVertical: spacing[2],
   },
   backButtonText: {
     color: colors.primary[600],
     fontSize: 16,
     fontWeight: '600',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
   content: {
-    padding: spacing[6],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[6],
     flex: 1,
   },
-  introText: {
+  // Ícone Telegram grande
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: spacing[6],
+  },
+  telegramIcon: {
+    fontSize: 64,
+  },
+  // Título e descrição principais
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing[2],
+  },
+  mainDescription: {
     fontSize: 16,
     color: colors.text.secondary,
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: spacing[8],
   },
-  setupContainer: {
+  // Cards de passo
+  stepCard: {
     backgroundColor: colors.bg.card,
     borderRadius: borderRadius.lg,
-    padding: spacing[6],
+    padding: spacing[4],
+    marginBottom: spacing[4],
     ...shadows.md,
   },
-  tokenContainer: {
-    backgroundColor: colors.bg.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing[6],
-    ...shadows.md,
+  stepHeader: {
+    marginBottom: spacing[3],
+  },
+  stepNumber: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text.muted,
+    letterSpacing: 0.5,
   },
   stepTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing[2],
+    marginBottom: spacing[4],
   },
-  stepDescription: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    marginBottom: spacing[6],
-    lineHeight: 20,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary[500],
-    height: 52,
+  // Botão "Abrir bot"
+  telegramButton: {
+    backgroundColor: colors.primary[600],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
     borderRadius: borderRadius.md,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  primaryButtonText: {
+  telegramButtonText: {
     color: colors.text.inverse,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
+  // Botão "Gerar código"
+  generateButton: {
+    backgroundColor: colors.bg.screen,
+    borderWidth: 2,
+    borderColor: colors.border.default,
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  generateButtonText: {
+    color: colors.primary[600],
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  // Code box com copiar
   codeBox: {
     backgroundColor: colors.neutral[900],
-    padding: spacing[4],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
     borderRadius: borderRadius.md,
-    marginBottom: spacing[6],
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  codeLabel: {
-    color: colors.text.muted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: spacing[1],
+    justifyContent: 'space-between',
+    marginBottom: spacing[3],
   },
   codeText: {
     color: colors.text.inverse,
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    flex: 1,
   },
-  ghostButton: {
-    marginTop: spacing[4],
+  copyButton: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    backgroundColor: colors.primary[600],
+    borderRadius: borderRadius.sm,
+  },
+  copyButtonText: {
+    color: colors.text.inverse,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  // Botão "Gerar novo código"
+  regenerateButton: {
+    paddingVertical: spacing[2],
     alignItems: 'center',
-    padding: spacing[2],
   },
-  ghostButtonText: {
+  regenerateButtonText: {
     color: colors.text.secondary,
     fontSize: 14,
     fontWeight: '600',
+    textDecorationLine: 'underline',
   },
+  // Nota de segurança
+  securityNote: {
+    flexDirection: 'row',
+    backgroundColor: colors.neutral[100],
+    borderRadius: borderRadius.md,
+    padding: spacing[4],
+    marginTop: spacing[2],
+  },
+  securityIcon: {
+    fontSize: 18,
+    marginRight: spacing[3],
+  },
+  securityText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+    flex: 1,
+  },
+  // Estado conectado
   successContainer: {
     alignItems: 'center',
-    paddingTop: spacing[10],
+    paddingVertical: spacing[8],
   },
   successIcon: {
     fontSize: 64,
     marginBottom: spacing[4],
   },
   successTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.status.success,
     marginBottom: spacing[4],
@@ -234,22 +320,28 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: spacing[6],
   },
-  noteBox: {
-    marginTop: 'auto',
-    backgroundColor: colors.neutral[100],
-    padding: spacing[4],
+  chatIdContainer: {
+    backgroundColor: colors.bg.card,
     borderRadius: borderRadius.md,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[5],
+    marginTop: spacing[6],
+    alignItems: 'center',
+    ...shadows.sm,
   },
-  noteTitle: {
+  chatIdLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.text.secondary,
-    marginBottom: spacing[1],
-  },
-  noteText: {
-    fontSize: 12,
     color: colors.text.muted,
-    lineHeight: 18,
-  }
+    marginBottom: spacing[1],
+    letterSpacing: 0.5,
+  },
+  chatIdValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    letterSpacing: 1,
+  },
 })

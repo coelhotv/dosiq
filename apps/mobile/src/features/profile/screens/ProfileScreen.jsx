@@ -1,11 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { Bell } from 'lucide-react-native'
+import { Bell, ChevronRight } from 'lucide-react-native'
 import Constants from 'expo-constants'
 import { useProfile } from '../hooks/useProfile'
 import { logoutUser } from '../services/profileService'
-import TelegramLinkCard from '../components/TelegramLinkCard'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
@@ -19,8 +18,7 @@ import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotif
  */
 export default function ProfileScreen() {
   const navigation = useNavigation()
-  const { user, settings, loading, error, refresh, generateToken } = useProfile()
-  const [isGenerating, setIsGenerating] = useState(false)
+  const { user, loading, error, refresh } = useProfile()
 
   const { data: notifData } = useNotificationLog({ userId: user?.id, limit: 30, enabled: !!user?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData, user?.id)
@@ -31,8 +29,8 @@ export default function ProfileScreen() {
       'Tem certeza que deseja sair?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sair', 
+        {
+          text: 'Sair',
           style: 'destructive',
           onPress: async () => {
             const { success, error: logoutErr } = await logoutUser()
@@ -43,18 +41,6 @@ export default function ProfileScreen() {
         }
       ]
     )
-  }
-
-  const handleGenerateToken = async () => {
-    setIsGenerating(true)
-    try {
-      await generateToken()
-    } catch (err) {
-      if (__DEV__) console.error('Erro ao gerar token:', err)
-      Alert.alert('Erro', 'Não foi possível gerar o código: ' + err.message)
-    } finally {
-      setIsGenerating(false)
-    }
   }
 
   if (loading) {
@@ -83,7 +69,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Minha Conta</Text>
+          <Text style={styles.sectionTitle}>MINHA CONTA</Text>
           <View style={styles.card}>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Email</Text>
@@ -99,47 +85,54 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notificações</Text>
+          <Text style={styles.sectionTitle}>AVISOS & LEMBRETES</Text>
           <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.notificationRow}>
-              <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
-              <Text style={styles.notificationLabel}>Preferências de Notificação</Text>
-              <Text style={styles.arrow}>›</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.card, { marginTop: spacing[2] }]}
             onPress={() => navigation.navigate(ROUTES.NOTIFICATION_INBOX, { userId: user?.id })}
             activeOpacity={0.7}
           >
             <View style={styles.notificationRow}>
               <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
-              <Text style={styles.notificationLabel}>Central de Avisos</Text>
+              <View style={styles.notificationTextGroup}>
+                <Text style={styles.notificationLabel}>Notificações</Text>
+                <Text style={styles.notificationSubtitle}>Avisos, preferências e canais</Text>
+              </View>
               {unreadCount > 0 && (
                 <View style={styles.inboxBadge}>
                   <Text style={styles.inboxBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                 </View>
               )}
-              <Text style={styles.arrow}>›</Text>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bot Telegram</Text>
-          <TelegramLinkCard
-            settings={settings}
-          />
+          <Text style={styles.sectionTitle}>OUTROS</Text>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.otherRow}
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.otherLabel}>Privacidade & dados</Text>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+            <View style={styles.otherDivider} />
+            <TouchableOpacity
+              style={styles.otherRow}
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.otherLabel}>Sobre o Dosiq</Text>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.logoutSection}>
-          <TouchableOpacity 
-            style={styles.logoutButton} 
+          <TouchableOpacity
+            style={styles.logoutButton}
             onPress={handleLogout}
             activeOpacity={0.7}
           >
@@ -183,11 +176,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing[6],
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: colors.text.secondary,
     marginBottom: spacing[2],
     paddingHorizontal: 20,
+    letterSpacing: 0.8,
   },
   card: {
     backgroundColor: colors.bg.card,
@@ -248,15 +242,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[3],
   },
-  notificationLabel: {
+  notificationTextGroup: {
     flex: 1,
+    gap: 2,
+  },
+  notificationLabel: {
     fontSize: 16,
     color: colors.text.primary,
     fontWeight: '500',
   },
-  arrow: {
-    fontSize: 20,
+  notificationSubtitle: {
+    fontSize: 12,
     color: colors.text.secondary,
+  },
+  otherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[3],
+  },
+  otherLabel: {
+    fontSize: 16,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  otherDivider: {
+    height: 1,
+    backgroundColor: colors.border.light,
   },
   inboxBadge: {
     minWidth: 20,

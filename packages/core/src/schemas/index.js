@@ -96,5 +96,11 @@ export {
   notificationLogCreateSchema,
 } from './notificationLogSchema.js'
 
+export {
+  userSettingsNotificationSchema,
+  NOTIFICATION_MODES,
+  deriveLegacyPreference,
+} from './userSettingsSchema.js'
+
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper.js'

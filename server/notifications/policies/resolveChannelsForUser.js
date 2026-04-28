@@ -1,36 +1,43 @@
-// Política de resolução de canais de notificação
-// Determina quais canais usar para notificar um usuário baseado em:
-// 1. Preferência de notificação (notification_preference em user_settings)
-// 2. Disponibilidade de cada canal (telegram_chat_id ou dispositivos ativos)
+// Política de resolução de canais de notificação (Wave N2+)
+// Flags explícitas têm precedência sobre notification_preference legado
 
-// Retorna array de canais válidos: [], ['telegram'], ['mobile_push'], ou ['telegram', 'mobile_push']
+// Retorna array de canais válidos: [], ['telegram'], ['mobile_push'], ['web_push'], ou combinações
 
 export async function resolveChannelsForUser({ userId, repositories }) {
-  const preference = await repositories.preferences.getByUserId(userId)
-  const hasTelegram = await repositories.preferences.hasTelegramChat(userId)
+  const hasTelegram       = await repositories.preferences.hasTelegramChat(userId)
   const activeExpoDevices = await repositories.devices.listActiveByUser(userId, 'expo')
+  const activeWebDevices  = await repositories.devices.listActiveByUser(userId, 'webpush')
 
-  // Caso 1: Usuário prefere não receber notificações
+  // Tentar buscar settings completos (com flags Wave N2)
+  let settings = null
+  if (repositories.preferences.getSettingsByUserId) {
+    settings = await repositories.preferences.getSettingsByUserId(userId)
+  }
+
+  // Modo explícito Wave N2: usar flags de canal se presentes
+  if (
+    settings &&
+    settings.channel_mobile_push_enabled !== undefined &&
+    settings.channel_web_push_enabled !== undefined &&
+    settings.channel_telegram_enabled !== undefined
+  ) {
+    const channels = []
+    if (settings.channel_mobile_push_enabled && activeExpoDevices.length > 0) channels.push('mobile_push')
+    if (settings.channel_web_push_enabled    && activeWebDevices.length > 0)  channels.push('web_push')
+    if (settings.channel_telegram_enabled    && hasTelegram)                   channels.push('telegram')
+    return channels
+  }
+
+  // Fallback legado: notification_preference
+  const preference = await repositories.preferences.getByUserId(userId)
   if (preference === 'none') return []
-
-  // Caso 2: Telegram apenas (se disponível)
-  if (preference === 'telegram') {
-    return hasTelegram ? ['telegram'] : []
-  }
-
-  // Caso 3: Mobile push apenas (se tiver dispositivos ativos)
-  if (preference === 'mobile_push') {
-    return activeExpoDevices.length > 0 ? ['mobile_push'] : []
-  }
-
-  // Caso 4: Ambos os canais (qualquer um que esteja disponível)
+  if (preference === 'telegram')    return hasTelegram ? ['telegram'] : []
+  if (preference === 'mobile_push') return activeExpoDevices.length > 0 ? ['mobile_push'] : []
   if (preference === 'both') {
     return [
       ...(hasTelegram ? ['telegram'] : []),
       ...(activeExpoDevices.length > 0 ? ['mobile_push'] : []),
     ]
   }
-
-  // Fallback (não deveria chegar aqui se CHECK constraint funcionar)
   return []
 }

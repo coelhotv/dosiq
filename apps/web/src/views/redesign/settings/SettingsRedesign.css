@@ -348,6 +348,190 @@
   background: var(--color-error-bg, #ffdad6);
 }
 
+/* ── Notificações (Wave N2) ─────────────────────────────────── */
+
+/* Linhas de configuração */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.settings-row-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-row-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+
+.settings-row-subtitle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-on-surface);
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+.settings-row--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.settings-row--info {
+  cursor: default;
+}
+
+/* Toggle switches */
+.settings-toggle {
+  width: 52px;
+  height: 32px;
+  accent-color: var(--color-primary);
+}
+
+/* Radio rows */
+.settings-radio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+}
+
+.settings-radio-row:last-child {
+  border-bottom: none;
+}
+
+.settings-radio-row input[type='radio'] {
+  margin-top: 4px;
+  accent-color: var(--color-primary);
+}
+
+.settings-radio-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+
+.settings-radio-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-on-surface);
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+/* Time inputs */
+.settings-time-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  flex-wrap: wrap;
+}
+
+.settings-time-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-on-surface);
+}
+
+.settings-time-input {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.settings-time-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.settings-time-sep {
+  font-size: 0.9rem;
+  color: var(--color-on-surface);
+  opacity: 0.6;
+}
+
+/* Badges */
+.settings-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.settings-badge--success {
+  background: color-mix(in srgb, var(--color-success, #22c55e) 12%, transparent);
+  color: var(--color-success, #22c55e);
+}
+
+.settings-badge--info {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.settings-badge--muted {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+  opacity: 0.6;
+}
+
+/* Save button */
+.settings-btn-save {
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.settings-btn-save:hover {
+  opacity: 0.9;
+  background: color-mix(in srgb, var(--color-primary) 85%, black);
+}
+
+.settings-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Footer ────────────────────────────────────────────────── */
 .sr-footer {
   text-align: center;

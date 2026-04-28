@@ -15,6 +15,7 @@ import {
 } from '../utils/timezone.js';
 import { calculateDaysRemaining, escapeMarkdownV2 } from '../utils/formatters.js';
 import { partitionDoses } from './utils/partitionDoses.js';
+import { shouldSendNow } from './utils/notificationGate.js';
 
 const logger = createLogger('Tasks');
 
@@ -334,7 +335,7 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     // R-111: Buscar apenas usuários ativos (evita queries em massa na auth.users)
     const { data: users, error: userError } = await supabase
       .from('user_settings')
-      .select('user_id, timezone');
+      .select('user_id, timezone, notification_mode, quiet_hours_start, quiet_hours_end');
 
     if (userError) throw userError;
 
@@ -380,6 +381,22 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
         // R-020: Usar utilitário central de timezone
         const currentHHMM = getCurrentTimeInTimezone(timezone);
         const currentHour = parseInt(currentHHMM.split(':')[0], 10);
+
+        // Wave N2: gate de supressão por modo e quiet hours
+        const canSend = shouldSendNow({
+          mode: user.notification_mode || 'realtime',
+          quietHoursStart: user.quiet_hours_start || null,
+          quietHoursEnd:   user.quiet_hours_end   || null,
+          currentHHMM,
+        })
+        if (!canSend) {
+          logger.info('Notificações suprimidas por modo/quiet hours', {
+            userId, correlationId,
+            mode: user.notification_mode,
+            currentHHMM,
+          })
+          continue
+        }
 
         const protocols = protocolsByUser[userId] || [];
         if (protocols.length === 0) continue;
@@ -848,11 +865,22 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 
     logger.info(`Running daily digest via dispatcher for ${users.length} users`, { correlationId });
 
+    // Fase 1: filtrar usuários elegíveis (mode=digest_morning, no horário correto)
+    const eligibleEntries = [];
     for (const user of users) {
       const userId = user.id;
       try {
         const settings = await getUserSettings(userId, true);
         if (!settings) continue;
+
+        const notificationMode = settings.notification_mode || 'realtime';
+        if (notificationMode !== 'digest_morning') continue;
+
+        const timezone = settings.timezone || 'America/Sao_Paulo';
+        const digestTime = settings.digest_time || '07:00';
+        const currentHHMM = getCurrentTimeInTimezone(timezone);
+
+        if (currentHHMM !== digestTime) continue;
 
         const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
         if (!shouldSend) {
@@ -860,7 +888,34 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           continue;
         }
 
-        const timezone = settings.timezone || 'America/Sao_Paulo';
+        eligibleEntries.push({ userId, settings, timezone });
+      } catch (err) {
+        logger.error(`Error evaluating daily digest eligibility for user`, err, { userId: user.id, correlationId });
+      }
+    }
+
+    if (eligibleEntries.length === 0) {
+      logger.info('Daily digest: no eligible users at this time', { correlationId });
+      return;
+    }
+
+    // Fase 2: bulk-fetch de protocolos para todos os usuários elegíveis (evita N+1)
+    const eligibleIds = eligibleEntries.map(e => e.userId);
+    const { data: allProtocols } = await supabase
+      .from('protocols')
+      .select('*, medicine:medicines(name)')
+      .in('user_id', eligibleIds)
+      .eq('is_active', true);
+
+    const protocolsByUser = {};
+    for (const p of allProtocols ?? []) {
+      if (!protocolsByUser[p.user_id]) protocolsByUser[p.user_id] = [];
+      protocolsByUser[p.user_id].push(p);
+    }
+
+    // Fase 3: dispatch por usuário com dados já em memória
+    for (const { userId, timezone } of eligibleEntries) {
+      try {
         const { data: logs } = await supabase
           .from('medicine_logs')
           .select('*')
@@ -873,23 +928,27 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           return logDate === today;
         }) || [];
 
-        const { data: protocols } = await supabase
-          .from('protocols')
-          .select('time_schedule')
-          .eq('user_id', userId)
-          .eq('is_active', true);
-
-        const expectedDoses = protocols?.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0) || 0;
+        const protocols = protocolsByUser[userId] || [];
+        const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
         const takenDoses = todayLogs.length;
         const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
 
         const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
         const summary = `${dateStr} — ${takenDoses}/${expectedDoses} doses (${percentage}%)`;
 
+        const scheduleLines = protocols
+          .flatMap(p => (p.time_schedule || []).map(t => `${t} — ${p.medicine?.name || 'Medicamento'}`))
+          .sort()
+          .slice(0, 10);
+
+        const scheduleBody = scheduleLines.length > 0
+          ? scheduleLines.join('\n')
+          : 'Verifique sua agenda no app.';
+
         await dispatcher.dispatch({
           userId,
           kind: 'daily_digest',
-          data: { summary },
+          data: { summary, scheduleLines, expectedDoses, takenDoses, scheduleBody },
           context: { correlationId, jobType: 'daily_digest_dispatcher' }
         });
 

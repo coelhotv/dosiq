@@ -8,10 +8,13 @@ import {
   Wand2,
   Grid3x2,
   LogOut,
+  Bell,
 } from 'lucide-react'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { validatePasswordChange } from '@schemas/authSchema'
+import { userSettingsNotificationSchema } from '@schemas/userSettingsSchema'
+import { webpushService } from '@shared/services/webpushService'
 import Button from '@shared/components/ui/Button'
 import './settings/SettingsRedesign.css'
 
@@ -35,8 +38,19 @@ export default function Settings({ onNavigate }) {
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
 
+  // ═══ Notification States (Wave N2) ═══
+  const [channelWebPushEnabled, setChannelWebPushEnabled] = useState(false)
+  const [notificationMode, setNotificationMode] = useState('realtime')
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false)
+  const [quietHoursStart, setQuietHoursStart] = useState('22:00')
+  const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
+  const [digestTime, setDigestTime] = useState('07:00')
+  const [savingChannel, setSavingChannel] = useState(false)
+  const [savingNotification, setSavingNotification] = useState(false)
+
   // ═══ Hooks ═══
   const { mode: complexityMode, medicineCount, overrideMode, setOverride } = useComplexityMode()
+  const webPushSupported = typeof window !== 'undefined' && 'PushManager' in window
 
   // ═══ Helper Functions ═══
   const showFeedback = useCallback((msg) => {
@@ -64,6 +78,21 @@ export default function Settings({ onNavigate }) {
         setSettings(settingsData ?? {})
         if (settingsData?.telegram_token) {
           setTelegramToken(settingsData.telegram_token)
+        }
+        // Load notification settings
+        if (settingsData?.notification_mode) {
+          setNotificationMode(settingsData.notification_mode)
+        }
+        if (settingsData?.channel_web_push_enabled) {
+          setChannelWebPushEnabled(settingsData.channel_web_push_enabled)
+        }
+        if (settingsData?.quiet_hours_start && settingsData?.quiet_hours_end) {
+          setQuietHoursEnabled(true)
+          setQuietHoursStart(settingsData.quiet_hours_start)
+          setQuietHoursEnd(settingsData.quiet_hours_end)
+        }
+        if (settingsData?.digest_time) {
+          setDigestTime(settingsData.digest_time)
         }
       }
     } catch (err) {
@@ -147,6 +176,120 @@ export default function Settings({ onNavigate }) {
       setError('Erro ao sair: ' + err.message)
     }
   }, [onNavigate])
+
+  const handleToggleWebPush = useCallback(async (e) => {
+    const enabled = e.target.checked
+    setSavingChannel(true)
+    try {
+      const userId = await getUserId()
+      if (enabled) {
+        await webpushService.subscribe()
+      }
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: userId,
+            channel_web_push_enabled: enabled,
+          },
+          { onConflict: 'user_id' }
+        )
+      if (error) throw error
+      setChannelWebPushEnabled(enabled)
+      showFeedback(enabled ? 'Push web ativado' : 'Push web desativado')
+    } catch (err) {
+      console.error('[Settings] webpush toggle error', err)
+      setError('Erro ao configurar push web: ' + err.message)
+    } finally {
+      setSavingChannel(false)
+    }
+  }, [showFeedback])
+
+  const handleModeChange = useCallback(
+    async (mode) => {
+      const v = userSettingsNotificationSchema.shape.notification_mode.safeParse(mode)
+      if (!v.success) { setError('Modo inválido'); return }
+      setSavingNotification(true)
+      try {
+        const userId = await getUserId()
+        setNotificationMode(mode)
+        const { error } = await supabase
+          .from('user_settings')
+          .upsert(
+            {
+              user_id: userId,
+              notification_mode: mode,
+            },
+            { onConflict: 'user_id' }
+          )
+        if (error) throw error
+        showFeedback('Modo alterado com sucesso')
+      } catch (err) {
+        console.error('[Settings] mode change error', err)
+        setError('Erro ao alterar modo: ' + err.message)
+      } finally {
+        setSavingNotification(false)
+      }
+    },
+    [showFeedback]
+  )
+
+  const saveQuietHours = useCallback(async () => {
+    if (quietHoursEnabled && (!quietHoursStart || !quietHoursEnd)) {
+      setError('Preencha os horários')
+      return
+    }
+    if (quietHoursEnabled) {
+      const v = userSettingsNotificationSchema.pick({ quiet_hours_start: true, quiet_hours_end: true })
+        .safeParse({ quiet_hours_start: quietHoursStart, quiet_hours_end: quietHoursEnd })
+      if (!v.success) { setError(v.error.errors[0]?.message ?? 'Horário inválido'); return }
+    }
+    try {
+      const userId = await getUserId()
+      const start = quietHoursEnabled ? quietHoursStart : null
+      const end = quietHoursEnabled ? quietHoursEnd : null
+
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: userId,
+            quiet_hours_start: start,
+            quiet_hours_end: end,
+          },
+          { onConflict: 'user_id' }
+        )
+      if (error) throw error
+      showFeedback('Horários salvos')
+    } catch (err) {
+      console.error('[Settings] quiet hours error', err)
+      setError('Erro ao salvar horários: ' + err.message)
+    }
+  }, [quietHoursEnabled, quietHoursStart, quietHoursEnd, showFeedback])
+
+  const saveDigestTime = useCallback(async () => {
+    if (!digestTime) {
+      setError('Selecione um horário')
+      return
+    }
+    try {
+      const userId = await getUserId()
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: userId,
+            digest_time: digestTime,
+          },
+          { onConflict: 'user_id' }
+        )
+      if (error) throw error
+      showFeedback('Horário do resumo salvo')
+    } catch (err) {
+      console.error('[Settings] digest time error', err)
+      setError('Erro ao salvar horário: ' + err.message)
+    }
+  }, [digestTime, showFeedback])
 
   // ═══ Effects ═══
   useEffect(() => {
@@ -259,6 +402,201 @@ export default function Settings({ onNavigate }) {
             </>
           )}
         </div>
+      </section>
+
+      {/* ═══ NOTIFICAÇÕES ═══ */}
+      <section className="sr-section">
+        <h3 className="sr-section__title">
+          <Bell size={24} /> Notificações
+        </h3>
+
+        {/* ── Seção: Canais ── */}
+        <div className="sr-section__card">
+          <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Canais
+          </h4>
+
+          {/* App (push nativo) — informativo */}
+          <div className="settings-row settings-row--info">
+            <div className="settings-row-label">
+              <span className="settings-row-icon">📱</span>
+              <div>
+                <span className="settings-row-title">App (push)</span>
+                <span className="settings-row-subtitle">Gerenciado pelo aplicativo móvel</span>
+              </div>
+            </div>
+            <span className="settings-badge settings-badge--info">App</span>
+          </div>
+
+          {/* Web (PWA) — switch funcional */}
+          <div className="settings-row">
+            <div className="settings-row-label">
+              <span className="settings-row-icon">🌐</span>
+              <div>
+                <span className="settings-row-title">Web (PWA)</span>
+                <span className="settings-row-subtitle">
+                  {webPushSupported
+                    ? channelWebPushEnabled
+                      ? 'Ativo neste navegador'
+                      : 'Inativo neste navegador'
+                    : 'Não suportado neste navegador'}
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              className="settings-toggle"
+              checked={channelWebPushEnabled}
+              disabled={!webPushSupported || savingChannel}
+              onChange={handleToggleWebPush}
+              aria-label="Ativar notificações Web (PWA)"
+            />
+          </div>
+
+          {/* Telegram — status */}
+          <div className="settings-row settings-row--info">
+            <div className="settings-row-label">
+              <span className="settings-row-icon">✈️</span>
+              <div>
+                <span className="settings-row-title">Telegram</span>
+                <span className="settings-row-subtitle">Configure pelo aplicativo móvel</span>
+              </div>
+            </div>
+            <span
+              className={`settings-badge ${
+                isTelegramConnected ? 'settings-badge--success' : 'settings-badge--muted'
+              }`}
+            >
+              {isTelegramConnected ? 'Conectado' : 'Desconectado'}
+            </span>
+          </div>
+
+          {/* Email — disabled */}
+          <div className="settings-row settings-row--disabled">
+            <div className="settings-row-label">
+              <span className="settings-row-icon">📧</span>
+              <div>
+                <span className="settings-row-title">Email</span>
+                <span className="settings-row-subtitle">Em breve</span>
+              </div>
+            </div>
+            <span className="settings-badge settings-badge--muted">Em breve</span>
+          </div>
+        </div>
+
+        {/* ── Seção: Modo de notificação ── */}
+        <div className="sr-section__card" style={{ marginTop: '1rem' }}>
+          <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Modo de notificação
+          </h4>
+          {[
+            {
+              value: 'realtime',
+              label: 'Tempo real',
+              desc: 'Receba cada lembrete no momento certo',
+            },
+            {
+              value: 'digest_morning',
+              label: 'Resumo matinal',
+              desc: 'Um resumo por dia no horário escolhido',
+            },
+            {
+              value: 'silent',
+              label: 'Silencioso',
+              desc: 'Sem envios externos, apenas no app',
+            },
+          ].map(({ value, label, desc }) => (
+            <label key={value} className="settings-radio-row">
+              <input
+                type="radio"
+                name="notification_mode"
+                value={value}
+                checked={notificationMode === value}
+                onChange={() => handleModeChange(value)}
+                disabled={savingNotification}
+              />
+              <div>
+                <span className="settings-radio-label">{label}</span>
+                <span className="settings-radio-desc">{desc}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {/* ── Seção: Não me incomode ── */}
+        <div className="sr-section__card" style={{ marginTop: '1rem' }}>
+          <div className="settings-row">
+            <div className="settings-row-label">
+              <span className="settings-row-title">Não me incomode</span>
+              <span className="settings-row-subtitle">
+                Silenciar notificações externas neste período
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              className="settings-toggle"
+              checked={quietHoursEnabled}
+              onChange={(e) => setQuietHoursEnabled(e.target.checked)}
+              aria-label="Ativar não me incomode"
+            />
+          </div>
+          {quietHoursEnabled && (
+            <div className="settings-time-row">
+              <label className="settings-time-label">
+                Das{' '}
+                <input
+                  type="time"
+                  className="settings-time-input"
+                  value={quietHoursStart}
+                  onChange={(e) => setQuietHoursStart(e.target.value)}
+                />
+              </label>
+              <span className="settings-time-sep">às</span>
+              <label className="settings-time-label">
+                <input
+                  type="time"
+                  className="settings-time-input"
+                  value={quietHoursEnd}
+                  onChange={(e) => setQuietHoursEnd(e.target.value)}
+                />
+              </label>
+              <button
+                className="settings-btn-save"
+                onClick={saveQuietHours}
+                type="button"
+              >
+                Salvar
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Seção: Hora do resumo (condicional) ── */}
+        {notificationMode === 'digest_morning' && (
+          <div className="sr-section__card" style={{ marginTop: '1rem' }}>
+            <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+              Hora do resumo
+            </h4>
+            <div className="settings-time-row">
+              <label className="settings-time-label">
+                Enviar às{' '}
+                <input
+                  type="time"
+                  className="settings-time-input"
+                  value={digestTime}
+                  onChange={(e) => setDigestTime(e.target.value)}
+                />
+              </label>
+              <button
+                className="settings-btn-save"
+                onClick={saveDigestTime}
+                type="button"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ═══ PREFERÊNCIAS ═══ */}
