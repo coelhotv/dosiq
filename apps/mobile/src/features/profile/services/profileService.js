@@ -75,7 +75,19 @@ export async function getUserSettings() {
 
     const { data, error } = await supabase
       .from('user_settings')
-      .select('user_id, telegram_chat_id, verification_token, notification_preference')
+      .select(`
+        user_id, 
+        telegram_chat_id, 
+        verification_token, 
+        notification_preference,
+        notification_mode,
+        quiet_hours_start,
+        quiet_hours_end,
+        digest_time,
+        channel_mobile_push_enabled,
+        channel_web_push_enabled,
+        channel_telegram_enabled
+      `)
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -84,7 +96,7 @@ export async function getUserSettings() {
     const settings = data || { user_id: user.id, telegram_chat_id: null }
     
     // Adicionando validação do output conforme sugerido
-    z.object({
+    userSettingsNotificationSchema.extend({
       user_id: z.string().uuid(),
       telegram_chat_id: z.string().nullable().optional(),
       verification_token: z.string().nullable().optional()
@@ -112,19 +124,14 @@ export async function updateNotificationSettings(userId, settings) {
       throw new Error(parsed.error.errors.map(e => e.message).join(', '))
     }
 
+    const updatePayload = {
+      user_id: userId,
+      ...settings
+    }
+
     const { error } = await supabase
       .from('user_settings')
-      .upsert({
-        user_id: userId,
-        notification_mode: settings.notification_mode,
-        quiet_hours_start: settings.quiet_hours_start ?? null,
-        quiet_hours_end:   settings.quiet_hours_end   ?? null,
-        digest_time:       settings.digest_time,
-        channel_mobile_push_enabled: settings.channel_mobile_push_enabled,
-        channel_web_push_enabled:    settings.channel_web_push_enabled,
-        channel_telegram_enabled:    settings.channel_telegram_enabled,
-        notification_preference:     settings.notification_preference,
-      }, { onConflict: 'user_id' })
+      .upsert(updatePayload, { onConflict: 'user_id' })
 
     if (error) throw error
     return { success: true, error: null }
