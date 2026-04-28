@@ -5,7 +5,7 @@
  * Usa useNotificationLog (Sprint 8.2) + useUnreadNotificationCount.
  */
 import { useEffect } from 'react'
-import { ArrowLeft, Bell } from 'lucide-react'
+import { ArrowLeft, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
@@ -57,9 +57,13 @@ export default function NotificationInbox({ userId, onNavigate, onBack, onOpenDo
           )}
         </div>
 
-        <div className="notif-inbox__header-icon" aria-hidden="true">
-          <Bell size={20} strokeWidth={1.75} />
-        </div>
+        <button 
+          className="notif-inbox__header-icon" 
+          onClick={() => onNavigate('settings')}
+          aria-label="Configurações de notificações"
+        >
+          <Settings size={20} strokeWidth={1.75} />
+        </button>
       </header>
 
       <main className="notif-inbox__content">

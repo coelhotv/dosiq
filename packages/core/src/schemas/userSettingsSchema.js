@@ -29,6 +29,9 @@ export const userSettingsNotificationSchema = z.object({
   digest_time: timeSchema
     .default('07:00'),
 
+  quiet_hours_enabled: z.boolean().default(false),
+  complexity_override: z.enum(['simple', 'complex']).nullable().optional(),
+
   channel_mobile_push_enabled: z.boolean().default(true),
   channel_web_push_enabled:    z.boolean().default(false),
   channel_telegram_enabled:    z.boolean().default(false),

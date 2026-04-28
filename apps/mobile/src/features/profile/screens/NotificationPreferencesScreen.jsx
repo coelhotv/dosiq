@@ -137,7 +137,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     if (!settings) return
 
     const pref = settings.notification_preference
-    setQuietHoursEnabled(!!(settings.quiet_hours_start || settings.quiet_hours_end))
+    setQuietHoursEnabled(settings.quiet_hours_enabled ?? !!(settings.quiet_hours_start || settings.quiet_hours_end))
     setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
     setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
     setDigestTime(settings.digest_time ?? '07:00')
@@ -191,6 +191,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
         notification_mode: mode,
         quiet_hours_start: (global && qEnabled) ? qStart : null,
         quiet_hours_end: (global && qEnabled) ? qEnd : null,
+        quiet_hours_enabled: global && qEnabled,
         digest_time: dTime,
         channel_mobile_push_enabled: global && mobile,
         channel_web_push_enabled: global && web,

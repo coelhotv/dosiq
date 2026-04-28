@@ -51,7 +51,7 @@ export default function IntegrationSection({
                   rel="noopener noreferrer"
                   className="sr-telegram__link"
                 >
-                  Abrir no Telegram <ArrowRight size={14} style={{ marginLeft: 4 }} />
+                  Abrir no Telegram <ArrowRight size={14} className="sr-icon-ml" />
                 </a>
               </div>
             )}
@@ -59,7 +59,7 @@ export default function IntegrationSection({
         ) : (
           <>
             <div className="sr-telegram__badge sr-telegram__badge--connected">
-              <CheckCircle2 size={14} style={{ marginRight: 6 }} /> Conectado
+              <CheckCircle2 size={14} className="sr-icon-mr" /> Conectado
             </div>
             <button
               className="sr-telegram__button sr-telegram__button--danger"

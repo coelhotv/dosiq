@@ -77,10 +77,12 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
       timeZone: settings.timezone || 'America/Sao_Paulo'
     })
 
-    if (!shouldSendNow({
+    const isQuietEnabled = settings.quiet_hours_enabled ?? false
+    
+    if (isQuietEnabled && !shouldSendNow({
       mode: settings.notification_mode,
       quietHoursStart: settings.quiet_hours_start,
-      quiet_hours_end: settings.quiet_hours_end,
+      quietHoursEnd: settings.quiet_hours_end,
       currentHHMM
     })) {
       isSuppressed = true

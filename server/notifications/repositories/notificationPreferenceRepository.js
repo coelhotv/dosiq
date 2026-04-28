@@ -81,7 +81,7 @@ export const notificationPreferenceRepository = {
   async getSettingsByUserId(userId) {
     const { data, error } = await supabase
       .from('user_settings')
-      .select('notification_mode, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
+      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
       .eq('user_id', userId)
       .single()
 
@@ -93,6 +93,7 @@ export const notificationPreferenceRepository = {
       // Defaults seguros
       return {
         notification_mode: 'realtime',
+        quiet_hours_enabled: false,
         quiet_hours_start: null,
         quiet_hours_end: null,
         digest_time: '08:00',

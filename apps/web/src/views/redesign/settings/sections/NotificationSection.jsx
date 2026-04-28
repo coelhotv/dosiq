@@ -19,9 +19,11 @@ export default function NotificationSection({
   quietHoursEnd,
   setQuietHoursEnd,
   saveQuietHours,
+  savingQuietHours,
   digestTime,
   setDigestTime,
   saveDigestTime,
+  savingDigestTime,
 }) {
   return (
     <section className="sr-section">
@@ -181,8 +183,13 @@ export default function NotificationSection({
                 onChange={(e) => setQuietHoursEnd(e.target.value)}
               />
             </label>
-            <button className="settings-btn-save" onClick={saveQuietHours} type="button">
-              Salvar
+            <button 
+              className="settings-btn-save" 
+              onClick={saveQuietHours} 
+              type="button"
+              disabled={savingQuietHours}
+            >
+              {savingQuietHours ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         )}
@@ -202,8 +209,13 @@ export default function NotificationSection({
                 onChange={(e) => setDigestTime(e.target.value)}
               />
             </label>
-            <button className="settings-btn-save" onClick={saveDigestTime} type="button">
-              Salvar
+            <button 
+              className="settings-btn-save" 
+              onClick={saveDigestTime} 
+              type="button"
+              disabled={savingDigestTime}
+            >
+              {savingDigestTime ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </div>

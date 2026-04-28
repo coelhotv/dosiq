@@ -47,8 +47,13 @@ export default function TodayScreen({ route, navigation }) {
   const medicines = data?.medicines ?? {}
   const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
 
-  // 1. Lógica de Persona:Threshold de complexidade adaptativa (Wave 10A)
-  const isComplex = useMemo(() => Object.keys(medicines).length > 3, [medicines])
+  // 1. Lógica de Persona: Threshold de complexidade adaptativa (Wave 10A)
+  const isComplex = useMemo(() => {
+    if (data?.user?.complexity_override) {
+      return data.user.complexity_override === 'complex'
+    }
+    return Object.keys(medicines).length > 3
+  }, [medicines, data?.user?.complexity_override])
 
   // Agrupamento da Timeline por Turnos (Epic 2) - Memoized
   const { groupedTimeline, shifts, countsByShift } = useMemo(() => {
