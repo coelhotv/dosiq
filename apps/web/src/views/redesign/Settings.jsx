@@ -9,6 +9,15 @@ import {
   Grid3x2,
   LogOut,
   Bell,
+  Smartphone,
+  Globe,
+  Send,
+  Mail,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
@@ -327,11 +336,11 @@ export default function Settings({ onNavigate }) {
       <div className="sr-header">
         <button
           className="sr-header__back"
-          onClick={() => onNavigate?.('profile')}
-          aria-label="Voltar"
+          onClick={() => onNavigate('dashboard')}
           type="button"
+          aria-label="Voltar"
         >
-          ←
+          <ArrowLeft size={24} />
         </button>
         <h1 className="sr-header__title">Configurações</h1>
       </div>
@@ -340,69 +349,6 @@ export default function Settings({ onNavigate }) {
       {message && <div className="sr-message sr-message--success">{message}</div>}
       {error && <div className="sr-message sr-message--error">{error}</div>}
 
-      {/* ═══ INTEGRAÇÕES ═══ */}
-      <section className="sr-section">
-        <h3 className="sr-section__title">
-          <Webhook size={24} /> Integrações
-        </h3>
-
-        <div className="sr-section__card">
-          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
-            Telegram
-          </h3>
-          <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', opacity: 0.6 }}>
-            Receba lembretes de medicação e alertas diretamente no seu chat.
-          </p>
-
-          {!isTelegramConnected ? (
-            <>
-              <button
-                className="sr-telegram__button sr-telegram__button--primary"
-                onClick={generateTelegramToken}
-                type="button"
-              >
-                Gerar Código de Vínculo
-              </button>
-              {telegramToken && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <p style={{ fontSize: '0.8rem', opacity: 0.6, margin: '0 0 0.5rem 0' }}>
-                    Envie ao bot:{' '}
-                    <code
-                      style={{
-                        fontSize: '0.75rem',
-                        background: 'rgba(0,0,0,0.05)',
-                        padding: '2px 4px',
-                        borderRadius: '3px',
-                      }}
-                    >
-                      /start {telegramToken}
-                    </code>
-                  </p>
-                  <a
-                    href="https://t.me/dosiq_bot"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="sr-telegram__link"
-                  >
-                    Abrir no Telegram →
-                  </a>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="sr-telegram__badge sr-telegram__badge--connected">● Conectado</div>
-              <button
-                className="sr-telegram__button sr-telegram__button--danger"
-                onClick={handleDisconnectTelegram}
-                type="button"
-              >
-                Desconectar
-              </button>
-            </>
-          )}
-        </div>
-      </section>
 
       {/* ═══ NOTIFICAÇÕES ═══ */}
       <section className="sr-section">
@@ -419,7 +365,9 @@ export default function Settings({ onNavigate }) {
           {/* App (push nativo) — informativo */}
           <div className="settings-row settings-row--info">
             <div className="settings-row-label">
-              <span className="settings-row-icon">📱</span>
+              <span className="settings-row-icon">
+                <Smartphone size={18} />
+              </span>
               <div>
                 <span className="settings-row-title">App (push)</span>
                 <span className="settings-row-subtitle">Gerenciado pelo aplicativo móvel</span>
@@ -431,7 +379,9 @@ export default function Settings({ onNavigate }) {
           {/* Web (PWA) — switch funcional */}
           <div className="settings-row">
             <div className="settings-row-label">
-              <span className="settings-row-icon">🌐</span>
+              <span className="settings-row-icon">
+                <Globe size={18} />
+              </span>
               <div>
                 <span className="settings-row-title">Web (PWA)</span>
                 <span className="settings-row-subtitle">
@@ -456,10 +406,12 @@ export default function Settings({ onNavigate }) {
           {/* Telegram — status */}
           <div className="settings-row settings-row--info">
             <div className="settings-row-label">
-              <span className="settings-row-icon">✈️</span>
+              <span className="settings-row-icon">
+                <Send size={18} />
+              </span>
               <div>
                 <span className="settings-row-title">Telegram</span>
-                <span className="settings-row-subtitle">Configure pelo aplicativo móvel</span>
+                <span className="settings-row-subtitle">Status de integração</span>
               </div>
             </div>
             <span
@@ -474,7 +426,9 @@ export default function Settings({ onNavigate }) {
           {/* Email — disabled */}
           <div className="settings-row settings-row--disabled">
             <div className="settings-row-label">
-              <span className="settings-row-icon">📧</span>
+              <span className="settings-row-icon">
+                <Mail size={18} />
+              </span>
               <div>
                 <span className="settings-row-title">Email</span>
                 <span className="settings-row-subtitle">Em breve</span>
@@ -599,6 +553,72 @@ export default function Settings({ onNavigate }) {
         )}
       </section>
 
+      {/* ═══ INTEGRAÇÕES ═══ */}
+      <section className="sr-section">
+        <h3 className="sr-section__title">
+          <Webhook size={24} /> Integrações
+        </h3>
+
+        <div className="sr-section__card">
+          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            Telegram
+          </h3>
+          <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', opacity: 0.6 }}>
+            Receba lembretes de medicação e alertas diretamente no seu chat.
+          </p>
+
+          {!isTelegramConnected ? (
+            <>
+              <button
+                className="sr-telegram__button sr-telegram__button--primary"
+                onClick={generateTelegramToken}
+                type="button"
+              >
+                Gerar Código de Vínculo
+              </button>
+              {telegramToken && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.6, margin: '0 0 0.5rem 0' }}>
+                    Envie ao bot:{' '}
+                    <code
+                      style={{
+                        fontSize: '0.75rem',
+                        background: 'rgba(0,0,0,0.05)',
+                        padding: '2px 4px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      /start {telegramToken}
+                    </code>
+                  </p>
+                  <a
+                    href="https://t.me/dosiq_bot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sr-telegram__link"
+                  >
+                    Abrir no Telegram <ArrowRight size={14} style={{ marginLeft: 4 }} />
+                  </a>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="sr-telegram__badge sr-telegram__badge--connected">
+                <CheckCircle2 size={14} style={{ marginRight: 6 }} /> Conectado
+              </div>
+              <button
+                className="sr-telegram__button sr-telegram__button--danger"
+                onClick={handleDisconnectTelegram}
+                type="button"
+              >
+                Desconectar
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
       {/* ═══ PREFERÊNCIAS ═══ */}
       <section className="sr-section">
         <h3 className="sr-section__title">
@@ -666,7 +686,7 @@ export default function Settings({ onNavigate }) {
               onClick={() => setShowPasswordForm(true)}
               type="button"
             >
-              Alterar →
+              Alterar <ArrowRight size={14} style={{ marginLeft: 4 }} />
             </button>
           ) : (
             <form className="sr-password__form" onSubmit={handleUpdatePassword}>
@@ -719,7 +739,7 @@ export default function Settings({ onNavigate }) {
               onClick={() => onNavigate?.('admin-dlq')}
               type="button"
             >
-              Ver Alertas →
+              Ver Alertas <ArrowRight size={14} style={{ marginLeft: 4 }} />
             </button>
           </div>
         </section>

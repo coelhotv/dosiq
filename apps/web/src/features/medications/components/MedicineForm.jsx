@@ -12,6 +12,7 @@ import {
 } from '@schemas/medicineSchema'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import { getFieldDescribedBy } from '@utils/formUtils'
+import { AlertCircle } from 'lucide-react'
 import './MedicineForm.css'
 
 /**
@@ -365,7 +366,11 @@ export default function MedicineForm({
         )}
       </div>
 
-      {errors.submit && <div className="error-banner">❌ {errors.submit}</div>}
+      {errors.submit && (
+        <div className="error-banner">
+          <AlertCircle size={18} /> {errors.submit}
+        </div>
+      )}
 
       <div className="form-actions">
         {showCancelButton && (

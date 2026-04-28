@@ -15,7 +15,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell,
-  ChevronRight,
+  ChevronRight, BellOff, CheckCircle2,
 } from 'lucide-react'
 import { getNotificationIcon, formatRelativeTime } from '@dosiq/core'
 import './NotificationCard.css'
@@ -79,8 +79,9 @@ export default function NotificationCard({
   const IconComponent = ICON_MAP[iconName] ?? Bell
   const relativeTime  = formatRelativeTime(sent_at)
   const isFailed      = ['falhou', 'failed'].includes(status?.toLowerCase())
+  const isMuted       = status?.toLowerCase() === 'muted'
   const isDailyDigest = notification_type === 'daily_digest'
-  const isDoseReminder = notification_type === 'dose_reminder'
+  const isDoseRelated = ['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'].includes(notification_type)
 
   // Título: sempre resolve pelo tipo (medicine_name, protocol_name, etc.)
   const displayTitle = resolveTitle(notification, label)
@@ -130,6 +131,12 @@ export default function NotificationCard({
                 aria-label="Falhou ao enviar"
               />
             )}
+            {isMuted && (
+              <span className="notif-card__muted-badge">
+                <BellOff size={10} strokeWidth={2.5} />
+                Silenciada
+              </span>
+            )}
           </div>
         </div>
 
@@ -169,12 +176,12 @@ export default function NotificationCard({
 
         {/* Rodapé: CTA */}
         <div className="notif-card__footer">
-          {isDoseReminder && wasTaken === true ? (
+          {isDoseRelated && wasTaken === true ? (
             <span
               className="notif-card__taken"
-              style={{ fontSize: 12, color: '#6b7280' }}
+              style={{ fontSize: 12, color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
             >
-              ✓ Tomada
+              <CheckCircle2 size={14} /> Tomada
             </span>
           ) : cta && (onNavigate || onOpenDoseModal) ? (
             <button

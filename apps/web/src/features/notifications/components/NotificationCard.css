@@ -66,6 +66,7 @@
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
@@ -130,4 +131,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   .notif-card, .notif-card__action { transition: none; }
+}
+
+.notif-card__muted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #6b7280);
+  background: rgba(107, 114, 128, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
