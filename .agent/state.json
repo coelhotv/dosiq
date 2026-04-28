@@ -18,10 +18,10 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "mode": "coding",
-    "status": "analysis",
-    "goal": "Fix Notification Mode Persistence in Mobile UI",
-    "goal_type": "fix"
+    "mode": "planning",
+    "status": "planning",
+    "goal": "Wave N2: Notification Gate Integration & Silent Mode Refinement",
+    "goal_type": "feature"
   },
   "memory": {
     "rules_count": 151,

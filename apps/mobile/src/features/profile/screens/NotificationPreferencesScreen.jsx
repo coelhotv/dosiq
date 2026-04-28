@@ -273,7 +273,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // ── Seções de UI ──────────────────────────────────────────────────────────
 
   const MODES = [
-    { value: 'realtime', label: 'Tempo real' },
+    { value: 'realtime', label: 'Alertas unitários' },
     { value: 'digest_morning', label: 'Resumo diário' },
     { value: 'silent', label: 'Silencioso' },
   ]
