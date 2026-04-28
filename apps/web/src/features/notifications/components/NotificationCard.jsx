@@ -169,10 +169,7 @@ export default function NotificationCard({
         {/* Rodapé: CTA */}
         <div className="notif-card__footer">
           {isDoseRelated && wasTaken === true ? (
-            <span
-              className="notif-card__taken"
-              style={{ fontSize: 12, color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
-            >
+            <span className="notif-card__taken">
               <CheckCircle2 size={14} /> Tomada
             </span>
           ) : cta && (onNavigate || onOpenDoseModal) ? (

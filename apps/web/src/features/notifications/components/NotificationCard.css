@@ -166,3 +166,12 @@
 .notif-card__expand:hover {
   color: var(--color-text-primary);
 }
+
+.notif-card__taken {
+  font-size: 12px;
+  color: var(--color-success, #10b981);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
