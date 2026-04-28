@@ -163,3 +163,4 @@
 - **[R-196]** isInQuietHours deve tratar janela cross-midnight: se start > end, a janela passa pela meia-noite (cur >= s || cur < e) -> [`rules/mobile_and_platform/R-196.md`](./rules/mobile_and_platform/R-196.md)
 - **[R-197]** Experiência nativa de notificações deve ter única porta de entrada no Perfil (1 card "Notificações" com badge) — Telegram é subfluxo de Preferências -> [`rules/mobile_and_platform/R-197.md`](./rules/mobile_and_platform/R-197.md)
 - **[R-198]** Canal web_push só retornado por resolveChannelsForUser quando channel_web_push_enabled=true E device ativo provider='webpush' — nunca inferir só pela subscription -> [`rules/mobile_and_platform/R-198.md`](./rules/mobile_and_platform/R-198.md)
+- **[R-199]** Intl.DateTimeFormat Module-Level Memoization (React Native) -> [`rules/react_and_ui/R-199.md`](./rules/react_and_ui/R-199.md)

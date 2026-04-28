@@ -24,16 +24,16 @@
     "goal_type": "feature"
   },
   "memory": {
-    "rules_count": 150,
-    "anti_patterns_count": 118,
+    "rules_count": 151,
+    "anti_patterns_count": 119,
     "decisions_count": 35,
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "recent_additions": {
-      "rules": ["R-196", "R-197", "R-198"],
-      "anti_patterns": [],
+      "rules": ["R-199"],
+      "anti_patterns": ["AP-119"],
       "knowledge": [],
       "decisions": ["ADR-035"],
       "contracts": []
