@@ -29,6 +29,7 @@
 - **[ADR-032]** ✅ APPROVED — Executar Fase 7: Migração Web para apps/web -> [`decisions/infra_and_deploy/ADR-032.md`](./decisions/infra_and_deploy/ADR-032.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[ADR-035]** Wave N2 — Política de canais, modos, quiet hours e arquitetura nativa de notificações -> [`decisions/mobile_and_platform/ADR-035.md`](./decisions/mobile_and_platform/ADR-035.md)
 - **[ADR-004]** Structured Logging for Telegram Bot Debugging -> [`decisions/mobile_and_platform/ADR-004.md`](./decisions/mobile_and_platform/ADR-004.md)
 - **[ADR-025]** Bot Architecture Must Mirror Web App Services -> [`decisions/mobile_and_platform/ADR-025.md`](./decisions/mobile_and_platform/ADR-025.md)
 - **[ADR-027]** Tabela Dedicada notification_devices para Tokens -> [`decisions/mobile_and_platform/ADR-027.md`](./decisions/mobile_and_platform/ADR-027.md)
