@@ -251,7 +251,7 @@ Cada wave gera registros canônicos em `.agent/memory/`:
 - Deeplink mobile funcional ✅ (1.4-1.8)
 - NotificationItem + NotificationInbox redesenhados ✅ (1.6-1.8)
 - `enrichWithDoses` + relacional dosages ✅ (1.8)
-- **N1.7 — PWA Web Push**: Desenvolvido ✅ | Merge pendente 🔄
+- **N1.7 — PWA Web Push**: Pendente desenvolvimento 🕖 
 
 ### Resumo N2 (2026-W17)
 - Quiet hours com cross-midnight support ✅
@@ -276,7 +276,7 @@ O projeto é considerado entregue quando:
 2. ✅ Tap em push mobile abre `BulkDoseRegisterModal` com checkboxes pré-marcados (cold start e foreground).
 3. ✅ Inbox mobile exibe "X/N tomadas" para grouped notifications.
 4. ✅ App nativo organiza notificações em Perfil → Avisos → Preferências → Telegram, sem cards paralelos concorrentes.
-5. ✅ Canal Web (PWA) é configurável e só envia `web_push` quando flag e subscription ativa existem.
+5. ⚠️ Canal Web (PWA) é configurável e só envia `web_push` quando flag e subscription ativa existem.
 6. ✅ Quiet hours configurado em Settings suprime push em janela definida (validado por device físico durante 24h).
 7. ✅ `notification_log.opened_at` é populado quando usuário toca em push (web e mobile).
 8. ✅ Copy de "Bom dia" não é idêntica em dois dias consecutivos para o mesmo usuário (seed determinístico válido).
