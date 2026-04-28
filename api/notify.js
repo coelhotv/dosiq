@@ -34,7 +34,11 @@ const preferencesRepo = {
     const { data } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single();
     return !!data?.telegram_chat_id;
   },
-  // Bug B5 (Wave N2): necessário para o gate centralizado em dispatchNotification
+  // Wave N2: getSettingsByUserId necessário para o gate centralizado em dispatchNotification.
+  // NOTA: Este método é intencionalmente inline e não importa notificationPreferenceRepository.js do servidor.
+  // Motivo: api/notify.js roda em contexto Vercel Serverless com SUPABASE_SERVICE_ROLE_KEY,
+  // enquanto o repo do servidor usa o client anon (src/shared/utils/supabase). Importar o repo
+  // do servidor quebraria a separação de clientes. As colunas são idênticas ao repo central.
   async getSettingsByUserId(userId) {
     const { data } = await supabase
       .from('user_settings')
