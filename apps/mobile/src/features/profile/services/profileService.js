@@ -125,13 +125,13 @@ export async function updateNotificationSettings(userId, settings) {
     }
 
     const updatePayload = {
-      id: userId,
+      user_id: userId,
       ...settings
     }
 
     const { error } = await supabase
       .from('user_settings')
-      .upsert(updatePayload, { onConflict: 'id' })
+      .upsert(updatePayload, { onConflict: 'user_id' })
 
     if (error) throw error
     return { success: true, error: null }
