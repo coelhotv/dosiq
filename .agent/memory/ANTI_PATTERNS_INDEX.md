@@ -81,6 +81,7 @@
 - **[AP-H28]** Modificar dados reais de produção para fins de teste de UI. -> [`anti-patterns/process_and_testing/AP-H28.md`](./anti-patterns/process_and_testing/AP-H28.md)
 - **[AP-055]** App Store Connect Manual Binary Upload Myth. No "Upload" button for .ipa files... -> [`anti-patterns/process_and_testing/AP-055.md`](./anti-patterns/process_and_testing/AP-055.md)
 - **[AP-114]** Validação de Entrada Silenciosa (Missing Zod in Services) -> [`anti-patterns/process_and_testing/AP-114.md`](./anti-patterns/process_and_testing/AP-114.md)
+- **[AP-120]** Refatoração por Purgue (Over-cleaning) — remoção de código orquestrador sem validar dependências de infra -> [`anti-patterns/process_and_testing/AP-120.md`](./anti-patterns/process_and_testing/AP-120.md)
 
 
 
