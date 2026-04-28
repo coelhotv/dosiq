@@ -113,19 +113,29 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.otherRow}
               onPress={() => {}}
-              activeOpacity={0.7}
+              activeOpacity={1}
+              disabled={true}
             >
-              <Text style={styles.otherLabel}>Privacidade & dados</Text>
-              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabelDisabled}>Política de privacidade e dados</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>em breve</Text>
+                </View>
+              </View>
             </TouchableOpacity>
             <View style={styles.otherDivider} />
             <TouchableOpacity
               style={styles.otherRow}
               onPress={() => {}}
-              activeOpacity={0.7}
+              activeOpacity={1}
+              disabled={true}
             >
-              <Text style={styles.otherLabel}>Sobre o Dosiq</Text>
-              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabelDisabled}>Sobre o Dosiq</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>em breve</Text>
+                </View>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -265,6 +275,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text.primary,
     fontWeight: '500',
+  },
+  otherLabelDisabled: {
+    fontSize: 16,
+    color: colors.text.muted,
+    fontWeight: '500',
+  },
+  otherLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  comingSoonBadge: {
+    backgroundColor: colors.status.error + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    marginLeft: spacing[2],
+  },
+  comingSoonText: {
+    fontSize: 10,
+    color: colors.status.error,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   otherDivider: {
     height: 1,
