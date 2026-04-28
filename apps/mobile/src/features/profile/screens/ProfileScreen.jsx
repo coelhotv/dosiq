@@ -117,7 +117,7 @@ export default function ProfileScreen() {
               disabled={true}
             >
               <View style={styles.otherLabelContainer}>
-                <Text style={styles.otherLabelDisabled}>Política de privacidade e dados</Text>
+                <Text style={styles.otherLabelDisabled}>Privacidade e dados</Text>
                 <View style={styles.comingSoonBadge}>
                   <Text style={styles.comingSoonText}>em breve</Text>
                 </View>
