@@ -1,20 +1,19 @@
+/**
+ * Proactive Stock Alerts — atualizado para ADR-030 (NotificationDispatcher)
+ *
+ * Mudanças arquiteturais vs versão anterior:
+ * - checkStockAlerts agora delega para checkStockAlertsViaDispatcher
+ * - Requer options.notificationDispatcher em vez de chamar bot.sendMessage
+ * - Cálculo de dias feito inline (qty / dailyConsumption); sem calculateDaysRemaining
+ * - Threshold único: daysRemaining < 7 → dispara alerta (sem separação proativo/crítico)
+ * - Queries bulk: user_settings → protocols → stock (sem N+1)
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Create a mutable reference that the mock factory will close over
-const mockState = {
-  calculateDaysRemaining: vi.fn(),
-  shouldSendNotification: vi.fn(),
-}
+// --- Mocks de módulos ---
 
-// Mock all dependencies at module level - use mutable reference
 vi.mock('../../../../../../server/services/supabase.js', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-  },
+  supabase: { from: vi.fn() },
 }))
 
 vi.mock('../../../../../../server/bot/logger.js', () => ({
@@ -27,336 +26,224 @@ vi.mock('../../../../../../server/bot/logger.js', () => ({
 }))
 
 vi.mock('../../../../../../server/services/protocolCache.js', () => ({
-  getAllUsersWithTelegram: vi.fn(),
-  getUserSettings: vi.fn().mockResolvedValue({ timezone: 'America/Sao_Paulo' }),
   getActiveProtocols: vi.fn().mockResolvedValue([]),
 }))
 
-vi.mock('../../../../../../server/utils/formatters.js', () => ({
-  // Use the mutable reference
-  calculateDaysRemaining: (...args) => mockState.calculateDaysRemaining(...args),
-  escapeMarkdownV2: vi.fn(
-    (text) => text?.toString().replace?.(/([_*[\]()~`>#+=|{}.!-])/g, '\\$1') || String(text)
-  ),
-}))
-
 vi.mock('../../../../../../server/services/notificationDeduplicator.js', () => ({
-  // Use the mutable reference
-  shouldSendNotification: (...args) => mockState.shouldSendNotification(...args),
+  shouldSendNotification: vi.fn().mockResolvedValue(true),
   logSuccessfulNotification: vi.fn().mockResolvedValue(true),
+  shouldSendGroupedNotification: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('../../../../../../server/bot/correlationLogger.js', () => ({
   getCurrentCorrelationId: vi.fn(() => 'test-correlation-id'),
-  getOrGenerateCorrelationId: vi.fn(() => 'test-correlation-id'),
 }))
 
-describe('Proactive Stock Alerts (F5.5-T1)', () => {
+vi.mock('../../../../../../server/services/deadLetterQueue.js', () => ({
+  ErrorCategories: { TELEGRAM: 'telegram', DATABASE: 'database' },
+}))
+
+vi.mock('../../../../../../server/utils/formatters.js', () => ({
+  escapeMarkdownV2: vi.fn((t) => String(t ?? '')),
+  calculateDaysRemaining: vi.fn(),
+}))
+
+vi.mock('../../../../../../server/utils/timezone.js', () => ({
+  getCurrentTimeInTimezone: vi.fn(() => '09:00'),
+  getCurrentDateInTimezone: vi.fn(() => '2025-01-01'),
+}))
+
+// --- Helpers ---
+
+const BASE_USER = { user_id: 'user-1', timezone: 'America/Sao_Paulo' }
+
+/** Cria o mock do dispatcher (substitui bot.sendMessage na nova arquitetura) */
+function createMockDispatcher() {
+  return { dispatch: vi.fn().mockResolvedValue({ success: true }) }
+}
+
+/**
+ * Configura supabase para retornar:
+ * - user_settings → [users]
+ * - protocols    → [protocols]  (usados para calcular dailyConsumption)
+ * - stock        → [stockItems]
+ *
+ * Todos os outros fallback retornam vazio.
+ */
+function setupSupabaseMock(supabase, { users = [BASE_USER], protocols = [], stockItems = [] } = {}) {
+  supabase.from.mockImplementation((table) => {
+    if (table === 'user_settings') {
+      return {
+        select: vi.fn().mockResolvedValue({ data: users, error: null }),
+      }
+    }
+    if (table === 'protocols') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({ data: protocols, error: null }),
+      }
+    }
+    if (table === 'stock') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({ data: stockItems, error: null }),
+      }
+    }
+    // Fallback genérico
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }
+  })
+}
+
+/** Cria um item de estoque com consumo calculável */
+function makeStockItem(userId, medicineId, quantity, medicineName = 'Medicamento') {
+  return { user_id: userId, medicine_id: medicineId, quantity, medicine: { name: medicineName } }
+}
+
+/** Cria um protocolo com consumo diário controlado */
+function makeProtocol(userId, medicineId, { intakesPerDay = 1, dosagePerIntake = 10 } = {}) {
+  return {
+    user_id: userId,
+    medicine_id: medicineId,
+    active: true,
+    time_schedule: Array(intakesPerDay).fill('08:00'),
+    dosage_per_intake: dosagePerIntake,
+  }
+}
+
+// --- Suite ---
+
+describe('Stock Alerts via Dispatcher (ADR-030)', () => {
   let checkStockAlerts
   let supabase
-  let getAllUsersWithTelegram
 
   beforeEach(async () => {
-    // Reset the mock functions in the mutable state
-    mockState.calculateDaysRemaining = vi.fn()
-    mockState.shouldSendNotification = vi.fn()
     vi.clearAllMocks()
-
-    // Import the mocked modules
-    const { getAllUsersWithTelegram: mockGetUsers } =
-      await import('../../../../../../server/services/protocolCache.js')
-    getAllUsersWithTelegram = mockGetUsers
-    getAllUsersWithTelegram.mockResolvedValue([
-      { user_id: 'user-test-1', telegram_chat_id: 'chat-test-1' },
-    ])
-
-    const { supabase: mockSupabase } = await import('../../../../../../server/services/supabase.js')
-    supabase = mockSupabase
-
-    // Import the function under test
+    const mod = await import('../../../../../../server/services/supabase.js')
+    supabase = mod.supabase
     const tasks = await import('../../../../../../server/bot/tasks.js')
     checkStockAlerts = tasks.checkStockAlerts
   })
 
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
+  afterEach(() => vi.clearAllMocks())
 
-  const createMockMedicine = (name, stockQuantity = 100, protocols = null) => ({
-    name,
-    stock: [{ quantity: stockQuantity }],
-    protocols:
-      protocols !== null
-        ? protocols
-        : [{ active: true, time_schedule: ['08:00'], dosage_per_intake: 1 }],
-  })
+  // ---- Cenário 1: alerta disparado (daysRemaining < 7) ----
 
-  const setupSupabaseMock = (firstName, medicines) => {
-    supabase.from.mockImplementation((table) => {
-      if (table === 'profiles') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { first_name: firstName },
-            error: null,
-          }),
-        }
-      }
-      if (table === 'medicines') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockResolvedValue({
-            data: medicines,
-            error: null,
-          }),
-        }
-      }
-      if (table === 'medicine_logs') {
-        // Retorna logs vazios — testes de stock usam calculateDaysRemaining mockado
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          gte: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }
-      }
-      return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        gte: vi.fn().mockResolvedValue({ data: [], error: null }),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }
-    })
-  }
-
-  describe('Cenário 1: 14 dias dispara alerta proativo', () => {
-    it('deve enviar alerta proativo quando medicamento tem 14 dias restantes', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(14)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('João', [createMockMedicine('Paracetamol', 140)])
-
-      await checkStockAlerts(mockBot, { correlationId: 'test-123' })
-
-      expect(mockBot.sendMessage).toHaveBeenCalled()
-      const call = mockBot.sendMessage.mock.calls[0]
-      expect(call[1]).toContain('Lembrete')
-    })
-
-    it('deve enviar alerta proativo quando medicamento tem 8 dias restantes (limite inferior)', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(8)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Maria', [createMockMedicine('Ibuprofeno', 80)])
-
-      await checkStockAlerts(mockBot, { correlationId: 'test-456' })
-
-      expect(mockBot.sendMessage).toHaveBeenCalled()
-    })
-  })
-
-  describe('Cenário 2: 7 dias dispara alerta crítico (não proativo)', () => {
-    it('deve enviar alerta crítico quando medicamento tem 7 dias restantes', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(7)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Pedro', [createMockMedicine('Amoxicilina', 70)])
-
-      await checkStockAlerts(mockBot)
-
-      expect(mockBot.sendMessage).toHaveBeenCalled()
-      const call = mockBot.sendMessage.mock.calls[0]
-      expect(call[1]).toContain('Estoque')
-      expect(call[1]).not.toContain('Lembrete de Reposição')
-    })
-  })
-
-  describe('Cenário 3: 0 dias dispara crítico', () => {
-    it('deve enviar alerta crítico quando medicamento tem 0 dias restantes (estoque zerado)', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(0)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Ana', [createMockMedicine('Omeprazol', 0)])
-
-      await checkStockAlerts(mockBot)
-
-      expect(mockBot.sendMessage).toHaveBeenCalled()
-      const call = mockBot.sendMessage.mock.calls[0]
-      expect(call[1]).toContain('ESTOQUE')
-    })
-
-    it('deve enviar alerta crítico quando medicamento tem dias negativos', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(-2)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Carlos', [createMockMedicine('Dipirona', -2)])
-
-      await checkStockAlerts(mockBot)
-
-      expect(mockBot.sendMessage).toHaveBeenCalled()
-    })
-  })
-
-  describe('Cenário 4: Deduplicação funciona separadamente para proativo vs crítico', () => {
-    it('deve verificar deduplicação com tipo "proactive_stock_alert" para alertas proativos', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(14)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Lucas', [createMockMedicine('Vitamina D', 140)])
-
-      await checkStockAlerts(mockBot)
-
-      const proactiveCall = mockState.shouldSendNotification.mock.calls.find(
-        (call) => call[2] === 'proactive_stock_alert'
-      )
-      expect(proactiveCall).toBeDefined()
-      expect(proactiveCall[2]).toBe('proactive_stock_alert')
-    })
-
-    it('deve verificar deduplicação com tipo "stock_alert" para alertas críticos', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(5)
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Fernanda', [createMockMedicine('Losartana', 50)])
-
-      await checkStockAlerts(mockBot)
-
-      const criticalCall = mockState.shouldSendNotification.mock.calls.find(
-        (call) => call[2] === 'stock_alert'
-      )
-      expect(criticalCall).toBeDefined()
-      expect(criticalCall[2]).toBe('stock_alert')
-    })
-
-    it('deve permitir ambos os tipos de alerta para usuários diferentes', async () => {
-      getAllUsersWithTelegram.mockResolvedValue([
-        { user_id: 'user-1', telegram_chat_id: 'chat-1' },
-        { user_id: 'user-2', telegram_chat_id: 'chat-2' },
-      ])
-
-      let userCallCount = 0
-      mockState.calculateDaysRemaining.mockImplementation(() => {
-        userCallCount++
-        return userCallCount <= 1 ? 14 : 5
+  describe('Alerta disparado quando estoque < 7 dias', () => {
+    it('deve disparar via dispatcher quando restam 6 dias', async () => {
+      const dispatcher = createMockDispatcher()
+      // qty=60, dailyConsumption=10 → 6 dias → < 7 → alerta
+      setupSupabaseMock(supabase, {
+        stockItems: [makeStockItem('user-1', 'med-1', 60, 'Paracetamol')],
+        protocols: [makeProtocol('user-1', 'med-1', { intakesPerDay: 1, dosagePerIntake: 10 })],
       })
 
-      mockState.shouldSendNotification.mockResolvedValue(true)
+      await checkStockAlerts({}, { correlationId: 'test-1', notificationDispatcher: dispatcher })
 
-      let profileCallCount = 0
-      supabase.from.mockImplementation((table) => {
-        if (table === 'profiles') {
-          profileCallCount++
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({
-              data: { first_name: profileCallCount === 1 ? 'Usuário1' : 'Usuário2' },
-              error: null,
-            }),
-          }
-        }
-        if (table === 'medicines') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockResolvedValue({
-              data: [createMockMedicine('Med1', 100)],
-              error: null,
-            }),
-          }
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          gte: vi.fn().mockResolvedValue({ data: [], error: null }),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }
+      expect(dispatcher.dispatch).toHaveBeenCalledOnce()
+      const call = dispatcher.dispatch.mock.calls[0][0]
+      expect(call.userId).toBe('user-1')
+      expect(call.kind).toBe('stock_alert')
+      expect(call.payload.metadata.daysRemaining).toBe(6)
+    })
+
+    it('deve disparar quando restam 0 dias (estoque zerado)', async () => {
+      const dispatcher = createMockDispatcher()
+      setupSupabaseMock(supabase, {
+        stockItems: [makeStockItem('user-1', 'med-1', 0, 'Omeprazol')],
+        protocols: [makeProtocol('user-1', 'med-1', { intakesPerDay: 1, dosagePerIntake: 10 })],
       })
 
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      await checkStockAlerts(mockBot)
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
 
-      expect(mockBot.sendMessage).toHaveBeenCalledTimes(2)
-
-      const proactiveCalls = mockState.shouldSendNotification.mock.calls.filter(
-        (call) => call[2] === 'proactive_stock_alert'
-      )
-      const criticalCalls = mockState.shouldSendNotification.mock.calls.filter(
-        (call) => call[2] === 'stock_alert'
-      )
-
-      expect(proactiveCalls.length).toBeGreaterThanOrEqual(1)
-      expect(criticalCalls.length).toBeGreaterThanOrEqual(1)
-    })
-
-    it('não deve enviar alerta proativo quando deduplicação retorna false', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(14)
-      mockState.shouldSendNotification.mockResolvedValue(false)
-      setupSupabaseMock('Bloqueado', [createMockMedicine('Aspirina', 140)])
-
-      await checkStockAlerts(mockBot)
-
-      expect(mockBot.sendMessage).not.toHaveBeenCalled()
-    })
-
-    it('não deve enviar alerta crítico quando deduplicação retorna false', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      mockState.calculateDaysRemaining.mockReturnValue(3)
-      mockState.shouldSendNotification.mockResolvedValue(false)
-      setupSupabaseMock('Bloqueado', [createMockMedicine('Novalgina', 30)])
-
-      await checkStockAlerts(mockBot)
-
-      expect(mockBot.sendMessage).not.toHaveBeenCalled()
+      expect(dispatcher.dispatch).toHaveBeenCalled()
     })
   })
 
-  describe('Regra de prioridade: Crítico bloqueia proativo', () => {
-    it('deve enviar apenas alerta crítico quando ambos os níveis estão presentes', async () => {
-      const mockBot = {
-        sendMessage: vi.fn().mockResolvedValue({ success: true, messageId: '123' }),
-      }
-      let medCallCount = 0
-      mockState.calculateDaysRemaining.mockImplementation(() => {
-        medCallCount++
-        if (medCallCount === 1) return 3
-        if (medCallCount === 2) return 12
-        return 15
+  // ---- Cenário 2: sem alerta quando estoque suficiente ----
+
+  describe('Sem alerta quando estoque >= 7 dias', () => {
+    it('não deve disparar quando restam exatamente 7 dias', async () => {
+      const dispatcher = createMockDispatcher()
+      // qty=70, dailyConsumption=10 → 7 dias → não alerta (threshold: < 7)
+      setupSupabaseMock(supabase, {
+        stockItems: [makeStockItem('user-1', 'med-1', 70, 'Ibuprofeno')],
+        protocols: [makeProtocol('user-1', 'med-1', { intakesPerDay: 1, dosagePerIntake: 10 })],
       })
 
-      mockState.shouldSendNotification.mockResolvedValue(true)
-      setupSupabaseMock('Misto', [
-        createMockMedicine('MedCritico', 30),
-        createMockMedicine('MedProativo', 120),
-        createMockMedicine('MedNormal', 150),
-      ])
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
 
-      await checkStockAlerts(mockBot)
+      expect(dispatcher.dispatch).not.toHaveBeenCalled()
+    })
 
-      expect(mockBot.sendMessage).toHaveBeenCalledTimes(1)
-      const call = mockBot.sendMessage.mock.calls[0]
-      expect(call[1]).toContain('Estoque')
-      expect(call[1]).not.toContain('Lembrete de Reposição')
+    it('não deve disparar quando restam 14 dias', async () => {
+      const dispatcher = createMockDispatcher()
+      setupSupabaseMock(supabase, {
+        stockItems: [makeStockItem('user-1', 'med-1', 140, 'Vitamina D')],
+        protocols: [makeProtocol('user-1', 'med-1', { intakesPerDay: 1, dosagePerIntake: 10 })],
+      })
+
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
+
+      expect(dispatcher.dispatch).not.toHaveBeenCalled()
+    })
+  })
+
+  // ---- Cenário 3: edge cases ----
+
+  describe('Edge cases', () => {
+    it('não deve disparar se não houver protocolos ativos (consumo = 0)', async () => {
+      const dispatcher = createMockDispatcher()
+      setupSupabaseMock(supabase, {
+        stockItems: [makeStockItem('user-1', 'med-1', 10, 'Amoxicilina')],
+        protocols: [], // sem protocolo → dailyConsumption = 0 → skip
+      })
+
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
+
+      expect(dispatcher.dispatch).not.toHaveBeenCalled()
+    })
+
+    it('não deve lançar erro quando notificationDispatcher não é fornecido (early return seguro)', async () => {
+      setupSupabaseMock(supabase, { users: [BASE_USER], stockItems: [], protocols: [] })
+
+      await expect(
+        checkStockAlerts({}, { correlationId: 'no-dispatcher' })
+      ).resolves.not.toThrow()
+    })
+
+    it('não deve disparar quando não há usuários em user_settings', async () => {
+      const dispatcher = createMockDispatcher()
+      setupSupabaseMock(supabase, { users: [], stockItems: [], protocols: [] })
+
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
+
+      expect(dispatcher.dispatch).not.toHaveBeenCalled()
+    })
+
+    it('deve disparar uma vez por medicamento com estoque crítico (múltiplos medicamentos)', async () => {
+      const dispatcher = createMockDispatcher()
+      setupSupabaseMock(supabase, {
+        stockItems: [
+          makeStockItem('user-1', 'med-1', 50, 'MedCritico'),  // 5 dias → alerta
+          makeStockItem('user-1', 'med-2', 200, 'MedNormal'),  // 20 dias → ok
+        ],
+        protocols: [
+          makeProtocol('user-1', 'med-1', { intakesPerDay: 1, dosagePerIntake: 10 }),
+          makeProtocol('user-1', 'med-2', { intakesPerDay: 1, dosagePerIntake: 10 }),
+        ],
+      })
+
+      await checkStockAlerts({}, { notificationDispatcher: dispatcher })
+
+      expect(dispatcher.dispatch).toHaveBeenCalledOnce()
+      expect(dispatcher.dispatch.mock.calls[0][0].payload.metadata.medicineName).toBe('MedCritico')
     })
   })
 })

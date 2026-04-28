@@ -28,6 +28,7 @@ import { BotFactory } from './bot/bot-factory.js';
 import { createLogger } from './bot/logger.js';
 import { healthCheck, registerDefaultChecks } from './bot/health-check.js';
 import { supabase } from './services/supabase.js';
+import { getNotificationDispatcher } from './bot/utils/dispatcherFactory.js';
 
 const logger = createLogger('BotApp');
 
@@ -49,6 +50,10 @@ logger.info('Token validated', { username: validation.botInfo.username });
 
 // Initialize bot with factory
 const bot = BotFactory.createPollingBot(token);
+
+// Initialize Notification Dispatcher (Sprint Wave N2)
+const notificationDispatcher = getNotificationDispatcher(bot);
+const schedulerOptions = { notificationDispatcher };
 
 // Register health checks
 registerDefaultChecks(bot, supabase);
@@ -85,14 +90,14 @@ handleInlineQueries(bot);
 bot.on('message', (msg) => handleChatbotMessage(bot, msg));
 
 // Start scheduler
-startScheduler(bot);
-startDailyDigest(bot);
+startScheduler(bot, schedulerOptions);
+startDailyDigest(bot, schedulerOptions);
 
 // Start intelligent alerts (Phase 4)
-startStockAlerts(bot);
-startAdherenceReports(bot);
-startTitrationAlerts(bot);
-startMonthlyReport(bot);
+startStockAlerts(bot, schedulerOptions);
+startAdherenceReports(bot, schedulerOptions);
+startTitrationAlerts(bot, schedulerOptions);
+startMonthlyReport(bot, schedulerOptions);
 
 // Start session cleanup for persistent sessions
 startAutoCleanup();

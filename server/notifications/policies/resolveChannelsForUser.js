@@ -8,17 +8,15 @@ export async function resolveChannelsForUser({ userId, repositories }) {
   const activeExpoDevices = await repositories.devices.listActiveByUser(userId, 'expo')
   const activeWebDevices  = await repositories.devices.listActiveByUser(userId, 'webpush')
 
-  // Tentar buscar settings completos (com flags Wave N2)
-  let settings = null
-  if (repositories.preferences.getSettingsByUserId) {
-    settings = await repositories.preferences.getSettingsByUserId(userId)
-  }
+  // Tentar buscar settings completos (flags de canal Wave N2)
+  const settings = repositories.preferences.getSettingsByUserId 
+    ? await repositories.preferences.getSettingsByUserId(userId)
+    : null
 
-  // Modo explícito Wave N2: usar flags de canal se presentes
+  // 1. Modo explícito Wave N2: usar flags booleanas de canal (precedência)
   if (
     settings &&
     settings.channel_mobile_push_enabled !== undefined &&
-    settings.channel_web_push_enabled !== undefined &&
     settings.channel_telegram_enabled !== undefined
   ) {
     const channels = []
@@ -28,7 +26,7 @@ export async function resolveChannelsForUser({ userId, repositories }) {
     return channels
   }
 
-  // Fallback legado: notification_preference
+  // 2. Fallback legado: notification_preference (string enum)
   const preference = await repositories.preferences.getByUserId(userId)
   if (preference === 'none') return []
   if (preference === 'telegram')    return hasTelegram ? ['telegram'] : []
@@ -39,5 +37,6 @@ export async function resolveChannelsForUser({ userId, repositories }) {
       ...(activeExpoDevices.length > 0 ? ['mobile_push'] : []),
     ]
   }
+
   return []
 }

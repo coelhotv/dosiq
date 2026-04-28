@@ -33,6 +33,25 @@ const preferencesRepo = {
   async hasTelegramChat(userId) {
     const { data } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single();
     return !!data?.telegram_chat_id;
+  },
+  // Wave N2: getSettingsByUserId necessário para o gate centralizado em dispatchNotification.
+  // NOTA: Este método é intencionalmente inline e não importa notificationPreferenceRepository.js do servidor.
+  // Motivo: api/notify.js roda em contexto Vercel Serverless com SUPABASE_SERVICE_ROLE_KEY,
+  // enquanto o repo do servidor usa o client anon (src/shared/utils/supabase). Importar o repo
+  // do servidor quebraria a separação de clientes. As colunas são idênticas ao repo central.
+  async getSettingsByUserId(userId) {
+    const { data } = await supabase
+      .from('user_settings')
+      .select('notification_mode, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
+      .eq('user_id', userId)
+      .single();
+    return data ?? {
+      notification_mode: 'realtime',
+      quiet_hours_start: null,
+      quiet_hours_end: null,
+      digest_time: '08:00',
+      timezone: 'America/Sao_Paulo'
+    };
   }
 };
 
@@ -142,6 +161,39 @@ function buildNotificationPayload({ kind, data }) {
         deeplink: `dosiq://today`,
         metadata: {}
       };
+
+    case 'weekly_adherence':
+      return {
+        title: '📊 Relatório Semanal de Adesão',
+        body: data.summary || `${data.percentage ?? 0}% de adesão esta semana`,
+        deeplink: 'dosiq://today',
+        metadata: { percentage: data.percentage, takenDoses: data.takenDoses, expectedDoses: data.expectedDoses }
+      };
+
+    case 'monthly_report':
+      return {
+        title: '📊 Relatório Mensal',
+        body: data.summary || `${data.percentage ?? 0}% de adesão este mês`,
+        deeplink: 'dosiq://today',
+        metadata: { percentage: data.percentage, takenDoses: data.takenDoses, expectedDoses: data.expectedDoses }
+      };
+
+    case 'titration_alert':
+      return {
+        title: `⚗️ Atualização de titulação — ${data.medicineName ?? 'Medicamento'}`,
+        body: data.message || `Verifique a dose atual de ${data.medicineName ?? 'seu medicamento'}`,
+        deeplink: `dosiq://protocols/${data.protocolId}`,
+        metadata: { protocolId: data.protocolId, medicineName: data.medicineName ?? null }
+      };
+
+    case 'prescription_alert':
+      return {
+        title: '⚠️ Prescrição próxima do vencimento',
+        body: `${data.medicineName ?? 'Medicamento'} vence em ${data.daysRemaining} dia(s)`,
+        deeplink: `dosiq://protocols/${data.protocolId}`,
+        metadata: { protocolId: data.protocolId, medicineName: data.medicineName ?? null, daysRemaining: data.daysRemaining }
+      };
+
     default:
       throw new Error(`Unsupported notification kind: ${kind}`);
   }

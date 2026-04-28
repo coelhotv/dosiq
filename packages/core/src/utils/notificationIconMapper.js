@@ -56,6 +56,20 @@ export function getNotificationIcon(type) {
       label: 'Doses agora',
       deepLinkAction: 'bulk-misc',
     },
+    weekly_adherence: {
+      iconName: 'PieChart',
+      color: '#8b5cf6',
+      bgColor: 'rgba(139, 92, 246, 0.10)',
+      label: 'Relatório semanal',
+      deepLinkAction: 'stats-weekly',
+    },
+    monthly_report: {
+      iconName: 'BarChart3',
+      color: '#0ea5e9',
+      bgColor: 'rgba(14, 165, 233, 0.10)',
+      label: 'Relatório mensal',
+      deepLinkAction: 'stats-monthly',
+    },
   }
   return map[type] ?? {
     iconName: 'Bell',
