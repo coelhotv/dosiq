@@ -136,3 +136,7 @@
 - **[AP-117]** Params de navegação sem contrato tipado entre emissor e receptor — mismatch silencioso (ex: `bulkMode` vs `screen`) faz a modal nunca abrir -> [`anti-patterns/mobile_and_platform/AP-117.md`](./anti-patterns/mobile_and_platform/AP-117.md)
 - **[AP-118]** Repository INSERT não espelhando campos do dispatcher/schema após adição tardia — dados descartados silenciosamente no banco mesmo com schema e dispatcher corretos -> [`anti-patterns/mobile_and_platform/AP-118.md`](./anti-patterns/mobile_and_platform/AP-118.md)
 - **[AP-119]** Redundant Derived State Synchronization -> [`anti-patterns/react_and_ui/AP-119.md`](./anti-patterns/react_and_ui/AP-119.md)
+- **[AP-121]** Inline Styles for Design System Tokens: Use utility classes instead of inline style attributes for consistent design. -> [`anti-patterns/react_and_ui/AP-121.md`](./anti-patterns/react_and_ui/AP-121.md)
+- **[AP-122]** Hardcoded Identifiers for Authorization: Hardcoding user/admin IDs in logic bypasses dynamic authorization systems. -> [`anti-patterns/react_and_ui/AP-122.md`](./anti-patterns/react_and_ui/AP-122.md)
+- **[AP-123]** Disconnected "Back" Navigation Flow: Navigation that assumes a fixed parent (like Dashboard) instead of actual entry context. -> [`anti-patterns/react_and_ui/AP-123.md`](./anti-patterns/react_and_ui/AP-123.md)
+

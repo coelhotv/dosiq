@@ -24,16 +24,16 @@
     "goal_type": "refactor"
   },
   "memory": {
-    "rules_count": 152,
-    "anti_patterns_count": 120,
+    "rules_count": 156,
+    "anti_patterns_count": 123,
     "decisions_count": 35,
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "recent_additions": {
-      "rules": ["R-200"],
-      "anti_patterns": ["AP-120"],
+      "rules": ["R-201", "R-202", "R-203", "R-204"],
+      "anti_patterns": ["AP-121", "AP-122", "AP-123"],
       "knowledge": [],
       "decisions": ["ADR-035"],
       "contracts": []

@@ -115,6 +115,8 @@
 - **[R-173]** When processing raw logs via Core logic, agents MUST ensure medicine and protoco... -> [`rules/process_and_testing/R-173.md`](./rules/process_and_testing/R-173.md)
 - **[R-177]** Agentes DEVEM usar primariamente o path ~/git-icloud/dosiq/ para esse pro... -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
+- **[R-201]** Secure Token Generation: Use window.crypto.getRandomValues() for security tokens in the frontend. -> [`rules/process_and_testing/R-201.md`](./rules/process_and_testing/R-201.md)
+
 
 ## ⚛️ React & Ui (`react_and_ui`)
 - **[R-010]** Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong ord... -> [`rules/react_and_ui/R-010.md`](./rules/react_and_ui/R-010.md)
@@ -165,3 +167,7 @@
 - **[R-197]** Experiência nativa de notificações deve ter única porta de entrada no Perfil (1 card "Notificações" com badge) — Telegram é subfluxo de Preferências -> [`rules/mobile_and_platform/R-197.md`](./rules/mobile_and_platform/R-197.md)
 - **[R-198]** Canal web_push só retornado por resolveChannelsForUser quando channel_web_push_enabled=true E device ativo provider='webpush' — nunca inferir só pela subscription -> [`rules/mobile_and_platform/R-198.md`](./rules/mobile_and_platform/R-198.md)
 - **[R-199]** Intl.DateTimeFormat Module-Level Memoization (React Native) -> [`rules/react_and_ui/R-199.md`](./rules/react_and_ui/R-199.md)
+- **[R-202]** Role-Based Admin Access: Prefer metadata-based role checks over hardcoded IDs. -> [`rules/react_and_ui/R-202.md`](./rules/react_and_ui/R-202.md)
+- **[R-203]** Semantic Versioning: Use import.meta.env.VITE_APP_VERSION with a hardcoded fallback in footers. -> [`rules/react_and_ui/R-203.md`](./rules/react_and_ui/R-203.md)
+- **[R-204]** Semantic A11y Elements: Interactive elements MUST be semantic buttons, never clickable divs. -> [`rules/react_and_ui/R-204.md`](./rules/react_and_ui/R-204.md)
+
