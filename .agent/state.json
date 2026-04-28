@@ -14,14 +14,14 @@
       "expo",
       "react-native"
     ],
-    "phase": "fase8-sprint-8.3-merged",
-    "current_sprint": "2026-W17"
+    "phase": "wave-n2-bug-fix-ready",
+    "current_sprint": "2026-W18"
   },
   "session": {
-    "mode": "planning",
-    "status": "planning",
-    "goal": "Wave N2: Notification Gate Integration & Silent Mode Refinement",
-    "goal_type": "feature"
+    "mode": "idle",
+    "status": "ready",
+    "goal": "Wave N2: Notification Gate Fix — 7 bugs identificados, plano aprovado, pronto para execução",
+    "goal_type": "bugfix"
   },
   "memory": {
     "rules_count": 151,
@@ -30,10 +30,10 @@
     "contracts_count": 20,
     "knowledge_count": 89,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "recent_additions": {
       "rules": ["R-199"],
-      "anti_patterns": ["AP-119"],
+      "anti_patterns": ["AP-119", "AP-N20"],
       "knowledge": [],
       "decisions": ["ADR-035"],
       "contracts": []
