@@ -91,5 +91,12 @@ export {
   REVIEW_CATEGORY_LABELS,
 } from './geminiReviewSchema'
 
+export {
+  NOTIFICATION_TYPES,
+  DOSE_RELATED_NOTIFICATION_TYPES,
+  notificationSchema,
+  notificationListSchema,
+} from './notificationSchema'
+
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper'
