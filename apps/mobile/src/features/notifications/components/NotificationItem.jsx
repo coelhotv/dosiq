@@ -9,11 +9,15 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native'
 import {
   Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell, ChevronRight,
+  Pill, Tablets, ListChecks, NotepadText
 } from 'lucide-react-native'
 import { getNotificationIcon, formatRelativeTime } from '@dosiq/core'
 import { colors } from '../../../shared/styles/tokens'
 
-const ICON_MAP = { Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell }
+const ICON_MAP = {
+  Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell,
+  Pill, Tablets, ListChecks, NotepadText
+}
 
 const CTA_MAP = {
   dose_reminder:         { label: 'Registrar dose',    action: 'dashboard' },
