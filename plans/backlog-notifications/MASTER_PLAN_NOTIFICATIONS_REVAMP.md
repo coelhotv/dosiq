@@ -1,12 +1,12 @@
 # Master Plan — Notifications Revamp
 
-> **Status:** EM EXECUÇÃO — Wave N1 7/8 sprints ✅ + N1.7 DESBLOQUEADA (aguardando execução)
-> **Sprint início:** 2026-W17 · **Último merge:** commit `55e968fc` (N1.8 fixes) — 2026-04-27
+> **Status:** PROGREDINDO — Wave N1 COMPLETA (8/8) ✅ + Wave N2 COMPLETA (8/8) ✅ + N3 Planejado
+> **Sprint início:** 2026-W17 · **Último merge:** commit `02802bfa` (Wave N2 RLS fix) — 2026-04-28
 > **Idea Plan origem:** [`IDEA_PLAN_NOTIFICATIONS_REVAMP.md`](./IDEA_PLAN_NOTIFICATIONS_REVAMP.md)
 > **Exec Specs derivados:**
-> - [`EXEC_SPEC_WAVE_N1_GROUPING.md`](./EXEC_SPEC_WAVE_N1_GROUPING.md) — agrupamento por treatment_plan + bulk register mobile · **EM EXECUÇÃO (7/8 ✅ — N1.7 desbloqueada, aguardando execução)**
-> - [`EXEC_SPEC_WAVE_N2_QUIET_HOURS.md`](./EXEC_SPEC_WAVE_N2_QUIET_HOURS.md) — quiet hours + digest mode + redesign da experiência nativa de notificações · **Não iniciado**
-> - [`EXEC_SPEC_WAVE_N3_COPY_METRICS.md`](./EXEC_SPEC_WAVE_N3_COPY_METRICS.md) — copy variável + métricas de engajamento · **Não iniciado**
+> - [`EXEC_SPEC_WAVE_N1_GROUPING.md`](./EXEC_SPEC_WAVE_N1_GROUPING.md) — agrupamento por treatment_plan + bulk register mobile · **✅ ENTREGUE (PR #497 + #498 + #501 + #505)**
+> - [`EXEC_SPEC_WAVE_N2_QUIET_HOURS.md`](./EXEC_SPEC_WAVE_N2_QUIET_HOURS.md) — quiet hours + digest mode + redesign da experiência nativa de notificações · **✅ ENTREGUE (PR #506 + #507)**
+> - [`EXEC_SPEC_WAVE_N3_COPY_METRICS.md`](./EXEC_SPEC_WAVE_N3_COPY_METRICS.md) — copy variável + métricas de engajamento · **Planejado (roadmap Wave 6)**
 
 ---
 
@@ -239,16 +239,31 @@ Cada wave gera registros canônicos em `.agent/memory/`:
 
 ## 9. Cronograma de Execução
 
-| Wave | Sprints internos | Estimativa | PR | Dependência |
-|------|-----------------|------------|----|-------------|
-| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | ~3 dias úteis | PR #1 | — |
-| **N2** — Quiet Hours + Native UX Redesign | 9 sprints (`2.1` a `2.9`) | ~3.5 dias úteis | PR #2 | N1 |
-| **N3** — Copy + Métricas + Formatter Digest | 9 sprints (`3.1` a `3.9`) | ~3.5 dias úteis | PR #3 | N1 |
+| Wave | Sprints internos | Status | PR | Entregue |
+|------|-----------------|--------|----|-----------| 
+| **N1** — Agrupamento + Bulk Mobile | 8 sprints (`1.1` a `1.8`) | ✅ COMPLETO | PR #497, #498, #501, #505 | 2026-04-26 |
+| **N2** — Quiet Hours + Native UX Redesign | 8 sprints (`2.1` a `2.8`) | ✅ COMPLETO | PR #506, #507 | 2026-04-28 |
+| **N3** — Copy + Métricas + Formatter Digest | 9 sprints (`3.1` a `3.9`) | 📋 Planejado | — | — |
 
-> **N2 e N3 são independentes entre si** — podem executar em paralelo após N1. Formatter enriquecido
-> do digest foi movido de N2 Sprint 2.3 para N3 Sprint 3.4 (2026-04-26).
+### Resumen N1 (2026-W16 a W17)
+- Agrupamento por `treatment_plan_id` ✅
+- Bulk register mobile (BulkDoseRegisterModal) ✅
+- Deeplink mobile funcional ✅
+- NotificationItem + NotificationInbox redesenhados ✅
+- `enrichWithDoses` + relacional dosages ✅
 
-Detalhamento sprint-a-sprint, com **alocação de agente coder por sprint** (avançado vs. rápido) para gestão de tokens, está nos Exec Specs por wave.
+### Resumo N2 (2026-W17)
+- Quiet hours com cross-midnight support ✅
+- Modos de notificação: realtime / digest_morning / silent ✅
+- Flags de canal explícitos: channel_mobile_push_enabled / channel_web_push_enabled / channel_telegram_enabled ✅
+- Redesign UX nativa: ProfileScreen hub + TelegramLinkScreen + NotificationPreferencesScreen ✅
+- RLS RPC para upsert device token (modelo "último usuário sobrescreve") ✅
+- Settings web extensão para quiet hours e modos ✅
+- `notificationGate.js` com `shouldSendNow()` + `isInQuietHours()` ✅
+- `runDailyDigestViaDispatcher` com N+1 fix (bulk-fetch) ✅
+
+> **N2 e N3 são independentes** — N3 pode executar em paralelo com N2 assim que N1 estiver estável.
+> Formatter enriquecido do digest permanece em N3 Sprint 3.4.
 
 ---
 
@@ -266,3 +281,29 @@ O projeto é considerado entregue quando:
 8. ✅ Copy de "Bom dia" não é idêntica em dois dias consecutivos para o mesmo usuário (seed determinístico válido).
 9. ✅ `npm run validate:agent` passa antes de cada PR. `npm run lint` passa antes de commit.
 10. ✅ Memória DEVFLOW atualizada com R/AP/ADR após cada wave (3 entries de journal mínimo).
+
+---
+
+## 11. Status de Validação (Wave N2)
+
+### ✅ Entregue em Produção
+
+- Wave N1 (PR #497-#505): Agrupamento por treatment_plan + bulk mobile
+- Wave N2 (PR #506-#507): Quiet hours + digest + redesign nativo
+
+### 🧪 Em Validação
+
+**Problema encontrado no Expo dev (2026-04-28):**
+- Erro RLS ao registrar device token em dispositivo compartilhado
+- Causa: `notification_devices` table com `UNIQUE (provider, push_token)` + UPDATE policy bloqueada quando token já existia para outro user_id
+- Resolução: RPC `upsert_notification_device` com SECURITY DEFINER (PR #507) + implementação `INSERT ... ON CONFLICT DO UPDATE` atômica
+
+**Próximos testes:**
+- Validar que token é reatribuído corretamente ao novo usuário em dispositivo compartilhado
+- Confirmar que quiet hours suprime push corretamente no horário especificado
+- Validar digest_morning mode: apenas 1 push matinal consolidado
+- Testar deeplinks de notificações em cold start e foreground
+
+### 🚀 Próximas Ondas
+
+Wave N3 pode começar quando N2 estiver estável em produção. Independência de N3 permite paralelização se necessário.
