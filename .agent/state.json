@@ -19,9 +19,9 @@
   },
   "session": {
     "mode": "coding",
-    "status": "coding",
-    "goal": "Wave N2 — Quiet Hours + redesign UX de notificações nativas",
-    "goal_type": "feature"
+    "status": "analysis",
+    "goal": "Fix Notification Mode Persistence in Mobile UI",
+    "goal_type": "fix"
   },
   "memory": {
     "rules_count": 151,

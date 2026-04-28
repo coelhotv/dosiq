@@ -144,6 +144,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
     const isGlobal = pref !== 'none'
     setGlobalEnabled(isGlobal)
+    setNotificationMode(settings.notification_mode ?? 'realtime')
 
     // Apenas sincroniza canais individuais se o global estiver ON
     if (isGlobal) {
