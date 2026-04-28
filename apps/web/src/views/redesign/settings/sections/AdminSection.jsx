@@ -15,10 +15,10 @@ export default function AdminSection({ isAdmin, dlqCount, onNavigate }) {
 
       <div className="sr-section__card">
         <h3 className="sr-section__card-header">Infraestrutura</h3>
-        <div
+        <button
           className="sr-admin__row"
           onClick={() => onNavigate('admin-dlq')}
-          style={{ cursor: 'pointer' }}
+          type="button"
         >
           <div className="sr-admin__label">
             <Database size={18} />
@@ -27,7 +27,7 @@ export default function AdminSection({ isAdmin, dlqCount, onNavigate }) {
           <span className={`sr-admin__badge ${dlqCount > 0 ? 'sr-admin__badge--warning' : ''}`}>
             {dlqCount}
           </span>
-        </div>
+        </button>
       </div>
     </section>
   )

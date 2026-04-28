@@ -3,9 +3,18 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adhere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
+
+## [4.1.0] — 2026-04-28
+
+### 📱 Mobile & Backend: Schema Alignment & Personalization
+- **Complexity Override**: Usuários podem agora forçar o dashboard para modo "Simples" ou "Complexo", ignorando a heurística automática de quantidade de medicamentos.
+- **Quiet Hours Toggle**: Adicionada opção para ativar/desativar o período de silêncio globalmente.
+- **Backend Sync**: Dispatcher de notificações e repositório de preferências atualizados para respeitar as novas colunas `quiet_hours_enabled` e `complexity_override`.
+- **Normalization**: Alinhamento total do app mobile com a tabela `user_settings` (colunas em inglês).
+
 
 ## [4.0.0] — 2026-04-09 — Santuário Terapêutico Complete ✨
 

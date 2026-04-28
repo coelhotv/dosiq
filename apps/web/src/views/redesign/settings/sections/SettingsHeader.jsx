@@ -14,7 +14,7 @@ export default function SettingsHeader({ onNavigate, message, error }) {
       <div className="sr-header">
         <button
           className="sr-header__back"
-          onClick={() => onNavigate('dashboard')}
+          onClick={() => onNavigate('profile')}
           type="button"
           aria-label="Voltar"
         >
