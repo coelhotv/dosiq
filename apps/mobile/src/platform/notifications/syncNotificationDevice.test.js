@@ -1,5 +1,5 @@
 // Testes para syncNotificationDevice.js
-// Valida: param validation, error handling, Supabase integration
+// Valida: param validation, error handling, integração via RPC
 
 import { describe, it, expect } from '@jest/globals'
 import { syncNotificationDevice } from './syncNotificationDevice'
@@ -52,35 +52,33 @@ describe('syncNotificationDevice', () => {
     })
   })
 
-  describe('Supabase integration', () => {
-    it('deve suceder com mock Supabase', async () => {
+  describe('Supabase RPC integration', () => {
+    it('deve chamar rpc upsert_notification_device com os params corretos', async () => {
       const mockSupabase = {
-        from: jest.fn().mockReturnValue({
-          upsert: jest.fn().mockResolvedValue({
-            data: [{ id: 'device-1' }],
-            error: null,
-          }),
-        }),
+        rpc: jest.fn().mockResolvedValue({ error: null }),
       }
 
-      const result = await syncNotificationDevice({
+      await syncNotificationDevice({
         supabase: mockSupabase,
         userId: 'user-123',
         token: 'ExponentPushToken[abc123]',
       })
 
-      expect(result).toEqual([{ id: 'device-1' }])
-      expect(mockSupabase.from).toHaveBeenCalledWith('notification_devices')
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'upsert_notification_device',
+        expect.objectContaining({
+          p_provider:   'expo',
+          p_push_token: 'ExponentPushToken[abc123]',
+          p_platform:   'ios',
+          p_app_kind:   'native',
+        })
+      )
     })
 
-    it('deve propagar erro do Supabase', async () => {
-      const mockError = new Error('Network error')
+    it('deve propagar erro do RPC', async () => {
       const mockSupabase = {
-        from: jest.fn().mockReturnValue({
-          upsert: jest.fn().mockResolvedValue({
-            data: null,
-            error: mockError,
-          }),
+        rpc: jest.fn().mockResolvedValue({
+          error: { message: 'Network error' },
         }),
       }
 
@@ -93,14 +91,9 @@ describe('syncNotificationDevice', () => {
       await expect(promise).rejects.toThrow('[syncNotificationDevice] Upsert failed: Network error')
     })
 
-    it('upsert deve incluir onConflict', async () => {
+    it('deve incluir device_fingerprint com os campos corretos', async () => {
       const mockSupabase = {
-        from: jest.fn().mockReturnValue({
-          upsert: jest.fn().mockResolvedValue({
-            data: [{ id: 'device-1' }],
-            error: null,
-          }),
-        }),
+        rpc: jest.fn().mockResolvedValue({ error: null }),
       }
 
       await syncNotificationDevice({
@@ -109,14 +102,14 @@ describe('syncNotificationDevice', () => {
         token: 'ExponentPushToken[abc123]',
       })
 
-      const upsertCall = mockSupabase.from('notification_devices').upsert
-      expect(upsertCall).toHaveBeenCalled()
-
-      const [data, options] = upsertCall.mock.calls[0]
-      expect(options).toEqual({ onConflict: 'provider,push_token' })
-      expect(data.user_id).toBe('user-123')
-      expect(data.push_token).toBe('ExponentPushToken[abc123]')
-      expect(data.is_active).toBe(true)
+      const [, params] = mockSupabase.rpc.mock.calls[0]
+      const fingerprint = JSON.parse(params.p_device_fingerprint)
+      expect(fingerprint).toMatchObject({
+        os: 'ios',
+        osVersion: 17,
+        deviceModel: 'iPhone 15 Pro',
+        appVersion: '4.0.0',
+      })
     })
   })
 })
