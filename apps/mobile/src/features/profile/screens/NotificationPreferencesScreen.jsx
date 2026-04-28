@@ -144,6 +144,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
     const isGlobal = pref !== 'none'
     setGlobalEnabled(isGlobal)
+    setNotificationMode(settings.notification_mode)
 
     // Apenas sincroniza canais individuais se o global estiver ON
     if (isGlobal) {
@@ -272,7 +273,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // ── Seções de UI ──────────────────────────────────────────────────────────
 
   const MODES = [
-    { value: 'realtime', label: 'Tempo real' },
+    { value: 'realtime', label: 'Alertas unitários' },
     { value: 'digest_morning', label: 'Resumo diário' },
     { value: 'silent', label: 'Silencioso' },
   ]

@@ -18,9 +18,9 @@
     "current_sprint": "2026-W17"
   },
   "session": {
-    "mode": "coding",
-    "status": "coding",
-    "goal": "Wave N2 — Quiet Hours + redesign UX de notificações nativas",
+    "mode": "planning",
+    "status": "planning",
+    "goal": "Wave N2: Notification Gate Integration & Silent Mode Refinement",
     "goal_type": "feature"
   },
   "memory": {
