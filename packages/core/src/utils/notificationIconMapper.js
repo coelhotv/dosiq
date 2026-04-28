@@ -8,7 +8,7 @@
 export function getNotificationIcon(type) {
   const map = {
     dose_reminder: {
-      iconName: 'Clock',
+      iconName: 'Pill',
       color: '#006a5e',
       bgColor: 'rgba(0, 106, 94, 0.10)',
       label: 'Lembrete de dose',
@@ -29,10 +29,10 @@ export function getNotificationIcon(type) {
       deepLinkAction: 'history',
     },
     daily_digest: {
-      iconName: 'BarChart2',
+      iconName: 'NotepadText',
       color: '#0284c7',
       bgColor: 'rgba(2, 132, 199, 0.10)',
-      label: 'Resumo diário',
+      label: 'Resumo do dia',
       deepLinkAction: null,
     },
     titration_update: {
@@ -43,14 +43,14 @@ export function getNotificationIcon(type) {
       deepLinkAction: 'treatment',
     },
     dose_reminder_by_plan: {
-      iconName: 'Package',
+      iconName: 'ListChecks',
       color: '#006a5e',
       bgColor: 'rgba(0, 106, 94, 0.10)',
       label: 'Lembrete de plano',
       deepLinkAction: 'bulk-plan',
     },
     dose_reminder_misc: {
-      iconName: 'Clock',
+      iconName: 'Tablets',
       color: '#006a5e',
       bgColor: 'rgba(0, 106, 94, 0.10)',
       label: 'Doses agora',

@@ -417,10 +417,10 @@ const styles = StyleSheet.create({
 
   // Chips de filtro
   filtersScroll:    { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
-  filtersContent:   { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
-  chip:             { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1 },
-  chipInactive:     { backgroundColor: '#ffffff', borderColor: colors.border?.medium ?? '#d1d5db' },
-  chipText:         { fontSize: 13, fontWeight: '500' },
+  filtersContent:   { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
+  chip:             { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, minHeight: 34, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  chipInactive:     { backgroundColor: colors.bg?.card ?? '#ffffff', borderColor: colors.border?.medium ?? '#d1d5db' },
+  chipText:         { fontSize: 14, fontWeight: '600', lineHeight: 18 },
   chipTextActive:   { color: '#ffffff' },
   chipTextInactive: { color: colors.text?.secondary ?? '#374151' },
 

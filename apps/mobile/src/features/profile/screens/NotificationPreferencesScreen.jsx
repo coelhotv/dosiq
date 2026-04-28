@@ -29,11 +29,31 @@ const HOURS = Array.from({ length: 24 }, (_, i) => {
 })
 
 // Derivar notification_preference legado
-function deriveLegacyPreference(mobile, telegram) {
-  if (mobile && telegram) return 'both'
-  if (mobile) return 'mobile_push'
-  if (telegram) return 'telegram'
+function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_enabled }) {
+  if (channel_mobile_push_enabled && channel_telegram_enabled) return 'both'
+  if (channel_mobile_push_enabled) return 'mobile_push'
+  if (channel_telegram_enabled) return 'telegram'
   return 'none'
+}
+
+// Detecta formato 12/24h do dispositivo (simplificado e memoizado globalmente)
+const IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
+  .format(new Date(2024, 0, 1, 13))
+  .match(/am|pm/i)
+
+// Formata hora de forma amigável (22h ou 10PM)
+function formatTimeFriendly(timeStr) {
+  if (!timeStr) return ''
+  const [hour] = timeStr.split(':')
+  const h = parseInt(hour, 10)
+  
+  if (IS_24H_FORMAT) {
+    return `${h}h`
+  } else {
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const h12 = h % 12 || 12
+    return `${h12}${ampm}`
+  }
 }
 
 // Picker de hora inline via Modal
@@ -48,7 +68,7 @@ function TimePicker({ value, onChange, label }) {
         accessibilityLabel={`${label}: ${value}`}
         accessibilityRole="button"
       >
-        <Text style={styles.timePickerValue}>{value}</Text>
+        <Text style={styles.timePickerValue}>{formatTimeFriendly(value)}</Text>
         <ChevronRight size={14} color={colors.text.muted} />
       </TouchableOpacity>
 
@@ -82,7 +102,7 @@ function TimePicker({ value, onChange, label }) {
                   accessibilityRole="menuitem"
                 >
                   <Text style={[styles.hourItemText, item === value && styles.hourItemTextActive]}>
-                    {item}
+                    {formatTimeFriendly(item)}
                   </Text>
                   {item === value && <Check size={16} color={colors.primary[600]} />}
                 </TouchableOpacity>
@@ -98,10 +118,10 @@ function TimePicker({ value, onChange, label }) {
 export default function NotificationPreferencesScreen({ navigation }) {
   const { user } = useAuth()
   const { settings, loading: settingsLoading, refresh } = useProfile()
+  const isTelegramConnected = !!settings?.telegram_chat_id
 
   const [globalEnabled, setGlobalEnabled] = useState(true)
   const [mobilePushEnabled, setMobilePushEnabled] = useState(true)
-  const [telegramEnabled, setTelegramEnabled] = useState(false)
   const [webPushEnabled, setWebPushEnabled] = useState(false)
   const [notificationMode, setNotificationMode] = useState('realtime')
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(false)
@@ -117,26 +137,22 @@ export default function NotificationPreferencesScreen({ navigation }) {
     if (!settings) return
 
     const pref = settings.notification_preference
-    setMobilePushEnabled(
-      settings.channel_mobile_push_enabled ??
-      (pref === 'mobile_push' || pref === 'both')
-    )
-    setTelegramEnabled(
-      settings.channel_telegram_enabled ??
-      (pref === 'telegram' || pref === 'both')
-    )
-    setWebPushEnabled(settings.channel_web_push_enabled ?? false)
-    setNotificationMode(settings.notification_mode ?? 'realtime')
     setQuietHoursEnabled(!!(settings.quiet_hours_start || settings.quiet_hours_end))
     setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
     setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
     setDigestTime(settings.digest_time ?? '07:00')
 
-    // globalEnabled = desabilitado apenas quando todos canais off e pref='none'
-    const allOff = pref === 'none' &&
-      !settings.channel_mobile_push_enabled &&
-      !settings.channel_telegram_enabled
-    setGlobalEnabled(!allOff)
+    const isGlobal = pref !== 'none'
+    setGlobalEnabled(isGlobal)
+
+    // Apenas sincroniza canais individuais se o global estiver ON
+    if (isGlobal) {
+      setMobilePushEnabled(
+        settings.channel_mobile_push_enabled ??
+        (pref === 'mobile_push' || pref === 'both')
+      )
+      setWebPushEnabled(settings.channel_web_push_enabled ?? false)
+    }
   }, [settings])
 
   useEffect(() => {
@@ -152,8 +168,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     }
   }
 
-  const isTelegramConnected = !!settings?.telegram_chat_id
-  const hasAnyChannel = mobilePushEnabled || telegramEnabled || webPushEnabled
+  const hasAnyChannel = mobilePushEnabled || isTelegramConnected || webPushEnabled
   const showChannelWarning = globalEnabled && !hasAnyChannel
 
   // Salvar no banco (debounce manual: chama após cada alteração)
@@ -162,7 +177,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
     setSaving(true)
     try {
       const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
-      const telegram = patch.telegramEnabled ?? telegramEnabled
+      const telegram = isTelegramConnected // Telegram segue o vínculo
+      const web = patch.webPushEnabled ?? webPushEnabled
       const mode = patch.notificationMode ?? notificationMode
       const qEnabled = patch.quietHoursEnabled ?? quietHoursEnabled
       const qStart = patch.quietHoursStart ?? quietHoursStart
@@ -170,26 +186,35 @@ export default function NotificationPreferencesScreen({ navigation }) {
       const dTime = patch.digestTime ?? digestTime
       const global = patch.globalEnabled ?? globalEnabled
 
-      await updateNotificationSettings(user.id, {
+      const result = await updateNotificationSettings(user.id, {
         notification_mode: mode,
         quiet_hours_start: (global && qEnabled) ? qStart : null,
         quiet_hours_end: (global && qEnabled) ? qEnd : null,
         digest_time: dTime,
         channel_mobile_push_enabled: global && mobile,
-        channel_web_push_enabled: global && webPushEnabled,
+        channel_web_push_enabled: global && web,
         channel_telegram_enabled: global && telegram,
-        notification_preference: deriveLegacyPreference(global && mobile, global && telegram),
+        notification_preference: global 
+          ? deriveLegacyPreference({ 
+              channel_mobile_push_enabled: mobile, 
+              channel_telegram_enabled: telegram 
+            }) 
+          : 'none',
       })
 
-      if (__DEV__) console.log('[NotificationPreferencesScreen] Configurações salvas')
-      await refresh()
+      if (result.success) {
+        if (__DEV__) console.log('[NotificationPreferencesScreen] Configurações salvas')
+        await refresh()
+      } else {
+        throw new Error(result.error || 'Erro desconhecido ao salvar')
+      }
     } catch (err) {
       if (__DEV__) console.error('[NotificationPreferencesScreen] Erro ao salvar:', err)
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
     } finally {
       setSaving(false)
     }
-  }, [user, mobilePushEnabled, telegramEnabled, webPushEnabled, notificationMode,
+  }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled])
 
   async function handleMobilePushToggle(val) {
@@ -220,7 +245,14 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
   function handleGlobalToggle(val) {
     setGlobalEnabled(val)
-    persist({ globalEnabled: val })
+    // Se está ativando e nada está ligado, ativa mobile_push como padrão
+    // para evitar que o estado volte a 'none' no DB e dê snap-back para off
+    if (val && !hasAnyChannel) {
+      setMobilePushEnabled(true)
+      persist({ globalEnabled: true, mobilePushEnabled: true })
+    } else {
+      persist({ globalEnabled: val })
+    }
   }
 
   function handleModeSelect(mode) {
@@ -241,7 +273,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
   const MODES = [
     { value: 'realtime', label: 'Tempo real' },
-    { value: 'digest_morning', label: 'Resumo matinal' },
+    { value: 'digest_morning', label: 'Resumo diário' },
     { value: 'silent', label: 'Silencioso' },
   ]
 
@@ -379,7 +411,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
         {/* Hora do resumo — só quando digest_morning */}
         {notificationMode === 'digest_morning' && globalEnabled && (
           <>
-            <Text style={styles.sectionLabel}>HORA DO RESUMO</Text>
+            <Text style={styles.sectionLabel}>HORA DO RESUMO DIÁRIO</Text>
             <View style={[styles.card, styles.timeRow]}>
               <Text style={styles.rowLabel}>Enviar resumo às</Text>
               <TimePicker

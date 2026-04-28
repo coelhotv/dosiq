@@ -113,19 +113,31 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.otherRow}
               onPress={() => {}}
-              activeOpacity={0.7}
+              activeOpacity={1}
+              disabled={true}
             >
-              <Text style={styles.otherLabel}>Privacidade & dados</Text>
-              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabelDisabled}>Privacidade e dados</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>em breve</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color={colors.text.muted} strokeWidth={1.5} />
             </TouchableOpacity>
             <View style={styles.otherDivider} />
             <TouchableOpacity
               style={styles.otherRow}
               onPress={() => {}}
-              activeOpacity={0.7}
+              activeOpacity={1}
+              disabled={true}
             >
-              <Text style={styles.otherLabel}>Sobre o Dosiq</Text>
-              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabelDisabled}>Sobre o Dosiq</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>em breve</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color={colors.text.muted} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -201,12 +213,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     color: colors.text.secondary,
+    lineHeight: 20,
   },
   value: {
     fontSize: 14,
     color: colors.text.primary,
     fontWeight: '600',
     maxWidth: '70%',
+    lineHeight: 20,
   },
   logoutSection: {
     marginTop: spacing[4],
@@ -265,6 +279,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text.primary,
     fontWeight: '500',
+  },
+  otherLabelDisabled: {
+    fontSize: 16,
+    color: colors.text.muted,
+    fontWeight: '500',
+    lineHeight: 22,
+  },
+  otherLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  comingSoonBadge: {
+    backgroundColor: colors.neutral[200],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    marginLeft: spacing[2],
+  },
+  comingSoonText: {
+    fontSize: 10,
+    color: colors.text.muted,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 14,
   },
   otherDivider: {
     height: 1,
