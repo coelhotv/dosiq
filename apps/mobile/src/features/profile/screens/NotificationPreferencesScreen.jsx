@@ -36,18 +36,18 @@ function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_
   return 'none'
 }
 
+// Detecta formato 12/24h do dispositivo (simplificado e memoizado globalmente)
+const IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
+  .format(new Date(2024, 0, 1, 13))
+  .match(/am|pm/i)
+
 // Formata hora de forma amigável (22h ou 10PM)
 function formatTimeFriendly(timeStr) {
   if (!timeStr) return ''
   const [hour] = timeStr.split(':')
   const h = parseInt(hour, 10)
   
-  // Detecta formato 12/24h do dispositivo (simplificado)
-  const is24h = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
-    .format(new Date(2024, 0, 1, 13))
-    .match(/am|pm/i)
-
-  if (is24h) {
+  if (IS_24H_FORMAT) {
     return `${h}h`
   } else {
     const ampm = h >= 12 ? 'PM' : 'AM'
@@ -122,7 +122,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
 
   const [globalEnabled, setGlobalEnabled] = useState(true)
   const [mobilePushEnabled, setMobilePushEnabled] = useState(true)
-  const [telegramEnabled, setTelegramEnabled] = useState(false)
   const [webPushEnabled, setWebPushEnabled] = useState(false)
   const [notificationMode, setNotificationMode] = useState('realtime')
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(false)
@@ -152,15 +151,9 @@ export default function NotificationPreferencesScreen({ navigation }) {
         settings.channel_mobile_push_enabled ??
         (pref === 'mobile_push' || pref === 'both')
       )
-      setTelegramEnabled(
-        settings.channel_telegram_enabled ??
-        (pref === 'telegram' || pref === 'both')
-      )
       setWebPushEnabled(settings.channel_web_push_enabled ?? false)
-    } else {
-      setTelegramEnabled(isTelegramConnected)
     }
-  }, [settings, isTelegramConnected])
+  }, [settings])
 
   useEffect(() => {
     checkPermission()
@@ -175,7 +168,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     }
   }
 
-  const hasAnyChannel = mobilePushEnabled || telegramEnabled || webPushEnabled
+  const hasAnyChannel = mobilePushEnabled || isTelegramConnected || webPushEnabled
   const showChannelWarning = globalEnabled && !hasAnyChannel
 
   // Salvar no banco (debounce manual: chama após cada alteração)
@@ -221,7 +214,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     } finally {
       setSaving(false)
     }
-  }, [user, mobilePushEnabled, telegramEnabled, webPushEnabled, notificationMode,
+  }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled])
 
   async function handleMobilePushToggle(val) {
