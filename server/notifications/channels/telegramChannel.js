@@ -9,7 +9,6 @@ import {
   formatDoseGroupedByPlanMessage,
   formatDoseGroupedMiscMessage,
 } from '../../bot/utils/doseFormatters.js'
-
 // Retorna telegram_chat_id do usuário ou null se não configurado
 async function getTelegramChatId(userId) {
   const { data, error } = await supabase
@@ -25,6 +24,8 @@ async function getTelegramChatId(userId) {
 
   return data?.telegram_chat_id || null
 }
+
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 
 /**
  * Converte payload canônico em texto MarkdownV2 para Telegram.
@@ -71,7 +72,9 @@ const EMPTY_RESULT = {
 export async function sendTelegramNotification({ userId, payload, context, bot }) {
   const correlationId = context?.correlationId || 'unknown'
 
-  const chatId = await getTelegramChatId(userId)
+  const chatId = userId === SYSTEM_USER_ID 
+    ? process.env.ADMIN_CHAT_ID 
+    : await getTelegramChatId(userId)
 
   if (!chatId) {
     console.info('[telegramChannel] sem telegram_chat_id', { correlationId, userId })

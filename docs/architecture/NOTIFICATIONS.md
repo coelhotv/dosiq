@@ -24,19 +24,27 @@ O Dosiq utiliza um **Motor de Notificações Unificado** baseado no princípio *
 
 ## 🏗️ Arquitetura do Motor
 
-O sistema opera através de um **Dispatcher** centralizado que abstrai a complexidade de cada canal.
+O sistema opera através de um motor desacoplado em **3 Camadas**, garantindo que a lógica de negócio, a formatação visual e a entrega técnica sejam independentes.
 
-### 1. Princípio Inbox-First
-Nenhuma notificação é enviada sem antes ser persistida na tabela `notification_log`. Isso garante que:
-- O usuário sempre tenha um histórico acessível via Web/App.
-- Possamos medir engajamento (`opened_at`, `action_taken_at`).
-- Notificações suprimidas por **Quiet Hours** ainda estejam disponíveis para consulta manual.
+### 1. Camada de Negócio (L1 - Business Logic)
+Responsável por decidir *quem* notificar e *o que* enviar. Reside em `server/bot/tasks.js` e em handlers de API.
+- **Isolamento**: Não conhece regras de formatação Markdown ou protocolos de rede.
+- **Contrato**: Envia um objeto `data` (payload bruto) para o Dispatcher.
 
-### 2. Dispatcher Unificado (`server/notifications/dispatcher/`)
-O `dispatchNotification.js` é o hub que coordena o envio para:
-- **Telegram**: Via `telegramChannel.js`.
-- **Mobile Push (Expo)**: Via `expoPushChannel.js`.
-- **Web Push (PWA)**: Via `webPushChannel.js`.
+### 2. Camada de Apresentação (L2 - Canonical Builder)
+Responsável por transformar o dado bruto em uma experiência visual rica. Reside em `server/notifications/payloads/buildNotificationPayload.js`.
+- **Canônico**: Garante que o mesmo lembrete tenha a mesma "voz" no Telegram, Push e Inbox.
+- **Validação**: Usa schemas Zod para garantir que o payload final (`title`, `body`, `deeplink`) esteja correto.
+- **Decoração**: Adiciona prefixos (ex: `🔄` para reenvios) e rodapés contextuais.
+
+### 3. Camada de Entrega (L3 - Delivery Dispatcher)
+O `dispatchNotification.js` é o hub de execução que coordena o envio multicanal.
+- **Resolução de Canais**: Consulta preferências e dispositivos ativos via `resolveChannelsForUser.js`.
+- **Gate de Supressão**: Aplica Quiet Hours e Notification Modes centralizadamente.
+- **Adaptadores**:
+    - **Telegram**: Via `telegramChannel.js`.
+    - **Mobile Push (Expo)**: Via `expoPushChannel.js`.
+- **Inbox-First**: Todo dispatch gera um registro no `notification_log`.
 
 ### 3. Agrupamento Inteligente (Wave N1)
 Para evitar o "spam" de notificações (múltiplos medicamentos no mesmo horário), o sistema aplica a regra de **Partição por Plano**:
@@ -100,9 +108,12 @@ As notificações de dose no Telegram incluem botões interativos:
 
 ## 🛠️ Confiabilidade e Observabilidade
 
-### Retry & DLQ
-- **Retry**: 3 tentativas com exponential backoff para falhas de rede.
-- **DLQ (Dead Letter Queue)**: Notificações que falham permanentemente vão para `failed_notification_queue` para análise admin.
+### Resiliência & DLQ (Gate 3.5)
+O sistema possui uma camada de proteção contra perda de notificações críticas:
+
+- **Captura Automática (Auto-DLQ)**: O Dispatcher (L3) monitora o sucesso de cada canal. Se todos os canais físicos falharem, a notificação é automaticamente enfileirada na `failed_notification_queue` (Dead Letter Queue).
+- **Manual Retry Proxy**: O Admin Panel permite o reenvio manual de falhas. Esse reenvio utiliza o Dispatcher, garantindo que o payload seja re-processado pela L2 (Apresentação), mantendo a consistência visual.
+- **Roteamento de Sistema**: Notificações para administradores (ex: resumos da DLQ) utilizam o `SYSTEM_USER_ID`, sendo roteadas automaticamente para o chat de administração configurado.
 
 ### Rastreabilidade
 - **Correlation ID**: Todo dispatch gera um UUID rastreável nos logs da Vercel e Supabase.

@@ -161,6 +161,8 @@ export const dlqService = {
       adherence_report: 'Relatório de Adesão',
       titration_alert: 'Alerta de Titulação',
       monthly_report: 'Relatório Mensal',
+      prescription_alert: 'Alerta de Prescrição',
+      dlq_digest: 'Resumo DLQ',
     }
     return types[type] || type || 'Desconhecido'
   },

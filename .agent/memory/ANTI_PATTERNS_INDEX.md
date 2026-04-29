@@ -139,4 +139,5 @@
 - **[AP-121]** Inline Styles for Design System Tokens: Use utility classes instead of inline style attributes for consistent design. -> [`anti-patterns/react_and_ui/AP-121.md`](./anti-patterns/react_and_ui/AP-121.md)
 - **[AP-122]** Hardcoded Identifiers for Authorization: Hardcoding user/admin IDs in logic bypasses dynamic authorization systems. -> [`anti-patterns/react_and_ui/AP-122.md`](./anti-patterns/react_and_ui/AP-122.md)
 - **[AP-123]** Disconnected "Back" Navigation Flow: Navigation that assumes a fixed parent (like Dashboard) instead of actual entry context. -> [`anti-patterns/react_and_ui/AP-123.md`](./anti-patterns/react_and_ui/AP-123.md)
+- **[AP-124]** MarkdownV2 escapes in pushBody: results in visible backslashes in mobile notifications. -> [`anti-patterns/mobile_and_platform/AP-124.md`](./anti-patterns/mobile_and_platform/AP-124.md)
 

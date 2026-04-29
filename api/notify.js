@@ -12,7 +12,6 @@ import {
   sendDLQDigest
 } from '../server/bot/tasks.js';
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
-import { resolveChannelsForUser } from '../server/notifications/policies/resolveChannelsForUser.js';
 import { createClient } from '@supabase/supabase-js';
 import { Expo } from 'expo-server-sdk';
 
@@ -63,154 +62,28 @@ const devicesRepo = {
   }
 };
 
-/**
- * Retorna saudação por horário do dia para o título do push (Wave N1).
- * @param {number} hour - Hora local (0–23)
- * @returns {string}
- */
-function getTimeOfDayGreeting(hour) {
-  if (hour >= 5 && hour < 11) return '🌅 Hora dos medicamentos da manhã';
-  if (hour >= 11 && hour < 14) return '🍽️ Hora dos medicamentos do almoço';
-  if (hour >= 14 && hour < 18) return '☕ Hora dos medicamentos da tarde';
-  if (hour >= 18 && hour < 23) return '🌆 Hora dos medicamentos da noite';
-  return '🌙 Hora dos medicamentos';
-}
-
-// Normaliza evento de domínio em payload de notificação
-function buildNotificationPayload({ kind, data }) {
-  switch (kind) {
-    case 'dose_reminder':
-      return {
-        title: '💊 Lembrete de nova dose',
-        body: `Está na hora de tomar ${data.dosage || 1}x de ${data.medicineName}. Não deixe para depois!`,
-        deeplink: `dosiq://today?protocolId=${data.protocolId}`,
-        metadata: {
-          protocolId:   data.protocolId,
-          medicineName: data.medicineName ?? null,
-          protocolName: data.protocolName ?? null,
-          medicineId:   data.medicineId,
-          dosage:       data.dosage || 1
-        }
-      };
-
-    case 'dose_reminder_by_plan': {
-      const count = data.doses?.length ?? 0;
-      const hour = data.hour ?? 0;
-      return {
-        title: `${data.planName || 'Plano de tratamento'} (${count})`,
-        body: `${count} medicamento${count !== 1 ? 's' : ''} agora — ${data.scheduledTime}`,
-        deeplink: `dosiq://today?at=${data.scheduledTime}&plan=${data.planId}`,
-        tag: `dose-${data.scheduledTime}-plan-${data.planId}`,
-        metadata: {
-          kind:          'dose_reminder_by_plan',
-          planId:        data.planId ?? null,
-          planName:      data.planName ?? null,
-          doses:         data.doses ?? [],
-          protocolIds:   data.protocolIds ?? [],
-          scheduledTime: data.scheduledTime,
-          hour,
-          navigation: {
-            screen: 'bulk-plan',
-            params: {
-              at: data.scheduledTime,
-              planId: data.planId,
-              treatmentPlanName: data.planName,
-              protocolIds: data.protocolIds ?? [],
-            },
-          },
-        },
-      };
-    }
-
-    case 'dose_reminder_misc': {
-      const count = data.doses?.length ?? 0;
-      const hour = data.hour ?? 0;
-      return {
-        title: getTimeOfDayGreeting(hour),
-        body: `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} — ${data.scheduledTime}`,
-        deeplink: `dosiq://today?at=${data.scheduledTime}&misc=1`,
-        tag: `dose-${data.scheduledTime}-misc`,
-        metadata: {
-          kind:          'dose_reminder_misc',
-          doses:         data.doses ?? [],
-          protocolIds:   data.protocolIds ?? [],
-          scheduledTime: data.scheduledTime,
-          hour,
-          navigation: {
-            screen: 'bulk-misc',
-            params: {
-              at: data.scheduledTime,
-              misc: true,
-              protocolIds: data.protocolIds ?? [],
-            },
-          },
-        },
-      };
-    }
-
-    case 'stock_alert':
-      return {
-        title: 'Estoque baixo',
-        body: `${data.medicineName} está acabando`,
-        deeplink: `dosiq://stock`,
-        metadata: { medicineId: data.medicineId, medicineName: data.medicineName ?? null }
-      };
-    case 'daily_digest':
-      return {
-        title: data.title || 'Resumo do dia',
-        body: data.body || data.summary || 'Veja seu resumo diário',
-        deeplink: `dosiq://today`,
-        metadata: {}
-      };
-    case 'weekly_adherence':
-      return {
-        title: '📊 Relatório Semanal de Adesão',
-        body: data.summary || `${data.percentage ?? 0}% de adesão esta semana`,
-        deeplink: 'dosiq://today',
-        metadata: { percentage: data.percentage, takenDoses: data.takenDoses, expectedDoses: data.expectedDoses }
-      };
-    
-    case 'daily_adherence_report':
-      return {
-        title: data.title || '📊 Relatório Diário de Adesão',
-        body: data.body || 'Veja como foi sua adesão hoje',
-        deeplink: 'dosiq://today',
-        metadata: { 
-          percentage: data.percentage, 
-          takenDoses: data.takenDoses, 
-          expectedDoses: data.expectedDoses,
-          details: data.details || []
-        }
-      };
-
-    case 'monthly_report':
-      return {
-        title: '📊 Relatório Mensal',
-        body: data.summary || `${data.percentage ?? 0}% de adesão este mês`,
-        deeplink: 'dosiq://today',
-        metadata: { percentage: data.percentage, takenDoses: data.takenDoses, expectedDoses: data.expectedDoses }
-      };
-
-    case 'titration_alert':
-      return {
-        title: `⚗️ Atualização de titulação — ${data.medicineName ?? 'Medicamento'}`,
-        body: data.message || `Verifique a dose atual de ${data.medicineName ?? 'seu medicamento'}`,
-        deeplink: `dosiq://protocols/${data.protocolId}`,
-        metadata: { protocolId: data.protocolId, medicineName: data.medicineName ?? null }
-      };
-
-    case 'prescription_alert':
-      return {
-        title: '⚠️ Prescrição próxima do vencimento',
-        body: `${data.medicineName ?? 'Medicamento'} vence em ${data.daysRemaining} dia(s)`,
-        deeplink: `dosiq://protocols/${data.protocolId}`,
-        metadata: { protocolId: data.protocolId, medicineName: data.medicineName ?? null, daysRemaining: data.daysRemaining }
-      };
-
-    default:
-      throw new Error(`Unsupported notification kind: ${kind}`);
+const dlqRepo = {
+  async enqueue(notificationData, error, retryCount, correlationId) {
+    const { error: upsertError } = await supabase
+      .from('failed_notification_queue')
+      .upsert({
+        user_id: notificationData.userId,
+        protocol_id: notificationData.protocolId,
+        notification_type: notificationData.type,
+        notification_payload: notificationData,
+        error_code: error?.code || error?.error_code,
+        error_message: error?.message || 'Unknown error',
+        retry_count: retryCount,
+        correlation_id: correlationId,
+        status: 'pending'
+      }, {
+        onConflict: 'correlation_id',
+        ignoreDuplicates: false
+      });
+    if (upsertError) throw upsertError;
   }
-}
+};
+
 
 // --- Bot Adapter (Minimal for Notifications) ---
 function createNotifyBotAdapter(token) {
@@ -378,31 +251,16 @@ export default async function handler(req, res) {
   const notificationDispatcher = {
     async dispatch({ userId, kind, data, context }) {
       try {
-        const payload = buildNotificationPayload({ kind, data });
-        const channels = await resolveChannelsForUser({ userId, repositories: { preferences: preferencesRepo, devices: devicesRepo } });
-        
-        logger.info('[notificationDispatcher] Canais resolvidos', { 
-          userId, 
-          kind, 
-          channels, 
-          correlationId: context?.correlationId 
-        });
-
-        if (channels.length === 0) {
-          logger.warn('[notificationDispatcher] Nenhum canal disponível para este usuário', { 
-            userId, 
-            kind,
-            correlationId: context?.correlationId 
-          });
-        }
-
         const result = await dispatchNotification({
           userId,
           kind,
-          payload,
-          channels,
+          data,
           context,
-          repositories: { preferences: preferencesRepo, devices: devicesRepo },
+          repositories: { 
+            preferences: preferencesRepo, 
+            devices: devicesRepo,
+            dlq: dlqRepo
+          },
           bot,
           expoClient
         });
@@ -480,7 +338,7 @@ export default async function handler(req, res) {
       results.push('stock_alerts');
 
       await withCorrelation(
-        (context) => sendDLQDigest(bot, context),
+        (context) => sendDLQDigest(notificationDispatcher, context),
         { correlationId, jobType: 'dlq_digest' }
       );
       results.push('dlq_digest');
@@ -489,7 +347,7 @@ export default async function handler(req, res) {
     // 4. Titration Alerts: Daily at 08:00
     if (currentHour === 8 && currentMinute === 0) {
       await withCorrelation(
-        (context) => checkTitrationAlerts(bot, context),
+        (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }),
         { correlationId, jobType: 'titration_alerts' }
       );
       results.push('titration_alerts');
@@ -498,7 +356,7 @@ export default async function handler(req, res) {
     // 5. Adherence Reports: Sunday at 23:00
     if (currentWeekDay === 0 && currentHour === 23 && currentMinute === 0) {
       await withCorrelation(
-        (context) => checkAdherenceReports(bot, context),
+        (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
         { correlationId, jobType: 'adherence_reports' }
       );
       results.push('adherence_reports');
@@ -507,7 +365,7 @@ export default async function handler(req, res) {
     // 6. Monthly Report: 1st of month at 10:00
     if (currentDay === 1 && currentHour === 10 && currentMinute === 0) {
       await withCorrelation(
-        (context) => checkMonthlyReport(bot, context),
+        (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }),
         { correlationId, jobType: 'monthly_report' }
       );
       results.push('monthly_report');

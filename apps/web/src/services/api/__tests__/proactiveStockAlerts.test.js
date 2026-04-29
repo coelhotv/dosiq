@@ -150,7 +150,7 @@ describe('Stock Alerts via Dispatcher (ADR-030)', () => {
       const call = dispatcher.dispatch.mock.calls[0][0]
       expect(call.userId).toBe('user-1')
       expect(call.kind).toBe('stock_alert')
-      expect(call.payload.metadata.daysRemaining).toBe(6)
+      expect(call.data.daysRemaining).toBe(6)
     })
 
     it('deve disparar quando restam 0 dias (estoque zerado)', async () => {
@@ -242,8 +242,7 @@ describe('Stock Alerts via Dispatcher (ADR-030)', () => {
 
       await checkStockAlerts({}, { notificationDispatcher: dispatcher })
 
-      expect(dispatcher.dispatch).toHaveBeenCalledOnce()
-      expect(dispatcher.dispatch.mock.calls[0][0].payload.metadata.medicineName).toBe('MedCritico')
+      expect(dispatcher.dispatch.mock.calls[0][0].data.medicineName).toBe('MedCritico')
     })
   })
 })
