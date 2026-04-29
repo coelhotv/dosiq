@@ -4,6 +4,7 @@ import { withCorrelation, generateCorrelationId } from '../server/bot/correlatio
 import {
   checkReminders,
   runDailyDigest,
+  runDailyAdherenceReport,
   checkStockAlerts,
   checkAdherenceReports,
   checkTitrationAlerts,
@@ -161,13 +162,25 @@ function buildNotificationPayload({ kind, data }) {
         deeplink: `dosiq://today`,
         metadata: {}
       };
-
     case 'weekly_adherence':
       return {
         title: '📊 Relatório Semanal de Adesão',
         body: data.summary || `${data.percentage ?? 0}% de adesão esta semana`,
         deeplink: 'dosiq://today',
         metadata: { percentage: data.percentage, takenDoses: data.takenDoses, expectedDoses: data.expectedDoses }
+      };
+    
+    case 'daily_adherence_report':
+      return {
+        title: data.title || '📊 Relatório Diário de Adesão',
+        body: data.body || 'Veja como foi sua adesão hoje',
+        deeplink: 'dosiq://today',
+        metadata: { 
+          percentage: data.percentage, 
+          takenDoses: data.takenDoses, 
+          expectedDoses: data.expectedDoses,
+          details: data.details || []
+        }
       };
 
     case 'monthly_report':
@@ -443,14 +456,20 @@ export default async function handler(req, res) {
     );
     results.push('reminders');
 
-    // 2. Daily Digest: Daily at 23:00
-    if (currentHour === 23 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => runDailyDigest(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'daily_digest' }
-      );
-      results.push('daily_digest');
-    }
+    // 2. Daily Digest (Horário personalizado por usuário validado em tasks.js)
+    await withCorrelation(
+      (context) => runDailyDigest(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'daily_digest' }
+    );
+    results.push('daily_digest');
+
+    // 2.1 Daily Adherence Report (Fase 12: Storytelling + Nudges)
+    // Chamado a cada minuto; elegibilidade por usuário validada em tasks.js
+    await withCorrelation(
+      (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'daily_adherence_report' }
+    );
+    results.push('daily_adherence_report');
 
     // 3. Tasks at 09:00: Stock Alerts + DLQ Digest
     if (currentHour === 9 && currentMinute === 0) {

@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = {
   MISSED_DOSE: 'missed_dose',
   TITRATION_UPDATE: 'titration_update',
   DAILY_DIGEST: 'daily_digest',
+  ADHERENCE_REPORT: 'adherence_report',
 }
 
 /**
@@ -46,6 +47,19 @@ export const notificationSchema = z.object({
     medicineName: z.string(),
     dosage: z.string(),
   })).nullable().optional(),
+
+  // Metadados de Adesão e Storytelling (M2.5)
+  percentage: z.number().min(0).max(100).optional(),
+  expected_doses: z.number().optional(),
+  taken_doses: z.number().optional(),
+  nudge: z.string().optional(),
+  storytelling: z.string().optional(),
+  details: z.array(z.object({
+    name: z.string(),
+    protocol_id: z.string().uuid().optional(),
+    taken: z.number(),
+    expected: z.number()
+  })).optional(),
 })
 
 /**

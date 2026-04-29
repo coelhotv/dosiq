@@ -5,13 +5,14 @@ import { getCurrentCorrelationId } from './correlationLogger.js';
 import {
   getActiveProtocols
 } from '../services/protocolCache.js';
-import { shouldSendNotification, logSuccessfulNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
+import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
 import {
   getCurrentTimeInTimezone,
   getCurrentDateInTimezone
 } from '../utils/timezone.js';
 import { escapeMarkdownV2 } from '../utils/formatters.js';
 import { partitionDoses } from './utils/partitionDoses.js';
+import { parseLocalDate, formatLocalDate } from '../utils/dateUtils.js';
 
 const logger = createLogger('Tasks');
 
@@ -102,29 +103,44 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     logger.info(`Iniciando verificação de lembretes para ${users.length} usuários (Dispatcher)`, { correlationId });
 
-    // Busca bulk: todos os protocolos ativos de todos os usuários em uma query (evita N+1)
-    const userIds = users.map(u => u.user_id);
-    const { data: allProtocols, error: bulkError } = await supabase
-      .from('protocols')
-      .select(`
-        id,
-        user_id,
-        name,
-        time_schedule,
-        medicine_id,
-        dosage_per_intake,
-        treatment_plan_id,
-        medicine:medicines(name),
-        treatment_plan:treatment_plans(id, name)
-      `)
-      .in('user_id', userIds)
-      .eq('active', true);
+    // Otimização Wave 12: Agrupar usuários por HHMM local para busca otimizada via JSONB (@>)
+    const userIdsByHHMM = {};
+    for (const user of users) {
+      const timezone = user.timezone || 'America/Sao_Paulo';
+      const currentHHMM = getCurrentTimeInTimezone(timezone);
+      if (!userIdsByHHMM[currentHHMM]) userIdsByHHMM[currentHHMM] = [];
+      userIdsByHHMM[currentHHMM].push(user.user_id);
+    }
 
-    if (bulkError) throw bulkError;
+    const allProtocols = [];
+    for (const [hhmm, ids] of Object.entries(userIdsByHHMM)) {
+      const { data, error } = await supabase
+        .from('protocols')
+        .select(`
+          id,
+          user_id,
+          name,
+          time_schedule,
+          medicine_id,
+          dosage_per_intake,
+          treatment_plan_id,
+          medicine:medicines(name),
+          treatment_plan:treatment_plans(id, name)
+        `)
+        .in('user_id', ids)
+        .eq('active', true)
+        .contains('time_schedule', [hhmm]); // Otimização JSONB (Wave 12)
 
-    // Agrupar por user_id em memória
+      if (error) {
+        logger.error(`Erro ao buscar protocolos para HHMM ${hhmm}`, error, { correlationId });
+        continue;
+      }
+      if (data) allProtocols.push(...data);
+    }
+
+    // Agrupar por user_id em memória (para facilitar o loop de dispatch por usuário)
     const protocolsByUser = {};
-    for (const p of allProtocols || []) {
+    for (const p of allProtocols) {
       if (!protocolsByUser[p.user_id]) protocolsByUser[p.user_id] = [];
       protocolsByUser[p.user_id].push(p);
     }
@@ -269,7 +285,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     // Aproveitar para pré-carregar settings e evitar N+1 de getUserSettings()
     const { data: usersRaw } = await supabase
       .from('user_settings')
-      .select('user_id, notification_mode, digest_time, timezone')
+      .select('user_id, notification_mode, digest_time, timezone, display_name')
       .eq('notification_mode', 'digest_morning');
 
     const users = usersRaw ?? [];
@@ -291,6 +307,14 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
         const digestTime = (user.digest_time || '07:00').slice(0, 5);
         const currentHHMM = getCurrentTimeInTimezone(timezone);
 
+        logger.debug(`Evaluating user ${userId} (${user.display_name})`, { 
+          timezone, 
+          digestTime, 
+          currentHHMM, 
+          match: currentHHMM === digestTime,
+          correlationId 
+        });
+
         if (currentHHMM !== digestTime) continue;
 
         const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
@@ -299,7 +323,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           continue;
         }
 
-        eligibleEntries.push({ userId, timezone });
+        eligibleEntries.push({ userId, timezone, displayName: user.display_name });
       } catch (err) {
         logger.error(`Error evaluating daily digest eligibility for user`, err, { userId, correlationId });
       }
@@ -316,7 +340,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
       .from('protocols')
       .select('*, medicine:medicines(name)')
       .in('user_id', eligibleIds)
-      .eq('is_active', true);
+      .eq('active', true);
 
     const protocolsByUser = {};
     for (const p of allProtocols ?? []) {
@@ -325,63 +349,241 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     }
 
     // Fase 3: dispatch por usuário com dados já em memória
-    for (const { userId, timezone } of eligibleEntries) {
+    for (const { userId, timezone, displayName } of eligibleEntries) {
       try {
+        // Buscar logs de hoje E de ontem para Storytelling (Wave 12)
+        const dateToday = getCurrentDateInTimezone(timezone);
+        const dateYesterdayDate = parseLocalDate(dateToday);
+        dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
+        const dateYesterday = formatLocalDate(dateYesterdayDate);
+
         const { data: logs } = await supabase
           .from('medicine_logs')
           .select('*')
           .eq('user_id', userId)
-          .gte('taken_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+          .gte('taken_at', dateYesterdayDate.toISOString());
 
-        const today = getCurrentDateInTimezone(timezone);
-        const todayLogs = logs?.filter(l => {
-          const logDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at));
-          return logDate === today;
-        }) || [];
+        const todayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateToday) || [];
+        const yesterdayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateYesterday) || [];
 
         const protocols = protocolsByUser[userId] || [];
         const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
-        const takenDoses = todayLogs.length;
-        const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+        const takenDosesToday = todayLogs.length;
+        const takenDosesYesterday = yesterdayLogs.length;
+        
+        const percentageToday = expectedDoses > 0 ? Math.round((takenDosesToday / expectedDoses) * 100) : 0;
+        const percentageYesterday = expectedDoses > 0 ? Math.round((takenDosesYesterday / expectedDoses) * 100) : 0;
 
-        const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
-        const summary = `${dateStr} — ${takenDoses}/${expectedDoses} doses (${percentage}%)`;
+        // Construir Storytelling
+        let storytelling = '';
+        if (percentageToday > percentageYesterday) {
+          storytelling = `📈 Melhora de ${percentageToday - percentageYesterday}% em relação a ontem! Continue assim.`;
+        } else if (percentageToday < percentageYesterday && percentageToday > 0) {
+          storytelling = `📉 Hoje você tomou um pouco menos que ontem (${percentageToday}% vs ${percentageYesterday}%). Vamos recuperar amanhã?`;
+        } else if (percentageToday === 100) {
+          storytelling = `🌟 Dia perfeito! Você manteve os 100% de ontem.`;
+        } else {
+          storytelling = `⚖️ Mantendo a constância! ${percentageToday}% hoje.`;
+        }
 
-        const scheduleLines = protocols
-          .flatMap(p => (p.time_schedule || []).map(t => `${t} — ${p.medicine?.name || 'Medicamento'}`))
-          .sort()
-          .slice(0, 10);
+        const dateStr = parseLocalDate(dateToday).toLocaleDateString('pt-BR');
+        const nudge = getMotivationalNudge(percentageToday);
+        
+        // Template Rico (Telegram / Inbox)
+        const richTitle = `📋 Resumo do Dia — ${dateStr}`;
+        let richBody = `Olá, ${displayName || 'Paciente'}! 👋\n\n`;
+        richBody += `${nudge}\n\n`;
+        richBody += `📊 **Sua Adesão Hoje:** ${takenDosesToday}/${expectedDoses} doses (${percentageToday}%)\n`;
+        richBody += `${storytelling}\n\n`;
+        
+        if (protocols.length > 0) {
+          richBody += `📝 **Detalhamento por Protocolo:**\n`;
+          protocols.forEach(p => {
+            const pLogs = todayLogs.filter(l => l.protocol_id === p.id).length;
+            const pExpected = p.time_schedule?.length || 0;
+            const statusEmoji = pLogs >= pExpected ? '✅' : pLogs > 0 ? '⚠️' : '❌';
+            richBody += `${statusEmoji} ${escapeMarkdownV2(p.name)}: ${pLogs}/${pExpected}\n`;
+          });
+        }
 
-        const scheduleBody = scheduleLines.length > 0
-          ? scheduleLines.join('\n')
-          : 'Verifique sua agenda no app.';
+        // Template Compacto (Push)
+        const pushBody = `${nudge} Hoje: ${percentageToday}%.` + (storytelling ? ` ${storytelling.split('!')[0]}!` : '');
 
         await dispatcher.dispatch({
           userId,
-          kind: 'daily_digest',
-          data: { summary, scheduleLines, expectedDoses, takenDoses, scheduleBody },
-          context: { correlationId, jobType: 'daily_digest_dispatcher' }
+          notificationType: 'daily_digest',
+          data: {
+            title: richTitle,
+            body: richBody,
+            pushBody,
+            summary: `${dateStr} — ${percentageToday}%`,
+            percentage: percentageToday,
+            taken_doses: takenDosesToday,
+            expected_doses: expectedDoses,
+            nudge,
+            storytelling,
+            details: protocols.map(p => ({
+              name: p.name,
+              protocol_id: p.id,
+              taken: todayLogs.filter(l => l.protocol_id === p.id).length,
+              expected: p.time_schedule?.length || 0
+            }))
+          }
         });
 
-        await logSuccessfulNotification(userId, null, 'daily_digest', {});
       } catch (err) {
-        logger.error(`Error running daily digest for user via dispatcher`, err, { userId, correlationId });
+        logger.error(`Error processing daily digest for user`, err, { userId, correlationId });
+      }
+    }
+  } catch (error) {
+    logger.error('Error in runDailyDigestViaDispatcher', error, { correlationId });
+  }
+}
+
+/**
+ * Relatório Diário de Adesão (Fase 12)
+ * Disparado às 23:00 para todos os usuários (estratégia Inbox-First).
+ * Foca em analytics e reforço positivo.
+ */
+async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
+  try {
+    const { data: users } = await supabase
+      .from('user_settings')
+      .select('user_id, timezone, display_name, digest_time, notification_mode')
+      .neq('notification_mode', 'digest_morning');
+
+    if (!users || users.length === 0) return;
+
+    const eligibleUsers = [];
+    for (const user of users) {
+      try {
+        const timezone = user.timezone || 'America/Sao_Paulo';
+        const currentHHMM = getCurrentTimeInTimezone(timezone);
+        // Default para 23:00 se não houver digest_time definido
+        const targetTime = (user.digest_time || '23:00').slice(0, 5);
+
+        if (currentHHMM !== targetTime) continue;
+
+        const shouldSend = await shouldSendNotification(user.user_id, null, 'adherence_report');
+        if (!shouldSend) continue;
+
+        eligibleUsers.push(user);
+      } catch (err) {
+        logger.error(`Error evaluating adherence report eligibility for user`, err, { userId: user.user_id, correlationId });
       }
     }
 
-    logger.info('Daily digest dispatch completed', { correlationId });
-  } catch (err) {
-    logger.error('Error in runDailyDigestViaDispatcher', err, { correlationId });
+    if (eligibleUsers.length === 0) return;
+
+    logger.info(`Running daily adherence report for ${eligibleUsers.length} users`, { correlationId });
+
+    const userIds = eligibleUsers.map(u => u.user_id);
+    const { data: allProtocols } = await supabase
+      .from('protocols')
+      .select('*, medicine:medicines(name)')
+      .in('user_id', userIds)
+      .eq('active', true);
+
+    const protocolsByUser = {};
+    for (const p of allProtocols ?? []) {
+      if (!protocolsByUser[p.user_id]) protocolsByUser[p.user_id] = [];
+      protocolsByUser[p.user_id].push(p);
+    }
+
+    for (const user of eligibleUsers) {
+      const { user_id: userId, timezone, display_name: displayName } = user;
+      try {
+        const dateToday = getCurrentDateInTimezone(timezone || 'America/Sao_Paulo');
+        const startOfDay = parseLocalDate(dateToday);
+        
+        const { data: logs } = await supabase
+          .from('medicine_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('taken_at', startOfDay.toISOString());
+
+        const protocols = protocolsByUser[userId] || [];
+        if (protocols.length === 0) continue;
+
+        const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
+        const takenDoses = logs?.length || 0;
+        const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+
+        const nudge = getMotivationalNudge(percentage);
+        const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
+
+        const title = `📊 Relatório de Adesão — ${dateStr}`;
+        let body = `Olá, ${displayName || 'Paciente'}! Aqui está seu desempenho de hoje:\n\n`;
+        body += `${nudge}\n\n`;
+        body += `✅ **Doses Tomadas:** ${takenDoses}\n`;
+        body += `📅 **Doses Previstas:** ${expectedDoses}\n`;
+        body += `📈 **Score do Dia:** ${percentage}%\n\n`;
+
+        if (percentage < 100 && expectedDoses > takenDoses) {
+          body += `💡 *Dica:* Que tal ajustar os horários das próximas doses para facilitar seu dia?`;
+        } else if (percentage === 100) {
+          body += `🏆 **Excelência!** Você completou 100% do seu tratamento hoje.`;
+        }
+
+        await dispatcher.dispatch({
+          userId,
+          notificationType: 'adherence_report',
+          data: {
+            title,
+            body,
+            summary: `${dateStr} — ${percentage}%`,
+            percentage,
+            taken_doses: takenDoses,
+            expected_doses: expectedDoses,
+            nudge,
+            details: protocols.map(p => ({
+              name: p.medicine?.name || 'Medicamento',
+              protocol_id: p.id,
+              taken: logs?.filter(l => l.protocol_id === p.id).length || 0,
+              expected: p.time_schedule?.length || 1
+            }))
+          }
+        });
+
+      } catch (err) {
+        logger.error(`Error processing daily adherence report for user`, err, { userId, correlationId });
+      }
+    }
+  } catch (error) {
+    logger.error('Error in runDailyAdherenceReportViaDispatcher', error, { correlationId });
+  }
+}
+
+/**
+ * Helper para Mensagens Motivacionais (Behavioral Nudges)
+ */
+function getMotivationalNudge(percentage) {
+  if (percentage === 100) {
+    const wins = [
+      "🏆 Imbatível! Sua saúde agradece por tanto compromisso.",
+      "🌟 Brilhante! 100% de adesão é o caminho para o sucesso.",
+      "✅ Missão cumprida! Você é um exemplo de dedicação."
+    ];
+    return wins[Math.floor(Math.random() * wins.length)];
+  } else if (percentage >= 80) {
+    return "📈 Quase lá! Você está indo muito bem. Um pequeno ajuste e chegamos nos 100%!";
+  } else if (percentage >= 50) {
+    return "⚖️ No caminho certo. Cada dose conta para a sua melhora. Vamos subir essa média?";
+  } else if (percentage > 0) {
+    return "💪 Não desanime! O importante é recomeçar. Amanhã teremos uma nova chance.";
+  } else {
+    return "🧘 Respire fundo. Organizar sua rotina é o primeiro passo para o autocuidado.";
   }
 }
 
 /**
  * Run daily digest for a specific user
  */
-export async function runDailyDigest(bot, options = {}) {
-  const correlationId = options.correlationId || getCurrentCorrelationId();
-  const notificationDispatcher = options.notificationDispatcher;
+export async function runDailyAdherenceReport(bot, { correlationId, notificationDispatcher }) {
+  await runDailyAdherenceReportViaDispatcher(notificationDispatcher, correlationId);
+}
 
+export async function runDailyDigest(bot, { correlationId, notificationDispatcher }) {
   if (!notificationDispatcher) {
     logger.warn('NotificationDispatcher não fornecido para runDailyDigest. Skipping.', { correlationId });
     return;
