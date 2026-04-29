@@ -46,6 +46,12 @@ export const titrationAlertDataSchema = z.object({
   }).optional()
 });
 
+export const prescriptionAlertDataSchema = z.object({
+  medicineName: z.string(),
+  endDate: z.string(),
+  daysRemaining: z.number()
+});
+
 export const kindSchema = z.enum([
   'dose_reminder',
   'dose_reminder_by_plan',
@@ -53,7 +59,9 @@ export const kindSchema = z.enum([
   'stock_alert',
   'daily_digest',
   'adherence_report',
-  'titration_alert'
+  'monthly_report',
+  'titration_alert',
+  'prescription_alert'
 ]);
 
 // Contrato de saída da Presentation Layer (L2) para a Delivery Layer (L3)
@@ -189,14 +197,60 @@ export function buildNotificationPayload({ kind, data }) {
       break;
     }
 
+    case 'monthly_report': {
+      const { firstName, percentage, taken, total } = adherenceReportDataSchema.parse(data);
+      const name = escapeMarkdownV2(firstName);
+      title = '🗓️ Relatório Mensal';
+      
+      let msg = `📊 *Seu Relatório Mensal*\n\n`;
+      msg += `Olá ${name}, sua taxa de adesão no último mês foi de **${percentage}%**\\.\n`;
+      msg += `✅ **Doses tomadas:** ${taken}\n`;
+      msg += `📝 **Doses esperadas:** ${total}\n\n`;
+      
+      if (percentage >= 90) msg += `🚀 *Desempenho excepcional\\!* Continue assim\\.`;
+      else if (percentage >= 70) msg += `💪 *Bom trabalho\\!* Vamos buscar os 100% no próximo mês?`;
+      else msg += `💡 *Lembrete:* Manter a constância é fundamental para o sucesso do tratamento\\.`;
+      
+      body = msg;
+      break;
+    }
+
+    case 'prescription_alert': {
+      const { medicineName, endDate, daysRemaining } = prescriptionAlertDataSchema.parse(data);
+      const name = escapeMarkdownV2(medicineName);
+      const date = escapeMarkdownV2(new Date(endDate).toLocaleDateString('pt-BR'));
+      title = '📋 Alerta de Prescrição';
+
+      let msg = '';
+      if (daysRemaining === 1) {
+        msg = `⚠️ *Sua prescrição vence amanhã\\!*\n\n`;
+      } else if (daysRemaining <= 7) {
+        msg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*\n\n`;
+      } else {
+        msg = `📋 *Renovação de Prescrição*\n\n`;
+      }
+
+      msg += `Medicamento: **${name}**\n`;
+      msg += `Vencimento: ${date}\n\n`;
+
+      if (daysRemaining <= 7) {
+        msg += `🚨 *Atenção\\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
+      } else {
+        msg += `💡 É um bom momento para agendar sua consulta de acompanhamento para renovação\\.`;
+      }
+
+      body = msg;
+      break;
+    }
+
     default:
       throw new Error(`Unsupported notification kind: ${kind}`);
   }
 
   // 3. Resolver Deeplink lógico (Responsabilidade da Layer 2)
   let deeplink = 'dosiq://today';
-  if (validatedKind === 'adherence_report') deeplink = 'dosiq://history';
-  if (validatedKind === 'stock_alert') deeplink = 'dosiq://stock';
+  if (validatedKind === 'adherence_report' || validatedKind === 'monthly_report') deeplink = 'dosiq://history';
+  if (validatedKind === 'stock_alert' || validatedKind === 'prescription_alert') deeplink = 'dosiq://stock';
   if (validatedKind === 'dose_reminder' && data.protocolId) {
     deeplink = `dosiq://today?protocolId=${data.protocolId}`;
   }

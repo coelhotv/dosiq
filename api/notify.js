@@ -12,8 +12,6 @@ import {
   sendDLQDigest
 } from '../server/bot/tasks.js';
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
-import { resolveChannelsForUser } from '../server/notifications/policies/resolveChannelsForUser.js';
-import { buildNotificationPayload as canonicalBuilder } from '../server/notifications/payloads/buildNotificationPayload.js';
 import { createClient } from '@supabase/supabase-js';
 import { Expo } from 'expo-server-sdk';
 
@@ -231,29 +229,10 @@ export default async function handler(req, res) {
   const notificationDispatcher = {
     async dispatch({ userId, kind, data, context }) {
       try {
-        const payload = canonicalBuilder({ kind, data });
-        const channels = await resolveChannelsForUser({ userId, repositories: { preferences: preferencesRepo, devices: devicesRepo } });
-        
-        logger.info('[notificationDispatcher] Canais resolvidos', { 
-          userId, 
-          kind, 
-          channels, 
-          correlationId: context?.correlationId 
-        });
-
-        if (channels.length === 0) {
-          logger.warn('[notificationDispatcher] Nenhum canal disponível para este usuário', { 
-            userId, 
-            kind,
-            correlationId: context?.correlationId 
-          });
-        }
-
         const result = await dispatchNotification({
           userId,
           kind,
-          payload,
-          channels,
+          data,
           context,
           repositories: { preferences: preferencesRepo, devices: devicesRepo },
           bot,

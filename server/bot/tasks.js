@@ -10,23 +10,14 @@ import {
   getCurrentTimeInTimezone,
   getCurrentDateInTimezone
 } from '../utils/timezone.js';
-import { escapeMarkdownV2 } from '../utils/formatters.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { parseLocalDate, formatLocalDate } from '../utils/dateUtils.js';
+import { escapeMarkdownV2 } from '../utils/formatters.js';
 
 
 const logger = createLogger('Tasks');
 
-/**
- * Retorna uma saudação baseada na hora do dia
- * @param {number} hour - Hora local (0-23)
- * @returns {string}
- */
-function getGreeting(hour) {
-  if (hour >= 5 && hour < 12) return 'Bom dia';
-  if (hour >= 12 && hour < 18) return 'Boa tarde';
-  return 'Boa noite';
-}
+// Helpers removidos (migrados para ./utils/notificationHelpers.js)
 
 /**
  * Função genérica para enviar alertas de estoque
@@ -41,35 +32,6 @@ function getGreeting(hour) {
  * @param {object} params.dlqPayload - Dados para enfileiramento em DLQ em caso de erro
  * @param {object} params.logContext - Contexto adicional para logging
  */
-
-/**
- * Format titration alert message
- * @param {object} protocol - Protocol data
- * @returns {string} Formatted message
- */
-function formatTitrationAlertMessage(protocol) {
-  const medicine = protocol.medicine || {};
-  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
-  const currentStage = protocol.current_stage_index || 0;
-  const totalStages = protocol.titration_schedule?.length || 0;
-
-  let message = `🎯 *Atualização de Titulação*\n\n`;
-  message += `Medicamento: **${name}**\n`;
-  message += `Etapa atual: ${currentStage + 1}/${totalStages}\n\n`;
-
-  if (protocol.titration_status === 'alvo_atingido') {
-    message += `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\n`;
-    message += `Continue com o acompanhamento médico\\.`;
-  } else if (protocol.titration_status === 'titulando') {
-    const nextStage = protocol.titration_schedule?.[currentStage + 1];
-    if (nextStage) {
-      message += `📈 Próxima etapa: ${nextStage.dosage} ${escapeMarkdownV2(medicine.dosage_unit || 'mg')}\n`;
-      message += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
-    }
-  }
-
-  return message;
-}
 
 // --- Helper Functions ---
 
@@ -369,33 +331,10 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     }
 
     // Fase 3: dispatch por usuário com dados já em memória
-    for (const { userId, timezone, displayName, digestTime } of eligibleEntries) {
+    for (const { userId, displayName, digestTime } of eligibleEntries) {
       try {
-        const dateToday = getCurrentDateInTimezone(timezone);
-        const dateTodayStart = parseLocalDate(dateToday);
-        const dateYesterdayDate = new Date(dateTodayStart);
-        dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
-        const dateYesterday = formatLocalDate(dateYesterdayDate);
-
-        // Buscar logs de ontem para o nudge motivacional (Wave 12)
-        const { data: logs } = await supabase
-          .from('medicine_logs')
-          .select('*')
-          .eq('user_id', userId)
-          .gte('taken_at', dateYesterdayDate.toISOString())
-          .lt('taken_at', dateTodayStart.toISOString());
-
-        const yesterdayLogs = logs || [];
         const protocols = protocolsByUser[userId] || [];
-        
-        // Cálculo de Score de Ontem
-        const expectedDosesYesterday = protocols.reduce((sum, p) => {
-          // Filtrar protocolos que já estavam ativos ontem
-          if (p.start_date && p.start_date > dateYesterday) return sum;
-          return sum + (p.time_schedule?.length || 0);
-        }, 0);
-        const takenDosesYesterday = yesterdayLogs.length;
-        const percentageYesterday = expectedDosesYesterday > 0 ? Math.min(100, Math.round((takenDosesYesterday / expectedDosesYesterday) * 100)) : 0;
+
 
         // Agenda de Hoje
         const todaySchedule = [];
@@ -412,45 +351,23 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
         todaySchedule.sort((a, b) => a.time.localeCompare(b.time));
 
         const currentHour = parseInt(digestTime.split(':')[0], 10);
-        const greeting = getGreeting(currentHour);
-        const dateStr = dateTodayStart.toLocaleDateString('pt-BR');
         
-        // Template Rico (Telegram / Inbox) - Planejador Matinal
-        const richTitle = `📅 Seu Planejador — ${dateStr}`;
-        let richBody = `${escapeMarkdownV2(greeting)}, ${escapeMarkdownV2(displayName || 'Paciente')}\\! 👋\n\n`;
-        
-        if (expectedDosesYesterday > 0) {
-          richBody += `📊 **Ontem:** você completou ${percentageYesterday}% das doses\\. `;
-          richBody += percentageYesterday === 100 ? 'Excelente\\! 🌟' : 'Vamos manter o foco hoje? 💪';
-          richBody += `\n\n`;
-        }
-
-        if (todaySchedule.length > 0) {
-          richBody += `🕒 **Sua Agenda de Hoje:**\n`;
-          todaySchedule.forEach(s => {
-            richBody += `• ${s.time} — ${escapeMarkdownV2(s.medicineName)} \\(${s.dosage} ${escapeMarkdownV2(s.unit)}\\)\n`;
-          });
-        } else {
-          richBody += `✨ Você não tem doses agendadas para hoje\\. Aproveite o descanso\\!`;
-        }
-
-        // Template Compacto (Push) - Sem escapes Markdown
-        const pushBody = `${greeting}! Ontem: ${percentageYesterday}%. Hoje você tem ${todaySchedule.length} doses agendadas. Vamos nessa?`;
+        // Dados para a Presentation Layer (L2) - Gate L1 -> L2
+        const data = {
+          firstName: displayName || 'Paciente',
+          hour: currentHour,
+          pendingCount: todaySchedule.length,
+          medicines: todaySchedule.map(s => ({
+            name: s.medicineName,
+            time: s.time,
+            dosage: `${s.dosage} ${s.unit}`
+          }))
+        };
 
         await dispatcher.dispatch({
           userId,
           kind: 'daily_digest',
-          payload: {
-            title: richTitle,
-            body: richBody,
-            pushBody,
-            metadata: {
-              summary: `${dateStr} — ${todaySchedule.length} doses`,
-              yesterdayPercentage: percentageYesterday,
-              scheduleCount: todaySchedule.length,
-              greeting
-            }
-          },
+          data,
           context: { correlationId, jobType: 'daily_digest' }
         });
 
@@ -544,66 +461,40 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
           return sum + (p.time_schedule?.length || 0);
         }, 0);
         const percentageYesterday = expectedYesterday > 0 ? Math.min(100, Math.round((yesterdayLogs.length / expectedYesterday) * 100)) : 0;
-
+        
         // Storytelling logic
         let storytelling = '';
         if (percentage > percentageYesterday) {
-          storytelling = `📈 Melhora de ${percentage - percentageYesterday}% em relação a ontem\\!`;
+          storytelling = `📈 Melhora de ${percentage - percentageYesterday}% em relação a ontem!`;
         } else if (percentage < percentageYesterday && percentage > 0) {
-          storytelling = `📉 Hoje foi um pouco mais difícil que ontem (${percentage}% vs ${percentageYesterday}%)\\.`;
+          storytelling = `📉 Hoje foi um pouco mais difícil que ontem (${percentage}% vs ${percentageYesterday}%).`;
         } else if (percentage === 100 && percentageYesterday === 100) {
-          storytelling = `🌟 Segundo dia seguido com 100%\\!`;
+          storytelling = `🌟 Segundo dia seguido com 100%!`;
         } else if (percentage === 0 && expectedDoses > 0) {
-          storytelling = `🧘 Amanhã é uma nova oportunidade para cuidar de você\\.`;
+          storytelling = `🧘 Amanhã é uma nova oportunidade para cuidar de você.`;
         } else {
-          storytelling = `⚖️ Mantendo a constância de ontem\\.`;
+          storytelling = `⚖️ Mantendo a constância de ontem.`;
         }
 
-        const nudge = getMotivationalNudge(percentage);
-        const dateStr = startOfDay.toLocaleDateString('pt-BR');
-
-        const title = `🌙 Resumo do seu Dia — ${dateStr}`;
-        let body = `Olá, ${escapeMarkdownV2(displayName || 'Paciente')}\\! 👋\n\n`;
-        body += `📊 **Hoje:** ${percentage}% das doses concluídas \\(${takenDoses}/${expectedDoses}\\)\\.\n`;
-        body += `📈 **Comparação:** ${storytelling}\n\n`;
-        body += `${escapeMarkdownV2(nudge)}\n\n`;
-
-        if (percentage === 100) {
-          body += `🏆 **Excelência\\!** Amanhã seguimos firmes\\.`;
-        } else {
-          body += `💡 Amanhã é uma nova chance de brilhar\\!`;
-        }
-
-        // Template Compacto (Push) - Sem escapes Markdown
-        const pushBody = `🌙 Resumo: ${percentage}% concluído hoje. ${storytelling.replace(/\\/g, '')} Prepare-se para amanhã!`;
+        // Dados para a Presentation Layer (L2) - Gate L1 -> L2
+        const data = {
+          firstName: displayName || 'Paciente',
+          period: 'hoje',
+          percentage,
+          taken: takenDoses,
+          total: expectedDoses,
+          storytelling
+        };
 
         await dispatcher.dispatch({
           userId,
           kind: 'adherence_report',
-          payload: {
-            title,
-            body,
-            pushBody,
-            metadata: {
-              summary: `${dateStr} — ${percentage}%`,
-              percentage,
-              taken_doses: takenDoses,
-              expected_doses: expectedDoses,
-              nudge,
-              storytelling,
-              details: protocols.map(p => ({
-                name: p.medicine?.name || 'Medicamento',
-                protocol_id: p.id,
-                taken: todayLogs.filter(l => l.protocol_id === p.id).length || 0,
-                expected: p.time_schedule?.length || 1
-              }))
-            }
-          },
+          data,
           context: { correlationId, jobType: 'adherence_report' }
         });
 
       } catch (err) {
-        logger.error(`Error processing daily adherence report for user`, err, { userId, correlationId });
+        logger.error(`Error processing daily adherence for user`, err, { userId, correlationId });
       }
     }
   } catch (error) {
@@ -612,27 +503,6 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
 }
 
 /**
- * Helper para Mensagens Motivacionais (Behavioral Nudges)
- */
-function getMotivationalNudge(percentage) {
-  if (percentage === 100) {
-    const wins = [
-      "🏆 Imbatível! Sua saúde agradece por tanto compromisso.",
-      "🌟 Brilhante! 100% de adesão é o caminho para o sucesso.",
-      "✅ Missão cumprida! Você é um exemplo de dedicação."
-    ];
-    return wins[Math.floor(Math.random() * wins.length)];
-  } else if (percentage >= 80) {
-    return "📈 Quase lá! Você está indo muito bem. Um pequeno ajuste e chegamos nos 100%!";
-  } else if (percentage >= 50) {
-    return "⚖️ No caminho certo. Cada dose conta para a sua melhora. Vamos subir essa média?";
-  } else if (percentage > 0) {
-    return "💪 Não desanime! O importante é recomeçar. Amanhã teremos uma nova chance.";
-  } else {
-    return "🧘 Respire fundo. Organizar sua rotina é o primeiro passo para o autocuidado.";
-  }
-}
-
 /**
  * Run daily digest for a specific user
  */
@@ -720,24 +590,17 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
           userId, medicineId, correlationId
         });
 
-        const richTitle = `📦 Alerta de Estoque: ${escapeMarkdownV2(stock.name)}`;
-        const richBody = `📉 **Restam:** ${stock.qty} doses\\.\n⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\.\n\nRecomendamos a reposição em breve\\.`;
-        const pushBody = `📦 ${stock.name} acabando: restam ${stock.qty} doses (~${daysRemaining} dias)\\. Garanta sua reposição\\!`;
+        // Dados para a Presentation Layer (L2) - Gate L1 -> L2
+        const data = {
+          medicineName: stock.name,
+          remaining: stock.qty,
+          daysRemaining
+        };
 
         await dispatcher.dispatch({
           userId,
           kind: 'stock_alert',
-          payload: {
-            title: richTitle,
-            body: richBody,
-            pushBody,
-            metadata: {
-              medicineId,
-              medicineName: stock.name,
-              daysRemaining,
-              stockQuantity: stock.qty
-            }
-          },
+          data,
           context: { correlationId, jobType: 'stock_alert_dispatcher' }
         });
       }
@@ -785,18 +648,17 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       }, 0);
       
       const takenDoses = logs?.length || 0;
-      const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+      const percentage = expectedDoses > 0 ? Math.min(100, Math.round((takenDoses / expectedDoses) * 100)) : 0;
 
       await dispatcher.dispatch({
         userId,
-        kind: 'weekly_adherence',
+        kind: 'adherence_report',
         data: {
-          title: '📊 Relatório Semanal de Adesão',
-          body: `Sua taxa de adesão na última semana foi de ${percentage}% (${takenDoses}/${expectedDoses} doses).`,
-          summary: `Última semana: ${percentage}%`,
+          firstName: user.display_name || 'Paciente',
+          period: 'na última semana',
           percentage,
-          takenDoses,
-          expectedDoses
+          taken: takenDoses,
+          total: expectedDoses
         },
         context: { correlationId, jobType: 'weekly_adherence_report' }
       });
@@ -826,29 +688,39 @@ export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationI
       const { data: protocols } = await supabase
         .from('protocols')
         .select(`
-          *,
-          medicine:medicines(name, dosage_unit)
+          id, current_stage_index, titration_schedule, titration_status,
+          medicine:medicine_id (name, dosage_unit)
         `)
         .eq('user_id', userId)
-        .in('titration_status', ['titulando', 'alvo_atingido']);
+        .eq('status', 'ativo')
+        .not('titration_schedule', 'is', null);
 
       if (!protocols || protocols.length === 0) continue;
 
       for (const protocol of protocols) {
-        const message = formatTitrationAlertMessage(protocol);
-        
+        const medicine = protocol.medicine || {};
+        const currentStage = (protocol.current_stage_index || 0) + 1;
+        const totalStages = protocol.titration_schedule?.length || 0;
+        const nextStageData = protocol.titration_schedule?.[protocol.current_stage_index + 1];
+
+        // Dados para a Presentation Layer (L2) - Gate L1 -> L2
+        const data = {
+          medicineName: medicine.name || 'Medicamento',
+          currentStage,
+          totalStages,
+          status: protocol.titration_status === 'alvo_atingido' ? 'alvo_atingido' : 'titulando',
+          nextStage: nextStageData ? {
+            dosage: nextStageData.dosage,
+            unit: medicine.dosage_unit || 'mg',
+            date: nextStageData.date
+          } : undefined
+        };
+
         await dispatcher.dispatch({
           userId,
           kind: 'titration_alert',
-          data: {
-            title: '📈 Ajuste de Dose (Titulação)',
-            body: message,
-            message,
-            protocolId: protocol.id,
-            medicineName: protocol.medicine?.name,
-            titrationStatus: protocol.titration_status
-          },
-          context: { correlationId, protocolId: protocol.id, jobType: 'titration_alert' }
+          data,
+          context: { correlationId, jobType: 'titration_alert' }
         });
       }
     }
@@ -894,12 +766,10 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
         userId,
         kind: 'monthly_report',
         data: {
-          title: '🗓️ Relatório Mensal',
-          body: `Sua taxa de adesão no último mês foi de ${percentage}% (${takenDoses}/${expectedDoses} doses).`,
-          summary: `Último mês: ${percentage}%`,
+          firstName: user.display_name || 'Paciente',
           percentage,
-          takenDoses,
-          expectedDoses
+          taken: takenDoses,
+          total: expectedDoses
         },
         context: { correlationId, jobType: 'monthly_report' }
       });
@@ -950,19 +820,15 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlati
         const alertDays = [30, 7, 1];
         if (!alertDays.includes(daysRemaining)) continue;
 
-        const message = formatPrescriptionAlertMessage(protocol, daysRemaining);
-
         await dispatcher.dispatch({
           userId,
           kind: 'prescription_alert',
           data: {
-            title: '📋 Alerta de Prescrição',
-            body: message,
-            protocolId: protocol.id,
-            medicineName: protocol.medicine?.name,
+            medicineName: protocol.medicine?.name || 'Medicamento',
+            endDate: protocol.end_date,
             daysRemaining
           },
-          context: { correlationId, protocolId: protocol.id, jobType: 'prescription_alert' }
+          context: { correlationId, jobType: 'prescription_alert' }
         });
       }
     }
@@ -1145,44 +1011,6 @@ function formatDLQDigestMessage(notifications) {
 
 // --- Prescription Alert Functions (F5.9) ---
 
-/**
- * Format prescription alert message
- * @param {object} protocol - Protocol data
- * @param {number} daysRemaining - Days until prescription expires
- * @returns {string} Formatted message
- */
-function formatPrescriptionAlertMessage(protocol, daysRemaining) {
-  const medicine = protocol.medicine || {};
-  const name = escapeMarkdownV2(medicine.name || 'Medicamento');
-  const endDate = protocol.end_date 
-    ? new Date(protocol.end_date).toLocaleDateString('pt-BR')
-    : 'Data não definida';
-
-  let message = '';
-  
-  if (daysRemaining === 1) {
-    message = `⚠️ *Prescrição vence amanhã\\!*\n\n`;
-  } else if (daysRemaining === 7) {
-    message = `⚠️ *Prescrição vencendo em 7 dias*\n\n`;
-  } else if (daysRemaining === 30) {
-    message = `📋 *Renovação de Prescrição*\n\n`;
-  } else {
-    message = `⚠️ *Prescrição próxima do vencimento*\n\n`;
-  }
-
-  message += `Protocolo: **${name}**\n`;
-  message += `Vencimento: ${escapeMarkdownV2(endDate)}\n\n`;
-
-  if (daysRemaining <= 1) {
-    message += `🚨 *Atenção\\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
-  } else if (daysRemaining <= 7) {
-    message += `📅 Agende sua consulta para renovar a prescrição\\.`;
-  } else {
-    message += `💡 É um bom momento para agendar sua consulta de acompanhamento\\.`;
-  }
-
-  return message;
-}
 
 
 /**
