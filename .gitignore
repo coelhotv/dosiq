@@ -51,6 +51,7 @@ tsconfig.tsbuildinfo
 coverage/
 screenshots/
 tmp/
+scratch/
 
 # Run outputs
 run/
