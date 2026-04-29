@@ -205,7 +205,7 @@ export function buildNotificationPayload({ kind, data }) {
       const medicineName = data.medicineName || 'Medicamento';
       const time = data.time || '';
       title = '💊 Hora do Medicamento';
-      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* (${escapeMarkdownV2(time)})\\..`;
+      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)\\.`;
       pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
       break;
     }
@@ -219,7 +219,7 @@ export function buildNotificationPayload({ kind, data }) {
       const greeting = getTimeOfDayGreeting(hour);
       title = `${greeting} — ${planName}`;
       
-      body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${escapeMarkdownV2(scheduledTime)})\\..`;
+      body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano \\(${escapeMarkdownV2(scheduledTime)}\\)\\.`;
       pushBody = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${scheduledTime}).`;
       break;
     }
@@ -230,7 +230,7 @@ export function buildNotificationPayload({ kind, data }) {
       const hour = data.hour ?? new Date().getHours();
       
       title = getTimeOfDayGreeting(hour);
-      body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\.. Clique para registrar\\..`;
+      body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\. Clique para registrar\\.`;
       pushBody = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${scheduledTime}. Clique para registrar.`;
       break;
     }
@@ -245,7 +245,7 @@ export function buildNotificationPayload({ kind, data }) {
 `;
       
       if (daysRemaining !== undefined) {
-        richMsg += `⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\..
+        richMsg += `⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\.
 
 `;
         plainMsg += `⏳ Previsão: Acaba em aproximadamente ${daysRemaining} dias.
@@ -253,9 +253,9 @@ export function buildNotificationPayload({ kind, data }) {
 `;
       }
       
-      const footer = `Recomendamos a reposição em breve\\..`;
+      const footer = `Recomendamos a reposição em breve\\.`;
       richMsg += footer;
-      plainMsg += footer.replace(/\\./g, '');
+      plainMsg += footer.replace(/\\\\/g, '');
       
       body = richMsg;
       pushBody = plainMsg;
@@ -285,10 +285,12 @@ export function buildNotificationPayload({ kind, data }) {
 `;
 
       if (status === 'alvo_atingido') {
-        const success = `✅ *Parabéns\\.!* Você atingiu a dose alvo\\.!
-Continue com o acompanhamento médico\\..`;
+        const success = `✅ *Parabéns\\!* Você atingiu a dose alvo\\!
+Continue com o acompanhamento médico\\.`;
+        const plainSuccess = `✅ Parabéns! Você atingiu a dose alvo!
+Continue com o acompanhamento médico.`;
         richMsg += success;
-        plainMsg += success.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
+        plainMsg += plainSuccess;
       } else if (status === 'titulando' && nextStage) {
         richMsg += `📈 Próxima etapa: ${escapeMarkdownV2(nextStage.dosage)} ${escapeMarkdownV2(nextStage.unit)}
 `;
@@ -415,8 +417,8 @@ Vencimento: ${date}
         };
       });
 
-      richMsg += items.map(i => i.rich).join('\\.');
-      plainMsg += items.map(i => i.plain).join('\\.');
+      richMsg += items.map(i => i.rich).join('\n');
+      plainMsg += items.map(i => i.plain).join('\n');
       
       body = richMsg;
       pushBody = plainMsg;
@@ -435,7 +437,7 @@ Vencimento: ${date}
     title = `🔄 ${title} (Reenvio)`;
     body = `${body}
 
-_Esta é uma nova tentativa de envio\\.._`;
+_Esta é uma nova tentativa de envio\\._`;
     pushBody = `${pushBody}
 
 (Reenvio)`;
