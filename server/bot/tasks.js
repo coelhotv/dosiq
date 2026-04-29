@@ -422,7 +422,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 
         await dispatcher.dispatch({
           userId,
-          notificationType: 'daily_digest',
+          kind: 'daily_digest',
           data: {
             title: richTitle,
             body: richBody,
@@ -538,7 +538,7 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
 
         await dispatcher.dispatch({
           userId,
-          notificationType: 'adherence_report',
+          kind: 'daily_adherence_report',
           data: {
             title,
             body,
@@ -673,15 +673,13 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
         await dispatcher.dispatch({
           userId,
           kind: 'stock_alert',
-          payload: {
+          data: {
             title: '📦 Estoque Baixo',
             body: `Seu estoque de ${stock.name} está acabando (restam aprox. ${daysRemaining} dias).`,
-            metadata: {
-              medicineId,
-              medicineName: stock.name,
-              daysRemaining,
-              stockQuantity: stock.qty
-            }
+            medicineId,
+            medicineName: stock.name,
+            daysRemaining,
+            stockQuantity: stock.qty
           },
           context: { correlationId, jobType: 'stock_alert_dispatcher' }
         });
@@ -731,14 +729,13 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       await dispatcher.dispatch({
         userId,
         kind: 'weekly_adherence',
-        payload: {
+        data: {
           title: '📊 Relatório Semanal de Adesão',
           body: `Sua taxa de adesão na última semana foi de ${percentage}% (${takenDoses}/${expectedDoses} doses).`,
-          metadata: {
-            percentage,
-            takenDoses,
-            expectedDoses
-          }
+          summary: `Última semana: ${percentage}%`,
+          percentage,
+          takenDoses,
+          expectedDoses
         },
         context: { correlationId, jobType: 'weekly_adherence_report' }
       });
@@ -782,14 +779,13 @@ export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationI
         await dispatcher.dispatch({
           userId,
           kind: 'titration_alert',
-          payload: {
+          data: {
             title: '📈 Ajuste de Dose (Titulação)',
             body: message,
-            metadata: {
-              protocolId: protocol.id,
-              medicineName: protocol.medicine?.name,
-              titrationStatus: protocol.titration_status
-            }
+            message,
+            protocolId: protocol.id,
+            medicineName: protocol.medicine?.name,
+            titrationStatus: protocol.titration_status
           },
           context: { correlationId, protocolId: protocol.id, jobType: 'titration_alert' }
         });
@@ -836,14 +832,13 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
       await dispatcher.dispatch({
         userId,
         kind: 'monthly_report',
-        payload: {
+        data: {
           title: '🗓️ Relatório Mensal',
           body: `Sua taxa de adesão no último mês foi de ${percentage}% (${takenDoses}/${expectedDoses} doses).`,
-          metadata: {
-            percentage,
-            takenDoses,
-            expectedDoses
-          }
+          summary: `Último mês: ${percentage}%`,
+          percentage,
+          takenDoses,
+          expectedDoses
         },
         context: { correlationId, jobType: 'monthly_report' }
       });
@@ -899,14 +894,12 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlati
         await dispatcher.dispatch({
           userId,
           kind: 'prescription_alert',
-          payload: {
+          data: {
             title: '📋 Alerta de Prescrição',
             body: message,
-            metadata: {
-              protocolId: protocol.id,
-              medicineName: protocol.medicine?.name,
-              daysRemaining
-            }
+            protocolId: protocol.id,
+            medicineName: protocol.medicine?.name,
+            daysRemaining
           },
           context: { correlationId, protocolId: protocol.id, jobType: 'prescription_alert' }
         });
