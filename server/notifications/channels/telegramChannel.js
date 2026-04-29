@@ -54,7 +54,8 @@ function formatMessage(payload) {
   }
 
   const title = escapeMarkdownV2(payload.title)
-  const body = escapeMarkdownV2(payload.body)
+  // body já vem formatado do L2 (buildNotificationPayload)
+  const body = payload.body
   return `*${title}*\n${body}`
 }
 

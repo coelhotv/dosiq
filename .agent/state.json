@@ -19,9 +19,9 @@
   },
   "session": {
     "mode": "coding",
-    "status": "complete",
-    "goal": "Formalização Arquitetura 3-Camadas e Resiliência DLQ (Wave 11)",
-    "goal_type": "refactor"
+    "status": "coding",
+    "goal": "Stabilization: Notification Formatting and Scheduling",
+    "goal_type": "fix"
   },
   "memory": {
     "rules_count": 159,

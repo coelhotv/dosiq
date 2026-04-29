@@ -16,6 +16,9 @@ import { parseLocalDate, formatLocalDate } from '../utils/dateUtils.js';
 
 const logger = createLogger('Tasks');
 
+// Horário fixo para o relatório diário de adesão (fechamento do dia)
+const ADHERENCE_REPORT_TIME = '23:00';
+
 // Helpers removidos (migrados para ./utils/notificationHelpers.js)
 
 /**
@@ -398,11 +401,11 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
     for (const user of users) {
       try {
         const timezone = user.timezone || 'America/Sao_Paulo';
-        const currentHHMM = getCurrentTimeInTimezone(timezone);
-        // Default para 23:00 se não houver digest_time definido
-        const targetTime = (user.digest_time || '23:00').slice(0, 5);
-
-        if (currentHHMM !== targetTime) continue;
+        const currentHHMM = getCurrentTimeInTimezone(timezone).replace(/[^\d:]/g, ''); 
+        
+        // Relatório de adesão é fixo às 23:00 (ADHERENCE_REPORT_TIME)
+        // Desacoplado do digest_time (que é matinal)
+        if (currentHHMM !== ADHERENCE_REPORT_TIME) continue;
 
         const shouldSend = await shouldSendNotification(user.user_id, null, 'adherence_report');
         if (!shouldSend) continue;

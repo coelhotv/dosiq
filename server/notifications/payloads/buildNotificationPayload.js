@@ -79,6 +79,7 @@ export const kindSchema = z.enum([
 export const notificationPayloadSchema = z.object({
   title: z.string(),
   body: z.string(),
+  pushBody: z.string(), // Texto puro sem escapes para Push/Alerts (R-205)
   deeplink: z.string().startsWith('dosiq://'), // Garante padrão de deep linking do app
   metadata: z.object({
     kind: kindSchema,
@@ -100,6 +101,7 @@ export function buildNotificationPayload({ kind, data }) {
 
   let title = '';
   let body = '';
+  let pushBody = '';
   let metadata = { ...data, kind: validatedKind };
 
   switch (validatedKind) {
@@ -108,20 +110,49 @@ export function buildNotificationPayload({ kind, data }) {
       const greeting = getGreeting(hour);
       title = '📅 Resumo do Dia';
       
-      let msg = `${greeting}, *${escapeMarkdownV2(firstName)}*\\!\\n\\n`;
+      const safeName = escapeMarkdownV2(firstName);
+      
+      // Versão Rich (Telegram/Inbox)
+      let richMsg = `${greeting}, *${safeName}*\\!
+
+`;
+      // Versão Plain (Push)
+      let plainMsg = `${greeting}, ${firstName}!
+
+`;
       
       if (pendingCount > 0) {
-        msg += `Você tem *${pendingCount}* ${pendingCount === 1 ? 'dose pendente' : 'doses pendentes'} para hoje:\\n\\n`;
+        const text = pendingCount === 1 ? 'dose pendente' : 'doses pendentes';
+        richMsg += `Você tem *${pendingCount}* ${text} para hoje:
+
+`;
+        plainMsg += `Você tem ${pendingCount} ${text} para hoje:
+
+`;
+        
         medicines.forEach(m => {
-          msg += `💊 *${escapeMarkdownV2(m.name)}*\\n`;
-          msg += `⏰ ${escapeMarkdownV2(m.time)}${m.dosage ? ` \\(${escapeMarkdownV2(m.dosage)}\\)` : ''}\\n\\n`;
+          richMsg += `💊 *${escapeMarkdownV2(m.name)}*
+`;
+          richMsg += `⏰ ${escapeMarkdownV2(m.time)}${m.dosage ? ` \\(${escapeMarkdownV2(m.dosage)}\\)` : ''}
+
+`;
+          
+          plainMsg += `💊 ${m.name}
+`;
+          plainMsg += `⏰ ${m.time}${m.dosage ? ` (${m.dosage})` : ''}
+
+`;
         });
-        msg += `Não se esqueça de registrar no app\\!`;
+        richMsg += `Não se esqueça de registrar no app\\!`;
+        plainMsg += `Não se esqueça de registrar no app!`;
       } else {
-        msg += `Você está em dia com todos os seus medicamentos de hoje\\! 🎉`;
+        const success = `Você está em dia com todos os seus medicamentos de hoje\\! 🎉`;
+        richMsg += success;
+        plainMsg += success.replace(/\\/g, '');
       }
       
-      body = msg;
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
@@ -130,25 +161,52 @@ export function buildNotificationPayload({ kind, data }) {
       const nudge = getMotivationalNudge(percentage);
       title = '📈 Relatório de Adesão';
       
-      let msg = `Olá, *${escapeMarkdownV2(firstName)}*\\!\\n\\n`;
-      msg += `Sua adesão ${escapeMarkdownV2(period)} foi de *${percentage}%*\\n`;
-      msg += `✅ *${taken}* de *${total}* doses registradas\\.\\n\\n`;
+      const safeName = escapeMarkdownV2(firstName);
+      const safePeriod = escapeMarkdownV2(period);
+      
+      // Versão Rich
+      let richMsg = `Olá, *${safeName}*\\!
+
+`;
+      richMsg += `Sua adesão ${safePeriod} foi de *${percentage}%*
+`;
+      richMsg += `✅ *${taken}* de *${total}* doses registradas\\.
+
+`;
+      
+      // Versão Plain
+      let plainMsg = `Olá, ${firstName}!
+
+`;
+      plainMsg += `Sua adesão ${period} foi de ${percentage}%
+`;
+      plainMsg += `✅ ${taken} de ${total} doses registradas.
+
+`;
       
       if (storytelling) {
-        msg += `📈 *Comparação:* ${escapeMarkdownV2(storytelling)}\\n\\n`;
+        richMsg += `📈 *Comparação:* ${escapeMarkdownV2(storytelling)}
+
+`;
+        plainMsg += `📈 Comparação: ${storytelling}
+
+`;
       }
       
-      msg += `_${escapeMarkdownV2(nudge)}_`;
+      richMsg += `_${escapeMarkdownV2(nudge)}_`;
+      plainMsg += nudge;
       
-      body = msg;
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
     case 'dose_reminder': {
-      const medicineName = escapeMarkdownV2(data.medicineName || 'Medicamento');
-      const time = escapeMarkdownV2(data.time || '');
+      const medicineName = data.medicineName || 'Medicamento';
+      const time = data.time || '';
       title = '💊 Hora do Medicamento';
-      body = `Está na hora de tomar *${medicineName}* \\(${time}\\)\\.`;
+      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* (${escapeMarkdownV2(time)})\\..`;
+      pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
       break;
     }
 
@@ -158,8 +216,11 @@ export function buildNotificationPayload({ kind, data }) {
       const scheduledTime = data.scheduledTime ?? 'agora';
       const hour = data.hour ?? new Date().getHours();
       
-      title = `${getTimeOfDayGreeting(hour)} — ${escapeMarkdownV2(planName)}`;
-      body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano \\(${escapeMarkdownV2(scheduledTime)}\\)\\.`;
+      const greeting = getTimeOfDayGreeting(hour);
+      title = `${greeting} — ${planName}`;
+      
+      body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${escapeMarkdownV2(scheduledTime)})\\..`;
+      pushBody = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${scheduledTime}).`;
       break;
     }
 
@@ -169,101 +230,196 @@ export function buildNotificationPayload({ kind, data }) {
       const hour = data.hour ?? new Date().getHours();
       
       title = getTimeOfDayGreeting(hour);
-      body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\. Clique para registrar\\.`;
+      body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\.. Clique para registrar\\..`;
+      pushBody = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${scheduledTime}. Clique para registrar.`;
       break;
     }
 
     case 'stock_alert': {
       const { medicineName, remaining, daysRemaining } = stockAlertDataSchema.parse(data);
-      title = `📦 Alerta de Estoque: ${escapeMarkdownV2(medicineName)}`;
+      title = `📦 Alerta de Estoque: ${medicineName}`;
       
-      let msg = `📉 **Restam:** ${remaining} doses\\.\n`;
+      let richMsg = `📉 **Restam:** ${remaining} doses\\..
+`;
+      let plainMsg = `📉 Restam: ${remaining} doses.
+`;
+      
       if (daysRemaining !== undefined) {
-        msg += `⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\.\n\n`;
+        richMsg += `⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\..
+
+`;
+        plainMsg += `⏳ Previsão: Acaba em aproximadamente ${daysRemaining} dias.
+
+`;
       }
-      msg += `Recomendamos a reposição em breve\\.`;
       
-      body = msg;
+      const footer = `Recomendamos a reposição em breve\\..`;
+      richMsg += footer;
+      plainMsg += footer.replace(/\\./g, '');
+      
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
     case 'titration_alert': {
       const { medicineName, currentStage, totalStages, status, nextStage } = titrationAlertDataSchema.parse(data);
-      const name = escapeMarkdownV2(medicineName);
       title = '🎯 Atualização de Titulação';
 
-      let msg = `🎯 *Atualização de Titulação*\n\n`;
-      msg += `Medicamento: **${name}**\n`;
-      msg += `Etapa atual: ${currentStage}/${totalStages}\n\n`;
+      let richMsg = `🎯 *Atualização de Titulação*
+
+`;
+      richMsg += `Medicamento: **${escapeMarkdownV2(medicineName)}**
+`;
+      richMsg += `Etapa atual: ${currentStage}/${totalStages}
+
+`;
+
+      let plainMsg = `🎯 Atualização de Titulação
+
+`;
+      plainMsg += `Medicamento: ${medicineName}
+`;
+      plainMsg += `Etapa atual: ${currentStage}/${totalStages}
+
+`;
 
       if (status === 'alvo_atingido') {
-        msg += `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\n`;
-        msg += `Continue com o acompanhamento médico\\.`;
+        const success = `✅ *Parabéns\\.!* Você atingiu a dose alvo\\.!
+Continue com o acompanhamento médico\\..`;
+        richMsg += success;
+        plainMsg += success.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
       } else if (status === 'titulando' && nextStage) {
-        msg += `📈 Próxima etapa: ${escapeMarkdownV2(nextStage.dosage)} ${escapeMarkdownV2(nextStage.unit)}\n`;
-        msg += `⏰ Data prevista: ${escapeMarkdownV2(nextStage.date || 'a definir')}`;
+        richMsg += `📈 Próxima etapa: ${escapeMarkdownV2(nextStage.dosage)} ${escapeMarkdownV2(nextStage.unit)}
+`;
+        richMsg += `⏰ Data prevista: ${escapeMarkdownV2(nextStage.date || 'a definir')}`;
+        
+        plainMsg += `📈 Próxima etapa: ${nextStage.dosage} ${nextStage.unit}
+`;
+        plainMsg += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
       }
 
-      body = msg;
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
     case 'monthly_report': {
       const { firstName, percentage, taken, total } = adherenceReportDataSchema.parse(data);
-      const name = escapeMarkdownV2(firstName);
       title = '🗓️ Relatório Mensal';
       
-      let msg = `📊 *Seu Relatório Mensal*\n\n`;
-      msg += `Olá ${name}, sua taxa de adesão no último mês foi de **${percentage}%**\\.\n`;
-      msg += `✅ **Doses tomadas:** ${taken}\n`;
-      msg += `📝 **Doses esperadas:** ${total}\n\n`;
+      let richMsg = `📊 *Seu Relatório Mensal*
+
+`;
+      richMsg += `Olá ${escapeMarkdownV2(firstName)}, sua taxa de adesão no último mês foi de **${percentage}%**\\..
+`;
+      richMsg += `✅ **Doses tomadas:** ${taken}
+`;
+      richMsg += `📝 **Doses esperadas:** ${total}
+
+`;
       
-      if (percentage >= 90) msg += `🚀 *Desempenho excepcional\\!* Continue assim\\.`;
-      else if (percentage >= 70) msg += `💪 *Bom trabalho\\!* Vamos buscar os 100% no próximo mês?`;
-      else msg += `💡 *Lembrete:* Manter a constância é fundamental para o sucesso do tratamento\\.`;
+      let plainMsg = `📊 Seu Relatório Mensal
+
+`;
+      plainMsg += `Olá ${firstName}, sua taxa de adesão no último mês foi de ${percentage}%.
+`;
+      plainMsg += `✅ Doses tomadas: ${taken}
+`;
+      plainMsg += `📝 Doses esperadas: ${total}
+
+`;
       
-      body = msg;
+      let nudge = '';
+      if (percentage >= 90) nudge = `🚀 *Desempenho excepcional\\.!* Continue assim\\.`;
+      else if (percentage >= 70) nudge = `💪 *Bom trabalho\\.!* Vamos buscar os 100% no próximo mês?`;
+      else nudge = `💡 *Lembrete:* Manter a constância é fundamental para o sucesso do tratamento\\.`;
+      
+      richMsg += nudge;
+      plainMsg += nudge.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
+      
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
     case 'prescription_alert': {
       const { medicineName, endDate, daysRemaining } = prescriptionAlertDataSchema.parse(data);
-      const name = escapeMarkdownV2(medicineName);
-      const date = escapeMarkdownV2(new Date(endDate).toLocaleDateString('pt-BR'));
+      const date = new Date(endDate).toLocaleDateString('pt-BR');
       title = '📋 Alerta de Prescrição';
 
-      let msg = '';
+      let richMsg = '';
+      let plainMsg = '';
       if (daysRemaining === 1) {
-        msg = `⚠️ *Sua prescrição vence amanhã\\!*\n\n`;
+        richMsg = `⚠️ *Sua prescrição vence amanhã\\.!*
+
+`;
+        plainMsg = `⚠️ Sua prescrição vence amanhã!
+
+`;
       } else if (daysRemaining <= 7) {
-        msg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*\n\n`;
+        richMsg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*
+
+`;
+        plainMsg = `⚠️ Prescrição vencendo em ${daysRemaining} dias
+
+`;
       } else {
-        msg = `📋 *Renovação de Prescrição*\n\n`;
+        richMsg = `📋 *Renovação de Prescrição*
+
+`;
+        plainMsg = `📋 Renovação de Prescrição
+
+`;
       }
 
-      msg += `Medicamento: **${name}**\n`;
-      msg += `Vencimento: ${date}\n\n`;
+      const info = `Medicamento: ${medicineName}
+Vencimento: ${date}
 
+`;
+      richMsg += escapeMarkdownV2(info);
+      plainMsg += info;
+
+      let footer = '';
       if (daysRemaining <= 7) {
-        msg += `🚨 *Atenção\\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
+        footer = `🚨 *Atenção\\.!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
       } else {
-        msg += `💡 É um bom momento para agendar sua consulta de acompanhamento para renovação\\.`;
+        footer = `💡 É um bom momento para agendar sua consulta de acompanhamento para renovação\\.`;
       }
+      
+      richMsg += footer;
+      plainMsg += footer.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
 
-      body = msg;
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
     case 'dlq_digest': {
       const { failedCount, failures } = dlqDigestDataSchema.parse(data);
       title = '⚠️ DLQ Digest';
-      body = `*${failedCount} notificações falhadas*\n\n`;
       
-      body += failures.map(f => {
+      let richMsg = `*${failedCount} notificações falhadas*
+
+`;
+      let plainMsg = `${failedCount} notificações falhadas
+
+`;
+      
+      const items = failures.map(f => {
         const time = new Date(f.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const error = (f.error_message || 'Erro desconhecido').substring(0, 50);
-        return `• [${time}] *${escapeMarkdownV2(f.type)}*: _${escapeMarkdownV2(error)}_`;
-      }).join('\n');
+        return {
+          rich: `• [${time}] *${escapeMarkdownV2(f.type)}*: _${escapeMarkdownV2(error)}_`,
+          plain: `• [${time}] ${f.type}: ${error}`
+        };
+      });
+
+      richMsg += items.map(i => i.rich).join('\\.');
+      plainMsg += items.map(i => i.plain).join('\\.');
+      
+      body = richMsg;
+      pushBody = plainMsg;
       break;
     }
 
@@ -277,13 +433,19 @@ export function buildNotificationPayload({ kind, data }) {
   // 4. Aplicar Decoração de Reenvio (Gate 3.5)
   if (data.isRetry) {
     title = `🔄 ${title} (Reenvio)`;
-    body = `${body}\n\n_Esta é uma nova tentativa de envio\\._`;
+    body = `${body}
+
+_Esta é uma nova tentativa de envio\\.._`;
+    pushBody = `${pushBody}
+
+(Reenvio)`;
   }
 
   // Validação do Contrato de Saída (Gate L2 -> L3)
   return notificationPayloadSchema.parse({
     title,
     body,
+    pushBody,
     deeplink,
     metadata: {
       ...metadata,
