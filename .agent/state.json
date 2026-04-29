@@ -18,9 +18,9 @@
     "current_sprint": "2026-W18"
   },
   "session": {
-    "mode": "planning",
-    "status": "planning",
-    "goal": "Implement Daily Adherence Reporting with Storytelling and Nudges",
+    "mode": "coding",
+    "status": "analysis",
+    "goal": "Refine Notification Experience: Morning Planner, Stock Alerts, and Nightly Storytelling",
     "goal_type": "feature"
   },
   "memory": {
