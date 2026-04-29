@@ -14,9 +14,19 @@ import { escapeMarkdownV2 } from '../utils/formatters.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { parseLocalDate, formatLocalDate } from '../utils/dateUtils.js';
 
+
 const logger = createLogger('Tasks');
 
-
+/**
+ * Retorna uma saudação baseada na hora do dia
+ * @param {number} hour - Hora local (0-23)
+ * @returns {string}
+ */
+function getGreeting(hour) {
+  if (hour >= 5 && hour < 12) return 'Bom dia';
+  if (hour >= 12 && hour < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
 
 /**
  * Função genérica para enviar alertas de estoque
@@ -31,18 +41,6 @@ const logger = createLogger('Tasks');
  * @param {object} params.dlqPayload - Dados para enfileiramento em DLQ em caso de erro
  * @param {object} params.logContext - Contexto adicional para logging
  */
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Format titration alert message
@@ -96,19 +94,25 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     if (userError) throw userError;
 
-    if (!users || users.length === 0) {
-      logger.info('Nenhum usuário encontrado em user_settings para dispatch', { correlationId });
+    // WAVE 11: Filtrar usuários que não estão no modo realtime
+    // Silent: sem notificações
+    // Digest: notificações individuais suprimidas (recebe apenas o resumo matinal)
+    const realtimeUsers = (users || []).filter(u => u.notification_mode === 'realtime');
+
+    if (realtimeUsers.length === 0) {
+      logger.info('Nenhum usuário em modo realtime encontrado para dispatch de lembretes unitários', { correlationId });
       return;
     }
 
-    logger.info(`Iniciando verificação de lembretes para ${users.length} usuários (Dispatcher)`, { correlationId });
+    logger.info(`Iniciando verificação de lembretes para ${realtimeUsers.length} usuários em modo realtime`, { correlationId });
 
     // Otimização Wave 12: Agrupar usuários por HHMM local para busca otimizada via JSONB (@>)
     // R-020: Usamos Map para garantir consistência de tempo por usuário (evita minute-flip race)
     const userTimes = new Map();
     const userIdsByHHMM = {};
     
-    for (const user of users) {
+    for (const user of realtimeUsers) {
+
       const timezone = user.timezone || 'America/Sao_Paulo';
       // Sanitização: remove caracteres de controle do Intl (ex: \u202f no Node 18+) que quebram JSONB
       const currentHHMM = getCurrentTimeInTimezone(timezone).replace(/[^\d:]/g, ''); 
@@ -156,7 +160,7 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
       protocolsByUser[p.user_id].push(p);
     }
 
-    for (const user of users) {
+    for (const user of realtimeUsers) {
       const userId = user.user_id;
 
       try {
@@ -334,7 +338,12 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           continue;
         }
 
-        eligibleEntries.push({ userId, timezone, displayName: user.display_name });
+        eligibleEntries.push({ 
+          userId, 
+          timezone, 
+          displayName: user.display_name,
+          digestTime 
+        });
       } catch (err) {
         logger.error(`Error evaluating daily digest eligibility for user`, err, { userId, correlationId });
       }
@@ -349,7 +358,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     const eligibleIds = eligibleEntries.map(e => e.userId);
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(name)')
+      .select('*, medicine:medicines(name, dosage_unit)')
       .in('user_id', eligibleIds)
       .eq('active', true);
 
@@ -360,86 +369,89 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     }
 
     // Fase 3: dispatch por usuário com dados já em memória
-    for (const { userId, timezone, displayName } of eligibleEntries) {
+    for (const { userId, timezone, displayName, digestTime } of eligibleEntries) {
       try {
-        // Buscar logs de hoje E de ontem para Storytelling (Wave 12)
         const dateToday = getCurrentDateInTimezone(timezone);
-        const dateYesterdayDate = parseLocalDate(dateToday);
+        const dateTodayStart = parseLocalDate(dateToday);
+        const dateYesterdayDate = new Date(dateTodayStart);
         dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
         const dateYesterday = formatLocalDate(dateYesterdayDate);
 
+        // Buscar logs de ontem para o nudge motivacional (Wave 12)
         const { data: logs } = await supabase
           .from('medicine_logs')
           .select('*')
           .eq('user_id', userId)
-          .gte('taken_at', dateYesterdayDate.toISOString());
+          .gte('taken_at', dateYesterdayDate.toISOString())
+          .lt('taken_at', dateTodayStart.toISOString());
 
-        const todayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateToday) || [];
-        const yesterdayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateYesterday) || [];
-
+        const yesterdayLogs = logs || [];
         const protocols = protocolsByUser[userId] || [];
-        const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
-        const takenDosesToday = todayLogs.length;
+        
+        // Cálculo de Score de Ontem
+        const expectedDosesYesterday = protocols.reduce((sum, p) => {
+          // Filtrar protocolos que já estavam ativos ontem
+          if (p.start_date && p.start_date > dateYesterday) return sum;
+          return sum + (p.time_schedule?.length || 0);
+        }, 0);
         const takenDosesYesterday = yesterdayLogs.length;
-        
-        const percentageToday = expectedDoses > 0 ? Math.round((takenDosesToday / expectedDoses) * 100) : 0;
-        const percentageYesterday = expectedDoses > 0 ? Math.round((takenDosesYesterday / expectedDoses) * 100) : 0;
+        const percentageYesterday = expectedDosesYesterday > 0 ? Math.min(100, Math.round((takenDosesYesterday / expectedDosesYesterday) * 100)) : 0;
 
-        // Construir Storytelling
-        let storytelling = '';
-        if (percentageToday > percentageYesterday) {
-          storytelling = `📈 Melhora de ${percentageToday - percentageYesterday}% em relação a ontem! Continue assim.`;
-        } else if (percentageToday < percentageYesterday && percentageToday > 0) {
-          storytelling = `📉 Hoje você tomou um pouco menos que ontem (${percentageToday}% vs ${percentageYesterday}%). Vamos recuperar amanhã?`;
-        } else if (percentageToday === 100) {
-          storytelling = `🌟 Dia perfeito! Você manteve os 100% de ontem.`;
-        } else {
-          storytelling = `⚖️ Mantendo a constância! ${percentageToday}% hoje.`;
-        }
-
-        const dateStr = parseLocalDate(dateToday).toLocaleDateString('pt-BR');
-        const nudge = getMotivationalNudge(percentageToday);
-        
-        // Template Rico (Telegram / Inbox)
-        const richTitle = `📋 Resumo do Dia — ${dateStr}`;
-        let richBody = `Olá, ${displayName || 'Paciente'}! 👋\n\n`;
-        richBody += `${nudge}\n\n`;
-        richBody += `📊 **Sua Adesão Hoje:** ${takenDosesToday}/${expectedDoses} doses (${percentageToday}%)\n`;
-        richBody += `${storytelling}\n\n`;
-        
-        if (protocols.length > 0) {
-          richBody += `📝 **Detalhamento por Protocolo:**\n`;
-          protocols.forEach(p => {
-            const pLogs = todayLogs.filter(l => l.protocol_id === p.id).length;
-            const pExpected = p.time_schedule?.length || 0;
-            const statusEmoji = pLogs >= pExpected ? '✅' : pLogs > 0 ? '⚠️' : '❌';
-            richBody += `${statusEmoji} ${escapeMarkdownV2(p.name)}: ${pLogs}/${pExpected}\n`;
+        // Agenda de Hoje
+        const todaySchedule = [];
+        protocols.forEach(p => {
+          (p.time_schedule || []).forEach(time => {
+            todaySchedule.push({
+              time,
+              medicineName: p.medicine?.name || p.name,
+              dosage: p.dosage_per_intake || 1,
+              unit: p.medicine?.dosage_unit || 'dose'
+            });
           });
+        });
+        todaySchedule.sort((a, b) => a.time.localeCompare(b.time));
+
+        const currentHour = parseInt(digestTime.split(':')[0], 10);
+        const greeting = getGreeting(currentHour);
+        const dateStr = dateTodayStart.toLocaleDateString('pt-BR');
+        
+        // Template Rico (Telegram / Inbox) - Planejador Matinal
+        const richTitle = `📅 Seu Planejador — ${dateStr}`;
+        let richBody = `${escapeMarkdownV2(greeting)}, ${escapeMarkdownV2(displayName || 'Paciente')}\\! 👋\n\n`;
+        
+        if (expectedDosesYesterday > 0) {
+          richBody += `📊 **Ontem:** você completou ${percentageYesterday}% das doses\\. `;
+          richBody += percentageYesterday === 100 ? 'Excelente\\! 🌟' : 'Vamos manter o foco hoje? 💪';
+          richBody += `\n\n`;
         }
 
-        // Template Compacto (Push)
-        const pushBody = `${nudge} Hoje: ${percentageToday}%.` + (storytelling ? ` ${storytelling.split('!')[0]}!` : '');
+        if (todaySchedule.length > 0) {
+          richBody += `🕒 **Sua Agenda de Hoje:**\n`;
+          todaySchedule.forEach(s => {
+            richBody += `• ${s.time} — ${escapeMarkdownV2(s.medicineName)} \\(${s.dosage} ${escapeMarkdownV2(s.unit)}\\)\n`;
+          });
+        } else {
+          richBody += `✨ Você não tem doses agendadas para hoje\\. Aproveite o descanso\\!`;
+        }
+
+        // Template Compacto (Push) - Sem escapes Markdown
+        const pushBody = `${greeting}! Ontem: ${percentageYesterday}%. Hoje você tem ${todaySchedule.length} doses agendadas. Vamos nessa?`;
 
         await dispatcher.dispatch({
           userId,
           kind: 'daily_digest',
-          data: {
+          payload: {
             title: richTitle,
             body: richBody,
             pushBody,
-            summary: `${dateStr} — ${percentageToday}%`,
-            percentage: percentageToday,
-            taken_doses: takenDosesToday,
-            expected_doses: expectedDoses,
-            nudge,
-            storytelling,
-            details: protocols.map(p => ({
-              name: p.name,
-              protocol_id: p.id,
-              taken: todayLogs.filter(l => l.protocol_id === p.id).length,
-              expected: p.time_schedule?.length || 0
-            }))
-          }
+            metadata: {
+              summary: `${dateStr} — ${todaySchedule.length} doses`,
+              yesterdayPercentage: percentageYesterday,
+              scheduleCount: todaySchedule.length,
+              greeting
+            }
+          },
+          context: { correlationId, jobType: 'daily_digest' }
         });
 
       } catch (err) {
@@ -461,7 +473,8 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
     const { data: users } = await supabase
       .from('user_settings')
       .select('user_id, timezone, display_name, digest_time, notification_mode')
-      .neq('notification_mode', 'digest_morning');
+      .neq('notification_mode', 'silent');
+
 
     if (!users || users.length === 0) return;
 
@@ -506,54 +519,87 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
       try {
         const dateToday = getCurrentDateInTimezone(timezone || 'America/Sao_Paulo');
         const startOfDay = parseLocalDate(dateToday);
+        const dateYesterdayDate = new Date(startOfDay);
+        dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
+        const startOfYesterday = formatLocalDate(dateYesterdayDate);
         
         const { data: logs } = await supabase
           .from('medicine_logs')
           .select('*')
           .eq('user_id', userId)
-          .gte('taken_at', startOfDay.toISOString());
+          .gte('taken_at', dateYesterdayDate.toISOString());
+
+        const todayLogs = logs?.filter(l => l.taken_at >= startOfDay.toISOString()) || [];
+        const yesterdayLogs = logs?.filter(l => l.taken_at < startOfDay.toISOString() && l.taken_at >= dateYesterdayDate.toISOString()) || [];
 
         const protocols = protocolsByUser[userId] || [];
         if (protocols.length === 0) continue;
 
         const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
-        const takenDoses = logs?.length || 0;
-        const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+        const takenDoses = todayLogs.length;
+        const percentage = expectedDoses > 0 ? Math.min(100, Math.round((takenDoses / expectedDoses) * 100)) : 0;
+        
+        const expectedYesterday = protocols.reduce((sum, p) => {
+          if (p.start_date && p.start_date > startOfYesterday) return sum;
+          return sum + (p.time_schedule?.length || 0);
+        }, 0);
+        const percentageYesterday = expectedYesterday > 0 ? Math.min(100, Math.round((yesterdayLogs.length / expectedYesterday) * 100)) : 0;
+
+        // Storytelling logic
+        let storytelling = '';
+        if (percentage > percentageYesterday) {
+          storytelling = `📈 Melhora de ${percentage - percentageYesterday}% em relação a ontem\\!`;
+        } else if (percentage < percentageYesterday && percentage > 0) {
+          storytelling = `📉 Hoje foi um pouco mais difícil que ontem (${percentage}% vs ${percentageYesterday}%)\\.`;
+        } else if (percentage === 100 && percentageYesterday === 100) {
+          storytelling = `🌟 Segundo dia seguido com 100%\\!`;
+        } else if (percentage === 0 && expectedDoses > 0) {
+          storytelling = `🧘 Amanhã é uma nova oportunidade para cuidar de você\\.`;
+        } else {
+          storytelling = `⚖️ Mantendo a constância de ontem\\.`;
+        }
 
         const nudge = getMotivationalNudge(percentage);
-        const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
+        const dateStr = startOfDay.toLocaleDateString('pt-BR');
 
-        const title = `📊 Relatório de Adesão — ${dateStr}`;
-        let body = `Olá, ${displayName || 'Paciente'}! Aqui está seu desempenho de hoje:\n\n`;
-        body += `${nudge}\n\n`;
-        body += `✅ **Doses Tomadas:** ${takenDoses}\n`;
-        body += `📅 **Doses Previstas:** ${expectedDoses}\n`;
-        body += `📈 **Score do Dia:** ${percentage}%\n\n`;
+        const title = `🌙 Resumo do seu Dia — ${dateStr}`;
+        let body = `Olá, ${escapeMarkdownV2(displayName || 'Paciente')}\\! 👋\n\n`;
+        body += `📊 **Hoje:** ${percentage}% das doses concluídas \\(${takenDoses}/${expectedDoses}\\)\\.\n`;
+        body += `📈 **Comparação:** ${storytelling}\n\n`;
+        body += `${escapeMarkdownV2(nudge)}\n\n`;
 
-        if (percentage < 100 && expectedDoses > takenDoses) {
-          body += `💡 *Dica:* Que tal ajustar os horários das próximas doses para facilitar seu dia?`;
-        } else if (percentage === 100) {
-          body += `🏆 **Excelência!** Você completou 100% do seu tratamento hoje.`;
+        if (percentage === 100) {
+          body += `🏆 **Excelência\\!** Amanhã seguimos firmes\\.`;
+        } else {
+          body += `💡 Amanhã é uma nova chance de brilhar\\!`;
         }
+
+        // Template Compacto (Push) - Sem escapes Markdown
+        const pushBody = `🌙 Resumo: ${percentage}% concluído hoje. ${storytelling.replace(/\\/g, '')} Prepare-se para amanhã!`;
 
         await dispatcher.dispatch({
           userId,
-          kind: 'daily_adherence_report',
-          data: {
+          kind: 'adherence_report',
+          payload: {
             title,
             body,
-            summary: `${dateStr} — ${percentage}%`,
-            percentage,
-            taken_doses: takenDoses,
-            expected_doses: expectedDoses,
-            nudge,
-            details: protocols.map(p => ({
-              name: p.medicine?.name || 'Medicamento',
-              protocol_id: p.id,
-              taken: logs?.filter(l => l.protocol_id === p.id).length || 0,
-              expected: p.time_schedule?.length || 1
-            }))
-          }
+            pushBody,
+            metadata: {
+              summary: `${dateStr} — ${percentage}%`,
+              percentage,
+              taken_doses: takenDoses,
+              expected_doses: expectedDoses,
+              nudge,
+              storytelling,
+              details: protocols.map(p => ({
+                name: p.medicine?.name || 'Medicamento',
+                protocol_id: p.id,
+                taken: todayLogs.filter(l => l.protocol_id === p.id).length || 0,
+                expected: p.time_schedule?.length || 1
+              }))
+            }
+          },
+          context: { correlationId, jobType: 'adherence_report' }
         });
 
       } catch (err) {
@@ -609,15 +655,19 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
     // 1. Buscar todos os usuários ativos com configurações (evita auth.users por causa do RLS)
     const { data: users, error: usersErr } = await supabase
       .from('user_settings')
-      .select('user_id, timezone');
+      .select('user_id, timezone, notification_mode');
 
     if (usersErr || !users || users.length === 0) {
       logger.info('Nenhum usuário encontrado em user_settings para alertas de estoque', { correlationId });
       return;
     }
 
-    const userIds = users.map(u => u.user_id);
-    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, { correlationId });
+    // WAVE 11: Respeitar o modo de notificação (Silent = nada)
+    const eligibleUsers = users.filter(u => u.notification_mode !== 'silent');
+    if (eligibleUsers.length === 0) return;
+
+    const userIds = eligibleUsers.map(u => u.user_id);
+    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários elegíveis`, { correlationId });
 
     // 2. Buscar protocolos ativos para calcular consumo diário (ADR-022)
     const { data: allProtocols } = await supabase
@@ -670,16 +720,23 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
           userId, medicineId, correlationId
         });
 
+        const richTitle = `📦 Alerta de Estoque: ${escapeMarkdownV2(stock.name)}`;
+        const richBody = `📉 **Restam:** ${stock.qty} doses\\.\n⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\.\n\nRecomendamos a reposição em breve\\.`;
+        const pushBody = `📦 ${stock.name} acabando: restam ${stock.qty} doses (~${daysRemaining} dias)\\. Garanta sua reposição\\!`;
+
         await dispatcher.dispatch({
           userId,
           kind: 'stock_alert',
-          data: {
-            title: '📦 Estoque Baixo',
-            body: `Seu estoque de ${stock.name} está acabando (restam aprox. ${daysRemaining} dias).`,
-            medicineId,
-            medicineName: stock.name,
-            daysRemaining,
-            stockQuantity: stock.qty
+          payload: {
+            title: richTitle,
+            body: richBody,
+            pushBody,
+            metadata: {
+              medicineId,
+              medicineName: stock.name,
+              daysRemaining,
+              stockQuantity: stock.qty
+            }
           },
           context: { correlationId, jobType: 'stock_alert_dispatcher' }
         });
@@ -699,14 +756,18 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
   try {
     const { data: users, error: userError } = await supabase
       .from('user_settings')
-      .select('user_id, timezone');
+      .select('user_id, timezone, notification_mode');
 
     if (userError) throw userError;
     if (!users || users.length === 0) return;
 
-    logger.info(`Iniciando relatórios semanais via Dispatcher para ${users.length} usuários`, { correlationId });
+    // WAVE 11: Respeitar o modo de notificação (Silent = nada)
+    const eligibleUsers = users.filter(u => u.notification_mode !== 'silent');
+    if (eligibleUsers.length === 0) return;
 
-    for (const user of users) {
+    logger.info(`Iniciando relatórios semanais via Dispatcher para ${eligibleUsers.length} usuários elegíveis`, { correlationId });
+
+    for (const user of eligibleUsers) {
       const userId = user.user_id;
       
       // Cálculo de adesão (últimos 7 dias)

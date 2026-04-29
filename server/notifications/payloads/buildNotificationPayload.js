@@ -3,12 +3,13 @@
 
 import { z } from 'zod'
 
-const kindSchema = z.enum([
+export const kindSchema = z.enum([
   'dose_reminder',
   'dose_reminder_by_plan',
   'dose_reminder_misc',
   'stock_alert',
   'daily_digest',
+  'adherence_report',
 ])
 
 export function buildNotificationPayload({ kind, data }) {
@@ -76,6 +77,13 @@ export function buildNotificationPayload({ kind, data }) {
     case 'daily_digest':
       return {
         title: 'Resumo do dia',
+        body: data.summary,
+        deeplink: `dosiq://today`,
+        metadata: {},
+      }
+    case 'adherence_report':
+      return {
+        title: '📊 Relatório de Adesão',
         body: data.summary,
         deeplink: `dosiq://today`,
         metadata: {},
