@@ -353,7 +353,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
       try {
         // Buscar logs de hoje E de ontem para Storytelling (Wave 12)
         const dateToday = getCurrentDateInTimezone(timezone);
-        const dateYesterdayDate = new Date(parseLocalDate(dateToday));
+        const dateYesterdayDate = parseLocalDate(dateToday);
         dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
         const dateYesterday = formatLocalDate(dateYesterdayDate);
 
@@ -363,8 +363,8 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           .eq('user_id', userId)
           .gte('taken_at', dateYesterdayDate.toISOString());
 
-        const todayLogs = logs?.filter(l => formatLocalDate(new Date(l.taken_at)) === dateToday) || [];
-        const yesterdayLogs = logs?.filter(l => formatLocalDate(new Date(l.taken_at)) === dateYesterday) || [];
+        const todayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateToday) || [];
+        const yesterdayLogs = logs?.filter(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)) === dateYesterday) || [];
 
         const protocols = protocolsByUser[userId] || [];
         const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
@@ -386,7 +386,7 @@ async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           storytelling = `⚖️ Mantendo a constância! ${percentageToday}% hoje.`;
         }
 
-        const dateStr = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone }).format(new Date());
+        const dateStr = parseLocalDate(dateToday).toLocaleDateString('pt-BR');
         const nudge = getMotivationalNudge(percentageToday);
         
         // Template Rico (Telegram / Inbox)
