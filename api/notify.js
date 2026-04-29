@@ -157,8 +157,8 @@ function buildNotificationPayload({ kind, data }) {
       };
     case 'daily_digest':
       return {
-        title: 'Resumo do dia',
-        body: data.summary || 'Veja seu resumo diário',
+        title: data.title || 'Resumo do dia',
+        body: data.body || data.summary || 'Veja seu resumo diário',
         deeplink: `dosiq://today`,
         metadata: {}
       };
