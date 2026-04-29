@@ -579,7 +579,7 @@ Main bundle: **102.47 kB gzip** (de 989KB original, 89% reducao).
 - `docs/reference/SCHEMAS.md` — schemas Zod
 - `docs/standards/GEMINI_INTEGRATION.md` — code review automatico
 - `docs/standards/MOBILE_PERFORMANCE.md` — **NOVO** — Standards de performance mobile (lazy loading, code splitting, CSS animations, assets, touch UX)
-- `docs/architecture/TELEGRAM_BOT.md` — bot + notificacoes
+- `docs/architecture/NOTIFICATIONS.md` — bot + notificações (Inbox-First)
 - `docs/architecture/CHATBOT_AI.md` — **NOVO** — Arquitetura do Chatbot IA Multi-Canal (F8.1): contextBuilder, safetyGuard, Groq API, bugfixes hallucination
 - `plans/EXEC_SPEC_FASE_5.md` — spec de execucao da Fase 5
 - `plans/EXEC_SPEC_MOBILE_PERFORMANCE.md` — Roadmap M0-M6 para otimizacao mobile (M2 concluido ✅)

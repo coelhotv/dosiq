@@ -161,7 +161,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Caracteres: `_ * [ ] ( ) ~ \` > # + - = | { } . !`
   - Aplicado em todos os comandos, callbacks e tasks do bot
 - **63 testes unitários**: Cobertura completa de edge cases
-- **Documentação consolidada**: `docs/architecture/TELEGRAM_BOT.md`
+- **Documentação consolidada**: [`docs/architecture/NOTIFICATIONS.md`](docs/architecture/NOTIFICATIONS.md)
 
 #### 🐛 Correções
 - **Erro DLQ resolvido**: "Character '!' is reserved and must be escaped"

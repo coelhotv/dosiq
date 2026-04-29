@@ -39,7 +39,8 @@
 | **Execute UX specs** | [`plans/EXEC_SPEC_UX_EVOLUTION.md`](plans/EXEC_SPEC_UX_EVOLUTION.md) + `plans/specs/` |
 | **Understand database** | [`docs/architecture/DATABASE.md`](docs/architecture/DATABASE.md) |
 | **CSS architecture** | [`docs/architecture/CSS.md`](docs/architecture/CSS.md) |
-| **Telegram bot** | [`docs/architecture/TELEGRAM_BOT.md`](docs/architecture/TELEGRAM_BOT.md) ✅ |
+| **Notificações & Bot** | [`docs/architecture/NOTIFICATIONS.md`](docs/architecture/NOTIFICATIONS.md) ✅ |
+| **Experiência de Produto (Notificações)** | [`docs/features/NOTIFICATIONS_EXPERIENCE.md`](docs/features/NOTIFICATIONS_EXPERIENCE.md) ✅ |
 | **Chatbot IA (F8.1)** | [`docs/architecture/CHATBOT_AI.md`](docs/architecture/CHATBOT_AI.md) ✅ — contextBuilder, safetyGuard, Groq API, hallucinations |
 | **Gemini/AI code review** | [`docs/standards/GEMINI_INTEGRATION.md`](docs/standards/GEMINI_INTEGRATION.md) ✅ |
 

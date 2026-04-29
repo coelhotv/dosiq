@@ -23,7 +23,7 @@
 | [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v4.0.0) | ✅ Atual |
 | [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase com refactor de estoque/purchases | ✅ Atual |
 | [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system | ✅ Migrado |
-| [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) | Bot Telegram consolidado com fluxos de estoque via RPC | ✅ Atual |
+| [`architecture/NOTIFICATIONS.md`](architecture/NOTIFICATIONS.md) | Central de Notificações & Bot (Inbox-First) | ✅ Atual |
 | [`releases/v4.0.0.md`](releases/v4.0.0.md) | Release notes oficiais da v4.0.0 | ✅ Novo |
 
 **Nota**: ARQUITETURA.md permanece na raiz como documento primário. ARQUITETURA_FRAMEWORK.md arquivado (conteúdo sobreposto).
@@ -97,7 +97,8 @@
 | Como funciona a arquitetura | [`architecture/OVERVIEW.md`](ARQUITETURA.md) |
 | Esquemas do banco de dados | [`architecture/DATABASE.md`](architecture/DATABASE.md) |
 | Sistema CSS e tokens | [`architecture/CSS.md`](architecture/CSS.md) |
-| Bot do Telegram | [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) |
+| Notificações & Bot | [`architecture/NOTIFICATIONS.md`](architecture/NOTIFICATIONS.md) |
+| Experiência de Produto (Notificações) | [`features/NOTIFICATIONS_EXPERIENCE.md`](features/NOTIFICATIONS_EXPERIENCE.md) |
 | Release notes da versão atual | [`releases/v4.0.0.md`](releases/v4.0.0.md) |
 | Como nomear variáveis/funções | [`PADROES_CODIGO.md`](PADROES_CODIGO.md) |
 | Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
