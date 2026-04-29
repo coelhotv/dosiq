@@ -24,15 +24,15 @@
     "goal_type": "fix"
   },
   "memory": {
-    "rules_count": 159,
+    "rules_count": 160,
     "anti_patterns_count": 125,
     "decisions_count": 35,
     "contracts_count": 21,
     "knowledge_count": 89,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 16,
+    "journal_entries_since_distillation": 17,
     "recent_additions": {
-      "rules": ["R-202", "R-203", "R-204", "R-205", "R-206", "R-207"],
+      "rules": ["R-202", "R-203", "R-204", "R-205", "R-206", "R-207", "R-208"],
       "anti_patterns": ["AP-122", "AP-123", "AP-124", "AP-125"],
       "knowledge": [],
       "decisions": ["ADR-035"],
