@@ -170,4 +170,5 @@
 - **[R-202]** Role-Based Admin Access: Prefer metadata-based role checks over hardcoded IDs. -> [`rules/react_and_ui/R-202.md`](./rules/react_and_ui/R-202.md)
 - **[R-203]** Semantic Versioning: Use import.meta.env.VITE_APP_VERSION with a hardcoded fallback in footers. -> [`rules/react_and_ui/R-203.md`](./rules/react_and_ui/R-203.md)
 - **[R-204]** Semantic A11y Elements: Interactive elements MUST be semantic buttons, never clickable divs. -> [`rules/react_and_ui/R-204.md`](./rules/react_and_ui/R-204.md)
+- **[R-205]** Mobile push notifications (pushBody) MUST be plain text (no MarkdownV2 escapes like \! or \.). -> [`rules/mobile_and_platform/R-205.md`](./rules/mobile_and_platform/R-205.md)
 

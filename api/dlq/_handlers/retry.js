@@ -1,9 +1,9 @@
 // api/dlq/_handlers/retry.js
-// Dead Letter Queue Handler - Retry a failed notification
-// NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
+// Dead Letter Queue Handler - Retry a failed notification via Dispatcher (ADR-030)
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
-import { escapeMarkdownV2 } from '../../../server/utils/formatters.js';
+import { dispatchNotification } from '../../../server/notifications/dispatcher/dispatchNotification.js';
+import { Expo } from 'expo-server-sdk';
 
 const logger = createLogger('DLQRetry');
 
@@ -13,28 +13,17 @@ const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
 /**
  * Handler para retry de notificação da DLQ
- * @param {object} req - Request object (Vercel)
- * @param {object} res - Response object (Vercel)
  */
 export async function handleRetry(req, res) {
-  // Get notification ID from query (router passa via req.query.id)
   const { id } = req.query;
 
-  if (!id) {
-    return res.status(400).json({ error: 'Missing notification ID' });
-  }
+  if (!id) return res.status(400).json({ error: 'Missing notification ID' });
 
-  // Validate UUID format
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(id)) {
-    return res.status(400).json({ error: 'Invalid notification ID format' });
-  }
-
-  // Create Supabase client with service role key
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
   try {
-    // Fetch the failed notification
+    // 1. Fetch the failed notification
     const { data: notification, error: fetchError } = await supabase
       .from('failed_notification_queue')
       .select('*')
@@ -42,60 +31,83 @@ export async function handleRetry(req, res) {
       .single();
 
     if (fetchError || !notification) {
-      logger.error('Notification not found', fetchError, { id });
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    // Check if notification can be retried
-    if (notification.status === 'resolved') {
-      return res.status(400).json({ error: 'Notification already resolved' });
-    }
+    // 2. Setup Dispatcher Dependencies (Minimal L1 Setup)
+    const preferencesRepo = {
+      async getByUserId(userId) {
+        const { data } = await supabase.from('user_settings').select('notification_preference').eq('user_id', userId).single();
+        return data?.notification_preference || 'telegram';
+      },
+      async hasTelegramChat(userId) {
+        const { data } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single();
+        return !!data?.telegram_chat_id;
+      },
+      async getSettingsByUserId(userId) {
+        const { data } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
+        return data || {};
+      }
+    };
 
-    if (notification.status === 'discarded') {
-      return res.status(400).json({ error: 'Notification was discarded' });
-    }
+    const devicesRepo = {
+      async listActiveByUser(userId, provider) {
+        const { data } = await supabase.from('notification_devices').select('*').eq('user_id', userId).eq('provider', provider).eq('is_active', true);
+        return data || [];
+      }
+    };
 
-    // Get user's chat_id from user_settings
-    const { data: userSettings, error: userError } = await supabase
-      .from('user_settings')
-      .select('telegram_chat_id')
-      .eq('user_id', notification.user_id)
-      .single();
+    const dlqRepo = {
+      async enqueue(notificationData, error, retryCount, correlationId) {
+        await supabase
+          .from('failed_notification_queue')
+          .upsert({
+            user_id: notificationData.userId,
+            protocol_id: notificationData.protocolId,
+            notification_type: notificationData.type,
+            notification_payload: notificationData,
+            error_code: error?.code || error?.error_code,
+            error_message: error?.message || 'Unknown error',
+            retry_count: retryCount,
+            correlation_id: correlationId,
+            status: 'pending'
+          }, { onConflict: 'correlation_id', ignoreDuplicates: false });
+      }
+    };
 
-    if (userError || !userSettings?.telegram_chat_id) {
-      logger.error('User chat ID not found', userError, { userId: notification.user_id });
-      return res.status(400).json({
-        error: 'User does not have Telegram chat ID configured',
-        success: false
-      });
-    }
+    const bot = {
+      sendMessage: async (chatId, text, options) => {
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text, ...options })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.description);
+        return { success: true, messageId: result.result.message_id };
+      }
+    };
 
-    const chatId = userSettings.telegram_chat_id;
+    // 3. Dispatch via 3-layer architecture
+    const dispatchResult = await dispatchNotification({
+      userId: notification.user_id,
+      kind: notification.notification_type,
+      data: {
+        ...(notification.notification_payload || {}),
+        isRetry: true // Ativa decoração "(Reenvio)" na L2
+      },
+      context: { 
+        correlationId: notification.correlation_id || `retry_${id}`,
+        isRetry: true
+      },
+      repositories: { preferences: preferencesRepo, devices: devicesRepo, dlq: dlqRepo },
+      bot,
+      expoClient
+    });
 
-    // Get protocol details for message formatting
-    const { data: protocol, error: protocolError } = await supabase
-      .from('protocols')
-      .select(`
-        *,
-        medicines (name, dosage_per_pill, dosage_unit)
-      `)
-      .eq('id', notification.protocol_id)
-      .single();
-
-    if (protocolError) {
-      logger.warn('Protocol not found, using stored payload', { protocolId: notification.protocol_id });
-    }
-
-    // Format the notification message
-    const medicineName = protocol?.medicines?.name || notification.notification_payload?.medicineName || 'Medicamento';
-    const message = formatRetryMessage(notification, medicineName);
-
-    // Send the message via Telegram API
-    const telegramResult = await sendTelegramMessage(botToken, chatId, message);
-
-    if (telegramResult.success) {
+    if (dispatchResult.success) {
       // Mark as resolved
-      const { error: updateError } = await supabase
+      await supabase
         .from('failed_notification_queue')
         .update({
           status: 'resolved',
@@ -104,135 +116,30 @@ export async function handleRetry(req, res) {
         })
         .eq('id', id);
 
-      if (updateError) {
-        logger.error('Failed to update notification status', updateError, { id });
-        // Message was sent, but status update failed - return warning
-        return res.status(200).json({
-          success: true,
-          message: 'Notification sent successfully, but status update failed',
-          messageId: telegramResult.messageId,
-          warning: 'A entrada permanece na DLQ e pode ser reenviada. Verifique manualmente.'
-        });
-      }
-
-      logger.info('Notification retry successful', {
-        id,
-        chatId,
-        messageId: telegramResult.messageId
-      });
-
       return res.status(200).json({
         success: true,
         message: 'Notification sent successfully',
-        messageId: telegramResult.messageId
+        channels: dispatchResult.channels
       });
-
     } else {
       // Update retry count
-      const { error: updateError } = await supabase
+      await supabase
         .from('failed_notification_queue')
         .update({
-          retry_count: notification.retry_count + 1,
+          retry_count: (notification.retry_count || 0) + 1,
           updated_at: new Date().toISOString(),
-          error_message: telegramResult.error
+          error_message: dispatchResult.errors?.[0]?.message || 'Unknown error'
         })
         .eq('id', id);
 
-      if (updateError) {
-        logger.error('Failed to update retry count', updateError, { id });
-      }
-
-      logger.error('Notification retry failed', null, {
-        id,
-        error: telegramResult.error
-      });
-
       return res.status(500).json({
         success: false,
-        error: telegramResult.error || 'Failed to send notification'
+        error: dispatchResult.errors?.[0]?.message || 'Failed to send notification'
       });
     }
 
   } catch (err) {
     logger.error('Unexpected error during retry', err, { id });
-    return res.status(500).json({
-      error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-  }
-}
-
-/**
- * Format retry message for Telegram
- */
-function formatRetryMessage(notification, medicineName) {
-  const type = notification.notification_type;
-  const timestamp = new Date(notification.created_at).toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo'
-  });
-
-  switch (type) {
-    case 'dose_reminder':
-      return `🔔 *Lembrete de dose* (Reenvio)\n\n` +
-             `💊 ${escapeMarkdownV2(medicineName)}\n` +
-             `📅 Horário original: ${timestamp}\n` +
-             `\n_Esta é uma nova tentativa de notificação._`;
-
-    case 'stock_alert':
-      return `⚠️ *Alerta de estoque* (Reenvio)\n\n` +
-             `💊 ${escapeMarkdownV2(medicineName)}\n` +
-             `📅 Original: ${timestamp}\n` +
-             `\n_Esta é uma nova tentativa de notificação._`;
-
-    case 'proactive_stock_alert':
-      return `💡 *Lembrete de Reposição* (Reenvio)\n\n` +
-             `📅 Original: ${timestamp}\n` +
-             `\n_Esta é uma nova tentativa de notificação._`;
-
-    default:
-      return `📢 *Notificação* (Reenvio)\n\n` +
-             `📅 Original: ${timestamp}\n` +
-             `\n_Esta é uma nova tentativa de notificação._`;
-  }
-}
-
-/**
- * Send message via Telegram API
- */
-async function sendTelegramMessage(token, chatId, text) {
-  if (!token) {
-    return { success: false, error: 'Bot token not configured' };
-  }
-
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'MarkdownV2'
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.ok) {
-      return {
-        success: false,
-        error: `${data.error_code}: ${data.description}`
-      };
-    }
-
-    return {
-      success: true,
-      messageId: data.result.message_id
-    };
-
-  } catch (err) {
-    return {
-      success: false,
-      error: err.message
-    };
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 }

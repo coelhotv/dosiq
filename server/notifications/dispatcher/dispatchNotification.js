@@ -5,6 +5,7 @@
 
 import { z } from 'zod'
 import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
+import { resolveChannelsForUser } from '../policies/resolveChannelsForUser.js'
 import { sendTelegramNotification } from '../channels/telegramChannel.js'
 import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
 import { shouldSendNow } from '../utils/notificationGate.js'
@@ -53,7 +54,12 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
 
   const correlationId = context?.correlationId || `dispatch_${Date.now()}`
   const ctx = { ...context, correlationId }
-  const validChannels = parsed.data.channels
+  
+  // Resolve channels if not provided
+  let validChannels = parsed.data.channels
+  if (validChannels.length === 0) {
+    validChannels = await resolveChannelsForUser({ userId, repositories })
+  }
 
   // Se payload não veio, tentamos construir a partir de data usando o builder canônico
   // Isso unifica as chamadas vindas de tasks legadas que ainda usam "data"
@@ -203,6 +209,30 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
     totalDelivered: normalized.totalDelivered,
     totalFailed: normalized.totalFailed,
   })
+
+  // --- DLQ Integration (Gate 3.5) ---
+  // Se houver falhas e o repositório estiver presente, enfileiramos para o Admin (DLQ)
+  // Evitamos re-enfileirar retentativas manuais (que já estão na DLQ e são tratadas pelo handler de retry)
+  if (normalized.totalFailed > 0 && repositories?.dlq && !context?.isRetry) {
+    const firstError = results.find(r => !r.success)?.errors?.[0];
+    const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc';
+    const protocolId = isGroupedKind ? null : (finalPayload?.metadata?.protocolId ?? null);
+
+    // Enfileira de forma assíncrona (não bloqueia o retorno do dispatch)
+    ;(async () => {
+      try {
+        await repositories.dlq.enqueue({
+          userId,
+          protocolId,
+          type: kind,
+          ...(data || {}) // L1 payload original para futura retentativa
+        }, firstError, 1, correlationId);
+        logger.info('Notificação falha enfileirada na DLQ', { correlationId, userId, kind });
+      } catch (dlqErr) {
+        logger.error('Falha ao enfileirar na DLQ', dlqErr, { correlationId, userId, kind });
+      }
+    })();
+  }
 
   return normalized
 }

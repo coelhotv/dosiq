@@ -38,5 +38,9 @@ export async function resolveChannelsForUser({ userId, repositories }) {
     ]
   }
 
+  // 3. Sistema: ID de sistema sempre resolve para telegram (admin)
+  const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
+  if (userId === SYSTEM_USER_ID) return ['telegram']
+
   return []
 }
