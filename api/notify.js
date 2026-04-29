@@ -463,14 +463,13 @@ export default async function handler(req, res) {
     );
     results.push('daily_digest');
 
-    // 2.1 Daily Adherence Report: Every day at 23:00
-    if (currentHour === 23 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'daily_adherence_report' }
-      );
-      results.push('daily_adherence_report');
-    }
+    // 2.1 Daily Adherence Report (Fase 12: Storytelling + Nudges)
+    // Chamado a cada minuto; elegibilidade por usuário validada em tasks.js
+    await withCorrelation(
+      (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'daily_adherence_report' }
+    );
+    results.push('daily_adherence_report');
 
     // 3. Tasks at 09:00: Stock Alerts + DLQ Digest
     if (currentHour === 9 && currentMinute === 0) {
