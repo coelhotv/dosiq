@@ -21,3 +21,4 @@
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[CON-017]** resolveChannelsForUser({ userId, repositories }) -> `string[]` canais App/Telegram/Web -> [`contracts/mobile_and_platform/CON-017.md`](./contracts/mobile_and_platform/CON-017.md)
+- **[CON-019]** dispatchNotification({ userId, kind, payload, data, channels, context }) -> Unified delivery gate -> [`contracts/mobile_and_platform/CON-019.md`](./contracts/mobile_and_platform/CON-019.md)

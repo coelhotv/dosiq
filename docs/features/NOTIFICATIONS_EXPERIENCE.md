@@ -57,12 +57,17 @@ O sistema não envia 5 pushes se o usuário tem 5 remédios às 08:00. Ele anali
 *   **Sobra Consolidada (Misc)**: Medicamentos avulsos no mesmo minuto são agrupados em: *"Suas doses de agora (2 meds)"*.
 *   **Individual**: Apenas quando há uma única dose isolada no tempo.
 
-### Modos de Experiência
-| Modo | Descrição | Impacto no Usuário |
+### Modos de Experiência e Supressão Centralizada
+
+O sistema utiliza um **Portão de Supressão Único** (`dispatchNotification.js`) que garante que as preferências do usuário sejam respeitadas em todos os canais:
+
+| Modo | Escopo de Supressão | Comportamento de Entrega |
 | :--- | :--- | :--- |
-| **Realtime** | Envio imediato conforme o agendamento. | Máximo alerta, ideal para tratamentos críticos. |
-| **Digest Morning** | Suprime alertas individuais e envia um único resumo matinal (`digest_time`). | Foco em produtividade e planejamento do dia. |
-| **Silent** | Desativa pushes externos; notificações aparecem apenas no Inbox. | Modo "Ghost", para usuários que já têm o hábito mas querem o registro. |
+| **Realtime** | Respeita Quiet Hours. | Envio imediato de lembretes e alertas de estoque. Ideal para tratamentos críticos. |
+| **Digest** | Suprime Alertas Realtime. | Bloqueia pushes individuais de doses. Envia apenas o Planejador Matinal (`daily_digest`). |
+| **Silent** | Suprime TUDO (Push/Bot). | Nenhuma entrega externa. Notificações aparecem apenas no Inbox. |
+
+**Janela de Silêncio (Quiet Hours):** Lembretes gerados entre 22h e 08h são silenciados por padrão, exceto se configurados explicitamente para bypass.
 
 ---
 
@@ -143,37 +148,44 @@ Este catálogo serve como a referência canônica para o tom de voz e os formato
     > Seu estoque de SeloZok está acabando (restam aprox. 6 dias).
 *   **Ações**: `[ 🛒 Comprar ]` `[ 📋 Ver Estoque ]`
 
-### 5. Resumo do Dia (`daily_digest`)
+### 5. Planejador Matinal (`daily_digest`)
 *   **Gatilho**: Modo Digest Morning ativado (envio no horário configurado).
 *   **Canais**: Push, Telegram, Inbox.
-*   **Exemplo Compacto (Push)**:
-    > 📈 Quase lá! Hoje: 85%. Você está indo muito bem. Um pequeno ajuste e chegamos nos 100%!
-*   **Exemplo Rico (Telegram/Inbox)**:
-    > 📋 **Resumo do Dia — 29/04/2026**
+*   **Inteligência**: Saudação dinâmica (Bom dia/Boa tarde) e contexto de adesão de ontem.
+*   **Exemplo Compacto (Push - Sem Markdown)**:
+    > Bom dia, João! Ontem você tomou 3/4 doses. Vamos focar nos 100% hoje? 🚀
+*   **Exemplo Rico (Telegram/Inbox - MarkdownV2)**:
+    > 📋 **Planejador Matinal — 29/04/2026**
     > 
-    > Olá, João! 👋
-    > 🏆 Imbatível! Sua saúde agradece por tanto compromisso.
+    > Bom dia, João\! 👋
     > 
-    > 📊 **Sua Adesão Hoje:** 4/4 doses (100%)
-    > 🌟 Dia perfeito! Você manteve os 100% de ontem.
+    > 📊 **Seu Desempenho de Ontem:**
+    > 3/4 doses registradas (75%)
     > 
-    > 📝 **Detalhamento por Protocolo:**
-    > ✅ Coração: 2/2
-    > ✅ Suplementação: 2/2
-*   **Ações**: `[ 📊 Ver Evolução ]`
+    > 📝 **Doses para Hoje:**
+    > • 08:00 — Atorvastatina
+    > • 14:00 — Ômega 3
+    > • 20:00 — Vitamina D
+    > • 22:00 — Melatonina
+    > 
+    > Que tal batermos a meta de hoje? 💪
+*   **Ações**: `[ 📊 Ver Planejamento ]`
 
 ### 6. Relatório de Adesão Noturno (`adherence_report`)
-*   **Gatilho**: Envio padrão às 23:00 para usuários sem modo Digest.
-*   **Canais**: Inbox (Push opcional).
-*   **Exemplo Rico**:
+*   **Gatilho**: Envio padrão às 23:00 para usuários (exceto modo `silent`).
+*   **Canais**: Push, Telegram, Inbox.
+*   **Exemplo Compacto (Push)**:
+    > Dia concluído! Você tomou 2 de 4 doses hoje (50%). Amanhã é um novo dia! 💪
+*   **Exemplo Rico (Telegram/Inbox)**:
     > 📊 **Relatório de Adesão — 29/04/2026**
     > 
-    > Olá, João! Aqui está seu desempenho de hoje:
-    > 💪 Não desanime! O importante é recomeçar. Amanhã teremos uma nova chance.
+    > Dia concluído, João\! 👋
     > 
     > ✅ **Doses Tomadas:** 2
     > 📅 **Doses Previstas:** 4
     > 📈 **Score do Dia:** 50%
+    > 
+    > 💪 Não desanime! O importante é recomeçar. Amanhã teremos uma nova chance.
 
 ### 7. Atualização de Titulação (`titration_alert`)
 *   **Gatilho**: Mudança automática de etapa em um protocolo com titulação.
@@ -207,9 +219,9 @@ O Dosiq utiliza algoritmos de "Nudges" para variar o tom de voz baseado na perfo
 
 Propostas para elevar o componente de notificações a uma ferramenta de **Engajamento Elite**:
 
-### [N3] Humanização e Variabilidade (Variable Copy)
+### [N3] Humanização e Variabilidade ✅ (Wave N3)
 *   **Objetivo**: Evitar a cegueira de notificação por repetição.
-*   **Ação**: Criar um motor de templates dinâmicos que alterna saudações, frases motivacionais e dicas de saúde baseadas no histórico do usuário.
+*   **Ação**: Implementado motor de saudações dinâmicas e variação de conteúdo baseado em faixas horárias e performance prévia (ontem vs hoje).
 
 ### [N4] Gamificação e Streaks
 *   **Objetivo**: Aumentar a retenção via aversão à perda.
