@@ -21,7 +21,8 @@ const dispatchInputSchema = z.object({
     'weekly_adherence',
     'monthly_report',
     'titration_alert',
-    'prescription_alert'
+    'prescription_alert',
+    'adherence_report'
   ]),
   channels: z.array(z.string()).default([]),
 })
@@ -91,8 +92,8 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
   }
 
   if (validChannels.length === 0 && !isSuppressed) {
-    console.info('[dispatchNotification] nenhum canal — skipping', { correlationId, userId, kind })
-    return normalizeChannelResults([])
+    console.info('[dispatchNotification] nenhum canal físico ativo — prosseguindo apenas com log (Inbox-First)', { correlationId, userId, kind })
+    // Não retornamos mais; deixamos seguir para a rotina de log
   }
 
   console.info('[dispatchNotification] iniciando', { 
@@ -126,14 +127,15 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
   // Fire-and-forget: não trava o retorno para o cron/request original
   ;(async () => {
     try {
-      // Filtra canais sem tentativa e sem erro (ex: nenhum device registrado)
-      // Se suprimida, permitimos logar mesmo sem canais ativos
-      const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
-      if (activeResults.length === 0 && !isSuppressed) return
+      // Wave 12: Sempre logar se houver payload, mesmo sem canais físicos, para alimentar a Inbox
+      if (!payload) return;
 
       const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
       const protocolId = isGroupedKind ? null : (payload?.metadata?.protocolId ?? null)
       
+      // Filtra canais sem tentativa e sem erro (ex: nenhum device registrado)
+      const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
+
       // Consolida canais num único array para o log
       const logChannels = activeResults.map((res) => ({
         channel:    res.channel,
@@ -142,11 +144,12 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
         tickets:    res.channel === 'mobile_push' ? (res.tickets ?? null) : null,
       }))
 
-      // Status geral: enviada se ao menos um canal teve sucesso, falhou se todos falharam, ou silenciada
+      // Status geral: enviada se ao menos um canal teve sucesso, falhou se todos falharam, silenciada,
+      // ou enviada se for apenas Inbox (sem canais físicos mas não suprimida)
       let overallStatus = 'falhou'
       if (isSuppressed) {
         overallStatus = 'silenciada'
-      } else if (activeResults.some(r => r.success)) {
+      } else if (activeResults.some(r => r.success) || (validChannels.length === 0 && !isSuppressed)) {
         overallStatus = 'enviada'
       }
 
@@ -170,6 +173,13 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
           provider_metadata: {
             ...(payload.metadata?.protocolIds ? { protocol_ids: payload.metadata.protocolIds } : {}),
             ...(payload.metadata?.planId ? { treatment_plan_id: payload.metadata.planId } : {}),
+            // M2.5: Metadados de adesão para Inbox
+            ...(payload.metadata?.percentage !== undefined ? { percentage: payload.metadata.percentage } : {}),
+            ...(payload.metadata?.expected_doses !== undefined ? { expected_doses: payload.metadata.expected_doses } : {}),
+            ...(payload.metadata?.taken_doses !== undefined ? { taken_doses: payload.metadata.taken_doses } : {}),
+            ...(payload.metadata?.nudge ? { nudge: payload.metadata.nudge } : {}),
+            ...(payload.metadata?.storytelling ? { storytelling: payload.metadata.storytelling } : {}),
+            ...(payload.metadata?.details ? { details: payload.metadata.details } : {}),
           },
         })
       } catch (logErr) {
