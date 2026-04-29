@@ -27,7 +27,7 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
     to: device.push_token,
     sound: 'default',
     title: payload.title,
-    body: payload.body,
+    body: payload.pushBody || payload.body,
     data: {
       ...(payload.metadata ?? {}),
       notificationLogId: payload.metadata?.notificationLogId ?? null,

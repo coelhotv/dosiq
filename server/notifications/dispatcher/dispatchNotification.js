@@ -4,26 +4,19 @@
 // correlationId é obrigatório em todos os logs (R-087)
 
 import { z } from 'zod'
+import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
 import { sendTelegramNotification } from '../channels/telegramChannel.js'
 import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
+import { shouldSendNow } from '../utils/notificationGate.js'
 import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { notificationLogRepository } from '../repositories/notificationLogRepository.js'
-import { shouldSendNow } from '../utils/notificationGate.js'
+import { createLogger } from '../../bot/logger.js'
+
+const logger = createLogger('Dispatcher')
 
 const dispatchInputSchema = z.object({
   userId: z.string().min(1),
-  kind: z.enum([
-    'dose_reminder', 
-    'dose_reminder_by_plan', 
-    'dose_reminder_misc', 
-    'stock_alert', 
-    'daily_digest',
-    'weekly_adherence',
-    'monthly_report',
-    'titration_alert',
-    'prescription_alert',
-    'adherence_report'
-  ]),
+  kind: kindSchema,
   channels: z.array(z.string()).default([]),
 })
 
@@ -35,11 +28,11 @@ async function dispatchChannel({ channel, userId, payload, context, repositories
     } else if (channel === 'mobile_push') {
       return await sendExpoPushNotification({ userId, payload, context, repositories, expoClient })
     } else {
-      console.warn('[dispatchNotification] canal desconhecido ignorado', { correlationId, channel })
+      logger.warn('canal desconhecido ignorado', { correlationId, channel })
       return null
     }
   } catch (error) {
-    console.error('[dispatchNotification] canal falhou', { correlationId, userId, channel, error: error.message })
+    logger.error('canal falhou', error, { correlationId, userId, channel })
     return {
       channel,
       success: false,
@@ -52,7 +45,7 @@ async function dispatchChannel({ channel, userId, payload, context, repositories
   }
 }
 
-export async function dispatchNotification({ userId, kind, payload, channels, context, repositories, bot, expoClient }) {
+export async function dispatchNotification({ userId, kind, payload, data, channels, context, repositories, bot, expoClient }) {
   const parsed = dispatchInputSchema.safeParse({ userId, kind, channels })
   if (!parsed.success) {
     throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
@@ -62,15 +55,18 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
   const ctx = { ...context, correlationId }
   const validChannels = parsed.data.channels
 
+  // Se payload não veio, tentamos construir a partir de data usando o builder canônico
+  // Isso unifica as chamadas vindas de tasks legadas que ainda usam "data"
+  const finalPayload = payload || (typeof buildNotificationPayload === 'function' ? buildNotificationPayload({ kind, data }) : (data || {}))
+
   // --- Wave N2: Centralized Gate Policy ---
   let isSuppressed = false
-  const isAlert = !['daily_digest', 'weekly_adherence', 'monthly_report'].includes(kind)
+  // Relatórios e digests não são "alertas" e ignoram quiet_hours e modo digest (só param no silent)
+  const isAlert = !['daily_digest', 'weekly_adherence', 'monthly_report', 'adherence_report'].includes(kind)
 
   if (isAlert) {
     const settings = await repositories.preferences.getSettingsByUserId(userId)
     const now = new Date()
-    // TODO: Usar luxon ou date-fns para timezone correto se necessário, 
-    // mas shouldSendNow usa HH:MM string que simplifica
     const currentHHMM = now.toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
       minute: '2-digit', 
@@ -80,23 +76,30 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
 
     const isQuietEnabled = settings.quiet_hours_enabled ?? false
     
-    if (isQuietEnabled && !shouldSendNow({
-      mode: settings.notification_mode,
-      quietHoursStart: settings.quiet_hours_start,
-      quietHoursEnd: settings.quiet_hours_end,
+    const shouldSend = shouldSendNow({
+      mode: settings.notification_mode || 'realtime',
+      quietHoursStart: isQuietEnabled ? settings.quiet_hours_start : null,
+      quietHoursEnd: isQuietEnabled ? settings.quiet_hours_end : null,
       currentHHMM
-    })) {
+    })
+
+    if (!shouldSend) {
       isSuppressed = true
-      console.info('[dispatchNotification] suprimida pelo gate', { correlationId, userId, kind, mode: settings.notification_mode })
+      console.info('[dispatchNotification] suprimida pelo gate', { 
+        correlationId, 
+        userId, 
+        kind, 
+        mode: settings.notification_mode,
+        quietHours: isQuietEnabled ? `${settings.quiet_hours_start}-${settings.quiet_hours_end}` : 'disabled'
+      })
     }
   }
 
   if (validChannels.length === 0 && !isSuppressed) {
     console.info('[dispatchNotification] nenhum canal físico ativo — prosseguindo apenas com log (Inbox-First)', { correlationId, userId, kind })
-    // Não retornamos mais; deixamos seguir para a rotina de log
   }
 
-  console.info('[dispatchNotification] iniciando', { 
+  logger.info('Iniciando dispatch de notificação', { 
     correlationId, 
     userId, 
     kind, 
@@ -107,7 +110,7 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
   let results = []
   if (!isSuppressed && validChannels.length > 0) {
     const settledResults = await Promise.allSettled(
-      validChannels.map((channel) => dispatchChannel({ channel, userId, payload, context: ctx, repositories, bot, expoClient }))
+      validChannels.map((channel) => dispatchChannel({ channel, userId, payload: finalPayload, context: ctx, repositories, bot, expoClient }))
     )
 
     results = settledResults
@@ -124,19 +127,16 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
   const normalized = normalizeChannelResults(results);
 
   // Sprint 8.4: Um único log por evento (não por canal) — evita duplicatas na inbox
-  // Fire-and-forget: não trava o retorno para o cron/request original
   ;(async () => {
     try {
       // Wave 12: Sempre logar se houver payload, mesmo sem canais físicos, para alimentar a Inbox
-      if (!payload) return;
+      if (!finalPayload) return;
 
       const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
-      const protocolId = isGroupedKind ? null : (payload?.metadata?.protocolId ?? null)
+      const protocolId = isGroupedKind ? null : (finalPayload?.metadata?.protocolId ?? null)
       
-      // Filtra canais sem tentativa e sem erro (ex: nenhum device registrado)
       const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
 
-      // Consolida canais num único array para o log
       const logChannels = activeResults.map((res) => ({
         channel:    res.channel,
         status:     res.success ? 'enviada' : 'falhou',
@@ -144,8 +144,6 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
         tickets:    res.channel === 'mobile_push' ? (res.tickets ?? null) : null,
       }))
 
-      // Status geral: enviada se ao menos um canal teve sucesso, falhou se todos falharam, silenciada,
-      // ou enviada se for apenas Inbox (sem canais físicos mas não suprimida)
       let overallStatus = 'falhou'
       if (isSuppressed) {
         overallStatus = 'silenciada'
@@ -160,26 +158,25 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
           user_id:              userId,
           protocol_id:          protocolId,
           notification_type:    kind,
-          title:                payload.title ?? null,
-          body:                 payload.body ?? null,
-          medicine_name:        payload.metadata?.medicineName ?? null,
-          protocol_name:        payload.metadata?.protocolName ?? null,
-          treatment_plan_id:    payload.metadata?.planId ?? null,
-          treatment_plan_name:  payload.metadata?.planName ?? null,
+          title:                finalPayload.title ?? null,
+          body:                 finalPayload.body ?? null,
+          medicine_name:        finalPayload.metadata?.medicineName ?? null,
+          protocol_name:        finalPayload.metadata?.protocolName ?? null,
+          treatment_plan_id:    finalPayload.metadata?.planId ?? null,
+          treatment_plan_name:  finalPayload.metadata?.planName ?? null,
           status:               overallStatus,
           channels:             logChannels,
           telegram_message_id:  logChannels.find(c => c.channel === 'telegram')?.message_id ?? null,
           mensagem_erro:        firstError,
           provider_metadata: {
-            ...(payload.metadata?.protocolIds ? { protocol_ids: payload.metadata.protocolIds } : {}),
-            ...(payload.metadata?.planId ? { treatment_plan_id: payload.metadata.planId } : {}),
-            // M2.5: Metadados de adesão para Inbox
-            ...(payload.metadata?.percentage !== undefined ? { percentage: payload.metadata.percentage } : {}),
-            ...(payload.metadata?.expected_doses !== undefined ? { expected_doses: payload.metadata.expected_doses } : {}),
-            ...(payload.metadata?.taken_doses !== undefined ? { taken_doses: payload.metadata.taken_doses } : {}),
-            ...(payload.metadata?.nudge ? { nudge: payload.metadata.nudge } : {}),
-            ...(payload.metadata?.storytelling ? { storytelling: payload.metadata.storytelling } : {}),
-            ...(payload.metadata?.details ? { details: payload.metadata.details } : {}),
+            ...(finalPayload.metadata?.protocolIds ? { protocol_ids: finalPayload.metadata.protocolIds } : {}),
+            ...(finalPayload.metadata?.planId ? { treatment_plan_id: finalPayload.metadata.planId } : {}),
+            ...(finalPayload.metadata?.percentage !== undefined ? { percentage: finalPayload.metadata.percentage } : {}),
+            ...(finalPayload.metadata?.expected_doses !== undefined ? { expected_doses: finalPayload.metadata.expected_doses } : {}),
+            ...(finalPayload.metadata?.taken_doses !== undefined ? { taken_doses: finalPayload.metadata.taken_doses } : {}),
+            ...(finalPayload.metadata?.nudge ? { nudge: finalPayload.metadata.nudge } : {}),
+            ...(finalPayload.metadata?.storytelling ? { storytelling: finalPayload.metadata.storytelling } : {}),
+            ...(finalPayload.metadata?.details ? { details: finalPayload.metadata.details } : {}),
           },
         })
       } catch (logErr) {
@@ -197,7 +194,8 @@ export async function dispatchNotification({ userId, kind, payload, channels, co
     }
   })()
 
-  console.info('[dispatchNotification] concluído', {
+
+  logger.info('Notificação concluída', {
     correlationId,
     userId,
     kind,
