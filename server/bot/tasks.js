@@ -104,38 +104,49 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     logger.info(`Iniciando verificação de lembretes para ${users.length} usuários (Dispatcher)`, { correlationId });
 
     // Otimização Wave 12: Agrupar usuários por HHMM local para busca otimizada via JSONB (@>)
+    // R-020: Usamos Map para garantir consistência de tempo por usuário (evita minute-flip race)
+    const userTimes = new Map();
     const userIdsByHHMM = {};
+    
     for (const user of users) {
       const timezone = user.timezone || 'America/Sao_Paulo';
-      const currentHHMM = getCurrentTimeInTimezone(timezone);
+      // Sanitização: remove caracteres de controle do Intl (ex: \u202f no Node 18+) que quebram JSONB
+      const currentHHMM = getCurrentTimeInTimezone(timezone).replace(/[^\d:]/g, ''); 
+      userTimes.set(user.user_id, currentHHMM);
+      
       if (!userIdsByHHMM[currentHHMM]) userIdsByHHMM[currentHHMM] = [];
       userIdsByHHMM[currentHHMM].push(user.user_id);
     }
 
     const allProtocols = [];
     for (const [hhmm, ids] of Object.entries(userIdsByHHMM)) {
-      const { data, error } = await supabase
-        .from('protocols')
-        .select(`
-          id,
-          user_id,
-          name,
-          time_schedule,
-          medicine_id,
-          dosage_per_intake,
-          treatment_plan_id,
-          medicine:medicines(name),
-          treatment_plan:treatment_plans(id, name)
-        `)
-        .in('user_id', ids)
-        .eq('active', true)
-        .contains('time_schedule', [hhmm]); // Otimização JSONB (Wave 12)
+      // Otimização: Batching de IDs (lotes de 50) para evitar limites de URL (414 Request-URI Too Large)
+      for (let i = 0; i < ids.length; i += 50) {
+        const chunk = ids.slice(i, i + 50);
+        const { data, error } = await supabase
+          .from('protocols')
+          .select(`
+            id,
+            user_id,
+            name,
+            time_schedule,
+            medicine_id,
+            dosage_per_intake,
+            treatment_plan_id,
+            medicine:medicines(name),
+            treatment_plan:treatment_plans(id, name)
+          `)
+          .in('user_id', chunk)
+          .eq('active', true)
+          // Fix Wave 12: JSON.stringify garante sintaxe correta para JSONB @> no PostgREST
+          .contains('time_schedule', JSON.stringify([hhmm])); 
 
-      if (error) {
-        logger.error(`Erro ao buscar protocolos para HHMM ${hhmm}`, error, { correlationId });
-        continue;
+        if (error) {
+          logger.error(`Erro ao buscar protocolos para HHMM ${hhmm} (Batch ${Math.floor(i/50) + 1})`, error, { correlationId });
+          continue;
+        }
+        if (data) allProtocols.push(...data);
       }
-      if (data) allProtocols.push(...data);
     }
 
     // Agrupar por user_id em memória (para facilitar o loop de dispatch por usuário)
@@ -147,10 +158,10 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     for (const user of users) {
       const userId = user.user_id;
-      const timezone = user.timezone || 'America/Sao_Paulo';
 
       try {
-        const currentHHMM = getCurrentTimeInTimezone(timezone);
+        // Recupera o tempo calculado no início para manter consistência com a query
+        const currentHHMM = userTimes.get(userId);
         const currentHour = parseInt(currentHHMM.split(':')[0], 10);
         const protocols = protocolsByUser[userId] || [];
         if (protocols.length === 0) continue;
