@@ -11,7 +11,8 @@
 DROP VIEW IF EXISTS medicine_stock_summary;
 
 -- Create the view with aggregated stock data
-CREATE OR REPLACE VIEW medicine_stock_summary AS
+CREATE OR REPLACE VIEW medicine_stock_summary
+WITH (security_invoker = on, security_barrier = true) AS
 SELECT 
   medicine_id,
   user_id,
@@ -25,7 +26,7 @@ GROUP BY medicine_id, user_id;
 
 -- Add comments for documentation
 COMMENT ON VIEW medicine_stock_summary IS 
-  'Aggregated stock summary by medicine and user. Optimizes queries by pre-calculating totals. Updated automatically on stock changes.';
+  'Aggregated stock summary by medicine and user. Optimizes queries by pre-calculating totals. Uses security_invoker so stock RLS is evaluated as the querying user.';
 
 COMMENT ON COLUMN medicine_stock_summary.medicine_id IS 'Reference to the medicine';
 COMMENT ON COLUMN medicine_stock_summary.user_id IS 'Owner of the stock data (for RLS)';
@@ -38,7 +39,7 @@ COMMENT ON COLUMN medicine_stock_summary.newest_entry_date IS 'Date of the newes
 -- PART 2: Enable Row Level Security
 -- ============================================
 
--- Enable RLS on the view
+-- security_invoker above ensures RLS is evaluated as the authenticated caller.
 ALTER VIEW medicine_stock_summary SET (security_barrier = true);
 
 -- Note: Views in PostgreSQL inherit RLS from the underlying table
@@ -112,6 +113,11 @@ RETURNS TABLE (
   newest_entry_date DATE
 ) AS $$
 BEGIN
+  IF p_user_id IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Usuário não autorizado'
+      USING ERRCODE = '42501';
+  END IF;
+
   RETURN QUERY
   SELECT 
     mss.medicine_id,
@@ -120,14 +126,14 @@ BEGIN
     mss.oldest_entry_date,
     mss.newest_entry_date
   FROM medicine_stock_summary mss
-  WHERE mss.user_id = p_user_id
+  WHERE mss.user_id = auth.uid()
     AND mss.total_quantity <= p_threshold
   ORDER BY mss.total_quantity ASC;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = public;
 
 COMMENT ON FUNCTION get_low_stock_medicines IS 
-  'Returns medicines with stock below threshold for alert purposes';
+  'Returns medicines with stock below threshold for the authenticated user';
 
 -- ============================================
 -- PART 6: Create function for stock summary refresh (if needed)
