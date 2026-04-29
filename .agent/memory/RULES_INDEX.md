@@ -171,4 +171,6 @@
 - **[R-203]** Semantic Versioning: Use import.meta.env.VITE_APP_VERSION with a hardcoded fallback in footers. -> [`rules/react_and_ui/R-203.md`](./rules/react_and_ui/R-203.md)
 - **[R-204]** Semantic A11y Elements: Interactive elements MUST be semantic buttons, never clickable divs. -> [`rules/react_and_ui/R-204.md`](./rules/react_and_ui/R-204.md)
 - **[R-205]** Mobile push notifications (pushBody) MUST be plain text (no MarkdownV2 escapes like \! or \.). -> [`rules/mobile_and_platform/R-205.md`](./rules/mobile_and_platform/R-205.md)
+- **[R-206]** L3 Gate Validation — Toda notificação enviada ao `dispatchNotification` deve ter seu `kind` validado contra o enum central antes de qualquer processamento de payload. -> [`rules/mobile_and_platform/R-206.md`](./rules/mobile_and_platform/R-206.md)
+- **[R-207]** Notification Deeplink Decoupling — A resolução de URLs de navegação (deeplinks) deve ser isolada da lógica de construção de mensagens (L2), preferencialmente em mapas ou funções auxiliares dedicadas. -> [`rules/mobile_and_platform/R-207.md`](./rules/mobile_and_platform/R-207.md)
 
