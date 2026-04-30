@@ -20,7 +20,7 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Fix 2: useNotificationLog respects enabled flag",
+    "goal": "Fix 3: useUnreadBadgeCount in ProfileScreen",
     "goal_type": "fix"
   },
   "memory": {

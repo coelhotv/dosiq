@@ -9,8 +9,7 @@ import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
 import { ROUTES } from '../../../navigation/routes'
-import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
-import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
+import { useUnreadBadgeCount } from '../../../shared/hooks/useUnreadBadgeCount'
 
 /**
  * Tela de Perfil do MVP mobile (H5.6)
@@ -20,8 +19,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation()
   const { user, loading, error, refresh } = useProfile()
 
-  const { data: notifData } = useNotificationLog({ userId: user?.id, limit: 30, enabled: !!user?.id })
-  const { unreadCount } = useUnreadNotificationCount(notifData, user?.id)
+  const { unreadCount } = useUnreadBadgeCount(user?.id)
 
   const handleLogout = async () => {
     Alert.alert(
