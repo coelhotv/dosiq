@@ -153,7 +153,7 @@ export function buildNotificationPayload({ kind, data }) {
     case 'adherence_report': {
       const { firstName, period, percentage, taken, total, storytelling } = adherenceReportDataSchema.parse(data);
       const nudge = getMotivationalNudge(percentage);
-      title = '📈 Relatório de Adesão';
+      title = '📈 Relatório diário';
       
       const safeName = escapeMarkdownV2(firstName);
       const safePeriod = escapeMarkdownV2(period);
@@ -169,19 +169,19 @@ export function buildNotificationPayload({ kind, data }) {
 `;
       
       // Versão Plain
-      let plainMsg = `Olá, ${firstName}! `;
-      plainMsg += `Sua adesão ${period} foi de ${percentage}%
+      let plainMsg = `Olá, ${firstName}! 
 `;
+      plainMsg += `Sua adesão ${period} foi de ${percentage}% `;
       plainMsg += `✅ ${taken} de ${total} doses registradas.
-
 `;
       
       if (storytelling) {
-        richMsg += `📈 *Comparação:* ${escapeMarkdownV2(storytelling)}
+        richMsg += `*Comparação:* ${escapeMarkdownV2(storytelling)}
 
 `;
-        plainMsg += `📈 Comparação: ${storytelling}
+        plainMsg += `Comparação: 
 `;
+        plainMsg += `${storytelling} `;
       }
       
       richMsg += `_${escapeMarkdownV2(nudge)}_`;
