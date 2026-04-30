@@ -1,4 +1,4 @@
-# @meus-remedios/core
+# @dosiq/core
 
 Responsabilidade: codigo puro compartilhado.
 
