@@ -212,6 +212,7 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
               medicineName: dose.medicineName,
               protocolId: dose.protocolId,
               medicineId: dose.medicineId,
+              time: currentHHMM,
               dosage: dose.dosageString || dose.dosagePerIntake,
             };
           }
