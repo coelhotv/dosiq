@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../../platform/supabase/nativeSupabaseClient'
 
 const getStorageKey = (userId) =>
@@ -22,22 +23,29 @@ export function useUnreadBadgeCount(userId) {
     if (!userId) return
     try {
       const lastSeen = await AsyncStorage.getItem(getStorageKey(userId))
-      const query = supabase
+      let query = supabase
         .from('notification_log')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
       
       if (lastSeen) {
-        query.gt('sent_at', lastSeen)
+        query = query.gt('sent_at', lastSeen)
       }
       
       const { count, error } = await query
       if (!error) setUnreadCount(count ?? 0)
     } catch (e) {
       // Silencioso — badge é cosmético
-      if (__DEV__) console.log('[useUnreadBadgeCount] Fetch failed:', e.message)
+      if (__DEV__) console.error('[useUnreadBadgeCount] Fetch failed:', e.message)
     }
   }, [userId])
+
+  // Atualiza ao focar na tela (ex: ao voltar da Inbox)
+  useFocusEffect(
+    useCallback(() => {
+      refreshBadge()
+    }, [refreshBadge])
+  )
 
   useEffect(() => {
     refreshBadge()

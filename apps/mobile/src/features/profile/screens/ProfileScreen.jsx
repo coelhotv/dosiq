@@ -19,7 +19,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation()
   const { user, loading, error, refresh } = useProfile()
 
-  const { unreadCount } = useUnreadBadgeCount(user?.id)
+  const { unreadCount, refreshBadge } = useUnreadBadgeCount(user?.id)
 
   const handleLogout = async () => {
     Alert.alert(
@@ -56,7 +56,10 @@ export default function ProfileScreen() {
         refreshControl={
           <RefreshControl 
             refreshing={loading} 
-            onRefresh={refresh} 
+            onRefresh={() => {
+              refresh()
+              refreshBadge()
+            }} 
             colors={[colors.primary[600]]} 
             tintColor={colors.primary[600]}
           />
