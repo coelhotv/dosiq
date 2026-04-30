@@ -79,6 +79,7 @@
 - **[R-189]** expo-notifications: usar shouldShowBanner + shouldShowList em vez do depreciado shouldShowAlert (SDK 53+) -> [`rules/mobile_and_platform/R-189.md`](./rules/mobile_and_platform/R-189.md)
 - **[R-191]** Agrupar doses do mesmo minuto em blocos semânticos (by_plan/misc/individual) via partitionDoses() antes de disparar notificações — 1 push por bloco, nunca 1 push por protocolo -> [`rules/mobile_and_platform/R-191.md`](./rules/mobile_and_platform/R-191.md)
 - **[R-200]** Centralized Notification Gate (ADR-030): Toda lógica de supressão DEVE residir no Dispatcher -> [`rules/mobile_and_platform/R-200.md`](./rules/mobile_and_platform/R-200.md)
+- **[R-209]** JS Stack for Android 7 Navigation Stability -> [`rules/mobile_and_platform/R-209.md`](./rules/mobile_and_platform/R-209.md)
 
 
 

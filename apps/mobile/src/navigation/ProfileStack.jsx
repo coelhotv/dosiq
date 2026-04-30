@@ -1,11 +1,11 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from './routes'
 import ProfileScreen from '../features/profile/screens/ProfileScreen'
 import TelegramLinkScreen from '../features/profile/screens/TelegramLinkScreen'
 import NotificationPreferencesScreen from '../features/profile/screens/NotificationPreferencesScreen'
 import NotificationInboxScreen from '../features/notifications/screens/NotificationInboxScreen'
 
-const Stack = createNativeStackNavigator()
+const Stack = createStackNavigator()
 
 export default function ProfileStack() {
   return (
