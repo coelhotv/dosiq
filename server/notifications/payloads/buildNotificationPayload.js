@@ -196,8 +196,8 @@ export function buildNotificationPayload({ kind, data }) {
       const medicineName = data.medicineName || 'Medicamento';
       const time = data.time || '';
       title = '💊 Hora do Medicamento';
-      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)\\.`;
-      pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
+      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)${data.dosage ? ` — **${escapeMarkdownV2(data.dosage)}**` : ''}\\.`;
+      pushBody = `Está na hora de tomar ${medicineName} (${time})${data.dosage ? ` — ${data.dosage}` : ''}.`;
       break;
     }
 

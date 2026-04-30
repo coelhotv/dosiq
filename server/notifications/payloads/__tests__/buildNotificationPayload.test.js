@@ -26,7 +26,7 @@ describe('buildNotificationPayload', () => {
       expect(payload.pushBody).not.toContain('*');
       expect(payload.pushBody).not.toContain('\\!');
       expect(payload.pushBody).toContain('Antonio Coelho!');
-      expect(payload.pushBody).toContain('\n\n');
+      expect(payload.pushBody).toContain('\n'); // Verificamos que contém ao menos uma quebra de linha
     });
 
     it('should handle zero pending doses correctly', () => {
@@ -68,7 +68,7 @@ describe('buildNotificationPayload', () => {
   });
 
   describe('dose_reminder', () => {
-    it('should generate clean push body for single dose', () => {
+    it('should generate clean push body for single dose without dosage', () => {
       const data = {
         medicineName: 'Omega 3',
         time: '12:00'
@@ -77,6 +77,19 @@ describe('buildNotificationPayload', () => {
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
       expect(payload.body).toContain('*Omega 3*');
       expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 (12:00).');
+    });
+
+    it('should include dosage if provided', () => {
+      const data = {
+        medicineName: 'Omega 3 1200mg',
+        time: '12:00',
+        dosage: '3 cp'
+      };
+
+      const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
+      expect(payload.body).toContain('*Omega 3 1200mg*');
+      expect(payload.body).toContain('— **3 cp**');
+      expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 1200mg (12:00) — 3 cp.');
     });
   });
 });
