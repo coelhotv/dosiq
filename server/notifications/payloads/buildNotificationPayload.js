@@ -117,9 +117,7 @@ export function buildNotificationPayload({ kind, data }) {
 
 `;
       // Versão Plain (Push)
-      let plainMsg = `${greeting}, ${firstName}!
-
-`;
+      let plainMsg = `${greeting}, ${firstName}! `;
       
       if (pendingCount > 0) {
         const text = pendingCount === 1 ? 'dose pendente' : 'doses pendentes';
@@ -127,7 +125,6 @@ export function buildNotificationPayload({ kind, data }) {
 
 `;
         plainMsg += `Você tem ${pendingCount} ${text} para hoje:
-
 `;
         
         medicines.forEach(m => {
@@ -137,10 +134,7 @@ export function buildNotificationPayload({ kind, data }) {
 
 `;
           
-          plainMsg += `💊 ${m.name}
-`;
-          plainMsg += `⏰ ${m.time}${m.dosage ? ` (${m.dosage})` : ''}
-
+          plainMsg += `⏰ ${m.name} - ${m.time}${m.dosage ? ` (${m.dosage})` : ''}
 `;
         });
         richMsg += `Não se esqueça de registrar no app\\!`;
@@ -175,9 +169,7 @@ export function buildNotificationPayload({ kind, data }) {
 `;
       
       // Versão Plain
-      let plainMsg = `Olá, ${firstName}!
-
-`;
+      let plainMsg = `Olá, ${firstName}! `;
       plainMsg += `Sua adesão ${period} foi de ${percentage}%
 `;
       plainMsg += `✅ ${taken} de ${total} doses registradas.
@@ -189,7 +181,6 @@ export function buildNotificationPayload({ kind, data }) {
 
 `;
         plainMsg += `📈 Comparação: ${storytelling}
-
 `;
       }
       
@@ -276,7 +267,6 @@ export function buildNotificationPayload({ kind, data }) {
 `;
 
       let plainMsg = `🎯 Atualização de Titulação
-
 `;
       plainMsg += `Medicamento: ${medicineName}
 `;
@@ -322,7 +312,6 @@ Continue com o acompanhamento médico.`;
 `;
       
       let plainMsg = `📊 Seu Relatório Mensal
-
 `;
       plainMsg += `Olá ${firstName}, sua taxa de adesão no último mês foi de ${percentage}%.
 `;
@@ -357,21 +346,18 @@ Continue com o acompanhamento médico.`;
 
 `;
         plainMsg = `⚠️ Sua prescrição vence amanhã!
-
 `;
       } else if (daysRemaining <= 7) {
         richMsg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*
 
 `;
         plainMsg = `⚠️ Prescrição vencendo em ${daysRemaining} dias
-
 `;
       } else {
         richMsg = `📋 *Renovação de Prescrição*
 
 `;
         plainMsg = `📋 Renovação de Prescrição
-
 `;
       }
 
