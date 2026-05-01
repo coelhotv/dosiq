@@ -247,7 +247,7 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 
 ---
 
-### 🟡 GATE 6.5 — Inbox Markdown Renderer (Bug Fix Visual)
+### 🟡 GATE 5.5 — Inbox Markdown Renderer (Bug Fix Visual)
 
 > **Exec Spec**: [EXEC_SPEC_GATE_6_5_inbox_renderer.md](EXEC_SPEC_GATE_6_5_inbox_renderer.md)
 

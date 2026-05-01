@@ -325,7 +325,6 @@ refactor(notifications): absorve formatters dose_reminder em L2 e emite actions[
 - doseFormatters.js deletado (lógica absorvida por L2)
 - telegramChannel.js: import de doseFormatters removido
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation

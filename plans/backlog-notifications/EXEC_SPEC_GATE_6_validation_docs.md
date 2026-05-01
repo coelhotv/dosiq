@@ -2,7 +2,7 @@
 
 > **Part of**: `notifications_architecture_consolidation_plan.md`
 > **Branch**: `fix/wave-12/notification-architecture-consolidation`
-> **Prerequisite**: GATE 6.5 approved and committed
+> **Prerequisite**: GATE 5.5 approved and committed
 > **Difficulty**: Low — verification, small fixes, and documentation
 > **Estimated time**: 2–3 hours
 
@@ -331,7 +331,7 @@ gh pr create \
 - GATE 3: L1 Cleanup (tasks.js) ✅
 - GATE 4: L3 Cleanup (channels) ✅
 - GATE 5: Dispatcher & Boundary ✅
-- GATE 6.5: Inbox Markdown Renderer ✅
+- GATE 5.5: Inbox Markdown Renderer ✅
 - GATE 6: Validation & Docs ✅
 
 ## Test plan

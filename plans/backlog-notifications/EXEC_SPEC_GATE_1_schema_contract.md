@@ -293,7 +293,6 @@ feat(notifications): adiciona actions[], metadata strict e schemas dose_reminder
 - context param na assinatura do builder (isRetry shim durante transição)
 - doseReminderDataSchema, doseReminderByPlanDataSchema, doseReminderMiscDataSchema
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation

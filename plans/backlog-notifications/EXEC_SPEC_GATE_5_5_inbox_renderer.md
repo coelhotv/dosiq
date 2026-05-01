@@ -1,4 +1,4 @@
-# EXEC SPEC — GATE 6.5: Inbox Markdown Renderer (Visual Bug Fix)
+# EXEC SPEC — GATE 5.5: Inbox Markdown Renderer (Visual Bug Fix)
 
 > **Part of**: `notifications_architecture_consolidation_plan.md`
 > **Branch**: `fix/wave-12/notification-architecture-consolidation`
@@ -294,7 +294,6 @@ fix(inbox): renderiza MarkdownV2 do body para paridade visual com Telegram
 - InboxRenderer (web): body renderizado com formatação rica
 - InboxRenderer (mobile): body renderizado com Text nesting
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation

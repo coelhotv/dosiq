@@ -61,7 +61,7 @@ A arquitetura atual e **3-camadas** (Business → Presentation → Delivery) com
 Ordem por **ROI esperado** + **trigger de execucao**. Nenhuma das 5 evolucoes e prematura — todas tem trigger objetivo.
 
 ### 1. Inbox Markdown Renderer (proximo — incluido na wave atual)
-**Trigger**: Imediato (ja no plano, GATE 6.5).
+**Trigger**: Imediato (ja no plano, GATE 5.5).
 **O que**: Web e mobile inbox parseiam MarkdownV2 do `body` para HTML/React. Hoje exibem texto literal com escapes (`*bold*`, `\\!`).
 **ROI**: Alto e visivel — bug visual eliminado; paridade com Telegram.
 **Custo**: ~1 dia.
@@ -127,7 +127,7 @@ Esta secao captura a conversa que originou os ADRs. Util para:
 | **2. Triplo campo (`body`, `pushBody`, `inboxBody`)** | ~1-2 dias | 3-4 canais | Tatica intermediaria; nao recomendada |
 | **3. Content tree + adapters** | ~5-7 dias | N canais | Quando 4o canal real materializar |
 
-**Decisao**: Caminho 1 agora (GATE 6.5), Caminho 3 quando trigger atingir (ADR-037).
+**Decisao**: Caminho 1 agora (GATE 5.5), Caminho 3 quando trigger atingir (ADR-037).
 
 **Por que nao Caminho 3 agora**: YAGNI. 2 canais ativos + Inbox como leitor passivo nao justificam abstracao. ROI negativo no curto prazo.
 

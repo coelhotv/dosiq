@@ -249,7 +249,7 @@ grep -n "context.isRetry\|context?.isRetry" server/notifications/payloads/buildN
 
 ## 🛑 HARD STOP — Gate Report
 
-**STOP HERE. Do not commit. Do not proceed to GATE 6.5.**
+**STOP HERE. Do not commit. Do not proceed to GATE 5.5.**
 
 Present the following to the human for review:
 
@@ -284,7 +284,6 @@ refactor(dispatcher): contrato único; isRetry em context; protocolId derivado d
 - dlq retry: isRetry apenas em context (remove de data)
 - buildNotificationPayload: remove shim data.isRetry
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation

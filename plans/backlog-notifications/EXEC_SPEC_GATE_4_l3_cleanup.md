@@ -332,7 +332,6 @@ refactor(channels): canais viram delivery puro; actions[] mapeadas para affordan
 - encodeCallback(): serializa actions[] → callback_data wire-compatible (R-030)
 - expoPushChannel: auditado (usa pushBody; sem leitura de metadata cru)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation

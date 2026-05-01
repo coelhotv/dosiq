@@ -355,7 +355,6 @@ refactor(tasks): L1 passa dados crus de domínio; L2 owna toda formatação
 - adherenceReportDataSchema: storytelling removido, comparison adicionado
 - case adherence_report: constrói storytelling a partir de comparison em L2
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 git push origin fix/wave-12/notification-architecture-consolidation
