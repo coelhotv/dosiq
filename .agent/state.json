@@ -24,18 +24,18 @@
     "goal_type": "fix"
   },
   "memory": {
-    "rules_count": 160,
-    "anti_patterns_count": 125,
-    "decisions_count": 35,
+    "rules_count": 162,
+    "anti_patterns_count": 126,
+    "decisions_count": 36,
     "contracts_count": 21,
-    "knowledge_count": 89,
+    "knowledge_count": 90,
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 17,
+    "journal_entries_since_distillation": 18,
     "recent_additions": {
-      "rules": ["R-202", "R-203", "R-204", "R-205", "R-206", "R-207", "R-208"],
-      "anti_patterns": ["AP-122", "AP-123", "AP-124", "AP-125"],
-      "knowledge": [],
-      "decisions": ["ADR-035"],
+      "rules": ["R-202", "R-203", "R-204", "R-205", "R-206", "R-207", "R-208", "R-209", "R-210"],
+      "anti_patterns": ["AP-122", "AP-123", "AP-124", "AP-125", "AP-155"],
+      "knowledge": ["K-090"],
+      "decisions": ["ADR-035", "ADR-036"],
       "contracts": ["CON-019"]
     }
   },
