@@ -30,6 +30,8 @@
 - **[ADR-037]** Adiamento de content-tree + format adapters até 4º canal (YAGNI consciente) -> [`decisions/infra_and_deploy/ADR-037.md`](./decisions/infra_and_deploy/ADR-037.md)
 - **[ADR-038]** Manutenção de scheduler-pull; domain events adiados até caso real-time -> [`decisions/infra_and_deploy/ADR-038.md`](./decisions/infra_and_deploy/ADR-038.md)
 - **[ADR-039]** Switch único de kinds em buildNotificationPayload.js até 15 kinds -> [`decisions/infra_and_deploy/ADR-039.md`](./decisions/infra_and_deploy/ADR-039.md)
+- **[ADR-040]** Estratégia de Linting Monorepo e Eficiência de CI (PR #522) -> [`decisions/infra_and_deploy/ADR-040.md`](./decisions/infra_and_deploy/ADR-040.md)
+
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[ADR-035]** Wave N2 — Política de canais, modos, quiet hours e arquitetura nativa de notificações -> [`decisions/mobile_and_platform/ADR-035.md`](./decisions/mobile_and_platform/ADR-035.md)
@@ -42,6 +44,7 @@
 - **[ADR-031]** Usar user_settings (public schema) em Jobs Serverless — não auth.users -> [`decisions/mobile_and_platform/ADR-031.md`](./decisions/mobile_and_platform/ADR-031.md)
 - **[ADR-036]** JS Stack for Legacy Android Compatibility -> [`decisions/mobile_and_platform/ADR-036.md`](./decisions/mobile_and_platform/ADR-036.md)
 - **[ADR-034]** PROPOSED — Política Wave N2 de notificações: quiet hours, modos, canais explícitos e UX nativa em quatro níveis -> [`decisions/mobile_and_platform/ADR-034.md`](./decisions/mobile_and_platform/ADR-034.md)
+- **[ADR-037]** Adiamento de content-tree + format adapters até 4º canal (YAGNI consciente) -> [`decisions/infra_and_deploy/ADR-037.md`](./decisions/infra_and_deploy/ADR-037.md)
 
 ## ⚛️ React & Ui (`react_and_ui`)
 - **[ADR-024]** Lucide-React Icons Always Paired with Text Labels -> [`decisions/react_and_ui/ADR-024.md`](./decisions/react_and_ui/ADR-024.md)
