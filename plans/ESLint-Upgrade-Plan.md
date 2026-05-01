@@ -26,6 +26,12 @@ O ESLint do Dosiq foi configurado quando o projeto era uma SPA simples. Hoje é 
 | `server/` sem regras Node.js específicas | `process.exit()`, imports errados | R-041 |
 | Sem detecção de dependências circulares | Loops de import silenciosos | — |
 | Sem regra de cross-boundary (web → server) | Acoplamento indevido | — |
+| Ordem de hooks incorreta (TDZ crashes) | Crash em runtime | R-010, AP-004 |
+| Early returns antes de hooks | Violação das regras do React | R-110 |
+| Funções gigantes (> 30 linhas) | Código difícil de testar/manter | R-122 |
+| Uso de Divs clicáveis em vez de Buttons | Problemas de acessibilidade e semântica | R-204 |
+| Fetchers do SWR instáveis (render loops) | Loops de renderização infinitos | R-188, AP-056 |
+| Cores hardcoded em componentes redesign | Desvio do Design System | R-118, AP-W27 |
 
 ---
 
@@ -111,6 +117,26 @@ npm install -D eslint-plugin-no-relative-import-paths
   pathGroups: [{ pattern: '@/**', group: 'internal' }],
   alphabetize: { order: 'asc', caseInsensitive: true }
 }]
+
+#### 2e. React Hook Order & Logic (R-010, R-110)
+```js
+'react-hooks/rules-of-hooks': 'error',
+'react-hooks/exhaustive-deps': 'warn',
+// no-restricted-syntax para garantir a ordem: States -> Memos -> Effects -> Handlers
+```
+
+#### 2f. Complexity & Maintenance (R-122, R-204)
+```js
+'max-lines-per-function': ['warn', { max: 30, skipBlankLines: true, skipComments: true }],
+'jsx-a11y/no-static-element-interactions': 'error',
+'jsx-a11y/click-events-have-key-events': 'error',
+```
+
+#### 2g. Design System Integrity (R-118)
+```js
+// Bloquear cores hardcoded (hex, rgb) em arquivos .redesign.css (se usar stylelint)
+// No ESLint: bloquear inline styles com cores hardcoded
+```
 ```
 
 **Arquivos afetados:** regras se aplicam a `apps/web/src/**/*.{js,jsx}` por padrão.
