@@ -142,4 +142,6 @@
 - **[AP-122]** Hardcoded Identifiers for Authorization: Hardcoding user/admin IDs in logic bypasses dynamic authorization systems. -> [`anti-patterns/react_and_ui/AP-122.md`](./anti-patterns/react_and_ui/AP-122.md)
 - **[AP-123]** Disconnected "Back" Navigation Flow: Navigation that assumes a fixed parent (like Dashboard) instead of actual entry context. -> [`anti-patterns/react_and_ui/AP-123.md`](./anti-patterns/react_and_ui/AP-123.md)
 - **[AP-124]** MarkdownV2 escapes in pushBody: results in visible backslashes in mobile notifications. -> [`anti-patterns/mobile_and_platform/AP-124.md`](./anti-patterns/mobile_and_platform/AP-124.md)
+- **[AP-126]** Config Linting Regression — Rodar regras ESM estritas em arquivos de configuração causa ERR_PACKAGE_PATH_NOT_EXPORTED. -> [`anti-patterns/process_and_testing/AP-126.md`](./anti-patterns/process_and_testing/AP-126.md)
+- **[AP-127]** Cross-Boundary Import Leak — Imports relativos entre domínios isolados (web/server) quebram a arquitetura de monorepo. -> [`anti-patterns/infra_and_deploy/AP-127.md`](./anti-patterns/infra_and_deploy/AP-127.md)
 
