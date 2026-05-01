@@ -90,11 +90,11 @@ async function enrichWithDoses(logs) {
  * @param {Object} options
  * @param {string} options.userId - ID do usuário (UUID)
  * @param {number} [options.limit=20] - Itens por página
- * @param {number} [options.offset=0] - Offset de paginação
+ * @param {boolean} [options.enabled=true] - Se deve ativar o carregamento e listeners
  * @returns {Object} { data, loading, error, stale, refresh }
  */
 export function useNotificationLog(options = {}) {
-  const { userId, limit = 20, offset = 0 } = options
+  const { userId, limit = 20, offset = 0, enabled = true } = options
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -105,7 +105,7 @@ export function useNotificationLog(options = {}) {
   const isMounted = useRef(true)
 
   const load = useCallback(async () => {
-    if (!userId) {
+    if (!userId || !enabled) {
       setLoading(false)
       return
     }
@@ -154,7 +154,7 @@ export function useNotificationLog(options = {}) {
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [userId, limit, offset])
+  }, [userId, limit, offset, enabled])
 
   useEffect(() => {
     isMounted.current = true
@@ -167,6 +167,8 @@ export function useNotificationLog(options = {}) {
   // Lógica de Refresh de Meia-Noite e AppState (R-184)
   // Garante que logs fiquem atualizados quando o dia muda ou app volta do background
   useEffect(() => {
+    if (!enabled) return
+
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
@@ -201,7 +203,7 @@ export function useNotificationLog(options = {}) {
       subscription.remove()
       clearTimeout(midnightTimer)
     }
-  }, [load])
+  }, [load, enabled])
 
   return {
     data,

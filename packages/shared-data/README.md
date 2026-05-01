@@ -1,4 +1,4 @@
-# @meus-remedios/shared-data
+# @dosiq/shared-data
 
 Responsabilidade: abstracoes de cache, queries e estado compartilhado.
 

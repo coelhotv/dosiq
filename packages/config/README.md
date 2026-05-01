@@ -1,4 +1,4 @@
-# @meus-remedios/config
+# @dosiq/config
 
 Responsabilidade: configuracoes compartilhadas (ambiente, constantes).
 

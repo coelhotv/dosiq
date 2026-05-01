@@ -37,6 +37,7 @@
 - **[ADR-029]** Dispatcher Multicanal de Notificações -> [`decisions/mobile_and_platform/ADR-029.md`](./decisions/mobile_and_platform/ADR-029.md)
 - **[ADR-030]** Feature Flag USE_NOTIFICATION_DISPATCHER para Rollback -> [`decisions/mobile_and_platform/ADR-030.md`](./decisions/mobile_and_platform/ADR-030.md)
 - **[ADR-031]** Usar user_settings (public schema) em Jobs Serverless — não auth.users -> [`decisions/mobile_and_platform/ADR-031.md`](./decisions/mobile_and_platform/ADR-031.md)
+- **[ADR-036]** JS Stack for Legacy Android Compatibility -> [`decisions/mobile_and_platform/ADR-036.md`](./decisions/mobile_and_platform/ADR-036.md)
 - **[ADR-034]** PROPOSED — Política Wave N2 de notificações: quiet hours, modos, canais explícitos e UX nativa em quatro níveis -> [`decisions/mobile_and_platform/ADR-034.md`](./decisions/mobile_and_platform/ADR-034.md)
 
 ## ⚛️ React & Ui (`react_and_ui`)

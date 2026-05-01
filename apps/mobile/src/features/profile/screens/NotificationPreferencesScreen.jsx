@@ -36,10 +36,16 @@ function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_
   return 'none'
 }
 
-// Detecta formato 12/24h do dispositivo (simplificado e memoizado globalmente)
-const IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
-  .format(new Date(2024, 0, 1, 13))
-  .match(/am|pm/i)
+// Detecta formato 12/24h com fallback seguro para Hermes/Android antigo
+let IS_24H_FORMAT = true // fallback: Brasil usa 24h
+try {
+  IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
+    .format(new Date(2024, 0, 1, 13))
+    .match(/am|pm/i)
+} catch (e) {
+  // Hermes sem Intl completo em Android ≤ 7 — fallback 24h (padrão BR)
+  if (__DEV__) console.warn('[NotificationPreferences] Intl.DateTimeFormat indisponível, usando 24h')
+}
 
 // Formata hora de forma amigável (22h ou 10PM)
 function formatTimeFriendly(timeStr) {

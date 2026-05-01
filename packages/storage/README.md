@@ -1,4 +1,4 @@
-# @meus-remedios/storage
+# @dosiq/storage
 
 Responsabilidade: abstracos de storage para web e mobile.
 

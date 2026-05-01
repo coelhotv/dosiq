@@ -89,4 +89,7 @@
 - **[K-086]** timezone-and-protocol-validity -> [`knowledge/process_and_testing/K-086.md`](./knowledge/process_and_testing/K-086.md)
 - **[K-087]** test-user-review-account -> [`knowledge/process_and_testing/K-087.md`](./knowledge/process_and_testing/K-087.md)
 - **[K-088]** gh-cli-macos-path -> [`knowledge/process_and_testing/K-088.md`](./knowledge/process_and_testing/K-088.md)
+
+## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[K-089]** dona-maria-layout -> [`knowledge/mobile_and_platform/K-089.md`](./knowledge/mobile_and_platform/K-089.md)
+- **[K-090]** Lightweight Notification Badge Pattern -> [`knowledge/mobile_and_platform/K-090.md`](./knowledge/mobile_and_platform/K-090.md)

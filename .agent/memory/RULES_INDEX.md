@@ -79,6 +79,7 @@
 - **[R-189]** expo-notifications: usar shouldShowBanner + shouldShowList em vez do depreciado shouldShowAlert (SDK 53+) -> [`rules/mobile_and_platform/R-189.md`](./rules/mobile_and_platform/R-189.md)
 - **[R-191]** Agrupar doses do mesmo minuto em blocos semânticos (by_plan/misc/individual) via partitionDoses() antes de disparar notificações — 1 push por bloco, nunca 1 push por protocolo -> [`rules/mobile_and_platform/R-191.md`](./rules/mobile_and_platform/R-191.md)
 - **[R-200]** Centralized Notification Gate (ADR-030): Toda lógica de supressão DEVE residir no Dispatcher -> [`rules/mobile_and_platform/R-200.md`](./rules/mobile_and_platform/R-200.md)
+- **[R-209]** JS Stack for Android 7 Navigation Stability -> [`rules/mobile_and_platform/R-209.md`](./rules/mobile_and_platform/R-209.md)
 
 
 
@@ -137,6 +138,7 @@
 - **[R-110]** Early returns with guard clauses MUST come AFTER all hook declarations (States →... -> [`rules/react_and_ui/R-110.md`](./rules/react_and_ui/R-110.md)
 - **[R-116]** Manter logs detalhados é obrigatório. Cada operação crítica deve ter console.log... -> [`rules/react_and_ui/R-116.md`](./rules/react_and_ui/R-116.md)
 - **[R-118]** All color values in components.redesign.css MUST come from CSS variables (--colo... -> [`rules/react_and_ui/R-118.md`](./rules/react_and_ui/R-118.md)
+- **[R-210]** Conditional Hook Execution (Enabled Flag) -> [`rules/react_and_ui/R-210.md`](./rules/react_and_ui/R-210.md)
 - **[R-119]** min-height and padding MUST be ONLY in size classes (.btn-sm, .btn-md, .btn-lg).... -> [`rules/react_and_ui/R-119.md`](./rules/react_and_ui/R-119.md)
 - **[R-120]** When 2+ classes share >80% of styles, consolidate via selector grouping (,). Sep... -> [`rules/react_and_ui/R-120.md`](./rules/react_and_ui/R-120.md)
 - **[R-133]** Antes de reutilizar/copiar um componente entre contextos, SEMPRE ler a assinatur... -> [`rules/react_and_ui/R-133.md`](./rules/react_and_ui/R-133.md)
