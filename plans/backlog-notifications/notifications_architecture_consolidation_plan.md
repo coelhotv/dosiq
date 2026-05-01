@@ -135,6 +135,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 
 ### 🟡 GATE 1 — Schema & Contract Hardening
 
+> **Exec Spec**: [EXEC_SPEC_GATE_1_schema_contract.md](EXEC_SPEC_GATE_1_schema_contract.md)
+
 **Files**: `payloads/buildNotificationPayload.js`
 
 **Scope**:
@@ -153,6 +155,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 ---
 
 ### 🟡 GATE 2 — L2 Absorption: dose_reminder family
+
+> **Exec Spec**: [EXEC_SPEC_GATE_2_l2_absorption.md](EXEC_SPEC_GATE_2_l2_absorption.md)
 
 **Files**: `payloads/buildNotificationPayload.js`, `bot/utils/notificationHelpers.js`, `bot/utils/doseFormatters.js`
 
@@ -176,6 +180,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 
 ### 🟡 GATE 3 — L1 Cleanup: tasks.js purge presentation
 
+> **Exec Spec**: [EXEC_SPEC_GATE_3_l1_cleanup.md](EXEC_SPEC_GATE_3_l1_cleanup.md)
+
 **Files**: `bot/tasks.js`
 
 **Scope**:
@@ -192,6 +198,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 ---
 
 ### 🟡 GATE 4 — L3 Cleanup: channels become pure delivery
+
+> **Exec Spec**: [EXEC_SPEC_GATE_4_l3_cleanup.md](EXEC_SPEC_GATE_4_l3_cleanup.md)
 
 **Files**: `channels/telegramChannel.js`, `channels/expoPushChannel.js`
 
@@ -220,6 +228,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 
 ### 🟡 GATE 5 — Dispatcher & Boundary
 
+> **Exec Spec**: [EXEC_SPEC_GATE_5_dispatcher_boundary.md](EXEC_SPEC_GATE_5_dispatcher_boundary.md)
+
 **Files**: `dispatcher/dispatchNotification.js`, `api/dlq/_handlers/retry.js`, `api/notify.js`
 
 **Scope**:
@@ -239,6 +249,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 
 ### 🟡 GATE 6.5 — Inbox Markdown Renderer (Bug Fix Visual)
 
+> **Exec Spec**: [EXEC_SPEC_GATE_6_5_inbox_renderer.md](EXEC_SPEC_GATE_6_5_inbox_renderer.md)
+
 **Files**: `apps/web/src/features/inbox/*` (descobrir), `apps/mobile/src/features/inbox/*` (descobrir)
 
 **Contexto**: Hoje `notification_inbox.body` armazena MarkdownV2 (mesmo formato consumido pelo Telegram), mas o renderer Inbox (web e mobile) exibe como texto puro — usuario ve `*bold*` literal, escapes `\\!`, etc. Bug visual real, nao de arquitetura.
@@ -255,6 +267,8 @@ Sequencia o refactor de 3 camadas iniciado em `notifications_architecture_refact
 ---
 
 ### 🟢 GATE 6 — Validation, Frontend Sync & Documentation
+
+> **Exec Spec**: [EXEC_SPEC_GATE_6_validation_docs.md](EXEC_SPEC_GATE_6_validation_docs.md)
 
 **Files**: `apps/web/src/services/api/dlqService.js`, `apps/web/src/components/inbox/*`, `docs/architecture/NOTIFICATIONS.md`
 
