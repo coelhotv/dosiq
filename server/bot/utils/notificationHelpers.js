@@ -20,11 +20,11 @@ export function getGreeting(hour) {
  * @returns {string}
  */
 export function getTimeOfDayGreeting(hour) {
-  if (hour >= 5 && hour < 11) return '🌅 Hora dos medicamentos da manhã';
-  if (hour >= 11 && hour < 14) return '🍽️ Hora dos medicamentos do almoço';
-  if (hour >= 14 && hour < 18) return '☕ Hora dos medicamentos da tarde';
-  if (hour >= 18 && hour < 23) return '🌆 Hora dos medicamentos da noite';
-  return '🌙 Hora dos medicamentos';
+  if (hour >= 5 && hour < 11) return '🌅 Hora dos remédios da manhã';
+  if (hour >= 11 && hour < 14) return '🍽️ Hora dos remédios do almoço';
+  if (hour >= 14 && hour < 18) return '☕ Hora dos remédios da tarde';
+  if (hour >= 18 && hour < 23) return '🌆 Hora dos remédios da noite';
+  return '🌙 Hora dos remédios';
 }
 
 /**
