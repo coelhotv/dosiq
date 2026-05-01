@@ -27,6 +27,9 @@
 - **[ADR-023]** No Font Weights Below 400 (Elderly Accessibility) -> [`decisions/infra_and_deploy/ADR-023.md`](./decisions/infra_and_deploy/ADR-023.md)
 - **[ADR-026]** Web Permanece na Raiz nas Fases 0-6 -> [`decisions/infra_and_deploy/ADR-026.md`](./decisions/infra_and_deploy/ADR-026.md)
 - **[ADR-032]** ✅ APPROVED — Executar Fase 7: Migração Web para apps/web -> [`decisions/infra_and_deploy/ADR-032.md`](./decisions/infra_and_deploy/ADR-032.md)
+- **[ADR-037]** Adiamento de content-tree + format adapters até 4º canal (YAGNI consciente) -> [`decisions/infra_and_deploy/ADR-037.md`](./decisions/infra_and_deploy/ADR-037.md)
+- **[ADR-038]** Manutenção de scheduler-pull; domain events adiados até caso real-time -> [`decisions/infra_and_deploy/ADR-038.md`](./decisions/infra_and_deploy/ADR-038.md)
+- **[ADR-039]** Switch único de kinds em buildNotificationPayload.js até 15 kinds -> [`decisions/infra_and_deploy/ADR-039.md`](./decisions/infra_and_deploy/ADR-039.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[ADR-035]** Wave N2 — Política de canais, modos, quiet hours e arquitetura nativa de notificações -> [`decisions/mobile_and_platform/ADR-035.md`](./decisions/mobile_and_platform/ADR-035.md)
