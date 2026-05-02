@@ -1,2 +1,0 @@
-./features/profile/screens/NotificationPreferencesScreen.jsx:        <View style={{ height: spacing[8] }} />
-./navigation/Navigation.jsx:      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

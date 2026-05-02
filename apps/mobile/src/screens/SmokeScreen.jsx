@@ -2,33 +2,27 @@
 // Critério de sucesso: renderiza "SUCCESS" quando medicineSchema.safeParse passa
 // R4-005: smoke screen é obrigatória antes de construir telas do produto
 
-import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { medicineSchema } from '@dosiq/core/schemas'
 import { ROUTES } from '../navigation/routes'
 
 export default function SmokeScreen({ navigation }) {
-  const { result, details } = useMemo(() => {
-    // Valida um medicamento de teste usando o schema compartilhado
-    const parsed = medicineSchema.safeParse({
-      name: 'Losartana',
-      dosage_per_pill: 50,
-      dosage_unit: 'mg',
-      type: 'medicamento',
-    })
+  // Valida um medicamento de teste usando o schema compartilhado
+  const parsed = medicineSchema.safeParse({
+    name: 'Teste',
+    dosage: '1 comprimido',
+    frequency: 'diario',
+    quantity_taken: 1,
+    unit: 'comprimido',
+  })
 
-    if (parsed.success) {
-      return {
-        result: 'SUCCESS',
-        details: '@dosiq/core resolvido pelo Metro ✓'
-      }
-    }
-    return {
-      result: 'ERROR',
-      details: JSON.stringify(parsed.error.issues, null, 2)
-    }
-  }, [])
+  const { result, details } = {
+    result: parsed.success ? 'SUCCESS' : 'FAILED',
+    details: parsed.success
+      ? 'medicineSchema: OK'
+      : 'medicineSchema: ' + JSON.stringify(parsed.error.format()),
+  }
 
   const isSuccess = result === 'SUCCESS'
 

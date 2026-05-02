@@ -105,28 +105,30 @@ export default function TodayScreen({ route, navigation }) {
   useEffect(() => {
     const params = route?.params
     if (!params?.screen) return
-    if (params.screen === 'bulk-plan' && params.planId) {
-      setBulkModal({
-        mode: 'plan',
-        planId: params.planId,
-        scheduledTime: params.at ?? '',
-        treatmentPlanName: params.treatmentPlanName,
-      })
-    } else if (params.screen === 'bulk-misc') {
-      setBulkModal({
-        mode: 'misc',
-        protocolIds: params.protocolIds ?? [],
-        scheduledTime: params.at ?? '',
-      })
-    } else if (params.screen === 'dose-individual' && params.protocolId) {
-      const protocol = protocols.find(p => p.id === params.protocolId)
-      if (protocol) {
-        setModalProtocol(protocol)
-        setModalScheduledTime(params.at ?? null)
+    setTimeout(() => {
+      if (params.screen === 'bulk-plan' && params.planId) {
+        setBulkModal({
+          mode: 'plan',
+          planId: params.planId,
+          scheduledTime: params.at ?? '',
+          treatmentPlanName: params.treatmentPlanName,
+        })
+      } else if (params.screen === 'bulk-misc') {
+        setBulkModal({
+          mode: 'misc',
+          protocolIds: params.protocolIds ?? [],
+          scheduledTime: params.at ?? '',
+        })
+      } else if (params.screen === 'dose-individual' && params.protocolId) {
+        const protocol = protocols.find(p => p.id === params.protocolId)
+        if (protocol) {
+          setModalProtocol(protocol)
+          setModalScheduledTime(params.at ?? null)
+        }
       }
-    }
-    // Limpar params após consumo para evitar re-abertura em back-navigate
-    navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
+      // Limpar params após consumo para evitar re-abertura em back-navigate
+      navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
+    }, 0)
   }, [route?.params, navigation, protocols])
 
 
@@ -282,7 +284,7 @@ export default function TodayScreen({ route, navigation }) {
         treatmentPlanName={bulkModal?.treatmentPlanName}
         userId={data?.user?.id ?? ''}
         onClose={() => setBulkModal(null)}
-        onSuccess={({ successCount }) => {
+        onSuccess={() => {
           setBulkModal(null)
           refresh()
         }}

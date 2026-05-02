@@ -22,6 +22,7 @@ import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { parseLocalDate } from '@dosiq/core'
+import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 // Horas disponíveis para o picker inline
 const HOURS = Array.from({ length: 24 }, (_, i) => {
@@ -45,9 +46,9 @@ try {
   IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
     .format(testDate)
     .match(/am|pm/i)
-} catch (e) {
+  debugLog('NotificationPreferences', 'Intl.DateTimeFormat indisponível, usando 24h')
+} catch {
   // Hermes sem Intl completo em Android ≤ 7 — fallback 24h (padrão BR)
-  if (__DEV__) console.warn('[NotificationPreferences] Intl.DateTimeFormat indisponível, usando 24h')
 }
 
 // Formata hora de forma amigável (22h ou 10PM)
@@ -126,7 +127,7 @@ function TimePicker({ value, onChange, label }) {
 
 export default function NotificationPreferencesScreen({ navigation }) {
   const { user } = useAuth()
-  const { settings, loading: settingsLoading, refresh } = useProfile()
+  const { settings, refresh } = useProfile()
   const isTelegramConnected = !!settings?.telegram_chat_id
 
   const [globalEnabled, setGlobalEnabled] = useState(true)
@@ -138,11 +139,10 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
   const [digestTime, setDigestTime] = useState('07:00')
   const [hasPermission, setHasPermission] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   // Carregar valores do banco ao montar
   useEffect(() => {
-    if (__DEV__) console.log('[NotificationPreferencesScreen] settings:', settings)
+    debugLog('NotificationPreferencesScreen', `settings: ${JSON.stringify(settings)}`)
     if (!settings) return
 
     const pref = settings.notification_preference
@@ -174,7 +174,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       const { granted } = await requestPushPermission()
       setHasPermission(granted)
     } catch (err) {
-      if (__DEV__) console.warn('[NotificationPreferencesScreen] Erro permissão:', err)
+      debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
     }
   }
 
@@ -184,7 +184,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // Salvar no banco (debounce manual: chama após cada alteração)
   const persist = useCallback(async (patch) => {
     if (!user?.id) return
-    setSaving(true)
+    // setSaving(true)
     try {
       const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
       const telegram = isTelegramConnected // Telegram segue o vínculo
@@ -214,16 +214,16 @@ export default function NotificationPreferencesScreen({ navigation }) {
       })
 
       if (result.success) {
-        if (__DEV__) console.log('[NotificationPreferencesScreen] Configurações salvas')
+        debugLog('NotificationPreferencesScreen', 'Configurações salvas')
         await refresh()
       } else {
         throw new Error(result.error || 'Erro desconhecido ao salvar')
       }
     } catch (err) {
-      if (__DEV__) console.error('[NotificationPreferencesScreen] Erro ao salvar:', err)
+      errorLog('NotificationPreferencesScreen', 'Erro ao salvar', err)
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
     } finally {
-      setSaving(false)
+      // setSaving(false)
     }
   }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled])
@@ -247,7 +247,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
         const token = await getExpoPushToken()
         await syncNotificationDevice({ supabase: user?.supabase, userId: user.id, token })
       } catch (syncErr) {
-        if (__DEV__) console.warn('[NotificationPreferencesScreen] Erro sync device:', syncErr)
+        debugLog('NotificationPreferencesScreen', `Erro sync device: ${syncErr.message}`)
       }
     }
     setMobilePushEnabled(val)

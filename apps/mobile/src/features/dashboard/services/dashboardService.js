@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { parseLocalDate, getTodayLocal, addDays } from '@dosiq/core'
+import { debugLog } from '@shared/utils/debugLog'
 
 /**
  * Busca protocolos ativos do utilizador.
@@ -49,7 +50,7 @@ export async function getTodayLogs(userId, dateStr) {
   // endUTC = meia-noite local do dia seguinte → UTC (exclusive upper boundary)
   const endLocal = addDays(startLocal, 1)
   const endUTC = endLocal.toISOString()
-  if (__DEV__) console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
+  debugLog('dashboardService', `getTodayLogs boundaries — start: ${startUTC} end: ${endUTC}`)
 
   const { data, error } = await supabase
     .from('medicine_logs')

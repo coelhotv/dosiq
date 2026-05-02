@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, isProtocolActiveOnDate, getNow, addDays, parseISO } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getActiveTreatments } from '../services/treatmentsService'
-import { debugLog } from '../../../shared/utils/debugLog'
+import { debugLog } from '@shared/utils/debugLog'
 
 const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
 

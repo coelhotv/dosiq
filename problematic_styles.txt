@@ -1,5 +1,0 @@
-apps/mobile/src/shared/components/ui/StatusBadge.jsx:    <View style={badgeStyle}>
-apps/mobile/src/shared/components/ui/StatusBadge.jsx:      <Text style={textStyle}>{label}</Text>
-apps/web/src/features/dashboard/components/DoseZoneList.jsx:        style={!done && onToggleSelection ? { cursor: 'pointer' } : { cursor: 'default' }}
-apps/web/src/features/notifications/components/NotificationList.jsx:  return <div style={GROUP_HEADER_STYLE} aria-hidden="true">{title}</div>
-apps/web/src/shared/components/ui/Calendar.jsx:        style={hasHeatColor ? { '--heat-color': heatColor } : undefined}

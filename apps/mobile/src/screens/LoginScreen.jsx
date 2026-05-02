@@ -22,7 +22,7 @@ import { ROUTES } from '../navigation/routes'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import { logEvent, setUserId } from '../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../platform/analytics/analyticsEvents'
-import { colors, spacing, typography } from '../shared/styles/tokens'
+import { colors, spacing, typography } from '@shared/styles/tokens'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')

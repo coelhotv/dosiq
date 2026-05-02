@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import { View, Text, StyleSheet, Animated } from 'react-native'
 import Svg, { Circle, G } from 'react-native-svg'
-import { colors } from '../../../shared/styles/tokens'
+import { colors } from '@shared/styles/tokens'
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, isProtocolActiveOnDate, getNow, parseISO, addDays } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
-import { debugLog } from '../../../shared/utils/debugLog'
+import { debugLog } from '@shared/utils/debugLog'
 
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 

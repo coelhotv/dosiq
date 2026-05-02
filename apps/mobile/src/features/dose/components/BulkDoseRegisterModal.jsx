@@ -2,7 +2,7 @@
 // Usado após tap em push notification grouped (plan ou misc) via deeplink N1.4
 // R-010: estados → effects → handlers
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Modal,
   View,
