@@ -22,6 +22,7 @@ import Loading from '@shared/components/ui/Loading'
 import EmptyState from '@shared/components/ui/EmptyState'
 import DoseListItem from './DoseListItem'
 import { calculateDosesByDate } from '@utils/adherenceLogic'
+import { parseLocalDate } from '@utils/dateUtils.js'
 import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 import './DailyDoseModal.css'
 
@@ -32,12 +33,12 @@ import './DailyDoseModal.css'
  */
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
-  // Adicionar T00:00:00 para evitar problemas de timezone
-  const date = new Date(dateStr + 'T00:00:00')
+  const date = parseLocalDate(dateStr)
   return date.toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    timeZone: 'America/Sao_Paulo',
   })
 }
 
@@ -48,10 +49,11 @@ const formatDate = (dateStr) => {
  */
 const formatShortDate = (dateStr) => {
   if (!dateStr) return ''
-  const date = new Date(dateStr + 'T00:00:00')
+  const date = parseLocalDate(dateStr)
   return date.toLocaleDateString('pt-BR', {
     day: 'numeric',
     month: 'short',
+    timeZone: 'America/Sao_Paulo',
   })
 }
 

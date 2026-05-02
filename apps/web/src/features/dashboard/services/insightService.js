@@ -12,6 +12,7 @@
  */
 
 import { analyticsService } from './analyticsService'
+import { getNow, addDays, parseISO } from '@utils/dateUtils.js'
 
 // Constantes para configuração do serviço
 const STORAGE_KEY = 'mr_insight_history'
@@ -48,7 +49,7 @@ export const INSIGHT_TYPES = {
  */
 function getMostActiveHour() {
   try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const sevenDaysAgo = addDays(getNow(), -7)
     const doseEvents = analyticsService.getEvents({
       name: 'dose_registered',
       since: sevenDaysAgo,
@@ -58,7 +59,9 @@ function getMostActiveHour() {
 
     const hourCounts = {}
     doseEvents.forEach((event) => {
-      const hour = new Date(event.timestamp).getHours()
+      // M9.0: Extrair hora no fuso de SP
+      const date = parseISO(event.timestamp)
+      const hour = parseInt(date.toLocaleTimeString('en-US', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }), 10)
       hourCounts[hour] = (hourCounts[hour] || 0) + 1
     })
 
@@ -93,7 +96,7 @@ function formatHour(hour) {
  */
 function getFeatureUsage() {
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const thirtyDaysAgo = addDays(getNow(), -30)
     const summary = analyticsService.getSummary({ since: thirtyDaysAgo })
 
     const featureEvents = {
@@ -120,7 +123,7 @@ function getFeatureUsage() {
  */
 function getAdherenceByDayOfWeek() {
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const thirtyDaysAgo = addDays(getNow(), -30)
     const doseEvents = analyticsService.getEvents({
       name: 'dose_registered',
       since: thirtyDaysAgo,
@@ -130,7 +133,11 @@ function getAdherenceByDayOfWeek() {
 
     const dayCounts = {}
     doseEvents.forEach((event) => {
-      const day = new Date(event.timestamp).toLocaleDateString('pt-BR', { weekday: 'long' })
+      // M9.0: Fixar fuso de Brasília para determinar dia da semana real
+      const day = parseISO(event.timestamp).toLocaleDateString('pt-BR', { 
+        weekday: 'long',
+        timeZone: 'America/Sao_Paulo'
+      })
       dayCounts[day] = (dayCounts[day] || 0) + 1
     })
 
@@ -551,7 +558,7 @@ export function shouldShowInsight(insightId) {
 
   if (!lastShown) return true
 
-  const timeSinceLastShown = Date.now() - lastShown.timestamp
+  const timeSinceLastShown = getNow() - lastShown.timestamp
   return timeSinceLastShown >= MIN_DISPLAY_INTERVAL
 }
 
@@ -577,7 +584,7 @@ export function saveInsightToHistory(insightId) {
     const history = getInsightHistory()
     history.unshift({
       id: insightId,
-      timestamp: Date.now(),
+      timestamp: getNow().getTime(),
     })
 
     const trimmedHistory = history.slice(0, MAX_HISTORY)

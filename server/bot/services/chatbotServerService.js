@@ -17,6 +17,13 @@
 import Groq from 'groq-sdk'
 import { supabase } from '../../services/supabase.js'
 import { createLogger } from '../logger.js'
+import { 
+  getNow, 
+  getTodayLocal, 
+  getSaoPauloTime, 
+  addDays,
+  parseLocalDate 
+} from '../../utils/dateUtils.js'
 import {
   CHATBOT_MAX_TOKENS,
   CHATBOT_TEMPERATURE,
@@ -87,13 +94,14 @@ export function addServerDisclaimer(response) {
 export function isServerRateLimited(userId) {
   const data = rateLimitMap.get(userId)
   if (!data) return false
-  if (Date.now() - data.windowStart > CHATBOT_RATE_LIMIT_WINDOW) return false
+  const now = getNow().getTime()
+  if (now - data.windowStart > CHATBOT_RATE_LIMIT_WINDOW) return false
   return data.count >= CHATBOT_RATE_LIMIT_MAX
 }
 
 function incrementServerRateCounter(userId) {
   const data = rateLimitMap.get(userId)
-  const now = Date.now()
+  const now = getNow().getTime()
 
   if (!data || now - data.windowStart > CHATBOT_RATE_LIMIT_WINDOW) {
     rateLimitMap.set(userId, { windowStart: now, count: 1 })
@@ -112,12 +120,13 @@ function incrementServerRateCounter(userId) {
 export async function fetchPatientData(userId) {
   logger.debug('📊 fetchPatientData: iniciando', { userId })
 
-  const today = new Date()
-  const yesterday = new Date(today.getTime() - 36 * 60 * 60 * 1000).toISOString()
+  const now = getNow()
+  const todayStr = getTodayLocal()
+  const yesterday = addDays(parseLocalDate(todayStr), -1).toISOString()
 
   logger.debug('📅 Intervalo de tempo', {
     userId,
-    today: today.toISOString(),
+    now: now.toISOString(),
     yesterday,
   })
 
@@ -171,13 +180,9 @@ export async function fetchPatientData(userId) {
     throw medicinesResult.error
   }
 
-  const timezone = 'America/Sao_Paulo'
-  const todayLocal = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(today)
-
   // Filtrar logs de hoje (com timezone correto)
   const todayLogs = (logsResult.data || []).filter(log => {
-    const logDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(log.taken_at))
-    return logDate === todayLocal
+    return getTodayLocal(getSaoPauloTime(log.taken_at)) === todayStr
   })
 
   // Agregar estoque por medicamento
@@ -213,7 +218,7 @@ export async function fetchPatientData(userId) {
 async function calculateSimpleAdherence(userId, protocols) {
   if (!protocols.length) return { adherence: null }
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const sevenDaysAgo = addDays(getNow(), -7).toISOString()
   const { data: logs } = await supabase
     .from('medicine_logs')
     .select('id')
@@ -242,8 +247,7 @@ async function calculateSimpleAdherence(userId, protocols) {
  * @returns {string}
  */
 export function buildServerContext({ medicines, protocols, logs, stockSummary, stats }) {
-  const today = new Date()
-  const todayStr = today.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  const todayStr = getTodayLocal().split('-').reverse().join('/')
 
   const medsContext = (medicines || []).map(med => {
     const protocol = (protocols || []).find(p => p.medicine_id === med.id)

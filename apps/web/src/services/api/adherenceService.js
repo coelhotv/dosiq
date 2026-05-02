@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
+import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getNow, parseISO, addDays, getTodayLocal, getYesterdayLocal, getSaoPauloTime } from '@utils/dateUtils.js'
 
 // Schema para validação de parâmetros
 const GetDailyAdherenceFromViewSchema = z.object({
@@ -17,9 +17,8 @@ const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
  */
 function _getDateRangeForPeriod(period) {
   const days = parseInt(period)
-  const endDate = new Date()
-  const startDate = new Date()
-  startDate.setDate(endDate.getDate() - days)
+  const endDate = getNow()
+  const startDate = addDays(endDate, -days)
   return { startDate, endDate, days }
 }
 
@@ -162,9 +161,8 @@ export const adherenceService = {
    */
   async calculateProtocolAdherence(protocolId, period = '30d', userId = null) {
     const days = parseInt(period)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const endDate = getNow()
+    const startDate = addDays(endDate, -days)
 
     // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
@@ -276,9 +274,8 @@ export const adherenceService = {
     const resolvedUserId = userId || (await getUserId())
 
     // Buscar logs dos últimos 90 dias
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 90)
+    const endDate = getNow()
+    const startDate = addDays(endDate, -90)
 
     const { data: logs, error } = await supabase
       .from('medicine_logs')
@@ -371,9 +368,8 @@ export const adherenceService = {
   async getDailyAdherence(days = 7) {
     const userId = await getUserId()
 
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const endDate = getNow()
+    const startDate = addDays(endDate, -days)
 
     // Buscar protocolos ativos
     const { data: protocols, error: protocolError } = await supabase
@@ -386,11 +382,8 @@ export const adherenceService = {
 
     // Expandir range de busca para compensar fuso horário
     // Doses tomadas em GMT-3 podem aparecer no dia seguinte em UTC
-    const adjustedStartDate = new Date(startDate)
-    adjustedStartDate.setHours(adjustedStartDate.getHours() - 24)
-
-    const adjustedEndDate = new Date(endDate)
-    adjustedEndDate.setHours(adjustedEndDate.getHours() + 24)
+    const adjustedStartDate = addDays(startDate, -1)
+    const adjustedEndDate = addDays(endDate, 1)
 
     // Buscar logs no período (com range expandido para timezone)
     const { data: logs, error: logError } = await supabase
@@ -408,8 +401,7 @@ export const adherenceService = {
     // Gerar array com dados para cada dia (usando data local)
     const dailyData = []
     for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(endDate)
-      date.setDate(date.getDate() - i)
+      const date = addDays(endDate, -i)
       const dateKey = formatLocalDate(date)
 
       // Calcular doses esperadas para este dia específico (filtra por start_date/end_date)
@@ -446,9 +438,8 @@ export const adherenceService = {
     }
 
     const { days: validDays } = validation.data
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - validDays)
+    const endDate = getNow()
+    const startDate = addDays(endDate, -validDays)
 
     const startDateStr = formatLocalDate(startDate)
     const endDateStr = formatLocalDate(endDate)
@@ -592,9 +583,8 @@ export const adherenceService = {
       return { currentStreak: 0, longestStreak: 0 }
     }
 
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 90)
+    const endDate = getNow()
+    const startDate = addDays(endDate, -90)
 
     const { data: logs, error } = await supabase
       .from('medicine_logs')
@@ -626,15 +616,17 @@ export const adherenceService = {
  * @param {Date} endDate - Data final do período (padrão: hoje)
  * @returns {number}
  */
-function calculateExpectedDoses(protocols, days, endDate = new Date()) {
+function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   if (!protocols || protocols.length === 0) return 0
 
-  // Calcular data de início do período de análise
-  const periodStart = new Date(endDate)
-  periodStart.setHours(0, 0, 0, 0)
-  periodStart.setDate(periodStart.getDate() - days + 1)
+  // M9.0: Normalizar endDate para fuso de Brasília para evitar day-drift em servidores UTC
+  const normalizedEndDate = getSaoPauloTime(endDate)
 
-  const periodEnd = new Date(endDate)
+  // Calcular data de início do período de análise
+  const periodStart = addDays(normalizedEndDate, -days + 1)
+  periodStart.setHours(0, 0, 0, 0)
+
+  const periodEnd = new Date(normalizedEndDate.getTime())
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
@@ -675,12 +667,12 @@ function calculateExpectedDoses(protocols, days, endDate = new Date()) {
 
     // Se não tiver end_date, assume que o protocolo continua ativo
     const protocolEndDate = protocol.end_date
-      ? new Date(protocol.end_date + 'T23:59:59')
+      ? parseISO(protocol.end_date + 'T23:59:59')
       : periodEnd
 
     // Calcular interseção entre período do protocolo e período de análise
-    const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
-    const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
+    const effectiveStart = new Date(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
+    const effectiveEnd = new Date(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
 
     // Calcular número de dias efetivos (inclusive)
     if (effectiveEnd >= effectiveStart) {
@@ -704,7 +696,7 @@ function calculateDailyExpectedDoses(protocols, dateStr = null) {
   if (!protocols || protocols.length === 0) return 0
 
   // Se não houver data, usar hoje
-  const targetDate = dateStr || formatLocalDate(new Date())
+  const targetDate = dateStr || getTodayLocal()
 
   return protocols.reduce((total, protocol) => {
     // Verificar se o protocolo estava ativo nesta data
@@ -724,7 +716,7 @@ function groupLogsByDay(logs) {
   const days = new Map()
 
   logs.forEach((log) => {
-    const dayKey = formatLocalDate(new Date(log.taken_at))
+    const dayKey = formatLocalDate(parseISO(log.taken_at))
     days.set(dayKey, (days.get(dayKey) || 0) + 1)
   })
 
@@ -793,10 +785,8 @@ function calculateStreaks(logsByDay, protocols) {
   const minAdherenceRate = 0.8 // 80% de adesão para contar o dia
 
   // Usar funções utilitárias para today/yesterday (timezone local)
-  const today = formatLocalDate(new Date())
-  const yesterdayDate = new Date()
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-  const yesterdayKey = formatLocalDate(yesterdayDate)
+  const today = getTodayLocal()
+  const yesterdayKey = getYesterdayLocal()
 
   // Calcular expected para hoje e ontem (com funções otimizadas)
   const todayExpected = dailyExpectedFast(parsed, today)
@@ -820,7 +810,7 @@ function calculateStreaks(logsByDay, protocols) {
 
   // Calcular streak: itera dia a dia para trás (max 91 iterações)
   const MAX_ITERATIONS = 91
-  let checkDate = new Date()
+  let checkDate = getNow()
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const dateKey = formatLocalDate(checkDate)
 

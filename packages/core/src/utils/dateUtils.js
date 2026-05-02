@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 /**
  * Date Utilities - Funções utilitárias para manipulação de datas
  *
@@ -64,7 +65,7 @@ export function isProtocolActiveOnDate(protocol, date) {
  * @returns {string} Data de hoje no formato YYYY-MM-DD
  */
 export function getTodayLocal() {
-  return formatLocalDate(new Date())
+  return formatLocalDate(getSaoPauloTime())
 }
 
 /**
@@ -72,7 +73,7 @@ export function getTodayLocal() {
  * @returns {string} Data de ontem no formato YYYY-MM-DD
  */
 export function getYesterdayLocal() {
-  const yesterday = new Date()
+  const yesterday = getSaoPauloTime()
   yesterday.setDate(yesterday.getDate() - 1)
   return formatLocalDate(yesterday)
 }
@@ -113,4 +114,96 @@ export function getPeriodFromTime(timeStr) {
   if (h >= 12 && h < 18) return 'Tarde'
   if (h >= 18 && h <= 23) return 'Noite'
   return 'Madrugada'
+}
+
+/**
+ * Retorna a data/hora atual como objeto Date
+ * @returns {Date}
+ */
+export function getNow() {
+  return getSaoPauloTime()
+}
+
+/**
+ * Retorna o timestamp atual em formato ISO (UTC)
+ * @returns {string} ISO 8601 string
+ */
+export function getServerTimestamp() {
+  return new Date().toISOString()
+}
+
+/**
+ * Converte string ISO para objeto Date
+ * @param {string} isoString 
+ * @returns {Date}
+ */
+export function parseISO(isoString) {
+  return new Date(isoString)
+}
+
+/**
+ * Retorna o ISO UTC correspondente ao início do dia (00:00:00) em São Paulo.
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {string} ISO 8601 string (UTC)
+ */
+export function getStartOfDayISO(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z')
+  // Descobrir o offset de SP para esta data específica
+  const spHour = parseInt(
+    d.toLocaleString('en-CA', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'America/Sao_Paulo',
+    }),
+    10
+  )
+  const offset = spHour >= 12 ? spHour - 24 : spHour
+  return new Date(d.getTime() - offset * 60 * 60 * 1000).toISOString()
+}
+
+/**
+ * Retorna o ISO UTC correspondente ao fim do dia (23:59:59.999) em São Paulo.
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {string} ISO 8601 string (UTC)
+ */
+export function getEndOfDayISO(dateStr) {
+  const start = new Date(getStartOfDayISO(dateStr))
+  return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
+}
+
+/**
+ * Retorna um objeto Date "ajustado" para o fuso de São Paulo
+ * para facilitar extração de horas/minutos locais em ambientes UTC.
+ * @param {Date} [date] - Data base (default: agora)
+ * @returns {Date}
+ */
+export function getSaoPauloTime(date = new Date()) {
+  return new Date(
+    date.toLocaleString('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      hour12: false,
+    }).replace(', ', 'T')
+  )
+}
+
+/**
+ * Clona um objeto Date para evitar mutações.
+ * @param {Date} date 
+ * @returns {Date}
+ */
+export function cloneDate(date) {
+  return new Date(date.getTime())
+}
+
+/**
+ * Adiciona meses a uma data e retorna um novo objeto Date.
+ * @param {Date|string} date - Data base (Date object ou string YYYY-MM-DD)
+ * @param {number} months - Número de meses a adicionar (pode ser negativo)
+ * @returns {Date} Nova data
+ */
+export function addMonths(date, months) {
+  const baseDate = typeof date === 'string' ? parseLocalDate(date) : cloneDate(date)
+  baseDate.setDate(1) // Seta dia 1 para evitar problemas com meses curtos
+  baseDate.setMonth(baseDate.getMonth() + months)
+  return baseDate
 }

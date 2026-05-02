@@ -1,3 +1,5 @@
+import { getTodayLocal, getSaoPauloTime } from '@utils/dateUtils'
+
 /**
  * Monta contexto compacto do paciente para enviar ao LLM.
  * Dados vem do DashboardContext (cache SWR) — ZERO chamadas ao Supabase.
@@ -16,8 +18,9 @@
  * @returns {string} - Contexto formatado para system prompt
  */
 export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats }) {
-  const today = new Date()
-  const todayStr = today.toLocaleDateString('pt-BR')
+  const today = getTodayLocal() // String YYYY-MM-DD
+  const [y, m, d] = today.split('-').map(Number)
+  const todayStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`
 
   const medsContext = (medicines || []).map((med) => {
     const protocol = (protocols || []).find((p) => p.medicine_id === med.id && p.active)
@@ -39,11 +42,11 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   })
 
   const todayLogs = (logs || []).filter((log) => {
-    const logDate = new Date(log.taken_at)
+    const logDate = getSaoPauloTime(new Date(log.taken_at))
     return (
-      logDate.getFullYear() === today.getFullYear() &&
-      logDate.getMonth() === today.getMonth() &&
-      logDate.getDate() === today.getDate()
+      logDate.getFullYear() === y &&
+      logDate.getMonth() + 1 === m &&
+      logDate.getDate() === d
     )
   })
 

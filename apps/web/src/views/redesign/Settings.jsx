@@ -11,6 +11,7 @@ import AdminSection from './settings/sections/AdminSection'
 
 // Import CSS
 import './settings/SettingsRedesign.css'
+import { getServerTimestamp } from '@utils/dateUtils'
 
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 
@@ -214,7 +215,7 @@ export default function SettingsRedesign({ onNavigate }) {
       } = await supabase.auth.getUser()
       await supabase
         .from('user_settings')
-        .update({ telegram_token: token, telegram_token_created_at: new Date().toISOString() })
+        .update({ telegram_token: token, telegram_token_created_at: getServerTimestamp() })
         .eq('user_id', user.id)
     } catch (err) {
       console.error('Token gen error:', err)

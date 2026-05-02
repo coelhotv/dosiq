@@ -4,7 +4,8 @@
  * @module features/reports/services/pdfGeneratorService
  */
 
-import { parseLocalDate, formatLocalDate } from '@utils/dateUtils.js'
+import { parseLocalDate, formatLocalDate, addDays } from '@utils/dateUtils.js'
+import { getNow } from '@utils/adherenceLogic'
 
 /**
  * Dimensões da página A4 em milímetros.
@@ -106,7 +107,7 @@ function calculateDaysRemaining(stockSummary, protocol) {
  */
 function logPDF(level, message, data = {}) {
   const logEntry = {
-    timestamp: new Date().toISOString(),
+    timestamp: getNow().toISOString(),
     service: 'pdfGeneratorService',
     level,
     message,
@@ -563,7 +564,7 @@ function prepareStockChartData(protocols, stockSummaries) {
  * URL.revokeObjectURL(url)
  */
 export async function generatePDF(options = {}) {
-  const startTime = Date.now()
+  const startTime = getNow().getTime()
   const {
     title = 'Dosiq - Relatório',
     period = '30d',
@@ -607,10 +608,9 @@ export async function generatePDF(options = {}) {
     logPDF('info', 'Módulos carregados sob demanda', { library: 'jspdf + services + charts' })
 
     // Busca dados em paralelo
-    const dataFetchStart = Date.now()
-    const today = new Date()
-    const thirtyDaysAgo = new Date(today)
-    thirtyDaysAgo.setDate(today.getDate() - 30)
+    const dataFetchStart = getNow().getTime()
+    const today = getNow()
+    const thirtyDaysAgo = addDays(today, -30)
     const startDateStr = formatLocalDate(thirtyDaysAgo)
     const endDateStr = formatLocalDate(today)
 
@@ -625,7 +625,7 @@ export async function generatePDF(options = {}) {
     ])
 
     logPDF('info', 'Dados buscados', {
-      duration: `${Date.now() - dataFetchStart}ms`,
+      duration: `${getNow().getTime() - dataFetchStart}ms`,
       adherenceScore: adherenceSummary.overallScore,
       protocolsCount: protocols.length,
       lowStockCount: lowStock.length,
@@ -646,7 +646,7 @@ export async function generatePDF(options = {}) {
     })
 
     // Desenha cabeçalho
-    drawHeader(doc, title, new Date())
+    drawHeader(doc, title, getNow())
 
     // Desenha resumo de adesão
     drawAdherenceSummary(doc, adherenceSummary)
@@ -688,7 +688,7 @@ export async function generatePDF(options = {}) {
     // Gera Blob
     const pdfBlob = doc.output('blob')
 
-    const totalDuration = Date.now() - startTime
+    const totalDuration = getNow().getTime() - startTime
     logPDF('info', 'PDF gerado com sucesso', {
       duration: `${totalDuration}ms`,
       blobSize: `${(pdfBlob.size / 1024).toFixed(2)}KB`,

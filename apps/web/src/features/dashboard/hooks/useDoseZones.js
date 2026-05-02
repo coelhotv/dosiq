@@ -11,7 +11,14 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { parseLocalDate, getTodayLocal, isProtocolActiveOnDate } from '@utils/dateUtils'
+import {
+  parseLocalDate,
+  getTodayLocal,
+  isProtocolActiveOnDate,
+  getNow,
+  getSaoPauloTime,
+  parseISO,
+} from '@utils/dateUtils'
 
 /**
  * Tipo DoseItem — Representa uma dose individual expandida de um protocolo.
@@ -48,10 +55,10 @@ export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
   const [h, m] = scheduledTime.split(':').map(Number)
   return todayLogs.some((log) => {
     if (log.protocol_id !== protocolId) return false
-    const logDate = new Date(log.taken_at)
-    const scheduled = new Date(logDate)
+    const logDate = getSaoPauloTime(parseISO(log.taken_at))
+    const scheduled = new Date(logDate.getTime())
     scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
+    return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
 }
 
@@ -67,10 +74,10 @@ export function findRegistrationTime(protocolId, scheduledTime, todayLogs) {
   const [h, m] = scheduledTime.split(':').map(Number)
   const log = todayLogs.find((l) => {
     if (l.protocol_id !== protocolId) return false
-    const logDate = new Date(l.taken_at)
-    const scheduled = new Date(logDate)
+    const logDate = getSaoPauloTime(parseISO(l.taken_at))
+    const scheduled = new Date(logDate.getTime())
     scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
+    return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
   return log ? log.taken_at : null
 }
@@ -96,7 +103,7 @@ export function classifyDose(
   if (isRegistered) return 'done'
 
   const [hours, minutes] = scheduledTime.split(':').map(Number)
-  const scheduled = new Date(now)
+  const scheduled = getSaoPauloTime(now)
   scheduled.setHours(hours, minutes, 0, 0)
 
   const diffMs = scheduled.getTime() - now.getTime()
@@ -169,7 +176,7 @@ export function filterTodayLogs(logs) {
 
   return logs.filter((log) => {
     if (!log.taken_at) return false
-    const logTime = new Date(log.taken_at).getTime()
+    const logTime = getSaoPauloTime(parseISO(log.taken_at)).getTime()
     return logTime >= todayStart && logTime < todayEnd
   })
 }
@@ -191,14 +198,14 @@ export function useDoseZones({
   const { protocols, logs, isLoading, refresh } = useDashboard()
 
   // Estado de "agora" — recalcula a cada 60 segundos (pausado quando aba não está visível)
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState(() => getNow())
 
   useEffect(() => {
     let intervalId = null
 
     const startInterval = () => {
       if (intervalId) return
-      intervalId = setInterval(() => setNow(new Date()), 60_000)
+      intervalId = setInterval(() => setNow(getNow()), 60_000)
     }
 
     const stopInterval = () => {
@@ -210,7 +217,7 @@ export function useDoseZones({
       if (document.hidden) {
         stopInterval()
       } else {
-        setNow(new Date()) // atualizar imediatamente ao retornar
+        setNow(getNow()) // atualizar imediatamente ao retornar
         startInterval()
       }
     }

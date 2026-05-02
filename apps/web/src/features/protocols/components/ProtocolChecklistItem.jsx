@@ -1,8 +1,10 @@
+import { getNow } from '@utils/dateUtils'
 import './ProtocolChecklistItem.css'
 
 export default function ProtocolChecklistItem({ protocol, isSelected, onToggle }) {
   const getCurrentTime = () => {
-    return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const now = getNow()
+    return now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   }
 
   const currentTime = getCurrentTime()

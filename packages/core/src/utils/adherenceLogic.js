@@ -9,7 +9,11 @@ import {
   parseLocalDate, 
   formatLocalDate, 
   getTodayLocal, 
-  isProtocolActiveOnDate as isProtocolInPeriod 
+  isProtocolActiveOnDate as isProtocolInPeriod,
+  getNow,
+  parseISO,
+  daysDifference,
+  getSaoPauloTime
 } from './dateUtils.js'
 
 // Invariantes de Negócio (R-022, R-129)
@@ -72,8 +76,8 @@ function getEffectiveDays(protocol, periodStart, periodEnd) {
   const protocolEndDate = protocol.end_date ? parseLocalDate(protocol.end_date) : periodEnd
 
   // Interseção entre período do protocolo e período de análise
-  const effectiveStart = new Date(Math.max(protocolStartDate, periodStart))
-  const effectiveEnd = new Date(Math.min(protocolEndDate, periodEnd))
+  const effectiveStart = new Date(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
+  const effectiveEnd = new Date(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
 
   if (effectiveEnd < effectiveStart) return 0
 
@@ -82,14 +86,14 @@ function getEffectiveDays(protocol, periodStart, periodEnd) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
 
-export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
+export function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   if (!protocols || protocols.length === 0) return 0
 
-  const periodStart = new Date(endDate)
+  const periodStart = new Date(endDate.getTime())
   periodStart.setHours(0, 0, 0, 0)
   periodStart.setDate(periodStart.getDate() - days + 1)
 
-  const periodEnd = new Date(endDate)
+  const periodEnd = new Date(endDate.getTime())
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
@@ -111,7 +115,7 @@ export function calculateExpectedDoses(protocols, days, endDate = new Date()) {
 export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays = 0) {
   const logsByDay = new Map()
   logs.forEach((log) => {
-    const dayKey = formatLocalDate(new Date(log.taken_at))
+    const dayKey = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
     if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, [])
     logsByDay.get(dayKey).push(log)
   })
@@ -120,10 +124,15 @@ export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays =
   let totalFollowed = 0
   let totalTakenAnytime = 0
   let currentStreak = 0
+  let streakBroken = false
   const todayStr = getTodayLocal()
 
-  for (let i = offsetDays; i < offsetDays + days; i++) {
-    const date = new Date()
+  // Loop expandido para cobrir o streak além dos dias do score
+  // Limite de segurança de 365 dias para evitar loops infinitos em datasets mal formados
+  const maxDays = Math.max(days + offsetDays, 365)
+
+  for (let i = offsetDays; i < maxDays; i++) {
+    const date = getNow()
     date.setDate(date.getDate() - i)
     const dateStr = formatLocalDate(date)
     const dayLogs = logsByDay.get(dateStr) || []
@@ -136,41 +145,49 @@ export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays =
       // Verificar se o protocolo estava ativo nesta data
       if (!isProtocolActiveOnDate(protocol, dateStr)) return
 
-      // Simplificação: Assume que todos os protocolos ativos devem ser seguidos todos os dias
-      // Em uma versão futura, considerar a frequência (daily, weekly, etc) aqui também
-      const schedule = protocol.time_schedule || []
-      dayExpected += schedule.length
+      const times = protocol.time_schedule || []
+      dayExpected += times.length
 
-      schedule.forEach((time) => {
+      // Doses tomadas para este protocolo específico neste dia (independente de horário)
+      const protocolLogs = dayLogs.filter((l) => l.protocol_id === protocol.id)
+      dayTakenAnytime += Math.min(protocolLogs.length, times.length)
+
+      times.forEach((time) => {
         if (isProtocolFollowed(time, dayLogs, dateStr)) {
           dayFollowed++
-        }
-
-        // Verifica se tomou em qualquer horário do dia
-        if (dayLogs.some((l) => l.protocol_id === protocol.id)) {
-          dayTakenAnytime++
         }
       })
     })
 
-    totalExpected += dayExpected
-    totalFollowed += dayFollowed
-    totalTakenAnytime += dayTakenAnytime
-
-    // Lógica de Streak
-    const minAdherence = 0.8
-    const isDaySuccessful = dayExpected > 0 && dayFollowed / dayExpected >= minAdherence
-
-    if (isDaySuccessful) {
-      currentStreak++
-    } else if (dateStr === todayStr) {
-      // Se hoje ainda não terminou, não quebra o streak
-      continue
-    } else if (i > 0 || (i === 0 && dayExpected > 0)) {
-      // Se não for hoje e falhou, ou se for hoje e já temos falha clara, interrompe
-      // Mas só se houver doses esperadas
-      if (dayExpected > 0) break
+    // Acumula para o score apenas se estiver dentro da janela 'days'
+    if (i < offsetDays + days) {
+      totalExpected += dayExpected
+      totalFollowed += dayFollowed
+      totalTakenAnytime += dayTakenAnytime
     }
+
+    // Lógica de Streak (continua enquanto não quebrar)
+    if (!streakBroken) {
+      const minAdherence = 0.8
+      // Para o STREAK, somos mais permissivos:
+      // 1. Se não havia nada previsto (gap entre tratamentos), o streak não quebra (mantém vivo)
+      // 2. Se havia doses, basta ter tomado (anytime) 80% delas (R-022)
+      const isDaySuccessful = dayExpected === 0 || dayTakenAnytime / dayExpected >= minAdherence
+      const isToday = dateStr === todayStr
+
+      if (isDaySuccessful) {
+        currentStreak++
+      } else if (isToday) {
+        // Hoje ainda não terminou, mantemos o streak vivo por UX positiva
+      } else if (dayExpected > 0) {
+        // Dia com doses esperadas que falhou (mesmo considerando anytime): quebra o streak
+        streakBroken = true
+      }
+      // Se dayExpected == 0, o streak continua (dia de folga/sem protocolo)
+    }
+
+    // Se já calculamos o score E o streak quebrou, podemos parar
+    if (i >= offsetDays + days && streakBroken) break
   }
 
   const score =
@@ -178,7 +195,7 @@ export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays =
 
   return {
     score,
-    taken: totalFollowed, // Representa doses seguidas corretamente na janela
+    taken: totalFollowed,
     takenAnytime: totalTakenAnytime,
     expected: totalExpected,
     currentStreak,
@@ -199,7 +216,7 @@ export function isProtocolFollowed(scheduledTime, logs, dateStr) {
 
   return logs.some((log) => {
     // 1. Verificar se o log é do mesmo dia local
-    const logDateStr = formatLocalDate(new Date(log.taken_at))
+    const logDateStr = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
 
     if (logDateStr !== dateStr) return false
 
@@ -219,10 +236,12 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
   if (!scheduledTime || !logTakenAt) return false
 
   const [sH, sM] = scheduledTime.split(':').map(Number)
-  const takenDate = new Date(logTakenAt)
+  
+  // R-020: Normalizar data tomada para fuso de SP (shifted)
+  const takenDate = getSaoPauloTime(parseISO(logTakenAt))
 
   // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada,
-  // usando o fuso horário local do dispositivo do usuário.
+  // usando o mesmo referencial (shifted SP) para paridade aritmética.
   const scheduledDate = new Date(takenDate)
   scheduledDate.setHours(sH, sM, 0, 0)
 
@@ -242,7 +261,7 @@ export function getNextDoseTime(protocol) {
     return '--:--'
   }
 
-  const now = new Date()
+  const now = getNow()
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   // Converte horários do cronograma para minutos e ordena
@@ -303,7 +322,7 @@ export function isInToleranceWindow(nextDoseTime) {
     return false
   }
 
-  const now = new Date()
+  const now = getNow()
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   const [hours, minutes] = nextDoseTime.split(':').map(Number)
@@ -352,7 +371,7 @@ export function calculateDaysRemaining(totalQuantity, dailyIntake) {
  * @param {Array} protocols - Protocolos ativos
  * @returns {Object} { takenDoses: [], missedDoses: [], scheduledDoses: [] }
  */
-export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
+export function calculateDosesByDate(date, logs, protocols, now = getNow()) {
   if (!date || !protocols || protocols.length === 0) {
     return { takenDoses: [], missedDoses: [], scheduledDoses: [] }
   }
@@ -478,7 +497,7 @@ export function calculateDosesByDate(date, logs, protocols, now = new Date()) {
  * @param {Date} now - Hora atual de referência
  * @returns {Array} Array único e ordenado de doses com a propriedade timelineStatus
  */
-export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
+export function evaluateDoseTimelineState(date, dosesObj, now = getNow()) {
   const { takenDoses = [], missedDoses = [], scheduledDoses = [] } = dosesObj
   const nowMs = now.getTime()
 
@@ -519,7 +538,7 @@ export function evaluateDoseTimelineState(date, dosesObj, now = new Date()) {
 
   // Ordenar por horário agendado (cronológico)
   return allDoses.sort((a, b) => {
-    const getTime = (d) => d.scheduledTime || (d.taken_at ? new Date(d.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '00:00')
+    const getTime = (d) => d.scheduledTime || (d.taken_at ? parseISO(d.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '00:00')
     return getTime(a).localeCompare(getTime(b))
   })
 }
@@ -540,8 +559,9 @@ export function isProtocolActiveOnDate(protocol, date) {
   const targetDate = parseLocalDate(dateStr)
   const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
 
-  // 1. Verificar se o registro está ativo
-  if (protocol.active === false) return false
+  // 1. Verificar se o registro está ativo ou se é um registro histórico finalizado (histórico de adesão)
+  const isHistorical = protocol.end_date && targetDate <= parseLocalDate(protocol.end_date)
+  if (protocol.active === false && !isHistorical) return false
 
   // 2. Verificar período de validade (Usa isProtocolInPeriod do dateUtils)
   if (!isProtocolInPeriod(protocol, dateStr)) return false
@@ -580,9 +600,7 @@ export function isProtocolActiveOnDate(protocol, date) {
       // Calcular dias desde a data de início (dia 0 = dose)
       if (protocol.start_date) {
         const startDate = parseLocalDate(protocol.start_date)
-        const diffTime = targetDate.getTime() - startDate.getTime()
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-        return diffDays % 2 === 0
+        return daysDifference(startDate, targetDate) % 2 === 0
       }
       return true // Sem data de início, assume início hoje
 

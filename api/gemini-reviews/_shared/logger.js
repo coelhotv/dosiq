@@ -8,6 +8,8 @@
  * @version 1.0.0
  */
 
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
+
 // ============================================================================
 // CONSTANTES
 // ============================================================================
@@ -40,7 +42,7 @@ const LOG_PREFIX = '[gemini-api]'
  * @param {Object} data - Dados adicionais para o log
  */
 export function log(endpoint, level, message, data = {}) {
-  const timestamp = new Date().toISOString()
+  const timestamp = getServerTimestamp()
   const logEntry = {
     timestamp,
     endpoint,

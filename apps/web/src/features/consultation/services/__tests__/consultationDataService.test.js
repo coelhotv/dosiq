@@ -81,6 +81,13 @@ vi.mock('@utils/titrationUtils', () => ({
 // Mock do dateUtils
 vi.mock('@utils/dateUtils', () => ({
   parseLocalDate: (dateStr) => new Date(dateStr + 'T00:00:00'),
+  getNow: () => new Date('2026-02-26T12:00:00'),
+  getServerTimestamp: () => '2026-02-26T12:00:00.000Z',
+  addDays: (date, days) => {
+    const d = new Date(date)
+    d.setDate(d.getDate() + days)
+    return d
+  },
 }))
 
 import { getConsultationData } from '@/features/consultation/services/consultationDataService'

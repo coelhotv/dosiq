@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, BellOff, Settings, WifiOff } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
-import { getTodayLocal } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, daysDifference } from '@dosiq/core'
 import { ROUTES } from '../../../navigation/routes'
 import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
@@ -65,10 +65,8 @@ const getStorageKey = (userId) =>
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
 
 function groupByDay(notifications) {
-  const now              = new Date()
-  const startOfToday     = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startOfYesterday = new Date(startOfToday - 86_400_000)
-  const startOfWeek      = new Date(startOfToday - 6 * 86_400_000)
+  const now = getNow()
+  const todayStr = getTodayLocal()
 
   const buckets = [
     { title: 'Hoje',         data: [] },
@@ -78,11 +76,13 @@ function groupByDay(notifications) {
   ]
 
   for (const n of notifications) {
-    const d = new Date(n.sent_at)
-    if      (d >= startOfToday)     buckets[0].data.push(n)
-    else if (d >= startOfYesterday) buckets[1].data.push(n)
-    else if (d >= startOfWeek)      buckets[2].data.push(n)
-    else                            buckets[3].data.push(n)
+    if (!n.sent_at) continue
+    const diff = daysDifference(n.sent_at.split('T')[0], todayStr)
+    
+    if      (diff === 0) buckets[0].data.push(n)
+    else if (diff === 1) buckets[1].data.push(n)
+    else if (diff <= 7)  buckets[2].data.push(n)
+    else                 buckets[3].data.push(n)
   }
 
   return buckets.filter(b => b.data.length > 0)
@@ -94,13 +94,13 @@ function buildWasTakenMap(notifications, doseLogs) {
   if (!doseLogs?.length) return {}
   const map = {}
   for (const n of notifications) {
-    const sentAtTime = new Date(n.sent_at).getTime()
+    const sentAtTime = parseISO(n.sent_at).getTime()
     if (n.notification_type === 'dose_reminder') {
       if (!n.protocol_id) continue
       map[n.id] = doseLogs.some(
         log =>
           log.protocol_id === n.protocol_id &&
-          new Date(log.taken_at).getTime() > sentAtTime
+          parseISO(log.taken_at).getTime() > sentAtTime
       )
     } else if (
       n.notification_type === 'dose_reminder_by_plan' ||
@@ -111,7 +111,7 @@ function buildWasTakenMap(notifications, doseLogs) {
       const taken = protocolIds.filter(pid =>
         doseLogs.some(
           log => log.protocol_id === pid &&
-                 new Date(log.taken_at).getTime() > sentAtTime
+                 parseISO(log.taken_at).getTime() > sentAtTime
         )
       ).length
       map[n.id] = { taken, total: protocolIds.length }
@@ -147,14 +147,16 @@ export default function NotificationInboxScreen({ navigation, route }) {
   useEffect(() => {
     let midnightTimer
     const schedule = () => {
-      const now = new Date()
-      const next = new Date(now)
+      const now = getNow()
+      const next = new Date(now.getTime())
       next.setDate(next.getDate() + 1)
       next.setHours(0, 0, 0, 0)
+      
+      const delay = next.getTime() - now.getTime()
       midnightTimer = setTimeout(() => {
         setLocalDay(getTodayLocal())
         schedule()
-      }, next.getTime() - now.getTime() + 1000)
+      }, delay + 1000)
     }
     schedule()
     const sub = AppState.addEventListener('change', (state) => {
@@ -167,7 +169,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const [doseLogs, setDoseLogs] = useState([])
   const loadDoseLogs = useCallback(async () => {
     if (!userId) return
-    const since = new Date(Date.now() - 7 * 86_400_000).toISOString()
+    const since = new Date(getNow().getTime() - 7 * 86_400_000).toISOString()
     const { data: rows, error: fetchErr } = await supabase
       .from('medicine_logs')
       .select('id, protocol_id, taken_at')
@@ -207,7 +209,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
   // Sections com filtro aplicado
   const filteredSections = useMemo(() => {
-    const lastSeenTime = lastSeen ? new Date(lastSeen).getTime() : null
+    const lastSeenTime = lastSeen ? parseISO(lastSeen).getTime() : null
 
     const filterItem = (item) => {
       if (activeFilter === 'all')    return true
@@ -215,7 +217,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
         if (!item.sent_at) return false
         // Antes de markAllRead ser persistido, lastSeenTime pode ser null → tudo é não lido
         if (!lastSeenTime) return true
-        return new Date(item.sent_at).getTime() > lastSeenTime
+        return parseISO(item.sent_at).getTime() > lastSeenTime
       }
       if (activeFilter === 'doses')  return DOSE_KINDS.includes(item.notification_type)
       if (activeFilter === 'stock')  return item.notification_type === 'stock_alert'
@@ -240,7 +242,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
         const target = DEEP_LINK_TARGETS[view]
         if (!target) return
         const params = {}
-        const d = new Date(item.sent_at)
+        const d = parseISO(item.sent_at)
         const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
         if (item.notification_type === 'dose_reminder' && item.protocol_id) {

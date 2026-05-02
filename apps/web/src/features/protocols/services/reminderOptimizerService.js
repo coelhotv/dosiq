@@ -1,4 +1,5 @@
 import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
+import { getNow, parseISO } from '@utils/adherenceLogic'
 
 /**
  * Analisa delta entre horário programado e horário real de tomada.
@@ -34,7 +35,7 @@ export function analyzeReminderTiming({ protocol, logs }) {
     }, {})
 
     console.error('[reminderOptimizerService] Validation failed:', {
-      timestamp: new Date().toISOString(),
+      timestamp: getNow().toISOString(),
       context: 'analyzeReminderTiming',
       protocol_id: protocol?.id,
       logs_count: logs?.length,
@@ -59,7 +60,7 @@ export function analyzeReminderTiming({ protocol, logs }) {
   // Otimização: Pré-processa os logs uma única vez para evitar parsing repetido
   const processedLogs = validLogs
     .map((log) => {
-      const logDate = new Date(log.taken_at)
+      const logDate = parseISO(log.taken_at)
       if (isNaN(logDate.getTime())) return null // Ignora datas inválidas
       return {
         ...log,
@@ -155,7 +156,7 @@ export function isSuggestionDismissed(protocolId) {
 
     // Dispensado por 30 dias
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
-    return Date.now() - timestamp < thirtyDaysMs
+    return getNow().getTime() - timestamp < thirtyDaysMs
   } catch (error) {
     console.error('[reminderOptimizerService] Error parsing dismissed suggestion:', error)
     return true
@@ -180,7 +181,7 @@ export function dismissSuggestion(protocolId, permanent = false) {
 
   const key = `optimizer_dismissed_${protocolId}`
   const value = JSON.stringify({
-    timestamp: Date.now(),
+    timestamp: getNow().getTime(),
     permanent,
   })
 
@@ -190,7 +191,7 @@ export function dismissSuggestion(protocolId, permanent = false) {
       protocolId,
       key,
       permanent,
-      timestamp: new Date().toISOString(),
+      timestamp: getNow().toISOString(),
       storageSize: Object.keys(localStorage).length,
     })
   } catch (error) {
@@ -198,7 +199,7 @@ export function dismissSuggestion(protocolId, permanent = false) {
       protocolId,
       key,
       error: error.message,
-      timestamp: new Date().toISOString(),
+      timestamp: getNow().toISOString(),
     })
   }
 }

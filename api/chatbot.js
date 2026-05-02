@@ -9,6 +9,7 @@ import {
   CHATBOT_TOP_P,
   CHATBOT_MAX_HISTORY,
 } from '../src/features/chatbot/config/chatbotConfig.js'
+import { getServerTimestamp } from '../server/utils/dateUtils.js'
 
 const MODEL = process.env.GROQ_MODEL || 'groq/compound'
 
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
     const estimatedSavings = Math.round(cachedTokens * 0.5) // 50% desconto em cached_tokens
 
     console.log(JSON.stringify({
-      timestamp: new Date().toISOString(),
+      timestamp: getServerTimestamp(),
       service: 'chatbot-api',
       level: 'info',
       message: 'Groq response received',

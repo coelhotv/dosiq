@@ -13,6 +13,7 @@ import {
   Circle,
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
+import { getNow } from '@utils/dateUtils'
 import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
 
 // Janela ±120min — fonte única em useDoseZones. Reutilizada para getDoseStatus e isWithinActionWindow.
@@ -161,7 +162,7 @@ export default function CronogramaPeriodo({
   allDoses = [],
   onRegister,
   variant = 'complex',
-  now = new Date(),
+  now = getNow(),
 }) {
   const { cascade } = useMotion()
   const didInitRef = useRef(false)

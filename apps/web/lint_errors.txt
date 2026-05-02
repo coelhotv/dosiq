@@ -1,0 +1,10 @@
+npm error Lifecycle script `lint` failed with error:
+npm error workspace @dosiq/web@3.3.0
+npm error location /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web
+npm error Missing script: "lint"
+npm error
+npm error Did you mean this?
+npm error   npm link # Symlink a package folder
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run --workspace=@dosiq/web@3.3.0

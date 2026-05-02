@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, getStartOfDayISO, getEndOfDayISO } from '@utils/dateUtils'
 
 // Schemas de validação para todos os métodos de leitura
 const limitSchema = z.number().int().positive().max(5000).default(50)
@@ -421,11 +421,9 @@ export const logService = {
       return { data: [], total: 0, hasMore: false }
     }
 
-    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
-    const startUtc = parseLocalDate(startDate).toISOString()
-    const endLocal = parseLocalDate(endDate)
-    endLocal.setHours(23, 59, 59, 999)
-    const endUtc = endLocal.toISOString()
+    // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC
+    const startUtc = getStartOfDayISO(startDate)
+    const endUtc = getEndOfDayISO(endDate)
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -470,10 +468,9 @@ export const logService = {
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
     const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-    const startUtc = parseLocalDate(startDateStr).toISOString()
-    const endLocal = parseLocalDate(endDateStr)
-    endLocal.setHours(23, 59, 59, 999)
-    const endUtc = endLocal.toISOString()
+    // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC
+    const startUtc = getStartOfDayISO(startDateStr)
+    const endUtc = getEndOfDayISO(endDateStr)
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -516,11 +513,9 @@ export const logService = {
       return { data: [], total: 0, hasMore: false }
     }
 
-    // Converte datas locais (YYYY-MM-DD) para UTC via parseLocalDate (R-020, AP-005)
-    const startUtc = parseLocalDate(startDate).toISOString()
-    const endLocal = parseLocalDate(endDate)
-    endLocal.setHours(23, 59, 59, 999)
-    const endUtc = endLocal.toISOString()
+    // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC
+    const startUtc = getStartOfDayISO(startDate)
+    const endUtc = getEndOfDayISO(endDate)
 
     const { data, error, count } = await supabase
       .from('medicine_logs')
@@ -559,11 +554,9 @@ export const logService = {
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
     const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-    // Converte datas locais para UTC via parseLocalDate (R-020)
-    const startUtc = parseLocalDate(startDateStr).toISOString()
-    const endLocal = parseLocalDate(endDateStr)
-    endLocal.setHours(23, 59, 59, 999)
-    const endUtc = endLocal.toISOString()
+    // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC
+    const startUtc = getStartOfDayISO(startDateStr)
+    const endUtc = getEndOfDayISO(endDateStr)
 
     const { data, error, count } = await supabase
       .from('medicine_logs')

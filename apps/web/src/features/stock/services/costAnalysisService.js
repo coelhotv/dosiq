@@ -4,7 +4,7 @@ import {
   CalculateAvgUnitPriceInputSchema,
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
 
 function getPriceEntries(medicine = {}) {
   if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
@@ -204,8 +204,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
     logs: validatedLogs,
   } = validation.data
 
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = addDays(getNow(), -30)
 
   // OTIMIZAÇÃO: Pré-processar dados para evitar O(M*P + M*L) → O(M + P + L)
   // Mapa de protocolos ativos por medicamento
@@ -224,7 +223,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   // Mapa de logs por medicamento (com pré-filtro de data)
   const logsByMedicine = {}
   validatedLogs.forEach((l) => {
-    if (l.medicine_id && new Date(l.taken_at) >= thirtyDaysAgo) {
+    if (l.medicine_id && parseISO(l.taken_at) >= thirtyDaysAgo) {
       if (!logsByMedicine[l.medicine_id]) {
         logsByMedicine[l.medicine_id] = []
       }
@@ -252,7 +251,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
       const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(med))
 
       // Consumo real vs teórico
-      const daysWithData = new Set(medLogs.map((l) => formatLocalDate(new Date(l.taken_at)))).size
+      const daysWithData = new Set(medLogs.map((l) => formatLocalDate(parseISO(l.taken_at)))).size
 
       let dailyConsumption
       let isRealData

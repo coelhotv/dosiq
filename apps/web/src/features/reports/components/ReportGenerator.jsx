@@ -13,6 +13,7 @@ import { generateConsultationPDF } from '@/features/reports/services/consultatio
 import { shareReport, shareNative, copyToClipboard } from '@/features/reports/services/shareService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import Button from '@shared/components/ui/Button'
+import { getNow, formatLocalDate } from '@utils/dateUtils.js'
 import './ReportGenerator.css'
 
 /**
@@ -40,11 +41,7 @@ function buildConsultationReportFilename(selectedPeriod) {
  * @returns {string} Data formatada como YYYY-MM-DD.
  */
 function formatDateForFilename() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return formatLocalDate(getNow())
 }
 
 /**

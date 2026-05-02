@@ -16,6 +16,14 @@ export {
   addDays,
   daysDifference,
   getPeriodFromTime,
+  getNow,
+  getServerTimestamp,
+  parseISO,
+  getSaoPauloTime,
+  getStartOfDayISO,
+  getEndOfDayISO,
+  addMonths,
+  cloneDate,
 } from './dateUtils.js'
 
 // Adherence logic and calculations

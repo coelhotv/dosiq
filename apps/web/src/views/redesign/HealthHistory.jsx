@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } fro
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { cachedLogService as logService, cachedAdherenceService as adherenceService  } from '@shared/services'
-import { formatLocalDate, parseLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, parseLocalDate, getSaoPauloTime, getTodayLocal, getNow, parseISO } from '@utils/dateUtils'
 import Calendar from '@shared/components/ui/Calendar'
 import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
@@ -36,7 +36,7 @@ export default function HealthHistory({ onNavigate }) {
   const [successMessage, setSuccessMessage] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingLog, setEditingLog] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(getTodayLocal())
   const [currentMonthLogs, setCurrentMonthLogs] = useState([])
   const [, setTotalLogs] = useState(0)
 
@@ -56,33 +56,42 @@ export default function HealthHistory({ onNavigate }) {
 
   // Planos de tratamento (para LogForm)
   const treatmentPlans = useMemo(() => {
-    const planMap = new Map()
+    const plansById = {}
+    
     protocols.forEach((p) => {
-      if (p.treatment_plan_id) {
-        planMap.set(p.treatment_plan_id, true)
+      // Para o LogForm (novo log), só reconstruímos planos que têm protocolos ativos
+      if (p.treatment_plan_id && p.active) {
+        if (!plansById[p.treatment_plan_id]) {
+          plansById[p.treatment_plan_id] = {
+            ...(p.treatment_plan || { id: p.treatment_plan_id, name: 'Plano s/ nome' }),
+            protocols: []
+          }
+        }
+        plansById[p.treatment_plan_id].protocols.push(p)
       }
     })
-    return Array.from(planMap.keys())
+    
+    return Object.values(plansById)
   }, [protocols])
+
+  // Somente protocolos ativos para o formulário de registro
+  const activeProtocols = useMemo(() => protocols.filter(p => p.active), [protocols])
 
   // Doses do dia selecionado — filtra dos logs do mês carregado, ordenados ascendente
   const dayLogs = useMemo(() => {
-    const d = selectedDate || new Date()
+    const dStr = typeof selectedDate === 'string' ? selectedDate : formatLocalDate(selectedDate)
+    
     return currentMonthLogs
       .filter((log) => {
-        const logDate = new Date(log.taken_at)
-        return (
-          logDate.getFullYear() === d.getFullYear() &&
-          logDate.getMonth() === d.getMonth() &&
-          logDate.getDate() === d.getDate()
-        )
+        const logDateStr = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
+        return logDateStr === dStr
       })
-      .sort((a, b) => new Date(a.taken_at) - new Date(b.taken_at))
+      .sort((a, b) => parseISO(a.taken_at) - parseISO(b.taken_at))
   }, [currentMonthLogs, selectedDate])
 
   // Datas marcadas no calendário (array de strings 'YYYY-MM-DD')
   const markedDates = useMemo(
-    () => currentMonthLogs.map((log) => formatLocalDate(new Date(log.taken_at))),
+    () => currentMonthLogs.map((log) => formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))),
     [currentMonthLogs]
   )
 
@@ -95,7 +104,7 @@ export default function HealthHistory({ onNavigate }) {
     try {
       setIsLoading(true)
       setError(null)
-      const now = new Date()
+      const now = getNow()
 
       // Phase 1: UI-critical — logs do mês atual (calendário + day panel)
       const logsResult = await logService.getByMonthSlim(now.getFullYear(), now.getMonth())
@@ -104,7 +113,7 @@ export default function HealthHistory({ onNavigate }) {
 
       // Selecionar dia mais recente com dose (ou hoje)
       if (logsResult.data?.length > 0) {
-        setSelectedDate(new Date(logsResult.data[0].taken_at))
+        setSelectedDate(parseISO(logsResult.data[0].taken_at))
       }
 
       // UI fica interativa AQUI
@@ -165,7 +174,7 @@ export default function HealthHistory({ onNavigate }) {
       setTotalLogs(result.total || 0)
       // Selecionar primeiro dia com dose no novo mês, ou dia 1
       if (result.data?.length > 0) {
-        setSelectedDate(new Date(result.data[0].taken_at))
+        setSelectedDate(parseISO(result.data[0].taken_at))
       } else {
         setSelectedDate(parseLocalDate(`${year}-${String(month + 1).padStart(2, '0')}-01`))
       }
@@ -320,7 +329,7 @@ export default function HealthHistory({ onNavigate }) {
         }}
       >
         <LogForm
-          protocols={protocols}
+          protocols={activeProtocols}
           treatmentPlans={treatmentPlans}
           initialValues={editingLog}
           onSave={handleLogMedicine}

@@ -97,6 +97,54 @@ export {
 } from './notificationLogSchema.js'
 
 export {
+  NOTIFICATION_TYPES,
+  DOSE_RELATED_NOTIFICATION_TYPES,
+  notificationSchema,
+  notificationListSchema,
+} from './notificationSchema.js'
+
+export {
+  emergencyCardSchema,
+  emergencyCardCreateSchema,
+  emergencyCardUpdateSchema,
+  emergencyCardFullSchema,
+  validateEmergencyCard,
+  validateEmergencyCardCreate,
+  validateEmergencyCardUpdate,
+  validateEmergencyContact,
+  mapEmergencyCardErrorsToForm,
+  getEmergencyCardErrorMessage,
+} from './emergencyCardSchema.js'
+
+export {
+  validatePasswordChange,
+} from './authSchema.js'
+
+export {
+  AnalyzeAdherencePatternsInputSchema,
+  AnalyzeAdherencePatternsOutputSchema,
+  validateAnalyzeAdherencePatternsInput,
+  validateAnalyzeAdherencePatternsOutput,
+} from './adherencePatternSchema.js'
+
+export {
+  CalculateMonthlyCostsInputSchema,
+  CalculateDailyIntakeInputSchema,
+  CalculateAvgUnitPriceInputSchema,
+  CalculateRealCostsInputSchema,
+} from './costAnalysisSchema.js'
+
+export {
+  AnalyzeReminderTimingInputSchema,
+  ReminderSuggestionSchema,
+} from './reminderOptimizerSchema.js'
+
+export {
+  validateUserProfile,
+  BRAZILIAN_STATES,
+} from './userProfileSchema.js'
+
+export {
   userSettingsNotificationSchema,
   NOTIFICATION_MODES,
   deriveLegacyPreference,

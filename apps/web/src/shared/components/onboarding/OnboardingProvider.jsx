@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { supabase, getUserId } from '@shared/utils/supabase'
+import { getNow } from '@utils/dateUtils.js'
 import { OnboardingContext } from './OnboardingContext'
 
 export function OnboardingProvider({ children }) {
@@ -57,7 +58,7 @@ export function OnboardingProvider({ children }) {
         {
           user_id: userId,
           onboarding_completed: true,
-          updated_at: new Date().toISOString(),
+          updated_at: getNow().toISOString(),
         },
         {
           onConflict: 'user_id',

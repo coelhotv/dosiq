@@ -6,7 +6,7 @@
 
 import { addDays, formatLocalDate, parseLocalDate } from '@utils/dateUtils.js'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
-import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
+import { calculateDailyIntake, calculateDosesByDate, getNow } from '@utils/adherenceLogic'
 
 /**
  * Formata um numero com fallback legivel.
@@ -316,6 +316,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
           ? parseLocalDate(row.date).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: '2-digit',
+              timeZone: 'America/Sao_Paulo',
             })
           : row.label || '',
         taken,
@@ -337,7 +338,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
   const trend = []
 
   for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const date = addDays(new Date(), -offset)
+    const date = addDays(getNow(), -offset)
     const dateStr = formatLocalDate(date)
     const result = calculateDosesByDate(dateStr, logs, activeProtocols)
     const taken = result.takenDoses.length
@@ -350,6 +351,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
       label: parseLocalDate(dateStr).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
+        timeZone: 'America/Sao_Paulo',
       }),
       taken,
       expected,
@@ -374,7 +376,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
  * @param {Object} params.consultationData - Dados consolidados do modo consulta.
  * @param {Object} params.dashboardData - Dados brutos do dashboard.
  * @param {string} [params.period='30d'] - Periodo de cobertura.
- * @param {Date|string} [params.generatedAt=new Date()] - Momento de geracao.
+ * @param {Date|string} [params.generatedAt=getNow()] - Momento de geracao.
  * @param {string} [params.title] - Titulo do documento.
  * @returns {Object} Modelo editorial pronto para o service de PDF.
  */
@@ -382,7 +384,7 @@ export function buildConsultationPdfData({
   consultationData,
   dashboardData = {},
   period = '30d',
-  generatedAt = new Date(),
+  generatedAt = getNow(),
   title = 'Dosiq - Consulta Médica',
   patientEmail = '',
 } = {}) {
@@ -545,12 +547,13 @@ export function buildConsultationPdfData({
     title,
     period,
     generatedAt,
-    generatedAtLabel: new Date(generatedAt).toLocaleString('pt-BR', {
+    generatedAtLabel: (generatedAt instanceof Date ? generatedAt : new Date(generatedAt)).toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
     }),
     patient: {
       name: formatPatientDisplayName(patientInfo.name, patientEmail),

@@ -9,7 +9,7 @@ import {
   REGULATORY_CATEGORY_LABELS,
 } from '@schemas/medicineSchema'
 import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow } from '@utils/dateUtils'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import Button from '@shared/components/ui/Button'
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
@@ -56,12 +56,12 @@ export default function TreatmentWizard({
     frequency: 'diário',
     time_schedule: ['08:00'],
     dosage_per_intake: 1,
-    start_date: formatLocalDate(new Date()),
+    start_date: formatLocalDate(getNow()),
   })
 
   const [stockData, setStockData] = useState({
     quantity: '',
-    purchase_date: formatLocalDate(new Date()),
+    purchase_date: formatLocalDate(getNow()),
     unit_price: '',
     expiration_date: '',
   })
@@ -688,11 +688,11 @@ export default function TreatmentWizard({
                       frequency: 'diário',
                       time_schedule: ['08:00'],
                       dosage_per_intake: 1,
-                      start_date: formatLocalDate(new Date()),
+                      start_date: formatLocalDate(getNow()),
                     })
                     setStockData({
                       quantity: '',
-                      purchase_date: formatLocalDate(new Date()),
+                      purchase_date: formatLocalDate(getNow()),
                       unit_price: '',
                       expiration_date: '',
                     })

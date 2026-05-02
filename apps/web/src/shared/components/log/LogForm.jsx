@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Pill, Folders } from 'lucide-react'
 import Button from '@shared/components/ui/Button'
 import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
+import { getNow, parseISO } from '@utils/dateUtils.js'
 import './LogForm.css'
 
 export default function LogForm({
@@ -13,9 +14,13 @@ export default function LogForm({
 }) {
   // Helper to format date to local ISO string (YYYY-MM-DDTHH:mm) for datetime-local input
   const toLocalISO = (dateStr) => {
-    const date = dateStr ? new Date(dateStr) : new Date()
-    const offset = date.getTimezoneOffset() * 60000
-    return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+    const date = dateStr ? parseISO(dateStr) : getNow()
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const mins = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${mins}`
   }
 
   const [formData, setFormData] = useState({
@@ -138,7 +143,7 @@ export default function LogForm({
           quantity_taken: formData.quantity_taken
             ? parseFloat(String(formData.quantity_taken).replace(',', '.'))
             : protocol.dosage_per_intake,
-          taken_at: new Date(formData.taken_at).toISOString(),
+          taken_at: new Date(formData.taken_at + ':00-03:00').toISOString(),
           notes: formData.notes.trim() || null,
         }
 
@@ -166,7 +171,7 @@ export default function LogForm({
           protocol_id: p.id,
           medicine_id: p.medicine_id,
           quantity_taken: p.dosage_per_intake,
-          taken_at: new Date(formData.taken_at).toISOString(),
+          taken_at: new Date(formData.taken_at + ':00-03:00').toISOString(),
           notes: formData.notes.trim()
             ? `[Plano: ${plan.name}] ${formData.notes.trim()}`
             : `[Plano: ${plan.name}]`,

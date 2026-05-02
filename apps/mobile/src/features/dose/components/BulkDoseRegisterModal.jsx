@@ -12,9 +12,9 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native'
-import { CheckCircle, Circle } from 'lucide-react-native'
 import { usePlanProtocols } from '../hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
+import { getNow } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -90,7 +90,7 @@ export default function BulkDoseRegisterModal({
       return {
         protocol_id: p.id,
         medicine_id: p.medicine?.id ?? p.medicine_id,
-        taken_at: new Date().toISOString(),
+        taken_at: getNow().toISOString(),
         quantity_taken: p.dosage_per_intake ?? 1,
       }
     })

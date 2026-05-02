@@ -6,7 +6,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate, calculateAdherenceStats, calculateDosesByDate  } from '@dosiq/core'
+import { 
+  getTodayLocal, 
+  parseLocalDate, 
+  evaluateDoseTimelineState, 
+  isProtocolActiveOnDate, 
+  calculateAdherenceStats, 
+  calculateDosesByDate,
+  getNow,
+  formatLocalDate,
+  parseISO
+} from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
   getActiveProtocols,
@@ -83,7 +93,7 @@ export function useTodayData() {
           name: userSettings?.display_name || null,
           complexity_override: userSettings?.complexity_override || null
         },
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         localDay: today // R-114 fix: save explicit local day string
       }
 
@@ -101,9 +111,9 @@ export function useTodayData() {
         const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
         if (cached) {
           const parsed = JSON.parse(cached)
-          const capturedAt = new Date(parsed.capturedAt)
-          const now = new Date()
-          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+          const capturedAt = parseISO(parsed.capturedAt)
+          const now = getNow()
+          const diffHours = (now.getTime() - capturedAt.getTime()) / (1000 * 60 * 60)
 
           // Regra: < 24h
           if (diffHours < 24) {
@@ -157,9 +167,9 @@ export function useTodayData() {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      // Meia-noite local do dia seguinte
-      const nextMidnight = new Date(now)
+      const now = getNow()
+      // Meia-noite local do dia seguinte (Brasil)
+      const nextMidnight = parseLocalDate(getTodayLocal())
       nextMidnight.setDate(nextMidnight.getDate() + 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
@@ -207,11 +217,7 @@ export function useTodayData() {
 
     // 1. Filtrar logs de hoje para a Timeline
     const todayLogs = data.logs.filter(l => {
-      const logDate = new Date(l.taken_at)
-      const lYear = logDate.getFullYear()
-      const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
-      const lDay = String(logDate.getDate()).padStart(2, '0')
-      return `${lYear}-${lMonth}-${lDay}` === todayStr
+      return formatLocalDate(parseISO(l.taken_at)) === todayStr
     })
 
     // 2. Classificar doses em zonas para o Dashboard
@@ -247,8 +253,9 @@ export function useTodayData() {
 
     // Ordenar listas cronologicamente (00:00 -> 23:59)
     const sortByTime = (a, b) => {
-      const timeA = a.scheduledTime || (a.taken_at ? new Date(a.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
-      const timeB = b.scheduledTime || (b.taken_at ? new Date(b.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
+      const formatTime = (d) => d.scheduledTime || (d.taken_at ? formatLocalDate(parseISO(d.taken_at), true).split(' ')[1].substring(0, 5) : '00:00')
+      const timeA = formatTime(a)
+      const timeB = formatTime(b)
       return timeA.localeCompare(timeB)
     }
 
@@ -256,10 +263,10 @@ export function useTodayData() {
       late: missedDoses.sort(sortByTime),
       now: scheduledDoses.filter(d => {
         const [h, m] = d.scheduledTime.split(':').map(Number)
-        const scheduledDate = new Date()
+        const scheduledDate = parseLocalDate(todayStr)
         scheduledDate.setHours(h, m, 0, 0)
-        const now = new Date()
-        const diffHours = (now - scheduledDate) / (1000 * 60 * 60)
+        const now = getNow()
+        const diffHours = (now.getTime() - scheduledDate.getTime()) / (1000 * 60 * 60)
         return diffHours >= -0.5 && diffHours <= 2
       }).sort(sortByTime),
       upcoming: scheduledDoses.sort(sortByTime),

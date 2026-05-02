@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
+import { getTodayLocal, isProtocolActiveOnDate, getNow, parseISO } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
 
@@ -108,7 +108,7 @@ export function useStock() {
       }
       const snapshot = {
         data: newData,
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         rawData: result.data // Salvamos o raw para resiliência de cache total se o dia mudar
       }
 
@@ -129,9 +129,9 @@ export function useStock() {
         const cached = await AsyncStorage.getItem(STOCK_CACHE_KEY)
         if (cached) {
           const parsed = JSON.parse(cached)
-          const capturedAt = new Date(parsed.capturedAt)
-          const now = new Date()
-          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+          const capturedAt = parseISO(parsed.capturedAt)
+          const now = getNow()
+          const diffHours = (now.getTime() - capturedAt.getTime()) / (1000 * 60 * 60)
 
           if (diffHours < 24) {
             dataRef.current = parsed.data
@@ -168,8 +168,8 @@ export function useStock() {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      const nextMidnight = new Date(now)
+      const now = getNow()
+      const nextMidnight = new Date(now.getTime())
       nextMidnight.setDate(nextMidnight.getDate() + 1)
       nextMidnight.setHours(0, 0, 0, 0)
       

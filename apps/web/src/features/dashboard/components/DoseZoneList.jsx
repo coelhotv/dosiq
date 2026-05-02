@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { parseISO } from '@utils/dateUtils'
 import { motion, AnimatePresence } from 'framer-motion'
 import TreatmentAccordion from '@dashboard/components/TreatmentAccordion'
 import SwipeRegisterItem from '@dashboard/components/SwipeRegisterItem'
@@ -36,9 +37,10 @@ function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done
 
   const displayTime =
     done && dose.registeredAt
-      ? new Date(dose.registeredAt).toLocaleTimeString('pt-BR', {
+      ? parseISO(dose.registeredAt).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
+          timeZone: 'America/Sao_Paulo',
         })
       : dose.scheduledTime
 

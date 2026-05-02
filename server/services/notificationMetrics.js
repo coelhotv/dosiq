@@ -1,5 +1,10 @@
 // server/services/notificationMetrics.js
 import { createLogger } from '../bot/logger.js';
+import { 
+  getNow, 
+  getServerTimestamp, 
+  addMinutes 
+} from '../utils/dateUtils.js';
 
 const logger = createLogger('NotificationMetrics');
 
@@ -30,8 +35,7 @@ class MetricsStore {
    * @returns {string} Formato: "YYYY-MM-DDTHH:mm"
    */
   getCurrentMinuteKey() {
-    const now = new Date();
-    return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    return getServerTimestamp().slice(0, 16); // YYYY-MM-DDTHH:mm
   }
 
   /**
@@ -48,8 +52,7 @@ class MetricsStore {
    * Limpa dados antigos (mais de METRICS_RETENTION_MINUTES)
    */
   cleanup() {
-    const cutoff = new Date();
-    cutoff.setMinutes(cutoff.getMinutes() - METRICS_RETENTION_MINUTES);
+    const cutoff = addMinutes(-METRICS_RETENTION_MINUTES);
     const cutoffKey = cutoff.toISOString().slice(0, 16);
 
     const cleanMap = (map) => {
@@ -90,7 +93,7 @@ export function recordSuccess(deliveryTimeMs = null, metadata = {}) {
     metricsStore.deliveryTimes.get(key).push(deliveryTimeMs);
   }
   
-  metricsStore.lastSuccessfulSend = new Date().toISOString();
+  metricsStore.lastSuccessfulSend = getServerTimestamp();
   
   logger.debug('Métrica: sucesso registrado', {
     minute: key,
@@ -114,7 +117,7 @@ export function recordFailure(errorCategory = 'unknown', wasRetryable = false, m
   metricsStore.increment(metricsStore.errorBreakdown, catKey);
   
   metricsStore.lastFailure = {
-    timestamp: new Date().toISOString(),
+    timestamp: getServerTimestamp(),
     category: errorCategory,
     retryable: wasRetryable
   };
@@ -167,7 +170,7 @@ export function recordRateLimitHit(metadata = {}) {
  */
 export function updateDlqSize(size) {
   metricsStore.dlqSize = size;
-  metricsStore.lastDlqCheck = new Date().toISOString();
+  metricsStore.lastDlqCheck = getServerTimestamp();
 }
 
 /**
@@ -189,13 +192,12 @@ function percentile(arr, p) {
  * @returns {object} Métricas agregadas
  */
 export function getMetrics(windowMinutes = 5) {
-  const now = new Date();
+  const now = getNow();
   const keys = [];
   
   // Gerar chaves dos últimos N minutos
   for (let i = 0; i < windowMinutes; i++) {
-    const d = new Date(now);
-    d.setMinutes(d.getMinutes() - i);
+    const d = addMinutes(-i, now);
     keys.push(d.toISOString().slice(0, 16));
   }
 

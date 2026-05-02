@@ -6,12 +6,16 @@ import {
   getActiveProtocols
 } from '../services/protocolCache.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import {
-  getCurrentTimeInTimezone,
-  getCurrentDateInTimezone
-} from '../utils/timezone.js';
+import { 
+  getNow, 
+  getServerTimestamp, 
+  getTodayLocal, 
+  addDays,
+  getSaoPauloTime,
+  parseLocalDate,
+  getCurrentTime
+} from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
-import { parseLocalDate, formatLocalDate } from '../utils/dateUtils.js';
 import { 
   formatMedicineWithStrength, 
   formatIntakeQuantity 
@@ -82,8 +86,8 @@ async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     for (const user of realtimeUsers) {
 
       const timezone = user.timezone || 'America/Sao_Paulo';
-      // Sanitização: remove caracteres de controle do Intl (ex: \u202f no Node 18+) que quebram JSONB
-      const currentHHMM = getCurrentTimeInTimezone(timezone).replace(/[^\d:]/g, ''); 
+      // R-020: Usamos getCurrentTime() que já é blindado para Brasília
+      const currentHHMM = getCurrentTime().replace(/[^\d:]/g, ''); 
       userTimes.set(user.user_id, currentHHMM);
       
       if (!userIdsByHHMM[currentHHMM]) userIdsByHHMM[currentHHMM] = [];
@@ -449,11 +453,10 @@ async function runDailyAdherenceReportViaDispatcher(dispatcher, correlationId) {
     for (const user of eligibleUsers) {
       const { user_id: userId, timezone, display_name: displayName } = user;
       try {
-        const dateToday = getCurrentDateInTimezone(timezone || 'America/Sao_Paulo');
+        const dateToday = getTodayLocal();
         const startOfDay = parseLocalDate(dateToday);
-        const dateYesterdayDate = new Date(startOfDay);
-        dateYesterdayDate.setDate(dateYesterdayDate.getDate() - 1);
-        const startOfYesterday = formatLocalDate(dateYesterdayDate);
+        const dateYesterdayDate = addDays(startOfDay, -1);
+        const startOfYesterday = getTodayLocal(dateYesterdayDate);
         
         const { data: logs } = await supabase
           .from('medicine_logs')
@@ -649,7 +652,7 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       const userId = user.user_id;
       
       // Cálculo de adesão (últimos 7 dias)
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const oneWeekAgo = addDays(getNow(), -7).toISOString();
       const { data: logs } = await supabase
         .from('medicine_logs')
         .select('id')
@@ -761,7 +764,7 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
     for (const user of users) {
       const userId = user.user_id;
 
-      const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const oneMonthAgo = addDays(getNow(), -30).toISOString();
       const { data: logs } = await supabase
         .from('medicine_logs')
         .select('id')
@@ -811,9 +814,7 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlati
 
     for (const user of users) {
       const userId = user.user_id;
-      const timezone = user.timezone || 'America/Sao_Paulo';
-      const today = getCurrentDateInTimezone(timezone);
-      const todayDate = new Date(today + 'T00:00:00');
+      const todayDate = parseLocalDate(getTodayLocal());
 
       const { data: protocols } = await supabase
         .from('protocols')
@@ -828,7 +829,7 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlati
       if (!protocols || protocols.length === 0) continue;
 
       for (const protocol of protocols) {
-        const endDate = new Date(protocol.end_date + 'T00:00:00');
+        const endDate = parseLocalDate(protocol.end_date);
         const diffTime = endDate.getTime() - todayDate.getTime();
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 

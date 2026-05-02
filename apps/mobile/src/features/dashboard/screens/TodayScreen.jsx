@@ -15,7 +15,7 @@ import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import LoadingState from '../../../shared/components/states/LoadingState'
 import EmptyState from '../../../shared/components/states/EmptyState'
 import ErrorState from '../../../shared/components/states/ErrorState'
-import { getPeriodFromTime } from '@dosiq/core'
+import { getPeriodFromTime, getNow } from '@dosiq/core'
 import AdherenceDayCard from '../components/AdherenceDayCard'
 import TimeBlockSeparator from '../components/TimeBlockSeparator'
 import DoseTimelineCard from '../components/DoseTimelineCard'
@@ -118,7 +118,7 @@ export default function TodayScreen({ route, navigation }) {
     const isFirstLoad = Object.keys(expandedShifts).length === 0
 
     if (shifts.length > 0 && (isFirstLoad || dayChanged)) {
-      const now = new Date()
+      const now = getNow()
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
       const currentShift = getPeriodFromTime(timeStr)
 
@@ -157,7 +157,7 @@ export default function TodayScreen({ route, navigation }) {
   // Dados do Cabeçalho (Personalização H8.7)
   const fullUserName = data?.user?.name || data?.user?.email?.split('@')[0] || 'Usuário'
   const firstName = fullUserName.trim().split(' ')[0]
-  const todayFormatted = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const todayFormatted = getNow().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const greeting = `Olá, ${firstName}`
 
   function handleOpenRegister(protocol, scheduledTime) {

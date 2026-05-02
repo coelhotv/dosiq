@@ -9,6 +9,7 @@
  */
 
 import { supabase } from '@shared/utils/supabase'
+import { getNow } from '@utils/adherenceLogic'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -38,7 +39,7 @@ const LOG_LEVELS = {
  * @param {Object} data - Dados adicionais para o log
  */
 function log(level, message, data = {}) {
-  const timestamp = new Date().toISOString()
+  const timestamp = getNow().toISOString()
   const logEntry = {
     timestamp,
     service: 'shareService',

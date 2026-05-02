@@ -9,7 +9,7 @@ import {
 } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser, supabase } from '@shared/utils/supabase'
-import { getTodayLocal } from '@utils/dateUtils'
+import { getTodayLocal, getNow, getServerTimestamp } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
 import './Dashboard.css'
 import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
@@ -245,10 +245,10 @@ export default function Dashboard({ onNavigate }) {
           medicine_id: medicineId,
           protocol_id: protocolId,
           quantity_taken: dosagePerIntake,
-          taken_at: new Date().toISOString(),
+          taken_at: getServerTimestamp(),
         })
         analyticsService.track('dose_registered_quick', {
-          timestamp: Date.now(),
+          timestamp: getNow().getTime(),
           method: 'priority-card',
         })
         refresh()
@@ -270,11 +270,11 @@ export default function Dashboard({ onNavigate }) {
             medicine_id: dose.medicineId,
             protocol_id: dose.protocolId,
             quantity_taken: dose.dosagePerIntake,
-            taken_at: new Date().toISOString(),
+            taken_at: getServerTimestamp(),
           })
         }
         analyticsService.track('doses_registered_batch', {
-          timestamp: Date.now(),
+          timestamp: getNow().getTime(),
           method: 'priority-card',
           count: doses.length,
         })
@@ -338,7 +338,7 @@ export default function Dashboard({ onNavigate }) {
 
   const adherenceScore = stats?.score ?? 0
   const streak = stats?.currentStreak ?? 0
-  const today = new Date().toLocaleDateString('pt-BR', {
+  const today = getNow().toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

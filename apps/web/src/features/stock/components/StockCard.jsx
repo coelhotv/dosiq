@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Card from '@shared/components/ui/Card'
 import StockIndicator from './StockIndicator'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, getNow } from '@utils/dateUtils'
 import './StockCard.css'
 
 // Prefixos de notas geradas automaticamente pelo sistema (deleção/edição de dose)
@@ -31,7 +31,7 @@ export default function StockCard({
 
   const isExpiringSoon = (expirationDate) => {
     if (!expirationDate) return false
-    const today = new Date()
+    const today = getNow()
     const expDate = parseLocalDate(expirationDate)
     const daysUntilExpiration = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
     return daysUntilExpiration <= 30 && daysUntilExpiration > 0
@@ -39,7 +39,7 @@ export default function StockCard({
 
   const isExpired = (expirationDate) => {
     if (!expirationDate) return false
-    const today = new Date()
+    const today = getNow()
     return parseLocalDate(expirationDate) < today
   }
 

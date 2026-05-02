@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
 import {
   checkRateLimit,
   getRateLimitHeaders,
@@ -145,7 +146,7 @@ async function updateReviewStatus(supabase, update) {
   // Construir objeto de atualização
   const updateData = {
     status,
-    updated_at: new Date().toISOString(),
+    updated_at: getServerTimestamp(),
   }
 
   if (resolution_type !== undefined) {
@@ -162,7 +163,7 @@ async function updateReviewStatus(supabase, update) {
 
   // Se status é resolved/partial/wontfix, adicionar resolved_at
   if (['resolved', 'partial', 'wontfix'].includes(status)) {
-    updateData.resolved_at = new Date().toISOString()
+    updateData.resolved_at = getServerTimestamp()
   }
 
   const { data, error } = await supabase

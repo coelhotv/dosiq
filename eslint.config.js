@@ -30,6 +30,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        ...globals.jest,
       },
       parserOptions: {
         ecmaVersion: 'latest',
@@ -165,7 +166,23 @@ export default [
     },
   },
   {
-    files: ['**/*.config.{js,jsx}', '**/vite.config.js', '**/vitest.config.js', '**/vitest.ci.config.js'],
+    files: [
+      '**/*.config.{js,jsx,cjs}',
+      '**/*.config.js',
+      '**/vite.config.js',
+      '**/vitest.*.config.js',
+      '**/jest.config.js',
+      '**/metro.config.js',
+      '**/babel.config.js',
+      '**/app.config.js',
+      '**/scripts/**/*.js',
+      '**/scratch/**/*.cjs'
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
     rules: {
       'import-x/no-unresolved': 'off',
     },
@@ -197,6 +214,7 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser, // RN usa alguns browser globals (console, fetch)
+        ...globals.jest,    // Mobile usa Jest para testes
         '__DEV__': 'readonly',
       },
     },

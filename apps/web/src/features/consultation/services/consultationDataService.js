@@ -12,6 +12,7 @@ import { emergencyCardService } from '@emergency/services/emergencyCardService'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateAdherenceStats } from '@utils/adherenceLogic'
 import { calculateTitrationData } from '@utils/titrationUtils'
+import { getNow, getServerTimestamp, addDays } from '@utils/dateUtils'
 
 /**
  * Agrega todos os dados clínicos para o Modo Consulta Médica
@@ -66,7 +67,7 @@ export function getConsultationData(
     stockAlerts,
     prescriptionStatus,
     activeTitrations,
-    generatedAt: new Date().toISOString(),
+    generatedAt: getServerTimestamp(),
   }
 }
 
@@ -176,8 +177,7 @@ function _calculateAdherenceSummary(logs, protocols) {
   }
 
   // Filtra logs dos últimos 90 dias
-  const ninetyDaysAgo = new Date()
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  const ninetyDaysAgo = addDays(getNow(), -90)
   const recentLogs = logs.filter((log) => new Date(log.taken_at) >= ninetyDaysAgo)
 
   // Calcula stats para 30 dias

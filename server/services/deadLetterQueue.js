@@ -2,6 +2,12 @@
 import { supabase } from './supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { updateDlqSize } from './notificationMetrics.js';
+import { 
+  getNow, 
+  getServerTimestamp, 
+  addDays, 
+  parseISO 
+} from '../utils/dateUtils.js';
 
 const logger = createLogger('DeadLetterQueue');
 
@@ -149,7 +155,7 @@ export async function markForRetry(id) {
       .from('failed_notification_queue')
       .update({
         status: DLQStatus.RETRYING,
-        updated_at: new Date().toISOString()
+        updated_at: getServerTimestamp()
       })
       .eq('id', id)
       .eq('status', DLQStatus.PENDING); // Only if pending
@@ -188,7 +194,7 @@ export async function markAsResolved(id, resolution, notes = '') {
       .update({
         status,
         resolution_notes: notes,
-        resolved_at: new Date().toISOString()
+        resolved_at: getServerTimestamp()
       })
       .eq('id', id);
     
@@ -273,8 +279,8 @@ export async function getDLQStats() {
       
       // Rastreia a falha mais antiga
       if (item.oldest_failure) {
-        const oldestDate = new Date(item.oldest_failure);
-        if (!stats.oldestFailure || oldestDate < new Date(stats.oldestFailure)) {
+        const oldestDate = parseISO(item.oldest_failure);
+        if (!stats.oldestFailure || oldestDate < parseISO(stats.oldestFailure)) {
           stats.oldestFailure = item.oldest_failure;
         }
       }
@@ -329,8 +335,7 @@ export async function getPendingForRetry(limit = 50) {
  */
 export async function cleanupResolved(daysToKeep = 30) {
   try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    const cutoffDate = addDays(-daysToKeep);
     
     const { error, count } = await supabase
       .from('failed_notification_queue')

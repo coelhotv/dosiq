@@ -1,3 +1,5 @@
+import { getNow, addDays, parseISO, getServerTimestamp } from '@utils/dateUtils'
+
 /**
  * Analytics Service - Privacy-First Local Analytics
  *
@@ -20,10 +22,10 @@ const MAX_EVENTS = 1000
  * @returns {Object} Formatted event object
  */
 const createEvent = (name, properties = {}) => ({
-  id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  id: crypto.randomUUID?.() || `${getNow().getTime()}-${Math.random().toString(36).substr(2, 9)}`,
   name,
   properties,
-  timestamp: new Date().toISOString(),
+  timestamp: getServerTimestamp(),
 })
 
 /**
@@ -59,11 +61,10 @@ const saveEvents = (events) => {
  * @returns {Array} Cleaned array of events
  */
 const cleanupEvents = (events) => {
-  const now = new Date()
-  const cutoffDate = new Date(now.setDate(now.getDate() - EVENT_RETENTION_DAYS))
+  const cutoffDate = addDays(getNow(), -EVENT_RETENTION_DAYS)
 
   // Filter out old events
-  let filtered = events.filter((event) => new Date(event.timestamp) > cutoffDate)
+  let filtered = events.filter((event) => parseISO(event.timestamp) > cutoffDate)
 
   // Enforce maximum number of events
   if (filtered.length > MAX_EVENTS) {
@@ -134,16 +135,16 @@ export const analyticsService = {
     }
 
     if (filter.since) {
-      const sinceDate = new Date(filter.since)
-      events = events.filter((e) => new Date(e.timestamp) >= sinceDate)
+      const sinceDate = parseISO(filter.since)
+      events = events.filter((e) => parseISO(e.timestamp) >= sinceDate)
     }
 
     if (filter.until) {
-      const untilDate = new Date(filter.until)
-      events = events.filter((e) => new Date(e.timestamp) <= untilDate)
+      const untilDate = parseISO(filter.until)
+      events = events.filter((e) => parseISO(e.timestamp) <= untilDate)
     }
 
-    return events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    return events.sort((a, b) => parseISO(b.timestamp) - parseISO(a.timestamp))
   },
 
   /**
@@ -160,13 +161,13 @@ export const analyticsService = {
     let filtered = events
 
     if (options.since) {
-      const sinceDate = new Date(options.since)
-      filtered = filtered.filter((e) => new Date(e.timestamp) >= sinceDate)
+      const sinceDate = parseISO(options.since)
+      filtered = filtered.filter((e) => parseISO(e.timestamp) >= sinceDate)
     }
 
     if (options.until) {
-      const untilDate = new Date(options.until)
-      filtered = filtered.filter((e) => new Date(e.timestamp) <= untilDate)
+      const untilDate = parseISO(options.until)
+      filtered = filtered.filter((e) => parseISO(e.timestamp) <= untilDate)
     }
 
     // Count events by name
@@ -192,11 +193,10 @@ export const analyticsService = {
    */
   clearOldEvents: (days = EVENT_RETENTION_DAYS) => {
     const events = getAllEvents()
-    const now = new Date()
-    const cutoffDate = new Date(now.setDate(now.getDate() - days))
+    const cutoffDate = addDays(getNow(), -days)
 
     const beforeCount = events.length
-    const filtered = events.filter((event) => new Date(event.timestamp) > cutoffDate)
+    const filtered = events.filter((event) => parseISO(event.timestamp) > cutoffDate)
     const afterCount = filtered.length
 
     saveEvents(filtered)

@@ -20,27 +20,16 @@ import { useMemo, useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { debugLog } from '@shared/utils/logger'
+import { getNow, getTodayLocal, addDays, formatLocalDate } from '@utils/dateUtils'
 import './SparklineAdesao.css'
 
 /**
  * Helper to check if a date is "today or before" in Brazil time (GMT-3)
- * Until 3AM UTC (which is midnight in Brazil), we don't show the "next day"
  * @param {string} dateStr - Date in format YYYY-MM-DD
  * @returns {boolean} true if date is visible (today or past)
  */
 function isDateVisibleInBrazil(dateStr) {
-  const now = new Date()
-  const brazilOffset = -3 * 60 * 60 * 1000 // GMT-3 in milliseconds
-
-  // Current time in Brazil
-  const nowInBrazil = new Date(now.getTime() + brazilOffset)
-
-  // Compare dates (ignoring time)
-  const nowDateStr = nowInBrazil.toISOString().split('T')[0]
-  const nowDate = new Date(nowDateStr + 'T00:00:00')
-  const inputDate = new Date(dateStr + 'T00:00:00')
-
-  return inputDate <= nowDate
+  return dateStr <= getTodayLocal()
 }
 
 /**
@@ -186,14 +175,13 @@ export function SparklineAdesao({
       return []
     }
 
-    const today = new Date()
+    const today = getNow()
     const data = []
 
     // Itera de d-daysCount até d-1 (exclui hoje — adesão de hoje é sempre parcial)
     for (let i = daysCount; i >= 1; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const dateKey = date.toISOString().split('T')[0]
+      const date = addDays(today, -i)
+      const dateKey = formatLocalDate(date)
 
       if (!isDateVisibleInBrazil(dateKey)) {
         continue
@@ -202,7 +190,7 @@ export function SparklineAdesao({
       const dayData = adherenceByDay.find((d) => d.date === dateKey)
       data.push({
         date: dateKey,
-        dayName: date.toLocaleDateString('pt-BR', { weekday: 'short' }),
+        dayName: date.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'America/Sao_Paulo' }),
         adherence: dayData?.adherence ?? 0,
         taken: dayData?.taken ?? 0,
         expected: dayData?.expected ?? 0,

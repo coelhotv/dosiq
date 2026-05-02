@@ -13,6 +13,12 @@
 
 import { supabase } from './supabase.js';
 import { getUserIdByChatId } from './userService.js';
+import { 
+  getNow, 
+  getServerTimestamp, 
+  addMinutes,
+  parseISO
+} from '../utils/dateUtils.js';
 
 const SESSION_TTL_MINUTES = 30; // 30 minute expiry as per requirements
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Run cleanup every 5 minutes
@@ -27,7 +33,7 @@ const CACHE_TTL_MS = 60 * 1000; // Local cache valid for 1 minute
  * @returns {string} ISO timestamp for session expiration
  */
 function calculateExpiration() {
-  return new Date(Date.now() + SESSION_TTL_MINUTES * 60 * 1000).toISOString();
+  return addMinutes(SESSION_TTL_MINUTES).toISOString();
 }
 
 /**
@@ -38,7 +44,7 @@ function calculateExpiration() {
 function isCacheValid(chatId) {
   const timestamp = cacheTimestamps.get(chatId);
   if (!timestamp) return false;
-  return (Date.now() - timestamp) < CACHE_TTL_MS;
+  return (getNow().getTime() - timestamp) < CACHE_TTL_MS;
 }
 
 /**
@@ -48,7 +54,7 @@ function isCacheValid(chatId) {
  */
 function updateCache(chatId, context) {
   localCache.set(chatId, context);
-  cacheTimestamps.set(chatId, Date.now());
+  cacheTimestamps.set(chatId, getNow().getTime());
 }
 
 /**
@@ -69,7 +75,7 @@ function clearCache(chatId) {
  * @returns {Promise<void>}
  */
 export async function setSession(chatId, context) {
-  const startTime = Date.now();
+  const startTime = getNow().getTime();
   const chatIdStr = String(chatId);
   const expiresAt = calculateExpiration();
 
@@ -94,7 +100,7 @@ export async function setSession(chatId, context) {
         chat_id: chatIdStr,
         context,
         expires_at: expiresAt,
-        updated_at: new Date().toISOString()
+        updated_at: getServerTimestamp()
       }, {
         onConflict: 'chat_id'
       });
@@ -103,7 +109,7 @@ export async function setSession(chatId, context) {
       console.error(`[SessionManager] Error setting session for chat ${chatId}:`, error);
       // Cache is already updated, session survives in memory even if DB fails
     } else {
-      const duration = Date.now() - startTime;
+      const duration = getNow().getTime() - startTime;
       if (duration > 300) {
         console.warn(`[SessionManager] Slow write detected: ${duration}ms for chat ${chatId}`);
       }
@@ -121,14 +127,14 @@ export async function setSession(chatId, context) {
  * @returns {Promise<object|null>} Session context or null if expired/not found
  */
 export async function getSession(chatId) {
-  const startTime = Date.now();
+  const startTime = getNow().getTime();
   const chatIdStr = String(chatId);
 
   // Fast path: check local cache first
   if (isCacheValid(chatIdStr) && localCache.has(chatIdStr)) {
     const cached = localCache.get(chatIdStr);
     // Validate cache hasn't expired logically
-    if (cached && cached._expiresAt && new Date(cached._expiresAt) > new Date()) {
+    if (cached && cached._expiresAt && parseISO(cached._expiresAt).getTime() > getNow().getTime()) {
       return cached;
     }
   }
@@ -149,7 +155,7 @@ export async function getSession(chatId) {
     }
 
     // Check if session expired
-    if (new Date(data.expires_at) < new Date()) {
+    if (parseISO(data.expires_at).getTime() < getNow().getTime()) {
       // Async cleanup without awaiting
       clearSession(chatId);
       clearCache(chatIdStr);
@@ -159,7 +165,7 @@ export async function getSession(chatId) {
     // Update cache with fresh data
     updateCache(chatIdStr, data.context);
 
-    const duration = Date.now() - startTime;
+    const duration = getNow().getTime() - startTime;
     if (duration > 300) {
       console.warn(`[SessionManager] Slow read detected: ${duration}ms for chat ${chatId}`);
     }
@@ -205,14 +211,14 @@ export async function clearSession(chatId) {
  * @returns {Promise<number>} Count of deleted sessions
  */
 export async function cleanupExpiredSessions() {
-  const startTime = Date.now();
+  const startTime = getNow().getTime();
 
   try {
     // Use database function if available, otherwise direct delete
     const { data, error } = await supabase
       .from('bot_sessions')
       .delete()
-      .lt('expires_at', new Date().toISOString())
+      .lt('expires_at', getServerTimestamp())
       .select('id');
 
     if (error) {
@@ -221,7 +227,7 @@ export async function cleanupExpiredSessions() {
     }
 
     const deletedCount = data?.length || 0;
-    const duration = Date.now() - startTime;
+    const duration = getNow().getTime() - startTime;
     
     if (deletedCount > 0) {
       console.log(`[SessionManager] Cleanup completed: ${deletedCount} sessions removed in ${duration}ms`);
@@ -247,7 +253,7 @@ export async function getSessionStats() {
     const { count: expiredCount, error: expiredError } = await supabase
       .from('bot_sessions')
       .select('*', { count: 'exact', head: true })
-      .lt('expires_at', new Date().toISOString());
+      .lt('expires_at', getServerTimestamp());
 
     if (totalError || expiredError) {
       console.error('[SessionManager] Error getting stats:', totalError || expiredError);

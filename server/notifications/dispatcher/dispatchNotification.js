@@ -11,7 +11,11 @@ import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
 import { shouldSendNow } from '../utils/notificationGate.js'
 import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { notificationLogRepository } from '../repositories/notificationLogRepository.js'
-import { createLogger } from '../../bot/logger.js'
+import { 
+  getNow, 
+  getCurrentTime, 
+  getServerTimestamp 
+} from '../../utils/dateUtils.js'
 
 const logger = createLogger('Dispatcher')
 
@@ -52,7 +56,7 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
     throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
   }
 
-  const correlationId = context?.correlationId || `dispatch_${Date.now()}`
+  const correlationId = context?.correlationId || `dispatch_${getNow().getTime()}`
   const ctx = { ...context, correlationId }
   
   // Resolve channels if not provided
@@ -72,13 +76,7 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
 
   if (isAlert) {
     const settings = await repositories.preferences.getSettingsByUserId(userId)
-    const now = new Date()
-    const currentHHMM = now.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false,
-      timeZone: settings.timezone || 'America/Sao_Paulo'
-    })
+    const currentHHMM = getCurrentTime()
 
     const isQuietEnabled = settings.quiet_hours_enabled ?? false
     

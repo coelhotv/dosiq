@@ -1,0 +1,351 @@
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile/src/features/dashboard/hooks/__tests__/useTodayData.test.js
+  64:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  65:17  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile/src/features/dashboard/services/dashboardService.js
+  50:20  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   33:16  warning  Function 'DoseRegisterModal' has too many lines (105). Maximum allowed is 100                                  max-lines-per-function
+   69:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)          no-restricted-syntax
+--
+  125:16  warning  Function 'NotificationInboxScreen' has a complexity of 24. Maximum allowed is 15                                                                                                                                          complexity
+  151:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)                                                                                                                     no-restricted-syntax
+  172:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)                                                                                                                     no-restricted-syntax
+--
+   16:1   error    '../hooks/useProfile' import is restricted from being used by a pattern. src/hooks/ foi removido. Use "@shared/hooks/" ou o alias da feature (ex: "@dashboard/hooks/", "@medications/hooks/")  no-restricted-imports
+   43:13  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)                                                                                          no-restricted-syntax
+--
+  151:16  error    'cacheErr' is defined but never used                                                                   no-unused-vars
+  172:28  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   17:8   warning  Function 'useTreatments' has too many lines (142). Maximum allowed is 100                              max-lines-per-function
+   42:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   58:30  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   59:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   73:16  error    'cacheErr' is defined but never used                                                                   no-unused-vars
+   90:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   91:28  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile/src/platform/notifications/unregisterNotificationDevice.js
+  12:47  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile/src/shared/hooks/useNotificationLog.js
+   67:20  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  117:20  error  Unexpected console statement. Only these console methods are allowed: warn, error, info                no-console
+  125:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  151:16  error  'cacheErr' is defined but never used                                                                   no-unused-vars
+  175:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  176:28  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile/src/shared/hooks/useUnreadNotificationCount.js
+  34:26  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  37:14  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  42:17  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   15:40  warning  Arrow function has too many lines (241). Maximum allowed is 100                                        max-lines-per-function
+   66:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   87:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  116:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  149:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  189:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  214:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  235:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  266:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  289:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  318:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  342:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   10:33  warning  Arrow function has too many lines (229). Maximum allowed is 100                                        max-lines-per-function
+   14:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   23:37  warning  Arrow function has too many lines (188). Maximum allowed is 100                                        max-lines-per-function
+   28:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   33:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   62:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   66:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   94:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   98:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  126:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  131:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  162:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  166:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  195:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  200:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  213:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  241:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  245:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/adherence/services/adherencePatternService.js
+   44:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  125:8   warning  Function 'analyzeAdherencePatterns' has a complexity of 18. Maximum allowed is 15                      complexity
+  143:36  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  155:36  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/adherence/services/protocolRiskService.js
+  54:64  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  61:63  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  63:37  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   49:1   warning  Function 'DoseCalendar' has too many lines (200). Maximum allowed is 100                               max-lines-per-function
+  197:17  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/calendar/services/doseCalendarService.js
+  41:10  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/chatbot/__tests__/contextBuilder.test.js
+  31:15  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/chatbot/components/ChatWindow.jsx
+   48:16  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   76:32  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   77:32  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   85:16  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/chatbot/services/contextBuilder.js
+  45:37  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  22:16  warning  Function 'ConsultationView' has a complexity of 18. Maximum allowed is 15                              complexity
+  58:12  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  20:16  warning  Function 'ConsultationViewRedesign' has a complexity of 16. Maximum allowed is 15                      complexity
+  54:12  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/consultation/services/__tests__/consultationDataService.test.js
+   83:32  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   84:17  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   87:15  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   95:37  warning  Arrow function has too many lines (447). Maximum allowed is 100                                        max-lines-per-function
+  182:17  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  190:17  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  224:34  warning  Arrow function has too many lines (185). Maximum allowed is 100                                        max-lines-per-function
+  442:14  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/consultation/services/consultationDataService.js
+  181:43  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/dashboard/components/__tests__/SparklineAdesao.test.jsx
+  16:17  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  18:15  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  40:26  warning  Arrow function has too many lines (108). Maximum allowed is 100                                        max-lines-per-function
+  95:12  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/dashboard/hooks/__tests__/useDoseZones.test.js
+   38:15  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   81:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  176:42  warning  Arrow function has too many lines (123). Maximum allowed is 100                                        max-lines-per-function
+  180:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/dashboard/hooks/useDoseZones.js
+   59:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   78:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   35:30  warning  Arrow function has too many lines (141). Maximum allowed is 100                                        max-lines-per-function
+  126:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  144:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  145:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  20:16  warning  Function 'EmergencyCardView' has too many lines (188). Maximum allowed is 100                          max-lines-per-function
+  59:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   42:16  warning  Function 'ExportDialog' has too many lines (200). Maximum allowed is 100                               max-lines-per-function
+  101:40  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  102:36  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   58:16  warning  Function 'NotificationCard' has a complexity of 23. Maximum allowed is 15                              complexity
+  120:32  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   14:10  error  'formatLocalDate' is defined but never used. Allowed unused vars must match /^(motion|AnimatePresence|[A-Z_])/u  no-unused-vars
+  141:20  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)            no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/prescriptions/services/__tests__/prescriptionService.test.js
+  21:32  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  24:44  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  25:44  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/protocols/components/TitrationStep.jsx
+  32:12  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   37:37  warning  Arrow function has too many lines (148). Maximum allowed is 100                                        max-lines-per-function
+   50:17  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  208:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  259:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  262:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  268:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  271:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  304:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  331:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  335:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   13:30  warning  Arrow function has too many lines (248). Maximum allowed is 100                                        max-lines-per-function
+   94:33  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   94:70  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   95:53  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  100:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  101:26  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  106:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  115:50  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  122:26  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  128:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  133:48  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  138:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  144:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  154:25  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  156:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   12:40  warning  Arrow function has too many lines (241). Maximum allowed is 100                                        max-lines-per-function
+   13:15  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  138:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  192:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  219:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  229:35  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  253:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  259:20  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  383:8   warning  Function 'buildConsultationPdfData' has a complexity of 76. Maximum allowed is 15                      complexity
+  550:68  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+   19:23  warning  Arrow function has too many lines (342). Maximum allowed is 100                                        max-lines-per-function
+   93:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+  487:34  warning  Arrow function has too many lines (278). Maximum allowed is 100                                        max-lines-per-function
+  489:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  508:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  524:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  543:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  557:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  575:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  587:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  617:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  629:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  652:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  673:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  691:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  702:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  723:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  735:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  754:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  759:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  778:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  797:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+    6:37  warning  Arrow function has too many lines (169). Maximum allowed is 100                                        max-lines-per-function
+   10:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   19:29  warning  Arrow function has too many lines (102). Maximum allowed is 100                                        max-lines-per-function
+   25:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   29:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   52:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   55:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   86:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   89:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  124:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  128:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  172:19  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  177:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  185:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  193:22  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/schemas/emergencyCardSchema.js
+  91:20  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/schemas/logSchema.js
+  25:22  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  26:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  28:27  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/schemas/protocolSchema.js
+  192:16  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  192:57  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/schemas/stockSchema.js
+  29:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  98:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  99:26  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/schemas/validationHelper.js
+  222:18  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/services/api/adherenceService.js
+  629:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  632:45  warning  Arrow function has a complexity of 16. Maximum allowed is 15                                           complexity
+  674:28  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  675:26  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/services/api/dlqService.js
+  141:12  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/shared/components/log/LogEntry.jsx
+  6:18  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+    8:16  warning  Function 'LogForm' has a complexity of 43. Maximum allowed is 15                                       complexity
+  146:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  174:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/shared/components/ui/__tests__/Calendar.heatmap.test.jsx
+  11:13  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/shared/hooks/useNotificationLog.js
+  55:20  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+    5:10  error  'parseLocalDate' is defined but never used. Allowed unused vars must match /^(motion|AnimatePresence|[A-Z_])/u  no-unused-vars
+  468:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)           no-restricted-syntax
+  554:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)           no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/utils/__tests__/adherence.smoke.test.js
+   7:23  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  15:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  16:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+    7:41  warning  Arrow function has too many lines (112). Maximum allowed is 100                                        max-lines-per-function
+   44:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  113:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  114:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/utils/__tests__/adherenceLogic.test.js
+  10:22  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  16:28  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  19:27  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  22:22  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  25:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  31:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  38:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/schemas/logSchema.js
+  29:27  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/schemas/stockSchema.js
+  99:26  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/schemas/validationHelper.js
+  222:18  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/utils/__tests__/adherence.smoke.test.js
+   7:23  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  15:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  16:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+    7:41  warning  Arrow function has too many lines (112). Maximum allowed is 100                                        max-lines-per-function
+   44:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  113:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  114:27  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/utils/__tests__/adherenceLogic.test.js
+  10:22  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  16:28  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  19:27  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  22:22  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  25:21  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  31:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  38:19  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  48:17  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  86:17  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/utils/adherenceLogic.js
+   79:26  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   80:24  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   92:23  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+   96:21  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  245:25  error    Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+--
+/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/packages/core/src/utils/notificationIconMapper.js
+   92:16  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax
+  107:10  error  Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020)  no-restricted-syntax

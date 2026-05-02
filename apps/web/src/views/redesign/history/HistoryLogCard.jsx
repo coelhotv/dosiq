@@ -2,6 +2,7 @@
 // S10C — Card de dose para o HistoryDayPanel (substitui LogEntry no contexto do histórico)
 
 import { PencilLine, Trash2 } from 'lucide-react'
+import { parseISO } from '@utils/dateUtils'
 
 /**
  * Card de dose para o painel do dia no histórico.
@@ -15,7 +16,7 @@ import { PencilLine, Trash2 } from 'lucide-react'
  */
 export default function HistoryLogCard({ log, onEdit, onDelete }) {
   const timeLabel = log.taken_at
-    ? new Date(log.taken_at).toLocaleTimeString('pt-BR', {
+    ? parseISO(log.taken_at).toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
       })

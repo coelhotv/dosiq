@@ -14,7 +14,7 @@ import {
   calculateMonthlyDoseMap,
   calculateMonthlyStats,
 } from '@calendar/services/doseCalendarService'
-import { formatLocalDate, parseLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, parseLocalDate, getNow, parseISO, getSaoPauloTime } from '@utils/dateUtils'
 import './DoseCalendar.css'
 
 /**
@@ -50,7 +50,7 @@ function DoseCalendar() {
   // 1. States first (R-010)
   const [selectedDate, setSelectedDate] = useState(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [viewDate, setViewDate] = useState(new Date())
+  const [viewDate, setViewDate] = useState(getNow())
 
   // 2. Context/Hooks
   const { logs, protocols } = useDashboard()
@@ -96,9 +96,8 @@ function DoseCalendar() {
     if (!dayInfo) return null
 
     // Verificar se é um dia futuro
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const isSelectedFuture = selectedDate > today
+    const todayStr = formatLocalDate(getNow())
+    const isSelectedFuture = dateStr > todayStr
 
     // Agrupar doses por protocolo
     const protocolDetails = protocols
@@ -116,7 +115,8 @@ function DoseCalendar() {
         // Contar doses esperadas e tomadas para este protocolo nesta data
         const logsForProtocol = logs.filter((log) => {
           if (log.protocol_id !== protocol.id) return false
-          const logDate = parseLocalDate(log.taken_at)
+          // R-020: parseISO + normalization para evitar day-drift em logs
+          const logDate = getSaoPauloTime(parseISO(log.taken_at))
           return formatLocalDate(logDate) === dateStr
         })
 
@@ -193,6 +193,7 @@ function DoseCalendar() {
    */
   const handleLoadMonth = useCallback(async (year, month) => {
     // Atualiza viewDate para disparar recálculo do doseMap
+    // Usando Date aqui apenas como container de Ano/Mês para navegação
     setViewDate(new Date(year, month, 1))
     return Promise.resolve()
   }, [])

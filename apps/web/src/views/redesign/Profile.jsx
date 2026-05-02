@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { supabase } from '@shared/utils/supabase'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, getNow, getTodayLocal, getSaoPauloTime } from '@utils/dateUtils'
 import { validateUserProfile, BRAZILIAN_STATES } from '@schemas/userProfileSchema'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import Button from '@shared/components/ui/Button'
@@ -100,7 +100,7 @@ export default function Profile({ onNavigate }) {
           .from('user_settings')
           .update({
             display_name: user.user_metadata.name,
-            updated_at: new Date().toISOString(),
+            updated_at: getNow().toISOString(),
           })
           .eq('user_id', user.id)
 
@@ -164,7 +164,7 @@ export default function Profile({ onNavigate }) {
     if (!settings?.birth_date) return null
     try {
       const birth = parseLocalDate(settings.birth_date)
-      const today = new Date()
+      const today = getSaoPauloTime()
       let years = today.getFullYear() - birth.getFullYear()
       const monthDiff = today.getMonth() - birth.getMonth()
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
@@ -247,7 +247,7 @@ export default function Profile({ onNavigate }) {
           {
             user_id: user.id,
             ...validation.data,
-            updated_at: new Date().toISOString(),
+            updated_at: getNow().toISOString(),
           },
           { onConflict: 'user_id' }
         )

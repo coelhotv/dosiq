@@ -1,4 +1,5 @@
 import { Clock } from 'lucide-react'
+import { getNow } from '@utils/dateUtils'
 
 /**
  * PriorityDoseCard — Destaque visual para doses urgentes (late + now).
@@ -18,9 +19,9 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
   const overflowCount = doses.length - DISPLAY_LIMIT
 
   const nextTime = doses[0]?.scheduledTime || ''
-  const now = new Date()
+  const now = getNow()
   const [hour, minute] = nextTime.split(':').map(Number)
-  const scheduled = new Date()
+  const scheduled = getNow()
   scheduled.setHours(hour, minute, 0, 0)
   const diffMin = Math.round((scheduled - now) / 60000)
 
