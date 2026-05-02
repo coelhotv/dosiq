@@ -1,5 +1,5 @@
 import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
-import { getNow, parseISO } from '@utils/dateUtils'
+import { getNow, parseISO, getSaoPauloTime } from '@utils/dateUtils'
 import { debugLog, errorLog } from '@shared/utils/logger'
 
 /**
@@ -63,9 +63,10 @@ export function analyzeReminderTiming({ protocol, logs }) {
     .map((log) => {
       const logDate = parseISO(log.taken_at)
       if (isNaN(logDate.getTime())) return null // Ignora datas inválidas
+      const spDate = getSaoPauloTime(logDate)
       return {
         ...log,
-        logMinutes: logDate.getHours() * 60 + logDate.getMinutes(),
+        logMinutes: spDate.getHours() * 60 + spDate.getMinutes(),
       }
     })
     .filter(Boolean)

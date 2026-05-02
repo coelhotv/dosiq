@@ -76,9 +76,12 @@ export function calculateAvgUnitPrice(stockEntries = []) {
  */
 export function calculateDailyIntake(medicineId, protocols = []) {
   // Validar entrada
+  // Filtrar protocolos com time_schedule inválido antes do Zod para evitar noise de validação (R-087)
+  const sanitizedProtocols = (protocols || []).filter(p => p && p.time_schedule != null)
+  
   const validation = CalculateDailyIntakeInputSchema.safeParse({ 
     medicineId, 
-    protocols: protocols || [] 
+    protocols: sanitizedProtocols 
   })
   if (!validation.success) {
     console.error('Erro de validação em calculateDailyIntake:', validation.error.format())
