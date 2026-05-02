@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Pill, Folders } from 'lucide-react'
+import { Pill, Folders, Clock, Calendar, Hash, Save, X, Info } from 'lucide-react'
 import Button from '@shared/components/ui/Button'
 import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
 import { getNow, parseISO, parseLocalDatetime } from '@utils/dateUtils.js'
@@ -32,7 +32,7 @@ export default function LogForm({
           ? 'plan'
           : 'protocol'),
     id: initialValues?.id || null, // For editing
-    protocol_id: initialValues?.protocol_id || '',
+    protocol_id: initialValues?.protocol_id || protocols[0]?.id || '',
     treatment_plan_id: initialValues?.treatment_plan_id || '',
     taken_at: toLocalISO(initialValues?.taken_at),
     quantity_taken: initialValues?.quantity_taken || '',
@@ -73,10 +73,14 @@ export default function LogForm({
       const plan = treatmentPlans.find((p) => p.id === formData.treatment_plan_id)
       if (plan) {
         const activeIds = plan.protocols?.filter((p) => p.active).map((p) => p.id) || []
-        setSelectedPlanProtocols(activeIds)
+        // Only update if the IDs are actually different to avoid infinite loops
+        setSelectedPlanProtocols((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(activeIds)) return prev
+          return activeIds
+        })
       }
     } else {
-      setSelectedPlanProtocols([])
+      setSelectedPlanProtocols((prev) => (prev.length > 0 ? [] : prev))
     }
   }, [formData.treatment_plan_id, formData.type, treatmentPlans])
 

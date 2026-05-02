@@ -67,7 +67,7 @@ export default function ProtocolRow({
             }}
           >
             <div className="protocol-row-tabular__name-row">
-              <span className="protocol-row-tabular__medicine-name">{item.medicineName}</span>
+              <span className="medicine-name">{item.medicineName}</span>
               {item.concentrationLabel && (
                 <span className="protocol-row__dosage">{item.concentrationLabel}</span>
               )}

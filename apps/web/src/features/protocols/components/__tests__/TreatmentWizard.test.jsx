@@ -32,6 +32,11 @@ vi.mock('@schemas/medicineSchema', () => ({
 
 vi.mock('@schemas/protocolSchema', () => ({
   FREQUENCIES: ['diario', 'semanal', 'quando_necessario'],
+  FREQUENCY_LABELS: {
+    diario: 'Diário',
+    semanal: 'Semanal',
+    quando_necessario: 'Quando necessário',
+  },
 }))
 
 vi.mock('framer-motion', () => ({

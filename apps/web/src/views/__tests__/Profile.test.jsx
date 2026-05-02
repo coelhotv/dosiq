@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import React from 'react'
 
 vi.mock('@shared/utils/supabase', () => ({
   supabase: {
@@ -17,15 +18,22 @@ vi.mock('@shared/utils/supabase', () => ({
       ),
     },
     from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: null, error: { code: 'PGRST116' } })),
-        })),
-      })),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(() =>
+        Promise.resolve({
+          data: {
+            display_name: 'Joao Silva',
+            birth_date: '1990-01-01',
+            city: 'São Paulo',
+            state: 'SP',
+          },
+          error: null,
+        })
+      ),
+      upsert: vi.fn().mockResolvedValue({ error: null }),
     })),
   },
-  signOut: vi.fn(() => Promise.resolve()),
-  updatePassword: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('@shared/components/ui/Loading', () => ({
@@ -44,53 +52,67 @@ vi.mock('@features/reports/components/ReportGenerator', () => ({
   default: () => <div data-testid="report-generator" />,
 }))
 
-import Profile from '@/views/Profile'
+vi.mock('@features/emergency/services/emergencyCardService', () => {
+  const service = {
+    load: vi.fn(() =>
+      Promise.resolve({
+        success: true,
+        source: 'remote',
+        data: {
+          blood_type: 'O+',
+          allergies: ['Aspirina'],
+          conditions: ['Hipertensão'],
+          emergency_contacts: [{ name: 'Maria', phone: '11999999999' }],
+        },
+      })
+    ),
+    save: vi.fn().mockResolvedValue({ success: true }),
+  }
+  return {
+    emergencyCardService: service,
+    default: service,
+  }
+})
+
+// Mocks para qrcode
+vi.mock('qrcode', () => ({
+  default: {
+    toDataURL: vi.fn(() => Promise.resolve('data:image/png;base64,mock')),
+  },
+}))
+
+import Profile from '@/views/redesign/Profile'
 
 describe('Profile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-
-    Object.defineProperty(window, 'localStorage', {
-      value: {
-        getItem: vi.fn(() => null),
-        setItem: vi.fn(),
-        removeItem: vi.fn(),
-      },
-      configurable: true,
-    })
-
-    // Reset localStorage for complexity override
-    if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
-      localStorage.removeItem('mr_complexity_override')
-    }
   })
 
   afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renderiza header com nome e email apos carregar', async () => {
+  it('renderiza header com nome e metadados apos carregar', async () => {
     render(<Profile onNavigate={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('Joao Silva')).toBeInTheDocument()
     })
-    expect(screen.getByText('joao@email.com')).toBeInTheDocument()
   })
 
-  it('renderiza secoes principais', async () => {
+  it('renderiza secoes principais de ferramentas', async () => {
     render(<Profile onNavigate={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('Joao Silva')).toBeInTheDocument()
     })
 
-    expect(screen.getByText(/Saúde & Histórico/i)).toBeInTheDocument()
-    expect(screen.getByText(/Relatórios & Dados/i)).toBeInTheDocument()
-    expect(screen.getByText(/Configurações/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ferramentas de Gestão/i)).toBeInTheDocument()
+    expect(screen.getByText(/Relatório PDF/i)).toBeInTheDocument()
+    expect(screen.getByText(/Exportar Dados/i)).toBeInTheDocument()
   })
 
-  it('navega para health-history ao clicar Minha Saude', async () => {
+  it('navega para health-history ao clicar Historico de Doses', async () => {
     const onNavigate = vi.fn()
     render(<Profile onNavigate={onNavigate} />)
 
@@ -98,17 +120,18 @@ describe('Profile', () => {
       expect(screen.getByText('Joao Silva')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Minha Saúde'))
+    fireEvent.click(screen.getByText('Histórico de Doses'))
     expect(onNavigate).toHaveBeenCalledWith('health-history')
   })
 
-  it('renderiza botao de logout', async () => {
+  it('abre modal de exportacao ao clicar', async () => {
     render(<Profile onNavigate={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Joao Silva')).toBeInTheDocument()
+      expect(screen.getByText('Exportar Dados')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Sair da Conta')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Exportar Dados'))
+    expect(screen.getByTestId('export-dialog')).toBeInTheDocument()
   })
 })
