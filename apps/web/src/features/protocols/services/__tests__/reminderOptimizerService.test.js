@@ -4,6 +4,7 @@ import {
   isSuggestionDismissed,
   dismissSuggestion,
 } from '@/features/protocols/services/reminderOptimizerService'
+import { getNow } from '@utils/dateUtils'
 
 // Mock localStorage para ambiente de teste (AP-T03: localStorage pode nao estar disponivel em jsdom)
 const localStorageMock = (() => {
@@ -181,6 +182,9 @@ describe('reminderOptimizerService', () => {
     })
 
     it('valida entrada com Zod safeParse', () => {
+      // Suprimimos console.error apenas para este teste que ESPERA falha
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      
       // Entrada inválida (protocol.id faltando)
       const invalidProtocol = {
         medicine_id: 'med-1',
@@ -195,6 +199,7 @@ describe('reminderOptimizerService', () => {
 
       // Zod vai rejeitar, função retorna null
       expect(result).toBeNull()
+      spy.mockRestore()
     })
 
     it('lida com logs sem protocol_id (filtra por medicine_id)', () => {
@@ -216,6 +221,9 @@ describe('reminderOptimizerService', () => {
     })
 
     it('trata JSON parsing error em timestamp', () => {
+      // Suprimimos console.error esperado
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      
       // Este teste verifica robustez contra dados malformados
       const logs = [
         {
@@ -231,6 +239,8 @@ describe('reminderOptimizerService', () => {
       expect(() => {
         analyzeReminderTiming({ protocol: mockProtocol, logs })
       }).not.toThrow()
+      
+      spy.mockRestore()
     })
   })
 
@@ -288,9 +298,11 @@ describe('reminderOptimizerService', () => {
     })
 
     it('trata JSON inválido em localStorage', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       localStorage.setItem('optimizer_dismissed_proto-1', 'invalid json')
       const result = isSuggestionDismissed('proto-1')
       expect(result).toBe(true) // Falha segura
+      spy.mockRestore()
     })
   })
 
@@ -309,7 +321,8 @@ describe('reminderOptimizerService', () => {
       expect(stored).not.toBeNull()
 
       const parsed = JSON.parse(stored)
-      expect(parsed.timestamp).toBe(Date.now())
+      // AP-T02: Usar getNow().getTime() para consistência com o service em ambientes UTC/CI
+      expect(parsed.timestamp).toBe(getNow().getTime())
       expect(parsed.permanent).toBe(false)
 
       vi.useRealTimers()
