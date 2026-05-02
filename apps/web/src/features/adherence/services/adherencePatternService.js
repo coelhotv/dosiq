@@ -1,5 +1,5 @@
 import { validateAnalyzeAdherencePatternsInput } from '@schemas/adherencePatternSchema'
-import { getSaoPauloTime } from '@utils/dateUtils'
+import { getSaoPauloTime, parseISO, formatLocalDate } from '@utils/dateUtils'
 
 /**
  * Nomes dos dias da semana
@@ -41,14 +41,8 @@ function getPeriodIndex(hour) {
 function countUniqueDaysWithLogs(logs) {
   const uniqueDays = new Set(
     logs.map((log) => {
-      const date = new Date(log.taken_at)
-      const formatter = new Intl.DateTimeFormat('en-CA', { 
-        timeZone: 'America/Sao_Paulo', 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit' 
-      })
-      return formatter.format(date) // Retorna YYYY-MM-DD no fuso SP
+      const date = parseISO(log.taken_at)
+      return formatLocalDate(date) // Retorna YYYY-MM-DD no fuso SP
     })
   )
   return uniqueDays.size
@@ -140,7 +134,7 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   // Contar doses tomadas por célula (CONTAR REGISTROS, NÃO COMPRIMIDOS)
   // Cada registro = 1 dose tomada (independente de quantity_taken)
   logs.forEach((log) => {
-    const spDate = getSaoPauloTime(new Date(log.taken_at))
+    const spDate = getSaoPauloTime(parseISO(log.taken_at))
     const hour = spDate.getHours()
     const dayIndex = spDate.getDay() // 0-6 (Domingo-Sábado)
     const periodIndex = getPeriodIndex(hour)
@@ -152,7 +146,7 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   const dayOccurrences = [0, 0, 0, 0, 0, 0, 0]
   const uniqueDates = new Set()
   logs.forEach((log) => {
-    const spDate = getSaoPauloTime(new Date(log.taken_at))
+    const spDate = getSaoPauloTime(parseISO(log.taken_at))
     const dateStr = spDate.toISOString().split('T')[0] // YYYY-MM-DD
     
     if (!uniqueDates.has(dateStr)) {

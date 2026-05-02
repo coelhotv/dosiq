@@ -21,6 +21,7 @@ import { updateNotificationSettings } from '../services/profileService'
 import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
 import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
 import { ROUTES } from '../../../navigation/routes'
+import { parseLocalDate } from '@dosiq/core'
 
 // Horas disponíveis para o picker inline
 const HOURS = Array.from({ length: 24 }, (_, i) => {
@@ -39,8 +40,10 @@ function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_
 // Detecta formato 12/24h com fallback seguro para Hermes/Android antigo
 let IS_24H_FORMAT = true // fallback: Brasil usa 24h
 try {
+  const testDate = parseLocalDate('2024-01-01')
+  testDate.setHours(13)
   IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
-    .format(new Date(2024, 0, 1, 13))
+    .format(testDate)
     .match(/am|pm/i)
 } catch (e) {
   // Hermes sem Intl completo em Android ≤ 7 — fallback 24h (padrão BR)

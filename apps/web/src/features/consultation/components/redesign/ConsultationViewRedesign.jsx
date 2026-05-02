@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { parseISO } from '@utils/dateUtils'
 import {
   ArrowLeft,
   Pill,
@@ -51,7 +52,7 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
   const formattedGeneratedAt = useMemo(() => {
     if (!generatedAt) return ''
-    return new Date(generatedAt).toLocaleString('pt-BR', {
+    return parseISO(generatedAt).toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

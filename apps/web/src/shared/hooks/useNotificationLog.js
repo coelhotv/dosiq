@@ -10,6 +10,7 @@ import { useMemo, useCallback } from 'react'
 import { useCachedQuery, generateCacheKey } from '@shared/hooks/useCachedQuery'
 import { createNotificationLogRepository, CACHE_KEYS } from '@dosiq/shared-data'
 import { supabase } from '@shared/utils/supabase'
+import { parseISO } from '@utils/dateUtils'
 
 // Repositório singleton para a plataforma web
 const repo = createNotificationLogRepository({ supabase })
@@ -52,7 +53,7 @@ async function enrichWithDoses(logs) {
 
   return logs.map(log => {
     if (log.notification_type === 'dose_reminder_by_plan' && log.treatment_plan_id) {
-      const d    = new Date(log.sent_at)
+      const d    = parseISO(log.sent_at)
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       const doses = (planProtoMap[log.treatment_plan_id] ?? [])
         .filter(p => (p.time_schedule ?? []).includes(hhmm))

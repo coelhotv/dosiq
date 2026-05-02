@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getNow, parseISO, addDays, getTodayLocal, getYesterdayLocal, getSaoPauloTime } from '@utils/dateUtils.js'
+import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getNow, parseISO, addDays, getTodayLocal, getYesterdayLocal, getSaoPauloTime, cloneDate, parseTimestamp } from '@utils/dateUtils.js'
 
 // Schema para validação de parâmetros
 const GetDailyAdherenceFromViewSchema = z.object({
@@ -626,7 +626,7 @@ function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   const periodStart = addDays(normalizedEndDate, -days + 1)
   periodStart.setHours(0, 0, 0, 0)
 
-  const periodEnd = new Date(normalizedEndDate.getTime())
+  const periodEnd = cloneDate(normalizedEndDate)
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
@@ -671,8 +671,8 @@ function calculateExpectedDoses(protocols, days, endDate = getNow()) {
       : periodEnd
 
     // Calcular interseção entre período do protocolo e período de análise
-    const effectiveStart = new Date(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
-    const effectiveEnd = new Date(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
+    const effectiveStart = parseTimestamp(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
+    const effectiveEnd = parseTimestamp(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
 
     // Calcular número de dias efetivos (inclusive)
     if (effectiveEnd >= effectiveStart) {
@@ -771,7 +771,7 @@ function calculateStreaks(logsByDay, protocols) {
     return { currentStreak: 0, longestStreak: 0 }
   }
 
-  // Pré-parsear protocolos UMA VEZ (evita ~2700 new Date() no loop)
+  // Pré-parsear protocolos UMA VEZ (evita ~2700 parseISO() no loop)
   const parsed = protocols.map((p) => ({
     timesPerDay: p.time_schedule?.length || 1,
     startStr: p.start_date || null,

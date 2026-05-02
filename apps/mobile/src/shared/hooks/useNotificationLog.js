@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
-import { getTodayLocal } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, addDays, cloneDate } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createNotificationLogRepository } from '@dosiq/shared-data'
 import { supabase } from '../../platform/supabase/nativeSupabaseClient'
@@ -64,7 +64,7 @@ async function enrichWithDoses(logs) {
 
   return logs.map(log => {
     if (log.notification_type === 'dose_reminder_by_plan' && log.treatment_plan_id) {
-      const d    = new Date(log.sent_at)
+      const d    = parseISO(log.sent_at)
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       const doses = (planProtoMap[log.treatment_plan_id] ?? [])
         .filter(p => (p.time_schedule ?? []).includes(hhmm))
@@ -122,7 +122,7 @@ export function useNotificationLog(options = {}) {
       const cacheKey = getCacheKey(userId)
       const snapshot = {
         logs,
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         localDay: getTodayLocal(), // R-114 compat
       }
 
@@ -172,9 +172,8 @@ export function useNotificationLog(options = {}) {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      const nextMidnight = new Date(now)
-      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      const now = getNow()
+      const nextMidnight = addDays(now, 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
       const msUntilMidnight = nextMidnight.getTime() - now.getTime()

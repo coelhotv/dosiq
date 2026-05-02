@@ -4,7 +4,7 @@
  * @module features/reports/services/consultationPdfDataBuilder
  */
 
-import { addDays, formatLocalDate, parseLocalDate } from '@utils/dateUtils.js'
+import { addDays, formatLocalDate, parseLocalDate, parseISO } from '@utils/dateUtils.js'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate, getNow } from '@utils/adherenceLogic'
 
@@ -547,7 +547,7 @@ export function buildConsultationPdfData({
     title,
     period,
     generatedAt,
-    generatedAtLabel: (generatedAt instanceof Date ? generatedAt : new Date(generatedAt)).toLocaleString('pt-BR', {
+    generatedAtLabel: (generatedAt instanceof Date ? generatedAt : parseISO(generatedAt)).toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

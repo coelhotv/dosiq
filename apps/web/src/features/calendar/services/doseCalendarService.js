@@ -7,7 +7,7 @@
  * @module doseCalendarService
  */
 
-import { parseLocalDate, formatLocalDate, isProtocolActiveOnDate, getSaoPauloTime, parseISO } from '@utils/dateUtils'
+import { parseLocalDate, formatLocalDate, isProtocolActiveOnDate, getSaoPauloTime, parseISO, getLastDayOfMonth } from '@utils/dateUtils'
 import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
 
 /**
@@ -36,9 +36,8 @@ import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
  * @returns {number} Número de dias no mês
  */
 function getDaysInMonth(year, month) {
-  // month é 1-indexado, então criamos data do dia 0 do próximo mês
-  // R-020: new Date com argumentos permitida para navegação
-  return new Date(year, month, 0).getDate()
+  // month é 1-indexado, então passamos month-1 para a utility (0-11)
+  return getLastDayOfMonth(year, month - 1)
 }
 
 /**

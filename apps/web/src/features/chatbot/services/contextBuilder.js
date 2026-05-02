@@ -1,4 +1,4 @@
-import { getTodayLocal, getSaoPauloTime } from '@utils/dateUtils'
+import { getTodayLocal, getSaoPauloTime, parseISO } from '@utils/dateUtils'
 
 /**
  * Monta contexto compacto do paciente para enviar ao LLM.
@@ -42,7 +42,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   })
 
   const todayLogs = (logs || []).filter((log) => {
-    const logDate = getSaoPauloTime(new Date(log.taken_at))
+    const logDate = getSaoPauloTime(parseISO(log.taken_at))
     return (
       logDate.getFullYear() === y &&
       logDate.getMonth() + 1 === m &&

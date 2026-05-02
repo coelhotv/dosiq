@@ -11,7 +11,7 @@ import { Virtuoso } from 'react-virtuoso'
 import { Bell } from 'lucide-react'
 import { NOTIFICATION_TYPES, DOSE_RELATED_NOTIFICATION_TYPES } from '@schemas'
 import { getNow, getTodayLocal, parseISO, daysDifference } from '@utils/adherenceLogic'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, addDays, parseLocalDate } from '@utils/dateUtils'
 import NotificationCard from './NotificationCard'
 import './NotificationList.css'
 
@@ -138,7 +138,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
     let timer
     const schedule = () => {
       const now = getNow()
-      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const next = addDays(parseLocalDate(getTodayLocal()), 1)
       timer = setTimeout(() => { 
         setLocalDay(getTodayLocal())
         schedule() 

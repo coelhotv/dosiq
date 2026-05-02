@@ -4,7 +4,7 @@
 
 import { z } from 'zod'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { parseLocalDate, getTodayLocal } from '@dosiq/core'
+import { parseLocalDate, getTodayLocal, cloneDate, addDays } from '@dosiq/core'
 
 /**
  * Busca protocolos ativos do utilizador.
@@ -47,8 +47,7 @@ export async function getTodayLogs(userId, dateStr) {
   const startLocal = parseLocalDate(dateStr)
   const startUTC = startLocal.toISOString()
   // endUTC = meia-noite local do dia seguinte → UTC (exclusive upper boundary)
-  const endLocal = new Date(startLocal.getTime())
-  endLocal.setDate(endLocal.getDate() + 1)
+  const endLocal = addDays(startLocal, 1)
   const endUTC = endLocal.toISOString()
   if (__DEV__) console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
 
@@ -122,12 +121,10 @@ export async function getLogsForPeriod(userId, days = 7) {
   
   // boundaries UTC baseadas na meia-noite local
   const todayStr = getTodayLocal()
-  const startLocal = parseLocalDate(todayStr)
-  startLocal.setDate(startLocal.getDate() - (days - 1))
+  const startLocal = addDays(todayStr, -(days - 1))
   const startUTC = startLocal.toISOString()
   
-  const endLocal = parseLocalDate(todayStr)
-  endLocal.setDate(endLocal.getDate() + 1)
+  const endLocal = addDays(todayStr, 1)
   const endUTC = endLocal.toISOString()
   
   const { data, error } = await supabase

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
-import { parseLocalDate, getStartOfDayISO, getEndOfDayISO } from '@utils/dateUtils'
+import { parseLocalDate, getStartOfDayISO, getEndOfDayISO, getLastDayOfMonth } from '@utils/dateUtils'
 
 // Schemas de validação para todos os métodos de leitura
 const limitSchema = z.number().int().positive().max(5000).default(50)
@@ -465,7 +465,7 @@ export const logService = {
 
     // Converte datas locais para UTC via parseLocalDate (R-020)
     const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
-    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    const lastDay = getLastDayOfMonth(year, month)
     const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
     // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC
@@ -551,7 +551,7 @@ export const logService = {
     }
 
     const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
-    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+    const lastDay = getLastDayOfMonth(year, month)
     const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
     // M9.0: Usar offset explícito de Brasília para evitar corte às 21h em servidores UTC

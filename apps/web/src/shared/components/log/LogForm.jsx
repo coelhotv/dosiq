@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Pill, Folders } from 'lucide-react'
 import Button from '@shared/components/ui/Button'
 import ProtocolChecklistItem from '@protocols/components/ProtocolChecklistItem'
-import { getNow, parseISO } from '@utils/dateUtils.js'
+import { getNow, parseISO, parseLocalDatetime } from '@utils/dateUtils.js'
 import './LogForm.css'
 
 export default function LogForm({
@@ -143,7 +143,7 @@ export default function LogForm({
           quantity_taken: formData.quantity_taken
             ? parseFloat(String(formData.quantity_taken).replace(',', '.'))
             : protocol.dosage_per_intake,
-          taken_at: new Date(formData.taken_at + ':00-03:00').toISOString(),
+          taken_at: parseLocalDatetime(formData.taken_at).toISOString(),
           notes: formData.notes.trim() || null,
         }
 
@@ -171,7 +171,7 @@ export default function LogForm({
           protocol_id: p.id,
           medicine_id: p.medicine_id,
           quantity_taken: p.dosage_per_intake,
-          taken_at: new Date(formData.taken_at + ':00-03:00').toISOString(),
+          taken_at: parseLocalDatetime(formData.taken_at).toISOString(),
           notes: formData.notes.trim()
             ? `[Plano: ${plan.name}] ${formData.notes.trim()}`
             : `[Plano: ${plan.name}]`,

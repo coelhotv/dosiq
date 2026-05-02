@@ -1,5 +1,5 @@
 import { calculateExpectedDoses } from '@utils/adherenceLogic'
-import { getNow, addDays, getSaoPauloTime } from '@utils/dateUtils'
+import { getNow, addDays, getSaoPauloTime, parseISO } from '@utils/dateUtils'
 
 /**
  * Niveis de risco para protocolos.
@@ -51,16 +51,16 @@ export function calculateProtocolRisk({ protocolId, logs, protocol }) {
   const protocolLogs = logs.filter((log) => log.protocol_id === protocolId)
 
   // Adesao ultimos 14 dias - usar sum of quantity_taken, nao contagem de logs (fix: Gemini issue #2)
-  const logs14d = protocolLogs.filter((log) => getSaoPauloTime(new Date(log.taken_at)) >= fourteenDaysAgo)
+  const logs14d = protocolLogs.filter((log) => getSaoPauloTime(parseISO(log.taken_at)) >= fourteenDaysAgo)
   const expected14d = calculateExpectedDoses([protocol], 14)
   const totalTaken14d = logs14d.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0)
   const adherence14d =
     expected14d > 0 ? Math.min(100, Math.round((totalTaken14d / expected14d) * 100)) : 100
 
   // Adesao ultimos 7 dias vs 7 dias anteriores (trend) - fix: Gemini issue #3
-  const logs7d = protocolLogs.filter((log) => getSaoPauloTime(new Date(log.taken_at)) >= sevenDaysAgo)
+  const logs7d = protocolLogs.filter((log) => getSaoPauloTime(parseISO(log.taken_at)) >= sevenDaysAgo)
   const logsPrev7d = protocolLogs.filter((log) => {
-    const logDate = getSaoPauloTime(new Date(log.taken_at))
+    const logDate = getSaoPauloTime(parseISO(log.taken_at))
     return logDate >= fourteenDaysAgo && logDate < sevenDaysAgo
   })
 

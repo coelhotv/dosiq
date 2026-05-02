@@ -13,7 +13,8 @@ import {
   getNow,
   parseISO,
   daysDifference,
-  getSaoPauloTime
+  getSaoPauloTime,
+  cloneDate
 } from './dateUtils.js'
 
 // Invariantes de Negócio (R-022, R-129)
@@ -76,8 +77,8 @@ function getEffectiveDays(protocol, periodStart, periodEnd) {
   const protocolEndDate = protocol.end_date ? parseLocalDate(protocol.end_date) : periodEnd
 
   // Interseção entre período do protocolo e período de análise
-  const effectiveStart = new Date(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
-  const effectiveEnd = new Date(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
+  const effectiveStart = parseTimestamp(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
+  const effectiveEnd = parseTimestamp(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
 
   if (effectiveEnd < effectiveStart) return 0
 
@@ -89,11 +90,11 @@ function getEffectiveDays(protocol, periodStart, periodEnd) {
 export function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   if (!protocols || protocols.length === 0) return 0
 
-  const periodStart = new Date(endDate.getTime())
+  const periodStart = cloneDate(endDate)
   periodStart.setHours(0, 0, 0, 0)
   periodStart.setDate(periodStart.getDate() - days + 1)
 
-  const periodEnd = new Date(endDate.getTime())
+  const periodEnd = cloneDate(endDate)
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
@@ -242,7 +243,7 @@ export function isDoseInToleranceWindow(scheduledTime, logTakenAt) {
 
   // Criamos um objeto Date para o horário previsto no MESMO DIA da dose tomada,
   // usando o mesmo referencial (shifted SP) para paridade aritmética.
-  const scheduledDate = new Date(takenDate)
+  const scheduledDate = cloneDate(takenDate)
   scheduledDate.setHours(sH, sM, 0, 0)
 
   const diffMs = Math.abs(takenDate.getTime() - scheduledDate.getTime())

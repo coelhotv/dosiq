@@ -16,6 +16,7 @@ import { motion } from 'framer-motion'
 import { Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell, ChevronRight, BellOff, CheckCircle2 } from 'lucide-react'
 import { getNotificationIcon, formatRelativeTime } from '@dosiq/core'
 import { NOTIFICATION_TYPES, DOSE_RELATED_NOTIFICATION_TYPES } from '@schemas'
+import { parseISO } from '@utils/dateUtils'
 import './NotificationCard.css'
 
 const ICON_MAP = { Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell }
@@ -117,7 +118,7 @@ export default function NotificationCard({
             <time
               className="notif-card__time"
               dateTime={sent_at}
-              title={sent_at ? new Date(sent_at).toLocaleString('pt-BR') : ''}
+              title={sent_at ? parseISO(sent_at).toLocaleString('pt-BR') : ''}
             >
               {relativeTime}
             </time>

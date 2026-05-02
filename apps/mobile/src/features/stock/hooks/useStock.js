@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, isProtocolActiveOnDate, getNow, parseISO } from '@dosiq/core'
+import { getTodayLocal, isProtocolActiveOnDate, getNow, parseISO, addDays } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getStockData } from '../services/stockService'
 
@@ -169,8 +169,7 @@ export function useStock() {
 
     const scheduleMidnightRefresh = () => {
       const now = getNow()
-      const nextMidnight = new Date(now.getTime())
-      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      const nextMidnight = addDays(now, 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
       const msUntilMidnight = nextMidnight.getTime() - now.getTime()

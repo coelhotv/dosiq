@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, BellOff, Settings, WifiOff } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
-import { getTodayLocal, getNow, parseISO, daysDifference } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays } from '@dosiq/core'
 import { ROUTES } from '../../../navigation/routes'
 import { useNotificationLog } from '../../../shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '../../../shared/hooks/useUnreadNotificationCount'
@@ -148,7 +148,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
     let midnightTimer
     const schedule = () => {
       const now = getNow()
-      const next = new Date(now.getTime())
+      const next = cloneDate(now)
       next.setDate(next.getDate() + 1)
       next.setHours(0, 0, 0, 0)
       
@@ -169,7 +169,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const [doseLogs, setDoseLogs] = useState([])
   const loadDoseLogs = useCallback(async () => {
     if (!userId) return
-    const since = new Date(getNow().getTime() - 7 * 86_400_000).toISOString()
+    const since = addDays(getNow(), -7).toISOString()
     const { data: rows, error: fetchErr } = await supabase
       .from('medicine_logs')
       .select('id, protocol_id, taken_at')

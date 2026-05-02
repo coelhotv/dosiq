@@ -18,6 +18,7 @@ import {
   getNow,
   getSaoPauloTime,
   parseISO,
+  cloneDate,
 } from '@utils/dateUtils'
 
 /**
@@ -56,7 +57,7 @@ export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
   return todayLogs.some((log) => {
     if (log.protocol_id !== protocolId) return false
     const logDate = getSaoPauloTime(parseISO(log.taken_at))
-    const scheduled = new Date(logDate.getTime())
+    const scheduled = cloneDate(logDate)
     scheduled.setHours(h, m, 0, 0)
     return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
@@ -75,7 +76,7 @@ export function findRegistrationTime(protocolId, scheduledTime, todayLogs) {
   const log = todayLogs.find((l) => {
     if (l.protocol_id !== protocolId) return false
     const logDate = getSaoPauloTime(parseISO(l.taken_at))
-    const scheduled = new Date(logDate.getTime())
+    const scheduled = cloneDate(logDate)
     scheduled.setHours(h, m, 0, 0)
     return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
   })

@@ -193,8 +193,8 @@ function DoseCalendar() {
    */
   const handleLoadMonth = useCallback(async (year, month) => {
     // Atualiza viewDate para disparar recálculo do doseMap
-    // Usando Date aqui apenas como container de Ano/Mês para navegação
-    setViewDate(new Date(year, month, 1))
+    // Usando parseLocalDate para garantir interpretação local (SP) da data de visualização
+    setViewDate(parseLocalDate(`${year}-${String(month + 1).padStart(2, '0')}-01`))
     return Promise.resolve()
   }, [])
 

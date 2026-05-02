@@ -207,3 +207,35 @@ export function addMonths(date, months) {
   baseDate.setMonth(baseDate.getMonth() + months)
   return baseDate
 }
+
+/**
+ * Retorna o último dia de um determinado mês/ano.
+ * @param {number} year 
+ * @param {number} month - 0-11
+ * @returns {number}
+ */
+export function getLastDayOfMonth(year, month) {
+  return new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+}
+
+/**
+ * Converte string datetime-local (YYYY-MM-DDTHH:mm) para objeto Date no fuso de SP.
+ * @param {string} datetimeStr 
+ * @returns {Date}
+ */
+export function parseLocalDatetime(datetimeStr) {
+  if (!datetimeStr) return getNow()
+  // Adiciona segundos e offset de Brasília se não houver
+  const fullStr = datetimeStr.length === 16 ? `${datetimeStr}:00-03:00` : datetimeStr
+  return new Date(fullStr)
+}
+
+/**
+ * Converte timestamp numérico (ms) para objeto Date.
+ * @param {number|string} timestamp 
+ * @returns {Date}
+ */
+export function parseTimestamp(timestamp) {
+  if (!timestamp) return getNow()
+  return new Date(Number(timestamp))
+}

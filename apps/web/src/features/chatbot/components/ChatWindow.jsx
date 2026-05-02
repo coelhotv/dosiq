@@ -13,6 +13,7 @@ import {
   getTodayLocal,
   getYesterdayLocal,
   formatLocalDate,
+  parseTimestamp,
 } from '@utils/dateUtils.js'
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import styles from './ChatWindow.module.css'
@@ -45,7 +46,7 @@ function renderMessageContent(content) {
  * Formata timestamp para exibição relativa (e.g., "às 14:30", "Ontem às 09:15").
  */
 const formatMessageTime = (timestamp) => {
-  const date = new Date(timestamp)
+  const date = parseTimestamp(timestamp)
   const dateStr = formatLocalDate(date)
   const today = getTodayLocal()
   const yesterday = getYesterdayLocal()
@@ -73,8 +74,8 @@ const formatMessageTime = (timestamp) => {
  */
 const shouldShowDateSeparator = (msgs, idx) => {
   if (idx === 0) return false
-  const prev = formatLocalDate(new Date(msgs[idx - 1].timestamp))
-  const curr = formatLocalDate(new Date(msgs[idx].timestamp))
+  const prev = formatLocalDate(parseTimestamp(msgs[idx - 1].timestamp))
+  const curr = formatLocalDate(parseTimestamp(msgs[idx].timestamp))
   return prev !== curr
 }
 
@@ -82,7 +83,7 @@ const shouldShowDateSeparator = (msgs, idx) => {
  * Formata label do separador de data (e.g., "Hoje", "Ontem", "15/03").
  */
 const formatDaySeparator = (timestamp) => {
-  const date = new Date(timestamp)
+  const date = parseTimestamp(timestamp)
   const dateStr = formatLocalDate(date)
   const today = getTodayLocal()
   const yesterday = getYesterdayLocal()
