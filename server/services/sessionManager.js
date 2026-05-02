@@ -19,6 +19,9 @@ import {
   addMinutes,
   parseISO
 } from '../utils/dateUtils.js';
+import { createLogger } from '../bot/logger.js';
+
+const logger = createLogger('SessionManager');
 
 const SESSION_TTL_MINUTES = 30; // 30 minute expiry as per requirements
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Run cleanup every 5 minutes
@@ -106,7 +109,7 @@ export async function setSession(chatId, context) {
       });
 
     if (error) {
-      console.error(`[SessionManager] Error setting session for chat ${chatId}:`, error);
+      logger.error(`Error setting session for chat ${chatId}:`, error);
       // Cache is already updated, session survives in memory even if DB fails
     } else {
       const duration = getNow().getTime() - startTime;

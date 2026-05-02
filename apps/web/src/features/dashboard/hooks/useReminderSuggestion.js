@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import { 
   analyzeReminderTiming, 
   isSuggestionDismissed 
@@ -12,22 +14,24 @@ import {
  * @returns {object|null} Dados da sugestão
  */
 export function useReminderSuggestion(protocols, logs, dismissedSuggestionId) {
-  if (!protocols?.length || !logs?.length) return null
-  
-  for (const protocol of protocols) {
-    if (!protocol.active) continue
-    if (protocol.id === dismissedSuggestionId) continue
-    if (isSuggestionDismissed(protocol.id)) continue
+  return useMemo(() => {
+    if (!protocols?.length || !logs?.length) return null
     
-    const suggestion = analyzeReminderTiming({ protocol, logs })
-    if (suggestion?.shouldSuggest) {
-      return {
-        suggestion,
-        protocolId: protocol.id,
-        protocolName: protocol.medicine?.name || protocol.name || '',
+    for (const protocol of protocols) {
+      if (!protocol.active) continue
+      if (protocol.id === dismissedSuggestionId) continue
+      if (isSuggestionDismissed(protocol.id)) continue
+      
+      const suggestion = analyzeReminderTiming({ protocol, logs })
+      if (suggestion?.shouldSuggest) {
+        return {
+          suggestion,
+          protocolId: protocol.id,
+          protocolName: protocol.medicine?.name || protocol.name || '',
+        }
       }
     }
-  }
-  
-  return null
+    
+    return null
+  }, [protocols, logs, dismissedSuggestionId])
 }

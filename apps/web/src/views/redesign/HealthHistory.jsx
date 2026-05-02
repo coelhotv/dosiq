@@ -54,12 +54,11 @@ export default function HealthHistory({ onNavigate }) {
 
   // ═══ Memos ═══
 
-  // Planos de tratamento (para LogForm)
+  // Planos de tratamento para NOVO log (só protocolos ativos)
   const treatmentPlans = useMemo(() => {
     const plansById = {}
     
     protocols.forEach((p) => {
-      // Para o LogForm (novo log), só reconstruímos planos que têm protocolos ativos
       if (p.treatment_plan_id && p.active) {
         if (!plansById[p.treatment_plan_id]) {
           plansById[p.treatment_plan_id] = {
@@ -74,7 +73,26 @@ export default function HealthHistory({ onNavigate }) {
     return Object.values(plansById)
   }, [protocols])
 
-  // Somente protocolos ativos para o formulário de registro
+  // Planos de tratamento para EDIÇÃO de log histórico (todos os protocolos, inclusive inativos)
+  const treatmentPlansAll = useMemo(() => {
+    const plansById = {}
+    
+    protocols.forEach((p) => {
+      if (p.treatment_plan_id) {
+        if (!plansById[p.treatment_plan_id]) {
+          plansById[p.treatment_plan_id] = {
+            ...(p.treatment_plan || { id: p.treatment_plan_id, name: 'Plano s/ nome' }),
+            protocols: []
+          }
+        }
+        plansById[p.treatment_plan_id].protocols.push(p)
+      }
+    })
+    
+    return Object.values(plansById)
+  }, [protocols])
+
+  // Somente protocolos ativos para o formulário de registro (novo log)
   const activeProtocols = useMemo(() => protocols.filter(p => p.active), [protocols])
 
   // Doses do dia selecionado — filtra dos logs do mês carregado, ordenados ascendente
@@ -329,8 +347,8 @@ export default function HealthHistory({ onNavigate }) {
         }}
       >
         <LogForm
-          protocols={activeProtocols}
-          treatmentPlans={treatmentPlans}
+          protocols={editingLog ? protocols : activeProtocols}
+          treatmentPlans={editingLog ? treatmentPlansAll : treatmentPlans}
           initialValues={editingLog}
           onSave={handleLogMedicine}
           onCancel={() => {

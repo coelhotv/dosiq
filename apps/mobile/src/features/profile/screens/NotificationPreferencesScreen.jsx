@@ -184,7 +184,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // Salvar no banco (debounce manual: chama após cada alteração)
   const persist = useCallback(async (patch) => {
     if (!user?.id) return
-    // setSaving(true)
     try {
       const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
       const telegram = isTelegramConnected // Telegram segue o vínculo
@@ -223,7 +222,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
       errorLog('NotificationPreferencesScreen', 'Erro ao salvar', err)
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
     } finally {
-      // setSaving(false)
     }
   }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled])

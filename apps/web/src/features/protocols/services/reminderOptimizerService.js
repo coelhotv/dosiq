@@ -1,6 +1,6 @@
 import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
 import { getNow, parseISO } from '@utils/dateUtils'
-import { debugLog } from '@shared/utils/logger'
+import { debugLog, errorLog } from '@shared/utils/logger'
 
 /**
  * Analisa delta entre horário programado e horário real de tomada.
@@ -196,7 +196,7 @@ export function dismissSuggestion(protocolId, permanent = false) {
       storageSize: Object.keys(localStorage).length,
     })
   } catch (error) {
-    console.error('[reminderOptimizerService] Failed to dismiss suggestion:', {
+    errorLog('reminderOptimizerService', 'Failed to dismiss suggestion:', {
       protocolId,
       key,
       error: error.message,

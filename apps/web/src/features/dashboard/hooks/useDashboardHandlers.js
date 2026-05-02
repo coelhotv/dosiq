@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { cachedLogService as logService } from '@shared/services'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { protocolService } from '@features/protocols/services/protocolService'
 import { dismissSuggestion } from '@features/protocols/services/reminderOptimizerService'
+import { errorLog } from '@shared/utils/logger'
 import { getNow, getServerTimestamp } from '@utils/dateUtils'
 
 /**
@@ -25,8 +26,8 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         })
         refresh()
       } catch (err) {
-        console.error('Erro ao registrar dose:', err)
-        alert('Erro ao registrar dose. Tente novamente.')
+        errorLog('useDashboardHandlers', 'Erro ao registrar dose:', err)
+        throw err
       }
     },
     [refresh]
@@ -52,8 +53,8 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         })
         refresh()
       } catch (err) {
-        console.error('Erro ao registrar doses:', err)
-        alert('Erro ao registrar doses. Tente novamente.')
+        errorLog('useDashboardHandlers', 'Erro ao registrar doses:', err)
+        throw err
       }
     },
     [refresh]
@@ -80,7 +81,7 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         try {
           await protocolService.update(protocolId, { time_schedule: finalSchedule })
         } catch (err) {
-          console.error('[DashboardHandlers] Erro ao atualizar horário do protocolo:', err)
+          errorLog('DashboardHandlers', 'Erro ao atualizar horário do protocolo:', err)
         }
       }
       
@@ -93,10 +94,10 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
     [refresh, reminderSuggestionData, protocols, setDismissedSuggestionId]
   )
 
-  return {
+  return useMemo(() => ({
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
     handleSnoozeAlert,
     handleReminderAccept
-  }
+  }), [handleRegisterDoseQuick, handleRegisterDosesAll, handleSnoozeAlert, handleReminderAccept])
 }
