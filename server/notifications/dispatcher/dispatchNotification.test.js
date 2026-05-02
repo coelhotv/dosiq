@@ -3,6 +3,20 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { dispatchNotification } from './dispatchNotification.js'
+import { vi as vitestVi } from 'vitest'
+
+vi.mock('../repositories/notificationLogRepository.js', () => ({
+  notificationLogRepository: {
+    create: vi.fn().mockResolvedValue({ id: 'log-123' }),
+    listByUserId: vi.fn().mockResolvedValue([])
+  }
+}))
+
+vi.mock('../../utils/dateUtils.js', () => ({
+  getNow: vi.fn(() => new Date('2026-05-02T12:00:00Z')),
+  getCurrentTime: vi.fn(() => '12:00'),
+  getServerTimestamp: vi.fn(() => '2026-05-02T12:00:00Z')
+}))
 
 const mockPayload = {
   title: '💊 Lembrete de nova dose',
@@ -16,7 +30,16 @@ const makeContext = () => ({ correlationId: 'test-corr-123' })
 const mockBot = { sendMessage: vi.fn() }
 const mockExpoClient = { sendPushNotificationsAsync: vi.fn() }
 const mockRepositories = {
-  preferences: { getByUserId: vi.fn(), hasTelegramChat: vi.fn() },
+  preferences: { 
+    getSettingsByUserId: vi.fn().mockResolvedValue({ 
+      notification_mode: 'realtime', 
+      quiet_hours_enabled: false,
+      channel_mobile_push_enabled: true,
+      channel_telegram_enabled: true
+    }), 
+    getByUserId: vi.fn().mockResolvedValue('both'),
+    hasTelegramChat: vi.fn().mockResolvedValue(true) 
+  },
   devices: { listActiveByUser: vi.fn(), deactivateByToken: vi.fn() },
 }
 
@@ -110,6 +133,11 @@ describe('dispatchNotification', () => {
 
   // Caso 4: none (channels=[]) → zero tentativas
   it('caso 4: channels vazio → nenhuma tentativa', async () => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      channel_mobile_push_enabled: false,
+      channel_telegram_enabled: false
+    })
+
     const result = await dispatchNotification({
       userId: 'user-4',
       kind: 'dose_reminder',

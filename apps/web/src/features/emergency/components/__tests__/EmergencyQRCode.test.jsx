@@ -40,10 +40,12 @@ describe('EmergencyQRCode', () => {
     expect(screen.getByText(/Gerando QR code/i)).toBeInTheDocument()
   })
 
-  it('deve exibir mensagem quando não há dados', () => {
+  it('deve exibir mensagem quando não há dados', async () => {
     render(<EmergencyQRCode cardData={null} medications={[]} />)
 
-    expect(screen.getByText(/Dados insuficientes para gerar QR code/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText(/Dados insuficientes para gerar QR code/i)).toBeInTheDocument()
+    })
   })
 
   it('deve renderizar QR code quando dados são fornecidos', async () => {

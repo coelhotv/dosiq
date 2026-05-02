@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { SparklineAdesao } from '@/features/dashboard/components/SparklineAdesao'
 
 vi.mock('@dashboard/services/analyticsService', () => ({
@@ -14,7 +14,8 @@ afterEach(() => {
 function makeData(days, adherence = 80) {
   const data = []
   const today = new Date()
-  for (let i = days - 1; i >= 0; i--) {
+  // O componente busca de -days até -1 (exclui hoje)
+  for (let i = days; i >= 1; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     data.push({
@@ -116,15 +117,17 @@ describe('SparklineAdesao — drill-down (funcionalidade existente)', () => {
     expect(onDayClick).toHaveBeenCalledTimes(1)
   })
 
-  it('passa os dados corretos para onDayClick', () => {
+  it('passa os dados corretos para onDayClick', async () => {
     const onDayClick = vi.fn()
     const data = makeData(7, 75)
     render(<SparklineAdesao adherenceByDay={data} size="medium" onDayClick={onDayClick} />)
     const dots = document.querySelectorAll('[data-testid^="sparkline-dot-"]')
     fireEvent.click(dots[0])
-    expect(onDayClick).toHaveBeenCalledWith(
-      expect.objectContaining({ adherence: 75, taken: 3, expected: 4 })
-    )
+    await waitFor(() => {
+      expect(onDayClick).toHaveBeenCalledWith(
+        expect.objectContaining({ adherence: 75, taken: 3, expected: 4 })
+      )
+    })
   })
 })
 
