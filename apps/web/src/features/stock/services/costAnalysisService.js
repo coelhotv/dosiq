@@ -36,8 +36,10 @@ function getPriceEntries(medicine = {}) {
  * @returns {number} Preço médio ou 0 se sem dados de preço
  */
 export function calculateAvgUnitPrice(stockEntries = []) {
-  // Validar entrada
-  const validation = CalculateAvgUnitPriceInputSchema.safeParse({ stockEntries })
+  // Validar entrada - Garantir array mesmo se null/undefined para evitar erro de Zod
+  const validation = CalculateAvgUnitPriceInputSchema.safeParse({ 
+    stockEntries: stockEntries || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateAvgUnitPrice:', validation.error.format())
     return 0
@@ -74,7 +76,10 @@ export function calculateAvgUnitPrice(stockEntries = []) {
  */
 export function calculateDailyIntake(medicineId, protocols = []) {
   // Validar entrada
-  const validation = CalculateDailyIntakeInputSchema.safeParse({ medicineId, protocols })
+  const validation = CalculateDailyIntakeInputSchema.safeParse({ 
+    medicineId, 
+    protocols: protocols || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateDailyIntake:', validation.error.format())
     return 0
@@ -116,7 +121,10 @@ export function calculateDailyIntake(medicineId, protocols = []) {
  */
 export function calculateMonthlyCosts(medicines = [], protocols = []) {
   // Validar entrada
-  const validation = CalculateMonthlyCostsInputSchema.safeParse({ medicines, protocols })
+  const validation = CalculateMonthlyCostsInputSchema.safeParse({ 
+    medicines: medicines || [], 
+    protocols: protocols || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateMonthlyCosts:', validation.error.format())
     return { items: [], totalMonthly: 0, projection3m: 0 }
@@ -192,7 +200,11 @@ export function calculateProjection(monthlyCost, months = 3) {
  */
 export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }) {
   // Validar entrada
-  const validation = CalculateRealCostsInputSchema.safeParse({ medicines, protocols, logs })
+  const validation = CalculateRealCostsInputSchema.safeParse({ 
+    medicines: medicines || [], 
+    protocols: protocols || [], 
+    logs: logs || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateRealCosts:', validation.error.format())
     return { items: [], totalMonthly: 0, projection3m: 0, projection6m: 0, isRealData: false }

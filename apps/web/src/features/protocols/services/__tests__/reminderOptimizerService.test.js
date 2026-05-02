@@ -47,7 +47,7 @@ describe('reminderOptimizerService', () => {
       protocol_id: protocolId,
       medicine_id: 'med-1',
       quantity_taken: 1,
-      taken_at: new Date(2026, 2, 8, hour, minute).toISOString(),
+      taken_at: `2026-03-08T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-03:00`,
     })
 
     it('retorna null quando time_schedule está vazio', () => {
@@ -205,7 +205,7 @@ describe('reminderOptimizerService', () => {
         protocol_id: null, // Sem protocol_id, filtra por medicine_id
         medicine_id: 'med-1',
         quantity_taken: 1,
-        taken_at: new Date(2026, 2, 8, 7, 20).toISOString(),
+        taken_at: `2026-03-08T07:20:00-03:00`,
       }))
 
       const result = analyzeReminderTiming({ protocol: mockProtocol, logs })
@@ -256,19 +256,19 @@ describe('reminderOptimizerService', () => {
     })
 
     it('retorna true quando dentro da janela de 30 dias', () => {
-      vi.setSystemTime(new Date('2026-03-08'))
+      vi.setSystemTime(new Date('2026-03-08T00:00:00-03:00'))
       dismissSuggestion('proto-1', false)
 
-      vi.setSystemTime(new Date('2026-03-15')) // +7 dias
+      vi.setSystemTime(new Date('2026-03-15T00:00:00-03:00')) // +7 dias
       const result = isSuggestionDismissed('proto-1')
       expect(result).toBe(true)
     })
 
     it('retorna false quando expirou a janela de 30 dias', () => {
-      vi.setSystemTime(new Date('2026-03-08'))
+      vi.setSystemTime(new Date('2026-03-08T00:00:00-03:00'))
       dismissSuggestion('proto-1', false)
 
-      vi.setSystemTime(new Date('2026-04-10')) // +33 dias
+      vi.setSystemTime(new Date('2026-04-10T00:00:00-03:00')) // +33 dias
       const result = isSuggestionDismissed('proto-1')
       expect(result).toBe(false)
     })
@@ -301,7 +301,7 @@ describe('reminderOptimizerService', () => {
 
     it('armazena dispensação em localStorage (impermanente)', () => {
       vi.useFakeTimers()
-      vi.setSystemTime(new Date('2026-03-08'))
+      vi.setSystemTime(new Date('2026-03-08T00:00:00-03:00'))
 
       dismissSuggestion('proto-1', false)
 
@@ -328,11 +328,11 @@ describe('reminderOptimizerService', () => {
     it('sobrescreve dispensação anterior', () => {
       vi.useFakeTimers()
 
-      vi.setSystemTime(new Date('2026-03-08'))
+      vi.setSystemTime(new Date('2026-03-08T00:00:00-03:00'))
       dismissSuggestion('proto-1', false)
       const stored1 = localStorage.getItem('optimizer_dismissed_proto-1')
 
-      vi.setSystemTime(new Date('2026-03-10'))
+      vi.setSystemTime(new Date('2026-03-10T00:00:00-03:00'))
       dismissSuggestion('proto-1', true)
       const stored2 = localStorage.getItem('optimizer_dismissed_proto-1')
 
