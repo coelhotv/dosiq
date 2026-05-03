@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getNow, parseISO, cloneDate } from '../utils/dateUtils.js'
+import { getRawNow, parseISO } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para Logs de Medicação
@@ -23,12 +23,11 @@ export const logSchema = z.object({
     .string()
     .datetime('Data e hora devem estar no formato ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)')
     .refine((date) => {
-      const parsed = parseISO(date)
-      const now = getNow()
-      // Permite até 5 minutos no futuro (margem para clock skew)
-      const futureLimit = cloneDate(now)
-      futureLimit.setMinutes(futureLimit.getMinutes() + 5)
-      return parsed <= futureLimit
+      // Usa getRawNow() (UTC real) pois parseISO também retorna UTC real.
+      // getNow()/getSaoPauloTime() retorna Date "shifted" que em ambiente UTC fica 3h atrás.
+      const parsedMs = parseISO(date).getTime()
+      const futureLimitMs = getRawNow().getTime() + 5 * 60 * 1000
+      return parsedMs <= futureLimitMs
     }, 'Data/hora não pode estar no futuro'),
 
   quantity_taken: z
