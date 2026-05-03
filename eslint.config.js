@@ -20,7 +20,7 @@ export default [
     '**/.expo/**',
     '**/.vercel/**',
     '**/scripts/**',
-    '**/scratches/**',
+    '**/scratch/**',
     '**/__tests__/**',
     '**/.agent/**'
   ] },

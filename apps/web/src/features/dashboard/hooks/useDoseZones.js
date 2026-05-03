@@ -13,9 +13,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import {
   parseLocalDate,
+  getRawNow,
   getTodayLocal,
   isProtocolActiveOnDate,
-  getNow,
   getSaoPauloTime,
   parseISO,
   cloneDate,
@@ -204,14 +204,14 @@ export function useDoseZones({
   const { protocols, logs, isLoading, refresh } = useDashboard()
 
   // Estado de "agora" — usa Date bruto para o timer (evita double-shift em classifyDose)
-  const [nowRaw, setNowRaw] = useState(() => new Date())
+  const [nowRaw, setNowRaw] = useState(() => getRawNow())
 
   useEffect(() => {
     let intervalId = null
 
     const startInterval = () => {
       if (intervalId) return
-      intervalId = setInterval(() => setNowRaw(new Date()), 60_000)
+      intervalId = setInterval(() => setNowRaw(getRawNow()), 60_000)
     }
 
     const stopInterval = () => {
@@ -223,7 +223,7 @@ export function useDoseZones({
       if (document.hidden) {
         stopInterval()
       } else {
-        setNowRaw(new Date()) // atualizar imediatamente ao retornar
+        setNowRaw(getRawNow()) // atualizar imediatamente ao retornar
         startInterval()
       }
     }

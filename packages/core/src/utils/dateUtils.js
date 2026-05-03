@@ -125,6 +125,15 @@ export function getNow() {
 }
 
 /**
+ * Retorna a data/hora atual "bruta" (sem ajuste de fuso horário).
+ * Útil para timers e momentos que serão processados por outras funções de fuso.
+ * @returns {Date}
+ */
+export function getRawNow() {
+  return new Date()
+}
+
+/**
  * Retorna o timestamp atual em formato ISO (UTC)
  * @returns {string} ISO 8601 string
  */
