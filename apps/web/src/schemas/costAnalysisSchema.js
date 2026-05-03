@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/costAnalysisSchema.js'
+export * from '../../../../packages/core/src/schemas/costAnalysisSchema.js'

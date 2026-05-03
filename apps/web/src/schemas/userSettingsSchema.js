@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/userSettingsSchema.js'
+export * from '../../../../packages/core/src/schemas/userSettingsSchema.js'

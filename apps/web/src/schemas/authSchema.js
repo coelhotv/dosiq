@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/authSchema.js'
+export * from '../../../../packages/core/src/schemas/authSchema.js'

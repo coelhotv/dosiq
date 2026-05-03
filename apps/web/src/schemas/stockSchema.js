@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/stockSchema.js'
+export * from '../../../../packages/core/src/schemas/stockSchema.js'

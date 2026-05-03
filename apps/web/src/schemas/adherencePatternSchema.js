@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/adherencePatternSchema.js'
+export * from '../../../../packages/core/src/schemas/adherencePatternSchema.js'

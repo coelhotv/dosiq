@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/validationHelper.js'
+export * from '../../../../packages/core/src/schemas/validationHelper.js'

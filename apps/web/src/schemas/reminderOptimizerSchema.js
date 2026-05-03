@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/reminderOptimizerSchema.js'
+export * from '../../../../packages/core/src/schemas/reminderOptimizerSchema.js'

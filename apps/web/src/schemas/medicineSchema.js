@@ -1,1 +1,1 @@
-export * from '@dosiq/core/schemas/medicineSchema.js'
+export * from '../../../../packages/core/src/schemas/medicineSchema.js'
