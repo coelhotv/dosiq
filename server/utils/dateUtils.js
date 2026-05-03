@@ -13,7 +13,28 @@
  */
 export function getSaoPauloTime(date = new Date()) {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Date(d.toLocaleString('en-CA', { timeZone: 'America/Sao_Paulo' }));
+  
+  // Se a data de entrada for inválida, retorna a data atual como fallback seguro
+  if (isNaN(d.getTime())) return new Date();
+
+  try {
+    // R-020: Forçamos hour12: false para evitar 'p.m.' em certas versões de Node (ex: v24)
+    // O en-CA retorna YYYY-MM-DD, HH:mm:ss. Substituímos ', ' por 'T' para ISO parsing garantido.
+    const s = d.toLocaleString('en-CA', { 
+      timeZone: 'America/Sao_Paulo',
+      hour12: false 
+    }).replace(', ', 'T');
+    
+    const shifted = new Date(s);
+    
+    // Se a conversão falhar, retorna a data original (melhor que Invalid Date)
+    if (isNaN(shifted.getTime())) return d;
+    
+    return shifted;
+  } catch {
+    // Log silencioso ou fallback se o timezone não existir no ambiente
+    return d;
+  }
 }
 
 /**
@@ -100,8 +121,16 @@ export function parseISO(isoString) {
  * @returns {string}
  */
 export function getCurrentTime() {
+  const now = getNow();
+  
+  // Defesa extra: se mesmo com o endurecimento de getNow() tivermos Invalid Date
+  if (isNaN(now.getTime())) {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  
   // R-020: date já é shifted, toISOString reflete tempo de parede de SP
-  return getNow().toISOString().slice(11, 16);
+  return now.toISOString().slice(11, 16);
 }
 
 /**
