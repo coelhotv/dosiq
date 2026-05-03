@@ -34,6 +34,7 @@
 - **[R-158]** Avoid peer dep conflicts (ERESOLVE) by aligning with root + dev tool peer requir... -> [`rules/infra_and_deploy/R-158.md`](./rules/infra_and_deploy/R-158.md)
 - **[R-159]** After adding/modifying workspace packages, commit package-lock.json to keep CI/C... -> [`rules/infra_and_deploy/R-159.md`](./rules/infra_and_deploy/R-159.md)
 - **[R-180]** In monorepos using local EAS builds, .easignore at the root MUST explicitly incl... -> [`rules/infra_and_deploy/R-180.md`](./rules/infra_and_deploy/R-180.md)
+- **[R-213]** Workspace packages com exports field DEVEM ter wildcard para sub-paths individuais (ex: "./schemas/*"). Vite 7 + Vitest rejeitam sub-paths não declarados mesmo com alias. -> [`rules/infra_and_deploy/R-213.md`](./rules/infra_and_deploy/R-213.md)
 
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)

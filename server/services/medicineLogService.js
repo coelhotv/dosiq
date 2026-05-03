@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { validateLogBulkArray } from '../../packages/core/src/schemas/logSchema.js';
+import { validateLogBulkArray } from '@dosiq/core/schemas';
 
 /**
  * medicineLogService

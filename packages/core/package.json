@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.js",
     "./schemas": "./src/schemas/index.js",
+    "./schemas/*": "./src/schemas/*.js",
     "./utils": "./src/utils/index.js",
+    "./utils/*": "./src/utils/*.js",
     "./protocols-utils": "./src/protocols-utils/index.js"
   }
 }

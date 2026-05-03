@@ -11,7 +11,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
-import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
+import { getServerTimestamp } from '@dosiq/core/utils'
+import { REVIEW_STATUSES, RESOLUTION_TYPES } from '@dosiq/core/schemas'
 import {
   checkRateLimit,
   getRateLimitHeaders,
@@ -43,26 +44,6 @@ const VERCEL_GITHUB_ACTIONS_SECRET = process.env.VERCEL_GITHUB_ACTIONS_SECRET
 // ============================================================================
 // CONSTANTES
 // ============================================================================
-
-/**
- * Status possíveis das reviews
- * @readonly
- */
-const REVIEW_STATUSES = [
-  'detected',
-  'reported',
-  'assigned',
-  'resolved',
-  'partial',
-  'wontfix',
-  'duplicate',
-]
-
-/**
- * Tipos de resolução possíveis
- * @readonly
- */
-const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial']
 
 // ============================================================================
 // SCHEMAS ZOD

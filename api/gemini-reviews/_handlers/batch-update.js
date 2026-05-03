@@ -11,7 +11,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import crypto from 'crypto'
-import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
+import { getServerTimestamp } from '@dosiq/core/utils'
+import { REVIEW_STATUSES, RESOLUTION_TYPES } from '@dosiq/core/schemas'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -26,30 +27,6 @@ const AGENT_WEBHOOK_SECRET = process.env.AGENT_WEBHOOK_SECRET
 // ============================================================================
 // SCHEMAS ZOD
 // ============================================================================
-
-/**
- * Status possíveis das reviews
- * @readonly
- */
-const REVIEW_STATUSES = [
-  'detected',
-  'reported',
-  'assigned',
-  'resolved',
-  'partial',
-  'wontfix',
-  'duplicate',
-  'pendente',
-  'em_progresso',
-  'corrigido',
-  'descartado',
-]
-
-/**
- * Tipos de resolução possíveis
- * @readonly
- */
-const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial']
 
 /**
  * Schema para item de atualização individual

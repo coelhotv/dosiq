@@ -145,4 +145,5 @@
 - **[AP-124]** MarkdownV2 escapes in pushBody: results in visible backslashes in mobile notifications. -> [`anti-patterns/mobile_and_platform/AP-124.md`](./anti-patterns/mobile_and_platform/AP-124.md)
 - **[AP-126]** Config Linting Regression — Rodar regras ESM estritas em arquivos de configuração causa ERR_PACKAGE_PATH_NOT_EXPORTED. -> [`anti-patterns/process_and_testing/AP-126.md`](./anti-patterns/process_and_testing/AP-126.md)
 - **[AP-127]** Cross-Boundary Import Leak — Imports relativos entre domínios isolados (web/server) quebram a arquitetura de monorepo. -> [`anti-patterns/infra_and_deploy/AP-127.md`](./anti-patterns/infra_and_deploy/AP-127.md)
+- **[AP-128]** Re-export de sub-path de workspace sem wildcard — "Missing specifier" em Vite 7/Vitest. Fix: adicionar `"./schemas/*": "./src/schemas/*.js"` no exports field. -> [`anti-patterns/infra_and_deploy/AP-128.md`](./anti-patterns/infra_and_deploy/AP-128.md)
 
