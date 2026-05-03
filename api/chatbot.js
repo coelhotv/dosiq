@@ -9,7 +9,7 @@ import {
   CHATBOT_TOP_P,
   CHATBOT_MAX_HISTORY,
 } from '../apps/web/src/features/chatbot/config/chatbotConfig.js'
-import { getServerTimestamp } from '../packages/core/src/utils/dateUtils.js'
+import { getServerTimestamp } from '@dosiq/core/utils'
 
 const MODEL = process.env.GROQ_MODEL || 'groq/compound'
 

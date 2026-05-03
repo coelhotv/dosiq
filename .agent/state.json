@@ -1,0 +1,25 @@
+{
+  "project": "dosiq",
+  "sprint": "2026-W18",
+  "session": {
+    "mode": "coding",
+    "status": "completed",
+    "goal": "Schema Consolidation — Eliminar duplicação web/core e schemas inline",
+    "goal_type": "refactor"
+  },
+  "memory": {
+    "last_distillation": "2026-04-26T05:15:00Z",
+    "journal_entries_since_distillation": 5,
+    "rules_count": 80,
+    "anti_patterns_count": 65,
+    "decisions_count": 40,
+    "contracts_count": 20
+  },
+  "genes": {
+    "memory_distillation_threshold": 15,
+    "auto_promote_rule_after_incidents": 3
+  },
+  "quality_gates": {
+    "index_loaded_at": "2026-05-03T00:00:00Z"
+  }
+}
