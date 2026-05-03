@@ -10,21 +10,21 @@ import {
   UIManager 
 } from 'react-native'
 import { Pill } from 'lucide-react-native'
-import { useTodayData } from '../hooks/useTodayData'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import LoadingState from '../../../shared/components/states/LoadingState'
-import EmptyState from '../../../shared/components/states/EmptyState'
-import ErrorState from '../../../shared/components/states/ErrorState'
-import { getPeriodFromTime } from '@dosiq/core'
-import AdherenceDayCard from '../components/AdherenceDayCard'
-import TimeBlockSeparator from '../components/TimeBlockSeparator'
-import DoseTimelineCard from '../components/DoseTimelineCard'
-import HeroDoseCard from '../components/HeroDoseCard'
-import StockAlertInline from '../components/StockAlertInline'
-import DoseRegisterModal from '../../dose/components/DoseRegisterModal'
-import BulkDoseRegisterModal from '../../dose/components/BulkDoseRegisterModal'
-import StaleBanner from '../../../shared/components/feedback/StaleBanner'
-import { colors, spacing, typography } from '../../../shared/styles/tokens'
+import { useTodayData } from '@dashboard/hooks/useTodayData'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import LoadingState from '@shared/components/states/LoadingState'
+import EmptyState from '@shared/components/states/EmptyState'
+import ErrorState from '@shared/components/states/ErrorState'
+import { getPeriodFromTime, getNow } from '@dosiq/core'
+import AdherenceDayCard from '@dashboard/components/AdherenceDayCard'
+import TimeBlockSeparator from '@dashboard/components/TimeBlockSeparator'
+import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
+import HeroDoseCard from '@dashboard/components/HeroDoseCard'
+import StockAlertInline from '@dashboard/components/StockAlertInline'
+import DoseRegisterModal from '@dose/components/DoseRegisterModal'
+import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
+import StaleBanner from '@shared/components/feedback/StaleBanner'
+import { colors, spacing, typography } from '@shared/styles/tokens'
 
 // Habilitar animações no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -55,7 +55,6 @@ export default function TodayScreen({ route, navigation }) {
     return Object.keys(medicines).length > 3
   }, [medicines, data?.user?.complexity_override])
 
-  // Agrupamento da Timeline por Turnos (Epic 2) - Memoized
   const { groupedTimeline, shifts, countsByShift } = useMemo(() => {
     const counts = {}
     const grouped = timeline.reduce((acc, dose) => {
@@ -82,61 +81,56 @@ export default function TodayScreen({ route, navigation }) {
     return { groupedTimeline: grouped, shifts: activeShifts, countsByShift: counts }
   }, [timeline, isComplex])
 
+  // Heurística de Expansão Inicial - Ajuste de Estado no Render (React 19 Pattern)
+  const currentDay = data?.localDay
+  if (currentDay && currentDay !== lastHeuristicDay) {
+    const now = getNow()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const currentShift = getPeriodFromTime(timeStr)
+
+    const initial = {}
+    shifts.forEach(shift => {
+      const doses = groupedTimeline[shift] || []
+      const isCurrent = shift === currentShift
+      const hasUrgent = doses.some(d => d.timelineStatus === 'ATRASADA' || d.timelineStatus === 'PROXIMA')
+      initial[shift] = isCurrent || hasUrgent
+    })
+    
+    setExpandedShifts(initial)
+    setLastHeuristicDay(currentDay)
+  }
+
   // 2. Deeplink params de push notification (N1.4 → N1.5)
   // Abre BulkDoseRegisterModal automaticamente quando a tela é navegada via push tap
   useEffect(() => {
     const params = route?.params
     if (!params?.screen) return
-    if (params.screen === 'bulk-plan' && params.planId) {
-      setBulkModal({
-        mode: 'plan',
-        planId: params.planId,
-        scheduledTime: params.at ?? '',
-        treatmentPlanName: params.treatmentPlanName,
-      })
-    } else if (params.screen === 'bulk-misc') {
-      setBulkModal({
-        mode: 'misc',
-        protocolIds: params.protocolIds ?? [],
-        scheduledTime: params.at ?? '',
-      })
-    } else if (params.screen === 'dose-individual' && params.protocolId) {
-      const protocol = protocols.find(p => p.id === params.protocolId)
-      if (protocol) {
-        setModalProtocol(protocol)
-        setModalScheduledTime(params.at ?? null)
+    setTimeout(() => {
+      if (params.screen === 'bulk-plan' && params.planId) {
+        setBulkModal({
+          mode: 'plan',
+          planId: params.planId,
+          scheduledTime: params.at ?? '',
+          treatmentPlanName: params.treatmentPlanName,
+        })
+      } else if (params.screen === 'bulk-misc') {
+        setBulkModal({
+          mode: 'misc',
+          protocolIds: params.protocolIds ?? [],
+          scheduledTime: params.at ?? '',
+        })
+      } else if (params.screen === 'dose-individual' && params.protocolId) {
+        const protocol = protocols.find(p => p.id === params.protocolId)
+        if (protocol) {
+          setModalProtocol(protocol)
+          setModalScheduledTime(params.at ?? null)
+        }
       }
-    }
-    // Limpar params após consumo para evitar re-abertura em back-navigate
-    navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
-  }, [route?.params])
+      // Limpar params após consumo para evitar re-abertura em back-navigate
+      navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
+    }, 0)
+  }, [route?.params, navigation, protocols])
 
-  // 3. Heurística de Expansão Inicial
-  useEffect(() => {
-    const currentDay = data?.localDay
-    const dayChanged = lastHeuristicDay && currentDay && lastHeuristicDay !== currentDay
-    const isFirstLoad = Object.keys(expandedShifts).length === 0
-
-    if (shifts.length > 0 && (isFirstLoad || dayChanged)) {
-      const now = new Date()
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-      const currentShift = getPeriodFromTime(timeStr)
-
-      const initial = {}
-      shifts.forEach(shift => {
-        const doses = groupedTimeline[shift] || []
-        // Regra 1: Expandir se for o turno atual
-        const isCurrent = shift === currentShift
-        // Regra 2: Expandir se tiver dose urgente (Atrasada/Próxima)
-        const hasUrgent = doses.some(d => d.timelineStatus === 'ATRASADA' || d.timelineStatus === 'PROXIMA')
-        
-        initial[shift] = isCurrent || hasUrgent
-      })
-      
-      setExpandedShifts(initial)
-      setLastHeuristicDay(currentDay)
-    }
-  }, [shifts, groupedTimeline, data?.localDay, lastHeuristicDay])
 
   const toggleShift = useCallback((shift) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -157,7 +151,7 @@ export default function TodayScreen({ route, navigation }) {
   // Dados do Cabeçalho (Personalização H8.7)
   const fullUserName = data?.user?.name || data?.user?.email?.split('@')[0] || 'Usuário'
   const firstName = fullUserName.trim().split(' ')[0]
-  const todayFormatted = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const todayFormatted = getNow().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const greeting = `Olá, ${firstName}`
 
   function handleOpenRegister(protocol, scheduledTime) {
@@ -290,10 +284,9 @@ export default function TodayScreen({ route, navigation }) {
         treatmentPlanName={bulkModal?.treatmentPlanName}
         userId={data?.user?.id ?? ''}
         onClose={() => setBulkModal(null)}
-        onSuccess={({ successCount }) => {
+        onSuccess={() => {
           setBulkModal(null)
           refresh()
-          if (__DEV__) console.log('[TodayScreen] BulkDoseRegisterModal — sucesso:', successCount)
         }}
       />
     </ScreenContainer>

@@ -2,6 +2,7 @@
 // Dead Letter Queue Service - Frontend API client for DLQ admin
 
 import { supabase } from '@shared/utils/supabase'
+import { parseISO } from '@utils/dateUtils'
 
 /**
  * DLQ Service - Gerencia operações da Dead Letter Queue
@@ -138,7 +139,7 @@ export const dlqService = {
    */
   formatDate(dateString) {
     if (!dateString) return '-'
-    return new Date(dateString).toLocaleString('pt-BR', {
+    return parseISO(dateString).toLocaleString('pt-BR', {
       timeZone: 'America/Sao_Paulo',
       day: '2-digit',
       month: '2-digit',

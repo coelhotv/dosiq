@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isDoseInToleranceWindow, calculateAdherenceStats } from '../adherenceLogic'
+import { isDoseInToleranceWindow, calculateAdherenceStats } from '@/utils/adherenceLogic'
 
 describe('Smoke: Adherence Logic', () => {
   it('detects dose within tolerance window', () => {

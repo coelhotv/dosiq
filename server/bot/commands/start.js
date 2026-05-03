@@ -1,4 +1,5 @@
 import { supabase } from '../../services/supabase.js';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
 
 export async function handleStart(bot, msg) {
   const chatId = msg.chat.id;
@@ -34,7 +35,7 @@ export async function handleStart(bot, msg) {
       .update({ 
         telegram_chat_id: chatId.toString(),
         verification_token: null, // Consume token
-        updated_at: new Date().toISOString()
+        updated_at: getServerTimestamp()
       })
       .eq('verification_token', token)
       .select()

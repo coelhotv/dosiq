@@ -4,6 +4,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { getNow, getServerTimestamp } from '../../utils/dateUtils.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
@@ -56,7 +57,7 @@ export const notificationDeviceRepository = {
     deviceName,
     deviceFingerprint,
     appVersion,
-    now = new Date(),
+    now = getNow(),
   }) {
     const parsed = upsertSchema.safeParse({ userId, appKind, platform, provider, pushToken, deviceName, deviceFingerprint, appVersion })
     if (!parsed.success) {
@@ -98,7 +99,7 @@ export const notificationDeviceRepository = {
   async deactivateByToken(pushToken) {
     const { error } = await supabase
       .from('notification_devices')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, updated_at: getServerTimestamp() })
       .eq('push_token', pushToken)
 
     if (error) {
@@ -115,7 +116,7 @@ export const notificationDeviceRepository = {
   async deactivateAllForUser(userId, provider = 'expo') {
     const { error } = await supabase
       .from('notification_devices')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, updated_at: getServerTimestamp() })
       .eq('user_id', userId)
       .eq('provider', provider)
 

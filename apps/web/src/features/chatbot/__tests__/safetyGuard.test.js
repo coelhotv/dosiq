@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { validateUserMessage, addDisclaimerIfNeeded, DISCLAIMER } from '../services/safetyGuard'
+import { validateUserMessage, addDisclaimerIfNeeded, DISCLAIMER } from '@/features/chatbot/services/safetyGuard'
 
 afterEach(() => {
   vi.clearAllMocks()

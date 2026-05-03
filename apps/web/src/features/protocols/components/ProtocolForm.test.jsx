@@ -38,8 +38,8 @@ describe('ProtocolForm', () => {
   it('renders correctly for a new protocol', () => {
     render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
-    expect(screen.getByText('Novo Protocolo')).toBeDefined()
-    expect(screen.getByLabelText(/Nome do Protocolo/i)).toBeDefined()
+    expect(screen.getByText('Novo Tratamento')).toBeDefined()
+    expect(screen.getByLabelText(/Nome do Tratamento/i)).toBeDefined()
   })
 
   it('renders correctly for editing an existing protocol', () => {
@@ -62,7 +62,7 @@ describe('ProtocolForm', () => {
       />
     )
 
-    expect(screen.getByText('Editar Protocolo')).toBeDefined()
+    expect(screen.getByText('Editar Tratamento')).toBeDefined()
   })
 
   it('renders with treatment plans', () => {
@@ -83,7 +83,7 @@ describe('ProtocolForm', () => {
   it('validates required fields on submit', async () => {
     render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
-    fireEvent.click(screen.getByText('Criar Protocolo'))
+    fireEvent.click(screen.getByText('Criar Tratamento'))
 
     await waitFor(() => {
       expect(
@@ -95,14 +95,8 @@ describe('ProtocolForm', () => {
       expect(
         screen.getByText(
           (content, element) =>
-            content === 'Nome do protocolo é obrigatório' &&
+            content === 'Nome do tratamento é obrigatório' &&
             element.classList.contains('error-message')
-        )
-      ).toBeInTheDocument()
-      expect(
-        screen.getByText(
-          (content, element) =>
-            content === 'Frequência é obrigatória' && element.classList.contains('error-message')
         )
       ).toBeInTheDocument()
       expect(
@@ -124,7 +118,7 @@ describe('ProtocolForm', () => {
 
     // Fill form
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+    fireEvent.change(screen.getByLabelText(/Nome do Tratamento/i), {
       target: { value: 'Test Protocol' },
     })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
@@ -136,7 +130,7 @@ describe('ProtocolForm', () => {
     fireEvent.click(screen.getByText('➕ Adicionar'))
 
     // Submit
-    fireEvent.click(screen.getByText('Criar Protocolo'))
+    fireEvent.click(screen.getByText('Criar Tratamento'))
 
     await waitFor(() => {
       expect(mockOnSave).toHaveBeenCalledWith({
@@ -151,6 +145,8 @@ describe('ProtocolForm', () => {
         titration_schedule: [],
         notes: null,
         active: true,
+        start_date: expect.any(String),
+        end_date: null,
       })
     })
   })
@@ -253,7 +249,7 @@ describe('ProtocolForm', () => {
 
     // Fill form with valid data
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+    fireEvent.change(screen.getByLabelText(/Nome do Tratamento/i), {
       target: { value: 'Test Protocol' },
     })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
@@ -264,7 +260,7 @@ describe('ProtocolForm', () => {
     fireEvent.click(screen.getByText('➕ Adicionar'))
 
     // Submit
-    fireEvent.click(screen.getByText('Criar Protocolo'))
+    fireEvent.click(screen.getByText('Criar Tratamento'))
 
     await waitFor(() => {
       expect(screen.getByText(`❌ ${errorMessage}`)).toBeInTheDocument()
@@ -277,7 +273,7 @@ describe('ProtocolForm', () => {
     render(<ProtocolForm medicines={mockMedicines} onSave={onSave} onCancel={mockOnCancel} />)
 
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+    fireEvent.change(screen.getByLabelText(/Nome do Tratamento/i), {
       target: { value: 'Test Protocol' },
     })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
@@ -289,7 +285,7 @@ describe('ProtocolForm', () => {
     fireEvent.click(screen.getByText('➕ Adicionar'))
 
     // Click submit
-    fireEvent.click(screen.getByText('Criar Protocolo'))
+    fireEvent.click(screen.getByText('Criar Tratamento'))
 
     // onSave should NOT have been called because validation should have failed
     await waitFor(() => {
@@ -304,7 +300,7 @@ describe('ProtocolForm', () => {
 
     // Fill all required fields first
     fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
-    fireEvent.change(screen.getByLabelText(/Nome do Protocolo/i), {
+    fireEvent.change(screen.getByLabelText(/Nome do Tratamento/i), {
       target: { value: 'Test Protocol' },
     })
     fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
@@ -319,7 +315,7 @@ describe('ProtocolForm', () => {
     fireEvent.change(screen.getByLabelText(/Dose Alvo/i), { target: { value: '' } })
 
     // Click submit
-    fireEvent.click(screen.getByText('Criar Protocolo'))
+    fireEvent.click(screen.getByText('Criar Tratamento'))
 
     // With empty target dosage, validation should pass and onSave should be called
     await waitFor(

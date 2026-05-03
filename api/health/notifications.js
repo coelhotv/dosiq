@@ -2,6 +2,7 @@
 import { createLogger } from '../../server/bot/logger.js';
 import { getMetrics } from '../../server/services/notificationMetrics.js';
 import { getDLQStats } from '../../server/services/deadLetterQueue.js';
+import { getNow, parseISO, getServerTimestamp } from '../../server/utils/dateUtils.js';
 
 const logger = createLogger('HealthNotifications');
 
@@ -23,7 +24,7 @@ async function checkHealth() {
   const metrics = getMetrics(5); // Últimos 5 minutos
   const dlqStats = await getDLQStats();
   
-  const now = new Date();
+  const now = getNow();
   const checks = {
     errorRate: {
       status: 'healthy',
@@ -68,7 +69,7 @@ async function checkHealth() {
   
   // Verificar último envio bem-sucedido
   if (metrics.timestamps.lastSuccessfulSend) {
-    const lastSuccess = new Date(metrics.timestamps.lastSuccessfulSend);
+    const lastSuccess = parseISO(metrics.timestamps.lastSuccessfulSend);
     const minutesSinceSuccess = (now - lastSuccess) / (1000 * 60);
     
     if (minutesSinceSuccess > HEALTH_THRESHOLDS.maxMinutesSinceSuccess) {
@@ -151,7 +152,7 @@ export default async function handler(req, res) {
     res.status(500).json({
       status: 'error',
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: getServerTimestamp()
     });
   }
 }

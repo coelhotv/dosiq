@@ -1,3 +1,5 @@
+import { getNow, parseISO } from './dateUtils.js'
+
 export function calculateTitrationData(protocol) {
   if (!protocol.titration_schedule || protocol.titration_schedule.length === 0) return null
   if (!protocol.stage_started_at) return null
@@ -9,8 +11,8 @@ export function calculateTitrationData(protocol) {
   if (currentStageIndex >= schedule.length) return null
 
   const currentStage = schedule[currentStageIndex]
-  const startDate = new Date(protocol.stage_started_at)
-  const today = new Date()
+  const startDate = parseISO(protocol.stage_started_at)
+  const today = getNow()
 
   // Calculate days elapsed (difference in time / milliseconds per day)
   const diffTime = Math.abs(today - startDate)

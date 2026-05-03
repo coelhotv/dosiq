@@ -14,6 +14,7 @@ import {
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
 import { createClient } from '@supabase/supabase-js';
 import { Expo } from 'expo-server-sdk';
+import { getServerTimestamp, getNow, getSaoPauloTime } from '../server/utils/dateUtils.js';
 
 const logger = createLogger('CronNotify');
 
@@ -173,7 +174,7 @@ function createNotifyBotAdapter(token) {
           return {
             success: true,
             messageId: result.message_id,
-            timestamp: new Date().toISOString(),
+            timestamp: getServerTimestamp(),
             attempts: attempt
           };
         } catch (err) {
@@ -198,7 +199,7 @@ function createNotifyBotAdapter(token) {
           message: lastError.message,
           retryable: isRetryableError(lastError)
         },
-        timestamp: new Date().toISOString(),
+        timestamp: getServerTimestamp(),
         attempts: maxAttempts
       };
     }
@@ -283,8 +284,8 @@ export default async function handler(req, res) {
   };
 
   // Get current time in Sao Paulo
-  const now = new Date();
-  const spDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const now = getNow();
+  const spDate = getSaoPauloTime(now);
   
   const currentHour = spDate.getHours();
   const currentMinute = spDate.getMinutes();

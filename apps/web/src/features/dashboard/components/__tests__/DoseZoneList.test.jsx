@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import DoseZoneList from '../DoseZoneList'
+import DoseZoneList from '@/features/dashboard/components/DoseZoneList'
 
 // Mocks de componentes pesados — isolam a lógica do DoseZoneList
 vi.mock('../TreatmentAccordion', () => ({

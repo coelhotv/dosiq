@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -117,7 +118,7 @@ async function updateReview(supabase, update) {
   // Construir objeto de atualização
   const updateData = {
     status,
-    updated_at: new Date().toISOString(),
+    updated_at: getServerTimestamp(),
   }
 
   if (resolution_type !== undefined) {
@@ -134,7 +135,7 @@ async function updateReview(supabase, update) {
 
   // Se status é resolved/partial/wontfix, adicionar resolved_at
   if (['resolved', 'partial', 'wontfix', 'corrigido', 'descartado'].includes(status)) {
-    updateData.resolved_at = new Date().toISOString()
+    updateData.resolved_at = getServerTimestamp()
   }
 
   const { data, error } = await supabase

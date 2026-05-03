@@ -1,4 +1,6 @@
 import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
+import { getNow, parseISO, getSaoPauloTime } from '@utils/dateUtils'
+import { debugLog, errorLog, warnLog } from '@shared/utils/logger'
 
 /**
  * Analisa delta entre horário programado e horário real de tomada.
@@ -33,13 +35,11 @@ export function analyzeReminderTiming({ protocol, logs }) {
       return acc
     }, {})
 
-    console.error('[reminderOptimizerService] Validation failed:', {
-      timestamp: new Date().toISOString(),
+    errorLog('reminderOptimizerService', 'Validation failed', {
       context: 'analyzeReminderTiming',
       protocol_id: protocol?.id,
       logs_count: logs?.length,
       error_by_field: fieldErrors,
-      first_log_sample: logs?.[0],
       first_issue_details: issues[0],
     })
     return null
@@ -59,11 +59,12 @@ export function analyzeReminderTiming({ protocol, logs }) {
   // Otimização: Pré-processa os logs uma única vez para evitar parsing repetido
   const processedLogs = validLogs
     .map((log) => {
-      const logDate = new Date(log.taken_at)
+      const logDate = parseISO(log.taken_at)
       if (isNaN(logDate.getTime())) return null // Ignora datas inválidas
+      const spDate = getSaoPauloTime(logDate)
       return {
         ...log,
-        logMinutes: logDate.getHours() * 60 + logDate.getMinutes(),
+        logMinutes: spDate.getHours() * 60 + spDate.getMinutes(),
       }
     })
     .filter(Boolean)
@@ -155,9 +156,9 @@ export function isSuggestionDismissed(protocolId) {
 
     // Dispensado por 30 dias
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
-    return Date.now() - timestamp < thirtyDaysMs
+    return getNow().getTime() - timestamp < thirtyDaysMs
   } catch (error) {
-    console.error('[reminderOptimizerService] Error parsing dismissed suggestion:', error)
+    errorLog('reminderOptimizerService', 'Error parsing dismissed suggestion', error)
     return true
   }
 }
@@ -174,31 +175,31 @@ export function dismissSuggestion(protocolId, permanent = false) {
     typeof localStorage === 'undefined' ||
     typeof localStorage.setItem !== 'function'
   ) {
-    console.warn('[reminderOptimizerService] dismissSuggestion called in non-browser environment')
+    warnLog('reminderOptimizerService', 'dismissSuggestion called in non-browser environment')
     return
   }
 
   const key = `optimizer_dismissed_${protocolId}`
   const value = JSON.stringify({
-    timestamp: Date.now(),
+    timestamp: getNow().getTime(),
     permanent,
   })
 
   try {
     localStorage.setItem(key, value)
-    console.log('[reminderOptimizerService] Suggestion dismissed:', {
+    debugLog('reminderOptimizerService', 'Suggestion dismissed:', {
       protocolId,
       key,
       permanent,
-      timestamp: new Date().toISOString(),
+      timestamp: getNow().toISOString(),
       storageSize: Object.keys(localStorage).length,
     })
   } catch (error) {
-    console.error('[reminderOptimizerService] Failed to dismiss suggestion:', {
+    errorLog('reminderOptimizerService', 'Failed to dismiss suggestion:', {
       protocolId,
       key,
       error: error.message,
-      timestamp: new Date().toISOString(),
+      timestamp: getNow().toISOString(),
     })
   }
 }

@@ -8,7 +8,7 @@ import {
   isTitrationActive,
   formatDose,
 } from '@protocols/services/titrationService'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow } from '@utils/dateUtils'
 
 const FREQUENCY_LABELS = {
   diario: 'Diário',
@@ -44,7 +44,7 @@ function getStockStatus(daysRemaining) {
  * CRÍTICO: usar parseLocalDate() para comparações de data, NUNCA new Date('YYYY-MM-DD')
  */
 function resolveTabStatus(protocol) {
-  const today = formatLocalDate(new Date())
+  const today = formatLocalDate(getNow())
   if (protocol.end_date && protocol.end_date < today) return 'finalizado'
   if (protocol.active === false) return 'pausado'
   return 'ativo'
@@ -148,7 +148,7 @@ export function useTreatmentList() {
         const intakeLabel = `${n} comprimido${n !== 1 ? 's' : ''}`
 
         // Próxima dose não-registrada (simplificado — comparar timeSchedule com hora atual)
-        const now = new Date()
+        const now = getNow()
         const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(
           now.getMinutes()
         ).padStart(2, '0')}`

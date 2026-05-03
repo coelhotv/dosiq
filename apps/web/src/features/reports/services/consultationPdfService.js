@@ -5,6 +5,7 @@
  */
 
 import { buildConsultationPdfData } from './consultationPdfDataBuilder.js'
+import { getNow } from '@utils/dateUtils'
 
 /**
  * Paleta do PDF.
@@ -787,7 +788,7 @@ export async function generateConsultationPDF(options = {}) {
     consultationData,
     dashboardData,
     period,
-    generatedAt: new Date(),
+    generatedAt: getNow(),
     title,
   })
 

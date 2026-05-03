@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
 import {
   checkRateLimit,
   getRateLimitHeaders,
@@ -260,7 +261,7 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
         status: 'detected',
         pr_number: prNumber,
         commit_sha: commitSha,
-        updated_at: new Date().toISOString(),
+        updated_at: getServerTimestamp(),
         resolution_type: null,
         resolved_by: null,
         resolved_at: null,
@@ -283,7 +284,7 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
         status: 'reported',
         pr_number: prNumber,
         commit_sha: commitSha,
-        updated_at: new Date().toISOString(),
+        updated_at: getServerTimestamp(),
       })
       .eq('id', id)
     return 'reactivated'
@@ -300,7 +301,7 @@ async function handleExistingIssue(supabase, existing, newIssue, prNumber, commi
     .update({
       pr_number: prNumber,
       commit_sha: commitSha,
-      updated_at: new Date().toISOString(),
+      updated_at: getServerTimestamp(),
     })
     .eq('id', id)
   return 'updated'

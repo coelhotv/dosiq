@@ -1,17 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
-// Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  takeRecords() {
-    return []
-  }
-  unobserve() {}
-}
-
 vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   useDashboard: vi.fn(() => ({
     protocols: [],
@@ -20,41 +9,39 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   })),
 }))
 
+vi.mock('@dashboard/hooks/useComplexityMode', () => ({
+  useComplexityMode: vi.fn(() => ({
+    mode: 'moderate',
+    isComplex: false,
+    ringGaugeSize: 'medium',
+    defaultViewMode: 'time',
+  })),
+}))
+
 vi.mock('@shared/services', () => ({
   cachedLogService: {
-    getByMonth: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
     getByMonthSlim: vi.fn(() => Promise.resolve({ data: [], total: 0 })),
-    getAllPaginated: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
-    getAllPaginatedSlim: vi.fn(() => Promise.resolve({ data: [], total: 0, hasMore: false })),
     create: vi.fn(),
     update: vi.fn(),
     createBulk: vi.fn(),
     delete: vi.fn(),
   },
   cachedAdherenceService: {
-    getAdherenceSummary: vi.fn(() =>
-      Promise.resolve({ overallTaken: 42, overallExpected: 50, longestStreak: 12 })
-    ),
     getDailyAdherenceFromView: vi.fn(() => Promise.resolve([])),
     getAdherencePatternFromView: vi.fn(() => Promise.resolve(null)),
   },
 }))
 
-vi.mock('@services/api/adherenceService', () => ({
-  adherenceService: {
-    getAdherenceSummary: vi.fn(() =>
-      Promise.resolve({
-        overallTaken: 42,
-        overallExpected: 50,
-        longestStreak: 12,
-      })
-    ),
-    getDailyAdherence: vi.fn(() => Promise.resolve([])),
-  },
+vi.mock('@shared/components/ui/Calendar', () => ({
+  default: () => <div data-testid="calendar" />,
 }))
 
-vi.mock('@shared/components/ui/Loading', () => ({
-  default: ({ text }) => <div data-testid="loading">{text}</div>,
+vi.mock('@/views/redesign/history/HistoryKPICards', () => ({
+  default: ({ adherenceScore }) => <div data-testid="kpi-cards">{adherenceScore}%</div>,
+}))
+
+vi.mock('@/views/redesign/history/HistoryDayPanel', () => ({
+  default: () => <div data-testid="day-panel" />,
 }))
 
 vi.mock('@shared/components/ui/Modal', () => ({
@@ -65,19 +52,7 @@ vi.mock('@shared/components/log/LogForm', () => ({
   default: () => <div data-testid="log-form" />,
 }))
 
-vi.mock('@shared/components/log/LogEntry', () => ({
-  default: ({ log }) => <div data-testid="log-entry">{log.medicine?.name}</div>,
-}))
-
-vi.mock('@shared/components/ui/CalendarWithMonthCache', () => ({
-  default: () => <div data-testid="calendar" />,
-}))
-
-vi.mock('@dashboard/components/SparklineAdesao', () => ({
-  default: () => <div data-testid="sparkline" />,
-}))
-
-import HealthHistory from '../HealthHistory'
+import HealthHistory from '@/views/redesign/HealthHistory'
 
 describe('HealthHistory', () => {
   beforeEach(() => {
@@ -90,22 +65,15 @@ describe('HealthHistory', () => {
 
   it('renderiza loading inicialmente', () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
-    expect(screen.getByTestId('loading')).toBeInTheDocument()
+    expect(screen.getByText(/Carregando histórico.../i)).toBeInTheDocument()
   })
 
-  it('renderiza score de adesao do dashboard context', async () => {
+  it('renderiza score de adesao e titulo apos carregar', async () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText('85%')).toBeInTheDocument()
-    })
-  })
-
-  it('renderiza streak atual', async () => {
-    render(<HealthHistory onNavigate={vi.fn()} />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/5d streak/)).toBeInTheDocument()
+      expect(screen.getByText('Histórico de Doses')).toBeInTheDocument()
+      expect(screen.getByTestId('kpi-cards')).toHaveTextContent('85%')
     })
   })
 
@@ -113,33 +81,16 @@ describe('HealthHistory', () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText(/Minha Saúde/)).toBeInTheDocument()
+      expect(screen.getByText(/Voltar/)).toBeInTheDocument()
     })
   })
 
-  it('renderiza calendario', async () => {
+  it('renderiza calendario e painel do dia', async () => {
     render(<HealthHistory onNavigate={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByTestId('calendar')).toBeInTheDocument()
-    })
-  })
-
-  it('renderiza stats do mes', async () => {
-    render(<HealthHistory onNavigate={vi.fn()} />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Doses')).toBeInTheDocument()
-      expect(screen.getByText('Dias')).toBeInTheDocument()
-      expect(screen.getByText('Comprimidos')).toBeInTheDocument()
-    })
-  })
-
-  it('renderiza botao de registrar dose', async () => {
-    render(<HealthHistory onNavigate={vi.fn()} />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Registrar Dose/)).toBeInTheDocument()
+      expect(screen.getByTestId('day-panel')).toBeInTheDocument()
     })
   })
 })

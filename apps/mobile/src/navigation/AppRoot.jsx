@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency'
 import Navigation from './Navigation'
+import { debugLog } from '@shared/utils/debugLog'
 
 // AppRoot — ponto de entrada da árvore de componentes
 export default function AppRoot() {
@@ -24,9 +25,7 @@ export default function AppRoot() {
           await new Promise(resolve => setTimeout(resolve, 1000))
           
           const { status } = await requestTrackingPermissionsAsync()
-          if (__DEV__) {
-            console.log(`[Tracking] Resultado da solicitação: ${status}`)
-          }
+          debugLog(`[Tracking] Resultado da solicitação: ${status}`)
         }
       } catch (error) {
         if (__DEV__) console.warn('[Tracking] Falha ao solicitar permissão:', error)

@@ -5,6 +5,7 @@
  * Zero roundtrip extra — tudo local.
  */
 import { useMemo, useCallback } from 'react'
+import { parseISO, getServerTimestamp } from '@utils/dateUtils.js'
 
 const STORAGE_KEY = 'dosiq:notif-last-seen'
 
@@ -27,16 +28,16 @@ export function useUnreadNotificationCount(notifications) {
   const unreadCount = useMemo(() => {
     if (!notifications?.length) return 0
     if (!lastSeen) return notifications.length
-    const lastSeenTime = new Date(lastSeen).getTime()
+    const lastSeenTime = parseISO(lastSeen).getTime()
     return notifications.filter(n => {
       if (!n.sent_at) return false
-      return new Date(n.sent_at).getTime() > lastSeenTime
+      return parseISO(n.sent_at).getTime() > lastSeenTime
     }).length
   }, [notifications, lastSeen])
 
   const markAllRead = useCallback(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, new Date().toISOString())
+      localStorage.setItem(STORAGE_KEY, getServerTimestamp())
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to set notification last seen time in localStorage:', err)

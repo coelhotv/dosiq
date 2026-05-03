@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { parseISO } from '@utils/dateUtils'
 import {
   ArrowLeft,
   Pill,
@@ -51,7 +52,7 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
 
   const formattedGeneratedAt = useMemo(() => {
     if (!generatedAt) return ''
-    return new Date(generatedAt).toLocaleString('pt-BR', {
+    return parseISO(generatedAt).toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -70,11 +71,11 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
   }
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'var(--color-success, #10b981)'
-    if (score >= 60) return 'var(--color-warning, #f59e0b)'
+    if (score >= 80) return 'var(--color-success)'
+    if (score >= 60) return 'var(--color-warning)'
     if (score >= 40)
-      return 'color-mix(in srgb, var(--color-warning, #f59e0b), var(--color-error, #ef4444))'
-    return 'var(--color-error, #ef4444)'
+      return 'color-mix(in srgb, var(--color-warning), var(--color-error))'
+    return 'var(--color-error)'
   }
 
   return (

@@ -1,4 +1,5 @@
 import { dismissSuggestion } from '@features/protocols/services/reminderOptimizerService'
+import { debugLog } from '@shared/utils/logger'
 import './ReminderSuggestion.css'
 
 /**
@@ -28,13 +29,13 @@ export default function ReminderSuggestion({
   }
 
   const handleKeep = () => {
-    console.log('[ReminderSuggestion] handleKeep clicked:', { protocolId, protocolName })
+    debugLog('ReminderSuggestion', 'handleKeep clicked:', { protocolId, protocolName })
     dismissSuggestion(protocolId, false) // 30 dias
     onDismiss()
   }
 
   const handleNeverAsk = () => {
-    console.log('[ReminderSuggestion] handleNeverAsk clicked:', { protocolId, protocolName })
+    debugLog('ReminderSuggestion', 'handleNeverAsk clicked:', { protocolId, protocolName })
     dismissSuggestion(protocolId, true) // Permanente
     onDismiss()
   }

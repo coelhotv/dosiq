@@ -60,17 +60,22 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
     return (
       <div className="titration-timeline compact">
         <div className="timeline-preview">
-          {steps.map((step) => (
-            <div
-              key={step.stepNumber}
-              className={`preview-step ${step.status}`}
-              onClick={() => handleStepClick(step)}
-              title={`${step.description || `Etapa ${step.stepNumber}`}: ${step.dose}${step.unit}`}
-            >
-              <span className="preview-dose">{step.dose}</span>
-              <span className="preview-unit">{step.unit}</span>
-            </div>
-          ))}
+          {steps.map((step) => {
+            const isClickable = Boolean(onStepClick)
+            const Tag = isClickable ? 'button' : 'div'
+            return (
+              <Tag
+                key={step.stepNumber}
+                type={isClickable ? 'button' : undefined}
+                className={`preview-step ${step.status}`}
+                onClick={() => handleStepClick(step)}
+                title={`${step.description || `Etapa ${step.stepNumber}`}: ${step.dose}${step.unit}`}
+              >
+                <span className="preview-dose">{step.dose}</span>
+                <span className="preview-unit">{step.unit}</span>
+              </Tag>
+            )
+          })}
         </div>
 
         <div className="timeline-progress-mini">
@@ -110,12 +115,16 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
       </div>
 
       <div className="timeline-steps">
-        {steps.map((step, index) => (
-          <div
-            key={step.stepNumber}
-            className="timeline-step-wrapper"
-            onClick={() => handleStepClick(step)}
-          >
+        {steps.map((step, index) => {
+          const isClickable = Boolean(onStepClick)
+          const Tag = isClickable ? 'button' : 'div'
+          return (
+            <Tag
+              key={step.stepNumber}
+              type={isClickable ? 'button' : undefined}
+              className="timeline-step-wrapper"
+              onClick={() => handleStepClick(step)}
+            >
             <TitrationStep
               stepNumber={step.stepNumber}
               dose={step.dose}
@@ -128,8 +137,9 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
               isLast={index === steps.length - 1}
               daysRemaining={step.status === 'current' ? daysUntilNext : 0}
             />
-          </div>
-        ))}
+          </Tag>
+        )
+      })}
       </div>
 
       <div className="timeline-footer">

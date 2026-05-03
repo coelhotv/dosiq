@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react'
 import { SectionList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useStock } from '@stock/hooks/useStock'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import LoadingState from '../../../shared/components/states/LoadingState'
-import EmptyState from '../../../shared/components/states/EmptyState'
-import ErrorState from '../../../shared/components/states/ErrorState'
-import StockItem from '../components/StockItem'
-import StaleBanner from '../../../shared/components/feedback/StaleBanner'
-import { colors, spacing, typography } from '../../../shared/styles/tokens'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import LoadingState from '@shared/components/states/LoadingState'
+import EmptyState from '@shared/components/states/EmptyState'
+import ErrorState from '@shared/components/states/ErrorState'
+import StockItem from '@stock/components/StockItem'
+import StaleBanner from '@shared/components/feedback/StaleBanner'
+import { colors, typography } from '@shared/styles/tokens'
 
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).

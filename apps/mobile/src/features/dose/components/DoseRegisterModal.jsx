@@ -15,10 +15,10 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { getTodayLocal } from '@dosiq/core'
+import { getNow } from '@dosiq/core'
 import { registerDose } from '../services/doseService'
-import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
-import { useOnlineStatus } from '../../../shared/hooks/useOnlineStatus'
+import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
 
 /**
  * @param {{
@@ -65,8 +65,8 @@ export default function DoseRegisterModal({
       return
     }
 
-    // Padrão do projecto: timestamps sempre em UTC (new Date().toISOString())
-    const takenAt = new Date().toISOString()
+    // Padrão do projecto: timestamps sempre em UTC (getNow().toISOString())
+    const takenAt = getNow().toISOString()
 
     const result = await registerDose({
       protocol_id: protocol.id,

@@ -6,6 +6,11 @@
   padding: var(--space-6);
   box-shadow: var(--shadow-md);
   transition: all var(--transition-base);
+  /* Button resets */
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  width: 100%;
 }
 
 .card-hover:hover {

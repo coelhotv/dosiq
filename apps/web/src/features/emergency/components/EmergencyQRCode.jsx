@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import QRCode from 'qrcode'
+import { getServerTimestamp, parseISO } from '@utils/dateUtils'
 import './EmergencyQRCode.css'
 
 /**
@@ -68,8 +69,8 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
         })) || [],
       a: cardData.allergies || [],
       dt: lastUpdated
-        ? new Date(lastUpdated).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
+        ? parseISO(lastUpdated).toISOString().split('T')[0]
+        : getServerTimestamp().split('T')[0],
     }
 
     // Adiciona tipo sanguíneo apenas se não for desconhecido

@@ -70,6 +70,11 @@
   position: relative;
   font-size: var(--font-size-sm);
   transition: all 0.2s;
+  /* Button resets */
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  color: inherit;
 }
 
 .calendar-day.empty {

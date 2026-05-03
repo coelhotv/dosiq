@@ -34,14 +34,24 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  // Ajuste de Estado no Render (React 19 Pattern) para evitar cascading renders no useEffect
+  const [prevKey, setPrevKey] = useState('')
+  const currentKey = `${userId}-${mode}-${planId}-${(protocolIds || []).join(',')}`
+  
+  if (currentKey !== prevKey) {
+    setPrevKey(currentKey)
+    if (userId && (mode === 'plan' ? !!planId : (protocolIds || []).length > 0)) {
+      setLoading(true)
+      setError(null)
+    }
+  }
+
   useEffect(() => {
     if (!userId) return
     if (mode === 'plan' && !planId) return
     if (mode === 'misc' && (!protocolIds || protocolIds.length === 0)) return
 
     let isMounted = true
-    setLoading(true)
-    setError(null)
 
     getActiveTreatments(userId)
       .then(result => {

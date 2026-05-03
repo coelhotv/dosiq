@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
+import { parseISO } from '../../utils/dateUtils.js';
 
 export async function handleHistorico(bot, msg) {
   const chatId = msg.chat.id;
@@ -28,7 +29,7 @@ export async function handleHistorico(bot, msg) {
     let message = '📜 *Histórico Recente:*\n\n';
 
     logs.forEach(log => {
-      const date = new Date(log.taken_at);
+      const date = parseISO(log.taken_at);
       const dateStr = date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',

@@ -1,4 +1,5 @@
 import { createLogger } from './logger.js';
+import { getServerTimestamp } from '../utils/dateUtils.js';
 
 const logger = createLogger('HealthCheck');
 
@@ -15,7 +16,7 @@ export class HealthCheck {
 
   async runAll() {
     const results = {
-      timestamp: new Date().toISOString(),
+      timestamp: getServerTimestamp(),
       overall: 'healthy',
       checks: {}
     };

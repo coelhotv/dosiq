@@ -1,11 +1,16 @@
-import { getCurrentTimeInTimezone } from './timezone.js';
+import { 
+  getTodayLocal, 
+  getCurrentTime as getLocalTime,
+  getSaoPauloTime,
+  addDays
+} from './dateUtils.js';
 
 /**
  * Format time in HH:MM format for Brazil timezone (legacy)
- * @deprecated Use getCurrentTimeInTimezone from timezone.js instead
+ * @deprecated Use getCurrentTime from dateUtils.js instead
  */
 export function getCurrentTime() {
-  return getCurrentTimeInTimezone('America/Sao_Paulo');
+  return getLocalTime();
 }
 
 /**
@@ -73,40 +78,37 @@ export function formatProtocol(protocol) {
  * Calculate adherence streak (days in a row with at least one dose) 
  * in a specific timezone.
  */
-export function calculateStreak(logs, timezone = 'America/Sao_Paulo') {
+export function calculateStreak(logs) {
   if (!logs || logs.length === 0) return 0;
   
-  // Get unique local dates (YYYY-MM-DD) in the target timezone
+  // Get unique local dates (YYYY-MM-DD) in Brazil timezone
   const localDates = logs
-    .map(l => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(l.taken_at)))
+    .map(l => getTodayLocal(getSaoPauloTime(l.taken_at)))
     .filter((v, i, a) => a.indexOf(v) === i)
     .sort((a, b) => b.localeCompare(a)); // Descending "2026-01-21", "2026-01-20"...
 
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date());
+  const today = getTodayLocal();
+  const firstLogDate = localDates[0];
 
   // If no logs at all for today OR yesterday, streak is broken
-  // (We allow today to be empty if it's still early, as long as yesterday has a log)
-  const firstLogDate = localDates[0];
-  const d1 = new Date(today);
-  const d2 = new Date(firstLogDate);
-  const diffDays = Math.round(Math.abs((d1 - d2) / (1000 * 60 * 60 * 24)));
-
-  if (diffDays > 1) return 0;
+  if (firstLogDate !== today) {
+    const yesterday = getTodayLocal(addDays(getSaoPauloTime(), -1));
+    if (firstLogDate !== yesterday) {
+      return 0;
+    }
+  }
 
   let streak = 0;
-  let currentRef = new Date(firstLogDate);
+  let currentRef = getSaoPauloTime(firstLogDate + 'T12:00:00');
   
   for (let i = 0; i < localDates.length; i++) {
     const dateStr = localDates[i];
-    const dateObj = new Date(dateStr);
+    const refStr = getTodayLocal(currentRef);
     
-    // Check if this date is 'currentRef'
-    const diff = Math.round((currentRef - dateObj) / (1000 * 60 * 60 * 24));
-    
-    if (diff === 0) {
+    if (dateStr === refStr) {
       streak++;
       // Move reference to yesterday
-      currentRef.setDate(currentRef.getDate() - 1);
+      currentRef = addDays(currentRef, -1);
     } else {
       // Gap found
       break;

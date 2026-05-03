@@ -37,9 +37,10 @@ export default function IntegrationSection({
                   <code
                     style={{
                       fontSize: '0.75rem',
-                      background: 'rgba(0,0,0,0.05)',
+                      background: 'var(--color-surface-container-high)',
                       padding: '2px 4px',
                       borderRadius: '3px',
+                      color: 'var(--color-on-surface)',
                     }}
                   >
                     /start {telegramToken}

@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod'
+import { parseLocalDate } from '@utils/dateUtils'
 import {
   validateMedicineCreate,
   validateMedicineUpdate,
@@ -219,7 +220,7 @@ export function isValidDateString(date) {
   const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   if (!dateSchema.safeParse(date).success) return false
 
-  const parsed = new Date(date)
+  const parsed = parseLocalDate(date)
   return !isNaN(parsed.getTime())
 }
 

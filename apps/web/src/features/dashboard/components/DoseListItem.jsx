@@ -9,6 +9,7 @@
  */
 
 import { motion } from 'framer-motion'
+import { parseISO } from '@utils/dateUtils'
 import './DoseListItem.css'
 
 /**
@@ -18,10 +19,11 @@ import './DoseListItem.css'
  */
 const formatTime = (dateStr) => {
   if (!dateStr) return '--:--'
-  const date = new Date(dateStr)
+  const date = parseISO(dateStr)
   return date.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
   })
 }
 

@@ -1,3 +1,5 @@
+import { parseISO } from './dateUtils.js'
+
 /**
  * Mapeia notification_type para configuração de ícone, cor e label legível.
  * Independente de plataforma — não importa lucide-react nem RN aqui.
@@ -89,7 +91,7 @@ export function getNotificationIcon(type) {
 export function formatRelativeTime(isoString) {
   if (!isoString) return ''
   const now = Date.now()
-  const then = new Date(isoString).getTime()
+  const then = parseISO(isoString).getTime()
   const diff = now - then
 
   const minute = 60 * 1000
@@ -104,7 +106,7 @@ export function formatRelativeTime(isoString) {
   if (diff < 2 * day)   return 'ontem'
   if (diff < week)      return `há ${Math.floor(diff / day)} dias`
 
-  return new Date(isoString).toLocaleDateString('pt-BR', {
+  return parseISO(isoString).toLocaleDateString('pt-BR', {
     day: 'numeric',
     month: 'short',
   })

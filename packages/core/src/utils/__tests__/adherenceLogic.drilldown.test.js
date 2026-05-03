@@ -39,10 +39,8 @@ describe('calculateDosesByDate', () => {
         },
       ]
 
-      // Use local time string to avoid timezone issues in CI
-      // 08:30 local time is within +/- 2h tolerance of 08:00 scheduled
-      const baseDateObj = new Date(baseDate + 'T08:30:00')
-      const localTimeString = baseDateObj.toISOString()
+      // Representa 08:30 no fuso de Brasília (GMT-3), independente do runner
+      const localTimeString = `${baseDate}T08:30:00-03:00`
 
       const logs = [
         {
@@ -108,10 +106,9 @@ describe('calculateDosesByDate', () => {
         },
       ]
 
-      // Use local time strings to avoid timezone issues in CI
-      // 08:30 and 20:30 local times are within tolerance of scheduled times
-      const morningTime = new Date(baseDate + 'T08:30:00').toISOString()
-      const eveningTime = new Date(baseDate + 'T20:30:00').toISOString()
+      // Representa horários no fuso de Brasília (GMT-3)
+      const morningTime = `${baseDate}T08:30:00-03:00`
+      const eveningTime = `${baseDate}T20:30:00-03:00`
 
       const logs = [
         {

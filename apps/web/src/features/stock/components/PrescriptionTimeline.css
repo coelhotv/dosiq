@@ -11,17 +11,21 @@
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
   transition: background 0.15s ease;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
 }
 
-.prescription-timeline[role='button'] {
+button.prescription-timeline {
   cursor: pointer;
 }
 
-.prescription-timeline[role='button']:hover {
+button.prescription-timeline:hover {
   background: var(--bg-tertiary);
 }
 
-.prescription-timeline[role='button']:focus-visible {
+button.prescription-timeline:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }

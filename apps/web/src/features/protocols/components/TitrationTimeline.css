@@ -117,6 +117,13 @@
 }
 
 .timeline-step-wrapper {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
   cursor: pointer;
   transition: opacity var(--transition-base);
 }
@@ -196,6 +203,9 @@
   cursor: pointer;
   transition: all var(--transition-base);
   border: 2px solid transparent;
+  background: none;
+  font: inherit;
+  color: inherit;
 }
 
 .preview-step.completed {

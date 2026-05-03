@@ -11,7 +11,7 @@ import {
   getPrescriptionStatus,
   getExpiringPrescriptions,
   PRESCRIPTION_STATUS,
-} from '../prescriptionService'
+} from '@/features/prescriptions/services/prescriptionService'
 
 // Mock da data atual para testes determinísticos
 // Fixamos a data em 2026-02-25 para todos os testes

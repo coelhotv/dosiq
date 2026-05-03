@@ -42,6 +42,7 @@ export const CACHE_KEYS = {
   LOGS_PAGINATED_SLIM: 'logs:paginatedSlim',
   LOGS_DATE_RANGE_SLIM: 'logs:dateRangeSlim',
   LOGS_BY_MONTH_SLIM: 'logs:monthSlim',
+  LOGS_DEEP_STREAK: 'logs:deepStreak',
 
   // Planos de tratamento
   TREATMENT_PLANS: 'treatmentPlans',

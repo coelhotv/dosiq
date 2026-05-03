@@ -17,7 +17,7 @@ import {
   REVIEW_STATUSES,
   REVIEW_PRIORITIES,
   REVIEW_CATEGORIES,
-} from '../geminiReviewSchema'
+} from '@/schemas/geminiReviewSchema'
 
 describe('Gemini Review Schema', () => {
   // ============================================================================

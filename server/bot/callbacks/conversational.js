@@ -4,6 +4,7 @@ import { getSession, setSession, clearSession } from '../state.js';
 import { calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 import { handleChatbotMessage } from '../commands/chatbot.js';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
 
 const logger = createLogger('ConversationalCallbacks');
 
@@ -315,7 +316,7 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
         protocol_id: protocolId,
         medicine_id: medicineId,
         quantity_taken: pillsToDecrease,
-        taken_at: new Date().toISOString()
+        taken_at: getServerTimestamp()
       }])
       .select('id')
       .single();

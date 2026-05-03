@@ -74,17 +74,19 @@ export default function SwipeRegisterItem({
         onDragEnd={handleDragEnd}
         animate={isSuccess ? { x: '100%', opacity: 0 } : { x: 0, opacity: 1 }}
       >
-        <div
+        <button
+          type="button"
           className="swipe-item-card__checkbox-wrapper"
           onClick={(e) => {
             e.stopPropagation()
             onToggleSelection?.(medicine.id)
           }}
+          aria-label={isSelected ? 'Desmarcar medicamento' : 'Selecionar medicamento'}
         >
           <div className={`swipe-item-card__checkbox ${isSelected ? 'checked' : ''}`}>
             {isSelected && '✓'}
           </div>
-        </div>
+        </button>
 
         <div className="swipe-item-card__time">{time}</div>
         <div className="swipe-item-card__info">

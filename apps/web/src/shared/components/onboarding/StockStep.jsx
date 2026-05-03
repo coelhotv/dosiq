@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { z } from 'zod'
 import { useOnboarding } from './useOnboarding'
 import { cachedStockService } from '@shared/services/cachedServices'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow } from '@utils/dateUtils'
 import Button from '@shared/components/ui/Button'
 import './StockStep.css'
 
@@ -46,7 +46,7 @@ export default function StockStep() {
         medicine_id: medicine.id,
         quantity: validatedData.quantity,
         unit_price: validatedData.unitPrice,
-        purchase_date: formatLocalDate(new Date()),
+        purchase_date: formatLocalDate(getNow()),
       })
 
       // Avança para próximo step após sucesso

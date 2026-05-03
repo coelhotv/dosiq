@@ -45,7 +45,6 @@ export const cachedMedicineService = {
     const result = await medicineService.create(medicine)
     // Invalida lista de medicamentos
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedMedicineService] Cache invalidado após create')
     return result
   },
 
@@ -57,7 +56,6 @@ export const cachedMedicineService = {
     // Também invalida estoque relacionado (preço pode ter mudado)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}:*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}:*`)
-    console.log('[cachedMedicineService] Cache invalidado após update')
     return result
   },
 
@@ -70,7 +68,6 @@ export const cachedMedicineService = {
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}:*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}:*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}:*`)
-    console.log('[cachedMedicineService] Cache invalidado após delete')
   },
 }
 
@@ -104,7 +101,6 @@ export const cachedProtocolService = {
     invalidateCache(`${CACHE_KEYS.PROTOCOLS}*`)
     // Invalida planos de tratamento (podem conter protocolos)
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
-    console.log('[cachedProtocolService] Cache invalidado após create')
     return result
   },
 
@@ -115,7 +111,6 @@ export const cachedProtocolService = {
     invalidateCache(generateCacheKey(CACHE_KEYS.PROTOCOL_BY_ID, { id }))
     // Invalida planos de tratamento
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
-    console.log('[cachedProtocolService] Cache invalidado após update')
     return result
   },
 
@@ -127,7 +122,6 @@ export const cachedProtocolService = {
     // Invalida planos de tratamento e logs relacionados
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
     invalidateCache(`${CACHE_KEYS.LOGS}*`)
-    console.log('[cachedProtocolService] Cache invalidado após delete')
   },
 }
 
@@ -175,7 +169,6 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     // Invalida medicamentos (preço médio pode mudar)
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedStockService] Cache invalidado após add')
     return result
   },
 
@@ -190,7 +183,6 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
     invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedStockService] Cache invalidado após update')
     return result
   },
 
@@ -205,7 +197,6 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
     invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedStockService] Cache invalidado após delete')
   },
 
   async decrease(medicineId, quantity) {
@@ -219,7 +210,6 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
     invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedStockService] Cache invalidado após decrease')
     return result
   },
 
@@ -234,7 +224,6 @@ export const cachedStockService = {
     invalidateCache(`${CACHE_KEYS.PURCHASES_LATEST}*`)
     invalidateCache(`${CACHE_KEYS.PURCHASES_AVG_PRICE}*`)
     invalidateCache(CACHE_KEYS.MEDICINES)
-    console.log('[cachedStockService] Cache invalidado após increase')
     return result
   },
 }
@@ -325,7 +314,6 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
-    console.log('[cachedLogService] Cache invalidado após create')
     return result
   },
 
@@ -336,7 +324,6 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
-    console.log('[cachedLogService] Cache invalidado após createBulk')
     return result
   },
 
@@ -346,7 +333,6 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
-    console.log('[cachedLogService] Cache invalidado após update')
     return result
   },
 
@@ -356,7 +342,6 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
-    console.log('[cachedLogService] Cache invalidado após delete')
   },
 }
 
@@ -378,7 +363,6 @@ export const cachedTreatmentPlanService = {
   async create(plan) {
     const result = await treatmentPlanService.create(plan)
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
-    console.log('[cachedTreatmentPlanService] Cache invalidado após create')
     return result
   },
 
@@ -386,7 +370,6 @@ export const cachedTreatmentPlanService = {
     const result = await treatmentPlanService.update(id, updates)
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
     invalidateCache(generateCacheKey(CACHE_KEYS.TREATMENT_PLAN_BY_ID, { id }))
-    console.log('[cachedTreatmentPlanService] Cache invalidado após update')
     return result
   },
 
@@ -394,7 +377,6 @@ export const cachedTreatmentPlanService = {
     await treatmentPlanService.delete(id)
     invalidateCache(`${CACHE_KEYS.TREATMENT_PLANS}*`)
     invalidateCache(generateCacheKey(CACHE_KEYS.TREATMENT_PLAN_BY_ID, { id }))
-    console.log('[cachedTreatmentPlanService] Cache invalidado após delete')
   },
 }
 

@@ -12,15 +12,17 @@ import {
   FlatList,
 } from 'react-native'
 import { Bell, Smartphone, Send, Globe, Mail, ChevronRight, Check } from 'lucide-react-native'
-import { useAuth } from '../../../platform/auth/hooks/useAuth'
-import { useProfile } from '../hooks/useProfile'
-import { requestPushPermission } from '../../../platform/notifications/requestPushPermission'
-import { getExpoPushToken } from '../../../platform/notifications/getExpoPushToken'
-import { syncNotificationDevice } from '../../../platform/notifications/syncNotificationDevice'
+import { useAuth } from '@platform/auth/hooks/useAuth'
+import { useProfile } from '@profile/hooks/useProfile'
+import { requestPushPermission } from '@platform/notifications/requestPushPermission'
+import { getExpoPushToken } from '@platform/notifications/getExpoPushToken'
+import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
 import { updateNotificationSettings } from '../services/profileService'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
-import { ROUTES } from '../../../navigation/routes'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
+import { ROUTES } from '@navigation/routes'
+import { parseLocalDate } from '@dosiq/core'
+import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 // Horas disponíveis para o picker inline
 const HOURS = Array.from({ length: 24 }, (_, i) => {
@@ -39,12 +41,14 @@ function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_
 // Detecta formato 12/24h com fallback seguro para Hermes/Android antigo
 let IS_24H_FORMAT = true // fallback: Brasil usa 24h
 try {
+  const testDate = parseLocalDate('2024-01-01')
+  testDate.setHours(13)
   IS_24H_FORMAT = !new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
-    .format(new Date(2024, 0, 1, 13))
+    .format(testDate)
     .match(/am|pm/i)
-} catch (e) {
+  debugLog('NotificationPreferences', 'Intl.DateTimeFormat indisponível, usando 24h')
+} catch {
   // Hermes sem Intl completo em Android ≤ 7 — fallback 24h (padrão BR)
-  if (__DEV__) console.warn('[NotificationPreferences] Intl.DateTimeFormat indisponível, usando 24h')
 }
 
 // Formata hora de forma amigável (22h ou 10PM)
@@ -123,7 +127,7 @@ function TimePicker({ value, onChange, label }) {
 
 export default function NotificationPreferencesScreen({ navigation }) {
   const { user } = useAuth()
-  const { settings, loading: settingsLoading, refresh } = useProfile()
+  const { settings, refresh } = useProfile()
   const isTelegramConnected = !!settings?.telegram_chat_id
 
   const [globalEnabled, setGlobalEnabled] = useState(true)
@@ -135,11 +139,10 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
   const [digestTime, setDigestTime] = useState('07:00')
   const [hasPermission, setHasPermission] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   // Carregar valores do banco ao montar
   useEffect(() => {
-    if (__DEV__) console.log('[NotificationPreferencesScreen] settings:', settings)
+    debugLog('NotificationPreferencesScreen', `settings: ${JSON.stringify(settings)}`)
     if (!settings) return
 
     const pref = settings.notification_preference
@@ -171,7 +174,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       const { granted } = await requestPushPermission()
       setHasPermission(granted)
     } catch (err) {
-      if (__DEV__) console.warn('[NotificationPreferencesScreen] Erro permissão:', err)
+      debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
     }
   }
 
@@ -181,7 +184,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // Salvar no banco (debounce manual: chama após cada alteração)
   const persist = useCallback(async (patch) => {
     if (!user?.id) return
-    setSaving(true)
     try {
       const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
       const telegram = isTelegramConnected // Telegram segue o vínculo
@@ -211,19 +213,17 @@ export default function NotificationPreferencesScreen({ navigation }) {
       })
 
       if (result.success) {
-        if (__DEV__) console.log('[NotificationPreferencesScreen] Configurações salvas')
+        debugLog('NotificationPreferencesScreen', 'Configurações salvas')
         await refresh()
       } else {
         throw new Error(result.error || 'Erro desconhecido ao salvar')
       }
     } catch (err) {
-      if (__DEV__) console.error('[NotificationPreferencesScreen] Erro ao salvar:', err)
+      errorLog('NotificationPreferencesScreen', 'Erro ao salvar', err)
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
-    } finally {
-      setSaving(false)
     }
   }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
-      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled])
+      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled, refresh])
 
   async function handleMobilePushToggle(val) {
     if (val && !hasPermission) {
@@ -244,7 +244,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
         const token = await getExpoPushToken()
         await syncNotificationDevice({ supabase: user?.supabase, userId: user.id, token })
       } catch (syncErr) {
-        if (__DEV__) console.warn('[NotificationPreferencesScreen] Erro sync device:', syncErr)
+        debugLog('NotificationPreferencesScreen', `Erro sync device: ${syncErr.message}`)
       }
     }
     setMobilePushEnabled(val)
@@ -372,7 +372,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
           <View style={styles.divider} />
 
           {/* Email — em breve */}
-          <View style={[styles.channelRow, { opacity: 0.4 }]} pointerEvents="none">
+          <View style={[styles.channelRow, styles.rowSoon]} pointerEvents="none">
             <View style={styles.rowLeft}>
               <Mail size={20} color={colors.text.muted} strokeWidth={2} />
               <Text style={styles.rowLabel}>Email</Text>
@@ -540,6 +540,9 @@ const styles = StyleSheet.create({
   },
   rowDisabled: {
     opacity: 0.6,
+  },
+  rowSoon: {
+    opacity: 0.4,
   },
   rowLeft: {
     flexDirection: 'row',

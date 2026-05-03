@@ -1,3 +1,5 @@
+import { getNow, addDays, parseISO } from '@utils/dateUtils.js'
+
 /**
  * Utilitários de Detecção PWA
  *
@@ -113,8 +115,7 @@ export function wasPromptDismissed() {
 export function dismissPrompt(days = 30) {
   try {
     localStorage.setItem('pwa-install-dismissed', 'true')
-    const expiryDate = new Date()
-    expiryDate.setDate(expiryDate.getDate() + days)
+    const expiryDate = addDays(getNow(), days)
     localStorage.setItem('pwa-install-dismissed-expiry', expiryDate.toISOString())
   } catch {
     // Ignora erros de localStorage
@@ -142,7 +143,7 @@ export function isDismissalExpired() {
     const expiry = localStorage.getItem('pwa-install-dismissed-expiry')
     if (!expiry) return true
 
-    return new Date() > new Date(expiry)
+    return getNow() > parseISO(expiry)
   } catch {
     return true
   }
@@ -226,4 +227,3 @@ export function getPWAState() {
     canShowPrompt: (!isStandalone() || (supportsWebPush() && !isPushPermissionGranted())) && (!wasPromptDismissed() || isDismissalExpired()),
   }
 }
-

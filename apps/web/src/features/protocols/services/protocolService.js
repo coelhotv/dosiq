@@ -1,6 +1,6 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { validateProtocolCreate, validateProtocolUpdate } from '@schemas/protocolSchema'
-import { getTodayLocal } from '@utils/dateUtils'
+import { getTodayLocal, getServerTimestamp } from '@utils/dateUtils'
 
 /**
  * Protocol Service - CRUD operations for protocols
@@ -20,7 +20,8 @@ export const protocolService = {
       .select(
         `
         *,
-        medicine:medicines(*)
+        medicine:medicines(*),
+        treatment_plan:treatment_plans(id, name, emoji, color)
       `
       )
       .eq('user_id', await getUserId())
@@ -100,7 +101,7 @@ export const protocolService = {
           titration_schedule: validatedProtocol.titration_schedule || [],
           current_stage_index: validatedProtocol.current_stage_index || 0,
           stage_started_at:
-            validatedProtocol.titration_schedule?.length > 0 ? new Date().toISOString() : null,
+            validatedProtocol.titration_schedule?.length > 0 ? getServerTimestamp() : null,
         },
       ])
       .select(
@@ -197,7 +198,7 @@ export const protocolService = {
         .update({
           titration_status: 'alvo_atingido',
           current_stage_index: protocol.titration_schedule.length - 1, // Keep at last stage
-          stage_started_at: new Date().toISOString(),
+          stage_started_at: getServerTimestamp(),
         })
         .eq('id', id)
         .eq('user_id', await getUserId())
@@ -219,7 +220,7 @@ export const protocolService = {
 
     const updates = {
       current_stage_index: nextStageIndex,
-      stage_started_at: new Date().toISOString(),
+      stage_started_at: getServerTimestamp(),
       dosage_per_intake: nextStage.dosage,
       titration_status: markAsCompleted ? 'alvo_atingido' : 'titulando',
     }

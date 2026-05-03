@@ -52,7 +52,7 @@ export default function TestConnection() {
             padding: 'var(--space-4)',
             borderRadius: 'var(--radius-md)',
             backgroundColor:
-              status === 'error' ? 'rgba(255, 0, 110, 0.1)' : 'rgba(0, 255, 136, 0.1)',
+              status === 'error' ? 'var(--color-error-bg)' : 'var(--color-success-bg)',
             border: `1px solid ${status === 'error' ? 'var(--color-error)' : 'var(--color-success)'}`,
             color: status === 'error' ? 'var(--color-error)' : 'var(--color-success)',
           }}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateMedicineCreate } from '../medicineSchema'
+import { validateMedicineCreate } from '@/schemas/medicineSchema'
 
 describe('Smoke: Medicine Schema', () => {
   it('validates minimum valid medicine', () => {

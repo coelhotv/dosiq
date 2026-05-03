@@ -1,5 +1,5 @@
-
 import { supabase } from './supabase.js';
+import { addMinutes, addDays } from '../utils/dateUtils.js';
 
 const DEDUP_WINDOW_MINUTES = 5; // Don't send same notification twice within 5 minutes
 
@@ -17,7 +17,7 @@ export async function shouldSendNotification(userId, protocolId, notificationTyp
     return true; // Fail open
   }
 
-  const cutoffTime = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000).toISOString();
+  const cutoffTime = addMinutes(-DEDUP_WINDOW_MINUTES).toISOString();
 
   try {
     // Build query based on notification type
@@ -131,7 +131,7 @@ export async function logSuccessfulNotification(userId, protocolId, notification
  * Limpa logs de notificação antigos (mais de 7 dias)
  */
 export async function cleanupOldNotificationLogs() {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAgo = addDays(-7).toISOString();
 
   const { error } = await supabase
     .from('notification_log')
@@ -160,7 +160,7 @@ export async function shouldSendGroupedNotification(userId, notificationType, { 
     return true; // Fail open
   }
 
-  const cutoffTime = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000).toISOString();
+  const cutoffTime = addMinutes(-DEDUP_WINDOW_MINUTES).toISOString();
 
   try {
     let query = supabase

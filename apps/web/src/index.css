@@ -75,6 +75,9 @@
 
   /* Cores Neutrais */
   --color-white: #ffffff;
+  --color-white-20: rgba(255, 255, 255, 0.2);
+  --color-white-70: rgba(255, 255, 255, 0.7);
+  --color-white-95: rgba(255, 255, 255, 0.95);
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -248,6 +251,11 @@
   --color-success: #34d399;
   --color-warning: #fb923c;
   --color-error: #f87171;
+
+  /* Opacidades White em Dark Mode */
+  --color-white-20: rgba(255, 255, 255, 0.1);
+  --color-white-70: rgba(255, 255, 255, 0.6);
+  --color-white-95: rgba(255, 255, 255, 0.9);
 
   /* Primary Colors (dark mode) */
   --cyan-primary: #22d3ee;

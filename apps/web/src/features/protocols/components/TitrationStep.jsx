@@ -1,3 +1,4 @@
+import { parseISO } from '@utils/dateUtils'
 import './TitrationStep.css'
 
 /**
@@ -29,7 +30,7 @@ export default function TitrationStep({
 }) {
   const formatDate = (date) => {
     if (!date) return ''
-    return new Date(date).toLocaleDateString('pt-BR', {
+    return (date instanceof Date ? date : parseISO(date)).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
     })

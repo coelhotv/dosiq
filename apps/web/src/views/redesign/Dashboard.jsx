@@ -1,6 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { cachedLogService as logService } from '@shared/services'
-import { analyticsService } from '@dashboard/services/analyticsService'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import {
   useDoseZones,
@@ -9,23 +7,16 @@ import {
 } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser, supabase } from '@shared/utils/supabase'
-import { getTodayLocal } from '@utils/dateUtils'
+import { getTodayLocal, getNow } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
 import './Dashboard.css'
-import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
-import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
-import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
-import StockAlertInline from '@dashboard/components/StockAlertInline'
+import DashboardColumnLeft from './DashboardColumnLeft'
+import DashboardColumnRight from './DashboardColumnRight'
 import SmartAlertsRedesign from '@dashboard/components/SmartAlertsRedesign'
-import InsightCardRedesign from '@dashboard/components/InsightCardRedesign'
-import ReminderSuggestionRedesign from '@features/protocols/components/ReminderSuggestionRedesign'
-import {
-  analyzeReminderTiming,
-  isSuggestionDismissed,
-  dismissSuggestion,
-} from '@features/protocols/services/reminderOptimizerService'
+import { useSmartAlerts } from '@dashboard/hooks/useSmartAlerts'
+import { useReminderSuggestion } from '@dashboard/hooks/useReminderSuggestion'
+import { useDashboardHandlers } from '@dashboard/hooks/useDashboardHandlers'
 import insightService from '@dashboard/services/insightService'
-import { protocolService } from '@features/protocols/services/protocolService'
 
 /**
  * getMotivationalMessage — Mensagem contextual baseada em adesão e doses restantes
@@ -111,52 +102,7 @@ export default function Dashboard({ onNavigate }) {
   }, [stockSummary])
 
   // ── smartAlerts: alertas inteligentes (estoque + dose atrasada + prescrição) ──
-  const smartAlerts = useMemo(() => {
-    const alerts = []
-
-    // 1. Stock alerts
-    stockSummary?.items?.forEach((item) => {
-      if (snoozedAlerts[`stock-${item.medicineId}`]) return
-      if (item.stockStatus === 'critical' || item.stockStatus === 'low') {
-        const severity = item.stockStatus === 'critical' ? 'critical' : 'warning'
-        alerts.push({
-          id: `stock-${item.medicineId}`,
-          severity,
-          title:
-            severity === 'critical'
-              ? `Estoque crítico — ${item.medicineName}`
-              : `Estoque baixo — ${item.medicineName}`,
-          message:
-            severity === 'critical'
-              ? `${item.quantity ?? 0} unidades restantes. Reposição urgente.`
-              : `${item.daysRemaining} dias restantes. Programe a compra.`,
-          actions: [{ label: 'Registrar Compra', type: 'primary' }],
-        })
-      }
-    })
-
-    // 2. Doses atrasadas (zones.late)
-    const lateDoses = (zones.late || []).filter((d) => !d.isRegistered)
-    if (lateDoses.length > 0 && !snoozedAlerts['late-doses']) {
-      const names = lateDoses
-        .slice(0, 2)
-        .map((d) => d.medicineName)
-        .join(', ')
-      const extra = lateDoses.length > 2 ? ` +${lateDoses.length - 2}` : ''
-      alerts.push({
-        id: 'late-doses',
-        severity: 'warning',
-        title: `${lateDoses.length} dose${lateDoses.length > 1 ? 's' : ''} atrasada${lateDoses.length > 1 ? 's' : ''}`,
-        message: `${names}${extra} — registre agora para manter sua adesão.`,
-        actions: [{ label: 'Registrar Agora', type: 'primary' }],
-      })
-    }
-
-    return alerts.sort((a, b) => {
-      const order = { critical: 0, warning: 1, info: 2 }
-      return (order[a.severity] ?? 2) - (order[b.severity] ?? 2)
-    })
-  }, [stockSummary, zones, snoozedAlerts])
+  const smartAlerts = useSmartAlerts(stockSummary, zones, snoozedAlerts)
 
   // ── currentInsight: insight rotativo do insightService ──
   const currentInsight = useMemo(() => {
@@ -216,121 +162,27 @@ export default function Dashboard({ onNavigate }) {
     return () => clearInterval(interval)
   }, [refresh])
 
-  // ── Sugestão de lembrete calculada (sem setState em effect) ──
-  // isSuggestionDismissed e analyzeReminderTiming são funções estáveis importadas (não reativas)
-  const reminderSuggestionData = (() => {
-    if (!protocols?.length || !logs?.length) return null
-    for (const protocol of protocols) {
-      if (!protocol.active) continue
-      if (protocol.id === dismissedSuggestionId) continue
-      if (isSuggestionDismissed(protocol.id)) continue
-      const suggestion = analyzeReminderTiming({ protocol, logs })
-      if (suggestion?.shouldSuggest) {
-        return {
-          suggestion,
-          protocolId: protocol.id,
-          protocolName: protocol.medicine?.name || protocol.name || '',
-        }
-      }
-    }
-    return null
-  })()
+  // ── Sugestão de lembrete calculada (Onda 2: hook customizado) ──
+  const reminderSuggestionData = useReminderSuggestion(protocols, logs, dismissedSuggestionId)
 
-  // ── Handlers ──
-  // Registra dose DIRETAMENTE sem modal (1-click experience)
-  const handleRegisterDoseQuick = useCallback(
-    async (medicineId, protocolId, dosagePerIntake) => {
-      try {
-        await logService.create({
-          medicine_id: medicineId,
-          protocol_id: protocolId,
-          quantity_taken: dosagePerIntake,
-          taken_at: new Date().toISOString(),
-        })
-        analyticsService.track('dose_registered_quick', {
-          timestamp: Date.now(),
-          method: 'priority-card',
-        })
-        refresh()
-      } catch (err) {
-        console.error('Erro ao registrar dose:', err)
-        alert('Erro ao registrar dose. Tente novamente.')
-      }
-    },
-    [refresh]
-  )
-
-  // Registra múltiplas doses em batch (PriorityDoseCard com 2+ doses)
-  const handleRegisterDosesAll = useCallback(
-    async (doses) => {
-      if (!doses || doses.length === 0) return
-      try {
-        for (const dose of doses) {
-          await logService.create({
-            medicine_id: dose.medicineId,
-            protocol_id: dose.protocolId,
-            quantity_taken: dose.dosagePerIntake,
-            taken_at: new Date().toISOString(),
-          })
-        }
-        analyticsService.track('doses_registered_batch', {
-          timestamp: Date.now(),
-          method: 'priority-card',
-          count: doses.length,
-        })
-        refresh()
-      } catch (err) {
-        console.error('Erro ao registrar doses:', err)
-        alert('Erro ao registrar doses. Tente novamente.')
-      }
-    },
-    [refresh]
-  )
-
-  const handleSnoozeAlert = useCallback((alertId) => {
-    setSnoozedAlerts((prev) => ({ ...prev, [alertId]: true }))
-  }, [])
-
-  const handleReminderAccept = useCallback(
-    async (newTime) => {
-      const protocolId = reminderSuggestionData?.protocolId
-      const currentTime = reminderSuggestionData?.suggestion?.currentTime
-      if (protocolId && newTime && currentTime) {
-        // Atualiza time_schedule: substitui horário antigo pelo sugerido
-        const protocol = protocols?.find((p) => p.id === protocolId)
-        const currentSchedule = protocol?.time_schedule ?? []
-        const updatedSchedule = currentSchedule.map((t) => (t === currentTime ? newTime : t))
-        // Se o horário antigo não estava no array (edge case), adiciona o novo
-        const finalSchedule = updatedSchedule.includes(newTime)
-          ? updatedSchedule
-          : [...updatedSchedule, newTime]
-        try {
-          await protocolService.update(protocolId, { time_schedule: finalSchedule })
-        } catch (err) {
-          console.error('[DashboardRedesign] Erro ao atualizar horário do protocolo:', err)
-        }
-      }
-      if (protocolId) {
-        // Persiste dispensa no localStorage (30 dias) para sobreviver ao reload
-        dismissSuggestion(protocolId, false)
-        setDismissedSuggestionId(protocolId)
-      }
-      refresh()
-    },
-    [refresh, reminderSuggestionData, protocols]
-  )
+  // ── Handlers (Onda 2: hook customizado) ──
+  const {
+    handleRegisterDoseQuick,
+    handleRegisterDosesAll,
+    handleSnoozeAlert,
+    handleReminderAccept,
+  } = useDashboardHandlers({
+    refresh,
+    reminderSuggestionData,
+    protocols,
+    setSnoozedAlerts,
+    setDismissedSuggestionId,
+  })
 
   // ── Loading state ──
   if (isLoading || contextLoading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '50vh',
-        }}
-      >
+      <div className="dashboard-loading-wrap">
         <Loading text="Carregando..." />
       </div>
     )
@@ -338,7 +190,7 @@ export default function Dashboard({ onNavigate }) {
 
   const adherenceScore = stats?.score ?? 0
   const streak = stats?.currentStreak ?? 0
-  const today = new Date().toLocaleDateString('pt-BR', {
+  const today = getNow().toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -346,13 +198,12 @@ export default function Dashboard({ onNavigate }) {
 
   return (
     <div
-      className="page-container"
-      style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}
+      className="page-container dashboard-container"
       aria-label="Dashboard — Dosiq"
     >
       {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
       {smartAlerts.length > 0 && (
-        <section style={{ marginBottom: '1.25rem' }} aria-label="Alertas inteligentes">
+        <section className="dashboard-alerts-section" aria-label="Alertas inteligentes">
           <SmartAlertsRedesign
             alerts={smartAlerts}
             onAction={(alert, action) => {
@@ -368,197 +219,33 @@ export default function Dashboard({ onNavigate }) {
       {/* ─── 2-Column Grid: Left (Ring + Greeting + Priority) | Right (Schedule + Stock + Empty) ─── */}
       <div className="grid-dashboard">
         {/* ═══ LEFT COLUMN (1fr) ═══ */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-            alignItems: 'center',
-          }}
-        >
-          {/* Header + Ring de Adesão */}
-          <div className="dr-badge">
-            <div className="dr-badge__text">
-              <h1
-                style={{
-                  margin: 0,
-                  fontFamily: 'var(--font-display, Public Sans, sans-serif)',
-                  fontSize: 'var(--text-headline-md, 1.75rem)',
-                  fontWeight: '700',
-                  color: 'var(--color-on-surface, #191c1d)',
-                  lineHeight: 1.2,
-                }}
-              >
-                {userName ? `Olá, ${userName} 👋` : 'Olá! 👋'}
-              </h1>
-
-              <p
-                style={{
-                  margin: '0.25rem 0 0',
-                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                  fontSize: 'var(--text-label-md, 0.75rem)',
-                  color: 'var(--color-outline, #6d7a76)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  fontWeight: '600',
-                }}
-              >
-                ADESÃO DIÁRIA
-              </p>
-
-              <p
-                style={{
-                  margin: '0.5rem 0 0',
-                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                  fontSize: 'var(--text-body-lg, 1rem)',
-                  color: 'var(--color-on-surface-variant, #3e4946)',
-                }}
-              >
-                {getMotivationalMessage(adherenceScore, totals.remaining)}
-              </p>
-            </div>
-
-            <RingGaugeRedesign score={adherenceScore} streak={streak} size="large" />
-          </div>
-
-          {/* Priority Dose Card — 1-Click Registration */}
-          {urgentDoses.length > 0 && (
-            <div style={{ width: '100%' }}>
-              <PriorityDoseCard
-                doses={urgentDoses}
-                onRegister={(dose) =>
-                  handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
-                }
-                onRegisterAll={handleRegisterDosesAll}
-                variant="priority"
-              />
-            </div>
-          )}
-
-          {/* 🆕 Insight Card — coluna esquerda, sob o PriorityDoseCard */}
-          {currentInsight && (
-            <div style={{ width: '100%' }}>
-              <InsightCardRedesign
-                insight={currentInsight}
-                onAction={(insight) => {
-                  if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
-                }}
-                onDismiss={() => {}}
-              />
-            </div>
-          )}
-
-          {/* 🆕 Reminder Suggestion — coluna esquerda, sob o InsightCard */}
-          {reminderSuggestionData && (
-            <div style={{ width: '100%' }}>
-              <ReminderSuggestionRedesign
-                suggestion={reminderSuggestionData.suggestion}
-                protocolId={reminderSuggestionData.protocolId}
-                protocolName={reminderSuggestionData.protocolName}
-                onAccept={handleReminderAccept}
-                onDismiss={() => setDismissedSuggestionId(reminderSuggestionData.protocolId)}
-              />
-            </div>
-          )}
-        </div>
+        <DashboardColumnLeft
+          userName={userName}
+          adherenceScore={adherenceScore}
+          totals={totals}
+          streak={streak}
+          getMotivationalMessage={getMotivationalMessage}
+          urgentDoses={urgentDoses}
+          handleRegisterDoseQuick={handleRegisterDoseQuick}
+          handleRegisterDosesAll={handleRegisterDosesAll}
+          currentInsight={currentInsight}
+          onNavigate={onNavigate}
+          reminderSuggestionData={reminderSuggestionData}
+          handleReminderAccept={handleReminderAccept}
+          setDismissedSuggestionId={setDismissedSuggestionId}
+        />
 
         {/* ═══ RIGHT COLUMN (2fr) ═══ */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-          }}
-        >
-          {/* Cronograma do Dia */}
-          {scheduleAllDoses.length > 0 && (
-            <section aria-label="Cronograma de hoje">
-              <div style={{ marginBottom: '1rem' }}>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontFamily: 'var(--font-display, Public Sans, sans-serif)',
-                    fontSize: 'var(--text-title-lg, 1.125rem)',
-                    fontWeight: '600',
-                    color: 'var(--color-on-surface, #191c1d)',
-                  }}
-                >
-                  Cronograma de Hoje
-                </h2>
-                <p
-                  style={{
-                    margin: '0.25rem 0 0',
-                    fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                    fontSize: 'var(--text-label-md, 0.75rem)',
-                    color: 'var(--color-outline, #6d7a76)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    fontWeight: '600',
-                  }}
-                >
-                  {today}
-                </p>
-              </div>
-              <CronogramaPeriodo
-                allDoses={scheduleAllDoses}
-                onRegister={(dose) =>
-                  handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
-                }
-                variant={complexityMode === 'simple' ? 'simple' : 'complex'}
-                now={now}
-              />
-            </section>
-          )}
-
-          {/* Empty State */}
-          {scheduleAllDoses.length === 0 && !contextLoading && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '3rem 1rem',
-                color: 'var(--color-outline, #6d7a76)',
-              }}
-              role="status"
-            >
-              <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💊</p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                  fontSize: 'var(--text-body-lg, 1rem)',
-                }}
-              >
-                Nenhuma dose agendada para hoje.
-              </p>
-              <button
-                onClick={() => onNavigate?.('medicines')}
-                style={{
-                  marginTop: '1rem',
-                  padding: '0.625rem 1.125rem',
-                  minHeight: '3.5rem',
-                  background: 'var(--gradient-primary, linear-gradient(135deg, #006a5e, #008577))',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-button, 1.25rem)',
-                  fontFamily: 'var(--font-body, Lexend, sans-serif)',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                Adicionar Medicamento
-              </button>
-            </div>
-          )}
-
-          {/* Stock Alert (Simple Mode: Bottom) */}
-          {complexityMode !== 'complex' && criticalStockItems.length > 0 && (
-            <section style={{ marginTop: 'auto' }} aria-label="Alertas de estoque">
-              <StockAlertInline
-                criticalItems={criticalStockItems}
-                onNavigateToStock={() => onNavigate?.('stock')}
-              />
-            </section>
-          )}
-        </div>
+        <DashboardColumnRight
+          scheduleAllDoses={scheduleAllDoses}
+          today={today}
+          handleRegisterDoseQuick={handleRegisterDoseQuick}
+          complexityMode={complexityMode}
+          now={now}
+          contextLoading={contextLoading}
+          onNavigate={onNavigate}
+          criticalStockItems={criticalStockItems}
+        />
       </div>
     </div>
   )

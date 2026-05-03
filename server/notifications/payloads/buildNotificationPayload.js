@@ -4,6 +4,10 @@
 import { z } from 'zod';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
+import { 
+  getSaoPauloTime, 
+  getServerTimestamp 
+} from '../../utils/dateUtils.js';
 
 /**
  * Schemas de contrato para os dados de entrada (Layer 1 -> Layer 2)
@@ -205,7 +209,7 @@ export function buildNotificationPayload({ kind, data }) {
       const n = data.doses?.length ?? 0;
       const planName = data.planName ?? 'Plano de tratamento';
       const scheduledTime = data.scheduledTime ?? 'agora';
-      const hour = data.hour ?? new Date().getHours();
+      const hour = data.hour ?? getSaoPauloTime().getHours();
       
       const greeting = getTimeOfDayGreeting(hour);
       title = `${greeting} — ${planName}`;
@@ -218,7 +222,7 @@ export function buildNotificationPayload({ kind, data }) {
     case 'dose_reminder_misc': {
       const n = data.doses?.length ?? 0;
       const scheduledTime = data.scheduledTime ?? 'agora';
-      const hour = data.hour ?? new Date().getHours();
+      const hour = data.hour ?? getSaoPauloTime().getHours();
       
       title = getTimeOfDayGreeting(hour);
       body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\. Clique para registrar\\.`;
@@ -336,7 +340,7 @@ Continue com o acompanhamento médico.`;
 
     case 'prescription_alert': {
       const { medicineName, endDate, daysRemaining } = prescriptionAlertDataSchema.parse(data);
-      const date = new Date(endDate).toLocaleDateString('pt-BR');
+      const date = getSaoPauloTime(endDate).toLocaleDateString('pt-BR');
       title = '📋 Alerta de Prescrição';
 
       let richMsg = '';
@@ -395,7 +399,8 @@ Vencimento: ${date}
 `;
       
       const items = failures.map(f => {
-        const time = new Date(f.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const localTime = getSaoPauloTime(f.created_at);
+        const time = localTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const error = (f.error_message || 'Erro desconhecido').substring(0, 50);
         return {
           rich: `• [${time}] *${escapeMarkdownV2(f.type)}*: _${escapeMarkdownV2(error)}_`,
@@ -437,7 +442,7 @@ _Esta é uma nova tentativa de envio\\._`;
     deeplink,
     metadata: {
       ...metadata,
-      builtAt: new Date().toISOString()
+      builtAt: getServerTimestamp()
     }
   });
 }

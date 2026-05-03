@@ -53,23 +53,28 @@ export default function ProtocolRow({
           style={{ minHeight: '3.5rem' }}
           onMouseEnter={onRowMouseEnter}
           onMouseLeave={onRowMouseLeave}
-          onClick={onRowClick}
-          role="row"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && onRowClick) {
-              e.preventDefault()
-              onRowClick()
-            }
-          }}
+          role="gridcell"
         >
-          <div className="protocol-row-tabular__name-row">
-            <span className="protocol-row-tabular__medicine-name">{item.medicineName}</span>
-            {item.concentrationLabel && (
-              <span className="protocol-row__dosage">{item.concentrationLabel}</span>
-            )}
-          </div>
-          <div className="protocol-row-tabular__intake">{item.intakeLabel}</div>
+          <button
+            type="button"
+            className="protocol-row-tabular__name-btn"
+            onClick={onRowClick}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && onRowClick) {
+                e.preventDefault()
+                onRowClick()
+              }
+            }}
+          >
+            <div className="protocol-row-tabular__name-row">
+              <span className="medicine-name">{item.medicineName}</span>
+              {item.concentrationLabel && (
+                <span className="protocol-row__dosage">{item.concentrationLabel}</span>
+              )}
+            </div>
+            <div className="protocol-row-tabular__intake">{item.intakeLabel}</div>
+          </button>
+
           {onDelete && isHovered && (
             <button
               className="protocol-row-tabular__delete-btn"

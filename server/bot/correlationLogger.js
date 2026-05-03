@@ -1,6 +1,7 @@
 // server/bot/correlationLogger.js
 import { createLogger } from './logger.js';
 import crypto from 'crypto';
+import { getServerTimestamp } from '../utils/dateUtils.js';
 
 const logger = createLogger('Correlation');
 
@@ -39,7 +40,7 @@ export async function withCorrelation(fn, context = {}) {
   const correlationId = context.correlationId || generateCorrelationId();
   const fullContext = {
     correlationId,
-    timestamp: new Date().toISOString(),
+    timestamp: getServerTimestamp(),
     ...context
   };
   

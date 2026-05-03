@@ -32,6 +32,11 @@ vi.mock('@schemas/medicineSchema', () => ({
 
 vi.mock('@schemas/protocolSchema', () => ({
   FREQUENCIES: ['diario', 'semanal', 'quando_necessario'],
+  FREQUENCY_LABELS: {
+    diario: 'Diário',
+    semanal: 'Semanal',
+    quando_necessario: 'Quando necessário',
+  },
 }))
 
 vi.mock('framer-motion', () => ({
@@ -49,7 +54,7 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }) => <>{children}</>,
 }))
 
-import TreatmentWizard from '../TreatmentWizard'
+import TreatmentWizard from '@/features/protocols/components/TreatmentWizard'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 
 describe('TreatmentWizard', () => {

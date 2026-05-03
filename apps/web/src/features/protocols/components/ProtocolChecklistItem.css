@@ -1,6 +1,10 @@
 /* Existing styles */
 .protocol-checklist-item {
   display: flex;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
   justify-content: space-between;
   align-items: center;
   background: var(--bg-tertiary);

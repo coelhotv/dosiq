@@ -7,7 +7,7 @@ import {
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
   validateEntity,
-} from '../index'
+} from '@/schemas/index'
 
 describe('Schemas de Validação Zod', () => {
   describe('Medicine Schema', () => {

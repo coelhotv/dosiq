@@ -1,5 +1,7 @@
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { validateEmergencyCard } from '@schemas/emergencyCardSchema'
+import { getServerTimestamp } from '@utils/dateUtils'
+import { debugLog, errorLog } from '@shared/utils/logger'
 
 /**
  * Emergency Card Service - Gerenciamento do cartão de emergência
@@ -27,17 +29,11 @@ const STORAGE_KEY = 'mr_emergency_card'
  * @param {Object} data - Dados adicionais para contexto
  */
 function log(level, message, data = {}) {
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    service: 'emergencyCardService',
-    level,
-    message,
-    ...data,
-  }
 
-  // Em produção, isso seria enviado para um serviço de logging
-  if (process.env.NODE_ENV === 'development' || level === 'error') {
-    console.log(JSON.stringify(logEntry))
+  if (level === 'error') {
+    errorLog('emergencyCardService', message, data)
+  } else {
+    debugLog('emergencyCardService', message, data)
   }
 }
 
@@ -101,7 +97,7 @@ function _mapToSupabase(data) {
     allergies: data.allergies,
     blood_type: data.blood_type,
     notes: data.notes || null,
-    last_updated: data.last_updated || new Date().toISOString(),
+    last_updated: data.last_updated || getServerTimestamp(),
   }
 }
 
@@ -122,7 +118,7 @@ function _mapFromSupabase(row) {
     allergies: card.allergies || [],
     blood_type: card.blood_type || 'desconhecido',
     notes: card.notes || null,
-    last_updated: card.last_updated || new Date().toISOString(),
+    last_updated: card.last_updated || getServerTimestamp(),
   }
 }
 
@@ -141,7 +137,7 @@ async function saveToSupabase(data) {
       {
         user_id: userId,
         emergency_card: emergencyCard,
-        updated_at: new Date().toISOString(),
+        updated_at: getServerTimestamp(),
       },
       {
         onConflict: 'user_id',
@@ -228,7 +224,7 @@ export const emergencyCardService = {
     // Adiciona timestamp de atualização
     const dataToSave = {
       ...validation.data,
-      last_updated: new Date().toISOString(),
+      last_updated: getServerTimestamp(),
     }
 
     // 2. Salvar no localStorage (síncrono)

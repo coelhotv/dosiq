@@ -5,7 +5,7 @@ import {
   searchByActiveIngredient,
   getAllMedicines,
   findDuplicatesByIngredient,
-} from '../medicineDatabaseService'
+} from '@/features/medications/services/medicineDatabaseService'
 
 /**
  * Mock da base de medicamentos para testes isolados

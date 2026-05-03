@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { buildPatientContext, buildSystemPrompt } from '../services/contextBuilder'
+import { buildPatientContext, buildSystemPrompt } from '@/features/chatbot/services/contextBuilder'
 
 afterEach(() => {
   vi.clearAllMocks()

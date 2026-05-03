@@ -5,7 +5,7 @@ import {
   calculateProtocolRisk,
   calculateAllProtocolRisks,
   RISK_LEVELS,
-} from '../protocolRiskService'
+} from '@/features/adherence/services/protocolRiskService'
 
 describe('protocolRiskService', () => {
   beforeEach(() => {

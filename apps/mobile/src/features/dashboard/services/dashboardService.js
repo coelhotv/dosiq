@@ -3,8 +3,9 @@
 // Schemas de domínio via @dosiq/core (nunca duplicar lógica de negócio)
 
 import { z } from 'zod'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { parseLocalDate } from '@dosiq/core'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { parseLocalDate, getTodayLocal, addDays } from '@dosiq/core'
+import { debugLog } from '@shared/utils/debugLog'
 
 /**
  * Busca protocolos ativos do utilizador.
@@ -47,10 +48,9 @@ export async function getTodayLogs(userId, dateStr) {
   const startLocal = parseLocalDate(dateStr)
   const startUTC = startLocal.toISOString()
   // endUTC = meia-noite local do dia seguinte → UTC (exclusive upper boundary)
-  const endLocal = new Date(startLocal)
-  endLocal.setDate(endLocal.getDate() + 1)
+  const endLocal = addDays(startLocal, 1)
   const endUTC = endLocal.toISOString()
-  if (__DEV__) console.log('[dashboardService] getTodayLogs boundaries — start:', startUTC, 'end:', endUTC)
+  debugLog('dashboardService', `getTodayLogs boundaries — start: ${startUTC} end: ${endUTC}`)
 
   const { data, error } = await supabase
     .from('medicine_logs')
@@ -121,12 +121,11 @@ export async function getLogsForPeriod(userId, days = 7) {
   z.string().uuid().parse(userId)
   
   // boundaries UTC baseadas na meia-noite local
-  const startLocal = parseLocalDate(new Date().toISOString().split('T')[0])
-  startLocal.setDate(startLocal.getDate() - (days - 1))
+  const todayStr = getTodayLocal()
+  const startLocal = addDays(todayStr, -(days - 1))
   const startUTC = startLocal.toISOString()
   
-  const endLocal = parseLocalDate(new Date().toISOString().split('T')[0])
-  endLocal.setDate(endLocal.getDate() + 1)
+  const endLocal = addDays(todayStr, 1)
   const endUTC = endLocal.toISOString()
   
   const { data, error } = await supabase

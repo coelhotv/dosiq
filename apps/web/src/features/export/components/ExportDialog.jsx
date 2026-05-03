@@ -15,6 +15,7 @@ import { FileBracesCorner, FileDigit } from 'lucide-react'
 import Modal from '@shared/components/ui/Modal'
 import Button from '@shared/components/ui/Button'
 import { exportAsJSON, exportAsCSV } from '@features/export/services/exportService'
+import { parseLocalDate } from '@utils/dateUtils'
 import './ExportDialog.css'
 
 /** Opções de formato de exportação */
@@ -98,8 +99,8 @@ export default function ExportDialog({ isOpen, onClose }) {
         includeMedicines,
         dateRange: hasDateFilter
           ? {
-              start: dateRange.start ? new Date(dateRange.start) : null,
-              end: dateRange.end ? new Date(dateRange.end) : null,
+              start: dateRange.start ? parseLocalDate(dateRange.start) : null,
+              end: dateRange.end ? parseLocalDate(dateRange.end) : null,
             }
           : null,
       }

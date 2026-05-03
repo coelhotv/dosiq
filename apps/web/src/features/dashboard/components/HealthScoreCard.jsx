@@ -52,10 +52,12 @@ export default function HealthScoreCard({
   // Se não tem dados suficientes para tendência, ocultar
   const showTrend = magnitude > 0 || trend !== 'up'
 
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div
+    <Tag
       className={`health-score-card ${onClick ? 'health-score-card--clickable' : ''}`}
       onClick={onClick}
+      type={onClick ? 'button' : undefined}
     >
       <div className="health-score-card__chart">
         <svg viewBox="0 0 60 60" className="health-score-card__svg">
@@ -92,6 +94,6 @@ export default function HealthScoreCard({
           </span>
         </div>
       </div>
-    </div>
+    </Tag>
   )
 }

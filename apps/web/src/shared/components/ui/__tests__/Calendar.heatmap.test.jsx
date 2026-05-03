@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render } from '@testing-library/react'
-import Calendar from '../Calendar'
+import Calendar from '@/shared/components/ui/Calendar'
 
 afterEach(() => {
   vi.clearAllMocks()

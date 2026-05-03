@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { parseLocalDate } from '../utils/dateUtils.js'
+import { parseLocalDate, getNow, cloneDate } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para Estoque
@@ -26,7 +26,7 @@ export const stockSchema = z.object({
     }, 'Data de compra inválida')
     .refine((date) => {
       const parsed = parseLocalDate(date)
-      const today = new Date()
+      const today = getNow()
       today.setHours(23, 59, 59, 999)
       return parsed <= today
     }, 'Data de compra não pode ser no futuro'),
@@ -95,8 +95,8 @@ export const stockCreateSchema = stockSchema
       if (!data.expiration_date) return true
 
       const expiration = parseLocalDate(data.expiration_date)
-      const today = new Date()
-      const oneYearAgo = new Date(today)
+      const today = getNow()
+      const oneYearAgo = cloneDate(today)
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
 
       // Data de validade não pode estar mais de 1 ano no passado

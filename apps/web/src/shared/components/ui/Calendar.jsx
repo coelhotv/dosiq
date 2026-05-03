@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths } from '@utils/dateUtils.js'
 import './Calendar.css'
 
 /**
@@ -41,7 +42,7 @@ export default function Calendar({
   monthPickerRange = { start: -12, end: 3 },
   adherenceData = {},
 }) {
-  const [viewDate, setViewDate] = useState(new Date())
+  const [viewDate, setViewDate] = useState(getSaoPauloTime())
   const [isLoading, setIsLoading] = useState(false)
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
@@ -80,7 +81,7 @@ export default function Calendar({
   // Navigation handlers
   const handlePreviousMonth = () => {
     setViewDate((prevDate) => {
-      const newDate = new Date(prevDate)
+      const newDate = cloneDate(prevDate)
       newDate.setMonth(newDate.getMonth() - 1)
       return newDate
     })
@@ -88,7 +89,7 @@ export default function Calendar({
 
   const handleNextMonth = () => {
     setViewDate((prevDate) => {
-      const newDate = new Date(prevDate)
+      const newDate = cloneDate(prevDate)
       newDate.setMonth(newDate.getMonth() + 1)
       return newDate
     })
@@ -97,7 +98,8 @@ export default function Calendar({
   // Month picker handler
   const handleMonthSelect = (e) => {
     const [selectedYear, selectedMonth] = e.target.value.split('-').map(Number)
-    setViewDate(new Date(selectedYear, selectedMonth, 1))
+    const newDate = parseLocalDate(`${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
+    setViewDate(newDate)
   }
 
   // Touch handlers (apenas se enableSwipe)
@@ -146,25 +148,35 @@ export default function Calendar({
     ]
 
     const options = []
-    const today = new Date()
-    const startDate = new Date(today.getFullYear(), today.getMonth() + monthPickerRange.start, 1)
-    const endDate = new Date(today.getFullYear(), today.getMonth() + monthPickerRange.end, 1)
+    const todayNow = getSaoPauloTime()
+    
+    // Calcular data inicial baseada no range (setando dia 1 via addMonths para evitar overflow de meses curtos)
+    const startDate = addMonths(todayNow, monthPickerRange.start)
 
-    let current = startDate
+    // Calcular data final baseada no range
+    const endDate = addMonths(todayNow, monthPickerRange.end)
+
+    let current = cloneDate(startDate)
     while (current <= endDate) {
       options.push({
         value: `${current.getFullYear()}-${current.getMonth()}`,
         label: `${monthNamesLocal[current.getMonth()]} ${current.getFullYear()}`,
       })
-      current = new Date(current.getFullYear(), current.getMonth() + 1, 1)
+      current = cloneDate(current)
+      current.setMonth(current.getMonth() + 1)
     }
 
     return options.reverse()
   }
 
   // Calendar calculations
-  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate()
-  const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay()
+  // Calendar calculations - Usando parseLocalDate para garantir integridade do grid
+  const daysInMonth = (y, m) => {
+    const d = parseLocalDate(`${y}-${String(m + 2).padStart(2, '0')}-01`)
+    d.setDate(0)
+    return d.getDate()
+  }
+  const firstDayOfMonth = (y, m) => parseLocalDate(`${y}-${String(m + 1).padStart(2, '0')}-01`).getDay()
 
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
@@ -196,35 +208,28 @@ export default function Calendar({
     )
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayKey = getTodayLocal() // 'YYYY-MM-DD' em fuso Brasilia (R-020)
 
   // Preencher dias do mes
   for (let d = 1; d <= totalDays; d++) {
-    const dayDate = new Date(year, month, d)
-    dayDate.setHours(0, 0, 0, 0)
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const dayDate = parseLocalDate(dateKey)
 
-    const isToday = dayDate.getTime() === today.getTime()
+    const isToday = dateKey === todayKey
     const isSelected =
       selectedDate &&
-      dayDate.getFullYear() === selectedDate.getFullYear() &&
-      dayDate.getMonth() === selectedDate.getMonth() &&
-      dayDate.getDate() === selectedDate.getDate()
+      (typeof selectedDate === 'string'
+        ? dateKey === selectedDate
+        : dayDate.getFullYear() === selectedDate.getFullYear() &&
+          dayDate.getMonth() === selectedDate.getMonth() &&
+          dayDate.getDate() === selectedDate.getDate())
 
     // Verificar se ha doses registradas neste dia
     // CORRECAO: Usar parsing manual de YYYY-MM-DD para evitar bugs de timezone (R-020)
     // As datas em markedDates estao em formato YYYY-MM-DD (local Brasilia GMT-3)
-    const hasLog = markedDates.some((dateStr) => {
-      const [logYear, logMonth, logDay] = dateStr.split('-').map(Number)
-      return (
-        logYear === dayDate.getFullYear() &&
-        logMonth - 1 === dayDate.getMonth() && // JS month eh 0-indexed
-        logDay === dayDate.getDate()
-      )
-    })
+    const hasLog = markedDates.some((dateStr) => dateStr === dateKey)
 
     // Heat map de adesão: aplica cor quando adherenceData tem dados para o dia
-    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const adherenceDayData = adherenceData[dateKey]
     const heatColor = getDayColor(adherenceDayData)
     const hasHeatColor = heatColor !== 'transparent'
@@ -240,8 +245,9 @@ export default function Calendar({
     ].filter(Boolean)
 
     days.push(
-      <div
+      <button
         key={d}
+        type="button"
         className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasLog ? 'has-log' : ''} ${hasHeatColor ? 'has-adherence' : ''}`}
         style={hasHeatColor ? { '--heat-color': heatColor } : undefined}
         role="gridcell"
@@ -251,7 +257,7 @@ export default function Calendar({
       >
         <span className="day-number">{d}</span>
         {hasLog && !hasHeatColor && <div className="log-dot"></div>}
-      </div>
+      </button>
     )
   }
 

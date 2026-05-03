@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { getNow, parseISO, cloneDate } from '@utils/dateUtils'
 
 /**
  * Schema de validação para Logs de Medicação
@@ -22,10 +23,11 @@ export const logSchema = z.object({
     .string()
     .datetime('Data e hora devem estar no formato ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)')
     .refine((date) => {
-      const parsed = new Date(date)
-      const now = new Date()
+      const parsed = parseISO(date)
+      const now = getNow()
       // Permite até 5 minutos no futuro (margem para clock skew)
-      const futureLimit = new Date(now.getTime() + 5 * 60 * 1000)
+      const futureLimit = cloneDate(now)
+      futureLimit.setMinutes(futureLimit.getMinutes() + 5)
       return parsed <= futureLimit
     }, 'Data/hora não pode estar no futuro'),
 

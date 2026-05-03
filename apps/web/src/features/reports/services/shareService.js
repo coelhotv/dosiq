@@ -9,6 +9,8 @@
  */
 
 import { supabase } from '@shared/utils/supabase'
+import { getNow } from '@utils/dateUtils'
+import { debugLog } from '@shared/utils/logger'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -38,7 +40,7 @@ const LOG_LEVELS = {
  * @param {Object} data - Dados adicionais para o log
  */
 function log(level, message, data = {}) {
-  const timestamp = new Date().toISOString()
+  const timestamp = getNow().toISOString()
   const logEntry = {
     timestamp,
     service: 'shareService',
@@ -54,7 +56,7 @@ function log(level, message, data = {}) {
   } else if (level === LOG_LEVELS.WARN) {
     console.warn(formattedMessage, logEntry)
   } else {
-    console.log(formattedMessage, logEntry)
+    debugLog('shareService', message, logEntry)
   }
 }
 

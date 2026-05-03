@@ -35,16 +35,14 @@ const logger = createLogger('BotApp');
 // Validate environment
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
-  logger.error('TELEGRAM_BOT_TOKEN não definido no .env');
-  process.exit(1);
+  throw new Error('TELEGRAM_BOT_TOKEN não definido no .env')
 }
 
 // Validate token before creating bot
 logger.info('Validating Telegram token...');
 const validation = await BotFactory.validateToken(token);
 if (!validation.valid) {
-  logger.error('Token validation failed', null, { error: validation.error });
-  process.exit(1);
+  throw new Error(`Token validation failed: ${validation.error}`)
 }
 logger.info('Token validated', { username: validation.botInfo.username });
 
@@ -106,11 +104,11 @@ startAutoCleanup();
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
   bot.stopPolling();
-  process.exit(0);
+  process.exit(0); // eslint-disable-line n/no-process-exit
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully...');
   bot.stopPolling();
-  process.exit(0);
+  process.exit(0); // eslint-disable-line n/no-process-exit
 });

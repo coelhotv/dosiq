@@ -1,8 +1,6 @@
-// Repositório para gerenciar os logs de notificações enviadas
-// Registra o histórico multicanal para consulta posterior na Inbox do usuário
-
 import { supabase } from '../../services/supabase.js';
 import { notificationLogCreateSchema } from '../../../packages/core/src/schemas/notificationLogSchema.js';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
 
 export const notificationLogRepository = {
   /**
@@ -30,7 +28,7 @@ export const notificationLogRepository = {
         treatment_plan_name: parsed.data.treatment_plan_name ?? null,
         notification_type: parsed.data.notification_type,
         status: parsed.data.status,
-        sent_at: parsed.data.sent_at || new Date().toISOString(),
+        sent_at: parsed.data.sent_at || getServerTimestamp(),
         telegram_message_id: parsed.data.telegram_message_id,
         mensagem_erro: parsed.data.mensagem_erro,
         provider_metadata: parsed.data.provider_metadata || {},

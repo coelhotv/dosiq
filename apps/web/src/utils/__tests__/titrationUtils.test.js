@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { calculateTitrationData } from '../titrationUtils'
+import { calculateTitrationData } from '@/utils/titrationUtils'
 
 describe('calculateTitrationData', () => {
   const baseDate = '2024-01-01'

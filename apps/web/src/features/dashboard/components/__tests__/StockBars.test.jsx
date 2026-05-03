@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import StockBars from '../StockBars'
+import StockBars from '@/features/dashboard/components/StockBars'
 
 afterEach(() => {
   vi.clearAllMocks()

@@ -5,6 +5,11 @@
 .ring-gauge {
   display: flex;
   align-items: center;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
 }
 
 .ring-gauge--clickable {

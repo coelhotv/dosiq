@@ -7,6 +7,7 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { logSchema } from '@dosiq/core'
 import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
+import { debugLog } from '@shared/utils/debugLog'
 
 /**
  * Regista uma dose tomada.
@@ -27,14 +28,14 @@ export async function registerDose(logData) {
   // A separação é garantida pelo fallback no catch abaixo.
 
   // R-121: validar com Zod antes de enviar ao Supabase
-  if (__DEV__) console.log('[doseService] registerDose — input:', JSON.stringify(logData))
+  debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
   if (!parsed.success) {
     if (__DEV__) console.warn('[doseService] Zod validation FAILED:', JSON.stringify(parsed.error.issues[0]))
     const firstError = parsed.error.issues[0]
     return { success: false, error: firstError.message }
   }
-  if (__DEV__) console.log('[doseService] Zod OK — parsed:', JSON.stringify(parsed.data))
+  debugLog('[doseService] Zod OK — parsed:', JSON.stringify(parsed.data))
 
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -42,7 +43,7 @@ export async function registerDose(logData) {
       return { success: false, error: 'Sessão expirada. Faça login novamente.' }
     }
 
-    if (__DEV__) console.log('[doseService] insert start — user:', user.id)
+    debugLog('[doseService] insert start — user:', user.id)
     const { data: logEntry, error: insertError } = await supabase
       .from('medicine_logs')
       .insert({ ...parsed.data, user_id: user.id })
@@ -58,7 +59,7 @@ export async function registerDose(logData) {
       return { success: false, error: insertError.message }
     }
 
-    if (__DEV__) console.log('[doseService] insert OK — id:', logEntry?.id, 'A consumir stock...')
+    debugLog('[doseService] insert OK — id:', logEntry?.id, 'A consumir stock...')
 
     // R-170: Consumir stock via RPC transactional (Wave 4 legacy compatibility)
     // p_medicine_id, p_quantity, p_medicine_log_id
@@ -94,7 +95,7 @@ export async function registerDose(logData) {
       return { success: false, error: 'Não foi possível registrar a dose: erro ao processar estoque.' }
     }
 
-    if (__DEV__) console.log('[doseService] stock consumido com sucesso')
+    debugLog('[doseService] stock consumido com sucesso')
     await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
     return { success: true, data: logEntry }
   } catch (err) {
@@ -178,7 +179,7 @@ export async function registerDoseMany(logsData) {
     if (successCount > 0) {
       await logEvent(EVENTS.DOSE_LOGGED_BULK, { count: successCount })
     }
-    if (__DEV__) console.log('[doseService] registerDoseMany concluído — sucesso:', successCount, '/', results.length)
+    debugLog('[doseService] registerDoseMany concluído — sucesso:', successCount, '/', results.length)
     return { success: successCount > 0, results }
   } catch (err) {
     if (__DEV__) console.error('[doseService] registerDoseMany erro catastrófico:', err)

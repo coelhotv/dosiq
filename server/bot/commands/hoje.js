@@ -1,6 +1,13 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
-import { getCurrentTime, escapeMarkdownV2 } from '../../utils/formatters.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
+import { 
+  getTodayLocal, 
+  getCurrentTime, 
+  parseLocalDate,
+  getSaoPauloTime,
+  addDays
+} from '../../utils/dateUtils.js';
 
 export async function handleHoje(bot, msg) {
   const chatId = msg.chat.id;
@@ -26,21 +33,18 @@ export async function handleHoje(bot, msg) {
     }
 
     // Get today's date in SP timezone
-    const timezone = 'America/Sao_Paulo';
-    const now = new Date();
-    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now);
+    const todayStr = getTodayLocal();
+    const startOfDay = parseLocalDate(todayStr);
 
-    // Fetch logs from last 24h to ensure we don't miss anything due to UTC shift
-    // Then filter accurately in memory
+    // Fetch logs from last 36h to ensure we don't miss anything due to UTC shift
     const { data: allLogs } = await supabase
       .from('medicine_logs')
       .select('protocol_id, taken_at')
       .eq('user_id', userId)
-      .gte('taken_at', new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString());
+      .gte('taken_at', addDays(startOfDay, -1).toISOString());
 
     const todayLogs = allLogs?.filter(log => {
-      const logDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(log.taken_at));
-      return logDate === todayStr;
+      return getTodayLocal(getSaoPauloTime(log.taken_at)) === todayStr;
     }) || [];
 
     // Helper to convert HH:MM to minutes
@@ -54,17 +58,14 @@ export async function handleHoje(bot, msg) {
     protocols.forEach(protocol => {
       const protocolLogs = todayLogs.filter(l => l.protocol_id === protocol.id);
       
-      protocol.time_schedule.forEach(time => {
+      (protocol.time_schedule || []).forEach(time => {
         const scheduledMin = toMin(time);
         
         // Find if any log matches this slot (within 3h window)
         const wasTaken = protocolLogs.some(log => {
-          const logTime = new Date(log.taken_at).toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-            timeZone: timezone
-          }).replace(/^24/, '00');
+          const logDate = getSaoPauloTime(log.taken_at);
+          const logTime = logDate.getHours().toString().padStart(2, '0') + ':' + 
+                          logDate.getMinutes().toString().padStart(2, '0');
           
           const actualMin = toMin(logTime);
           return Math.abs(scheduledMin - actualMin) < 180; // 3 hour window
@@ -72,7 +73,7 @@ export async function handleHoje(bot, msg) {
 
         schedule.push({
           time,
-          medicine: protocol.medicine.name,
+          medicine: protocol.medicine?.name || protocol.name,
           dosage: protocol.dosage_per_intake,
           taken: wasTaken
         });
@@ -83,7 +84,8 @@ export async function handleHoje(bot, msg) {
     schedule.sort((a, b) => a.time.localeCompare(b.time));
 
     const currentTime = getCurrentTime();
-    const todayFormatted = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    // Exibição amigável: DD/MM/YYYY
+    const todayFormatted = todayStr.split('-').reverse().join('/');
     let message = `📅 *Doses de Hoje* \\(${escapeMarkdownV2(todayFormatted)}\\)\n\n`;
 
     schedule.forEach(item => {

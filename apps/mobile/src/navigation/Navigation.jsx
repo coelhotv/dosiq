@@ -10,9 +10,10 @@
 
 import { useEffect, useState } from 'react'
 import { View, ActivityIndicator } from 'react-native'
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
+import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ROUTES } from './routes'
+import { navigationRef } from './navigationRef'
 import SmokeScreen from '../screens/SmokeScreen'
 import LoginScreen from '../screens/LoginScreen'
 import RootTabs from './RootTabs'
@@ -20,12 +21,9 @@ import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
+import { debugLog } from '@shared/utils/debugLog'
 
 const Stack = createNativeStackNavigator()
-
-// Ref de nível de módulo — permite importação externa para deeplink (R-164, N1.4)
-// createNavigationContainerRef enfileira ações automaticamente se o navigator não estiver pronto
-export const navigationRef = createNavigationContainerRef()
 
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
@@ -56,7 +54,7 @@ export default function Navigation() {
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       if (event === 'SIGNED_OUT') {
-        if (__DEV__) console.log('[Navigation] User signed out, clearing caches...')
+        debugLog('Navigation', 'User signed out, clearing caches...')
         await AsyncStorage.multiRemove([
           '@dosiq/today-snapshot',
           '@dosiq/treatments-snapshot',

@@ -17,7 +17,7 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
   const mostCritical = sorted[0]
   const isCritical = mostCritical.stockStatus === 'critical'
 
-  const accentColor = isCritical ? 'var(--color-error, #ba1a1a)' : 'var(--color-tertiary, #7b5700)'
+  const accentColor = isCritical ? 'var(--color-error)' : 'var(--color-tertiary)'
 
   const progressPct = Math.max(
     0,
@@ -33,8 +33,8 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
         borderRadius: 'var(--radius-lg, 1rem)',
         padding: '1rem 1.25rem',
         background: isCritical
-          ? 'color-mix(in srgb, var(--color-error, #ba1a1a) 8%, transparent)'
-          : 'color-mix(in srgb, var(--color-tertiary-fixed, #ffdea8) 40%, transparent)',
+          ? 'color-mix(in srgb, var(--color-error) 8%, transparent)'
+          : 'color-mix(in srgb, var(--color-tertiary-fixed) 40%, transparent)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
@@ -64,7 +64,7 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
           style={{
             fontFamily: 'var(--font-body, Lexend, sans-serif)',
             fontSize: 'var(--text-label-md, 0.75rem)',
-            color: 'var(--color-on-surface-variant, #3e4946)',
+            color: 'var(--color-on-surface-variant)',
             marginBottom: '0.375rem',
           }}
         >
@@ -81,7 +81,7 @@ export default function StockAlertInline({ criticalItems = [], onNavigateToStock
           style={{
             height: '8px',
             borderRadius: 'var(--radius-full, 9999px)',
-            background: 'var(--color-surface-container-highest, #e1e3e4)',
+            background: 'var(--color-surface-container-highest)',
             overflow: 'hidden',
           }}
         >

@@ -3,13 +3,13 @@
  * Renderiza prescrições com data de fim, filtrando prescrições contínuas (Wave 15.6)
  */
 
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, getNow, daysDifference } from '@utils/dateUtils'
 import './PrescriptionTimelineRedesign.css'
 
 function deriveProgress(startDate, endDate) {
   const start = parseLocalDate(startDate)
   const end = parseLocalDate(endDate)
-  const today = new Date()
+  const today = getNow()
   const totalDays = Math.max((end - start) / 86400000, 1)
   const elapsed = (today - start) / 86400000
   return Math.min(Math.max((elapsed / totalDays) * 100, 0), 100)
@@ -18,9 +18,10 @@ function deriveProgress(startDate, endDate) {
 function getDaysRemaining(endDateStr) {
   if (!endDateStr) return null
   const end = parseLocalDate(endDateStr)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return Math.ceil((end - today) / 86400000)
+  const today = getNow()
+  
+  // Usar helper centralizado para evitar timezone drift
+  return daysDifference(today, end)
 }
 
 function formatShortDate(dateStr) {

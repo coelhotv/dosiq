@@ -11,6 +11,7 @@
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
+import { getServerTimestamp, addHours } from '../server/utils/dateUtils.js'
 
 // ============================================================================
 // CONFIGURAÇÃO
@@ -65,7 +66,7 @@ const LOG_LEVELS = {
  * @param {Object} data - Dados adicionais para o log
  */
 function log(level, message, data = {}) {
-  const timestamp = new Date().toISOString()
+  const timestamp = getServerTimestamp()
   const logEntry = {
     timestamp,
     endpoint: ENDPOINT,
@@ -250,7 +251,7 @@ async function uploadToBlob(buffer, filename, expiresInHours, userId) {
   const path = `reports/${userId}/${timestamp}-${fileHash}-${safeFilename}`
 
   // Calcular data de expiração do cache (usa x-vercel-cache-max-age header)
-  const cacheExpiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)
+  const cacheExpiresAt = addHours(expiresInHours)
 
   // Preparar upload usando a API do Vercel Blob
   // Ref: https://vercel.com/docs/storage/vercel-blob/using-blob-sdk

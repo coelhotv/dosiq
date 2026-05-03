@@ -1,3 +1,5 @@
+import { getNow, parseISO, addDays, daysDifference, formatLocalDate } from '@utils/dateUtils.js'
+
 /**
  * Titration Service
  *
@@ -54,20 +56,19 @@ export function calculateTitrationSteps(protocol) {
   const schedule = protocol.titration_schedule
   const currentStageIndex = protocol.current_stage_index ?? 0
   const stageStartedAt = protocol.stage_started_at
-    ? new Date(protocol.stage_started_at)
-    : new Date()
-  const protocolStartDate = protocol.start_date ? new Date(protocol.start_date) : stageStartedAt
+    ? parseISO(protocol.stage_started_at)
+    : getNow()
+  const protocolStartDate = protocol.start_date ? parseISO(protocol.start_date) : stageStartedAt
 
   const unit = protocol.medicine?.dosage_unit || 'mg'
 
   // Calcular datas de cada etapa
-  let currentDate = new Date(protocolStartDate)
+  let currentDate = addDays(protocolStartDate, 0)
   const steps = schedule.map((stage, index) => {
     const stepNumber = index + 1
     const durationDays = parseInt(stage.duration_days) || 7
-    const startDate = new Date(currentDate)
-    const endDate = new Date(currentDate)
-    endDate.setDate(endDate.getDate() + durationDays - 1)
+    const startDate = addDays(currentDate, 0)
+    const endDate = addDays(currentDate, durationDays - 1)
 
     // Determinar status
     let status
@@ -80,8 +81,7 @@ export function calculateTitrationSteps(protocol) {
     }
 
     // Avançar data para próxima etapa
-    currentDate = new Date(endDate)
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate = addDays(endDate, 1)
 
     return {
       stepNumber,
@@ -130,15 +130,15 @@ export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
   const currentStep = steps[currentStageIndex]
   if (!currentStep) return 0
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = getNow()
+  const endDate = addDays(currentStep.endDate, 0)
 
-  const endDate = new Date(currentStep.endDate)
-  endDate.setHours(0, 0, 0, 0)
+  // Comparar apenas as datas (meia-noite) para cálculo de dias restantes via formatLocalDate
+  const todayKey = formatLocalDate(today)
+  const endDateKey = formatLocalDate(endDate)
 
-  // Calcular diferença em dias
-  const diffTime = endDate - today
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  // Calcular diferença em dias usando helper centralizado
+  const diffDays = daysDifference(todayKey, endDateKey)
 
   return Math.max(0, diffDays)
 }
@@ -156,9 +156,9 @@ export function getStepProgress(currentStageIndex, steps, stageStartedAt) {
   const currentStep = steps[currentStageIndex]
   if (!currentStep) return 0
 
-  const today = new Date()
-  const startDate = new Date(currentStep.startDate)
-  const endDate = new Date(currentStep.endDate)
+  const today = getNow()
+  const startDate = addDays(currentStep.startDate, 0)
+  const endDate = addDays(currentStep.endDate, 0)
 
   // Se ainda não começou
   if (today < startDate) return 0
@@ -166,9 +166,9 @@ export function getStepProgress(currentStageIndex, steps, stageStartedAt) {
   // Se já terminou
   if (today > endDate) return 100
 
-  // Calcular progresso atual
+  // Calcular progresso atual usando helper centralizado
   const totalDuration = currentStep.durationDays
-  const elapsedDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1
+  const elapsedDays = daysDifference(startDate, today) + 1
 
   return Math.min(100, Math.round((elapsedDays / totalDuration) * 100))
 }
@@ -195,9 +195,9 @@ function calculateOverallProgress(currentStageIndex, schedule, stageStartedAt) {
   // Dias na etapa atual
   if (currentStageIndex < schedule.length) {
     const currentStageDuration = parseInt(schedule[currentStageIndex].duration_days) || 1
-    const today = new Date()
-    const startDate = new Date(stageStartedAt)
-    const elapsedDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1
+    const today = getNow()
+    const startDate = addDays(stageStartedAt, 0)
+    const elapsedDays = daysDifference(startDate, today) + 1
     completedDays += Math.max(0, Math.min(elapsedDays, currentStageDuration))
   }
 

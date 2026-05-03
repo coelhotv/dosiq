@@ -46,13 +46,28 @@
   }
 }
 
-.treatment-accordion__header {
+.treatment-accordion__header-group {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3); /* 12px - era 16px */
+  position: relative;
+}
+
+.treatment-accordion__header {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
   cursor: pointer;
   transition: var(--transition-hover);
+  /* Reset button styles */
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 .treatment-accordion__header:hover {
@@ -96,6 +111,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  padding-right: var(--space-3);
 }
 
 .treatment-accordion__batch-btn {

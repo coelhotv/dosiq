@@ -3,6 +3,7 @@
 // NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js';
 
 const logger = createLogger('DLQDiscard');
 
@@ -61,7 +62,7 @@ export async function handleDiscard(req, res) {
       .from('failed_notification_queue')
       .update({
         status: 'discarded',
-        resolved_at: new Date().toISOString(),
+        resolved_at: getServerTimestamp(),
         resolution_notes: reason
       })
       .eq('id', id);

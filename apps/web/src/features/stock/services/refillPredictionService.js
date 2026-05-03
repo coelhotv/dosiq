@@ -1,6 +1,6 @@
 // src/features/stock/services/refillPredictionService.js
 
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
 import { calculateExpectedDoses } from '@utils/adherenceLogic'
 
 /**
@@ -22,12 +22,11 @@ import { calculateExpectedDoses } from '@utils/adherenceLogic'
  */
 export function predictRefill({ medicineId, currentStock, logs, protocols }) {
   // 1. Calcular consumo real (ultimos 30 dias)
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = addDays(getNow(), -30)
   thirtyDaysAgo.setHours(0, 0, 0, 0) // Zerar horas para comparacao consistente
 
   const recentLogs = logs.filter(
-    (log) => log.medicine_id === medicineId && new Date(log.taken_at) >= thirtyDaysAgo
+    (log) => log.medicine_id === medicineId && parseISO(log.taken_at) >= thirtyDaysAgo
   )
 
   const daysWithData = getDaysWithData(recentLogs)
@@ -70,8 +69,7 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
   // 3. Calcular data prevista de stockout
   let predictedStockoutDate = null
   if (daysRemaining !== Infinity && daysRemaining >= 0) {
-    const stockoutDate = new Date()
-    stockoutDate.setDate(stockoutDate.getDate() + daysRemaining)
+    const stockoutDate = addDays(getNow(), daysRemaining)
     predictedStockoutDate = formatLocalDate(stockoutDate)
   }
 
@@ -142,6 +140,6 @@ export function predictAllRefills({ medicines, stocks, logs, protocols }) {
  * Conta dias unicos com pelo menos 1 log.
  */
 function getDaysWithData(logs) {
-  const uniqueDays = new Set(logs.map((log) => formatLocalDate(new Date(log.taken_at))))
+  const uniqueDays = new Set(logs.map((log) => formatLocalDate(parseISO(log.taken_at))))
   return uniqueDays.size
 }

@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, A
 import { useNavigation } from '@react-navigation/native'
 import { Bell, ChevronRight } from 'lucide-react-native'
 import Constants from 'expo-constants'
-import { useProfile } from '../hooks/useProfile'
+import { useProfile } from '@profile/hooks/useProfile'
 import { logoutUser } from '../services/profileService'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import LoadingState from '../../../shared/components/states/LoadingState'
-import { colors, spacing, borderRadius, shadows, typography } from '../../../shared/styles/tokens'
-import { ROUTES } from '../../../navigation/routes'
-import { useUnreadBadgeCount } from '../../../shared/hooks/useUnreadBadgeCount'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import LoadingState from '@shared/components/states/LoadingState'
+import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
+import { ROUTES } from '@navigation/routes'
+import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
 
 /**
  * Tela de Perfil do MVP mobile (H5.6)

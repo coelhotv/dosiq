@@ -58,7 +58,7 @@ function resolveTitle(notification, label) {
 export default function NotificationItem({ notification, wasTaken, onNavigate }) {
   const [expanded, setExpanded] = useState(false)
 
-  const { notification_type, status, sent_at, title, body } = notification
+  const { notification_type, status, sent_at, body } = notification
 
   const { iconName, color, bgColor, label } = getNotificationIcon(notification_type)
   const IconComponent  = ICON_MAP[iconName] ?? Bell

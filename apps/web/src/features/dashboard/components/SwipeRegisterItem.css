@@ -58,6 +58,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  /* Button resets */
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
 }
 
 .swipe-item-card__checkbox {

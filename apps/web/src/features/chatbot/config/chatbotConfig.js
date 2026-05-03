@@ -86,10 +86,10 @@ export const CHATBOT_HISTORY_MAX_DISPLAY = 20
  * Reutilizável em web (ChatWindow) e server (Telegram).
  * @returns {{role: string, content: string, timestamp: number}}
  */
-export function createWelcomeMessage() {
+export function createWelcomeMessage(timestamp = null) {
   return {
     role: 'assistant',
     content: `Olá! Sou seu Assistente IA de medicamentos. Como posso ajudar?\n\n_${CHATBOT_DISCLAIMER}_`,
-    timestamp: Date.now(),
+    timestamp: timestamp,
   }
 }

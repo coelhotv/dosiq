@@ -1,3 +1,5 @@
+import { getNow } from '@dosiq/core'
+
 // Desativa o device durante logout
 // Falha silenciosa — logout deve ocorrer mesmo se desativação remota falhar
 
@@ -9,7 +11,7 @@ export async function unregisterNotificationDevice({ supabase, userId, token }) 
   try {
     await supabase
       .from('notification_devices')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, updated_at: getNow().toISOString() })
       .eq('user_id', userId)
       .eq('provider', 'expo')
       .eq('push_token', token)

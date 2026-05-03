@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
+import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 /**
  * Busca todos os tratamentos ativos do usuário com dados de medicamento
@@ -16,7 +17,7 @@ export async function getActiveTreatments(userId) {
     // Validação de entrada conforme regra do projeto (R-125)
     z.string().uuid().parse(userId)
 
-    if (__DEV__) console.log('[treatmentsService] Buscando tratamentos ativos para:', userId)
+    debugLog('treatmentsService', `Buscando tratamentos ativos para: ${userId}`)
 
     const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
@@ -50,7 +51,7 @@ export async function getActiveTreatments(userId) {
       .order('name')
 
     if (error) {
-      console.error('[treatmentsService] Erro Supabase:', error)
+      errorLog('treatmentsService', 'Erro Supabase', error)
       return { success: false, error: error.message }
     }
 
@@ -61,7 +62,7 @@ export async function getActiveTreatments(userId) {
 
     return { success: true, data: validData }
   } catch (err) {
-    console.error('[treatmentsService] Erro inesperado:', err)
+    errorLog('treatmentsService', 'Erro inesperado', err)
     return { success: false, error: 'Erro ao carregar tratamentos ativos.' }
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow } from '@utils/dateUtils'
 import { getFieldDescribedBy } from '@utils/formUtils'
 import './StockForm.css'
 
@@ -9,7 +9,7 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
     medicine_id: initialValues?.medicine_id || '',
     quantity: initialValues?.quantity ?? '',
     unit_price: initialValues?.unit_price ?? '',
-    purchase_date: initialValues?.purchase_date || formatLocalDate(new Date()),
+    purchase_date: initialValues?.purchase_date || formatLocalDate(getNow()),
     expiration_date: initialValues?.expiration_date || '',
     pharmacy: initialValues?.pharmacy || '',
     laboratory: initialValues?.laboratory || '',

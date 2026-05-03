@@ -6,8 +6,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, parseLocalDate, evaluateDoseTimelineState, isProtocolActiveOnDate } from '@dosiq/core'
-import { calculateAdherenceStats, calculateDosesByDate } from '@dosiq/core'
+import { 
+  getTodayLocal, 
+  parseLocalDate, 
+  evaluateDoseTimelineState, 
+  isProtocolActiveOnDate, 
+  calculateAdherenceStats, 
+  calculateDosesByDate,
+  getNow,
+  formatLocalDate,
+  parseISO
+} from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
   getActiveProtocols,
@@ -15,6 +24,7 @@ import {
   getMedicinesData,
   getUserSettings,
 } from '../services/dashboardService'
+import { debugLog } from '@shared/utils/debugLog'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -46,7 +56,7 @@ export function useTodayData() {
     setError(null)
 
     try {
-      if (__DEV__) console.log('[useTodayData] fetch start')
+      debugLog('[useTodayData] fetch start')
       
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
       
@@ -84,7 +94,7 @@ export function useTodayData() {
           name: userSettings?.display_name || null,
           complexity_override: userSettings?.complexity_override || null
         },
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         localDay: today // R-114 fix: save explicit local day string
       }
 
@@ -102,9 +112,9 @@ export function useTodayData() {
         const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
         if (cached) {
           const parsed = JSON.parse(cached)
-          const capturedAt = new Date(parsed.capturedAt)
-          const now = new Date()
-          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+          const capturedAt = parseISO(parsed.capturedAt)
+          const now = getNow()
+          const diffHours = (now.getTime() - capturedAt.getTime()) / (1000 * 60 * 60)
 
           // Regra: < 24h
           if (diffHours < 24) {
@@ -115,7 +125,7 @@ export function useTodayData() {
             
             // Regra H5.8: Se dia diferente (comparação local-local), limpar logs
             if (snapshotDay && snapshotDay !== today) {
-              if (__DEV__) console.log('[useTodayData] Day mismatch, segregating logs')
+              debugLog('[useTodayData] Day mismatch, segregating logs')
               parsed.logs = Array.isArray(parsed.logs) ? [] : []
               setIsDaySegregated(true)
             } else {
@@ -141,7 +151,7 @@ export function useTodayData() {
         } else {
           throw err // Re-throw original se não houver cache
         }
-      } catch (cacheErr) {
+      } catch {
         setError(err.message ?? 'Erro ao carregar dados.')
       }
     } finally {
@@ -158,9 +168,9 @@ export function useTodayData() {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      // Meia-noite local do dia seguinte
-      const nextMidnight = new Date(now)
+      const now = getNow()
+      // Meia-noite local do dia seguinte (Brasil)
+      const nextMidnight = parseLocalDate(getTodayLocal())
       nextMidnight.setDate(nextMidnight.getDate() + 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
@@ -168,7 +178,7 @@ export function useTodayData() {
       
       clearTimeout(midnightTimer)
       midnightTimer = setTimeout(() => {
-        if (__DEV__) console.log('[useTodayData] Meia-noite detectada: Refreshing...')
+        debugLog('[useTodayData] Meia-noite detectada: Refreshing...')
         load()
         scheduleMidnightRefresh() // Agendar próxima
       }, msUntilMidnight + 1000) // +1s para garantir que passou o boundary
@@ -182,7 +192,7 @@ export function useTodayData() {
         const today = getTodayLocal()
         // Se mudou o dia enquanto estava em background, forçar reload
         if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
-          if (__DEV__) console.log('[useTodayData] Dia alterado via background: Refreshing...')
+          debugLog('[useTodayData] Dia alterado via background: Refreshing...')
           load()
         }
       }
@@ -208,11 +218,7 @@ export function useTodayData() {
 
     // 1. Filtrar logs de hoje para a Timeline
     const todayLogs = data.logs.filter(l => {
-      const logDate = new Date(l.taken_at)
-      const lYear = logDate.getFullYear()
-      const lMonth = String(logDate.getMonth() + 1).padStart(2, '0')
-      const lDay = String(logDate.getDate()).padStart(2, '0')
-      return `${lYear}-${lMonth}-${lDay}` === todayStr
+      return formatLocalDate(parseISO(l.taken_at)) === todayStr
     })
 
     // 2. Classificar doses em zonas para o Dashboard
@@ -248,8 +254,9 @@ export function useTodayData() {
 
     // Ordenar listas cronologicamente (00:00 -> 23:59)
     const sortByTime = (a, b) => {
-      const timeA = a.scheduledTime || (a.taken_at ? new Date(a.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
-      const timeB = b.scheduledTime || (b.taken_at ? new Date(b.taken_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00')
+      const formatTime = (d) => d.scheduledTime || (d.taken_at ? formatLocalDate(parseISO(d.taken_at), true).split(' ')[1].substring(0, 5) : '00:00')
+      const timeA = formatTime(a)
+      const timeB = formatTime(b)
       return timeA.localeCompare(timeB)
     }
 
@@ -257,10 +264,10 @@ export function useTodayData() {
       late: missedDoses.sort(sortByTime),
       now: scheduledDoses.filter(d => {
         const [h, m] = d.scheduledTime.split(':').map(Number)
-        const scheduledDate = new Date()
+        const scheduledDate = parseLocalDate(todayStr)
         scheduledDate.setHours(h, m, 0, 0)
-        const now = new Date()
-        const diffHours = (now - scheduledDate) / (1000 * 60 * 60)
+        const now = getNow()
+        const diffHours = (now.getTime() - scheduledDate.getTime()) / (1000 * 60 * 60)
         return diffHours >= -0.5 && diffHours <= 2
       }).sort(sortByTime),
       upcoming: scheduledDoses.sort(sortByTime),

@@ -1,4 +1,5 @@
 import { validateAnalyzeAdherencePatternsInput } from '@schemas/adherencePatternSchema'
+import { getSaoPauloTime, parseISO, formatLocalDate } from '@utils/dateUtils'
 
 /**
  * Nomes dos dias da semana
@@ -40,8 +41,8 @@ function getPeriodIndex(hour) {
 function countUniqueDaysWithLogs(logs) {
   const uniqueDays = new Set(
     logs.map((log) => {
-      const date = new Date(log.taken_at)
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      const date = parseISO(log.taken_at)
+      return formatLocalDate(date) // Retorna YYYY-MM-DD no fuso SP
     })
   )
   return uniqueDays.size
@@ -133,12 +134,11 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   // Contar doses tomadas por célula (CONTAR REGISTROS, NÃO COMPRIMIDOS)
   // Cada registro = 1 dose tomada (independente de quantity_taken)
   logs.forEach((log) => {
-    const logDate = new Date(log.taken_at)
-    const dayIndex = logDate.getDay() // 0-6 (domingo-sábado)
-    const hour = logDate.getHours()
+    const spDate = getSaoPauloTime(parseISO(log.taken_at))
+    const hour = spDate.getHours()
+    const dayIndex = spDate.getDay() // 0-6 (Domingo-Sábado)
     const periodIndex = getPeriodIndex(hour)
 
-    // Incrementar 1 para cada dose registrada (não usar quantity_taken que mistura comprimidos com doses)
     grid[dayIndex][periodIndex].taken += 1
   })
 
@@ -146,11 +146,12 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   const dayOccurrences = [0, 0, 0, 0, 0, 0, 0]
   const uniqueDates = new Set()
   logs.forEach((log) => {
-    const logDate = new Date(log.taken_at)
-    const dateStr = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}-${String(logDate.getDate()).padStart(2, '0')}`
+    const spDate = getSaoPauloTime(parseISO(log.taken_at))
+    const dateStr = spDate.toISOString().split('T')[0] // YYYY-MM-DD
+    
     if (!uniqueDates.has(dateStr)) {
       uniqueDates.add(dateStr)
-      const dayIndex = logDate.getDay()
+      const dayIndex = spDate.getDay()
       dayOccurrences[dayIndex] += 1
     }
   })

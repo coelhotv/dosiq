@@ -13,7 +13,7 @@
 import { protocolService } from '@features/protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
 import { medicineService } from '@features/medications/services/medicineService'
-import { formatLocalDate, parseLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, parseLocalDate, getNow, parseISO, getServerTimestamp } from '@utils/dateUtils'
 
 /** Versão do formato de exportação */
 const EXPORT_VERSION = '1.0.0'
@@ -84,7 +84,7 @@ function escapeCSVField(value) {
 function formatDateTime(dateStr) {
   if (!dateStr) return ''
 
-  const date = new Date(dateStr)
+  const date = parseISO(dateStr)
   const day = String(date.getDate()).padStart(2, '0')
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const year = date.getFullYear()
@@ -168,7 +168,7 @@ function downloadFile(content, filename, mimeType) {
  * @returns {string} Nome do arquivo
  */
 function generateFilename(prefix, extension) {
-  const now = new Date()
+  const now = getNow()
   const timestamp = formatLocalDate(now).replace(/-/g, '')
   const time = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0')
   return `${prefix}_${timestamp}_${time}.${extension}`
@@ -306,7 +306,7 @@ export async function exportAsJSON(options = {}) {
 
   const exportData = {
     metadata: {
-      exportDate: new Date().toISOString(),
+      exportDate: getServerTimestamp(),
       version: EXPORT_VERSION,
       dateRange: dateRange
         ? {
@@ -477,7 +477,7 @@ export async function exportAsCSV(options = {}) {
   // Adiciona cabeçalho com metadados
   const metadataSection = [
     '=== METADADOS ===',
-    `Data de Exportação;${formatDateTime(new Date().toISOString())}`,
+    `Data de Exportação;${formatDateTime(getServerTimestamp())}`,
     `Versão do Formato;${EXPORT_VERSION}`,
     dateRange
       ? `Período;${formatDateOnly(formatLocalDate(dateRange.start))} a ${formatDateOnly(formatLocalDate(dateRange.end))}`

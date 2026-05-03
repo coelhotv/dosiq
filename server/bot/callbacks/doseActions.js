@@ -4,6 +4,7 @@ import { medicineLogService } from '../../services/medicineLogService.js';
 import { calculateDaysRemaining, calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 
@@ -58,7 +59,7 @@ async function handleTakeDose(bot, callbackQuery) {
         protocol_id: protocolId,
         medicine_id: medicineId,
         quantity_taken: parseFloat(quantity),
-        taken_at: new Date().toISOString()
+        taken_at: getServerTimestamp()
       }])
       .select('id')
       .single();
@@ -429,7 +430,7 @@ async function handleTakePlan(bot, callbackQuery) {
       protocol_id: p.id,
       medicine_id: p.medicine_id,
       quantity_taken: p.dosage_per_intake,
-      taken_at: new Date().toISOString(),
+      taken_at: getServerTimestamp(),
       notes: `[Plano: ${planName}] Registrar agora (Telegram)`
     }));
 
@@ -497,7 +498,7 @@ async function handleTakeList(bot, callbackQuery) {
       protocol_id: p.protocolId,
       medicine_id: p.medicineId,
       quantity_taken: p.dosagePerIntake,
-      taken_at: new Date().toISOString(),
+      taken_at: getServerTimestamp(),
       notes: 'Doses avulsas registradas via Telegram'
     }));
 

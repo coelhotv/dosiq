@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '../../../server/bot/logger.js';
 import { dispatchNotification } from '../../../server/notifications/dispatcher/dispatchNotification.js';
 import { Expo } from 'expo-server-sdk';
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js';
 
 const logger = createLogger('DLQRetry');
 
@@ -111,7 +112,7 @@ export async function handleRetry(req, res) {
         .from('failed_notification_queue')
         .update({
           status: 'resolved',
-          resolved_at: new Date().toISOString(),
+          resolved_at: getServerTimestamp(),
           resolution_notes: 'Manually retried via admin interface'
         })
         .eq('id', id);
@@ -127,7 +128,7 @@ export async function handleRetry(req, res) {
         .from('failed_notification_queue')
         .update({
           retry_count: (notification.retry_count || 0) + 1,
-          updated_at: new Date().toISOString(),
+          updated_at: getServerTimestamp(),
           error_message: dispatchResult.errors?.[0]?.message || 'Unknown error'
         })
         .eq('id', id);

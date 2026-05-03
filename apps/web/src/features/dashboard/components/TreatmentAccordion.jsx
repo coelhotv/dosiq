@@ -48,25 +48,39 @@ export default function TreatmentAccordion({
     <div
       className={`treatment-accordion ${isExpanded ? 'treatment-accordion--expanded' : ''} ${protocol.is_in_tolerance_window ? 'treatment-accordion--urgent' : ''}`}
     >
-      <div className="treatment-accordion__header" onClick={() => setIsExpanded(!isExpanded)}>
-        <div className="treatment-accordion__info">
-          <div className="treatment-accordion__title-row">
-            <h3 className="treatment-accordion__title">{protocol.name}</h3>
-            {riskLevel && (
-              <span
-                className="treatment-accordion__risk-badge"
-                style={{ backgroundColor: riskColor }}
-                title={riskLabel || riskLevel}
-                aria-label={`Risco: ${riskLabel || riskLevel}`}
-              />
-            )}
+      <div className="treatment-accordion__header-group">
+        <button
+          type="button"
+          className="treatment-accordion__header"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+        >
+          <div className="treatment-accordion__info">
+            <div className="treatment-accordion__title-row">
+              <h3 className="treatment-accordion__title">{protocol.name}</h3>
+              {riskLevel && (
+                <span
+                  className="treatment-accordion__risk-badge"
+                  style={{ backgroundColor: riskColor }}
+                  title={riskLabel || riskLevel}
+                  aria-label={`Risco: ${riskLabel || riskLevel}`}
+                />
+              )}
+            </div>
+            <span className="treatment-accordion__meta">
+              {protocol.medicines_count || 0} medicamentos • {formatNextDose()}
+            </span>
           </div>
-          <span className="treatment-accordion__meta">
-            {protocol.medicines_count || 0} medicamentos • {formatNextDose()}
-          </span>
-        </div>
+          <motion.span
+            className="treatment-accordion__icon"
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+          >
+            ▼
+          </motion.span>
+        </button>
         <div className="treatment-accordion__controls">
           <button
+            type="button"
             className="treatment-accordion__batch-btn"
             onClick={(e) => {
               e.stopPropagation()
@@ -75,12 +89,6 @@ export default function TreatmentAccordion({
           >
             {selectedCount > 0 && selectedCount < totalCount ? `LOTE (${selectedCount})` : 'LOTE'}
           </button>
-          <motion.span
-            className="treatment-accordion__icon"
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-          >
-            ▼
-          </motion.span>
         </div>
       </div>
 

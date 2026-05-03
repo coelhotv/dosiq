@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ViewModeToggle from '../ViewModeToggle'
+import ViewModeToggle from '@/features/dashboard/components/ViewModeToggle'
 
 afterEach(() => {
   vi.clearAllMocks()
