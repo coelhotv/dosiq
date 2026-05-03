@@ -10,14 +10,14 @@ import {
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
-} from './medicineSchema'
+} from './medicineSchema.js'
 
 import {
   validateProtocolCreate,
   validateProtocolUpdate,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
-} from './protocolSchema'
+} from './protocolSchema.js'
 
 import {
   validateStockCreate,
@@ -26,7 +26,7 @@ import {
   validateStockIncrease,
   mapStockErrorsToForm,
   getStockErrorMessage,
-} from './stockSchema'
+} from './stockSchema.js'
 
 import {
   validateLogCreate,
@@ -36,7 +36,7 @@ import {
   mapBulkLogErrors,
   getLogErrorMessage,
   getBulkLogErrorMessage,
-} from './logSchema'
+} from './logSchema.js'
 
 /**
  * Classe de erro de validação customizada
