@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native'
-import { useProfile } from '../hooks/useProfile'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
+import { useProfile } from '@profile/hooks/useProfile'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 /**
  * Tela de vinculação do Telegram — Sprint 2.7 Wave N2 Redesign

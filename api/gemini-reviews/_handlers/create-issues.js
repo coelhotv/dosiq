@@ -12,6 +12,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js'
 import {
   checkRateLimit,
   getRateLimitHeaders,
@@ -363,7 +364,7 @@ async function updateReviewStatus(supabase, id, issueNumber) {
     .update({
       status: 'reported',
       github_issue_number: issueNumber,
-      updated_at: new Date().toISOString(),
+      updated_at: getServerTimestamp(),
     })
     .eq('id', id)
 

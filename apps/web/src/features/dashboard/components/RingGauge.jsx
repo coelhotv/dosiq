@@ -121,10 +121,12 @@ export default function RingGauge({
   )
 
   if (size === 'large') {
+    const Tag = isClickable ? 'button' : 'div'
     return (
-      <div
+      <Tag
         className={`ring-gauge ring-gauge--large ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
         onClick={onClick}
+        type={isClickable ? 'button' : undefined}
         tabIndex={isClickable ? 0 : undefined}
         onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
       >
@@ -149,15 +151,17 @@ export default function RingGauge({
             </div>
           )}
         </div>
-      </div>
+      </Tag>
     )
   }
 
   if (size === 'medium') {
+    const Tag = isClickable ? 'button' : 'div'
     return (
-      <div
+      <Tag
         className={`ring-gauge ring-gauge--medium ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
         onClick={onClick}
+        type={isClickable ? 'button' : undefined}
         tabIndex={isClickable ? 0 : undefined}
         onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
       >
@@ -171,21 +175,23 @@ export default function RingGauge({
             <SparklineAdesao adherenceByDay={sparklineData} size="inline" />
           )}
         </div>
-      </div>
+      </Tag>
     )
   }
 
   // compact
+  const Tag = isClickable ? 'button' : 'div'
   return (
-    <div
+    <Tag
       className={`ring-gauge ring-gauge--compact ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
       onClick={onClick}
+      type={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
       onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       {ringElement}
       <span className="ring-gauge__score-text">{score}%</span>
       {streakBadge}
-    </div>
+    </Tag>
   )
 }

@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../../platform/supabase/nativeSupabaseClient'
+import { errorLog } from '@shared/utils/debugLog'
 
 const getStorageKey = (userId) =>
   userId ? `@dosiq/notif-last-seen:${userId}` : '@dosiq/notif-last-seen'
@@ -36,7 +37,7 @@ export function useUnreadBadgeCount(userId) {
       if (!error) setUnreadCount(count ?? 0)
     } catch (e) {
       // Silencioso — badge é cosmético
-      if (__DEV__) console.error('[useUnreadBadgeCount] Fetch failed:', e.message)
+      if (__DEV__) errorLog('useUnreadBadgeCount', `Fetch failed: ${e.message}`)
     }
   }, [userId])
 
@@ -48,7 +49,8 @@ export function useUnreadBadgeCount(userId) {
   )
 
   useEffect(() => {
-    refreshBadge()
+    const timer = setTimeout(() => refreshBadge(), 0)
+    return () => clearTimeout(timer)
   }, [refreshBadge])
 
   return { unreadCount, refreshBadge }

@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
+import { debugLog } from '@shared/utils/logger'
 
 // Aliases locais para a engine — mantem chamadas internas compactas
 const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
@@ -283,7 +284,7 @@ export function useCachedMutation(mutationFn, options = {}) {
         keysToInvalidate.forEach((key) => {
           if (key) {
             invalidateCache(key)
-            console.log(`[useCachedMutation] Cache invalidado: ${key}`)
+            debugLog('useCachedMutation', `Cache invalidado: ${key}`)
           }
         })
 

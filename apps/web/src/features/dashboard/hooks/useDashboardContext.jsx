@@ -12,7 +12,7 @@ import {
   isDoseInToleranceWindow,
   isProtocolActiveOnDate,
 } from '@utils/adherenceLogic'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, addDays, getSaoPauloTime, getNow, getTodayLocal, parseISO } from '@utils/dateUtils'
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
@@ -26,10 +26,10 @@ const DashboardContext = createContext(null)
  * garantir consistência de dados e "custo zero" de queries extras.
  */
 export function DashboardProvider({ children }) {
-  const thirtyDaysAgo = useMemo(() => {
-    const date = new Date()
-    date.setDate(date.getDate() - 30)
-    return date.toISOString()
+  const streakStartLimit = useMemo(() => {
+    const date = getNow()
+    date.setDate(date.getDate() - 365) // 1 ano de histórico para streak profundo
+    return formatLocalDate(date)
   }, [])
 
   const queries = useMemo(
@@ -39,25 +39,24 @@ export function DashboardProvider({ children }) {
         fetcher: () => medicineService.getAll(),
       },
       {
-        key: CACHE_KEYS.PROTOCOLS_ACTIVE,
-        fetcher: () => protocolService.getActive(),
+        key: CACHE_KEYS.PROTOCOLS, // Buscamos todos para histórico real de adesão e streak
+        fetcher: () => protocolService.getAll(),
       },
       {
-        key: 'logs:last30d',
+        key: CACHE_KEYS.LOGS_DEEP_STREAK,
         fetcher: async () => {
           // Slim select: apenas id, taken_at, quantity_taken, protocol_id, medicine_id, status
-          // Sem relações completas — consumidores usam medicineMap/protocolMap separados
-          // Reduz payload de ~315KB para ~60KB (~80% redução)
+          // Puxamos até 365 dias (limite 1500) para garantir streaks reais de longa duração
           const result = await logService.getByDateRangeSlim(
-            thirtyDaysAgo.split('T')[0],
-            new Date().toISOString().split('T')[0],
-            1000
+            streakStartLimit,
+            getTodayLocal(),
+            1500
           )
           return result.data
         },
       },
     ],
-    [thirtyDaysAgo]
+    [streakStartLimit]
   )
 
   const { results, isLoading, isFetching, hasError, refetchAll } = useCachedQueries(queries)
@@ -69,8 +68,8 @@ export function DashboardProvider({ children }) {
     } = onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         invalidateCache(CACHE_KEYS.MEDICINES)
-        invalidateCache(CACHE_KEYS.PROTOCOLS_ACTIVE)
-        invalidateCache('logs:last30d')
+        invalidateCache(CACHE_KEYS.PROTOCOLS)
+        invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
         refetchAll({ force: true })
       }
     })
@@ -180,21 +179,20 @@ export function DashboardProvider({ children }) {
     const logs = logsResult.data
     if (!protocols || !logs) return []
 
-    const now = new Date()
     const days = 7
+    const now = getNow()
 
     // Agrupar logs por dia (formato local YYYY-MM-DD)
     const logsByDay = new Map()
     logs.forEach((log) => {
-      const dayKey = formatLocalDate(new Date(log.taken_at))
+      const dayKey = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
       logsByDay.set(dayKey, (logsByDay.get(dayKey) || 0) + 1)
     })
 
     // Gerar array de 7 dias
     const dailyData = []
     for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now)
-      date.setDate(date.getDate() - i)
+      const date = addDays(now, -i)
       const dateKey = formatLocalDate(date)
 
       // Calcular doses esperadas (filtra protocolos ativos nesta data)
@@ -230,7 +228,7 @@ export function DashboardProvider({ children }) {
       isFetching,
       hasError,
       refresh: refetchAll,
-      lastSync: new Date().toISOString(),
+      lastSync: getNow().toISOString(),
       isDoseInToleranceWindow, // Expondo para o Dashboard usar na lógica de alertas
     }),
     [

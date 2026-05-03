@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import PlanBadge from '../PlanBadge'
+import PlanBadge from '@/features/dashboard/components/PlanBadge'
 
 afterEach(() => {
   vi.clearAllMocks()

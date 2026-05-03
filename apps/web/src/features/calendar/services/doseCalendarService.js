@@ -7,7 +7,7 @@
  * @module doseCalendarService
  */
 
-import { parseLocalDate, formatLocalDate, isProtocolActiveOnDate } from '@utils/dateUtils'
+import { parseLocalDate, formatLocalDate, isProtocolActiveOnDate, getSaoPauloTime, parseISO, getLastDayOfMonth } from '@utils/dateUtils'
 import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
 
 /**
@@ -36,8 +36,8 @@ import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
  * @returns {number} Número de dias no mês
  */
 function getDaysInMonth(year, month) {
-  // month é 1-indexado, então criamos data do dia 0 do próximo mês
-  return new Date(year, month, 0).getDate()
+  // month é 1-indexado, então passamos month-1 para a utility (0-11)
+  return getLastDayOfMonth(year, month - 1)
 }
 
 /**
@@ -161,8 +161,8 @@ function countTakenDosesForDate(logs, protocolId, dateStr, timeSchedule) {
   const relevantLogs = logs.filter((log) => {
     if (log.protocol_id !== protocolId) return false
 
-    // Extrair data local do log
-    const logDate = new Date(log.taken_at)
+    // Extrair data local do log (Normalizado para SP - R-020)
+    const logDate = getSaoPauloTime(parseISO(log.taken_at))
     const logDateStr = formatLocalDate(logDate)
 
     return logDateStr === dateStr

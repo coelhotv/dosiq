@@ -1,6 +1,6 @@
 import { createLogger } from '../logger.js';
-import { getUserIdByChatId } from '../services/userService.js';
-import { supabase } from '../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
+import { supabase } from '../../services/supabase.js';
 
 const logger = createLogger('CommandWrapper');
 

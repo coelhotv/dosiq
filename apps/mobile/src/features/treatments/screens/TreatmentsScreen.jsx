@@ -1,14 +1,14 @@
 import { useState, useCallback, useMemo } from 'react'
 import { ScrollView, View, Text, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
-import ScreenContainer from '../../../shared/components/ui/ScreenContainer'
-import LoadingState from '../../../shared/components/states/LoadingState'
-import ErrorState from '../../../shared/components/states/ErrorState'
-import EmptyState from '../../../shared/components/states/EmptyState'
-import TreatmentCard from '../components/TreatmentCard'
-import TreatmentPlanHeader from '../components/TreatmentPlanHeader'
-import { useTreatments } from '../hooks/useTreatments'
-import { colors, spacing, typography } from '../../../shared/styles/tokens'
-import StaleBanner from '../../../shared/components/feedback/StaleBanner'
+import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import LoadingState from '@shared/components/states/LoadingState'
+import ErrorState from '@shared/components/states/ErrorState'
+import EmptyState from '@shared/components/states/EmptyState'
+import TreatmentCard from '@treatments/components/TreatmentCard'
+import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
+import { useTreatments } from '@treatments/hooks/useTreatments'
+import { colors, spacing, typography } from '@shared/styles/tokens'
+import StaleBanner from '@shared/components/feedback/StaleBanner'
 
 // Habilitar animações no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

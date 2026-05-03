@@ -1,7 +1,7 @@
 // src/features/stock/services/__tests__/refillPredictionService.test.js
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { predictRefill, predictAllRefills } from '../refillPredictionService'
+import { predictRefill, predictAllRefills } from '@/features/stock/services/refillPredictionService'
 
 describe('refillPredictionService', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { analyzeAdherencePatterns } from '../adherencePatternService'
+import { analyzeAdherencePatterns } from '@/features/adherence/services/adherencePatternService'
 import { randomUUID } from 'crypto'
 
 describe('adherencePatternService', () => {

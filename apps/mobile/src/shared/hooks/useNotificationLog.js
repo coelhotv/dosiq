@@ -8,10 +8,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
-import { getTodayLocal } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, addDays } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createNotificationLogRepository } from '@dosiq/shared-data'
-import { supabase } from '../../platform/supabase/nativeSupabaseClient'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { debugLog } from '@shared/utils/debugLog'
 
 /**
  * Gera chave de cache dinâmica por usuário para evitar vazamento de dados (Security Fix)
@@ -64,7 +65,7 @@ async function enrichWithDoses(logs) {
 
   return logs.map(log => {
     if (log.notification_type === 'dose_reminder_by_plan' && log.treatment_plan_id) {
-      const d    = new Date(log.sent_at)
+      const d    = parseISO(log.sent_at)
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       const doses = (planProtoMap[log.treatment_plan_id] ?? [])
         .filter(p => (p.time_schedule ?? []).includes(hhmm))
@@ -94,7 +95,7 @@ async function enrichWithDoses(logs) {
  * @returns {Object} { data, loading, error, stale, refresh }
  */
 export function useNotificationLog(options = {}) {
-  const { userId, limit = 20, offset = 0, enabled = true } = options
+  const { userId, limit = 20, enabled = true } = options
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -114,15 +115,15 @@ export function useNotificationLog(options = {}) {
     setError(null)
 
     try {
-      if (__DEV__) console.log('[useNotificationLog] Fetching notifications...')
+      debugLog('[useNotificationLog] Fetching notifications...')
 
-      const raw  = await repo.listByUserId(userId, { limit, offset })
+      const raw  = await repo.listByUserId(userId, { limit })
       const logs = await enrichWithDoses(raw)
 
       const cacheKey = getCacheKey(userId)
       const snapshot = {
         logs,
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         localDay: getTodayLocal(), // R-114 compat
       }
 
@@ -148,13 +149,13 @@ export function useNotificationLog(options = {}) {
         } else if (isMounted.current) {
           setError(err.message || 'Erro ao carregar notificações.')
         }
-      } catch (cacheErr) {
+      } catch {
         if (isMounted.current) setError('Erro de conexão e cache ausente.')
       }
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [userId, limit, offset, enabled])
+  }, [userId, limit, enabled])
 
   useEffect(() => {
     isMounted.current = true
@@ -172,16 +173,15 @@ export function useNotificationLog(options = {}) {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      const nextMidnight = new Date(now)
-      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      const now = getNow()
+      const nextMidnight = addDays(now, 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
       const msUntilMidnight = nextMidnight.getTime() - now.getTime()
       
       clearTimeout(midnightTimer)
       midnightTimer = setTimeout(() => {
-        if (__DEV__) console.log('[useNotificationLog] Meia-noite: Refreshing...')
+        debugLog('[useNotificationLog] Meia-noite: Refreshing...')
         load()
         scheduleMidnightRefresh()
       }, msUntilMidnight + 1000)
@@ -192,7 +192,7 @@ export function useNotificationLog(options = {}) {
     const handleStateChange = (nextState) => {
       if (nextState === 'active') {
         // Forçar um refresh leve ao voltar, opcionalmente checar se o dia mudou
-        if (__DEV__) console.log('[useNotificationLog] App active: Refreshing...')
+        debugLog('[useNotificationLog] App active: Refreshing...')
         load()
       }
     }

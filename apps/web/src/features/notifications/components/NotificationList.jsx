@@ -10,6 +10,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { Bell } from 'lucide-react'
 import { NOTIFICATION_TYPES, DOSE_RELATED_NOTIFICATION_TYPES } from '@schemas'
+import { addDays, parseLocalDate, getNow, getTodayLocal, parseISO, daysDifference } from '@utils/dateUtils'
 import NotificationCard from './NotificationCard'
 import './NotificationList.css'
 
@@ -22,12 +23,7 @@ import './NotificationList.css'
  * @param {Array} notifications
  * @returns {Array<{title: string, items: Array}>}
  */
-function groupByDay(notifications, today = new Date()) {
-  const now = today
-  const startOfToday     = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startOfYesterday = new Date(startOfToday - 86400000)
-  const startOfWeek      = new Date(startOfToday - 6 * 86400000)
-
+function groupByDay(notifications, todayStr = getTodayLocal()) {
   const groups = [
     { title: 'Hoje',         items: [] },
     { title: 'Ontem',        items: [] },
@@ -36,11 +32,12 @@ function groupByDay(notifications, today = new Date()) {
   ]
 
   for (const n of notifications) {
-    const d = new Date(n.sent_at)
-    if (d >= startOfToday)          groups[0].items.push(n)
-    else if (d >= startOfYesterday) groups[1].items.push(n)
-    else if (d >= startOfWeek)      groups[2].items.push(n)
-    else                            groups[3].items.push(n)
+    const diff = daysDifference(n.sent_at, todayStr)
+    
+    if (diff === 0)       groups[0].items.push(n)
+    else if (diff === 1)  groups[1].items.push(n)
+    else if (diff <= 7)   groups[2].items.push(n)
+    else                  groups[3].items.push(n)
   }
 
   return groups.filter(g => g.items.length > 0)
@@ -55,10 +52,10 @@ function groupByDay(notifications, today = new Date()) {
 function calcWasTaken(notification, doseLogs) {
   if (!doseLogs?.length) return false
   const { notification_type, protocol_id, treatment_plan_id, sent_at } = notification
-  const sentAtDate = new Date(sent_at)
+  const sentAtDate = parseISO(sent_at)
 
   return doseLogs.some(log => {
-    const takenAtDate = new Date(log.taken_at)
+    const takenAtDate = parseISO(log.taken_at)
     if (takenAtDate <= sentAtDate) return false
 
     if (notification_type === NOTIFICATION_TYPES.DOSE_REMINDER && protocol_id) {
@@ -83,7 +80,7 @@ function calcWasTaken(notification, doseLogs) {
 const GROUP_HEADER_STYLE = {
   fontSize: 12,
   fontWeight: 600,
-  color: '#6b7280',
+  color: 'var(--color-gray-500)',
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
   padding: '12px 0 6px',
@@ -135,15 +132,18 @@ function EmptyState() {
  */
 export default function NotificationList({ notifications, isLoading, error, onNavigate, onOpenDoseModal, doseLogs }) {
   // localDay: re-avalia groupByDay quando o dia muda (visibilitychange + midnight timer)
-  const [localDay, setLocalDay] = useState(() => new Date().toDateString())
+  const [localDay, setLocalDay] = useState(() => getTodayLocal())
   useEffect(() => {
     let timer
     const schedule = () => {
-      const now = new Date()
-      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-      timer = setTimeout(() => { setLocalDay(new Date().toDateString()); schedule() }, next - now + 1000)
+      const now = getNow()
+      const next = addDays(parseLocalDate(getTodayLocal()), 1)
+      timer = setTimeout(() => { 
+        setLocalDay(getTodayLocal())
+        schedule() 
+      }, next.getTime() - now.getTime() + 1000)
     }
-    const onVisibility = () => { if (!document.hidden) setLocalDay(new Date().toDateString()) }
+    const onVisibility = () => { if (!document.hidden) setLocalDay(getTodayLocal()) }
     schedule()
     document.addEventListener('visibilitychange', onVisibility)
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility) }
@@ -152,7 +152,7 @@ export default function NotificationList({ notifications, isLoading, error, onNa
   // Monta lista plana com grupos intercalados (para Virtuoso e para lista simples)
   const flatItems = useMemo(() => {
     if (!notifications?.length) return []
-    const groups = groupByDay(notifications, new Date(localDay))
+    const groups = groupByDay(notifications, localDay)
     const items = []
     for (const group of groups) {
       items.push({ type: 'header', title: group.title })

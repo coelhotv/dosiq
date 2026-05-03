@@ -6,7 +6,7 @@ import {
   formatBRL,
   calculateDailyIntake,
   calculateAvgUnitPrice,
-} from '../costAnalysisService'
+} from '@/features/stock/services/costAnalysisService'
 
 describe('costAnalysisService', () => {
   afterEach(() => {
@@ -486,7 +486,8 @@ describe('costAnalysisService', () => {
 
   describe('calculateRealCosts', () => {
     it('calcula custo com dados reais (>=14 dias)', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -505,7 +506,7 @@ describe('costAnalysisService', () => {
       // 15 dias de logs, 30 comprimidos consumidos
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 2,
       }))
 
@@ -521,7 +522,8 @@ describe('costAnalysisService', () => {
     })
 
     it('usa consumo teorico quando dados insuficientes (<14 dias)', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -540,7 +542,7 @@ describe('costAnalysisService', () => {
       // 5 dias de logs apenas
       const logs = Array.from({ length: 5 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -554,7 +556,8 @@ describe('costAnalysisService', () => {
     })
 
     it('retorna projection3m e projection6m', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -572,7 +575,7 @@ describe('costAnalysisService', () => {
       ]
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -584,7 +587,8 @@ describe('costAnalysisService', () => {
     })
 
     it('marca isRealData como true apenas se ALGUM item usar consumo real', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -614,7 +618,7 @@ describe('costAnalysisService', () => {
       // Med-1 com 15 dias de dados reais
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -626,7 +630,8 @@ describe('costAnalysisService', () => {
     })
 
     it('exclui medicamentos sem protocolo ativo', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -649,7 +654,7 @@ describe('costAnalysisService', () => {
       ]
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -670,7 +675,8 @@ describe('costAnalysisService', () => {
     })
 
     it('retorna 0 monthlyCost para medicina sem preco', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         {
           id: 'med-1',
@@ -688,7 +694,7 @@ describe('costAnalysisService', () => {
       ]
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -699,7 +705,8 @@ describe('costAnalysisService', () => {
     })
 
     it('ordena items DESC por monthlyCost', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
         { id: 'med-1', name: 'Med1', stock: [{ quantity: 30, unit_price: 1.0 }] },
         { id: 'med-2', name: 'Med2', stock: [{ quantity: 30, unit_price: 2.0 }] },
@@ -720,7 +727,7 @@ describe('costAnalysisService', () => {
       ]
       const logs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: i < 8 ? 'med-1' : 'med-2',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 
@@ -732,31 +739,23 @@ describe('costAnalysisService', () => {
     })
 
     it('ignora logs fora dos ultimos 30 dias', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
-        {
-          id: 'med-1',
-          name: 'Losartana',
-          stock: [{ quantity: 30, unit_price: 1.0 }],
-        },
+        { id: 'med-1', name: 'Losartana', stock: [{ quantity: 30, unit_price: 1.0 }] },
       ]
       const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00'],
-        },
+        { medicine_id: 'med-1', active: true, dosage_per_intake: 1, time_schedule: ['08:00'] },
       ]
       // 15 logs reais, 10 logs com 35 dias atrás
       const recentLogs = Array.from({ length: 15 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
       const oldLogs = Array.from({ length: 10 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - (35 + i) * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-02-${String(20 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
       const logs = [...recentLogs, ...oldLogs]
@@ -775,26 +774,18 @@ describe('costAnalysisService', () => {
     })
 
     it('calcula corretamente com 14 dias exatos (threshold)', () => {
-      const today = new Date()
+      const today = new Date('2026-03-31T12:00:00-03:00')
+      vi.setSystemTime(today)
       const medicines = [
-        {
-          id: 'med-1',
-          name: 'Losartana',
-          stock: [{ quantity: 30, unit_price: 1.0 }],
-        },
+        { id: 'med-1', name: 'Losartana', stock: [{ quantity: 30, unit_price: 1.0 }] },
       ]
       const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00'],
-        },
+        { medicine_id: 'med-1', active: true, dosage_per_intake: 1, time_schedule: ['08:00'] },
       ]
       // Exatamente 14 dias com 1 dose por dia
       const logs = Array.from({ length: 14 }, (_, i) => ({
         medicine_id: 'med-1',
-        taken_at: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString(),
+        taken_at: `2026-03-${String(30 - i).padStart(2, '0')}T10:00:00-03:00`,
         quantity_taken: 1,
       }))
 

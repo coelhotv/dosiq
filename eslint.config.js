@@ -20,7 +20,9 @@ export default [
     '**/.expo/**',
     '**/.vercel/**',
     '**/scripts/**',
-    '**/scratches/**'
+    '**/scratch/**',
+    '**/__tests__/**',
+    '**/.agent/**'
   ] },
   {
     files: ['**/*.{js,jsx}'],
@@ -30,6 +32,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        ...globals.jest,
       },
       parserOptions: {
         ecmaVersion: 'latest',
@@ -165,7 +168,23 @@ export default [
     },
   },
   {
-    files: ['**/*.config.{js,jsx}', '**/vite.config.js', '**/vitest.config.js', '**/vitest.ci.config.js'],
+    files: [
+      '**/*.config.{js,jsx,cjs}',
+      '**/*.config.js',
+      '**/vite.config.js',
+      '**/vitest.*.config.js',
+      '**/jest.config.js',
+      '**/metro.config.js',
+      '**/babel.config.js',
+      '**/app.config.js',
+      '**/scripts/**/*.js',
+      '**/scratch/**/*.cjs'
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
     rules: {
       'import-x/no-unresolved': 'off',
     },
@@ -182,10 +201,28 @@ export default [
         ...globals.node,
       },
     },
+    settings: {
+      'import-x/resolver': {
+        node: {
+          moduleDirectory: ['node_modules', 'server/node_modules']
+        }
+      }
+    },
     rules: {
+      'import-x/no-unresolved': 'off',
       'n/no-process-exit': 'error',
       'n/no-path-concat': 'error',
       'no-console': 'off', // Logs são essenciais no server
+      'no-restricted-imports': ['error', {
+        patterns: [
+          // API pode importar do server/ (exceção temporária), mas mantém outras restrições
+          {
+            group: ['**/lib/**'],
+            message: 'src/lib/ foi removido. Use "@shared/utils/supabase" ou "@shared/utils/queryCache".',
+          }
+          // Outras restrições de hooks/components não se aplicam a api/ (Node)
+        ]
+      }]
     },
   },
   {
@@ -197,6 +234,7 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser, // RN usa alguns browser globals (console, fetch)
+        ...globals.jest,    // Mobile usa Jest para testes
         '__DEV__': 'readonly',
       },
     },
@@ -215,6 +253,12 @@ export default [
             ['@protocols', './apps/mobile/src/features/protocols'],
             ['@stock', './apps/mobile/src/features/stock'],
             ['@dashboard', './apps/mobile/src/features/dashboard'],
+            ['@navigation', './apps/mobile/src/navigation'],
+            ['@platform', './apps/mobile/src/platform'],
+            ['@profile', './apps/mobile/src/features/profile'],
+            ['@notifications', './apps/mobile/src/features/notifications'],
+            ['@treatments', './apps/mobile/src/features/treatments'],
+            ['@dose', './apps/mobile/src/features/dose'],
           ],
           extensions: ['.ios.js', '.android.js', '.js', '.jsx', '.ts', '.tsx']
         }

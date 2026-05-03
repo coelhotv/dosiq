@@ -27,7 +27,7 @@ import EntradaHistorico from '@stock/components/redesign/EntradaHistorico'
 import CostSummaryRedesign from '@stock/components/CostSummaryRedesign'
 import PrescriptionTimelineRedesign from '@stock/components/PrescriptionTimelineRedesign'
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, getNow } from '@utils/dateUtils'
 import { stockService } from '@shared/services'
 import './Stock.css'
 
@@ -37,7 +37,7 @@ import './Stock.css'
  * @param {object} protocol — protocolo com start_date, end_date, active
  * @returns {'ativa' | 'vencida' | 'vencendo' | 'finalizada'}
  */
-function deriveProtocolStatus(protocol, now = new Date()) {
+function deriveProtocolStatus(protocol, now = getNow()) {
   if (!protocol.end_date) return 'ativa'
   const end = parseLocalDate(protocol.end_date)
   const daysLeft = (end - now) / 86400000
@@ -122,8 +122,8 @@ export default function Stock({ initialParams, onClearParams }) {
       purchases: allPurchases?.filter((p) => p.medicine_id === med.id) || [],
     }))
     try {
-      const protocols = dashboardData?.protocols || []
-      return calculateMonthlyCosts(medicinesWithStock, protocols)
+      const activeProtocols = dashboardData?.protocols?.filter((p) => p.active) || []
+      return calculateMonthlyCosts(medicinesWithStock, activeProtocols)
     } catch (err) {
       console.error('[StockRedesign] Erro ao calcular custos:', err)
       return null
@@ -134,7 +134,7 @@ export default function Stock({ initialParams, onClearParams }) {
   const prescriptionTimelineData = useMemo(() => {
     if (!dashboardData?.protocols?.length) return []
     return dashboardData.protocols
-      .filter((p) => p.start_date && p.end_date) // filtra apenas protocolos com vigência definida (exclui uso contínuo)
+      .filter((p) => p.active && p.start_date && p.end_date) // filtra apenas protocolos ATIVOS com vigência definida
       .map((p) => ({
         id: p.id,
         name: p.name,

@@ -19,6 +19,7 @@ import { webStorageAdapter } from '@shared/platform/storage/webStorageAdapter'
 
 const logger = {
   log: (msg) => {
+    // eslint-disable-next-line no-console
     if (import.meta.env.DEV) console.debug(msg)
   },
   warn: (msg) => console.warn(msg),

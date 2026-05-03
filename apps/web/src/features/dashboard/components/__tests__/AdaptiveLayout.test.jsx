@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import AdaptiveLayout from '../AdaptiveLayout'
+import AdaptiveLayout from '@/features/dashboard/components/AdaptiveLayout'
 
 afterEach(() => {
   vi.clearAllMocks()

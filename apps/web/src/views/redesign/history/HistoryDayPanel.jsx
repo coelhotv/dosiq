@@ -2,6 +2,7 @@
 // S10C.3 — Wave 10C: Painel de doses do dia selecionado no calendário
 
 import HistoryLogCard from './HistoryLogCard'
+import { parseLocalDate } from '@utils/dateUtils'
 
 /**
  * Painel de doses do dia selecionado no calendário.
@@ -18,11 +19,12 @@ import HistoryLogCard from './HistoryLogCard'
 export default function HistoryDayPanel({ selectedDate, dayLogs, onEditLog, onDeleteLog }) {
   // Formatar data para exibição
   const dateLabel = selectedDate
-    ? selectedDate.toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      })
+    ? (typeof selectedDate === 'string' ? parseLocalDate(selectedDate) : selectedDate)
+        .toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        })
     : ''
 
   // Capitalizar primeira letra (pt-BR retorna minúsculo)

@@ -201,10 +201,10 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
                         width: `${protocol.score}%`,
                         backgroundColor:
                           protocol.score >= 80
-                            ? '#00ff88'
+                            ? 'var(--color-success)'
                             : protocol.score >= 60
-                              ? '#ffd700'
-                              : '#ff3366',
+                              ? 'var(--color-warning)'
+                              : 'var(--color-error)',
                       }}
                     />
                   </div>

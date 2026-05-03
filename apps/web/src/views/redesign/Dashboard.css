@@ -16,6 +16,65 @@
   text-align: center;
 }
 
+.dashboard-container {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.dashboard-loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.dashboard-alerts-section {
+  margin-bottom: 1.25rem;
+}
+
+.dashboard-column-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.dashboard-widget-wrapper {
+  width: 100%;
+}
+
+.dashboard-column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-section-header {
+  margin-bottom: 1rem;
+}
+
+.dashboard-section-title {
+  margin: 0;
+  font-family: var(--font-display, Public Sans, sans-serif);
+  font-size: var(--text-title-lg, 1.125rem);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.dashboard-section-subtitle {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-label-md, 0.75rem);
+  color: var(--color-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.dashboard-footer-section {
+  margin-top: auto;
+}
+
 @media (max-width: 767px) {
   .dr-badge {
     flex-direction: row;

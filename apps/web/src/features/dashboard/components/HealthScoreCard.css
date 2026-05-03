@@ -1,16 +1,20 @@
 .health-score-card {
   display: flex;
   align-items: center;
-  gap: var(--space-2); /* 8px */
-  padding: var(--space-2) var(--space-3); /* 8px 12px - mais compacto */
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--gradient-hero);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border); /* Mais fino */
-  border-radius: var(--radius-card-md); /* 12px */
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card-md);
   box-shadow: var(--shadow-sm);
   min-width: unset;
-  max-height: 80px; /* Mais baixo */
+  max-height: 80px;
   transition: var(--transition-hover);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
 }
 
 .health-score-card--clickable {

@@ -1,4 +1,5 @@
 import { supabase } from '@shared/utils/supabase'
+import { getServerTimestamp } from '@utils/dateUtils.js'
 import {
   validateGeminiReviewCreate,
   validateGeminiReviewUpdate,
@@ -202,7 +203,7 @@ export const geminiReviewService = {
 
     // Se status for final, adicionar resolved_at
     if (status === 'corrigido' || status === 'descartado') {
-      updateData.resolved_at = new Date().toISOString()
+      updateData.resolved_at = getServerTimestamp()
     } else {
       updateData.resolved_at = null
     }
@@ -245,7 +246,7 @@ export const geminiReviewService = {
 
     // Se status for final, adicionar resolved_at
     if (status === 'corrigido' || status === 'descartado') {
-      updateData.resolved_at = new Date().toISOString()
+      updateData.resolved_at = getServerTimestamp()
     }
 
     // Validar status

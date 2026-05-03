@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import PrescriptionTimeline from '../PrescriptionTimeline'
+import PrescriptionTimeline from '@/features/stock/components/PrescriptionTimeline'
 
 // Hoje fixo: 2026-03-05 (evita flakiness por data real)
 vi.mock('@utils/dateUtils', async (importOriginal) => {

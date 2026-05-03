@@ -15,7 +15,7 @@ import {
   isPushPermissionGranted,
   supportsWebPush
 } from './pwaUtils'
-import { webpushService } from '../../services/webpushService'
+import { webpushService } from '@/shared/services/webpushService'
 
 /**
  * Componente de Prompt de Instalação PWA

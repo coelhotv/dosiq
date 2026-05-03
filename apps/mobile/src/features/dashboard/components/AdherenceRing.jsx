@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import { View, Text, StyleSheet, Animated } from 'react-native'
 import Svg, { Circle, G } from 'react-native-svg'
-import { colors } from '../../../shared/styles/tokens'
+import { colors } from '@shared/styles/tokens'
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
@@ -15,7 +15,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 }) {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
-  const animatedValue = useRef(new Animated.Value(0)).current
+  const [animatedValue] = React.useState(() => new Animated.Value(0))
 
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -23,16 +23,16 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
       duration: 1000,
       useNativeDriver: false, // Color interpolation doesn't work with native driver for SVG props
     }).start()
-  }, [score])
+  }, [score, animatedValue])
 
   // Cálculo do offset para o SVG (inverso do progresso)
-  const strokeDashoffset = animatedValue.interpolate({
+  const strokeDashoffset = React.useMemo(() => animatedValue.interpolate({
     inputRange: [0, 100],
     outputRange: [circumference, 0],
-  })
+  }), [animatedValue, circumference])
 
   // Interpolação de cor baseada no score (5 escalas pastéis)
-  const strokeColor = animatedValue.interpolate({
+  const strokeColor = React.useMemo(() => animatedValue.interpolate({
     inputRange: [0, 1, 49, 50, 69, 70, 89, 90, 100],
     outputRange: [
       colors.neutral[300], // 0% (Cinza)
@@ -45,7 +45,7 @@ export default function AdherenceRing({ score = 0, size = 120, strokeWidth = 12 
       colors.status.success, // > 90% (Verde Suave)
       colors.status.success,
     ],
-  })
+  }), [animatedValue])
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>

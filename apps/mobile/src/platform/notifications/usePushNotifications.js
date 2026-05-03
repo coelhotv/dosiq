@@ -10,8 +10,9 @@ import { requestPushPermission } from './requestPushPermission'
 import { getExpoPushToken } from './getExpoPushToken'
 import { syncNotificationDevice } from './syncNotificationDevice'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
-import { navigationRef } from '../../navigation/Navigation'
+import { navigationRef } from '../../navigation/navigationRef'
 import { ROUTES } from '../../navigation/routes'
+import { debugLog } from '@shared/utils/debugLog'
 
 const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
 
@@ -32,9 +33,7 @@ function navigateFromPush(navigationData) {
   // Incluir screen nos params para que TodayScreen identifique qual modal abrir
   navigationRef.navigate(targetRoute, screen ? { screen, ...params } : params)
 
-  if (__DEV__) {
-    console.log('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
-  }
+    debugLog('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
 }
 
 export function usePushNotifications({ supabase, session }) {
@@ -63,7 +62,7 @@ export function usePushNotifications({ supabase, session }) {
         const { granted } = await requestPushPermission()
 
         if (!granted) {
-          if (__DEV__) console.log('[usePushNotifications] Permissão de push não concedida')
+          debugLog('[usePushNotifications] Permissão de push não concedida')
           return
         }
 
@@ -96,9 +95,7 @@ export function usePushNotifications({ supabase, session }) {
           }
         )
 
-        if (__DEV__) {
-          console.log('[usePushNotifications] Push setup completo: token =', token.substring(0, 20) + '...')
-        }
+        debugLog('[usePushNotifications] Push setup completo: token =', token.substring(0, 20) + '...')
       } catch (error) {
         if (isMounted && __DEV__) {
           console.error('[usePushNotifications] Erro durante setup:', error.message)

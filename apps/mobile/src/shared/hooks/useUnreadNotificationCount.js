@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { parseISO, getNow } from '@dosiq/core'
 
 const getStorageKey = (userId) =>
   userId ? `@dosiq/notif-last-seen:${userId}` : '@dosiq/notif-last-seen'
@@ -31,15 +32,15 @@ export function useUnreadNotificationCount(notifications, userId) {
   const unreadCount = useMemo(() => {
     if (!notifications?.length) return 0
     if (!lastSeen) return notifications.length
-    const lastSeenTime = new Date(lastSeen).getTime()
+    const lastSeenTime = parseISO(lastSeen).getTime()
     return notifications.filter((n) => {
       if (!n.sent_at) return false
-      return new Date(n.sent_at).getTime() > lastSeenTime
+      return parseISO(n.sent_at).getTime() > lastSeenTime
     }).length
   }, [notifications, lastSeen])
 
   const markAllRead = useCallback(() => {
-    const now = new Date().toISOString()
+    const now = getNow().toISOString()
     AsyncStorage.setItem(getStorageKey(userId), now)
       .then(() => setLastSeen(now))
       .catch((err) => {

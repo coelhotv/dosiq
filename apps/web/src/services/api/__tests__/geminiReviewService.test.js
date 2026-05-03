@@ -14,7 +14,7 @@ vi.mock('@shared/utils/supabase', () => ({
 }))
 
 // Import after mock
-import { geminiReviewService } from '../geminiReviewService'
+import { geminiReviewService } from '@/services/api/geminiReviewService'
 
 describe('Gemini Review Service - Smoke', () => {
   beforeEach(() => {

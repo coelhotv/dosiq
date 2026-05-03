@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   Sun,
@@ -13,6 +13,7 @@ import {
   Circle,
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
+import { getNow } from '@utils/dateUtils'
 import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
 
 // Janela ±120min — fonte única em useDoseZones. Reutilizada para getDoseStatus e isWithinActionWindow.
@@ -75,7 +76,7 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
         <CircleCheckBig
           size={18}
           className="cronograma-dose-card__status-icon"
-          color="var(--color-primary, #006a5e)"
+          color="var(--color-primary)"
           aria-label="Dose registrada"
         />
       )}
@@ -83,7 +84,7 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
         <CircleAlert
           size={18}
           className="cronograma-dose-card__status-icon"
-          color="var(--color-warning, #f59e0b)"
+          color="var(--color-warning)"
           aria-label="Dose perdida"
         />
       )}
@@ -92,7 +93,7 @@ function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
       <div
         className={`cronograma-dose-card__icon-wrap cronograma-dose-card__icon-wrap--${isSupplement ? 'supplement' : 'medicine'}`}
       >
-        <MedicineIcon size={20} color="#ffffff" aria-hidden="true" />
+        <MedicineIcon size={20} color="var(--color-white)" aria-hidden="true" />
       </div>
 
       {/* Bloco principal: info à esquerda, horário grande à direita */}
@@ -161,40 +162,42 @@ export default function CronogramaPeriodo({
   allDoses = [],
   onRegister,
   variant = 'complex',
-  now = new Date(),
+  now = getNow(),
 }) {
   const { cascade } = useMotion()
-  const didInitRef = useRef(false)
-
   const currentHour = now.getHours()
 
-  // Estado inicial baseado no horário atual: passados → fechados, atual/futuros → abertos
-  const [openZones, setOpenZones] = useState(() =>
-    Object.fromEntries(
+  // Zonas que o usuário abriu/fechou explicitamente
+  const [manuallyToggledZones, setManuallyToggledZones] = useState({})
+
+  // Lógica de abertura automática (passados → fechados, atual/futuros → abertos, vazios → fechados)
+  const autoOpenZones = useMemo(() => {
+    return Object.fromEntries(
       PERIODS.map(({ id, timeRange }) => {
-        const [, end] = timeRange
-        return [id, currentHour < end]
+        const [start, end] = timeRange
+        const isPast = currentHour >= end
+        
+        // Se temos doses, fechamos se a zona estiver vazia
+        if (allDoses.length > 0) {
+          const hasDoses = allDoses.some((d) => {
+            const h = getHour(d.scheduledTime)
+            return h >= start && h < end
+          })
+          if (!hasDoses) return [id, false]
+        }
+        
+        // Padrão: aberto se for atual ou futuro
+        return [id, !isPast]
       })
     )
-  )
+  }, [allDoses, currentHour])
 
-  // Após primeiro carregamento de dados: fechar zonas vazias
-  useEffect(() => {
-    if (didInitRef.current || allDoses.length === 0) return
-    didInitRef.current = true
-    setOpenZones((prev) => {
-      const next = { ...prev }
-      PERIODS.forEach(({ id, timeRange }) => {
-        const [start, end] = timeRange
-        const hasDoses = allDoses.some((d) => {
-          const h = getHour(d.scheduledTime)
-          return h >= start && h < end
-        })
-        if (!hasDoses) next[id] = false
-      })
-      return next
-    })
-  }, [allDoses])
+  const toggleZone = (id) => {
+    setManuallyToggledZones((prev) => ({
+      ...prev,
+      [id]: !(manuallyToggledZones[id] ?? autoOpenZones[id])
+    }))
+  }
 
   // Agrupar doses por período (sempre 4 períodos — sem .filter)
   const grouped = useMemo(() => {
@@ -247,7 +250,7 @@ export default function CronogramaPeriodo({
     >
       {grouped.map(({ id, label, Icon, doses, isPast, isCurrent }) => {
         const PeriodIcon = Icon
-        const isOpen = openZones[id] ?? !isPast
+        const isOpen = manuallyToggledZones[id] ?? autoOpenZones[id]
         const isEmpty = doses.length === 0
         // Passado com conteúdo → verde apagado; passado vazio → cinza esmaecido
         const isPastActive = isPast && !isEmpty
@@ -271,17 +274,17 @@ export default function CronogramaPeriodo({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => setOpenZones((prev) => ({ ...prev, [id]: !prev[id] }))}
+              onClick={() => toggleZone(id)}
               aria-expanded={isOpen}
             >
               <PeriodIcon
                 size={16}
                 color={
                   isPastActive
-                    ? 'var(--color-primary, #006a5e)'
+                    ? 'var(--color-primary)'
                     : isPastEmpty
-                      ? 'var(--color-outline-variant, #bec9c5)'
-                      : 'var(--color-outline, #6d7a76)'
+                      ? 'var(--color-outline-variant)'
+                      : 'var(--color-outline)'
                 }
                 aria-hidden="true"
               />
@@ -300,7 +303,7 @@ export default function CronogramaPeriodo({
                       <span className="cronograma-period-header__done-tag">· Concluído</span>
                       <CheckCircle2
                         size={14}
-                        color="var(--color-primary, #006a5e)"
+                        color="var(--color-primary)"
                         aria-hidden="true"
                       />
                     </>
@@ -324,7 +327,7 @@ export default function CronogramaPeriodo({
                 <div className="cronograma-period-empty" role="status">
                   <Circle
                     size={18}
-                    color="var(--color-outline-variant, #bec9c5)"
+                    color="var(--color-outline-variant)"
                     aria-hidden="true"
                   />
                   <p className="cronograma-period-empty__text">

@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { parseISO } from '../packages/core/src/utils/dateUtils.js'
 
 // Load .env
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -90,7 +91,7 @@ async function main() {
     console.log('📊 ANÁLISE DE LOGS POR HORA\n')
     const logsByHour = new Map()
     logs.forEach(log => {
-      const date = new Date(log.taken_at)
+      const date = parseISO(log.taken_at)
       const hour = date.getHours()
       const key = `${hour}h`
       logsByHour.set(key, (logsByHour.get(key) ?? 0) + 1)
@@ -138,7 +139,7 @@ async function main() {
       'Noite (18-23h)': 0,
     }
     logs.forEach(l => {
-      const h = new Date(l.taken_at).getHours()
+      const h = parseISO(l.taken_at).getHours()
       if (h < 6) {
         logsByPeriod['Madrugada (00-05h)']++
       } else if (h < 12) {

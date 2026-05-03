@@ -13,7 +13,7 @@ import ConsultationViewRedesign from '@features/consultation/components/redesign
 import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
-import { formatLocalDate } from '@utils/dateUtils.js'
+import { formatLocalDate, getNow } from '@utils/dateUtils.js'
 import './Consultation.css'
 
 export default function Consultation({ onBack }) {
@@ -29,7 +29,7 @@ export default function Consultation({ onBack }) {
   )
 
   // Create single 'now' instance for temporal consistency across PDF export, share, and filename generation
-  const now = useMemo(() => new Date(), [])
+  const now = useMemo(() => getNow(), [])
 
   useEffect(() => {
     let isMounted = true
@@ -67,7 +67,7 @@ export default function Consultation({ onBack }) {
 
   const handleGeneratePDF = useCallback(async () => {
     try {
-      analyticsService.track('consultation_pdf_generated', { timestamp: Date.now() })
+      analyticsService.track('consultation_pdf_generated', { timestamp: getNow().getTime() })
       const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
       const pdfBlob = await generateConsultationPDF({
         consultationData,
@@ -90,7 +90,7 @@ export default function Consultation({ onBack }) {
 
   const handleShare = useCallback(async () => {
     try {
-      analyticsService.track('consultation_share_initiated', { timestamp: Date.now() })
+      analyticsService.track('consultation_share_initiated', { timestamp: getNow().getTime() })
       const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
       const pdfBlob = await generateConsultationPDF({
         consultationData,
@@ -143,7 +143,7 @@ export default function Consultation({ onBack }) {
   }, [consultationData, dashboardData, now])
 
   const handleBack = useCallback(() => {
-    analyticsService.track('consultation_mode_closed', { timestamp: Date.now() })
+    analyticsService.track('consultation_mode_closed', { timestamp: getNow().getTime() })
     onBack?.()
   }, [onBack])
 

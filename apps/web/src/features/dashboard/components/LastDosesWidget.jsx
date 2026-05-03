@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
+import { getNow, parseISO, getSaoPauloTime } from '@utils/dateUtils.js'
 import './LastDosesWidget.css'
 
 /**
@@ -27,7 +28,7 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
 
     // Ordenar por taken_at descendente (mais recente primeiro)
     const sortedDoses = takenDoses.sort((a, b) => {
-      return new Date(b.taken_at) - new Date(a.taken_at)
+      return parseISO(b.taken_at).getTime() - parseISO(a.taken_at).getTime()
     })
 
     // Limitar a 3 doses (balance com próximas doses)
@@ -47,12 +48,16 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
 
   // Formatar horário relativo
   const formatRelativeTime = (dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now - date
+    // R-020: Ambos devem estar no mesmo referencial (shifted SP) para aritmética correta
+    const date = getSaoPauloTime(parseISO(dateString))
+    const now = getNow()
+    const diffMs = now.getTime() - date.getTime()
     const diffMinutes = Math.floor(diffMs / (1000 * 60))
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    const options = { timeZone: 'America/Sao_Paulo' }
+    const timeOptions = { ...options, hour: '2-digit', minute: '2-digit' }
 
     // Menos de 1 hora
     if (diffMinutes < 60) {
@@ -67,22 +72,23 @@ export default function LastDosesWidget({ onViewHistory, viewAllClassName }) {
 
     // Ontem
     if (diffDays === 1) {
-      return `Ontem às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      return `Ontem às ${date.toLocaleTimeString('pt-BR', timeOptions)}`
     }
 
     // 2-6 dias atrás
     if (diffDays < 7) {
       const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
-      const weekday = weekdays[date.getDay()]
-      return `${weekday} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      // M9.0: Extrair dia da semana no fuso de SP
+      const dayIndex = parseInt(date.toLocaleDateString('en-US', { ...options, weekday: 'numeric' }), 10) % 7
+      const weekday = weekdays[dayIndex]
+      return `${weekday} às ${date.toLocaleTimeString('pt-BR', timeOptions)}`
     }
 
     // Mais de uma semana
     return date.toLocaleDateString('pt-BR', {
+      ...timeOptions,
       day: '2-digit',
       month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
     })
   }
 

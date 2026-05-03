@@ -1,3 +1,5 @@
+import { getServerTimestamp } from '../utils/dateUtils.js';
+
 // Logger estruturado com níveis de log
 export const LOG_LEVELS = {
   ERROR: 0,
@@ -15,7 +17,7 @@ class Logger {
   }
 
   formatMessage(level, message, data = null) {
-    const timestamp = new Date().toISOString();
+    const timestamp = getServerTimestamp();
     const dataStr = data ? ` ${JSON.stringify(data)}` : '';
     return `[${timestamp}] [${level}] [${this.context}] ${message}${dataStr}`;
   }

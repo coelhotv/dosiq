@@ -2,7 +2,7 @@
 // Usado após tap em push notification grouped (plan ou misc) via deeplink N1.4
 // R-010: estados → effects → handlers
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Modal,
   View,
@@ -13,9 +13,10 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { CheckCircle, Circle } from 'lucide-react-native'
-import { usePlanProtocols } from '../hooks/usePlanProtocols'
+import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
-import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { getNow } from '@dosiq/core'
+import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 /**
  * @param {{
@@ -45,6 +46,10 @@ export default function BulkDoseRegisterModal({
   const [selected, setSelected] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Trackers para ajuste de estado no render
+  const [prevProtocols, setPrevProtocols] = useState([])
+  const [prevVisible, setPrevVisible] = useState(false)
 
   const { protocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
     mode,
@@ -54,22 +59,21 @@ export default function BulkDoseRegisterModal({
     userId,
   })
 
-  // Pré-marcar todos quando protocolos carregam
-  useEffect(() => {
-    if (protocols.length === 0) return
-    const initial = {}
-    protocols.forEach(p => { initial[p.id] = true })
-    setSelected(initial)
-  }, [protocols])
+  // Ajuste de Estado no Render (R-010 + React 19)
+  if (protocols !== prevProtocols || visible !== prevVisible) {
+    setPrevProtocols(protocols)
+    setPrevVisible(visible)
 
-  // Limpar estado ao fechar
-  useEffect(() => {
     if (!visible) {
       setSelected({})
       setError(null)
       setLoading(false)
+    } else if (protocols.length > 0 && protocols !== prevProtocols) {
+      const initial = {}
+      protocols.forEach(p => { initial[p.id] = true })
+      setSelected(initial)
     }
-  }, [visible])
+  }
 
   function toggleProtocol(id) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
@@ -90,7 +94,7 @@ export default function BulkDoseRegisterModal({
       return {
         protocol_id: p.id,
         medicine_id: p.medicine?.id ?? p.medicine_id,
-        taken_at: new Date().toISOString(),
+        taken_at: getNow().toISOString(),
         quantity_taken: p.dosage_per_intake ?? 1,
       }
     })

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { parseISO } from '@utils/dateUtils'
 import { motion, AnimatePresence } from 'framer-motion'
 import TreatmentAccordion from '@dashboard/components/TreatmentAccordion'
 import SwipeRegisterItem from '@dashboard/components/SwipeRegisterItem'
@@ -20,10 +21,10 @@ const ZONE_ORDER = ['late', 'now', 'upcoming', 'later', 'done']
 /**
  * Determina se uma zona deve iniciar expandida com base na complexidade.
  */
-function getDefaultExpanded(zone) {
+function getDefaultExpanded(zone, complexityMode = 'moderate') {
   if (zone === 'late') return true
   if (zone === 'now') return true
-  if (zone === 'upcoming') return true // ação principal quando não há late/now
+  if (zone === 'upcoming') return complexityMode !== 'complex'
   return false // later e done: sempre colapsadas
 }
 
@@ -36,16 +37,12 @@ function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done
 
   const displayTime =
     done && dose.registeredAt
-      ? new Date(dose.registeredAt).toLocaleTimeString('pt-BR', {
+      ? parseISO(dose.registeredAt).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
+          timeZone: 'America/Sao_Paulo',
         })
       : dose.scheduledTime
-
-  const handleCardClick = (e) => {
-    if (done || !onToggleSelection || e.target.closest('.dose-card__register-btn')) return
-    onToggleSelection(dose.protocolId, dose.scheduledTime)
-  }
 
   return (
     <motion.div
@@ -54,21 +51,27 @@ function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      onClick={handleCardClick}
-      style={!done && onToggleSelection ? { cursor: 'pointer' } : undefined}
     >
-      <div className="dose-card__time">{displayTime}</div>
-      <div className="dose-card__info">
-        <span className="dose-card__name">{dose.medicineName}</span>
-        {dose.planBadge && (
-          <PlanBadge
-            emoji={dose.planBadge.emoji}
-            color={dose.planBadge.color}
-            planName={dose.treatmentPlanName}
-          />
-        )}
-        <span className="dose-card__dosage">{dose.dosagePerIntake} cp</span>
-      </div>
+      <button
+        type="button"
+        className="dose-card__select-area"
+        onClick={() => onToggleSelection?.(dose.protocolId, dose.scheduledTime)}
+        disabled={done || !onToggleSelection}
+        style={!done && onToggleSelection ? { cursor: 'pointer' } : { cursor: 'default' }}
+      >
+        <div className="dose-card__time">{displayTime}</div>
+        <div className="dose-card__info">
+          <span className="dose-card__name">{dose.medicineName}</span>
+          {dose.planBadge && (
+            <PlanBadge
+              emoji={dose.planBadge.emoji}
+              color={dose.planBadge.color}
+              planName={dose.treatmentPlanName}
+            />
+          )}
+          <span className="dose-card__dosage">{dose.dosagePerIntake} cp</span>
+        </div>
+      </button>
       {done ? (
         <span className="dose-card__done-icon" aria-label="Registrada">
           ✓
@@ -95,15 +98,11 @@ function ZoneSection({ zoneKey, doses, expanded, onToggle, config, children }) {
 
   return (
     <div className="dose-zone-section" data-testid={`zone-${zoneKey}`}>
-      <div
+      <button
+        type="button"
         className={`zone-header zone-header--${config.color}`}
         onClick={onToggle}
-        role="button"
         aria-expanded={expanded}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onToggle()
-        }}
       >
         <span className="zone-header__icon" aria-hidden="true">
           {config.icon}
@@ -115,7 +114,7 @@ function ZoneSection({ zoneKey, doses, expanded, onToggle, config, children }) {
         >
           ▾
         </span>
-      </div>
+      </button>
 
       <AnimatePresence>
         {expanded && (
@@ -203,6 +202,7 @@ function makeSyntheticProtocol(group, zoneKey) {
 export default function DoseZoneList({
   zones,
   viewMode,
+  complexityMode = 'moderate',
   onRegisterDose,
   onBatchRegister,
   onToggleSelection,
@@ -212,7 +212,7 @@ export default function DoseZoneList({
   const [expandedZones, setExpandedZones] = useState(() => {
     const expanded = new Set()
     for (const zoneKey of ZONE_ORDER) {
-      if (getDefaultExpanded(zoneKey)) {
+      if (getDefaultExpanded(zoneKey, complexityMode)) {
         expanded.add(zoneKey)
       }
     }

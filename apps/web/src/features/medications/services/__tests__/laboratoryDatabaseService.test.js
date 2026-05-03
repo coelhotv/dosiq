@@ -3,7 +3,7 @@ import {
   searchLaboratories,
   getLaboratoryByName,
   getAllLaboratories,
-} from '../laboratoryDatabaseService'
+} from '@/features/medications/services/laboratoryDatabaseService'
 
 /**
  * Mock da base de laboratórios para testes isolados

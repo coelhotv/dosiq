@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, AlertCircle } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { getNow, parseLocalDate, formatLocalDate, parseISO, getTodayLocal } from '@dosiq/core'
 
 /**
  * DoseListItem - Item de dose individual (Splitted)
@@ -20,17 +21,22 @@ export default function DoseListItem({ dose, onRegister }) {
   const isMissed = dose.status === 'missed'
 
   // Formatação do horário: Concluídas mostram hora real, Agendadas mostram hora prevista
-  const formatTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  // Formatação do horário: Concluídas mostram hora real, Agendadas mostram hora prevista
+  const formatTime = (iso) => {
+    const formatted = formatLocalDate(parseISO(iso), true)
+    return formatted.split(' ')[1].substring(0, 5) // HH:mm
+  }
   const displayTime = isTaken && takenAt ? formatTime(takenAt) : (scheduledTime || '--:--')
 
   // Verificação de janela para o botão Tomar (+/- 2h)
   const isWithinWindow = React.useMemo(() => {
     if (!scheduledTime || isTaken) return false
     const [h, m] = scheduledTime.split(':').map(Number)
-    const scheduledDate = new Date()
+    const todayStr = getTodayLocal()
+    const scheduledDate = parseLocalDate(todayStr)
     scheduledDate.setHours(h, m, 0, 0)
-    const now = new Date()
-    const diffHours = Math.abs(now - scheduledDate) / (1000 * 60 * 60)
+    const now = getNow()
+    const diffHours = Math.abs(now.getTime() - scheduledDate.getTime()) / (1000 * 60 * 60)
     return diffHours <= 2
   }, [scheduledTime, isTaken])
 

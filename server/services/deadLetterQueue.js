@@ -2,6 +2,11 @@
 import { supabase } from './supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { updateDlqSize } from './notificationMetrics.js';
+import { 
+  getServerTimestamp, 
+  addDays, 
+  parseISO 
+} from '../utils/dateUtils.js';
 
 const logger = createLogger('DeadLetterQueue');
 
@@ -37,6 +42,18 @@ export const DLQStatus = {
 };
 
 /**
+ * Error mappers for Telegram HTTP codes
+ * @private
+ */
+const TELEGRAM_ERROR_MAPPERS = {
+  400: (msg) => (msg.includes('too long') ? ErrorCategories.MESSAGE_TOO_LONG : ErrorCategories.TELEGRAM_400),
+  401: () => ErrorCategories.TELEGRAM_401,
+  403: (msg) => (msg.includes('blocked') || msg.includes('deactivated') ? ErrorCategories.INVALID_CHAT : ErrorCategories.TELEGRAM_403),
+  404: () => ErrorCategories.TELEGRAM_404,
+  429: () => ErrorCategories.RATE_LIMIT
+};
+
+/**
  * Categorizes a notification error
  * @param {Error|object} error - Error that occurred
  * @returns {string} Error category
@@ -44,36 +61,19 @@ export const DLQStatus = {
 function categorizeError(error) {
   if (!error) return ErrorCategories.UNKNOWN;
   
-  const code = error.code || error.error_code;
+  const code = Number(error.code || error.error_code);
   const message = (error.message || '').toLowerCase();
   
-  // Telegram HTTP codes
-  if (code) {
-    switch (Number(code)) {
-      case 400:
-        if (message.includes('too long') || message.includes('message is too long')) {
-          return ErrorCategories.MESSAGE_TOO_LONG;
-        }
-        return ErrorCategories.TELEGRAM_400;
-      case 401:
-        return ErrorCategories.TELEGRAM_401;
-      case 403:
-        if (message.includes('bot was blocked') || message.includes('user is deactivated')) {
-          return ErrorCategories.INVALID_CHAT;
-        }
-        return ErrorCategories.TELEGRAM_403;
-      case 404:
-        return ErrorCategories.TELEGRAM_404;
-      case 429:
-        return ErrorCategories.RATE_LIMIT;
-      default:
-        return ErrorCategories.TELEGRAM_API_ERROR;
-    }
+  // 1. Telegram HTTP codes
+  if (code && TELEGRAM_ERROR_MAPPERS[code]) {
+    return TELEGRAM_ERROR_MAPPERS[code](message);
   }
   
-  // Message patterns
-  if (message.includes('etimedout') || message.includes('econnreset') || 
-      message.includes('enotfound') || message.includes('network error')) {
+  if (code) return ErrorCategories.TELEGRAM_API_ERROR;
+  
+  // 2. Network patterns
+  const networkPatterns = ['etimedout', 'econnreset', 'enotfound', 'network error'];
+  if (networkPatterns.some(p => message.includes(p))) {
     return ErrorCategories.NETWORK_ERROR;
   }
   
@@ -149,7 +149,7 @@ export async function markForRetry(id) {
       .from('failed_notification_queue')
       .update({
         status: DLQStatus.RETRYING,
-        updated_at: new Date().toISOString()
+        updated_at: getServerTimestamp()
       })
       .eq('id', id)
       .eq('status', DLQStatus.PENDING); // Only if pending
@@ -188,7 +188,7 @@ export async function markAsResolved(id, resolution, notes = '') {
       .update({
         status,
         resolution_notes: notes,
-        resolved_at: new Date().toISOString()
+        resolved_at: getServerTimestamp()
       })
       .eq('id', id);
     
@@ -264,17 +264,24 @@ export async function getDLQStats() {
     
     data.forEach(item => {
       const count = parseInt(item.count, 10) || 0;
-      stats[item.status] = count;
+      const status = item.status;
+      
+      // Basic counts
+      if (status in stats) {
+        stats[status] = count;
+      }
       stats.total += count;
       
-      // Agrega por categoria de erro
+      // Category aggregation
       const cat = item.error_category || 'unknown';
       stats.byCategory[cat] = (stats.byCategory[cat] || 0) + count;
       
-      // Rastreia a falha mais antiga
+      // Oldest failure tracking
       if (item.oldest_failure) {
-        const oldestDate = new Date(item.oldest_failure);
-        if (!stats.oldestFailure || oldestDate < new Date(stats.oldestFailure)) {
+        const itemOldest = parseISO(item.oldest_failure);
+        const currentOldest = stats.oldestFailure ? parseISO(stats.oldestFailure) : null;
+        
+        if (!currentOldest || itemOldest < currentOldest) {
           stats.oldestFailure = item.oldest_failure;
         }
       }
@@ -329,8 +336,7 @@ export async function getPendingForRetry(limit = 50) {
  */
 export async function cleanupResolved(daysToKeep = 30) {
   try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    const cutoffDate = addDays(-daysToKeep);
     
     const { error, count } = await supabase
       .from('failed_notification_queue')

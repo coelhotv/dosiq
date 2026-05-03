@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { parseISO, parseLocalDate, getNow, addDays } from '../packages/core/src/utils/dateUtils.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
@@ -25,15 +26,15 @@ async function analyzeData() {
   // Contar dias únicos
   const uniqueDays = new Set(
     allLogs.map((log) => {
-      const date = new Date(log.taken_at)
+      const date = parseISO(log.taken_at)
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     })
   )
 
   // Achar data range
   const dates = Array.from(uniqueDays).sort()
-  const firstDate = new Date(dates[dates.length - 1] + 'T00:00:00')
-  const lastDate = new Date(dates[0] + 'T00:00:00')
+  const firstDate = parseLocalDate(dates[dates.length - 1])
+  const lastDate = parseLocalDate(dates[0])
   const daysDiff = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1
 
   console.log('📊 Análise Completa de Logs:')
@@ -44,8 +45,7 @@ async function analyzeData() {
   console.log(`  Status: ${uniqueDays.size >= 21 ? '✅ PASSOU' : '❌ FALHOU'} critério de 21 dias únicos`)
 
   // Últimos 30 dias
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = addDays(getNow(), -30)
   const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
 
   const last30Days = allLogs.filter(log => {

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import EmergencyQRCode from '../EmergencyQRCode'
+import EmergencyQRCode from '@/features/emergency/components/EmergencyQRCode'
 
 // Mock da biblioteca qrcode
 vi.mock('qrcode', () => ({
@@ -40,10 +40,12 @@ describe('EmergencyQRCode', () => {
     expect(screen.getByText(/Gerando QR code/i)).toBeInTheDocument()
   })
 
-  it('deve exibir mensagem quando não há dados', () => {
+  it('deve exibir mensagem quando não há dados', async () => {
     render(<EmergencyQRCode cardData={null} medications={[]} />)
 
-    expect(screen.getByText(/Dados insuficientes para gerar QR code/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText(/Dados insuficientes para gerar QR code/i)).toBeInTheDocument()
+    })
   })
 
   it('deve renderizar QR code quando dados são fornecidos', async () => {

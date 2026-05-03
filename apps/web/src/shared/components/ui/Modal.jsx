@@ -44,10 +44,16 @@ export default function Modal({ isOpen, onClose, children, title }) {
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay" onClick={onClose} aria-hidden="false">
+    <div className="modal-overlay" aria-hidden="false">
+      <button 
+        type="button" 
+        className="modal-backdrop-button" 
+        onClick={onClose} 
+        aria-label="Fechar diálogo"
+        tabIndex="-1"
+      />
       <div
         className="modal-content"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}

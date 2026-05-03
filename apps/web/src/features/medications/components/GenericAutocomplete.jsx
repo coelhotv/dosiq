@@ -193,8 +193,9 @@ export default function GenericAutocomplete({
       {isOpen && suggestions.length > 0 && (
         <div ref={dropdownRef} id={dropdownId} className="autocomplete-dropdown" role="listbox">
           {suggestions.map((item, index) => (
-            <div
+            <button
               key={index}
+              type="button"
               role="option"
               aria-selected={selectedIndex === index}
               className={`autocomplete-item ${selectedIndex === index ? 'selected' : ''}`}
@@ -202,7 +203,7 @@ export default function GenericAutocomplete({
               onMouseEnter={() => setSelectedIndex(index)}
             >
               {renderSuggestion(item, index)}
-            </div>
+            </button>
           ))}
         </div>
       )}

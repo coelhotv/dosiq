@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import './RingGaugeRedesign.css'
 
 const RADIUS = 46
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
@@ -31,28 +32,16 @@ export default function RingGaugeRedesign({
   }
 
   const strokeColor = getStrokeColor(score)
+  const Tag = isClickable ? 'button' : 'div'
 
   return (
-    <div
-      className={`ring-gauge-redesign ring-gauge-redesign--${size}${className ? ` ${className}` : ''}`}
+    <Tag
+      className={`ring-gauge-redesign ring-gauge-redesign--${size} ${
+        isClickable ? 'ring-gauge-redesign--clickable' : ''
+      }${className ? ` ${className}` : ''}`}
       onClick={isClickable ? onClick : undefined}
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={
-        isClickable
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onClick()
-            }
-          : undefined
-      }
+      type={isClickable ? 'button' : undefined}
       aria-label={`Adesão diária: ${score}%. Streak: ${streak} dias`}
-      style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '0.5rem',
-        cursor: isClickable ? 'pointer' : 'default',
-      }}
     >
       <svg
         width={svgSize}
@@ -60,7 +49,7 @@ export default function RingGaugeRedesign({
         viewBox="0 0 120 120"
         role="img"
         aria-hidden="true"
-        style={{ display: 'block' }}
+        className="ring-gauge-redesign__svg-container"
       >
         {/* Track */}
         <circle
@@ -82,9 +71,9 @@ export default function RingGaugeRedesign({
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           initial={{ strokeDashoffset: CIRCUMFERENCE }}
-          animate={{ 
+          animate={{
             strokeDashoffset: offset,
-            stroke: strokeColor 
+            stroke: strokeColor,
           }}
           transition={
             prefersReducedMotion
@@ -124,17 +113,12 @@ export default function RingGaugeRedesign({
       {/* Streak */}
       {streak > 0 && (
         <div
+          className="ring-gauge-redesign__streak"
           aria-label={`Streak: ${streak} dias consecutivos`}
-          style={{
-            fontFamily: 'var(--font-body, Lexend, sans-serif)',
-            fontSize: 'var(--text-label-lg, 0.875rem)',
-            fontWeight: 'var(--font-weight-medium, 500)',
-            color: 'var(--color-tertiary, #7b5700)',
-          }}
         >
           🔥 {streak} dias
         </div>
       )}
-    </div>
+    </Tag>
   )
 }

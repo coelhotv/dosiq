@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { getServerTimestamp } from '../utils/dateUtils.js'
 
 /**
  * Schema de validação para o Cartão de Emergência
@@ -88,7 +89,7 @@ export const emergencyCardSchema = z.object({
   last_updated: z
     .string()
     .datetime('Data de atualização deve ser uma data válida (ISO 8601)')
-    .default(() => new Date().toISOString()),
+    .default(() => getServerTimestamp()),
 })
 
 /**

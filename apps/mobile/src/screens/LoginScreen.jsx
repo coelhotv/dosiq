@@ -17,14 +17,14 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { signInWithEmail, signOut } from '../platform/auth/authService'
+import { signInWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import { logEvent, setUserId } from '../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../platform/analytics/analyticsEvents'
-import { colors, spacing, typography } from '../shared/styles/tokens'
+import { colors, spacing, typography } from '@shared/styles/tokens'
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
+import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 /**
  * Busca a lista de medicamentos com seu estoque e protocolos ativos para cálculo de consumo.
@@ -16,7 +17,7 @@ export async function getStockData(userId) {
     // Validação de entrada conforme R-125
     z.string().uuid().parse(userId)
 
-    if (__DEV__) console.log('[stockService] Buscando dados de estoque para:', userId)
+    debugLog('stockService', `Buscando dados de estoque para: ${userId}`)
 
     // Buscamos medicamentos com: 
     // 1. Quantidade total (da view medicine_stock_summary)
@@ -48,7 +49,7 @@ export async function getStockData(userId) {
       .order('name')
 
     if (error) {
-      console.error('[stockService] Erro na query:', error)
+      errorLog('stockService', 'Erro na query', error)
       return { success: false, error: 'Erro ao carregar dados de estoque' }
     }
 
@@ -63,7 +64,7 @@ export async function getStockData(userId) {
 
     return { success: true, data: validData }
   } catch (err) {
-    console.error('[stockService] Erro inesperado:', err)
+    errorLog('stockService', 'Erro inesperado', err)
     return { success: false, error: err.message }
   }
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import RingGauge from '../RingGauge'
+import RingGauge from '@/features/dashboard/components/RingGauge'
 
 vi.mock('../SparklineAdesao', () => ({
   default: ({ data, size }) => (

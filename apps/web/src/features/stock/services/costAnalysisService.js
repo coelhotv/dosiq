@@ -4,7 +4,7 @@ import {
   CalculateAvgUnitPriceInputSchema,
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
-import { formatLocalDate } from '@utils/dateUtils'
+import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
 
 function getPriceEntries(medicine = {}) {
   if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
@@ -36,8 +36,10 @@ function getPriceEntries(medicine = {}) {
  * @returns {number} Preço médio ou 0 se sem dados de preço
  */
 export function calculateAvgUnitPrice(stockEntries = []) {
-  // Validar entrada
-  const validation = CalculateAvgUnitPriceInputSchema.safeParse({ stockEntries })
+  // Validar entrada - Garantir array mesmo se null/undefined para evitar erro de Zod
+  const validation = CalculateAvgUnitPriceInputSchema.safeParse({ 
+    stockEntries: stockEntries || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateAvgUnitPrice:', validation.error.format())
     return 0
@@ -74,7 +76,13 @@ export function calculateAvgUnitPrice(stockEntries = []) {
  */
 export function calculateDailyIntake(medicineId, protocols = []) {
   // Validar entrada
-  const validation = CalculateDailyIntakeInputSchema.safeParse({ medicineId, protocols })
+  // Filtrar protocolos com time_schedule inválido antes do Zod para evitar noise de validação (R-087)
+  const sanitizedProtocols = (protocols || []).filter(p => p && p.time_schedule != null)
+  
+  const validation = CalculateDailyIntakeInputSchema.safeParse({ 
+    medicineId, 
+    protocols: sanitizedProtocols 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateDailyIntake:', validation.error.format())
     return 0
@@ -116,7 +124,10 @@ export function calculateDailyIntake(medicineId, protocols = []) {
  */
 export function calculateMonthlyCosts(medicines = [], protocols = []) {
   // Validar entrada
-  const validation = CalculateMonthlyCostsInputSchema.safeParse({ medicines, protocols })
+  const validation = CalculateMonthlyCostsInputSchema.safeParse({ 
+    medicines: medicines || [], 
+    protocols: protocols || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateMonthlyCosts:', validation.error.format())
     return { items: [], totalMonthly: 0, projection3m: 0 }
@@ -192,7 +203,11 @@ export function calculateProjection(monthlyCost, months = 3) {
  */
 export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }) {
   // Validar entrada
-  const validation = CalculateRealCostsInputSchema.safeParse({ medicines, protocols, logs })
+  const validation = CalculateRealCostsInputSchema.safeParse({ 
+    medicines: medicines || [], 
+    protocols: protocols || [], 
+    logs: logs || [] 
+  })
   if (!validation.success) {
     console.error('Erro de validação em calculateRealCosts:', validation.error.format())
     return { items: [], totalMonthly: 0, projection3m: 0, projection6m: 0, isRealData: false }
@@ -204,8 +219,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
     logs: validatedLogs,
   } = validation.data
 
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = addDays(getNow(), -30)
 
   // OTIMIZAÇÃO: Pré-processar dados para evitar O(M*P + M*L) → O(M + P + L)
   // Mapa de protocolos ativos por medicamento
@@ -224,7 +238,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   // Mapa de logs por medicamento (com pré-filtro de data)
   const logsByMedicine = {}
   validatedLogs.forEach((l) => {
-    if (l.medicine_id && new Date(l.taken_at) >= thirtyDaysAgo) {
+    if (l.medicine_id && parseISO(l.taken_at) >= thirtyDaysAgo) {
       if (!logsByMedicine[l.medicine_id]) {
         logsByMedicine[l.medicine_id] = []
       }
@@ -252,7 +266,7 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
       const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(med))
 
       // Consumo real vs teórico
-      const daysWithData = new Set(medLogs.map((l) => formatLocalDate(new Date(l.taken_at)))).size
+      const daysWithData = new Set(medLogs.map((l) => formatLocalDate(parseISO(l.taken_at)))).size
 
       let dailyConsumption
       let isRealData

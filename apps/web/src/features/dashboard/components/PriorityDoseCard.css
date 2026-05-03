@@ -1,0 +1,113 @@
+/* ============================================================
+   PriorityDoseCard.css — Santuário Terapêutico
+   ============================================================ */
+
+.priority-dose-card {
+  background: linear-gradient(135deg, var(--color-secondary, #005db6), var(--color-secondary-container, #63a1ff));
+  border-radius: var(--radius-card, 2rem);
+  padding: 2rem;
+  color: var(--color-white);
+  box-shadow: var(--shadow-floating);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.priority-dose-card__decoration {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.priority-dose-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.priority-dose-card__badge {
+  background: var(--color-white-20);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.25rem 0.75rem;
+  font-size: var(--text-label-sm, 0.625rem);
+  font-weight: var(--font-weight-bold, 700);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.priority-dose-card__time-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--text-title-lg, 1.125rem);
+  font-weight: var(--font-weight-bold, 700);
+  font-family: var(--font-display, Public Sans, sans-serif);
+}
+
+.priority-dose-card__relative-time {
+  margin: 0 0 1rem;
+  font-size: var(--text-body-lg, 1rem);
+  opacity: 0.85;
+  font-family: var(--font-body, Lexend, sans-serif);
+}
+
+.priority-dose-card__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.priority-dose-card__item {
+  font-size: var(--text-body-lg, 1rem);
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.priority-dose-card__bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-white-70);
+  flex-shrink: 0;
+}
+
+.priority-dose-card__overflow {
+  font-size: var(--text-body-md, 0.875rem);
+  opacity: 0.7;
+  padding-left: 0.875rem;
+}
+
+.priority-dose-card__cta {
+  width: 100%;
+  padding: 1rem;
+  min-height: 56px;
+  background: var(--color-white-95);
+  color: var(--color-secondary);
+  border: none;
+  border-radius: var(--radius-button, 1.25rem);
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-title-lg, 1.125rem);
+  font-weight: var(--font-weight-bold, 700);
+  cursor: pointer;
+  transition: all 200ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.priority-dose-card__cta:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}

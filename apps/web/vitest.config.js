@@ -37,17 +37,10 @@ export default defineConfig({
     // OTIMIZAÇÕES PARA VITEST 4+ (Testing Infrastructure Overhaul)
     // ==========================================
 
-    // Vitest 4+ API — pool options dentro de poolOptions
-    // Usar 1 thread é mais seguro que 2+ para evitar race conditions
-    // Se velocidade for crítica, use: npx vitest run --threads --maxThreads=2
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-        maxThreads: 1,
-        minThreads: 1,
-      },
-    },
+    singleThread: true,
+    maxThreads: 1,
+    minThreads: 1,
 
     // Limites de tempo mais rigorosos (10s suficiente para testes bem escritos)
     testTimeout: 10000,
@@ -55,7 +48,11 @@ export default defineConfig({
     teardownTimeout: 5000,
 
     // Incluir TODOS os testes (incluindo components/ e features/ e server/ na raiz do monorepo)
-    include: ['src/**/*.test.{js,jsx}', '../../server/**/*.test.{js,jsx}'],
+    include: [
+      'src/**/*.test.{js,jsx}', 
+      '../../server/**/*.test.{js,jsx}',
+      '../../packages/core/src/**/*.test.{js,jsx}'
+    ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

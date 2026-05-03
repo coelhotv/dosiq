@@ -11,7 +11,15 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import { parseLocalDate, getTodayLocal, isProtocolActiveOnDate } from '@utils/dateUtils'
+import {
+  parseLocalDate,
+  getRawNow,
+  getTodayLocal,
+  isProtocolActiveOnDate,
+  getSaoPauloTime,
+  parseISO,
+  cloneDate,
+} from '@utils/dateUtils'
 
 /**
  * Tipo DoseItem — Representa uma dose individual expandida de um protocolo.
@@ -37,41 +45,33 @@ import { parseLocalDate, getTodayLocal, isProtocolActiveOnDate } from '@utils/da
 export const DOSE_REGISTRATION_TOLERANCE_MS = 120 * 60 * 1000 // 120 minutos
 
 /**
- * Verifica se uma dose foi registrada hoje, com tolerância de ±120 minutos.
- * @param {string} protocolId
- * @param {string} scheduledTime - "HH:MM"
- * @param {Array} todayLogs - logs filtrados para hoje
- * @returns {boolean}
+ * Encontra o log correspondente a um horário agendado, com tolerância.
+ * @private
  */
-export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
-  if (!todayLogs || todayLogs.length === 0) return false
+function getLogForSchedule(protocolId, scheduledTime, todayLogs) {
+  if (!todayLogs || todayLogs.length === 0) return null
   const [h, m] = scheduledTime.split(':').map(Number)
-  return todayLogs.some((log) => {
+  return todayLogs.find((log) => {
     if (log.protocol_id !== protocolId) return false
-    const logDate = new Date(log.taken_at)
-    const scheduled = new Date(logDate)
+    const logDate = getSaoPauloTime(parseISO(log.taken_at))
+    const scheduled = cloneDate(logDate)
     scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
+    return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
   })
 }
 
 /**
- * Retorna o ISO timestamp do registro se encontrado, null caso contrário.
- * @param {string} protocolId
- * @param {string} scheduledTime
- * @param {Array} todayLogs
- * @returns {string|null}
+ * Verifica se uma dose foi registrada hoje.
+ */
+export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
+  return !!getLogForSchedule(protocolId, scheduledTime, todayLogs)
+}
+
+/**
+ * Retorna o ISO timestamp do registro se encontrado.
  */
 export function findRegistrationTime(protocolId, scheduledTime, todayLogs) {
-  if (!todayLogs || todayLogs.length === 0) return null
-  const [h, m] = scheduledTime.split(':').map(Number)
-  const log = todayLogs.find((l) => {
-    if (l.protocol_id !== protocolId) return false
-    const logDate = new Date(l.taken_at)
-    const scheduled = new Date(logDate)
-    scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate - scheduled) <= DOSE_REGISTRATION_TOLERANCE_MS
-  })
+  const log = getLogForSchedule(protocolId, scheduledTime, todayLogs)
   return log ? log.taken_at : null
 }
 
@@ -96,10 +96,11 @@ export function classifyDose(
   if (isRegistered) return 'done'
 
   const [hours, minutes] = scheduledTime.split(':').map(Number)
-  const scheduled = new Date(now)
+  const nowSP = getSaoPauloTime(now)
+  const scheduled = cloneDate(nowSP)
   scheduled.setHours(hours, minutes, 0, 0)
 
-  const diffMs = scheduled.getTime() - now.getTime()
+  const diffMs = scheduled.getTime() - nowSP.getTime()
   const diffMinutes = diffMs / 60000
 
   if (diffMinutes < -lateWindowMinutes) return null // muito antiga — não mostrar
@@ -110,48 +111,60 @@ export function classifyDose(
 }
 
 /**
- * Expande protocolos em DoseItems individuais (um por horário do time_schedule).
- * @param {Array} protocols
- * @param {Array} todayLogs
- * @returns {DoseItem[]}
+ * Cria o badge do plano de tratamento.
+ * @private
+ */
+function getPlanBadge(plan) {
+  if (!plan) return null
+  return {
+    emoji: plan.emoji || '📋',
+    color: plan.color || '#6366f1',
+  }
+}
+
+/**
+ * Cria um objeto DoseItem a partir de um protocolo e horário.
+ * @private
+ */
+function createDoseItem(protocol, scheduledTime, registrationTime) {
+  const medicine = protocol.medicine || {}
+  return {
+    protocolId: protocol.id,
+    medicineId: protocol.medicine_id,
+    medicineName: medicine.name || 'Desconhecido',
+    medicineType: medicine.type || 'medicamento',
+    dosagePerPill: medicine.dosage_per_pill ?? null,
+    dosageUnit: medicine.dosage_unit ?? null,
+    scheduledTime,
+    dosagePerIntake: protocol.dosage_per_intake ?? 1,
+    treatmentPlanId: protocol.treatment_plan_id || null,
+    treatmentPlanName: protocol.treatment_plan?.name || null,
+    planBadge: getPlanBadge(protocol.treatment_plan),
+    isRegistered: !!registrationTime,
+    registeredAt: registrationTime,
+  }
+}
+
+/**
+ * Expande protocolos em DoseItems individuais.
  */
 export function expandProtocolsToDoses(protocols, todayLogs) {
   const doses = []
   const todayStr = getTodayLocal()
 
-  for (const protocol of protocols) {
-    // 1. Excluir protocolos "quando_necessario"
-    if (protocol.frequency === 'quando_necessario') continue
+  protocols.forEach((protocol) => {
+    // 1. Validar elegibilidade
+    if (protocol.frequency === 'quando_necessario') return
+    if (!isProtocolActiveOnDate(protocol, todayStr)) return
 
-    // 2. Resiliência de Cache: Filtrar validade do protocolo para HOJE (GMT-3)
-    // Isso protege a UI caso o cache SWR tenha dados obsoletos.
-    if (!isProtocolActiveOnDate(protocol, todayStr)) continue
-
+    // 2. Expandir horários
     const times = protocol.time_schedule || []
-    for (const time of times) {
-      const registrationTime = findRegistrationTime(protocol.id, time, todayLogs)
-      doses.push({
-        protocolId: protocol.id,
-        medicineId: protocol.medicine_id,
-        medicineName: protocol.medicine?.name || 'Desconhecido',
-        medicineType: protocol.medicine?.type || 'medicamento',
-        dosagePerPill: protocol.medicine?.dosage_per_pill ?? null,
-        dosageUnit: protocol.medicine?.dosage_unit ?? null,
-        scheduledTime: time,
-        dosagePerIntake: protocol.dosage_per_intake ?? 1,
-        treatmentPlanId: protocol.treatment_plan_id || null,
-        treatmentPlanName: protocol.treatment_plan?.name || null,
-        planBadge: protocol.treatment_plan
-          ? {
-              emoji: protocol.treatment_plan.emoji || '📋',
-              color: protocol.treatment_plan.color || '#6366f1',
-            }
-          : null,
-        isRegistered: !!registrationTime,
-        registeredAt: registrationTime,
-      })
-    }
-  }
+    times.forEach((time) => {
+      const regTime = findRegistrationTime(protocol.id, time, todayLogs)
+      doses.push(createDoseItem(protocol, time, regTime))
+    })
+  })
+
   return doses
 }
 
@@ -169,7 +182,7 @@ export function filterTodayLogs(logs) {
 
   return logs.filter((log) => {
     if (!log.taken_at) return false
-    const logTime = new Date(log.taken_at).getTime()
+    const logTime = getSaoPauloTime(parseISO(log.taken_at)).getTime()
     return logTime >= todayStart && logTime < todayEnd
   })
 }
@@ -190,15 +203,15 @@ export function useDoseZones({
 } = {}) {
   const { protocols, logs, isLoading, refresh } = useDashboard()
 
-  // Estado de "agora" — recalcula a cada 60 segundos (pausado quando aba não está visível)
-  const [now, setNow] = useState(() => new Date())
+  // Estado de "agora" — usa Date bruto para o timer (evita double-shift em classifyDose)
+  const [nowRaw, setNowRaw] = useState(() => getRawNow())
 
   useEffect(() => {
     let intervalId = null
 
     const startInterval = () => {
       if (intervalId) return
-      intervalId = setInterval(() => setNow(new Date()), 60_000)
+      intervalId = setInterval(() => setNowRaw(getRawNow()), 60_000)
     }
 
     const stopInterval = () => {
@@ -210,7 +223,7 @@ export function useDoseZones({
       if (document.hidden) {
         stopInterval()
       } else {
-        setNow(new Date()) // atualizar imediatamente ao retornar
+        setNowRaw(getRawNow()) // atualizar imediatamente ao retornar
         startInterval()
       }
     }
@@ -240,7 +253,7 @@ export function useDoseZones({
     for (const dose of allDoses) {
       const zone = classifyDose(
         dose.scheduledTime,
-        now,
+        nowRaw,
         lateWindowMinutes,
         nowWindowMinutes,
         upcomingWindowMinutes,
@@ -260,7 +273,7 @@ export function useDoseZones({
     Object.values(result).forEach((arr) => arr.sort(sortByTime))
 
     return result
-  }, [allDoses, now, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
+  }, [allDoses, nowRaw, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
 
   // Totais
   const totals = useMemo(() => {
@@ -271,5 +284,5 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh, now }
+  return { zones, totals, isLoading, refresh, now: getSaoPauloTime(nowRaw) }
 }

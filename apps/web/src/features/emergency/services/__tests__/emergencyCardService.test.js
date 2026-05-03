@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { emergencyCardService } from '../emergencyCardService'
+import { emergencyCardService } from '@/features/emergency/services/emergencyCardService'
 
 // Mock Supabase at module level (R-071)
 const mockSelect = vi.fn()

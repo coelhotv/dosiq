@@ -9,6 +9,7 @@
  */
 
 import { useCallback } from 'react'
+import { debugLog } from '@shared/utils/logger'
 
 /**
  * Tipos de feedback háptico pré-definidos
@@ -114,7 +115,7 @@ export function useHapticFeedback() {
         }
       } catch (err) {
         // Silenciosamente ignora erros de vibration API
-        console.debug('Haptic feedback error:', err)
+        debugLog('Haptic', 'Haptic feedback error:', err)
       }
     },
     [isSupported, prefersReducedMotion]
@@ -133,7 +134,7 @@ export function useHapticFeedback() {
       try {
         navigator.vibrate(duration)
       } catch (err) {
-        console.debug('Haptic vibration error:', err)
+        debugLog('Haptic', 'Haptic vibration error:', err)
       }
     },
     [isSupported, prefersReducedMotion]

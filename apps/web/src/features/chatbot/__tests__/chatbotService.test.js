@@ -22,7 +22,7 @@ const mockLocalStorage = (() => {
 })()
 vi.stubGlobal('localStorage', mockLocalStorage)
 
-import { sendChatMessage } from '../services/chatbotService'
+import { sendChatMessage } from '@/features/chatbot/services/chatbotService'
 
 const mockPatientData = {
   medicines: [

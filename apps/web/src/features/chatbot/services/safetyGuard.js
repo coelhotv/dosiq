@@ -7,7 +7,7 @@ import {
   CHATBOT_BLOCKED_PATTERNS,
   CHATBOT_DISCLAIMER,
   CHATBOT_HEALTH_KEYWORDS,
-} from '../config/chatbotConfig'
+} from '@/features/chatbot/config/chatbotConfig'
 
 export const DISCLAIMER = CHATBOT_DISCLAIMER
 

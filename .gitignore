@@ -81,6 +81,8 @@ run/
 # AI tool configs — agent-specific, not shared
 CLAUDE.md
 GEMINI.md
+AGENTS.md
+
 .claude/settings.local.json
 .kilocode
 .kilocodemodes
@@ -125,3 +127,5 @@ apps/web/public/*
 !apps/web/public/tablet.jpg
 !apps/web/public/politica-de-privacidade.html
 !apps/web/public/gemini-svg.svg
+# Added by code-review-graph
+.code-review-graph/

@@ -1,7 +1,7 @@
 // src/shared/components/ui/GlobalDoseModal.jsx
 // Modal global de registro de dose — disponível em todas as views via App.jsx
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import {
   cachedLogService as logService,
@@ -55,6 +55,13 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
     [refresh, onClose]
   )
 
+  // Filtros para garantir que apenas tratamentos ativos apareçam no formulário
+  const activeProtocols = useMemo(() => protocols.filter((p) => p.active), [protocols])
+  const activeTreatmentPlans = useMemo(
+    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => p.active)),
+    [treatmentPlans]
+  )
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       {plansError && (
@@ -63,8 +70,8 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
         </p>
       )}
       <LogForm
-        protocols={protocols}
-        treatmentPlans={treatmentPlans}
+        protocols={activeProtocols}
+        treatmentPlans={activeTreatmentPlans}
         initialValues={initialValues}
         onSave={handleSave}
         onCancel={onClose}

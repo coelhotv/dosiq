@@ -8,7 +8,7 @@ import {
   BLOOD_TYPE_LABELS,
   emergencyContactSchema,
   emergencyCardSchema,
-} from '../emergencyCardSchema'
+} from '@/schemas/emergencyCardSchema'
 
 describe('emergencyCardSchema', () => {
   afterEach(() => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
+import { parseISO } from '@utils/dateUtils'
 import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
 
@@ -56,7 +57,7 @@ export default function EmergencyCardView({ data, onEdit }) {
     if (!cardData?.last_updated) return 'Não disponível'
 
     try {
-      const date = new Date(cardData.last_updated)
+      const date = parseISO(cardData.last_updated)
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',

@@ -11,7 +11,7 @@
  * 7. Protocolo com start_date no meio do mês
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { calculateMonthlyDoseMap, calculateMonthlyStats } from '../doseCalendarService'
+import { calculateMonthlyDoseMap, calculateMonthlyStats } from '@/features/calendar/services/doseCalendarService'
 
 describe('doseCalendarService', () => {
   afterEach(() => {

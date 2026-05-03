@@ -2,7 +2,7 @@ import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
-import { getCurrentDateInTimezone } from '../../utils/timezone.js';
+import { getTodayLocal } from '../../utils/dateUtils.js';
 
 // Helper function to fetch medicines
 async function fetchMedicines(userId, medicineName = null) {
@@ -129,7 +129,7 @@ export async function processAddStock(bot, chatId, userId, medicineId, quantity,
       p_medicine_id: medicineId,
       p_quantity: quantity,
       p_unit_price: 0,
-      p_purchase_date: getCurrentDateInTimezone('America/Sao_Paulo'),
+      p_purchase_date: getTodayLocal(),
       p_expiration_date: null,
       p_pharmacy: null,
       p_laboratory: null,

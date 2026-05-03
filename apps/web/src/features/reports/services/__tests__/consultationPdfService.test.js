@@ -131,7 +131,7 @@ vi.mock('jspdf-autotable', () => ({
   default: mocks.mockAutoTable,
 }))
 
-import { generateConsultationPDF } from '../consultationPdfService.js'
+import { generateConsultationPDF } from '@/features/reports/services/consultationPdfService.js'
 
 describe('consultationPdfService', () => {
   beforeEach(() => {

@@ -7,12 +7,14 @@ export default function Card({
   hover = true,
   variant = 'default',
 }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div
+    <Tag
       className={`card card-${variant} ${hover ? 'card-hover' : ''} ${className}`}
       onClick={onClick}
+      type={onClick ? 'button' : undefined}
     >
       {children}
-    </div>
+    </Tag>
   )
 }

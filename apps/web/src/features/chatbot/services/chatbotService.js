@@ -1,12 +1,13 @@
 import { validateUserMessage, addDisclaimerIfNeeded } from './safetyGuard'
 import { buildPatientContext, buildSystemPrompt } from './contextBuilder'
+import { getNow } from '@utils/dateUtils'
 import {
   CHATBOT_MAX_HISTORY,
   CHATBOT_RATE_LIMIT_WINDOW,
   CHATBOT_RATE_LIMIT_MAX,
   CHATBOT_HISTORY_STORAGE_KEY,
   CHATBOT_HISTORY_MAX_DISPLAY,
-} from '../config/chatbotConfig'
+} from '@/features/chatbot/config/chatbotConfig'
 
 const MAX_HISTORY = CHATBOT_MAX_HISTORY
 const RATE_LIMIT_WINDOW = CHATBOT_RATE_LIMIT_WINDOW
@@ -94,7 +95,7 @@ function isRateLimited() {
   if (typeof window === 'undefined') return false
   try {
     const data = JSON.parse(localStorage.getItem('mr_chat_rate') || '{}')
-    if (Date.now() - (data.windowStart || 0) > RATE_LIMIT_WINDOW) return false
+    if (getNow().getTime() - (data.windowStart || 0) > RATE_LIMIT_WINDOW) return false
     return (data.count || 0) >= RATE_LIMIT_MAX
   } catch {
     return false
@@ -105,7 +106,7 @@ function incrementRateCounter() {
   if (typeof window === 'undefined') return
   try {
     const data = JSON.parse(localStorage.getItem('mr_chat_rate') || '{}')
-    const now = Date.now()
+    const now = getNow().getTime()
     if (now - (data.windowStart || 0) > RATE_LIMIT_WINDOW) {
       localStorage.setItem('mr_chat_rate', JSON.stringify({ windowStart: now, count: 1 }))
     } else {

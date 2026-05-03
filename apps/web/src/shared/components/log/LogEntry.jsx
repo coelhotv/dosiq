@@ -1,12 +1,14 @@
 import { memo } from 'react'
+import { parseISO } from '@utils/dateUtils'
 import './LogEntry.css'
 
 function LogEntry({ log, onEdit, onDelete }) {
   const formatDateTime = (dateString) => {
-    const date = new Date(dateString)
+    const date = parseISO(dateString)
+    const options = { timeZone: 'America/Sao_Paulo' }
     return {
-      date: date.toLocaleDateString('pt-BR'),
-      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      date: date.toLocaleDateString('pt-BR', options),
+      time: date.toLocaleTimeString('pt-BR', { ...options, hour: '2-digit', minute: '2-digit' }),
     }
   }
 

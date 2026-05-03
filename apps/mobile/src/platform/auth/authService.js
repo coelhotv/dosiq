@@ -1,6 +1,6 @@
 // authService.js — serviço de autenticação com validação Zod
 import { z } from 'zod'
-import { supabase } from '../supabase/nativeSupabaseClient'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 /**
  * Schema para validação de credenciais de login
@@ -70,7 +70,7 @@ export async function signInWithEmail(email, password) {
     }
 
     return { success: true }
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Erro inesperado ao fazer login' }
   }
 }

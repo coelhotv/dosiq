@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import CostChart from '../CostChart'
+import CostChart from '@/features/stock/components/CostChart'
 
 afterEach(() => {
   vi.clearAllMocks()

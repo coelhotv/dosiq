@@ -1,6 +1,4 @@
-const { withAppDelegate, withDangerousMod } = require('@expo/config-plugins');
-const fs = require('fs');
-const path = require('path');
+const { withAppDelegate } = require('@expo/config-plugins');
 
 const withFirebaseFix = (config) => {
   // 1. Injeta no AppDelegate.swift

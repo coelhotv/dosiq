@@ -4,9 +4,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
+import { getTodayLocal, isProtocolActiveOnDate, getNow, addDays, parseISO } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getActiveTreatments } from '../services/treatmentsService'
+import { debugLog } from '@shared/utils/debugLog'
 
 const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
 
@@ -39,7 +40,7 @@ export function useTreatments() {
       const today = getTodayLocal()
       const snapshot = {
         data: newData,
-        capturedAt: new Date().toISOString(),
+        capturedAt: getNow().toISOString(),
         localDay: today // R-114 fix
       }
 
@@ -55,8 +56,8 @@ export function useTreatments() {
         const cached = await AsyncStorage.getItem(TREATMENTS_CACHE_KEY)
         if (cached) {
           const parsed = JSON.parse(cached)
-          const capturedAt = new Date(parsed.capturedAt)
-          const now = new Date()
+          const capturedAt = parseISO(parsed.capturedAt)
+          const now = getNow()
           const diffHours = (now - capturedAt) / (1000 * 60 * 60)
 
           if (diffHours < 24) {
@@ -70,7 +71,7 @@ export function useTreatments() {
         } else {
           throw err
         }
-      } catch (cacheErr) {
+      } catch {
         setError(err.message ?? 'Erro ao carregar tratamentos.')
       }
     } finally {
@@ -87,16 +88,15 @@ export function useTreatments() {
     let midnightTimer
 
     const scheduleMidnightRefresh = () => {
-      const now = new Date()
-      const nextMidnight = new Date(now)
-      nextMidnight.setDate(nextMidnight.getDate() + 1)
+      const now = getNow()
+      const nextMidnight = addDays(now, 1)
       nextMidnight.setHours(0, 0, 0, 0)
       
       const msUntilMidnight = nextMidnight.getTime() - now.getTime()
       
       clearTimeout(midnightTimer)
       midnightTimer = setTimeout(() => {
-        if (__DEV__) console.log('[useTreatments] Meia-noite detectada: Refreshing...')
+        debugLog('useTreatments', 'Meia-noite detectada: Refreshing...')
         load()
         scheduleMidnightRefresh()
       }, msUntilMidnight + 1000)
@@ -108,7 +108,7 @@ export function useTreatments() {
       if (nextState === 'active') {
         const today = getTodayLocal()
         if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
-          if (__DEV__) console.log('[useTreatments] Dia alterado via background: Refreshing...')
+          debugLog('useTreatments', 'Dia alterado via background: Refreshing...')
           load()
         }
       }
