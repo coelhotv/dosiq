@@ -1,0 +1,30 @@
+✗ Build failed in 1.53s
+error during build:
+[vite-plugin-pwa:build] There was an error during the build:
+  src/features/dashboard/hooks/useDoseZones.js (16:2): "getRawNow" is not exported by "src/utils/dateUtils.js", imported by "src/features/dashboard/hooks/useDoseZones.js".
+Additionally, handling the error in the 'buildEnd' hook caused the following error:
+  src/features/dashboard/hooks/useDoseZones.js (16:2): "getRawNow" is not exported by "src/utils/dateUtils.js", imported by "src/features/dashboard/hooks/useDoseZones.js".
+file: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web/src/features/dashboard/hooks/useDoseZones.js:16:2
+
+14: import {
+15:   parseLocalDate,
+16:   getRawNow,
+      ^
+17:   getTodayLocal,
+18:   isProtocolActiveOnDate,
+
+    at getRollupError (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/rollup/dist/es/shared/node-entry.js:23863:39
+    at async catchUnfinishedHookActions (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/rollup/dist/es/shared/node-entry.js:23321:16)
+    at async rollupInternal (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/rollup/dist/es/shared/node-entry.js:23846:5)
+    at async buildEnvironment (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/vite/dist/node/chunks/config.js:33545:12)
+    at async Object.build (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/vite/dist/node/chunks/config.js:33904:19)
+    at async Object.buildApp (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/vite/dist/node/chunks/config.js:33901:153)
+    at async CAC.<anonymous> (file:///Users/coelhotv/Library/Mobile%20Documents/com%7Eapple%7ECloudDocs/git/dosiq/node_modules/vite/dist/node/cli.js:629:3)
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web
+npm error workspace @dosiq/web@3.3.0
+npm error location /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/web
+npm error command failed
+npm error command sh -c vite build

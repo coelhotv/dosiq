@@ -16,6 +16,7 @@ export {
   daysDifference,
   getPeriodFromTime,
   getNow,
+  getRawNow,
   getServerTimestamp,
   parseISO,
   getSaoPauloTime,
