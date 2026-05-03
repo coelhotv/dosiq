@@ -24,19 +24,24 @@ vi.mock('@utils/dateUtils', async (importOriginal) => {
   }
 })
 
+beforeEach(() => {
+  vi.useFakeTimers()
+  // Fixar "agora" como 2026-03-05 09:30:00 BRT (12:30:00 UTC)
+  const fakeNow = new Date('2026-03-05T09:30:00-03:00')
+  vi.setSystemTime(fakeNow)
+})
+
 afterEach(() => {
+  vi.useRealTimers()
   vi.clearAllMocks()
-  vi.clearAllTimers()
 })
 
 // ─────────────────────────────────────────────
 // 1. classifyDose (pura — sem mocks)
 // ─────────────────────────────────────────────
 describe('classifyDose', () => {
-  // "agora" fixo: 09:30 LOCAL — usar setHours para ser timezone-agnostic
-  // (new Date(utcString) + setHours depende do timezone local, quebrando em UTC/CI)
-  const now = new Date()
-  now.setHours(9, 30, 0, 0)
+  // "agora" fixo: 09:30 LOCAL (São Paulo)
+  const now = new Date('2026-03-05T09:30:00-03:00')
 
   it('classifica dose registrada como done', () => {
     expect(classifyDose('09:00', now, 120, 60, 240, true)).toBe('done')
@@ -77,9 +82,8 @@ describe('classifyDose', () => {
 // 2. isDoseRegistered
 // ─────────────────────────────────────────────
 describe('isDoseRegistered', () => {
-  // Criar taken_at em 08:05 LOCAL — timezone-agnostic (setHours usa tempo local)
-  const takenAt0805 = new Date()
-  takenAt0805.setHours(8, 5, 0, 0)
+  // Criar taken_at em 08:05 LOCAL (São Paulo)
+  const takenAt0805 = new Date('2026-03-05T08:05:00-03:00')
   const todayLogs = [{ protocol_id: 'p1', taken_at: takenAt0805.toISOString() }]
 
   it('retorna true quando log existe dentro da tolerância de 30min', () => {
@@ -174,18 +178,7 @@ describe('filterTodayLogs', () => {
 // 5. hook behavior
 // ─────────────────────────────────────────────
 describe('useDoseZones — hook behavior', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    // Definir "agora" como 09:30 LOCAL — timezone-agnostic
-    const fakeNow = new Date()
-    fakeNow.setHours(9, 30, 0, 0)
-    vi.setSystemTime(fakeNow)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-    vi.clearAllMocks()
-  })
+  // Removido beforeEach duplicado, movido para o topo
 
   function setupDashboard(protocols = [], logs = []) {
     mockUseDashboard.mockReturnValue({

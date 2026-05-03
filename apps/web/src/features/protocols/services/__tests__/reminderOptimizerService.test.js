@@ -33,6 +33,7 @@ describe('reminderOptimizerService', () => {
     vi.clearAllMocks()
     vi.clearAllTimers()
     localStorage.clear()
+    vi.restoreAllMocks()
   })
 
   describe('analyzeReminderTiming', () => {
@@ -199,7 +200,7 @@ describe('reminderOptimizerService', () => {
 
       // Zod vai rejeitar, função retorna null
       expect(result).toBeNull()
-      spy.mockRestore()
+      expect(spy).toHaveBeenCalled()
     })
 
     it('lida com logs sem protocol_id (filtra por medicine_id)', () => {
@@ -357,6 +358,9 @@ describe('reminderOptimizerService', () => {
 
     it('não lança erro em ambiente server-side', () => {
       const originalWindow = global.window
+      // Suprimir warning esperado no console
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      
       // @ts-ignore
       delete global.window
 
@@ -364,6 +368,7 @@ describe('reminderOptimizerService', () => {
         expect(() => {
           dismissSuggestion('proto-1', false)
         }).not.toThrow()
+        expect(warnSpy).toHaveBeenCalled()
       } finally {
         global.window = originalWindow
       }

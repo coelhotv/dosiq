@@ -177,13 +177,44 @@ export function getEndOfDayISO(dateStr) {
  * @param {Date} [date] - Data base (default: agora)
  * @returns {Date}
  */
+/**
+ * Retorna um objeto Date "ajustado" para o fuso de São Paulo
+ * para facilitar extração de horas/minutos locais em ambientes UTC.
+ * 
+ * O Date retornado terá os mesmos valores de getHours(), getMinutes(), etc.
+ * que um relógio em São Paulo mostraria naquele momento.
+ * 
+ * @param {Date} [date] - Data base (default: agora)
+ * @returns {Date}
+ */
 export function getSaoPauloTime(date = new Date()) {
-  return new Date(
-    date.toLocaleString('en-CA', {
-      timeZone: 'America/Sao_Paulo',
-      hour12: false,
-    }).replace(', ', 'T')
-  )
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
+  
+  const parts = formatter.formatToParts(date)
+  const map = {}
+  parts.forEach(p => { map[p.type] = p.value })
+  
+  // Construir string ISO simplificada para as partes de SP
+  // Ao criar o Date sem timezone, ele usa o timezone local da máquina (ex: UTC no CI)
+  // mas preserva os números SP, garantindo que getHours() retorne o valor esperado.
+  const isoStr = `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`
+  const result = new Date(isoStr)
+  
+  // Garantir preservação de milissegundos se disponíveis
+  if (!isNaN(result.getTime())) {
+    result.setMilliseconds(date.getMilliseconds())
+  }
+  
+  return result
 }
 
 /**

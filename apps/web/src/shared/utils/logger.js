@@ -31,6 +31,17 @@ export function errorLog(tag, message, ...args) {
 }
 
 /**
+ * Log de aviso (sempre, mas formatado como warning)
+ * @param {string} tag - Prefixo [tag]
+ * @param {string} message - Mensagem
+ * @param {...*} args - Dados adicionais
+ */
+export function warnLog(tag, message, ...args) {
+  // eslint-disable-next-line no-console
+  console.warn(`[${tag}] ${message}`, ...args)
+}
+
+/**
  * Log condicional (quando expressão é true)
  * @param {boolean} condition - Condição
  * @param {string} tag - Prefixo

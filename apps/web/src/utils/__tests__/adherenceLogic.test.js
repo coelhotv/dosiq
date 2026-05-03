@@ -4,38 +4,30 @@ import { isDoseInToleranceWindow, isProtocolFollowed } from '@/utils/adherenceLo
 describe('adherenceLogic - Janela de Tolerância', () => {
   it('deve validar dose dentro da janela de +/- 2 horas', () => {
     const scheduledTime = '10:00'
-    // 10:00 local -> 13:00 UTC (assumindo America/Sao_Paulo UTC-3 para o teste)
-    // Mas o Date nativo usará o fuso do ambiente.
-
-    const baseDate = new Date()
-    baseDate.setHours(10, 0, 0, 0)
-
-    const exact = baseDate.toISOString()
+    // Usamos strings com offset fixo de Brasília (-03:00) para garantir consistência no CI
+    const dateStr = '2026-02-11'
+    
+    const exact = `${dateStr}T10:00:00-03:00`
     expect(isDoseInToleranceWindow(scheduledTime, exact)).toBe(true)
 
-    const twoHoursBefore = new Date(baseDate.getTime() - 2 * 60 * 60 * 1000).toISOString()
+    const twoHoursBefore = `${dateStr}T08:00:00-03:00`
     expect(isDoseInToleranceWindow(scheduledTime, twoHoursBefore)).toBe(true)
 
-    const twoHoursAfter = new Date(baseDate.getTime() + 2 * 60 * 60 * 1000).toISOString()
+    const twoHoursAfter = `${dateStr}T12:00:00-03:00`
     expect(isDoseInToleranceWindow(scheduledTime, twoHoursAfter)).toBe(true)
 
-    const tooEarly = new Date(baseDate.getTime() - 121 * 60 * 1000).toISOString()
+    const tooEarly = `${dateStr}T07:59:00-03:00`
     expect(isDoseInToleranceWindow(scheduledTime, tooEarly)).toBe(false)
 
-    const tooLate = new Date(baseDate.getTime() + 121 * 60 * 1000).toISOString()
+    const tooLate = `${dateStr}T12:01:00-03:00`
     expect(isDoseInToleranceWindow(scheduledTime, tooLate)).toBe(false)
   })
 
   it('isProtocolFollowed deve encontrar dose correta no dia', () => {
     const scheduledTime = '10:00'
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    const dateStr = `${year}-${month}-${day}`
-
+    const dateStr = '2026-02-11'
     const logs = [
-      { taken_at: new Date(today.setHours(11, 30, 0, 0)).toISOString() }, // 1.5h depois
+      { taken_at: `${dateStr}T11:30:00-03:00` }, // 1.5h depois
     ]
 
     expect(isProtocolFollowed(scheduledTime, logs, dateStr)).toBe(true)

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import StockForm from '@/features/stock/components/StockForm'
 
@@ -42,7 +42,15 @@ describe('StockForm', () => {
   const mockOnCancel = vi.fn()
 
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    // 2026-05-02 10:00:00 BRT (13:00:00 UTC) - Mesmo dia em ambos
+    const fakeNow = new Date('2026-05-02T10:00:00-03:00')
+    vi.setSystemTime(fakeNow)
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe('rendering', () => {

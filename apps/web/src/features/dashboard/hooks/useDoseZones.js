@@ -96,10 +96,11 @@ export function classifyDose(
   if (isRegistered) return 'done'
 
   const [hours, minutes] = scheduledTime.split(':').map(Number)
-  const scheduled = getSaoPauloTime(now)
+  const nowSP = getSaoPauloTime(now)
+  const scheduled = cloneDate(nowSP)
   scheduled.setHours(hours, minutes, 0, 0)
 
-  const diffMs = scheduled.getTime() - now.getTime()
+  const diffMs = scheduled.getTime() - nowSP.getTime()
   const diffMinutes = diffMs / 60000
 
   if (diffMinutes < -lateWindowMinutes) return null // muito antiga — não mostrar
@@ -202,15 +203,15 @@ export function useDoseZones({
 } = {}) {
   const { protocols, logs, isLoading, refresh } = useDashboard()
 
-  // Estado de "agora" — recalcula a cada 60 segundos (pausado quando aba não está visível)
-  const [now, setNow] = useState(() => getNow())
+  // Estado de "agora" — usa Date bruto para o timer (evita double-shift em classifyDose)
+  const [nowRaw, setNowRaw] = useState(() => new Date())
 
   useEffect(() => {
     let intervalId = null
 
     const startInterval = () => {
       if (intervalId) return
-      intervalId = setInterval(() => setNow(getNow()), 60_000)
+      intervalId = setInterval(() => setNowRaw(new Date()), 60_000)
     }
 
     const stopInterval = () => {
@@ -222,7 +223,7 @@ export function useDoseZones({
       if (document.hidden) {
         stopInterval()
       } else {
-        setNow(getNow()) // atualizar imediatamente ao retornar
+        setNowRaw(new Date()) // atualizar imediatamente ao retornar
         startInterval()
       }
     }
@@ -252,7 +253,7 @@ export function useDoseZones({
     for (const dose of allDoses) {
       const zone = classifyDose(
         dose.scheduledTime,
-        now,
+        nowRaw,
         lateWindowMinutes,
         nowWindowMinutes,
         upcomingWindowMinutes,
@@ -272,7 +273,7 @@ export function useDoseZones({
     Object.values(result).forEach((arr) => arr.sort(sortByTime))
 
     return result
-  }, [allDoses, now, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
+  }, [allDoses, nowRaw, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
 
   // Totais
   const totals = useMemo(() => {
@@ -283,5 +284,5 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh, now }
+  return { zones, totals, isLoading, refresh, now: getSaoPauloTime(nowRaw) }
 }

@@ -1,6 +1,6 @@
 import { AnalyzeReminderTimingInputSchema } from '@schemas/reminderOptimizerSchema'
 import { getNow, parseISO, getSaoPauloTime } from '@utils/dateUtils'
-import { debugLog, errorLog } from '@shared/utils/logger'
+import { debugLog, errorLog, warnLog } from '@shared/utils/logger'
 
 /**
  * Analisa delta entre horário programado e horário real de tomada.
@@ -35,13 +35,11 @@ export function analyzeReminderTiming({ protocol, logs }) {
       return acc
     }, {})
 
-    console.error('[reminderOptimizerService] Validation failed:', {
-      timestamp: getNow().toISOString(),
+    errorLog('reminderOptimizerService', 'Validation failed', {
       context: 'analyzeReminderTiming',
       protocol_id: protocol?.id,
       logs_count: logs?.length,
       error_by_field: fieldErrors,
-      first_log_sample: logs?.[0],
       first_issue_details: issues[0],
     })
     return null
@@ -160,7 +158,7 @@ export function isSuggestionDismissed(protocolId) {
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
     return getNow().getTime() - timestamp < thirtyDaysMs
   } catch (error) {
-    console.error('[reminderOptimizerService] Error parsing dismissed suggestion:', error)
+    errorLog('reminderOptimizerService', 'Error parsing dismissed suggestion', error)
     return true
   }
 }
@@ -177,7 +175,7 @@ export function dismissSuggestion(protocolId, permanent = false) {
     typeof localStorage === 'undefined' ||
     typeof localStorage.setItem !== 'function'
   ) {
-    console.warn('[reminderOptimizerService] dismissSuggestion called in non-browser environment')
+    warnLog('reminderOptimizerService', 'dismissSuggestion called in non-browser environment')
     return
   }
 
