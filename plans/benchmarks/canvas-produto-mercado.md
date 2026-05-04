@@ -12,11 +12,10 @@
 ### 1.1. Nome e identidade
 
 **Nome atual:** Dosiq (produto pessoal em evolução para plataforma)
-**Naming estratégico:** Avaliar rebranding para mercado (ex: CuidaMed, AdereMed, MedPlan) ao escalar além do uso pessoal. O nome "Dosiq" é familiar e direto — pode funcionar no mercado consumer; rebranding só se expandir para B2B.
 
 ### 1.2. Visão de produto
 
-"Ser a ferramenta indispensável de gestão de medicamentos para brasileiros com doenças crônicas — gratuita, inteligente, integrada ao WhatsApp e portátil para qualquer consulta médica."
+"Ser a ferramenta indispensável de gestão de medicamentos para brasileiros com doenças crônicas — gratuita, inteligente, integrada ao Telegram e portátil para qualquer consulta médica."
 
 ### 1.3. Posicionamento
 

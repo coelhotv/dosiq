@@ -5,13 +5,13 @@
 ## 1. VISÃO E POSICIONAMENTO
 
 ### 1.1. Nome provisório
-**CuidaMed** (working name — sugere cuidado contínuo, medicação e proximidade)
+**Dosiq** (working name — sugere cuidado contínuo, medicação e proximidade)
 
 ### 1.2. Visão de produto
 "Tornar a adesão a tratamentos crônicos simples, acessível e valorizada para todos os brasileiros, conectando pacientes, cuidadores, profissionais de saúde e o ecossistema farmacêutico em uma jornada integrada de cuidado."
 
 ### 1.3. Posicionamento (positioning statement)
-Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dificuldade em manter adesão a tratamentos complexos**, CuidaMed é uma **plataforma de adesão terapêutica inteligente** que **combina lembretes personalizados, automação via prescrição digital, integração com SUS/farmácias e incentivos de adesão**, diferentemente de **apps globais (Medisafe, MyTherapy) que não se integram ao ecossistema de saúde brasileiro** e **apps locais genéricos que oferecem apenas alarmes simples**.
+Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dificuldade em manter adesão a tratamentos complexos**, Dosiq é uma **plataforma de adesão terapêutica inteligente** que **combina lembretes personalizados, automação via prescrição digital, integração com SUS/farmácias e incentivos de adesão**, diferentemente de **apps globais (Medisafe, MyTherapy) que não se integram ao ecossistema de saúde brasileiro** e **apps locais genéricos que oferecem apenas alarmes simples**.
 
 ### 1.4. Proposta de valor (value propositions)
 
@@ -203,7 +203,7 @@ Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dific
 
 **11. Integração com prescrição eletrônica (eRx)**
 - Parcerias com sistemas de prescrição digital (Memed, iClinic, Pulsamed, Amplimed).
-- Médico prescreve via sistema → sistema envia prescrição assinada digitalmente (ICP-Brasil ou assinatura eletrônica avançada conforme Lei 14.063) → CuidaMed recebe via API (com autorização do paciente) → app automaticamente popula lista de medicamentos, posologia, duração do tratamento.
+- Médico prescreve via sistema → sistema envia prescrição assinada digitalmente (ICP-Brasil ou assinatura eletrônica avançada conforme Lei 14.063) → Dosiq recebe via API (com autorização do paciente) → app automaticamente popula lista de medicamentos, posologia, duração do tratamento.
 - **Benefício:** zero digitação manual; reduz erros; mantém sincronia com prescrição ativa.
 
 **12. Integração com Meu SUS Digital / Conecte SUS**
@@ -255,7 +255,7 @@ Para **pacientes crônicos brasileiros e seus cuidadores** que **enfrentam dific
 - Logs de perguntas alimentam base de conhecimento e melhorias.
 
 **18. Plataforma B2B para indústria farmacêutica (PSP — Patient Support Program)**
-- White-label ou co-branded: CuidaMed como motor, farmacêutica customiza logo, cores, conteúdo educacional para moléculas específicas (ex.: "Programa de Adesão Humira" para AbbVie).
+- White-label ou co-branded: Dosiq como motor, farmacêutica customiza logo, cores, conteúdo educacional para moléculas específicas (ex.: "Programa de Adesão Humira" para AbbVie).
 - Dashboard para farmacêutica com métricas agregadas e anonimizadas: adesão média, tempo até abandono, perfil de pacientes.
 - Possibilidade de farmacêutica patrocinar cashback ou benefícios (seguindo diretrizes éticas e regulatórias).
 
@@ -451,14 +451,14 @@ Integracao (logs de integrações externas)
 
 **Fluxo:**
 1. Médico prescreve via sistema eRx habitual.
-2. Sistema eRx envia webhook para CuidaMed (com autorização prévia do paciente via OAuth 2.0).
+2. Sistema eRx envia webhook para Dosiq (com autorização prévia do paciente via OAuth 2.0).
 3. Payload contém: paciente (CPF/CNS), medicamentos (CID, posologia estruturada), data de emissão, assinatura digital.
-4. CuidaMed valida assinatura, cria/atualiza MedicamentoAtivo para o paciente, gera lembretes automaticamente.
+4. Dosiq valida assinatura, cria/atualiza MedicamentoAtivo para o paciente, gera lembretes automaticamente.
 5. Paciente recebe notificação: "Nova prescrição recebida do Dr. Roberto. Seus lembretes foram atualizados."
 
 **Desafios:**
 - Falta de padronização entre sistemas eRx (cada um tem API diferente ou inexistente).
-- Solução temporária: integração manual via upload de PDF com QR-Code estruturado (padrão que CuidaMed pode propor como white-paper aberto para adoção por sistemas eRx).
+- Solução temporária: integração manual via upload de PDF com QR-Code estruturado (padrão que Dosiq pode propor como white-paper aberto para adoção por sistemas eRx).
 
 **Stack técnico:**
 - Webhook receiver (API endpoint seguro com autenticação JWT).
@@ -471,9 +471,9 @@ Integracao (logs de integrações externas)
 
 **Fluxo:**
 1. Usuário autentica via gov.br (OAuth 2.0 com consentimento LGPD explícito).
-2. CuidaMed solicita acesso ao módulo "Medicamentos" do Meu SUS Digital via API oficial (quando disponível).
+2. Dosiq solicita acesso ao módulo "Medicamentos" do Meu SUS Digital via API oficial (quando disponível).
 3. API retorna lista de medicamentos dispensados (nome, data, quantidade, local de retirada).
-4. CuidaMed cruza com medicamentos ativos do paciente; sugere adicionar se ainda não estiver na lista.
+4. Dosiq cruza com medicamentos ativos do paciente; sugere adicionar se ainda não estiver na lista.
 5. Atualiza estoque automaticamente com base em dispensações.
 
 **Desafios:**
@@ -490,13 +490,13 @@ Integracao (logs de integrações externas)
 **Parceiros:** Raia Drogasil, Pague Menos, Ultrafarma, agregadores (CliqueFarma, Consulta Remédios, Farma Delivery).
 
 **Fluxo:**
-1. Quando estoque de medicamento está baixo (<5 dias), CuidaMed mostra botão "Comprar agora".
+1. Quando estoque de medicamento está baixo (<5 dias), Dosiq mostra botão "Comprar agora".
 2. Ao clicar, abre modal com comparação de preços em farmácias próximas (geolocalização) + delivery.
 3. Usuário seleciona farmácia → redirecionamento para checkout (deep link para app da farmácia ou web).
-4. Farmácia confirma compra via webhook → CuidaMed atualiza estoque automaticamente.
+4. Farmácia confirma compra via webhook → Dosiq atualiza estoque automaticamente.
 
 **Monetização:**
-- CuidaMed recebe comissão de afiliação ou fee por transação da farmácia/agregador.
+- Dosiq recebe comissão de afiliação ou fee por transação da farmácia/agregador.
 - Alternativamente, modelo white-label onde farmácia patrocina acesso premium para seus clientes.
 
 **Stack técnico:**
@@ -510,7 +510,7 @@ Integracao (logs de integrações externas)
 
 **Fluxo:**
 1. Usuário autoriza acesso a HealthKit (iOS) ou Google Fit (Android).
-2. CuidaMed lê dados via APIs nativas (HealthKit Framework / Google Fit SDK).
+2. Dosiq lê dados via APIs nativas (HealthKit Framework / Google Fit SDK).
 3. Dados sincronizados periodicamente (ex.: a cada abertura do app ou 1x/dia em background).
 4. Métricas exibidas em gráficos na tela de histórico, correlacionadas com eventos de dose.
 
@@ -530,7 +530,7 @@ Integracao (logs de integrações externas)
 
 **Fluxo:**
 1. Usuário conecta dispositivo via Bluetooth ou API do fabricante (OAuth).
-2. Dados transmitidos automaticamente para CuidaMed (sem input manual).
+2. Dados transmitidos automaticamente para Dosiq (sem input manual).
 3. Ex.: smart pill box detecta abertura do compartimento de losartana às 8h05 → marca dose como tomada automaticamente.
 
 **Stack técnico:**
@@ -715,7 +715,7 @@ Integracao (logs de integrações externas)
 #### 5.1.2. B2B2C — Indústria farmacêutica (primário)
 
 **Patient Support Programs (PSP) white-label:**
-- Farmacêutica licencia plataforma CuidaMed para programa de adesão de moléculas específicas (ex.: "Programa Cuidar+ AbbVie" para Humira).
+- Farmacêutica licencia plataforma Dosiq para programa de adesão de moléculas específicas (ex.: "Programa Cuidar+ AbbVie" para Humira).
 - Pricing: fee anual fixo (R$ 200k–500k) + per-patient-per-month (R$ 10–30/paciente ativo, dependendo de funcionalidades).
 - Com 5 farmacêuticas parceiras, média de 2.000 pacientes/programa → 10k pacientes × R$ 20 = R$ 200k/mês recorrente.
 
@@ -726,23 +726,23 @@ Integracao (logs de integrações externas)
 #### 5.1.3. B2B2C — Planos de saúde e operadoras
 
 **Gestão de crônicos como serviço:**
-- Operadora oferece CuidaMed como benefício para beneficiários com doenças crônicas (hipertensos, diabéticos).
+- Operadora oferece Dosiq como benefício para beneficiários com doenças crônicas (hipertensos, diabéticos).
 - Pricing: per-beneficiary-per-month (R$ 5–15), com demonstração de ROI via redução de internações evitáveis.
 - Com 3 operadoras médias (50k beneficiários crônicos cada) a R$ 8/mês → 150k usuários × R$ 8 = R$ 1,2M/mês.
 
 #### 5.1.4. B2B2C — Farmácias (reposição e fidelização)
 
 **Programa de fidelização:**
-- Farmácia patrocina acesso premium para clientes fiéis; CuidaMed envia lembretes de reposição com deep link para farmácia patrocinadora.
+- Farmácia patrocina acesso premium para clientes fiéis; Dosiq envia lembretes de reposição com deep link para farmácia patrocinadora.
 - Pricing: fee mensal fixo (R$ 10k–30k/mês por rede) ou revenue share (5–10% de vendas geradas via app).
 
 **Comissionamento de vendas:**
-- Integrações com delivery/agregadores; CuidaMed recebe comissão de afiliação (3–10% do valor da transação).
+- Integrações com delivery/agregadores; Dosiq recebe comissão de afiliação (3–10% do valor da transação).
 
 #### 5.1.5. B2G — Governo (SUS)
 
 **Piloto público:**
-- Ministério da Saúde ou Secretarias Estaduais/Municipais licenciam CuidaMed para programas de hipertensão/diabetes.
+- Ministério da Saúde ou Secretarias Estaduais/Municipais licenciam Dosiq para programas de hipertensão/diabetes.
 - Pricing: contrato anual (licitação) com fee por usuário ativo ou per-capita mensal.
 - Exemplo: piloto com 10k pacientes em 50 UBS de uma capital, R$ 3/paciente/mês → R$ 30k/mês + potencial de escala nacional.
 
@@ -860,7 +860,7 @@ Integracao (logs de integrações externas)
 #### 6.2.3. B2G (governo/SUS)
 
 **Estratégia de longo prazo:**
-- Publicar white-paper técnico sobre CuidaMed e propor como solução complementar ao Meu SUS Digital.
+- Publicar white-paper técnico sobre Dosiq e propor como solução complementar ao Meu SUS Digital.
 - Aproximação com Ministério da Saúde (Departamento de Assistência Farmacêutica) e Secretarias Estaduais/Municipais.
 - Participar de editais de inovação (ex.: Conecta SUS, programas de healthtechs do BNDES, Finep).
 - Piloto em parceria com universidade pública (ex.: USP, Unicamp) para avaliar eficácia em estudo controlado randomizado.
@@ -1014,7 +1014,7 @@ Integracao (logs de integrações externas)
 
 ### 10.2. Due diligence regulatória
 
-- **Consulta formal com ANVISA:** definir se CuidaMed precisa de registro como SaMD (depende de escopo de funcionalidades clínicas).
+- **Consulta formal com ANVISA:** definir se Dosiq precisa de registro como SaMD (depende de escopo de funcionalidades clínicas).
 - **Auditoria LGPD:** contratação de consultoria especializada para revisar políticas de privacidade, contratos de processamento de dados, segurança de infraestrutura.
 - **Certificações futuras:** ISO 13485 (se evoluir para SaMD), ISO 27001 (segurança da informação), SOC 2 Type II (confiança para clientes enterprise).
 
@@ -1030,7 +1030,7 @@ Integracao (logs de integrações externas)
 
 ## CONCLUSÃO E CALL TO ACTION
 
-**CuidaMed** representa uma oportunidade única de construir a **plataforma de adesão terapêutica definitiva para o mercado brasileiro**, capturando um mercado endereçável de:
+**Dosiq** representa uma oportunidade única de construir a **plataforma de adesão terapêutica definitiva para o mercado brasileiro**, capturando um mercado endereçável de:
 
 - **50+ milhões de brasileiros com doenças crônicas** (hipertensão, diabetes, dislipidemia, insuficiência cardíaca, doenças autoimunes, etc.).
 - **Mercado global de medication adherence projetado em US$12B+ até 2034**, com Brasil representando fatia relevante na América Latina.
