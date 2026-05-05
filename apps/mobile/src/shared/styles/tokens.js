@@ -37,11 +37,12 @@ export const colors = {
 
   // Text semântico (Aliases para retrocompatibilidade e semântica)
   text: {
-    primary: '#1a1c1e', // Revert to neutral.800 for UI readability
+    primary: '#1a1c1e', // neutral.800
     secondary: '#44474e', // neutral.600
-    brand: '#004d45', // New explicit brand color
     muted: '#8e9199', // neutral.400
     inverse: '#ffffff',
+    // --- Branding specific tokens ---
+    brand: '#004d45', // Forest Green para Wordmark
   },
 
   // Borders
@@ -52,10 +53,11 @@ export const colors = {
 
   // Backgrounds semântico
   bg: {
-    screen: '#f8fafb', // Revert to Neutral Surface for better UX contrast
-    brand: '#F0FDFB', // Explicit brand background (Login/Splash)
+    screen: '#f8fafb', // Sanctuary Surface
     card: '#ffffff',
     overlay: 'rgba(26, 28, 29, 0.4)',
+    // --- Branding specific tokens ---
+    brand: '#F0FDFB', // Mint para Login/Splash
   },
 
   // Tab navigation
@@ -122,9 +124,9 @@ export const shadows = {
 
 export const typography = {
   fontFamily: {
-    brand: 'Comfortaa-Bold', // Somente para wordmarks/branding
     bold: 'System',
     medium: 'System',
     regular: 'System',
+    brand: 'Comfortaa-Bold', // Unicamente para branding
   },
 }
