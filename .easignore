@@ -1,13 +1,45 @@
-# EAS Ignore para Monorepo
-node_modules/
-.git/
+# EAS Ignore para Monorepo Dosiq
+# Este arquivo controla o que o EAS CLI envia para o builder.
+# Configurado para ser "slim", enviando apenas o necessário para a app mobile.
 
-# Forçar inclusão dos arquivos de configuração mobile para builds locais
+# 1. Ignorar pastas de ferramentas, agentes e IDEs
+.*
+!/.easignore
+!/.gitignore
+
+# 2. Ignorar outros aplicativos e backend
+/apps/web/
+/server/
+/api/
+
+# 3. Ignorar infraestrutura de projeto e logs
+/bug-logs/
+/screenshots/
+/plans/
+/docs/
+scratch/
+*.log
+.DS_Store
+
+# 4. Ignorar dependências locais (o builder instala as suas)
+node_modules/
+**/node_modules/
+
+# 5. PERMITIR arquivos essenciais do monorepo
+!/package.json
+!/package-lock.json
+!/turbo.json
+
+# 6. PERMITIR pacotes necessários para a App Mobile
+!/apps/mobile/
+!/packages/core/
+!/packages/design-tokens/
+!/packages/shared-data/
+
+# 7. FORÇAR inclusão de arquivos de configuração mobile (que podem estar no .gitignore)
 !apps/mobile/GoogleService-Info-development.plist
 !apps/mobile/GoogleService-Info-production.plist
 !apps/mobile/GoogleService-Info.plist
 !apps/mobile/google-services-development.json
 !apps/mobile/google-services-production.json
 !apps/mobile/google-services.json
-
-# Se houver outros pacotes mobile no futuro, adicionar aqui
