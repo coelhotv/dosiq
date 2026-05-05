@@ -37,8 +37,9 @@ export const colors = {
 
   // Text semântico (Aliases para retrocompatibilidade e semântica)
   text: {
-    primary: '#004d45', // Sanctuary Forest Green (Deep)
+    primary: '#1a1c1e', // Revert to neutral.800 for UI readability
     secondary: '#44474e', // neutral.600
+    brand: '#004d45', // New explicit brand color
     muted: '#8e9199', // neutral.400
     inverse: '#ffffff',
   },
@@ -51,7 +52,8 @@ export const colors = {
 
   // Backgrounds semântico
   bg: {
-    screen: '#F0FDFB', // Sanctuary Mint Surface
+    screen: '#f8fafb', // Revert to Neutral Surface for better UX contrast
+    brand: '#F0FDFB', // Explicit brand background (Login/Splash)
     card: '#ffffff',
     overlay: 'rgba(26, 28, 29, 0.4)',
   },
@@ -120,8 +122,9 @@ export const shadows = {
 
 export const typography = {
   fontFamily: {
-    bold: 'Comfortaa-Bold',
-    medium: 'Comfortaa-Regular', // Fallback para medium por enquanto
-    regular: 'Comfortaa-Regular',
+    brand: 'Comfortaa-Bold', // Somente para wordmarks/branding
+    bold: 'System',
+    medium: 'System',
+    regular: 'System',
   },
 }
