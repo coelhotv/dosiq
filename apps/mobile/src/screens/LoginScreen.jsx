@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     alignSelf: 'center',
-    marginBottom: spacing[4],
+    marginBottom: spacing[3],
   },
   title: {
     fontSize: 48,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   button: {
-    backgroundColor: colors.primary[600],
+    backgroundColor: '#006A5E',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
