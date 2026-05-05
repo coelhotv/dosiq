@@ -95,7 +95,7 @@
 
 .lp-brand__text {
   font-family: var(--font-brand, sans-serif);
-  font-size: 1.25rem;
+  font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.04em;
   color: var(--lp-green-700);

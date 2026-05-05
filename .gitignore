@@ -115,17 +115,9 @@ dosiq.xcworkspace/
 # Plans archive (historical, not active)
 plans/archive_old/
 
-# Public assets — whitelist essentials via negation
-apps/web/public/*
-!apps/web/public/app-icons/
-!apps/web/public/favicon.ico
-!apps/web/public/favicon.svg
-!apps/web/public/logo-new.png
-!apps/web/public/logo-new.svg
-!apps/web/public/desktop.jpg
-!apps/web/public/mobile.jpg
-!apps/web/public/tablet.jpg
-!apps/web/public/politica-de-privacidade.html
-!apps/web/public/gemini-svg.svg
 # Added by code-review-graph
 .code-review-graph/
+
+# Public folder
+apps/web/public/medicamentos-ativos-anvisa.csv
+apps/web/public/*old*

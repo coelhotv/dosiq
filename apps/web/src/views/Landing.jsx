@@ -24,11 +24,11 @@ function PrototypeIcon({ children, className = '', size = 20, viewBox = '0 0 24 
 function LogoMark({ className = '', size = 24 }) {
   return (
     <img
-      src="/dosiq-logo-verde.svg"
+      src="/dosiq-logo-verde.png"
       width={size}
       height={size}
       className={className}
-      alt="Dosiq"
+      alt="dosiq"
       aria-hidden="true"
       style={{ display: 'block' }}
     />
@@ -186,7 +186,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <div className="lp-brand__mark">
                 <LogoMark size={32} />
               </div>
-              <span className="lp-brand__text">Dosiq</span>
+              <span className="lp-brand__text">dosiq</span>
             </div>
 
             <nav className="lp-nav">
