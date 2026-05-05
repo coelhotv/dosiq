@@ -43,3 +43,9 @@ node_modules/
 !apps/mobile/google-services-development.json
 !apps/mobile/google-services-production.json
 !apps/mobile/google-services.json
+
+# 8. Ignorar arquivos temporários de sistema que travam o rmdir
+.DS_Store
+.Spotlight-V100
+.Trashes
+Thumbs.db

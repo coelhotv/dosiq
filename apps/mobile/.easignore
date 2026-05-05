@@ -1,6 +1,4 @@
 # Expo generated native directories
-ios/
-android/
 credentials/
 
 # Dependencies
@@ -28,3 +26,9 @@ dist/
 
 # Nunca enviar chaves privadas de credenciais
 credentials.json
+
+# Ignorar arquivos temporários de sistema que travam o rmdir
+.DS_Store
+.Spotlight-V100
+.Trashes
+Thumbs.db

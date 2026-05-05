@@ -48,17 +48,23 @@ echo "🔐 Exportando credencial Firebase: $CREDS_FILE"
 export GOOGLE_SERVICES_JSON_PATH="$CREDS_FILE"
 export EAS_BUILD_PROFILE="$PROFILE"
 
+# echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
+# Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
+rm -rf "$SCRIPT_DIR/android"
+
 echo "🧹 Limpando cache e regenerando diretório nativo..."
 npx expo prebuild --platform android --clean
 
 echo "🚀 Iniciando build Android ($PROFILE) para v$APP_VERSION..."
-# Usamos || true para ignorar erros de limpeza interna do EAS (comum no iCloud) 
-eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || {
-  echo "⚠️ Aviso: O comando EAS reportou um problema (provavelmente limpeza de cache no iCloud), verificando integridade do binário..."
-}
+# Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
+# pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
+eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || true
 
-if [ ! -f "$TEMP_OUTPUT" ]; then
-  echo "❌ Erro: Build concluído mas arquivo não encontrado em $TEMP_OUTPUT"
+if [ -f "$TEMP_OUTPUT" ]; then
+  echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
+else
+  echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
+  echo "Verifique os logs do EAS acima para entender o porquê da falha na compilação."
   exit 1
 fi
 

@@ -74,7 +74,7 @@ read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancel
 
 # echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
 # Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
-# rm -rf "$SCRIPT_DIR/ios"
+rm -rf "$SCRIPT_DIR/ios"
 # rm -rf "$SCRIPT_DIR/android"
 
 echo "Gerando prebuild pro iOS..."
@@ -104,16 +104,15 @@ fi
 rm -f "$TEMP_OUTPUT"
 
 echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
-# Build local via EAS
-if eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache ; then
-  echo "✅ EAS build concluído com sucesso."
-else
-  echo "❌ Erro crítico no EAS build. Verifique os logs acima."
-  exit 1
-fi
+# Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
+# pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
+eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || true
 
-if [ ! -e "$TEMP_OUTPUT" ]; then
-  echo "❌ Erro: Arquivos de saída não encontrados em $TEMP_OUTPUT"
+if [ -f "$TEMP_OUTPUT" ]; then
+  echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
+else
+  echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
+  echo "Verifique os logs do EAS acima para entender o porquê da falha na compilação."
   exit 1
 fi
 
