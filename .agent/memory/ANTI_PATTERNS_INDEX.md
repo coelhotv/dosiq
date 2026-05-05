@@ -98,6 +98,7 @@
 - **[AP-H06]** Runtime error when React/React-DOM pair doesn't have exact same version (19.2.5 ... -> [`anti-patterns/react_and_ui/AP-H06.md`](./anti-patterns/react_and_ui/AP-H06.md)
 - **[AP-H15]** useCallback com state no deps array + useEffect([callback]) cria loop infinito: ... -> [`anti-patterns/react_and_ui/AP-H15.md`](./anti-patterns/react_and_ui/AP-H15.md)
 - **[AP-LOG-001]** 50+ debug logs on Dashboard load polluteDevTools, confuse users, create noise th... -> [`anti-patterns/react_and_ui/AP-LOG-001.md`](./anti-patterns/react_and_ui/AP-LOG-001.md)
+- **[AP-H22]** Global Brand Leak: Applying brand-specific aesthetic tokens (Comfortaa, mint backgrounds) to global UI keys causes UX fatigue and readability issues in the main app product. -> [`anti-patterns/react_and_ui/AP-H22.md`](./anti-patterns/react_and_ui/AP-H22.md)
 - **[AP-P02]** Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g.,... -> [`anti-patterns/react_and_ui/AP-P02.md`](./anti-patterns/react_and_ui/AP-P02.md)
 - **[AP-P09]** N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each block... -> [`anti-patterns/react_and_ui/AP-P09.md`](./anti-patterns/react_and_ui/AP-P09.md)
 - **[AP-P10]** All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows ... -> [`anti-patterns/react_and_ui/AP-P10.md`](./anti-patterns/react_and_ui/AP-P10.md)

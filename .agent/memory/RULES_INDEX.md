@@ -179,3 +179,4 @@
 - **[R-208]** Adherence Report Scheduling — O relatório diário de adesão deve ser agendado para as 23:00 (constante ADHERENCE_REPORT_TIME) para garantir o fechamento completo do dia, desacoplado do horário do boletim matinal (digest). -> [`rules/mobile_and_platform/R-208.md`](./rules/mobile_and_platform/R-208.md)
 - **[R-211]** Automated ESLint Architecture (Flat Config) -> [`rules/process_and_testing/R-211.md`](./rules/process_and_testing/R-211.md)
 - **[R-212]** Sempre utilizar o utilitário `rtk` como proxy para comandos CLI para otimizar tokens -> [`rules/process_and_testing/R-212.md`](./rules/process_and_testing/R-212.md)
+- **[R-214]** Branding Isolation: Brand-specific tokens (Comfortaa, Mint colors) MUST be isolated in explicit 'brand' keys and never leak into global UI tokens (primary, background) to preserve app usability. -> [`rules/react_and_ui/R-214.md`](./rules/react_and_ui/R-214.md)

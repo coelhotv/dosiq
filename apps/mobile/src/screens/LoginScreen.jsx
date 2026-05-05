@@ -137,11 +137,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 48,
+    lineHeight: 48,
     color: colors.text.brand,
     marginBottom: spacing[1],
     textAlign: 'center',
     fontFamily: typography.fontFamily.brand,
     letterSpacing: -1,
+    includeFontPadding: false,
   },
   subtitle: {
     fontSize: 16,
