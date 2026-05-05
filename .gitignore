@@ -12,6 +12,8 @@ node_modules/
 .expo/
 
 # Build output
+apps/mobile/ios/
+apps/mobile/android/
 dist/
 dist-ssr
 build/
@@ -57,8 +59,7 @@ scratch/
 run/
 
 # DEVFLOW runtime files (not versioned)
-.agent/sessions/.lock
-.agent/sessions/events.jsonl
+.agent/sessions/
 
 # DEVFLOW skill (symlink to master — not versioned)
 .agent/DEVFLOW.md
@@ -83,7 +84,8 @@ CLAUDE.md
 GEMINI.md
 AGENTS.md
 
-.claude/settings.local.json
+.agents/
+.claude/
 .kilocode
 .kilocodemodes
 .roomodes
