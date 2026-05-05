@@ -122,7 +122,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F0FDFB',
+    backgroundColor: colors.bg.screen,
   },
   container: {
     flex: 1,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing[2],
     textAlign: 'center',
-    fontFamily: 'Comfortaa-Bold',
+    fontFamily: typography.fontFamily.bold,
     letterSpacing: -1,
   },
   subtitle: {
