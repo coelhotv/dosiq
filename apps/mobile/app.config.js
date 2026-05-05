@@ -72,6 +72,7 @@ module.exports = {
     plugins: [
       '@react-native-firebase/app',
       'expo-notifications',
+      'expo-font',
       ['expo-build-properties', {
         ios: {
           useFrameworks: 'static'

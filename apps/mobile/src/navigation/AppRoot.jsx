@@ -4,9 +4,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency'
 import Navigation from './Navigation'
 import { debugLog } from '@shared/utils/debugLog'
+import { 
+  useFonts, 
+  Comfortaa_400Regular, 
+  Comfortaa_700Bold 
+} from '@expo-google-fonts/comfortaa'
 
 // AppRoot — ponto de entrada da árvore de componentes
 export default function AppRoot() {
+  const [fontsLoaded] = useFonts({
+    'Comfortaa-Regular': Comfortaa_400Regular,
+    'Comfortaa-Bold': Comfortaa_700Bold,
+  })
+
   useEffect(() => {
     let isRequesting = false
 
@@ -48,6 +58,10 @@ export default function AppRoot() {
 
     return () => subscription.remove()
   }, [])
+
+  if (!fontsLoaded) {
+    return null
+  }
 
   return (
     <SafeAreaProvider>
