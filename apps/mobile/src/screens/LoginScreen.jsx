@@ -63,7 +63,7 @@ export default function LoginScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Dosiq</Text>
+        <Text style={styles.title}>dosiq</Text>
         <Text style={styles.subtitle}>Entre na sua conta</Text>
 
         <TextInput

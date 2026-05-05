@@ -23,112 +23,15 @@ function PrototypeIcon({ children, className = '', size = 20, viewBox = '0 0 24 
 
 function LogoMark({ className = '', size = 24 }) {
   return (
-    <svg
-      viewBox="0 0 100 100"
+    <img
+      src="/dosiq-logo-verde.svg"
       width={size}
       height={size}
-      xmlns="http://www.w3.org/2000/svg"
       className={className}
+      alt="Dosiq"
       aria-hidden="true"
-    >
-      {/* Pílula (cápsula) */}
-      <rect
-        x="10"
-        y="30"
-        width="80"
-        height="40"
-        rx="20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="5"
-        transform="rotate(-45 50 50)"
-      />
-
-      {/* IC Body (corpo do chip) */}
-      <rect
-        x="38"
-        y="38"
-        width="24"
-        height="24"
-        rx="2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-
-      {/* Pino superior central com zigzag até borda */}
-      <line x1="50" y1="38" x2="50" y2="32" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M 50 32 L 50 20 L 49 20"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Pino inferior central com zigzag até borda */}
-      <line x1="50" y1="62" x2="50" y2="68" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M 50 68 L 50 80 L 47 80"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Pino esquerdo com zigzag até borda */}
-      <line x1="38" y1="50" x2="32" y2="50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M 32 50 L 20 50 L 21 48"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Pino direito com zigzag até borda */}
-      <line x1="62" y1="50" x2="68" y2="50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M 68 50 L 80 50 L 80 47"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Pinos superiores laterais (simples) */}
-      <line x1="42" y1="38" x2="42" y2="32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="58" y1="38" x2="58" y2="32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-
-      {/* Pinos inferiores laterais (simples) */}
-      <line x1="42" y1="62" x2="42" y2="68" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="58" y1="62" x2="58" y2="68" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-
-      {/* Pino esquerdo inferior */}
-      <line x1="38" y1="56" x2="32" y2="56" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-
-      {/* Pino direito inferior */}
-      <line x1="62" y1="56" x2="68" y2="56" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-
-      {/* Pino esquerdo superior */}
-      <line x1="38" y1="44" x2="32" y2="44" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-
-      {/* Pino direito superior */}
-      <line x1="62" y1="44" x2="68" y2="44" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-
-      {/* Detalhe interno: ponto de referência (cavidade do IC real) */}
-      <circle cx="42" cy="42" r="1.5" fill="currentColor" />
-
-      {/* Linhas de circuito internas */}
-      <line x1="46" y1="44" x2="54" y2="44" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
-      <line x1="46" y1="50" x2="54" y2="50" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
-      <line x1="46" y1="56" x2="54" y2="56" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
-      <line x1="50" y1="44" x2="50" y2="56" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
-    </svg>
+      style={{ display: 'block' }}
+    />
   )
 }
 

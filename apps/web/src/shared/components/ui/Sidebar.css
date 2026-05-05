@@ -28,16 +28,18 @@
 /* Brand area */
 .sidebar-brand {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.75rem 1rem 1.5rem;
 }
 
 .sidebar-brand-title {
-  font-family: var(--font-display, 'Public Sans', sans-serif);
-  font-size: var(--text-title-lg, 1.125rem);
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-primary, #006a5e);
+  font-family: var(--font-brand, sans-serif);
+  font-size: var(--text-headline-lg, 2.0rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-primary, #2D4F2A);
   line-height: 1.2;
 }
 

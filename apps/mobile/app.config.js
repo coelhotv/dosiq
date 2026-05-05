@@ -45,7 +45,7 @@ module.exports = {
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#E9F3EA',
+      backgroundColor: '#F0FDFB',
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
@@ -65,7 +65,7 @@ module.exports = {
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH || `./google-services.json`,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#E9F3EA',
+        backgroundColor: '#F0FDFB',
       },
       edgeToEdgeEnabled: true,
     },

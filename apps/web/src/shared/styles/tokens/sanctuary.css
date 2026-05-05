@@ -12,7 +12,7 @@
    Google Fonts — Public Sans + Lexend
    NOTA: @import DEVE estar no topo do arquivo.
    ============================================ */
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&family=Comfortaa:wght@400;500;600;700&display=swap');
 
 /* ============================================
    DESIGN TOKENS — SANTUÁRIO TERAPÊUTICO
@@ -237,6 +237,7 @@
      ============================================ */
   --font-display: 'Public Sans', system-ui, sans-serif;
   --font-body: 'Lexend', system-ui, sans-serif;
+  --font-brand: 'Comfortaa', sans-serif;
   --font-family: var(--font-body);
 
   /* Font weights */

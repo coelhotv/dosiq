@@ -71,25 +71,25 @@ export default defineConfig({
         type: 'module',
       },
       manifest: {
-        name: 'Dosiq',
-        short_name: 'Dosiq',
-        description: 'Gerenciador de Medicamentos',
-        theme_color: '#4f46e5',
-        background_color: '#ffffff',
+        name: 'dosiq',
+        short_name: 'dosiq',
+        description: 'inteligência em doses',
+        theme_color: '#006a5e',
+        background_color: '#F0FDFB',
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'app-icons/web/icon-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'app-icons/web/icon-512.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'app-icons/web/icon-512-maskable.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

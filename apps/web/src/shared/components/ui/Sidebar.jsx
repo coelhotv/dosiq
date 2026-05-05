@@ -13,8 +13,11 @@ export default function Sidebar({ currentView, setCurrentView, onNewDose, unread
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
-        <span className="sidebar-brand-title">Dosiq</span>
-        <span className="sidebar-brand-subtitle">Santuário Terapêutico</span>
+        <img src="/dosiq-logo-verde.svg" alt="" width="48" height="48" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+          <span className="sidebar-brand-title">dosiq</span>
+          <span className="sidebar-brand-subtitle">inteligência em doses</span>
+        </div>
       </div>
 
       <nav className="sidebar-nav">

@@ -90,16 +90,15 @@
   width: 40px;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-card-sm);
-  background: var(--lp-green-600);
-  color: var(--lp-white);
-  box-shadow: 0 12px 30px rgba(156, 241, 225, 0.4);
+  flex-shrink: 0;
 }
 
 .lp-brand__text {
+  font-family: var(--font-brand, sans-serif);
   font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
+  color: var(--lp-green-700);
 }
 
 .lp-nav {
