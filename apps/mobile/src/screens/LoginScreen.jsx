@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   title: {
-    fontSize: 32,
+    fontSize: 48,
     color: colors.text.primary,
     marginBottom: spacing[2],
     textAlign: 'center',
