@@ -10,6 +10,8 @@ import {
   notificationPayloadSchema
 } from './_payloadSchemas.js';
 
+export { kindSchema, notificationPayloadSchema };
+
 import {
   buildDailyDigestPayload,
   buildAdherenceReportPayload,

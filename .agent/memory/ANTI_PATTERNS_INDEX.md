@@ -28,6 +28,7 @@
 - **[AP-096]** CSS Deletion Without Verifying className Usage in JSX -> [`anti-patterns/infra_and_deploy/AP-096.md`](./anti-patterns/infra_and_deploy/AP-096.md)
 - **[AP-H04]** npm ERESOLVE conflict when adding new workspace package with incompatible peer d... -> [`anti-patterns/infra_and_deploy/AP-H04.md`](./anti-patterns/infra_and_deploy/AP-H04.md)
 - **[AP-H05]** GitHub Actions npm ci fails when new workspace added but lock file not committed -> [`anti-patterns/infra_and_deploy/AP-H05.md`](./anti-patterns/infra_and_deploy/AP-H05.md)
+- **[AP-130]** SyntaxError: The requested module does not provide an export named 'X' (ESM) -> [`anti-patterns/infra_and_deploy/AP-130.md`](./anti-patterns/infra_and_deploy/AP-130.md)
 - **[AP-SL03]** Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras c... -> [`anti-patterns/infra_and_deploy/AP-SL03.md`](./anti-patterns/infra_and_deploy/AP-SL03.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
@@ -83,6 +84,7 @@
 - **[AP-H28]** Modificar dados reais de produção para fins de teste de UI. -> [`anti-patterns/process_and_testing/AP-H28.md`](./anti-patterns/process_and_testing/AP-H28.md)
 - **[AP-055]** App Store Connect Manual Binary Upload Myth. No "Upload" button for .ipa files... -> [`anti-patterns/process_and_testing/AP-055.md`](./anti-patterns/process_and_testing/AP-055.md)
 - **[AP-114]** Validação de Entrada Silenciosa (Missing Zod in Services) -> [`anti-patterns/process_and_testing/AP-114.md`](./anti-patterns/process_and_testing/AP-114.md)
+- **[AP-131]** Stale Mock Method Signature after Service Refactor -> [`anti-patterns/process_and_testing/AP-131.md`](./anti-patterns/process_and_testing/AP-131.md)
 - **[AP-120]** Refatoração por Purgue (Over-cleaning) — remoção de código orquestrador sem validar dependências de infra -> [`anti-patterns/process_and_testing/AP-120.md`](./anti-patterns/process_and_testing/AP-120.md)
 
 
