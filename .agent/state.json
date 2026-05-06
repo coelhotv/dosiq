@@ -2,15 +2,15 @@
   "project": "dosiq",
   "sprint": "2026-W18",
   "session": {
-    "mode": "coding",
-    "status": "review",
-    "goal": "Native in-app landing page",
-    "goal_type": "feature"
+    "mode": "idle",
+    "status": "completed",
+    "goal": null,
+    "goal_type": null
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 8,
-    "rules_count": 80,
+    "journal_entries_since_distillation": 9,
+    "rules_count": 81,
     "anti_patterns_count": 65,
     "decisions_count": 40,
     "contracts_count": 20
