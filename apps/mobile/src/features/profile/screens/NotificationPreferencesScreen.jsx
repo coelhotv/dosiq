@@ -114,7 +114,7 @@ function TimePicker({ value, onChange, label }) {
                   <Text style={[styles.hourItemText, item === value && styles.hourItemTextActive]}>
                     {formatTimeFriendly(item)}
                   </Text>
-                  {item === value && <Check size={16} color={colors.primary[600]} />}
+                  {item === value && <Check size={16} color={colors.brand.primary} />}
                 </TouchableOpacity>
               )}
             />
@@ -301,13 +301,13 @@ export default function NotificationPreferencesScreen({ navigation }) {
         {/* Global toggle */}
         <View style={[styles.card, styles.globalRow]}>
           <View style={styles.rowLeft}>
-            <Bell size={20} color={globalEnabled ? colors.primary[600] : colors.text.muted} strokeWidth={2} />
+            <Bell size={20} color={globalEnabled ? colors.brand.primary : colors.text.muted} strokeWidth={2} />
             <Text style={styles.rowLabel}>Notificações ativas</Text>
           </View>
           <Switch
             value={globalEnabled}
             onValueChange={handleGlobalToggle}
-            trackColor={{ false: colors.neutral[200], true: colors.primary[500] }}
+            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
             thumbColor={colors.bg.card}
             accessibilityLabel="Ativar ou desativar todas as notificações"
           />
@@ -320,14 +320,14 @@ export default function NotificationPreferencesScreen({ navigation }) {
           {/* App push */}
           <View style={styles.channelRow}>
             <View style={styles.rowLeft}>
-              <Smartphone size={20} color={colors.primary[600]} strokeWidth={2} />
+              <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
               <Text style={styles.rowLabel}>App (push)</Text>
             </View>
             <Switch
               value={mobilePushEnabled && globalEnabled}
               onValueChange={handleMobilePushToggle}
               disabled={!globalEnabled}
-              trackColor={{ false: colors.neutral[200], true: colors.primary[500] }}
+              trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
               thumbColor={colors.bg.card}
               accessibilityLabel="Ativar notificações push do aplicativo"
             />
@@ -338,7 +338,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
           {/* Telegram */}
           <TouchableOpacity style={styles.channelRow} onPress={handleTelegramPress} activeOpacity={0.7} accessibilityLabel="Configurar Telegram">
             <View style={styles.rowLeft}>
-              <Send size={20} color={colors.primary[600]} strokeWidth={2} />
+              <Send size={20} color={colors.brand.primary} strokeWidth={2} />
               <Text style={styles.rowLabel}>Telegram</Text>
             </View>
             <View style={styles.rowRight}>
@@ -441,7 +441,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
             value={quietHoursEnabled && globalEnabled}
             onValueChange={handleQuietHoursToggle}
             disabled={!globalEnabled}
-            trackColor={{ false: colors.neutral[200], true: colors.primary[500] }}
+            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
             thumbColor={colors.bg.card}
             accessibilityLabel="Ativar horas de silêncio"
           />
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   backButtonText: {
-    color: colors.primary[600],
+    color: colors.brand.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -617,13 +617,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioActive: {
-    borderColor: colors.primary[600],
+    borderColor: colors.brand.primary,
   },
   radioDot: {
     width: 10,
     height: 10,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
   },
 
   // Time picker row
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
   timePickerValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.primary[600],
+    color: colors.brand.primary,
   },
 
   // Modal
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
   },
   hourItemActive: {
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.brand.primary + '11', // Opacidade leve para o item ativo
   },
   hourItemText: {
     fontSize: 16,
@@ -692,6 +692,6 @@ const styles = StyleSheet.create({
   },
   hourItemTextActive: {
     fontWeight: '700',
-    color: colors.primary[600],
+    color: colors.brand.primary,
   },
 })
