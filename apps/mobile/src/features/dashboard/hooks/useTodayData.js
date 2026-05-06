@@ -1,20 +1,9 @@
-// useTodayData.js — hook para dados da tela Hoje
-// Padrão: { data, loading, error, stale, refresh }
-// R-010: ordem de declaração — states → effects → handlers
-// stale=true quando há snapshot em cache mas a última refresh falhou (R5-008)
-
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { 
   getTodayLocal, 
-  parseLocalDate, 
-  evaluateDoseTimelineState, 
-  isProtocolActiveOnDate, 
-  calculateAdherenceStats, 
-  calculateDosesByDate,
   getNow,
-  formatLocalDate,
   parseISO
 } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
@@ -24,290 +13,110 @@ import {
   getMedicinesData,
   getUserSettings,
 } from '../services/dashboardService'
-import { debugLog } from '@shared/utils/debugLog'
+import { useTodayDerived } from './_useTodayDerived'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
-/**
- * @typedef {{ 
- *   protocols: Array, 
- *   logs: Array, 
- *   medicines: Record<string,Object>,
- *   stats: Object,
- *   zones: Object,
- *   user: Object|null,
- *   capturedAt?: string
- * }} TodayData
- * @returns {{ data: TodayData|null, loading: boolean, error: string|null, stale: boolean, isDaySegregated: boolean, refresh: Function }}
- */
 export function useTodayData() {
-  // States primeiro (R-010)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
   const [isDaySegregated, setIsDaySegregated] = useState(false)
-  
-  // Ref para snapshot check sem entrar nos deps do useCallback
   const dataRef = useRef(null)
+  const enhancedData = useTodayDerived(data)
+
+  const handleOnlineSuccess = useCallback(async (user, protocols, logs, medicines, userSettings, today) => {
+    const enrichedProtocols = protocols.map(p => ({ ...p, medicine: medicines[p.medicine_id] || null }))
+    const newData = {
+      protocols: enrichedProtocols,
+      logs,
+      medicines,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: userSettings?.display_name || null,
+        complexity_override: userSettings?.complexity_override || null
+      },
+      capturedAt: getNow().toISOString(),
+      localDay: today
+    }
+    await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
+    dataRef.current = newData
+    setData(newData)
+    setStale(false)
+    setIsDaySegregated(false)
+  }, [])
+
+  const handleCacheFallback = useCallback(async (originalErr) => {
+    const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
+    if (!cached) throw originalErr
+    
+    const parsed = JSON.parse(cached)
+    const diffHours = (getNow().getTime() - parseISO(parsed.capturedAt).getTime()) / (1000 * 60 * 60)
+    if (diffHours >= 24) throw new Error('Cache expirado (> 24h)')
+
+    const today = getTodayLocal()
+    const snapshotDay = parsed.localDay || (parsed.capturedAt ?? '').split('T')[0]
+    
+    if (snapshotDay && snapshotDay !== today) {
+      parsed.logs = []
+      setIsDaySegregated(true)
+    } else {
+      setIsDaySegregated(false)
+    }
+
+    const safeData = {
+      protocols: Array.isArray(parsed.protocols) ? parsed.protocols : [],
+      logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+      medicines: parsed.medicines || {},
+      user: parsed.user || null,
+      capturedAt: parsed.capturedAt
+    }
+    setData(safeData)
+    dataRef.current = safeData
+    setStale(true)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-
     try {
-      debugLog('[useTodayData] fetch start')
-      
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
-      
-      let user = currentSession?.user
-      if (sessionError || !user) {
-        const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
-        if (userError || !verifiedUser) throw new Error('Sessão expirada')
-        user = verifiedUser
-      }
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user || (await supabase.auth.getUser()).data.user
+      if (!user) throw new Error('Sessão expirada')
 
       const today = getTodayLocal()
-      
-      // Fetch online (primary)
       const [protocols, logs, userSettings] = await Promise.all([
         getActiveProtocols(user.id, today),
-        getLogsForPeriod(user.id, 14), // 14 dias de logs para tendências comparativas
+        getLogsForPeriod(user.id, 14),
         getUserSettings(user.id)
       ])
 
-      const medicineIds = [...new Set(protocols.map((p) => p.medicine_id))]
-      const medicines = await getMedicinesData(medicineIds)
-
-      const enrichedProtocols = protocols.map(p => ({
-        ...p,
-        medicine: medicines[p.medicine_id] || null
-      }))
-
-      const newData = { 
-        protocols: enrichedProtocols, 
-        logs, 
-        medicines,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: userSettings?.display_name || null,
-          complexity_override: userSettings?.complexity_override || null
-        },
-        capturedAt: getNow().toISOString(),
-        localDay: today // R-114 fix: save explicit local day string
-      }
-
-      // Salvar em cache para uso offline posterior
-      await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
-
-      dataRef.current = newData
-      setData(newData)
-      setStale(false)
-      setIsDaySegregated(false)
+      const medicines = await getMedicinesData([...new Set(protocols.map(p => p.medicine_id))])
+      await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, today)
     } catch (err) {
-      if (__DEV__) console.warn('[useTodayData] Fetch failed, trying cache:', err.message)
-      
       try {
-        const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          const capturedAt = parseISO(parsed.capturedAt)
-          const now = getNow()
-          const diffHours = (now.getTime() - capturedAt.getTime()) / (1000 * 60 * 60)
-
-          // Regra: < 24h
-          if (diffHours < 24) {
-            const today = getTodayLocal()
-            
-            // R-114: Prefer explicit localDay from snapshot, fallback to ISO split
-            const snapshotDay = parsed.localDay || (parsed.capturedAt ?? '').split('T')[0]
-            
-            // Regra H5.8: Se dia diferente (comparação local-local), limpar logs
-            if (snapshotDay && snapshotDay !== today) {
-              debugLog('[useTodayData] Day mismatch, segregating logs')
-              parsed.logs = Array.isArray(parsed.logs) ? [] : []
-              setIsDaySegregated(true)
-            } else {
-              setIsDaySegregated(false)
-            }
-
-            // Safety gate: garantir que parsed tem o formato esperado
-            const safeData = {
-              protocols: Array.isArray(parsed.protocols) ? parsed.protocols : [],
-              logs: Array.isArray(parsed.logs) ? parsed.logs : [],
-              medicines: parsed.medicines || {},
-              user: parsed.user || null,
-              capturedAt: parsed.capturedAt
-            }
-
-            setData(safeData)
-            dataRef.current = safeData
-            setStale(true)
-            setError(null) 
-          } else {
-            throw new Error('Cache expirado (> 24h)')
-          }
-        } else {
-          throw err // Re-throw original se não houver cache
-        }
-      } catch {
-        setError(err.message ?? 'Erro ao carregar dados.')
+        await handleCacheFallback(err)
+      } catch (fallbackErr) {
+        setError(fallbackErr.message ?? 'Erro ao carregar dados.')
       }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [handleOnlineSuccess, handleCacheFallback])
+
+  useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    load()
-  }, [load])
-
-  // Lógica de Refresh de Meia-Noite e AppState (R5-008, R-020)
-  useEffect(() => {
-    let midnightTimer
-
-    const scheduleMidnightRefresh = () => {
-      const now = getNow()
-      // Meia-noite local do dia seguinte (Brasil)
-      const nextMidnight = parseLocalDate(getTodayLocal())
-      nextMidnight.setDate(nextMidnight.getDate() + 1)
-      nextMidnight.setHours(0, 0, 0, 0)
-      
-      const msUntilMidnight = nextMidnight.getTime() - now.getTime()
-      
-      clearTimeout(midnightTimer)
-      midnightTimer = setTimeout(() => {
-        debugLog('[useTodayData] Meia-noite detectada: Refreshing...')
-        load()
-        scheduleMidnightRefresh() // Agendar próxima
-      }, msUntilMidnight + 1000) // +1s para garantir que passou o boundary
-    }
-
-    scheduleMidnightRefresh()
-
-    // Listener para quando o app volta do background (Device Lock ou App Switch)
     const handleStateChange = (nextState) => {
-      if (nextState === 'active') {
-        const today = getTodayLocal()
-        // Se mudou o dia enquanto estava em background, forçar reload
-        if (dataRef.current?.localDay && dataRef.current.localDay !== today) {
-          debugLog('[useTodayData] Dia alterado via background: Refreshing...')
-          load()
-        }
+      if (nextState === 'active' && dataRef.current?.localDay && dataRef.current.localDay !== getTodayLocal()) {
+        load()
       }
     }
-
     const subscription = AppState.addEventListener('change', handleStateChange)
-
-    return () => {
-      subscription.remove()
-      clearTimeout(midnightTimer)
-    }
+    return () => subscription.remove()
   }, [load])
 
-  // Derivar estatísticas e zonas (Performance: memoized)
-  const enhancedData = useMemo(() => {
-    if (!data) return null
-
-    const todayStr = getTodayLocal()
-    
-    // 0. Resiliência de Cache: Filtrar validade do protocolo para HOJE (GMT-3)
-    // Isso protege a UI caso o snapshot no AsyncStorage tenha dados obsoletos.
-    const validProtocols = data.protocols.filter(p => isProtocolActiveOnDate(p, todayStr))
-
-    // 1. Filtrar logs de hoje para a Timeline
-    const todayLogs = data.logs.filter(l => {
-      return formatLocalDate(parseISO(l.taken_at)) === todayStr
-    })
-
-    // 2. Classificar doses em zonas para o Dashboard
-    const { takenDoses, missedDoses, scheduledDoses } = calculateDosesByDate(
-      todayStr,
-      todayLogs,
-      validProtocols
-    )
-
-    // 3. Calcular estatísticas de adesão (Últimos 7 dias - Diluído conforme feedback H8.7)
-    const stats = calculateAdherenceStats(
-      data.logs,
-      validProtocols,
-      7,
-      0 // Janela atual (D0 a D7)
-    )
-
-    // 4. Calcular estatísticas do período anterior para tendência (+5% vs semana passada)
-    const statsPrevious = calculateAdherenceStats(
-      data.logs,
-      validProtocols,
-      7,
-      7 // Janela anterior (D7 a D14)
-    )
-
-    const scoreTrend = statsPrevious.expected > 0 ? (stats.score - statsPrevious.score) : 0
-
-    const statsWithTrend = {
-      ...stats,
-      trend: scoreTrend,
-      hasPreviousData: statsPrevious.expected > 0
-    }
-
-    // Ordenar listas cronologicamente (00:00 -> 23:59)
-    const sortByTime = (a, b) => {
-      const formatTime = (d) => d.scheduledTime || (d.taken_at ? formatLocalDate(parseISO(d.taken_at), true).split(' ')[1].substring(0, 5) : '00:00')
-      const timeA = formatTime(a)
-      const timeB = formatTime(b)
-      return timeA.localeCompare(timeB)
-    }
-
-    const zones = {
-      late: missedDoses.sort(sortByTime),
-      now: scheduledDoses.filter(d => {
-        const [h, m] = d.scheduledTime.split(':').map(Number)
-        const scheduledDate = parseLocalDate(todayStr)
-        scheduledDate.setHours(h, m, 0, 0)
-        const now = getNow()
-        const diffHours = (now.getTime() - scheduledDate.getTime()) / (1000 * 60 * 60)
-        return diffHours >= -0.5 && diffHours <= 2
-      }).sort(sortByTime),
-      upcoming: scheduledDoses.sort(sortByTime),
-      done: takenDoses.sort(sortByTime)
-    }
-
-    // 4. Nova Timeline Tática (Epic 2 Fase 8)
-    const timeline = evaluateDoseTimelineState(todayStr, {
-      takenDoses,
-      missedDoses,
-      scheduledDoses
-    })
-
-    // 5. Calcular alertas de estoque
-    const stockAlerts = Object.values(data.medicines || {})
-      .filter(m => {
-        const daysRemaining = m.daysRemaining ?? Infinity
-        return daysRemaining <= 7 // Limiar para alerta no Dashboard
-      })
-      .map(m => ({
-        medicineId: m.id,
-        medicineName: m.name,
-        daysRemaining: m.daysRemaining
-      }))
-
-    return {
-      ...data,
-      stats: statsWithTrend,
-      zones,
-      timeline,
-      stockAlerts
-    }
-  }, [data])
-
-  return { 
-    data: enhancedData, 
-    loading, 
-    error, 
-    stale, 
-    isDaySegregated,
-    refresh: load 
-  }
+  return { data: enhancedData, loading, error, stale, isDaySegregated, refresh: load }
 }
