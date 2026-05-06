@@ -60,8 +60,8 @@ export default function ProfileScreen() {
               refresh()
               refreshBadge()
             }} 
-            colors={[colors.primary[600]]} 
-            tintColor={colors.primary[600]}
+            colors={[colors.brand.primary]} 
+            tintColor={colors.brand.primary}
           />
         }
       >
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.notificationRow}>
-              <Bell size={20} color={colors.primary[600]} strokeWidth={1.5} />
+              <Bell size={20} color={colors.brand.primary} strokeWidth={1.5} />
               <View style={styles.notificationTextGroup}>
                 <Text style={styles.notificationLabel}>Notificações</Text>
                 <Text style={styles.notificationSubtitle}>Avisos, preferências e canais</Text>
