@@ -271,4 +271,20 @@ export default [
       'no-relative-import-paths/no-relative-import-paths': 'off', // Mobile usa estrutura diferente
     },
   },
+  // Override 1: Componentes React (.jsx)
+  {
+    files: ['**/*.jsx'],
+    rules: {
+      'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
+      'complexity': ['warn', { max: 20 }],
+    }
+  },
+  // Override 2: Arquivos de teste — describe/it são "funções" para o ESLint
+  {
+    files: ['**/*.test.{js,jsx}', '**/*.spec.{js,jsx}'],
+    rules: {
+      'max-lines-per-function': 'off',
+      'complexity': 'off',
+    }
+  },
 ]
