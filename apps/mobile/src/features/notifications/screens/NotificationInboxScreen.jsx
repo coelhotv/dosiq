@@ -287,7 +287,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
     )
   }, [loading, activeFilter])
 
-  const primaryColor = colors.primary?.[600] ?? '#006a5e'
+  const primaryColor = colors.brand.primary
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

@@ -141,7 +141,7 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
                 <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
               )}
               <Text style={styles.actionText}>{cta.label}</Text>
-              <ChevronRight size={13} color={colors.primary?.[600] ?? '#006a5e'} strokeWidth={2.5} />
+              <ChevronRight size={13} color={colors.brand.primary} strokeWidth={2.5} />
             </View>
           ) : null}
         </View>
@@ -179,9 +179,9 @@ const styles = StyleSheet.create({
   expandBtn:   { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280', marginTop: 2 },
   footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 },
   takenLabel:  { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280' },
-  takenFull:   { color: colors.primary?.[600] ?? '#006a5e' },
+  takenFull:   { color: colors.brand.primary },
   actionLabel: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  actionText:  { fontSize: 13, fontWeight: '600', color: colors.primary?.[600] ?? '#006a5e' },
+  actionText:  { fontSize: 13, fontWeight: '600', color: colors.brand.primary },
   doseList:    { gap: 2, marginTop: 2 },
   doseItem:    { fontSize: 13, fontWeight: '400', color: colors.text?.secondary ?? '#4b5563', lineHeight: 19 },
 })

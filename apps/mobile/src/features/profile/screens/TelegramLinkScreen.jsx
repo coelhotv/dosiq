@@ -110,7 +110,7 @@ export default function TelegramLinkScreen({ navigation }) {
                   disabled={isGenerating}
                 >
                   {isGenerating ? (
-                    <ActivityIndicator color={colors.primary[600]} size="small" />
+                    <ActivityIndicator color={colors.brand.primary} size="small" />
                   ) : (
                     <Text style={styles.generateButtonText}>Gerar código</Text>
                   )}
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
   },
   backButtonText: {
-    color: colors.primary[600],
+    color: colors.brand.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   // Botão "Abrir bot"
   telegramButton: {
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[4],
     borderRadius: borderRadius.md,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   generateButtonText: {
-    color: colors.primary[600],
+    color: colors.brand.primary,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   copyButton: {
     paddingVertical: spacing[2],
     paddingHorizontal: spacing[3],
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     borderRadius: borderRadius.sm,
   },
   copyButtonText: {
