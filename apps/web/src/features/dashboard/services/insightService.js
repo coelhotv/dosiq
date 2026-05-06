@@ -14,6 +14,17 @@
 import { analyticsService } from './analyticsService'
 import { getNow, addDays, parseISO } from '@utils/dateUtils.js'
 import { debugLog } from '@shared/utils/logger'
+import {
+  createStreakInsight,
+  createPerfectWeekInsight,
+  createGoodWeekInsight,
+  createImprovementInsight,
+  createStockHealthyInsight,
+  createMissedDosesTodayInsight,
+  createLowAdherenceInsight,
+  createStreakBrokenInsight,
+  createProtocolReminderInsight,
+} from './_insightGenerators'
 
 // Constantes para configuração do serviço
 const STORAGE_KEY = 'mr_insight_history'
@@ -253,176 +264,27 @@ function createWeakDayInsight(onNavigate) {
  * @returns {Array} - Lista de insights aplicáveis
  */
 export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs, onNavigate }) {
-  const insights = []
-
-  // Insight: Celebração de Streak (threshold reduzido para ser mais inclusivo)
-  if (stats.currentStreak >= 5) {
-    insights.push({
-      id: 'streak_achievement',
-      type: INSIGHT_TYPES.STREAK_CELEBRATION,
-      priority: 'low',
-      icon: '🔥',
-      text: `Você está em uma sequência de ${stats.currentStreak} dias! Continue assim!`,
-      highlight: `${stats.currentStreak} dias`,
-      actionLabel: 'Ver Histórico',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'streak_achievement' })
-        onNavigate?.('history')
-      },
-    })
-  }
-
-  // Insight: Semana Perfeita
-  if (stats.adherence === 100) {
-    insights.push({
-      id: 'perfect_week',
-      type: INSIGHT_TYPES.ADHERENCE_POSITIVE,
-      priority: 'low',
-      icon: '⭐',
-      text: 'Semana perfeita! 100% de adesão nos últimos 7 dias.',
-      highlight: '100% de adesão',
-      actionLabel: 'Compartilhar',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'perfect_week' })
-        shareAchievement()
-      },
-    })
-  }
-
-  // Insight: Boa Semana (adesão >= 80%)
-  if (stats.adherence >= 80 && stats.adherence < 100) {
-    insights.push({
-      id: 'good_week',
-      type: INSIGHT_TYPES.ADHERENCE_POSITIVE,
-      priority: 'low',
-      icon: '👍',
-      text: `Sua adesão esta semana está em ${Math.round(stats.adherence)}%. Muito bem! Continue assim!`,
-      highlight: `${Math.round(stats.adherence)}%`,
-      actionLabel: 'Ver Histórico',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'good_week' })
-        onNavigate?.('history')
-      },
-    })
-  }
-
-  // Insight: Melhoria de Adesão
   const trend = calculateTrendFromData(dailyAdherence)
-  if (trend.direction === 'up' && trend.percentage >= 10) {
-    insights.push({
-      id: 'improvement',
-      type: INSIGHT_TYPES.ADHERENCE_POSITIVE,
-      priority: 'low',
-      icon: '📈',
-      text: `Sua adesão melhorou ${trend.percentage}% em relação à semana anterior!`,
-      highlight: `${trend.percentage}% melhor`,
-      actionLabel: 'Ver Detalhes',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'improvement' })
-        onNavigate?.('stats')
-      },
-    })
-  }
-
-  // Insight: Estoque Saudável
-  const lowStockCount = stockSummary?.filter((s) => s.isLow || s.isZero).length || 0
-  if (lowStockCount === 0 && stockSummary?.length > 0) {
-    insights.push({
-      id: 'stock_healthy',
-      type: INSIGHT_TYPES.ADHERENCE_POSITIVE,
-      priority: 'info',
-      icon: '✅',
-      text: 'Todos os medicamentos com estoque saudável. Ótimo planejamento!',
-      highlight: 'estoque saudável',
-      actionLabel: 'Ver Estoque',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'stock_healthy' })
-        onNavigate?.('stock')
-      },
-    })
-  }
-
-  // Insight: Doses Pendentes Hoje
   const todayMissed = countTodayMissedDoses(logs, dailyAdherence)
-  if (todayMissed > 0 && todayMissed <= 2) {
-    insights.push({
-      id: 'missed_doses_today',
-      type: INSIGHT_TYPES.ADHERENCE_MOTIVATIONAL,
-      priority: 'medium',
-      icon: '⏰',
-      text: `Você tem ${todayMissed} doses pendentes hoje. Que tal completar agora?`,
-      highlight: `${todayMissed} doses pendentes`,
-      actionLabel: 'Registrar Doses',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'missed_doses_today' })
-        onNavigate?.('register')
-      },
-    })
-  }
 
-  // Insight: Adesão Baixa (threshold ajustado para motivar users entre 50-80%)
-  if (stats.adherence < 80 && stats.adherence > 0) {
-    insights.push({
-      id: 'low_adherence_week',
-      type: INSIGHT_TYPES.ADHERENCE_MOTIVATIONAL,
-      priority: 'medium',
-      icon: '💪',
-      text: `Sua adesão esta semana está em ${Math.round(stats.adherence)}%. Vamos melhorar juntos!`,
-      highlight: `${Math.round(stats.adherence)}%`,
-      actionLabel: 'Ver Protocolos',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'low_adherence_week' })
-        onNavigate?.('protocols')
-      },
-    })
-  }
+  const generators = [
+    () => createStreakInsight(stats, onNavigate),
+    () => createPerfectWeekInsight(stats, shareAchievement),
+    () => createGoodWeekInsight(stats, onNavigate),
+    () => createImprovementInsight(trend, onNavigate),
+    () => createStockHealthyInsight(stockSummary, onNavigate),
+    () => createMissedDosesTodayInsight(todayMissed, onNavigate),
+    () => createLowAdherenceInsight(stats, onNavigate),
+    () => createStreakBrokenInsight(stats, onNavigate),
+    () => createProtocolReminderInsight(stats, onNavigate),
+    () => createBestTimeInsight(onNavigate),
+    () => createFeatureDiscoveryInsight(onNavigate),
+    () => createWeakDayInsight(onNavigate),
+  ]
 
-  // Insight: Streak Quebrado
-  if (stats.currentStreak === 0 && stats.longestStreak >= 3) {
-    insights.push({
-      id: 'streak_broken',
-      type: INSIGHT_TYPES.ADHERENCE_MOTIVATIONAL,
-      priority: 'high',
-      icon: '🔄',
-      text: `Seu streak foi interrompido. Seu recorde foi ${stats.longestStreak} dias. Recomece agora!`,
-      highlight: `${stats.longestStreak} dias`,
-      actionLabel: 'Registrar Dose',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'streak_broken' })
-        onNavigate?.('register')
-      },
-    })
-  }
-
-  // Insight: Protocolos Ativos
-  const activeProtocols = stats.activeProtocols || 0
-  if (activeProtocols > 0 && activeProtocols <= 3) {
-    insights.push({
-      id: 'protocol_reminder',
-      type: INSIGHT_TYPES.PROTOCOL_REMINDER,
-      priority: 'info',
-      icon: '📋',
-      text: `Você tem ${activeProtocols} protocolo${activeProtocols > 1 ? 's' : ''} ativo${activeProtocols > 1 ? 's' : ''}. Todos em dia!`,
-      highlight: `${activeProtocols} protocolo${activeProtocols > 1 ? 's' : ''}`,
-      actionLabel: 'Ver Protocolos',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'protocol_reminder' })
-        onNavigate?.('protocols')
-      },
-    })
-  }
-
-  // Insights Baseados em Analytics (Capítulo 10)
-  const bestTimeInsight = createBestTimeInsight(onNavigate)
-  if (bestTimeInsight) insights.push(bestTimeInsight)
-
-  const featureDiscoveryInsight = createFeatureDiscoveryInsight(onNavigate)
-  if (featureDiscoveryInsight) insights.push(featureDiscoveryInsight)
-
-  const weakDayInsight = createWeakDayInsight(onNavigate)
-  if (weakDayInsight) insights.push(weakDayInsight)
-
-  return insights.filter((insight) => insight !== null)
+  return generators
+    .map((gen) => gen())
+    .filter((insight) => insight !== null)
 }
 
 /**

@@ -560,6 +560,124 @@ function prepareStockChartData(protocols, stockSummaries) {
  * a.click()
  * URL.revokeObjectURL(url)
  */
+/**
+ * Carrega dinamicamente os módulos pesados necessários para gerar o PDF.
+ * @param {boolean} includeStock - Incluir módulo de estoque
+ * @param {boolean} includeRiskTable - Incluir módulo de risco
+ * @returns {Promise<Object>} Módulos carregados
+ */
+async function _loadPdfModules(includeStock, includeRiskTable) {
+  const [
+    { jsPDF },
+    { default: autoTable },
+    { renderAdherenceChart, renderStockChart },
+    { adherenceService },
+    { protocolService },
+    stockModule,
+    riskModule,
+    logModule,
+  ] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+    import('./chartRenderer.js'),
+    import('@services/api/adherenceService.js'),
+    import('@features/protocols/services/protocolService.js'),
+    includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
+    includeRiskTable ? import('@adherence/services/protocolRiskService.js') : Promise.resolve(null),
+    includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
+  ])
+  return {
+    jsPDF,
+    autoTable,
+    renderAdherenceChart,
+    renderStockChart,
+    adherenceService,
+    protocolService,
+    stockService: stockModule?.stockService,
+    calculateAllProtocolRisks: riskModule?.calculateAllProtocolRisks,
+    logService: logModule?.logService,
+  }
+}
+
+/**
+ * Busca todos os dados necessários para o PDF em paralelo.
+ * @param {Object} services - Serviços carregados
+ * @param {Object} flags - Flags de inclusão
+ * @param {string} period - Período
+ * @returns {Promise<Object>} Dados buscados
+ */
+async function _fetchPdfData(services, { includeProtocols, includeStock, includeRiskTable }, period) {
+  const { adherenceService, protocolService, stockService, logService } = services
+  const today = getNow()
+  const startDateStr = formatLocalDate(addDays(today, -30))
+  const endDateStr = formatLocalDate(today)
+
+  const [adherenceSummary, dailyAdherence, protocols, recentLogs] = await Promise.all([
+    adherenceService.getAdherenceSummary(period),
+    adherenceService.getDailyAdherence(30),
+    includeProtocols ? protocolService.getAll() : Promise.resolve([]),
+    includeRiskTable && logService
+      ? logService.getByDateRange(startDateStr, endDateStr, 500).then((r) => r.data ?? [])
+      : Promise.resolve([]),
+  ])
+
+  let stockSummaries = []
+  if (includeStock && stockService && protocols.length > 0) {
+    const medicineIds = [...new Set(protocols.map((p) => p.medicine_id).filter(Boolean))]
+    stockSummaries = await Promise.all(medicineIds.map((id) => stockService.getStockSummary(id)))
+  }
+
+  return { adherenceSummary, dailyAdherence, protocols, recentLogs, stockSummaries }
+}
+
+/**
+ * Renderiza o documento PDF com os dados e opções fornecidos.
+ * @param {Function} jsPDF - Construtor jsPDF
+ * @param {Object} data - Dados buscados
+ * @param {Object} opts - Opções de inclusão de seções
+ * @param {Object} renderers - Funções de renderização de charts/tabelas
+ * @returns {Blob} Blob do PDF
+ */
+function _renderDocument(jsPDF, data, opts, renderers) {
+  const { title, includeCharts, includeProtocols, includeStock, includeRiskTable } = opts
+  const { adherenceSummary, dailyAdherence, protocols, recentLogs, stockSummaries } = data
+  const { renderAdherenceChart, renderStockChart, autoTable, calculateAllProtocolRisks } = renderers
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  drawHeader(doc, title, getNow())
+  drawAdherenceSummary(doc, adherenceSummary)
+
+  let currentY = Y_POSITIONS.chartStart
+  if (includeCharts) {
+    const chartData = prepareAdherenceChartData(dailyAdherence)
+    const chartImage = chartData ? renderAdherenceChart(chartData, 500, 200) : null
+    currentY = drawAdherenceChart(doc, chartImage, currentY)
+  }
+
+  if (includeProtocols) {
+    currentY = drawProtocolsTable(doc, protocols, autoTable, currentY)
+  }
+
+  if (includeRiskTable && calculateAllProtocolRisks && protocols.length > 0) {
+    const risks = calculateAllProtocolRisks({ protocols, logs: recentLogs })
+    currentY = drawRiskTable(doc, risks, protocols, autoTable, currentY)
+    logPDF('info', 'Tabela de risco adicionada', {
+      protocolsWithData: risks.filter((r) => r.hasEnoughData).length,
+      totalProtocols: risks.length,
+    })
+  }
+
+  if (includeStock) {
+    const stockChartData = prepareStockChartData(protocols, stockSummaries)
+    const stockChartImage =
+      stockChartData.length > 0 ? renderStockChart(stockChartData, 500, 150) : null
+    drawStockSummary(doc, stockChartData, stockChartImage, currentY)
+  }
+
+  drawFooter(doc)
+  return doc.output('blob')
+}
+
 export async function generatePDF(options = {}) {
   const startTime = getNow().getTime()
   const {
@@ -574,137 +692,42 @@ export async function generatePDF(options = {}) {
   logPDF('info', 'Iniciando geração do PDF', { title, period, options })
 
   try {
-    // Lazy load TODOS os módulos pesados (jsPDF, services, chartRenderer)
-    // Isso evita que o main bundle inclua vendor-pdf (589KB), feature-stock (139KB), etc.
-    const [
-      { jsPDF },
-      { default: autoTable },
-      { renderAdherenceChart, renderStockChart },
-      { adherenceService },
-      { protocolService },
-      stockModule,
-      riskModule,
-      logModule,
-    ] = await Promise.all([
-      import('jspdf'),
-      import('jspdf-autotable'),
-      import('./chartRenderer.js'),
-      import('@services/api/adherenceService.js'),
-      import('@features/protocols/services/protocolService.js'),
-      includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
-      includeRiskTable
-        ? import('@adherence/services/protocolRiskService.js')
-        : Promise.resolve(null),
-      includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
-    ])
-
-    const stockService = stockModule?.stockService
-    const calculateAllProtocolRisks = riskModule?.calculateAllProtocolRisks
-    const logService = logModule?.logService
-
+    const modules = await _loadPdfModules(includeStock, includeRiskTable)
     logPDF('info', 'Módulos carregados sob demanda', { library: 'jspdf + services + charts' })
 
-    // Busca dados em paralelo
     const dataFetchStart = getNow().getTime()
-    const today = getNow()
-    const thirtyDaysAgo = addDays(today, -30)
-    const startDateStr = formatLocalDate(thirtyDaysAgo)
-    const endDateStr = formatLocalDate(today)
-
-    const [adherenceSummary, dailyAdherence, protocols, lowStock, recentLogs] = await Promise.all([
-      adherenceService.getAdherenceSummary(period),
-      adherenceService.getDailyAdherence(30),
-      includeProtocols ? protocolService.getAll() : Promise.resolve([]),
-      includeStock && stockService ? stockService.getLowStockMedicines(100) : Promise.resolve([]),
-      includeRiskTable && logService
-        ? logService.getByDateRange(startDateStr, endDateStr, 500).then((r) => r.data ?? [])
-        : Promise.resolve([]),
-    ])
-
+    const data = await _fetchPdfData(modules, { includeProtocols, includeStock, includeRiskTable }, period)
     logPDF('info', 'Dados buscados', {
       duration: `${getNow().getTime() - dataFetchStart}ms`,
-      adherenceScore: adherenceSummary.overallScore,
-      protocolsCount: protocols.length,
-      lowStockCount: lowStock.length,
+      adherenceScore: data.adherenceSummary.overallScore,
+      protocolsCount: data.protocols.length,
     })
 
-    // Busca resumos de estoque para cada medicamento
-    let stockSummaries = []
-    if (includeStock && stockService && protocols.length > 0) {
-      const medicineIds = [...new Set(protocols.map((p) => p.medicine_id).filter(Boolean))]
-      stockSummaries = await Promise.all(medicineIds.map((id) => stockService.getStockSummary(id)))
-    }
-
-    // Cria documento PDF
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    })
-
-    // Desenha cabeçalho
-    drawHeader(doc, title, getNow())
-
-    // Desenha resumo de adesão
-    drawAdherenceSummary(doc, adherenceSummary)
-
-    // Prepara e desenha gráfico de adesão
-    let currentY = Y_POSITIONS.chartStart
-    if (includeCharts) {
-      const chartData = prepareAdherenceChartData(dailyAdherence)
-      const chartImage = chartData ? renderAdherenceChart(chartData, 500, 200) : null
-      currentY = drawAdherenceChart(doc, chartImage, currentY)
-    }
-
-    // Desenha tabela de protocolos
-    if (includeProtocols) {
-      currentY = drawProtocolsTable(doc, protocols, autoTable, currentY)
-    }
-
-    // Desenha tabela de risco por protocolo
-    if (includeRiskTable && calculateAllProtocolRisks && protocols.length > 0) {
-      const risks = calculateAllProtocolRisks({ protocols, logs: recentLogs })
-      currentY = drawRiskTable(doc, risks, protocols, autoTable, currentY)
-      logPDF('info', 'Tabela de risco adicionada', {
-        protocolsWithData: risks.filter((r) => r.hasEnoughData).length,
-        totalProtocols: risks.length,
-      })
-    }
-
-    // Desenha resumo de estoque
-    if (includeStock) {
-      const stockChartData = prepareStockChartData(protocols, stockSummaries)
-      const stockChartImage =
-        stockChartData.length > 0 ? renderStockChart(stockChartData, 500, 150) : null
-      drawStockSummary(doc, stockChartData, stockChartImage, currentY)
-    }
-
-    // Desenha rodapé
-    drawFooter(doc)
-
-    // Gera Blob
-    const pdfBlob = doc.output('blob')
+    const pdfBlob = _renderDocument(
+      modules.jsPDF,
+      data,
+      { title, includeCharts, includeProtocols, includeStock, includeRiskTable },
+      {
+        renderAdherenceChart: modules.renderAdherenceChart,
+        renderStockChart: modules.renderStockChart,
+        autoTable: modules.autoTable,
+        calculateAllProtocolRisks: modules.calculateAllProtocolRisks,
+      }
+    )
 
     const totalDuration = getNow().getTime() - startTime
     logPDF('info', 'PDF gerado com sucesso', {
       duration: `${totalDuration}ms`,
       blobSize: `${(pdfBlob.size / 1024).toFixed(2)}KB`,
-      blobSizeMB: `${(pdfBlob.size / 1024 / 1024).toFixed(2)}MB`,
     })
 
-    // Verifica tamanho do arquivo (<2MB)
     if (pdfBlob.size > 2 * 1024 * 1024) {
-      logPDF('warn', 'PDF excede 2MB', {
-        size: `${(pdfBlob.size / 1024 / 1024).toFixed(2)}MB`,
-      })
+      logPDF('warn', 'PDF excede 2MB', { size: `${(pdfBlob.size / 1024 / 1024).toFixed(2)}MB` })
     }
 
     return pdfBlob
   } catch (error) {
-    logPDF('error', 'Erro ao gerar PDF', {
-      error: error.message,
-      stack: error.stack,
-    })
+    logPDF('error', 'Erro ao gerar PDF', { error: error.message, stack: error.stack })
     throw new Error(`Falha ao gerar relatório PDF: ${error.message}`)
   }
 }

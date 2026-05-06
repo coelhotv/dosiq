@@ -545,13 +545,57 @@ export function evaluateDoseTimelineState(date, dosesObj, now = getNow()) {
   })
 }
 
+// Mapa de dias da semana para cálculo de frequência semanal
+const WEEKLY_DAY_MAP = {
+  domingo: 0, sunday: 0,
+  segunda: 1, 'segunda-feira': 1, monday: 1,
+  terça: 2, 'terça-feira': 2, tuesday: 2,
+  quarta: 3, 'quarta-feira': 3, wednesday: 3,
+  quinta: 4, 'quinta-feira': 4, thursday: 4,
+  sexta: 5, 'sexta-feira': 5, friday: 5,
+  sábado: 6, sabado: 6, saturday: 6,
+}
+
+/**
+ * Verifica se o protocolo semanal tem dose no dia da semana especificado.
+ * @param {Object} protocol - Protocolo com propriedade days[]
+ * @param {number} dayOfWeek - Dia da semana (0=Domingo, 6=Sábado)
+ * @returns {boolean}
+ */
+function _isWeeklyMatch(protocol, dayOfWeek) {
+  if (!protocol.days || !Array.isArray(protocol.days)) return false
+  return protocol.days.some((day) => WEEKLY_DAY_MAP[day.toLowerCase()] === dayOfWeek)
+}
+
+/**
+ * Verifica se protocolo "dia sim, dia não" tem dose na data alvo.
+ * @param {Object} protocol - Protocolo com start_date opcional
+ * @param {Date} targetDate - Data alvo
+ * @returns {boolean}
+ */
+function _isAlternatingMatch(protocol, targetDate) {
+  if (!protocol.start_date) return true // Sem data de início, assume início hoje
+  const startDate = parseLocalDate(protocol.start_date)
+  return daysDifference(startDate, targetDate) % 2 === 0
+}
+
+/**
+ * Verifica se um protocolo inativo tem registro histórico válido para a data.
+ * @param {Object} protocol - Protocolo
+ * @param {Date} targetDate - Data alvo
+ * @returns {boolean}
+ */
+function _isHistoricalActive(protocol, targetDate) {
+  return Boolean(protocol.end_date && targetDate <= parseLocalDate(protocol.end_date))
+}
+
 /**
  * Verifica se um protocolo está "vigente" para uma data específica.
  * Vigente significa:
  * 1. O protocolo está marcado como ativo
  * 2. A data alvo está dentro do intervalo [start_date, end_date]
  * 3. A frequência do protocolo (diário, semanal, dia-sim-dia-nao) cai na data alvo
- * 
+ *
  * @param {Object} protocol - Protocolo
  * @param {string|Date} date - Data alvo (YYYY-MM-DD ou Date object)
  * @returns {boolean}
@@ -561,59 +605,47 @@ export function isProtocolActiveOnDate(protocol, date) {
   const targetDate = parseLocalDate(dateStr)
   const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
 
-  // 1. Verificar se o registro está ativo ou se é um registro histórico finalizado (histórico de adesão)
-  const isHistorical = protocol.end_date && targetDate <= parseLocalDate(protocol.end_date)
-  if (protocol.active === false && !isHistorical) return false
+  // 1. Verificar se o registro está ativo ou se é um registro histórico finalizado
+  if (protocol.active === false && !_isHistoricalActive(protocol, targetDate)) return false
 
   // 2. Verificar período de validade (Usa isProtocolInPeriod do dateUtils)
   if (!isProtocolInPeriod(protocol, dateStr)) return false
 
   // 3. Verificar frequência
   const frequency = (protocol.frequency || 'diário').toLowerCase()
+  return _matchesFrequency(frequency, protocol, dayOfWeek, targetDate)
+}
 
-  switch (frequency) {
-    case 'diário':
-    case 'diariamente':
-    case 'daily':
-      return true
+/** @type {Map<string, (protocol: Object, dayOfWeek: number, targetDate: Date) => boolean>} */
+const FREQUENCY_MATCHERS = new Map([
+  ['diário', () => true],
+  ['diariamente', () => true],
+  ['daily', () => true],
+  ['semanal', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
+  ['semanalmente', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
+  ['weekly', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
+  ['dia_sim_dia_nao', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
+  ['dia sim, dia não', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
+  ['every_other_day', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
+  ['alternating', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
+  ['personalizado', () => false],
+  ['custom', () => false],
+  ['quando_necessário', () => false],
+  ['when_needed', () => false],
+  ['prn', () => false],
+])
 
-    case 'semanal':
-    case 'semanalmente':
-    case 'weekly':
-      // Verificar se o dia da semana está nos dias configurados
-      if (protocol.days && Array.isArray(protocol.days)) {
-        const dayMap = {
-          domingo: 0, sunday: 0,
-          segunda: 1, 'segunda-feira': 1, monday: 1,
-          terça: 2, 'terça-feira': 2, tuesday: 2,
-          quarta: 3, 'quarta-feira': 3, wednesday: 3,
-          quinta: 4, 'quinta-feira': 4, thursday: 4,
-          sexta: 5, 'sexta-feira': 5, friday: 5,
-          sábado: 6, sabado: 6, saturday: 6,
-        }
-        return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
-      }
-      return false
-
-    case 'dia_sim_dia_nao':
-    case 'dia sim, dia não':
-    case 'every_other_day':
-    case 'alternating':
-      // Calcular dias desde a data de início (dia 0 = dose)
-      if (protocol.start_date) {
-        const startDate = parseLocalDate(protocol.start_date)
-        return daysDifference(startDate, targetDate) % 2 === 0
-      }
-      return true // Sem data de início, assume início hoje
-
-    case 'personalizado':
-    case 'custom':
-    case 'quando_necessário':
-    case 'when_needed':
-    case 'prn':
-      return false
-
-    default:
-      return true
-  }
+/**
+ * Verifica se a frequência do protocolo cobre a data alvo.
+ * Extraído de isProtocolActiveOnDate para reduzir complexidade ciclomática.
+ * @param {string} frequency - Frequência normalizada (lowercase)
+ * @param {Object} protocol - Protocolo
+ * @param {number} dayOfWeek - Dia da semana da data alvo
+ * @param {Date} targetDate - Data alvo
+ * @returns {boolean}
+ */
+function _matchesFrequency(frequency, protocol, dayOfWeek, targetDate) {
+  const matcher = FREQUENCY_MATCHERS.get(frequency)
+  if (matcher) return matcher(protocol, dayOfWeek, targetDate)
+  return true // default: assume ativo
 }

@@ -7,6 +7,12 @@
 import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils.js'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
+import {
+  buildSummaryCards,
+  buildAttentionItems,
+  buildPatientSection,
+  buildClinicalNotes,
+} from './_pdfSectionBuilders'
 
 /**
  * Formata um numero com fallback legivel.
@@ -52,14 +58,13 @@ function summarizeTrend(trend = [], fallbackCurrentStreak = 0) {
  * @param {Object} medicine - Medicamento associado.
  * @returns {string} Label no formato `[tratamento] - [medicacao]`.
  */
+/** Retorna o primeiro valor truthy dos argumentos. @param {...*} vals @returns {*} */
+function _first(...vals) { return vals.find(Boolean) }
+
 export function formatTreatmentLabel(protocol, medicine) {
-  const treatmentName = protocol?.name || protocol?.treatment_name || protocol?.medicine_name
-  const medicineName = medicine?.name || protocol?.medicine?.name || protocol?.medicine_name
-
-  if (treatmentName && medicineName) {
-    return `${treatmentName} - ${medicineName}`
-  }
-
+  const treatmentName = _first(protocol?.name, protocol?.treatment_name, protocol?.medicine_name) ?? ''
+  const medicineName = _first(medicine?.name, protocol?.medicine?.name, protocol?.medicine_name) ?? ''
+  if (treatmentName && medicineName) return `${treatmentName} - ${medicineName}`
   return treatmentName || medicineName || 'Tratamento sem nome'
 }
 
@@ -192,6 +197,54 @@ function buildTreatmentRows(protocols = [], medicines = []) {
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 }
 
+function _resolveStockMedicine(stockItem, medicines) {
+  return medicines.find((item) => item.id === stockItem?.medicine?.id)
+    || stockItem?.medicine || {}
+}
+
+function _resolveStockProtocol(medicine, protocols) {
+  return protocols.find((item) => item.medicine_id === medicine.id && item.active !== false)
+}
+
+function _resolveStockDays(stockItem, dailyIntake, totalQuantity) {
+  if (stockItem?.daysRemaining != null) return stockItem.daysRemaining
+  return dailyIntake > 0 ? Math.floor(totalQuantity / dailyIntake) : null
+}
+
+function _resolveStockMessage(stockItem) {
+  if (stockItem?.isZero) return 'Estoque esgotado'
+  if (stockItem?.isLow) return 'Estoque baixo'
+  return 'Estoque monitorado'
+}
+
+/**
+ * Mapeia um item de estoque para o formato de row do PDF.
+ * @param {Object} stockItem - Item bruto de estoque
+ * @param {Array} protocols - Protocolos
+ * @param {Array} medicines - Medicamentos
+ * @returns {Object}
+ */
+function _mapStockItem(stockItem, protocols, medicines) {
+  const medicine = _resolveStockMedicine(stockItem, medicines)
+  const protocol = _resolveStockProtocol(medicine, protocols)
+  const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols)
+  const totalQuantity = stockItem?.total ?? 0
+  const daysRemaining = _resolveStockDays(stockItem, dailyIntake, totalQuantity)
+  const severity = getStockSeverity({ ...stockItem, daysRemaining })
+  const id = medicine.id || stockItem?.medicine?.id || stockItem?.medicine_id || crypto.randomUUID()
+
+  return {
+    id,
+    label: formatTreatmentLabel(protocol, medicine),
+    medicineName: safeText(medicine.name, 'Desconhecido'),
+    totalQuantity,
+    dailyIntake,
+    daysRemaining,
+    severity,
+    message: _resolveStockMessage(stockItem),
+  }
+}
+
 /**
  * Gera rows de estoque ordenados por urgencia.
  * @param {Array<Object>} stockSummary - Sumario de estoque vindo do dashboard.
@@ -201,34 +254,7 @@ function buildTreatmentRows(protocols = [], medicines = []) {
  */
 function buildStockRows(stockSummary = [], protocols = [], medicines = []) {
   return stockSummary
-    .map((stockItem) => {
-      const medicine =
-        medicines.find((item) => item.id === stockItem?.medicine?.id) || stockItem?.medicine || {}
-      const protocol = protocols.find(
-        (item) => item.medicine_id === medicine.id && item.active !== false
-      )
-      const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols)
-      const totalQuantity = stockItem?.total ?? 0
-      const daysRemaining =
-        stockItem?.daysRemaining ??
-        (dailyIntake > 0 ? Math.floor(totalQuantity / dailyIntake) : null)
-      const severity = getStockSeverity({ ...stockItem, daysRemaining })
-
-      return {
-        id: medicine.id || stockItem?.medicine?.id || stockItem?.medicine_id || crypto.randomUUID(),
-        label: formatTreatmentLabel(protocol, medicine),
-        medicineName: safeText(medicine.name, 'Desconhecido'),
-        totalQuantity,
-        dailyIntake,
-        daysRemaining,
-        severity,
-        message: stockItem?.isZero
-          ? 'Estoque esgotado'
-          : stockItem?.isLow
-            ? 'Estoque baixo'
-            : 'Estoque monitorado',
-      }
-    })
+    .map((stockItem) => _mapStockItem(stockItem, protocols, medicines))
     .sort((a, b) => {
       const severityOrder = { critical: 0, warning: 1, stable: 2 }
       const severityDiff = severityOrder[a.severity] - severityOrder[b.severity]
@@ -296,6 +322,19 @@ function buildTitrationRows(activeTitrations = [], protocols = [], medicines = [
 }
 
 /**
+ * Mapeia um score de adesão para um status legivel.
+ * @param {number|null} score - Percentual de adesão (0-100) ou null
+ * @param {number} expected - Doses esperadas
+ * @returns {string}
+ */
+function _adherenceRowStatus(score, expected) {
+  if (expected === 0) return 'Sem doses'
+  if (score >= 90) return 'Excelente'
+  if (score >= 70) return 'Atenção'
+  return 'Critico'
+}
+
+/**
  * Gera uma trilha sintetica de adesao dos ultimos dias.
  * @param {Array<Object>} dailyAdherence - Série diária já consolidada pelo dashboard.
  * @param {Array<Object>} logs - Logs de dose.
@@ -322,14 +361,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
         taken,
         expected,
         score,
-        status:
-          expected === 0
-            ? 'Sem doses'
-            : score >= 90
-              ? 'Excelente'
-              : score >= 70
-                ? 'Atenção'
-                : 'Critico',
+        status: _adherenceRowStatus(score, expected),
       }
     })
   }
@@ -356,14 +388,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
       taken,
       expected,
       score,
-      status:
-        expected === 0
-          ? 'Sem doses'
-          : score >= 90
-            ? 'Excelente'
-            : score >= 70
-              ? 'Atenção'
-              : 'Critico',
+      status: _adherenceRowStatus(score, expected),
     })
   }
 
@@ -380,6 +405,52 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
  * @param {string} [params.title] - Titulo do documento.
  * @returns {Object} Modelo editorial pronto para o service de PDF.
  */
+/**
+ * Prepara o resumo de adesão para o PDF.
+ * @param {Object} consultationData - Dados de consulta
+ * @param {Array} adherenceTrend - Tendência de adesão
+ * @param {number} periodDays - Dias do período
+ * @returns {Object} { adherence30d, adherence90d, selectedPeriodLabel, selectedPeriodSummary, currentStreak }
+ */
+function _prepareAdherenceSummary(consultationData, adherenceTrend, periodDays) {
+  const adherence30d = consultationData?.adherenceSummary?.last30d || {
+    score: 0, taken: 0, expected: 0, punctuality: 0,
+  }
+  const adherence90d = consultationData?.adherenceSummary?.last90d || {
+    score: 0, taken: 0, expected: 0, punctuality: 0,
+  }
+  const selectedPeriodLabel = getTrendLabel(periodDays)
+  const currentStreak = consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0
+
+  let selectedPeriodSummary
+  if (periodDays === 30) selectedPeriodSummary = adherence30d
+  else if (periodDays === 90) selectedPeriodSummary = adherence90d
+  else selectedPeriodSummary = summarizeTrend(adherenceTrend, currentStreak)
+
+  return { adherence30d, adherence90d, selectedPeriodLabel, selectedPeriodSummary, currentStreak }
+}
+
+/** Extrai e normaliza dados do dashboard e consultationData. */
+function _extractInputs(consultationData, dashboardData) {
+  return {
+    medicines: dashboardData.medicines || [],
+    protocols: dashboardData.protocols || [],
+    logs: dashboardData.logs || [],
+    dailyAdherence: dashboardData.dailyAdherence || [],
+    stockSummary: dashboardData.stockSummary || [],
+    patientInfo: consultationData?.patientInfo || {},
+    activeMedicines: consultationData?.activeMedicines || [],
+    prescriptionStatus: consultationData?.prescriptionStatus || [],
+    activeTitrations: consultationData?.activeTitrations || [],
+  }
+}
+
+/** Calcula número de dias do período selecionado. */
+function _calculatePeriodDays(period, dailyAdherenceLength) {
+  if (period === 'all') return Math.max(dailyAdherenceLength || 0, 90)
+  return Math.max(parseInt(period, 10) || 7, 1)
+}
+
 export function buildConsultationPdfData({
   consultationData,
   dashboardData = {},
@@ -388,205 +459,39 @@ export function buildConsultationPdfData({
   title = 'Dosiq - Consulta Médica',
   patientEmail = '',
 } = {}) {
-  const medicines = dashboardData.medicines || []
-  const protocols = dashboardData.protocols || []
-  const logs = dashboardData.logs || []
-  const dailyAdherence = dashboardData.dailyAdherence || []
-  const stockSummary = dashboardData.stockSummary || []
-  const patientInfo = consultationData?.patientInfo || {}
-  const activeMedicines = consultationData?.activeMedicines || []
-  const periodDays =
-    period === 'all'
-      ? Math.max(dailyAdherence.length || 0, 90)
-      : Math.max(parseInt(period, 10) || 7, 1)
-  const activeTreatments = buildTreatmentRows(protocols, medicines)
-  const stockRows = buildStockRows(stockSummary, protocols, medicines)
-  const prescriptionRows = buildPrescriptionRows(
-    consultationData?.prescriptionStatus || [],
-    protocols,
-    medicines
+  const inp = _extractInputs(consultationData, dashboardData)
+  const periodDays = _calculatePeriodDays(period, inp.dailyAdherence.length)
+
+  const activeTreatments = buildTreatmentRows(inp.protocols, inp.medicines)
+  const stockRows = buildStockRows(inp.stockSummary, inp.protocols, inp.medicines)
+  const prescriptionRows = buildPrescriptionRows(inp.prescriptionStatus, inp.protocols, inp.medicines)
+  const titrationRows = buildTitrationRows(inp.activeTitrations, inp.protocols, inp.medicines)
+  const adherenceTrend = buildAdherenceTrend(inp.dailyAdherence, inp.logs, inp.protocols, periodDays)
+  const { adherence30d, adherence90d, selectedPeriodLabel, selectedPeriodSummary, currentStreak } =
+    _prepareAdherenceSummary(consultationData, adherenceTrend, periodDays)
+
+  const adherenceData = { selectedPeriodSummary, adherence30d, adherence90d, selectedPeriodLabel }
+  const summaryCards = buildSummaryCards(
+    adherenceData, activeTreatments, inp.activeMedicines, stockRows, prescriptionRows, titrationRows
   )
-  const titrationRows = buildTitrationRows(
-    consultationData?.activeTitrations || [],
-    protocols,
-    medicines
-  )
-  const adherenceTrend = buildAdherenceTrend(dailyAdherence, logs, protocols, periodDays)
-
-  const adherence30d = consultationData?.adherenceSummary?.last30d || {
-    score: 0,
-    taken: 0,
-    expected: 0,
-    punctuality: 0,
-  }
-  const adherence90d = consultationData?.adherenceSummary?.last90d || {
-    score: 0,
-    taken: 0,
-    expected: 0,
-    punctuality: 0,
-  }
-  const selectedPeriodLabel = getTrendLabel(periodDays)
-  const selectedPeriodSummary =
-    periodDays === 30
-      ? adherence30d
-      : periodDays === 90
-        ? adherence90d
-        : summarizeTrend(
-            adherenceTrend,
-            consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0
-          )
-
-  const criticalStockCount = stockRows.filter((item) => item.severity === 'critical').length
-  const warningStockCount = stockRows.filter((item) => item.severity === 'warning').length
-  const expiringPrescriptionCount = prescriptionRows.filter(
-    (item) => item.status === 'vencendo'
-  ).length
-  const expiredPrescriptionCount = prescriptionRows.filter(
-    (item) => item.status === 'vencida'
-  ).length
-  const activeTitrationCount = titrationRows.length
-
-  const summaryCards = [
-    {
-      label: `Adesao ${selectedPeriodLabel}`,
-      value: `${selectedPeriodSummary.score ?? 0}%`,
-      meta: `${selectedPeriodSummary.taken ?? 0}/${selectedPeriodSummary.expected ?? 0} doses`,
-      tone:
-        (selectedPeriodSummary.score ?? 0) >= 80
-          ? 'success'
-          : (selectedPeriodSummary.score ?? 0) >= 50
-            ? 'warning'
-            : 'danger',
-    },
-    {
-      label: 'Adesao 30d',
-      value: `${adherence30d.score ?? 0}%`,
-      meta: `${adherence30d.taken ?? 0}/${adherence30d.expected ?? 0} doses`,
-      tone:
-        (adherence30d.score ?? 0) >= 80
-          ? 'success'
-          : (adherence30d.score ?? 0) >= 50
-            ? 'warning'
-            : 'danger',
-    },
-    {
-      label: 'Adesao 90d',
-      value: `${adherence90d.score ?? 0}%`,
-      meta: `${adherence90d.taken ?? 0}/${adherence90d.expected ?? 0} doses`,
-      tone:
-        (adherence90d.score ?? 0) >= 80
-          ? 'success'
-          : (adherence90d.score ?? 0) >= 50
-            ? 'warning'
-            : 'danger',
-    },
-    {
-      label: 'Pontualidade',
-      value: `${selectedPeriodSummary.punctuality ?? 0}%`,
-      meta: `Janela de tolerancia | ${selectedPeriodLabel}`,
-      tone:
-        (selectedPeriodSummary.punctuality ?? 0) >= 80
-          ? 'success'
-          : (selectedPeriodSummary.punctuality ?? 0) >= 50
-            ? 'warning'
-            : 'danger',
-    },
-    {
-      label: 'Tratamentos ativos',
-      value: String(activeTreatments.length),
-      meta: `${activeMedicines.length} medicamentos`,
-      tone: 'info',
-    },
-    {
-      label: 'Alertas criticos',
-      value: String(criticalStockCount + expiredPrescriptionCount),
-      meta: `${warningStockCount + expiringPrescriptionCount} em atencao`,
-      tone: criticalStockCount + expiredPrescriptionCount > 0 ? 'danger' : 'success',
-    },
-    {
-      label: 'Titulações',
-      value: String(activeTitrationCount),
-      meta: `${titrationRows.filter((item) => item.isTransitionDue).length} pendentes`,
-      tone: activeTitrationCount > 0 ? 'warning' : 'success',
-    },
-  ]
-
-  const attentionItems = [
-    ...stockRows
-      .filter((item) => item.severity !== 'stable')
-      .slice(0, 4)
-      .map((item) => ({
-        label: item.label,
-        detail:
-          item.severity === 'critical'
-            ? 'Estoque esgotado'
-            : `Estoque baixo: ${item.daysRemaining ?? '-'} dias`,
-        tone: item.severity,
-      })),
-    ...prescriptionRows
-      .filter((item) => item.status !== 'vigente')
-      .slice(0, 4)
-      .map((item) => ({
-        label: item.label,
-        detail:
-          item.status === 'vencida'
-            ? 'Prescricao vencida'
-            : `${item.daysRemaining ?? '-'} dias para vencer`,
-        tone: item.status === 'vencida' ? 'danger' : 'warning',
-      })),
-    ...titrationRows.slice(0, 3).map((item) => ({
-      label: item.label,
-      detail: item.isTransitionDue
-        ? 'Transicao pendente'
-        : `Etapa ${item.currentStep}/${item.totalSteps}`,
-      tone: item.isTransitionDue ? 'warning' : 'info',
-    })),
-  ]
+  const attentionItems = buildAttentionItems(stockRows, prescriptionRows, titrationRows)
+  const patient = buildPatientSection(inp.patientInfo, patientEmail, formatPatientDisplayName, extractEmailHandle)
+  const clinicalNotes = buildClinicalNotes(inp.patientInfo)
+  const generatedAtDate = generatedAt instanceof Date ? generatedAt : parseISO(generatedAt)
+  const generatedAtLabel = generatedAtDate.toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  })
 
   return {
-    title,
-    period,
-    generatedAt,
-    generatedAtLabel: (generatedAt instanceof Date ? generatedAt : parseISO(generatedAt)).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo',
-    }),
-    patient: {
-      name: formatPatientDisplayName(patientInfo.name, patientEmail),
-      age: patientInfo.age ?? null,
-      handle: extractEmailHandle(patientEmail) || null,
-      emergencyCard: patientInfo.emergencyCard || null,
-    },
-    summaryCards,
-    activeTreatments,
+    title, period, generatedAt, generatedAtLabel, patient, summaryCards, activeTreatments,
     adherence: {
-      selectedPeriod: {
-        ...selectedPeriodSummary,
-        label: selectedPeriodLabel,
-      },
-      last30d: adherence30d,
-      last90d: adherence90d,
-      trend: adherenceTrend,
-      trendLabel: selectedPeriodLabel,
-      currentStreak:
-        consultationData?.adherenceSummary?.currentStreak ?? adherence30d.currentStreak ?? 0,
+      selectedPeriod: { ...selectedPeriodSummary, label: selectedPeriodLabel },
+      last30d: adherence30d, last90d: adherence90d,
+      trend: adherenceTrend, trendLabel: selectedPeriodLabel, currentStreak,
     },
-    stockRows,
-    prescriptionRows,
-    titrationRows,
-    attentionItems,
-    clinicalNotes: [
-      patientInfo.emergencyCard?.allergies?.length
-        ? `Alergias registradas: ${patientInfo.emergencyCard.allergies.join(', ')}`
-        : 'Sem alergias registradas no cartao de emergencia',
-      patientInfo.emergencyCard?.blood_type
-        ? `Tipo sanguineo: ${patientInfo.emergencyCard.blood_type}`
-        : 'Tipo sanguineo nao informado',
-    ],
+    stockRows, prescriptionRows, titrationRows, attentionItems, clinicalNotes,
   }
 }
 
