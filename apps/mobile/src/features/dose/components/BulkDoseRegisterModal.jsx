@@ -151,7 +151,7 @@ export default function BulkDoseRegisterModal({
 
           {protocolsLoading ? (
             <View style={styles.centerState}>
-              <ActivityIndicator color={colors.primary[600]} />
+              <ActivityIndicator color={colors.brand.primary} />
             </View>
           ) : protocolsError ? (
             <View style={styles.centerState}>
@@ -171,7 +171,7 @@ export default function BulkDoseRegisterModal({
                     disabled={loading}
                   >
                     {isChecked
-                      ? <CheckCircle size={22} color={colors.primary[600]} strokeWidth={2} />
+                      ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
                       : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
                     }
                     <View style={styles.itemText}>
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 13,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,

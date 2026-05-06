@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 4,
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,

@@ -14,7 +14,7 @@ export default function PrimaryButton({ label, onPress, loading = false, disable
       disabled={isDisabled}
     >
       {loading ? (
-        <ActivityIndicator color="#fff" size="small" />
+        <ActivityIndicator color={colors.brand.primary} size="small" />
       ) : (
         <Text style={styles.label}>{label}</Text>
       )}
@@ -24,7 +24,7 @@ export default function PrimaryButton({ label, onPress, loading = false, disable
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 10,

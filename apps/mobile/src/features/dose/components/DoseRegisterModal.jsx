@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 13,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,

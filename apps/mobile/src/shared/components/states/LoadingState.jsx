@@ -7,7 +7,7 @@ import { colors } from '../../styles/tokens'
 export default function LoadingState({ message = 'Carregando...' }) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary[600]} />
+      <ActivityIndicator size="large" color={colors.brand.primary} />
       <Text style={styles.text}>{message}</Text>
     </View>
   )
