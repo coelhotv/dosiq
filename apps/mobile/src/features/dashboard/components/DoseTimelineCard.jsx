@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionButton: {
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
