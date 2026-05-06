@@ -6,6 +6,7 @@ export const ROUTES = {
   // Raiz auth-aware
   SMOKE: 'Smoke',
   LOGIN: 'Login',
+  LANDING: 'Landing',
 
   // Shell do produto (tab navigator)
   TABS: 'Tabs',

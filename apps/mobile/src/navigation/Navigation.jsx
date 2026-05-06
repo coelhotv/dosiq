@@ -16,6 +16,7 @@ import { ROUTES } from './routes'
 import { navigationRef } from './navigationRef'
 import SmokeScreen from '../screens/SmokeScreen'
 import LoginScreen from '../screens/LoginScreen'
+import LandingScreen from '../screens/LandingScreen'
 import RootTabs from './RootTabs'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -92,6 +93,7 @@ export default function Navigation() {
         ) : (
           // Sem sessão → renderizar login e smoke (diag)
           <>
+            <Stack.Screen name={ROUTES.LANDING} component={LandingScreen} />
             <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
             <Stack.Screen
               name={ROUTES.SMOKE}

@@ -37,7 +37,7 @@ export function errorLog(tag, message, ...args) {
  * @param {...*} args - Dados adicionais
  */
 export function warnLog(tag, message, ...args) {
-  // eslint-disable-next-line no-console
+   
   console.warn(`[${tag}] ${message}`, ...args)
 }
 

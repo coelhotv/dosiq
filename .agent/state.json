@@ -3,13 +3,13 @@
   "sprint": "2026-W18",
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "goal": "Schema Consolidation — Eliminar duplicação web/core e schemas inline",
-    "goal_type": "refactor"
+    "status": "review",
+    "goal": "Native in-app landing page",
+    "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 80,
     "anti_patterns_count": 65,
     "decisions_count": 40,
