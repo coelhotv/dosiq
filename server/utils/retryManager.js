@@ -96,13 +96,50 @@ export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Executa uma função com retry automático
- * @param {Function} fn - Função a ser executada
- * @param {object} config - Configuração de retry
- * @param {object} context - Contexto para logging
- * @returns {Promise<{success: boolean, result?: any, error?: Error, attempts: number}>}
- */
+function handleRetrySuccess(result, attempt, correlationId, context) {
+  recordSuccess(context.operation || 'unknown');
+
+  if (attempt > 1) {
+    logger.info(`Operação bem-sucedida após retry`, {
+      correlationId,
+      attempt,
+      ...context
+    });
+  }
+
+  return {
+    success: true,
+    result,
+    attempts: attempt
+  };
+}
+
+function handleRetryError(err, attempt, maxRetries, config, correlationId, context) {
+  // Verificar se é erro de rate limiting
+  if (err.response?.status === 429 || err.statusCode === 429) {
+    recordRateLimitHit(context.operation || 'unknown');
+  }
+
+  // Verificar se deve retry
+  if (!isRetryableError(err) || attempt === maxRetries) {
+    return { shouldRetry: false, delay: 0 };
+  }
+
+  // Registrar retry
+  recordRetry(context.operation || 'unknown');
+
+  // Calcular delay
+  const delay = calculateDelay(attempt, config);
+
+  logger.warn(`Retry ${attempt}/${maxRetries} após ${delay}ms`, {
+    correlationId,
+    error: err.message,
+    ...context
+  });
+
+  return { shouldRetry: true, delay };
+}
+
 export async function sendWithRetry(fn, config = DEFAULT_RETRY_CONFIG, context = {}) {
   const { maxRetries } = config;
   const correlationId = context.correlationId || generateCorrelationId();
@@ -112,49 +149,16 @@ export async function sendWithRetry(fn, config = DEFAULT_RETRY_CONFIG, context =
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const result = await fn();
-
-      // Sucesso - registrar métrica e retornar
-      recordSuccess(context.operation || 'unknown');
-
-      if (attempt > 1) {
-        logger.info(`Operação bem-sucedida após retry`, {
-          correlationId,
-          attempt,
-          ...context
-        });
-      }
-
-      return {
-        success: true,
-        result,
-        attempts: attempt
-      };
+      return handleRetrySuccess(result, attempt, correlationId, context);
     } catch (err) {
       lastError = err;
 
-      // Verificar se é erro de rate limiting
-      if (err.response?.status === 429 || err.statusCode === 429) {
-        recordRateLimitHit(context.operation || 'unknown');
-      }
+      const { shouldRetry, delay } = handleRetryError(err, attempt, maxRetries, config, correlationId, context);
 
-      // Verificar se deve retry
-      if (!isRetryableError(err) || attempt === maxRetries) {
+      if (!shouldRetry) {
         break;
       }
 
-      // Registrar retry
-      recordRetry(context.operation || 'unknown');
-
-      // Calcular delay
-      const delay = calculateDelay(attempt, config);
-
-      logger.warn(`Retry ${attempt}/${maxRetries} após ${delay}ms`, {
-        correlationId,
-        error: err.message,
-        ...context
-      });
-
-      // Aguardar antes da próxima tentativa
       await sleep(delay);
     }
   }

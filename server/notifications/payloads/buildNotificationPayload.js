@@ -1,94 +1,27 @@
 // Constrói payload canônico de notificação a partir de evento de domínio
 // Todos os canais (Telegram, Expo) consomem este shape normalizado
 
-import { z } from 'zod';
-import { escapeMarkdownV2 } from '../../utils/formatters.js';
-import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { 
-  getSaoPauloTime, 
   getServerTimestamp 
 } from '../../utils/dateUtils.js';
 
-/**
- * Schemas de contrato para os dados de entrada (Layer 1 -> Layer 2)
- */
-export const dailyDigestDataSchema = z.object({
-  firstName: z.string(),
-  hour: z.number().min(0).max(23),
-  pendingCount: z.number(),
-  medicines: z.array(z.object({
-    name: z.string(),
-    time: z.string(),
-    dosage: z.string().optional()
-  }))
-});
+import {
+  kindSchema,
+  notificationPayloadSchema
+} from './_payloadSchemas.js';
 
-export const adherenceReportDataSchema = z.object({
-  firstName: z.string(),
-  period: z.string(), // ex: "hoje", "esta semana"
-  percentage: z.number().min(0).max(100),
-  taken: z.number(),
-  total: z.number(),
-  storytelling: z.string().optional() // Insights comparativos vindos da L1
-});
-
-export const stockAlertDataSchema = z.object({
-  medicineName: z.string(),
-  remaining: z.number(),
-  daysRemaining: z.number().optional()
-});
-
-export const titrationAlertDataSchema = z.object({
-  medicineName: z.string(),
-  currentStage: z.number(),
-  totalStages: z.number(),
-  status: z.enum(['alvo_atingido', 'titulando']),
-  nextStage: z.object({
-    dosage: z.string(),
-    unit: z.string(),
-    date: z.string().optional()
-  }).optional()
-});
-
-export const prescriptionAlertDataSchema = z.object({
-  medicineName: z.string(),
-  endDate: z.string(),
-  daysRemaining: z.number()
-});
-
-export const dlqDigestDataSchema = z.object({
-  failedCount: z.number(),
-  failures: z.array(z.object({
-    id: z.string(),
-    type: z.string(),
-    error_message: z.string().optional(),
-    created_at: z.string()
-  }))
-});
-
-export const kindSchema = z.enum([
-  'dose_reminder',
-  'dose_reminder_by_plan',
-  'dose_reminder_misc',
-  'stock_alert',
-  'daily_digest',
-  'adherence_report',
-  'monthly_report',
-  'titration_alert',
-  'prescription_alert',
-  'dlq_digest'
-]);
-
-// Contrato de saída da Presentation Layer (L2) para a Delivery Layer (L3)
-export const notificationPayloadSchema = z.object({
-  title: z.string(),
-  body: z.string(),
-  pushBody: z.string(), // Texto puro sem escapes para Push/Alerts (R-205)
-  deeplink: z.string().startsWith('dosiq://'), // Garante padrão de deep linking do app
-  metadata: z.object({
-    kind: kindSchema,
-  }).passthrough()
-});
+import {
+  buildDailyDigestPayload,
+  buildAdherenceReportPayload,
+  buildDoseReminderPayload,
+  buildDoseReminderByPlanPayload,
+  buildDoseReminderMiscPayload,
+  buildStockAlertPayload,
+  buildTitrationAlertPayload,
+  buildMonthlyReportPayload,
+  buildPrescriptionAlertPayload,
+  buildDlqDigestPayload
+} from './_payloadBuilders.js';
 
 /**
  * Centralizador de construção de payloads de notificação.
@@ -103,322 +36,45 @@ export function buildNotificationPayload({ kind, data }) {
   // 1. Validar Kind
   const validatedKind = kindSchema.parse(kind);
 
-  let title = '';
-  let body = '';
-  let pushBody = '';
-  let metadata = { ...data, kind: validatedKind };
+  let payloadContent;
 
   switch (validatedKind) {
-    case 'daily_digest': {
-      const { firstName, hour, pendingCount, medicines } = dailyDigestDataSchema.parse(data);
-      const greeting = getGreeting(hour);
-      title = '📅 Resumo do Dia';
-      
-      const safeName = escapeMarkdownV2(firstName);
-      
-      // Versão Rich (Telegram/Inbox)
-      let richMsg = `${greeting}, *${safeName}*\\!
-
-`;
-      // Versão Plain (Push)
-      let plainMsg = `${greeting}, ${firstName}! `;
-      
-      if (pendingCount > 0) {
-        const text = pendingCount === 1 ? 'dose pendente' : 'doses pendentes';
-        richMsg += `Você tem *${pendingCount}* ${text} para hoje:
-
-`;
-        plainMsg += `Você tem ${pendingCount} ${text} para hoje:
-`;
-        
-        medicines.forEach(m => {
-          richMsg += `💊 *${escapeMarkdownV2(m.name)}*
-`;
-          richMsg += `⏰ ${escapeMarkdownV2(m.time)}${m.dosage ? ` \\(${escapeMarkdownV2(m.dosage)}\\)` : ''}
-
-`;
-          
-          plainMsg += `⏰ ${m.name} - ${m.time}${m.dosage ? ` (${m.dosage})` : ''}
-`;
-        });
-        richMsg += `Não se esqueça de registrar no app\\!`;
-        plainMsg += `Não se esqueça de registrar no app!`;
-      } else {
-        const success = `Você está em dia com todos os seus medicamentos de hoje\\! 🎉`;
-        richMsg += success;
-        plainMsg += success.replace(/\\/g, '');
-      }
-      
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'daily_digest':
+      payloadContent = buildDailyDigestPayload(data);
       break;
-    }
-
-    case 'adherence_report': {
-      const { firstName, period, percentage, taken, total, storytelling } = adherenceReportDataSchema.parse(data);
-      const nudge = getMotivationalNudge(percentage);
-      title = '📈 Relatório diário';
-      
-      const safeName = escapeMarkdownV2(firstName);
-      const safePeriod = escapeMarkdownV2(period);
-      
-      // Versão Rich
-      let richMsg = `Olá, *${safeName}*\\!
-
-`;
-      richMsg += `Sua adesão ${safePeriod} foi de *${percentage}%*
-`;
-      richMsg += `✅ *${taken}* de *${total}* doses registradas\\.
-
-`;
-      
-      // Versão Plain
-      let plainMsg = `Olá, ${firstName}! 
-`;
-      plainMsg += `Sua adesão ${period} foi de ${percentage}% `;
-      plainMsg += `✅ ${taken} de ${total} doses registradas.
-`;
-      
-      if (storytelling) {
-        richMsg += `*Comparação:* ${escapeMarkdownV2(storytelling)}
-
-`;
-        plainMsg += `Comparação: 
-`;
-        plainMsg += `${storytelling} `;
-      }
-      
-      richMsg += `_${escapeMarkdownV2(nudge)}_`;
-      plainMsg += nudge;
-      
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'adherence_report':
+      payloadContent = buildAdherenceReportPayload(data);
       break;
-    }
-
-    case 'dose_reminder': {
-      const medicineName = data.medicineName || 'Medicamento';
-      const time = data.time || '';
-      title = '💊 Hora do Medicamento';
-      body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)${data.dosage ? ` — **${escapeMarkdownV2(data.dosage)}**` : ''}\\.`;
-      pushBody = `Está na hora de tomar ${medicineName} (${time})${data.dosage ? ` — ${data.dosage}` : ''}.`;
+    case 'dose_reminder':
+      payloadContent = buildDoseReminderPayload(data);
       break;
-    }
-
-    case 'dose_reminder_by_plan': {
-      const n = data.doses?.length ?? 0;
-      const planName = data.planName ?? 'Plano de tratamento';
-      const scheduledTime = data.scheduledTime ?? 'agora';
-      const hour = data.hour ?? getSaoPauloTime().getHours();
-      
-      const greeting = getTimeOfDayGreeting(hour);
-      title = `${greeting} — ${planName}`;
-      
-      body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano \\(${escapeMarkdownV2(scheduledTime)}\\)\\.`;
-      pushBody = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${scheduledTime}).`;
+    case 'dose_reminder_by_plan':
+      payloadContent = buildDoseReminderByPlanPayload(data);
       break;
-    }
-
-    case 'dose_reminder_misc': {
-      const n = data.doses?.length ?? 0;
-      const scheduledTime = data.scheduledTime ?? 'agora';
-      const hour = data.hour ?? getSaoPauloTime().getHours();
-      
-      title = getTimeOfDayGreeting(hour);
-      body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\. Clique para registrar\\.`;
-      pushBody = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${scheduledTime}. Clique para registrar.`;
+    case 'dose_reminder_misc':
+      payloadContent = buildDoseReminderMiscPayload(data);
       break;
-    }
-
-    case 'stock_alert': {
-      const { medicineName, remaining, daysRemaining } = stockAlertDataSchema.parse(data);
-      title = `📦 Alerta de Estoque: ${medicineName}`;
-      
-      let richMsg = `📉 **Restam:** ${remaining} doses\\..
-`;
-      let plainMsg = `📉 Restam: ${remaining} doses.
-`;
-      
-      if (daysRemaining !== undefined) {
-        richMsg += `⏳ **Previsão:** Acaba em aproximadamente **${daysRemaining} dias**\\.
-
-`;
-        plainMsg += `⏳ Previsão: Acaba em aproximadamente ${daysRemaining} dias.
-
-`;
-      }
-      
-      const footer = `Recomendamos a reposição em breve\\.`;
-      richMsg += footer;
-      plainMsg += footer.replace(/\\\\/g, '');
-      
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'stock_alert':
+      payloadContent = buildStockAlertPayload(data);
       break;
-    }
-
-    case 'titration_alert': {
-      const { medicineName, currentStage, totalStages, status, nextStage } = titrationAlertDataSchema.parse(data);
-      title = '🎯 Atualização de Titulação';
-
-      let richMsg = `🎯 *Atualização de Titulação*
-
-`;
-      richMsg += `Medicamento: **${escapeMarkdownV2(medicineName)}**
-`;
-      richMsg += `Etapa atual: ${currentStage}/${totalStages}
-
-`;
-
-      let plainMsg = `🎯 Atualização de Titulação
-`;
-      plainMsg += `Medicamento: ${medicineName}
-`;
-      plainMsg += `Etapa atual: ${currentStage}/${totalStages}
-
-`;
-
-      if (status === 'alvo_atingido') {
-        const success = `✅ *Parabéns\\!* Você atingiu a dose alvo\\!
-Continue com o acompanhamento médico\\.`;
-        const plainSuccess = `✅ Parabéns! Você atingiu a dose alvo!
-Continue com o acompanhamento médico.`;
-        richMsg += success;
-        plainMsg += plainSuccess;
-      } else if (status === 'titulando' && nextStage) {
-        richMsg += `📈 Próxima etapa: ${escapeMarkdownV2(nextStage.dosage)} ${escapeMarkdownV2(nextStage.unit)}
-`;
-        richMsg += `⏰ Data prevista: ${escapeMarkdownV2(nextStage.date || 'a definir')}`;
-        
-        plainMsg += `📈 Próxima etapa: ${nextStage.dosage} ${nextStage.unit}
-`;
-        plainMsg += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
-      }
-
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'titration_alert':
+      payloadContent = buildTitrationAlertPayload(data);
       break;
-    }
-
-    case 'monthly_report': {
-      const { firstName, percentage, taken, total } = adherenceReportDataSchema.parse(data);
-      title = '🗓️ Relatório Mensal';
-      
-      let richMsg = `📊 *Seu Relatório Mensal*
-
-`;
-      richMsg += `Olá ${escapeMarkdownV2(firstName)}, sua taxa de adesão no último mês foi de **${percentage}%**\\..
-`;
-      richMsg += `✅ **Doses tomadas:** ${taken}
-`;
-      richMsg += `📝 **Doses esperadas:** ${total}
-
-`;
-      
-      let plainMsg = `📊 Seu Relatório Mensal
-`;
-      plainMsg += `Olá ${firstName}, sua taxa de adesão no último mês foi de ${percentage}%.
-`;
-      plainMsg += `✅ Doses tomadas: ${taken}
-`;
-      plainMsg += `📝 Doses esperadas: ${total}
-
-`;
-      
-      let nudge = '';
-      if (percentage >= 90) nudge = `🚀 *Desempenho excepcional\\.!* Continue assim\\.`;
-      else if (percentage >= 70) nudge = `💪 *Bom trabalho\\.!* Vamos buscar os 100% no próximo mês?`;
-      else nudge = `💡 *Lembrete:* Manter a constância é fundamental para o sucesso do tratamento\\.`;
-      
-      richMsg += nudge;
-      plainMsg += nudge.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
-      
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'monthly_report':
+      payloadContent = buildMonthlyReportPayload(data);
       break;
-    }
-
-    case 'prescription_alert': {
-      const { medicineName, endDate, daysRemaining } = prescriptionAlertDataSchema.parse(data);
-      const date = getSaoPauloTime(endDate).toLocaleDateString('pt-BR');
-      title = '📋 Alerta de Prescrição';
-
-      let richMsg = '';
-      let plainMsg = '';
-      if (daysRemaining === 1) {
-        richMsg = `⚠️ *Sua prescrição vence amanhã\\.!*
-
-`;
-        plainMsg = `⚠️ Sua prescrição vence amanhã!
-`;
-      } else if (daysRemaining <= 7) {
-        richMsg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*
-
-`;
-        plainMsg = `⚠️ Prescrição vencendo em ${daysRemaining} dias
-`;
-      } else {
-        richMsg = `📋 *Renovação de Prescrição*
-
-`;
-        plainMsg = `📋 Renovação de Prescrição
-`;
-      }
-
-      const info = `Medicamento: ${medicineName}
-Vencimento: ${date}
-
-`;
-      richMsg += escapeMarkdownV2(info);
-      plainMsg += info;
-
-      let footer = '';
-      if (daysRemaining <= 7) {
-        footer = `🚨 *Atenção\\.!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
-      } else {
-        footer = `💡 É um bom momento para agendar sua consulta de acompanhamento para renovação\\.`;
-      }
-      
-      richMsg += footer;
-      plainMsg += footer.replace(/[\\.\\.]/g, '').replace(/\\./g, '');
-
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'prescription_alert':
+      payloadContent = buildPrescriptionAlertPayload(data);
       break;
-    }
-
-    case 'dlq_digest': {
-      const { failedCount, failures } = dlqDigestDataSchema.parse(data);
-      title = '⚠️ DLQ Digest';
-      
-      let richMsg = `*${failedCount} notificações falhadas*
-
-`;
-      let plainMsg = `${failedCount} notificações falhadas
-
-`;
-      
-      const items = failures.map(f => {
-        const localTime = getSaoPauloTime(f.created_at);
-        const time = localTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const error = (f.error_message || 'Erro desconhecido').substring(0, 50);
-        return {
-          rich: `• [${time}] *${escapeMarkdownV2(f.type)}*: _${escapeMarkdownV2(error)}_`,
-          plain: `• [${time}] ${f.type}: ${error}`
-        };
-      });
-
-      richMsg += items.map(i => i.rich).join('\n');
-      plainMsg += items.map(i => i.plain).join('\n');
-      
-      body = richMsg;
-      pushBody = plainMsg;
+    case 'dlq_digest':
+      payloadContent = buildDlqDigestPayload(data);
       break;
-    }
-
     default:
       throw new Error(`Unsupported notification kind: ${kind}`);
   }
+
+  let { title, body, pushBody } = payloadContent;
+  let metadata = { ...data, kind: validatedKind };
 
   // 3. Resolver Deeplink lógico (Responsabilidade da Layer 2)
   const deeplink = resolveDeeplink(validatedKind, data);

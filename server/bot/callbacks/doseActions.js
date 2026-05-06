@@ -28,113 +28,105 @@ export async function handleCallbacks(bot) {
   });
 }
 
+async function resolveProtocolMedicine(protocolId) {
+  const { data: protocol, error } = await supabase
+    .from('protocols')
+    .select('medicine_id, medicine:medicines(name, dosage_unit)')
+    .eq('id', protocolId)
+    .single();
+
+  if (error || !protocol) throw new Error('Protocolo não encontrado');
+  return { medicineId: protocol.medicine_id, medicineName: protocol.medicine.name };
+}
+
+async function createLogAndConsumeStock(userId, protocolId, medicineId, quantity) {
+  const { data: createdLogs, error: logError } = await supabase
+    .from('medicine_logs')
+    .insert([{
+      user_id: userId,
+      protocol_id: protocolId,
+      medicine_id: medicineId,
+      quantity_taken: quantity,
+      taken_at: getServerTimestamp()
+    }])
+    .select('id')
+    .single();
+
+  if (logError) throw logError;
+
+  const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+    p_user_id: userId,
+    p_medicine_id: medicineId,
+    p_quantity: quantity,
+    p_medicine_log_id: createdLogs.id
+  });
+
+  if (consumeError) {
+    await supabase.from('medicine_logs').delete().eq('id', createdLogs.id).eq('user_id', userId);
+    throw consumeError;
+  }
+}
+
+async function calculateAdherenceAndStockWarnings(userId, medicineId) {
+  const { data: updatedStock } = await supabase
+    .from('stock')
+    .select('quantity')
+    .eq('medicine_id', medicineId)
+    .eq('user_id', userId)
+    .gt('quantity', 0);
+
+  const totalQuantity = updatedStock?.reduce((sum, s) => sum + s.quantity, 0) || 0;
+  
+  const { data: activeProtocols } = await supabase
+    .from('protocols')
+    .select('time_schedule, dosage_per_intake')
+    .eq('medicine_id', medicineId)
+    .eq('user_id', userId)
+    .eq('active', true);
+
+  const dailyUsage = activeProtocols?.reduce((sum, p) => sum + ((p.time_schedule?.length || 0) * (p.dosage_per_intake || 0)), 0) || 0;
+  const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
+  
+  const { data: allLogs } = await supabase
+    .from('medicine_logs')
+    .select('taken_at')
+    .eq('user_id', userId);
+  
+  const streak = calculateStreak(allLogs);
+  return { daysRemaining, streak };
+}
+
+function buildConfirmationMessage(medicineName, streak, daysRemaining) {
+  let confirmMsg = `✅ Dose de *${escapeMarkdownV2(medicineName)}* registrada\\!`;
+  
+  if (streak > 1) {
+    confirmMsg += `\n🔥 *${streak} dias seguidos\\!*`;
+  }
+  
+  if (daysRemaining !== null && daysRemaining <= 7) {
+    if (daysRemaining <= 0) {
+      confirmMsg += `\n\n⚠️ *ATENÇÃO:* Estoque zerado\\!`;
+    } else {
+      confirmMsg += `\n\n⚠️ Estoque baixo: \\~${daysRemaining} dias restantes`;
+    }
+  }
+  return confirmMsg;
+}
+
 async function handleTakeDose(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
   const chatId = message.chat.id;
-  
-  // New format: take_:{protocolId}:{quantity}
   const [_, protocolId, quantity] = data.split(':');
   
   try {
-    // Get actual user ID from chat ID
     const userId = await getUserIdByChatId(chatId);
+    const { medicineId, medicineName } = await resolveProtocolMedicine(protocolId);
     
-    // 1. Fetch medicine_id from protocol
-    const { data: protocol, error: protocolError } = await supabase
-      .from('protocols')
-      .select('medicine_id, medicine:medicines(name, dosage_unit)')
-      .eq('id', protocolId)
-      .single();
-
-    if (protocolError || !protocol) throw new Error('Protocolo não encontrado');
-
-    const medicineId = protocol.medicine_id;
-    const medicineName = protocol.medicine.name;
-
-    // 2. Criar Log
-    const { data: createdLogs, error: logError } = await supabase
-      .from('medicine_logs')
-      .insert([{
-        user_id: userId,
-        protocol_id: protocolId,
-        medicine_id: medicineId,
-        quantity_taken: parseFloat(quantity),
-        taken_at: getServerTimestamp()
-      }])
-      .select('id')
-      .single();
-
-    if (logError) throw logError;
-
-    // 3. Decrementar Estoque via RPC FIFO (overload server-side com p_user_id explícito)
-    // Bot usa service_role → auth.uid() = NULL → usar overload de 4 parâmetros
-    const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
-      p_user_id: userId,
-      p_medicine_id: medicineId,
-      p_quantity: parseFloat(quantity),
-      p_medicine_log_id: createdLogs.id
-    });
-
-    if (consumeError) {
-      await supabase
-        .from('medicine_logs')
-        .delete()
-        .eq('id', createdLogs.id)
-        .eq('user_id', userId);
-
-      throw consumeError;
-    }
-
-    // 4. Check stock levels and warn if low
-    const { data: updatedStock } = await supabase
-      .from('stock')
-      .select('quantity')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', userId)
-      .gt('quantity', 0);
-
-    const totalQuantity = updatedStock?.reduce((sum, s) => sum + s.quantity, 0) || 0;
+    await createLogAndConsumeStock(userId, protocolId, medicineId, parseFloat(quantity));
     
-    // Get daily usage for this medicine
-    const { data: activeProtocols } = await supabase
-      .from('protocols')
-      .select('time_schedule, dosage_per_intake')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', userId)
-      .eq('active', true);
+    const { daysRemaining, streak } = await calculateAdherenceAndStockWarnings(userId, medicineId);
+    const confirmMsg = buildConfirmationMessage(medicineName, streak, daysRemaining);
 
-    const dailyUsage = activeProtocols?.reduce((sum, p) => {
-      const timesPerDay = p.time_schedule?.length || 0;
-      const dosagePerIntake = p.dosage_per_intake || 0;
-      return sum + (timesPerDay * dosagePerIntake);
-    }, 0) || 0;
-
-    const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
-    
-    // Get all logs to calculate streak
-    const { data: allLogs } = await supabase
-      .from('medicine_logs')
-      .select('taken_at')
-      .eq('user_id', userId);
-    
-    const streak = calculateStreak(allLogs);
-
-    // Update the message
-    let confirmMsg = `✅ Dose de *${escapeMarkdownV2(medicineName)}* registrada\\!`;
-    
-    if (streak > 1) {
-      confirmMsg += `\n🔥 *${streak} dias seguidos\\!*`;
-    }
-    
-    if (daysRemaining !== null && daysRemaining <= 7) {
-      if (daysRemaining <= 0) {
-        confirmMsg += `\n\n⚠️ *ATENÇÃO:* Estoque zerado\\!`;
-      } else {
-        confirmMsg += `\n\n⚠️ Estoque baixo: \\~${daysRemaining} dias restantes`;
-      }
-    }
-
-    // Add quick action buttons
     const quickActions = {
       inline_keyboard: [
         [
@@ -155,14 +147,9 @@ async function handleTakeDose(bot, callbackQuery) {
     await bot.answerCallbackQuery(id, { text: 'Dose registrada!' });
   } catch (err) {
     console.error('Erro ao registrar dose:', err);
-    
-    // Handle unlinked user case
     if (err.message === 'User not linked') {
       try {
-        await bot.answerCallbackQuery(id, {
-          text: 'Conta não vinculada. Use /start para vincular.',
-          show_alert: true
-        });
+        await bot.answerCallbackQuery(id, { text: 'Conta não vinculada. Use /start para vincular.', show_alert: true });
       } catch { /* ignore */ }
       return;
     }

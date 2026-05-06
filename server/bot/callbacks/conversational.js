@@ -10,8 +10,7 @@ const logger = createLogger('ConversationalCallbacks');
 
 export async function handleConversationalCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
-    const { data, message, id } = callbackQuery;
-    const chatId = message.chat.id;
+    const { data } = callbackQuery;
 
     if (data.startsWith('reg_med:')) {
       await handleRegistrarMedSelected(bot, callbackQuery);
@@ -20,25 +19,7 @@ export async function handleConversationalCallbacks(bot) {
     } else if (data.startsWith('add_stock_med:')) {
       await handleAddStockMedSelected(bot, callbackQuery);
     } else if (data.startsWith('add_stock_med_val:')) {
-      const [_, index, qty] = data.split(':');
-      try {
-        const session = await getSession(chatId);
-        
-        if (!session || !session.medicineMap || !session.medicineMap[index]) {
-          return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
-        }
-        
-        const { medicineId, medicineName } = session.medicineMap[index];
-        const userId = await getUserIdByChatId(chatId);
-        await processAddStock(bot, chatId, userId, medicineId, parseFloat(qty), medicineName);
-        await bot.deleteMessage(chatId, message.message_id);
-        await bot.answerCallbackQuery(id);
-      } catch (err) {
-        if (err.message === 'User not linked') {
-          return bot.answerCallbackQuery(id, { text: 'Conta não vinculada.', show_alert: true });
-        }
-        throw err;
-      }
+      await handleAddStockMedValSelected(bot, callbackQuery);
     } else if (data.startsWith('pause_prot:') || data.startsWith('resume_prot:')) {
       await handleProtocolCallback(bot, callbackQuery);
     } else if (data.startsWith('conv_cancel')) {
@@ -87,6 +68,30 @@ export async function handleConversationalCallbacks(bot) {
 
 import { processAddStock } from '../commands/adicionar_estoque.js';
 import { handleProtocolCallback } from '../commands/protocols.js';
+
+async function handleAddStockMedValSelected(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  const [_, index, qty] = data.split(':');
+  try {
+    const session = await getSession(chatId);
+    
+    if (!session || !session.medicineMap || !session.medicineMap[index]) {
+      return bot.answerCallbackQuery(id, { text: 'Sessão expirada. Tente novamente.', show_alert: true });
+    }
+    
+    const { medicineId, medicineName } = session.medicineMap[index];
+    const userId = await getUserIdByChatId(chatId);
+    await processAddStock(bot, chatId, userId, medicineId, parseFloat(qty), medicineName);
+    await bot.deleteMessage(chatId, message.message_id);
+    await bot.answerCallbackQuery(id);
+  } catch (err) {
+    if (err.message === 'User not linked') {
+      return bot.answerCallbackQuery(id, { text: 'Conta não vinculada.', show_alert: true });
+    }
+    throw err;
+  }
+}
 
 async function handleAddStockMedSelected(bot, callbackQuery) {
   const { data, message, id } = callbackQuery;
@@ -250,142 +255,130 @@ async function handleCancel(bot, callbackQuery) {
   await bot.answerCallbackQuery(id);
 }
 
+async function _validateStockAndGetDecrementInfo(bot, chatId, userId, medicineId, quantity, editMessageId) {
+  const { data: medicine } = await supabase
+    .from('medicines')
+    .select('name, dosage_per_pill, dosage_unit')
+    .eq('id', medicineId)
+    .single();
+    
+  const dosagePerPill = medicine?.dosage_per_pill || 1;
+  const pillsToDecrease = quantity / dosagePerPill;
+  
+  const { data: stockEntries, error: fetchError } = await supabase
+    .from('stock')
+    .select('*')
+    .eq('medicine_id', medicineId)
+    .eq('user_id', userId)
+    .gt('quantity', 0)
+    .order('purchase_date', { ascending: true });
+    
+  const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
+  if (totalStock < pillsToDecrease) {
+    const unit = medicine?.dosage_unit || 'mg';
+    const message = `⚠️ Estoque insuficiente\\!\n\n` +
+      `Medicamento: ${escapeMarkdownV2(medicine?.name || 'Desconhecido')}\n` +
+      `Dosagem solicitada: ${quantity}${escapeMarkdownV2(unit)}\n` +
+      `Comprimidos necessários: ${pillsToDecrease}\n` +
+      `Estoque disponível: ${totalStock} comprimidos\n\n` +
+      `Por favor, adicione estoque antes de registrar a dose\\.`;
+    
+    if (editMessageId) {
+      await bot.editMessageText(message, {
+        chat_id: chatId,
+        message_id: editMessageId,
+        parse_mode: 'MarkdownV2'
+      });
+    } else {
+      await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+    }
+    return null;
+  }
+  
+  return { pillsToDecrease, stockEntries, fetchError, medicine };
+}
+
+async function _createLogAndDecrementStock(userId, protocolId, medicineId, pillsToDecrease, stockEntries, fetchError) {
+  const { data: createdLog, error: logError } = await supabase
+    .from('medicine_logs')
+    .insert([{
+      user_id: userId,
+      protocol_id: protocolId,
+      medicine_id: medicineId,
+      quantity_taken: pillsToDecrease,
+      taken_at: getServerTimestamp()
+    }])
+    .select('id')
+    .single();
+
+  if (logError) return { logError, consumeError: null };
+
+  if (!fetchError && stockEntries.length > 0) {
+    const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+      p_medicine_id: medicineId,
+      p_quantity: pillsToDecrease,
+      p_medicine_log_id: createdLog.id
+    });
+
+    if (consumeError) {
+      await supabase
+        .from('medicine_logs')
+        .delete()
+        .eq('id', createdLog.id)
+        .eq('user_id', userId);
+      return { logError: null, consumeError };
+    }
+  }
+  return { logError: null, consumeError: null };
+}
+
+async function _handleDoseRegistrationError(bot, chatId, medicineId, logError, consumeError, quantity, editMessageId) {
+  const errorMsg = logError ? logError.message : consumeError?.message;
+  const { data: med } = await supabase
+    .from('medicines')
+    .select('name')
+    .eq('id', medicineId)
+    .single();
+  
+  const message = `❌ Erro ao registrar dose de *${escapeMarkdownV2(med?.name || 'Desconhecido')}*\\.\n\n` +
+    `Detalhes do erro: ${escapeMarkdownV2(errorMsg || 'Erro desconhecido')}\n\n` +
+    `Por favor, tente novamente ou contate o suporte\\.`;
+  
+  if (editMessageId) {
+    await bot.editMessageText(message, {
+      chat_id: chatId,
+      message_id: editMessageId,
+      parse_mode: 'MarkdownV2'
+    });
+  } else {
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+  }
+}
+
 async function processDoseRegistration(bot, chatId, protocolId, medicineId, quantity, editMessageId = null) {
   try {
-    // Get actual user ID from chat ID
     const userId = await getUserIdByChatId(chatId);
     
-    // Fetch medicine to get dosage_per_pill for stock calculation
-    const { data: medicine } = await supabase
-      .from('medicines')
-      .select('dosage_per_pill')
-      .eq('id', medicineId)
-      .single();
-    
-    const dosagePerPill = medicine?.dosage_per_pill || 1;
-    
-    // Calculate number of pills to decrease from stock
-    const pillsToDecrease = quantity / dosagePerPill;
-    
-    console.log(`[processDoseRegistration] Dosage: ${quantity}mg, DosagePerPill: ${dosagePerPill}mg, PillsToDecrease: ${pillsToDecrease}`);
-    
     // 1. Validar Estoque ANTES de gravar a dose
-    const { data: stockEntries, error: fetchError } = await supabase
-      .from('stock')
-      .select('*')
-      .eq('medicine_id', medicineId)
-      .eq('user_id', userId)
-      .gt('quantity', 0)
-      .order('purchase_date', { ascending: true });
+    const stockInfo = await _validateStockAndGetDecrementInfo(bot, chatId, userId, medicineId, quantity, editMessageId);
+    if (!stockInfo) return; // Insufficient stock, message already sent
     
-    // Validar se há estoque suficiente (usando quantidade de comprimidos)
-    const totalStock = stockEntries?.reduce((sum, entry) => sum + entry.quantity, 0) || 0;
-    if (totalStock < pillsToDecrease) {
-      const { data: med } = await supabase
-        .from('medicines')
-        .select('name, dosage_unit')
-        .eq('id', medicineId)
-        .single();
-      
-      const unit = med?.dosage_unit || 'mg';
-      const message = `⚠️ Estoque insuficiente\\!\n\n` +
-        `Medicamento: ${escapeMarkdownV2(med?.name || 'Desconhecido')}\n` +
-        `Dosagem solicitada: ${quantity}${escapeMarkdownV2(unit)}\n` +
-        `Comprimidos necessários: ${pillsToDecrease}\n` +
-        `Estoque disponível: ${totalStock} comprimidos\n\n` +
-        `Por favor, adicione estoque antes de registrar a dose\\.`;
-      
-      if (editMessageId) {
-        await bot.editMessageText(message, {
-          chat_id: chatId,
-          message_id: editMessageId,
-          parse_mode: 'MarkdownV2'
-        });
-      } else {
-        await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-      }
-      return;
-    }
+    const { pillsToDecrease, stockEntries, fetchError, medicine: med } = stockInfo;
     
-    // 2. Criar Log (só se houver estoque suficiente)
-    // quantity_taken deve ser em comprimidos, não em mg
-    const { data: createdLog, error: logError } = await supabase
-      .from('medicine_logs')
-      .insert([{
-        user_id: userId,
-        protocol_id: protocolId,
-        medicine_id: medicineId,
-        quantity_taken: pillsToDecrease,
-        taken_at: getServerTimestamp()
-      }])
-      .select('id')
-      .single();
-
-    if (logError) {
-      logger.error('Erro ao criar log de dose:', logError, { 
-        chatId, 
-        userId, 
-        protocolId, 
-        medicineId, 
-        quantity 
-      });
-      
-      const { data: med } = await supabase
-        .from('medicines')
-        .select('name')
-        .eq('id', medicineId)
-        .single();
-      
-      const message = `❌ Erro ao registrar dose de *${escapeMarkdownV2(med?.name || 'Desconhecido')}*\\.\n\n` +
-        `Detalhes do erro: ${escapeMarkdownV2(logError.message || 'Erro desconhecido')}\n\n` +
-        `Por favor, tente novamente ou contate o suporte\\.`;
-      
-      if (editMessageId) {
-        await bot.editMessageText(message, {
-          chat_id: chatId,
-          message_id: editMessageId,
-          parse_mode: 'MarkdownV2'
-        });
-      } else {
-        await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
-      }
-      return;
+    // 2 & 3. Criar Log e Decrementar Estoque
+    const { logError, consumeError } = await _createLogAndDecrementStock(userId, protocolId, medicineId, pillsToDecrease, stockEntries, fetchError);
+    if (logError || consumeError) {
+      if (logError) logger.error('Erro ao criar log de dose:', logError, { chatId, userId, protocolId, medicineId, quantity });
+      return _handleDoseRegistrationError(bot, chatId, medicineId, logError, consumeError, quantity, editMessageId);
     }
 
-    // 3. Decrementar Estoque via RPC FIFO (só se houver estoque suficiente)
-    if (!fetchError && stockEntries.length > 0) {
-      const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
-        p_medicine_id: medicineId,
-        p_quantity: pillsToDecrease,
-        p_medicine_log_id: createdLog.id
-      });
-
-      if (consumeError) {
-        await supabase
-          .from('medicine_logs')
-          .delete()
-          .eq('id', createdLog.id)
-          .eq('user_id', userId);
-
-        throw consumeError;
-      }
-    }
-
-    // 3. Fetch name for summary
-    const { data: med } = await supabase
-      .from('medicines')
-      .select('name, dosage_unit')
-      .eq('id', medicineId)
-      .single();
-
-    // Get all logs to calculate streak
+    // 4. Calcular streak
     const { data: allLogs } = await supabase
       .from('medicine_logs')
       .select('taken_at')
       .eq('user_id', userId);
     
     const streak = calculateStreak(allLogs);
-
     const unit = med?.dosage_unit || 'mg';
     let message = `✅ Dose de *${quantity}${escapeMarkdownV2(unit)} ${escapeMarkdownV2(med?.name || '')}* registrada com sucesso\\!`;
     

@@ -15,6 +15,47 @@ import { createLogger } from '../logger.js'
 
 const logger = createLogger('ChatbotCommand')
 
+async function _processAndReply(bot, chatId, message, userId) {
+  try {
+    // Mostrar indicador de digitação enquanto processa
+    logger.debug('🕐 Enviando ação "typing" ao Telegram', { chatId })
+    await bot.sendChatAction(chatId, 'typing')
+
+    logger.debug('🤖 Chamando sendTelegramChatMessage', { chatId, userId, msgLen: message.length })
+    const result = await sendTelegramChatMessage({ message, userId })
+
+    logger.info('✅ Resultado do chatbot recebido', {
+      chatId,
+      userId,
+      blocked: result.blocked,
+      rateLimited: result.rateLimited,
+      responseLen: result.response?.length || 0,
+      responsePreview: result.response?.substring(0, 80) || '(vazio)',
+    })
+
+    logger.debug('📤 Enviando resposta ao Telegram', { chatId, respLen: result.response?.length })
+    const prefixedResponse = `🤖 IA: ${result.response}`
+    await bot.sendMessage(chatId, prefixedResponse)
+    logger.info('✅ Mensagem enviada com sucesso', { chatId, respLen: prefixedResponse?.length })
+  } catch (error) {
+    logger.error('❌ Erro no handler do chatbot', error, {
+      chatId,
+      userId,
+      errorMessage: error.message,
+      errorStatus: error.response?.statusCode,
+    })
+    try {
+      await bot.sendMessage(chatId, '🤖 IA: Desculpe, tive um problema. Tente novamente.')
+    } catch (sendError) {
+      logger.error('❌ Erro ao enviar mensagem de erro', sendError, {
+        chatId,
+        errorMessage: sendError.message,
+        errorStatus: sendError.response?.statusCode,
+      })
+    }
+  }
+}
+
 /**
  * Processa mensagem de texto do usuário e responde com chatbot IA.
  *
@@ -55,42 +96,5 @@ export async function handleChatbotMessage(bot, msg) {
     return
   }
 
-  try {
-    // Mostrar indicador de digitação enquanto processa
-    logger.debug('🕐 Enviando ação "typing" ao Telegram', { chatId })
-    await bot.sendChatAction(chatId, 'typing')
-
-    logger.debug('🤖 Chamando sendTelegramChatMessage', { chatId, userId, msgLen: message.length })
-    const result = await sendTelegramChatMessage({ message, userId })
-
-    logger.info('✅ Resultado do chatbot recebido', {
-      chatId,
-      userId,
-      blocked: result.blocked,
-      rateLimited: result.rateLimited,
-      responseLen: result.response?.length || 0,
-      responsePreview: result.response?.substring(0, 80) || '(vazio)',
-    })
-
-    logger.debug('📤 Enviando resposta ao Telegram', { chatId, respLen: result.response?.length })
-    const prefixedResponse = `🤖 IA: ${result.response}`
-    await bot.sendMessage(chatId, prefixedResponse)
-    logger.info('✅ Mensagem enviada com sucesso', { chatId, respLen: prefixedResponse?.length })
-  } catch (error) {
-    logger.error('❌ Erro no handler do chatbot', error, {
-      chatId,
-      userId,
-      errorMessage: error.message,
-      errorStatus: error.response?.statusCode,
-    })
-    try {
-      await bot.sendMessage(chatId, '🤖 IA: Desculpe, tive um problema. Tente novamente.')
-    } catch (sendError) {
-      logger.error('❌ Erro ao enviar mensagem de erro', sendError, {
-        chatId,
-        errorMessage: sendError.message,
-        errorStatus: sendError.response?.statusCode,
-      })
-    }
-  }
+  await _processAndReply(bot, chatId, message, userId)
 }
