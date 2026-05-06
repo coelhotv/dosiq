@@ -18,11 +18,11 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   
   const medicineName = firstDose.medicine?.name || 'Medicamento'
   const displayTitle = isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA'
-  const alertColor = isDelayed ? '#904d00' : colors.primary[200]
-  const buttonBgColor = isDelayed ? '#f9a825' : '#ffffff'
-  const buttonTextColor = isDelayed ? '#1a1c1e' : colors.primary[600]
-  const textColor = isDelayed ? '#1a1c1e' : '#ffffff'
-  const timeColor = isDelayed ? '#44474e' : 'rgba(255, 255, 255, 0.7)'
+  const alertColor = isDelayed ? '#904d00' : colors.brand.light
+  const buttonBgColor = isDelayed ? '#f9a825' : colors.bg.card
+  const buttonTextColor = isDelayed ? colors.neutral[800] : colors.brand.primary
+  const textColor = isDelayed ? colors.neutral[800] : colors.text.inverse
+  const timeColor = isDelayed ? colors.neutral[600] : 'rgba(255, 255, 255, 0.7)'
 
   return (
     <View style={[styles.container, isDelayed && styles.containerDelayed]}>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing[4],
     marginBottom: spacing[4],
     borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     padding: spacing[6],
     shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 8 },

@@ -60,9 +60,18 @@ export const colors = {
     brand: '#F0FDFB', // Mint para Login/Splash
   },
 
+  // --- Branding specific tokens ---
+  brand: {
+    primary: '#006A5E',   // Verde Dosiq (CTA Principal)
+    secondary: '#008577', // Verde Dosiq Secundário (Gradients)
+    forest: '#004d45',    // Wordmark
+    mint: '#F0FDFB',      // Background
+    light: '#ccfbf1',     // Para textos sobre fundos escuros
+  },
+
   // Tab navigation
   tab: {
-    activeTint: '#005db6', // primary.600
+    activeTint: '#006A5E', 
     inactiveTint: '#8e9199', // neutral.400
     bgDefault: '#ffffff',
   },

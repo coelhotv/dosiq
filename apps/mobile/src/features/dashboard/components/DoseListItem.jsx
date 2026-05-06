@@ -54,7 +54,7 @@ export default function DoseListItem({ dose, onRegister }) {
           ) : isMissed ? (
             <AlertCircle size={14} color={colors.bg.card} />
           ) : (
-            <Clock size={14} color={colors.primary[600]} />
+            <Clock size={14} color={colors.brand.primary} />
           )}
         </View>
       </View>
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   ctaButton: {
-    backgroundColor: colors.primary[600],
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[2],
     borderRadius: borderRadius.md,

@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { BellRing, Check } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -17,12 +18,17 @@ export default function PriorityActionCard({ doses, onPress }) {
   const medicineName = firstDose.medicine?.name || 'Medicamento'
   
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <View style={styles.shadowWrapper}>
+      <LinearGradient
+        colors={[colors.brand.primary, colors.brand.secondary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+      >
         <View style={styles.header}>
-          <BellRing size={20} color={colors.primary[100]} style={styles.icon} />
+          <BellRing size={20} color={colors.brand.light} style={styles.icon} />
           <Text style={styles.alertText}>
-            {isMultiple ? `${doses.length} MEDICAMENTOS AGORA` : 'URGENTE AGORA'}
+            {isMultiple ? `${doses.length} PENDÊNCIAS AGORA` : 'URGENTE AGORA'}
           </Text> 
         </View>
         
@@ -41,29 +47,33 @@ export default function PriorityActionCard({ doses, onPress }) {
           onPress={() => onPress && onPress(firstDose)}
           activeOpacity={0.8}
         >
-          <Check size={20} color={colors.primary[600]} />
+          <Check size={20} color={colors.brand.primary} />
           <Text style={styles.buttonText}>
             {isMultiple ? 'Ver Urgências' : 'Confirmar Agora'}
           </Text>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  shadowWrapper: {
     marginHorizontal: spacing[4],
     marginBottom: spacing[4],
     borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary[600],
-    padding: spacing[6],
     // Sanctuary Ambient Shadow (lg)
     shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
+    backgroundColor: 'transparent',
+  },
+  container: {
+    borderRadius: borderRadius.xl,
+    padding: spacing[6],
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -76,13 +86,13 @@ const styles = StyleSheet.create({
   alertText: {
     fontSize: 13,
     fontWeight: '900',
-    color: colors.primary[200], 
+    color: colors.brand.light, 
     letterSpacing: 1.5,
   },
   medicineName: {
     fontSize: 26,
     fontWeight: '800',
-    color: colors.bg.card, // White text
+    color: colors.text.inverse,
     marginBottom: spacing[1],
   },
   timeInfo: {
@@ -101,7 +111,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.primary[600],
+    color: colors.brand.primary,
     marginLeft: spacing[2],
   },
 })
