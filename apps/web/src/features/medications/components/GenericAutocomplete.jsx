@@ -1,6 +1,71 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import './Autocomplete.css'
 
+function useAutocompleteLogic({ searchFn, onChange, onSelect }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [isLoading, setIsLoading] = useState(false)
+  const debounceRef = useRef(null)
+
+  const debouncedSearch = useCallback(
+    async (query) => {
+      if (!query || query.trim().length < 3) {
+        setSuggestions([])
+        setIsOpen(false)
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const results = await searchFn(query, 10)
+        setSuggestions(results)
+        setIsOpen(results.length > 0)
+        setSelectedIndex(-1)
+      } catch (error) {
+        console.error('Erro ao buscar sugestões:', error)
+        setSuggestions([])
+        setIsOpen(false)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [searchFn]
+  )
+
+  const handleSearch = useCallback(
+    (query) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => debouncedSearch(query), 300)
+    },
+    [debouncedSearch]
+  )
+
+  const handleInputChange = (e) => {
+    const newValue = e.target.value
+    onChange?.(newValue)
+    handleSearch(newValue)
+  }
+
+  const handleSelectSuggestion = (item) => {
+    onSelect?.(item)
+    setIsOpen(false)
+    setSuggestions([])
+    setSelectedIndex(-1)
+  }
+
+  return {
+    suggestions,
+    isOpen,
+    setIsOpen,
+    selectedIndex,
+    setSelectedIndex,
+    isLoading,
+    handleInputChange,
+    handleSelectSuggestion,
+  }
+}
+
 /**
  * Componente genérico de autocomplete reutilizável.
  *
@@ -30,79 +95,21 @@ export default function GenericAutocomplete({
   ariaDescribedBy,
   ariaInvalid = false,
 }) {
-  const [suggestions, setSuggestions] = useState([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedIndex, setSelectedIndex] = useState(-1)
-  const [isLoading, setIsLoading] = useState(false)
-  const debounceRef = useRef(null)
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
 
-  /**
-   * Executa busca com debounce de 300ms
-   */
-  const debouncedSearch = useCallback(
-    async (query) => {
-      if (!query || query.trim().length < 3) {
-        setSuggestions([])
-        setIsOpen(false)
-        return
-      }
+  const {
+    suggestions,
+    isOpen,
+    setIsOpen,
+    selectedIndex,
+    setSelectedIndex,
+    isLoading,
+    handleInputChange,
+    handleSelectSuggestion,
+  } = useAutocompleteLogic({ searchFn, onChange, onSelect })
 
-      setIsLoading(true)
-      try {
-        const results = await searchFn(query, 10)
-        setSuggestions(results)
-        setIsOpen(results.length > 0)
-        setSelectedIndex(-1)
-      } catch (error) {
-        console.error('Erro ao buscar sugestões:', error)
-        setSuggestions([])
-        setIsOpen(false)
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [searchFn]
-  )
-
-  /**
-   * Debounce wrapper
-   */
-  const handleSearch = useCallback(
-    (query) => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current)
-      }
-      debounceRef.current = setTimeout(() => {
-        debouncedSearch(query)
-      }, 300)
-    },
-    [debouncedSearch]
-  )
-
-  /**
-   * Ao digitar no input
-   */
-  const handleInputChange = (e) => {
-    const newValue = e.target.value
-    onChange?.(newValue)
-    handleSearch(newValue)
-  }
-
-  /**
-   * Ao selecionar uma sugestão
-   */
-  const handleSelectSuggestion = (item) => {
-    onSelect?.(item)
-    setIsOpen(false)
-    setSuggestions([])
-    setSelectedIndex(-1)
-  }
-
-  /**
-   * Navegação por teclado (setas, Enter, Escape)
-   */
+  // Navegação por teclado (setas, Enter, Escape)
   const handleKeyDown = (e) => {
     if (!isOpen || suggestions.length === 0) {
       if (e.key === 'Escape') {
@@ -139,9 +146,7 @@ export default function GenericAutocomplete({
     }
   }
 
-  /**
-   * Fechar dropdown ao clicar fora
-   */
+  // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -153,11 +158,9 @@ export default function GenericAutocomplete({
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [setIsOpen])
 
-  /**
-   * Scroll para item selecionado
-   */
+  // Scroll para item selecionado
   useEffect(() => {
     if (selectedIndex >= 0 && dropdownRef.current) {
       const items = dropdownRef.current.querySelectorAll('[role="option"]')
