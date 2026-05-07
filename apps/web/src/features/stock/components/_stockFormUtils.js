@@ -1,15 +1,18 @@
 import { formatLocalDate, getNow } from '@utils/dateUtils'
 
-export const getInitialFormData = (initialValues = {}) => ({
-  medicine_id: initialValues.medicine_id || '',
-  quantity: initialValues.quantity ?? '',
-  unit_price: initialValues.unit_price ?? '',
-  purchase_date: initialValues.purchase_date || formatLocalDate(getNow()),
-  expiration_date: initialValues.expiration_date || '',
-  pharmacy: initialValues.pharmacy || '',
-  laboratory: initialValues.laboratory || '',
-  notes: initialValues.notes || '',
-})
+export const getInitialFormData = (initialValues) => {
+  const values = initialValues || {}
+  return {
+    medicine_id: values.medicine_id || '',
+    quantity: values.quantity ?? '',
+    unit_price: values.unit_price ?? '',
+    purchase_date: values.purchase_date || formatLocalDate(getNow()),
+    expiration_date: values.expiration_date || '',
+    pharmacy: values.pharmacy || '',
+    laboratory: values.laboratory || '',
+    notes: values.notes || '',
+  }
+}
 
 export const validateStockForm = (formData) => {
   const newErrors = {}
@@ -39,7 +42,7 @@ export const buildStockPayload = (formData, effectiveLaboratory) => ({
   unit_price: formData.unit_price ? parseFloat(formData.unit_price) : 0,
   purchase_date: formData.purchase_date || null,
   expiration_date: formData.expiration_date || null,
-  pharmacy: formData.pharmacy.trim() || null,
+  pharmacy: formData.pharmacy?.trim() || null,
   laboratory: effectiveLaboratory,
-  notes: formData.notes.trim() || null,
+  notes: formData.notes?.trim() || null,
 })

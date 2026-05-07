@@ -268,6 +268,10 @@
   }
 }
 
+.cronograma-doses--complex {
+  gap: 1.25rem;
+}
+
 /* ============================================================
    Wave 7.5 — Dashboard "Hoje" + Treatments Refinements
    ============================================================ */
@@ -552,9 +556,7 @@
   opacity: 0.65;
 }
 
-.cronograma-dose-card--pending {
-  /* herda base .cronograma-dose-card */
-}
+
 
 /* Tag "Perdida" */
 .cronograma-dose-card__missed-tag {
@@ -999,6 +1001,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  min-height: 3.5rem;
 }
 
 /* Linha 1: nome+badge esq · stock pill dir */
@@ -1482,3 +1485,11 @@
     padding: 1.5rem 2rem;
   }
 }
+
+/* Utilities for removing inline styles — Wave 5 Review */
+.mt-4 { margin-top: 1rem !important; }
+.mt-6 { margin-top: 1.5rem !important; }
+.mb-4 { margin-bottom: 1rem !important; }
+.ml-10 { margin-left: 2.5rem !important; }
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }

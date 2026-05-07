@@ -63,6 +63,7 @@ export default [
             ['@calendar', './apps/web/src/features/calendar'],
             ['@emergency', './apps/web/src/features/emergency'],
             ['@prescriptions', './apps/web/src/features/prescriptions'],
+            ['@settings', './apps/web/src/views/redesign/settings'],
             ['@schemas', './apps/web/src/schemas'],
             ['@utils', './apps/web/src/utils'],
             ['@design-tokens', './packages/design-tokens/src'],

@@ -22,6 +22,7 @@ export default defineConfig({
       '@calendar': path.resolve(__dirname, './src/features/calendar'),
       '@emergency': path.resolve(__dirname, './src/features/emergency'),
       '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
+      '@settings': path.resolve(__dirname, './src/views/redesign/settings'),
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),

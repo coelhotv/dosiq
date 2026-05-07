@@ -15,12 +15,12 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
   }
 
   const selectedMedicine =
-    medicines.find((medicine) => medicine.id === formData.medicine_id) || null
+    medicines?.find((medicine) => medicine.id === formData.medicine_id) || null
   const regulatoryCategory = selectedMedicine?.regulatory_category || null
   const shouldAskPurchaseLaboratory = regulatoryCategory === 'Genérico'
   const fixedLaboratory = regulatoryCategory && regulatoryCategory !== 'Genérico'
   const effectiveLaboratory = shouldAskPurchaseLaboratory
-    ? formData.laboratory.trim() || null
+    ? formData.laboratory?.trim() || null
     : selectedMedicine?.laboratory || null
 
   const validate = () => {
