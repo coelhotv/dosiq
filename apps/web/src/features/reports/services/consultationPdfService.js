@@ -213,12 +213,7 @@ function drawKpiCard(doc, card, x, y, width, height) {
   }
 
   const toneColor = toneMap[card.tone] || toneMap.info
-  const accentColor =
-    card.tone === 'danger'
-      ? COLORS.danger
-      : card.tone === 'warning'
-        ? COLORS.warning
-        : COLORS.primary
+  const accentColor = _resolveAccentColor(card.tone)
 
   doc.setFillColor(...rgb(toneColor))
   doc.setDrawColor(...rgb(COLORS.line))
@@ -235,6 +230,17 @@ function drawKpiCard(doc, card, x, y, width, height) {
   doc.setFontSize(KPI_LAYOUT.fontSizeMeta)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text(card.meta || '', x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.metaOffsetY)
+}
+
+/**
+ * Resolve a cor de destaque baseada no tone do score.
+ * @param {string} tone - 'danger' | 'warning' | outro
+ * @returns {Array<number>} Cor RGB
+ */
+function _resolveAccentColor(tone) {
+  if (tone === 'danger') return COLORS.danger
+  if (tone === 'warning') return COLORS.warning
+  return COLORS.primary
 }
 
 function drawArcSegments(doc, centerX, centerY, radius, startAngle, endAngle) {
@@ -271,8 +277,7 @@ function drawHeroGauge(doc, pdfData) {
   const centerY = HERO_LAYOUT.y + HERO_LAYOUT.size / 2
   const radius = HERO_LAYOUT.size / 2 - 4
   const arcEnd = -90 + (score / 100) * 360
-  const accentColor =
-    tone === 'danger' ? COLORS.danger : tone === 'warning' ? COLORS.warning : COLORS.primary
+  const accentColor = _resolveAccentColor(tone)
 
   doc.setFillColor(...rgb(COLORS.white))
   doc.setDrawColor(...rgb(COLORS.line))
@@ -369,6 +374,57 @@ function drawAttentionList(doc, items, x, y, width) {
 }
 
 /**
+ * Desenha linha de KPI cards de resumo (uma fileira de até 3 cards).
+ * @param {Object} doc - Instancia do jsPDF.
+ * @param {Array} cards - Subset de cards a desenhar.
+ * @param {number} rowY - Posicao Y da fileira.
+ */
+function _drawKpiCardRow(doc, cards, rowY) {
+  cards.forEach((card, index) => {
+    drawKpiCard(
+      doc,
+      card,
+      SUMMARY_CARD_LAYOUT.startX + index * (SUMMARY_CARD_LAYOUT.width + SUMMARY_CARD_LAYOUT.gap),
+      rowY,
+      SUMMARY_CARD_LAYOUT.width,
+      SUMMARY_CARD_LAYOUT.height
+    )
+  })
+}
+
+/**
+ * Desenha coluna de texto editorial (mensagem executiva e notas clinicas).
+ * @param {Object} doc - Instancia do jsPDF.
+ * @param {Object} pdfData - Dados do PDF.
+ * @param {number} notesX - Posicao X da coluna de notas.
+ * @param {number} editorialHeight - Altura dos blocos editoriais.
+ * @param {string[]} executiveText - Texto da mensagem executiva (splitado).
+ * @param {string[]} clinicalNotes - Texto das notas clinicas (splitado).
+ */
+function _drawEditorialSection(doc, pdfData, notesX, editorialHeight, executiveText, clinicalNotes) {
+  doc.setFillColor(...rgb(COLORS.white))
+  doc.setDrawColor(...rgb(COLORS.line))
+  doc.roundedRect(PAGE.margin, SUMMARY_TEXT_LAYOUT.topY, SUMMARY_TEXT_LAYOUT.leftColumnWidth, editorialHeight, 4, 4, 'FD')
+  doc.roundedRect(notesX, SUMMARY_TEXT_LAYOUT.topY, SUMMARY_TEXT_LAYOUT.rightColumnWidth, editorialHeight, 4, 4, 'FD')
+
+  doc.setFontSize(10)
+  doc.setTextColor(...rgb(COLORS.text))
+  doc.text('Mensagem executiva', PAGE.margin + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop)
+  doc.setFontSize(8)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.setFont('helvetica', 'normal')
+  doc.text(executiveText, PAGE.margin + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY)
+
+  doc.setFontSize(10)
+  doc.setTextColor(...rgb(COLORS.text))
+  doc.text('Notas clinicas', notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop)
+  doc.setFontSize(8)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.setFont('helvetica', 'normal')
+  doc.text(clinicalNotes, notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY)
+}
+
+/**
  * Adiciona um bloco de resumo clinico na primeira pagina.
  * @param {Object} doc - Instancia do jsPDF.
  * @param {Object} pdfData - Dados normalizados do PDF.
@@ -386,36 +442,14 @@ function renderSummaryPage(doc, pdfData) {
   doc.text(`Periodo: ${getPeriodLabel(pdfData.period)}`, PAGE.margin, 33)
   doc.text(`Gerado em: ${pdfData.generatedAtLabel}`, PAGE.margin, 38)
 
-  if (pdfData.patient.age !== null && pdfData.patient.age !== undefined) {
-    doc.text(`Paciente: ${pdfData.patient.name} | ${pdfData.patient.age} anos`, PAGE.margin, 43)
-  } else {
-    doc.text(`Paciente: ${pdfData.patient.name}`, PAGE.margin, 43)
-  }
+  const patientLine = pdfData.patient.age != null
+    ? `Paciente: ${pdfData.patient.name} | ${pdfData.patient.age} anos`
+    : `Paciente: ${pdfData.patient.name}`
+  doc.text(patientLine, PAGE.margin, 43)
 
   drawHeroGauge(doc, pdfData)
-
-  const cards = pdfData.summaryCards
-  cards.slice(0, 3).forEach((card, index) => {
-    drawKpiCard(
-      doc,
-      card,
-      SUMMARY_CARD_LAYOUT.startX + index * (SUMMARY_CARD_LAYOUT.width + SUMMARY_CARD_LAYOUT.gap),
-      SUMMARY_CARD_LAYOUT.startY,
-      SUMMARY_CARD_LAYOUT.width,
-      SUMMARY_CARD_LAYOUT.height
-    )
-  })
-
-  cards.slice(3, 6).forEach((card, index) => {
-    drawKpiCard(
-      doc,
-      card,
-      SUMMARY_CARD_LAYOUT.startX + index * (SUMMARY_CARD_LAYOUT.width + SUMMARY_CARD_LAYOUT.gap),
-      SUMMARY_CARD_LAYOUT.startY + SUMMARY_CARD_LAYOUT.rowGap,
-      SUMMARY_CARD_LAYOUT.width,
-      SUMMARY_CARD_LAYOUT.height
-    )
-  })
+  _drawKpiCardRow(doc, pdfData.summaryCards.slice(0, 3), SUMMARY_CARD_LAYOUT.startY)
+  _drawKpiCardRow(doc, pdfData.summaryCards.slice(3, 6), SUMMARY_CARD_LAYOUT.startY + SUMMARY_CARD_LAYOUT.rowGap)
 
   const executiveText = doc.splitTextToSize(
     'Resumo pensado para decisao rapida em consulta: tratamentos ativos, adesao recente, alertas de estoque, prescricoes e titulacoes.',
@@ -425,71 +459,14 @@ function renderSummaryPage(doc, pdfData) {
     pdfData.clinicalNotes.map((note) => `- ${note}`).join('\n'),
     SUMMARY_TEXT_LAYOUT.rightColumnWidth - SUMMARY_TEXT_LAYOUT.cardPaddingX * 2 - 4
   )
-
   const notesX = PAGE.margin + SUMMARY_TEXT_LAYOUT.leftColumnWidth + SUMMARY_TEXT_LAYOUT.columnGap
   const editorialHeight =
     Math.max(executiveText.length, clinicalNotes.length) * SUMMARY_TEXT_LAYOUT.bodyLineHeight +
-    SUMMARY_TEXT_LAYOUT.cardPaddingTop +
-    8
+    SUMMARY_TEXT_LAYOUT.cardPaddingTop + 8
 
-  doc.setFillColor(...rgb(COLORS.white))
-  doc.setDrawColor(...rgb(COLORS.line))
-  doc.roundedRect(
-    PAGE.margin,
-    SUMMARY_TEXT_LAYOUT.topY,
-    SUMMARY_TEXT_LAYOUT.leftColumnWidth,
-    editorialHeight,
-    4,
-    4,
-    'FD'
-  )
-  doc.roundedRect(
-    notesX,
-    SUMMARY_TEXT_LAYOUT.topY,
-    SUMMARY_TEXT_LAYOUT.rightColumnWidth,
-    editorialHeight,
-    4,
-    4,
-    'FD'
-  )
+  _drawEditorialSection(doc, pdfData, notesX, editorialHeight, executiveText, clinicalNotes)
 
-  doc.setFontSize(10)
-  doc.setTextColor(...rgb(COLORS.text))
-  doc.text(
-    'Mensagem executiva',
-    PAGE.margin + SUMMARY_TEXT_LAYOUT.cardPaddingX,
-    SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop
-  )
-  doc.setFontSize(8)
-  doc.setTextColor(...rgb(COLORS.muted))
-  doc.setFont('helvetica', 'normal')
-  doc.text(
-    executiveText,
-    PAGE.margin + SUMMARY_TEXT_LAYOUT.cardPaddingX,
-    SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY
-  )
-
-  doc.setFontSize(10)
-  doc.setTextColor(...rgb(COLORS.text))
-  doc.text(
-    'Notas clinicas',
-    notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX,
-    SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop
-  )
-  doc.setFontSize(8)
-  doc.setTextColor(...rgb(COLORS.muted))
-  doc.setFont('helvetica', 'normal')
-  doc.text(
-    clinicalNotes,
-    notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX,
-    SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.bodyOffsetY
-  )
-
-  const attentionTopY = Math.max(
-    SUMMARY_TEXT_LAYOUT.attentionTopY,
-    SUMMARY_TEXT_LAYOUT.topY + editorialHeight + 8
-  )
-
+  const attentionTopY = Math.max(SUMMARY_TEXT_LAYOUT.attentionTopY, SUMMARY_TEXT_LAYOUT.topY + editorialHeight + 8)
   drawAttentionList(doc, pdfData.attentionItems, PAGE.margin, attentionTopY, 86)
 }
 

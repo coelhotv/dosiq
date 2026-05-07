@@ -272,6 +272,14 @@ export default [
       'no-relative-import-paths/no-relative-import-paths': 'off', // Mobile usa estrutura diferente
     },
   },
+  // Override 0: API handlers têm complexidade estrutural legítima (parse/validate/respond)
+  {
+    files: ['api/**/*.js', 'api/**/_handlers/**/*.js'],
+    rules: {
+      'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
+      'complexity': ['warn', { max: 20 }],
+    }
+  },
   // Override 1: Componentes React (.jsx)
   {
     files: ['**/*.jsx'],

@@ -40,6 +40,52 @@ function getDaysInMonth(year, month) {
   return getLastDayOfMonth(year, month - 1)
 }
 
+// Mapa de nomes de dias para índice (0=Domingo, 6=Sábado)
+const WEEK_DAY_MAP = {
+  domingo: 0, sunday: 0,
+  segunda: 1, 'segunda-feira': 1, monday: 1,
+  terça: 2, 'terça-feira': 2, tuesday: 2,
+  quarta: 3, 'quarta-feira': 3, wednesday: 3,
+  quinta: 4, 'quinta-feira': 4, thursday: 4,
+  sexta: 5, 'sexta-feira': 5, friday: 5,
+  sábado: 6, sabado: 6, saturday: 6,
+}
+
+/**
+ * Verifica se protocolo semanal cobre o dayOfWeek dado.
+ * @param {Object} protocol - Protocolo com days[]
+ * @param {number} dayOfWeek - Dia da semana (0-6)
+ * @returns {boolean}
+ */
+function _isWeeklyScheduleMatch(protocol, dayOfWeek) {
+  if (!protocol.days || !Array.isArray(protocol.days)) return false
+  return protocol.days.some((day) => WEEK_DAY_MAP[day.toLowerCase()] === dayOfWeek)
+}
+
+/**
+ * Verifica se protocolo alternado tem dose na targetDate.
+ * @param {Object} protocol - Protocolo com start_date opcional
+ * @param {Date} targetDate - Data alvo
+ * @returns {boolean}
+ */
+function _isAlternatingScheduleMatch(protocol, targetDate) {
+  if (!protocol.start_date) return true
+  const startDate = parseLocalDate(protocol.start_date)
+  const diffMs = targetDate.getTime() - startDate.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  return diffDays % 2 === 0
+}
+
+// Mapa de frequência → tipo canônico para reduzir ramificações
+const FREQ_TYPE_MAP = {
+  'diário': 'daily', diariamente: 'daily', daily: 'daily',
+  semanal: 'weekly', semanalmente: 'weekly', weekly: 'weekly',
+  dias_alternados: 'alternating', dia_sim_dia_nao: 'alternating',
+  'dia sim, dia não': 'alternating', every_other_day: 'alternating', alternating: 'alternating',
+  quando_necessário: 'skip', when_needed: 'skip', prn: 'skip',
+  personalizado: 'skip', custom: 'skip',
+}
+
 /**
  * Verifica se um protocolo deve gerar doses esperadas em uma data específica.
  * Considera frequência, dias alternados, semanal, etc.
@@ -49,84 +95,18 @@ function getDaysInMonth(year, month) {
  * @returns {boolean} True se o protocolo deve gerar doses na data
  */
 function shouldExpectDosesOnDate(protocol, dateStr) {
-  // Protocolos inativos não geram doses esperadas
   if (!protocol.active) return false
-
-  // Verificar se está dentro do período de vigência
   if (!isProtocolActiveOnDate(protocol, dateStr)) return false
 
-  const frequency = (protocol.frequency || 'diário').toLowerCase()
-
-  // "Quando necessário" não gera doses esperadas
-  if (frequency === 'quando_necessário' || frequency === 'when_needed' || frequency === 'prn') {
-    return false
-  }
+  const freqType = FREQ_TYPE_MAP[(protocol.frequency || 'diário').toLowerCase()] || 'daily'
+  if (freqType === 'skip') return false
+  if (freqType === 'daily') return true
 
   const targetDate = parseLocalDate(dateStr)
-  const dayOfWeek = targetDate.getDay() // 0=Domingo, 1=Segunda, etc.
+  if (freqType === 'weekly') return _isWeeklyScheduleMatch(protocol, targetDate.getDay())
+  if (freqType === 'alternating') return _isAlternatingScheduleMatch(protocol, targetDate)
 
-  switch (frequency) {
-    case 'diário':
-    case 'diariamente':
-    case 'daily':
-      return true
-
-    case 'semanal':
-    case 'semanalmente':
-    case 'weekly':
-      // Verificar se o dia da semana está nos dias configurados
-      if (protocol.days && Array.isArray(protocol.days)) {
-        const dayMap = {
-          domingo: 0,
-          sunday: 0,
-          segunda: 1,
-          'segunda-feira': 1,
-          monday: 1,
-          terça: 2,
-          'terça-feira': 2,
-          tuesday: 2,
-          quarta: 3,
-          'quarta-feira': 3,
-          wednesday: 3,
-          quinta: 4,
-          'quinta-feira': 4,
-          thursday: 4,
-          sexta: 5,
-          'sexta-feira': 5,
-          friday: 5,
-          sábado: 6,
-          sabado: 6,
-          saturday: 6,
-        }
-        return protocol.days.some((day) => dayMap[day.toLowerCase()] === dayOfWeek)
-      }
-      return false
-
-    case 'dias_alternados':
-    case 'dia_sim_dia_nao':
-    case 'dia sim, dia não':
-    case 'every_other_day':
-    case 'alternating':
-      // Calcular dias desde a data de início
-      if (protocol.start_date) {
-        const startDate = parseLocalDate(protocol.start_date)
-        const diffTime = targetDate.getTime() - startDate.getTime()
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-        // Dia sim, dia não: dias pares = dose, ímpares = sem dose
-        return diffDays % 2 === 0
-      }
-      // Se não tiver data de início, assumir que começa hoje (dia 0 = dose)
-      return true
-
-    case 'personalizado':
-    case 'custom':
-      // Frequência personalizada requer lógica específica não definida
-      return false
-
-    default:
-      // Frequências desconhecidas não geram doses esperadas (segurança)
-      return false
-  }
+  return false
 }
 
 /**

@@ -104,6 +104,66 @@ function getDaysOfWeekForProtocol(frequency) {
 }
 
 /**
+ * Calcula o valor de adherence para uma célula do grid.
+ * @param {number} taken - Doses tomadas
+ * @param {number} totalExpected - Total esperado (expectedPerDay × occurrences)
+ * @param {number} expectedPerDay - Esperadas por dia
+ * @param {number} occurrences - Ocorrências do dia nos logs
+ * @returns {number|null}
+ */
+function _calcCellAdherence(taken, totalExpected) {
+  if (totalExpected > 0) return Math.min(100, Math.round((taken / totalExpected) * 100))
+  return null
+}
+
+/**
+ * Encontra a célula com pior adesão no grid (mínimo 3 doses esperadas).
+ * @param {Array<Array<Object>>} grid - Grid 7×4
+ * @returns {Object|null}
+ */
+function _findWorstCell(grid) {
+  let worstAdherence = 100
+  let worstDayIndex = null
+  let worstPeriodIndex = null
+
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    for (let periodIndex = 0; periodIndex < 4; periodIndex++) {
+      const cell = grid[dayIndex][periodIndex]
+      if (cell.expected >= 3 && cell.adherence < worstAdherence) {
+        worstAdherence = cell.adherence
+        worstDayIndex = dayIndex
+        worstPeriodIndex = periodIndex
+      }
+    }
+  }
+
+  if (worstDayIndex === null) return null
+  return {
+    dayIndex: worstDayIndex,
+    periodIndex: worstPeriodIndex,
+    adherence: worstAdherence,
+    dayName: DAY_NAMES[worstDayIndex],
+    periodName: PERIOD_NAMES[worstPeriodIndex],
+  }
+}
+
+/**
+ * Gera narrativa de padrão de adesão.
+ * @param {boolean} hasEnoughData
+ * @param {Object|null} worstCell
+ * @returns {string}
+ */
+function _buildPatternNarrative(hasEnoughData, worstCell) {
+  if (hasEnoughData && worstCell) {
+    return `Seu pior horário é ${worstCell.dayName} à ${worstCell.periodName.toLowerCase()}`
+  }
+  if (!hasEnoughData) {
+    return `Dados insuficientes. Registre pelo menos 21 dias de doses para análise completa.`
+  }
+  return 'Sua adesão está excelente em todos os períodos!'
+}
+
+/**
  * Analisa padrões de adesão por dia da semana e período do dia.
  *
  * @param {Object} params
@@ -163,23 +223,8 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
       const occurrences = dayOccurrences[dayIndex]
       const totalExpected = expectedPerDay * occurrences
       const taken = grid[dayIndex][periodIndex].taken
-
-      // Armazenar expected (por dia) no grid
       grid[dayIndex][periodIndex].expected = expectedPerDay
-
-      if (totalExpected > 0) {
-        // Calcular adherence normalizando: (taken / totalExpected) * 100
-        grid[dayIndex][periodIndex].adherence = Math.min(
-          100,
-          Math.round((taken / totalExpected) * 100)
-        )
-      } else if (expectedPerDay === 0) {
-        // Se não há doses esperadas neste período, marcar como N/D
-        grid[dayIndex][periodIndex].adherence = null
-      } else if (occurrences === 0) {
-        // Se o dia não ocorre nos logs, não calcular adherence
-        grid[dayIndex][periodIndex].adherence = null
-      }
+      grid[dayIndex][periodIndex].adherence = _calcCellAdherence(taken, totalExpected)
     }
   }
 
@@ -187,44 +232,9 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   const daysWithData = countUniqueDaysWithLogs(logs)
   const hasEnoughData = daysWithData >= 21
 
-  // Encontrar pior célula (mínimo 3 doses esperadas)
-  let worstCell = null
-  if (hasEnoughData) {
-    let worstAdherence = 100
-    let worstDayIndex = null
-    let worstPeriodIndex = null
-
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      for (let periodIndex = 0; periodIndex < 4; periodIndex++) {
-        const cell = grid[dayIndex][periodIndex]
-        if (cell.expected >= 3 && cell.adherence < worstAdherence) {
-          worstAdherence = cell.adherence
-          worstDayIndex = dayIndex
-          worstPeriodIndex = periodIndex
-        }
-      }
-    }
-
-    if (worstDayIndex !== null && worstPeriodIndex !== null) {
-      worstCell = {
-        dayIndex: worstDayIndex,
-        periodIndex: worstPeriodIndex,
-        adherence: worstAdherence,
-        dayName: DAY_NAMES[worstDayIndex],
-        periodName: PERIOD_NAMES[worstPeriodIndex],
-      }
-    }
-  }
-
-  // Gerar narrativa
-  let narrative = ''
-  if (hasEnoughData && worstCell) {
-    narrative = `Seu pior horário é ${worstCell.dayName} à ${worstCell.periodName.toLowerCase()}`
-  } else if (!hasEnoughData) {
-    narrative = `Dados insuficientes. Registre pelo menos 21 dias de doses para análise completa.`
-  } else {
-    narrative = 'Sua adesão está excelente em todos os períodos!'
-  }
+  // Encontrar pior célula e gerar narrativa
+  const worstCell = hasEnoughData ? _findWorstCell(grid) : null
+  const narrative = _buildPatternNarrative(hasEnoughData, worstCell)
 
   return {
     grid,

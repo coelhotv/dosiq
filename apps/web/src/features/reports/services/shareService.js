@@ -130,37 +130,54 @@ async function getAuthToken() {
  *   expiresInHours: 48
  * })
  */
+/**
+ * Valida os parâmetros de compartilhamento.
+ * @param {Blob} blob - Arquivo PDF
+ * @param {string} filename - Nome do arquivo
+ * @param {number} expiresInHours - Horas de expiração
+ * @throws {Error} Se algum parâmetro for inválido
+ */
+function _validateShareParams(blob, filename, expiresInHours) {
+  if (!blob || !(blob instanceof Blob)) throw new Error('Arquivo inválido. Envie um Blob válido.')
+  if (!filename || !filename.endsWith('.pdf')) throw new Error('Nome do arquivo deve terminar com .pdf')
+  if (expiresInHours < 1 || expiresInHours > 168) throw new Error('Tempo de expiração deve estar entre 1 e 168 horas')
+  const maxSize = 5 * 1024 * 1024
+  if (blob.size > maxSize) throw new Error('Arquivo muito grande. Máximo de 5MB.')
+}
+
+/**
+ * Envia o PDF para a API de compartilhamento.
+ * @param {string} base64Data - PDF em base64
+ * @param {string} filename - Nome do arquivo
+ * @param {number} expiresInHours - Horas de expiração
+ * @param {string} token - Token JWT
+ * @returns {Promise<{url: string, expiresAt: string}>}
+ */
+async function _uploadToShareApi(base64Data, filename, expiresInHours, token) {
+  const response = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ blob: base64Data, filename, expiresInHours }),
+  })
+  const result = await response.json()
+  if (!response.ok || !result.success) {
+    const errorMessage = result.error || 'Erro ao compartilhar relatório'
+    logWarn('Falha no compartilhamento', { status: response.status, error: errorMessage })
+    throw new Error(errorMessage)
+  }
+  logInfo('Relatório compartilhado com sucesso', { url: result.data?.url?.split('?')[0] })
+  return { url: result.data.url, expiresAt: result.data.expiresAt }
+}
+
 export async function shareReport(blob, options) {
   const { filename, expiresInHours = 72 } = options
-
   logInfo('Iniciando compartilhamento de relatório', { filename, size: blob.size, expiresInHours })
 
-  // Validar parâmetros
-  if (!blob || !(blob instanceof Blob)) {
-    throw new Error('Arquivo inválido. Envie um Blob válido.')
-  }
+  _validateShareParams(blob, filename, expiresInHours)
 
-  if (!filename || !filename.endsWith('.pdf')) {
-    throw new Error('Nome do arquivo deve terminar com .pdf')
-  }
-
-  if (expiresInHours < 1 || expiresInHours > 168) {
-    throw new Error('Tempo de expiração deve estar entre 1 e 168 horas')
-  }
-
-  // Verificar tamanho máximo (5MB)
-  const maxSize = 5 * 1024 * 1024
-  if (blob.size > maxSize) {
-    throw new Error('Arquivo muito grande. Máximo de 5MB.')
-  }
-
-  // Obter token de autenticação
   const token = await getAuthToken()
-  if (!token) {
-    throw new Error('Usuário não autenticado. Faça login para compartilhar.')
-  }
+  if (!token) throw new Error('Usuário não autenticado. Faça login para compartilhar.')
 
-  // Converter Blob para base64
   let base64Data
   try {
     base64Data = await blobToBase64(blob)
@@ -170,35 +187,8 @@ export async function shareReport(blob, options) {
     throw new Error('Erro ao processar arquivo')
   }
 
-  // Fazer requisição para API
   try {
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        blob: base64Data,
-        filename,
-        expiresInHours,
-      }),
-    })
-
-    const result = await response.json()
-
-    if (!response.ok || !result.success) {
-      const errorMessage = result.error || 'Erro ao compartilhar relatório'
-      logWarn('Falha no compartilhamento', { status: response.status, error: errorMessage })
-      throw new Error(errorMessage)
-    }
-
-    logInfo('Relatório compartilhado com sucesso', { url: result.data?.url?.split('?')[0] })
-
-    return {
-      url: result.data.url,
-      expiresAt: result.data.expiresAt,
-    }
+    return await _uploadToShareApi(base64Data, filename, expiresInHours, token)
   } catch (error) {
     if (error.message === 'Failed to fetch') {
       logError('Erro de conexão com servidor', error)
