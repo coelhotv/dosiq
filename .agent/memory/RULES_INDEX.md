@@ -181,3 +181,4 @@
 - **[R-211]** Automated ESLint Architecture (Flat Config) -> [`rules/process_and_testing/R-211.md`](./rules/process_and_testing/R-211.md)
 - **[R-212]** Sempre utilizar o utilitário `rtk` como proxy para comandos CLI para otimizar tokens -> [`rules/process_and_testing/R-212.md`](./rules/process_and_testing/R-212.md)
 - **[R-214]** Branding Isolation: Brand-specific tokens (Comfortaa, Mint colors) MUST be isolated in explicit 'brand' keys and never leak into global UI tokens (primary, background) to preserve app usability. -> [`rules/react_and_ui/R-214.md`](./rules/react_and_ui/R-214.md)
+- **[R-216]** Null-Safe Form Initialization: Always treat initialValues as potentially null or undefined to prevent TypeError when accessing properties. -> [`rules/react_and_ui/R-216.md`](./rules/react_and_ui/R-216.md)

@@ -131,6 +131,7 @@
 - **[AP-056]** Unstable Fetcher Loop -> [`anti-patterns/react_and_ui/AP-056.md`](./anti-patterns/react_and_ui/AP-056.md)
 - **[AP-057]** Closure Reference Leak (Snapshot ReferenceError) -> [`anti-patterns/react_and_ui/AP-057.md`](./anti-patterns/react_and_ui/AP-057.md)
 - **[AP-111]** Blind Toggle Fallacy (Double-tap bug with implicit state) -> [`anti-patterns/react_and_ui/AP-111.md`](./anti-patterns/react_and_ui/AP-111.md)
+- **[AP-132]** Unprotected String Prototypes on Form Data: Prevents crash when calling .trim() or similar on undefined/null form fields. -> [`anti-patterns/react_and_ui/AP-132.md`](./anti-patterns/react_and_ui/AP-132.md)
 - **[AP-125]** Stale Dispatcher Mock Contracts — Manter mocks de testes que esperam estruturas de payload prontas (L2) quando a arquitetura foi refatorada para enviar dados brutos de domínio (L1). -> [`anti-patterns/process_and_testing/AP-125.md`](./anti-patterns/process_and_testing/AP-125.md)
 - **[AP-H22]** "TypeError: Cannot read property 'useState' of null" crash caused by Metro bundling multiple versions of React. -> [`anti-patterns/react_and_ui/AP-H22.md`](./anti-patterns/react_and_ui/AP-H22.md)
 - **[AP-H26]** ReferenceError: 'colors' is not defined. Falta de import de tokens ao padronizar UI nativa. -> [`anti-patterns/react_and_ui/AP-H26.md`](./anti-patterns/react_and_ui/AP-H26.md)
