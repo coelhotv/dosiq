@@ -25,7 +25,8 @@ const supabase = createClient(
 );
 const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
-// Repository factories — thin wrappers em torno do supabase singleton
+// === HELPERS: Repository factories ===
+
 const preferencesRepo = {
   async getByUserId(userId) {
     const { data } = await supabase.from('user_settings').select('notification_preference').eq('user_id', userId).single();
@@ -35,11 +36,6 @@ const preferencesRepo = {
     const { data } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single();
     return !!data?.telegram_chat_id;
   },
-  // Wave N2: getSettingsByUserId necessário para o gate centralizado em dispatchNotification.
-  // NOTA: Este método é intencionalmente inline e não importa notificationPreferenceRepository.js do servidor.
-  // Motivo: api/notify.js roda em contexto Vercel Serverless com SUPABASE_SERVICE_ROLE_KEY,
-  // enquanto o repo do servidor usa o client anon (src/shared/utils/supabase). Importar o repo
-  // do servidor quebraria a separação de clientes. As colunas são idênticas ao repo central.
   async getSettingsByUserId(userId) {
     const { data } = await supabase
       .from('user_settings')
@@ -85,6 +81,36 @@ const dlqRepo = {
   }
 };
 
+// === HELPER: isRetryableError ===
+
+function isRetryableError(error) {
+  const retryableCodes = [
+    'ETIMEDOUT',
+    'ECONNRESET',
+    'ENOTFOUND',
+    'ECONNREFUSED',
+    'Socket hang up',
+    'ECONNABORTED',
+    'Network Error'
+  ];
+
+  if (retryableCodes.some(code =>
+    error.message?.includes(code) ||
+    error.code === code
+  )) {
+    return true;
+  }
+
+  if (error.response?.status === 429) {
+    return true;
+  }
+
+  if (error.response?.status >= 500) {
+    return true;
+  }
+
+  return false;
+}
 
 // --- Bot Adapter (Minimal for Notifications) ---
 function createNotifyBotAdapter(token) {
@@ -101,7 +127,6 @@ function createNotifyBotAdapter(token) {
       if (!data.ok) {
         logger.error(`Erro na API do Telegram (${method})`, null, { error: data });
         const error = new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
-        // Anexar status HTTP para detecção de erros retryable
         error.response = { status: res.status };
         error.statusCode = res.status;
         throw error;
@@ -109,52 +134,14 @@ function createNotifyBotAdapter(token) {
 
       return data.result;
     } catch (err) {
-      // Se o erro não tem response, adicionar baseado no fetch response
       if (!err.response && res) {
         err.response = { status: res.status };
         err.statusCode = res.status;
       }
       logger.error(`Erro de fetch (${method})`, err);
-      throw err;  // SEMPRE re-lançar o erro
+      throw err;
     }
   };
-
-  /**
-   * Verifica se um erro é passível de retry (transitório)
-   * @param {Error} error - Objeto de erro
-   * @returns {boolean} true se o erro é transitório e pode ser retentado
-   */
-  function isRetryableError(error) {
-    // Network errors (connection issues)
-    const retryableCodes = [
-      'ETIMEDOUT',
-      'ECONNRESET',
-      'ENOTFOUND',
-      'ECONNREFUSED',
-      'Socket hang up',
-      'ECONNABORTED',
-      'Network Error'
-    ];
-
-    if (retryableCodes.some(code =>
-      error.message?.includes(code) ||
-      error.code === code
-    )) {
-      return true;
-    }
-
-    // Telegram API rate limiting (429 Too Many Requests)
-    if (error.response?.status === 429) {
-      return true;
-    }
-
-    // Telegram API internal errors (5xx)
-    if (error.response?.status >= 500) {
-      return true;
-    }
-
-    return false;
-  }
 
   return {
     sendMessage: async (chatId, text, options = {}) => {
@@ -206,11 +193,122 @@ function createNotifyBotAdapter(token) {
   };
 }
 
+// === HELPER: createNotificationDispatcher ===
+
+function _createNotificationDispatcher(bot) {
+  return {
+    async dispatch({ userId, kind, data, context }) {
+      try {
+        const result = await dispatchNotification({
+          userId,
+          kind,
+          data,
+          context,
+          repositories: {
+            preferences: preferencesRepo,
+            devices: devicesRepo,
+            dlq: dlqRepo
+          },
+          bot,
+          expoClient
+        });
+
+        logger.info('[notificationDispatcher] Resultado do envio', {
+          userId,
+          kind,
+          success: result.success,
+          totalDelivered: result.totalDelivered,
+          totalFailed: result.totalFailed,
+          correlationId: context?.correlationId
+        });
+
+        return result;
+      } catch (error) {
+        logger.error('[notificationDispatcher] Erro ao enviar notificação', error, { userId, kind, correlationId: context?.correlationId });
+        return { success: false, channels: [], totalDelivered: 0, totalFailed: 1, deactivatedTokens: [], errors: [{ message: error.message }] };
+      }
+    }
+  };
+}
+
+// === HELPER: executeCronJobs ===
+
+async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDate) {
+  const currentHour = spDate.getHours();
+  const currentMinute = spDate.getMinutes();
+  const currentDay = spDate.getDate();
+  const currentWeekDay = spDate.getDay();
+  const results = [];
+
+  // 1. Always check dose reminders (Every minute)
+  await withCorrelation(
+    (context) => checkReminders(bot, { ...context, notificationDispatcher }),
+    { correlationId, jobType: 'reminders' }
+  );
+  results.push('reminders');
+
+  // 2. Daily Digest
+  await withCorrelation(
+    (context) => runDailyDigest(bot, { ...context, notificationDispatcher }),
+    { correlationId, jobType: 'daily_digest' }
+  );
+  results.push('daily_digest');
+
+  // 2.1 Daily Adherence Report
+  await withCorrelation(
+    (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
+    { correlationId, jobType: 'daily_adherence_report' }
+  );
+  results.push('daily_adherence_report');
+
+  // 3. Tasks at 09:00
+  if (currentHour === 9 && currentMinute === 0) {
+    await withCorrelation(
+      (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'stock_alerts' }
+    );
+    results.push('stock_alerts');
+
+    await withCorrelation(
+      (context) => sendDLQDigest(notificationDispatcher, context),
+      { correlationId, jobType: 'dlq_digest' }
+    );
+    results.push('dlq_digest');
+  }
+
+  // 4. Titration Alerts: Daily at 08:00
+  if (currentHour === 8 && currentMinute === 0) {
+    await withCorrelation(
+      (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'titration_alerts' }
+    );
+    results.push('titration_alerts');
+  }
+
+  // 5. Adherence Reports: Sunday at 23:00
+  if (currentWeekDay === 0 && currentHour === 23 && currentMinute === 0) {
+    await withCorrelation(
+      (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'adherence_reports' }
+    );
+    results.push('adherence_reports');
+  }
+
+  // 6. Monthly Report: 1st of month at 10:00
+  if (currentDay === 1 && currentHour === 10 && currentMinute === 0) {
+    await withCorrelation(
+      (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }),
+      { correlationId, jobType: 'monthly_report' }
+    );
+    results.push('monthly_report');
+  }
+
+  return results;
+}
+
 export default async function handler(req, res) {
-  // Gerar correlation ID para esta execução do cron
   const correlationId = generateCorrelationId();
-  
-  // Log de diagnóstico das variáveis de ambiente (apenas existência, não valores)
+
   logger.info('Ambiente de execução', {
     correlationId,
     nodeEnv: process.env.NODE_ENV,
@@ -228,12 +326,10 @@ export default async function handler(req, res) {
     url: req.url
   });
 
-  // Accept both GET (from cron-job.org) and POST (for compatibility)
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' });
   }
 
-  // Protection against unauthorized calls
   const authHeader = req.headers['authorization'];
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn('Unauthorized cron attempt', { correlationId, authHeader });
@@ -247,51 +343,11 @@ export default async function handler(req, res) {
   }
 
   const bot = createNotifyBotAdapter(token);
+  const notificationDispatcher = _createNotificationDispatcher(bot);
 
-  // --- Notification Dispatcher Setup (Sprint 6.4) ---
-  const notificationDispatcher = {
-    async dispatch({ userId, kind, data, context }) {
-      try {
-        const result = await dispatchNotification({
-          userId,
-          kind,
-          data,
-          context,
-          repositories: { 
-            preferences: preferencesRepo, 
-            devices: devicesRepo,
-            dlq: dlqRepo
-          },
-          bot,
-          expoClient
-        });
-
-        logger.info('[notificationDispatcher] Resultado do envio', { 
-          userId, 
-          kind, 
-          success: result.success,
-          totalDelivered: result.totalDelivered,
-          totalFailed: result.totalFailed,
-          correlationId: context?.correlationId 
-        });
-
-        return result;
-      } catch (error) {
-        logger.error('[notificationDispatcher] Erro ao enviar notificação', error, { userId, kind, correlationId: context?.correlationId });
-        return { success: false, channels: [], totalDelivered: 0, totalFailed: 1, deactivatedTokens: [], errors: [{ message: error.message }] };
-      }
-    }
-  };
-
-  // Get current time in Sao Paulo
   const now = getNow();
   const spDate = getSaoPauloTime(now);
-  
-  const currentHour = spDate.getHours();
-  const currentMinute = spDate.getMinutes();
-  const currentDay = spDate.getDate();
-  const currentWeekDay = spDate.getDay();
-  
+
   const currentHHMM = spDate.toLocaleTimeString('pt-BR', {
     hour: '2-digit', minute: '2-digit', hour12: false
   });
@@ -299,78 +355,14 @@ export default async function handler(req, res) {
   logger.info(`Executing cron jobs`, {
     correlationId,
     time: currentHHMM,
-    hour: currentHour,
-    minute: currentMinute,
-    day: currentDay,
-    weekday: currentWeekDay
+    hour: spDate.getHours(),
+    minute: spDate.getMinutes(),
+    day: spDate.getDate(),
+    weekday: spDate.getDay()
   });
 
-  const results = [];
-
   try {
-    // 1. Always check dose reminders (Every minute)
-    await withCorrelation(
-      (context) => checkReminders(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'reminders' }
-    );
-    results.push('reminders');
-
-    // 2. Daily Digest (Horário personalizado por usuário validado em tasks.js)
-    await withCorrelation(
-      (context) => runDailyDigest(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'daily_digest' }
-    );
-    results.push('daily_digest');
-
-    // 2.1 Daily Adherence Report (Fase 12: Storytelling + Nudges)
-    // Chamado a cada minuto; elegibilidade por usuário validada em tasks.js
-    await withCorrelation(
-      (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'daily_adherence_report' }
-    );
-    results.push('daily_adherence_report');
-
-    // 3. Tasks at 09:00: Stock Alerts + DLQ Digest
-    if (currentHour === 9 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'stock_alerts' }
-      );
-      results.push('stock_alerts');
-
-      await withCorrelation(
-        (context) => sendDLQDigest(notificationDispatcher, context),
-        { correlationId, jobType: 'dlq_digest' }
-      );
-      results.push('dlq_digest');
-    }
-
-    // 4. Titration Alerts: Daily at 08:00
-    if (currentHour === 8 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'titration_alerts' }
-      );
-      results.push('titration_alerts');
-    }
-
-    // 5. Adherence Reports: Sunday at 23:00
-    if (currentWeekDay === 0 && currentHour === 23 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'adherence_reports' }
-      );
-      results.push('adherence_reports');
-    }
-
-    // 6. Monthly Report: 1st of month at 10:00
-    if (currentDay === 1 && currentHour === 10 && currentMinute === 0) {
-      await withCorrelation(
-        (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }),
-        { correlationId, jobType: 'monthly_report' }
-      );
-      results.push('monthly_report');
-    }
+    const results = await _executeCronJobs(notificationDispatcher, bot, correlationId, spDate);
 
     logger.info('Cron jobs completed', {
       correlationId,
@@ -384,7 +376,7 @@ export default async function handler(req, res) {
       time: currentHHMM,
       correlationId
     });
-    
+
   } catch (error) {
     console.error('[CronNotify] Cron job failed with error:', {
       correlationId,

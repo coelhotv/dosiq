@@ -417,6 +417,52 @@ async function downloadFromBlob(blobUrl) {
 }
 
 // ============================================================================
+// VALIDAÇÃO E PAYLOAD
+// ============================================================================
+
+/**
+ * Valida payload do request
+ * @param {Object} requestData - Dados da requisição
+ * @returns {Object} Resultado da validação
+ */
+function _validatePayload(requestData) {
+  const validation = createIssuesRequestSchema.safeParse(requestData);
+  if (!validation.success) {
+    logInfo(ENDPOINT, 'Validation failed', {
+      errors: validation.error.issues.map((i) => ({
+        field: i.path.join('.'),
+        message: i.message,
+      })),
+    });
+  }
+  return validation;
+}
+
+/**
+ * Resolve request data (blob ou body)
+ * @param {Object} reqBody - Body da requisição
+ * @returns {Promise<Object>} Dados resolvidos
+ */
+async function _resolveRequestData(reqBody) {
+  if (reqBody.blob_url) {
+    logInfo(ENDPOINT, 'Blob URL provided, downloading...', {
+      blobUrl: reqBody.blob_url.split('?')[0],
+    });
+    try {
+      const blobData = await downloadFromBlob(reqBody.blob_url);
+      return { ...blobData, ...reqBody };
+    } catch (error) {
+      logError(ENDPOINT, 'Failed to download from Blob', error, {
+        blobUrl: reqBody.blob_url.split('?')[0],
+      });
+      throw error;
+    }
+  }
+  logInfo(ENDPOINT, 'Using body directly (no blob URL)');
+  return reqBody;
+}
+
+// ============================================================================
 // FUNÇÃO PRINCIPAL
 // ============================================================================
 
@@ -525,6 +571,13 @@ async function createIssuesFromReview(supabase, reviewData, githubToken) {
   return results
 }
 
+function _buildHandlerResponse(results) {
+  const hasErrors = results.errors.length > 0
+  const allFailed = results.created === 0 && hasErrors
+  const status = allFailed ? 500 : hasErrors ? 207 : 200
+  return { status, body: { success: !allFailed, data: results, ...(hasErrors && { partial: !allFailed }) } }
+}
+
 // ============================================================================
 // HANDLER PRINCIPAL
 // ============================================================================
@@ -575,48 +628,28 @@ export async function handleCreateIssues(req, res) {
   }
 
   try {
-    let requestData
+    let requestData;
 
-    // Se blob_url fornecida, baixar dados do Blob
-    if (req.body.blob_url) {
-      logInfo(ENDPOINT, 'Blob URL provided, downloading...', {
-        blobUrl: req.body.blob_url.split('?')[0],
-      })
-      try {
-        const blobData = await downloadFromBlob(req.body.blob_url)
-        requestData = { ...blobData, ...req.body }
-      } catch (error) {
-        logError(ENDPOINT, 'Failed to download from Blob', error, {
-          blobUrl: req.body.blob_url.split('?')[0],
-        })
-        return res.status(400).json({
-          success: false,
-          error: 'Erro ao baixar dados do Blob',
-        })
-      }
-    } else {
-      logInfo(ENDPOINT, 'Using body directly (no blob URL)')
-      requestData = req.body
+    try {
+      requestData = await _resolveRequestData(req.body);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: 'Erro ao baixar dados do Blob',
+      });
     }
 
-    // Validar body da requisição
     logInfo(ENDPOINT, 'Validating request data', {
       pr_number: requestData?.pr_number,
       owner: requestData?.owner,
       repo: requestData?.repo,
       commit_sha: requestData?.commit_sha?.substring(0, 8),
       issuesCount: requestData?.issues?.length || 0,
-    })
+    });
 
-    const validation = createIssuesRequestSchema.safeParse(requestData)
+    const validation = _validatePayload(requestData);
 
     if (!validation.success) {
-      logInfo(ENDPOINT, 'Validation failed', {
-        errors: validation.error.issues.map((i) => ({
-          field: i.path.join('.'),
-          message: i.message,
-        })),
-      })
       return res.status(400).json({
         success: false,
         error: 'Dados inválidos',
@@ -624,15 +657,15 @@ export async function handleCreateIssues(req, res) {
           field: issue.path.join('.'),
           message: issue.message,
         })),
-      })
+      });
     }
 
-    const validatedData = validation.data
+    const validatedData = validation.data;
     logInfo(ENDPOINT, 'Validation successful', {
       pr_number: validatedData.pr_number,
       owner: validatedData.owner,
       repo: validatedData.repo,
-    })
+    });
 
     // Usar GITHUB_TOKEN do ambiente apenas (não aceita do body por segurança)
     const githubToken = GITHUB_TOKEN
@@ -653,29 +686,19 @@ export async function handleCreateIssues(req, res) {
     const results = await createIssuesFromReview(supabase, validatedData, githubToken)
 
     // Retornar resultado
-    const hasErrors = results.errors.length > 0
-    const allFailed = results.created === 0 && hasErrors
-
-    const responseHeaders = getRateLimitHeaders(clientIP)
+    const { status, body } = _buildHandlerResponse(results)
 
     logResult(ENDPOINT, 'handler', {
       created: results.created,
       errorsCount: results.errors.length,
-      allFailed,
+      allFailed: body.success === false,
     })
 
-    // Set headers individually (Vercel serverless doesn't support .set() chain)
-    Object.entries(responseHeaders).forEach(([key, value]) => {
+    Object.entries(getRateLimitHeaders(clientIP)).forEach(([key, value]) => {
       res.setHeader(key, value)
     })
 
-    return res
-      .status(hasErrors ? (allFailed ? 500 : 207) : 200)
-      .json({
-        success: !allFailed,
-        data: results,
-        ...(hasErrors && { partial: !allFailed }),
-      })
+    return res.status(status).json(body)
   } catch (error) {
     logError(ENDPOINT, 'Unhandled error in handler', error, {
       errorMessage: error.message,

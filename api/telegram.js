@@ -85,6 +85,86 @@ function createBotAdapter(token) {
   };
 }
 
+// === HELPERS: Message and Callback Handlers ===
+
+const _simpleCommandHandlers = {
+  '/start': handleStart,
+  '/status': handleStatus,
+  '/estoque': handleEstoque,
+  '/hoje': handleHoje,
+  '/proxima': handleProxima,
+  '/historico': handleHistorico,
+  '/ajuda': handleAjuda,
+  '/registrar': handleRegistrar,
+  '/adicionar_estoque': handleAdicionarEstoque,
+};
+
+async function _handleTextMessage(bot, msg) {
+  const text = msg.text;
+  const chatId = msg.chat.id;
+
+  logger.info('💬 Mensagem de texto recebida', {
+    chatId,
+    textPreview: text.substring(0, 50),
+    textLen: text.length,
+    isCommand: text.startsWith('/')
+  });
+
+  // Try simple command handlers
+  for (const [cmd, handler] of Object.entries(_simpleCommandHandlers)) {
+    if (text.startsWith(cmd)) {
+      logger.debug(`🔧 Roteando: ${cmd}`, { chatId });
+      await handler(bot, msg);
+      return;
+    }
+  }
+
+  // Regex commands
+  if (text.startsWith('/repor')) {
+    const match = text.match(/\/repor\s+(.+)\s+(\d+[.,]?\d*)/);
+    if (match) {
+      logger.debug('🔧 Roteando: /repor', { chatId });
+      await handleReporShortcut(bot, msg, match);
+    } else {
+      logger.warn('⚠️ Formato inválido /repor', { chatId, text });
+      bot.sendMessage(msg.chat.id, 'Formato inválido. Use: /repor Nome Quantidade');
+    }
+    return;
+  }
+
+  if (text.startsWith('/pausar')) {
+    const match = text.match(/\/pausar(?:\s+(.+))?/);
+    logger.debug('🔧 Roteando: /pausar', { chatId });
+    await handlePausar(bot, msg, match || [text, undefined]);
+    return;
+  }
+
+  if (text.startsWith('/retomar')) {
+    const match = text.match(/\/retomar(?:\s+(.+))?/);
+    logger.debug('🔧 Roteando: /retomar', { chatId });
+    await handleRetomar(bot, msg, match || [text, undefined]);
+    return;
+  }
+
+  // Fallback: chatbot
+  logger.info('🤖 Emitindo evento "message" para listeners (chatbot IA)', {
+    chatId,
+    textPreview: text.substring(0, 50)
+  });
+  await bot._emit('message', msg);
+}
+
+async function _handleCallbackQuery(bot, callbackQuery) {
+  const callbackData = callbackQuery.data;
+  const chatId = callbackQuery.message?.chat?.id;
+  logger.info('🔲 Callback query recebido', {
+    chatId,
+    callbackData: callbackData.substring(0, 50),
+    callbackLen: callbackData.length
+  });
+  await bot._emit('callback_query', callbackQuery);
+}
+
 export default async function handler(req, res) {
   logger.info('📨 Webhook recebido', {
     method: req.method,
@@ -110,102 +190,11 @@ export default async function handler(req, res) {
   handleConversationalCallbacks(bot);
 
   try {
-    // Dispatch based on update type
     if (update.message?.text) {
-      const msg = update.message;
-      const text = msg.text;
-      const chatId = msg.chat.id;
-
-      logger.info('💬 Mensagem de texto recebida', {
-        chatId,
-        textPreview: text.substring(0, 50),
-        textLen: text.length,
-        isCommand: text.startsWith('/')
-      });
-
-      // Command Routing
-      if (text.startsWith('/start')) {
-        logger.debug('🔧 Roteando: /start', { chatId });
-        await handleStart(bot, msg);
-      }
-      else if (text.startsWith('/status')) {
-        logger.debug('🔧 Roteando: /status', { chatId });
-        await handleStatus(bot, msg);
-      }
-      else if (text.startsWith('/estoque')) {
-        logger.debug('🔧 Roteando: /estoque', { chatId });
-        await handleEstoque(bot, msg);
-      }
-      else if (text.startsWith('/hoje')) {
-        logger.debug('🔧 Roteando: /hoje', { chatId });
-        await handleHoje(bot, msg);
-      }
-      else if (text.startsWith('/proxima')) {
-        logger.debug('🔧 Roteando: /proxima', { chatId });
-        await handleProxima(bot, msg);
-      }
-      else if (text.startsWith('/historico')) {
-        logger.debug('🔧 Roteando: /historico', { chatId });
-        await handleHistorico(bot, msg);
-      }
-      else if (text.startsWith('/ajuda')) {
-        logger.debug('🔧 Roteando: /ajuda', { chatId });
-        await handleAjuda(bot, msg);
-      }
-
-      else if (text.startsWith('/registrar')) {
-        logger.debug('🔧 Roteando: /registrar', { chatId });
-        await handleRegistrar(bot, msg);
-      }
-      else if (text.startsWith('/adicionar_estoque')) {
-        logger.debug('🔧 Roteando: /adicionar_estoque', { chatId });
-        await handleAdicionarEstoque(bot, msg);
-      }
-
-      // Arguments regex commands
-      else if (text.startsWith('/repor')) {
-        const match = text.match(/\/repor\s+(.+)\s+(\d+[.,]?\d*)/);
-        if (match) {
-          logger.debug('🔧 Roteando: /repor', { chatId });
-          await handleReporShortcut(bot, msg, match);
-        }
-        else {
-          logger.warn('⚠️ Formato inválido /repor', { chatId, text });
-          bot.sendMessage(msg.chat.id, 'Formato inválido. Use: /repor Nome Quantidade');
-        }
-      }
-      else if (text.startsWith('/pausar')) {
-        const match = text.match(/\/pausar(?:\s+(.+))?/);
-        logger.debug('🔧 Roteando: /pausar', { chatId });
-        await handlePausar(bot, msg, match || [text, undefined]);
-      }
-      else if (text.startsWith('/retomar')) {
-        const match = text.match(/\/retomar(?:\s+(.+))?/);
-        logger.debug('🔧 Roteando: /retomar', { chatId });
-        await handleRetomar(bot, msg, match || [text, undefined]);
-      }
-
-      // Fallback: Emit 'message' event for conversational callback listeners (chatbot IA)
-      else {
-        logger.info('🤖 Emitindo evento "message" para listeners (chatbot IA)', {
-          chatId,
-          textPreview: text.substring(0, 50)
-        });
-        await bot._emit('message', msg);
-      }
-    }
-    else if (update.callback_query) {
-      const callbackData = update.callback_query.data;
-      const chatId = update.callback_query.message?.chat?.id;
-      logger.info('🔲 Callback query recebido', {
-        chatId,
-        callbackData: callbackData.substring(0, 50),
-        callbackLen: callbackData.length
-      });
-      // Dispatch to listeners registered via bot.on('callback_query', ...)
-      await bot._emit('callback_query', update.callback_query);
-    }
-    else {
+      await _handleTextMessage(bot, update.message);
+    } else if (update.callback_query) {
+      await _handleCallbackQuery(bot, update.callback_query);
+    } else {
       logger.warn('⚠️ Update sem tipo identificado', { updateKeys: Object.keys(update) });
     }
 
