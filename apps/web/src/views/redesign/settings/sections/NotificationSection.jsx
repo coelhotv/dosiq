@@ -8,6 +8,9 @@ export default function NotificationSection({
   savingChannel,
   handleToggleWebPush,
   isTelegramConnected,
+  generateTelegramToken,
+  telegramToken,
+  handleDisconnectTelegram,
   notificationMode,
   handleModeChange,
   savingNotification,
@@ -36,6 +39,9 @@ export default function NotificationSection({
         savingChannel={savingChannel}
         handleToggleWebPush={handleToggleWebPush}
         isTelegramConnected={isTelegramConnected}
+        generateTelegramToken={generateTelegramToken}
+        telegramToken={telegramToken}
+        handleDisconnectTelegram={handleDisconnectTelegram}
       />
 
       <div className="sr-section__card mt-4">

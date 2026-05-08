@@ -67,8 +67,10 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
             className="priority-dose-card__item"
           >
             <span className="priority-dose-card__bullet" aria-hidden="true" />
-            <strong>{dose.medicineName}</strong>
-            &nbsp;·&nbsp;{dose.dosagePerIntake} comprimido{dose.dosagePerIntake !== 1 ? 's' : ''}
+            <span className="priority-dose-card__item-text">
+              <strong>{dose.medicineName}</strong>
+              &nbsp;·&nbsp;{dose.dosagePerIntake} comprimido{dose.dosagePerIntake !== 1 ? 's' : ''}
+            </span>
           </li>
         ))}
         {overflowCount > 0 && (

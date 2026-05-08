@@ -36,15 +36,16 @@ export function useSettingsState() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      if (user.user_metadata?.role === 'admin') {
-        setIsAdmin(true)
-        const { count } = await supabase.from('dead_letter_queue').select('*', { count: 'exact', head: true })
-        setDlqCount(count || 0)
-      }
-
       const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single()
       if (settings) {
         setIsTelegramConnected(!!settings.telegram_chat_id)
+
+        const adminChatId = import.meta.env.VITE_ADMIN_CHAT_ID
+        if (adminChatId && String(settings.telegram_chat_id) === String(adminChatId)) {
+          setIsAdmin(true)
+          const { count } = await supabase.from('dead_letter_queue').select('*', { count: 'exact', head: true })
+          setDlqCount(count || 0)
+        }
         setNotificationMode(settings.notification_mode || 'realtime')
         setQuietHoursEnabled(settings.quiet_hours_enabled || false)
         setQuietHoursStart(settings.quiet_hours_start || '23:00')

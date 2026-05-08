@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { supabase } from '@shared/utils/supabase'
 import SettingsHeader from '@settings/sections/SettingsHeader'
 import NotificationSection from '@settings/sections/NotificationSection'
-import IntegrationSection from '@settings/sections/IntegrationSection'
 import PreferenceSection from '@settings/sections/PreferenceSection'
 import AccountSection from '@settings/sections/AccountSection'
 import AdminSection from '@settings/sections/AdminSection'
@@ -27,10 +26,11 @@ export default function SettingsRedesign({ onNavigate, mode }) {
   }
 
   const handleLogout = async () => {
-    if (window.confirm('Deseja realmente sair?')) {
-      await supabase.auth.signOut()
-      onNavigate('landing')
-    }
+    if (!window.confirm('Deseja realmente sair?')) return
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('sb-'))
+      .forEach((k) => localStorage.removeItem(k))
+    window.location.reload()
   }
 
   const currentMessage = message.text ? message : msg
@@ -47,24 +47,22 @@ export default function SettingsRedesign({ onNavigate, mode }) {
       ) : mode === 'account' ? (
         <>
           <PreferenceSection {...preference} />
+          <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
           <AccountSection
             showPasswordForm={showPasswordForm} setShowPasswordForm={setShowPasswordForm}
             handleUpdatePassword={handleUpdatePassword} newPassword={newPassword}
             setNewPassword={setNewPassword} handleLogout={handleLogout}
           />
-          <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
           <footer className="sr-footer">Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário</footer>
         </>
       ) : mode === 'notifications' ? (
         <>
-          <NotificationSection {...notification} />
-          <IntegrationSection {...integration} />
+          <NotificationSection {...notification} {...integration} />
           <footer className="sr-footer">Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário</footer>
         </>
       ) : (
         <>
-          <NotificationSection {...notification} />
-          <IntegrationSection {...integration} />
+          <NotificationSection {...notification} {...integration} />
           <PreferenceSection {...preference} />
           <AccountSection
             showPasswordForm={showPasswordForm} setShowPasswordForm={setShowPasswordForm}

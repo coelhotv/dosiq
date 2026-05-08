@@ -3,6 +3,9 @@
   border-radius: var(--radius-card, 2rem);
   padding: 1.5rem;
   box-shadow: var(--shadow-ambient, 0 24px 24px rgba(25, 28, 29, 0.04));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (prefers-reduced-motion: no-preference) {

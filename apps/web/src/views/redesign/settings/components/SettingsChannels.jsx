@@ -1,4 +1,4 @@
-import { Smartphone, Globe, Send, Mail } from 'lucide-react'
+import { Smartphone, Globe, Send, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 
 export default function SettingsChannels({
   webPushSupported,
@@ -6,6 +6,9 @@ export default function SettingsChannels({
   savingChannel,
   handleToggleWebPush,
   isTelegramConnected,
+  generateTelegramToken,
+  telegramToken,
+  handleDisconnectTelegram,
 }) {
   return (
     <div className="sr-section__card">
@@ -44,17 +47,60 @@ export default function SettingsChannels({
         />
       </div>
 
-      <div className="settings-row settings-row--info">
+      <div className="settings-row" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
         <div className="settings-row-label">
           <span className="settings-row-icon"><Send size={18} /></span>
           <div>
             <span className="settings-row-title">Telegram</span>
-            <span className="settings-row-subtitle">Status de integração</span>
+            <span className="settings-row-subtitle">
+              {isTelegramConnected ? 'Receba lembretes no chat' : 'Conecte para receber lembretes'}
+            </span>
           </div>
         </div>
-        <span className={`settings-badge ${isTelegramConnected ? 'settings-badge--success' : 'settings-badge--muted'}`}>
-          {isTelegramConnected ? 'Conectado' : 'Desconectado'}
-        </span>
+        {isTelegramConnected ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span className="settings-badge settings-badge--success" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <CheckCircle2 size={12} /> Conectado
+            </span>
+            <button
+              className="sr-telegram__button sr-telegram__button--danger"
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', minHeight: 'unset' }}
+              onClick={handleDisconnectTelegram}
+              type="button"
+            >
+              Desconectar
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+            <button
+              className="sr-telegram__button sr-telegram__button--primary"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={generateTelegramToken}
+              type="button"
+            >
+              Gerar Código de Vínculo
+            </button>
+            {telegramToken && (
+              <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>
+                Envie ao bot:{' '}
+                <code style={{ background: 'var(--color-surface-container-high)', padding: '2px 4px', borderRadius: '3px' }}>
+                  /start {telegramToken}
+                </code>
+                {' — '}
+                <a
+                  href="https://t.me/dosiq_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sr-telegram__link"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                >
+                  Abrir no Telegram <ArrowRight size={12} />
+                </a>
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="settings-row settings-row--disabled">

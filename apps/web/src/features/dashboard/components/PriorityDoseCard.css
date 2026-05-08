@@ -73,6 +73,20 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.priority-dose-card__item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .priority-dose-card {
+    padding: 1.25rem;
+  }
 }
 
 .priority-dose-card__bullet {

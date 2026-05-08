@@ -260,7 +260,7 @@
   gap: 0.5rem;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .cronograma-doses {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -724,7 +724,7 @@
   gap: var(--space-3);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .treatments-redesign__topbar {
     flex-direction: row;
     align-items: flex-start;
@@ -733,7 +733,8 @@
   }
 
   .treatments-redesign__topbar .anvisa-search-bar {
-    flex: 0 0 28rem;
+    flex: 1 1 28rem;
+    max-width: 28rem;
   }
 }
 

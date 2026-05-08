@@ -4,6 +4,9 @@
   padding: 1.5rem;
   color: #ffffff;
   box-shadow: var(--gradient-primary-shadow, 0 8px 24px rgba(0, 106, 94, 0.22));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .reminder-suggestion-redesign__badge {
