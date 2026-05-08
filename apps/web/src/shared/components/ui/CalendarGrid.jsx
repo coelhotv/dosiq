@@ -104,7 +104,7 @@ export function buildCalendarDays({
 /**
  * Renderiza as linhas do calendário agrupadas por semana.
  */
-export default function CalendarGrid({ days, isLoading, enableLazyLoad, monthNames, month, year }) {
+export default function CalendarGrid({ days, isLoading, enableLazyLoad }) {
   if (isLoading && enableLazyLoad) {
     return (
       <div className="calendar-skeleton">

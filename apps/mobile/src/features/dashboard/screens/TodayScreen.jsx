@@ -125,7 +125,7 @@ function _buildHeaderData(user) {
 // Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
-  timeline, stockAlerts, protocols, stats, medicines,
+  timeline, stockAlerts, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,

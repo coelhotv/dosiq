@@ -29,6 +29,14 @@ const STATUS_COLORS = {
   futuro: '#6b7280', // Cinza (mesma cor para dias futuros)
 }
 
+const STATUS_LABELS = {
+  completo: 'Completo',
+  parcial: 'Parcial',
+  perdido: 'Perdido',
+  sem_doses: 'Sem doses',
+  futuro: 'Futuro',
+}
+
 /**
  * DoseCalendar - Componente de calendário visual de doses
  *

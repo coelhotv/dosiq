@@ -30,25 +30,31 @@ function getPromptText(platformInfo) {
  * iOS Safari: instruções customizadas | Chrome/Android: prompt nativo ou instruções
  * Dispensável com persistência via localStorage
  */
+function _computeInitialPlatformInfo() {
+  const standalone = isStandalone()
+  return {
+    isIOSSafari: isIOSSafari(),
+    isChromeAndroid: isChromeAndroid(),
+    isDesktopChrome: isDesktopChrome(),
+    canShowNativePrompt: canShowNativePrompt(),
+    isStandalone: standalone,
+  }
+}
+
+function _computeInitialVisibility() {
+  const standalone = isStandalone()
+  const dismissed = wasPromptDismissed() && !isDismissalExpired()
+  const pushSatisfied = !supportsWebPush() || isPushPermissionGranted()
+  if ((standalone && pushSatisfied) || dismissed) return false
+  const needsPush = standalone && supportsWebPush() && !isPushPermissionGranted()
+  return (!standalone && (isIOSSafari() || isChromeAndroid() || isDesktopChrome())) || needsPush
+}
+
 export default function InstallPrompt() {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(_computeInitialVisibility)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
-  const [platformInfo, setPlatformInfo] = useState({ isIOSSafari: false, isChromeAndroid: false, isDesktopChrome: false, canShowNativePrompt: false })
-
-  useEffect(() => {
-    if (isStandalone() && (!supportsWebPush() || isPushPermissionGranted())) { setIsVisible(false); return }
-    if (wasPromptDismissed() && !isDismissalExpired()) { setIsVisible(false); return }
-
-    const isIOS = isIOSSafari()
-    const isAndroid = isChromeAndroid()
-    const isDesktop = isDesktopChrome()
-
-    setPlatformInfo({ isIOSSafari: isIOS, isChromeAndroid: isAndroid, isDesktopChrome: isDesktop, canShowNativePrompt: canShowNativePrompt(), isStandalone: isStandalone() })
-
-    const needsPush = isStandalone() && supportsWebPush() && !isPushPermissionGranted()
-    setIsVisible((!isStandalone() && (isIOS || isAndroid || isDesktop)) || needsPush)
-  }, [])
+  const [platformInfo] = useState(_computeInitialPlatformInfo)
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => { event.preventDefault(); setDeferredPrompt(event) }

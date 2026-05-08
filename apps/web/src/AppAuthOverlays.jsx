@@ -1,8 +1,7 @@
 /**
  * AppAuthOverlays — FABs, modais e wizard de onboarding para usuários autenticados.
  */
-import { Suspense } from 'react'
-import { lazy } from 'react'
+import { Suspense, lazy } from 'react'
 import { BotMessageSquare } from 'lucide-react'
 import { OnboardingWizard } from '@shared/components/onboarding'
 import appStyles from './App.module.css'
