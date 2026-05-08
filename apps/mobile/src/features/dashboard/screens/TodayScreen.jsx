@@ -41,10 +41,10 @@ export default function TodayScreen({ route, navigation }) {
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
-  const timeline = data?.timeline ?? []
+  const timeline = useMemo(() => data?.timeline ?? [], [data?.timeline])
   const stockAlerts = data?.stockAlerts ?? []
-  const protocols = data?.protocols ?? []
-  const medicines = data?.medicines ?? {}
+  const protocols = useMemo(() => data?.protocols ?? [], [data?.protocols])
+  const medicines = useMemo(() => data?.medicines ?? {}, [data?.medicines])
   const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
 
   // 1. Lógica de Persona: Threshold de complexidade adaptativa (Wave 10A)

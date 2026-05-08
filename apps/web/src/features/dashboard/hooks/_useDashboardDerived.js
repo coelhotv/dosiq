@@ -121,9 +121,9 @@ function _deriveDailyAdherence(protocols, logs) {
  * Extraído para reduzir linhas e complexidade do useDashboardContext.
  */
 export function useDashboardDerived(medicinesResult, protocolsResult, logsResult) {
-  const medicines = medicinesResult.data || []
-  const protocols = protocolsResult.data || []
-  const logs = logsResult.data || []
+  const medicines = useMemo(() => medicinesResult.data || [], [medicinesResult.data])
+  const protocols = useMemo(() => protocolsResult.data || [], [protocolsResult.data])
+  const logs = useMemo(() => logsResult.data || [], [logsResult.data])
 
   const rawStats = useMemo(() => _deriveRawStats(protocols, logs), [protocols, logs])
 
