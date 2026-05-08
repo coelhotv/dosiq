@@ -1,6 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
 import { dlqService } from '@services/api/dlqService'
 
+function _buildDLQQueryParams(page, pageSize, statusFilter) {
+  return {
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+    status: statusFilter || null,
+  }
+}
+
+function _buildConfirmAction(type, id, message, serviceCall, successText, setActionLoading, setActionMessage, loadEntries) {
+  return {
+    type,
+    id,
+    message,
+    onConfirm: async () => {
+      setActionLoading(id)
+      setActionMessage(null)
+      try {
+        const result = await serviceCall()
+        setActionMessage({ type: 'success', text: result.message || successText })
+        loadEntries()
+      } catch (err) {
+        setActionMessage({ type: 'error', text: err.message })
+      } finally {
+        setActionLoading(null)
+      }
+    },
+  }
+}
+
 /**
  * useDLQState - Hook de gerenciamento de estado para DLQAdmin
  */
@@ -29,19 +58,11 @@ export function useDLQState() {
   const [confirmAction, setConfirmAction] = useState(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
-  // Carregar dados
   const loadEntries = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-
     try {
-      const offset = (page - 1) * pageSize
-      const result = await dlqService.getAll({
-        limit: pageSize,
-        offset,
-        status: statusFilter || null,
-      })
-
+      const result = await dlqService.getAll(_buildDLQQueryParams(page, pageSize, statusFilter))
       setEntries(result.data)
       setTotal(result.total)
       setTotalPages(result.totalPages)
@@ -57,90 +78,32 @@ export function useDLQState() {
     loadEntries()
   }, [loadEntries])
 
-  // Handlers de ação
   const handleRetry = useCallback((id) => {
-    setConfirmAction({
-      type: 'retry',
-      id,
-      message: 'Deseja retentar esta notificação?',
-      onConfirm: async () => {
-        setActionLoading(id)
-        setActionMessage(null)
-
-        try {
-          const result = await dlqService.retry(id)
-          setActionMessage({
-            type: 'success',
-            text: result.message || 'Notificação reenviada com sucesso!',
-          })
-          loadEntries()
-        } catch (err) {
-          setActionMessage({ type: 'error', text: err.message })
-        } finally {
-          setActionLoading(null)
-        }
-      },
-    })
+    setConfirmAction(_buildConfirmAction('retry', id, 'Deseja retentar esta notificação?',
+      () => dlqService.retry(id), 'Notificação reenviada com sucesso!',
+      setActionLoading, setActionMessage, loadEntries))
     setShowConfirmModal(true)
   }, [loadEntries])
 
   const handleDiscard = useCallback((id) => {
-    setConfirmAction({
-      type: 'discard',
-      id,
-      message: 'Deseja descartar esta notificação? Esta ação não pode ser desfeita.',
-      onConfirm: async () => {
-        setActionLoading(id)
-        setActionMessage(null)
-
-        try {
-          const result = await dlqService.discard(id)
-          setActionMessage({ type: 'success', text: result.message || 'Notificação descartada.' })
-          loadEntries()
-        } catch (err) {
-          setActionMessage({ type: 'error', text: err.message })
-        } finally {
-          setActionLoading(null)
-        }
-      },
-    })
+    setConfirmAction(_buildConfirmAction('discard', id, 'Deseja descartar esta notificação? Esta ação não pode ser desfeita.',
+      () => dlqService.discard(id), 'Notificação descartada.',
+      setActionLoading, setActionMessage, loadEntries))
     setShowConfirmModal(true)
   }, [loadEntries])
 
   const handleConfirmAction = useCallback(async () => {
-    if (confirmAction?.onConfirm) {
-      await confirmAction.onConfirm()
-    }
+    if (confirmAction?.onConfirm) await confirmAction.onConfirm()
     setShowConfirmModal(false)
     setConfirmAction(null)
   }, [confirmAction])
 
-  const handleCancelConfirm = useCallback(() => {
-    setShowConfirmModal(false)
-    setConfirmAction(null)
-  }, [])
-
-  const handleViewDetails = useCallback((entry) => {
-    setSelectedEntry(entry)
-    setShowDetails(true)
-  }, [])
-
-  const handlePrevPage = useCallback(() => {
-    setPage((prev) => (prev > 1 ? prev - 1 : prev))
-  }, [])
-
-  const handleNextPage = useCallback(() => {
-    setPage((prev) => (prev < totalPages ? prev + 1 : prev))
-  }, [totalPages])
-
-  const handleStatusChange = useCallback((e) => {
-    setStatusFilter(e.target.value)
-    setPage(1)
-  }, [])
-
-  const closeDetails = useCallback(() => {
-    setShowDetails(false)
-  }, [])
+  const handleCancelConfirm = useCallback(() => { setShowConfirmModal(false); setConfirmAction(null) }, [])
+  const handleViewDetails = useCallback((entry) => { setSelectedEntry(entry); setShowDetails(true) }, [])
+  const handlePrevPage = useCallback(() => setPage((prev) => (prev > 1 ? prev - 1 : prev)), [])
+  const handleNextPage = useCallback(() => setPage((prev) => (prev < totalPages ? prev + 1 : prev)), [totalPages])
+  const handleStatusChange = useCallback((e) => { setStatusFilter(e.target.value); setPage(1) }, [])
+  const closeDetails = useCallback(() => setShowDetails(false), [])
 
   // Limpar mensagem após 5 segundos
   useEffect(() => {

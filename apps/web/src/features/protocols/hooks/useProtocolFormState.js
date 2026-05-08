@@ -7,6 +7,7 @@ import {
   getTitrationInitialDosage,
 } from './protocolFormUtils'
 import { submitProtocolForm } from './_protocolFormSubmit'
+import { getTitrationEnabledStatus, buildProtocolFormInitialData } from './_protocolFormHelpers'
 
 export function useProtocolFormState({
   protocol,
@@ -19,24 +20,16 @@ export function useProtocolFormState({
 }) {
   const [formData, setFormData] = useState(() => {
     const data = getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
-    const isTitrating = protocol?.titration_schedule?.length > 0 || protocol?.titration_status === 'titulando'
-    if (!protocol && isTitrating && !data.dosage_per_intake) {
-      data.dosage_per_intake = getTitrationInitialDosage(data)
-    }
-    return data
+    return buildProtocolFormInitialData(protocol, data, preselectedMedicine, isSimpleMode, getTitrationInitialDosage)
   })
 
-  const [enableTitration, setEnableTitration] = useState(
-    protocol?.titration_schedule?.length > 0 || protocol?.titration_status === 'titulando'
-  )
+  const [enableTitration, setEnableTitration] = useState(getTitrationEnabledStatus(protocol))
 
   const [timeInput, setTimeInput] = useState('')
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shakeFields, setShakeFields] = useState({})
   const [saveSuccess, setSaveSuccess] = useState(false)
-
-
 
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target
