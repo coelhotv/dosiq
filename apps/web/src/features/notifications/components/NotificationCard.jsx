@@ -32,28 +32,55 @@ const CTA_MAP = {
   [NOTIFICATION_TYPES.DAILY_DIGEST]:          null,
 }
 
-/**
- * Resolve o título do card de acordo com o tipo da notificação.
- * Prioriza medicine_name / protocol_name / treatment_plan_name sobre o label genérico.
- */
+const TITLE_RESOLVERS = {
+  [NOTIFICATION_TYPES.DOSE_REMINDER]: (n, l) => n.medicine_name ?? l,
+  [NOTIFICATION_TYPES.STOCK_ALERT]: (n, l) => n.medicine_name ?? l,
+  [NOTIFICATION_TYPES.MISSED_DOSE]: (n, l) => n.medicine_name ?? l,
+  [NOTIFICATION_TYPES.TITRATION_UPDATE]: (n, l) => n.protocol_name ?? l,
+  [NOTIFICATION_TYPES.DAILY_DIGEST]: () => 'Resumo do dia',
+  [NOTIFICATION_TYPES.DOSE_REMINDER_BY_PLAN]: (n) => n.treatment_plan_name ?? 'Plano de tratamento',
+  [NOTIFICATION_TYPES.DOSE_REMINDER_MISC]: () => 'Doses agendadas',
+}
+
 function resolveTitle(notification, label) {
-  const { notification_type, medicine_name, protocol_name, treatment_plan_name } = notification
-  switch (notification_type) {
-    case NOTIFICATION_TYPES.DOSE_REMINDER:
-    case NOTIFICATION_TYPES.STOCK_ALERT:
-    case NOTIFICATION_TYPES.MISSED_DOSE:
-      return medicine_name ?? label
-    case NOTIFICATION_TYPES.TITRATION_UPDATE:
-      return protocol_name ?? label
-    case NOTIFICATION_TYPES.DAILY_DIGEST:
-      return 'Resumo do dia'
-    case NOTIFICATION_TYPES.DOSE_REMINDER_BY_PLAN:
-      return treatment_plan_name ?? 'Plano de tratamento'
-    case NOTIFICATION_TYPES.DOSE_REMINDER_MISC:
-      return 'Doses agendadas'
-    default:
-      return label
-  }
+  const resolver = TITLE_RESOLVERS[notification.notification_type]
+  if (!resolver) return label
+  return resolver(notification, label)
+}
+
+function _renderDosesList(doses) {
+  if (!doses?.length) return null
+  return (
+    <ul className="notif-card__dose-list">
+      {doses.map((dose, i) => (
+        <li key={i} className="notif-card__dose-item">
+          {`${dose.dosage}x ${dose.medicineName}`}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function _renderBodyContent(displayBody, isDailyDigest, expanded, setExpanded) {
+  if (!displayBody) return null
+  return (
+    <>
+      <p
+        className={`notif-card__preview ${isDailyDigest && !expanded ? 'notif-card__preview--collapsed' : ''}`}
+      >
+        {displayBody}
+      </p>
+      {isDailyDigest && (
+        <button
+          className="notif-card__expand"
+          onClick={() => setExpanded(prev => !prev)}
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Ver menos' : 'Ver mais'}
+        </button>
+      )}
+    </>
+  )
 }
 
 export default function NotificationCard({
@@ -84,12 +111,25 @@ export default function NotificationCard({
 
   // Título: sempre resolve pelo tipo (medicine_name, protocol_name, etc.)
   const displayTitle = resolveTitle(notification, label)
-
   const displayBody = body ?? null
-  const doses       = notification.doses ?? null
-
-  // CTA
+  const doses = notification.doses ?? null
   const cta = CTA_MAP[notification_type] ?? null
+
+  const handleCtaClick = () => {
+    const isPlan = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_BY_PLAN
+    const isMisc = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_MISC
+    const isIndividual = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER
+    if (isIndividual && onOpenDoseModal && notification.protocol_id) {
+      onOpenDoseModal({ type: 'protocol', protocol_id: notification.protocol_id })
+    } else if ((isPlan || isMisc) && onOpenDoseModal) {
+      onOpenDoseModal({
+        type: isPlan ? 'plan' : 'protocol',
+        treatment_plan_id: notification.treatment_plan_id ?? '',
+      })
+    } else {
+      onNavigate(cta.action)
+    }
+  }
 
   return (
     <motion.article
@@ -140,32 +180,7 @@ export default function NotificationCard({
         </div>
 
         {/* Corpo */}
-        {doses?.length > 0 ? (
-          <ul className="notif-card__dose-list">
-            {doses.map((dose, i) => (
-              <li key={i} className="notif-card__dose-item">
-                {`${dose.dosage}x ${dose.medicineName}`}
-              </li>
-            ))}
-          </ul>
-        ) : displayBody ? (
-          <>
-            <p
-              className={`notif-card__preview ${isDailyDigest && !expanded ? 'notif-card__preview--collapsed' : ''}`}
-            >
-              {displayBody}
-            </p>
-            {isDailyDigest && (
-              <button
-                className="notif-card__expand"
-                onClick={() => setExpanded(prev => !prev)}
-                aria-expanded={expanded}
-              >
-                {expanded ? 'Ver menos' : 'Ver mais'}
-              </button>
-            )}
-          </>
-        ) : null}
+        {doses?.length > 0 ? _renderDosesList(doses) : _renderBodyContent(displayBody, isDailyDigest, expanded, setExpanded)}
 
         {/* Rodapé: CTA */}
         <div className="notif-card__footer">
@@ -176,21 +191,7 @@ export default function NotificationCard({
           ) : cta && (onNavigate || onOpenDoseModal) ? (
             <button
               className="notif-card__action"
-              onClick={() => {
-                const isPlan = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_BY_PLAN
-                const isMisc = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER_MISC
-                const isIndividual = notification_type === NOTIFICATION_TYPES.DOSE_REMINDER
-                if (isIndividual && onOpenDoseModal && notification.protocol_id) {
-                  onOpenDoseModal({ type: 'protocol', protocol_id: notification.protocol_id })
-                } else if ((isPlan || isMisc) && onOpenDoseModal) {
-                  onOpenDoseModal({
-                    type: isPlan ? 'plan' : 'protocol',
-                    treatment_plan_id: notification.treatment_plan_id ?? '',
-                  })
-                } else {
-                  onNavigate(cta.action)
-                }
-              }}
+              onClick={handleCtaClick}
               aria-label={`${cta.label} — ${displayTitle}`}
             >
               {cta.label}

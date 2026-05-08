@@ -27,6 +27,12 @@ function getStreakIcon(streak) {
   return '🔥'
 }
 
+function _getSvgSize(size) {
+  if (size === 'large') return 120
+  if (size === 'compact') return 56
+  return 80
+}
+
 /**
  * RingGauge — Ring gauge circular animado com score de adesão.
  *
@@ -51,17 +57,14 @@ export default function RingGauge({
   const offset = circumference - (score / 100) * circumference
   const ringColor = getRingColor(score)
   const isClickable = Boolean(onClick)
+  const svgSize = _getSvgSize(size)
 
-  const svgSize = size === 'large' ? 120 : size === 'compact' ? 56 : 80
-
-  // Testa se o usuário prefere movimento reduzido
   const prefersReducedMotion =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const ringTransition = prefersReducedMotion
     ? { duration: 0 }
     : { type: 'spring', stiffness: 60, damping: 15 }
-
   const streakTransition = prefersReducedMotion ? { duration: 0 } : { delay: 0.3, duration: 0.4 }
 
   const ringElement = (
@@ -120,16 +123,17 @@ export default function RingGauge({
     </motion.div>
   )
 
+  const Tag = isClickable ? 'button' : 'div'
+  const sharedProps = {
+    className: `ring-gauge ring-gauge--${size} ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`,
+    onClick,
+    type: isClickable ? 'button' : undefined,
+    tabIndex: isClickable ? 0 : undefined,
+  }
+
   if (size === 'large') {
-    const Tag = isClickable ? 'button' : 'div'
     return (
-      <Tag
-        className={`ring-gauge ring-gauge--large ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
-        onClick={onClick}
-        type={isClickable ? 'button' : undefined}
-        tabIndex={isClickable ? 0 : undefined}
-        onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
-      >
+      <Tag {...sharedProps}>
         <div className="ring-gauge__ring-wrapper">{ringElement}</div>
         <div className="ring-gauge__info">
           <AnimatePresence mode="wait">
@@ -156,15 +160,8 @@ export default function RingGauge({
   }
 
   if (size === 'medium') {
-    const Tag = isClickable ? 'button' : 'div'
     return (
-      <Tag
-        className={`ring-gauge ring-gauge--medium ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
-        onClick={onClick}
-        type={isClickable ? 'button' : undefined}
-        tabIndex={isClickable ? 0 : undefined}
-        onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
-      >
+      <Tag {...sharedProps}>
         {ringElement}
         <div className="ring-gauge__medium-content">
           <div className="ring-gauge__medium-top">
@@ -179,16 +176,8 @@ export default function RingGauge({
     )
   }
 
-  // compact
-  const Tag = isClickable ? 'button' : 'div'
   return (
-    <Tag
-      className={`ring-gauge ring-gauge--compact ${isClickable ? 'ring-gauge--clickable' : ''} ${className}`}
-      onClick={onClick}
-      type={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={isClickable ? (e) => e.key === 'Enter' && onClick() : undefined}
-    >
+    <Tag {...sharedProps}>
       {ringElement}
       <span className="ring-gauge__score-text">{score}%</span>
       {streakBadge}

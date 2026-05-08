@@ -20,43 +20,51 @@ export function useWizardNavigation(initialStep) {
   return { step, direction, setStep, setDirection, goNext, goBack }
 }
 
+const _MEDICINE_DEFAULTS = {
+  name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg',
+  laboratory: '', active_ingredient: '', therapeutic_class: null, regulatory_category: null,
+}
+
+function _buildInitialMedicineData(m) {
+  if (!m) return { ..._MEDICINE_DEFAULTS }
+  return {
+    name: m.name || '',
+    type: m.type || 'medicamento',
+    dosage_per_pill: m.dosage_per_pill || '',
+    dosage_unit: m.dosage_unit || 'mg',
+    laboratory: m.laboratory || '',
+    active_ingredient: m.active_ingredient || '',
+    therapeutic_class: m.therapeutic_class ?? null,
+    regulatory_category: m.regulatory_category ?? null,
+  }
+}
+
+function _applyMedicineSelect(prev, medicine) {
+  return {
+    ...prev,
+    name: medicine.name,
+    active_ingredient: toTitleCase(medicine.activeIngredient) || '',
+    therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
+    regulatory_category: medicine.regulatoryCategory || null,
+    laboratory: medicine.laboratory || '',
+  }
+}
+
 export function useWizardMedicine(preselectedMedicine) {
   const [medicineMode, setMedicineMode] = useState('new')
-  const [selectedExistingMedicine, setSelectedExistingMedicine] = useState(
-    preselectedMedicine || null
-  )
-
-  const [medicineData, setMedicineData] = useState({
-    name: preselectedMedicine?.name || '',
-    type: preselectedMedicine?.type || 'medicamento',
-    dosage_per_pill: preselectedMedicine?.dosage_per_pill || '',
-    dosage_unit: preselectedMedicine?.dosage_unit || 'mg',
-    laboratory: preselectedMedicine?.laboratory || '',
-    active_ingredient: preselectedMedicine?.active_ingredient || '',
-    therapeutic_class: preselectedMedicine?.therapeutic_class || null,
-    regulatory_category: preselectedMedicine?.regulatory_category || null,
-  })
+  const [selectedExistingMedicine, setSelectedExistingMedicine] = useState(preselectedMedicine || null)
+  const [medicineData, setMedicineData] = useState(() => _buildInitialMedicineData(preselectedMedicine))
 
   const updateMedicine = useCallback((field, value) => {
     setMedicineData((prev) => ({ ...prev, [field]: value }))
   }, [])
 
   const handleMedicineSelect = useCallback((medicine) => {
-    setMedicineData((prev) => ({
-      ...prev,
-      name: medicine.name,
-      active_ingredient: toTitleCase(medicine.activeIngredient) || '',
-      therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
-      regulatory_category: medicine.regulatoryCategory || null,
-      laboratory: medicine.laboratory || '',
-    }))
+    setMedicineData((prev) => _applyMedicineSelect(prev, medicine))
   }, [])
 
   const handleLaboratorySelect = useCallback((laboratory) => {
-    setMedicineData((prev) => ({
-      ...prev,
-      laboratory: laboratory.laboratory || '',
-    }))
+    setMedicineData((prev) => ({ ...prev, laboratory: laboratory.laboratory || '' }))
   }, [])
 
   return {

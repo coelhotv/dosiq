@@ -5,49 +5,62 @@ import ProtocolFormDosesSection from '@protocols/components/sections/ProtocolFor
 import ProtocolFormAdvancedSection from '@protocols/components/sections/ProtocolFormAdvancedSection'
 import '@protocols/components/ProtocolForm.css'
 
+const _getSuccessMessage = (isSimpleMode) =>
+  isSimpleMode ? 'Tratamento criado com sucesso!' : 'Tratamento salvo com sucesso!'
+
 const SuccessMessage = ({ isSimpleMode }) => (
   <div className="success-message">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-    <span>{isSimpleMode ? 'Tratamento criado com sucesso!' : 'Tratamento salvo com sucesso!'}</span>
+    <span>{_getSuccessMessage(isSimpleMode)}</span>
   </div>
 )
+
+const _renderErrorContent = (error, isSimpleMode) =>
+  isSimpleMode ? (
+    <>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <span>{error}</span>
+    </>
+  ) : (
+    <>❌ {error}</>
+  )
 
 const ErrorBanner = ({ error, isSimpleMode }) => (
   <div className={`error-banner ${isSimpleMode ? 'error-alert' : ''}`}>
-    {isSimpleMode ? (
-      <>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <span>{error}</span>
-      </>
-    ) : (
-      <>❌ {error}</>
-    )}
+    {_renderErrorContent(error, isSimpleMode)}
   </div>
 )
 
+const _getSubmitButtonLabel = (isSubmitting, isSimpleMode, hasProtocol) => {
+  if (isSubmitting) return isSimpleMode ? 'Criando...' : 'Salvando...'
+  if (isSimpleMode) return 'Criar Protocolo'
+  return hasProtocol ? 'Atualizar' : 'Criar Tratamento'
+}
+
+const _shouldShowSubmitSpinner = (isSubmitting, isSimpleMode) => isSubmitting && isSimpleMode
+
+const _shouldShowArrowIcon = (isSubmitting, isSimpleMode) => !isSubmitting && isSimpleMode
+
 const SubmitButton = ({ isSubmitting, isSimpleMode, hasProtocol }) => {
-  if (isSubmitting) {
-    if (isSimpleMode) {
-      return (
-        <>
-          <span className="spinner"></span>
-          Criando...
-        </>
-      )
-    }
-    return 'Salvando...'
-  }
-  
-  if (isSimpleMode) {
+  const label = _getSubmitButtonLabel(isSubmitting, isSimpleMode, hasProtocol)
+  if (_shouldShowSubmitSpinner(isSubmitting, isSimpleMode)) {
     return (
       <>
-        Criar Protocolo
+        <span className="spinner"></span>
+        {label}
+      </>
+    )
+  }
+  if (_shouldShowArrowIcon(isSubmitting, isSimpleMode)) {
+    return (
+      <>
+        {label}
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -61,8 +74,12 @@ const SubmitButton = ({ isSubmitting, isSimpleMode, hasProtocol }) => {
       </>
     )
   }
-  
-  return hasProtocol ? 'Atualizar' : 'Criar Tratamento'
+  return label
+}
+
+function _getFormTitle(protocol, title) {
+  if (title) return title
+  return protocol ? 'Editar Tratamento' : 'Novo Tratamento'
 }
 
 export default function ProtocolForm({
@@ -107,17 +124,22 @@ export default function ProtocolForm({
     autoAdvance,
   })
 
-  const formTitle = title || (protocol ? 'Editar Tratamento' : 'Novo Tratamento')
+  const formTitle = _getFormTitle(protocol, title)
+  const formClass = isSimpleMode ? 'protocol-form-simple' : ''
+  const formPaddingBottom = isSimpleMode ? '0' : '80px'
+  const showCancelBtn = !isSimpleMode && onCancel
+  const showTopSuccess = saveSuccess && !isSimpleMode
+  const showBottomSuccess = saveSuccess && isSimpleMode
 
   return (
     <form
-      className={`protocol-form ${isSimpleMode ? 'protocol-form-simple' : ''}`}
+      className={`protocol-form ${formClass}`}
       onSubmit={handleSubmit}
-      style={{ paddingBottom: isSimpleMode ? '0' : '80px' }}
+      style={{ paddingBottom: formPaddingBottom }}
     >
       <h3>{formTitle}</h3>
 
-      {saveSuccess && !isSimpleMode && <SuccessMessage isSimpleMode={false} />}
+      {showTopSuccess && <SuccessMessage isSimpleMode={false} />}
 
       <ProtocolFormBasicSection
         formData={formData}
@@ -152,12 +174,12 @@ export default function ProtocolForm({
         showTitration={showTitration}
       />
 
-      {saveSuccess && isSimpleMode && <SuccessMessage isSimpleMode={true} />}
+      {showBottomSuccess && <SuccessMessage isSimpleMode={true} />}
 
       {errors.submit && <ErrorBanner error={errors.submit} isSimpleMode={isSimpleMode} />}
 
       <div className={`form-actions ${isSimpleMode ? 'form-actions-simple' : ''}`}>
-        {!isSimpleMode && onCancel && (
+        {showCancelBtn && (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
@@ -168,10 +190,10 @@ export default function ProtocolForm({
           disabled={isSubmitting}
           className={isSimpleMode ? 'btn-save' : ''}
         >
-          <SubmitButton 
-            isSubmitting={isSubmitting} 
-            isSimpleMode={isSimpleMode} 
-            hasProtocol={!!protocol} 
+          <SubmitButton
+            isSubmitting={isSubmitting}
+            isSimpleMode={isSimpleMode}
+            hasProtocol={!!protocol}
           />
         </Button>
       </div>

@@ -11,24 +11,82 @@ import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 
 import './ProtocolCard.css'
 
+function _getProtocolFlags(protocol) {
+  const titrationStatus = protocol?.titration_status?.toLowerCase()
+  const hasTitration = titrationStatus && !['estável'].includes(titrationStatus)
+  const hasSchedule = protocol?.titration_schedule?.length > 0
+  return { hasTitration, hasSchedule, canShowTimeline: hasTitration && hasSchedule }
+}
+
+function _renderProtocolStatusBadge({ active, streak }) {
+  return (
+    <div className="protocol-header-badges">
+      {streak > 0 && (
+        <StreakBadge streak={streak} size="sm" showLabel={false} />
+      )}
+      <div className={`protocol-status ${active ? 'active' : 'inactive'}`}>
+        {active ? '✅ Ativo' : '⏸️ Pausado'}
+      </div>
+    </div>
+  )
+}
+
+function _renderTitrationSection(protocol) {
+  if (!protocol.titration_status || protocol.titration_status === 'estável') return null
+  return (
+    <div className="detail-item titration">
+      <span className={`titration-badge ${protocol.titration_status}`}>
+        {protocol.titration_status === 'titulando' ? '📈 Titulando' : '🎯 Alvo Atingido'}
+      </span>
+      {protocol.titration_scheduler_data && (
+        <div className="titration-card-progress">
+          <div className="titration-progress-stats">
+            <span>
+              Etapa {protocol.titration_scheduler_data.currentStep}/
+              {protocol.titration_scheduler_data.totalSteps}
+            </span>
+            <span>
+              Dia {protocol.titration_scheduler_data.day}/
+              {protocol.titration_scheduler_data.totalDays}
+            </span>
+          </div>
+          <div className="titration-progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${protocol.titration_scheduler_data.progressPercent}%` }}
+            />
+          </div>
+          {protocol.titration_scheduler_data.stageNote && (
+            <p className="stage-objective">
+              Objetivo: {protocol.titration_scheduler_data.stageNote}
+            </p>
+          )}
+        </div>
+      )}
+      {protocol.titration_schedule?.length > 0 && (
+        <div className="titration-schedule-preview">
+          <h5>Cronograma Planejado:</h5>
+          <div className="stages-timeline">
+            {protocol.titration_schedule.map((stage, idx) => (
+              <div
+                key={idx}
+                className={`timeline-stage ${idx === protocol.current_stage_index ? 'current' : idx < (protocol.current_stage_index || 0) ? 'past' : 'future'}`}
+              >
+                <span className="stage-dose-mini">{stage.dosage} comp.</span>
+                <span className="stage-days-mini">{stage.days}d</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelete }) {
   const [showTimeline, setShowTimeline] = useState(false)
-
-  const formatTime = (time) => {
-    return time // Already in HH:MM format
-  }
-
-  const hasTitration = protocol?.titration_status && protocol.titration_status !== 'estável'
-  const hasSchedule = protocol?.titration_schedule?.length > 0
-  const canShowTimeline = hasTitration && hasSchedule
-
-  const handleShowTimeline = () => {
-    setShowTimeline(true)
-  }
-
-  const handleCloseTimeline = () => {
-    setShowTimeline(false)
-  }
+  const flags = _getProtocolFlags(protocol)
+  const { canShowTimeline } = flags
 
   return (
     <Card className={`protocol-card ${!protocol.active ? 'inactive' : ''}`}>
@@ -42,14 +100,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
               : ''}
           </span>
         </div>
-        <div className="protocol-header-badges">
-          {protocol.streak > 0 && (
-            <StreakBadge streak={protocol.streak} size="sm" showLabel={false} />
-          )}
-          <div className={`protocol-status ${protocol.active ? 'active' : 'inactive'}`}>
-            {protocol.active ? '✅ Ativo' : '⏸️ Pausado'}
-          </div>
-        </div>
+        {_renderProtocolStatusBadge({ active: protocol.active, streak: protocol.streak })}
       </div>
 
       <div className="protocol-details">
@@ -79,56 +130,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           </span>
         </div>
 
-        {protocol.titration_status && protocol.titration_status !== 'estável' && (
-          <div className="detail-item titration">
-            <span className={`titration-badge ${protocol.titration_status}`}>
-              {protocol.titration_status === 'titulando' ? '📈 Titulando' : '🎯 Alvo Atingido'}
-            </span>
-
-            {protocol.titration_scheduler_data && (
-              <div className="titration-card-progress">
-                <div className="titration-progress-stats">
-                  <span>
-                    Etapa {protocol.titration_scheduler_data.currentStep}/
-                    {protocol.titration_scheduler_data.totalSteps}
-                  </span>
-                  <span>
-                    Dia {protocol.titration_scheduler_data.day}/
-                    {protocol.titration_scheduler_data.totalDays}
-                  </span>
-                </div>
-                <div className="titration-progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${protocol.titration_scheduler_data.progressPercent}%` }}
-                  />
-                </div>
-                {protocol.titration_scheduler_data.stageNote && (
-                  <p className="stage-objective">
-                    Objetivo: {protocol.titration_scheduler_data.stageNote}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {protocol.titration_schedule?.length > 0 && (
-              <div className="titration-schedule-preview">
-                <h5>Cronograma Planejado:</h5>
-                <div className="stages-timeline">
-                  {protocol.titration_schedule.map((stage, idx) => (
-                    <div
-                      key={idx}
-                      className={`timeline-stage ${idx === protocol.current_stage_index ? 'current' : idx < (protocol.current_stage_index || 0) ? 'past' : 'future'}`}
-                    >
-                      <span className="stage-dose-mini">{stage.dosage} comp.</span>
-                      <span className="stage-days-mini">{stage.days}d</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {_renderTitrationSection(protocol)}
 
         {protocol.time_schedule && protocol.time_schedule.length > 0 && (
           <div className="detail-item schedule">
@@ -136,7 +138,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
             <div className="schedule-times">
               {protocol.time_schedule.map((time) => (
                 <span key={time} className="time-badge">
-                  {formatTime(time)}
+                  {time}
                 </span>
               ))}
             </div>
@@ -153,7 +155,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
 
       <div className="protocol-actions">
         {canShowTimeline && (
-          <Button variant="primary" size="sm" onClick={handleShowTimeline}>
+          <Button variant="primary" size="sm" onClick={() => setShowTimeline(true)}>
             📈 Ver Timeline
           </Button>
         )}
@@ -175,7 +177,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
       {canShowTimeline && (
         <Modal
           isOpen={showTimeline}
-          onClose={handleCloseTimeline}
+          onClose={() => setShowTimeline(false)}
           title={`Timeline: ${protocol.name}`}
         >
           <TitrationTimeline protocol={protocol} />

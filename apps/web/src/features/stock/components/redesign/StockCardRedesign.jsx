@@ -20,14 +20,25 @@ import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import './StockCardRedesign.css'
 
-// Texto e ícone do CTA por status
-// Simple: CTA visível apenas para urgente e atencao; seguro/alto não têm botão
-// Complex: CTA visível para todos os status
 const CTA_CONFIG = {
   urgente: { label: 'Comprar Agora', Icon: ScanBarcode },
   atencao: { label: 'Comprar em Breve', Icon: ShoppingBasket },
   seguro: { label: 'Agendar Compra', Icon: CalendarClock },
   alto: { label: 'Agendar Compra', Icon: CalendarClock },
+}
+
+function _shouldShowCta(isComplex, stockStatus) {
+  if (isComplex) return true
+  return stockStatus === 'urgente' || stockStatus === 'atencao'
+}
+
+function _getMedicineIconName(medicineType) {
+  return medicineType === 'suplemento' ? 'PillBottle' : 'Pill'
+}
+
+const _ICON_MAP = {
+  Pill,
+  PillBottle,
 }
 
 /**
@@ -100,10 +111,11 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
   const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
   const ctaConfig = CTA_CONFIG[stockStatus] || { label: 'Comprar Agora', Icon: ScanBarcode }
-  const showCta = isComplex || stockStatus === 'urgente' || stockStatus === 'atencao'
+  const showCta = _shouldShowCta(isComplex, stockStatus)
   const lastPurchaseText = formatLastPurchase(lastPurchase)
   const isSupplement = medicine.type === 'suplemento'
-  const MedicineIcon = isSupplement ? PillBottle : Pill
+  const iconName = _getMedicineIconName(medicine.type)
+  const MedicineIcon = _ICON_MAP[iconName]
 
   return (
     <motion.div

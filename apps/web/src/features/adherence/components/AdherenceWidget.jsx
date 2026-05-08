@@ -72,6 +72,112 @@ import './AdherenceWidget.css'
  * @see {@link AdherenceProgress} - Para componente visual puro sem dados
  * @see {@link StreakBadge} - Para exibir streak em outros contextos
  */
+
+function _getScoreLabel(score) {
+  if (score >= 90) return 'Excelente'
+  if (score >= 80) return 'Muito Bom'
+  if (score >= 60) return 'Bom'
+  if (score >= 40) return 'Regular'
+  return 'Precisa de Atenção'
+}
+
+function _getScoreStatus(score) {
+  if (score >= 80) return 'good'
+  if (score >= 60) return 'warning'
+  return 'poor'
+}
+
+function _getScoreColorVar(score) {
+  if (score >= 80) return 'var(--color-success)'
+  if (score >= 60) return 'var(--color-warning)'
+  return 'var(--color-error)'
+}
+
+function _shouldShowStreak(data) {
+  return data?.currentStreak > 0 || data?.longestStreak > 0
+}
+
+function _shouldShowProtocolScores(data) {
+  return data?.protocolScores?.length > 0
+}
+
+function _shouldShowLowAdherenceTip(data) {
+  return (data?.overallScore || 0) < 60
+}
+
+function _shouldShowHighAdherenceTip(data) {
+  return (data?.overallScore || 0) >= 90
+}
+
+function _formatPeriodLabel(p) {
+  return p.replace('d', ' dias')
+}
+
+function _renderLoadingState() {
+  return (
+    <div className="adherence-widget loading">
+      <Loading text="Calculando adesão..." size="sm" />
+    </div>
+  )
+}
+
+function _renderErrorState(error, onRetry) {
+  return (
+    <div className="adherence-widget error">
+      <p className="error-text">{error}</p>
+      <button onClick={onRetry} className="retry-btn">
+        Tentar novamente
+      </button>
+    </div>
+  )
+}
+
+function _renderProtocolScores(data) {
+  if (!_shouldShowProtocolScores(data)) return null
+  return (
+    <div className="protocol-scores">
+      <h4 className="protocols-title">Por Protocolo</h4>
+      <div className="protocols-list">
+        {data.protocolScores.map((protocol) => (
+          <div key={protocol.protocolId} className="protocol-item">
+            <div className="protocol-info">
+              <span className="protocol-name">{protocol.name}</span>
+              {protocol.medicineName && (
+                <span className="protocol-medicine">{protocol.medicineName}</span>
+              )}
+            </div>
+            <div className="protocol-score">
+              <div className="mini-progress">
+                <div
+                  className="mini-progress-bar"
+                  style={{
+                    width: `${protocol.score}%`,
+                    backgroundColor: _getScoreColorVar(protocol.score),
+                  }}
+                />
+              </div>
+              <span className="protocol-score-value">{protocol.score}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function _renderAdherenceTips(data) {
+  return (
+    <div className="adherence-tips">
+      {_shouldShowLowAdherenceTip(data) && (
+        <p className="tip-text">💡 Dica: Configure lembretes para não esquecer suas doses</p>
+      )}
+      {_shouldShowHighAdherenceTip(data) && (
+        <p className="tip-text success">🌟 Parabéns! Você está mantendo uma adesão excelente!</p>
+      )}
+    </div>
+  )
+}
+
 export default function AdherenceWidget({ defaultPeriod = '30d' }) {
   const [period, setPeriod] = useState(defaultPeriod)
   const [data, setData] = useState(null)
@@ -96,38 +202,8 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
     loadAdherenceData()
   }, [loadAdherenceData])
 
-  const getScoreLabel = (score) => {
-    if (score >= 90) return 'Excelente'
-    if (score >= 80) return 'Muito Bom'
-    if (score >= 60) return 'Bom'
-    if (score >= 40) return 'Regular'
-    return 'Precisa de Atenção'
-  }
-
-  const getScoreStatus = (score) => {
-    if (score >= 80) return 'good'
-    if (score >= 60) return 'warning'
-    return 'poor'
-  }
-
-  if (loading) {
-    return (
-      <div className="adherence-widget loading">
-        <Loading text="Calculando adesão..." size="sm" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="adherence-widget error">
-        <p className="error-text">{error}</p>
-        <button onClick={loadAdherenceData} className="retry-btn">
-          Tentar novamente
-        </button>
-      </div>
-    )
-  }
+  if (loading) return _renderLoadingState()
+  if (error) return _renderErrorState(error, loadAdherenceData)
 
   return (
     <div className="adherence-widget">
@@ -141,7 +217,7 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
               className={`period-btn ${period === p ? 'active' : ''}`}
               onClick={() => setPeriod(p)}
             >
-              {p.replace('d', ' dias')}
+              {_formatPeriodLabel(p)}
             </button>
           ))}
         </div>
@@ -152,8 +228,8 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
         <div className="score-section">
           <AdherenceProgress score={data?.overallScore || 0} size={140} strokeWidth={12} />
           <div className="score-info">
-            <span className={`score-label ${getScoreStatus(data?.overallScore || 0)}`}>
-              {getScoreLabel(data?.overallScore || 0)}
+            <span className={`score-label ${_getScoreStatus(data?.overallScore || 0)}`}>
+              {_getScoreLabel(data?.overallScore || 0)}
             </span>
             <span className="score-detail">
               {data?.overallTaken || 0} de {data?.overallExpected || 0} doses
@@ -162,7 +238,7 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
         </div>
 
         {/* Streak info */}
-        {(data?.currentStreak > 0 || data?.longestStreak > 0) && (
+        {_shouldShowStreak(data) && (
           <div className="streak-section">
             {data?.currentStreak > 0 && (
               <div className="streak-item">
@@ -181,50 +257,10 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
       </div>
 
       {/* Adesão por protocolo */}
-      {data?.protocolScores?.length > 0 && (
-        <div className="protocol-scores">
-          <h4 className="protocols-title">Por Protocolo</h4>
-          <div className="protocols-list">
-            {data.protocolScores.map((protocol) => (
-              <div key={protocol.protocolId} className="protocol-item">
-                <div className="protocol-info">
-                  <span className="protocol-name">{protocol.name}</span>
-                  {protocol.medicineName && (
-                    <span className="protocol-medicine">{protocol.medicineName}</span>
-                  )}
-                </div>
-                <div className="protocol-score">
-                  <div className="mini-progress">
-                    <div
-                      className="mini-progress-bar"
-                      style={{
-                        width: `${protocol.score}%`,
-                        backgroundColor:
-                          protocol.score >= 80
-                            ? 'var(--color-success)'
-                            : protocol.score >= 60
-                              ? 'var(--color-warning)'
-                              : 'var(--color-error)',
-                      }}
-                    />
-                  </div>
-                  <span className="protocol-score-value">{protocol.score}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {_renderProtocolScores(data)}
 
       {/* Dicas baseadas no score */}
-      <div className="adherence-tips">
-        {(data?.overallScore || 0) < 60 && (
-          <p className="tip-text">💡 Dica: Configure lembretes para não esquecer suas doses</p>
-        )}
-        {(data?.overallScore || 0) >= 90 && (
-          <p className="tip-text success">🌟 Parabéns! Você está mantendo uma adesão excelente!</p>
-        )}
-      </div>
+      {_renderAdherenceTips(data)}
     </div>
   )
 }

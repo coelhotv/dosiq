@@ -1,29 +1,80 @@
 import { getTodayDateString } from '@schemas/protocolSchema'
 
-export const getInitialFormData = (protocol, initialValues, preselectedMedicine, isSimpleMode) => ({
-  medicine_id:
-    protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || '',
-  treatment_plan_id: protocol?.treatment_plan_id || initialValues?.treatment_plan_id || '',
-  name:
+function _getMedicineId(protocol, initialValues, preselectedMedicine) {
+  return protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || ''
+}
+
+function _getTreatmentPlanId(protocol, initialValues) {
+  return protocol?.treatment_plan_id || initialValues?.treatment_plan_id || ''
+}
+
+function _getName(protocol, initialValues, preselectedMedicine, isSimpleMode) {
+  return (
     protocol?.name ||
     initialValues?.name ||
-    (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Tratamento` : ''),
-  frequency: protocol?.frequency || initialValues?.frequency || 'diário',
-  time_schedule: protocol?.time_schedule || initialValues?.time_schedule || [],
-  dosage_per_intake: protocol?.dosage_per_intake ?? initialValues?.dosage_per_intake ?? '',
-  target_dosage: protocol?.target_dosage ?? initialValues?.target_dosage ?? '',
-  titration_status: protocol?.titration_status || initialValues?.titration_status || 'estável',
-  titration_schedule: protocol?.titration_schedule || initialValues?.titration_schedule || [],
-  notes: protocol?.notes || initialValues?.notes || '',
-  active:
-    protocol?.active !== undefined
-      ? protocol.active
-      : initialValues?.active !== undefined
-        ? initialValues.active
-        : true,
-  start_date: protocol?.start_date || initialValues?.start_date || getTodayDateString(),
-  end_date: protocol?.end_date || initialValues?.end_date || '',
-})
+    (isSimpleMode && preselectedMedicine ? `${preselectedMedicine.name} - Tratamento` : '')
+  )
+}
+
+function _getActive(protocol, initialValues) {
+  if (protocol?.active !== undefined) return protocol.active
+  if (initialValues?.active !== undefined) return initialValues.active
+  return true
+}
+
+function _getFrequency(protocol, initialValues) {
+  return protocol?.frequency || initialValues?.frequency || 'diário'
+}
+
+function _getTimeSchedule(protocol, initialValues) {
+  return protocol?.time_schedule || initialValues?.time_schedule || []
+}
+
+function _getDosagePerIntake(protocol, initialValues) {
+  return protocol?.dosage_per_intake ?? initialValues?.dosage_per_intake ?? ''
+}
+
+function _getTargetDosage(protocol, initialValues) {
+  return protocol?.target_dosage ?? initialValues?.target_dosage ?? ''
+}
+
+function _getTitrationStatus(protocol, initialValues) {
+  return protocol?.titration_status || initialValues?.titration_status || 'estável'
+}
+
+function _getTitrationSchedule(protocol, initialValues) {
+  return protocol?.titration_schedule || initialValues?.titration_schedule || []
+}
+
+function _getNotes(protocol, initialValues) {
+  return protocol?.notes || initialValues?.notes || ''
+}
+
+function _getStartDate(protocol, initialValues) {
+  return protocol?.start_date || initialValues?.start_date || getTodayDateString()
+}
+
+function _getEndDate(protocol, initialValues) {
+  return protocol?.end_date || initialValues?.end_date || ''
+}
+
+export function getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode) {
+  return {
+    medicine_id: _getMedicineId(protocol, initialValues, preselectedMedicine),
+    treatment_plan_id: _getTreatmentPlanId(protocol, initialValues),
+    name: _getName(protocol, initialValues, preselectedMedicine, isSimpleMode),
+    frequency: _getFrequency(protocol, initialValues),
+    time_schedule: _getTimeSchedule(protocol, initialValues),
+    dosage_per_intake: _getDosagePerIntake(protocol, initialValues),
+    target_dosage: _getTargetDosage(protocol, initialValues),
+    titration_status: _getTitrationStatus(protocol, initialValues),
+    titration_schedule: _getTitrationSchedule(protocol, initialValues),
+    notes: _getNotes(protocol, initialValues),
+    active: _getActive(protocol, initialValues),
+    start_date: _getStartDate(protocol, initialValues),
+    end_date: _getEndDate(protocol, initialValues),
+  }
+}
 
 export const getTitrationInitialDosage = (formData) => {
   if (formData.titration_schedule?.length > 0) {
@@ -33,28 +84,53 @@ export const getTitrationInitialDosage = (formData) => {
   return ''
 }
 
-// eslint-disable-next-line complexity
+function _validateMedicineId(medicineId, errors) {
+  if (!medicineId) errors.medicine_id = 'Selecione um medicamento'
+}
+
+function _validateName(name, errors) {
+  if (!name.trim()) errors.name = 'Nome do tratamento é obrigatório'
+}
+
+function _validateFrequency(frequency, errors) {
+  if (!frequency.trim()) errors.frequency = 'Frequência é obrigatória'
+}
+
+function _validateTimeSchedule(timeSchedule, errors) {
+  if (timeSchedule.length === 0) errors.time_schedule = 'Adicione pelo menos um horário'
+}
+
+function _validateDosagePerIntake(dosage, errors) {
+  if (dosage === '' || dosage === null || dosage < 0 || dosage > 100) {
+    errors.dosage_per_intake = 'Dosagem deve estar entre 0 e 100'
+  }
+}
+
+function _validateTargetDosage(targetDosage, errors) {
+  if (targetDosage && isNaN(targetDosage)) {
+    errors.target_dosage = 'Deve ser um número'
+  }
+}
+
+function _triggerShakeAnimation(newErrors, setShakeFields) {
+  if (Object.keys(newErrors).length === 0) return
+  const fieldsWithError = Object.keys(newErrors)
+  setShakeFields(Object.fromEntries(fieldsWithError.map((field) => [field, true])))
+  setTimeout(() => setShakeFields({}), 500)
+}
+
 export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
   const newErrors = {}
 
-  if (!formData.medicine_id) newErrors.medicine_id = 'Selecione um medicamento'
-  if (!formData.name.trim()) newErrors.name = 'Nome do tratamento é obrigatório'
-  if (!formData.frequency.trim()) newErrors.frequency = 'Frequência é obrigatória'
-  if (formData.time_schedule.length === 0) newErrors.time_schedule = 'Adicione pelo menos um horário'
-  if (!formData.dosage_per_intake || formData.dosage_per_intake <= 0 || formData.dosage_per_intake > 100) {
-    newErrors.dosage_per_intake = 'Dosagem deve estar entre 0.1 e 100'
-  }
-  if (formData.target_dosage && isNaN(formData.target_dosage)) {
-    newErrors.target_dosage = 'Deve ser um número'
-  }
+  _validateMedicineId(formData.medicine_id, newErrors)
+  _validateName(formData.name, newErrors)
+  _validateFrequency(formData.frequency, newErrors)
+  _validateTimeSchedule(formData.time_schedule, newErrors)
+  _validateDosagePerIntake(formData.dosage_per_intake, newErrors)
+  _validateTargetDosage(formData.target_dosage, newErrors)
 
   setErrors(newErrors)
-
-  if (Object.keys(newErrors).length > 0) {
-    const fieldsWithError = Object.keys(newErrors)
-    setShakeFields(fieldsWithError.reduce((acc, field) => ({ ...acc, [field]: true }), {}))
-    setTimeout(() => setShakeFields({}), 500)
-  }
+  _triggerShakeAnimation(newErrors, setShakeFields)
 
   return Object.keys(newErrors).length === 0
 }

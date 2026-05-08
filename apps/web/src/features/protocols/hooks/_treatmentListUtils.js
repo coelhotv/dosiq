@@ -62,6 +62,49 @@ export function resolveGroup(protocol) {
   }
 }
 
+function _computeIntakeLabel(dosage) {
+  if (dosage == null) return '—'
+  const n = dosage
+  return `${n} comprimido${n !== 1 ? 's' : ''}`
+}
+
+function _computeNextDoseTime(timeSchedule) {
+  const now = getNow()
+  const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(
+    now.getMinutes()
+  ).padStart(2, '0')}`
+  const times = Array.isArray(timeSchedule) ? timeSchedule : []
+  return times.find((t) => t > currentHHMM) || null
+}
+
+function _computeConcentrationLabel(medicine) {
+  if (!medicine?.dosage_per_pill || !medicine?.dosage_unit) return null
+  return `${medicine.dosage_per_pill}${medicine.dosage_unit}`
+}
+
+function _computeTreatmentPlanInfo(treatmentPlan) {
+  return {
+    treatmentPlanId: treatmentPlan?.id || null,
+    treatmentPlanName: treatmentPlan?.name || null,
+    treatmentPlanEmoji: treatmentPlan?.emoji || '💊',
+    treatmentPlanColor: treatmentPlan?.color || '#6366f1',
+  }
+}
+
+function _computeMedicineInfo(medicine, dosagePerIntake) {
+  return {
+    medicineName: medicine?.name || '—',
+    medicineType: medicine?.type || 'medicamento',
+    dosageLabel: formatDose(
+      dosagePerIntake,
+      medicine?.dosage_unit || 'mg',
+      medicine?.dosage_per_pill
+    ),
+    concentrationLabel: _computeConcentrationLabel(medicine),
+    therapeuticClass: medicine?.therapeutic_class || null,
+  }
+}
+
 /**
  * Transforma um protocolo bruto em um item de tratamento processado
  */
@@ -79,34 +122,15 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     protocols: [protocol],
   })
 
-  const dosageLabel = formatDose(
-    protocol.dosage_per_intake,
-    protocol.medicine?.dosage_unit || 'mg',
-    protocol.medicine?.dosage_per_pill
-  )
-
-  const concentrationLabel =
-    protocol.medicine?.dosage_per_pill && protocol.medicine?.dosage_unit
-      ? `${protocol.medicine.dosage_per_pill}${protocol.medicine.dosage_unit}`
-      : null
-
-  const n = protocol.dosage_per_intake ?? 1
-  const intakeLabel = `${n} comprimido${n !== 1 ? 's' : ''}`
-
-  const now = getNow()
-  const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(
-    now.getMinutes()
-  ).padStart(2, '0')}`
+  const intakeLabel = _computeIntakeLabel(protocol.dosage_per_intake)
+  const nextDoseTime = _computeNextDoseTime(protocol.time_schedule)
+  const treatmentPlanInfo = _computeTreatmentPlanInfo(protocol.treatment_plan)
+  const medicineInfo = _computeMedicineInfo(protocol.medicine, protocol.dosage_per_intake)
   const times = Array.isArray(protocol.time_schedule) ? protocol.time_schedule : []
-  const nextDoseTime = times.find((t) => t > currentHHMM) || null
 
   return {
     id: protocol.id,
     medicineId: protocol.medicine_id,
-    medicineName: protocol.medicine?.name || protocol.name,
-    medicineType: protocol.medicine?.type || 'medicamento',
-    dosageLabel,
-    concentrationLabel,
     intakeLabel,
     frequency: protocol.frequency,
     frequencyLabel: FREQUENCY_LABELS[protocol.frequency] || protocol.frequency,
@@ -119,11 +143,8 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     hasTitration,
     titrationSummary: titSummary,
     notes: protocol.notes || null,
-    treatmentPlanId: protocol.treatment_plan?.id || null,
-    treatmentPlanName: protocol.treatment_plan?.name || null,
-    treatmentPlanEmoji: protocol.treatment_plan?.emoji || '💊',
-    treatmentPlanColor: protocol.treatment_plan?.color || '#6366f1',
-    therapeuticClass: protocol.medicine?.therapeutic_class || null,
+    ...medicineInfo,
+    ...treatmentPlanInfo,
     ...groupInfo,
     active: protocol.active,
     endDate: protocol.end_date || null,
