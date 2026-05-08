@@ -29,7 +29,7 @@ export default function SettingsRedesign({ onNavigate, mode }) {
   const handleLogout = async () => {
     if (window.confirm('Deseja realmente sair?')) {
       await supabase.auth.signOut()
-      onNavigate('login')
+      onNavigate('landing')
     }
   }
 
@@ -53,6 +53,12 @@ export default function SettingsRedesign({ onNavigate, mode }) {
             setNewPassword={setNewPassword} handleLogout={handleLogout}
           />
           <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
+          <footer className="sr-footer">Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário</footer>
+        </>
+      ) : mode === 'notifications' ? (
+        <>
+          <NotificationSection {...notification} />
+          <IntegrationSection {...integration} />
           <footer className="sr-footer">Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário</footer>
         </>
       ) : (

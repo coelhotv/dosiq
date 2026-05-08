@@ -269,7 +269,16 @@
 }
 
 .cronograma-doses--complex {
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .cronograma-doses--complex {
+    display: flex;
+    grid-template-columns: unset;
+  }
 }
 
 /* ============================================================

@@ -79,7 +79,7 @@ export default function AppViewRouter({
     case 'consultation':
       return W(<Consultation onBack={() => setCurrentView('profile')} />)
     case 'settings':
-      return W(<Settings onNavigate={setCurrentView} />)
+      return W(<Settings onNavigate={setCurrentView} mode="notifications" />)
     case 'account-settings':
       return W(<Settings onNavigate={setCurrentView} mode="account" />)
     case 'emergency':
