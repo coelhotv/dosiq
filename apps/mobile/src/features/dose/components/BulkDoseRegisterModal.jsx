@@ -31,6 +31,38 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
  *   userId: string,
  * }} props
  */
+// Lista de protocolos para seleção em batch
+function BulkDoseProtocolList({ protocols, selected, loading, onToggle }) {
+  return (
+    <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+      {protocols.map(p => {
+        const isChecked = !!selected[p.id]
+        const medicineName = p.medicine?.name ?? p.name ?? 'Medicamento'
+        const dose = `${p.dosage_per_intake ?? 1} cp`
+        return (
+          <Pressable
+            key={p.id}
+            style={styles.item}
+            onPress={() => onToggle(p.id)}
+            disabled={loading}
+          >
+            {isChecked
+              ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
+              : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
+            }
+            <View style={styles.itemText}>
+              <Text style={[styles.medicineName, !isChecked && styles.unchecked]}>
+                {medicineName}
+              </Text>
+              <Text style={styles.doseInfo}>{dose}</Text>
+            </View>
+          </Pressable>
+        )
+      })}
+    </ScrollView>
+  )
+}
+
 export default function BulkDoseRegisterModal({
   visible,
   onClose,
@@ -158,32 +190,12 @@ export default function BulkDoseRegisterModal({
               <Text style={styles.errorText}>{protocolsError}</Text>
             </View>
           ) : (
-            <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-              {protocols.map(p => {
-                const isChecked = !!selected[p.id]
-                const medicineName = p.medicine?.name ?? p.name ?? 'Medicamento'
-                const dose = `${p.dosage_per_intake ?? 1} cp`
-                return (
-                  <Pressable
-                    key={p.id}
-                    style={styles.item}
-                    onPress={() => toggleProtocol(p.id)}
-                    disabled={loading}
-                  >
-                    {isChecked
-                      ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
-                      : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
-                    }
-                    <View style={styles.itemText}>
-                      <Text style={[styles.medicineName, !isChecked && styles.unchecked]}>
-                        {medicineName}
-                      </Text>
-                      <Text style={styles.doseInfo}>{dose}</Text>
-                    </View>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
+            <BulkDoseProtocolList
+              protocols={protocols}
+              selected={selected}
+              loading={loading}
+              onToggle={toggleProtocol}
+            />
           )}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}

@@ -30,6 +30,35 @@ const HOURS = Array.from({ length: 24 }, (_, i) => {
   return `${h}:00`
 })
 
+// Constrói o payload de configurações de notificação para o banco
+function _buildNotificationSettingsPayload(patch, state) {
+  const { mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
+          quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled } = state
+  const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
+  const telegram = isTelegramConnected
+  const web = patch.webPushEnabled ?? webPushEnabled
+  const mode = patch.notificationMode ?? notificationMode
+  const qEnabled = patch.quietHoursEnabled ?? quietHoursEnabled
+  const qStart = patch.quietHoursStart ?? quietHoursStart
+  const qEnd = patch.quietHoursEnd ?? quietHoursEnd
+  const dTime = patch.digestTime ?? digestTime
+  const global = patch.globalEnabled ?? globalEnabled
+
+  return {
+    notification_mode: mode,
+    quiet_hours_start: (global && qEnabled) ? qStart : null,
+    quiet_hours_end: (global && qEnabled) ? qEnd : null,
+    quiet_hours_enabled: global && qEnabled,
+    digest_time: dTime,
+    channel_mobile_push_enabled: global && mobile,
+    channel_web_push_enabled: global && web,
+    channel_telegram_enabled: global && telegram,
+    notification_preference: global
+      ? deriveLegacyPreference({ channel_mobile_push_enabled: mobile, channel_telegram_enabled: telegram })
+      : 'none',
+  }
+}
+
 // Derivar notification_preference legado
 function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_enabled }) {
   if (channel_mobile_push_enabled && channel_telegram_enabled) return 'both'
@@ -125,6 +154,235 @@ function TimePicker({ value, onChange, label }) {
   )
 }
 
+// Seção de canais: App Push + Telegram + Web + Email
+function NotificationChannelsSection({
+  globalEnabled,
+  mobilePushEnabled,
+  webPushEnabled,
+  isTelegramConnected,
+  onMobilePushToggle,
+  onTelegramPress,
+}) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.channelRow}>
+        <View style={styles.rowLeft}>
+          <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
+          <Text style={styles.rowLabel}>App (push)</Text>
+        </View>
+        <Switch
+          value={mobilePushEnabled && globalEnabled}
+          onValueChange={onMobilePushToggle}
+          disabled={!globalEnabled}
+          trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
+          thumbColor={colors.bg.card}
+          accessibilityLabel="Ativar notificações push do aplicativo"
+        />
+      </View>
+
+      <View style={styles.divider} />
+
+      <TouchableOpacity style={styles.channelRow} onPress={onTelegramPress} activeOpacity={0.7} accessibilityLabel="Configurar Telegram">
+        <View style={styles.rowLeft}>
+          <Send size={20} color={colors.brand.primary} strokeWidth={2} />
+          <Text style={styles.rowLabel}>Telegram</Text>
+        </View>
+        <View style={styles.rowRight}>
+          <View style={[styles.badge, isTelegramConnected ? styles.badgeConnected : styles.badgeDisconnected]}>
+            <Text style={[styles.badgeText, isTelegramConnected ? styles.badgeTextConnected : styles.badgeTextDisconnected]}>
+              {isTelegramConnected ? 'CONECTADO' : 'DESCONECTADO'}
+            </Text>
+          </View>
+          <ChevronRight size={16} color={colors.text.muted} />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.divider} />
+
+      <View style={[styles.channelRow, styles.rowDisabled]} pointerEvents="none">
+        <View style={styles.rowLeft}>
+          <Globe size={20} color={colors.text.muted} strokeWidth={2} />
+          <View>
+            <Text style={[styles.rowLabel, { color: colors.text.secondary }]}>Web (PWA)</Text>
+            <Text style={styles.rowHint}>Configure pelo navegador</Text>
+          </View>
+        </View>
+        <View style={[styles.badge, styles.badgeDisconnected]}>
+          <Text style={[styles.badgeText, styles.badgeTextDisconnected]}>
+            {webPushEnabled ? 'ATIVO' : 'INATIVO'}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={[styles.channelRow, styles.rowSoon]} pointerEvents="none">
+        <View style={styles.rowLeft}>
+          <Mail size={20} color={colors.text.muted} strokeWidth={2} />
+          <Text style={styles.rowLabel}>Email</Text>
+        </View>
+        <View style={[styles.badge, styles.badgeDisconnected]}>
+          <Text style={[styles.badgeText, styles.badgeTextDisconnected]}>EM BREVE</Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+// Seção de modo de envio (radio buttons)
+function NotificationModeSection({ globalEnabled, notificationMode, onModeSelect }) {
+  const MODES = [
+    { value: 'realtime', label: 'Alertas unitários' },
+    { value: 'digest_morning', label: 'Resumo diário' },
+    { value: 'silent', label: 'Silencioso' },
+  ]
+  return (
+    <View style={styles.card}>
+      {MODES.map((m, idx) => (
+        <React.Fragment key={m.value}>
+          <TouchableOpacity
+            style={styles.modeRow}
+            onPress={() => onModeSelect(m.value)}
+            disabled={!globalEnabled}
+            activeOpacity={0.7}
+            accessibilityLabel={`Modo: ${m.label}`}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: notificationMode === m.value }}
+          >
+            <View style={[styles.radio, notificationMode === m.value && styles.radioActive]}>
+              {notificationMode === m.value && <View style={styles.radioDot} />}
+            </View>
+            <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
+              {m.label}
+            </Text>
+          </TouchableOpacity>
+          {idx < MODES.length - 1 && <View style={styles.divider} />}
+        </React.Fragment>
+      ))}
+    </View>
+  )
+}
+
+// Render principal da tela de preferências (pós-carregamento)
+function NotificationPreferencesContent({
+  navigation, globalEnabled, mobilePushEnabled, webPushEnabled, isTelegramConnected,
+  showChannelWarning, notificationMode, digestTime, quietHoursEnabled, quietHoursStart, quietHoursEnd,
+  handleGlobalToggle, handleMobilePushToggle, handleTelegramPress, handleModeSelect,
+  handleQuietHoursToggle, setDigestTime, setQuietHoursStart, setQuietHoursEnd, persist,
+}) {
+  const bellColor = globalEnabled ? colors.brand.primary : colors.text.muted
+  const showDigest = notificationMode === 'digest_morning' && globalEnabled
+
+  return (
+    <ScreenContainer>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} accessibilityLabel="Voltar">
+            <Text style={styles.backButtonText}>← Voltar</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Preferências</Text>
+          <Text style={styles.subtitle}>Escolha onde e quando ser avisado.</Text>
+        </View>
+
+        <View style={[styles.card, styles.globalRow]}>
+          <View style={styles.rowLeft}>
+            <Bell size={20} color={bellColor} strokeWidth={2} />
+            <Text style={styles.rowLabel}>Notificações ativas</Text>
+          </View>
+          <Switch
+            value={globalEnabled}
+            onValueChange={handleGlobalToggle}
+            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
+            thumbColor={colors.bg.card}
+            accessibilityLabel="Ativar ou desativar todas as notificações"
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>CANAIS</Text>
+        <NotificationChannelsSection
+          globalEnabled={globalEnabled} mobilePushEnabled={mobilePushEnabled}
+          webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
+          onMobilePushToggle={handleMobilePushToggle} onTelegramPress={handleTelegramPress}
+        />
+
+        {showChannelWarning && (
+          <Text style={styles.channelWarning}>
+            Ative ao menos um canal para receber lembretes de dose.
+          </Text>
+        )}
+
+        <Text style={styles.sectionLabel}>MODO DE ENVIO</Text>
+        <NotificationModeSection
+          globalEnabled={globalEnabled} notificationMode={notificationMode} onModeSelect={handleModeSelect}
+        />
+
+        {showDigest && (
+          <>
+            <Text style={styles.sectionLabel}>HORA DO RESUMO DIÁRIO</Text>
+            <View style={[styles.card, styles.timeRow]}>
+              <Text style={styles.rowLabel}>Enviar resumo às</Text>
+              <TimePicker
+                value={digestTime}
+                label="Hora do resumo"
+                onChange={(v) => { setDigestTime(v); persist({ digestTime: v }) }}
+              />
+            </View>
+          </>
+        )}
+
+        <NotificationQuietHoursSection
+          globalEnabled={globalEnabled} quietHoursEnabled={quietHoursEnabled}
+          quietHoursStart={quietHoursStart} quietHoursEnd={quietHoursEnd}
+          onToggle={handleQuietHoursToggle}
+          onStartChange={(v) => { setQuietHoursStart(v); persist({ quietHoursStart: v }) }}
+          onEndChange={(v) => { setQuietHoursEnd(v); persist({ quietHoursEnd: v }) }}
+        />
+
+        <View style={{ height: spacing[8] }} />
+      </ScrollView>
+    </ScreenContainer>
+  )
+}
+
+// Seção de horas silenciosas
+function NotificationQuietHoursSection({
+  globalEnabled,
+  quietHoursEnabled,
+  quietHoursStart,
+  quietHoursEnd,
+  onToggle,
+  onStartChange,
+  onEndChange,
+}) {
+  return (
+    <>
+      <Text style={styles.sectionLabel}>NÃO ME INCOMODE</Text>
+      <View style={[styles.card, styles.globalRow]}>
+        <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
+          Silenciar por período
+        </Text>
+        <Switch
+          value={quietHoursEnabled && globalEnabled}
+          onValueChange={onToggle}
+          disabled={!globalEnabled}
+          trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
+          thumbColor={colors.bg.card}
+          accessibilityLabel="Ativar horas de silêncio"
+        />
+      </View>
+
+      {quietHoursEnabled && globalEnabled && (
+        <View style={[styles.card, styles.timeRow]}>
+          <Text style={styles.rowLabel}>Das</Text>
+          <TimePicker value={quietHoursStart} label="Início do silêncio" onChange={onStartChange} />
+          <Text style={styles.rowLabel}>às</Text>
+          <TimePicker value={quietHoursEnd} label="Fim do silêncio" onChange={onEndChange} />
+        </View>
+      )}
+    </>
+  )
+}
+
 export default function NotificationPreferencesScreen({ navigation }) {
   const { user } = useAuth()
   const { settings, refresh } = useProfile()
@@ -184,34 +442,13 @@ export default function NotificationPreferencesScreen({ navigation }) {
   // Salvar no banco (debounce manual: chama após cada alteração)
   const persist = useCallback(async (patch) => {
     if (!user?.id) return
+    const state = {
+      mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
+      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled,
+    }
     try {
-      const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
-      const telegram = isTelegramConnected // Telegram segue o vínculo
-      const web = patch.webPushEnabled ?? webPushEnabled
-      const mode = patch.notificationMode ?? notificationMode
-      const qEnabled = patch.quietHoursEnabled ?? quietHoursEnabled
-      const qStart = patch.quietHoursStart ?? quietHoursStart
-      const qEnd = patch.quietHoursEnd ?? quietHoursEnd
-      const dTime = patch.digestTime ?? digestTime
-      const global = patch.globalEnabled ?? globalEnabled
-
-      const result = await updateNotificationSettings(user.id, {
-        notification_mode: mode,
-        quiet_hours_start: (global && qEnabled) ? qStart : null,
-        quiet_hours_end: (global && qEnabled) ? qEnd : null,
-        quiet_hours_enabled: global && qEnabled,
-        digest_time: dTime,
-        channel_mobile_push_enabled: global && mobile,
-        channel_web_push_enabled: global && web,
-        channel_telegram_enabled: global && telegram,
-        notification_preference: global 
-          ? deriveLegacyPreference({ 
-              channel_mobile_push_enabled: mobile, 
-              channel_telegram_enabled: telegram 
-            }) 
-          : 'none',
-      })
-
+      const payload = _buildNotificationSettingsPayload(patch, state)
+      const result = await updateNotificationSettings(user.id, payload)
       if (result.success) {
         debugLog('NotificationPreferencesScreen', 'Configurações salvas')
         await refresh()
@@ -277,196 +514,20 @@ export default function NotificationPreferencesScreen({ navigation }) {
     navigation.navigate(ROUTES.TELEGRAM_LINK)
   }
 
-  // ── Seções de UI ──────────────────────────────────────────────────────────
-
-  const MODES = [
-    { value: 'realtime', label: 'Alertas unitários' },
-    { value: 'digest_morning', label: 'Resumo diário' },
-    { value: 'silent', label: 'Silencioso' },
-  ]
-
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} accessibilityLabel="Voltar">
-            <Text style={styles.backButtonText}>← Voltar</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Preferências</Text>
-          <Text style={styles.subtitle}>Escolha onde e quando ser avisado.</Text>
-        </View>
-
-        {/* Global toggle */}
-        <View style={[styles.card, styles.globalRow]}>
-          <View style={styles.rowLeft}>
-            <Bell size={20} color={globalEnabled ? colors.brand.primary : colors.text.muted} strokeWidth={2} />
-            <Text style={styles.rowLabel}>Notificações ativas</Text>
-          </View>
-          <Switch
-            value={globalEnabled}
-            onValueChange={handleGlobalToggle}
-            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
-            thumbColor={colors.bg.card}
-            accessibilityLabel="Ativar ou desativar todas as notificações"
-          />
-        </View>
-
-        {/* Canais */}
-        <Text style={styles.sectionLabel}>CANAIS</Text>
-        <View style={styles.card}>
-
-          {/* App push */}
-          <View style={styles.channelRow}>
-            <View style={styles.rowLeft}>
-              <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
-              <Text style={styles.rowLabel}>App (push)</Text>
-            </View>
-            <Switch
-              value={mobilePushEnabled && globalEnabled}
-              onValueChange={handleMobilePushToggle}
-              disabled={!globalEnabled}
-              trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
-              thumbColor={colors.bg.card}
-              accessibilityLabel="Ativar notificações push do aplicativo"
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Telegram */}
-          <TouchableOpacity style={styles.channelRow} onPress={handleTelegramPress} activeOpacity={0.7} accessibilityLabel="Configurar Telegram">
-            <View style={styles.rowLeft}>
-              <Send size={20} color={colors.brand.primary} strokeWidth={2} />
-              <Text style={styles.rowLabel}>Telegram</Text>
-            </View>
-            <View style={styles.rowRight}>
-              <View style={[styles.badge, isTelegramConnected ? styles.badgeConnected : styles.badgeDisconnected]}>
-                <Text style={[styles.badgeText, isTelegramConnected ? styles.badgeTextConnected : styles.badgeTextDisconnected]}>
-                  {isTelegramConnected ? 'CONECTADO' : 'DESCONECTADO'}
-                </Text>
-              </View>
-              <ChevronRight size={16} color={colors.text.muted} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          {/* Web PWA — informativo */}
-          <View style={[styles.channelRow, styles.rowDisabled]} pointerEvents="none">
-            <View style={styles.rowLeft}>
-              <Globe size={20} color={colors.text.muted} strokeWidth={2} />
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text.secondary }]}>Web (PWA)</Text>
-                <Text style={styles.rowHint}>Configure pelo navegador</Text>
-              </View>
-            </View>
-            <View style={[styles.badge, styles.badgeDisconnected]}>
-              <Text style={[styles.badgeText, styles.badgeTextDisconnected]}>
-                {webPushEnabled ? 'ATIVO' : 'INATIVO'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Email — em breve */}
-          <View style={[styles.channelRow, styles.rowSoon]} pointerEvents="none">
-            <View style={styles.rowLeft}>
-              <Mail size={20} color={colors.text.muted} strokeWidth={2} />
-              <Text style={styles.rowLabel}>Email</Text>
-            </View>
-            <View style={[styles.badge, styles.badgeDisconnected]}>
-              <Text style={[styles.badgeText, styles.badgeTextDisconnected]}>EM BREVE</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Aviso canal mínimo */}
-        {showChannelWarning && (
-          <Text style={styles.channelWarning}>
-            Ative ao menos um canal para receber lembretes de dose.
-          </Text>
-        )}
-
-        {/* Modo de envio */}
-        <Text style={styles.sectionLabel}>MODO DE ENVIO</Text>
-        <View style={styles.card}>
-          {MODES.map((m, idx) => (
-            <React.Fragment key={m.value}>
-              <TouchableOpacity
-                style={styles.modeRow}
-                onPress={() => handleModeSelect(m.value)}
-                disabled={!globalEnabled}
-                activeOpacity={0.7}
-                accessibilityLabel={`Modo: ${m.label}`}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: notificationMode === m.value }}
-              >
-                <View style={[styles.radio, notificationMode === m.value && styles.radioActive]}>
-                  {notificationMode === m.value && <View style={styles.radioDot} />}
-                </View>
-                <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
-                  {m.label}
-                </Text>
-              </TouchableOpacity>
-              {idx < MODES.length - 1 && <View style={styles.divider} />}
-            </React.Fragment>
-          ))}
-        </View>
-
-        {/* Hora do resumo — só quando digest_morning */}
-        {notificationMode === 'digest_morning' && globalEnabled && (
-          <>
-            <Text style={styles.sectionLabel}>HORA DO RESUMO DIÁRIO</Text>
-            <View style={[styles.card, styles.timeRow]}>
-              <Text style={styles.rowLabel}>Enviar resumo às</Text>
-              <TimePicker
-                value={digestTime}
-                label="Hora do resumo"
-                onChange={(v) => { setDigestTime(v); persist({ digestTime: v }) }}
-              />
-            </View>
-          </>
-        )}
-
-        {/* Não me incomode */}
-        <Text style={styles.sectionLabel}>NÃO ME INCOMODE</Text>
-        <View style={[styles.card, styles.globalRow]}>
-          <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
-            Silenciar por período
-          </Text>
-          <Switch
-            value={quietHoursEnabled && globalEnabled}
-            onValueChange={handleQuietHoursToggle}
-            disabled={!globalEnabled}
-            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
-            thumbColor={colors.bg.card}
-            accessibilityLabel="Ativar horas de silêncio"
-          />
-        </View>
-
-        {quietHoursEnabled && globalEnabled && (
-          <View style={[styles.card, styles.timeRow]}>
-            <Text style={styles.rowLabel}>Das</Text>
-            <TimePicker
-              value={quietHoursStart}
-              label="Início do silêncio"
-              onChange={(v) => { setQuietHoursStart(v); persist({ quietHoursStart: v }) }}
-            />
-            <Text style={styles.rowLabel}>às</Text>
-            <TimePicker
-              value={quietHoursEnd}
-              label="Fim do silêncio"
-              onChange={(v) => { setQuietHoursEnd(v); persist({ quietHoursEnd: v }) }}
-            />
-          </View>
-        )}
-
-        <View style={{ height: spacing[8] }} />
-      </ScrollView>
-    </ScreenContainer>
+    <NotificationPreferencesContent
+      navigation={navigation}
+      globalEnabled={globalEnabled} mobilePushEnabled={mobilePushEnabled}
+      webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
+      showChannelWarning={showChannelWarning} notificationMode={notificationMode}
+      digestTime={digestTime} quietHoursEnabled={quietHoursEnabled}
+      quietHoursStart={quietHoursStart} quietHoursEnd={quietHoursEnd}
+      handleGlobalToggle={handleGlobalToggle} handleMobilePushToggle={handleMobilePushToggle}
+      handleTelegramPress={handleTelegramPress} handleModeSelect={handleModeSelect}
+      handleQuietHoursToggle={handleQuietHoursToggle}
+      setDigestTime={setDigestTime} setQuietHoursStart={setQuietHoursStart}
+      setQuietHoursEnd={setQuietHoursEnd} persist={persist}
+    />
   )
 }
 

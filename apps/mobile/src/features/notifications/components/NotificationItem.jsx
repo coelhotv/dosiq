@@ -29,6 +29,68 @@ const CTA_MAP = {
   daily_digest:          null,
 }
 
+// Renderiza o rodapé de CTA ou status de dose tomada
+function NotificationItemFooter({ isDoseReminder, wasTaken, groupedComplete, hasNavAction, cta }) {
+  if (isDoseReminder && wasTaken === true) {
+    return <Text style={styles.takenLabel}>✓ Tomada</Text>
+  }
+  if (groupedComplete) {
+    return (
+      <Text style={[styles.takenLabel, styles.takenFull]}>
+        {wasTaken.taken}/{wasTaken.total} tomadas
+      </Text>
+    )
+  }
+  if (hasNavAction) {
+    return (
+      <View style={styles.actionLabel}>
+        {typeof wasTaken === 'object' && (
+          <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
+        )}
+        <Text style={styles.actionText}>{cta.label}</Text>
+        <ChevronRight size={13} color={colors.brand.primary} strokeWidth={2.5} />
+      </View>
+    )
+  }
+  return null
+}
+
+// Renderiza o corpo da notificação (doses ou body text)
+function NotificationItemBody({ doses, displayBody, isDailyDigest, expanded, onToggleExpanded }) {
+  if (doses?.length > 0) {
+    return (
+      <View style={styles.doseList}>
+        {doses.map((dose, i) => (
+          <Text key={i} style={styles.doseItem}>
+            {`${dose.dosage}x ${dose.medicineName}`}
+          </Text>
+        ))}
+      </View>
+    )
+  }
+  if (!displayBody) return null
+  return (
+    <>
+      <Text
+        style={styles.preview}
+        numberOfLines={isDailyDigest && !expanded ? 2 : undefined}
+      >
+        {displayBody}
+      </Text>
+      {isDailyDigest && (
+        <Pressable
+          onPress={onToggleExpanded}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Ver menos' : 'Ver mais'}
+          hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+        >
+          <Text style={styles.expandBtn}>{expanded ? 'Ver menos' : 'Ver mais'}</Text>
+        </Pressable>
+      )}
+    </>
+  )
+}
+
 function resolveTitle(notification, label) {
   const { notification_type, medicine_name, protocol_name } = notification
   switch (notification_type) {
@@ -98,52 +160,23 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
         </View>
 
         {/* Corpo */}
-        {doses?.length > 0 ? (
-          <View style={styles.doseList}>
-            {doses.map((dose, i) => (
-              <Text key={i} style={styles.doseItem}>
-                {`${dose.dosage}x ${dose.medicineName}`}
-              </Text>
-            ))}
-          </View>
-        ) : displayBody ? (
-          <>
-            <Text
-              style={styles.preview}
-              numberOfLines={isDailyDigest && !expanded ? 2 : undefined}
-            >
-              {displayBody}
-            </Text>
-            {isDailyDigest && (
-              <Pressable
-                onPress={() => setExpanded(prev => !prev)}
-                accessibilityRole="button"
-                accessibilityLabel={expanded ? 'Ver menos' : 'Ver mais'}
-                hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
-              >
-                <Text style={styles.expandBtn}>{expanded ? 'Ver menos' : 'Ver mais'}</Text>
-              </Pressable>
-            )}
-          </>
-        ) : null}
+        <NotificationItemBody
+          doses={doses}
+          displayBody={displayBody}
+          isDailyDigest={isDailyDigest}
+          expanded={expanded}
+          onToggleExpanded={() => setExpanded(prev => !prev)}
+        />
 
         {/* Rodapé: CTA ou confirmação de dose tomada */}
         <View style={styles.footer}>
-          {isDoseReminder && wasTaken === true ? (
-            <Text style={styles.takenLabel}>✓ Tomada</Text>
-          ) : groupedComplete ? (
-            <Text style={[styles.takenLabel, styles.takenFull]}>
-              {wasTaken.taken}/{wasTaken.total} tomadas
-            </Text>
-          ) : hasNavAction ? (
-            <View style={styles.actionLabel}>
-              {typeof wasTaken === 'object' && (
-                <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
-              )}
-              <Text style={styles.actionText}>{cta.label}</Text>
-              <ChevronRight size={13} color={colors.brand.primary} strokeWidth={2.5} />
-            </View>
-          ) : null}
+          <NotificationItemFooter
+            isDoseReminder={isDoseReminder}
+            wasTaken={wasTaken}
+            groupedComplete={groupedComplete}
+            hasNavAction={hasNavAction}
+            cta={cta}
+          />
         </View>
       </View>
     </View>

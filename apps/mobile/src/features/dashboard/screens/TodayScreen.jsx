@@ -31,6 +31,206 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
+// Agrupa doses da timeline por turno e computa contadores
+function _groupTimeline(timeline, isComplex) {
+  const counts = {}
+  const grouped = timeline.reduce((acc, dose) => {
+    const shift = getPeriodFromTime(dose.scheduledTime)
+    if (!acc[shift]) {
+      acc[shift] = []
+      counts[shift] = { total: 0, taken: 0 }
+    }
+    acc[shift].push(dose)
+    counts[shift].total += 1
+    if (dose.isRegistered) counts[shift].taken += 1
+    return acc
+  }, {})
+
+  const allShifts = ['Manhã', 'Tarde', 'Noite', 'Madrugada']
+  const shifts = isComplex
+    ? allShifts
+    : allShifts.filter(s => grouped[s] && grouped[s].length > 0)
+
+  return { groupedTimeline: grouped, shifts, countsByShift: counts }
+}
+
+// Calcula estado inicial de expansão dos turnos
+function _computeInitialExpanded(shifts, groupedTimeline) {
+  const now = getNow()
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const currentShift = getPeriodFromTime(timeStr)
+
+  const initial = {}
+  shifts.forEach(shift => {
+    const doses = groupedTimeline[shift] || []
+    const isCurrent = shift === currentShift
+    const hasUrgent = doses.some(d => d.timelineStatus === 'ATRASADA' || d.timelineStatus === 'PROXIMA')
+    initial[shift] = isCurrent || hasUrgent
+  })
+  return initial
+}
+
+// Renderiza conteúdo de um turno expandido (Complex mode)
+function _renderShiftDoses(doses, handleOpenRegister) {
+  if (doses.length === 0) {
+    return (
+      <View style={styles.emptyShiftContainer}>
+        <Text style={styles.emptyShiftText}>Nenhum medicamento para este turno</Text>
+      </View>
+    )
+  }
+  return doses.map((dose) => (
+    <DoseTimelineCard key={dose.id} dose={dose} onRegister={handleOpenRegister} />
+  ))
+}
+
+// Resolve o modal a abrir a partir dos params de deeplink
+function _resolveDeeplinkModal(params, protocols, setBulkModal, setModalProtocol, setModalScheduledTime) {
+  if (params.screen === 'bulk-plan' && params.planId) {
+    setBulkModal({
+      mode: 'plan',
+      planId: params.planId,
+      scheduledTime: params.at ?? '',
+      treatmentPlanName: params.treatmentPlanName,
+    })
+  } else if (params.screen === 'bulk-misc') {
+    setBulkModal({
+      mode: 'misc',
+      protocolIds: params.protocolIds ?? [],
+      scheduledTime: params.at ?? '',
+    })
+  } else if (params.screen === 'dose-individual' && params.protocolId) {
+    const protocol = protocols.find(p => p.id === params.protocolId)
+    if (protocol) {
+      setModalProtocol(protocol)
+      setModalScheduledTime(params.at ?? null)
+    }
+  }
+}
+
+// Resolve o nome do medicamento do protocolo selecionado
+function _resolveMedicineName(modalProtocol, medicines) {
+  if (!modalProtocol) return ''
+  return medicines[modalProtocol.medicine_id]?.name ?? 'Medicamento'
+}
+
+// Extrai dados do header a partir dos dados do usuário
+function _buildHeaderData(user) {
+  const fullUserName = user?.name || user?.email?.split('@')[0] || 'Usuário'
+  const firstName = fullUserName.trim().split(' ')[0]
+  const todayFormatted = getNow().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return { greeting: `Olá, ${firstName}`, todayFormatted }
+}
+
+// Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
+function TodayScreenContent({
+  data, stale, isDaySegregated, loading, refresh,
+  timeline, stockAlerts, protocols, stats, medicines,
+  isComplex, shifts, groupedTimeline, countsByShift,
+  expandedShifts, toggleShift,
+  modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
+  bulkModal, setBulkModal,
+}) {
+  const priorityDoses = timeline
+    .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
+    .slice(0, 3)
+  const { greeting, todayFormatted } = _buildHeaderData(data?.user)
+  const adherenceTrend = stats.hasPreviousData
+    ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
+    : 'Mantendo a média'
+  const bulkMode = bulkModal?.mode ?? 'plan'
+  const userId = data?.user?.id ?? ''
+
+  return (
+    <ScreenContainer>
+      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={refresh} tintColor={colors.status.success} />}
+      >
+        <View style={styles.header}>
+          <Text style={styles.greeting}>{greeting}</Text>
+          <Text style={styles.date}>{todayFormatted}</Text>
+        </View>
+        <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
+        <StockAlertInline alerts={stockAlerts} />
+        {priorityDoses.length > 0 && (
+          <HeroDoseCard doses={priorityDoses} onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime)} />
+        )}
+        <View style={styles.agendaHeader}>
+          <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
+        </View>
+        <TodayAgendaContent
+          protocols={protocols} isComplex={isComplex} timeline={timeline}
+          shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
+          expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
+        />
+      </ScrollView>
+      <DoseRegisterModal
+        visible={modalProtocol !== null}
+        protocol={modalProtocol}
+        scheduledTime={modalScheduledTime}
+        medicineName={medicineName}
+        onClose={handleCloseRegister}
+        onSuccess={handleRegisterSuccess}
+      />
+      <BulkDoseRegisterModal
+        visible={bulkModal !== null}
+        mode={bulkMode}
+        planId={bulkModal?.planId}
+        protocolIds={bulkModal?.protocolIds}
+        scheduledTime={bulkModal?.scheduledTime ?? ''}
+        treatmentPlanName={bulkModal?.treatmentPlanName}
+        userId={userId}
+        onClose={() => setBulkModal(null)}
+        onSuccess={() => { setBulkModal(null); refresh() }}
+      />
+    </ScreenContainer>
+  )
+}
+
+// Renderiza a agenda de doses (Simple ou Complex mode)
+function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister }) {
+  if (protocols.length === 0) {
+    return (
+      <EmptyState
+        icon={<Pill size={48} color={colors.status.success} />}
+        message={'Sem tratamentos ativos.\nAdicione tratamentos na versão web.'}
+      />
+    )
+  }
+  if (!isComplex) {
+    return (
+      <View style={styles.simpleList}>
+        {timeline.map((dose) => (
+          <DoseTimelineCard key={dose.id} dose={dose} onRegister={handleOpenRegister} />
+        ))}
+      </View>
+    )
+  }
+  return shifts.map(shift => {
+    const doses = groupedTimeline[shift] || []
+    const isExpanded = expandedShifts[shift]
+    const shiftCounts = countsByShift[shift] || { total: 0, taken: 0 }
+    return (
+      <View key={shift} style={styles.shiftContainer}>
+        <TimeBlockSeparator
+          type={shift}
+          isExpanded={isExpanded}
+          onToggle={() => toggleShift(shift)}
+          isDisabled={doses.length === 0}
+          counts={shiftCounts.total > 0 ? shiftCounts : null}
+        />
+        {isExpanded && (
+          <View style={styles.dosesList}>
+            {_renderShiftDoses(doses, handleOpenRegister)}
+          </View>
+        )}
+      </View>
+    )
+  })
+}
+
 export default function TodayScreen({ route, navigation }) {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
@@ -41,95 +241,48 @@ export default function TodayScreen({ route, navigation }) {
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
-  const timeline = useMemo(() => data?.timeline ?? [], [data?.timeline])
+  // Pre-resolve optional chains do data para reduzir complexidade ciclomática
+  const rawTimeline = data?.timeline
+  const rawProtocols = data?.protocols
+  const rawMedicines = data?.medicines
+  const rawStats = data?.stats
+  const rawUser = data?.user
+  const currentDay = data?.localDay
+
+  const timeline = useMemo(() => rawTimeline ?? [], [rawTimeline])
   const stockAlerts = data?.stockAlerts ?? []
-  const protocols = useMemo(() => data?.protocols ?? [], [data?.protocols])
-  const medicines = useMemo(() => data?.medicines ?? {}, [data?.medicines])
-  const stats = data?.stats ?? { expected: 0, taken: 0, score: 0 }
+  const protocols = useMemo(() => rawProtocols ?? [], [rawProtocols])
+  const medicines = useMemo(() => rawMedicines ?? {}, [rawMedicines])
+  const stats = rawStats ?? { expected: 0, taken: 0, score: 0 }
 
   // 1. Lógica de Persona: Threshold de complexidade adaptativa (Wave 10A)
+  const complexityOverride = rawUser?.complexity_override
   const isComplex = useMemo(() => {
-    if (data?.user?.complexity_override) {
-      return data.user.complexity_override === 'complex'
-    }
+    if (complexityOverride) return complexityOverride === 'complex'
     return Object.keys(medicines).length > 3
-  }, [medicines, data?.user?.complexity_override])
+  }, [medicines, complexityOverride])
 
-  const { groupedTimeline, shifts, countsByShift } = useMemo(() => {
-    const counts = {}
-    const grouped = timeline.reduce((acc, dose) => {
-      const shift = getPeriodFromTime(dose.scheduledTime)
-      if (!acc[shift]) {
-        acc[shift] = []
-        counts[shift] = { total: 0, taken: 0 }
-      }
-      acc[shift].push(dose)
-      
-      // Acumular contadores (Wave v0.1.5 Otimizada)
-      counts[shift].total += 1
-      if (dose.isRegistered) counts[shift].taken += 1
-      
-      return acc
-    }, {})
-    
-    // Carlos (isComplex) vê todos os turnos principais. Dona Maria vê apenas onde há doses.
-    const allShifts = ['Manhã', 'Tarde', 'Noite', 'Madrugada']
-    const activeShifts = isComplex 
-      ? allShifts 
-      : allShifts.filter(s => grouped[s] && grouped[s].length > 0)
-    
-    return { groupedTimeline: grouped, shifts: activeShifts, countsByShift: counts }
-  }, [timeline, isComplex])
+  // Carlos (isComplex) vê todos os turnos. Dona Maria vê apenas onde há doses.
+  const { groupedTimeline, shifts, countsByShift } = useMemo(
+    () => _groupTimeline(timeline, isComplex),
+    [timeline, isComplex]
+  )
 
   // Heurística de Expansão Inicial - Ajuste de Estado no Render (React 19 Pattern)
-  const currentDay = data?.localDay
   if (currentDay && currentDay !== lastHeuristicDay) {
-    const now = getNow()
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-    const currentShift = getPeriodFromTime(timeStr)
-
-    const initial = {}
-    shifts.forEach(shift => {
-      const doses = groupedTimeline[shift] || []
-      const isCurrent = shift === currentShift
-      const hasUrgent = doses.some(d => d.timelineStatus === 'ATRASADA' || d.timelineStatus === 'PROXIMA')
-      initial[shift] = isCurrent || hasUrgent
-    })
-    
-    setExpandedShifts(initial)
+    setExpandedShifts(_computeInitialExpanded(shifts, groupedTimeline))
     setLastHeuristicDay(currentDay)
   }
 
   // 2. Deeplink params de push notification (N1.4 → N1.5)
-  // Abre BulkDoseRegisterModal automaticamente quando a tela é navegada via push tap
+  const routeParams = route?.params
   useEffect(() => {
-    const params = route?.params
-    if (!params?.screen) return
+    if (!routeParams?.screen) return
     setTimeout(() => {
-      if (params.screen === 'bulk-plan' && params.planId) {
-        setBulkModal({
-          mode: 'plan',
-          planId: params.planId,
-          scheduledTime: params.at ?? '',
-          treatmentPlanName: params.treatmentPlanName,
-        })
-      } else if (params.screen === 'bulk-misc') {
-        setBulkModal({
-          mode: 'misc',
-          protocolIds: params.protocolIds ?? [],
-          scheduledTime: params.at ?? '',
-        })
-      } else if (params.screen === 'dose-individual' && params.protocolId) {
-        const protocol = protocols.find(p => p.id === params.protocolId)
-        if (protocol) {
-          setModalProtocol(protocol)
-          setModalScheduledTime(params.at ?? null)
-        }
-      }
-      // Limpar params após consumo para evitar re-abertura em back-navigate
+      _resolveDeeplinkModal(routeParams, protocols, setBulkModal, setModalProtocol, setModalScheduledTime)
       navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
     }, 0)
-  }, [route?.params, navigation, protocols])
+  }, [routeParams, navigation, protocols])
 
 
   const toggleShift = useCallback((shift) => {
@@ -143,20 +296,16 @@ export default function TodayScreen({ route, navigation }) {
   if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
-  // Doses prioritárias (Hero)
-  const priorityDoses = timeline
-    .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
-    .slice(0, 3)
-
-  // Dados do Cabeçalho (Personalização H8.7)
-  const fullUserName = data?.user?.name || data?.user?.email?.split('@')[0] || 'Usuário'
-  const firstName = fullUserName.trim().split(' ')[0]
-  const todayFormatted = getNow().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
-  const greeting = `Olá, ${firstName}`
+  const medicineName = _resolveMedicineName(modalProtocol, medicines)
 
   function handleOpenRegister(protocol, scheduledTime) {
     setModalProtocol(protocol)
     setModalScheduledTime(scheduledTime)
+  }
+
+  function handleCloseRegister() {
+    setModalProtocol(null)
+    setModalScheduledTime(null)
   }
 
   function handleRegisterSuccess() {
@@ -166,130 +315,16 @@ export default function TodayScreen({ route, navigation }) {
   }
 
   return (
-    <ScreenContainer>
-      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
-
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading && !!data}
-            onRefresh={refresh}
-            tintColor={colors.status.success}
-          />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.date}>{todayFormatted}</Text>
-        </View>
-
-        <AdherenceDayCard 
-          score={stats.score} 
-          trend={
-            stats.hasPreviousData 
-              ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
-              : "Mantendo a média"
-          }
-        />
-
-        <StockAlertInline alerts={stockAlerts} />
-
-        {priorityDoses.length > 0 && (
-          <HeroDoseCard 
-            doses={priorityDoses} 
-            onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime)} 
-          />
-        )}
-
-        <View style={styles.agendaHeader}>
-          <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
-        </View>
-
-        {protocols.length === 0 ? (
-          <EmptyState
-            icon={<Pill size={48} color={colors.status.success} />}
-            message={'Sem tratamentos ativos.\nAdicione tratamentos na versão web.'}
-          />
-        ) : !isComplex ? (
-          /* MODO SIMPLE: Dona Maria (Lista direta cronológica) */
-          <View style={styles.simpleList}>
-            {timeline.map((dose) => (
-              <DoseTimelineCard 
-                key={dose.id} 
-                dose={dose} 
-                onRegister={handleOpenRegister}
-              />
-            ))}
-          </View>
-        ) : (
-          /* MODO COMPLEX: Carlos (Agrupado por turnos com Accordion) */
-          shifts.map(shift => {
-            const doses = groupedTimeline[shift] || []
-            const isExpanded = expandedShifts[shift]
-            const isEmpty = doses.length === 0
-            const shiftCounts = countsByShift[shift] || { total: 0, taken: 0 }
-
-            return (
-              <View key={shift} style={styles.shiftContainer}>
-                <TimeBlockSeparator 
-                  type={shift} 
-                  isExpanded={isExpanded}
-                  onToggle={() => toggleShift(shift)}
-                  isDisabled={isEmpty}
-                  counts={shiftCounts.total > 0 ? shiftCounts : null}
-                />
-                
-                {isExpanded && (
-                  <View style={styles.dosesList}>
-                    {isEmpty ? (
-                      <View style={styles.emptyShiftContainer}>
-                        <Text style={styles.emptyShiftText}>Nenhum medicamento para este turno</Text>
-                      </View>
-                    ) : (
-                      doses.map((dose) => (
-                        <DoseTimelineCard 
-                          key={dose.id} 
-                          dose={dose} 
-                          onRegister={handleOpenRegister}
-                        />
-                      ))
-                    )}
-                  </View>
-                )}
-              </View>
-            )
-          })
-        )}
-      </ScrollView>
-
-      <DoseRegisterModal
-        visible={modalProtocol !== null}
-        protocol={modalProtocol}
-        scheduledTime={modalScheduledTime}
-        medicineName={modalProtocol ? (medicines[modalProtocol.medicine_id]?.name ?? 'Medicamento') : ''}
-        onClose={() => {
-          setModalProtocol(null)
-          setModalScheduledTime(null)
-        }}
-        onSuccess={handleRegisterSuccess}
-      />
-
-      <BulkDoseRegisterModal
-        visible={bulkModal !== null}
-        mode={bulkModal?.mode ?? 'plan'}
-        planId={bulkModal?.planId}
-        protocolIds={bulkModal?.protocolIds}
-        scheduledTime={bulkModal?.scheduledTime ?? ''}
-        treatmentPlanName={bulkModal?.treatmentPlanName}
-        userId={data?.user?.id ?? ''}
-        onClose={() => setBulkModal(null)}
-        onSuccess={() => {
-          setBulkModal(null)
-          refresh()
-        }}
-      />
-    </ScreenContainer>
+    <TodayScreenContent
+      data={data} stale={stale} isDaySegregated={isDaySegregated} loading={loading} refresh={refresh}
+      timeline={timeline} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
+      isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
+      countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
+      modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime}
+      medicineName={medicineName} handleOpenRegister={handleOpenRegister}
+      handleRegisterSuccess={handleRegisterSuccess} handleCloseRegister={handleCloseRegister}
+      bulkModal={bulkModal} setBulkModal={setBulkModal}
+    />
   )
 }
 

@@ -62,6 +62,72 @@ const FILTERS = [
 const getStorageKey = (userId) =>
   userId ? `@dosiq/notif-last-seen:${userId}` : '@dosiq/notif-last-seen'
 
+// Configura timer de meia-noite + AppState listener para atualizar localDay
+function _setupMidnightRefresh(setLocalDay) {
+  let midnightTimer
+  const schedule = () => {
+    const now = getNow()
+    const next = cloneDate(now)
+    next.setDate(next.getDate() + 1)
+    next.setHours(0, 0, 0, 0)
+    const delay = next.getTime() - now.getTime()
+    midnightTimer = setTimeout(() => {
+      setLocalDay(getTodayLocal())
+      schedule()
+    }, delay + 1000)
+  }
+  schedule()
+  const sub = AppState.addEventListener('change', (state) => {
+    if (state === 'active') setLocalDay(getTodayLocal())
+  })
+  return () => { sub.remove(); clearTimeout(midnightTimer) }
+}
+
+// Aplica filtro ativo sobre as sections agrupadas
+function _applyFilter(sections, activeFilter, lastSeen) {
+  const lastSeenTime = lastSeen ? parseISO(lastSeen).getTime() : null
+
+  const filterItem = (item) => {
+    if (activeFilter === 'all') return true
+    if (activeFilter === 'unread') {
+      if (!item.sent_at) return false
+      if (!lastSeenTime) return true
+      return parseISO(item.sent_at).getTime() > lastSeenTime
+    }
+    if (activeFilter === 'doses') return DOSE_KINDS.includes(item.notification_type)
+    if (activeFilter === 'stock') return item.notification_type === 'stock_alert'
+    return true
+  }
+
+  return sections
+    .map(s => ({ ...s, data: s.data.filter(filterItem) }))
+    .filter(s => s.data.length > 0)
+}
+
+// Resolve params de navegação a partir de um item de notificação
+function _buildNavParams(item) {
+  const d = parseISO(item.sent_at)
+  const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const params = {}
+
+  if (item.notification_type === 'dose_reminder' && item.protocol_id) {
+    params.screen = 'dose-individual'
+    params.protocolId = item.protocol_id
+    params.at = hhmm
+  } else if (item.notification_type === 'dose_reminder_by_plan') {
+    params.screen = 'bulk-plan'
+    params.planId = item.treatment_plan_id
+    params.treatmentPlanName = item.treatment_plan_name
+    params.at = hhmm
+  } else if (item.notification_type === 'dose_reminder_misc') {
+    params.screen = 'bulk-misc'
+    params.protocolIds = item.provider_metadata?.protocol_ids ?? []
+    params.at = hhmm
+  }
+
+  return params
+}
+
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
 
 function groupByDay(notifications) {
@@ -119,6 +185,76 @@ function buildWasTakenMap(notifications, doseLogs) {
   return map
 }
 
+// ─── Sub-componentes ───────────────────────────────────────────────────────────
+
+function NotificationInboxHeader({ navigation, unreadCount, loading }) {
+  const primaryColor = colors.brand.primary
+  return (
+    <View style={styles.header}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.iconButton}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <ArrowLeft size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
+      </TouchableOpacity>
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>Avisos</Text>
+        {unreadCount > 0 && !loading && (
+          <Text style={[styles.subtitle, { color: primaryColor }]}>
+            {unreadCount} {unreadCount === 1 ? 'não lida' : 'não lidas'}
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity
+        onPress={() => navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)}
+        style={styles.iconButton}
+        accessibilityRole="button"
+        accessibilityLabel="Preferências de notificação"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Settings size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function NotificationInboxFilters({ activeFilter, onFilter }) {
+  const primaryColor = colors.brand.primary
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.filtersScroll}
+      contentContainerStyle={styles.filtersContent}
+    >
+      {FILTERS.map((f) => {
+        const isActive = activeFilter === f.key
+        return (
+          <TouchableOpacity
+            key={f.key}
+            onPress={() => onFilter(f.key)}
+            style={[
+              styles.chip,
+              isActive
+                ? { backgroundColor: primaryColor, borderColor: primaryColor }
+                : styles.chipInactive,
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isActive }}
+          >
+            <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>
+              {f.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </ScrollView>
+  )
+}
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function NotificationInboxScreen({ navigation, route }) {
@@ -143,26 +279,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
   // localDay: detecta virada de dia via AppState + timer de meia-noite (R5-008)
   const [localDay, setLocalDay] = useState(getTodayLocal)
-  useEffect(() => {
-    let midnightTimer
-    const schedule = () => {
-      const now = getNow()
-      const next = cloneDate(now)
-      next.setDate(next.getDate() + 1)
-      next.setHours(0, 0, 0, 0)
-      
-      const delay = next.getTime() - now.getTime()
-      midnightTimer = setTimeout(() => {
-        setLocalDay(getTodayLocal())
-        schedule()
-      }, delay + 1000)
-    }
-    schedule()
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') setLocalDay(getTodayLocal())
-    })
-    return () => { sub.remove(); clearTimeout(midnightTimer) }
-  }, [])
+  useEffect(() => _setupMidnightRefresh(setLocalDay), [])
 
   // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders (R-010, R-028)
   const [doseLogs, setDoseLogs] = useState([])
@@ -207,26 +324,10 @@ export default function NotificationInboxScreen({ navigation, route }) {
   )
 
   // Sections com filtro aplicado
-  const filteredSections = useMemo(() => {
-    const lastSeenTime = lastSeen ? parseISO(lastSeen).getTime() : null
-
-    const filterItem = (item) => {
-      if (activeFilter === 'all')    return true
-      if (activeFilter === 'unread') {
-        if (!item.sent_at) return false
-        // Antes de markAllRead ser persistido, lastSeenTime pode ser null → tudo é não lido
-        if (!lastSeenTime) return true
-        return parseISO(item.sent_at).getTime() > lastSeenTime
-      }
-      if (activeFilter === 'doses')  return DOSE_KINDS.includes(item.notification_type)
-      if (activeFilter === 'stock')  return item.notification_type === 'stock_alert'
-      return true
-    }
-
-    return sections
-      .map(s => ({ ...s, data: s.data.filter(filterItem) }))
-      .filter(s => s.data.length > 0)
-  }, [sections, activeFilter, lastSeen])
+  const filteredSections = useMemo(
+    () => _applyFilter(sections, activeFilter, lastSeen),
+    [sections, activeFilter, lastSeen]
+  )
 
   const wasTakenMap = useMemo(
     () => buildWasTakenMap(data ?? [], doseLogs),
@@ -240,26 +341,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
       onNavigate={(view) => {
         const target = DEEP_LINK_TARGETS[view]
         if (!target) return
-        const params = {}
-        const d = parseISO(item.sent_at)
-        const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-
-        if (item.notification_type === 'dose_reminder' && item.protocol_id) {
-          params.screen = 'dose-individual'
-          params.protocolId = item.protocol_id
-          params.at = hhmm
-        } else if (item.notification_type.startsWith('dose_reminder_')) {
-          params.at = hhmm
-          if (item.notification_type === 'dose_reminder_by_plan') {
-            params.screen = 'bulk-plan'
-            params.planId = item.treatment_plan_id
-            params.treatmentPlanName = item.treatment_plan_name
-          } else {
-            params.screen = 'bulk-misc'
-            params.protocolIds = item.provider_metadata?.protocol_ids ?? []
-          }
-        }
-        navigation.navigate(target, params)
+        navigation.navigate(target, _buildNavParams(item))
       }}
     />
   ), [navigation, wasTakenMap])
@@ -291,37 +373,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Voltar"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ArrowLeft size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
-        </TouchableOpacity>
-
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>Avisos</Text>
-          {unreadCount > 0 && !loading && (
-            <Text style={[styles.subtitle, { color: primaryColor }]}>
-              {unreadCount} {unreadCount === 1 ? 'não lida' : 'não lidas'}
-            </Text>
-          )}
-        </View>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Preferências de notificação"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Settings size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
-        </TouchableOpacity>
-      </View>
+      <NotificationInboxHeader navigation={navigation} unreadCount={unreadCount} loading={loading} />
 
       {/* ── Banner offline ── */}
       {stale && (
@@ -331,35 +383,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* ── Chips de filtro ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersScroll}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {FILTERS.map((f) => {
-          const isActive = activeFilter === f.key
-          return (
-            <TouchableOpacity
-              key={f.key}
-              onPress={() => setActiveFilter(f.key)}
-              style={[
-                styles.chip,
-                isActive
-                  ? { backgroundColor: primaryColor, borderColor: primaryColor }
-                  : styles.chipInactive,
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
-            >
-              <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
-      </ScrollView>
+      <NotificationInboxFilters activeFilter={activeFilter} onFilter={setActiveFilter} />
 
       {/* ── Conteúdo principal ── */}
       {loading && !data && (
