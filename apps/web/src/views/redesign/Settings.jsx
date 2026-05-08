@@ -9,7 +9,7 @@ import AdminSection from '@settings/sections/AdminSection'
 import { useSettingsState } from '@features/settings/hooks/useSettingsState'
 import './settings/SettingsRedesign.css'
 
-export default function SettingsRedesign({ onNavigate }) {
+export default function SettingsRedesign({ onNavigate, mode }) {
   const { loading, isAdmin, dlqCount, message, notification, integration, preference } = useSettingsState()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [newPassword, setNewPassword] = useState('')
@@ -44,6 +44,17 @@ export default function SettingsRedesign({ onNavigate }) {
       />
       {loading ? (
         <div className="sr-loading">Carregando configurações...</div>
+      ) : mode === 'account' ? (
+        <>
+          <PreferenceSection {...preference} />
+          <AccountSection
+            showPasswordForm={showPasswordForm} setShowPasswordForm={setShowPasswordForm}
+            handleUpdatePassword={handleUpdatePassword} newPassword={newPassword}
+            setNewPassword={setNewPassword} handleLogout={handleLogout}
+          />
+          <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
+          <footer className="sr-footer">Dosiq v{import.meta.env.VITE_APP_VERSION ?? '3.3.0'} • Design Santuário</footer>
+        </>
       ) : (
         <>
           <NotificationSection {...notification} />

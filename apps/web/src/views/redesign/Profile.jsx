@@ -26,7 +26,7 @@ export default function Profile({ onNavigate }) {
     <div className="ph-view">
       <div className="ph-mobile-header">
         <h1 className="ph-mobile-header__title">Perfil</h1>
-        <button className="ph-mobile-header__settings" onClick={() => onNavigate('settings')} aria-label="Configurações" type="button">
+        <button className="ph-mobile-header__settings" onClick={() => onNavigate('account-settings')} aria-label="Configurações da conta" type="button">
           <Settings size={24} />
         </button>
       </div>
