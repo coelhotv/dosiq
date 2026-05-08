@@ -157,47 +157,57 @@ global.SharedArrayBuffer = global.SharedArrayBuffer || global.ArrayBuffer
   // Se não capturarmos, toString() → this.href → Hermes invoca toString() → loop infinito (stack overflow).
   var _nativeToString = URL.prototype.toString
 
-  // toString() sobreescrito: constrói URL com _searchPairs se existirem
-  // Usa _nativeToString para obter href base (evita recursão via href getter nativo)
-  URL.prototype.toString = function () {
-    var href = _nativeToString.call(this)   // href nativo, sem passar por este override
-    
-    // R-118: Bypass para URLs do Metro/DevServer
-    if (href.indexOf('192.168.') >= 0 || href.indexOf('localhost') >= 0 || href.indexOf('127.0.0.1') >= 0 || href.indexOf(':8081') >= 0) {
-      return href
-    }
+  // R-118: Bypass para URLs do Metro/DevServer
+  function _isDevServerUrl(href) {
+    return href.indexOf('192.168.') >= 0 || href.indexOf('localhost') >= 0 ||
+      href.indexOf('127.0.0.1') >= 0 || href.indexOf(':8081') >= 0
+  }
 
+  // Extrai {base, search, hash} de uma href string
+  function _parseHrefParts(href) {
     var q = href.indexOf('?')
     var h = href.indexOf('#')
     var base = q >= 0 ? href.slice(0, q) : (h >= 0 ? href.slice(0, h) : href)
     var search = q >= 0 ? (h >= 0 ? href.slice(q, h) : href.slice(q)) : ''
     var hash = h >= 0 ? href.slice(h) : ''
+    return { base: base, search: search, hash: hash }
+  }
 
-    // R-168: Hermes normaliza URLs adicionando '/' no fim do path (ex: /protocols → /protocols/).
-    // PostgREST rejeita /protocols/?select=... ou /rpc/func/ com PGRST125.
-    // Remover barra final do Path se existir (e não for raiz do host).
-    if (base.charAt(base.length - 1) === '/') {
-      var afterProto = base.indexOf('//') + 2
-      var firstPathSlash = base.indexOf('/', afterProto)
-      if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
-        base = base.slice(0, -1)
-      }
+  // R-168: Hermes normaliza URLs adicionando '/' no fim do path — PostgREST rejeita com PGRST125.
+  function _stripTrailingPathSlash(base) {
+    if (base.charAt(base.length - 1) !== '/') return base
+    var afterProto = base.indexOf('//') + 2
+    var firstPathSlash = base.indexOf('/', afterProto)
+    if (firstPathSlash >= 0 && firstPathSlash < base.length - 1) {
+      return base.slice(0, -1)
     }
+    return base
+  }
 
-    // Se temos pares acumulados, reconstruímos o search a partir de _searchPairs
-    if (this._searchPairs && this._searchPairs.length) {
-      var pairs = this._searchPairs
-      var qs = ''
-      for (var i = 0; i < pairs.length; i++) {
-        if (i) qs += '&'
-        qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
-      }
-      search = '?' + qs
+  // Serializa _searchPairs em query string
+  function _buildSearchString(pairs) {
+    var qs = ''
+    for (var i = 0; i < pairs.length; i++) {
+      if (i) qs += '&'
+      qs += encodeURIComponent(pairs[i][0]) + '=' + encodeURIComponent(pairs[i][1])
     }
+    return '?' + qs
+  }
 
-    var result = base + search + hash
+  // toString() sobreescrito: constrói URL com _searchPairs se existirem
+  // Usa _nativeToString para obter href base (evita recursão via href getter nativo)
+  URL.prototype.toString = function () {
+    var href = _nativeToString.call(this)   // href nativo, sem passar por este override
+    if (_isDevServerUrl(href)) return href
+
+    var parts = _parseHrefParts(href)
+    var base = _stripTrailingPathSlash(parts.base)
+    var search = this._searchPairs && this._searchPairs.length
+      ? _buildSearchString(this._searchPairs)
+      : parts.search
+
+    var result = base + search + parts.hash
     if (__DEV__) {
-      // Logar URLs do Supabase para debug de PGRST125
       if (result.indexOf('supabase.co') >= 0) {
         console.info('[sp-tostring] result:', result)
       }
