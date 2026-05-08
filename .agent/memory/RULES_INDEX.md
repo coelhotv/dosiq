@@ -119,6 +119,7 @@
 - **[R-177]** Agentes DEVEM usar primariamente o path ~/git-icloud/dosiq/ para esse pro... -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
 - **[R-201]** Secure Token Generation: Use window.crypto.getRandomValues() for security tokens in the frontend. -> [`rules/process_and_testing/R-201.md`](./rules/process_and_testing/R-201.md)
+- **[R-218]** Sub-agentes DEVEM criar branch de feature, rodar gate, reportar resultado — jamais commitar na main ou abrir PR sem aprovação explícita do agente principal -> [`rules/process_and_testing/R-218.md`](./rules/process_and_testing/R-218.md)
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
@@ -182,3 +183,4 @@
 - **[R-212]** Sempre utilizar o utilitário `rtk` como proxy para comandos CLI para otimizar tokens -> [`rules/process_and_testing/R-212.md`](./rules/process_and_testing/R-212.md)
 - **[R-214]** Branding Isolation: Brand-specific tokens (Comfortaa, Mint colors) MUST be isolated in explicit 'brand' keys and never leak into global UI tokens (primary, background) to preserve app usability. -> [`rules/react_and_ui/R-214.md`](./rules/react_and_ui/R-214.md)
 - **[R-216]** Null-Safe Form Initialization: Always treat initialValues as potentially null or undefined to prevent TypeError when accessing properties. -> [`rules/react_and_ui/R-216.md`](./rules/react_and_ui/R-216.md)
+- **[R-217]** Logout via localStorage cleanup (sb-* keys) + reload — NUNCA usar supabase.auth.signOut() diretamente (Workbox bloqueia /auth/v1/logout) -> [`rules/react_and_ui/R-217.md`](./rules/react_and_ui/R-217.md)
