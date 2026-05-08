@@ -196,8 +196,8 @@
           </p>
           <div class="meta">
             <span>Produto: Dosiq</span>
-            <span>Versão do documento: 0.1</span>
-            <span>Última atualização: 14/04/2026</span>
+            <span>Versão do documento: 0.2</span>
+            <span>Última atualização: 08/05/2026</span>
           </div>
         </div>
       </div>
@@ -254,6 +254,7 @@
             <li>informações básicas de sessão</li>
             <li>identificadores técnicos necessários para funcionamento da conta</li>
             <li>dados necessários para segurança, autenticação e integridade da aplicação</li>
+            <li>tokens ou identificadores necessários para notificações, quando o usuário ativar esse recurso</li>
           </ul>
 
           <h3>3.4. O que o app não faz por padrão</h3>
@@ -273,6 +274,7 @@
             <li>exibir tratamentos ativos</li>
             <li>controlar estoque de medicamentos</li>
             <li>manter sincronização entre dispositivos, quando aplicável</li>
+            <li>enviar lembretes e notificações configurados pelo usuário</li>
             <li>oferecer suporte ao usuário</li>
             <li>cumprir obrigações legais e de segurança, quando necessário</li>
           </ul>
@@ -310,6 +312,11 @@
           <p>
             No estado atual do projeto, parte central da persistência e autenticação é operada com
             apoio de infraestrutura Supabase.
+          </p>
+          <p>
+            Quando notificações, hospedagem, monitoramento técnico ou outros recursos auxiliares
+            forem utilizados, os respectivos provedores poderão tratar somente os dados necessários
+            para entregar esses recursos e manter a segurança da aplicação.
           </p>
         </section>
 
@@ -360,11 +367,22 @@
         <section class="section">
           <h2>10. Exclusão de conta e dados</h2>
           <p>
-            No período de MVP e beta, o processo de exclusão de conta pode ocorrer inicialmente por
-            solicitação ao suporte.
+            O usuário pode solicitar a exclusão da conta e dos dados pessoais associados ao Dosiq
+            a qualquer momento. Para fazer a solicitação, envie um e-mail para
+            <a href="mailto:contact@coelho.me">contact@coelho.me</a> com o assunto
+            "Exclusão de conta e dados" e informe o e-mail usado no cadastro.
+          </p>
+          <p>
+            Após receber a solicitação, o Dosiq poderá pedir confirmação de identidade para proteger
+            a conta contra pedidos indevidos. Confirmada a solicitação, serão apagados ou
+            anonimizados os dados de conta e os dados associados ao uso do aplicativo, incluindo
+            medicamentos, tratamentos, registros de doses, estoque e preferências, salvo quando a
+            retenção for necessária para cumprir obrigação legal, regulatória, antifraude, de
+            segurança ou para resguardar direitos.
           </p>
           <div class="contact-card">
             <p><strong>Canal de solicitação:</strong> contact@coelho.me</p>
+            <p><strong>Pedido recomendado:</strong> exclusão da conta e dos dados associados</p>
           </div>
         </section>
 
@@ -377,6 +395,11 @@
             <li>cumprir obrigações legais e regulatórias</li>
             <li>preservar segurança e integridade do serviço</li>
           </ul>
+          <p>
+            Quando os dados deixarem de ser necessários, eles serão eliminados ou anonimizados,
+            observadas as hipóteses legais aplicáveis e as solicitações de exclusão feitas pelo
+            usuário.
+          </p>
         </section>
 
         <section class="section">
