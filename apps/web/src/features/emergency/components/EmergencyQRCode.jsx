@@ -9,6 +9,29 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import QRCode from 'qrcode'
+
+/** Renderiza estado de carregamento do QR code. */
+function QRLoadingState() {
+  return (
+    <div className="emergency-qr-code loading">
+      <div className="qr-loading-spinner"></div>
+      <p>Gerando QR code...</p>
+    </div>
+  )
+}
+
+/** Renderiza estado de erro do QR code. */
+function QRErrorState({ error, onRetry }) {
+  return (
+    <div className="emergency-qr-code error">
+      <div className="qr-error-icon">⚠️</div>
+      <p>{error}</p>
+      <button className="btn btn-secondary btn-sm" onClick={onRetry}>
+        Tentar Novamente
+      </button>
+    </div>
+  )
+}
 import { getServerTimestamp, parseISO } from '@utils/dateUtils'
 import './EmergencyQRCode.css'
 
@@ -201,26 +224,8 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
 
   // ===== RENDER =====
 
-  if (isGenerating) {
-    return (
-      <div className="emergency-qr-code loading">
-        <div className="qr-loading-spinner"></div>
-        <p>Gerando QR code...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="emergency-qr-code error">
-        <div className="qr-error-icon">⚠️</div>
-        <p>{error}</p>
-        <button className="btn btn-secondary btn-sm" onClick={() => setError(null)}>
-          Tentar Novamente
-        </button>
-      </div>
-    )
-  }
+  if (isGenerating) return <QRLoadingState />
+  if (error) return <QRErrorState error={error} onRetry={() => setError(null)} />
 
   if (!qrDataUrl) {
     return (

@@ -18,6 +18,93 @@ import { exportAsJSON, exportAsCSV } from '@features/export/services/exportServi
 import { parseLocalDate } from '@utils/dateUtils'
 import './ExportDialog.css'
 
+/** Renderiza seletor de formato de exportação. */
+function FormatSelector({ format, isExporting, onFormatChange }) {
+  return (
+    <div className="export-section">
+      <label className="export-label">Formato</label>
+      <div className="format-toggle">
+        {FORMAT_OPTIONS.map((option) => {
+          const OptionIcon = option.icon
+          return (
+            <button
+              key={option.value}
+              type="button"
+              className={`format-toggle-btn${format === option.value ? ' active' : ''}`}
+              onClick={() => onFormatChange(option.value)}
+              disabled={isExporting}
+            >
+              <OptionIcon size={18} />
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Renderiza seletor de intervalo de datas. */
+function DateRangeSelector({ dateRange, isExporting, onDateChange }) {
+  return (
+    <div className="export-section">
+      <label className="export-label">Período (opcional)</label>
+      <div className="date-range">
+        <div className="date-input-group">
+          <label htmlFor="export-date-start">De</label>
+          <input
+            id="export-date-start"
+            type="date"
+            value={dateRange.start}
+            onChange={onDateChange('start')}
+            disabled={isExporting}
+            className="date-input"
+          />
+        </div>
+        <div className="date-input-group">
+          <label htmlFor="export-date-end">Até</label>
+          <input
+            id="export-date-end"
+            type="date"
+            value={dateRange.end}
+            onChange={onDateChange('end')}
+            disabled={isExporting}
+            className="date-input"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Renderiza checkboxes de seleção de tipos de dados. */
+function DataTypeCheckboxes({ states, isExporting, onCheckboxChange }) {
+  const { includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines } = states
+  return (
+    <div className="export-section">
+      <label className="export-label">Dados a exportar</label>
+      <div className="checkbox-group">
+        {[
+          { checked: includeProtocols, setter: setIncludeProtocols, label: DATA_TYPE_LABELS.protocols },
+          { checked: includeLogs, setter: setIncludeLogs, label: DATA_TYPE_LABELS.logs },
+          { checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock },
+          { checked: includeMedicines, setter: setIncludeMedicines, label: DATA_TYPE_LABELS.medicines },
+        ].map(({ checked, setter, label }) => (
+          <label key={label} className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={onCheckboxChange(setter)}
+              disabled={isExporting}
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /** Opções de formato de exportação */
 const FORMAT_OPTIONS = [
   { value: 'json', label: 'JSON', icon: FileBracesCorner },
@@ -153,104 +240,14 @@ export default function ExportDialog({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Exportar Dados">
       <div className="export-dialog">
-        {/* Format Selector */}
-        <div className="export-section">
-          <label className="export-label">Formato</label>
-          <div className="format-toggle">
-            {FORMAT_OPTIONS.map((option) => {
-              const OptionIcon = option.icon
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`format-toggle-btn${format === option.value ? ' active' : ''}`}
-                  onClick={() => handleFormatChange(option.value)}
-                  disabled={isExporting}
-                >
-                  <OptionIcon size={18} />
-                  {option.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Date Range */}
-        <div className="export-section">
-          <label className="export-label">Período (opcional)</label>
-          <div className="date-range">
-            <div className="date-input-group">
-              <label htmlFor="export-date-start">De</label>
-              <input
-                id="export-date-start"
-                type="date"
-                value={dateRange.start}
-                onChange={handleDateChange('start')}
-                disabled={isExporting}
-                className="date-input"
-              />
-            </div>
-            <div className="date-input-group">
-              <label htmlFor="export-date-end">Até</label>
-              <input
-                id="export-date-end"
-                type="date"
-                value={dateRange.end}
-                onChange={handleDateChange('end')}
-                disabled={isExporting}
-                className="date-input"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Data Types */}
-        <div className="export-section">
-          <label className="export-label">Dados a exportar</label>
-          <div className="checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={includeProtocols}
-                onChange={handleCheckboxChange(setIncludeProtocols)}
-                disabled={isExporting}
-              />
-              <span>{DATA_TYPE_LABELS.protocols}</span>
-            </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={includeLogs}
-                onChange={handleCheckboxChange(setIncludeLogs)}
-                disabled={isExporting}
-              />
-              <span>{DATA_TYPE_LABELS.logs}</span>
-            </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={includeStock}
-                onChange={handleCheckboxChange(setIncludeStock)}
-                disabled={isExporting}
-              />
-              <span>{DATA_TYPE_LABELS.stock}</span>
-            </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={includeMedicines}
-                onChange={handleCheckboxChange(setIncludeMedicines)}
-                disabled={isExporting}
-              />
-              <span>{DATA_TYPE_LABELS.medicines}</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Error Message */}
+        <FormatSelector format={format} isExporting={isExporting} onFormatChange={handleFormatChange} />
+        <DateRangeSelector dateRange={dateRange} isExporting={isExporting} onDateChange={handleDateChange} />
+        <DataTypeCheckboxes
+          states={{ includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines }}
+          isExporting={isExporting}
+          onCheckboxChange={handleCheckboxChange}
+        />
         {exportError && <div className="export-error">{exportError}</div>}
-
-        {/* Actions */}
         <div className="export-actions">
           <Button variant="outline" onClick={handleClose} disabled={isExporting}>
             Cancelar

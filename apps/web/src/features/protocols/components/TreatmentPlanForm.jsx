@@ -2,6 +2,49 @@ import { useState } from 'react'
 import Button from '@shared/components/ui/Button'
 import './TreatmentPlanForm.css'
 
+/** Renderiza campos visuais (emoji e cor) do formulário de plano. */
+function PlanVisualFields({ formData, onChange }) {
+  return (
+    <div className="treatment-plan-form__visual">
+      <div className="form-row">
+        <label className="form-label" htmlFor="emoji">Emoji do Plano</label>
+        <input
+          type="text"
+          id="emoji"
+          name="emoji"
+          className="treatment-plan-form__emoji-input"
+          value={formData.emoji}
+          onChange={onChange}
+          placeholder="💊"
+          maxLength={10}
+        />
+      </div>
+      <div className="form-row">
+        <label className="form-label" htmlFor="color">Cor do Badge</label>
+        <div className="treatment-plan-form__color-row">
+          <input
+            type="color"
+            id="color"
+            name="color"
+            value={formData.color || '#3d6b5e'}
+            onChange={onChange}
+            className="treatment-plan-form__color-picker"
+          />
+          <input
+            type="text"
+            name="color"
+            className="treatment-plan-form__color-text"
+            value={formData.color}
+            onChange={onChange}
+            placeholder="#6366f1"
+            maxLength={7}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     name: plan?.name || '',
@@ -111,48 +154,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
         />
       </div>
 
-      <div className="treatment-plan-form__visual">
-        <div className="form-row">
-          <label className="form-label" htmlFor="emoji">
-            Emoji do Plano
-          </label>
-          <input
-            type="text"
-            id="emoji"
-            name="emoji"
-            className="treatment-plan-form__emoji-input"
-            value={formData.emoji}
-            onChange={handleChange}
-            placeholder="💊"
-            maxLength={10}
-          />
-        </div>
-
-        <div className="form-row">
-          <label className="form-label" htmlFor="color">
-            Cor do Badge
-          </label>
-          <div className="treatment-plan-form__color-row">
-            <input
-              type="color"
-              id="color"
-              name="color"
-              value={formData.color || '#3d6b5e'}
-              onChange={handleChange}
-              className="treatment-plan-form__color-picker"
-            />
-            <input
-              type="text"
-              name="color"
-              className="treatment-plan-form__color-text"
-              value={formData.color}
-              onChange={handleChange}
-              placeholder="#6366f1"
-              maxLength={7}
-            />
-          </div>
-        </div>
-      </div>
+      <PlanVisualFields formData={formData} onChange={handleChange} />
 
       {errors.submit && (
         <div className="error-banner" role="alert">

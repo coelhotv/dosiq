@@ -8,6 +8,78 @@ import MedicineForm from '@medications/components/MedicineForm'
 import MedicineCard from '@medications/components/MedicineCard'
 import './Medicines.css'
 
+/**
+ * Monta mensagem de confirmação de exclusão com informações de dependências.
+ */
+function buildDeleteConfirmMessage(deps) {
+  const parts = []
+  if (deps?.hasProtocols) parts.push('protocolos')
+  if (deps?.hasStock) parts.push('estoque')
+  return `Este medicamento possui ${parts.join(' e ')} associado(s).\nTem certeza que deseja excluí-lo?`
+}
+
+/**
+ * Carrega dependências (protocolos e estoque) de uma lista de medicamentos.
+ */
+async function fetchMedicineDependencies(meds) {
+  const dependencies = {}
+  for (const medicine of meds) {
+    const [protocols, stock] = await Promise.all([
+      protocolService.getByMedicineId(medicine.id),
+      stockService.getByMedicine(medicine.id),
+    ])
+    dependencies[medicine.id] = { hasProtocols: protocols.length > 0, hasStock: stock.length > 0 }
+  }
+  return dependencies
+}
+
+const FILTER_TYPES = [
+  { value: 'all', label: 'Todos' },
+  { value: 'medicamento', label: 'Medicamentos' },
+  { value: 'suplemento', label: 'Suplementos' },
+]
+
+/** Renderiza os botões de filtro de tipo de medicamento. */
+function MedicineFilterTabs({ filterType, onFilterChange }) {
+  return (
+    <div className="filter-tabs" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+      {FILTER_TYPES.map(({ value, label }) => (
+        <Button
+          key={value}
+          variant={filterType === value ? 'primary' : 'outline'}
+          onClick={() => onFilterChange(value)}
+          size="sm"
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  )
+}
+
+/** Renderiza a grade de cartões de medicamentos filtrados. */
+function MedicinesGrid({ medicines, filterType, medicineDependencies, onEdit, onDelete }) {
+  const filtered = medicines.filter((m) => filterType === 'all' || m.type === filterType)
+  return (
+    <div className="medicines-grid">
+      {filtered.map((medicine) => {
+        const hasDependencies =
+          medicineDependencies[medicine.id]?.hasProtocols ||
+          medicineDependencies[medicine.id]?.hasStock
+        return (
+          <MedicineCard
+            key={medicine.id}
+            medicine={medicine}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            hasDependencies={hasDependencies}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 export default function Medicines({ onNavigateToProtocol }) {
   const [medicines, setMedicines] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -18,18 +90,8 @@ export default function Medicines({ onNavigateToProtocol }) {
   const [filterType, setFilterType] = useState('all') // 'all', 'medicamento', 'suplemento'
   const [medicineDependencies, setMedicineDependencies] = useState({}) // { medicineId: { hasProtocols: boolean, hasStock: boolean } }
 
-  const loadDependencies = useCallback(async (medicines) => {
-    const dependencies = {}
-    for (const medicine of medicines) {
-      const [protocols, stock] = await Promise.all([
-        protocolService.getByMedicineId(medicine.id),
-        stockService.getByMedicine(medicine.id),
-      ])
-      dependencies[medicine.id] = {
-        hasProtocols: protocols.length > 0,
-        hasStock: stock.length > 0,
-      }
-    }
+  const loadDependencies = useCallback(async (meds) => {
+    const dependencies = await fetchMedicineDependencies(meds)
     setMedicineDependencies(dependencies)
   }, [])
 
@@ -93,20 +155,10 @@ export default function Medicines({ onNavigateToProtocol }) {
   }
 
   const handleDelete = async (medicine) => {
-    const hasDependencies =
-      medicineDependencies[medicine.id]?.hasProtocols || medicineDependencies[medicine.id]?.hasStock
-
-    if (hasDependencies) {
-      const confirmation = window.confirm(
-        `Este medicamento possui${medicineDependencies[medicine.id].hasProtocols ? 'protocolos e' : ''} ${medicineDependencies[medicine.id].hasStock ? 'estoque' : ''} associado(s).\nTem certeza que deseja excluí-lo?`
-      )
-      if (!confirmation) {
-        return
-      }
-    }
-    if (!window.confirm(`Tem certeza que deseja excluir "${medicine.name}"?`)) {
-      return
-    }
+    const deps = medicineDependencies[medicine.id]
+    const hasDependencies = deps?.hasProtocols || deps?.hasStock
+    if (hasDependencies && !window.confirm(buildDeleteConfirmMessage(deps))) return
+    if (!window.confirm(`Tem certeza que deseja excluir "${medicine.name}"?`)) return
 
     try {
       await medicineService.delete(medicine.id)
@@ -143,32 +195,9 @@ export default function Medicines({ onNavigateToProtocol }) {
         </Button>
       </div>
 
-      <div className="filter-tabs" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <Button
-          variant={filterType === 'all' ? 'primary' : 'outline'}
-          onClick={() => setFilterType('all')}
-          size="sm"
-        >
-          Todos
-        </Button>
-        <Button
-          variant={filterType === 'medicamento' ? 'primary' : 'outline'}
-          onClick={() => setFilterType('medicamento')}
-          size="sm"
-        >
-          Medicamentos
-        </Button>
-        <Button
-          variant={filterType === 'suplemento' ? 'primary' : 'outline'}
-          onClick={() => setFilterType('suplemento')}
-          size="sm"
-        >
-          Suplementos
-        </Button>
-      </div>
+      <MedicineFilterTabs filterType={filterType} onFilterChange={setFilterType} />
 
       {successMessage && <div className="success-banner fade-in">✅ {successMessage}</div>}
-
       {error && <div className="error-banner fade-in">❌ {error}</div>}
 
       {medicines.length === 0 ? (
@@ -180,24 +209,13 @@ export default function Medicines({ onNavigateToProtocol }) {
           onCtaClick={handleAdd}
         />
       ) : (
-        <div className="medicines-grid">
-          {medicines
-            .filter((m) => filterType === 'all' || m.type === filterType)
-            .map((medicine) => {
-              const hasDependencies =
-                medicineDependencies[medicine.id]?.hasProtocols ||
-                medicineDependencies[medicine.id]?.hasStock
-              return (
-                <MedicineCard
-                  key={medicine.id}
-                  medicine={medicine}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  hasDependencies={hasDependencies} // Pass this prop to MedicineCard
-                />
-              )
-            })}
-        </div>
+        <MedicinesGrid
+          medicines={medicines}
+          filterType={filterType}
+          medicineDependencies={medicineDependencies}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       <Modal

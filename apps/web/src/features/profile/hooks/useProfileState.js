@@ -8,6 +8,32 @@ import { validateUserProfile } from '@schemas/userProfileSchema'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import QRCode from 'qrcode'
 
+/**
+ * Sincroniza display_name do metadata para user_settings se ausente.
+ */
+async function syncDisplayName(user, settings) {
+  if (settings && !settings.display_name && user.user_metadata?.name) {
+    await supabase
+      .from('user_settings')
+      .update({ display_name: user.user_metadata.name, updated_at: getNow().toISOString() })
+      .eq('user_id', user.id)
+    return { ...settings, display_name: user.user_metadata.name }
+  }
+  return settings
+}
+
+/**
+ * Carrega e sincroniza o cartão de emergência do usuário.
+ */
+async function loadAndSyncEmergencyCard(settings) {
+  const cardResult = await emergencyCardService.load()
+  const cardData = cardResult.success ? cardResult.data : null
+  if (cardData && cardResult.source === 'local' && settings && !settings.emergency_card) {
+    emergencyCardService.save(cardData)
+  }
+  return cardData
+}
+
 export function useProfileState() {
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState(null)
@@ -31,20 +57,12 @@ export function useProfileState() {
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data: settingsData } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single()
-      let settings = settingsData ?? {}
+      const settings = await syncDisplayName(user, settingsData ?? {})
+      const cardData = await loadAndSyncEmergencyCard(settings)
 
-      if (settings && !settings.display_name && user.user_metadata?.name) {
-        await supabase.from('user_settings').update({ display_name: user.user_metadata.name, updated_at: getNow().toISOString() }).eq('user_id', user.id)
-        settings.display_name = user.user_metadata.name
-      }
-
-      const cardResult = await emergencyCardService.load()
-      const cardData = cardResult.success ? cardResult.data : null
-      if (cardData && cardResult.source === 'local' && settings && !settings.emergency_card) {
-        emergencyCardService.save(cardData)
-      }
-
-      setUser(user); setSettings(settings); setEmergencyCard(cardData)
+      setUser(user)
+      setSettings(settings)
+      setEmergencyCard(cardData)
       setProfileForm({
         display_name: settings?.display_name || user.user_metadata?.name || '',
         birth_date: settings?.birth_date || '',

@@ -58,6 +58,68 @@ const formatShortDate = (dateStr) => {
 }
 
 /**
+ * Calcula o status de adesão baseado no percentual.
+ * @param {number} percent - Percentual de adesão (0-100)
+ * @returns {'good'|'warning'|'poor'} Status de adesão
+ */
+const getAdherenceStatus = (percent) => {
+  if (percent >= 80) return 'good'
+  if (percent >= 50) return 'warning'
+  return 'poor'
+}
+
+/**
+ * Renderiza a seção de resumo de adesão do dia.
+ */
+const DailySummaryBadge = ({ dailySummary }) => {
+  if (!dailySummary) return null
+  const adherencePercent = dailySummary.adherence ?? 0
+  const status = getAdherenceStatus(adherencePercent)
+  return (
+    <div className="daily-dose-summary" aria-live="polite" aria-atomic="true">
+      <span
+        className={`adherence-badge adherence-badge--${status}`}
+        aria-label={`Adesão: ${adherencePercent}%`}
+      >
+        {adherencePercent}% adesão
+      </span>
+      <span
+        className="dose-count"
+        aria-label={`${dailySummary.taken} de ${dailySummary.expected} doses`}
+      >
+        {dailySummary.taken} de {dailySummary.expected} doses
+      </span>
+    </div>
+  )
+}
+
+/**
+ * Renderiza uma seção de lista de doses (tomadas, perdidas ou agendadas).
+ */
+const DoseListSection = ({ doses, sectionClass, titleClass, titleText, listLabel, isTaken, status }) => {
+  if (doses.length === 0) return null
+  return (
+    <div className={`dose-list-section ${sectionClass || ''}`}>
+      <h3 className={`dose-list-section__title ${titleClass || ''}`} aria-live={isTaken ? undefined : 'polite'}>
+        {titleText} ({doses.length})
+      </h3>
+      <div className="dose-list" role="list" aria-label={listLabel}>
+        {doses.map((log, index) => (
+          <DoseListItem
+            key={log.id}
+            log={log}
+            isTaken={isTaken}
+            status={status}
+            scheduledTime={log.scheduledTime}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
  * Componente DailyDoseModal
  *
  * @param {Object} props
@@ -101,14 +163,8 @@ export function DailyDoseModal({
   }, [date, logs, protocols])
 
   const hasDoses = takenDoses.length > 0 || missedDoses.length > 0 || scheduledDoses.length > 0
-  const hasScheduledDoses = hasDoses
   const formattedDate = formatDate(date)
   const shortDate = formatShortDate(date)
-
-  // Calcular porcentagem de adesão
-  const adherencePercent = dailySummary?.adherence ?? 0
-  const adherenceStatus =
-    adherencePercent >= 80 ? 'good' : adherencePercent >= 50 ? 'warning' : 'poor'
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={formattedDate}>
@@ -121,122 +177,63 @@ export function DailyDoseModal({
         aria-labelledby="daily-dose-title"
         data-testid="daily-dose-modal"
       >
-        {/* Header com resumo - escondido visualmente pois Modal já tem título */}
         <div id="daily-dose-title" className="sr-only">
           Doses do dia {shortDate}
         </div>
 
-        {/* Badge de adesão */}
-        {dailySummary && (
-          <div className="daily-dose-summary" aria-live="polite" aria-atomic="true">
-            <span
-              className={`adherence-badge adherence-badge--${adherenceStatus}`}
-              aria-label={`Adesão: ${adherencePercent}%`}
-            >
-              {adherencePercent}% adesão
-            </span>
-            <span
-              className="dose-count"
-              aria-label={`${dailySummary.taken} de ${dailySummary.expected} doses`}
-            >
-              {dailySummary.taken} de {dailySummary.expected} doses
-            </span>
-          </div>
-        )}
+        <DailySummaryBadge dailySummary={dailySummary} />
 
-        {/* Estado de loading */}
         {isLoading && (
           <div className="daily-dose-loading">
             <Loading message="Carregando doses..." />
           </div>
         )}
 
-        {/* Estado de erro */}
         {error && !isLoading && (
           <EmptyState
             icon="⚠️"
             title="Erro ao carregar"
             message="Não foi possível carregar os dados deste dia."
-            action={
-              onRetry
-                ? {
-                    label: 'Tentar novamente',
-                    onClick: onRetry,
-                  }
-                : null
-            }
+            action={onRetry ? { label: 'Tentar novamente', onClick: onRetry } : null}
           />
         )}
 
-        {/* Estado vazio - sem doses agendadas */}
-        {!isLoading && !error && !hasScheduledDoses && (
+        {!isLoading && !error && !hasDoses && (
           <EmptyState
             icon="📋"
             title="Nenhuma dose agendada"
-            message={`Não há doses programadas para este dia.`}
+            message="Não há doses programadas para este dia."
           />
         )}
 
-        {/* Lista de doses tomadas */}
-        {!isLoading && !error && takenDoses.length > 0 && (
-          <div className="dose-list-section">
-            <h3 className="dose-list-section__title">Doses Tomadas ({takenDoses.length})</h3>
-            <div className="dose-list" role="list" aria-label={`Doses tomadas em ${shortDate}`}>
-              {takenDoses.map((log, index) => (
-                <DoseListItem key={log.id} log={log} isTaken={true} index={index} />
-              ))}
-            </div>
-          </div>
+        {!isLoading && !error && (
+          <>
+            <DoseListSection
+              doses={takenDoses}
+              titleText="Doses Tomadas"
+              listLabel={`Doses tomadas em ${shortDate}`}
+              isTaken={true}
+            />
+            <DoseListSection
+              doses={missedDoses}
+              sectionClass="dose-list-section--missed"
+              titleClass="dose-list-section__title--missed"
+              titleText="Doses Perdidas"
+              listLabel={`Doses perdidas em ${shortDate}`}
+              isTaken={false}
+            />
+            <DoseListSection
+              doses={scheduledDoses}
+              sectionClass="dose-list-section--scheduled"
+              titleClass="dose-list-section__title--scheduled"
+              titleText="Doses Agendadas"
+              listLabel={`Doses agendadas em ${shortDate}`}
+              isTaken={false}
+              status="scheduled"
+            />
+          </>
         )}
 
-        {/* Lista de doses perdidas */}
-        {!isLoading && !error && missedDoses.length > 0 && (
-          <div className="dose-list-section dose-list-section--missed">
-            <h3
-              className="dose-list-section__title dose-list-section__title--missed"
-              aria-live="polite"
-            >
-              Doses Perdidas ({missedDoses.length})
-            </h3>
-            <div className="dose-list" role="list" aria-label={`Doses perdidas em ${shortDate}`}>
-              {missedDoses.map((log, index) => (
-                <DoseListItem
-                  key={log.id}
-                  log={log}
-                  isTaken={false}
-                  scheduledTime={log.scheduledTime}
-                  index={index}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Lista de doses agendadas (futuras) */}
-        {!isLoading && !error && scheduledDoses.length > 0 && (
-          <div className="dose-list-section dose-list-section--scheduled">
-            <h3
-              className="dose-list-section__title dose-list-section__title--scheduled"
-              aria-live="polite"
-            >
-              Doses Agendadas ({scheduledDoses.length})
-            </h3>
-            <div className="dose-list" role="list" aria-label={`Doses agendadas em ${shortDate}`}>
-              {scheduledDoses.map((log, index) => (
-                <DoseListItem
-                  key={log.id}
-                  log={log}
-                  isTaken={false}
-                  status="scheduled"
-                  scheduledTime={log.scheduledTime}
-                  index={index}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer informativo */}
         {hasDoses && (
           <div className="daily-dose-footer">
             <p className="daily-dose-hint">💡 Clique em uma dose para ver detalhes</p>

@@ -4,6 +4,37 @@ import StockIndicator from './StockIndicator'
 import { parseLocalDate, getNow } from '@utils/dateUtils'
 import './StockCard.css'
 
+/** Renderiza o histórico completo de entradas (consumidas e ajustes automáticos). */
+function StockHistorySection({ consumedEntries, systemEntries, renderEntryItem }) {
+  return (
+    <div className="history-section">
+      {consumedEntries.length > 0 && (
+        <>
+          <span className="history-section-title">Lotes consumidos</span>
+          <div className="entries-list">
+            {consumedEntries.map((entry) => renderEntryItem(entry, 'consumed'))}
+          </div>
+        </>
+      )}
+      {systemEntries.length > 0 && (
+        <>
+          <span className="history-section-title">Ajustes automáticos</span>
+          <div className="entries-list">
+            {systemEntries.map((entry) => (
+              <div key={entry.id} className="entry-item system-adjustment">
+                <div className="entry-info">
+                  <span className="entry-quantity">+{entry.quantity} un.</span>
+                  <span className="entry-date system-note">{entry.notes}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // Prefixos de notas geradas automaticamente pelo sistema (deleção/edição de dose)
 const SYSTEM_NOTE_PREFIXES = ['Dose excluída', 'Ajuste de dose']
 
@@ -149,31 +180,11 @@ export default function StockCard({
               </button>
 
               {showHistory && (
-                <div className="history-section">
-                  {consumedEntries.length > 0 && (
-                    <>
-                      <span className="history-section-title">Lotes consumidos</span>
-                      <div className="entries-list">
-                        {consumedEntries.map((entry) => renderEntryItem(entry, 'consumed'))}
-                      </div>
-                    </>
-                  )}
-                  {systemEntries.length > 0 && (
-                    <>
-                      <span className="history-section-title">Ajustes automáticos</span>
-                      <div className="entries-list">
-                        {systemEntries.map((entry) => (
-                          <div key={entry.id} className="entry-item system-adjustment">
-                            <div className="entry-info">
-                              <span className="entry-quantity">+{entry.quantity} un.</span>
-                              <span className="entry-date system-note">{entry.notes}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
+                <StockHistorySection
+                  consumedEntries={consumedEntries}
+                  systemEntries={systemEntries}
+                  renderEntryItem={renderEntryItem}
+                />
               )}
             </>
           )}

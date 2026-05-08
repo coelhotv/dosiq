@@ -14,6 +14,36 @@ function getDayColor(data) {
 }
 
 /**
+ * Verifica se uma data está selecionada.
+ */
+function isDaySelected(dayDate, dateKey, selectedDate) {
+  if (!selectedDate) return false
+  if (typeof selectedDate === 'string') return dateKey === selectedDate
+  return (
+    dayDate.getFullYear() === selectedDate.getFullYear() &&
+    dayDate.getMonth() === selectedDate.getMonth() &&
+    dayDate.getDate() === selectedDate.getDate()
+  )
+}
+
+/**
+ * Constrói o aria-label para um dia do calendário.
+ */
+function buildDayAriaLabel({ d, month, year, monthNames, isToday, isSelected, hasHeatColor, adherenceDayData, hasLog }) {
+  const parts = [`${d} de ${monthNames[month]} de ${year}`]
+  if (isToday) parts.push('Hoje')
+  if (isSelected) parts.push('Selecionado')
+  if (hasHeatColor) {
+    parts.push(`Adesão ${adherenceDayData?.adherence ?? 0} por cento, ${adherenceDayData?.taken ?? 0} de ${adherenceDayData?.expected ?? 0} doses`)
+  } else if (hasLog) {
+    parts.push('Com registro de dose')
+  } else {
+    parts.push('Sem registros')
+  }
+  return parts.join('. ')
+}
+
+/**
  * Constrói o array de dias (botões + vazios) para o mês exibido.
  */
 export function buildCalendarDays({
@@ -27,7 +57,6 @@ export function buildCalendarDays({
   daysInMonth,
   firstDayOfMonth,
   parseLocalDate,
-  formatLocalDate,
   onDayClick,
 }) {
   const days = []
@@ -45,28 +74,12 @@ export function buildCalendarDays({
     const dayDate = parseLocalDate(dateKey)
 
     const isToday = dateKey === todayKey
-    const isSelected =
-      selectedDate &&
-      (typeof selectedDate === 'string'
-        ? dateKey === selectedDate
-        : dayDate.getFullYear() === selectedDate.getFullYear() &&
-          dayDate.getMonth() === selectedDate.getMonth() &&
-          dayDate.getDate() === selectedDate.getDate())
-
+    const isSelected = isDaySelected(dayDate, dateKey, selectedDate)
     const hasLog = markedDates.some((dateStr) => dateStr === dateKey)
     const adherenceDayData = adherenceData[dateKey]
     const heatColor = getDayColor(adherenceDayData)
     const hasHeatColor = heatColor !== 'transparent'
-    const ariaLabelParts = [
-      `${d} de ${monthNames[month]} de ${year}`,
-      isToday ? 'Hoje' : null,
-      isSelected ? 'Selecionado' : null,
-      hasHeatColor
-        ? `Adesão ${adherenceDayData?.adherence ?? 0} por cento, ${adherenceDayData?.taken ?? 0} de ${adherenceDayData?.expected ?? 0} doses`
-        : hasLog
-          ? 'Com registro de dose'
-          : 'Sem registros',
-    ].filter(Boolean)
+    const ariaLabel = buildDayAriaLabel({ d, month, year, monthNames, isToday, isSelected, hasHeatColor, adherenceDayData, hasLog })
 
     days.push(
       <button
@@ -76,7 +89,7 @@ export function buildCalendarDays({
         style={hasHeatColor ? { '--heat-color': heatColor } : undefined}
         role="gridcell"
         aria-selected={isSelected}
-        aria-label={ariaLabelParts.join('. ')}
+        aria-label={ariaLabel}
         onClick={() => onDayClick && onDayClick(dayDate)}
       >
         <span className="day-number">{d}</span>

@@ -3,6 +3,101 @@ import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomple
 import Button from '@shared/components/ui/Button'
 import { DOSAGE_UNITS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS } from '@schemas/medicineSchema'
 
+/** Renderiza o formulário de cadastro de novo medicamento. */
+function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }) {
+  return (
+    <>
+      <label className="wizard__label">
+        Nome *
+        <MedicineAutocomplete
+          value={medicineData.name}
+          onChange={(value) => updateMedicine('name', value)}
+          onSelect={handleMedicineSelect}
+          placeholder="Ex: Losartana ou busque na base ANVISA..."
+        />
+      </label>
+      <label className="wizard__label">
+        Tipo
+        <select className="wizard__select" value={medicineData.type} onChange={(e) => updateMedicine('type', e.target.value)}>
+          <option value="medicamento">Medicamento</option>
+          <option value="suplemento">Suplemento</option>
+        </select>
+      </label>
+      <label className="wizard__label">
+        Marca / Laboratório
+        <LaboratoryAutocomplete
+          value={medicineData.laboratory}
+          onChange={(value) => updateMedicine('laboratory', value)}
+          onSelect={handleLaboratorySelect}
+          placeholder="Ex: EMS, Medley..."
+        />
+      </label>
+      {medicineData.active_ingredient && (
+        <label className="wizard__label">
+          Princípio Ativo
+          <input type="text" className="wizard__input" value={medicineData.active_ingredient} readOnly />
+          <small className="wizard__label-note">Preenchido automaticamente via ANVISA</small>
+        </label>
+      )}
+      {medicineData.therapeutic_class && (
+        <label className="wizard__label">
+          Classe Terapêutica
+          <input
+            type="text"
+            className="wizard__input"
+            value={medicineData.therapeutic_class}
+            onChange={(e) => updateMedicine('therapeutic_class', e.target.value)}
+            maxLength={100}
+          />
+          <small className="wizard__label-note">Preenchido automaticamente via ANVISA</small>
+        </label>
+      )}
+      <label className="wizard__label">
+        Categoria Regulatória
+        <select
+          className="wizard__select"
+          value={medicineData.regulatory_category || ''}
+          onChange={(e) => updateMedicine('regulatory_category', e.target.value || null)}
+        >
+          <option value="">Selecione (opcional)</option>
+          {REGULATORY_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {REGULATORY_CATEGORY_LABELS[category] || category}
+            </option>
+          ))}
+        </select>
+        <small className="wizard__label-note">Preenchido automaticamente via ANVISA quando disponível.</small>
+      </label>
+      <div className="wizard__row">
+        <label className="wizard__label" style={{ flex: 1 }}>
+          Dosagem *
+          <input
+            type="number"
+            className="wizard__input"
+            value={medicineData.dosage_per_pill}
+            onChange={(e) => updateMedicine('dosage_per_pill', e.target.value)}
+            placeholder="50"
+            min="0"
+            step="any"
+          />
+        </label>
+        <label className="wizard__label" style={{ width: 100 }}>
+          Unidade
+          <select
+            className="wizard__select"
+            value={medicineData.dosage_unit}
+            onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
+          >
+            {DOSAGE_UNITS.map((u) => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </>
+  )
+}
+
 export default function TreatmentWizardStep1({
   medicines,
   medicineMode,
@@ -67,118 +162,12 @@ export default function TreatmentWizardStep1({
           </select>
         </label>
       ) : (
-        <>
-          <label className="wizard__label">
-            Nome *
-            <MedicineAutocomplete
-              value={medicineData.name}
-              onChange={(value) => updateMedicine('name', value)}
-              onSelect={handleMedicineSelect}
-              placeholder="Ex: Losartana ou busque na base ANVISA..."
-            />
-          </label>
-
-          <label className="wizard__label">
-            Tipo
-            <select
-              className="wizard__select"
-              value={medicineData.type}
-              onChange={(e) => updateMedicine('type', e.target.value)}
-            >
-              <option value="medicamento">Medicamento</option>
-              <option value="suplemento">Suplemento</option>
-            </select>
-          </label>
-
-          <label className="wizard__label">
-            Marca / Laboratório
-            <LaboratoryAutocomplete
-              value={medicineData.laboratory}
-              onChange={(value) => updateMedicine('laboratory', value)}
-              onSelect={handleLaboratorySelect}
-              placeholder="Ex: EMS, Medley..."
-            />
-          </label>
-
-          {medicineData.active_ingredient && (
-            <label className="wizard__label">
-              Princípio Ativo
-              <input
-                type="text"
-                className="wizard__input"
-                value={medicineData.active_ingredient}
-                readOnly
-              />
-              <small className="wizard__label-note">
-                Preenchido automaticamente via ANVISA
-              </small>
-            </label>
-          )}
-
-          {medicineData.therapeutic_class && (
-            <label className="wizard__label">
-              Classe Terapêutica
-              <input
-                type="text"
-                className="wizard__input"
-                value={medicineData.therapeutic_class}
-                onChange={(e) => updateMedicine('therapeutic_class', e.target.value)}
-                maxLength={100}
-              />
-              <small className="wizard__label-note">
-                Preenchido automaticamente via ANVISA
-              </small>
-            </label>
-          )}
-
-          <label className="wizard__label">
-            Categoria Regulatória
-            <select
-              className="wizard__select"
-              value={medicineData.regulatory_category || ''}
-              onChange={(e) => updateMedicine('regulatory_category', e.target.value || null)}
-            >
-              <option value="">Selecione (opcional)</option>
-              {REGULATORY_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {REGULATORY_CATEGORY_LABELS[category] || category}
-                </option>
-              ))}
-            </select>
-            <small className="wizard__label-note">
-              Preenchido automaticamente via ANVISA quando disponível.
-            </small>
-          </label>
-
-          <div className="wizard__row">
-            <label className="wizard__label" style={{ flex: 1 }}>
-              Dosagem *
-              <input
-                type="number"
-                className="wizard__input"
-                value={medicineData.dosage_per_pill}
-                onChange={(e) => updateMedicine('dosage_per_pill', e.target.value)}
-                placeholder="50"
-                min="0"
-                step="any"
-              />
-            </label>
-            <label className="wizard__label" style={{ width: 100 }}>
-              Unidade
-              <select
-                className="wizard__select"
-                value={medicineData.dosage_unit}
-                onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
-              >
-                {DOSAGE_UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </>
+        <NewMedicineForm
+          medicineData={medicineData}
+          updateMedicine={updateMedicine}
+          handleMedicineSelect={handleMedicineSelect}
+          handleLaboratorySelect={handleLaboratorySelect}
+        />
       )}
 
       <div className="wizard__actions">

@@ -4,6 +4,31 @@
 import { useCallback } from 'react'
 import { protocolService, treatmentPlanService } from '@shared/services'
 
+/** Cria protocolo ou atualiza, exibindo feedback e navegando ao estoque se novo. */
+async function saveProtocol({ editingProtocol, protocolData, showSuccess, onNavigateToStock }) {
+  if (editingProtocol) {
+    await protocolService.update(editingProtocol.id, protocolData)
+    showSuccess('Protocolo atualizado com sucesso!')
+  } else {
+    await protocolService.create(protocolData)
+    showSuccess('Protocolo criado com sucesso!')
+    if (window.confirm('Protocolo criado! Deseja adicionar o estoque inicial deste medicamento agora?')) {
+      onNavigateToStock(protocolData.medicine_id)
+    }
+  }
+}
+
+/** Cria plano de tratamento ou atualiza existente. */
+async function savePlan({ editingPlan, planData, showSuccess }) {
+  if (editingPlan) {
+    await treatmentPlanService.update(editingPlan.id, planData)
+    showSuccess('Plano de tratamento atualizado!')
+  } else {
+    await treatmentPlanService.create(planData)
+    showSuccess('Plano de tratamento criado!')
+  }
+}
+
 export function useProtocolHandlers({
   medicines,
   editingProtocol,
@@ -41,16 +66,7 @@ export function useProtocolHandlers({
 
   const handleSave = useCallback(async (protocolData) => {
     try {
-      if (editingProtocol) {
-        await protocolService.update(editingProtocol.id, protocolData)
-        showSuccess('Protocolo atualizado com sucesso!')
-      } else {
-        await protocolService.create(protocolData)
-        showSuccess('Protocolo criado com sucesso!')
-        if (window.confirm('Protocolo criado! Deseja adicionar o estoque inicial deste medicamento agora?')) {
-          onNavigateToStock(protocolData.medicine_id)
-        }
-      }
+      await saveProtocol({ editingProtocol, protocolData, showSuccess, onNavigateToStock })
       handleCloseProtocol()
       await loadData()
     } catch (err) {
@@ -60,13 +76,7 @@ export function useProtocolHandlers({
 
   const handleSavePlan = useCallback(async (planData) => {
     try {
-      if (editingPlan) {
-        await treatmentPlanService.update(editingPlan.id, planData)
-        showSuccess('Plano de tratamento atualizado!')
-      } else {
-        await treatmentPlanService.create(planData)
-        showSuccess('Plano de tratamento criado!')
-      }
+      await savePlan({ editingPlan, planData, showSuccess })
       handleClosePlan()
       await loadData()
     } catch (err) {

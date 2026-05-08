@@ -20,6 +20,96 @@ function _makeShowMsg(setMessage) {
   }
 }
 
+/**
+ * Constrói o objeto de retorno estruturado de useSettingsState.
+ */
+function _buildReturnValue({ loading, isAdmin, dlqCount, message, notification, integration, preference }) {
+  return { loading, isAdmin, dlqCount, message, notification, integration, preference }
+}
+
+/**
+ * Hook interno com os handlers de notificação e integração.
+ * Separa a lógica de handlers para reduzir o tamanho de useSettingsState.
+ */
+function useSettingsHandlers({ showMsg, channelWebPushEnabled, setChannelWebPushEnabled, setIsTelegramConnected, setComplexityOverride, quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime }) {
+  const handleToggleWebPush = useCallback(async () => {
+    try {
+      const newValue = !channelWebPushEnabled
+      if (newValue && (await Notification.requestPermission()) !== 'granted') {
+        return showMsg('error', 'Permissão de notificação negada.')
+      }
+      await updateWebPushSetting(newValue)
+      setChannelWebPushEnabled(newValue)
+      showMsg('success', `Notificações Web ${newValue ? 'ativadas' : 'desativadas'}.`)
+    } catch {
+      showMsg('error', 'Falha ao atualizar canal Web.')
+    }
+  }, [channelWebPushEnabled, showMsg, setChannelWebPushEnabled])
+
+  const handleModeChange = useCallback(async (mode) => {
+    try {
+      await updateNotificationModeSetting(mode)
+      showMsg('success', 'Modo de notificação atualizado.')
+    } catch {
+      showMsg('error', 'Erro ao salvar modo.')
+    }
+  }, [showMsg])
+
+  const saveQuietHours = useCallback(async () => {
+    try {
+      await updateQuietHoursSetting(quietHoursEnabled, quietHoursStart, quietHoursEnd)
+      showMsg('success', 'Período silencioso salvo.')
+    } catch {
+      showMsg('error', 'Erro ao salvar período silencioso.')
+    }
+  }, [quietHoursEnabled, quietHoursStart, quietHoursEnd, showMsg])
+
+  const saveDigestTime = useCallback(async () => {
+    try {
+      await updateDigestTimeSetting(digestTime)
+      showMsg('success', 'Horário do resumo salvo.')
+    } catch {
+      showMsg('error', 'Erro ao salvar horário.')
+    }
+  }, [digestTime, showMsg])
+
+  const generateTelegramToken = useCallback(async () => {
+    const token = generateTokenString()
+    try {
+      await saveTelegramTokenSetting(token)
+      return token
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.error('Erro ao salvar token Telegram:', err)
+      showMsg('error', 'Erro ao salvar token do Telegram.')
+      return token
+    }
+  }, [showMsg])
+
+  const handleDisconnectTelegram = useCallback(async () => {
+    if (!window.confirm('Tem certeza que deseja desconectar o Telegram?')) return
+    try {
+      await disconnectTelegramSetting()
+      setIsTelegramConnected(false)
+      showMsg('success', 'Telegram desconectado.')
+    } catch {
+      showMsg('error', 'Erro ao desconectar.')
+    }
+  }, [showMsg, setIsTelegramConnected])
+
+  const handleComplexityChange = useCallback(async (mode) => {
+    const value = mode === 'auto' ? null : mode
+    try {
+      await updateComplexityModeSetting(value)
+      setComplexityOverride(value)
+      showMsg('success', 'Preferência de visualização atualizada.')
+    } catch {
+      showMsg('error', 'Erro ao salvar preferência.')
+    }
+  }, [setComplexityOverride, showMsg])
+
+  return { handleToggleWebPush, handleModeChange, saveQuietHours, saveDigestTime, generateTelegramToken, handleDisconnectTelegram, handleComplexityChange }
+}
+
 async function _loadAdminData(user, setIsAdmin, setDlqCount) {
   if (user.user_metadata?.role !== 'admin') return
   setIsAdmin(true)
@@ -51,7 +141,6 @@ export function useSettingsState() {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [isAdmin, setIsAdmin] = useState(false)
   const [dlqCount, setDlqCount] = useState(0)
-
   const [isTelegramConnected, setIsTelegramConnected] = useState(false)
   const [telegramToken, setTelegramToken] = useState('')
   const [notificationMode, setNotificationMode] = useState('realtime')
@@ -90,105 +179,31 @@ export function useSettingsState() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const handleToggleWebPush = useCallback(async () => {
-    try {
-      setSavingChannel(true)
-      const newValue = !channelWebPushEnabled
-      if (newValue && (await Notification.requestPermission()) !== 'granted') {
-        return showMsg('error', 'Permissão de notificação negada.')
-      }
-      await updateWebPushSetting(newValue)
-      setChannelWebPushEnabled(newValue)
-      showMsg('success', `Notificações Web ${newValue ? 'ativadas' : 'desativadas'}.`)
-    } catch {
-      showMsg('error', 'Falha ao atualizar canal Web.')
-    } finally {
-      setSavingChannel(false)
-    }
-  }, [channelWebPushEnabled, showMsg])
+  const handlers = useSettingsHandlers({
+    showMsg, channelWebPushEnabled, setChannelWebPushEnabled, setIsTelegramConnected,
+    setComplexityOverride, quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime,
+  })
 
-  const handleModeChange = useCallback(async (mode) => {
-    try {
-      setSavingNotification(true)
-      await updateNotificationModeSetting(mode)
-      setNotificationMode(mode)
-      showMsg('success', 'Modo de notificação atualizado.')
-    } catch {
-      showMsg('error', 'Erro ao salvar modo.')
-    } finally {
-      setSavingNotification(false)
-    }
-  }, [showMsg])
-
-  const saveQuietHours = useCallback(async () => {
-    try {
-      setSavingQuietHours(true)
-      await updateQuietHoursSetting(quietHoursEnabled, quietHoursStart, quietHoursEnd)
-      showMsg('success', 'Período silencioso salvo.')
-    } catch {
-      showMsg('error', 'Erro ao salvar período silencioso.')
-    } finally {
-      setSavingQuietHours(false)
-    }
-  }, [quietHoursEnabled, quietHoursStart, quietHoursEnd, showMsg])
-
-  const saveDigestTime = useCallback(async () => {
-    try {
-      setSavingDigestTime(true)
-      await updateDigestTimeSetting(digestTime)
-      showMsg('success', 'Horário do resumo salvo.')
-    } catch {
-      showMsg('error', 'Erro ao salvar horário.')
-    } finally {
-      setSavingDigestTime(false)
-    }
-  }, [digestTime, showMsg])
-
-  const generateTelegramToken = useCallback(async () => {
-    const token = generateTokenString()
-    setTelegramToken(token)
-    try {
-      await saveTelegramTokenSetting(token)
-    } catch (err) {
-      if (process.env.NODE_ENV === 'development') console.error('Erro ao salvar token Telegram:', err)
-      showMsg('error', 'Erro ao salvar token do Telegram.')
-    }
-  }, [showMsg])
-
-  const handleDisconnectTelegram = useCallback(async () => {
-    if (!window.confirm('Tem certeza que deseja desconectar o Telegram?')) return
-    try {
-      await disconnectTelegramSetting()
-      setIsTelegramConnected(false)
-      showMsg('success', 'Telegram desconectado.')
-    } catch {
-      showMsg('error', 'Erro ao desconectar.')
-    }
-  }, [showMsg])
-
-  const handleComplexityChange = useCallback(async (mode) => {
-    const value = mode === 'auto' ? null : mode
-    try {
-      await updateComplexityModeSetting(value)
-      setComplexityOverride(value)
-      showMsg('success', 'Preferência de visualização atualizada.')
-    } catch {
-      showMsg('error', 'Erro ao salvar preferência.')
-    }
-  }, [setComplexityOverride, showMsg])
+  const wrappedHandlers = {
+    handleToggleWebPush: useCallback(async () => { setSavingChannel(true); await handlers.handleToggleWebPush(); setSavingChannel(false) }, [handlers]),
+    handleModeChange: useCallback(async (mode) => { setSavingNotification(true); await handlers.handleModeChange(mode); setNotificationMode(mode); setSavingNotification(false) }, [handlers]),
+    saveQuietHours: useCallback(async () => { setSavingQuietHours(true); await handlers.saveQuietHours(); setSavingQuietHours(false) }, [handlers]),
+    saveDigestTime: useCallback(async () => { setSavingDigestTime(true); await handlers.saveDigestTime(); setSavingDigestTime(false) }, [handlers]),
+    generateTelegramToken: useCallback(async () => { const token = await handlers.generateTelegramToken(); setTelegramToken(token) }, [handlers]),
+  }
 
   const displayMode = getComplexityDisplayMode(complexityMode, overrideMode)
 
-  return {
+  return _buildReturnValue({
     loading, isAdmin, dlqCount, message,
     notification: {
-      webPushSupported, channelWebPushEnabled, savingChannel, handleToggleWebPush,
-      isTelegramConnected, notificationMode, handleModeChange, savingNotification,
+      webPushSupported, channelWebPushEnabled, savingChannel, handleToggleWebPush: wrappedHandlers.handleToggleWebPush,
+      isTelegramConnected, notificationMode, handleModeChange: wrappedHandlers.handleModeChange, savingNotification,
       quietHoursEnabled, setQuietHoursEnabled, quietHoursStart, setQuietHoursStart,
-      quietHoursEnd, setQuietHoursEnd, saveQuietHours, savingQuietHours,
-      digestTime, setDigestTime, saveDigestTime, savingDigestTime,
+      quietHoursEnd, setQuietHoursEnd, saveQuietHours: wrappedHandlers.saveQuietHours, savingQuietHours,
+      digestTime, setDigestTime, saveDigestTime: wrappedHandlers.saveDigestTime, savingDigestTime,
     },
-    integration: { isTelegramConnected, generateTelegramToken, telegramToken, handleDisconnectTelegram },
-    preference: { overrideMode, handleComplexityChange, displayMode },
-  }
+    integration: { isTelegramConnected, generateTelegramToken: wrappedHandlers.generateTelegramToken, telegramToken, handleDisconnectTelegram: handlers.handleDisconnectTelegram },
+    preference: { overrideMode, handleComplexityChange: handlers.handleComplexityChange, displayMode },
+  })
 }

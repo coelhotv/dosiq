@@ -1,4 +1,76 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+
+/**
+ * Renderiza a seção de alergias do cartão de emergência.
+ */
+function AllergiesSection({ allergies }) {
+  return (
+    <section className="emergency-section allergies-section">
+      <h2 className="section-label">⚠️ Alergias</h2>
+      {allergies && allergies.length > 0 ? (
+        <ul className="allergies-list">
+          {allergies.map((allergy, index) => (
+            <li key={index} className="allergy-item">{allergy}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="no-data">Nenhuma alergia registrada</p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Renderiza a seção de medicamentos ativos do cartão de emergência.
+ */
+function MedicationsSection({ activeMedications }) {
+  return (
+    <section className="emergency-section medications-section">
+      <h2 className="section-label">💊 Medicamentos em Uso</h2>
+      {activeMedications.length > 0 ? (
+        <ul className="medications-list">
+          {activeMedications.map((med, index) => (
+            <li key={index} className="medication-item">
+              <span className="med-name">{med.name}</span>
+              {med.dosage && (
+                <span className="med-dosage"> - {med.dosage} {med.unit}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="no-data">Nenhum medicamento ativo</p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Renderiza a seção de contatos de emergência.
+ */
+function ContactsSection({ contacts }) {
+  return (
+    <section className="emergency-section contacts-section">
+      <h2 className="section-label">📞 Contatos de Emergência</h2>
+      {contacts && contacts.length > 0 ? (
+        <div className="contacts-grid">
+          {contacts.map((contact, index) => (
+            <div key={index} className="contact-card">
+              <div className="contact-name">{contact.name}</div>
+              <div className="contact-phone">
+                <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+              </div>
+              <div className="contact-relationship">{contact.relationship}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="no-data">Nenhum contato registrado</p>
+      )}
+    </section>
+  )
+}
+
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
@@ -163,63 +235,9 @@ export default function EmergencyCardView({ data, onEdit }) {
         </div>
       </section>
 
-      {/* Alergias */}
-      <section className="emergency-section allergies-section">
-        <h2 className="section-label">⚠️ Alergias</h2>
-        {cardData.allergies && cardData.allergies.length > 0 ? (
-          <ul className="allergies-list">
-            {cardData.allergies.map((allergy, index) => (
-              <li key={index} className="allergy-item">
-                {allergy}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="no-data">Nenhuma alergia registrada</p>
-        )}
-      </section>
-
-      {/* Medicamentos em Uso */}
-      <section className="emergency-section medications-section">
-        <h2 className="section-label">💊 Medicamentos em Uso</h2>
-        {activeMedications.length > 0 ? (
-          <ul className="medications-list">
-            {activeMedications.map((med, index) => (
-              <li key={index} className="medication-item">
-                <span className="med-name">{med.name}</span>
-                {med.dosage && (
-                  <span className="med-dosage">
-                    {' '}
-                    - {med.dosage} {med.unit}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="no-data">Nenhum medicamento ativo</p>
-        )}
-      </section>
-
-      {/* Contatos de Emergência */}
-      <section className="emergency-section contacts-section">
-        <h2 className="section-label">📞 Contatos de Emergência</h2>
-        {cardData.emergency_contacts && cardData.emergency_contacts.length > 0 ? (
-          <div className="contacts-grid">
-            {cardData.emergency_contacts.map((contact, index) => (
-              <div key={index} className="contact-card">
-                <div className="contact-name">{contact.name}</div>
-                <div className="contact-phone">
-                  <a href={`tel:${contact.phone}`}>{contact.phone}</a>
-                </div>
-                <div className="contact-relationship">{contact.relationship}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="no-data">Nenhum contato registrado</p>
-        )}
-      </section>
+      <AllergiesSection allergies={cardData.allergies} />
+      <MedicationsSection activeMedications={activeMedications} />
+      <ContactsSection contacts={cardData.emergency_contacts} />
 
       {/* Observações */}
       {cardData.notes && (
