@@ -1,60 +1,20 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { BotMessageSquare } from 'lucide-react'
 import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supabase'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
 import '@shared/styles/index.css'
-import appStyles from './App.module.css'
-import Auth from './views/Auth'
 import Loading from '@shared/components/ui/Loading'
-
-// Lazy imports — carregam apenas quando a view é acessada
-const Landing = lazy(() => import('./views/Landing'))
-const Medicines = lazy(() => import('./views/redesign/Medicines'))
-const Stock = lazy(() => import('./views/redesign/Stock'))
-const Protocols = lazy(() => import('./views/Protocols'))
-const HealthHistory = lazy(() => import('./views/redesign/HealthHistory'))
-const Settings = lazy(() => import('./views/redesign/Settings'))
-const Emergency = lazy(() => import('./views/redesign/Emergency'))
-const Treatment = lazy(() => import('./views/redesign/Treatments'))
-const Profile = lazy(() => import('./views/redesign/Profile'))
-const Consultation = lazy(() => import('./views/redesign/Consultation'))
-const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
-const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
-const NotificationInbox = lazy(() => import('./views/redesign/NotificationInbox'))
-const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
-const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
-const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
-const GlobalDoseModal = lazy(() => import('@shared/components/ui/GlobalDoseModal'))
+import AppViewRouter from './AppViewRouter'
+import AppAuthOverlays from './AppAuthOverlays'
 import TestConnection from '@shared/components/TestConnection'
-import { OnboardingProvider, OnboardingWizard } from '@shared/components/onboarding'
+import { OnboardingProvider } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 
-/**
- * Placeholder exibido enquanto chunk de view carrega
- */
-function ViewSkeleton() {
-  return (
-    <div
-      role="status"
-      style={{
-        minHeight: '60vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--color-text-secondary)',
-        fontSize: '14px',
-      }}
-      aria-busy="true"
-      aria-label="Carregando view..."
-    >
-      <span className="sr-only">Carregando...</span>
-    </div>
-  )
-}
+const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
+const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
 
 function AppInner() {
   const shouldReduceMotion = useReducedMotion()
@@ -67,30 +27,19 @@ function AppInner() {
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
-  const [showAuth, setShowAuth] = useState(false) // toggles auth UI for unauthenticated visitors
+  const [showAuth, setShowAuth] = useState(false)
 
   const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
 
   useEffect(() => {
-    // Check initial session
     getCurrentUser()
-      .then((user) => {
-        setSession(user)
-        setIsLoading(false)
-      })
-      .catch(() => {
-        setSession(null)
-        setIsLoading(false)
-      })
+      .then((user) => { setSession(user); setIsLoading(false) })
+      .catch(() => { setSession(null); setIsLoading(false) })
 
-    // Listen for changes
-    const {
-      data: { subscription },
-    } = onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
-        // Refresh token pode ter falhado por race condition (PWA + aba do browser concorrentes).
-        // Verificar se outro contexto já renovou a sessão antes de deslogar o usuário.
+        // Verificar race condition (PWA + aba concorrente) antes de deslogar
         const { data: { session: latestSession } } = await supabase.auth.getSession()
         setSession(latestSession?.user ?? null)
         return
@@ -101,22 +50,9 @@ function AppInner() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const navigateToProtocol = (medicineId) => {
-    setInitialTreatmentMedicineId(medicineId)
-    setCurrentView('treatment')
-  }
-
-  const navigateToStock = (medicineId) => {
-    setInitialStockParams({ medicineId })
-    setCurrentView('stock')
-  }
-
   if (isLoading) {
     return (
-      <div
-        className="app-container"
-        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
-      >
+      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <Loading text="Carregando..." />
       </div>
     )
@@ -124,171 +60,19 @@ function AppInner() {
 
   const isAuthenticated = !!session
 
-  const renderCurrentView = () => {
-    if (!session) {
-      return showAuth ? (
-        <Auth
-          onAuthSuccess={() => {
-            setShowAuth(false)
-            setCurrentView('dashboard')
-          }}
-          onClose={() => setShowAuth(false)}
-        />
-      ) : (
-        <Suspense fallback={<ViewSkeleton />}>
-          <Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />
-        </Suspense>
-      )
-    }
-
-    switch (currentView) {
-      case 'landing':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Landing
-              isAuthenticated={isAuthenticated}
-              onOpenAuth={() => setShowAuth(true)}
-              onContinue={() => setCurrentView('dashboard')}
-            />
-          </Suspense>
-        )
-      case 'medicines':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Medicines onNavigateToProtocol={navigateToProtocol} />
-          </Suspense>
-        )
-      case 'stock':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Stock
-              initialParams={initialStockParams}
-              onClearParams={() => setInitialStockParams(null)}
-            />
-          </Suspense>
-        )
-      case 'protocols':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Protocols
-              initialParams={initialProtocolParams}
-              onClearParams={() => setInitialProtocolParams(null)}
-              onNavigateToStock={navigateToStock}
-            />
-          </Suspense>
-        )
-      case 'treatment':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Treatment
-              onNavigateToProtocol={() => setCurrentView('treatment')}
-              onNavigate={setCurrentView}
-              initialMedicineId={initialTreatmentMedicineId}
-              onClearInitialMedicine={() => setInitialTreatmentMedicineId(null)}
-            />
-          </Suspense>
-        )
-      case 'profile':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Profile onNavigate={setCurrentView} />
-          </Suspense>
-        )
-      case 'health-history':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <HealthHistory key="health-history" onNavigate={setCurrentView} />
-          </Suspense>
-        )
-      case 'history':
-        // W3-06: historico agora vive em HealthHistory
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <HealthHistory key="history" onNavigate={setCurrentView} />
-          </Suspense>
-        )
-      case 'consultation':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Consultation onBack={() => setCurrentView('profile')} />
-          </Suspense>
-        )
-      case 'settings':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Settings onNavigate={setCurrentView} />
-          </Suspense>
-        )
-      case 'emergency':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Emergency onNavigate={setCurrentView} />
-          </Suspense>
-        )
-      case 'admin-dlq':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <DLQAdmin />
-          </Suspense>
-        )
-      case 'notifications':
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <NotificationInbox
-              userId={session?.id}
-              onNavigate={setCurrentView}
-              onBack={() => setCurrentView('dashboard')}
-              onOpenDoseModal={(initialValues) => {
-                setDoseModalInitialValues(initialValues)
-                setIsDoseModalOpen(true)
-              }}
-            />
-          </Suspense>
-        )
-      case 'dashboard':
-      default: {
-        const dashboardNavigate = (view, params) => {
-          if (view === 'stock' && params?.medicineId) {
-            setInitialStockParams({ medicineId: params.medicineId })
-          } else if (view === 'protocols' && params?.medicineId) {
-            setInitialProtocolParams({ medicineId: params.medicineId })
-          }
-          setCurrentView(view)
-        }
-        return (
-          <Suspense fallback={<ViewSkeleton />}>
-            <Dashboard onNavigate={dashboardNavigate} />
-          </Suspense>
-        )
-      }
-    }
-  }
-
   return (
     <OnboardingProvider>
       <DashboardProvider>
-        {/* Skip to main content — visível apenas no focus, para navegação por teclado */}
-        <a href="#main-content" className="skip-to-content">
-          Ir para conteúdo principal
-        </a>
+        <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
 
         <div className="app-container">
-          {/* Sidebar — desktop, apenas usuários autenticados */}
           {isAuthenticated && (
             <Suspense fallback={null}>
-              <Sidebar
-                currentView={currentView}
-                setCurrentView={setCurrentView}
-                onNewDose={() => setIsDoseModalOpen(true)}
-                unreadCount={unreadCount}
-              />
+              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onNewDose={() => setIsDoseModalOpen(true)} unreadCount={unreadCount} />
             </Suspense>
           )}
 
-          <main
-            id="main-content"
-            className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}
-          >
+          <main id="main-content" className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={currentView}
@@ -297,75 +81,47 @@ function AppInner() {
                 exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
                 transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
               >
-                {renderCurrentView()}
+                <AppViewRouter
+                  session={session}
+                  currentView={currentView}
+                  showAuth={showAuth}
+                  initialProtocolParams={initialProtocolParams}
+                  initialStockParams={initialStockParams}
+                  initialTreatmentMedicineId={initialTreatmentMedicineId}
+                  setShowAuth={setShowAuth}
+                  setCurrentView={setCurrentView}
+                  setInitialStockParams={setInitialStockParams}
+                  setInitialProtocolParams={setInitialProtocolParams}
+                  setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
+                  setIsDoseModalOpen={setIsDoseModalOpen}
+                  setDoseModalInitialValues={setDoseModalInitialValues}
+                />
               </motion.div>
             </AnimatePresence>
-            <footer
-              style={{
-                textAlign: 'center',
-                marginTop: 'var(--space-8)',
-                paddingBottom: 'var(--space-8)',
-                color: 'var(--text-tertiary)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
+            <footer style={{ textAlign: 'center', marginTop: 'var(--space-8)', paddingBottom: 'var(--space-8)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
               {' '}
             </footer>
           </main>
 
           <OfflineBanner />
 
-          {/* BottomNav — redesign version */}
           {isAuthenticated && (
             <Suspense fallback={null}>
               <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
           )}
 
-          {/* Chatbot IA — lazy-loaded, disponivel para usuarios autenticados */}
           {isAuthenticated && (
-            <>
-              <button
-                onClick={() => setIsChatOpen(true)}
-                aria-label="Abrir assistente IA"
-                className={appStyles.chatFab}
-              >
-                <BotMessageSquare size={24} />
-              </button>
-              {isChatOpen && (
-                <Suspense fallback={null}>
-                  <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-                </Suspense>
-              )}
-            </>
+            <AppAuthOverlays
+              isChatOpen={isChatOpen}
+              setIsChatOpen={setIsChatOpen}
+              isDoseModalOpen={isDoseModalOpen}
+              setIsDoseModalOpen={setIsDoseModalOpen}
+              doseModalInitialValues={doseModalInitialValues}
+              setDoseModalInitialValues={setDoseModalInitialValues}
+            />
           )}
 
-          {/* FAB móvel "Registrar Dose" — visível apenas mobile */}
-          {isAuthenticated && (
-            <button
-              onClick={() => setIsDoseModalOpen(true)}
-              aria-label="Registrar dose"
-              className={appStyles.doseFab}
-            >
-              + Dose
-            </button>
-          )}
-
-          {/* Modal global de registro de dose */}
-          {isAuthenticated && isDoseModalOpen && (
-            <Suspense fallback={null}>
-              <GlobalDoseModal
-                isOpen={isDoseModalOpen}
-                initialValues={doseModalInitialValues}
-                onClose={() => { setIsDoseModalOpen(false); setDoseModalInitialValues(null) }}
-              />
-            </Suspense>
-          )}
-
-          {/* Onboarding Wizard - apenas para usuários autenticados */}
-          {isAuthenticated && <OnboardingWizard />}
-
-          {/* PWA Install Prompt - para todos os usuários */}
           <InstallPrompt />
         </div>
       </DashboardProvider>

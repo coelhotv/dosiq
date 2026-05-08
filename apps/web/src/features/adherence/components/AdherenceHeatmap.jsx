@@ -1,36 +1,42 @@
 import { useState } from 'react'
 import { debugLog } from '@shared/utils/logger'
+import HeatmapGrid from './HeatmapGrid'
+import HeatmapStacked from './HeatmapStacked'
 import './AdherenceHeatmap.css'
 
-/**
- * Nomes dos dias da semana
- */
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
-
-/**
- * Nomes dos períodos do dia
- */
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 
 /**
- * Componente de heatmap de adesão por dia da semana e período do dia
- *
- * Props:
- * - pattern: { grid, worstCell, narrative, hasEnoughData } (saída de analyzeAdherencePatterns)
- *
- * Renderiza:
- * - Desktop (>= 380px): Grid 7x4 via CSS
- * - Mobile (< 380px): Stacked cards via CSS
- * (A responsividade é controlada por media queries no CSS, não por lógica JS)
+ * Calcula opacidade baseada na adherência (0-100%)
+ */
+const getOpacity = (adherence) => {
+  if (adherence === null) return 1.0
+  if (adherence >= 90) return 1.0
+  if (adherence >= 75) return 0.8
+  if (adherence >= 50) return 0.5
+  if (adherence >= 25) return 0.25
+  return 0.1
+}
+
+/**
+ * Retorna cor CSS com opacidade adequada. null = cinza neutro.
+ */
+const getCellColor = (adherence) => {
+  if (adherence === null) return 'rgba(120, 120, 140, 0.15)'
+  return `rgba(34, 197, 94, ${getOpacity(adherence)})`
+}
+
+/**
+ * Componente de heatmap de adesão por dia da semana e período do dia.
+ * Desktop (>= 380px): Grid 7x4 | Mobile (< 380px): Stacked cards (via CSS).
  */
 export default function AdherenceHeatmap({ pattern }) {
-  // States
   const [hoveredCell, setHoveredCell] = useState(null)
   const [touchedCell, setTouchedCell] = useState(null)
 
   debugLog('AdherenceHeatmap', 'Pattern recebido:', pattern)
 
-  // Guard clause: dados insuficientes
   if (!pattern || !pattern.hasEnoughData) {
     debugLog('AdherenceHeatmap', 'Dados insuficientes:', {
       hasPattern: !!pattern,
@@ -46,170 +52,42 @@ export default function AdherenceHeatmap({ pattern }) {
     )
   }
 
-  /**
-   * Calcula opacidade baseada na adherência (0-100%)
-   * 100% = 1.0 (verde opaco)
-   * 50% = 0.5 (verde translúcido)
-   * 0% = 0.1 (verde bem transparente)
-   * null = N/D (cinza neutro)
-   */
-  const getOpacity = (adherence) => {
-    if (adherence === null) return 1.0
-    if (adherence >= 90) return 1.0
-    if (adherence >= 75) return 0.8
-    if (adherence >= 50) return 0.5
-    if (adherence >= 25) return 0.25
-    return 0.1
-  }
-
-  /**
-   * Retorna cor CSS com opacidade adequada
-   * null = cinza neutro (sem protocolo)
-   */
-  const getCellColor = (adherence) => {
-    if (adherence === null) return 'rgba(120, 120, 140, 0.15)' // cinza neutro para N/D
-    const opacity = getOpacity(adherence)
-    return `rgba(34, 197, 94, ${opacity})` // green-500 com opacidade variável
-  }
-
-  /**
-   * Constrói o texto do tooltip com informações corretas de adesão
-   */
   const buildTooltip = (dayIndex, periodIndex) => {
     const cell = pattern.grid[dayIndex][periodIndex]
     const adherenceText = cell.adherence === null ? 'N/D' : `${cell.adherence}%`
-    // totalExpected = doses esperadas por dia × quantas vezes esse dia ocorre nos logs
     const totalExpected = cell.expected * (pattern.dayOccurrences?.[dayIndex] || 1)
     return `${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${adherenceText} (${cell.taken}/${totalExpected} doses)`
   }
 
-  /**
-   * Handler para tooltip ao passar mouse
-   */
-  const handleCellInteraction = (dayIndex, periodIndex) => {
+  const handleCellMouseEnter = (dayIndex, periodIndex) => {
     setHoveredCell(buildTooltip(dayIndex, periodIndex))
   }
 
-  /**
-   * Handler para tooltip ao tocar em mobile
-   */
   const handleCellTouchEnd = (dayIndex, periodIndex) => {
     const tooltip = buildTooltip(dayIndex, periodIndex)
     setTouchedCell(tooltip === touchedCell ? null : tooltip)
   }
 
-  const handleCellMouseLeave = () => {
-    setHoveredCell(null)
-  }
+  const handleCellMouseLeave = () => setHoveredCell(null)
 
-  // Renderização: Grid (visível em desktop via CSS) + Stacked (visível em mobile via CSS)
   return (
     <div
       className="adherence-heatmap"
       role="region"
       aria-label="Heatmap de adesão por dia e período"
     >
-      {/* Grid: Desktop (>=380px) */}
-      <div className="adherence-heatmap__grid-container">
-        <div className="adherence-heatmap__container">
-          {' '}
-          {/* Inner container for grid styling */}
-          {/* Cabeçalho com períodos */}
-          <div className="adherence-heatmap__header">
-            <div className="adherence-heatmap__corner" />
-            {PERIOD_NAMES.map((period, idx) => (
-              <div key={idx} className="adherence-heatmap__period-header">
-                {period}
-              </div>
-            ))}
-          </div>
-          {/* Grid de células */}
-          {pattern.grid.map((row, dayIndex) => (
-            <div key={dayIndex} className="adherence-heatmap__row">
-              {/* Label do dia */}
-              <div className="adherence-heatmap__day-label">{DAY_NAMES[dayIndex]}</div>
+      <HeatmapGrid
+        pattern={pattern}
+        hoveredCell={hoveredCell}
+        touchedCell={touchedCell}
+        getCellColor={getCellColor}
+        onCellMouseEnter={handleCellMouseEnter}
+        onCellMouseLeave={handleCellMouseLeave}
+        onCellTouchEnd={handleCellTouchEnd}
+      />
 
-              {/* Células do grid */}
-              {row.map((cell, periodIndex) => {
-                const cellKey = `${dayIndex}-${periodIndex}`
-                const isActive =
-                  hoveredCell !== null &&
-                  hoveredCell.includes(`${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}`)
+      <HeatmapStacked pattern={pattern} getCellColor={getCellColor} />
 
-                return (
-                  <div
-                    key={cellKey}
-                    className={`adherence-heatmap__cell ${isActive ? 'adherence-heatmap__cell--active' : ''} ${cell.adherence === null ? 'adherence-heatmap__cell--na' : ''}`}
-                    style={{ backgroundColor: getCellColor(cell.adherence) }}
-                    onMouseEnter={() => handleCellInteraction(dayIndex, periodIndex)}
-                    onMouseLeave={handleCellMouseLeave}
-                    onTouchEnd={() => handleCellTouchEnd(dayIndex, periodIndex)}
-                    role="gridcell"
-                    aria-label={`${DAY_NAMES[dayIndex]} ${PERIOD_NAMES[periodIndex]}: ${cell.adherence === null ? 'N/D' : `${cell.adherence}%`}`}
-                    tabIndex={0}
-                  >
-                    <span className="adherence-heatmap__cell-text">
-                      {cell.adherence === null ? '—' : `${cell.adherence}%`}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-          {/* Tooltip flutuante */}
-          {hoveredCell && (
-            <div className="adherence-heatmap__tooltip" role="tooltip">
-              {hoveredCell}
-            </div>
-          )}
-          {/* Tooltip para mobile (persistente) */}
-          {touchedCell && (
-            <div
-              className="adherence-heatmap__tooltip adherence-heatmap__tooltip--mobile"
-              role="status"
-            >
-              {touchedCell}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Stacked: Mobile (<380px) */}
-      <div className="adherence-heatmap__stacked-wrapper">
-        <div className="adherence-heatmap__stacked-container">
-          {pattern.grid.map((row, dayIndex) => (
-            <div key={dayIndex} className="adherence-heatmap__day-card">
-              <h4 className="adherence-heatmap__day-card-title">{DAY_NAMES[dayIndex]}</h4>
-              <div className="adherence-heatmap__day-card-periods">
-                {row.map((cell, periodIndex) => (
-                  <div
-                    key={periodIndex}
-                    className={`adherence-heatmap__period-bar ${cell.adherence === null ? 'adherence-heatmap__period-bar--na' : ''}`}
-                  >
-                    <span className="adherence-heatmap__period-name">
-                      {PERIOD_NAMES[periodIndex]}
-                    </span>
-                    <div className="adherence-heatmap__period-fill-bg">
-                      <div
-                        className="adherence-heatmap__period-fill"
-                        style={{
-                          width: `${cell.adherence === null ? 0 : cell.adherence}%`,
-                          backgroundColor: getCellColor(cell.adherence),
-                        }}
-                      />
-                    </div>
-                    <span className="adherence-heatmap__period-percent">
-                      {cell.adherence === null ? '—' : `${cell.adherence}%`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Narrativa (única para ambos os layouts) */}
       {pattern.narrative && (
         <div className="adherence-heatmap__narrative" role="status">
           💡 {pattern.narrative}

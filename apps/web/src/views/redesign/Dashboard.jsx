@@ -38,12 +38,39 @@ function getMotivationalMessage(adherenceScore, remainingDoses) {
   return '🎯 Vamos retomar'
 }
 
+/** Resolve o primeiro nome do usuário a partir de settings → metadata → email */
+async function resolveUserName(user, supabaseClient) {
+  const { data: settings } = await supabaseClient
+    .from('user_settings')
+    .select('display_name')
+    .eq('user_id', user.id)
+    .single()
+  if (settings?.display_name) return settings.display_name.split(' ')[0]
+  if (user?.user_metadata?.full_name) return user.user_metadata.full_name.split(' ')[0]
+  if (user?.email) return user.email.split('@')[0]
+  return ''
+}
+
+/** Seleciona o insight atual baseado no estado do dashboard */
+function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate }) {
+  if (!stats) return null
+  return insightService.selectBestInsight({
+    stats: {
+      score: stats.score ?? 0,
+      currentStreak: stats.currentStreak ?? 0,
+      longestStreak: stats.longestStreak ?? 0,
+      adherence: stats.adherence ?? 0,
+      activeProtocols: protocols?.filter((p) => p.active)?.length ?? 0,
+    },
+    dailyAdherence: [],
+    stockSummary: stockSummary?.items ?? [],
+    logs: logs ?? [],
+    onNavigate,
+  })
+}
+
 /**
  * DashboardRedesign — View principal do Santuário Terapêutico.
- *
- * Compartilha TODA a lógica de dados com Dashboard.jsx.
- * Diferença: apenas a camada de apresentação.
- *
  * @param {Function} onNavigate — Callback de navegação (view, params?) => void
  */
 export default function Dashboard({ onNavigate }) {
@@ -105,46 +132,17 @@ export default function Dashboard({ onNavigate }) {
   const smartAlerts = useSmartAlerts(stockSummary, zones, snoozedAlerts)
 
   // ── currentInsight: insight rotativo do insightService ──
-  const currentInsight = useMemo(() => {
-    if (!stats) return null
-    const insight = insightService.selectBestInsight({
-      stats: {
-        score: stats.score ?? 0,
-        currentStreak: stats.currentStreak ?? 0,
-        longestStreak: stats.longestStreak ?? 0,
-        adherence: stats.adherence ?? 0,
-        activeProtocols: protocols?.filter((p) => p.active)?.length ?? 0,
-      },
-      dailyAdherence: [],
-      stockSummary: stockSummary?.items ?? [],
-      logs: logs ?? [],
-      onNavigate,
-    })
-    return insight
-  }, [stats, stockSummary, logs, protocols, onNavigate])
+  const currentInsight = useMemo(
+    () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate }),
+    [stats, stockSummary, logs, protocols, onNavigate]
+  )
 
   // ── Carregar nome do usuário ──
   useEffect(() => {
     getCurrentUser()
       .then(async (user) => {
         if (!user) return
-
-        // 1. Prioridade: display_name do perfil (user_settings)
-        const { data: settings } = await supabase
-          .from('user_settings')
-          .select('display_name')
-          .eq('user_id', user.id)
-          .single()
-
-        if (settings?.display_name) {
-          setUserName(settings.display_name.split(' ')[0])
-        } else if (user?.user_metadata?.full_name) {
-          // 2. Fallback: nome do auth metadata
-          setUserName(user.user_metadata.full_name.split(' ')[0])
-        } else if (user?.email) {
-          // 3. Fallback: prefixo do email
-          setUserName(user.email.split('@')[0])
-        }
+        setUserName(await resolveUserName(user, supabase))
       })
       .catch(() => {})
       .finally(() => setIsLoading(false))

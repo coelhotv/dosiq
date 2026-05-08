@@ -1,36 +1,37 @@
 // src/views/redesign/HealthHistoryRedesign.jsx
 // Wave 10C — Rewrite completo: componente independente calendar-driven (sem Virtuoso, sem wrapper)
 
-import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
-import { cachedLogService as logService, cachedAdherenceService as adherenceService  } from '@shared/services'
+import { cachedLogService as logService, cachedAdherenceService as adherenceService } from '@shared/services'
 import { formatLocalDate, parseLocalDate, getSaoPauloTime, getTodayLocal, getNow, parseISO } from '@utils/dateUtils'
-import Calendar from '@shared/components/ui/Calendar'
-import Modal from '@shared/components/ui/Modal'
-import LogForm from '@shared/components/log/LogForm'
-import HistoryKPICards from './history/HistoryKPICards'
-import HistoryDayPanel from './history/HistoryDayPanel'
+import HealthHistoryView from './history/HealthHistoryView'
 import './history/HistoryRedesign.css'
 
-// Lazy: só carrega em modo complex
-const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao'))
-const AdherenceHeatmap = lazy(() => import('@adherence/components/AdherenceHeatmap'))
+/** Agrupa protocolos por plano de tratamento (optionally filtra ativos) */
+function buildPlansByProtocols(protocols, activeOnly = false) {
+  const plansById = {}
+  protocols.forEach((p) => {
+    if (!p.treatment_plan_id) return
+    if (activeOnly && !p.active) return
+    if (!plansById[p.treatment_plan_id]) {
+      plansById[p.treatment_plan_id] = {
+        ...(p.treatment_plan || { id: p.treatment_plan_id, name: 'Plano s/ nome' }),
+        protocols: [],
+      }
+    }
+    plansById[p.treatment_plan_id].protocols.push(p)
+  })
+  return Object.values(plansById)
+}
 
 /**
  * Histórico de Doses — Calendar-Driven.
- *
- * Paradigma: calendário é o controle principal de navegação.
- * Fluxo: Selecionar mês → Clicar dia → Ver doses → Editar/Deletar.
- *
- * Performance: 1 query por mês (getByMonthSlim), dados carregados on-demand.
- * SEM Virtuoso, SEM scroll infinito, SEM paginação global.
- *
  * @param {Object} props
- * @param {Function} props.onNavigate - Callback de navegação (para 'profile', etc.)
+ * @param {Function} props.onNavigate - Callback de navegação
  */
 export default function HealthHistory({ onNavigate }) {
-  // ═══ States ═══
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -39,124 +40,55 @@ export default function HealthHistory({ onNavigate }) {
   const [selectedDate, setSelectedDate] = useState(getTodayLocal())
   const [currentMonthLogs, setCurrentMonthLogs] = useState([])
   const [, setTotalLogs] = useState(0)
-
-  // Dados para modo complex (sparkline + heatmap)
   const [dailyAdherence, setDailyAdherence] = useState([])
   const [adherencePattern, setAdherencePattern] = useState(null)
 
-  // ═══ Context ═══
   const { protocols, stats, refresh } = useDashboard()
   const { mode: complexityMode } = useComplexityMode()
   const isComplex = complexityMode === 'complex'
-
-  // ═══ Refs ═══
   const patternLoadedRef = useRef(false)
 
-  // ═══ Memos ═══
-
-  // Planos de tratamento para NOVO log (só protocolos ativos)
-  const treatmentPlans = useMemo(() => {
-    const plansById = {}
-    
-    protocols.forEach((p) => {
-      if (p.treatment_plan_id && p.active) {
-        if (!plansById[p.treatment_plan_id]) {
-          plansById[p.treatment_plan_id] = {
-            ...(p.treatment_plan || { id: p.treatment_plan_id, name: 'Plano s/ nome' }),
-            protocols: []
-          }
-        }
-        plansById[p.treatment_plan_id].protocols.push(p)
-      }
-    })
-    
-    return Object.values(plansById)
-  }, [protocols])
-
-  // Planos de tratamento para EDIÇÃO de log histórico (todos os protocolos, inclusive inativos)
-  const treatmentPlansAll = useMemo(() => {
-    const plansById = {}
-    
-    protocols.forEach((p) => {
-      if (p.treatment_plan_id) {
-        if (!plansById[p.treatment_plan_id]) {
-          plansById[p.treatment_plan_id] = {
-            ...(p.treatment_plan || { id: p.treatment_plan_id, name: 'Plano s/ nome' }),
-            protocols: []
-          }
-        }
-        plansById[p.treatment_plan_id].protocols.push(p)
-      }
-    })
-    
-    return Object.values(plansById)
-  }, [protocols])
-
-  // Somente protocolos ativos para o formulário de registro (novo log)
+  const treatmentPlans = useMemo(() => buildPlansByProtocols(protocols, true), [protocols])
+  const treatmentPlansAll = useMemo(() => buildPlansByProtocols(protocols, false), [protocols])
   const activeProtocols = useMemo(() => protocols.filter(p => p.active), [protocols])
 
-  // Doses do dia selecionado — filtra dos logs do mês carregado, ordenados ascendente
   const dayLogs = useMemo(() => {
     const dStr = typeof selectedDate === 'string' ? selectedDate : formatLocalDate(selectedDate)
-    
     return currentMonthLogs
-      .filter((log) => {
-        const logDateStr = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
-        return logDateStr === dStr
-      })
+      .filter((log) => formatLocalDate(getSaoPauloTime(parseISO(log.taken_at))) === dStr)
       .sort((a, b) => parseISO(a.taken_at) - parseISO(b.taken_at))
   }, [currentMonthLogs, selectedDate])
 
-  // Datas marcadas no calendário (array de strings 'YYYY-MM-DD')
   const markedDates = useMemo(
     () => currentMonthLogs.map((log) => formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))),
     [currentMonthLogs]
   )
-
-  // Contadores do mês (para KPI "Doses este Mês")
   const dosesThisMonth = useMemo(() => currentMonthLogs.length, [currentMonthLogs])
-
-  // ═══ Effects ═══
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
       const now = getNow()
-
-      // Phase 1: UI-critical — logs do mês atual (calendário + day panel)
       const logsResult = await logService.getByMonthSlim(now.getFullYear(), now.getMonth())
       setCurrentMonthLogs(logsResult.data || [])
       setTotalLogs(logsResult.total || 0)
-
-      // Selecionar dia mais recente com dose (ou hoje)
-      if (logsResult.data?.length > 0) {
-        setSelectedDate(parseISO(logsResult.data[0].taken_at))
-      }
-
-      // UI fica interativa AQUI
+      if (logsResult.data?.length > 0) setSelectedDate(parseISO(logsResult.data[0].taken_at))
       setIsLoading(false)
 
-      // Phase 2: Dados deferidos (só se complex)
       if (isComplex) {
         const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 100))
         scheduleIdle(async () => {
           try {
             const daily = await adherenceService.getDailyAdherenceFromView(90)
             setDailyAdherence(daily)
-          } catch (err) {
-            console.error('[HistoryRedesign] Erro daily adherence:', err.message)
-          }
-
-          // Heatmap: carregar direto (sem IntersectionObserver)
+          } catch (err) { console.error('[HistoryRedesign] Erro daily adherence:', err.message) }
           if (!patternLoadedRef.current) {
             try {
               const pattern = await adherenceService.getAdherencePatternFromView()
               setAdherencePattern(pattern)
               patternLoadedRef.current = true
-            } catch (err) {
-              console.error('[HistoryRedesign] Erro pattern:', err.message)
-            }
+            } catch (err) { console.error('[HistoryRedesign] Erro pattern:', err.message) }
           }
         })
       }
@@ -166,19 +98,12 @@ export default function HealthHistory({ onNavigate }) {
     }
   }, [isComplex])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadData() }, [loadData])
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadData()
+    window.addEventListener('mr:dose-saved', loadData)
+    return () => window.removeEventListener('mr:dose-saved', loadData)
   }, [loadData])
-
-  // Escuta evento global de dose salva (GlobalDoseModal) para recarregar
-  useEffect(() => {
-    const handleDoseSaved = () => loadData()
-    window.addEventListener('mr:dose-saved', handleDoseSaved)
-    return () => window.removeEventListener('mr:dose-saved', handleDoseSaved)
-  }, [loadData])
-
-  // ═══ Handlers ═══
 
   const showSuccess = useCallback((msg) => {
     setSuccessMessage(msg)
@@ -190,173 +115,83 @@ export default function HealthHistory({ onNavigate }) {
       const result = await logService.getByMonthSlim(year, month)
       setCurrentMonthLogs(result.data || [])
       setTotalLogs(result.total || 0)
-      // Selecionar primeiro dia com dose no novo mês, ou dia 1
-      if (result.data?.length > 0) {
-        setSelectedDate(parseISO(result.data[0].taken_at))
-      } else {
-        setSelectedDate(parseLocalDate(`${year}-${String(month + 1).padStart(2, '0')}-01`))
-      }
+      const firstDate = result.data?.length > 0
+        ? parseISO(result.data[0].taken_at)
+        : parseLocalDate(`${year}-${String(month + 1).padStart(2, '0')}-01`)
+      setSelectedDate(firstDate)
       return result
+    } catch (err) { console.error('[HistoryRedesign] Erro ao carregar mês:', err); return { data: [], total: 0 } }
+  }, [])
+
+  const handleLogMedicine = useCallback(async (logData) => {
+    try {
+      if (logData.id) {
+        await logService.update(logData.id, logData)
+        showSuccess('Registro atualizado!')
+      } else if (Array.isArray(logData)) {
+        await logService.createBulk(logData)
+        showSuccess('Plano registrado!')
+      } else {
+        await logService.create(logData)
+        showSuccess('Dose registrada!')
+      }
+      setIsModalOpen(false)
+      setEditingLog(null)
+      await loadData()
+      refresh()
     } catch (err) {
-      console.error('[HistoryRedesign] Erro ao carregar mês:', err)
-      return { data: [], total: 0 }
+      console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
+      throw new Error(err.message)
     }
-  }, [])
+  }, [loadData, refresh, showSuccess])
 
-  const handleDayClick = useCallback((date) => {
-    setSelectedDate(date)
-  }, [])
+  const handleDeleteLog = useCallback(async (id) => {
+    try {
+      await logService.delete(id)
+      showSuccess('Registro removido!')
+      setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
+      setTotalLogs((prev) => Math.max(0, prev - 1))
+      refresh()
+    } catch (err) { setError('Erro ao remover: ' + err.message) }
+  }, [refresh, showSuccess])
 
-  const handleLogMedicine = useCallback(
-    async (logData) => {
-      try {
-        if (logData.id) {
-          await logService.update(logData.id, logData)
-          showSuccess('Registro atualizado!')
-        } else if (Array.isArray(logData)) {
-          await logService.createBulk(logData)
-          showSuccess('Plano registrado!')
-        } else {
-          await logService.create(logData)
-          showSuccess('Dose registrada!')
-        }
-        setIsModalOpen(false)
-        setEditingLog(null)
-        await loadData()
-        refresh()
-      } catch (err) {
-        console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
-        throw new Error(err.message)
-      }
-    },
-    [loadData, refresh, showSuccess]
-  )
+  const handleEditClick = useCallback((log) => { setEditingLog(log); setIsModalOpen(true) }, [])
+  const handleCloseModal = useCallback(() => { setIsModalOpen(false); setEditingLog(null) }, [])
 
-  const handleDeleteLog = useCallback(
-    async (id) => {
-      try {
-        await logService.delete(id)
-        showSuccess('Registro removido!')
-        // Remover do state local (otimismo) — evita reload completo
-        setCurrentMonthLogs((prev) => prev.filter((log) => log.id !== id))
-        setTotalLogs((prev) => Math.max(0, prev - 1))
-        refresh()
-      } catch (err) {
-        setError('Erro ao remover: ' + err.message)
-      }
-    },
-    [refresh, showSuccess]
-  )
-
-  const handleEditClick = useCallback((log) => {
-    setEditingLog(log)
-    setIsModalOpen(true)
-  }, [])
-
-  // ═══ Render ═══
-
-  if (isLoading) {
-    return (
-      <div className="hhr-view">
-        <div className="hhr-loading">
-          <div className="hhr-loading__spinner" />
-          <span>Carregando histórico...</span>
-        </div>
+  if (isLoading) return (
+    <div className="hhr-view">
+      <div className="hhr-loading">
+        <div className="hhr-loading__spinner" />
+        <span>Carregando histórico...</span>
       </div>
-    )
-  }
+    </div>
+  )
 
   return (
-    <div className="hhr-view">
-      {/* ── Header ── */}
-      <div className="hhr-header">
-        {onNavigate && (
-          <button
-            className="hhr-back-btn"
-            onClick={() => onNavigate('profile')}
-            aria-label="Voltar"
-          >
-            ← Voltar
-          </button>
-        )}
-        <h1 className="hhr-header__title">Histórico de Doses</h1>
-        <p className="hhr-header__subtitle">
-          Acompanhe sua jornada de saúde e adesão ao tratamento.
-        </p>
-      </div>
-
-      {/* ── Feedback messages ── */}
-      {successMessage && <div className="hhr-banner hhr-banner--success">{successMessage}</div>}
-      {error && <div className="hhr-banner hhr-banner--error">{error}</div>}
-
-      {/* ── KPI Cards ── */}
-      <HistoryKPICards
-        adherenceScore={stats?.score ?? 0}
-        currentStreak={stats?.currentStreak ?? 0}
-        dosesThisMonth={dosesThisMonth}
-      />
-
-      {/* ── Calendar + Day Panel ── */}
-      <div className="hhr-calendar-section">
-        <div className="hhr-calendar-card">
-          <Calendar
-            selectedDate={selectedDate}
-            onDayClick={handleDayClick}
-            onLoadMonth={handleCalendarLoadMonth}
-            markedDates={markedDates}
-            enableLazyLoad={true}
-            enableSwipe={true}
-            enableMonthPicker={true}
-          />
-        </div>
-
-        <HistoryDayPanel
-          selectedDate={selectedDate}
-          dayLogs={dayLogs}
-          onEditLog={handleEditClick}
-          onDeleteLog={handleDeleteLog}
-        />
-      </div>
-
-      {/* ── Sparkline 30d (complex only) ── */}
-      {isComplex && dailyAdherence.length > 0 && (
-        <div className="hhr-chart-card">
-          <h3 className="hhr-section-title">Adesão 30 Dias</h3>
-          <Suspense fallback={<div className="hhr-chart-skeleton" aria-busy="true" />}>
-            <SparklineAdesao adherenceByDay={dailyAdherence} size="expanded" />
-          </Suspense>
-        </div>
-      )}
-
-      {/* ── Adherence Heatmap (complex only) ── */}
-      {isComplex && adherencePattern && (
-        <div className="hhr-chart-card">
-          <h3 className="hhr-section-title">Padrão por Período</h3>
-          <Suspense fallback={<div className="hhr-chart-skeleton" aria-busy="true" />}>
-            <AdherenceHeatmap pattern={adherencePattern} />
-          </Suspense>
-        </div>
-      )}
-
-      {/* ── Modal de edição ── */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingLog(null)
-        }}
-      >
-        <LogForm
-          protocols={editingLog ? protocols : activeProtocols}
-          treatmentPlans={editingLog ? treatmentPlansAll : treatmentPlans}
-          initialValues={editingLog}
-          onSave={handleLogMedicine}
-          onCancel={() => {
-            setIsModalOpen(false)
-            setEditingLog(null)
-          }}
-        />
-      </Modal>
-    </div>
+    <HealthHistoryView
+      onNavigate={onNavigate}
+      successMessage={successMessage}
+      error={error}
+      isComplex={isComplex}
+      dailyAdherence={dailyAdherence}
+      adherencePattern={adherencePattern}
+      stats={stats}
+      dosesThisMonth={dosesThisMonth}
+      selectedDate={selectedDate}
+      markedDates={markedDates}
+      dayLogs={dayLogs}
+      isModalOpen={isModalOpen}
+      editingLog={editingLog}
+      protocols={protocols}
+      activeProtocols={activeProtocols}
+      treatmentPlans={treatmentPlans}
+      treatmentPlansAll={treatmentPlansAll}
+      onDayClick={(date) => setSelectedDate(date)}
+      onLoadMonth={handleCalendarLoadMonth}
+      onEditLog={handleEditClick}
+      onDeleteLog={handleDeleteLog}
+      onSaveLog={handleLogMedicine}
+      onCloseModal={handleCloseModal}
+    />
   )
 }
