@@ -67,13 +67,60 @@ export const kindSchema = z.enum([
   'dlq_digest'
 ]);
 
+// Schemas para ações interativas (Gate 4 preliminar)
+export const actionSchema = z.object({
+  id: z.enum(['take_dose', 'take_plan', 'dismiss', 'open_link']),
+  label: z.string(),
+  params: z.record(z.unknown()).optional()
+});
+
+// Metadados estritos (Gate 1 — adeus passthrough)
+export const metadataSchema = z.object({
+  kind: kindSchema,
+  builtAt: z.string(),
+  correlationId: z.string().optional(),
+  details: z.record(z.unknown()).optional()
+}).strict();
+
+// Novas validações de dados (Gate 1)
+export const doseReminderDataSchema = z.object({
+  medicineName: z.string(),
+  time: z.string(),
+  dosage: z.string().optional(),
+  protocolId: z.string().optional()
+});
+
+export const doseReminderByPlanDataSchema = z.object({
+  planName: z.string(),
+  planId: z.string().optional(),
+  scheduledTime: z.string(),
+  hour: z.number().min(0).max(23),
+  doses: z.array(z.object({
+    medicineName: z.string(),
+    dosagePerIntake: z.number().max(100),
+    dosageUnit: z.string().optional(),
+    protocolId: z.string().optional()
+  }))
+});
+
+export const doseReminderMiscDataSchema = z.object({
+  scheduledTime: z.string(),
+  hour: z.number().min(0).max(23),
+  doses: z.array(z.object({
+    medicineName: z.string(),
+    dosagePerIntake: z.number().max(100),
+    dosageUnit: z.string().optional(),
+    protocolId: z.string().optional()
+  })),
+  protocolIds: z.array(z.string()).optional()
+});
+
 // Contrato de saída da Presentation Layer (L2) para a Delivery Layer (L3)
 export const notificationPayloadSchema = z.object({
   title: z.string(),
   body: z.string(),
   pushBody: z.string(), // Texto puro sem escapes para Push/Alerts (R-205)
-  deeplink: z.string().startsWith('dosiq://'), // Garante padrão de deep linking do app
-  metadata: z.object({
-    kind: kindSchema,
-  }).passthrough()
+  deeplink: z.string().startsWith('dosiq://').nullable(), // Garante padrão de deep linking do app
+  actions: z.array(actionSchema).default([]),
+  metadata: metadataSchema
 });

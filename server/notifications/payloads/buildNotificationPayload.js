@@ -7,10 +7,12 @@ import {
 
 import {
   kindSchema,
-  notificationPayloadSchema
+  notificationPayloadSchema,
+  actionSchema,
+  metadataSchema
 } from './_payloadSchemas.js';
 
-export { kindSchema, notificationPayloadSchema };
+export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
 
 import {
   buildDailyDigestPayload,
@@ -34,11 +36,12 @@ import {
  * @param {object} params.data - Dados específicos para o tipo
  * @returns {object} Payload formatado { title, body, deeplink, metadata }
  */
-export function buildNotificationPayload({ kind, data }) {
+export function buildNotificationPayload({ kind, data, context = {} }) {
   // 1. Validar Kind
   const validatedKind = kindSchema.parse(kind);
 
   let payloadContent;
+  let actions = [];
 
   switch (validatedKind) {
     case 'daily_digest':
@@ -75,34 +78,47 @@ export function buildNotificationPayload({ kind, data }) {
       throw new Error(`Unsupported notification kind: ${kind}`);
   }
 
-  let { title, body, pushBody } = payloadContent;
-  let metadata = { ...data, kind: validatedKind };
-
-  // 3. Resolver Deeplink lógico (Responsabilidade da Layer 2)
+  // 2. Resolver Deeplink lógico (Responsabilidade da Layer 2)
   const deeplink = resolveDeeplink(validatedKind, data);
 
-  // 4. Aplicar Decoração de Reenvio (Gate 3.5)
-  if (data.isRetry) {
-    title = `🔄 ${title} (Reenvio)`;
-    body = `${body}
-
-_Esta é uma nova tentativa de envio\\._`;
-    pushBody = `${pushBody}
-
-(Reenvio)`;
-  }
+  // 3. Aplicar Decoração de Reenvio (Gate 1 — Shim de transição)
+  const decorated = applyRetryDecoration(payloadContent, context, data);
 
   // Validação do Contrato de Saída (Gate L2 -> L3)
   return notificationPayloadSchema.parse({
-    title,
-    body,
-    pushBody,
+    ...decorated,
     deeplink,
-    metadata: {
-      ...metadata,
-      builtAt: getServerTimestamp()
-    }
+    actions,
+    metadata: buildMetadata(validatedKind, context)
   });
+}
+
+/**
+ * Aplica decoração visual de reenvio se necessário.
+ * Isolado para reduzir complexidade da função principal.
+ */
+function applyRetryDecoration(content, context, data) {
+  const isRetry = context.isRetry ?? data.isRetry ?? false;
+  if (!isRetry) return content;
+
+  return {
+    ...content,
+    title: `🔄 ${content.title} (Reenvio)`,
+    body: `${content.body}\n\n_Esta é uma nova tentativa de envio\\._`,
+    pushBody: `${content.pushBody}\n\n(Reenvio)`
+  };
+}
+
+/**
+ * Constrói objeto de metadados estrito conforme contrato.
+ */
+function buildMetadata(kind, context) {
+  return {
+    kind,
+    builtAt: getServerTimestamp(),
+    ...(context.correlationId ? { correlationId: context.correlationId } : {}),
+    ...(context.details ? { details: context.details } : {})
+  };
 }
 
 /**
