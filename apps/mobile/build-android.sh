@@ -4,6 +4,16 @@
 
 set -euo pipefail
 
+# Garantir que o Android SDK é encontrado pelo Gradle
+export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
+if [ ! -d "$ANDROID_HOME" ]; then
+  echo "❌ Android SDK não encontrado em $ANDROID_HOME"
+  echo "   Instale o Android SDK via Android Studio ou defina ANDROID_HOME."
+  exit 1
+fi
+
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
