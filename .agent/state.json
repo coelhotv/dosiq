@@ -1,18 +1,18 @@
 {
   "project": "dosiq",
-  "sprint": "2026-W18",
+  "sprint": "2026-W19",
   "session": {
-    "mode": "idle",
+    "mode": "coding",
     "status": "completed",
-    "goal": null,
-    "goal_type": null
+    "goal": "Mobile — Fluxos Iniciais + Política de Privacidade",
+    "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "rules_count": 84,
     "anti_patterns_count": 71,
-    "decisions_count": 40,
+    "decisions_count": 41,
     "contracts_count": 20
   },
   "genes": {
@@ -20,6 +20,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-03T00:00:00Z"
+    "index_loaded_at": "2026-05-09T04:00:00Z"
   }
 }

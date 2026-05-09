@@ -9,7 +9,7 @@
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
 import { useEffect, useState } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, Linking } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ROUTES } from './routes'
@@ -17,6 +17,9 @@ import { navigationRef } from './navigationRef'
 import SmokeScreen from '../screens/SmokeScreen'
 import LoginScreen from '../screens/LoginScreen'
 import LandingScreen from '../screens/LandingScreen'
+import SignupScreen from '../screens/SignupScreen'
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
+import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -29,6 +32,7 @@ const Stack = createNativeStackNavigator()
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
   const [session, setSession] = useState(undefined)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   // Setup push notifications pós-login (H6.3)
   usePushNotifications({ supabase, session })
@@ -54,6 +58,11 @@ export default function Navigation() {
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true)
+        setSession(s ?? null)
+        return
+      }
       if (event === 'SIGNED_OUT') {
         debugLog('Navigation', 'User signed out, clearing caches...')
         await AsyncStorage.multiRemove([
@@ -66,6 +75,24 @@ export default function Navigation() {
     })
 
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    function handleDeepLink({ url }) {
+      if (!url) return
+      const hash = url.split('#')[1]
+      if (!hash) return
+      const params = Object.fromEntries(new URLSearchParams(hash))
+      if (params.type === 'recovery' && params.access_token && params.refresh_token) {
+        supabase.auth.setSession({
+          access_token: params.access_token,
+          refresh_token: params.refresh_token,
+        })
+      }
+    }
+    Linking.getInitialURL().then((url) => { if (url) handleDeepLink({ url }) })
+    const sub = Linking.addEventListener('url', handleDeepLink)
+    return () => sub.remove()
   }, [])
 
 
@@ -86,15 +113,20 @@ export default function Navigation() {
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
       >
-        {/* Renderização condicional baseada no estado da sessão */}
-        {session ? (
-          // Utilizador autenticado → renderizar shell do produto (tabs)
+        {isPasswordRecovery ? (
+          <Stack.Screen
+            name={ROUTES.RESET_PASSWORD}
+            component={ResetPasswordScreen}
+            initialParams={{ onComplete: () => setIsPasswordRecovery(false) }}
+          />
+        ) : session ? (
           <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
         ) : (
-          // Sem sessão → renderizar login e smoke (diag)
           <>
             <Stack.Screen name={ROUTES.LANDING} component={LandingScreen} />
             <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+            <Stack.Screen name={ROUTES.SIGNUP} component={SignupScreen} />
+            <Stack.Screen name={ROUTES.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
             <Stack.Screen
               name={ROUTES.SMOKE}
               component={SmokeScreen}

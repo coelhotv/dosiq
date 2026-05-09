@@ -28,6 +28,7 @@ function AppInner() {
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
@@ -38,6 +39,11 @@ function AppInner() {
       .catch(() => { setSession(null); setIsLoading(false) })
 
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true)
+        setSession(session?.user ?? null)
+        return
+      }
       if (event === 'SIGNED_OUT') {
         // Verificar race condition (PWA + aba concorrente) antes de deslogar
         const { data: { session: latestSession } } = await supabase.auth.getSession()
@@ -85,6 +91,8 @@ function AppInner() {
                   session={session}
                   currentView={currentView}
                   showAuth={showAuth}
+                  isPasswordRecovery={isPasswordRecovery}
+                  onResetComplete={() => { setIsPasswordRecovery(false); setCurrentView('dashboard') }}
                   initialProtocolParams={initialProtocolParams}
                   initialStockParams={initialStockParams}
                   initialTreatmentMedicineId={initialTreatmentMedicineId}

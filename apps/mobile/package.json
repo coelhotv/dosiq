@@ -31,6 +31,7 @@
     "expo-secure-store": "^14.0.1",
     "expo-status-bar": "~2.2.3",
     "expo-tracking-transparency": "^55.0.13",
+    "expo-web-browser": "~14.2.0",
     "lucide-react-native": "^1.8.0",
     "react": "19.0.0",
     "react-native": "0.79.6",

@@ -2,20 +2,27 @@
 import { z } from 'zod'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
-/**
- * Schema para validação de credenciais de login
- */
 const loginCredentialsSchema = z.object({
   email: z.string().email('Email inválido').trim(),
   password: z.string().min(1, 'Senha é obrigatória'),
 })
 
-/**
- * Traduz erros do Supabase Auth para mensagens amigáveis em português
- * @param {Error} authError - Erro retornado pelo Supabase Auth
- * @returns {string} Mensagem de erro traduzida
- */
-function translateAuthError(authError) {
+const signupCredentialsSchema = z
+  .object({
+    email: z.string().email('Email inválido').trim(),
+    password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+    confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
+
+const emailSchema = z.object({
+  email: z.string().email('Email inválido').trim(),
+})
+
+function translateAuthError(authError, context = 'login') {
   if (!authError) return null
 
   const message = authError.message?.toLowerCase() || ''
@@ -27,7 +34,13 @@ function translateAuthError(authError) {
     return 'Usuário não encontrado'
   }
   if (message.includes('email not confirmed')) {
-    return 'Email não confirmado'
+    return 'Email não confirmado. Verifique sua caixa de entrada.'
+  }
+  if (message.includes('user already registered')) {
+    return 'Email já cadastrado. Faça login.'
+  }
+  if (message.includes('password should be at least') || message.includes('weak password')) {
+    return 'Senha muito fraca. Use no mínimo 8 caracteres.'
   }
   if (message.includes('password too long')) {
     return 'Senha muito longa'
@@ -36,21 +49,21 @@ function translateAuthError(authError) {
     return 'Email não autenticado'
   }
   if (message.includes('rate limit')) {
-    return 'Muitas tentativas de login. Tente novamente mais tarde'
+    return 'Muitas tentativas. Tente novamente mais tarde.'
   }
 
-  // Fallback: retorna mensagem original se não conseguir traduzir
-  return authError.message || 'Erro ao fazer login'
+  const fallbacks = {
+    login: 'Erro ao fazer login',
+    signup: 'Erro ao criar conta',
+    reset: 'Erro ao enviar email de recuperação',
+  }
+  return fallbacks[context] || authError.message || 'Erro inesperado'
 }
 
 /**
  * Realiza login com email e senha
- * @param {string} email - Email do usuário
- * @param {string} password - Senha do usuário
- * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function signInWithEmail(email, password) {
-  // Validação com Zod
   const validation = loginCredentialsSchema.safeParse({ email, password })
 
   if (!validation.success) {
@@ -65,8 +78,7 @@ export async function signInWithEmail(email, password) {
     })
 
     if (authError) {
-      const translatedError = translateAuthError(authError)
-      return { success: false, error: translatedError }
+      return { success: false, error: translateAuthError(authError, 'login') }
     }
 
     return { success: true }
@@ -76,8 +88,102 @@ export async function signInWithEmail(email, password) {
 }
 
 /**
+ * Cria nova conta com email e senha
+ * Supabase envia email de confirmação após cadastro bem-sucedido
+ */
+export async function signUpWithEmail(email, password, confirmPassword) {
+  const validation = signupCredentialsSchema.safeParse({ email, password, confirmPassword })
+
+  if (!validation.success) {
+    const errorMessage = validation.error.issues[0]?.message || 'Dados inválidos'
+    return { success: false, error: errorMessage }
+  }
+
+  try {
+    const { error: authError } = await supabase.auth.signUp({
+      email: validation.data.email,
+      password: validation.data.password,
+    })
+
+    if (authError) {
+      return { success: false, error: translateAuthError(authError, 'signup') }
+    }
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Erro inesperado ao criar conta' }
+  }
+}
+
+/**
+ * Envia email de recuperação de senha
+ * Supabase não revela se o email existe (resposta sempre "success" por segurança)
+ */
+export async function sendPasswordReset(email) {
+  const validation = emailSchema.safeParse({ email })
+
+  if (!validation.success) {
+    const errorMessage = validation.error.issues[0]?.message || 'Email inválido'
+    return { success: false, error: errorMessage }
+  }
+
+  try {
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(
+      validation.data.email,
+      { redirectTo: 'dosiq://auth/callback' }
+    )
+
+    if (authError) {
+      return { success: false, error: translateAuthError(authError, 'reset') }
+    }
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Erro inesperado ao enviar email de recuperação' }
+  }
+}
+
+const updatePasswordSchema = z
+  .object({
+    password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+    confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
+
+/**
+ * Atualiza a senha do usuário autenticado via link de recuperação
+ */
+export async function updatePassword(newPassword, confirmPassword) {
+  const validation = updatePasswordSchema.safeParse({
+    password: newPassword,
+    confirmPassword,
+  })
+
+  if (!validation.success) {
+    const errorMessage = validation.error.issues[0]?.message || 'Dados inválidos'
+    return { success: false, error: errorMessage }
+  }
+
+  try {
+    const { error: authError } = await supabase.auth.updateUser({
+      password: validation.data.password,
+    })
+
+    if (authError) {
+      return { success: false, error: translateAuthError(authError, 'reset') }
+    }
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Erro inesperado ao atualizar senha' }
+  }
+}
+
+/**
  * Faz logout do usuário
- * @returns {Promise<{success: boolean}>}
  */
 export async function signOut() {
   try {
@@ -93,4 +199,4 @@ export async function signOut() {
   }
 }
 
-export default { signInWithEmail, signOut }
+export default { signInWithEmail, signUpWithEmail, sendPasswordReset, updatePassword, signOut }

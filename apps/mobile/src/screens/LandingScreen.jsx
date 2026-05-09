@@ -1,12 +1,10 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Pressable, 
-  Alert,
-  Platform,
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
   Image
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +18,7 @@ export default function LandingScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const handleCreateAccount = () => {
-    Alert.alert('Em breve', 'Cadastro pelo app ainda não está disponível.');
+    navigation.navigate(ROUTES.SIGNUP);
   };
 
   const handleLogin = () => {

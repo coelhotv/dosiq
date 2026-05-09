@@ -18,6 +18,7 @@ const Consultation = lazy(() => import('./views/redesign/Consultation'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
 const NotificationInbox = lazy(() => import('./views/redesign/NotificationInbox'))
+const ResetPassword = lazy(() => import('./views/ResetPasswordView'))
 
 const SKELETON = (
   <div
@@ -46,7 +47,13 @@ export default function AppViewRouter({
   setInitialTreatmentMedicineId,
   setIsDoseModalOpen,
   setDoseModalInitialValues,
+  isPasswordRecovery,
+  onResetComplete,
 }) {
+  if (isPasswordRecovery) {
+    return W(<ResetPassword onComplete={onResetComplete} />)
+  }
+
   if (!session) {
     return showAuth ? (
       <Auth

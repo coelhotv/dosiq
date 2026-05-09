@@ -24,7 +24,7 @@ import { logEvent, setUserId } from '../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../platform/analytics/analyticsEvents'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,12 +54,17 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color={colors.text.secondary} />
+        <Text style={styles.backButtonText}>Voltar</Text>
+      </Pressable>
+
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Image 
-          source={require('../../assets/icon.png')} 
+        <Image
+          source={require('../../assets/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -101,6 +106,10 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
+        <Pressable onPress={() => navigation.navigate(ROUTES.FORGOT_PASSWORD)}>
+          <Text style={styles.forgotPasswordLink}>Esqueci minha senha</Text>
+        </Pressable>
+
         {error && <Text style={styles.error}>{error}</Text>}
 
         <Pressable
@@ -123,6 +132,19 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.brand,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[4],
+    paddingBottom: spacing[2],
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    fontWeight: '500',
   },
   container: {
     flex: 1,
@@ -170,7 +192,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
     borderRadius: 8,
-    marginBottom: spacing[3],
+    marginBottom: spacing[2],
   },
   passwordInput: {
     flex: 1,
@@ -182,8 +204,15 @@ const styles = StyleSheet.create({
   eyeIcon: {
     paddingHorizontal: 12,
   },
+  forgotPasswordLink: {
+    textAlign: 'center',
+    color: colors.brand.primary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: spacing[4],
+  },
   button: {
-    backgroundColor: '#006A5E',
+    backgroundColor: colors.brand.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

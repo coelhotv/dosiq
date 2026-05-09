@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, A
 import { useNavigation } from '@react-navigation/native'
 import { Bell, ChevronRight } from 'lucide-react-native'
 import Constants from 'expo-constants'
+import * as WebBrowser from 'expo-web-browser'
 import { useProfile } from '@profile/hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -10,6 +11,7 @@ import LoadingState from '@shared/components/states/LoadingState'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
+import { EXTERNAL_URLS } from '../../../shared/constants'
 
 /**
  * Tela de Perfil do MVP mobile (H5.6)
@@ -20,6 +22,10 @@ export default function ProfileScreen() {
   const { user, loading, error, refresh } = useProfile()
 
   const { unreadCount, refreshBadge } = useUnreadBadgeCount(user?.id)
+
+  const handlePrivacyPolicy = async () => {
+    await WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
+  }
 
   const handleLogout = async () => {
     Alert.alert(
@@ -113,17 +119,13 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.otherRow}
-              onPress={() => {}}
-              activeOpacity={1}
-              disabled={true}
+              onPress={handlePrivacyPolicy}
+              activeOpacity={0.7}
             >
               <View style={styles.otherLabelContainer}>
-                <Text style={styles.otherLabelDisabled}>Privacidade e dados</Text>
-                <View style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonText}>em breve</Text>
-                </View>
+                <Text style={styles.otherLabel}>Privacidade e dados</Text>
               </View>
-              <ChevronRight size={18} color={colors.text.muted} strokeWidth={1.5} />
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </TouchableOpacity>
             <View style={styles.otherDivider} />
             <TouchableOpacity
