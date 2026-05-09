@@ -82,6 +82,7 @@
 - **[R-200]** Centralized Notification Gate (ADR-030): Toda lógica de supressão DEVE residir no Dispatcher -> [`rules/mobile_and_platform/R-200.md`](./rules/mobile_and_platform/R-200.md)
 - **[R-209]** JS Stack for Android 7 Navigation Stability -> [`rules/mobile_and_platform/R-209.md`](./rules/mobile_and_platform/R-209.md)
 - **[R-215]** Native Dependency Sync for Cross-Platform Components -> [`rules/mobile_and_platform/R-215.md`](./rules/mobile_and_platform/R-215.md)
+- **[R-220]** 3-Layer Notification Architecture (L1, L2, L3): Separação rigorosa entre negócio, apresentação e entrega -> [`rules/mobile_and_platform/R-220.md`](./rules/mobile_and_platform/R-220.md)
 
 
 

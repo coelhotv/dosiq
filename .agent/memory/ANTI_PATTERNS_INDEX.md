@@ -76,6 +76,8 @@
 - **[AP-T01]** Tests pass locally, fail in CI; unpredictable hangs -> [`anti-patterns/process_and_testing/AP-T01.md`](./anti-patterns/process_and_testing/AP-T01.md)
 - **[AP-T02]** Memory accumulation, OOM on 8GB machines, state leaks between tests -> [`anti-patterns/process_and_testing/AP-T02.md`](./anti-patterns/process_and_testing/AP-T02.md)
 - **[AP-T06]** Timing-dependent, flaky in CI; can timeout unexpectedly -> [`anti-patterns/process_and_testing/AP-T06.md`](./anti-patterns/process_and_testing/AP-T06.md)
+- **[AP-071]** Timezone-dependent logic in notifications without UTC conversion first. -> [`anti-patterns/notifications/AP-071.md`](./anti-patterns/notifications/AP-071.md)
+- **[AP-075]** Presentation Leakage in Business Logic (L1): Construção de strings formatadas em schedulers -> [`anti-patterns/notifications/AP-075.md`](./anti-patterns/notifications/AP-075.md)
 - **[AP-T07]** If assertion fails, Promise stays pending → Vitest hangs indefinitely -> [`anti-patterns/process_and_testing/AP-T07.md`](./anti-patterns/process_and_testing/AP-T07.md)
 - **[AP-T08]** Blocks development, 6.5 min wait time discourages testing -> [`anti-patterns/process_and_testing/AP-T08.md`](./anti-patterns/process_and_testing/AP-T08.md)
 - **[AP-T09]** Tests >15s can trigger 10-min kill switch in agents, fail CI -> [`anti-patterns/process_and_testing/AP-T09.md`](./anti-patterns/process_and_testing/AP-T09.md)

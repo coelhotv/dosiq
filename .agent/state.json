@@ -2,10 +2,10 @@
   "project": "dosiq",
   "sprint": "2026-W19",
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "goal": "Mobile — Fluxos Iniciais + Política de Privacidade",
-    "goal_type": "feature"
+    "mode": "planning",
+    "status": "in-progress",
+    "goal": "Notifications Architecture Consolidation (Gate 1 Prep)",
+    "goal_type": "refactor"
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
