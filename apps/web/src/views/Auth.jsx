@@ -1,7 +1,82 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import { signIn, signUp } from '@shared/utils/supabase'
+import { signIn, signUp, sendPasswordReset } from '@shared/utils/supabase'
 import './Auth.css'
+
+function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [emailSent, setEmailSent] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    try {
+      await sendPasswordReset(email)
+      setEmailSent(true)
+    } catch {
+      setError('Erro ao enviar email de recuperação. Verifique o endereço.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        {onClose && (
+          <button className="auth-close-btn" onClick={onClose} aria-label="Fechar">
+            <X size={20} />
+          </button>
+        )}
+        <div className="auth-header">
+          <div className="logo-container">
+            <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
+          </div>
+          <h1>Recuperar senha</h1>
+          <p className="auth-subtitle">Informe seu email para receber o link de redefinição</p>
+        </div>
+
+        {emailSent ? (
+          <div className="auth-form">
+            <div className="auth-message">Verifique seu email para redefinir sua senha.</div>
+            <button type="button" className="auth-submit-btn" onClick={onBack}>
+              Voltar ao login
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="forgot-email">Email</label>
+              <input
+                id="forgot-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                className="auth-input"
+              />
+            </div>
+            {error && <div className="auth-error">{error}</div>}
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+            </button>
+          </form>
+        )}
+
+        <div className="auth-footer">
+          <p>
+            <button type="button" className="toggle-auth-btn" onClick={onBack}>
+              Lembrei minha senha
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Auth({ onAuthSuccess, onClose }) {
   const [isLogin, setIsLogin] = useState(true)
@@ -10,6 +85,7 @@ export default function Auth({ onAuthSuccess, onClose }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -40,6 +116,17 @@ export default function Auth({ onAuthSuccess, onClose }) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isForgotPassword) {
+    return (
+      <ForgotPasswordCard
+        email={email}
+        setEmail={setEmail}
+        onClose={onClose}
+        onBack={() => { setIsForgotPassword(false); setError(null) }}
+      />
+    )
   }
 
   return (
@@ -87,6 +174,18 @@ export default function Auth({ onAuthSuccess, onClose }) {
               className="auth-input"
             />
           </div>
+
+          {isLogin && (
+            <div className="auth-forgot-password-wrapper">
+              <button
+                type="button"
+                className="toggle-auth-btn"
+                onClick={() => { setIsForgotPassword(true); setError(null) }}
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
           {message && <div className="auth-message">{message}</div>}

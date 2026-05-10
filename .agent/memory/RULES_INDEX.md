@@ -188,3 +188,5 @@
 - **[R-216]** Null-Safe Form Initialization: Always treat initialValues as potentially null or undefined to prevent TypeError when accessing properties. -> [`rules/react_and_ui/R-216.md`](./rules/react_and_ui/R-216.md)
 - **[R-217]** Logout via localStorage cleanup (sb-* keys) + reload — NUNCA usar supabase.auth.signOut() diretamente (Workbox bloqueia /auth/v1/logout) -> [`rules/react_and_ui/R-217.md`](./rules/react_and_ui/R-217.md)
 - **[R-221]** SQP — Standard Quality Protocol for Multi-Gate Projects: Enforces strict hard-stops, branch naming, and zero-lint-regression policies for complex architectural migrations. -> [`rules/process_and_testing/R-221.md`](./rules/process_and_testing/R-221.md)
+
+- **[R-224]** Deep link auth handlers devem ser async + try/catch + suportar PKCE (`?code=` → `exchangeCodeForSession`) e implicit flow (`#access_token=` → `setSession`). -> [`rules/mobile_and_platform/R-224.md`](./rules/mobile_and_platform/R-224.md)

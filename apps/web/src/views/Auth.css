@@ -233,3 +233,9 @@
     padding: 1.5rem 1rem;
   }
 }
+
+
+.auth-forgot-password-wrapper {
+  text-align: right;
+  margin-top: -8px;
+}

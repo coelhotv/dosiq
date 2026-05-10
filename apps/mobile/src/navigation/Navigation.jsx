@@ -78,19 +78,43 @@ export default function Navigation() {
   }, [])
 
   useEffect(() => {
-    function handleDeepLink({ url }) {
+    async function handleDeepLink({ url }) {
       if (!url) return
+
+      // PKCE flow: dosiq://auth/callback?code=xxxxx
+      const queryString = url.split('?')[1]?.split('#')[0]
+      if (queryString) {
+        const queryParams = Object.fromEntries(new URLSearchParams(queryString))
+        if (queryParams.code) {
+          try {
+            const { error } = await supabase.auth.exchangeCodeForSession(queryParams.code)
+            if (error) debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
+          } catch (e) {
+            debugLog('Navigation', 'Exceção em exchangeCodeForSession', e?.message)
+          }
+          return
+        }
+      }
+
+      // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery
       const hash = url.split('#')[1]
       if (!hash) return
       const params = Object.fromEntries(new URLSearchParams(hash))
       if (params.type === 'recovery' && params.access_token && params.refresh_token) {
-        supabase.auth.setSession({
-          access_token: params.access_token,
-          refresh_token: params.refresh_token,
-        })
+        try {
+          const { error } = await supabase.auth.setSession({
+            access_token: params.access_token,
+            refresh_token: params.refresh_token,
+          })
+          if (error) debugLog('Navigation', 'setSession recovery falhou', error.message)
+        } catch (e) {
+          debugLog('Navigation', 'Exceção em setSession recovery', e?.message)
+        }
       }
     }
-    Linking.getInitialURL().then((url) => { if (url) handleDeepLink({ url }) })
+    Linking.getInitialURL()
+      .then((url) => { if (url) handleDeepLink({ url }) })
+      .catch((err) => debugLog('Navigation', 'getInitialURL falhou', err?.message))
     const sub = Linking.addEventListener('url', handleDeepLink)
     return () => sub.remove()
   }, [])
