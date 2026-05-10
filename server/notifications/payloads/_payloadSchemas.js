@@ -7,7 +7,8 @@ export const dailyDigestDataSchema = z.object({
   medicines: z.array(z.object({
     name: z.string(),
     time: z.string(),
-    dosage: z.string().optional()
+    dosagePerIntake: z.number().optional(),
+    dosageUnit: z.string().optional()
   }))
 });
 
@@ -17,7 +18,11 @@ export const adherenceReportDataSchema = z.object({
   percentage: z.number().min(0).max(100),
   taken: z.number(),
   total: z.number(),
-  storytelling: z.string().optional() // Insights comparativos vindos da L1
+  comparison: z.object({
+    previousPercentage: z.number().min(0).max(100),
+    deltaPercent: z.number(),
+    trend: z.enum(['up', 'down', 'flat'])
+  }).optional()
 });
 
 export const stockAlertDataSchema = z.object({
@@ -87,7 +92,8 @@ export const metadataSchema = z.object({
 export const doseReminderDataSchema = z.object({
   medicineName: z.string(),
   time: z.string(),
-  dosage: z.string().optional(),
+  dosagePerIntake: z.number().optional(),
+  dosageUnit: z.string().optional(),
   protocolId: z.string().optional(),
   hour: z.number().min(0).max(23).optional()
 });

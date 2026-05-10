@@ -28,19 +28,7 @@ async function _getEligibleUsersForAdherence(users, correlationId) {
   return eligibleUsers;
 }
 
-function _getAdherenceStorytelling(percentage, percentageYesterday, expectedDoses) {
-  if (percentage > percentageYesterday) {
-    return `📈 Melhora de ${percentage - percentageYesterday}% em relação a ontem!`;
-  } else if (percentage < percentageYesterday && percentage > 0) {
-    return `📉 Hoje foi um pouco mais difícil que ontem (${percentage}% vs ${percentageYesterday}%).`;
-  } else if (percentage === 100 && percentageYesterday === 100) {
-    return `🌟 Segundo dia seguido com 100%!`;
-  } else if (percentage === 0 && expectedDoses > 0) {
-    return `🧘 Amanhã é uma nova oportunidade para cuidar de você.`;
-  } else {
-    return `⚖️ Mantendo a constância de ontem.`;
-  }
-}
+// _getAdherenceStorytelling removed — moved to Layer 2 (buildNotificationPayload.js)
 
 async function _processUserAdherence(user, protocolsByUser, dispatcher, correlationId) {
   const { user_id: userId, display_name: displayName } = user;
@@ -72,7 +60,11 @@ async function _processUserAdherence(user, protocolsByUser, dispatcher, correlat
     }, 0);
     const percentageYesterday = expectedYesterday > 0 ? Math.min(100, Math.round((yesterdayLogs.length / expectedYesterday) * 100)) : 0;
     
-    const storytelling = _getAdherenceStorytelling(percentage, percentageYesterday, expectedDoses);
+    const delta = percentage - percentageYesterday;
+    const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+    const comparison = expectedYesterday > 0
+      ? { previousPercentage: percentageYesterday, deltaPercent: Math.abs(delta), trend }
+      : undefined;
 
     const data = {
       firstName: displayName || 'Paciente',
@@ -80,7 +72,7 @@ async function _processUserAdherence(user, protocolsByUser, dispatcher, correlat
       percentage,
       taken: takenDoses,
       total: expectedDoses,
-      storytelling
+      comparison
     };
 
     await dispatcher.dispatch({

@@ -4,11 +4,21 @@ import {
   stockAlertDataSchema, 
   titrationAlertDataSchema, 
   prescriptionAlertDataSchema, 
-  dlqDigestDataSchema 
+  dlqDigestDataSchema,
+  doseReminderDataSchema
 } from './_payloadSchemas.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { getSaoPauloTime } from '../../utils/dateUtils.js';
+
+const formatDose = (qty, unit) => {
+  if (!qty) return undefined;
+  const u = unit?.toLowerCase() || 'cp';
+  if (['mg', 'mcg', 'g', 'ml'].includes(u)) {
+    return '1 cp';
+  }
+  return `${qty} ${u}`;
+};
 
 export function buildDailyDigestPayload(data) {
   const { firstName, hour, pendingCount, medicines } = dailyDigestDataSchema.parse(data);
@@ -25,9 +35,10 @@ export function buildDailyDigestPayload(data) {
     plainMsg += `Você tem ${pendingCount} ${text} para hoje:\n`;
     
     medicines.forEach(m => {
+      const displayDosage = formatDose(m.dosagePerIntake, m.dosageUnit);
       richMsg += `💊 *${escapeMarkdownV2(m.name)}*\n`;
-      richMsg += `⏰ ${escapeMarkdownV2(m.time)}${m.dosage ? ` \\(${escapeMarkdownV2(m.dosage)}\\)` : ''}\n\n`;
-      plainMsg += `⏰ ${m.name} - ${m.time}${m.dosage ? ` (${m.dosage})` : ''}\n`;
+      richMsg += `⏰ ${escapeMarkdownV2(m.time)}${displayDosage ? ` \\(${escapeMarkdownV2(displayDosage)}\\)` : ''}\n\n`;
+      plainMsg += `⏰ ${m.name} - ${m.time}${displayDosage ? ` (${displayDosage})` : ''}\n`;
     });
     richMsg += `Não se esqueça de registrar no app\\!`;
     plainMsg += `Não se esqueça de registrar no app!`;
@@ -42,7 +53,7 @@ export function buildDailyDigestPayload(data) {
 }
 
 export function buildAdherenceReportPayload(data) {
-  const { firstName, period, percentage, taken, total, storytelling } = adherenceReportDataSchema.parse(data);
+  const { firstName, period, percentage, taken, total, comparison } = adherenceReportDataSchema.parse(data);
   const nudge = getMotivationalNudge(percentage);
   const title = '📈 Relatório diário';
   
@@ -57,9 +68,17 @@ export function buildAdherenceReportPayload(data) {
   plainMsg += `Sua adesão ${period} foi de ${percentage}% `;
   plainMsg += `✅ ${taken} de ${total} doses registradas.\n`;
   
-  if (storytelling) {
-    richMsg += `*Comparação:* ${escapeMarkdownV2(storytelling)}\n\n`;
-    plainMsg += `Comparação: \n${storytelling} `;
+  if (comparison) {
+    const { deltaPercent, trend } = comparison;
+    const trendEmoji = trend === 'up' ? '📈' : trend === 'down' ? '📉' : '➡️';
+    const trendText = trend === 'up'
+      ? `Melhora de ${deltaPercent}% vs ontem`
+      : trend === 'down'
+      ? `Queda de ${deltaPercent}% vs ontem`
+      : `Estável vs ontem`;
+
+    richMsg += `*Comparação:* ${trendEmoji} ${escapeMarkdownV2(trendText)}\n\n`;
+    plainMsg += `Comparação: ${trendEmoji} ${trendText}\n`;
   }
   
   richMsg += `_${escapeMarkdownV2(nudge)}_`;
@@ -69,11 +88,12 @@ export function buildAdherenceReportPayload(data) {
 }
 
 export function buildDoseReminderPayload(data) {
-  const medicineName = data.medicineName || 'Medicamento';
-  const time = data.time || '';
+  const { medicineName, time, dosagePerIntake, dosageUnit } = doseReminderDataSchema.parse(data);
   const title = '💊 Hora do Medicamento';
-  const body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)${data.dosage ? ` — **${escapeMarkdownV2(data.dosage)}**` : ''}\\.`;
-  const pushBody = `Está na hora de tomar ${medicineName} (${time})${data.dosage ? ` — ${data.dosage}` : ''}.`;
+  const displayDosage = formatDose(dosagePerIntake, dosageUnit);
+  
+  const body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)${displayDosage ? ` — **${escapeMarkdownV2(displayDosage)}**` : ''}\\.`;
+  const pushBody = `Está na hora de tomar ${medicineName} (${time})${displayDosage ? ` — ${displayDosage}` : ''}.`;
   return { title, body, pushBody };
 }
 
