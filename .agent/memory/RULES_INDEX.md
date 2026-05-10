@@ -83,6 +83,8 @@
 - **[R-209]** JS Stack for Android 7 Navigation Stability -> [`rules/mobile_and_platform/R-209.md`](./rules/mobile_and_platform/R-209.md)
 - **[R-215]** Native Dependency Sync for Cross-Platform Components -> [`rules/mobile_and_platform/R-215.md`](./rules/mobile_and_platform/R-215.md)
 - **[R-220]** 3-Layer Notification Architecture (L1, L2, L3): Separação rigorosa entre negócio, apresentação e entrega -> [`rules/mobile_and_platform/R-220.md`](./rules/mobile_and_platform/R-220.md)
+- **[R-222]** Notification Schema Hardening: Usar strict enums (z.enum) para IDs de ações e parâmetros para evitar injeção e falhas silenciosas -> [`rules/notifications/R-222.md`](./rules/notifications/R-222.md)
+- **[R-223]** Mobile Button Stacking: Preferir empilhamento vertical para botões de ação (Telegram/Mobile) para evitar overflow e melhorar hit-targets -> [`rules/notifications/R-223.md`](./rules/notifications/R-223.md)
 
 
 

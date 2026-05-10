@@ -13,7 +13,6 @@
 **Dosiq** — PWA de gerenciamento de medicamentos. React 19 + Vite 7 + Supabase + Zod 4 + Framer Motion 12 + Vitest 4. Deploy: Vercel Hobby (grátis).
 
 **v3.3.0** — Fases 1-5 ✅ + Mobile M0-M8 ✅ + HealthHistory P1-P4 ✅ + Chatbot F8.1 ✅ + Redesign Wave 4-5 ✅
-**Próxima:** Wave 6 — Dashboard Redesign (`plans/backlog-redesign/`)
 
 ---
 
