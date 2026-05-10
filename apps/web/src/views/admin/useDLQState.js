@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { dlqService } from '@services/api/dlqService'
 
 function _buildDLQQueryParams(page, pageSize, statusFilter) {
@@ -75,7 +75,9 @@ export function useDLQState() {
   }, [page, pageSize, statusFilter])
 
   useEffect(() => {
-    loadEntries()
+    startTransition(() => {
+      loadEntries()
+    })
   }, [loadEntries])
 
   const handleRetry = useCallback((id) => {

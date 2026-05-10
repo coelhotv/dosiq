@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, startTransition } from 'react'
 import Button from '@shared/components/ui/Button'
 import './TitrationWizard.css'
 
@@ -12,7 +12,9 @@ export default function TitrationWizard({ schedule = [], onChange }) {
   })
 
   useEffect(() => {
-    setStages(schedule)
+    startTransition(() => {
+      setStages(schedule)
+    })
   }, [schedule])
 
   const handleAddStage = () => {

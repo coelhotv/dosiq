@@ -6,7 +6,7 @@
  * @module useNotificationLog
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import { AppState } from 'react-native'
 import { getTodayLocal, getNow, parseISO, addDays } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -159,7 +159,9 @@ export function useNotificationLog(options = {}) {
 
   useEffect(() => {
     isMounted.current = true
-    load()
+    startTransition(() => {
+      load()
+    })
     return () => {
       isMounted.current = false
     }

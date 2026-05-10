@@ -53,6 +53,8 @@ export default function Stock({ initialParams, onClearParams }) {
     ...highItems.filter(i => i.hasActiveProtocol), ...orphanItems,
   ], [criticalItems, warningItems, okItems, highItems, orphanItems])
 
+  const protocols = dashboardData?.protocols
+
   const costData = useMemo(() => {
     if (!medicines?.length) return null
     const medicinesWithStock = medicines.map((med) => ({
@@ -61,17 +63,17 @@ export default function Stock({ initialParams, onClearParams }) {
       purchases: allPurchases?.filter((p) => p.medicine_id === med.id) || [],
     }))
     try {
-      const activeProtocols = dashboardData?.protocols?.filter((p) => p.active) || []
+      const activeProtocols = protocols?.filter((p) => p.active) || []
       return calculateMonthlyCosts(medicinesWithStock, activeProtocols)
     } catch (err) {
       console.error('[StockRedesign] Erro ao calcular custos:', err)
       return null
     }
-  }, [medicines, items, allPurchases, dashboardData])
+  }, [medicines, items, allPurchases, protocols])
 
   const prescriptionTimelineData = useMemo(() => {
-    if (!dashboardData?.protocols?.length) return []
-    return dashboardData.protocols
+    if (!protocols?.length) return []
+    return protocols
       .filter((p) => p.active && p.start_date && p.end_date)
       .map((p) => ({
         id: p.id,
@@ -81,8 +83,9 @@ export default function Stock({ initialParams, onClearParams }) {
         endDate: p.end_date,
         status: deriveProtocolStatus(p),
       }))
-  }, [dashboardData?.protocols, medicines])
+  }, [protocols, medicines])
 
+  // ═══ Handlers ═══
   const handleOpenModal = (medicineId = null) => {
     if (medicines.length === 0) return
     setSelectedMedicineId(typeof medicineId === 'string' ? medicineId : null)
@@ -103,6 +106,7 @@ export default function Stock({ initialParams, onClearParams }) {
     }
   }
 
+  // ═══ Effects ═══
   useEffect(() => {
     if (initialParams?.medicineId && medicines.length > 0) {
       startTransition(() => {

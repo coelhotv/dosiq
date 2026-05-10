@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, startTransition } from 'react'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { getNow } from '@utils/dateUtils.js'
 import { OnboardingContext } from './OnboardingContext'
@@ -15,11 +15,6 @@ export function OnboardingProvider({ children }) {
   })
 
   const TOTAL_STEPS = 5
-
-  // Verifica se o onboarding já foi completado
-  useEffect(() => {
-    checkOnboardingStatus()
-  }, [])
 
   const checkOnboardingStatus = async () => {
     try {
@@ -49,6 +44,13 @@ export function OnboardingProvider({ children }) {
       setIsLoading(false)
     }
   }
+
+  // Verifica se o onboarding já foi completado
+  useEffect(() => {
+    startTransition(() => {
+      checkOnboardingStatus()
+    })
+  }, [])
 
   const completeOnboarding = useCallback(async () => {
     try {

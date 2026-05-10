@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { adherenceService } from '@services/api/adherenceService'
 import AdherenceProgress from './AdherenceProgress'
 import StreakBadge from './StreakBadge'
@@ -199,7 +199,9 @@ export default function AdherenceWidget({ defaultPeriod = '30d' }) {
   }, [period])
 
   useEffect(() => {
-    loadAdherenceData()
+    startTransition(() => {
+      loadAdherenceData()
+    })
   }, [loadAdherenceData])
 
   if (loading) return _renderLoadingState()

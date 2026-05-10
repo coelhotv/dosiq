@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, startTransition } from 'react'
 
 /**
  * Renderiza a seção de alergias do cartão de emergência.
@@ -158,7 +158,9 @@ export default function EmergencyCardView({ data, onEdit }) {
         setIsLoading(false)
       }
 
-      loadCardData()
+      startTransition(() => {
+        loadCardData()
+      })
     }
   }, [data])
 

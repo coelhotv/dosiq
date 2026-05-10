@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { 
@@ -106,7 +106,11 @@ export function useTodayData() {
     }
   }, [handleOnlineSuccess, handleCacheFallback])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    startTransition(() => {
+      load()
+    })
+  }, [load])
 
   useEffect(() => {
     const handleStateChange = (nextState) => {

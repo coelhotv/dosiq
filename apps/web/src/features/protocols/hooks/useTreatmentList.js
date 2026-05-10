@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, startTransition } from 'react'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { adherenceService } from '@services/api/adherenceService'
 import { stockService } from '@shared/services'
@@ -56,7 +56,9 @@ export function useTreatmentList() {
   }, [])
 
   useEffect(() => {
-    fetchAll()
+    startTransition(() => {
+      fetchAll()
+    })
   }, [fetchAll])
 
 

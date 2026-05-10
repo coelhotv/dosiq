@@ -1,7 +1,7 @@
 // useTreatments.js — hook para listagem de tratamentos
 // Padrão: { data, loading, error, stale, refresh }
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, getNow, addDays, parseISO } from '@dosiq/core'
@@ -81,7 +81,9 @@ export function useTreatments() {
   }, [])
 
   useEffect(() => {
-    load()
+    startTransition(() => {
+      load()
+    })
   }, [load])
 
   // Lógica de Refresh de Meia-Noite e AppState (R-184)

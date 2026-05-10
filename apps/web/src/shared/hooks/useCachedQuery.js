@@ -10,7 +10,7 @@
  * @module useCachedQuery
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react'
 import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
 import { debugLog } from '@shared/utils/logger'
 
@@ -93,8 +93,9 @@ export function useCachedQuery(key, fetcher, options = {}) {
     if (enabled && key) {
       // Catch rejection to prevent unhandled promise warning
       // (error is already handled in executeQuery catch block and set in state)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      executeQuery().catch(() => {})
+      startTransition(() => {
+        executeQuery().catch(() => {})
+      })
     }
 
     return () => {
@@ -180,25 +181,6 @@ export function useCachedQueries(queries) {
   // We manually update queriesRef.current inside effect to access fresh query values.
   // This is intentional — queriesKey is a stable string derived from query keys.
 
-  useEffect(() => {
-    isMounted.current = true
-    queriesRef.current = queries
-
-    const fetchAll = async () => {
-      setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
-      const settled = await executeParallelQueries(queriesRef.current)
-      updateResults(settled)
-    }
-
-    fetchAll()
-
-    return () => {
-      isMounted.current = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queriesKey])
-
-
   const updateResults = useCallback((settled) => {
     if (isMounted.current) {
       setResults((prev) => {
@@ -216,14 +198,35 @@ export function useCachedQueries(queries) {
     }
   }, [])
 
+  useEffect(() => {
+    isMounted.current = true
+    queriesRef.current = queries
+
+    const fetchAll = async () => {
+      setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
+      const settled = await executeParallelQueries(queriesRef.current)
+      updateResults(settled)
+    }
+
+    startTransition(() => {
+      fetchAll()
+    })
+
+    return () => {
+      isMounted.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queriesKey, updateResults])
+
   const refetchAll = useCallback(async () => {
-    queriesRef.current.forEach((query) => {
+    const currentQueries = queriesRef.current
+    currentQueries.forEach((query) => {
       const { key } = query
       if (key) invalidateCache(key)
     })
 
     setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
-    const settled = await executeParallelQueries(queriesRef.current)
+    const settled = await executeParallelQueries(currentQueries)
     updateResults(settled)
   }, [updateResults])
 

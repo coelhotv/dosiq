@@ -7,7 +7,7 @@
  * Sem dependências de legacy (Emergency.jsx deletado).
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import EmergencyCardView from '@features/emergency/components/EmergencyCardView'
@@ -86,7 +86,9 @@ export default function Emergency({ onNavigate }) {
 
   // ═══ Effects ═══
   useEffect(() => {
-    loadCardData()
+    startTransition(() => {
+      loadCardData()
+    })
   }, [loadCardData])
 
   // ═══ Render ═══

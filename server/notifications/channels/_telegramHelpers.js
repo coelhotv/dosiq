@@ -1,10 +1,9 @@
 import { supabase } from '../../services/supabase.js'
 import { escapeMarkdownV2 } from '../../utils/formatters.js'
-import {
-  formatDoseGroupedByPlanMessage,
-  formatDoseGroupedMiscMessage,
-} from '../../bot/utils/doseFormatters.js'
 
+/**
+ * Obtém o telegram_chat_id de um usuário.
+ */
 export async function getTelegramChatId(userId) {
   const { data, error } = await supabase
     .from('user_settings')
@@ -20,66 +19,69 @@ export async function getTelegramChatId(userId) {
   return data?.telegram_chat_id || null
 }
 
+/**
+ * Formata a mensagem para o Telegram usando o payload canônico.
+ */
 export function formatMessage(payload) {
-  const { metadata } = payload
-
-  if (payload.kind === 'dose_reminder_by_plan' && metadata?.doses) {
-    return formatDoseGroupedByPlanMessage(
-      metadata.planName,
-      metadata.doses,
-      metadata.scheduledTime,
-      metadata.hour,
-    )
-  }
-
-  if (payload.kind === 'dose_reminder_misc' && metadata?.doses) {
-    return formatDoseGroupedMiscMessage(
-      metadata.doses,
-      metadata.scheduledTime,
-      metadata.hour,
-    )
-  }
-
+  // A Layer 2 já fornece title e body prontos. 
+  // O title é escapado aqui por segurança, mas o body já vem com MarkdownV2 da L2.
   const title = escapeMarkdownV2(payload.title)
   const body = payload.body
   return `*${title}*\n${body}`
 }
 
+/**
+ * Infere o tipo de notificação para retrocompatibilidade ou lógica interna.
+ */
 export function inferTelegramKind(payload) {
-  if (payload.metadata?.kind) return payload.metadata.kind
-  if (payload.deeplink?.includes('plan=')) return 'dose_reminder_by_plan'
-  if (payload.deeplink?.includes('misc=1')) return 'dose_reminder_misc'
-  return 'dose_reminder'
+  return payload.metadata?.kind || 'dose_reminder'
 }
 
-export function buildTelegramReplyMarkup(kind, payload) {
-  if (kind === 'dose_reminder_by_plan' && payload.metadata?.planId) {
-    const planIdShort = String(payload.metadata.planId).slice(0, 8)
-    const hhmm = payload.metadata.scheduledTime ?? '00:00'
-    return {
-      inline_keyboard: [[
-        { text: '✅ Registrar este plano', callback_data: `takeplan:${planIdShort}:${hhmm}` },
-        { text: '📋 Detalhes', callback_data: `details:plan:${planIdShort}` },
-      ]]
-    }
-  } else if (kind === 'dose_reminder_misc' && payload.metadata?.protocolIds?.length) {
-    const hhmm = payload.metadata.scheduledTime ?? '00:00'
-    return {
-      inline_keyboard: [[
-        { text: '✅ Registrar todos', callback_data: `takelist:misc:${hhmm}` },
-        { text: '📋 Detalhes', callback_data: `details:misc:${hhmm}` },
-      ]]
-    }
-  } else if (payload.metadata?.protocolId) {
-    const { protocolId, dosage } = payload.metadata
-    return {
-      inline_keyboard: [[
-        { text: '✅ Tomar', callback_data: `take_:${protocolId}:${dosage ?? 1}` },
-        { text: '⏰ Adiar', callback_data: `snooze_:${protocolId}` },
-        { text: '⏭️ Pular', callback_data: `skip_:${protocolId}` }
-      ]]
-    }
-  }
+/**
+ * Constrói o reply_markup do Telegram a partir das ações canônicas.
+ */
+export function buildTelegramReplyMarkup(payload) {
+  const actions = payload.actions || []
+  if (actions.length === 0) return undefined
 
-  return undefined
+  const keyboard = actions.map(action => {
+    let callbackData = ''
+    const p = action.params || {}
+    
+    switch (action.id) {
+      case 'take':
+        // Legado: take_:protocolId:dosage
+        callbackData = `take_:${p.protocolId}:${p.dosage ?? 1}`
+        break
+      case 'snooze':
+        // Legado: snooze_:protocolId
+        callbackData = `snooze_:${p.protocolId}`
+        break
+      case 'skip':
+        // Legado: skip_:protocolId
+        callbackData = `skip_:${p.protocolId}`
+        break
+      case 'take_plan':
+        // Novo: takeplan:planIdShort:hhmm
+        callbackData = `takeplan:${p.planIdShort}:${p.hhmm}`
+        break
+      case 'take_misc':
+        // Novo: takelist:misc:hhmm
+        callbackData = `takelist:misc:${p.hhmm}`
+        break
+      case 'details':
+        // Novo: details:kind:id
+        callbackData = `details:${p.kind}:${p.planIdShort || p.hhmm}`
+        break
+      default:
+        return null
+    }
+
+    return { text: action.label, callback_data: callbackData }
+  }).filter(Boolean)
+
+  if (keyboard.length === 0) return undefined
+
+  // Colocamos os botões empilhados (um por linha) para melhor usabilidade mobile
+  return { inline_keyboard: keyboard.map(button => [button]) }
 }

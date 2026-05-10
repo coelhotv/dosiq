@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { medicineService, protocolService, stockService } from '@shared/services' // Import protocolService and stockService
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
@@ -113,7 +113,9 @@ export default function Medicines({ onNavigateToProtocol }) {
   }, [loadDependencies])
 
   useEffect(() => {
-    loadMedicines()
+    startTransition(() => {
+      loadMedicines()
+    })
   }, [loadMedicines])
 
   const handleAdd = () => {

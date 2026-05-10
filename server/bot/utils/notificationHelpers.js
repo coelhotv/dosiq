@@ -92,3 +92,16 @@ export function formatIntakeQuantity(quantity, medicineUnit) {
   // Fallback para unidades desconhecidas ou genéricas
   return `${quantity} ${medicineUnit || 'dose'}`;
 }
+
+/**
+ * Emoji de saudação por horário do dia.
+ * @param {number} hour - Hora local (0–23)
+ * @returns {string}
+ */
+export function getTimeOfDayEmoji(hour) {
+  if (hour >= 5 && hour < 11) return '🌅';
+  if (hour >= 11 && hour < 14) return '🍽️';
+  if (hour >= 14 && hour < 18) return '☕';
+  if (hour >= 18 && hour < 23) return '🌆';
+  return '🌙';
+}

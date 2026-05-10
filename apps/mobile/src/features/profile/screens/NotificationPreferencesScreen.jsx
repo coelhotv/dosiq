@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, startTransition } from 'react'
 import {
   View,
   Text,
@@ -403,29 +403,27 @@ export default function NotificationPreferencesScreen({ navigation }) {
     debugLog('NotificationPreferencesScreen', `settings: ${JSON.stringify(settings)}`)
     if (!settings) return
 
-    const pref = settings.notification_preference
-    setQuietHoursEnabled(settings.quiet_hours_enabled ?? !!(settings.quiet_hours_start || settings.quiet_hours_end))
-    setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
-    setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
-    setDigestTime(settings.digest_time ?? '07:00')
+    startTransition(() => {
+      const pref = settings.notification_preference
+      setQuietHoursEnabled(settings.quiet_hours_enabled ?? !!(settings.quiet_hours_start || settings.quiet_hours_end))
+      setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
+      setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
+      setDigestTime(settings.digest_time ?? '07:00')
 
-    const isGlobal = pref !== 'none'
-    setGlobalEnabled(isGlobal)
-    setNotificationMode(settings.notification_mode)
+      const isGlobal = pref !== 'none'
+      setGlobalEnabled(isGlobal)
+      setNotificationMode(settings.notification_mode)
 
-    // Apenas sincroniza canais individuais se o global estiver ON
-    if (isGlobal) {
-      setMobilePushEnabled(
-        settings.channel_mobile_push_enabled ??
-        (pref === 'mobile_push' || pref === 'both')
-      )
-      setWebPushEnabled(settings.channel_web_push_enabled ?? false)
-    }
+      // Apenas sincroniza canais individuais se o global estiver ON
+      if (isGlobal) {
+        setMobilePushEnabled(
+          settings.channel_mobile_push_enabled ??
+          (pref === 'mobile_push' || pref === 'both')
+        )
+        setWebPushEnabled(settings.channel_web_push_enabled ?? false)
+      }
+    })
   }, [settings])
-
-  useEffect(() => {
-    checkPermission()
-  }, [])
 
   async function checkPermission() {
     try {
@@ -435,6 +433,12 @@ export default function NotificationPreferencesScreen({ navigation }) {
       debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
     }
   }
+
+  useEffect(() => {
+    startTransition(() => {
+      checkPermission()
+    })
+  }, [])
 
   const hasAnyChannel = mobilePushEnabled || isTelegramConnected || webPushEnabled
   const showChannelWarning = globalEnabled && !hasAnyChannel

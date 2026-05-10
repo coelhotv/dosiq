@@ -69,7 +69,7 @@ export const kindSchema = z.enum([
 
 // Schemas para ações interativas (Gate 4 preliminar)
 export const actionSchema = z.object({
-  id: z.enum(['take_dose', 'take_plan', 'dismiss', 'open_link']),
+  id: z.enum(['take', 'snooze', 'skip', 'take_plan', 'take_misc', 'details']),
   label: z.string(),
   params: z.record(z.unknown()).optional()
 });
@@ -82,12 +82,14 @@ export const metadataSchema = z.object({
   details: z.record(z.unknown()).optional()
 }).strict();
 
+
 // Novas validações de dados (Gate 1)
 export const doseReminderDataSchema = z.object({
   medicineName: z.string(),
   time: z.string(),
   dosage: z.string().optional(),
-  protocolId: z.string().optional()
+  protocolId: z.string().optional(),
+  hour: z.number().min(0).max(23).optional()
 });
 
 export const doseReminderByPlanDataSchema = z.object({

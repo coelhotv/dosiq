@@ -92,4 +92,48 @@ describe('buildNotificationPayload', () => {
       expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 1200mg (12:00) — 3 cp.');
     });
   });
+
+  describe('dose_reminder_by_plan', () => {
+    it('should generate rich body for multiple medications in a plan', () => {
+      const data = {
+        planName: 'Protocolo VIP',
+        planId: 'plan_123',
+        scheduledTime: '09:00',
+        hour: 9,
+        doses: [
+          { medicineName: 'Med A', dosagePerIntake: 1 },
+          { medicineName: 'Med B', dosagePerIntake: 2 }
+        ]
+      };
+
+      const payload = buildNotificationPayload({ kind: 'dose_reminder_by_plan', data });
+      
+      expect(payload.body).toContain('*Protocolo VIP*');
+      expect(payload.body).toContain('2 medicamentos agora');
+      expect(payload.body).toContain('Med A');
+      expect(payload.body).toContain('Med B');
+      expect(payload.pushBody).toContain('doses do plano Protocolo VIP (09:00)');
+      expect(payload.actions).toHaveLength(2);
+      expect(payload.actions[0].id).toBe('take_plan');
+    });
+  });
+
+  describe('dose_reminder_misc', () => {
+    it('should generate rich body for miscellaneous doses', () => {
+      const data = {
+        scheduledTime: '22:00',
+        hour: 22,
+        doses: [
+          { medicineName: 'Med X', dosagePerIntake: 1 }
+        ]
+      };
+
+      const payload = buildNotificationPayload({ kind: 'dose_reminder_misc', data });
+      
+      expect(payload.body).toContain('*Suas doses agora*');
+      expect(payload.body).toContain('1 medicamento pendente');
+      expect(payload.pushBody).toContain('1 medicamento pendente (22:00)');
+      expect(payload.actions[0].id).toBe('take_misc');
+    });
+  });
 });

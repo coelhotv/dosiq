@@ -37,7 +37,7 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
 
   // Botões interativos por kind (R-030: callback_data < 64 bytes)
   const options = { parse_mode: 'MarkdownV2' }
-  const reply_markup = buildTelegramReplyMarkup(kind, payload)
+  const reply_markup = buildTelegramReplyMarkup(payload)
   if (reply_markup) {
     options.reply_markup = reply_markup
   }

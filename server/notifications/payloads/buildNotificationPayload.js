@@ -5,11 +5,21 @@ import {
   getServerTimestamp 
 } from '../../utils/dateUtils.js';
 
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
+
+import { 
+  getTimeOfDayGreeting, 
+  getTimeOfDayEmoji 
+} from '../../bot/utils/notificationHelpers.js';
+
 import {
   kindSchema,
   notificationPayloadSchema,
   actionSchema,
-  metadataSchema
+  metadataSchema,
+  doseReminderDataSchema,
+  doseReminderByPlanDataSchema,
+  doseReminderMiscDataSchema
 } from './_payloadSchemas.js';
 
 export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
@@ -17,9 +27,6 @@ export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
 import {
   buildDailyDigestPayload,
   buildAdherenceReportPayload,
-  buildDoseReminderPayload,
-  buildDoseReminderByPlanPayload,
-  buildDoseReminderMiscPayload,
   buildStockAlertPayload,
   buildTitrationAlertPayload,
   buildMonthlyReportPayload,
@@ -40,57 +47,225 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
   // 1. Validar Kind
   const validatedKind = kindSchema.parse(kind);
 
-  let payloadContent;
+  const metadata = buildMetadata(validatedKind, context);
+  let title, body, pushBody;
   let actions = [];
 
   switch (validatedKind) {
-    case 'daily_digest':
-      payloadContent = buildDailyDigestPayload(data);
+    case 'daily_digest': {
+      const content = buildDailyDigestPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'adherence_report':
-      payloadContent = buildAdherenceReportPayload(data);
+    }
+    case 'adherence_report': {
+      const content = buildAdherenceReportPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'dose_reminder':
-      payloadContent = buildDoseReminderPayload(data);
+    }
+    case 'dose_reminder': {
+      const formatted = formatDoseReminder(data, metadata);
+      title = formatted.title;
+      body = formatted.body;
+      pushBody = formatted.pushBody;
+      actions = formatted.actions;
       break;
-    case 'dose_reminder_by_plan':
-      payloadContent = buildDoseReminderByPlanPayload(data);
+    }
+    case 'dose_reminder_by_plan': {
+      const formatted = formatDoseReminderByPlan(data, metadata);
+      title = formatted.title;
+      body = formatted.body;
+      pushBody = formatted.pushBody;
+      actions = formatted.actions;
       break;
-    case 'dose_reminder_misc':
-      payloadContent = buildDoseReminderMiscPayload(data);
+    }
+    case 'dose_reminder_misc': {
+      const formatted = formatDoseReminderMisc(data, metadata);
+      title = formatted.title;
+      body = formatted.body;
+      pushBody = formatted.pushBody;
+      actions = formatted.actions;
       break;
-    case 'stock_alert':
-      payloadContent = buildStockAlertPayload(data);
+    }
+    case 'stock_alert': {
+      const content = buildStockAlertPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'titration_alert':
-      payloadContent = buildTitrationAlertPayload(data);
+    }
+    case 'titration_alert': {
+      const content = buildTitrationAlertPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'monthly_report':
-      payloadContent = buildMonthlyReportPayload(data);
+    }
+    case 'monthly_report': {
+      const content = buildMonthlyReportPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'prescription_alert':
-      payloadContent = buildPrescriptionAlertPayload(data);
+    }
+    case 'prescription_alert': {
+      const content = buildPrescriptionAlertPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
-    case 'dlq_digest':
-      payloadContent = buildDlqDigestPayload(data);
+    }
+    case 'dlq_digest': {
+      const content = buildDlqDigestPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
       break;
+    }
     default:
-      throw new Error(`Unsupported notification kind: ${kind}`);
+      throw new Error(`Unknown notification kind: ${kind}`);
   }
 
   // 2. Resolver Deeplink lógico (Responsabilidade da Layer 2)
   const deeplink = resolveDeeplink(validatedKind, data);
 
   // 3. Aplicar Decoração de Reenvio (Gate 1 — Shim de transição)
-  const decorated = applyRetryDecoration(payloadContent, context, data);
+  const decorated = applyRetryDecoration({ title, body, pushBody }, context, data);
 
   // Validação do Contrato de Saída (Gate L2 -> L3)
   return notificationPayloadSchema.parse({
     ...decorated,
     deeplink,
     actions,
-    metadata: buildMetadata(validatedKind, context)
+    metadata
   });
+}
+
+/**
+ * Formata payload de lembrete de dose única.
+ */
+function formatDoseReminder(data, metadata) {
+  const result = doseReminderDataSchema.safeParse(data);
+  if (!result.success) {
+    throw new Error(`Invalid data for dose_reminder: ${result.error.message}`);
+  }
+
+  const { medicineName, time, dosage, hour, protocolId } = result.data;
+  const emoji = getTimeOfDayEmoji(hour);
+  const greeting = getTimeOfDayGreeting(hour);
+  const title = `${emoji} ${greeting}`;
+
+  const safeName = escapeMarkdownV2(medicineName);
+  const safeTime = escapeMarkdownV2(time);
+
+  let body, pushBody;
+  if (dosage) {
+    const safeDosage = escapeMarkdownV2(dosage);
+    body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\) — **${safeDosage}**\\.`;
+    pushBody = `Está na hora de tomar ${medicineName} (${time}) — ${dosage}.`;
+  } else {
+    body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\)\\.`;
+    pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
+  }
+
+  const actions = [
+    { id: 'take',   label: '✅ Tomar',  params: { protocolId: protocolId ?? '', dosage: dosage ?? 1 } },
+    { id: 'snooze', label: '⏰ Adiar',  params: { protocolId: protocolId ?? '' } },
+    { id: 'skip',   label: '⏭️ Pular', params: { protocolId: protocolId ?? '' } }
+  ];
+
+  return { title, body, pushBody, actions, metadata };
+}
+
+/**
+ * Formata payload de lembrete de doses por plano.
+ */
+function formatDoseReminderByPlan(data, metadata) {
+  const result = doseReminderByPlanDataSchema.safeParse(data);
+  if (!result.success) {
+    throw new Error(`Invalid data for dose_reminder_by_plan: ${result.error.message}`);
+  }
+
+  const { planName, planId, scheduledTime, hour, doses } = result.data;
+  const emoji = getTimeOfDayEmoji(hour);
+  const greeting = getTimeOfDayGreeting(hour);
+  const title = `${emoji} ${greeting}`;
+  const safePlanName = escapeMarkdownV2(planName || 'Plano de tratamento');
+  const safeTime = escapeMarkdownV2(scheduledTime);
+  const count = doses.length;
+  const MAX_SHOWN = 10;
+  const shown = doses.slice(0, MAX_SHOWN);
+  const extra = count - shown.length;
+  const doseLines = shown.map(d => {
+    const name = escapeMarkdownV2(d.medicineName || 'Medicamento');
+    const qty = escapeMarkdownV2(String(d.dosagePerIntake ?? 1));
+    return `  💊 ${name} — ${qty} cp`;
+  }).join('\n');
+
+  let body = `${emoji} *${safePlanName}*\n\n${escapeMarkdownV2(String(count))} medicamentos agora — ${safeTime}\n\n${doseLines}`;
+  if (extra > 0) {
+    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+  }
+
+  const plainLines = shown.map(d =>
+    `• ${d.medicineName} — ${d.dosagePerIntake ?? 1} cp`
+  ).join('\n');
+  const pushBody = `Está na hora de tomar as doses do plano ${planName} (${scheduledTime}).\n${plainLines}${extra > 0 ? `\n… e mais ${extra}` : ''}`;
+
+  const planIdShort = String(planId ?? '').slice(0, 8);
+  const actions = [
+    { id: 'take_plan', label: '✅ Registrar este plano', params: { planIdShort, hhmm: scheduledTime } },
+    { id: 'details',   label: '📋 Detalhes',             params: { kind: 'plan', planIdShort } }
+  ];
+
+  return { title, body, pushBody, actions, metadata };
+}
+
+/**
+ * Formata payload de lembrete de doses avulsas (misc).
+ */
+function formatDoseReminderMisc(data, metadata) {
+  const result = doseReminderMiscDataSchema.safeParse(data);
+  if (!result.success) {
+    throw new Error(`Invalid data for dose_reminder_misc: ${result.error.message}`);
+  }
+
+  const { scheduledTime, hour, doses } = result.data;
+  const emoji = getTimeOfDayEmoji(hour);
+  const greeting = getTimeOfDayGreeting(hour);
+  const title = `${emoji} ${greeting}`;
+  const safeTime = escapeMarkdownV2(scheduledTime);
+  const count = doses.length;
+  const MAX_SHOWN = 10;
+  const shown = doses.slice(0, MAX_SHOWN);
+  const extra = count - shown.length;
+
+  const doseLines = shown.map(d => {
+    const name = escapeMarkdownV2(d.medicineName || 'Medicamento');
+    const qty = escapeMarkdownV2(String(d.dosagePerIntake ?? 1));
+    return `  • ${name} — ${qty} cp`;
+  }).join('\n');
+
+  let body = `${emoji} *Suas doses agora* — ${safeTime}\n\n${escapeMarkdownV2(String(count))} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''}:\n\n${doseLines}`;
+  if (extra > 0) {
+    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+  }
+
+  const plainLines = shown.map(d =>
+    `• ${d.medicineName} — ${d.dosagePerIntake ?? 1} cp`
+  ).join('\n');
+  const pushBody = `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} (${scheduledTime}):\n${plainLines}${extra > 0 ? `\n… e mais ${extra}` : ''}`;
+
+  const hhmm = scheduledTime;
+  const actions = [
+    { id: 'take_misc', label: '✅ Registrar todos', params: { hhmm } },
+    { id: 'details',   label: '📋 Detalhes',        params: { kind: 'misc', hhmm } }
+  ];
+
+  return { title, body, pushBody, actions, metadata };
 }
 
 /**

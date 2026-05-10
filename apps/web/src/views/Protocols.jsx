@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { medicineService, protocolService, treatmentPlanService } from '@shared/services'
 import Button from '@shared/components/ui/Button'
 import Loading from '@shared/components/ui/Loading'
@@ -49,12 +49,18 @@ export default function Protocols({ initialParams, onClearParams, onNavigateToSt
     }
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    startTransition(() => {
+      loadData()
+    })
+  }, [loadData])
 
   useEffect(() => {
     if (initialParams?.medicineId && medicines.length > 0) {
-      setIsModalOpen(true)
-      setEditingProtocol(null)
+      startTransition(() => {
+        setIsModalOpen(true)
+        setEditingProtocol(null)
+      })
     }
   }, [initialParams, medicines])
 

@@ -1,12 +1,25 @@
 /**
  * useProfileState — Hook de lógica para a view de perfil.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, startTransition } from 'react'
 import { supabase } from '@shared/utils/supabase'
 import { parseLocalDate, getNow, getSaoPauloTime } from '@utils/dateUtils'
 import { validateUserProfile } from '@schemas/userProfileSchema'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import QRCode from 'qrcode'
+
+// Helper to calculate age without blocking compiler optimization
+function calculateAge(birthDate) {
+  if (!birthDate) return null
+  try {
+    const birth = parseLocalDate(birthDate)
+    const today = getSaoPauloTime()
+    let years = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) years--
+    return years >= 0 ? years : null
+  } catch { return null }
+}
 
 /**
  * Sincroniza display_name do metadata para user_settings se ausente.
@@ -50,6 +63,14 @@ export function useProfileState() {
     setMessage(msg); setTimeout(() => setMessage(null), 3000);
   }, [])
 
+  const displayName = useMemo(() => settings?.display_name || user?.user_metadata?.name || user?.email || 'Paciente', [settings, user])
+  const initials = useMemo(() => displayName.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''), [displayName])
+  const age = useMemo(() => calculateAge(settings?.birth_date), [settings?.birth_date])
+  const location = useMemo(() => {
+    const parts = [settings?.city, settings?.state].filter(Boolean)
+    return parts.join(', ') || null
+  }, [settings?.city, settings?.state])
+
   const loadProfile = useCallback(async () => {
     try {
       setIsLoading(true)
@@ -76,33 +97,32 @@ export function useProfileState() {
     }
   }, [])
 
-  useEffect(() => { loadProfile() }, [loadProfile])
-
-  const displayName = useMemo(() => settings?.display_name || user?.user_metadata?.name || user?.email || 'Paciente', [settings, user])
-  const initials = useMemo(() => displayName.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''), [displayName])
-  
-  const age = useMemo(() => {
-    if (!settings?.birth_date) return null
-    try {
-      const birth = parseLocalDate(settings.birth_date); const today = getSaoPauloTime()
-      let years = today.getFullYear() - birth.getFullYear()
-      const monthDiff = today.getMonth() - birth.getMonth()
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) years--
-      return years >= 0 ? years : null
-    } catch { return null }
-  }, [settings?.birth_date])
-
-  const location = useMemo(() => [settings?.city, settings?.state].filter(Boolean).join(', ') || null, [settings])
+  useEffect(() => {
+    startTransition(() => {
+      loadProfile()
+    })
+  }, [loadProfile])
 
   useEffect(() => {
-    if (!emergencyCard) { setQrMiniatureUrl(null); return; }
+    if (!emergencyCard) {
+      startTransition(() => {
+        setQrMiniatureUrl(null)
+      })
+      return
+    }
     const generateQR = async () => {
       try {
         const payload = { v: '1', n: displayName, bt: emergencyCard.blood_type || '', a: emergencyCard.allergies?.join(', ') || '' }
         const qrString = btoa(encodeURIComponent(JSON.stringify(payload)).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode(parseInt(p1, 16))))
         const url = await QRCode.toDataURL(qrString, { width: 100, margin: 1, errorCorrectionLevel: 'L' })
-        setQrMiniatureUrl(url)
-      } catch { setQrMiniatureUrl(null) }
+        startTransition(() => {
+            setQrMiniatureUrl(url)
+        })
+      } catch {
+        startTransition(() => {
+            setQrMiniatureUrl(null)
+        })
+      }
     }
     generateQR()
   }, [emergencyCard, displayName])

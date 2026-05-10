@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { supabase } from '@shared/utils/supabase'
 import { getServerTimestamp } from '@utils/dateUtils'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
@@ -62,7 +62,11 @@ export function useSettingsState() {
     }
   }, [setComplexityOverride])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    startTransition(() => {
+      fetchData()
+    })
+  }, [fetchData])
 
   const handleToggleWebPush = async () => {
     try {

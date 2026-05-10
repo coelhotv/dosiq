@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { validateLogForm, buildLogPayloads, getInitialFormData } from './_logFormUtils.js'
 
 export function useLogFormState({ protocols, treatmentPlans, initialValues, onSave }) {
@@ -14,7 +14,9 @@ export function useLogFormState({ protocols, treatmentPlans, initialValues, onSa
   // Atualizar formData quando initialValues mudar (Deep Linking Interno)
   useEffect(() => {
     if (initialValues) {
-      setFormData(getInitialFormData(initialValues, protocols))
+      startTransition(() => {
+        setFormData(getInitialFormData(initialValues, protocols))
+      })
     }
   }, [initialValues, protocols])
 
@@ -24,13 +26,17 @@ export function useLogFormState({ protocols, treatmentPlans, initialValues, onSa
       const plan = treatmentPlans?.find((p) => p.id === formData.treatment_plan_id)
       if (plan) {
         const activeIds = plan.protocols?.filter((p) => p.active).map((p) => p.id) || []
-        setSelectedPlanProtocols((prev) => {
-          if (JSON.stringify(prev) === JSON.stringify(activeIds)) return prev
-          return activeIds
+        startTransition(() => {
+          setSelectedPlanProtocols((prev) => {
+            if (JSON.stringify(prev) === JSON.stringify(activeIds)) return prev
+            return activeIds
+          })
         })
       }
     } else {
-      setSelectedPlanProtocols((prev) => (prev.length > 0 ? [] : prev))
+      startTransition(() => {
+        setSelectedPlanProtocols((prev) => (prev.length > 0 ? [] : prev))
+      })
     }
   }, [formData.treatment_plan_id, formData.type, treatmentPlans])
 
