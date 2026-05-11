@@ -51,11 +51,15 @@ function translateAuthError(authError, context = 'login') {
   if (message.includes('rate limit')) {
     return 'Muitas tentativas. Tente novamente mais tarde.'
   }
+  if (message.includes('different from the old password') || message.includes('same password')) {
+    return 'Nova senha deve ser diferente da senha atual.'
+  }
 
   const fallbacks = {
     login: 'Erro ao fazer login',
     signup: 'Erro ao criar conta',
-    reset: 'Erro ao enviar email de recuperação',
+    reset: 'Erro ao atualizar senha',
+    send_reset: 'Erro ao enviar email de recuperação',
   }
   return fallbacks[context] || authError.message || 'Erro inesperado'
 }
@@ -134,7 +138,7 @@ export async function sendPasswordReset(email) {
     )
 
     if (authError) {
-      return { success: false, error: translateAuthError(authError, 'reset') }
+      return { success: false, error: translateAuthError(authError, 'send_reset') }
     }
 
     return { success: true }
