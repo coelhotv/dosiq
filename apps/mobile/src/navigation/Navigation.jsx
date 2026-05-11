@@ -26,6 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
+import { remoteDebugLog } from '../platform/debug/remoteDebugLog'
 
 const Stack = createNativeStackNavigator()
 
@@ -58,6 +59,7 @@ export default function Navigation() {
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      remoteDebugLog('auth_state_change', { event, hasSession: !!s })
       if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordRecovery(true)
         setSession(s ?? null)
@@ -81,6 +83,12 @@ export default function Navigation() {
     async function handleDeepLink({ url }) {
       if (!url) return
 
+      remoteDebugLog('deep_link_received', {
+        hasPkce: url.includes('?code='),
+        hasImplicit: url.includes('#access_token='),
+        prefix: url.substring(0, 35),
+      })
+
       // PKCE flow: dosiq://auth/callback?code=xxxxx
       const queryString = url.split('?')[1]?.split('#')[0]
       if (queryString) {
@@ -88,8 +96,16 @@ export default function Navigation() {
         if (queryParams.code) {
           try {
             const { error } = await supabase.auth.exchangeCodeForSession(queryParams.code)
-            if (error) debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
+            if (error) {
+              remoteDebugLog('exchange_code_error', { msg: error.message })
+              debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
+            } else {
+              remoteDebugLog('exchange_code_success')
+              // exchangeCodeForSession dispara SIGNED_IN, não PASSWORD_RECOVERY
+              setIsPasswordRecovery(true)
+            }
           } catch (e) {
+            remoteDebugLog('exchange_code_exception', { msg: e?.message })
             debugLog('Navigation', 'Exceção em exchangeCodeForSession', e?.message)
           }
           return
@@ -98,7 +114,10 @@ export default function Navigation() {
 
       // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery
       const hash = url.split('#')[1]
-      if (!hash) return
+      if (!hash) {
+        remoteDebugLog('deep_link_no_hash_no_pkce')
+        return
+      }
       const params = Object.fromEntries(new URLSearchParams(hash))
       if (params.type === 'recovery' && params.access_token && params.refresh_token) {
         try {
@@ -106,10 +125,20 @@ export default function Navigation() {
             access_token: params.access_token,
             refresh_token: params.refresh_token,
           })
-          if (error) debugLog('Navigation', 'setSession recovery falhou', error.message)
+          if (error) {
+            remoteDebugLog('set_session_error', { msg: error.message })
+            debugLog('Navigation', 'setSession recovery falhou', error.message)
+          } else {
+            remoteDebugLog('set_session_success')
+            // setSession dispara SIGNED_IN, não PASSWORD_RECOVERY
+            setIsPasswordRecovery(true)
+          }
         } catch (e) {
+          remoteDebugLog('set_session_exception', { msg: e?.message })
           debugLog('Navigation', 'Exceção em setSession recovery', e?.message)
         }
+      } else {
+        remoteDebugLog('deep_link_hash_no_recovery', { type: params.type, hasAt: !!params.access_token, hasRt: !!params.refresh_token })
       }
     }
     Linking.getInitialURL()

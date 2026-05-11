@@ -18,8 +18,9 @@ Cada `.js` dentro de `api/` conta como funcao, EXCETO arquivos em diretorios pre
 | 4 | `api/notify.js` | Cron orchestrator | 60s |
 | 5 | `api/share.js` | PDF sharing via Vercel Blob | default |
 | 6 | `api/telegram.js` | Telegram webhook | 10s |
+| 7 | `api/debug-log.js` | **TEMPORARIO** — debug deep link mobile (remover antes do launch público) | default |
 
-**Total: 6/12 funcoes → 6 slots livres**
+**Total: 7/12 funcoes → 5 slots livres**
 
 ### Projecao de Budget (Roadmap 2026)
 
