@@ -163,3 +163,4 @@
 
 
 - **[AP-138]** Promise não-awaited em Linking event handler → crash via TurboModule (EXC_CRASH SIGABRT). Toda operação async em Linking callbacks exige await + try/catch. -> [`anti-patterns/mobile_and_platform/AP-138.md`](./anti-patterns/mobile_and_platform/AP-138.md)
+- **[AP-139]** `Object.fromEntries(new URLSearchParams(str))` lança "iterator method is not callable" no Hermes (React Native/Expo). URLSearchParams não implementa o protocolo iterator no Hermes. Usar `.get(key)` diretamente. -> [`anti-patterns/mobile_and_platform/AP-139.md`](./anti-patterns/mobile_and_platform/AP-139.md)
