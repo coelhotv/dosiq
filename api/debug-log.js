@@ -9,7 +9,7 @@ export default function handler(req, res) {
   const { event, data } = req.body ?? {}
   if (!event) return res.status(400).json({ error: 'event required' })
 
-  console.log('[mobile-debug]', JSON.stringify({ event, data: data ?? {}, ts: new Date().toISOString() }))
+  console.log('[mobile-debug]', JSON.stringify({ event, data: data ?? {} }))
 
   return res.status(200).json({ ok: true })
 }
