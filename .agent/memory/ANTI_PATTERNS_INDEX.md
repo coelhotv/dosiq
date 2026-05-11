@@ -30,6 +30,7 @@
 - **[AP-H05]** GitHub Actions npm ci fails when new workspace added but lock file not committed -> [`anti-patterns/infra_and_deploy/AP-H05.md`](./anti-patterns/infra_and_deploy/AP-H05.md)
 - **[AP-130]** SyntaxError: The requested module does not provide an export named 'X' (ESM) -> [`anti-patterns/infra_and_deploy/AP-130.md`](./anti-patterns/infra_and_deploy/AP-130.md)
 - **[AP-SL03]** Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras c... -> [`anti-patterns/infra_and_deploy/AP-SL03.md`](./anti-patterns/infra_and_deploy/AP-SL03.md)
+- **[AP-140]** Duplicate Imports in ESM Node.js -> [`anti-patterns/infra_and_deploy/AP-140.md`](./anti-patterns/infra_and_deploy/AP-140.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[AP-A03]** When 2+ protocols exist for same medicine, logs bleed between them. Protocol A's... -> [`anti-patterns/mobile_and_platform/AP-A03.md`](./anti-patterns/mobile_and_platform/AP-A03.md)
@@ -89,6 +90,7 @@
 - **[AP-131]** Stale Mock Method Signature after Service Refactor -> [`anti-patterns/process_and_testing/AP-131.md`](./anti-patterns/process_and_testing/AP-131.md)
 - **[AP-120]** Refatoração por Purgue (Over-cleaning) — remoção de código orquestrador sem validar dependências de infra -> [`anti-patterns/process_and_testing/AP-120.md`](./anti-patterns/process_and_testing/AP-120.md)
 - **[AP-133]** Sub-agente commitando direto na main sem branch/PR/review → regressões de produção silenciosas (layout, auth, admin) -> [`anti-patterns/process_and_testing/AP-133.md`](./anti-patterns/process_and_testing/AP-133.md)
+- **[AP-139]** Redundant Null Check in initialized metrics -> [`anti-patterns/process_and_testing/AP-139.md`](./anti-patterns/process_and_testing/AP-139.md)
 
 
 
