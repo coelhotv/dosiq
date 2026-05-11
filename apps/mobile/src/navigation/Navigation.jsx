@@ -92,10 +92,10 @@ export default function Navigation() {
       // PKCE flow: dosiq://auth/callback?code=xxxxx
       const queryString = url.split('?')[1]?.split('#')[0]
       if (queryString) {
-        const queryParams = Object.fromEntries(new URLSearchParams(queryString))
-        if (queryParams.code) {
+        const code = new URLSearchParams(queryString).get('code')
+        if (code) {
           try {
-            const { error } = await supabase.auth.exchangeCodeForSession(queryParams.code)
+            const { error } = await supabase.auth.exchangeCodeForSession(code)
             if (error) {
               remoteDebugLog('exchange_code_error', { msg: error.message })
               debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
@@ -119,20 +119,17 @@ export default function Navigation() {
         return
       }
       remoteDebugLog('hash_found', { hashLen: hash.length })
-      let params
-      try {
-        params = Object.fromEntries(new URLSearchParams(hash))
-      } catch (e) {
-        remoteDebugLog('hash_parse_error', { msg: e?.message })
-        return
-      }
-      remoteDebugLog('hash_parsed', { type: params.type, hasAt: !!params.access_token, hasRt: !!params.refresh_token })
-      if (params.type === 'recovery' && params.access_token && params.refresh_token) {
+      const sp = new URLSearchParams(hash)
+      const tokenType = sp.get('type')
+      const accessToken = sp.get('access_token')
+      const refreshToken = sp.get('refresh_token')
+      remoteDebugLog('hash_parsed', { type: tokenType, hasAt: !!accessToken, hasRt: !!refreshToken })
+      if (tokenType === 'recovery' && accessToken && refreshToken) {
         remoteDebugLog('calling_set_session')
         try {
           const { error } = await supabase.auth.setSession({
-            access_token: params.access_token,
-            refresh_token: params.refresh_token,
+            access_token: accessToken,
+            refresh_token: refreshToken,
           })
           if (error) {
             remoteDebugLog('set_session_error', { msg: error.message })
@@ -147,7 +144,7 @@ export default function Navigation() {
           debugLog('Navigation', 'Exceção em setSession recovery', e?.message)
         }
       } else {
-        remoteDebugLog('deep_link_hash_no_recovery', { type: params.type, hasAt: !!params.access_token, hasRt: !!params.refresh_token })
+        remoteDebugLog('deep_link_hash_no_recovery', { type: tokenType, hasAt: !!accessToken, hasRt: !!refreshToken })
       }
     }
     Linking.getInitialURL()
