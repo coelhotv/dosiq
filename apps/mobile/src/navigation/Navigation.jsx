@@ -118,8 +118,17 @@ export default function Navigation() {
         remoteDebugLog('deep_link_no_hash_no_pkce')
         return
       }
-      const params = Object.fromEntries(new URLSearchParams(hash))
+      remoteDebugLog('hash_found', { hashLen: hash.length })
+      let params
+      try {
+        params = Object.fromEntries(new URLSearchParams(hash))
+      } catch (e) {
+        remoteDebugLog('hash_parse_error', { msg: e?.message })
+        return
+      }
+      remoteDebugLog('hash_parsed', { type: params.type, hasAt: !!params.access_token, hasRt: !!params.refresh_token })
       if (params.type === 'recovery' && params.access_token && params.refresh_token) {
+        remoteDebugLog('calling_set_session')
         try {
           const { error } = await supabase.auth.setSession({
             access_token: params.access_token,
