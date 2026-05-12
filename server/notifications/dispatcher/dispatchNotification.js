@@ -28,7 +28,7 @@ import {
   enqueueToDlq 
 } from './_dispatchHelpers.js'
 
-export async function dispatchNotification({ userId, kind, payload, data, channels, context, repositories, bot, expoClient }) {
+export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }) {
   const parsed = dispatchInputSchema.safeParse({ userId, kind, channels })
   if (!parsed.success) {
     throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
@@ -43,9 +43,8 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
     validChannels = await resolveChannelsForUser({ userId, repositories })
   }
 
-  // Se payload não veio, tentamos construir a partir de data usando o builder canônico
-  // Isso unifica as chamadas vindas de tasks legadas que ainda usam "data"
-  const finalPayload = payload || (typeof buildNotificationPayload === 'function' ? buildNotificationPayload({ kind, data }) : (data || {}))
+  // dispatcher sempre chama o builder internamente. Callers passam apenas { kind, data, context }.
+  const finalPayload = buildNotificationPayload({ kind, data, context: ctx })
 
   // --- Wave N2: Centralized Gate Policy ---
   let isSuppressed = false
@@ -94,7 +93,8 @@ export async function dispatchNotification({ userId, kind, payload, data, channe
       results,
       validChannels,
       isSuppressed,
-      correlationId
+      correlationId,
+      context: ctx
     })
   })()
 

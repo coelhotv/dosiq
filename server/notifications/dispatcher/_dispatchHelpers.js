@@ -74,21 +74,30 @@ function determineOverallStatus(isSuppressed, activeResults, validChannels) {
   return 'falhou'
 }
 
-function buildProviderMetadata(metadata) {
+function buildProviderMetadata(metadata, results = [], context = {}) {
   if (!metadata) return {}
-  const pm = {}
-  if (metadata.protocolIds) pm.protocol_ids = metadata.protocolIds
-  if (metadata.planId) pm.treatment_plan_id = metadata.planId
-  if (metadata.percentage !== undefined) pm.percentage = metadata.percentage
-  if (metadata.expected_doses !== undefined) pm.expected_doses = metadata.expected_doses
-  if (metadata.taken_doses !== undefined) pm.taken_doses = metadata.taken_doses
-  if (metadata.nudge) pm.nudge = metadata.nudge
-  if (metadata.storytelling) pm.storytelling = metadata.storytelling
-  if (metadata.details) pm.details = metadata.details
+  
+  const pm = {
+    kind: metadata.kind,
+    builtAt: metadata.builtAt,
+    ...(metadata.details ? { details: metadata.details } : {}),
+    ...(metadata.percentage ? { percentage: metadata.percentage } : {}),
+    ...(metadata.nudge ? { nudge: metadata.nudge } : {}),
+  }
+
+  if (context?.isRetry) pm.isRetry = true
+
+  const telegramRes = (results || []).find(r => r.channel === 'telegram')
+  if (telegramRes?.messageId) pm.telegram_message_id = telegramRes.messageId
+
+  const expoRes = (results || []).find(r => r.channel === 'mobile_push')
+  // expoPushChannel retorna { tickets: [{ id, status }, ...] }
+  if (expoRes?.tickets?.[0]?.id) pm.expo_ticket_id = expoRes.tickets[0].id
+
   return pm
 }
 
-function buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, overallStatus, firstError, protocolId }) {
+function buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, overallStatus, firstError, protocolId, results, context }) {
   return {
     user_id:              userId,
     protocol_id:          protocolId,
@@ -103,7 +112,7 @@ function buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, 
     channels:             logChannels,
     telegram_message_id:  logChannels.find(c => c.channel === 'telegram')?.message_id ?? null,
     mensagem_erro:        firstError,
-    provider_metadata:    buildProviderMetadata(finalPayload.metadata),
+    provider_metadata:    buildProviderMetadata(finalPayload.metadata, results, context),
   }
 }
 
@@ -114,13 +123,13 @@ export async function logNotificationEvent({
   results,
   validChannels,
   isSuppressed,
-  correlationId
+  correlationId,
+  context
 }) {
   try {
     if (!finalPayload) return
 
-    const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
-    const protocolId = isGroupedKind ? null : (finalPayload?.metadata?.protocolId ?? null)
+    const protocolId = finalPayload?.metadata?.protocolId ?? null
     
     const activeResults = results.filter(r => r.attempted > 0 || r.errors.length > 0)
     const logChannels = buildLogChannels(activeResults)
@@ -128,7 +137,7 @@ export async function logNotificationEvent({
     const firstError = activeResults.find(r => !r.success)?.errors?.[0]?.message ?? null
 
     try {
-      const logPayload = buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, overallStatus, firstError, protocolId })
+      const logPayload = buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, overallStatus, firstError, protocolId, results, context })
       await notificationLogRepository.create(logPayload)
     } catch (logErr) {
       console.error('[dispatchNotification] Falha ao persistir log no DB', {
@@ -158,8 +167,7 @@ export async function enqueueToDlq({
 }) {
   if (normalized.totalFailed > 0 && repositories?.dlq && !context?.isRetry) {
     const firstError = results.find(r => !r.success)?.errors?.[0]
-    const isGroupedKind = kind === 'dose_reminder_by_plan' || kind === 'dose_reminder_misc'
-    const protocolId = isGroupedKind ? null : (finalPayload?.metadata?.protocolId ?? null)
+    const protocolId = finalPayload?.metadata?.protocolId ?? null
 
     try {
       await repositories.dlq.enqueue({

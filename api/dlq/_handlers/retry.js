@@ -134,13 +134,11 @@ export async function handleRetry(req, res) {
     const dispatchResult = await dispatchNotification({
       userId: notification.user_id,
       kind: notification.notification_type,
-      data: {
-        ...(notification.notification_payload || {}),
-        isRetry: true
-      },
+      data: notification.notification_payload || {},
       context: {
         correlationId: notification.correlation_id || `retry_${id}`,
-        isRetry: true
+        isRetry: true,
+        originalNotificationId: notification.id
       },
       repositories: { preferences: preferencesRepo, devices: devicesRepo, dlq: dlqRepo },
       bot,

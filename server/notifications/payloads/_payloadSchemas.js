@@ -85,7 +85,7 @@ export const metadataSchema = z.object({
   builtAt: z.string(),
   correlationId: z.string().optional(),
   details: z.record(z.string(), z.unknown()).optional()
-}).strict();
+}).passthrough();
 
 
 // Novas validações de dados (Gate 1)
