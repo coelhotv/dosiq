@@ -465,7 +465,7 @@ vercel env ls
 psql $DATABASE_URL -c "SELECT * FROM gemini_reviews LIMIT 1;"
 
 # 3. Testar endpoint de health
-curl https://dosiq.vercel.app/api/health/notifications
+curl https://dosiq.app/api/health/notifications
 
 # 4. Validar workflow
 gh workflow view gemini-review.yml

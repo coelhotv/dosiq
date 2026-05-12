@@ -74,7 +74,7 @@ O repositório agora possui um rascunho inicial da política em:
 
 URL pública planejada para a ficha da loja:
 
-- [https://dosiq.vercel.app/politica-de-privacidade](https://dosiq.vercel.app/politica-de-privacidade)
+- [https://dosiq.app/politica-de-privacidade](https://dosiq.app/politica-de-privacidade)
 
 Contato público definido para suporte e privacidade:
 
@@ -456,7 +456,7 @@ Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 3. internal testing funcionando
 4. ficha principal preenchida
 5. data safety revisada
-6. política de privacidade publicada em `https://dosiq.vercel.app/politica-de-privacidade`
+6. política de privacidade publicada em `https://dosiq.app/politica-de-privacidade`
 7. credenciais de review preparadas
 8. estratégia de closed testing definida
 

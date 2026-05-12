@@ -47,7 +47,7 @@ Confirme seu cadastro no Dosiq
 
     <div style="background: #f5f5f5; padding: 20px 24px; text-align: center; font-size: 13px; color: #999; border-top: 1px solid #e5e5e5;">
       Dosiq — Inteligência em Doses<br/>
-      <a href="https://dosiq.vercel.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
+      <a href="https://dosiq.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
     </div>
 
   </div>
@@ -93,7 +93,7 @@ Recupere sua senha do Dosiq
 
     <div style="background: #f5f5f5; padding: 20px 24px; text-align: center; font-size: 13px; color: #999; border-top: 1px solid #e5e5e5;">
       Dosiq — Inteligência em Doses<br/>
-      <a href="https://dosiq.vercel.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
+      <a href="https://dosiq.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
     </div>
 
   </div>
@@ -141,7 +141,7 @@ Seu link de acesso ao Dosiq
 
     <div style="background: #f5f5f5; padding: 20px 24px; text-align: center; font-size: 13px; color: #999; border-top: 1px solid #e5e5e5;">
       Dosiq — Inteligência em Doses<br/>
-      <a href="https://dosiq.vercel.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
+      <a href="https://dosiq.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
     </div>
 
   </div>
@@ -179,7 +179,7 @@ Sua senha do Dosiq foi alterada
 
     <div style="background: #f5f5f5; padding: 20px 24px; text-align: center; font-size: 13px; color: #999; border-top: 1px solid #e5e5e5;">
       Dosiq — Inteligência em Doses<br/>
-      <a href="https://dosiq.vercel.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
+      <a href="https://dosiq.app/politica-de-privacidade" style="color: #006A5E; text-decoration: none;">Política de Privacidade</a>
     </div>
 
   </div>
@@ -211,7 +211,7 @@ Sua senha do Dosiq foi alterada
 
 | Campo | Valor |
 |-------|-------|
-| Site URL | `https://dosiq.vercel.app` |
+| Site URL | `https://dosiq.app` |
 | Additional Redirect URLs | `dosiq://auth/callback` (deep link mobile) |
 
 ---
@@ -265,7 +265,7 @@ Para produção com alto volume, configure SMTP via **Dashboard → Authenticati
 - [ ] Template "Magic link": subject + HTML corretos (ativar quando implementar OTP login)
 - [ ] Template "Password changed" (Security): subject + HTML + warning block corretos
 - [ ] Todos templates: logo dosiq visível, botão verde (#006A5E) onde aplicável, footer com política
-- [ ] Site URL configurada: `https://dosiq.vercel.app`
+- [ ] Site URL configurada: `https://dosiq.app`
 - [ ] Redirect URLs incluem `dosiq://auth/callback`
 - [ ] SMTP configurado (se tráfego > limite Supabase built-in)
 - [ ] Teste manual de ambos templates enviado e visualizado

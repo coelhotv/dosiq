@@ -538,7 +538,7 @@ gh run rerun RUN_ID --debug
 
 ```bash
 # Testar endpoint persist (com auth)
-curl -X POST https://dosiq.vercel.app/api/gemini-reviews/persist \
+curl -X POST https://dosiq.app/api/gemini-reviews/persist \
   -H "Authorization: Bearer $VERCEL_GITHUB_ACTIONS_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -549,12 +549,12 @@ curl -X POST https://dosiq.vercel.app/api/gemini-reviews/persist \
   -v
 
 # Testar sem auth (deve retornar 401)
-curl -X POST https://dosiq.vercel.app/api/gemini-reviews/persist \
+curl -X POST https://dosiq.app/api/gemini-reviews/persist \
   -H "Content-Type: application/json" \
   -d '{}'
 
 # Ver headers de rate limit
-curl -I https://dosiq.vercel.app/api/gemini-reviews/persist
+curl -I https://dosiq.app/api/gemini-reviews/persist
 ```
 
 ### Scripts de Monitoramento
@@ -588,7 +588,7 @@ vercel logs dosiq --path=/api/gemini-reviews/ --limit=50 | grep -c "Cold Start: 
 ```bash
 # Verificar todos os endpoints
 check_endpoints() {
-  local base="https://dosiq.vercel.app"
+  local base="https://dosiq.app"
   local token="$VERCEL_GITHUB_ACTIONS_SECRET"
   
   for endpoint in persist create-issues update-status; do
