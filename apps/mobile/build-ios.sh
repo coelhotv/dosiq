@@ -13,7 +13,7 @@ PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
 if [ "$PROFILE" = "production" ]; then
   echo "🔍 Verificando Distribution Certificate no keychain..."
-  CERT=$(security find-identity -v -p codesigning | grep -E "iPhone Distribution|Apple Distribution" | grep "Antonio Coelho" | head -1)
+  CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "Antonio Coelho" | head -1)
 
   if [ -z "$CERT" ]; then
     echo ""
