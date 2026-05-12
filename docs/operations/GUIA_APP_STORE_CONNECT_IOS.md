@@ -71,7 +71,7 @@ Separe estes dados:
 - bundle id de produção: `com.coelhotv.dosik`
 - domínio público: `https://dosiq.app`
 - política de privacidade: `https://dosiq.app/politica-de-privacidade`
-- e-mail público: `contact@coelho.me`
+- e-mail público: `contact@dosiq.app`
 - categoria inicial sugerida: `Health & Fitness`
 - idioma principal da ficha: `Portuguese (Brazil)` ou inglês base com conteúdo em pt-BR, conforme a UI disponível
 

@@ -78,7 +78,7 @@ URL pública planejada para a ficha da loja:
 
 Contato público definido para suporte e privacidade:
 
-- `contact@coelho.me`
+- `contact@dosiq.app`
 
 ### Decisão recomendada para o MVP
 

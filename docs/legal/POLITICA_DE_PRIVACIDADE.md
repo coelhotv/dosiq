@@ -26,7 +26,7 @@ Ao usar o Dosik, você declara estar ciente desta Política de Privacidade.
 Controlador responsável pelo app:
 
 - **Nome/Responsável:** AC Coelho
-- **E-mail de contato para privacidade e suporte:** contact@coelho.me
+- **E-mail de contato para privacidade e suporte:** contact@dosiq.app
 
 Enquanto estes campos não forem substituídos pelos dados oficiais do responsável pela aplicação, este documento deve ser tratado como rascunho operacional de publicação.
 
@@ -167,7 +167,7 @@ No período de MVP/beta, o processo de exclusão pode ocorrer inicialmente por s
 
 Canal de solicitação:
 
-- **E-mail:** contact@coelho.me
+- **E-mail:** contact@dosiq.app
 
 Ao receber a solicitação, faremos a análise e o processamento dentro de prazo razoável, respeitando:
 
@@ -223,7 +223,7 @@ Quando houver mudanças relevantes, a versão atualizada passará a ser disponib
 Para dúvidas, solicitações ou temas relacionados à privacidade:
 
 - **Responsável:** AC Coelho
-- **E-mail:** contact@coelho.me
+- **E-mail:** contact@dosiq.app
 
 ---
 
