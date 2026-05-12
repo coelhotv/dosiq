@@ -160,6 +160,8 @@
 - **[AP-127]** Cross-Boundary Import Leak — Imports relativos entre domínios isolados (web/server) quebram a arquitetura de monorepo. -> [`anti-patterns/infra_and_deploy/AP-127.md`](./anti-patterns/infra_and_deploy/AP-127.md)
 - **[AP-128]** Re-export de sub-path de workspace sem wildcard — "Missing specifier" em Vite 7/Vitest. Fix: adicionar `"./schemas/*": "./src/schemas/*.js"` no exports field. -> [`anti-patterns/infra_and_deploy/AP-128.md`](./anti-patterns/infra_and_deploy/AP-128.md)
 - **[AP-129]** Imports sem extensão `.js` em ESM Node.js — "Cannot find module" no Vercel. `import { x } from './schema'` falha em ESM puro; usar `'./schema.js'`. -> [`anti-patterns/infra_and_deploy/AP-129.md`](./anti-patterns/infra_and_deploy/AP-129.md)
+- **[AP-140]** Strict Metadata Validation causing Logging Regressions — Validar estritamente objetos de transporte de metadados remove campos de domínio vitais para observabilidade. -> [`anti-patterns/process_and_testing/AP-140.md`](./anti-patterns/process_and_testing/AP-140.md)
+
 
 
 - **[AP-138]** Promise não-awaited em Linking event handler → crash via TurboModule (EXC_CRASH SIGABRT). Toda operação async em Linking callbacks exige await + try/catch. -> [`anti-patterns/mobile_and_platform/AP-138.md`](./anti-patterns/mobile_and_platform/AP-138.md)
