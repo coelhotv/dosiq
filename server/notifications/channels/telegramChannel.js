@@ -1,84 +1,74 @@
-// Canal de notificação Telegram
-// Encapsula o adapter Telegram existente (server/bot/)
-// Recebe payload canônico e converte para texto MarkdownV2
-// bot é injetado para facilitar testes sem chamadas HTTP reais
-
-import { getTelegramChatId, formatMessage, buildTelegramReplyMarkup, inferTelegramKind } from './_telegramHelpers.js'
+import { supabase } from '../../services/supabase.js'
+import { escapeMarkdownV2 } from '../../utils/formatters.js'
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
+const EMPTY_RESULT = { channel: 'telegram', success: true, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [] }
+const TELEGRAM_CALLBACK_LIMIT = 64
 
-// Shape padronizado de retorno de canal
-const EMPTY_RESULT = {
-  channel: 'telegram',
-  success: true,
-  attempted: 0,
-  delivered: 0,
-  failed: 0,
-  deactivatedTokens: [],
-  errors: [],
+async function getTelegramChatId(userId) {
+  if (userId === SYSTEM_USER_ID) return process.env.ADMIN_CHAT_ID
+  const { data, error } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single()
+  if (error) console.error('[telegramChannel.getTelegramChatId]', { userId, error: error.message })
+  return data?.telegram_chat_id || null
+}
+
+function encodeCallback(action) {
+  const { id, params: p = {} } = action
+  let raw
+  switch (id) {
+    case 'take': raw = `take_:${p.protocolId}:${p.dosage ?? 1}`; break
+    case 'snooze': raw = `snooze_:${p.protocolId}`; break
+    case 'skip': raw = `skip_:${p.protocolId}`; break
+    case 'take_plan': raw = `takeplan:${p.planIdShort}:${p.hhmm}`; break
+    case 'take_misc': raw = `takelist:misc:${p.hhmm}`; break
+    case 'details': raw = p.kind === 'plan' ? `details:plan:${p.planIdShort}` : `details:misc:${p.hhmm}`; break
+    default: return null
+  }
+  // TODO: Centralize callback limit and refine truncation logic to avoid data corruption.
+  // Currently accepting truncation as technical debt due to Telegram 64-byte limit.
+  return Buffer.byteLength(raw, 'utf8') <= TELEGRAM_CALLBACK_LIMIT ? raw : raw.slice(0, TELEGRAM_CALLBACK_LIMIT)
 }
 
 export async function sendTelegramNotification({ userId, payload, context, bot }) {
   const correlationId = context?.correlationId || 'unknown'
-
-  const chatId = userId === SYSTEM_USER_ID 
-    ? process.env.ADMIN_CHAT_ID 
-    : await getTelegramChatId(userId)
+  const chatId = await getTelegramChatId(userId)
 
   if (!chatId) {
     console.info('[telegramChannel] sem telegram_chat_id', { correlationId, userId })
     return EMPTY_RESULT
   }
 
-  // Inferir kind via metadata (explícito do dispatcher) ou deeplink como fallback
-  const kind = inferTelegramKind(payload)
-
-  const message = formatMessage({ ...payload, kind })
-
-  // Botões interativos por kind (R-030: callback_data < 64 bytes)
   const options = { parse_mode: 'MarkdownV2' }
-  const reply_markup = buildTelegramReplyMarkup(payload)
-  if (reply_markup) {
-    options.reply_markup = reply_markup
+
+  if (payload.actions?.length > 0) {
+    const buttons = payload.actions
+      .map(a => {
+        const data = encodeCallback(a)
+        return data ? { text: a.label, callback_data: data } : null
+      })
+      .filter(Boolean)
+
+    if (buttons.length > 0) {
+      options.reply_markup = { inline_keyboard: buttons.map(b => [b]) }
+    }
   }
 
   try {
+    const message = payload.title ? `*${escapeMarkdownV2(payload.title)}*\n${payload.body}` : payload.body
     const sentMessage = await bot.sendMessage(chatId, message, options)
-
-    console.info('[telegramChannel] entregue', { 
-      correlationId, 
-      userId, 
-      chatId,
-      withButtons: !!options.reply_markup 
-    })
-
-    const messageId = sentMessage?.messageId ?? sentMessage?.message_id;
-    if (!messageId) {
-      console.error('[telegramChannel] Resposta do bot sem message_id', { correlationId, userId, result: sentMessage });
-    }
+    const messageId = sentMessage?.messageId ?? sentMessage?.message_id
+    
+    console.info('[telegramChannel] entregue', { correlationId, userId, chatId, withButtons: !!options.reply_markup })
 
     return {
-      channel: 'telegram',
-      success: true,
-      attempted: 1,
-      delivered: 1,
-      failed: 0,
-      deactivatedTokens: [],
-      errors: [],
-      messageId,
-      providerMetadata: { telegram_message_id: messageId }
+      channel: 'telegram', success: true, attempted: 1, delivered: 1, failed: 0,
+      deactivatedTokens: [], errors: [], messageId, providerMetadata: { telegram_message_id: messageId }
     }
   } catch (error) {
     console.error('[telegramChannel] falha no envio', { correlationId, userId, chatId, error: error.message })
-
     return {
-      channel: 'telegram',
-      success: false,
-      attempted: 1,
-      delivered: 0,
-      failed: 1,
-      deactivatedTokens: [],
-      errors: [{ message: error.message }],
+      channel: 'telegram', success: false, attempted: 1, delivered: 0, failed: 1,
+      deactivatedTokens: [], errors: [{ message: error.message }]
     }
   }
 }

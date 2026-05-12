@@ -76,7 +76,7 @@ export const kindSchema = z.enum([
 export const actionSchema = z.object({
   id: z.enum(['take', 'snooze', 'skip', 'take_plan', 'take_misc', 'details']),
   label: z.string(),
-  params: z.record(z.unknown()).optional()
+  params: z.record(z.string(), z.unknown()).optional()
 });
 
 // Metadados estritos (Gate 1 — adeus passthrough)
@@ -84,7 +84,7 @@ export const metadataSchema = z.object({
   kind: kindSchema,
   builtAt: z.string(),
   correlationId: z.string().optional(),
-  details: z.record(z.unknown()).optional()
+  details: z.record(z.string(), z.unknown()).optional()
 }).strict();
 
 

@@ -71,4 +71,39 @@ describe('telegramChannel', () => {
     expect(result.delivered).toBe(0)
     expect(mockBot.sendMessage).not.toHaveBeenCalled()
   })
+
+  // Caso 3: com ações canônicas → botões mapeados corretamente para o Telegram
+  it('caso 3: com ações canônicas mapeia botões corretamente', async () => {
+    mockSingle.mockResolvedValue({ data: { telegram_chat_id: 'chat-123' }, error: null })
+    mockBot.sendMessage.mockResolvedValue({ message_id: 43 })
+
+    const payloadWithActions = {
+      ...makePayload(),
+      actions: [
+        { id: 'take', label: '✅ Tomei', params: { protocolId: 'p1', dosage: 1 } },
+        { id: 'skip', label: '❌ Pular', params: { protocolId: 'p1' } }
+      ]
+    }
+
+    const result = await sendTelegramNotification({
+      userId: 'user-3',
+      payload: payloadWithActions,
+      context: makeContext(),
+      bot: mockBot,
+    })
+
+    expect(result.success).toBe(true)
+    expect(mockBot.sendMessage).toHaveBeenCalledWith(
+      'chat-123',
+      expect.any(String),
+      expect.objectContaining({
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '✅ Tomei', callback_data: 'take_:p1:1' }],
+            [{ text: '❌ Pular', callback_data: 'skip_:p1' }]
+          ]
+        }
+      })
+    )
+  })
 })
