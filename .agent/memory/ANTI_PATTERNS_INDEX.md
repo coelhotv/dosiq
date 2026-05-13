@@ -22,6 +22,7 @@
 - **[AP-W16]** CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes... -> [`anti-patterns/data_and_schema/AP-W16.md`](./anti-patterns/data_and_schema/AP-W16.md)
 - **[AP-115]** Enum Zod do dispatcher não atualizado ao adicionar novos kinds — novos notification types são rejeitados silenciosamente antes de chegar aos canais -> [`anti-patterns/data_and_schema/AP-115.md`](./anti-patterns/data_and_schema/AP-115.md)
 - **[AP-N20]** useEffect de hidratação sem sincronizar todos os estados locais derivados de settings — campo ausente mantém valor inicial do useState; nunca usar `?? 'valor'` quando o schema Zod já garante `.default()` -> [`anti-patterns/react_and_ui/AP-N20.md`](./anti-patterns/react_and_ui/AP-N20.md)
+- **[AP-142]** consume_stock_fifo com `entry_type='purchase'` bloqueia consumo de entradas adjustment legítimas — estoque visível na UI mas FIFO lança "Estoque insuficiente" (phantom stock) -> [`anti-patterns/data_and_schema/AP-142.md`](./anti-patterns/data_and_schema/AP-142.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
 - **[AP-H27]** Import relativo cross-boundary quebra após git mv em monorepo — tests em src/ com `../../../../server/` falham -> [`anti-patterns/infra_and_deploy/AP-H27.md`](./anti-patterns/infra_and_deploy/AP-H27.md)
