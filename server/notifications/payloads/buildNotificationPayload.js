@@ -27,6 +27,7 @@ export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
 import {
   buildDailyDigestPayload,
   buildAdherenceReportPayload,
+  buildWeeklyAdherencePayload,
   buildStockAlertPayload,
   buildTitrationAlertPayload,
   buildMonthlyReportPayload,
@@ -61,6 +62,13 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
     }
     case 'adherence_report': {
       const content = buildAdherenceReportPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
+      break;
+    }
+    case 'weekly_adherence': {
+      const content = buildWeeklyAdherencePayload(data);
       title = content.title;
       body = content.body;
       pushBody = content.pushBody;
@@ -172,9 +180,8 @@ function formatDoseReminder(data, metadata) {
   }
 
   const actions = [
-    { id: 'take',   label: '✅ Tomar',  params: { protocolId: protocolId ?? '', dosage: dosage ?? 1 } },
-    { id: 'snooze', label: '⏰ Adiar',  params: { protocolId: protocolId ?? '' } },
-    { id: 'skip',   label: '⏭️ Pular', params: { protocolId: protocolId ?? '' } }
+    { id: 'take', label: '✅ Tomar', params: { protocolId: protocolId ?? '', dosage: dosage ?? 1 } },
+    { id: 'skip', label: '⏭️ Pular', params: { protocolId: protocolId ?? '' } }
   ];
 
   return { title, body, pushBody, actions, metadata };
@@ -205,7 +212,7 @@ function formatDoseReminderByPlan(data, metadata) {
     return `  💊 ${name} — ${qty} cp`;
   }).join('\n');
 
-  let body = `${emoji} *${safePlanName}*\n\n${escapeMarkdownV2(String(count))} medicamentos agora — ${safeTime}\n\n${doseLines}`;
+  let body = `*${safePlanName}*\n\n${escapeMarkdownV2(String(count))} medicamentos agora — ${safeTime}\n\n${doseLines}`;
   if (extra > 0) {
     body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
   }
@@ -217,8 +224,7 @@ function formatDoseReminderByPlan(data, metadata) {
 
   const planIdShort = String(planId ?? '').slice(0, 8);
   const actions = [
-    { id: 'take_plan', label: '✅ Registrar este plano', params: { planIdShort, hhmm: scheduledTime } },
-    { id: 'details',   label: '📋 Detalhes',             params: { kind: 'plan', planIdShort } }
+    { id: 'take_plan', label: '✅ Registrar este plano', params: { planIdShort, hhmm: scheduledTime } }
   ];
 
   return { title, body, pushBody, actions, metadata };
@@ -249,7 +255,7 @@ function formatDoseReminderMisc(data, metadata) {
     return `  • ${name} — ${qty} cp`;
   }).join('\n');
 
-  let body = `${emoji} *Suas doses agora* — ${safeTime}\n\n${escapeMarkdownV2(String(count))} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''}:\n\n${doseLines}`;
+  let body = `*Suas doses agora* — ${safeTime}\n\n${escapeMarkdownV2(String(count))} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''}:\n\n${doseLines}`;
   if (extra > 0) {
     body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
   }
@@ -261,8 +267,7 @@ function formatDoseReminderMisc(data, metadata) {
 
   const hhmm = scheduledTime;
   const actions = [
-    { id: 'take_misc', label: '✅ Registrar todos', params: { hhmm } },
-    { id: 'details',   label: '📋 Detalhes',        params: { kind: 'misc', hhmm } }
+    { id: 'take_misc', label: '✅ Registrar todos', params: { hhmm } }
   ];
 
   return { title, body, pushBody, actions, metadata };
@@ -294,6 +299,7 @@ function getNavigationMetadata(kind, data, protocolIds) {
     stock_alert: { screen: 'stock', params: {} },
     prescription_alert: { screen: 'stock', params: {} },
     adherence_report: { screen: 'history', params: {} },
+    weekly_adherence: { screen: 'history', params: {} },
     monthly_report: { screen: 'history', params: {} },
     daily_digest: { screen: 'history', params: {} },
     dlq_digest: { screen: 'admin/dlq', params: {} },
@@ -345,6 +351,7 @@ function resolveDeeplink(kind, data) {
   // 1. Mapeamento de rotas estáticas
   const staticRoutes = {
     adherence_report: 'history',
+    weekly_adherence: 'history',
     monthly_report: 'history',
     stock_alert: 'stock',
     prescription_alert: 'stock',

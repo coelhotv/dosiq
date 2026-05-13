@@ -14,7 +14,7 @@ export const dailyDigestDataSchema = z.object({
 
 export const adherenceReportDataSchema = z.object({
   firstName: z.string(),
-  period: z.string(), // ex: "hoje", "esta semana"
+  period: z.string(),
   percentage: z.number().min(0).max(100),
   taken: z.number(),
   total: z.number(),
@@ -23,6 +23,13 @@ export const adherenceReportDataSchema = z.object({
     deltaPercent: z.number(),
     trend: z.enum(['up', 'down', 'flat'])
   }).optional()
+});
+
+export const weeklyAdherenceDataSchema = z.object({
+  firstName: z.string(),
+  percentage: z.number().min(0).max(100),
+  taken: z.number(),
+  total: z.number()
 });
 
 export const stockAlertDataSchema = z.object({
@@ -66,6 +73,7 @@ export const kindSchema = z.enum([
   'stock_alert',
   'daily_digest',
   'adherence_report',
+  'weekly_adherence',
   'monthly_report',
   'titration_alert',
   'prescription_alert',
@@ -74,7 +82,7 @@ export const kindSchema = z.enum([
 
 // Schemas para ações interativas (Gate 4 preliminar)
 export const actionSchema = z.object({
-  id: z.enum(['take', 'snooze', 'skip', 'take_plan', 'take_misc', 'details']),
+  id: z.enum(['take', 'skip', 'take_plan', 'take_misc']),
   label: z.string(),
   params: z.record(z.string(), z.unknown()).optional()
 });

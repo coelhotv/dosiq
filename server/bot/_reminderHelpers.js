@@ -12,6 +12,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
   for (const [hhmm, ids] of Object.entries(userIdsByHHMM)) {
     for (let i = 0; i < ids.length; i += 50) {
       const chunk = ids.slice(i, i + 50);
+      const today = getTodayLocal();
       const { data, error } = await supabase
         .from('protocols')
         .select(`
@@ -21,6 +22,8 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
         `)
         .in('user_id', chunk)
         .eq('active', true)
+        .lte('start_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
         .contains('time_schedule', JSON.stringify([hhmm])); 
 
       if (error) {
@@ -95,19 +98,21 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     if (userError) throw userError;
 
-    const realtimeUsers = (users || []).filter(u => u.notification_mode === 'realtime');
+    // digest mode tem mecanismo próprio (daily_digest); excluir apenas digest, não silent
+    // silent users chegam ao dispatcher que loga 'silenciada' → aparece no inbox
+    const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');
 
-    if (realtimeUsers.length === 0) {
-      logger.info('Nenhum usuário em modo realtime encontrado para dispatch de lembretes unitários', { correlationId });
+    if (eligibleUsers.length === 0) {
+      logger.info('Nenhum usuário elegível para dispatch de lembretes', { correlationId });
       return;
     }
 
-    logger.info(`Iniciando verificação de lembretes para ${realtimeUsers.length} usuários em modo realtime`, { correlationId });
+    logger.info(`Iniciando verificação de lembretes para ${eligibleUsers.length} usuários`, { correlationId });
 
     const userTimes = new Map();
     const userIdsByHHMM = {};
-    
-    for (const user of realtimeUsers) {
+
+    for (const user of eligibleUsers) {
       const currentHHMM = getCurrentTime().substring(0, 5);
       userTimes.set(user.user_id, currentHHMM);
       
@@ -123,7 +128,7 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
       protocolsByUser[p.user_id].push(p);
     }
 
-    for (const user of realtimeUsers) {
+    for (const user of eligibleUsers) {
       const userId = user.user_id;
 
       try {
@@ -222,11 +227,14 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     }
 
     const eligibleIds = eligibleEntries.map(e => e.userId);
+    const today = getTodayLocal();
     const { data: allProtocols } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill)')
       .in('user_id', eligibleIds)
-      .eq('active', true);
+      .eq('active', true)
+      .lte('start_date', today)
+      .or(`end_date.is.null,end_date.gte.${today}`);
 
     const protocolsByUser = {};
     for (const p of allProtocols ?? []) {
@@ -334,11 +342,8 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
       return;
     }
 
-    const eligibleUsers = users.filter(u => u.notification_mode !== 'silent');
-    if (eligibleUsers.length === 0) return;
-
-    const userIds = eligibleUsers.map(u => u.user_id);
-    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários elegíveis`, { correlationId });
+    const userIds = users.map(u => u.user_id);
+    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, { correlationId });
 
     const { data: allProtocols } = await supabase
       .from('protocols')

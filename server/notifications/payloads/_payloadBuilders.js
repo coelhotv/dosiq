@@ -1,9 +1,10 @@
-import { 
-  dailyDigestDataSchema, 
-  adherenceReportDataSchema, 
-  stockAlertDataSchema, 
-  titrationAlertDataSchema, 
-  prescriptionAlertDataSchema, 
+import {
+  dailyDigestDataSchema,
+  adherenceReportDataSchema,
+  weeklyAdherenceDataSchema,
+  stockAlertDataSchema,
+  titrationAlertDataSchema,
+  prescriptionAlertDataSchema,
   dlqDigestDataSchema,
   doseReminderDataSchema
 } from './_payloadSchemas.js';
@@ -84,6 +85,26 @@ export function buildAdherenceReportPayload(data) {
   richMsg += `_${escapeMarkdownV2(nudge)}_`;
   plainMsg += nudge;
   
+  return { title, body: richMsg, pushBody: plainMsg };
+}
+
+export function buildWeeklyAdherencePayload(data) {
+  const { firstName, percentage, taken, total } = weeklyAdherenceDataSchema.parse(data);
+  const nudge = getMotivationalNudge(percentage);
+  const title = '📊 Relatório Semanal';
+
+  const safeName = escapeMarkdownV2(firstName);
+
+  let richMsg = `Olá, *${safeName}*\\!\n\n`;
+  richMsg += `Sua adesão na última semana foi de *${percentage}%*\n`;
+  richMsg += `✅ *${taken}* de *${total}* doses registradas\\.\n\n`;
+  richMsg += `_${escapeMarkdownV2(nudge)}_`;
+
+  let plainMsg = `Olá, ${firstName}!\n`;
+  plainMsg += `Sua adesão na última semana foi de ${percentage}% `;
+  plainMsg += `✅ ${taken} de ${total} doses registradas.\n`;
+  plainMsg += nudge;
+
   return { title, body: richMsg, pushBody: plainMsg };
 }
 

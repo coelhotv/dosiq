@@ -148,6 +148,20 @@ export function getCurrentTimeInTimezone(timezone = 'America/Sao_Paulo') {
 }
 
 /**
+ * Retorna { hhmm, weekday (0=dom..6=sab), dayOfMonth } na timezone do usuário.
+ * @param {string} timezone
+ */
+export function getCurrentDatePartsInTimezone(timezone = 'America/Sao_Paulo') {
+  const now = new Date();
+  const hhmm = now.toLocaleTimeString('pt-BR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short', day: 'numeric' }).formatToParts(now);
+  const weekdayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const weekday = weekdayMap[parts.find(p => p.type === 'weekday')?.value] ?? -1;
+  const dayOfMonth = parseInt(parts.find(p => p.type === 'day')?.value ?? '0', 10);
+  return { hhmm, weekday, dayOfMonth };
+}
+
+/**
  * Retorna o ISO UTC correspondente ao início do dia (00:00:00) em São Paulo.
  * @param {string} dateStr - Data no formato YYYY-MM-DD
  * @returns {string} ISO 8601 string (UTC)

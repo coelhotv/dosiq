@@ -49,7 +49,8 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
       .filter(Boolean)
 
     if (buttons.length > 0) {
-      options.reply_markup = { inline_keyboard: buttons.map(b => [b]) }
+      const singleRow = payload.metadata?.kind === 'dose_reminder'
+      options.reply_markup = { inline_keyboard: singleRow ? [buttons] : buttons.map(b => [b]) }
     }
   }
 

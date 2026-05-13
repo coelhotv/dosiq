@@ -285,8 +285,8 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
     results.push('titration_alerts');
   }
 
-  // 5. Adherence Reports: Sunday at 23:00
-  if (currentWeekDay === 0 && currentHour === 23 && currentMinute === 0) {
+  // 5. Adherence Reports: Sunday 21:00-23:59 SP (window covers UTC-3 to UTC-5 at 23:00 local)
+  if (currentWeekDay === 0 && currentHour >= 21) {
     await withCorrelation(
       (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
       { correlationId, jobType: 'adherence_reports' }
@@ -294,8 +294,8 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
     results.push('adherence_reports');
   }
 
-  // 6. Monthly Report: 1st of month at 10:00
-  if (currentDay === 1 && currentHour === 10 && currentMinute === 0) {
+  // 6. Monthly Report: 1st of month (per-user timezone handles exact 10:00)
+  if (currentDay === 1) {
     await withCorrelation(
       (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }),
       { correlationId, jobType: 'monthly_report' }

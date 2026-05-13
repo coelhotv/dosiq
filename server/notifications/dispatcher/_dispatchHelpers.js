@@ -32,7 +32,7 @@ export async function dispatchChannel({ channel, userId, payload, context, repos
 }
 
 export function checkGatePolicy({ userId, kind, settings, currentHHMM, correlationId }) {
-  const isAlert = !['daily_digest', 'weekly_adherence', 'monthly_report', 'adherence_report'].includes(kind)
+  const isAlert = !['daily_digest'].includes(kind)
 
   if (!isAlert) return false
 
@@ -76,22 +76,17 @@ function determineOverallStatus(isSuppressed, activeResults, validChannels) {
 
 function buildProviderMetadata(metadata, results = [], context = {}) {
   if (!metadata) return {}
-  
-  const pm = {
-    ...metadata,
-    ...(metadata.details ? { details: metadata.details } : {}),
-    ...(metadata.percentage ? { percentage: metadata.percentage } : {}),
-    ...(metadata.nudge ? { nudge: metadata.nudge } : {}),
-  }
 
+  const pm = { ...metadata }
   if (context?.isRetry) pm.isRetry = true
 
-  const telegramRes = (results || []).find(r => r.channel === 'telegram')
+  const telegramRes = results.find(r => r.channel === 'telegram')
   if (telegramRes?.messageId) pm.telegram_message_id = telegramRes.messageId
 
-  const expoRes = (results || []).find(r => r.channel === 'mobile_push')
   // expoPushChannel retorna { tickets: [{ id, status }, ...] }
-  if (expoRes?.tickets?.[0]?.id) pm.expo_ticket_id = expoRes.tickets[0].id
+  const expoRes = results.find(r => r.channel === 'mobile_push')
+  const expoTicketId = expoRes?.tickets?.[0]?.id
+  if (expoTicketId) pm.expo_ticket_id = expoTicketId
 
   return pm
 }

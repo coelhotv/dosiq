@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { createLogger } from '../bot/logger.js';
+import { getTodayLocal } from '../utils/dateUtils.js';
 
 const logger = createLogger('ProtocolCache');
 
@@ -36,11 +37,14 @@ export async function getActiveProtocols(userId, useCache = true) {
   }
 
   try {
+    const today = getTodayLocal();
     const { data, error } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(*)')
       .eq('user_id', userId)
-      .eq('active', true);
+      .eq('active', true)
+      .lte('start_date', today)
+      .or(`end_date.is.null,end_date.gte.${today}`);
 
     if (error) throw error;
 
