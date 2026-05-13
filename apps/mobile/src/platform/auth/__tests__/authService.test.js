@@ -132,7 +132,10 @@ describe('authService', () => {
       })
       const result = await sendPasswordReset('test@example.com')
       expect(result.success).toBe(true)
-      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('test@example.com')
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        { redirectTo: 'dosiq://auth/callback' }
+      )
     })
 
     it('retorna erro traduzido para rate limit', async () => {

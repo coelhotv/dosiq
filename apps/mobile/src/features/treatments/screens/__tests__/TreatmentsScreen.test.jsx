@@ -18,7 +18,13 @@ describe('TreatmentsScreen', () => {
     useTreatments.mockReturnValue({
       loading: false,
       data: [
-        { id: '1', name: 'Tratamento A', active: true, medicine_id: 'm1' }
+        { 
+          id: 'g1', 
+          title: 'Geral', 
+          protocols: [
+            { id: '1', name: 'Tratamento A', active: true, medicine_id: 'm1' }
+          ] 
+        }
       ]
     });
     const { getByText } = render(<TreatmentsScreen />);

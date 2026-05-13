@@ -92,6 +92,7 @@ export const metadataSchema = z.object({
 export const doseReminderDataSchema = z.object({
   medicineName: z.string(),
   time: z.string(),
+  dosage: z.string().optional(), // Pre-formatted dosage string
   dosagePerIntake: z.number().optional(),
   dosageUnit: z.string().optional(),
   protocolId: z.string().optional(),

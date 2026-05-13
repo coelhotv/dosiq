@@ -14,8 +14,7 @@ import { ROUTES } from '../../../navigation/routes'
 
 // --- Mocks de módulo ---
 
-// createNavigationContainerRef retorna um objeto com navigate() diretamente (sem .current)
-jest.mock('../../../navigation/Navigation', () => ({
+jest.mock('../../../navigation/navigationRef', () => ({
   navigationRef: {
     navigate: jest.fn(),
   },
@@ -51,7 +50,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 // Acesso às funções mock via require (após as declarações de mock)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { navigationRef } = require('../../../navigation/Navigation')
+const { navigationRef } = require('../../../navigation/navigationRef')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Notifications = require('expo-notifications')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -111,7 +110,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-plan', { planId: 'plan-1', at: '08:00' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-1', at: '08:00' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-plan', planId: 'plan-1', at: '08:00' })
     unmount()
   })
 
@@ -135,7 +134,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-misc', { misc: 1, at: '14:00' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { misc: 1, at: '14:00' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-misc', misc: 1, at: '14:00' })
     unmount()
   })
 
@@ -159,7 +158,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('dose-individual', { protocolId: 'proto-1' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { protocolId: 'proto-1' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'dose-individual', protocolId: 'proto-1' })
     unmount()
   })
 
@@ -204,7 +203,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(Notifications.getLastNotificationResponseAsync).toHaveBeenCalled()
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { planId: 'plan-cold' })
+    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-plan', planId: 'plan-cold' })
     unmount()
   })
 

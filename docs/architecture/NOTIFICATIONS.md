@@ -1,8 +1,8 @@
 # 🔔 Sistema de Notificações & Bot Telegram
 
-**Versão:** 5.0.0  
-**Última atualização:** 2026-04-29  
-**Status:** Produção (Waves N1, N2 & M2.5)
+**Versão:** 5.5.0  
+**Última atualização:** 2026-05-12  
+**Status:** Produção (Waves N1, N2, M2.5 & Gate 5.5 Inbox)
 
 Documentação central do motor de notificações do Dosiq, abrangendo a arquitetura multicanal (Telegram, Push, Web), o sistema de agrupamento inteligente e a lógica de engajamento comportamental.
 
@@ -32,10 +32,11 @@ Responsável por decidir *quem* notificar e *o que* enviar. Reside em `server/bo
 - **Contrato**: Envia um objeto `data` (payload bruto) para o Dispatcher.
 
 ### 2. Camada de Apresentação (L2 - Canonical Builder)
-Responsável por transformar o dado bruto em uma experiência visual rica. Reside em `server/notifications/payloads/buildNotificationPayload.js`.
+Responsável por transformar o dado bruto em uma experiência visual rica e unificada. Reside em `server/notifications/payloads/buildNotificationPayload.js`.
 - **Canônico**: Garante que o mesmo lembrete tenha a mesma "voz" no Telegram, Push e Inbox.
-- **Validação**: Usa schemas Zod para garantir que o payload final (`title`, `body`, `deeplink`) esteja correto.
-- **Decoração**: Adiciona prefixos (ex: `🔄` para reenvios) e rodapés contextuais.
+- **Markdown-V2**: Centraliza a sanitização e formatação via `escapeMarkdownV2`, garantindo compatibilidade entre o Telegram e o parser Web/Mobile.
+- **Validação**: Usa schemas Zod (`_payloadSchemas.js`) para garantir que o payload final (`title`, `body`, `deeplink`) esteja em conformidade.
+- **Decoração**: Adiciona prefixos (ex: `🔄` para reenvios) e ícones contextuais.
 
 ### 3. Camada de Entrega (L3 - Delivery Dispatcher)
 O `dispatchNotification.js` é o hub de execução que coordena o envio multicanal.
@@ -44,7 +45,7 @@ O `dispatchNotification.js` é o hub de execução que coordena o envio multican
 - **Adaptadores**:
     - **Telegram**: Via `telegramChannel.js`.
     - **Mobile Push (Expo)**: Via `expoPushChannel.js`.
-- **Inbox-First**: Todo dispatch gera um registro no `notification_log`.
+- **Inbox-First**: Todo dispatch gera um registro no `notification_log`, que é o feed mestre lido pelas aplicações Web e Mobile.
 
 ### 3. Agrupamento Inteligente (Wave N1)
 Para evitar o "spam" de notificações (múltiplos medicamentos no mesmo horário), o sistema aplica a regra de **Partição por Plano**:
@@ -63,8 +64,10 @@ As tarefas são disparadas por um cron central (`/api/notify`) e processadas com
 | **Dose Reminders** | A cada minuto | Verifica doses agendadas, aplica agrupamento e quiet hours. |
 | **Stock Alerts** | 09:00 (Local) | Verifica predição de estoque e alerta se < 7 dias. |
 | **Daily Digest** | `digest_time` | Resumo completo do dia para usuários em `digest_morning` mode. |
-| **Adherence Report** | Dom/Mensal | Relatório com storytelling comparando adesão atual vs. anterior. |
+| **Adherence Report** | Domingos | Relatório semanal com storytelling de engajamento. |
+| **Monthly Report** | Dia 1º (Local) | Fechamento mensal de adesão e economia gerada. |
 | **Titration Alert** | 08:00 (Local) | Alerta quando um protocolo atinge o dia de troca de dose. |
+| **Prescription Alert**| Eventual | Notifica quando uma receita está próxima de vencer. |
 
 ---
 

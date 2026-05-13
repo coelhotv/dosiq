@@ -2,57 +2,31 @@
  * NotificationItem — Item da Central de Avisos (Mobile).
  *
  * Título contextual por tipo (medicine_name / protocol_name).
- * CTA semântico por tipo. Status "enviada" silencioso; "falhou" mostra ícone discreto.
+ * CTA semântico por tipo via NotificationActions.
  * R-167: logs em __DEV__ apenas. R-138: ícone sempre com label. ADR-023: fontWeight ≥ 400.
  */
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native'
-import {
-  Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell, ChevronRight,
-  Pill, Tablets, ListChecks, NotepadText
+import { 
+  AlertTriangle, Bell, Clock, Package, BarChart2, TrendingUp, 
+  ListChecks, Tablets, PieChart, BarChart3, NotepadText 
 } from 'lucide-react-native'
 import { getNotificationIcon, formatRelativeTime } from '@dosiq/core'
+import { parseTelegramMarkdownNative } from '../utils/markdownParser'
 import { colors } from '../../../shared/styles/tokens'
+import NotificationActions from './NotificationActions'
 
-const ICON_MAP = {
-  Clock, Package, AlertTriangle, BarChart2, TrendingUp, Bell,
-  Pill, Tablets, ListChecks, NotepadText
-}
-
-const CTA_MAP = {
-  dose_reminder:         { label: 'Registrar dose',    action: 'dashboard' },
-  dose_reminder_by_plan: { label: 'Registrar plano',   action: 'bulk-plan' },
-  dose_reminder_misc:    { label: 'Registrar doses',   action: 'bulk-misc' },
-  stock_alert:           { label: 'Ver estoque',        action: 'stock' },
-  missed_dose:           { label: 'Registrar atrasada', action: 'history' },
-  titration_update:      { label: 'Ver tratamento',     action: 'treatment' },
-  daily_digest:          null,
-}
-
-// Renderiza o rodapé de CTA ou status de dose tomada
-function NotificationItemFooter({ isDoseReminder, wasTaken, groupedComplete, hasNavAction, cta }) {
-  if (isDoseReminder && wasTaken === true) {
-    return <Text style={styles.takenLabel}>✓ Tomada</Text>
-  }
-  if (groupedComplete) {
-    return (
-      <Text style={[styles.takenLabel, styles.takenFull]}>
-        {wasTaken.taken}/{wasTaken.total} tomadas
-      </Text>
-    )
-  }
-  if (hasNavAction) {
-    return (
-      <View style={styles.actionLabel}>
-        {typeof wasTaken === 'object' && (
-          <Text style={styles.takenLabel}>{wasTaken.taken}/{wasTaken.total} • </Text>
-        )}
-        <Text style={styles.actionText}>{cta.label}</Text>
-        <ChevronRight size={13} color={colors.brand.primary} strokeWidth={2.5} />
-      </View>
-    )
-  }
-  return null
+const ICON_COMPONENTS = {
+  Pill: Clock,
+  Package,
+  AlertTriangle,
+  NotepadText,
+  TrendingUp,
+  ListChecks,
+  Tablets,
+  PieChart,
+  BarChart3,
+  Bell
 }
 
 // Renderiza o corpo da notificação (doses ou body text)
@@ -75,7 +49,7 @@ function NotificationItemBody({ doses, displayBody, isDailyDigest, expanded, onT
         style={styles.preview}
         numberOfLines={isDailyDigest && !expanded ? 2 : undefined}
       >
-        {displayBody}
+        {parseTelegramMarkdownNative(displayBody)}
       </Text>
       {isDailyDigest && (
         <Pressable
@@ -92,7 +66,7 @@ function NotificationItemBody({ doses, displayBody, isDailyDigest, expanded, onT
 }
 
 function resolveTitle(notification, label) {
-  const { notification_type, medicine_name, protocol_name } = notification
+  const { notification_type, medicine_name, protocol_name, treatment_plan_name } = notification
   switch (notification_type) {
     case 'dose_reminder':
     case 'stock_alert':
@@ -103,7 +77,7 @@ function resolveTitle(notification, label) {
     case 'daily_digest':
       return 'Resumo do dia'
     case 'dose_reminder_by_plan':
-      return notification.treatment_plan_name ?? 'Plano de tratamento'
+      return treatment_plan_name ?? 'Plano de tratamento'
     case 'dose_reminder_misc':
       return 'Doses agora'
     default:
@@ -114,7 +88,7 @@ function resolveTitle(notification, label) {
 /**
  * @param {Object} props
  * @param {Object}   props.notification - Objeto notificationLog do DB
- * @param {boolean}  [props.wasTaken]   - Se dose já foi registrada (calculado pelo pai)
+ * @param {boolean|Object} [props.wasTaken] - Se dose já foi registrada ou objeto de progresso
  * @param {function} [props.onNavigate] - (routeName) => void
  */
 export default function NotificationItem({ notification, wasTaken, onNavigate }) {
@@ -123,7 +97,6 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const { notification_type, status, sent_at, body } = notification
 
   const { iconName, color, bgColor, label } = getNotificationIcon(notification_type)
-  const IconComponent  = ICON_MAP[iconName] ?? Bell
   const relativeTime   = formatRelativeTime(sent_at)
   const isFailed       = ['falhou', 'failed'].includes(status?.toLowerCase())
   const isDailyDigest  = notification_type === 'daily_digest'
@@ -132,7 +105,11 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const displayTitle = resolveTitle(notification, label)
   const displayBody  = body ?? null
   const doses        = notification.doses ?? null
-  const cta          = CTA_MAP[notification_type] ?? null
+
+  const IconComponent = ICON_COMPONENTS[iconName] ?? Bell
+
+  // Verifica se deve ser clicável baseado no CTA_MAP consolidado
+  const cta = NotificationActions.getCTA(notification_type)
   const groupedComplete = isDoseReminder && typeof wasTaken === 'object' && wasTaken.taken === wasTaken.total
   const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true) && !groupedComplete
 
@@ -151,7 +128,7 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
             {isFailed && (
               <AlertTriangle
                 size={12}
-                color={colors.status?.error ?? '#dc2626'}
+                color={colors.status?.error}
                 strokeWidth={2.5}
                 accessibilityLabel="Falhou ao enviar"
               />
@@ -168,14 +145,14 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
           onToggleExpanded={() => setExpanded(prev => !prev)}
         />
 
-        {/* Rodapé: CTA ou confirmação de dose tomada */}
+        {/* Rodapé: Ações Consolidadas */}
         <View style={styles.footer}>
-          <NotificationItemFooter
-            isDoseReminder={isDoseReminder}
+          <NotificationActions 
+            notification={notification}
             wasTaken={wasTaken}
+            onNavigate={onNavigate}
+            isDoseReminder={isDoseReminder}
             groupedComplete={groupedComplete}
-            hasNavAction={hasNavAction}
-            cta={cta}
           />
         </View>
       </View>
@@ -205,16 +182,12 @@ const styles = StyleSheet.create({
   iconCircle:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 1, flexShrink: 0 },
   body:        { flex: 1, gap: 4 },
   titleRow:    { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
-  title:       { fontSize: 15, fontWeight: '600', color: colors.text?.primary ?? '#111827', flex: 1 },
+  title:       { fontSize: 15, fontWeight: '600', color: colors.text?.primary, flex: 1 },
   timeRow:     { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
-  time:        { fontSize: 12, fontWeight: '400', color: colors.text?.muted ?? '#9ca3af', fontVariant: ['tabular-nums'] },
-  preview:     { fontSize: 13, fontWeight: '400', color: colors.text?.secondary ?? '#4b5563', lineHeight: 19 },
-  expandBtn:   { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280', marginTop: 2 },
+  time:        { fontSize: 12, fontWeight: '400', color: colors.text?.muted },
+  preview:     { fontSize: 13, fontWeight: '400', color: colors.text?.secondary, lineHeight: 19 },
+  expandBtn:   { fontSize: 12, fontWeight: '500', color: colors.text?.muted, marginTop: 2 },
   footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 },
-  takenLabel:  { fontSize: 12, fontWeight: '500', color: colors.text?.muted ?? '#6b7280' },
-  takenFull:   { color: colors.brand.primary },
-  actionLabel: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  actionText:  { fontSize: 13, fontWeight: '600', color: colors.brand.primary },
   doseList:    { gap: 2, marginTop: 2 },
-  doseItem:    { fontSize: 13, fontWeight: '400', color: colors.text?.secondary ?? '#4b5563', lineHeight: 19 },
+  doseItem:    { fontSize: 13, fontWeight: '400', color: colors.text?.secondary, lineHeight: 19 },
 })

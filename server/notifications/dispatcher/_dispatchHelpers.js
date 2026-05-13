@@ -78,8 +78,7 @@ function buildProviderMetadata(metadata, results = [], context = {}) {
   if (!metadata) return {}
   
   const pm = {
-    kind: metadata.kind,
-    builtAt: metadata.builtAt,
+    ...metadata,
     ...(metadata.details ? { details: metadata.details } : {}),
     ...(metadata.percentage ? { percentage: metadata.percentage } : {}),
     ...(metadata.nudge ? { nudge: metadata.nudge } : {}),

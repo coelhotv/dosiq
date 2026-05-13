@@ -13,6 +13,9 @@ export const NOTIFICATION_TYPES = {
   TITRATION_UPDATE: 'titration_update',
   DAILY_DIGEST: 'daily_digest',
   ADHERENCE_REPORT: 'adherence_report',
+  MONTHLY_REPORT: 'monthly_report',
+  PRESCRIPTION_ALERT: 'prescription_alert',
+  DLQ_DIGEST: 'dlq_digest',
 }
 
 /**

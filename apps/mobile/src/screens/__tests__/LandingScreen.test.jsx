@@ -9,9 +9,6 @@ const mockNavigation = {
   navigate: jest.fn(),
 };
 
-// Mock Alert
-jest.spyOn(Alert, 'alert');
-
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children, edges }) => <>{children}</>,
@@ -78,13 +75,10 @@ describe('LandingScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith(ROUTES.LOGIN);
   });
 
-  it('shows Alert when "Criar conta" is pressed', () => {
+  it('navigates to Signup when "Criar conta" is pressed', () => {
     const { getByText } = render(<LandingScreen navigation={mockNavigation} />);
     
     fireEvent.press(getByText('Criar conta'));
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Em breve',
-      'Cadastro pelo app ainda não está disponível.'
-    );
+    expect(mockNavigation.navigate).toHaveBeenCalledWith(ROUTES.SIGNUP);
   });
 });

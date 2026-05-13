@@ -126,7 +126,7 @@ export function buildStockAlertPayload(data) {
   const { medicineName, remaining, daysRemaining } = stockAlertDataSchema.parse(data);
   const title = `📦 Alerta de Estoque: ${medicineName}`;
   
-  let richMsg = `📉 **Restam:** ${remaining} doses\\..\n`;
+  let richMsg = `📉 **Restam:** ${remaining} doses\\.\n`;
   let plainMsg = `📉 Restam: ${remaining} doses.\n`;
   
   if (daysRemaining !== undefined) {
@@ -175,7 +175,7 @@ export function buildMonthlyReportPayload(data) {
   const title = '🗓️ Relatório Mensal';
   
   let richMsg = `📊 *Seu Relatório Mensal*\n\n`;
-  richMsg += `Olá ${escapeMarkdownV2(firstName)}, sua taxa de adesão no último mês foi de **${percentage}%**\\..\n`;
+  richMsg += `Olá ${escapeMarkdownV2(firstName)}, sua taxa de adesão no último mês foi de **${percentage}%**\\.\n`;
   richMsg += `✅ **Doses tomadas:** ${taken}\n`;
   richMsg += `📝 **Doses esperadas:** ${total}\n\n`;
   
@@ -186,8 +186,8 @@ export function buildMonthlyReportPayload(data) {
   
   let nudge = '';
   let plainNudge = '';
-  if (percentage >= 90) { nudge = `🚀 *Desempenho excepcional\\.!* Continue assim\\.`; plainNudge = `🚀 Desempenho excepcional! Continue assim.`; }
-  else if (percentage >= 70) { nudge = `💪 *Bom trabalho\\.!* Vamos buscar os 100% no próximo mês?`; plainNudge = `💪 Bom trabalho! Vamos buscar os 100% no próximo mês?`; }
+  if (percentage >= 90) { nudge = `🚀 *Desempenho excepcional\\!* Continue assim\\.`; plainNudge = `🚀 Desempenho excepcional! Continue assim.`; }
+  else if (percentage >= 70) { nudge = `💪 *Bom trabalho\\!* Vamos buscar os 100% no próximo mês?`; plainNudge = `💪 Bom trabalho! Vamos buscar os 100% no próximo mês?`; }
   else { nudge = `💡 *Lembrete:* Manter a constância é fundamental para o sucesso do tratamento\\.`; plainNudge = `💡 Lembrete: Manter a constância é fundamental para o sucesso do tratamento.`; }
   
   richMsg += nudge;

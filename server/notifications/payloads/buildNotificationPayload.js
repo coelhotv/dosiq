@@ -288,13 +288,42 @@ function applyRetryDecoration(content, context) {
  * Constrói objeto de metadados conforme contrato (passthrough).
  */
 function buildMetadata(kind, context, data = {}) {
+  // Extrair protocolIds se for um array ou se estiver em data.doses (para grouped/misc)
+  let protocolIds = data.protocolIds || []
+  if (protocolIds.length === 0 && Array.isArray(data.doses)) {
+    protocolIds = data.doses.map(d => d.protocolId).filter(Boolean)
+  }
+
+  // ─── Resolução de Navegação (Mobile Deep-linking N1.4) ───
+  const navigation = { screen: 'today', params: {} }
+  const at = data.scheduledTime || data.time || 'now'
+
+  if (kind === 'dose_reminder') {
+    navigation.screen = 'dose-individual'
+    navigation.params = { protocolId: data.protocolId, at }
+  } else if (kind === 'dose_reminder_by_plan') {
+    navigation.screen = 'bulk-plan'
+    navigation.params = { planId: data.planId, treatmentPlanName: data.planName, at }
+  } else if (kind === 'dose_reminder_misc') {
+    navigation.screen = 'bulk-misc'
+    navigation.params = { protocolIds, at }
+  } else if (kind === 'stock_alert' || kind === 'prescription_alert') {
+    navigation.screen = 'stock'
+  } else if (['adherence_report', 'monthly_report', 'daily_digest'].includes(kind)) {
+    navigation.screen = 'history'
+  } else if (kind === 'dlq_digest') {
+    navigation.screen = 'admin/dlq'
+  }
+
   return {
     kind,
     builtAt: getServerTimestamp(),
+    navigation, // Objeto esperado pelo usePushNotifications do Mobile
     ...(context.correlationId ? { correlationId: context.correlationId } : {}),
     ...(context.details ? { details: context.details } : {}),
     // Campos de negócio para persistência (Inbox/Logs)
     ...(data.protocolId ? { protocolId: data.protocolId } : {}),
+    ...(protocolIds.length > 0 ? { protocolIds } : {}),
     ...(data.medicineName ? { medicineName: data.medicineName } : {}),
     ...(data.planId ? { planId: data.planId } : {}),
     ...(data.planName ? { planName: data.planName } : {}),
@@ -335,8 +364,10 @@ function resolveDeeplink(kind, data) {
         ? `${BASE_URL}today?bulkMode=plan&planId=${data.planId}&at=${data.scheduledTime || 'now'}`
         : `${BASE_URL}today`;
 
-    case 'dose_reminder_misc':
-      return `${BASE_URL}today?bulkMode=misc&at=${data.scheduledTime || 'now'}`;
+    case 'dose_reminder_misc': {
+      const pids = data.protocolIds?.join(',') || '';
+      return `${BASE_URL}today?bulkMode=misc&at=${data.scheduledTime || 'now'}${pids ? `&protocolIds=${pids}` : ''}`;
+    }
 
     default:
       return `${BASE_URL}today`;

@@ -7,4 +7,9 @@
  */
 import { createWebStorageAdapter } from '@dosiq/storage'
 
-export const webStorageAdapter = createWebStorageAdapter(window.localStorage)
+// Safe access for window.localStorage to avoid crashes in some test environments
+const storage = (typeof window !== 'undefined' && window.localStorage) 
+  ? window.localStorage 
+  : { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+
+export const webStorageAdapter = createWebStorageAdapter(storage)
