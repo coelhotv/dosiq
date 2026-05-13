@@ -208,6 +208,7 @@ export default function ReportGenerator() {
   // 1. States (R-010: Hook order)
   const [patientName, setPatientName] = useState('')
   const [patientEmail, setPatientEmail] = useState('')
+  const [patientUserId, setPatientUserId] = useState(null)
   const [period, setPeriod] = useState('30d')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -234,8 +235,8 @@ export default function ReportGenerator() {
   )
 
   const consultationData = useMemo(
-    () => getConsultationData(dashboardData, patientName, null, patientEmail),
-    [dashboardData, patientEmail, patientName]
+    () => getConsultationData(dashboardData, patientName, null, patientEmail, patientUserId),
+    [dashboardData, patientEmail, patientName, patientUserId]
   )
 
   useEffect(() => {
@@ -250,6 +251,7 @@ export default function ReportGenerator() {
         if (!isMounted) return
         setPatientName(user?.user_metadata?.name || user?.user_metadata?.full_name || '')
         setPatientEmail(user?.email || '')
+        setPatientUserId(user?.id || null)
       } catch (err) {
         console.error('Erro ao carregar perfil para relatório clínico:', err)
       }

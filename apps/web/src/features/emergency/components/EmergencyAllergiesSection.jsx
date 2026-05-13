@@ -3,6 +3,7 @@
  */
 import Button from '@shared/components/ui/Button'
 import Card from '@shared/components/ui/Card'
+import { TriangleAlert } from 'lucide-react'
 
 export default function EmergencyAllergiesSection({
   allergies,
@@ -14,7 +15,7 @@ export default function EmergencyAllergiesSection({
 }) {
   return (
     <Card className="emergency-card-section" hover={false}>
-      <h3 className="section-title">⚠️ Alergias</h3>
+      <h3 className="section-title"><TriangleAlert size={22} /> Alergias</h3>
       <p className="section-description">
         Liste suas alergias conhecidas (até 20). Isso é crucial para tratamento de emergência.
       </p>

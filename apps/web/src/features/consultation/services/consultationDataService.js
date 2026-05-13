@@ -31,12 +31,14 @@ export function getConsultationData(
   dashboardData,
   patientName = '',
   patientAge = null,
-  patientEmail = ''
+  patientEmail = '',
+  userId = null
 ) {
   const { medicines, protocols, logs, stockSummary } = dashboardData
 
   // 1. Informações do paciente + cartão de emergência (offline, do localStorage)
-  const emergencyCard = emergencyCardService.getOfflineCard()
+  // userId obrigatório para isolamento entre usuários no mesmo dispositivo
+  const emergencyCard = emergencyCardService.getOfflineCard(userId)
 
   const patientInfo = {
     name: formatPatientDisplayName(patientName, patientEmail),

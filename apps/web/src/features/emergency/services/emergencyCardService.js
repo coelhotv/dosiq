@@ -7,7 +7,7 @@ import { debugLog, errorLog } from '@shared/utils/logger'
  * Emergency Card Service - Gerenciamento do cartão de emergência
  *
  * ESTRATÉGIA OFFLINE-FIRST:
- * - Primário: localStorage (chave: mr_emergency_card)
+ * - Primário: localStorage (chave: mr_emergency_card_<userId> — isolada por usuário)
  * - Secundário: Supabase user_settings.emergency_card (JSONB)
  *
  * WRITE-THROUGH:
@@ -20,7 +20,17 @@ import { debugLog, errorLog } from '@shared/utils/logger'
  * 2. Fallback para Supabase se localStorage vazio
  */
 
-const STORAGE_KEY = 'mr_emergency_card'
+export const STORAGE_KEY_PREFIX = 'mr_emergency_card'
+
+/**
+ * Retorna a chave localStorage isolada por usuário.
+ * Evita vazamento de dados entre usuários no mesmo dispositivo.
+ * @param {string} userId - ID do usuário autenticado
+ * @returns {string} Chave namespaced
+ */
+function getStorageKey(userId) {
+  return `${STORAGE_KEY_PREFIX}_${userId}`
+}
 
 /**
  * Log estruturado para o serviço de cartão de emergência
@@ -46,17 +56,18 @@ function shouldSkipLocalStorage() {
 }
 
 /**
- * Salva dados no localStorage
+ * Salva dados no localStorage com chave isolada por usuário
+ * @param {string} userId - ID do usuário autenticado
  * @param {Object} data - Dados do cartão de emergência
  */
-function saveToLocalStorage(data) {
+function saveToLocalStorage(userId, data) {
   if (shouldSkipLocalStorage()) {
     log('debug', 'localStorage ignorado em ambiente de teste')
     return
   }
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(data))
     log('info', 'Dados salvos no localStorage')
   } catch (error) {
     log('error', 'Erro ao salvar no localStorage', { error: error.message })
@@ -64,17 +75,18 @@ function saveToLocalStorage(data) {
 }
 
 /**
- * Recupera dados do localStorage
+ * Recupera dados do localStorage com chave isolada por usuário
+ * @param {string} userId - ID do usuário autenticado
  * @returns {Object|null} Dados do cartão ou null se vazio/erro
  */
-function getFromLocalStorage() {
+function getFromLocalStorage(userId) {
   if (shouldSkipLocalStorage()) {
     log('debug', 'localStorage ignorado em ambiente de teste')
     return null
   }
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(getStorageKey(userId))
     if (stored) {
       log('info', 'Dados recuperados do localStorage')
       return JSON.parse(stored)
@@ -124,12 +136,12 @@ function _mapFromSupabase(row) {
 
 /**
  * Salva o cartão de emergência no Supabase
+ * @param {string} userId - ID do usuário autenticado
  * @param {Object} data - Dados validados do cartão
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-async function saveToSupabase(data) {
+async function saveToSupabase(userId, data) {
   try {
-    const userId = await getUserId()
     const emergencyCard = _mapToSupabase(data)
 
     // Usa upsert para criar ou atualizar
@@ -167,12 +179,11 @@ async function saveToSupabase(data) {
 
 /**
  * Recupera o cartão de emergência do Supabase
+ * @param {string} userId - ID do usuário autenticado
  * @returns {Promise<Object|null>} Dados do cartão ou null
  */
-async function getFromSupabase() {
+async function getFromSupabase(userId) {
   try {
-    const userId = await getUserId()
-
     const { data, error } = await supabase
       .from('user_settings')
       .select('emergency_card')
@@ -227,11 +238,12 @@ export const emergencyCardService = {
       last_updated: getServerTimestamp(),
     }
 
-    // 2. Salvar no localStorage (síncrono)
-    saveToLocalStorage(dataToSave)
+    // 2. Salvar no localStorage (user-scoped)
+    const userId = await getUserId()
+    saveToLocalStorage(userId, dataToSave)
 
-    // 3. Salvar no Supabase (assíncrono)
-    const supabaseResult = await saveToSupabase(dataToSave)
+    // 3. Salvar no Supabase (assíncrono) — reutiliza userId já obtido
+    const supabaseResult = await saveToSupabase(userId, dataToSave)
 
     if (!supabaseResult.success) {
       // Dados estão salvos localmente, mas falhou no Supabase
@@ -265,20 +277,22 @@ export const emergencyCardService = {
   async load() {
     log('info', 'Carregando cartão de emergência')
 
-    // 1. Tentar localStorage primeiro
-    const localData = getFromLocalStorage()
+    const userId = await getUserId()
+
+    // 1. Tentar localStorage primeiro (chave user-scoped)
+    const localData = getFromLocalStorage(userId)
 
     if (localData) {
       log('info', 'Dados carregados do localStorage')
       return { success: true, data: localData, source: 'local' }
     }
 
-    // 2. Fallback para Supabase
-    const supabaseData = await getFromSupabase()
+    // 2. Fallback para Supabase — reutiliza userId já obtido
+    const supabaseData = await getFromSupabase(userId)
 
     if (supabaseData) {
       // Salva no localStorage para próximas consultas
-      saveToLocalStorage(supabaseData)
+      saveToLocalStorage(userId, supabaseData)
       log('info', 'Dados carregados do Supabase e salvos localmente')
       return { success: true, data: supabaseData, source: 'supabase' }
     }
@@ -289,29 +303,41 @@ export const emergencyCardService = {
   },
 
   /**
-   * Recupera o cartão de emergência APENAS do localStorage (síncrono)
+   * Recupera o cartão de emergência APENAS do localStorage (síncrono).
    *
    * Use esta função quando precisar dos dados offline sem chamadas assíncronas.
    * Ideal para exibição em telas de emergência onde a velocidade é crítica.
+   * O chamador DEVE fornecer o userId para garantir isolamento entre usuários.
    *
+   * @param {string} userId - ID do usuário autenticado
    * @returns {Object|null} Dados do cartão ou null se vazio
    */
-  getOfflineCard() {
+  getOfflineCard(userId) {
     log('info', 'Recuperando cartão offline (síncrono)')
-    return getFromLocalStorage()
+    if (!userId) {
+      log('warn', 'getOfflineCard chamado sem userId — retornando null para evitar vazamento')
+      return null
+    }
+    return getFromLocalStorage(userId)
   },
 
   /**
-   * Limpa o cartão de emergência do localStorage
+   * Limpa o cartão de emergência do localStorage para um usuário específico.
    * (Não remove do Supabase - apenas limpa cache local)
+   * @param {string} userId - ID do usuário autenticado
    */
-  clearLocalCache() {
+  clearLocalCache(userId) {
     if (shouldSkipLocalStorage()) {
       return
     }
 
+    if (!userId) {
+      log('warn', 'clearLocalCache chamado sem userId — nenhuma ação executada')
+      return
+    }
+
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(getStorageKey(userId))
       log('info', 'Cache local limpo')
     } catch (error) {
       log('error', 'Erro ao limpar cache local', { error: error.message })

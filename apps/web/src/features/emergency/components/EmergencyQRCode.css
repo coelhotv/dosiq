@@ -111,31 +111,6 @@
   gap: 0.5rem;
 }
 
-.qr-actions .btn-primary {
-  background: var(--primary-color, #3b82f6);
-  color: white;
-  border: none;
-}
-
-.qr-actions .btn-primary:hover {
-  background: var(--primary-color-hover, #2563eb);
-  transform: translateY(-1px);
-}
-
-.qr-actions .btn-primary:active {
-  transform: translateY(0);
-}
-
-.qr-actions .btn-secondary {
-  background: var(--surface-color, #ffffff);
-  color: var(--text-primary, #1f2937);
-  border: 2px solid var(--border-color, #e5e7eb);
-}
-
-.qr-actions .btn-secondary:hover {
-  background: var(--surface-color-hover, #f9fafb);
-  border-color: var(--border-color-hover, #d1d5db);
-}
 
 /* Info section */
 .qr-info {
@@ -164,15 +139,6 @@
     color: var(--text-secondary-dark, #9ca3af);
   }
 
-  .qr-actions .btn-secondary {
-    background: var(--surface-color-dark, #1f2937);
-    color: var(--text-primary-dark, #f9fafb);
-    border-color: var(--border-color-dark, #374151);
-  }
-
-  .qr-actions .btn-secondary:hover {
-    background: var(--surface-color-dark-hover, #374151);
-  }
 
   .qr-info {
     background: var(--info-bg-dark, #1e3a5f);
@@ -237,7 +203,19 @@
 }
 
 /* Focus styles para acessibilidade */
-.qr-actions .btn:focus-visible {
-  outline: 2px solid var(--primary-color, #3b82f6);
+.qr-actions .btn-emergency-outline:focus-visible,
+.qr-actions .btn-emergency:focus-visible {
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
+}
+
+/* Outline claro para contraste sobre fundo escuro do QR */
+.qr-actions .btn-emergency-outline {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.qr-actions .btn-emergency-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
 }

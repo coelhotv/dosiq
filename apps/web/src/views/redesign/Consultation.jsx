@@ -49,7 +49,7 @@ export default function Consultation({ onBack }) {
           }
           return
         }
-        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail)
+        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail, user?.id)
         setConsultationData(data)
       } catch {
         if (!isMounted) return

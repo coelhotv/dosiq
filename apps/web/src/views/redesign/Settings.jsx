@@ -6,6 +6,7 @@ import PreferenceSection from '@settings/sections/PreferenceSection'
 import AccountSection from '@settings/sections/AccountSection'
 import AdminSection from '@settings/sections/AdminSection'
 import { useSettingsState } from '@features/settings/hooks/useSettingsState'
+import { STORAGE_KEY_PREFIX } from '@features/emergency/services/emergencyCardService'
 import './settings/SettingsRedesign.css'
 
 export default function SettingsRedesign({ onNavigate, mode }) {
@@ -28,7 +29,7 @@ export default function SettingsRedesign({ onNavigate, mode }) {
   const handleLogout = async () => {
     if (!window.confirm('Deseja realmente sair?')) return
     Object.keys(localStorage)
-      .filter((k) => k.startsWith('sb-'))
+      .filter((k) => k.startsWith('sb-') || k.startsWith(STORAGE_KEY_PREFIX))
       .forEach((k) => localStorage.removeItem(k))
     window.location.reload()
   }

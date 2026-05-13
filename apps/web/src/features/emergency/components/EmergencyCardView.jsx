@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, startTransition } from 'react'
+import { TriangleAlert, PillBottle, Phone, FilePen, FilePlusCorner, QrCode, Printer, Pencil, Siren, WifiOff } from 'lucide-react'
 
 /**
  * Renderiza a seção de alergias do cartão de emergência.
@@ -6,7 +7,7 @@ import { useState, useEffect, useMemo, useCallback, startTransition } from 'reac
 function AllergiesSection({ allergies }) {
   return (
     <section className="emergency-section allergies-section">
-      <h2 className="section-label">⚠️ Alergias</h2>
+      <h2 className="section-label"><TriangleAlert size={22} /> Alergias</h2>
       {allergies && allergies.length > 0 ? (
         <ul className="allergies-list">
           {allergies.map((allergy, index) => (
@@ -26,17 +27,39 @@ function AllergiesSection({ allergies }) {
 function MedicationsSection({ activeMedications }) {
   return (
     <section className="emergency-section medications-section">
-      <h2 className="section-label">💊 Medicamentos em Uso</h2>
+      <h2 className="section-label"><PillBottle size={22} /> Medicamentos em Uso</h2>
       {activeMedications.length > 0 ? (
         <ul className="medications-list">
-          {activeMedications.map((med, index) => (
-            <li key={index} className="medication-item">
-              <span className="med-name">{med.name}</span>
-              {med.dosage && (
-                <span className="med-dosage"> - {med.dosage} {med.unit}</span>
-              )}
-            </li>
-          ))}
+          {activeMedications.map((med, index) => {
+            const pillLabel = med.dosagePerIntake === 1 ? 'comp.' : 'comp.'
+            const doseStr =
+              med.dosagePerIntake != null
+                ? `${med.dosagePerIntake} ${pillLabel}`
+                : null
+            const pillDosageStr =
+              med.dosagePerPill
+                ? `${med.dosagePerPill}${med.unit ? ` ${med.unit}` : ''}/comp.`
+                : null
+            const frequencyStr =
+              med.dosesPerDay != null && med.frequency === 'diário'
+                ? `${med.dosesPerDay}x ao dia`
+                : med.frequency
+                  ? FREQUENCY_LABELS[med.frequency] || med.frequency
+                  : null
+
+            return (
+              <li key={index} className="medication-item">
+                <span className="med-name">
+                  {med.name}
+                  {pillDosageStr && <span className="med-dosage"> — {med.dosagePerPill}{med.unit ? ` ${med.unit}` : ''}</span>}
+                </span>
+                <div className="med-detail">
+                  {doseStr && <span className="med-dose">{doseStr}</span>}
+                  {frequencyStr && <span className="med-frequency">{frequencyStr}</span>}
+                </div>
+              </li>
+            )
+          })}
         </ul>
       ) : (
         <p className="no-data">Nenhum medicamento ativo</p>
@@ -51,7 +74,7 @@ function MedicationsSection({ activeMedications }) {
 function ContactsSection({ contacts }) {
   return (
     <section className="emergency-section contacts-section">
-      <h2 className="section-label">📞 Contatos de Emergência</h2>
+      <h2 className="section-label"><Phone size={22} /> Contatos de Emergência</h2>
       {contacts && contacts.length > 0 ? (
         <div className="contacts-grid">
           {contacts.map((contact, index) => (
@@ -74,6 +97,7 @@ function ContactsSection({ contacts }) {
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
+import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 import { parseISO } from '@utils/dateUtils'
 import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
@@ -113,13 +137,23 @@ export default function EmergencyCardView({ data, onEdit }) {
     )
 
     // Filtra medicamentos que têm protocolos ativos
+    const protocolByMedicineId = new Map(
+      protocols.filter((p) => p.active).map((p) => [p.medicine_id, p])
+    )
+
     return medicines
       .filter((med) => activeProtocolMedicineIds.has(med.id))
-      .map((med) => ({
-        name: med.name,
-        dosage: med.dosage_per_pill,
-        unit: med.dosage_unit || '',
-      }))
+      .map((med) => {
+        const protocol = protocolByMedicineId.get(med.id)
+        return {
+          name: med.name,
+          dosagePerPill: med.dosage_per_pill,
+          unit: med.dosage_unit || '',
+          dosagePerIntake: protocol?.dosage_per_intake ?? null,
+          dosesPerDay: protocol?.time_schedule?.length ?? null,
+          frequency: protocol?.frequency ?? null,
+        }
+      })
   }, [medicines, protocols, isDashboardLoading])
 
   /**
@@ -203,10 +237,10 @@ export default function EmergencyCardView({ data, onEdit }) {
   if (!cardData) {
     return (
       <div className="emergency-card-view emergency-card-empty">
-        <div className="empty-icon">📋</div>
+        <div className="empty-icon"><FilePlusCorner size={48} /></div>
         <h2>Nenhum Cartão de Emergência</h2>
         <p>Você ainda não configurou seu cartão de emergência.</p>
-        <button className="btn btn-primary" onClick={onEdit}>
+        <button className="btn-emergency" onClick={onEdit}>
           Configurar Agora
         </button>
       </div>
@@ -218,14 +252,14 @@ export default function EmergencyCardView({ data, onEdit }) {
       {/* Indicador Offline */}
       {isOffline && (
         <div className="offline-indicator">
-          <span className="offline-icon">📡</span>
+          <WifiOff size={16} className="offline-icon" />
           <span>Modo Offline - Dados podem estar desatualizados</span>
         </div>
       )}
 
       {/* Cabeçalho do Cartão */}
       <header className="emergency-card-header">
-        <h1 className="emergency-title">🚨 CARTÃO DE EMERGÊNCIA</h1>
+        <h1 className="emergency-title"><Siren size={32} /> CARTÃO DE EMERGÊNCIA</h1>
         <p className="emergency-subtitle">Informações médicas críticas</p>
       </header>
 
@@ -244,14 +278,14 @@ export default function EmergencyCardView({ data, onEdit }) {
       {/* Observações */}
       {cardData.notes && (
         <section className="emergency-section notes-section">
-          <h2 className="section-label">📝 Observações</h2>
+          <h2 className="section-label"><FilePen size={22} /> Observações</h2>
           <p className="notes-content">{cardData.notes}</p>
         </section>
       )}
 
       {/* QR Code para Emergências */}
       <section className="emergency-section qr-section">
-        <h2 className="section-label">📱 QR Code de Emergência</h2>
+        <h2 className="section-label"><QrCode size={22} /> QR Code de Emergência</h2>
         <EmergencyQRCode
           cardData={cardData}
           medications={activeMedications}
@@ -263,12 +297,12 @@ export default function EmergencyCardView({ data, onEdit }) {
       <footer className="emergency-card-footer">
         <p className="last-updated">Última atualização: {formattedLastUpdated}</p>
         <div className="footer-actions">
-          <button className="btn btn-secondary btn-sm" onClick={handlePrint}>
-            🖨️ Imprimir
+          <button className="btn-emergency-outline" onClick={handlePrint}>
+            <Printer size={16} /> Imprimir
           </button>
           {onEdit && (
-            <button className="btn btn-primary btn-sm" onClick={onEdit}>
-              ✏️ Editar
+            <button className="btn-emergency" onClick={onEdit}>
+              <Pencil size={16} /> Editar
             </button>
           )}
         </div>
