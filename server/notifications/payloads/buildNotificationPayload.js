@@ -284,8 +284,27 @@ function applyRetryDecoration(content, context) {
   };
 }
 
+function getNavigationMetadata(kind, data, protocolIds) {
+  const at = data.scheduledTime || data.time || 'now'
+
+  const routes = {
+    dose_reminder: { screen: 'dose-individual', params: { protocolId: data.protocolId, at } },
+    dose_reminder_by_plan: { screen: 'bulk-plan', params: { planId: data.planId, treatmentPlanName: data.planName, at } },
+    dose_reminder_misc: { screen: 'bulk-misc', params: { protocolIds, at } },
+    stock_alert: { screen: 'stock', params: {} },
+    prescription_alert: { screen: 'stock', params: {} },
+    adherence_report: { screen: 'history', params: {} },
+    monthly_report: { screen: 'history', params: {} },
+    daily_digest: { screen: 'history', params: {} },
+    dlq_digest: { screen: 'admin/dlq', params: {} },
+  }
+
+  return routes[kind] || { screen: 'today', params: {} }
+}
+
 /**
- * Constrói objeto de metadados conforme contrato (passthrough).
+ * Constrói objeto de metadados conforme whitelist estrita de `metadataSchema`.
+ * Nenhum campo além dos definidos no schema é permitido (Gate 6).
  */
 function buildMetadata(kind, context, data = {}) {
   // Extrair protocolIds se for um array ou se estiver em data.doses (para grouped/misc)
@@ -294,42 +313,26 @@ function buildMetadata(kind, context, data = {}) {
     protocolIds = data.doses.map(d => d.protocolId).filter(Boolean)
   }
 
-  // ─── Resolução de Navegação (Mobile Deep-linking N1.4) ───
-  const navigation = { screen: 'today', params: {} }
-  const at = data.scheduledTime || data.time || 'now'
+  const navigation = getNavigationMetadata(kind, data, protocolIds)
 
-  if (kind === 'dose_reminder') {
-    navigation.screen = 'dose-individual'
-    navigation.params = { protocolId: data.protocolId, at }
-  } else if (kind === 'dose_reminder_by_plan') {
-    navigation.screen = 'bulk-plan'
-    navigation.params = { planId: data.planId, treatmentPlanName: data.planName, at }
-  } else if (kind === 'dose_reminder_misc') {
-    navigation.screen = 'bulk-misc'
-    navigation.params = { protocolIds, at }
-  } else if (kind === 'stock_alert' || kind === 'prescription_alert') {
-    navigation.screen = 'stock'
-  } else if (['adherence_report', 'monthly_report', 'daily_digest'].includes(kind)) {
-    navigation.screen = 'history'
-  } else if (kind === 'dlq_digest') {
-    navigation.screen = 'admin/dlq'
-  }
-
-  return {
+  const rawMetadata = {
     kind,
     builtAt: getServerTimestamp(),
     navigation, // Objeto esperado pelo usePushNotifications do Mobile
-    ...(context.correlationId ? { correlationId: context.correlationId } : {}),
-    ...(context.details ? { details: context.details } : {}),
+    correlationId: context.correlationId,
+    details: context.details,
     // Campos de negócio para persistência (Inbox/Logs)
-    ...(data.protocolId ? { protocolId: data.protocolId } : {}),
-    ...(protocolIds.length > 0 ? { protocolIds } : {}),
-    ...(data.medicineName ? { medicineName: data.medicineName } : {}),
-    ...(data.planId ? { planId: data.planId } : {}),
-    ...(data.planName ? { planName: data.planName } : {}),
-    ...(data.percentage ? { percentage: data.percentage } : {}),
-    ...(data.nudge ? { nudge: data.nudge } : {}),
-  };
+    protocolId: data.protocolId,
+    protocolIds: protocolIds.length > 0 ? protocolIds : undefined,
+    medicineName: data.medicineName,
+    planId: data.planId,
+    planName: data.planName,
+    percentage: data.percentage,
+    nudge: data.nudge,
+  }
+
+  // Remove chaves com valor undefined
+  return Object.fromEntries(Object.entries(rawMetadata).filter((entry) => entry[1] !== undefined))
 }
 
 /**

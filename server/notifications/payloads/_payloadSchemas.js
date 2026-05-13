@@ -79,13 +79,27 @@ export const actionSchema = z.object({
   params: z.record(z.string(), z.unknown()).optional()
 });
 
-// Metadados estritos (Gate 1 — adeus passthrough)
+// Metadados estritos (Gate 1 / Gate 6) — whitelist explícita, sem passthrough.
+// Todos os campos que buildMetadata() pode produzir devem estar listados aqui.
 export const metadataSchema = z.object({
   kind: kindSchema,
   builtAt: z.string(),
   correlationId: z.string().optional(),
-  details: z.record(z.string(), z.unknown()).optional()
-}).passthrough();
+  details: z.record(z.string(), z.unknown()).optional(),
+  // Navegação mobile (usePushNotifications deep-linking N1.4)
+  navigation: z.object({
+    screen: z.string(),
+    params: z.record(z.string(), z.unknown()).default({})
+  }).optional(),
+  // Campos de negócio para Inbox/Logs — somente os que existem no schema de dados
+  protocolId: z.string().optional(),
+  protocolIds: z.array(z.string()).optional(),
+  medicineName: z.string().optional(),
+  planId: z.string().optional(),
+  planName: z.string().optional(),
+  percentage: z.number().optional(),
+  nudge: z.string().optional(),
+});
 
 
 // Novas validações de dados (Gate 1)

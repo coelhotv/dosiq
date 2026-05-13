@@ -157,6 +157,8 @@ export const dlqService = {
   formatNotificationType(type) {
     const types = {
       dose_reminder: 'Lembrete de Dose',
+      dose_reminder_by_plan: 'Lembrete por Plano',
+      dose_reminder_misc: 'Lembrete de Doses Avulsas',
       stock_alert: 'Alerta de Estoque',
       daily_digest: 'Resumo Diário',
       adherence_report: 'Relatório de Adesão',

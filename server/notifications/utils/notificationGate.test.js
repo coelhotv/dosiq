@@ -1,79 +1,81 @@
-import { test, describe } from 'node:test';
-import assert from 'node:assert/strict';
-import { shouldSendNow, isInQuietHours } from './notificationGate.js';
+// Migrado de node:test → vitest (Gate 6 — R-276)
+// Vitest é o test runner canônico deste projeto. node:test não é reconhecido pelo vitest.
+
+import { describe, it, expect } from 'vitest'
+import { shouldSendNow, isInQuietHours } from './notificationGate.js'
 
 describe('shouldSendNow', () => {
-  test('silent → false', () => {
-    assert.equal(shouldSendNow({ mode: 'silent', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' }), false)
+  it('silent → false', () => {
+    expect(shouldSendNow({ mode: 'silent', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' })).toBe(false)
   })
 
-  test('digest_morning → false', () => {
-    assert.equal(shouldSendNow({ mode: 'digest_morning', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' }), false)
+  it('digest_morning → false', () => {
+    expect(shouldSendNow({ mode: 'digest_morning', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' })).toBe(false)
   })
 
-  test('realtime sem quiet hours → true', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' }), true)
+  it('realtime sem quiet hours → true', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: null, quietHoursEnd: null, currentHHMM: '10:00' })).toBe(true)
   })
 
-  test('realtime dentro QH normal (13:00-15:00, current=14:00) → false', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '14:00' }), false)
+  it('realtime dentro QH normal (13:00-15:00, current=14:00) → false', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '14:00' })).toBe(false)
   })
 
-  test('realtime fora QH normal (13:00-15:00, current=16:00) → true', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '16:00' }), true)
+  it('realtime fora QH normal (13:00-15:00, current=16:00) → true', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '16:00' })).toBe(true)
   })
 
-  test('realtime dentro QH cross-midnight (22:00-07:00, current=23:00) → false', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '23:00' }), false)
+  it('realtime dentro QH cross-midnight (22:00-07:00, current=23:00) → false', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '23:00' })).toBe(false)
   })
 
-  test('realtime dentro QH cross-midnight (22:00-07:00, current=01:00) → false', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '01:00' }), false)
+  it('realtime dentro QH cross-midnight (22:00-07:00, current=01:00) → false', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '01:00' })).toBe(false)
   })
 
-  test('realtime fora QH cross-midnight (22:00-07:00, current=10:00) → true', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '10:00' }), true)
+  it('realtime fora QH cross-midnight (22:00-07:00, current=10:00) → true', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '22:00', quietHoursEnd: '07:00', currentHHMM: '10:00' })).toBe(true)
   })
 
-  test('QH start=null → não suprime por horário', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: null, quietHoursEnd: '15:00', currentHHMM: '14:00' }), true)
+  it('QH start=null → não suprime por horário', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: null, quietHoursEnd: '15:00', currentHHMM: '14:00' })).toBe(true)
   })
 
-  test('QH end=null → não suprime por horário', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: null, currentHHMM: '14:00' }), true)
+  it('QH end=null → não suprime por horário', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: null, currentHHMM: '14:00' })).toBe(true)
   })
 
-  test('current=start (inclusive) → dentro', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '13:00' }), false)
+  it('current=start (inclusive) → dentro', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '13:00' })).toBe(false)
   })
 
-  test('current=end (exclusive) → fora', () => {
-    assert.equal(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '15:00' }), true)
+  it('current=end (exclusive) → fora', () => {
+    expect(shouldSendNow({ mode: 'realtime', quietHoursStart: '13:00', quietHoursEnd: '15:00', currentHHMM: '15:00' })).toBe(true)
   })
 })
 
 describe('isInQuietHours', () => {
-  test('start e end null → false', () => {
-    assert.equal(isInQuietHours('10:00', null, null), false)
+  it('start e end null → false', () => {
+    expect(isInQuietHours('10:00', null, null)).toBe(false)
   })
 
-  test('janela normal: dentro', () => {
-    assert.equal(isInQuietHours('14:00', '13:00', '15:00'), true)
+  it('janela normal: dentro', () => {
+    expect(isInQuietHours('14:00', '13:00', '15:00')).toBe(true)
   })
 
-  test('janela normal: fora', () => {
-    assert.equal(isInQuietHours('16:00', '13:00', '15:00'), false)
+  it('janela normal: fora', () => {
+    expect(isInQuietHours('16:00', '13:00', '15:00')).toBe(false)
   })
 
-  test('cross-midnight: dentro (após start)', () => {
-    assert.equal(isInQuietHours('23:00', '22:00', '07:00'), true)
+  it('cross-midnight: dentro (após start)', () => {
+    expect(isInQuietHours('23:00', '22:00', '07:00')).toBe(true)
   })
 
-  test('cross-midnight: dentro (antes de end)', () => {
-    assert.equal(isInQuietHours('01:00', '22:00', '07:00'), true)
+  it('cross-midnight: dentro (antes de end)', () => {
+    expect(isInQuietHours('01:00', '22:00', '07:00')).toBe(true)
   })
 
-  test('cross-midnight: fora', () => {
-    assert.equal(isInQuietHours('10:00', '22:00', '07:00'), false)
+  it('cross-midnight: fora', () => {
+    expect(isInQuietHours('10:00', '22:00', '07:00')).toBe(false)
   })
 })
