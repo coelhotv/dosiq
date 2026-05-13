@@ -111,6 +111,26 @@ SEMPRE usar aliases. NUNCA caminhos relativos longos.
 - `shouldSendNotification()` já loga — não chamar `logNotification()` depois
 - Session: `await getSession(chatId)` para `userId` dinâmico
 
+### Migrações Supabase
+
+**Grants obrigatórios** a partir de 30/10/2026, novas tabelas no projeto não recebem grants automáticos.
+Template obrigatório após `CREATE TABLE`:
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO service_role;
+-- anon: apenas se a tabela tiver dados verdadeiramente públicos (raro no dosiq)
+ALTER TABLE public.<tabela> ENABLE ROW LEVEL SECURITY;
+```
+
+**Funções SECURITY DEFINER** — regras obrigatórias:
+- `REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC;` antes de qualquer `GRANT` explícito
+- `REVOKE EXECUTE ON FUNCTION ... FROM anon;` sempre (usuários não autenticados não devem chamar RPCs privilegiadas)
+- `SET search_path = ''` no cabeçalho da função (previne search path injection)
+- Usar `public.<tabela>` (schema qualificado) no body quando `search_path = ''`
+
+---
+
 ### Vercel Serverless (R-090)
 - Hobby: **máx 12 funções**. Utilitários em `api/_prefixo/` não contam
 - Verificar budget antes de criar `.js` em `api/` (ver `api/CLAUDE.md`)
