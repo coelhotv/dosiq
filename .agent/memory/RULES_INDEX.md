@@ -86,6 +86,7 @@
 - **[R-220]** 3-Layer Notification Architecture (L1, L2, L3): Separação rigorosa entre negócio, apresentação e entrega -> [`rules/mobile_and_platform/R-220.md`](./rules/mobile_and_platform/R-220.md)
 - **[R-222]** Notification Schema Hardening: Usar strict enums (z.enum) para IDs de ações e parâmetros para evitar injeção e falhas silenciosas -> [`rules/notifications/R-222.md`](./rules/notifications/R-222.md)
 - **[R-223]** Mobile Button Stacking: Preferir empilhamento vertical para botões de ação (Telegram/Mobile) para evitar overflow e melhorar hit-targets -> [`rules/notifications/R-223.md`](./rules/notifications/R-223.md)
+- **[R-227]** Kind Uniqueness por Relatório: cada tipo de relatório DEVE ter kind, schema Zod e builder únicos — nunca compartilhar kind entre relatórios com contexto diferente -> [`rules/notifications/R-227.md`](./rules/notifications/R-227.md)
 
 
 

@@ -80,6 +80,8 @@
 - **[AP-T06]** Timing-dependent, flaky in CI; can timeout unexpectedly -> [`anti-patterns/process_and_testing/AP-T06.md`](./anti-patterns/process_and_testing/AP-T06.md)
 - **[AP-071]** Timezone-dependent logic in notifications without UTC conversion first. -> [`anti-patterns/notifications/AP-071.md`](./anti-patterns/notifications/AP-071.md)
 - **[AP-075]** Presentation Leakage in Business Logic (L1): Construção de strings formatadas em schedulers -> [`anti-patterns/notifications/AP-075.md`](./anti-patterns/notifications/AP-075.md)
+- **[AP-076]** Silent Mode Gate em L1 antes do dispatcher — viola 3-layer arch, impede log/inbox para usuários silent -> [`anti-patterns/notifications/AP-076.md`](./anti-patterns/notifications/AP-076.md)
+- **[AP-077]** Callback Data HH:MM split destructuring — `split(':')` parte o horário; usar `parts.slice(N).join(':')` -> [`anti-patterns/notifications/AP-077.md`](./anti-patterns/notifications/AP-077.md)
 - **[AP-T07]** If assertion fails, Promise stays pending → Vitest hangs indefinitely -> [`anti-patterns/process_and_testing/AP-T07.md`](./anti-patterns/process_and_testing/AP-T07.md)
 - **[AP-T08]** Blocks development, 6.5 min wait time discourages testing -> [`anti-patterns/process_and_testing/AP-T08.md`](./anti-patterns/process_and_testing/AP-T08.md)
 - **[AP-T09]** Tests >15s can trigger 10-min kill switch in agents, fail CI -> [`anti-patterns/process_and_testing/AP-T09.md`](./anti-patterns/process_and_testing/AP-T09.md)
