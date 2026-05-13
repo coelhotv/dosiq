@@ -4,22 +4,22 @@
   "session": {
     "mode": "standby",
     "status": "idle",
-    "goal": "Gate 4 (L3 Cleanup) Completed",
-    "goal_type": "refactor"
+    "goal": "Gate 5.5 (Inbox Consolidation) Completed",
+    "goal_type": "delivery"
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 9,
-    "rules_count": 175,
-    "anti_patterns_count": 152,
+    "journal_entries_since_distillation": 10,
+    "rules_count": 176,
+    "anti_patterns_count": 153,
     "decisions_count": 42,
-    "contracts_count": 20
+    "contracts_count": 21
   },
   "genes": {
     "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-12T03:00:00Z"
+    "index_loaded_at": "2026-05-13T05:50:00Z"
   }
 }
