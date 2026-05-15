@@ -4,15 +4,15 @@
   "session": {
     "mode": "standby",
     "status": "completed",
-    "goal": "fix(notifications): regressões + auditoria 3-camadas (PR #547)",
-    "goal_type": "fix"
+    "goal": "feat(mobile): Fase 0 (Pré-Requisitos) CRUD Native completa + spec Fase 1 reescrita (PR #552)",
+    "goal_type": "feat"
   },
   "memory": {
     "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 12,
-    "rules_count": 177,
-    "anti_patterns_count": 155,
-    "decisions_count": 42,
+    "journal_entries_since_distillation": 14,
+    "rules_count": 180,
+    "anti_patterns_count": 158,
+    "decisions_count": 44,
     "contracts_count": 21
   },
   "genes": {
@@ -20,6 +20,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-13T22:40:00Z"
+    "index_loaded_at": "2026-05-15T19:15:00Z"
   }
 }
