@@ -35,6 +35,8 @@
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[ADR-042]** Auth permanece em authService.js mobile (Zod + PT-BR) — consolidação no @dosiq/core deferida -> [`decisions/mobile_and_platform/ADR-042.md`](./decisions/mobile_and_platform/ADR-042.md)
+- **[ADR-043]** Hardening G1→G2→G3 em Fase 1 CRUD: parity test factory vs web obrigatório em G2, decisão pré-G3 sobre `costAnalysisService`, PR G3 atômica, smoke checklist E2E PO; feature flag e playbook descartados para closed alpha -> [`decisions/mobile_and_platform/ADR-043.md`](./decisions/mobile_and_platform/ADR-043.md)
+- **[ADR-044]** Distribuição cavecrew (Opus arquiteto / Sonnet ⭐⭐ / Haiku ⭐ mecânico) + gate de confiança Haiku em M1.10 da Fase 1 -> [`decisions/mobile_and_platform/ADR-044.md`](./decisions/mobile_and_platform/ADR-044.md)
 - **[ADR-035]** Wave N2 — Política de canais, modos, quiet hours e arquitetura nativa de notificações -> [`decisions/mobile_and_platform/ADR-035.md`](./decisions/mobile_and_platform/ADR-035.md)
 - **[ADR-004]** Structured Logging for Telegram Bot Debugging -> [`decisions/mobile_and_platform/ADR-004.md`](./decisions/mobile_and_platform/ADR-004.md)
 - **[ADR-025]** Bot Architecture Must Mirror Web App Services -> [`decisions/mobile_and_platform/ADR-025.md`](./decisions/mobile_and_platform/ADR-025.md)
