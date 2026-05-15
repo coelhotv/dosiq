@@ -10,7 +10,10 @@ on:
       - 'scripts/**'
       - 'scratches/**'
   pull_request:
-    branches: [main, develop]
+    # Inclui feat/** para suportar estratégia de "branch de branch":
+    # sprint branches (feat/<area>-<topico>) targetam mãe (feat/<area>)
+    # antes de mergear na main. Sem isso, PRs sprint→mãe não rodam CI.
+    branches: [main, develop, "feat/**"]
     paths-ignore:
       - 'docs/**'
       - '.agent/**'
