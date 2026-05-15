@@ -1,14 +1,16 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  RefreshControl, 
-  StyleSheet, 
-  LayoutAnimation, 
-  Platform, 
-  UIManager 
+import {
+  ScrollView,
+  View,
+  Text,
+  RefreshControl,
+  StyleSheet,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  TouchableOpacity
 } from 'react-native'
+import { ROUTES } from '../../../navigation/routes'
 import { Pill } from 'lucide-react-native'
 import { useTodayData } from '@dashboard/hooks/useTodayData'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -130,6 +132,7 @@ function TodayScreenContent({
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
   bulkModal, setBulkModal,
+  navigation,
 }) {
   const priorityDoses = timeline
     .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
@@ -149,8 +152,21 @@ function TodayScreenContent({
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={refresh} tintColor={colors.status.success} />}
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.date}>{todayFormatted}</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>{greeting}</Text>
+            <Text style={styles.date}>{todayFormatted}</Text>
+          </View>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devBtn}
+              onPress={() => navigation?.navigate(ROUTES.FORM_KIT_DEMO)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir Form Kit Demo"
+            >
+              <Text style={styles.devBtnText}>DEV</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
@@ -324,6 +340,7 @@ export default function TodayScreen({ route, navigation }) {
       medicineName={medicineName} handleOpenRegister={handleOpenRegister}
       handleRegisterSuccess={handleRegisterSuccess} handleCloseRegister={handleCloseRegister}
       bulkModal={bulkModal} setBulkModal={setBulkModal}
+      navigation={navigation}
     />
   )
 }
@@ -336,6 +353,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  devBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: colors.status.warning,
+    marginLeft: 8,
+  },
+  devBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.text.inverse,
+    letterSpacing: 1,
   },
   greeting: {
     fontSize: 28,

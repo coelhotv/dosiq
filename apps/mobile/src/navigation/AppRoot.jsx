@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency'
 import Navigation from './Navigation'
+import { ToastProvider } from '@shared/components/feedback/Toast'
 import { debugLog } from '@shared/utils/debugLog'
 import { 
   useFonts, 
@@ -65,7 +66,9 @@ export default function AppRoot() {
 
   return (
     <SafeAreaProvider>
-      <Navigation />
+      <ToastProvider>
+        <Navigation />
+      </ToastProvider>
     </SafeAreaProvider>
   )
 }

@@ -54,6 +54,7 @@ coverage/
 screenshots/
 tmp/
 scratch/
+MOCKS_APP_CRUD/
 
 # Run outputs
 run/

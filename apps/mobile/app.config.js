@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.3.7' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.3.8' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -84,7 +84,8 @@ module.exports = {
           "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
         }
       ],
-      './withFirebaseFix.js'
+      './withFirebaseFix.js',
+      '@react-native-community/datetimepicker'
     ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*

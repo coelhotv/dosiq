@@ -21,6 +21,8 @@ import SignupScreen from '../screens/SignupScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
+import FormKitDemoScreen from '../features/_dev/screens/FormKitDemoScreen'
+import AnvisaSearchScreen from '../features/medications/screens/AnvisaSearchScreen'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
@@ -150,7 +152,19 @@ export default function Navigation() {
             initialParams={{ onComplete: () => setIsPasswordRecovery(false) }}
           />
         ) : session ? (
-          <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
+          <>
+            <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
+            <Stack.Screen
+              name={ROUTES.ANVISA_SEARCH}
+              component={AnvisaSearchScreen}
+            />
+            {__DEV__ && (
+              <Stack.Screen
+                name={ROUTES.FORM_KIT_DEMO}
+                component={FormKitDemoScreen}
+              />
+            )}
+          </>
         ) : (
           <>
             <Stack.Screen name={ROUTES.LANDING} component={LandingScreen} />
