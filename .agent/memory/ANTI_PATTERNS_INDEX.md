@@ -67,9 +67,11 @@
 - **[AP-156]** `schema.pick({[field]:true})` em validação isolada descarta refinements de objeto (.refine/.superRefine) -> [`anti-patterns/mobile_and_platform/AP-156.md`](./anti-patterns/mobile_and_platform/AP-156.md)
 - **[AP-157]** Normalizar dataset grande (NFD) em cada keystroke vs pré-normalizar no boot via useMemo -> [`anti-patterns/mobile_and_platform/AP-157.md`](./anti-patterns/mobile_and_platform/AP-157.md)
 - **[AP-158]** Callbacks em `route.params` quebram React Navigation + criam stale closures -> [`anti-patterns/mobile_and_platform/AP-158.md`](./anti-patterns/mobile_and_platform/AP-158.md)
+- **[AP-159]** Delete de entidade pai sem pre-check de dependências FK deixa órfãos no banco (hard block via XDeleteBlockedSheet) -> [`anti-patterns/data_and_schema/AP-159.md`](./anti-patterns/data_and_schema/AP-159.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[AP-001]** Production bug — fix goes to unused file -> [`anti-patterns/process_and_testing/AP-001.md`](./anti-patterns/process_and_testing/AP-001.md)
+- **[AP-160]** Opus violando R-010 (ordem de hooks) em fixes incrementais pós-validação (cavecrew acerta zero-shot via R-230) -> [`anti-patterns/process_and_testing/AP-160.md`](./anti-patterns/process_and_testing/AP-160.md)
 - **[AP-012]** Broken build, lint errors, failing tests -> [`anti-patterns/process_and_testing/AP-012.md`](./anti-patterns/process_and_testing/AP-012.md)
 - **[AP-095]** Preview build fails, PR unmergeeable, wasted review cycles -> [`anti-patterns/process_and_testing/AP-095.md`](./anti-patterns/process_and_testing/AP-095.md)
 - **[AP-A01]** Code ends up on `main` without review, history/audit trail lost, violates delive... -> [`anti-patterns/process_and_testing/AP-A01.md`](./anti-patterns/process_and_testing/AP-A01.md)

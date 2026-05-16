@@ -194,5 +194,7 @@
 - **[R-217]** Logout via localStorage cleanup (sb-* keys) + reload — NUNCA usar supabase.auth.signOut() diretamente (Workbox bloqueia /auth/v1/logout) -> [`rules/react_and_ui/R-217.md`](./rules/react_and_ui/R-217.md)
 - **[R-221]** SQP — Standard Quality Protocol for Multi-Gate Projects: Enforces strict hard-stops, branch naming, and zero-lint-regression policies for complex architectural migrations. -> [`rules/process_and_testing/R-221.md`](./rules/process_and_testing/R-221.md)
 - **[R-230]** Brief padrão para spawn cavecrew (sonnet/haiku): 6 itens obrigatórios + lint round-trip pós-spawn -> [`rules/process_and_testing/R-230.md`](./rules/process_and_testing/R-230.md)
+- **[R-231]** Factory pattern para repositórios CRUD compartilhados web↔mobile via `@dosiq/core/repositories/` (DI cross-platform, validação Zod canônica) -> [`rules/data_and_schema/R-231.md`](./rules/data_and_schema/R-231.md)
+- **[R-232]** Zod 4 — locale PT-BR + customError friendly via `z.config()` global em `@dosiq/core/zodSetup.js` (side-effect import). Não duplicar errorMap por schema -> [`rules/data_and_schema/R-232.md`](./rules/data_and_schema/R-232.md)
 
 - **[R-224]** Deep link auth handlers devem ser async + try/catch + suportar PKCE (`?code=` → `exchangeCodeForSession`) e implicit flow (`#access_token=` → `setSession`). -> [`rules/mobile_and_platform/R-224.md`](./rules/mobile_and_platform/R-224.md)

@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
-import { ScrollView, View, Text, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
+import { ScrollView, View, Text, Pressable, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { Pill, ChevronRight } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
@@ -8,6 +10,8 @@ import TreatmentCard from '@treatments/components/TreatmentCard'
 import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
 import { useTreatments } from '@treatments/hooks/useTreatments'
 import { colors, spacing, typography } from '@shared/styles/tokens'
+import { lightTap } from '@shared/utils/haptics'
+import { ROUTES } from '@navigation/routes'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 
 // Habilitar animações no Android
@@ -18,8 +22,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
 
 export default function TreatmentsScreen() {
+  const navigation = useNavigation()
   const { data: groups, loading, error, stale, refresh } = useTreatments()
   const [expandedGroups, setExpandedGroups] = useState({})
+
+  const goToMedicines = useCallback(() => {
+    lightTap()
+    navigation.navigate(ROUTES.MEDICINES_LIST)
+  }, [navigation])
 
   // Heurística de Complexidade Adaptativa (Wave 10A)
   const { isComplex, flatData } = useMemo(() => {
@@ -75,9 +85,24 @@ export default function TreatmentsScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Meus Tratamentos</Text>
-          <Text style={styles.subtitle}>Acompanhe seus tratamentos ativos</Text>
+          <Text style={styles.title}>Tratamentos</Text>
+          <Text style={styles.subtitle}>Acompanhe os tratamentos ativos</Text>
         </View>
+
+        {/* Link Medicamentos no topo APENAS no estado zero — destaque para onboarding.
+            Quando há tratamentos, o link migra para o rodapé (gestão diária = tratamentos). */}
+        {isEmpty && (
+          <Pressable
+            onPress={goToMedicines}
+            style={({ pressed }) => [styles.medicinesLink, pressed && styles.medicinesLinkPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Medicamentos"
+          >
+            <Pill size={18} color={colors.primary[700]} />
+            <Text style={styles.medicinesLinkText}>Medicamentos</Text>
+            <ChevronRight size={18} color={colors.primary[700]} />
+          </Pressable>
+        )}
 
         {isEmpty ? (
           <EmptyState 
@@ -124,6 +149,24 @@ export default function TreatmentsScreen() {
             )
           })
         )}
+
+        {/* Link Medicamentos no rodapé quando há tratamentos — mesmo estilo do topo, só posição diferente. */}
+        {!isEmpty && (
+          <Pressable
+            onPress={goToMedicines}
+            style={({ pressed }) => [
+              styles.medicinesLink,
+              styles.medicinesLinkFooter,
+              pressed && styles.medicinesLinkPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Medicamentos"
+          >
+            <Pill size={18} color={colors.primary[700]} />
+            <Text style={styles.medicinesLinkText}>Medicamentos</Text>
+            <ChevronRight size={18} color={colors.primary[700]} />
+          </Pressable>
+        )}
       </ScrollView>
     </ScreenContainer>
   )
@@ -159,5 +202,27 @@ const styles = StyleSheet.create({
   },
   simpleList: {
     paddingTop: spacing[2],
+  },
+  medicinesLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingHorizontal: 20,
+    paddingVertical: spacing[2],
+    marginBottom: spacing[3],
+  },
+  medicinesLinkPressed: {
+    opacity: 0.6,
+  },
+  medicinesLinkText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary[700],
+    fontFamily: typography.fontFamily.bold,
+  },
+  medicinesLinkFooter: {
+    marginTop: spacing[6],
+    marginBottom: spacing[2],
   },
 })

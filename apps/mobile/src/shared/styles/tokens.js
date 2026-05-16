@@ -35,6 +35,13 @@ export const colors = {
     info: '#005db6',
   },
 
+  // Suplemento (paridade visual com web — laranja para diferenciar de medicamento)
+  supplement: {
+    50: '#fef3c7',
+    500: '#d97706',
+    700: '#92400e',
+  },
+
   // Text semântico (Aliases para retrocompatibilidade e semântica)
   text: {
     primary: '#1a1c1e', // neutral.800

@@ -66,6 +66,19 @@ export default function RootTabs() {
         name={ROUTES.TREATMENTS}
         component={TreatmentsStack}
         options={{ title: 'Tratamentos' }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
+            // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
+            const isFocused = navigation.isFocused()
+            const tabState = route.state
+            const isOnSubScreen = tabState && tabState.index > 0
+            if (isFocused && isOnSubScreen) {
+              e.preventDefault()
+              navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.TREATMENTS_LIST })
+            }
+          },
+        })}
       />
       <Tab.Screen
         name={ROUTES.STOCK}

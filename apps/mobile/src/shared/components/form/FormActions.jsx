@@ -61,6 +61,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[3],
     marginTop: spacing[5],
+    paddingHorizontal: spacing[5],
+    paddingBottom: spacing[3],
   },
   primaryButton: {
     flex: 1,

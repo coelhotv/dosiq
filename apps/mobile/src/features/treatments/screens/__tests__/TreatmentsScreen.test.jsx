@@ -6,6 +6,10 @@ import { useTreatments } from '@features/treatments/hooks/useTreatments';
 jest.mock('@features/treatments/hooks/useTreatments');
 jest.mock('@shared/components/ui/ScreenContainer', () => ({ children }) => <>{children}</>);
 jest.mock('@dashboard/components/AdherenceRing', () => 'AdherenceRing');
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: jest.fn() }),
+}));
+jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 
 describe('TreatmentsScreen', () => {
   it('renders loading state', () => {

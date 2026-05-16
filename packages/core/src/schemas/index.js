@@ -16,6 +16,11 @@ export {
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
+  DOSAGE_UNITS,
+  MEDICINE_TYPES,
+  MEDICINE_TYPE_LABELS,
+  REGULATORY_CATEGORIES,
+  REGULATORY_CATEGORY_LABELS,
 } from './medicineSchema.js'
 
 export {

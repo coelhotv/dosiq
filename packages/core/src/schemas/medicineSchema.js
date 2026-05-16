@@ -53,57 +53,49 @@ export const REGULATORY_CATEGORY_LABELS = {
 /**
  * Schema base para medicamento
  */
+// Mensagens de erro friendly via z.config global (ver packages/core/src/zodSetup.js).
+// Aqui mantemos apenas overrides específicos quando regra de negócio exige texto
+// diferente do padrão (ex: "máx 200 caracteres" — informação útil, não jargão).
+
 export const medicineSchema = z.object({
   name: z
     .string()
-    .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(200, 'Nome não pode ter mais de 200 caracteres')
+    .min(2, 'O nome precisa de pelo menos 2 caracteres')
+    .max(200, 'O nome pode ter no máximo 200 caracteres')
     .trim(),
 
   laboratory: z
     .string()
-    .max(200, 'Laboratório não pode ter mais de 200 caracteres')
+    .max(200, 'O laboratório pode ter no máximo 200 caracteres')
     .optional()
     .nullable()
     .transform((val) => val || null),
 
   active_ingredient: z
     .string()
-    .max(300, 'Princípio ativo não pode ter mais de 300 caracteres')
+    .max(300, 'O princípio ativo pode ter no máximo 300 caracteres')
     .optional()
     .nullable()
     .transform((val) => val || null),
 
-  dosage_per_pill: z
+  dosage_per_pill: z.coerce
     .number()
-    .positive('Dosagem deve ser maior que zero')
-    .max(10000, 'Dosagem parece estar muito alta. Verifique o valor'),
+    .positive('A dose deve ser maior que zero')
+    .max(10000, 'A dose parece muito alta. Verifique o valor'),
 
-  dosage_unit: z.enum(DOSAGE_UNITS, {
-    errorMap: () => ({
-      message: 'Unidade de dosagem inválida. Use: mg, mcg, g, ml, UI, cp ou gotas',
-    }),
-  }),
+  dosage_unit: z.enum(DOSAGE_UNITS),
 
-  type: z
-    .enum(MEDICINE_TYPES, {
-      errorMap: () => ({ message: 'Tipo inválido. Opções: medicamento, suplemento' }),
-    })
-    .default('medicamento'),
+  type: z.enum(MEDICINE_TYPES).default('medicamento'),
 
   therapeutic_class: z
     .string()
-    .max(100, 'Classe terapêutica não pode ter mais de 100 caracteres')
+    .max(100, 'A classe terapêutica pode ter no máximo 100 caracteres')
     .optional()
     .nullable()
     .transform((val) => val || null),
 
   regulatory_category: z
-    .enum(REGULATORY_CATEGORIES, {
-      errorMap: () => ({
-        message: 'Categoria regulatória inválida.',
-      }),
-    })
+    .enum(REGULATORY_CATEGORIES)
     .optional()
     .nullable()
     .transform((val) => val || null),
