@@ -71,6 +71,7 @@ module.exports = {
     },
     plugins: [
       '@react-native-firebase/app',
+      '@react-native-firebase/crashlytics',
       'expo-notifications',
       'expo-font',
       ['expo-build-properties', {

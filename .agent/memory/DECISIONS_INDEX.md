@@ -2,6 +2,7 @@
 
 ## 📦 Data & Schema (`data_and_schema`)
 - **[ADR-017]** Profile Hub: Centralized User Data Management -> [`decisions/data_and_schema/ADR-017.md`](./decisions/data_and_schema/ADR-017.md)
+- **[ADR-045]** Factory location para repositórios CRUD compartilhados — `@dosiq/core/repositories/` (ratifica R-231; descarta `shared-data/services/`) -> [`decisions/data_and_schema/ADR-045.md`](./decisions/data_and_schema/ADR-045.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
 - **[ADR-001]** Gradual Redesign Rollout via Feature Flags -> [`decisions/infra_and_deploy/ADR-001.md`](./decisions/infra_and_deploy/ADR-001.md)

@@ -258,36 +258,46 @@ Todas são funções sem args, fire-and-forget. Não precisa `await` nem `try/ca
 
 ---
 
-## Telas
+## Telas e patterns de seleção
 
-### `AnvisaSearchScreen`
+### `MedicineAnvisaSheet` (Fase 1 — pattern canônico)
 
-`apps/mobile/src/features/medications/screens/AnvisaSearchScreen.jsx`
+`apps/mobile/src/features/medications/components/MedicineAnvisaSheet.jsx`
 
-Tela dedicada de busca ANVISA. Layout único: `TextInput` no topo + `FlatList` cards ocupando o resto (sem overlay sobreposto — diferente do `FormAutocomplete` inline).
+Bottom sheet 85% altura sobreposto ao form de medicamento. Substitui a versão fullscreen anterior (`AnvisaSearchScreen` — **REMOVIDO** na Sprint M1.2).
 
-**Padrão de retorno serializável** (React Navigation v7):
+**Razão da escolha bottom sheet**: preserva contexto do form aberto; após selecionar, o sheet fecha e o form recebe os campos preenchidos via `setValues`. Evita o anti-pattern "callback em route.params" (AP-158) e o dead-end UX quando usuário tap no resultado da busca standalone.
+
+**Pattern de seleção via setValues**:
 ```js
-// Source screen:
-navigation.navigate(ROUTES.ANVISA_SEARCH, { returnRoute: ROUTES.MEDICINE_CREATE })
-
-// AnvisaSearchScreen ao selecionar:
-navigation.navigate({
-  name: returnRoute,
-  params: { selectedMedicine: medicine },
-  merge: true,
-})
-
-// Source consome:
-useEffect(() => {
-  if (route?.params?.selectedMedicine) {
-    setSelected(route.params.selectedMedicine)
-    navigation.setParams({ selectedMedicine: undefined })  // limpa
-  }
-}, [route?.params?.selectedMedicine, navigation])
+const handleAnvisaSelect = useCallback((item) => {
+  form.setValues({
+    name: item.name ?? form.values.name,
+    active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
+    therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
+    regulatory_category: item.regulatoryCategory ?? form.values.regulatory_category,
+    laboratory: isGeneric ? '' : (item.laboratory ?? form.values.laboratory ?? ''),
+  })
+  setSheetOpen(false)
+}, [form])
 ```
 
-> **Para Fase 1 (`MedicineCreateScreen`)**: a busca dentro do cadastro será **bottom sheet**, NÃO fullscreen — preserva contexto do form aberto. `AnvisaSearchScreen` é a versão fullscreen para browse standalone.
+### `MedicineSelectorSheet` (Fase 2 — pattern análogo)
+
+`apps/mobile/src/features/treatments/components/MedicineSelectorSheet.jsx` (a criar em T2.4)
+
+Mesmo pattern bottom sheet, mas dados vêm de `useMedicines()` (biblioteca do user, não ANVISA). Selecionar atualiza `medicine_id` no form de tratamento + autocompleta nome sugerido.
+
+### `MedicineDeleteBlockedSheet` (Fase 1) vs `ProtocolDeleteSheet` (Fase 2)
+
+Dois patterns distintos de delete UX, conforme natureza da entidade:
+
+| Entidade | Pattern | Onde |
+|----------|---------|------|
+| Medicamento | **Hard block** se há tratamentos OU estoque > 0 (`AP-159`) | `MedicineDeleteBlockedSheet.jsx` |
+| Tratamento | **Warning soft** com histórico de doses (não bloqueia) | `ProtocolDeleteSheet.jsx` (a criar em T2.11) |
+
+Razão: medicamento órfão = inconsistência crítica de dados de saúde; tratamento delete não afeta doses já registradas no histórico.
 
 ---
 
@@ -381,6 +391,22 @@ function formProps(form, name) {
 ---
 
 ## Histórico de mudanças
+
+### 2026-05-16 — Atualização pós-Fase 1 + Pré-Fase-2
+
+- `AnvisaSearchScreen` REMOVIDA (M1.2): substituída pelo bottom sheet `MedicineAnvisaSheet`. Razão: contexto preservado + evita dead-end UX + remove anti-pattern AP-158 (callbacks em route.params).
+- Adicionado pattern `MedicineDeleteBlockedSheet` (AP-159 hard block para medicamento) — protege dados de saúde de ficarem órfãos.
+- Adicionado `Toast`/`useToast` para feedback transitório (já documentado em §Componentes — Feedback).
+- Padrão **wrappers de mutation** estabelecido: `useMedicineMutation` (Fase 1) → `useProtocolMutation` (Fase 2): hooks que envolvem `useMutation` + Toast + cache invalidation centralizado.
+- Padrão **Zod 4 locale global** via `@dosiq/core/zodSetup.js` (R-232): elimina necessidade de `errorMap` por schema. Mensagens "Dona Maria friendly" por código (`invalid_type`, `too_small`, `too_big`).
+- Padrão **decimal vírgula → ponto** em tempo real para campos numéricos PT-BR (`replace(',', '.')` + filter chars + colapsa pontos).
+- Helpers a criar em Fase 2 (`@dosiq/core/utils/`):
+  - `formatDoseUnit(qty, dosage_unit)` / `pluralizeDoseUnit` — render correto de unidades
+  - `formatDatePtBR(isoDate)` — "12 mar 2026"
+  - `formatEndDate(isoDate)` — null → "Uso contínuo"
+- Glossário canônico criado em `docs/reference/GLOSSARY.md` (convenções de string + termos UI↔código).
+
+
 
 | Sprint | Mudanças |
 |--------|----------|

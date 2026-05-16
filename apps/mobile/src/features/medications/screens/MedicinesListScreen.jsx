@@ -137,7 +137,7 @@ export default function MedicinesListScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Buscar nos meus medicamentos..."
+              placeholder="Buscar em medicamentos..."
               placeholderTextColor={colors.text.muted}
               style={styles.searchInput}
               autoFocus
