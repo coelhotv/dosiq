@@ -1,0 +1,50 @@
+{
+  "period": "2026-W17 to 2026-W20",
+  "compressed_at": "2026-05-16T13:35:00Z",
+  "sessions_total": 108,
+  "summary": "Período concentrou 2 macro-entregas: (1) Wave N2 Notification Hardening (W17-W19) — quiet hours, agrupamento, dispatcher boundary, inbox; (2) CRUD Native Mobile Fase 0+1 (W19-W20) — Form Kit, CRUD Medicamentos completo, factory compartilhada @dosiq/core, locale Zod PT-BR.",
+  "counter_reconciliation": {
+    "note": "state.json esteve dessincronizado dos índices markdown desde last_distillation 2026-04-26. Distill reconciliou. Diff entre estados:",
+    "before": { "rules": 182, "anti_patterns": 160, "decisions": 44, "contracts": 21 },
+    "after":  { "rules": 183, "anti_patterns": 161, "decisions": 45, "contracts": 20 },
+    "delta":  { "rules": "+1", "anti_patterns": "+1", "decisions": "+1", "contracts": "-1" },
+    "interpretation": "Os 9 R / 10 AP / 2 ADR listados em rules_added/anti_patterns_added/decisions_made foram adicionados ao longo do período (W17-W20) com bumps sincronizados ao state.json em outras sessões. O delta líquido entre last_distillation e agora reflete apenas 4 mudanças registradas; o restante já havia sido reconciliado em distills/sessions individuais. Contracts -1 indica remoção/archive de 1 CON-NNN sem decremento sincronizado — investigar em distill futuro com D5 self-clean profundo (scan all CON files vs index)."
+  },
+  "milestones": [
+    { "gate": "4", "pr": 542, "summary": "L3 Cleanup Telegram + Zod v4 Fix" },
+    { "gate": "5", "pr": 543, "summary": "Dispatcher Boundary Hardening + Payload Standardization" },
+    { "gate": "5.5", "pr": 544, "summary": "Notification Inbox Architecture Consolidation" },
+    { "gate": "F0-CLOSED", "pr": 552, "summary": "Fase 0 Pré-Requisitos CRUD Native (Form Kit + Mutations + Polish)" },
+    { "gate": "F1-CLOSED", "pr": 558, "summary": "Fase 1 CRUD Medicamentos Mobile + Factory createMedicineRepository compartilhada" }
+  ],
+  "rules_added": ["R-189", "R-193", "R-195", "R-227", "R-228", "R-229", "R-230", "R-231", "R-232"],
+  "anti_patterns_added": ["AP-076", "AP-077", "AP-115", "AP-117", "AP-118", "AP-156", "AP-157", "AP-158", "AP-159", "AP-160"],
+  "decisions_made": ["ADR-043", "ADR-044"],
+  "top_rules_applied": {
+    "R-060": 12,
+    "R-130": 6,
+    "R-121": 6,
+    "R-180": 4,
+    "R-169": 4,
+    "R-062": 4,
+    "R-010": 4,
+    "R-001": 4,
+    "R-230": 3,
+    "R-221": 3,
+    "R-193": 3,
+    "R-191": 3,
+    "R-190": 3,
+    "R-117": 3,
+    "R-092": 3,
+    "R-022": 3,
+    "R-020": 3
+  },
+  "key_learnings": [
+    "Cavecrew Haiku 4/4 zero retrabalho na Fase 1 — distribuição multi-modelo validada (Opus arquiteto + Sonnet ⭐⭐ + Haiku ⭐ mecânico)",
+    "Opus comete R-010 em fixes incrementais pós-validação (AP-160) — Sonnet/Haiku zero-shot via R-230 brief evita o problema",
+    "Spec viva funciona: 9→18 regras UX consolidadas durante implementação da Fase 1",
+    "Factory pattern + DI em @dosiq/core/repositories (R-231) permite parity tests web↔mobile com mocked client — 19 tests cobrem 2 apps",
+    "Zod 4 locale + customError global (R-232) elimina duplicação de errorMap por schema; corpus de revisores LLM ainda treina em Zod 3"
+  ],
+  "prs_consolidated": [535, 536, 537, 538, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558]
+}

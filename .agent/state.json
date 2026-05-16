@@ -2,25 +2,25 @@
   "project": "dosiq",
   "sprint": "2026-W20",
   "session": {
-    "mode": "standby",
-    "status": "completed",
-    "goal": "feat(medications): Fase 1 CRUD Medicamentos Mobile + Factory Compartilhada (PR #558 mãe→main)",
-    "goal_type": "feat"
+    "mode": "distillation",
+    "status": "distilled",
+    "goal": "compress and distill project memory — pós Fase 1 CRUD Medicamentos",
+    "goal_type": "chore"
   },
   "memory": {
-    "last_distillation": "2026-04-26T05:15:00Z",
-    "journal_entries_since_distillation": 15,
-    "rules_count": 182,
-    "anti_patterns_count": 160,
-    "decisions_count": 44,
-    "contracts_count": 21,
-    "distillation_due": true
+    "last_distillation": "2026-05-16T13:35:00Z",
+    "journal_entries_since_distillation": 0,
+    "rules_count": 183,
+    "anti_patterns_count": 161,
+    "decisions_count": 45,
+    "contracts_count": 20,
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-16T07:30:00Z"
+    "index_loaded_at": "2026-05-16T13:35:00Z"
   }
 }
