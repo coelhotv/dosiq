@@ -1,79 +1,38 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import baseConfig from './vitest.base.config.js'
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@features': path.resolve(__dirname, './src/features'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-      '@dashboard': path.resolve(__dirname, './src/features/dashboard'),
-      '@medications': path.resolve(__dirname, './src/features/medications'),
-      '@protocols': path.resolve(__dirname, './src/features/protocols'),
-      '@stock': path.resolve(__dirname, './src/features/stock'),
-      '@adherence': path.resolve(__dirname, './src/features/adherence'),
-      '@calendar': path.resolve(__dirname, './src/features/calendar'),
-      '@emergency': path.resolve(__dirname, './src/features/emergency'),
-      '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
-      '@consultation': path.resolve(__dirname, './src/features/consultation'),
-      '@reports': path.resolve(__dirname, './src/features/reports'),
-      '@export': path.resolve(__dirname, './src/features/export'),
-      '@costs': path.resolve(__dirname, './src/features/costs'),
-      '@interactions': path.resolve(__dirname, './src/features/interactions'),
-      '@dosiq/core': path.resolve(__dirname, '../../packages/core/src'),
-      '@schemas': path.resolve(__dirname, './src/schemas'),
-      '@services': path.resolve(__dirname, './src/services'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js'],
-    css: false,
+/**
+ * Config padrão (dev local) — herda baseConfig + override para incluir
+ * tests do monorepo (server + packages/core).
+ */
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      pool: 'threads',
+      singleThread: true,
+      maxThreads: 1,
+      minThreads: 1,
 
-    // ==========================================
-    // OTIMIZAÇÕES PARA VITEST 4+ (Testing Infrastructure Overhaul)
-    // ==========================================
-
-    pool: 'threads',
-    singleThread: true,
-    maxThreads: 1,
-    minThreads: 1,
-
-    // Limites de tempo mais rigorosos (10s suficiente para testes bem escritos)
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 5000,
-
-    // Incluir TODOS os testes (incluindo components/ e features/ e server/ na raiz do monorepo)
-    include: [
-      'src/**/*.test.{js,jsx}', 
-      '../../server/**/*.test.{js,jsx}',
-      '../../packages/core/src/**/*.test.{js,jsx}'
-    ],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/cypress/**',
-      '**/.{idea,git,cache,output,temp}/**',
-    ],
-
-    // Coverage mais leve
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        'src/main.jsx',
-        'src/App.jsx',
-        '**/__tests__/**',
-        '**/*.test.{js,jsx}',
-        '**/*.config.js',
+      include: [
+        'src/**/*.test.{js,jsx}',
+        '../../server/**/*.test.{js,jsx}',
+        '../../packages/core/src/**/*.test.{js,jsx}',
       ],
+
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+        exclude: [
+          'node_modules/',
+          'src/test/',
+          'src/main.jsx',
+          'src/App.jsx',
+          '**/__tests__/**',
+          '**/*.test.{js,jsx}',
+          '**/*.config.js',
+        ],
+      },
     },
-  },
-})
+  }),
+)

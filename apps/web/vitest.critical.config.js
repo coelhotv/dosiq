@@ -1,89 +1,63 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import { defineConfig, mergeConfig } from 'vitest/config'
 import path from 'path'
+import baseConfig from './vitest.base.config.js'
 
 /**
- * Configuração de Testes Críticos
+ * Configuração de Testes Críticos (CI kill switch — validate:agent).
  *
- * Esta configuração foca apenas nos testes mais importantes para validação rápida:
+ * Foca apenas nos testes mais importantes para validação rápida:
  * - Services (lógica de negócio)
  * - Utils (funções auxiliares)
  * - Schemas (validação de dados)
  * - Hooks (lógica reutilizável)
- * - Features (nova organização)
+ * - Features: services/utils/hooks (NÃO components)
  *
- * NÃO inclui componentes de UI que são mais lentos de testar.
+ * Pool 'forks' (menos memória que threads). Bail 1 (fail fast).
  *
- * Otimizado para CI com pool 'forks' (menos uso de memória que 'threads')
+ * Override: @schemas aponta para `packages/core/src/schemas` (canonical).
  */
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@features': path.resolve(__dirname, './src/features'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-      '@dashboard': path.resolve(__dirname, './src/features/dashboard'),
-      '@medications': path.resolve(__dirname, './src/features/medications'),
-      '@protocols': path.resolve(__dirname, './src/features/protocols'),
-      '@stock': path.resolve(__dirname, './src/features/stock'),
-      '@adherence': path.resolve(__dirname, './src/features/adherence'),
-      '@calendar': path.resolve(__dirname, './src/features/calendar'),
-      '@emergency': path.resolve(__dirname, './src/features/emergency'),
-      '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
-      '@dosiq/core': path.resolve(__dirname, '../../packages/core/src'),
-      '@schemas': path.resolve(__dirname, '../../packages/core/src/schemas'),
-      '@services': path.resolve(__dirname, './src/services'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.js',
-
-    // Fail fast: abort after first failing test file
-    bail: 1,
-
-    // Apenas testes críticos (excluir componentes UI e smoke)
-    include: [
-      'src/services/**/*.test.{js,jsx}',
-      'src/utils/**/*.test.{js,jsx}',
-      'src/schemas/**/*.test.{js,jsx}',
-      'src/shared/hooks/**/*.test.{js,jsx}',
-      // Features: apenas services, utils, hooks (NÃO components)
-      'src/features/**/services/**/*.test.{js,jsx}',
-      'src/features/**/utils/**/*.test.{js,jsx}',
-      'src/features/**/hooks/**/*.test.{js,jsx}',
-    ],
-    exclude: [
-      '**/*.smoke.test.*',
-      '**/*.integration.test.*',
-      'src/components/**/*',
-      'src/shared/components/**/*',
-      'src/features/**/components/**/*', // Excluir UI components de features
-      'node_modules/',
-    ],
-
-    // Pool otimizado para CI - forks usa menos memória que threads
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true, // Executar sequencialmente para evitar OOM
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    resolve: {
+      alias: {
+        '@schemas': path.resolve(__dirname, '../../packages/core/src/schemas'),
       },
     },
+    test: {
+      setupFiles: './src/test/setup.js',
+      bail: 1,
 
-    // Timeouts rigorosos
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 5000,
+      include: [
+        'src/services/**/*.test.{js,jsx}',
+        'src/utils/**/*.test.{js,jsx}',
+        'src/schemas/**/*.test.{js,jsx}',
+        'src/shared/hooks/**/*.test.{js,jsx}',
+        'src/features/**/services/**/*.test.{js,jsx}',
+        'src/features/**/utils/**/*.test.{js,jsx}',
+        'src/features/**/hooks/**/*.test.{js,jsx}',
+      ],
+      exclude: [
+        '**/*.smoke.test.*',
+        '**/*.integration.test.*',
+        'src/components/**/*',
+        'src/shared/components/**/*',
+        'src/features/**/components/**/*',
+        'node_modules/',
+      ],
 
-    // Reporter minimalista
-    reporters: ['dot'],
+      pool: 'forks',
+      poolOptions: {
+        forks: {
+          singleFork: true,
+        },
+      },
 
-    // Cache separado
-    cache: {
-      dir: '.vitest-cache-critical',
+      reporters: ['dot'],
+
+      cache: {
+        dir: '.vitest-cache-critical',
+      },
     },
-  },
-})
+  }),
+)
