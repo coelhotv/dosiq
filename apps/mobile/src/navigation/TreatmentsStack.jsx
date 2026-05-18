@@ -8,6 +8,8 @@
 import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from './routes'
 import TreatmentsScreen from '../features/treatments/screens/TreatmentsScreen'
+import ProtocolDetailScreen from '../features/treatments/screens/ProtocolDetailScreen'
+import ProtocolFormScreen from '../features/treatments/screens/ProtocolFormScreen'
 import MedicinesListScreen from '../features/medications/screens/MedicinesListScreen'
 import MedicineDetailScreen from '../features/medications/screens/MedicineDetailScreen'
 import MedicineFormScreen from '../features/medications/screens/MedicineFormScreen'
@@ -18,6 +20,8 @@ export default function TreatmentsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name={ROUTES.TREATMENTS_LIST} component={TreatmentsScreen} />
+      <Stack.Screen name={ROUTES.PROTOCOL_DETAIL} component={ProtocolDetailScreen} />
+      <Stack.Screen name={ROUTES.PROTOCOL_FORM} component={ProtocolFormScreen} />
       <Stack.Screen name={ROUTES.MEDICINES_LIST} component={MedicinesListScreen} />
       <Stack.Screen name={ROUTES.MEDICINE_DETAIL} component={MedicineDetailScreen} />
       <Stack.Screen name={ROUTES.MEDICINE_CREATE} component={MedicineFormScreen} />

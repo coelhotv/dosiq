@@ -3,28 +3,31 @@
 # Refatorado em 2026-02-19 para integração otimizada
 # Atualizado em 2026-02-21 com filtros de path inteligentes (P3.2)
 # Atualizado em 2026-04-11 para suporte a Monorepo Híbrido (Web+Native) e DEVFLOW Memory
+# Atualizado em 2026-05-16: cobertura mobile (services/schemas/platform) + custom_instructions
+#                          alinhados ao DEVFLOW v1.7 (INDEX.md, sem JSONs aposentados) +
+#                          guardrails contra sugestões cross-platform incorretas
 
 $schema: "http://json-schema.org/draft-07/schema#"
 
 code_review:
   # Threshold mínimo para comentários (MEDIUM = ignora LOW)
   comment_severity_threshold: MEDIUM
-  
+
   # Limite de comentários por review
   max_review_comments: 20
-  
+
   # Review automático quando PR é aberto
   pull_request_opened:
     help: true
     summary: true
     code_review: true
     include_drafts: false
-  
+
   # Re-review automático quando novos commits são pushados
   pull_request_synchronize:
     code_review: true
     summary: true
-  
+
   # P3.2: Filtros de path inteligentes - Paths a ignorar completamente
   excluded_paths:
     - "docs/archive/**"
@@ -42,33 +45,47 @@ code_review:
     - "**/*.min.js"
     - "**/coverage/**"
     - ".vitest-cache*/**"
-    # Tratamento DEVFLOW: ignorar journals pois são logs append-only
+    # DEVFLOW: journals e sessões são logs append-only
     - ".agent/memory/journal/**"
     - ".agent/sessions/**"
-    # Tratamento Native App:
+    # Native App:
     - "apps/mobile/.expo/**"
-  
+    - "apps/mobile/android/build/**"
+    - "apps/mobile/ios/build/**"
+
   # P3.2: Paths com prioridade máxima para review
   critical_paths:
+    # Web (legacy + atual)
     - "src/services/api/**"
     - "src/schemas/**"
     - "server/bot/**"
     - "api/**"
-    - "src/features/**/services/**"
-    # Tratamento Monorepo:
+    # Web monorepo (apps/web/)
+    - "apps/web/src/services/api/**"
+    - "apps/web/src/schemas/**"
+    - "apps/web/src/features/**/services/**"
+    # Mobile monorepo (apps/mobile/) — adicionados 2026-05-16
+    - "apps/mobile/src/features/**/services/**"
+    - "apps/mobile/src/features/**/schemas/**"
+    - "apps/mobile/src/platform/**"
+    - "apps/mobile/src/navigation/**"
+    # Core compartilhado (Zod schemas + repositories factory + zodSetup)
     - "packages/core/**"
-    - "packages/shared-data/**"
+    - "packages/shared-data/**"   # aposentado por ADR-045, mantido até remoção formal
     - "packages/storage/**"
     - "packages/config/**"
-    # Tratamento DEVFLOW: monitorar arquivos the estado estruturado
-    - ".agent/memory/*.json"
-  
+    # DEVFLOW: monitorar arquivos de estado estruturado
+    - ".agent/state.json"
+    - ".agent/memory/RULES_INDEX.md"
+    - ".agent/memory/ANTI_PATTERNS_INDEX.md"
+    - ".agent/memory/CONTRACTS_INDEX.md"
+    - ".agent/memory/DECISIONS_INDEX.md"
+
   # Paths adicionais incluídos no review (não-críticos mas relevantes)
   included_paths:
     - "src/**"
     - "server/**"
     - ".github/workflows/**"
-    # Tratamento Monorepo:
     - "apps/**"
     - "packages/**"
 
@@ -77,14 +94,38 @@ memory_config:
 
 # Configurações de output estruturado
 output_config:
-  # Gerar JSON estruturado para agentes
   structured_output: true
-  # Incluir sugestões de código
   include_suggestions: true
-  # Incluir linhas de código afetadas
   include_code_snippets: true
 
-# INSTRUÇÕES PARA AGENTE REVISOR GERADO PELO WORKFLOW:
+# INSTRUÇÕES PARA AGENTE REVISOR
 custom_instructions: |
-  1. DEVFLOW Compliance: Verify if modifications to core logic, schemas, or storage reflect in updates to .agent/memory/contracts.json or decisions.json.
-  2. Hybrid Architecture (Web + Native): Ensure packages/core and packages/shared-data do NOT use window, document, navigator, or localStorage APIs. Any storage should use the async interfaces from packages/storage.
+  1. DEVFLOW Compliance: Verifique se modificações em core logic, schemas, ou repositories refletem
+     em updates a CONTRACTS_INDEX.md, DECISIONS_INDEX.md ou ADR-NNN.md correspondente.
+     (Os arquivos JSON contracts.json/decisions.json foram aposentados em DEVFLOW v1.7+ —
+     toda referência agora é via INDEX.md + detail files em rules/, anti-patterns/,
+     decisions/, contracts/.)
+
+  2. Hybrid Architecture (Web + Mobile): packages/core e packages/shared-data NÃO podem usar
+     APIs window/document/navigator/localStorage/sessionStorage/fetch direto ao DOM.
+     Storage deve usar interfaces async de packages/storage.
+
+  3. Cross-platform validation: web e mobile NÃO compartilham hooks, components ou utils de
+     plataforma — apenas @dosiq/core. Antes de sugerir "use helper X" em apps/mobile, verifique
+     se X existe em apps/mobile/ ou @dosiq/core. Utils da apps/web/src/shared/ NÃO estão
+     disponíveis no mobile (ex: NÃO sugerir useCachedQuery em hook mobile — pattern mobile é
+     useState + AsyncStorage manual + TTL, ver apps/mobile/src/features/medications/hooks/useMedicines.js).
+
+  4. React Native specifics: borderStyle só aceita 'solid' (dashed/dotted disparam warning,
+     AP-163). __DEV__ substitui process.env.NODE_ENV. toLocaleString('pt-BR') não funciona
+     (Hermes sem ICU) — usar helpers de @dosiq/core. Stack navigator é @react-navigation/stack
+     JS (não native-stack — crasha Android API 24, ADR-036).
+
+  5. Hardening G1/G2/G3 (ADR-043): durante sprints rotulados G1 (cópia espelhada web → mobile),
+     divergências do espelho web SÃO o problema, não a solução. Não sugerir consolidação para
+     factory durante G1 — isso quebra o gate de parity. G2 (extract factory) e G3 (web adota
+     factory) tratam consolidação.
+
+  6. Zod 4: API de issues mudou (issue.code/origin/input em vez de type/received do Zod 3).
+     Locale PT-BR + customError são globais via z.config() em packages/core/src/zodSetup.js
+     (R-232). Não sugerir errorMap por schema; só customizar mensagens com info útil ao usuário.

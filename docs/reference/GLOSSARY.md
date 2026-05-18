@@ -29,7 +29,7 @@ Aplicam-se a TODA UI do app (mobile + web).
 
 | Termo UI (PT) | Variável código (EN) | DB | Notas |
 |---------------|---------------------|-----|-------|
-| Medicamento(s) | `medicine(s)` | `medicines` | Não usar "remédio" |
+| Medicamento(s) | `medicine(s)` | `medicines` | Pode usar "remédio" em textos de suporte |
 | Princípio ativo | `active_ingredient` | string | Subtitle do card |
 | Laboratório | `laboratory` | string | Mostrar apenas em detail, não em card listagem |
 | Tipo | `type` | enum `'medicamento'\|'suplemento'` | Ícone Pill vs PillBottle |
@@ -45,8 +45,8 @@ Aplicam-se a TODA UI do app (mobile + web).
 | Termo UI (PT) | Variável código (EN) | DB | Notas |
 |---------------|---------------------|-----|-------|
 | Tratamento(s) | `protocol(s)` | `protocols` | Sempre "tratamento" em UI |
-| Nome do tratamento | `name` | string | Ex: "SeloZok manhã/noite" |
-| Plano terapêutico / Organização | `treatment_plan` | `treatment_plans` | "Plano" curto OU "Organização" em forms |
+| Nome do tratamento | `name` | string | Ex: "Hipertensão" |
+| Plano terapêutico / Organização | `treatment_plan` | `treatment_plans` | "Plano" curto OU "Plano de tratamentos" em forms |
 | Dose por tomada | `dosage_per_intake` | number | Em unidades farmacêuticas; render via `formatDoseUnit` |
 | Frequência / Periodicidade | `frequency` | enum (`diario`, `dias_alternados`, `semanal`, `personalizado`, `quando_necessario`) | PT-BR snake_case |
 | Horários | `time_schedule` | array `"HH:MM"` | min 1, max 10 |
@@ -63,7 +63,6 @@ Aplicam-se a TODA UI do app (mobile + web).
 | Termo UI (PT) | Variável código (EN) | DB |
 |---------------|---------------------|-----|
 | Estoque | `stock` | `stock` |
-| Lote | `batch_number` | string |
 | Validade | `expiration_date` | YYYY-MM-DD |
 | Quantidade | `quantity` | number |
 | Preço | `unit_price` / `total_price` | `purchases` table |
@@ -73,8 +72,8 @@ Aplicam-se a TODA UI do app (mobile + web).
 | Termo UI (PT) | Variável código (EN) | DB |
 |---------------|---------------------|-----|
 | Dose | `dose_log` / `log` | `dose_logs` |
-| Confirmada / Tomada | status `taken` | enum |
-| Pendente | status `pending` | enum |
+| Confirmada / Tomada | status `taken` | derivada |
+| Pendente | status `pending` | derivada |
 | Agendada (futuro) | derivada | — |
 | Silenciada | status `silenced` | enum |
 | Adesão | `adherence` | derivada |

@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { CheckCircle2, Eye, EyeOff } from 'lucide-react-native'
 import { updatePassword } from '../platform/auth/authService'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
@@ -47,8 +47,7 @@ export default function ResetPasswordScreen({ route }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
-          <Ionicons
-            name="checkmark-circle"
+          <CheckCircle2
             size={80}
             color={colors.brand.primary}
             style={styles.successIcon}
@@ -102,11 +101,11 @@ export default function ResetPasswordScreen({ route }) {
             style={styles.eyeIcon}
             onPress={() => setShowPassword((v) => !v)}
           >
-            <Ionicons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
-              color={colors.text.muted}
-            />
+            {showPassword ? (
+              <EyeOff size={20} color={colors.text.muted} />
+            ) : (
+              <Eye size={20} color={colors.text.muted} />
+            )}
           </Pressable>
         </View>
 
@@ -126,11 +125,11 @@ export default function ResetPasswordScreen({ route }) {
             style={styles.eyeIcon}
             onPress={() => setShowConfirm((v) => !v)}
           >
-            <Ionicons
-              name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
-              color={colors.text.muted}
-            />
+            {showConfirm ? (
+              <EyeOff size={20} color={colors.text.muted} />
+            ) : (
+              <Eye size={20} color={colors.text.muted} />
+            )}
           </Pressable>
         </View>
 

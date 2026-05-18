@@ -2,16 +2,16 @@
   "project": "dosiq",
   "sprint": "2026-W20",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "goal": "compress and distill project memory — pós Fase 1 CRUD Medicamentos",
-    "goal_type": "chore"
+    "mode": "coding",
+    "status": "coding",
+    "goal": "Fase 2 T2.1 — helpers @dosiq/core/utils + protocolService mobile (copy + DI)",
+    "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-05-16T13:35:00Z",
     "journal_entries_since_distillation": 0,
     "rules_count": 183,
-    "anti_patterns_count": 161,
+    "anti_patterns_count": 162,
     "decisions_count": 45,
     "contracts_count": 20,
     "distillation_due": false

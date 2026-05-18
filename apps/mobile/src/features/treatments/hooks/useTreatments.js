@@ -34,7 +34,7 @@ export function useTreatments() {
       if (authError || !user) throw new Error('Sessão expirada.')
 
       const result = await getActiveTreatments(user.id)
-      
+
       if (!result.success) throw new Error(result.error)
 
       const newData = result.data

@@ -35,6 +35,10 @@ export {
   validateTitrationStage,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
+  FREQUENCIES,
+  FREQUENCY_LABELS,
+  WEEKDAYS,
+  WEEKDAY_LABELS,
 } from './protocolSchema.js'
 
 export {

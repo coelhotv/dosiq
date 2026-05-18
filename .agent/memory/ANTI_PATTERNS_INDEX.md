@@ -68,6 +68,7 @@
 - **[AP-157]** Normalizar dataset grande (NFD) em cada keystroke vs pré-normalizar no boot via useMemo -> [`anti-patterns/mobile_and_platform/AP-157.md`](./anti-patterns/mobile_and_platform/AP-157.md)
 - **[AP-158]** Callbacks em `route.params` quebram React Navigation + criam stale closures -> [`anti-patterns/mobile_and_platform/AP-158.md`](./anti-patterns/mobile_and_platform/AP-158.md)
 - **[AP-162]** Import de `@expo/vector-icons` carrega ~4 MB de fonts cumulativos — preferir `lucide-react-native` ou import específico por família -> [`anti-patterns/mobile_and_platform/AP-162.md`](./anti-patterns/mobile_and_platform/AP-162.md)
+- **[AP-163]** `borderStyle: 'dashed'/'dotted'` em RN dispara `WARN Unsupported dashed / dotted border style` (RN só aceita `'solid'`) — multiplica por frame em containers animados via `LayoutAnimation` -> [`anti-patterns/mobile_and_platform/AP-163.md`](./anti-patterns/mobile_and_platform/AP-163.md)
 - **[AP-159]** Delete de entidade pai sem pre-check de dependências FK deixa órfãos no banco (hard block via XDeleteBlockedSheet) -> [`anti-patterns/data_and_schema/AP-159.md`](./anti-patterns/data_and_schema/AP-159.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)

@@ -24,6 +24,33 @@ export default function MedicineDemoScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Seção Fase 2 — Primitivos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fase 2 — Primitivos T2.2</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              navigation?.navigate(ROUTES.TREATMENT_PRIMITIVES_DEMO)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>🧪 WeekdaySelector + MedicineSelectorRow + TimeSchedulePicker</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              // ProtocolForm vive em TreatmentsStack → Tab Tratamentos
+              navigation?.navigate(ROUTES.TABS, {
+                screen: ROUTES.TREATMENTS,
+                params: { screen: ROUTES.PROTOCOL_FORM },
+              })
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📝 ProtocolFormScreen (CREATE) — composição completa T2.6</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Seção 1 — Telas Sprint M1.1 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Telas Sprint M1.1</Text>

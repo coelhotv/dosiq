@@ -7,7 +7,8 @@
 // - Footer: Voltar + Abrir tratamentos (CTA verde)
 
 import { useMemo } from 'react'
-import { View, Text, Modal, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { View, Text, Modal, Pressable, ScrollView, StyleSheet, Platform, StatusBar } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { AlertCircle, Layers, Package, ChevronRight } from 'lucide-react-native'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
@@ -32,9 +33,19 @@ export function MedicineDeleteBlockedSheet({
   )
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+      // Android: cobre window stack inteiro (parent inputs/tab bar vazam sem isso no API 24).
+      statusBarTranslucent
+    >
+      {Platform.OS === 'android' ? (
+        <View style={{ height: StatusBar.currentHeight ?? 0 }} />
+      ) : null}
       <Pressable style={styles.backdrop} onPress={onCancel} />
-      <View style={styles.sheet}>
+      <SafeAreaView edges={['bottom']} style={styles.sheet}>
         <View style={styles.handle} />
 
         <View style={styles.headerIcon}>
@@ -108,7 +119,7 @@ export function MedicineDeleteBlockedSheet({
             <Text style={styles.btnPrimaryText}>Abrir tratamentos</Text>
           </Pressable>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   )
 }

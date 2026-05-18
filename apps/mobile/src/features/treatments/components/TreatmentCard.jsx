@@ -1,7 +1,7 @@
 // TreatmentCard.jsx — card de exibição de um tratamento
 // R-166: UX Parity P-011
 
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StatusBadge from '../../../shared/components/ui/StatusBadge'
 import { colors, spacing } from '../../../shared/styles/tokens'
@@ -18,7 +18,7 @@ import { colors, spacing } from '../../../shared/styles/tokens'
  *   }
  * }} props
  */
-export default function TreatmentCard({ treatment }) {
+export default function TreatmentCard({ treatment, onPress }) {
   const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine } = treatment
 
   // Mapeamento de status da titulação para o badge (estáveis na web usam verde)
@@ -43,8 +43,8 @@ export default function TreatmentCard({ treatment }) {
     return map[freq] || freq
   }
 
-  return (
-    <SectionCard 
+  const card = (
+    <SectionCard
       title={
         <View style={styles.titleWrapper}>
           <Text style={styles.titleText}>{medicine?.name || name}</Text>
@@ -84,6 +84,19 @@ export default function TreatmentCard({ treatment }) {
         )}
       </View>
     </SectionCard>
+  )
+
+  if (!onPress) return card
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir tratamento ${medicine?.name || name}`}
+    >
+      {card}
+    </Pressable>
   )
 }
 
@@ -151,5 +164,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.primary[700],
     fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 })

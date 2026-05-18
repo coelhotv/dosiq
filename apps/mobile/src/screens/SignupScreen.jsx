@@ -13,7 +13,7 @@ import {
   ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { ArrowLeft, Eye, EyeOff, Mail } from 'lucide-react-native'
 import { signUpWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
 import { colors, spacing, typography } from '@shared/styles/tokens'
@@ -49,7 +49,7 @@ export default function SignupScreen({ navigation }) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIconWrapper}>
-            <Ionicons name="mail-outline" size={56} color={colors.brand.primary} />
+            <Mail size={56} color={colors.brand.primary} />
           </View>
           <Text style={styles.successTitle}>Verifique seu email</Text>
           <Text style={styles.successDescription}>
@@ -73,7 +73,7 @@ export default function SignupScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color={colors.text.secondary} />
+        <ArrowLeft size={24} color={colors.text.secondary} />
         <Text style={styles.backButtonText}>Voltar</Text>
       </Pressable>
       <KeyboardAvoidingView
@@ -120,11 +120,11 @@ export default function SignupScreen({ navigation }) {
               style={styles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color={colors.text.secondary}
-              />
+              {showPassword ? (
+                <EyeOff size={22} color={colors.text.secondary} />
+              ) : (
+                <Eye size={22} color={colors.text.secondary} />
+              )}
             </Pressable>
           </View>
 
@@ -143,11 +143,11 @@ export default function SignupScreen({ navigation }) {
               style={styles.eyeIcon}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              <Ionicons
-                name={showConfirmPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color={colors.text.secondary}
-              />
+              {showConfirmPassword ? (
+                <EyeOff size={22} color={colors.text.secondary} />
+              ) : (
+                <Eye size={22} color={colors.text.secondary} />
+              )}
             </Pressable>
           </View>
 

@@ -8,6 +8,7 @@ jest.mock('@shared/components/ui/ScreenContainer', () => ({ children }) => <>{ch
 jest.mock('@dashboard/components/AdherenceRing', () => 'AdherenceRing');
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
+  useFocusEffect: () => {},
 }));
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 
@@ -38,6 +39,6 @@ describe('TreatmentsScreen', () => {
   it('renders empty state when no treatments', () => {
     useTreatments.mockReturnValue({ loading: false, data: [] });
     const { getByText } = render(<TreatmentsScreen />);
-    expect(getByText(/Nenhum tratamento ativo/i)).toBeTruthy();
+    expect(getByText(/Comece seu primeiro tratamento/i)).toBeTruthy();
   });
 });

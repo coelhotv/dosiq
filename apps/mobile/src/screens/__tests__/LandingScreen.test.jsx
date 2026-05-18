@@ -36,12 +36,10 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-// Mock Lucide
+// Mock Lucide — Proxy retorna Fragment para qualquer ícone (migração T1.11)
 jest.mock('lucide-react-native', () => {
   const React = require('react');
-  return {
-    Sun: () => <React.Fragment />,
-  };
+  return new Proxy({}, { get: () => () => <React.Fragment /> });
 });
 
 // Mock AdherenceRing

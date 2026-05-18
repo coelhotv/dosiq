@@ -7,7 +7,10 @@ import {
   Pressable,
   FlatList,
   StyleSheet,
+  Platform,
+  StatusBar,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Search, X, Pill, PillBottle } from 'lucide-react-native'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import { selectionTap } from '@shared/utils/haptics'
@@ -91,10 +94,16 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
       transparent
       animationType="slide"
       onRequestClose={handleClose}
+      // Android: cobre o stack inteiro (sem isso inputs do form parent vazam
+      // por cima do overlay no Android 7/API 24).
+      statusBarTranslucent
     >
       <View style={styles.root}>
+        {Platform.OS === 'android' ? (
+          <View style={{ height: StatusBar.currentHeight ?? 0 }} />
+        ) : null}
         <Pressable style={styles.backdrop} onPress={handleClose} />
-        <View style={styles.sheet}>
+        <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>Base ANVISA</Text>
 
@@ -133,7 +142,7 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
             keyboardDismissMode="on-drag"
             contentContainerStyle={styles.listContent}
           />
-        </View>
+        </SafeAreaView>
       </View>
     </Modal>
   )

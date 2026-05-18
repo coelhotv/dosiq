@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { Mail } from 'lucide-react-native'
 import { sendPasswordReset } from '../platform/auth/authService'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
@@ -44,8 +44,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
-          <Ionicons
-            name="mail-outline"
+          <Mail
             size={80}
             color={colors.brand.primary}
             style={styles.successIcon}

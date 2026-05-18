@@ -16,7 +16,7 @@ import {
   Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native'
 import { signInWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
@@ -55,7 +55,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color={colors.text.secondary} />
+        <ArrowLeft size={24} color={colors.text.secondary} />
         <Text style={styles.backButtonText}>Voltar</Text>
       </Pressable>
 
@@ -98,11 +98,11 @@ export default function LoginScreen({ navigation }) {
             style={styles.eyeIcon}
             onPress={() => setShowPassword(!showPassword)}
           >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={22}
-              color={colors.text.secondary}
-            />
+            {showPassword ? (
+              <EyeOff size={22} color={colors.text.secondary} />
+            ) : (
+              <Eye size={22} color={colors.text.secondary} />
+            )}
           </Pressable>
         </View>
 

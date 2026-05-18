@@ -3,7 +3,11 @@
 // ADR-029: chama Supabase directamente usando nativeSupabaseClient
 
 import { z } from 'zod'
-import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
+// isProtocolInPeriod (period-only) em vez de isProtocolActiveOnDate (adherence
+// strict que filtra por frequency/weekdays — exclui quando_necessário,
+// personalizado, semanal sem weekdays). Listagem mostra qualquer tratamento
+// dentro do período de validade independente da frequência.
+import { getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
 
@@ -55,10 +59,11 @@ export async function getActiveTreatments(userId) {
       return { success: false, error: error.message }
     }
 
-    // Filtro de validade temporal (Wave v0.1.5)
-    // Garantimos que o usuário só veja o que está tomando HOJE na fase Read-Only
+    // Filtro de validade temporal — período only (start_date/end_date).
+    // Listagem mostra TODOS os tratamentos em período de validade, ignorando
+    // frequency (quando_necessário, semanal etc. devem aparecer).
     const today = getTodayLocal()
-    const validData = (rawData || []).filter(p => isProtocolActiveOnDate(p, today))
+    const validData = (rawData || []).filter(p => isProtocolInPeriod(p, today))
 
     return { success: true, data: validData }
   } catch (err) {

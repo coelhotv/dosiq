@@ -73,24 +73,31 @@ export function useFormState(schema, { initialValues = EMPTY } = {}) {
     [schema, values],
   )
 
-  const validate = useCallback(() => {
-    const result = schema.safeParse(values)
-    if (result.success) {
-      setErrors(EMPTY)
-      return true
-    }
-    setErrors(mapIssues(result.error.issues))
-    // Marca todos campos com erro como touched (UX: mostra mensagens)
-    setTouched((prev) => {
-      const next = { ...prev }
-      for (const issue of result.error.issues) {
-        const path = issue.path[0]
-        if (path) next[path] = true
+  // `overrides`: merge sobre values antes do parse. Evita race entre
+  // handleChange (assíncrono) e validate quando submit precisa coerce
+  // um campo (ex: string "0,5" → number 0.5) na mesma frame.
+  const validate = useCallback(
+    (overrides) => {
+      const candidate = overrides ? { ...values, ...overrides } : values
+      const result = schema.safeParse(candidate)
+      if (result.success) {
+        setErrors(EMPTY)
+        return true
       }
-      return next
-    })
-    return false
-  }, [schema, values])
+      setErrors(mapIssues(result.error.issues))
+      // Marca todos campos com erro como touched (UX: mostra mensagens)
+      setTouched((prev) => {
+        const next = { ...prev }
+        for (const issue of result.error.issues) {
+          const path = issue.path[0]
+          if (path) next[path] = true
+        }
+        return next
+      })
+      return false
+    },
+    [schema, values],
+  )
 
   const reset = useCallback(
     (nextInitial) => {

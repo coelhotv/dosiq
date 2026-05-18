@@ -24,6 +24,10 @@ export const ROUTES = {
   TREATMENTS_LIST: 'TreatmentsList',
   TREATMENT_DETAIL: 'TreatmentDetail',
 
+  // Sub-rotas de Tratamentos (Fase 2)
+  PROTOCOL_FORM: 'ProtocolForm',
+  PROTOCOL_DETAIL: 'ProtocolDetail',
+
   // Sub-rotas de Perfil
   PROFILE_MAIN: 'ProfileMain',
   TELEGRAM_LINK: 'TelegramLink',
@@ -38,4 +42,5 @@ export const ROUTES = {
 
   // Dev-only (apenas __DEV__)
   MEDICINE_DEMO: 'MedicineDemo',
+  TREATMENT_PRIMITIVES_DEMO: 'TreatmentPrimitivesDemo',
 }

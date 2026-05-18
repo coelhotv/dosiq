@@ -8,8 +8,7 @@ import {
   Image
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Sun } from 'lucide-react-native';
+import { Sun, UserPlus, LogIn } from 'lucide-react-native';
 import { colors, spacing, typography, shadows } from '@shared/styles/tokens';
 import { ROUTES } from '@navigation/routes';
 import AdherenceRing from '@features/dashboard/components/AdherenceRing';
@@ -128,7 +127,7 @@ export default function LandingScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Criar conta"
         >
-          <Ionicons name="person-add-outline" size={20} color="#fff" />
+          <UserPlus size={20} color="#fff" />
           <Text style={styles.createAccountText}>Criar conta</Text>
         </Pressable>
         
@@ -138,7 +137,7 @@ export default function LandingScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Já tenho conta"
         >
-          <Ionicons name="log-in-outline" size={24} color={colors.primary[600]} />
+          <LogIn size={24} color={colors.primary[600]} />
           <Text style={styles.loginBtnText}>Já tenho conta</Text>
         </Pressable>
       </View>

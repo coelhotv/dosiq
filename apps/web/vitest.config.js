@@ -22,6 +22,7 @@ export default defineConfig({
       '@export': path.resolve(__dirname, './src/features/export'),
       '@costs': path.resolve(__dirname, './src/features/costs'),
       '@interactions': path.resolve(__dirname, './src/features/interactions'),
+      '@dosiq/core': path.resolve(__dirname, '../../packages/core/src'),
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@services': path.resolve(__dirname, './src/services'),
       '@utils': path.resolve(__dirname, './src/utils'),

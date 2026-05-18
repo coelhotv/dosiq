@@ -31,6 +31,7 @@ export default defineConfig({
       '@calendar': path.resolve(__dirname, './src/features/calendar'),
       '@emergency': path.resolve(__dirname, './src/features/emergency'),
       '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
+      '@dosiq/core': path.resolve(__dirname, '../../packages/core/src'),
       '@schemas': path.resolve(__dirname, '../../packages/core/src/schemas'),
       '@services': path.resolve(__dirname, './src/services'),
       '@utils': path.resolve(__dirname, './src/utils'),
