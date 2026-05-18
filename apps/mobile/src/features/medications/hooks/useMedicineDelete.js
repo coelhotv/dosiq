@@ -17,6 +17,19 @@ import { medicineService } from '../services/medicineService'
 
 const MEDICINES_CACHE_KEY = '@dosiq/medicines-snapshot'
 
+/**
+ * Cache invalidation matrix (R-236) — useMedicineDelete:
+ *
+ * confirmDelete só dispara se preCheck.canDelete (hard block contra protocolos
+ * e stock > 0). Quando passa o pre-check, garantidamente:
+ *   - sem protocols → nada em treatments-snapshot/today-snapshot
+ *   - sem stock     → nada em stock-snapshot
+ * Logo invalida APENAS:
+ *   - @dosiq/medicines-snapshot
+ *
+ * Se algum dia o hard block virar soft, ESTA matrix muda — adicionar
+ * treatments-snapshot, today-snapshot e stock-snapshot ao Promise.all abaixo.
+ */
 export function useMedicineDelete(medicine) {
   const navigation = useNavigation()
   const { show } = useToast()

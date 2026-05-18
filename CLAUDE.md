@@ -168,6 +168,25 @@ Rodar do root via workspace:
 
 `.memory/` aposentado (somente leitura W01-W11). Tudo novo → `.agent/memory/`.
 
+## Distill Policy (dosiq — pós-Fase 2.5)
+
+**Threshold automático**: `genes.memory_distillation_threshold = 15` (mantido).
+Auto-trigger quando `journal_entries_since_distillation >= 15`.
+
+**Trigger manual obrigatório**: ao encerrar QUALQUER fase de evolução
+(Fase 0/1/2/2.5/3/4/5/6), rodar `/devflow distill` imediatamente após o PR de
+RETRO + DEVFLOW C5 ser mergeado — independente do threshold.
+
+**Por quê**: fases entregam ~3-8 journal entries cada; com threshold 15, distill
+auto pode atrasar 2-3 fases. Trigger manual pós-fase mantém memória "fresh" no
+ponto de transição, evitando counter drift (AP-161) e perdendo a janela em que
+os aprendizados ainda estão vivos no contexto.
+
+**Avaliar baixar threshold pra 10 após Fase 4** se distill manual virar overhead.
+
+Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
+`state.json` contra índices markdown — fonte de verdade).
+
 ---
 
 ## Git Workflow

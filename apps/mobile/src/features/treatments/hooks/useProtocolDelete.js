@@ -11,6 +11,9 @@ import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 import { protocolService } from '../services/protocolService'
 
 const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
+const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
+const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
+const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
 export function useProtocolDelete(protocol) {
   // States (R-010 — States → Memos → Effects → Handlers)
@@ -19,12 +22,26 @@ export function useProtocolDelete(protocol) {
   const [isLoading, setIsLoading] = useState(false)
 
   // Handlers
+  /**
+   * confirmDelete — exclui tratamento (sem hard block — soft warning na sheet).
+   * Caches invalidados (matrix R-236):
+   *   - @dosiq/protocols-snapshot (detail/useProtocol)
+   *   - @dosiq/treatments-snapshot (listagem — item some)
+   *   - @dosiq/today-snapshot (agenda do dia pode ter dose desse protocol)
+   *   - @dosiq/stock-snapshot (consumo daily recalcula — daysRemaining sobe)
+   */
   const confirmDelete = useCallback(async () => {
     if (!protocol?.id) return false
     setIsLoading(true)
     try {
       await protocolService.delete(protocol.id)
-      await AsyncStorage.removeItem(PROTOCOLS_CACHE_KEY).catch(() => {})
+      // multiRemove = 1 chamada à ponte nativa (vs N concorrentes) — atômico.
+      await AsyncStorage.multiRemove([
+        PROTOCOLS_CACHE_KEY,
+        TREATMENTS_CACHE_KEY,
+        TODAY_CACHE_KEY,
+        STOCK_CACHE_KEY,
+      ]).catch(() => {})
       successHaptic()
       show('Tratamento excluído', { variant: 'success' })
       navigation.goBack()
