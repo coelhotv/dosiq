@@ -1,6 +1,7 @@
 # DEVFLOW Anti-Patterns Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[AP-164]** Função com mesmo nome em arquivos diferentes do mesmo package — barrel `export *` colide silenciosamente; consumer importa a errada (isProtocolActiveOnDate strict vs period-only) -> [`anti-patterns/data_and_schema/AP-164.md`](./anti-patterns/data_and_schema/AP-164.md)
 - **[AP-058]** z.record() argumento único quebra parse em Zod v4 — TypeError '_zod' com objetos não-vazios -> [`anti-patterns/data_and_schema/AP-058.md`](./anti-patterns/data_and_schema/AP-058.md)
 - **[AP-005]** UTC midnight = wrong day in GMT-3 -> [`anti-patterns/data_and_schema/AP-005.md`](./anti-patterns/data_and_schema/AP-005.md)
 - **[AP-B02]** HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afet... -> [`anti-patterns/data_and_schema/AP-B02.md`](./anti-patterns/data_and_schema/AP-B02.md)
@@ -69,6 +70,9 @@
 - **[AP-158]** Callbacks em `route.params` quebram React Navigation + criam stale closures -> [`anti-patterns/mobile_and_platform/AP-158.md`](./anti-patterns/mobile_and_platform/AP-158.md)
 - **[AP-162]** Import de `@expo/vector-icons` carrega ~4 MB de fonts cumulativos — preferir `lucide-react-native` ou import específico por família -> [`anti-patterns/mobile_and_platform/AP-162.md`](./anti-patterns/mobile_and_platform/AP-162.md)
 - **[AP-163]** `borderStyle: 'dashed'/'dotted'` em RN dispara `WARN Unsupported dashed / dotted border style` (RN só aceita `'solid'`) — multiplica por frame em containers animados via `LayoutAnimation` -> [`anti-patterns/mobile_and_platform/AP-163.md`](./anti-patterns/mobile_and_platform/AP-163.md)
+- **[AP-165]** Modal RN sem `statusBarTranslucent` no Android < 8: overlay não cobre topo + inputs do form parent vazam por cima + bottom tab bar corta botões do sheet -> [`anti-patterns/mobile_and_platform/AP-165.md`](./anti-patterns/mobile_and_platform/AP-165.md)
+- **[AP-166]** `useFormState.validate()` lê `values` da frame anterior — race com `handleChange` assíncrono quando coerce + validate na mesma frame. Fix: aceitar `overrides` opcional -> [`anti-patterns/react_and_ui/AP-166.md`](./anti-patterns/react_and_ui/AP-166.md)
+- **[AP-167]** Eager parse string→number em input decimal apaga vírgula (estado intermediário `"0,"` vira `0`); user não completa decimal -> [`anti-patterns/react_and_ui/AP-167.md`](./anti-patterns/react_and_ui/AP-167.md)
 - **[AP-159]** Delete de entidade pai sem pre-check de dependências FK deixa órfãos no banco (hard block via XDeleteBlockedSheet) -> [`anti-patterns/data_and_schema/AP-159.md`](./anti-patterns/data_and_schema/AP-159.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)

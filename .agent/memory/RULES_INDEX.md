@@ -39,6 +39,7 @@
 
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[R-233]** Bottom sheet mobile (Modal RN) DEVE usar pattern unificado Android-safe: `statusBarTranslucent` + spacer `StatusBar.currentHeight` + `SafeAreaView edges=['bottom']` -> [`rules/mobile_and_platform/R-233.md`](./rules/mobile_and_platform/R-233.md)
 - **[R-024]** In the clinical PDF daily table, count completed vs expected dose events per day... -> [`rules/mobile_and_platform/R-024.md`](./rules/mobile_and_platform/R-024.md)
 - **[R-025]** If no display name, derive PDF patient label from email local-part before fallin... -> [`rules/mobile_and_platform/R-025.md`](./rules/mobile_and_platform/R-025.md)
 - **[R-025-1]** Always reuse src/shared/utils/patientUtils.js for patient display fallback. Do n... -> [`rules/mobile_and_platform/R-025-1.md`](./rules/mobile_and_platform/R-025-1.md)
@@ -91,6 +92,7 @@
 
 
 ## 🛡️ Process & Testing (`process_and_testing`)
+- **[R-234]** Smoke PO ANTES de abrir PR — push OK (EAS worktree precisa) mas HOLD `gh pr create` até PO validar smoke -> [`rules/process_and_testing/R-234.md`](./rules/process_and_testing/R-234.md)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)
 - **[R-190]** Mandatory Devflow Bootstrap (Hard Stop) [HOT] -> [`rules/process_and_testing/R-190.md`](./rules/process_and_testing/R-190.md)
 - **[R-002]** Always verify path aliases in vite.config.js before assuming @feature/x resolves... -> [`rules/process_and_testing/R-002.md`](./rules/process_and_testing/R-002.md)
@@ -128,6 +130,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[R-235]** Hook canônico antes de inline — grep por `use*Delete`/`use*Mutation` existente e adotar; inline OK só se nenhum cobre ou single call site -> [`rules/react_and_ui/R-235.md`](./rules/react_and_ui/R-235.md)
 - **[R-010]** Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong ord... -> [`rules/react_and_ui/R-010.md`](./rules/react_and_ui/R-010.md)
 - **[R-011]** LogForm returns Array when type==='plan' and Object when type==='protocol'. Alwa... -> [`rules/react_and_ui/R-011.md`](./rules/react_and_ui/R-011.md)
 - **[R-095]** All Wave 1 (Onda 1) components must receive data ONLY via props. Never import us... -> [`rules/react_and_ui/R-095.md`](./rules/react_and_ui/R-095.md)
