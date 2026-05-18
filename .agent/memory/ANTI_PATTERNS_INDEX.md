@@ -2,6 +2,7 @@
 
 ## 📦 Data & Schema (`data_and_schema`)
 - **[AP-164]** Função com mesmo nome em arquivos diferentes do mesmo package — barrel `export *` colide silenciosamente; consumer importa a errada (isProtocolActiveOnDate strict vs period-only) -> [`anti-patterns/data_and_schema/AP-164.md`](./anti-patterns/data_and_schema/AP-164.md)
+- **[AP-168]** Cache invalidation incompleto em mutation — esquece snapshots adjacentes (toggleActive invalidou só protocols, esqueceu treatments-snapshot) -> [`anti-patterns/data_and_schema/AP-168.md`](./anti-patterns/data_and_schema/AP-168.md)
 - **[AP-058]** z.record() argumento único quebra parse em Zod v4 — TypeError '_zod' com objetos não-vazios -> [`anti-patterns/data_and_schema/AP-058.md`](./anti-patterns/data_and_schema/AP-058.md)
 - **[AP-005]** UTC midnight = wrong day in GMT-3 -> [`anti-patterns/data_and_schema/AP-005.md`](./anti-patterns/data_and_schema/AP-005.md)
 - **[AP-B02]** HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afet... -> [`anti-patterns/data_and_schema/AP-B02.md`](./anti-patterns/data_and_schema/AP-B02.md)
@@ -76,6 +77,8 @@
 - **[AP-159]** Delete de entidade pai sem pre-check de dependências FK deixa órfãos no banco (hard block via XDeleteBlockedSheet) -> [`anti-patterns/data_and_schema/AP-159.md`](./anti-patterns/data_and_schema/AP-159.md)
 
 ## 🛡️ Process & Testing (`process_and_testing`)
+- **[AP-169]** Branch local outdated antes de spawn → sub-agent duplica arquivos (port manual de PR-A já mergeado) -> [`anti-patterns/process_and_testing/AP-169.md`](./anti-patterns/process_and_testing/AP-169.md)
+- **[AP-170]** Alias adicionado em `vitest.config.js` não propaga para `vitest.critical.config.js` (CI falha silencioso com "is not a function") -> [`anti-patterns/process_and_testing/AP-170.md`](./anti-patterns/process_and_testing/AP-170.md)
 - **[AP-001]** Production bug — fix goes to unused file -> [`anti-patterns/process_and_testing/AP-001.md`](./anti-patterns/process_and_testing/AP-001.md)
 - **[AP-160]** Opus violando R-010 (ordem de hooks) em fixes incrementais pós-validação (cavecrew acerta zero-shot via R-230) -> [`anti-patterns/process_and_testing/AP-160.md`](./anti-patterns/process_and_testing/AP-160.md)
 - **[AP-161]** DEVFLOW state.json counter drift entre distillations — sessions modificam INDEX.md sem bumpar counters; D5 self-clean profundo é a correção obrigatória -> [`anti-patterns/process_and_testing/AP-161.md`](./anti-patterns/process_and_testing/AP-161.md)

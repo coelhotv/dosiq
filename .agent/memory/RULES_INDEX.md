@@ -1,6 +1,7 @@
 # DEVFLOW Rules Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[R-236]** Mutation documenta TODOS os caches que invalida (matrix explícita) — evita bug latente quando snapshot adjacente é esquecido -> [`rules/data_and_schema/R-236.md`](./rules/data_and_schema/R-236.md)
 - **[R-020]** ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('... [AUTOMATED via ESLint] -> [`rules/data_and_schema/R-020.md`](./rules/data_and_schema/R-020.md)
 - **[R-021]** All Zod schema enum values must be in Portuguese. Always export labels for UI di... -> [`rules/data_and_schema/R-021.md`](./rules/data_and_schema/R-021.md)
 - **[R-H27]** Native Adaptive Complexity (Persona Logic) -> [`rules/data_and_schema/R-H27.md`](./rules/data_and_schema/R-H27.md)
@@ -93,6 +94,7 @@
 
 ## 🛡️ Process & Testing (`process_and_testing`)
 - **[R-234]** Smoke PO ANTES de abrir PR — push OK (EAS worktree precisa) mas HOLD `gh pr create` até PO validar smoke -> [`rules/process_and_testing/R-234.md`](./rules/process_and_testing/R-234.md)
+- **[R-237]** Wave orchestration com dependency graph antes de spawn cavecrew — agrupa tasks paralelas em waves; reserva Opus pra integração -> [`rules/process_and_testing/R-237.md`](./rules/process_and_testing/R-237.md)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)
 - **[R-190]** Mandatory Devflow Bootstrap (Hard Stop) [HOT] -> [`rules/process_and_testing/R-190.md`](./rules/process_and_testing/R-190.md)
 - **[R-002]** Always verify path aliases in vite.config.js before assuming @feature/x resolves... -> [`rules/process_and_testing/R-002.md`](./rules/process_and_testing/R-002.md)
