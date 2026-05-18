@@ -1,6 +1,6 @@
 // isProtocolInPeriod (period-only) em vez de isProtocolActiveOnDate (strict
 // adherence-aware). Listagem agrupada inclui quando_necessário, semanal, etc.
-import { getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
+import { getTodayLocal, isProtocolInPeriod, resolveTreatmentStatus, TREATMENT_STATUS } from '@dosiq/core'
 
 export function groupTreatmentsByPlanOrClass(data) {
   if (!data) return null
@@ -53,4 +53,59 @@ export function groupTreatmentsByPlanOrClass(data) {
     if (b.id === 'general') return -1
     return a.title.localeCompare(b.title)
   })
+}
+
+/**
+ * Transformer principal (Fase 2.5 T5).
+ * Anota cada protocol com `tabStatus` + `endDate`, separa em 3 listas,
+ * agrupa apenas ativos por plano/classe, e computa counts.
+ *
+ * @param {any[]|null} rawData — lista bruta de protocols do service
+ * @returns {{
+ *   data: any[],          // ativos (compat com callsites existentes via useTreatments)
+ *   ativos: any[],
+ *   pausados: any[],
+ *   finalizados: any[],
+ *   counts: { ativos: number, pausados: number, finalizados: number },
+ *   groups: object[]|null // agrupamento dos ativos (igual a groupTreatmentsByPlanOrClass)
+ * }}
+ */
+export function transformTreatments(rawData) {
+  const empty = { data: [], ativos: [], pausados: [], finalizados: [], counts: { ativos: 0, pausados: 0, finalizados: 0 }, groups: null }
+  if (!rawData) return empty
+
+  const activeItems = []
+  const pausedItems = []
+  const finishedItems = []
+
+  rawData.forEach(protocol => {
+    const tabStatus = resolveTreatmentStatus(protocol)
+    const enriched = { ...protocol, tabStatus, endDate: protocol.end_date ?? null }
+
+    if (tabStatus === TREATMENT_STATUS.FINALIZADO) {
+      finishedItems.push(enriched)
+    } else if (tabStatus === TREATMENT_STATUS.PAUSADO) {
+      pausedItems.push(enriched)
+    } else {
+      activeItems.push(enriched)
+    }
+  })
+
+  const counts = {
+    ativos: activeItems.length,
+    pausados: pausedItems.length,
+    finalizados: finishedItems.length,
+  }
+
+  // Agrupamento por plano/classe apenas para ativos
+  const groups = groupTreatmentsByPlanOrClass(activeItems)
+
+  return {
+    data: activeItems,
+    ativos: activeItems,
+    pausados: pausedItems,
+    finalizados: finishedItems,
+    counts,
+    groups,
+  }
 }

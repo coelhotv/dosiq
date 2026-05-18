@@ -8,6 +8,7 @@ import ErrorState from '@shared/components/states/ErrorState'
 import TreatmentCard from '@treatments/components/TreatmentCard'
 import TreatmentEmptyState from '@treatments/components/TreatmentEmptyState'
 import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
+import TreatmentTabBar from '@treatments/components/TreatmentTabBar'
 import { useTreatments } from '@treatments/hooks/useTreatments'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 import { lightTap } from '@shared/utils/haptics'
@@ -23,7 +24,18 @@ const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
 
 export default function TreatmentsScreen() {
   const navigation = useNavigation()
-  const { data: groups, loading, error, stale, refresh } = useTreatments()
+  const {
+    groups,
+    loading,
+    error,
+    stale,
+    refresh,
+    activeTab,
+    setActiveTab,
+    counts,
+    pausados,
+    finalizados,
+  } = useTreatments()
   const [expandedGroups, setExpandedGroups] = useState({})
 
   const goToMedicines = useCallback(() => {
@@ -46,13 +58,17 @@ export default function TreatmentsScreen() {
     navigation.navigate(ROUTES.PROTOCOL_FORM, { treatment_plan_id: groupId })
   }, [navigation])
 
-  // Heurística de Complexidade Adaptativa (Wave 10A)
+  // Heurística de Complexidade Adaptativa (Wave 10A) — APENAS ativos.
+  // Pausados e finalizados vão flat (sem grupos), conforme spec Fase 2.5 §3.1.
   const { isComplex, flatData } = useMemo(() => {
     if (!groups) return DEFAULT_COMPLEXITY
     const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
     const flat = groups.flatMap(g => g.protocols)
     return { isComplex: total > 3, flatData: flat }
   }, [groups])
+
+  const totalAcrossTabs = (counts?.ativos ?? 0) + (counts?.pausados ?? 0) + (counts?.finalizados ?? 0)
+  const isFullyEmpty = totalAcrossTabs === 0
 
   // Refresh ao ganhar foco: captura tratamentos/planos criados em ProtocolFormScreen
   // (useTreatments cache key difere de @dosiq/protocols-snapshot invalidado pela mutation).
@@ -90,8 +106,10 @@ export default function TreatmentsScreen() {
     )
   }
 
-  // Se não houver grupos, mostrar EmptyState
-  const isEmpty = !groups || groups.length === 0
+  // Empty global (Fase 2.5): só mostra TreatmentEmptyState quando NÃO há
+  // tratamentos em NENHUMA tab. Se há em outra tab, mantém TabBar e mostra
+  // mensagem específica per-tab.
+  const isEmpty = isFullyEmpty
 
   return (
     <ScreenContainer>
@@ -129,59 +147,113 @@ export default function TreatmentsScreen() {
 
         {isEmpty ? (
           <TreatmentEmptyState onCreatePress={goToCreate} />
-        ) : !isComplex ? (
-          /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
-          <View style={styles.simpleList}>
-            {flatData.map(protocol => (
-              <TreatmentCard
-                key={protocol.id}
-                treatment={protocol}
-                onPress={() => openProtocolDetail(protocol.id)}
-              />
-            ))}
-          </View>
         ) : (
-          /* MODO COMPLEX: Carlos (Agrupado por planos/classes) */
-          groups.map(group => {
-            const isExpanded = expandedGroups[group.id] !== false
+          <>
+            <TreatmentTabBar
+              activeTab={activeTab}
+              counts={counts}
+              onChange={setActiveTab}
+            />
 
-            return (
-              <View key={group.id} style={styles.groupContainer}>
-                <TreatmentPlanHeader
-                  title={group.title}
-                  emoji={group.emoji}
-                  color={group.color}
-                  isExpanded={isExpanded}
-                  onToggle={() => toggleGroup(group.id)}
-                  count={group.protocols.length}
-                />
+            {activeTab === 'ativos' && counts.ativos === 0 ? (
+              <Text style={styles.tabEmpty}>Nenhum tratamento ativo no momento.</Text>
+            ) : null}
 
-                {isExpanded && (
-                  <View style={styles.protocolsList}>
-                    {group.protocols.map(protocol => (
-                      <TreatmentCard
-                        key={protocol.id}
-                        treatment={protocol}
-                        onPress={() => openProtocolDetail(protocol.id)}
+            {activeTab === 'pausados' && (
+              pausados.length === 0 ? (
+                <Text style={styles.tabEmpty}>Nenhum tratamento pausado.</Text>
+              ) : (
+                <View style={styles.simpleList}>
+                  {pausados.map(protocol => (
+                    <TreatmentCard
+                      key={protocol.id}
+                      treatment={protocol}
+                      tabStatus={protocol.tabStatus}
+                      endDate={protocol.endDate}
+                      onPress={() => openProtocolDetail(protocol.id)}
+                    />
+                  ))}
+                </View>
+              )
+            )}
+
+            {activeTab === 'finalizados' && (
+              finalizados.length === 0 ? (
+                <Text style={styles.tabEmpty}>Nenhum tratamento finalizado ainda.</Text>
+              ) : (
+                <View style={styles.simpleList}>
+                  {finalizados.map(protocol => (
+                    <TreatmentCard
+                      key={protocol.id}
+                      treatment={protocol}
+                      tabStatus={protocol.tabStatus}
+                      endDate={protocol.endDate}
+                      onPress={() => openProtocolDetail(protocol.id)}
+                    />
+                  ))}
+                </View>
+              )
+            )}
+
+            {activeTab === 'ativos' && counts.ativos > 0 && (
+              !isComplex ? (
+                /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
+                <View style={styles.simpleList}>
+                  {flatData.map(protocol => (
+                    <TreatmentCard
+                      key={protocol.id}
+                      treatment={protocol}
+                      tabStatus={protocol.tabStatus}
+                      endDate={protocol.endDate}
+                      onPress={() => openProtocolDetail(protocol.id)}
+                    />
+                  ))}
+                </View>
+              ) : (
+                /* MODO COMPLEX: Carlos (Agrupado por planos/classes) */
+                groups.map(group => {
+                  const isExpanded = expandedGroups[group.id] !== false
+                  return (
+                    <View key={group.id} style={styles.groupContainer}>
+                      <TreatmentPlanHeader
+                        title={group.title}
+                        emoji={group.emoji}
+                        color={group.color}
+                        isExpanded={isExpanded}
+                        onToggle={() => toggleGroup(group.id)}
+                        count={group.protocols.length}
                       />
-                    ))}
-                    <Pressable
-                      onPress={() => goToCreateInGroup(group.id)}
-                      style={({ pressed }) => [
-                        styles.addToGroup,
-                        pressed && styles.addToGroupPressed,
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Adicionar tratamento ao grupo ${group.title}`}
-                    >
-                      <Plus size={16} color={colors.primary[700]} />
-                      <Text style={styles.addToGroupText}>Adicionar tratamento ao grupo</Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            )
-          })
+                      {isExpanded && (
+                        <View style={styles.protocolsList}>
+                          {group.protocols.map(protocol => (
+                            <TreatmentCard
+                              key={protocol.id}
+                              treatment={protocol}
+                              tabStatus={protocol.tabStatus}
+                              endDate={protocol.endDate}
+                              onPress={() => openProtocolDetail(protocol.id)}
+                            />
+                          ))}
+                          <Pressable
+                            onPress={() => goToCreateInGroup(group.id)}
+                            style={({ pressed }) => [
+                              styles.addToGroup,
+                              pressed && styles.addToGroupPressed,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Adicionar tratamento ao grupo ${group.title}`}
+                          >
+                            <Plus size={16} color={colors.primary[700]} />
+                            <Text style={styles.addToGroupText}>Adicionar tratamento ao grupo</Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
+                  )
+                })
+              )
+            )}
+          </>
         )}
 
         {/* Link Medicamentos no rodapé quando há tratamentos — mesmo estilo do topo, só posição diferente. */}
@@ -249,6 +321,13 @@ const styles = StyleSheet.create({
   },
   simpleList: {
     paddingTop: spacing[2],
+  },
+  tabEmpty: {
+    fontSize: 14,
+    color: colors.text.muted,
+    textAlign: 'center',
+    paddingVertical: spacing[8],
+    paddingHorizontal: spacing[5],
   },
   medicinesLink: {
     flexDirection: 'row',

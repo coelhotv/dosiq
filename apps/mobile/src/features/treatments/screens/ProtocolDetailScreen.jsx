@@ -5,7 +5,7 @@
 // Delete sheet com warning soft + stats chega em Sprint T2.2 (T2.11/T2.12).
 
 import { useCallback, useMemo, useState } from 'react'
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, Pressable, Switch, StyleSheet } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 import {
   ArrowLeft,
@@ -23,6 +23,8 @@ import {
   formatEndDate,
   getNow,
   parseLocalDate,
+  resolveTreatmentStatus,
+  TREATMENT_STATUS,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -30,6 +32,7 @@ import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
 import { useProtocol } from '@treatments/hooks/useProtocols'
 import { useProtocolDelete } from '@treatments/hooks/useProtocolDelete'
+import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import ProtocolDeleteSheet from '@treatments/components/ProtocolDeleteSheet'
 import { lightTap, selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, typography } from '@shared/styles/tokens'
@@ -58,7 +61,11 @@ export default function ProtocolDetailScreen() {
   const id = route.params?.id
   const { data: protocol, loading, error, refresh } = useProtocol(id)
   const { confirmDelete, isLoading: isDeleting } = useProtocolDelete(protocol)
+  const { toggleActive } = useProtocolMutation()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Optimistic toggle state — Switch reflete intenção imediata; reverte se mutation falhar.
+  const [activeOverride, setActiveOverride] = useState(null)
+  const [toggling, setToggling] = useState(false)
 
   // Memos
   const frequencyLabel = useMemo(
@@ -74,6 +81,16 @@ export default function ProtocolDetailScreen() {
   }, [protocol])
 
   const inUseDays = useMemo(() => daysInUse(protocol?.start_date), [protocol])
+
+  // Fase 2.5 — status derivado (ativo/pausado/finalizado).
+  // `activeOverride` permite optimistic UI no toggle Ligado/Desligado: enquanto
+  // mutation roda, Switch reflete intenção do user; reverte se erro.
+  const effectiveActive = activeOverride !== null ? activeOverride : (protocol?.active !== false)
+  const treatmentStatus = useMemo(() => {
+    if (!protocol) return TREATMENT_STATUS.ATIVO
+    return resolveTreatmentStatus({ ...protocol, active: effectiveActive })
+  }, [protocol, effectiveActive])
+  const isFinished = treatmentStatus === TREATMENT_STATUS.FINALIZADO
 
   // Effects
   useFocusEffect(
@@ -104,6 +121,24 @@ export default function ProtocolDetailScreen() {
     lightTap()
     setDeleteOpen(true)
   }, [isDeleting])
+
+  // Toggle Ligado/Desligado (Fase 2.5 §3.2)
+  const handleToggleActive = useCallback(async (next) => {
+    if (toggling || !protocol?.id) return
+    selectionTap()
+    setActiveOverride(next)  // optimistic
+    setToggling(true)
+    try {
+      await toggleActive(protocol.id, next)
+      // sucesso: refresh garante que protocol.active venha atualizado do server
+      await refresh()
+      setActiveOverride(null)
+    } catch {
+      setActiveOverride(!next)  // rollback visual
+    } finally {
+      setToggling(false)
+    }
+  }, [toggling, protocol, toggleActive, refresh])
 
   const handleConfirmDelete = useCallback(async () => {
     // useProtocolDelete encapsula: delete + cache invalidation + toast +
@@ -260,6 +295,37 @@ export default function ProtocolDetailScreen() {
             <Text style={styles.notesText}>{protocol.notes}</Text>
           </SectionCard>
         ) : null}
+
+        {/* Status — Toggle Ligado/Desligado (Fase 2.5 §3.2)
+            Oculto se finalizado (end_date < hoje); mostra caption inerte. */}
+        <SectionCard title="STATUS">
+          {isFinished ? (
+            <Text style={styles.statusFinishedHint}>
+              Tratamento finalizado{protocol.end_date ? ` em ${formatDatePtBR(protocol.end_date)}` : ''}. Edite o período para reativar.
+            </Text>
+          ) : (
+            <View style={styles.statusRow}>
+              <View style={styles.statusTextWrap}>
+                <Text style={styles.statusLabel}>Tratamento ativo</Text>
+                <Text style={styles.statusHelper}>
+                  {effectiveActive
+                    ? 'Enviando lembretes e contando doses.'
+                    : 'Pausado — sem lembretes, sem contar doses.'}
+                </Text>
+              </View>
+              <Switch
+                value={effectiveActive}
+                onValueChange={handleToggleActive}
+                disabled={toggling}
+                trackColor={{ true: colors.primary[500], false: colors.neutral[300] }}
+                thumbColor={colors.bg.card}
+                accessibilityRole="switch"
+                accessibilityLabel="Ligar ou desligar tratamento"
+                accessibilityState={{ checked: effectiveActive }}
+              />
+            </View>
+          )}
+        </SectionCard>
 
         {/* Excluir tratamento */}
         <Pressable
@@ -476,6 +542,31 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     lineHeight: 22,
     paddingVertical: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing[2],
+    gap: spacing[3],
+  },
+  statusTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  statusLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  statusHelper: {
+    fontSize: 12,
+    color: colors.text.muted,
+  },
+  statusFinishedHint: {
+    fontSize: 13,
+    color: colors.text.muted,
+    paddingVertical: spacing[2],
+    lineHeight: 18,
   },
   deleteBtn: {
     flexDirection: 'row',

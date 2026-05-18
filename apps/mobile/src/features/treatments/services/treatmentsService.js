@@ -3,25 +3,22 @@
 // ADR-029: chama Supabase directamente usando nativeSupabaseClient
 
 import { z } from 'zod'
-// isProtocolInPeriod (period-only) em vez de isProtocolActiveOnDate (adherence
-// strict que filtra por frequency/weekdays — exclui quando_necessário,
-// personalizado, semanal sem weekdays). Listagem mostra qualquer tratamento
-// dentro do período de validade independente da frequência.
-import { getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 /**
- * Busca todos os tratamentos ativos do usuário com dados de medicamento
+ * Busca TODOS os tratamentos do usuário (ativos, pausados e finalizados).
+ * Categorização por status é feita no transformer via resolveTreatmentStatus
+ * (@dosiq/core/utils/treatmentStatus.js) — sem filtros server-side ou client-side.
  * @param {string} userId
  * @returns {Promise<{success: boolean, data?: any[], error?: string}>}
  */
-export async function getActiveTreatments(userId) {
+export async function getAllTreatments(userId) {
   try {
     // Validação de entrada conforme regra do projeto (R-125)
     z.string().uuid().parse(userId)
 
-    debugLog('treatmentsService', `Buscando tratamentos ativos para: ${userId}`)
+    debugLog('treatmentsService', `Buscando todos os tratamentos para: ${userId}`)
 
     const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
@@ -51,7 +48,6 @@ export async function getActiveTreatments(userId) {
         )
       `)
       .eq('user_id', userId)
-      .eq('active', true)
       .order('name')
 
     if (error) {
@@ -59,15 +55,12 @@ export async function getActiveTreatments(userId) {
       return { success: false, error: error.message }
     }
 
-    // Filtro de validade temporal — período only (start_date/end_date).
-    // Listagem mostra TODOS os tratamentos em período de validade, ignorando
-    // frequency (quando_necessário, semanal etc. devem aparecer).
-    const today = getTodayLocal()
-    const validData = (rawData || []).filter(p => isProtocolInPeriod(p, today))
-
-    return { success: true, data: validData }
+    return { success: true, data: rawData || [] }
   } catch (err) {
     errorLog('treatmentsService', 'Erro inesperado', err)
-    return { success: false, error: 'Erro ao carregar tratamentos ativos.' }
+    return { success: false, error: 'Erro ao carregar tratamentos.' }
   }
 }
+
+// deprecated — usar getAllTreatments; remover no PR seguinte após callsites migrarem
+export const getActiveTreatments = getAllTreatments

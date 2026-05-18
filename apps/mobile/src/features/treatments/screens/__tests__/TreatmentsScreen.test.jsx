@@ -13,31 +13,44 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 
 describe('TreatmentsScreen', () => {
+  // Helper: shape Fase 2.5 do useTreatments (activeTab + counts + grupos + listas per-tab)
+  const mockUseTreatments = (overrides = {}) => ({
+    loading: false,
+    error: null,
+    stale: false,
+    refresh: jest.fn(),
+    groups: [],
+    data: [],
+    activeTab: 'ativos',
+    setActiveTab: jest.fn(),
+    counts: { ativos: 0, pausados: 0, finalizados: 0 },
+    ativos: [],
+    pausados: [],
+    finalizados: [],
+    currentItems: [],
+    ...overrides,
+  })
+
   it('renders loading state', () => {
-    useTreatments.mockReturnValue({ loading: true, data: null });
+    useTreatments.mockReturnValue(mockUseTreatments({ loading: true, groups: null, data: null }));
     const { getByText } = render(<TreatmentsScreen />);
     expect(getByText(/Carregando seus tratamentos/i)).toBeTruthy();
   });
 
   it('renders list of treatments when data exists', () => {
-    useTreatments.mockReturnValue({
-      loading: false,
-      data: [
-        { 
-          id: 'g1', 
-          title: 'Geral', 
-          protocols: [
-            { id: '1', name: 'Tratamento A', active: true, medicine_id: 'm1' }
-          ] 
-        }
-      ]
-    });
+    const protocol = { id: '1', name: 'Tratamento A', active: true, medicine_id: 'm1', tabStatus: 'ativo' }
+    useTreatments.mockReturnValue(mockUseTreatments({
+      groups: [{ id: 'g1', title: 'Geral', protocols: [protocol] }],
+      ativos: [protocol],
+      counts: { ativos: 1, pausados: 0, finalizados: 0 },
+      currentItems: [protocol],
+    }));
     const { getByText } = render(<TreatmentsScreen />);
     expect(getByText('Tratamento A')).toBeTruthy();
   });
 
   it('renders empty state when no treatments', () => {
-    useTreatments.mockReturnValue({ loading: false, data: [] });
+    useTreatments.mockReturnValue(mockUseTreatments({ groups: [], data: [] }));
     const { getByText } = render(<TreatmentsScreen />);
     expect(getByText(/Comece seu primeiro tratamento/i)).toBeTruthy();
   });

@@ -6,21 +6,23 @@ import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, getNow, addDays, parseISO } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { getActiveTreatments } from '../services/treatmentsService'
+import { getAllTreatments } from '../services/treatmentsService'
 import { debugLog } from '@shared/utils/debugLog'
-import { groupTreatmentsByPlanOrClass } from './_treatmentsTransformer'
+import { transformTreatments } from './_treatmentsTransformer'
 
 const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
 
 /**
  * @typedef {{ id: string, name: string, frequency: string, time_schedule: string[], dosage_per_intake: number, titration_status: string, medicine: { name: string, type: string } }} Treatment
- * @returns {{ data: Treatment[]|null, loading: boolean, error: string|null, stale: boolean, refresh: Function }}
+ * @returns {{ data: Treatment[]|null, loading: boolean, error: string|null, stale: boolean, refresh: Function, activeTab: string, setActiveTab: Function, counts: {ativos:number,pausados:number,finalizados:number}, ativos: Treatment[], pausados: Treatment[], finalizados: Treatment[], groups: object[]|null, currentItems: Treatment[] }}
  */
 export function useTreatments() {
+  // States (R-010: states first)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
+  const [activeTab, setActiveTab] = useState('ativos')
   const dataRef = useRef(null)
 
   const load = useCallback(async () => {
@@ -33,7 +35,7 @@ export function useTreatments() {
       const user = authData?.user
       if (authError || !user) throw new Error('Sessão expirada.')
 
-      const result = await getActiveTreatments(user.id)
+      const result = await getAllTreatments(user.id)
 
       if (!result.success) throw new Error(result.error)
 
@@ -124,15 +126,31 @@ export function useTreatments() {
     }
   }, [load])
 
-  const groupedData = useMemo(() => groupTreatmentsByPlanOrClass(data), [data])
+  // Memos (R-010: memos after states)
+  const transformed = useMemo(() => transformTreatments(data), [data])
 
-  const result = useMemo(() => ({ 
-    data: groupedData, 
-    loading, 
-    error, 
-    stale, 
-    refresh: load 
-  }), [groupedData, loading, error, stale, load])
+  const currentItems = useMemo(
+    () => transformed[activeTab] ?? [],
+    [transformed, activeTab]
+  )
+
+  const result = useMemo(() => ({
+    // shape legado — compat com callsites existentes
+    data: transformed.data,
+    loading,
+    error,
+    stale,
+    refresh: load,
+    // shape Fase 2.5
+    activeTab,
+    setActiveTab,
+    counts: transformed.counts ?? { ativos: 0, pausados: 0, finalizados: 0 },
+    ativos: transformed.ativos ?? [],
+    pausados: transformed.pausados ?? [],
+    finalizados: transformed.finalizados ?? [],
+    groups: transformed.groups ?? [],
+    currentItems,
+  }), [transformed, loading, error, stale, load, activeTab, currentItems])
 
   return result
 }

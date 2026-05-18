@@ -92,7 +92,7 @@ export default function PlanSelectField({
     return (
       <FormSelect
         name="treatment_plan"
-        label="plano terapêutico"
+        label="Plano terapêutico"
         value={value.planId}
         options={options}
         onChange={handleSelectChange}

@@ -83,3 +83,9 @@ export {
   formatDatePtBR,
   formatEndDate,
 } from './dateFormat.js'
+
+// Treatment status resolver (Fase 2.5 — paridade web↔mobile)
+export {
+  TREATMENT_STATUS,
+  resolveTreatmentStatus,
+} from './treatmentStatus.js'

@@ -1,4 +1,5 @@
-import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { getNow } from '@utils/dateUtils'
+import { resolveTreatmentStatus } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
 import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
 
@@ -27,10 +28,7 @@ export function getStockStatus(daysRemaining) {
  * Derivar tabStatus de um protocolo
  */
 export function resolveTabStatus(protocol) {
-  const today = formatLocalDate(getNow())
-  if (protocol.end_date && protocol.end_date < today) return 'finalizado'
-  if (protocol.active === false) return 'pausado'
-  return 'ativo'
+  return resolveTreatmentStatus(protocol)
 }
 
 /**
