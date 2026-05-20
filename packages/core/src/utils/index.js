@@ -81,6 +81,7 @@ export {
 // Date presentation PT-BR (Fase 2)
 export {
   formatDatePtBR,
+  formatDateShortPtBR,
   formatEndDate,
 } from './dateFormat.js'
 

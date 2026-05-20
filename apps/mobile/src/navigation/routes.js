@@ -49,6 +49,6 @@ export const ROUTES = {
   // ❌ PURCHASE_DELETE removido (PO-1 — Fase 3 não tem exclusão de compra)
 
   // Dev-only (apenas __DEV__)
-  MEDICINE_DEMO: 'MedicineDemo',
-  TREATMENT_PRIMITIVES_DEMO: 'TreatmentPrimitivesDemo',
+  DEV_HUB: 'DevHub',
+  STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
 }
