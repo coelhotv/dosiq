@@ -28,12 +28,12 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
   // Nenhum hook complexo — apenas useMemo se houver heavy computation
 
   // Derivações
-  const consumed = purchase.quantity_bought - remaining
-  const percentConsumed = purchase.quantity_bought > 0 ? (consumed / purchase.quantity_bought) * 100 : 0
   const isInUse = remaining > 0
   const expiryDays = purchase.expiration_date ? computeExpiryDays(purchase.expiration_date) : null
   const purchaseDateFormatted = formatDateShortPtBR(purchase.purchase_date)
   const totalCost = purchase.unit_price * purchase.quantity_bought
+  // Grátis: medicamentos distribuídos pelo SUS / Farmácia Popular (preço zero/nulo)
+  const isFree = !(purchase.unit_price > 0)
   const expiryStatusColor = expiryDays === null
     ? colors.neutral[400] // sem data
     : expiryDays < 30
@@ -72,33 +72,20 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
         </Text>
       </View>
 
-      {/* Barra de consumo (se em uso) */}
-      {isInUse && (
-        <View style={styles.progressSection}>
-          <View style={styles.progressLabelRow}>
-            <Text style={styles.progressLabel}>
-              Consumida {consumed} / {purchase.quantity_bought}
-            </Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${percentConsumed}%` },
-              ]}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* Custo: "R$ 0,89 por un. · Total R$ 26,70" */}
+      {/* Custo: "R$ 0,89 por un. · Total R$ 26,70" — ou "Grátis" (SUS/Farmácia Popular) */}
       <View style={styles.costRow}>
         <Text style={styles.costLabel}>Custo: </Text>
-        <Text style={styles.costValue}>
-          {formatBRL(purchase.unit_price)} por un.
-        </Text>
-        <Text style={styles.costDot}> · </Text>
-        <Text style={styles.costValue}>Total {formatBRL(totalCost)}</Text>
+        {isFree ? (
+          <Text style={styles.costValue}>Grátis</Text>
+        ) : (
+          <>
+            <Text style={styles.costValue}>
+              {formatBRL(purchase.unit_price)} por un.
+            </Text>
+            <Text style={styles.costDot}> · </Text>
+            <Text style={styles.costValue}>Total {formatBRL(totalCost)}</Text>
+          </>
+        )}
       </View>
 
       {/* Farmácia + Laboratório (se presentes) */}
@@ -215,36 +202,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.muted,
     marginHorizontal: 2,
-  },
-
-  // Seção de barra de consumo
-  progressSection: {
-    gap: spacing[1],
-  },
-
-  progressLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.secondary,
-  },
-
-  progressBar: {
-    height: 6,
-    backgroundColor: colors.neutral[200],
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary[500],
-    borderRadius: 3,
   },
 
   // Linha de custo

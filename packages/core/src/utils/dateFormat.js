@@ -27,10 +27,10 @@ export function formatDatePtBR(isoDate) {
 }
 
 /**
- * Formata uma data ISO/string YYYY-MM-DD para "DD/MMM/AA" PT-BR lowercase.
- * Variante compacta com ano de 2 dígitos (formato comum em comprovantes BR).
+ * Formata uma data ISO/string YYYY-MM-DD para "DD/MM/AA" numérico PT-BR.
+ * Variante compacta data-driven (só números) para cards densos em dados.
  *
- * @example formatDateShortPtBR('2026-03-12') → '12/mar/26'
+ * @example formatDateShortPtBR('2026-03-12') → '12/03/26'
  * @example formatDateShortPtBR(null)         → ''
  */
 export function formatDateShortPtBR(isoDate) {
@@ -38,7 +38,7 @@ export function formatDateShortPtBR(isoDate) {
   const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
   const day = String(d.getDate()).padStart(2, '0')
-  const month = MONTHS_PT_BR[d.getMonth()]
+  const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = String(d.getFullYear()).slice(-2)
   return `${day}/${month}/${year}`
 }

@@ -31,14 +31,14 @@ describe('formatDatePtBR', () => {
 })
 
 describe('formatDateShortPtBR', () => {
-  it('formata string YYYY-MM-DD para DD/MMM/AA PT-BR lowercase', () => {
-    expect(formatDateShortPtBR('2026-03-12')).toBe('12/mar/26')
-    expect(formatDateShortPtBR('2026-01-01')).toBe('01/jan/26')
-    expect(formatDateShortPtBR('2026-12-31')).toBe('31/dez/26')
+  it('formata string YYYY-MM-DD para DD/MM/AA numérico', () => {
+    expect(formatDateShortPtBR('2026-03-12')).toBe('12/03/26')
+    expect(formatDateShortPtBR('2026-01-01')).toBe('01/01/26')
+    expect(formatDateShortPtBR('2026-12-31')).toBe('31/12/26')
   })
 
-  it('zero-pad em dias single-digit', () => {
-    expect(formatDateShortPtBR('2026-05-03')).toBe('03/mai/26')
+  it('zero-pad em dia e mês single-digit', () => {
+    expect(formatDateShortPtBR('2026-05-03')).toBe('03/05/26')
   })
 
   it('retorna vazio para null/undefined/empty', () => {
@@ -49,7 +49,7 @@ describe('formatDateShortPtBR', () => {
 
   it('aceita Date object', () => {
     const d = new Date(2026, 6, 15)
-    expect(formatDateShortPtBR(d)).toBe('15/jul/26')
+    expect(formatDateShortPtBR(d)).toBe('15/07/26')
   })
 })
 
