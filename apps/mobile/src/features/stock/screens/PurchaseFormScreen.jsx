@@ -40,16 +40,13 @@ import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Normaliza string decimal PT-BR para número, preservando estados intermediários.
- * Retorna number quando parseável, string caso contrário (ex: "0," ou ".").
+ * Mantém o valor decimal como string PT-BR (AP-167) durante a digitação,
+ * normalizando ponto → vírgula. A coerção para número só acontece no submit
+ * via coerceDecimal — assim o input exibe vírgula (PT-BR) e a camada de dados
+ * não fica acoplada a requisitos de UI.
  */
 function parseDecimalPtBR(raw) {
-  const str = String(raw ?? '')
-  if (str === '' || str === ',' || str === '.') return str
-  const normalized = str.replace(',', '.')
-  if (normalized.endsWith('.')) return str // estado intermediário "1."
-  const num = Number(normalized)
-  return Number.isFinite(num) ? num : str
+  return String(raw ?? '').replace('.', ',')
 }
 
 /**
@@ -104,10 +101,10 @@ export default function PurchaseFormScreen() {
     if (isEdit && purchase) {
       return {
         quantity:
-          purchase.quantity != null ? String(purchase.quantity) : '',
+          purchase.quantity != null ? String(purchase.quantity).replace('.', ',') : '',
         unit_price:
           purchase.unit_price != null && purchase.unit_price !== 0
-            ? String(purchase.unit_price)
+            ? String(purchase.unit_price).replace('.', ',')
             : '',
         purchase_date: purchase.purchase_date ?? todayIso,
         expiration_date: purchase.expiration_date ?? null,
@@ -321,6 +318,7 @@ export default function PurchaseFormScreen() {
                   }
                   onChange={handleExpirationDateChange}
                   onBlur={form.handleBlur}
+                  minimumDate={purchaseDateObj || undefined}
                 />
               </View>
             </View>
@@ -334,6 +332,7 @@ export default function PurchaseFormScreen() {
               placeholder="Onde você comprou?"
               helperText="Opcional"
               autoCapitalize="words"
+              maxLength={200}
               {...formProps(form, 'pharmacy')}
             />
             <FormInput
@@ -342,6 +341,7 @@ export default function PurchaseFormScreen() {
               placeholder="Fabricante"
               helperText="Opcional"
               autoCapitalize="words"
+              maxLength={200}
               {...formProps(form, 'laboratory')}
             />
             <FormInput
