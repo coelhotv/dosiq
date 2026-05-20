@@ -177,6 +177,20 @@ return (data || []).filter((m) => {
 
 Archive spec original (`exec_spec_stock_refactor.md`) tem update correspondente em §21.2 (nova seção) marcando essa mudança como pós-entrega.
 
+### 0.9 Migration pendente pra Wave 5 — precisão de `purchases.unit_price`
+
+Regressão detectada via Supabase MCP (schema vivo, 2026-05-20): `purchases.unit_price` ficou `NUMERIC(10,2)` no refactor (`20260402`), enquanto `stock.unit_price` é `NUMERIC(12,4)`. Custos muito baixos (genéricos/fracionados, ex. `R$ 0,134`/comprimido) eram **arredondados silenciosamente pra 2 casas** no INSERT — Zod e form aceitavam, Postgres truncava sem erro.
+
+**Decisão PO**: mínimo 3 casas decimais (4 efetivas, alinhado com `stock`).
+
+**Migration criada** (Wave 5, mesma leva da §0.8 — PO aplica manualmente):
+- Path: `docs/migrations/20260520_purchases_unit_price_precision.sql`
+- Conteúdo: `ALTER TABLE purchases ALTER COLUMN unit_price TYPE NUMERIC(12,4)` (idempotente — só altera se escala ≠ 4)
+- CHECK `(>= 0)` e DEFAULT 0 permanecem válidos; ampliação de escala sem perda de dados
+- RPC `create_purchase_with_stock` param `p_unit_price` já é `NUMERIC` ilimitado — sem alteração
+
+**Polish opcional (não bloqueia migration)**: limitar input decimal do `unit_price` no `PurchaseFormScreen` a 4 casas + Zod `.refine` de máx 4 decimais — feedback explícito em vez de arredondar mudo. Avaliar em fix-pack pós-Fase 3.
+
 ### 0.6 Helpers canônicos a criar em `@dosiq/core/utils/`
 Antes do spawn de telas/cards, criar estes helpers (Wave 1 inline Opus):
 
