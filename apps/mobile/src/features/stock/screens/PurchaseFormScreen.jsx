@@ -13,7 +13,7 @@
 // ADR-046: unidade sempre presente no label de quantidade.
 // ADR-028: StyleSheet. ADR-023: fontWeights >= 400.
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -33,7 +33,11 @@ import FormDatePicker from '@shared/components/form/FormDatePicker'
 import FormSection from '@shared/components/form/FormSection'
 import FormActions from '@shared/components/form/FormActions'
 import { useStockMutation } from '@stock/hooks/useStockMutation'
+import { medicineService } from '@medications/services/medicineService'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
+
+// Categorias regulatórias com marca registrada → laboratório fixo (não muda por compra).
+const FIXED_LAB_CATEGORIES = ['Novo', 'Similar']
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers de decimal PT-BR (AP-167)
@@ -126,6 +130,28 @@ export default function PurchaseFormScreen() {
 
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, updatePurchase, isLoading } = useStockMutation()
+
+  // States — laboratório travado p/ medicamentos de marca (Novo/Similar)
+  const [labLocked, setLabLocked] = useState(false)
+
+  // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
+  // laboratório é marca registrada (não muda por compra): preenche + trava.
+  useEffect(() => {
+    if (!medicineId) return
+    let cancelled = false
+    medicineService
+      .getById(medicineId)
+      .then((med) => {
+        if (cancelled || !med) return
+        if (FIXED_LAB_CATEGORIES.includes(med.regulatory_category) && med.laboratory) {
+          form.handleChange('laboratory', med.laboratory)
+          setLabLocked(true)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicineId])
 
   // Handlers
 
@@ -339,9 +365,10 @@ export default function PurchaseFormScreen() {
               name="laboratory"
               label="Laboratório"
               placeholder="Fabricante"
-              helperText="Opcional"
+              helperText={labLocked ? 'Marca registrada — definida pelo medicamento' : 'Opcional'}
               autoCapitalize="words"
               maxLength={200}
+              disabled={labLocked}
               {...formProps(form, 'laboratory')}
             />
             <FormInput

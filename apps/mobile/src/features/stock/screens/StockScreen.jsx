@@ -153,9 +153,9 @@ export default function StockScreen() {
         ListHeaderComponent={
           <View>
             <View style={styles.header}>
-              <Text style={styles.title}>Meu Estoque</Text>
+              <Text style={styles.title}>Estoque</Text>
               <Text style={styles.subtitle}>
-                Acompanhe o estoque de seus remédios
+                Acompanhe o estoque dos medicamentos
               </Text>
             </View>
             <StockFilterChips value={filter} onChange={setFilter} counts={counts} />
@@ -163,8 +163,15 @@ export default function StockScreen() {
         }
         ListEmptyComponent={
           <EmptyState
-            message="Você não possui medicamentos cadastrados ou estoque registrado."
+            message="Nenhum medicamento cadastrado ou estoque registrado."
           />
+        }
+        ListFooterComponent={
+          active.length > 0 ? (
+            <Text style={styles.footnote}>
+              * As estimativas desta tela consideram os tratamentos ativos.
+            </Text>
+          ) : null
         }
       />
 
@@ -238,5 +245,13 @@ const styles = StyleSheet.create({
   },
   fabPressed: {
     opacity: 0.9,
+  },
+  footnote: {
+    fontSize: 12,
+    color: colors.text.muted,
+    fontStyle: 'italic',
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[6],
   },
 })
