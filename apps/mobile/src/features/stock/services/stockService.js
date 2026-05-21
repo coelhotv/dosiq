@@ -185,6 +185,25 @@ export const stockService = {
   },
 
   /**
+   * Mapa medicineId → total_quantity de todos os meds do usuário (bulk).
+   * Usado pelo PurchaseMedicineSheet pra exibir saldo sem N queries.
+   * @returns {Promise<Record<string, number>>}
+   */
+  async getStockSummaryMap(userId) {
+    z.string().uuid().parse(userId)
+    const { data, error } = await nativeSupabaseClient
+      .from('medicine_stock_summary')
+      .select('medicine_id, total_quantity')
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return (data || []).reduce((map, row) => {
+      map[row.medicine_id] = row.total_quantity ?? 0
+      return map
+    }, {})
+  },
+
+  /**
    * Total quantity (com fallback manual caso view não retorne).
    */
   async getTotalQuantity(medicineId, userId) {

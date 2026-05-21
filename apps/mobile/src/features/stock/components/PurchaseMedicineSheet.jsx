@@ -21,6 +21,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Pill, Search, X } from 'lucide-react-native'
 import { useMedicines } from '../../medications/hooks/useMedicines'
+import { useAuth } from '@platform/auth/hooks/useAuth'
+import { stockService } from '@stock/services/stockService'
 import { selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
@@ -74,10 +76,16 @@ function MedicineRow({ item, onPress }) {
 export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
   // States (R-010 — States → Memos → Effects → Handlers)
   const [query, setQuery] = useState('')
+  const [stockMap, setStockMap] = useState({})
   const { data, loading, error, refresh } = useMedicines()
+  const { user } = useAuth()
 
-  // Memos
-  const list = useMemo(() => (Array.isArray(data) ? data : []), [data])
+  // Memos — mescla saldo (medicine_stock_summary) em cada medicamento.
+  // useMedicines não traz estoque; sem isso todo saldo aparecia "0 un.".
+  const list = useMemo(() => {
+    const arr = Array.isArray(data) ? data : []
+    return arr.map((m) => ({ ...m, current_stock: stockMap[m.id] ?? 0 }))
+  }, [data, stockMap])
 
   // Pré-computa haystack normalizado para evitar normalize por keystroke (AP-157)
   const indexed = useMemo(
@@ -105,10 +113,19 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
     [filtered]
   )
 
-  // Effects — refresh lista toda vez que sheet abre (captura med recém-criado)
+  // Effects — refresh lista + saldo toda vez que sheet abre (captura med/compra recém-criados)
   useEffect(() => {
-    if (visible) refresh?.()
-  }, [visible, refresh])
+    if (!visible) return
+    refresh?.()
+    const userId = user?.id
+    if (!userId) return
+    let cancelled = false
+    stockService
+      .getStockSummaryMap(userId)
+      .then((map) => { if (!cancelled) setStockMap(map) })
+      .catch(() => { if (!cancelled) setStockMap({}) })
+    return () => { cancelled = true }
+  }, [visible, refresh, user])
 
   // Handlers
   function handleClose() {
