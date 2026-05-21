@@ -265,7 +265,7 @@ export default function PurchaseFormScreen() {
                   }
                   error={form.touched.quantity ? form.errors.quantity : undefined}
                   onChange={handleQuantityChange}
-                  onBlur={form.handleBlur}
+                  onBlur={() => form.handleBlur('quantity', coerceDecimal(form.values.quantity))}
                 />
               </View>
               <View style={styles.rowHalf}>
@@ -280,7 +280,7 @@ export default function PurchaseFormScreen() {
                   }
                   error={form.touched.unit_price ? form.errors.unit_price : undefined}
                   onChange={handlePriceChange}
-                  onBlur={form.handleBlur}
+                  onBlur={() => form.handleBlur('unit_price', coerceDecimal(form.values.unit_price))}
                 />
               </View>
             </View>
