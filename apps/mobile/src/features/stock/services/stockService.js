@@ -28,6 +28,11 @@ import { debugLog, errorLog } from '@shared/utils/debugLog'
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
+ * @deprecated PO-9 §0.7 — filtra `protocols.active=true` no servidor e esconde
+ * meds com estoque órfão. Substituído por
+ * `stockService.getMedicinesWithStockOrActiveProtocol`. Remover em fix-pack
+ * pós-Fase 3 (sem callers após Wave 4).
+ *
  * Busca medicamentos com estoque + protocolos ativos pra cálculo de consumo.
  * @param {string} userId
  * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
@@ -89,6 +94,55 @@ function fmtZodErr(errors) {
 
 export const stockService = {
   // === READS ===
+
+  /**
+   * Medicamentos do hub de estoque (PO-9 §0.7): lista quem tem protocolo ativo
+   * HOJE OU saldo positivo. Corrige bug de produção do getStockData legacy, que
+   * filtrava `protocols.active=true` no servidor e escondia meds com estoque
+   * órfão (sem treatment / treatment finalizado / treatment pausado).
+   *
+   * NÃO filtra protocols.active no servidor — atividade é avaliada no client
+   * via isProtocolActiveOnDate, e a inclusão considera também totalStock > 0.
+   *
+   * @returns {Promise<Array>} medicines crus (medicine_stock_summary + protocols)
+   */
+  async getMedicinesWithStockOrActiveProtocol(userId) {
+    z.string().uuid().parse(userId)
+    const { data, error } = await nativeSupabaseClient
+      .from('medicines')
+      .select(`
+        id,
+        name,
+        laboratory,
+        dosage_unit,
+        dosage_per_pill,
+        medicine_stock_summary!left (
+          total_quantity
+        ),
+        protocols (
+          id,
+          dosage_per_intake,
+          time_schedule,
+          frequency,
+          active,
+          start_date,
+          end_date
+        )
+      `)
+      .eq('user_id', userId)
+      .order('name')
+
+    if (error) throw error
+
+    const today = getTodayLocal()
+    return (data || []).filter((m) => {
+      const hasActiveProtocol = (m.protocols || []).some(
+        (p) => p.active && isProtocolActiveOnDate(p, today),
+      )
+      const totalStock = m.medicine_stock_summary?.[0]?.total_quantity ?? 0
+      return hasActiveProtocol || totalStock > 0
+    })
+  },
 
   /**
    * Stock entries de um medicamento (FIFO order).
