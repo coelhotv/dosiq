@@ -104,8 +104,11 @@ export default function PurchaseFormScreen() {
   const initialValues = useMemo(() => {
     if (isEdit && purchase) {
       return {
-        quantity:
-          purchase.quantity != null ? String(purchase.quantity).replace('.', ',') : '',
+        quantity: (() => {
+          // purchase vem da tabela (quantity_bought) ou do demo (quantity)
+          const q = purchase.quantity_bought ?? purchase.quantity
+          return q != null ? String(q).replace('.', ',') : ''
+        })(),
         unit_price:
           purchase.unit_price != null && purchase.unit_price !== 0
             ? String(purchase.unit_price).replace('.', ',')

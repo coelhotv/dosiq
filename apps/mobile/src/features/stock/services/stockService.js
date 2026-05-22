@@ -255,16 +255,22 @@ export const stockService = {
    * Histórico de compras de um medicamento.
    */
   async getPurchasesByMedicine(medicineId, userId) {
+    // Embed do lote em `stock` (FK stock.purchase_id → purchases.id) pra expor o
+    // saldo restante de cada compra. `remaining` = soma das entries do lote
+    // (normalmente 1). Sem isso o PurchaseCard mostrava sempre "0 restantes".
     const { data, error } = await nativeSupabaseClient
       .from('purchases')
-      .select('*')
+      .select('*, stock(quantity)')
       .eq('medicine_id', medicineId)
       .eq('user_id', userId)
       .order('purchase_date', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return (data || []).map((p) => ({
+      ...p,
+      remaining: (p.stock || []).reduce((acc, s) => acc + (Number(s.quantity) || 0), 0),
+    }))
   },
 
   /**
@@ -326,7 +332,7 @@ export const stockService = {
     const { data, error } = await nativeSupabaseClient
       .from('purchases')
       .update({
-        quantity: p.quantity,
+        quantity_bought: p.quantity,
         unit_price: p.unit_price ?? 0,
         purchase_date: p.purchase_date,
         expiration_date: p.expiration_date,

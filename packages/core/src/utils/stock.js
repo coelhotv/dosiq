@@ -63,9 +63,11 @@ export function resolveStockStatus(qty, dailyConsumption, nearestExpiryYYYYMM = 
 /**
  * computeAverageUnitPrice — preco medio ponderado pela quantidade comprada.
  *
- * Ignora compras com `quantity <= 0` ou `unit_price` ausente/nulo.
+ * Ignora compras com quantidade <= 0 ou `unit_price` ausente/nulo.
+ * Aceita `quantity_bought` (coluna canônica da tabela purchases) ou `quantity`
+ * (contrato de input do form/schema) — o que estiver presente.
  *
- * @param {Array<{quantity: number, unit_price: number}>} purchases
+ * @param {Array<{quantity_bought?: number, quantity?: number, unit_price: number}>} purchases
  * @returns {number} preco medio (0 se nao houver compras validas)
  */
 export function computeAverageUnitPrice(purchases) {
@@ -74,7 +76,7 @@ export function computeAverageUnitPrice(purchases) {
   let totalCost = 0
   let totalQty = 0
   for (const p of purchases) {
-    const qty = Number(p?.quantity) || 0
+    const qty = Number(p?.quantity_bought ?? p?.quantity) || 0
     // Rejeitar explicitamente null/undefined ANTES de Number() —
     // Number(null) === 0 (finito) escaparia o filtro de isFinite.
     if (p?.unit_price == null || qty <= 0) continue

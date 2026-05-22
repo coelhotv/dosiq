@@ -9,9 +9,11 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
+  Pressable,
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
+import { ChevronLeft } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import EmptyState from '@shared/components/states/EmptyState'
 import PurchaseCard from '@stock/components/PurchaseCard'
@@ -102,10 +104,26 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 
   const keyExtractor = useCallback((item) => item.id, [])
 
+  // — Render: barra superior com voltar (sempre visível, inclusive no loading) —
+  const topBar = (
+    <View style={styles.topBar}>
+      <Pressable
+        onPress={() => navigation.goBack()}
+        style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+      >
+        <ChevronLeft size={26} color={colors.text.primary} />
+      </Pressable>
+    </View>
+  )
+
   // — Loading —
   if (loading) {
     return (
       <ScreenContainer>
+        {topBar}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text style={styles.loadingText}>Carregando histórico...</Text>
@@ -116,6 +134,7 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 
   return (
     <ScreenContainer>
+      {topBar}
       <FlatList
         data={purchases}
         keyExtractor={keyExtractor}
@@ -174,6 +193,23 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // Barra superior (voltar)
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    paddingTop: spacing[2],
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtnPressed: {
+    opacity: 0.6,
+  },
+
   // Loading
   loadingContainer: {
     flex: 1,
