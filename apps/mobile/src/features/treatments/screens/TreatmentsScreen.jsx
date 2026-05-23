@@ -27,6 +27,7 @@ export default function TreatmentsScreen() {
   const {
     groups,
     loading,
+    hasLoaded,
     error,
     stale,
     refresh,
@@ -90,10 +91,10 @@ export default function TreatmentsScreen() {
     })
   }, [])
 
-  if (loading && !groups) {
+  if (!hasLoaded) {
     return (
       <ScreenContainer>
-        <LoadingState message="Carregando seus tratamentos..." />
+        <LoadingState message="Carregando tratamentos..." />
       </ScreenContainer>
     )
   }

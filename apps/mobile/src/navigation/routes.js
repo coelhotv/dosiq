@@ -40,7 +40,15 @@ export const ROUTES = {
   MEDICINE_EDIT: 'MedicineEdit',
   MEDICINE_DETAIL: 'MedicineDetail',
 
+  // Sub-rotas de Estoque (Fase 3)
+  STOCK_MAIN: 'StockMain',                 // renomeada de STOCK pra hub
+  STOCK_DETAIL: 'StockDetail',
+  PURCHASE_FORM: 'PurchaseForm',           // mode prop: 'create' | 'edit'
+  PURCHASE_HISTORY: 'PurchaseHistory',
+  STOCK_ADJUSTMENT: 'StockAdjustment',
+  // ❌ PURCHASE_DELETE removido (PO-1 — Fase 3 não tem exclusão de compra)
+
   // Dev-only (apenas __DEV__)
-  MEDICINE_DEMO: 'MedicineDemo',
-  TREATMENT_PRIMITIVES_DEMO: 'TreatmentPrimitivesDemo',
+  DEV_HUB: 'DevHub',
+  STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
 }

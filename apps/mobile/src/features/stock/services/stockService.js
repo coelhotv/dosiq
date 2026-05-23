@@ -1,28 +1,52 @@
-// ADR-029: thin local service — chama Supabase directamente via nativeSupabaseClient
-// R-125: validação Zod na camada de serviço (R-NNN sugerido em review PR #467)
+// stockService.js — Fase 3 CRUD Estoque mobile (S3.2 G2: adopt factories).
+//
+// G2: thin wrapper sobre createStockRepository + createPurchaseRepository de
+// @dosiq/core/repositories. O `stockService` exportado é a COMPOSIÇÃO das duas
+// instâncias (callers continuam usando stockService.createPurchase/etc num único
+// objeto). DI mobile: nativeSupabaseClient + getUserId via supabase.auth.
+//
+// Mudança vs S3.1: userId NÃO é mais param explícito — a factory resolve via
+// getUserId injetado. Call sites mobile (hooks/screens) dropam o arg userId.
+//
+// getStockData (legacy MVP read-only) preservado sem callers reais (apenas refs
+// em comentários) — mantido pra não introduzir risco; remover em fix-pack pós-Fase 3.
 
 import { z } from 'zod'
-import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
+import {
+  createStockRepository,
+  createPurchaseRepository,
+  getTodayLocal,
+  isProtocolActiveOnDate,
+} from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
 
+async function getUserId() {
+  const { data, error } = await nativeSupabaseClient.auth.getUser()
+  const user = data?.user
+  if (error || !user) throw new Error('Sessão expirada. Faça login novamente.')
+  return user.id
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// LEGACY — getStockData (MVP read-only, mantido por segurança; sem callers)
+// ───────────────────────────────────────────────────────────────────────────
+
 /**
- * Busca a lista de medicamentos com seu estoque e protocolos ativos para cálculo de consumo.
- * 
- * @param {string} userId - UUID do usuário
+ * @deprecated PO-9 §0.7 — filtra `protocols.active=true` no servidor e esconde
+ * meds com estoque órfão. Substituído por
+ * `stockService.getMedicinesWithStockOrActiveProtocol`. Remover em fix-pack
+ * pós-Fase 3 (sem callers após Wave 4).
+ *
+ * Busca medicamentos com estoque + protocolos ativos pra cálculo de consumo.
+ * @param {string} userId
  * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
  */
 export async function getStockData(userId) {
   try {
-    // Validação de entrada conforme R-125
     z.string().uuid().parse(userId)
+    debugLog('stockService', `getStockData: ${userId}`)
 
-    debugLog('stockService', `Buscando dados de estoque para: ${userId}`)
-
-    // Buscamos medicamentos com: 
-    // 1. Quantidade total (da view medicine_stock_summary)
-    // 2. Protocolos ativos (para calcular consumo diário)
-    // Nota: O join com medicine_stock_summary usa a relação automática baseada em medicine_id
     const { data: rawData, error } = await nativeSupabaseClient
       .from('medicines')
       .select(`
@@ -49,22 +73,27 @@ export async function getStockData(userId) {
       .order('name')
 
     if (error) {
-      errorLog('stockService', 'Erro na query', error)
+      errorLog('stockService', 'getStockData query error', error)
       return { success: false, error: 'Erro ao carregar dados de estoque' }
     }
 
-    // Filtro de validade de protocolos (Wave v0.1.5)
-    // Na fase Read-Only, só mostramos estoque do que tem tratamento "rodando" hoje.
     const today = getTodayLocal()
-    const validData = (rawData || []).filter(m => {
-      // Verifica se existe pelo menos um protocolo vinculado que seja válido para hoje
-      const hasValidProtocol = (m.protocols || []).some(p => isProtocolActiveOnDate(p, today))
-      return hasValidProtocol
-    })
+    const validData = (rawData || []).filter((m) =>
+      (m.protocols || []).some((p) => isProtocolActiveOnDate(p, today)),
+    )
 
     return { success: true, data: validData }
   } catch (err) {
-    errorLog('stockService', 'Erro inesperado', err)
+    errorLog('stockService', 'getStockData unexpected', err)
     return { success: false, error: err.message }
   }
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// FASE 3 S3.2 G2 — composição das factories de @dosiq/core
+// ───────────────────────────────────────────────────────────────────────────
+
+const stockRepo = createStockRepository({ client: nativeSupabaseClient, getUserId })
+const purchaseRepo = createPurchaseRepository({ client: nativeSupabaseClient, getUserId })
+
+export const stockService = { ...stockRepo, ...purchaseRepo }

@@ -27,6 +27,23 @@ export function formatDatePtBR(isoDate) {
 }
 
 /**
+ * Formata uma data ISO/string YYYY-MM-DD para "DD/MM/AA" numérico PT-BR.
+ * Variante compacta data-driven (só números) para cards densos em dados.
+ *
+ * @example formatDateShortPtBR('2026-03-12') → '12/03/26'
+ * @example formatDateShortPtBR(null)         → ''
+ */
+export function formatDateShortPtBR(isoDate) {
+  if (!isoDate) return ''
+  const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = String(d.getFullYear()).slice(-2)
+  return `${day}/${month}/${year}`
+}
+
+/**
  * Formata data de término de tratamento. null/undefined → "Uso contínuo".
  *
  * @example formatEndDate(null)         → 'Uso contínuo'

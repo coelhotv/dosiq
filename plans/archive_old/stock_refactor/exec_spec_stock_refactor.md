@@ -45,6 +45,7 @@ Esta execução deve:
 5. Não usar `notes` como mecanismo canônico de classificação depois da migração.
 6. Não implementar ajuste manual negativo nesta entrega.
    - se `p_quantity_delta < 0`, a função deve falhar explicitamente.
+   - **NOTA pós-entrega (2026-05-19, Fase 3 mobile)**: regra desbloqueada via nova migration documentada em §21.2. Ajuste negativo PERMITIDO com audit FIFO obrigatória. Regra original mantida historicamente — implementação atual segue §21.2.
 7. Não usar `stock.quantity` remanescente para calcular histórico de compra, última compra ou preço médio.
 8. Não inventar enums novos fora dos listados nesta spec.
 9. Não omitir testes de `logService.create`, `logService.update` e `logService.delete`.
@@ -751,7 +752,7 @@ apply_manual_stock_adjustment(
 )
 ```
 
-### Regras
+### Regras (versão original — 2026-04-02)
 
 - usar para correções manuais e casos de sistema sem origem em compra;
 - se `p_quantity_delta > 0`, criar entrada `stock` com:
@@ -760,7 +761,11 @@ apply_manual_stock_adjustment(
   - `original_quantity = p_quantity_delta`
 - se `p_quantity_delta < 0`, falhar explicitamente com exceção `Ajuste manual negativo não suportado nesta entrega`.
 
-**Decisão fechada desta spec:** ajuste manual de saída não entra no fluxo de produto desta onda; implementar apenas ajustes positivos e restauração por log.
+**Decisão fechada desta spec (original):** ajuste manual de saída não entra no fluxo de produto desta onda; implementar apenas ajustes positivos e restauração por log.
+
+### ⚠️ Atualização pós-entrega — ver §21.2
+
+A regra de bloqueio do delta negativo foi REVOGADA em 2026-05-19 quando Fase 3 mobile precisou implementar PO-6 (modo único "Acertar saldo" — usuário digita valor final, delta pode ser negativo). Ver §21.2 pra novo comportamento canônico + migration.
 
 ---
 
@@ -1932,3 +1937,167 @@ FOR UPDATE
 #### Invariante adicionada
 
 > `medicine_stock_summary` e `consume_stock_fifo` devem estar em sincronia: se a view inclui uma entrada no total, o FIFO deve poder consumi-la.
+
+---
+
+### 21.2 Desbloqueio de ajuste manual negativo
+
+**Data planejada**: 2026-05-19+ (Wave 5 do Sprint S3.2 — Fase 3 mobile)
+**Driver**: Mobile Fase 3 PO-6 (modo único "Acertar saldo" — usuário digita valor final; cenários: perda/doação/descarte/vencimento/correção)
+**Spec consumidora**: [`plans/backlog-native_app/EXEC_SPEC_FASE3_ESTOQUE.md`](../../backlog-native_app/EXEC_SPEC_FASE3_ESTOQUE.md) §0.8
+
+#### Mudança
+
+Regra original (§1.1 #6 e §7.4): `apply_manual_stock_adjustment` falha quando `p_quantity_delta < 0`. Razão histórica: cautela, evitar criar fluxo perigoso sem auditoria adequada.
+
+Realidade pós-mobile: usuários precisam reduzir saldo sem registrar dose (caí pílula, doação pra terceiro, descarte, etc). Sem essa função, a UI mobile não consegue implementar PO-6 sem workaround sujo.
+
+#### Migration nova
+
+Path: `docs/migrations/YYYYMMDD_allow_negative_manual_adjustments.sql` (data definida quando criada)
+
+Reescreve `apply_manual_stock_adjustment` (mantendo nome/assinatura) com comportamento:
+
+```sql
+CREATE OR REPLACE FUNCTION public.apply_manual_stock_adjustment(
+  p_medicine_id uuid,
+  p_quantity_delta numeric,
+  p_reason text,
+  p_notes text DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_user_id uuid;
+  v_stock_id uuid;
+  v_remaining numeric;
+  v_lot record;
+  v_take numeric;
+  v_total_available numeric;
+  v_adjustment_id uuid;
+BEGIN
+  v_user_id := auth.uid();
+
+  -- delta == 0: no-op explicito
+  IF p_quantity_delta = 0 THEN
+    RAISE EXCEPTION 'Delta zero não é permitido';
+  END IF;
+
+  -- ── Delta POSITIVO: mantém comportamento original ──
+  IF p_quantity_delta > 0 THEN
+    INSERT INTO public.stock (
+      user_id, medicine_id, quantity, original_quantity,
+      purchase_date, entry_type, purchase_id, notes
+    ) VALUES (
+      v_user_id, p_medicine_id, p_quantity_delta, p_quantity_delta,
+      CURRENT_DATE, 'adjustment', NULL, p_notes
+    ) RETURNING id INTO v_stock_id;
+
+    INSERT INTO public.stock_adjustments (
+      user_id, medicine_id, stock_id, quantity_delta, reason, notes
+    ) VALUES (
+      v_user_id, p_medicine_id, v_stock_id, p_quantity_delta, p_reason, p_notes
+    ) RETURNING id INTO v_adjustment_id;
+
+    RETURN v_adjustment_id;
+  END IF;
+
+  -- ── Delta NEGATIVO: novo comportamento ──
+  -- 1. Validar saldo total disponível >= abs(delta)
+  SELECT COALESCE(SUM(quantity), 0) INTO v_total_available
+  FROM public.stock
+  WHERE user_id = v_user_id
+    AND medicine_id = p_medicine_id
+    AND quantity > 0
+    AND entry_type != 'legacy_unrecoverable';
+
+  IF v_total_available < abs(p_quantity_delta) THEN
+    RAISE EXCEPTION 'Saldo insuficiente para ajuste negativo (disponível: %, solicitado: %)',
+      v_total_available, abs(p_quantity_delta);
+  END IF;
+
+  -- 2. Iterar lotes FIFO + decrementar (sem criar stock_consumptions — não é dose)
+  v_remaining := abs(p_quantity_delta);
+
+  FOR v_lot IN
+    SELECT * FROM public.stock
+    WHERE user_id = v_user_id
+      AND medicine_id = p_medicine_id
+      AND quantity > 0
+      AND entry_type != 'legacy_unrecoverable'
+    ORDER BY purchase_date ASC, created_at ASC, id ASC
+    FOR UPDATE
+  LOOP
+    EXIT WHEN v_remaining <= 0;
+
+    v_take := LEAST(v_lot.quantity, v_remaining);
+
+    UPDATE public.stock
+    SET quantity = quantity - v_take,
+        updated_at = now()
+    WHERE id = v_lot.id;
+
+    -- Audit por lote afetado
+    INSERT INTO public.stock_adjustments (
+      user_id, medicine_id, stock_id, quantity_delta, reason, notes
+    ) VALUES (
+      v_user_id, p_medicine_id, v_lot.id, -v_take, p_reason, p_notes
+    );
+
+    v_remaining := v_remaining - v_take;
+  END LOOP;
+
+  -- Retorna ID do último adjustment criado (audit head)
+  SELECT id INTO v_adjustment_id
+  FROM public.stock_adjustments
+  WHERE user_id = v_user_id AND medicine_id = p_medicine_id
+  ORDER BY created_at DESC LIMIT 1;
+
+  RETURN v_adjustment_id;
+END;
+$$;
+
+-- Grants/RLS conforme template CLAUDE.md
+REVOKE EXECUTE ON FUNCTION public.apply_manual_stock_adjustment(uuid, numeric, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.apply_manual_stock_adjustment(uuid, numeric, text, text) FROM anon;
+GRANT EXECUTE ON FUNCTION public.apply_manual_stock_adjustment(uuid, numeric, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_manual_stock_adjustment(uuid, numeric, text, text) TO service_role;
+```
+
+#### Reasons aceitos (canonical pós-§21.2)
+
+**Delta positivo** (set original archive §4.1.1):
+- `'ajuste_manual_positivo'`
+- `'correcao_erro'`
+- `'backfill_system_adjustment'`
+- `'outro'`
+
+**Delta negativo** (NOVO):
+- `'perda'`
+- `'doacao'`
+- `'descarte'`
+- `'vencimento_manual'` (distinto de vencimento detectado por job)
+- `'correcao_erro'`
+- `'outro'`
+
+#### Invariantes pós-mudança
+
+1. Delta zero: rejeitado (exceção). Sem mudança no banco.
+2. Delta positivo: comportamento idêntico ao original — cria 1 linha `stock` + 1 `stock_adjustments`.
+3. Delta negativo: nunca cria linha `stock` nova; decrementa lotes FIFO existentes; cria N `stock_adjustments` (1 por lote afetado).
+4. Saldo insuficiente: rejeitado antes de qualquer side effect (compatível com `consume_stock_fifo`).
+5. `stock_consumptions` NÃO é tocada por ajuste manual (ajuste não é dose; reversibilidade via novo ajuste compensatório).
+6. `medicine_stock_summary` reflete novo saldo automaticamente (view agregada).
+
+#### Não afeta
+
+- `consume_stock_fifo` (dose normal — continua usando `stock_consumptions`)
+- `restore_stock_for_log` (estorno de dose excluída — continua)
+- `create_purchase_with_stock` (compra normal — continua)
+
+#### Aplicação
+
+Migration é aplicada manualmente pelo PO via Supabase SQL Editor OU CLI. NÃO auto-migra. Versão Mobile (`adjustToBalance`) DEPENDE da aplicação prévia — sem isso, runtime falha com exceção da regra original.

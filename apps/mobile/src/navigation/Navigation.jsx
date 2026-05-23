@@ -21,8 +21,8 @@ import SignupScreen from '../screens/SignupScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
-import MedicineDemoScreen from '../features/_dev/screens/MedicineDemoScreen'
-import TreatmentPrimitivesDemoScreen from '../features/_dev/screens/TreatmentPrimitivesDemoScreen'
+import DevHubScreen from '../features/_dev/screens/DevHubScreen'
+import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
@@ -157,12 +157,12 @@ export default function Navigation() {
             {__DEV__ && (
               <>
                 <Stack.Screen
-                  name={ROUTES.MEDICINE_DEMO}
-                  component={MedicineDemoScreen}
+                  name={ROUTES.DEV_HUB}
+                  component={DevHubScreen}
                 />
                 <Stack.Screen
-                  name={ROUTES.TREATMENT_PRIMITIVES_DEMO}
-                  component={TreatmentPrimitivesDemoScreen}
+                  name={ROUTES.STOCK_PRIMITIVES_DEMO}
+                  component={StockPrimitivesDemoScreen}
                 />
               </>
             )}

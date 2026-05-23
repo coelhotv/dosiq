@@ -36,6 +36,8 @@ export default mergeConfig(
         'src/features/**/services/**/*.test.{js,jsx}',
         'src/features/**/utils/**/*.test.{js,jsx}',
         'src/features/**/hooks/**/*.test.{js,jsx}',
+        // Helpers canônicos compartilhados (Fase 2.5+) — críticos pra paridade web↔mobile
+        '../../packages/core/src/**/*.test.{js,jsx}',
       ],
       exclude: [
         '**/*.smoke.test.*',

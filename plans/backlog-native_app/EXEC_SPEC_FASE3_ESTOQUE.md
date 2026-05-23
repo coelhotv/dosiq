@@ -1,4 +1,4 @@
-# EXEC SPEC — Fase 3: CRUD Estoque (v2 — 2026-05-18)
+# EXEC SPEC — Fase 3: CRUD Estoque (v2.1 — 2026-05-19)
 
 > **Duração**: 2 sprints semanais
 > **Branch base**: `feat/crud-stock`
@@ -62,9 +62,134 @@ Esquecer um cache = bug latente (D11 Fase 2.5; G7 retro Fase 3).
 | PO-3 | **Form de compra sempre com med travado no topo** | Sem `MedicineSelectableRow` no form; seleção é `PurchaseMedicineSheet` (do FAB Hub) ou param da rota (do FAB Detail) |
 | PO-4 | **Editar compra ≠ Registrar compra** | Mesma tela, mode prop diferente; push do "..." em PurchaseCard do Histórico |
 | PO-5 | **Indicadores v1 = KPI grid 2×2** (skip variant C colapsável; ir direto pra A) | StockIndicators componente único; mock detalhes reflete |
-| PO-6 | **Ajuste manual = modo único "Acertar saldo"** (digitar valor final) | Sem segmented `+ / −`. Preview teal do delta. Motivo obrigatório |
+| PO-6 | **Ajuste manual = modo único "Acertar saldo"** (digitar valor final, delta pode ser negativo) | Sem segmented `+ / −`. Preview teal do delta. Motivo obrigatório. **Requer migration nova pra desbloquear delta negativo** (ver §0.8) |
 | PO-7 | Glossário UI: "Estoque", "compra", "lote", "validade", "saldo", "farmácia", "laboratório" | Adotar nos labels |
 | PO-8 | **Stock = 0 é cenário válido** (validação acontece em LogForm dose) | Spec NÃO bloqueia stock=0; UI mostra status crítico + CTA "Registrar compra". Designer não precisa novo mock |
+| PO-9 | **Regra de listagem do Hub** (NOVA, corrige bug atual em produção) | StockScreen mostra meds onde `hasActiveProtocol \|\| totalStock > 0`. Bug atual: `getStockData` legacy filtra só `protocols.active=true` → meds com estoque órfão (treatment finalizado/pausado/inexistente) ficam invisíveis. Fix é INERENTE à reescrita Wave 4 — não fix retroativo separado |
+| PO-10 | **`regulatory_category` FORA escopo Fase 3 v1** | Mocks não diferenciam Genérico/Similar/Novo. `StockForm` mobile NÃO implementa matriz regulatória (web archived spec §11.5). Defer pra v2 quando UI mobile expandir cadastro de medicamentos |
+
+### 0.6.5 Alignment com archive_old/stock_refactor (canonical SQL/RPC contract)
+
+Reference: [`plans/archive_old/stock_refactor/exec_spec_stock_refactor.md`](../archive_old/stock_refactor/exec_spec_stock_refactor.md)
+
+Refactor stock (PR #443, 2026-04-02) estabeleceu o modelo canônico que mobile Fase 3 DEVE respeitar:
+
+**Tabelas + colunas** (já existem em produção):
+- `purchases` (fonte canônica histórico — quantity_bought, unit_price, purchase_date, expiration_date, pharmacy, laboratory, notes)
+- `stock` (saldo por lote — purchase_id, original_quantity, **entry_type** {purchase/adjustment/legacy_unrecoverable})
+- `stock_adjustments` (audit trail — quantity_delta, reason, reference_id)
+- `stock_consumptions` (consumo por log + lote — medicine_log_id, stock_id, quantity_consumed, reversed_at)
+- view `medicine_stock_summary` (agregado pra leitura rápida — total_quantity)
+- `medicines.regulatory_category` (genérico/similar/novo — FORA escopo mobile v1, ver PO-10)
+
+**RPCs canônicos** (mobile usa via `stockService.js`):
+- `create_purchase_with_stock(p_medicine_id, p_quantity, p_unit_price, p_purchase_date, p_expiration_date, p_pharmacy, p_laboratory, p_notes)` — atomic compra + lote
+- `consume_stock_fifo(p_medicine_id, p_quantity, p_medicine_log_id)` — FIFO com `entry_type != 'legacy_unrecoverable'` (fix Phantom Stock 2026-05-13 — §21.1 archive)
+- `restore_stock_for_log(p_medicine_log_id, p_reason)` — estorna exato por lote
+- `apply_manual_stock_adjustment(p_medicine_id, p_quantity_delta, p_reason, p_notes)` — **atualmente bloqueia delta < 0** (archive §1.1 regra 6); ver §0.8 pra mudança Fase 3
+
+**Read-side regras (Wave 4 StockScreen + Wave 3 PurchaseHistory)**:
+- Histórico de compras → SEMPRE `purchases` (via `getPurchasesByMedicine`), NUNCA `stock.quantity`
+- Última compra → `purchases ORDER BY purchase_date DESC LIMIT 1`
+- Saldo total → `medicine_stock_summary.total_quantity` (já filtra entry_type apropriadamente na view)
+- Preço médio → `computeAverageUnitPrice(purchases)` com `quantity_bought × unit_price` (helper §0.6)
+- **NUNCA** filtrar `notes LIKE 'Dose excluída%'` ou similares — esse hack do legacy foi eliminado em PR #443
+
+**Write-side regras (Wave 2/3/5)**:
+- Mobile NUNCA faz `insert` direto em `stock` — só via RPCs
+- Mobile NUNCA cria entry de compra fake pra representar ajuste (anti-pattern morto)
+- LogForm dose (já existente) usa `consume_stock_fifo` server-side ao registrar dose
+- `useStockMutation.toggleActive` ou similar pra purchase NÃO existe (PO-1 sem delete)
+
+### 0.7 Regra de listagem do Hub (PO-9 — corrige bug em produção)
+
+`StockScreen` (Wave 4) DEVE listar medicamentos onde:
+```js
+hasActiveProtocol || totalStock > 0
+```
+
+Onde:
+- `hasActiveProtocol = protocols.some(p => p.active && isProtocolActiveOnDate(p, today))`
+- `totalStock = medicine_stock_summary.total_quantity ?? 0`
+
+**Bug atual em produção** (`getStockData` legacy em `stockService.js`):
+```js
+.eq('protocols.active', true)        // ← filtra protocols antes do join
+.filter((m) => m.protocols.some(isProtocolActiveOnDate))  // ← exclui meds sem treatment ativo
+```
+
+Cenários quebrados hoje (que Wave 4 corrige por reescrita):
+- Med cadastrado com 30cp + sem treatment criado → invisível
+- Med com treatment finalizado mas estoque sobrando → invisível
+- Med com treatment **pausado** + estoque positivo → invisível (Fase 2.5 introduziu pausa, agravou o problema)
+
+**Query refactor pra Wave 4** (substitui `getStockData`):
+```js
+// Em useStock.js ou stockService.getMedicinesWithStockOrActiveProtocol
+const { data, error } = await nativeSupabaseClient
+  .from('medicines')
+  .select(`
+    id, name, laboratory, dosage_unit, dosage_per_pill,
+    medicine_stock_summary!left ( total_quantity ),
+    protocols ( id, dosage_per_intake, time_schedule, frequency, active, start_date, end_date )
+  `)
+  .eq('user_id', userId)
+  // SEM filtro protocols.active — queremos avaliar atividade no client
+  .order('name')
+
+const today = getTodayLocal()
+return (data || []).filter((m) => {
+  const hasActiveProtocol = (m.protocols || []).some(
+    (p) => p.active && isProtocolActiveOnDate(p, today),
+  )
+  const totalStock = m.medicine_stock_summary?.total_quantity ?? 0
+  return hasActiveProtocol || totalStock > 0
+})
+```
+
+**Deprecação**: `getStockData` legacy fica preservada até Wave 4 reescrever `useStock`. Após Wave 4 mergeada, marcar `getStockData` como `@deprecated` + remover em fix-pack pós-Fase 3.
+
+### 0.8 Migration pendente pra Wave 5 — ajuste manual negativo
+
+`adjustToBalance` (modo único "Acertar saldo" — PO-6) precisa funcionar pra **delta negativo** (cenários: perda, doação, descarte, vencimento manual sem usar lote vencido). RPC atual `apply_manual_stock_adjustment` **falha explicitamente** quando `p_quantity_delta < 0` (archive §1.1 regra 6 — decisão conservadora de 2026-04-02).
+
+**Decisão Fase 3**: desbloquear via nova migration durante Wave 5.
+
+**Migration a criar** (Wave 5, antes do `StockAdjustmentScreen` ser implementado):
+- Path: `docs/migrations/YYYYMMDD_allow_negative_manual_adjustments.sql`
+- Conteúdo: ALTER FUNCTION `apply_manual_stock_adjustment` removendo check `p_quantity_delta < 0 → raise exception`
+- Comportamento novo pra delta negativo:
+  1. Validar `total_quantity` atual >= `abs(p_quantity_delta)` (não permitir saldo negativo)
+  2. Iterar lotes FIFO (`stock` com `entry_type != 'legacy_unrecoverable'` + `quantity > 0`)
+  3. Decrementar lotes (consumir FIFO igual `consume_stock_fifo`, mas SEM criar `stock_consumptions` — não é dose)
+  4. Inserir `stock_adjustments` negativo com `reason = p_reason` + `notes = p_notes`
+  5. NÃO cria `stock_consumptions` (não há `medicine_log_id`)
+- Grants + RLS conforme template CLAUDE.md (REVOKE EXECUTE FROM PUBLIC/anon, search_path='', SECURITY DEFINER)
+- Aplicação manual pelo PO (não auto-merge migration)
+
+**Reasons aceitos pra delta negativo** (alinhado com archive §4.1.1 + extensões PO-6):
+- `'perda'`
+- `'doacao'`
+- `'descarte'`
+- `'vencimento_manual'`
+- `'correcao_erro'`
+- `'outro'`
+
+Archive spec original (`exec_spec_stock_refactor.md`) tem update correspondente em §21.2 (nova seção) marcando essa mudança como pós-entrega.
+
+### 0.9 Migration pendente pra Wave 5 — precisão de `purchases.unit_price`
+
+Regressão detectada via Supabase MCP (schema vivo, 2026-05-20): `purchases.unit_price` ficou `NUMERIC(10,2)` no refactor (`20260402`), enquanto `stock.unit_price` é `NUMERIC(12,4)`. Custos muito baixos (genéricos/fracionados, ex. `R$ 0,134`/comprimido) eram **arredondados silenciosamente pra 2 casas** no INSERT — Zod e form aceitavam, Postgres truncava sem erro.
+
+**Decisão PO**: mínimo 3 casas decimais (4 efetivas, alinhado com `stock`).
+
+**Migration criada** (Wave 5, mesma leva da §0.8 — PO aplica manualmente):
+- Path: `docs/migrations/20260520_purchases_unit_price_precision.sql`
+- Conteúdo: `ALTER TABLE purchases ALTER COLUMN unit_price TYPE NUMERIC(12,4)` (idempotente — só altera se escala ≠ 4)
+- CHECK `(>= 0)` e DEFAULT 0 permanecem válidos; ampliação de escala sem perda de dados
+- RPC `create_purchase_with_stock` param `p_unit_price` já é `NUMERIC` ilimitado — sem alteração
+
+**Polish opcional (não bloqueia migration)**: limitar input decimal do `unit_price` no `PurchaseFormScreen` a 4 casas + Zod `.refine` de máx 4 decimais — feedback explícito em vez de arredondar mudo. Avaliar em fix-pack pós-Fase 3.
 
 ### 0.6 Helpers canônicos a criar em `@dosiq/core/utils/`
 Antes do spawn de telas/cards, criar estes helpers (Wave 1 inline Opus):
@@ -143,7 +268,7 @@ Na web, o domínio de estoque é dividido em:
 | S1.5 | Tela `PurchaseFormScreen` (modes create/edit; med travado no topo — PO-3) | `apps/mobile/src/features/stock/screens/PurchaseFormScreen.jsx` | 🤖 Sonnet | ⭐⭐⭐ |
 | S1.6 | Tela `PurchaseHistoryScreen` (header resumo + PurchaseCards full + "..." → Editar) | `apps/mobile/src/features/stock/screens/PurchaseHistoryScreen.jsx` | 🤖 Sonnet | ⭐⭐ |
 | S1.7 | Componente `PurchaseMedicineSheet` (R-233 statusBarTranslucent) | `apps/mobile/src/features/stock/components/PurchaseMedicineSheet.jsx` | 🤖 Sonnet | ⭐⭐ |
-| S1.8 | Expandir `StockScreen` (chips filtro + FAB → sheet) + `StockDetailScreen` (FAB → form med travado — PO-2) | `apps/mobile/src/features/stock/screens/StockScreen.jsx`, `StockDetailScreen.jsx` | 🤖 Sonnet | ⭐⭐⭐ |
+| S1.8 | Expandir `StockScreen` (chips filtro + FAB → sheet) + `StockDetailScreen` (FAB → form med travado — PO-2) · **regra listagem expandida PO-9** (substitui `getStockData` legacy) | `apps/mobile/src/features/stock/screens/StockScreen.jsx`, `StockDetailScreen.jsx`, `apps/mobile/src/features/stock/hooks/useStock.js` | 🤖 Sonnet | ⭐⭐⭐ |
 | S1.9 | `StockStack` navigation + rotas | `apps/mobile/src/navigation/StockStack.jsx` | 🤖 Haiku | ⭐ |
 | S1.10 | Atualizar `routes.js` + `RootTabs.jsx` (StockStack) | `apps/mobile/src/navigation/routes.js`, `RootTabs.jsx` | 🤖 Haiku | ⭐ |
 | S1.11 | Testes do `stockService` mobile + helpers `@dosiq/core/utils/stock` | `apps/mobile/.../__tests__/`, `packages/core/.../__tests__/` | 🤖 Haiku | ⭐⭐ |
@@ -155,16 +280,18 @@ Na web, o domínio de estoque é dividido em:
 ### Sprint S3.2 — Indicadores + Ajuste + Extract + Migrate (Semana ~11)
 
 > **Wave plan**:
-> - **Wave 1 spawn paralelo**: S2.1 (Sonnet StockIndicators KPI grid 2×2), S2.2 (Sonnet StockAdjustment), S2.3/S2.4 (Sonnet factories)
-> - **Wave 2 spawn**: S2.5 (Sonnet parity tests factories), S2.6 (Sonnet mobile adopt) — depende Wave 1
-> - **Wave 3 inline Opus**: G2 gate check + smoke PO
-> - **Wave 4 spawn**: S2.8 (Opus web adopt), S2.9 (Haiku delete obsoletos), S2.10 (Haiku validate:agent)
-> - **Wave 5 inline Opus**: G3 gate check + merge `feat/crud-stock` → `main`
+> - **Wave 1 inline Opus**: S2.0 (migration ajuste negativo §0.8) + handoff pro PO aplicar antes de continuar
+> - **Wave 2 spawn paralelo**: S2.1 (Sonnet StockIndicators KPI grid 2×2), S2.2 (Sonnet StockAdjustment — depende migration aplicada), S2.3/S2.4 (Sonnet factories)
+> - **Wave 3 spawn**: S2.5 (Sonnet parity tests factories), S2.6 (Sonnet mobile adopt) — depende Wave 2
+> - **Wave 4 inline Opus**: G2 gate check + smoke PO
+> - **Wave 5 spawn**: S2.8 (Opus web adopt), S2.9 (Haiku delete obsoletos), S2.10 (Haiku validate:agent)
+> - **Wave 6 inline Opus**: G3 gate check + merge `feat/crud-stock` → `main`
 
 | # | Task | Arquivos | Agente | Complexidade |
 |---|------|----------|--------|-------------|
+| **S2.0** | **NOVA** — Migration desbloqueando ajuste manual negativo (§0.8) + handoff PO aplicar | `docs/migrations/YYYYMMDD_allow_negative_manual_adjustments.sql` | 👤 Opus | ⭐⭐⭐ |
 | S2.1 | Componente `StockIndicators` KPI grid 2×2 (PO-5 — direto v2, sem variant C) | `apps/mobile/src/features/stock/components/StockIndicators.jsx` | 🤖 Sonnet | ⭐⭐⭐ |
-| S2.2 | Tela `StockAdjustmentScreen` modo único "Acertar saldo" (PO-6) + DeltaPreview + motivo | `apps/mobile/src/features/stock/screens/StockAdjustmentScreen.jsx` | 🤖 Sonnet | ⭐⭐ |
+| S2.2 | Tela `StockAdjustmentScreen` modo único "Acertar saldo" (PO-6) + DeltaPreview + motivo · **depende S2.0 migration aplicada** | `apps/mobile/src/features/stock/screens/StockAdjustmentScreen.jsx` | 🤖 Sonnet | ⭐⭐ |
 | S2.3 | Criar `createStockRepository` em `@dosiq/core/repositories/` | `packages/core/src/repositories/createStockRepository.js` | 🤖 Sonnet | ⭐⭐⭐ |
 | S2.4 | Criar `createPurchaseRepository` em `@dosiq/core/repositories/` | `packages/core/src/repositories/createPurchaseRepository.js` | 🤖 Sonnet | ⭐⭐ |
 | S2.5 | Parity tests factories (espelhar pattern `createProtocolRepository.test.js`) | `packages/core/src/repositories/__tests__/` | 🤖 Sonnet | ⭐⭐ |
@@ -337,6 +464,8 @@ function StockIndicators({ medicine, stockSummary, activeProtocols, purchases })
 
 ### S2.2 — Ajuste Manual de Saldo (PO-6 modo único)
 
+**Pré-condição**: migration S2.0 (§0.8) aplicada pelo PO. Sem ela, `adjustToBalance` falha em runtime quando `newBalance < currentStock` (RPC archive original bloqueia delta negativo).
+
 ```jsx
 function StockAdjustmentScreen({ route, navigation }) {
   const { medicineId, currentStock } = route.params
@@ -361,8 +490,9 @@ function StockAdjustmentScreen({ route, navigation }) {
 }
 ```
 
-**ADJUSTMENT_REASONS** (proposta — PO confirma):
-`perda`, `doacao`, `descarte`, `vencimento`, `correcao_erro`, `outro`
+**ADJUSTMENT_REASONS** (§0.8 — alinhado com migration S2.0):
+- delta negativo: `perda`, `doacao`, `descarte`, `vencimento_manual`, `correcao_erro`, `outro`
+- delta positivo: `ajuste_manual_positivo`, `correcao_erro`, `outro` (reusa set existente archive)
 
 ---
 
@@ -457,6 +587,8 @@ packages/core/src/
 | Purchase form (create+edit) cria entrada + atualiza saldo | Demo gravada |
 | FAB ubíquo (Hub + Detail) funciona conforme PO-2/PO-3 | Smoke PO |
 | `StockIndicators` KPI grid 2×2 calcula corretamente | Smoke PO |
+| Regra listagem expandida PO-9 (`hasActiveProtocol \|\| totalStock > 0`) ativa em StockScreen — meds órfãos (sem treatment) aparecem | Smoke PO + grep `getStockData` ausente |
+| Migration S2.0 (`allow_negative_manual_adjustments`) aplicada em produção pelo PO antes de S2.2 | Confirmação PO |
 | Cache invalidation matrix documentada em `useStockMutation` (R-236) | Code review |
 | Bottom sheets com `statusBarTranslucent` (R-233) testado em Android API 24 | Smoke PO Android |
 | **Smoke PO (R-234) concluído antes de `gh pr create`** | Confirmação PO |
@@ -498,7 +630,8 @@ Brief obrigatório R-230 (6 itens) em TODO spawn. Recalibração pós-Fase 2: So
 | S1.1-S1.2 | 👤 Opus | Consolidação 2 services + validar RPCs Hermes |
 | S1.3, S1.5, S1.6, S1.7, S1.8 | 🤖 Sonnet ⭐⭐ | Componentes/hooks complexos (cache matrix, sheet R-233, form mode dual, KPI cross-domain) |
 | S1.4, S1.9, S1.10, S1.11 | 🤖 Haiku ⭐ | Tasks mecânicas (card simples, nav files, tests espelhados) |
-| S2.1, S2.2 | 🤖 Sonnet ⭐⭐ | KPI grid 2×2 + ajuste com DeltaPreview (UX complexa, mas pattern claro) |
+| S2.0 | 👤 Opus | Migration SQL crítica (desbloqueia delta negativo + audit FIFO + grants/RLS) |
+| S2.1, S2.2 | 🤖 Sonnet ⭐⭐ | KPI grid 2×2 + ajuste com DeltaPreview (UX complexa, mas pattern claro). S2.2 depende S2.0 mergeada |
 | S2.3, S2.4, S2.5 | 🤖 Sonnet ⭐⭐ | Factories — espelhar `createProtocolRepository` pattern (validado Fase 2) |
 | S2.6, S2.8 | 👤 Opus | Adopção mobile + web (mudança em arquivos sensíveis cross-feature) |
 | S2.9, S2.10 | 🤖 Haiku ⭐ | Delete obsoletos + validate:agent |
@@ -533,6 +666,15 @@ Brief obrigatório R-230 (6 itens) em TODO spawn. Recalibração pós-Fase 2: So
 ---
 
 ## Changelog
+
+### v2.1 — 2026-05-19 (alignment com archive_old/stock_refactor + bug listagem PO-9 + ajuste negativo)
+- **§0.5 adicionados PO-9 + PO-10**: regra listagem expandida (hasActiveProtocol OR totalStock>0 — corrige bug produção atual via reescrita Wave 4) + regulatory_category fora escopo v1
+- **§0.6.5 NOVO** — Alignment com archive_old/stock_refactor: cataloga modelo canônico (purchases/stock/stock_adjustments/stock_consumptions/medicine_stock_summary view + 4 RPCs + entry_type filter Phantom Stock fix). Define regras read-side (sempre purchases pra histórico, nunca filtro `notes LIKE`) e write-side (nunca insert direto stock, sempre RPC)
+- **§0.7 NOVO** — Detalha regra PO-9 com query refactor pra Wave 4 + lista cenários quebrados em produção (med órfão / treatment finalizado / treatment pausado Fase 2.5)
+- **§0.8 NOVO** — Migration pendente Wave 5: desbloqueia `apply_manual_stock_adjustment` pra delta negativo (PO-6 modo único requer; archive §1.1 regra 6 bloqueava por conservadorismo). Define comportamento novo + reasons aceitos + handoff PO aplica
+- **Sprint Breakdown S3.2** reorganizado: nova S2.0 (migration negativa Opus inline) bloqueia S2.2 (StockAdjustmentScreen) · S1.8 (StockScreen) inclui fix PO-9 substituindo getStockData legacy
+- **Quality Gates G1** + 2 critérios: regra listagem PO-9 + migration S2.0 aplicada
+- **Delegação** atualizada com S2.0 Opus
 
 ### v2 — 2026-05-18 (pós-RETRO_FASE2 + absorção mocks designer)
 - **§0 NOVO** — Cuidados aprendidos pré-Fase 3 (consolidado RETROs Fase 1+2): arquitetura compartilhada, mobile patterns, cache invalidation matrix CRÍTICA, processo SQP §§10-13, decisões PO PO-1..PO-8, helpers canônicos §0.6
