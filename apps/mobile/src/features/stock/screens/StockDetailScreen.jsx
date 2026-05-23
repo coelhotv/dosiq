@@ -32,7 +32,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -75,12 +75,19 @@ export default function StockDetailScreen({ navigation }) {
     () => (dailyConsumption > 0 ? saldo / dailyConsumption : Infinity),
     [saldo, dailyConsumption],
   )
+  // Status canônico via @dosiq/core (mesma lógica da listagem) — trata edge
+  // cases como saldo 0 sem consumo (critico) que o cálculo manual por dias errava.
   const badgeStatus = useMemo(() => {
-    if (badgeDays < 7) return 'CRITICAL'
-    if (badgeDays < 14) return 'LOW'
-    if (badgeDays < 30) return 'NORMAL'
-    return 'HIGH'
-  }, [badgeDays])
+    const status = resolveStockStatus(saldo, dailyConsumption)
+    const statusMap = {
+      critico: 'CRITICAL',
+      baixo: 'LOW',
+      normal: 'NORMAL',
+      alto: 'HIGH',
+      vencido: 'CRITICAL',
+    }
+    return statusMap[status] || 'NORMAL'
+  }, [saldo, dailyConsumption])
 
   const isSupplement = useMemo(
     () => SUPPLEMENT_TYPES.has(medicine?.type),
