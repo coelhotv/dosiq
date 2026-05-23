@@ -96,8 +96,10 @@ export default function StockAdjustmentScreen() {
   )
 
   // Effects — busca medicine (dose pill da ficha) sempre + saldo atual se não
-  // veio por param. Callback sync; setState no .then = microtask (não dispara
-  // set-state-in-effect).
+  // veio por param. NÃO depende de `currentBalance` (evita re-execução quando o
+  // saldo é setado); `needsBalance` deriva do param (estável). Callback sync;
+  // setState no .then = microtask (não dispara set-state-in-effect).
+  const needsBalance = typeof paramBalance !== 'number'
   useFocusEffect(
     useCallback(() => {
       const userId = user?.id
@@ -107,7 +109,7 @@ export default function StockAdjustmentScreen() {
         .getById(medicineId)
         .then((med) => { if (!cancelled && med) setMedicine(med) })
         .catch(() => {})
-      if (currentBalance == null) {
+      if (needsBalance) {
         stockService
           .getTotalQuantity(medicineId, userId)
           .then((total) => {
@@ -118,7 +120,7 @@ export default function StockAdjustmentScreen() {
       return () => {
         cancelled = true
       }
-    }, [currentBalance, medicineId, user]),
+    }, [medicineId, user, needsBalance]),
   )
 
   // Handlers
