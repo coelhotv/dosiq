@@ -35,6 +35,7 @@ import FormSection from '@shared/components/form/FormSection'
 import FormActions from '@shared/components/form/FormActions'
 import { useStockMutation } from '@stock/hooks/useStockMutation'
 import { stockService } from '@stock/services/stockService'
+import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
 
@@ -65,6 +66,7 @@ export default function StockAdjustmentScreen() {
   const [currentBalance, setCurrentBalance] = useState(
     typeof paramBalance === 'number' ? paramBalance : null,
   )
+  const [medicine, setMedicine] = useState(null)
   const [newBalance, setNewBalance] = useState('')
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
@@ -93,18 +95,26 @@ export default function StockAdjustmentScreen() {
     [submitting, currentBalance, parsedNew, delta, reason],
   )
 
-  // Effects — busca saldo atual se não veio por param (callback sync; setState
-  // dentro do .then = microtask, não dispara set-state-in-effect).
+  // Effects — busca medicine (dose pill da ficha) sempre + saldo atual se não
+  // veio por param. Callback sync; setState no .then = microtask (não dispara
+  // set-state-in-effect).
   useFocusEffect(
     useCallback(() => {
-      if (currentBalance != null || !medicineId || !user?.id) return
+      const userId = user?.id
+      if (!medicineId || !userId) return
       let cancelled = false
-      stockService
-        .getTotalQuantity(medicineId, user.id)
-        .then((total) => {
-          if (!cancelled && typeof total === 'number') setCurrentBalance(total)
-        })
+      medicineService
+        .getById(medicineId)
+        .then((med) => { if (!cancelled && med) setMedicine(med) })
         .catch(() => {})
+      if (currentBalance == null) {
+        stockService
+          .getTotalQuantity(medicineId, userId)
+          .then((total) => {
+            if (!cancelled && typeof total === 'number') setCurrentBalance(total)
+          })
+          .catch(() => {})
+      }
       return () => {
         cancelled = true
       }
@@ -138,6 +148,12 @@ export default function StockAdjustmentScreen() {
       setSubmitting(false)
     }
   }, [parsedNew, delta, reason, notes, adjustBalance, medicineId, navigation])
+
+  // Dose pill da ficha (sempre que houver medicine com dosagem).
+  const dosePill =
+    medicine?.dosage_per_pill != null
+      ? `${medicine.dosage_per_pill}${medicine.dosage_unit ?? ''}`
+      : null
 
   // Preview "APÓS AJUSTE" — cor do delta: verde se positivo, vermelho se negativo.
   const deltaPositive = delta != null && delta > 0
@@ -176,9 +192,16 @@ export default function StockAdjustmentScreen() {
               <Package size={18} color={colors.primary[700]} strokeWidth={2} />
             </View>
             <View style={styles.contextInfo}>
-              <Text style={styles.contextName} numberOfLines={2}>
-                {medicineName ?? '—'}
-              </Text>
+              <View style={styles.contextNameRow}>
+                <Text style={styles.contextName} numberOfLines={2}>
+                  {medicine?.name ?? medicineName ?? '—'}
+                </Text>
+                {dosePill ? (
+                  <View style={styles.dosePill}>
+                    <Text style={styles.dosePillText}>{dosePill}</Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={styles.contextBalance}>
                 {currentBalance != null
                   ? `Saldo atual: ${currentBalance} ${currentBalance === 1 ? 'unidade' : 'unidades'}`
@@ -193,7 +216,7 @@ export default function StockAdjustmentScreen() {
               name="newBalance"
               label="Novo saldo (un.)"
               required
-              placeholder="0"
+              placeholder={currentBalance != null ? String(currentBalance) : '0'}
               keyboardType="number-pad"
               maxLength={6}
               value={newBalance}
@@ -331,10 +354,30 @@ const styles = StyleSheet.create({
   contextInfo: {
     flex: 1,
   },
+  contextNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    flexWrap: 'wrap',
+  },
   contextName: {
+    flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  dosePill: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  dosePillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text.secondary,
   },
   contextBalance: {
     fontSize: 13,
