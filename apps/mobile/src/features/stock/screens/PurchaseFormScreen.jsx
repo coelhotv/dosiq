@@ -13,7 +13,7 @@
 // ADR-046: unidade sempre presente no label de quantidade.
 // ADR-028: StyleSheet. ADR-023: fontWeights >= 400.
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -33,7 +33,11 @@ import FormDatePicker from '@shared/components/form/FormDatePicker'
 import FormSection from '@shared/components/form/FormSection'
 import FormActions from '@shared/components/form/FormActions'
 import { useStockMutation } from '@stock/hooks/useStockMutation'
+import { medicineService } from '@medications/services/medicineService'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
+
+// Categorias regulatórias com marca registrada → laboratório fixo (não muda por compra).
+const FIXED_LAB_CATEGORIES = ['Novo', 'Similar']
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers de decimal PT-BR (AP-167)
@@ -100,8 +104,11 @@ export default function PurchaseFormScreen() {
   const initialValues = useMemo(() => {
     if (isEdit && purchase) {
       return {
-        quantity:
-          purchase.quantity != null ? String(purchase.quantity).replace('.', ',') : '',
+        quantity: (() => {
+          // purchase vem da tabela (quantity_bought) ou do demo (quantity)
+          const q = purchase.quantity_bought ?? purchase.quantity
+          return q != null ? String(q).replace('.', ',') : ''
+        })(),
         unit_price:
           purchase.unit_price != null && purchase.unit_price !== 0
             ? String(purchase.unit_price).replace('.', ',')
@@ -126,6 +133,30 @@ export default function PurchaseFormScreen() {
 
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, updatePurchase, isLoading } = useStockMutation()
+
+  // States — laboratório travado p/ medicamentos de marca (Novo/Similar)
+  const [labLocked, setLabLocked] = useState(false)
+  const { handleChange } = form
+
+  // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
+  // laboratório é marca registrada (não muda por compra): preenche + trava.
+  // setState ocorre dentro do .then (microtask, não sync no corpo do effect),
+  // então não dispara react-hooks/set-state-in-effect.
+  useEffect(() => {
+    if (!medicineId) return
+    let cancelled = false
+    medicineService
+      .getById(medicineId)
+      .then((med) => {
+        if (cancelled || !med) return
+        if (FIXED_LAB_CATEGORIES.includes(med.regulatory_category) && med.laboratory) {
+          handleChange('laboratory', med.laboratory)
+          setLabLocked(true)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [medicineId, handleChange])
 
   // Handlers
 
@@ -260,12 +291,14 @@ export default function PurchaseFormScreen() {
                   required
                   placeholder="0"
                   keyboardType="decimal-pad"
+                  disabled={isEdit}
+                  helperText={isEdit ? 'Corrija o saldo pelo "Acertar saldo"' : undefined}
                   value={
                     form.values.quantity != null ? String(form.values.quantity) : ''
                   }
                   error={form.touched.quantity ? form.errors.quantity : undefined}
                   onChange={handleQuantityChange}
-                  onBlur={form.handleBlur}
+                  onBlur={() => form.handleBlur('quantity', coerceDecimal(form.values.quantity))}
                 />
               </View>
               <View style={styles.rowHalf}>
@@ -280,7 +313,7 @@ export default function PurchaseFormScreen() {
                   }
                   error={form.touched.unit_price ? form.errors.unit_price : undefined}
                   onChange={handlePriceChange}
-                  onBlur={form.handleBlur}
+                  onBlur={() => form.handleBlur('unit_price', coerceDecimal(form.values.unit_price))}
                 />
               </View>
             </View>
@@ -339,9 +372,10 @@ export default function PurchaseFormScreen() {
               name="laboratory"
               label="Laboratório"
               placeholder="Fabricante"
-              helperText="Opcional"
+              helperText={labLocked ? 'Marca registrada — definida pelo medicamento' : 'Opcional'}
               autoCapitalize="words"
               maxLength={200}
+              disabled={labLocked}
               {...formProps(form, 'laboratory')}
             />
             <FormInput

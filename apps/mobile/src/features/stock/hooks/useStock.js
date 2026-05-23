@@ -3,9 +3,9 @@ import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getTodayLocal, getNow, parseISO, addDays, isProtocolActiveOnDate } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { getStockData } from '../services/stockService'
+import { stockService } from '../services/stockService'
 import { debugLog } from '@shared/utils/debugLog'
-import { transformStockData, filterActiveStockItems } from './_stockDataTransformer'
+import { transformStockData, splitStockItems } from './_stockDataTransformer'
 
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
@@ -21,12 +21,13 @@ async function _resolveUser() {
 }
 
 async function _fetchAndPersistStock(userId, setState, dataRef) {
-  const result = await getStockData(userId)
+  // PO-9 §0.7: lista meds com protocolo ativo OU saldo positivo (corrige bug de
+  // estoque órfão invisível). Split em active (com previsão) + inactive (só-estoque).
+  const rawData = await stockService.getMedicinesWithStockOrActiveProtocol(userId)
   const today = getTodayLocal()
-  if (!result.success) throw new Error(result.error)
-  const active = filterActiveStockItems(transformStockData(result.data))
-  const newData = { active, inactive: [], localDay: today }
-  const snapshot = { data: newData, capturedAt: getNow().toISOString(), rawData: result.data }
+  const { active, inactive } = splitStockItems(transformStockData(rawData))
+  const newData = { active, inactive, localDay: today }
+  const snapshot = { data: newData, capturedAt: getNow().toISOString(), rawData }
   await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))
   dataRef.current = newData
   setState({ data: newData, loading: false, error: null, stale: false, refreshing: false })
@@ -103,32 +104,42 @@ export function useStock() {
 
   useEffect(() => _setupMidnightAndAppState(loadStock, dataRef), [loadStock])
 
-  // Resilience layer (Rule R-175): Double-check validity on the active list
-  // Isso protege contra o caso do cache ter sido gerado às 23:59 de ontem e carregado às 00:01 de hoje.
+  // Resilience layer (Rule R-175): re-valida atividade no dia atual.
+  // Protege contra cache gerado às 23:59 e carregado às 00:01 (dia virou).
+  // PO-9: re-split active/inactive a partir da união, mantendo só-estoque visível.
   const refinedData = useMemo(() => {
-    if (!state.data?.active) return state.data
+    if (!state.data?.active && !state.data?.inactive) return state.data
     const today = getTodayLocal()
-    
-    const refinedActive = state.data.active.filter(item => {
-      // Se o item já foi processado e tem activeProtocols salvos:
+
+    const isActiveToday = (item) => {
       if (item.activeProtocols) {
         return item.activeProtocols.some(p => isProtocolActiveOnDate(p, today))
       }
-      // Fallback para protocols originais
       return (item.protocols || []).some(p => p.active && isProtocolActiveOnDate(p, today))
-    })
+    }
 
-    return { 
-      ...state.data, 
-      active: refinedActive 
+    const union = [...(state.data.active || []), ...(state.data.inactive || [])]
+    const refinedActive = union.filter(isActiveToday)
+    const refinedInactive = union.filter(
+      item => !isActiveToday(item) && (item.totalQuantity ?? 0) > 0,
+    )
+
+    return {
+      ...state.data,
+      active: refinedActive,
+      inactive: refinedInactive,
     }
   }, [state.data])
+
+  // refresh estável (useCallback) — arrow inline no useMemo recriava a função a
+  // cada setState, causando loop em consumidores com useFocusEffect([refresh]).
+  const refresh = useCallback(() => loadStock(true), [loadStock])
 
   const result = useMemo(() => ({
     ...state,
     data: refinedData,
-    refresh: () => loadStock(true)
-  }), [state, refinedData, loadStock])
+    refresh,
+  }), [state, refinedData, refresh])
 
   return result
 }

@@ -46,18 +46,12 @@ export default function StockItem({ medicine }) {
           </View>
           
           {hasActiveProtocol && (
-            <StockLevelBadge 
-              status={status} 
-              daysRemaining={daysRemaining} 
+            <StockLevelBadge
+              status={status}
+              daysRemaining={daysRemaining}
             />
           )}
         </View>
-
-        {hasActiveProtocol && daysRemaining !== Infinity && (
-          <Text style={styles.helperText}>
-            Estimativa baseada nos seus protocolos ativos.
-          </Text>
-        )}
       </View>
     </SectionCard>
   )
@@ -111,11 +105,5 @@ const styles = StyleSheet.create({
   bold: {
     fontWeight: '700',
     color: colors.text.primary
-  },
-  helperText: {
-    fontSize: 11,
-    color: colors.neutral[500],
-    marginTop: 12,
-    fontStyle: 'italic'
   }
 })

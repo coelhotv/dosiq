@@ -16,6 +16,7 @@ describe('TreatmentsScreen', () => {
   // Helper: shape Fase 2.5 do useTreatments (activeTab + counts + grupos + listas per-tab)
   const mockUseTreatments = (overrides = {}) => ({
     loading: false,
+    hasLoaded: true,
     error: null,
     stale: false,
     refresh: jest.fn(),
@@ -32,9 +33,9 @@ describe('TreatmentsScreen', () => {
   })
 
   it('renders loading state', () => {
-    useTreatments.mockReturnValue(mockUseTreatments({ loading: true, groups: null, data: null }));
+    useTreatments.mockReturnValue(mockUseTreatments({ loading: true, hasLoaded: false, groups: null, data: null }));
     const { getByText } = render(<TreatmentsScreen />);
-    expect(getByText(/Carregando seus tratamentos/i)).toBeTruthy();
+    expect(getByText(/Carregando tratamentos/i)).toBeTruthy();
   });
 
   it('renders list of treatments when data exists', () => {

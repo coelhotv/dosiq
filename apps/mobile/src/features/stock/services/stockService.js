@@ -28,6 +28,11 @@ import { debugLog, errorLog } from '@shared/utils/debugLog'
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
+ * @deprecated PO-9 §0.7 — filtra `protocols.active=true` no servidor e esconde
+ * meds com estoque órfão. Substituído por
+ * `stockService.getMedicinesWithStockOrActiveProtocol`. Remover em fix-pack
+ * pós-Fase 3 (sem callers após Wave 4).
+ *
  * Busca medicamentos com estoque + protocolos ativos pra cálculo de consumo.
  * @param {string} userId
  * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
@@ -91,6 +96,55 @@ export const stockService = {
   // === READS ===
 
   /**
+   * Medicamentos do hub de estoque (PO-9 §0.7): lista quem tem protocolo ativo
+   * HOJE OU saldo positivo. Corrige bug de produção do getStockData legacy, que
+   * filtrava `protocols.active=true` no servidor e escondia meds com estoque
+   * órfão (sem treatment / treatment finalizado / treatment pausado).
+   *
+   * NÃO filtra protocols.active no servidor — atividade é avaliada no client
+   * via isProtocolActiveOnDate, e a inclusão considera também totalStock > 0.
+   *
+   * @returns {Promise<Array>} medicines crus (medicine_stock_summary + protocols)
+   */
+  async getMedicinesWithStockOrActiveProtocol(userId) {
+    z.string().uuid().parse(userId)
+    const { data, error } = await nativeSupabaseClient
+      .from('medicines')
+      .select(`
+        id,
+        name,
+        laboratory,
+        dosage_unit,
+        dosage_per_pill,
+        medicine_stock_summary!left (
+          total_quantity
+        ),
+        protocols (
+          id,
+          dosage_per_intake,
+          time_schedule,
+          frequency,
+          active,
+          start_date,
+          end_date
+        )
+      `)
+      .eq('user_id', userId)
+      .order('name')
+
+    if (error) throw error
+
+    const today = getTodayLocal()
+    return (data || []).filter((m) => {
+      const hasActiveProtocol = (m.protocols || []).some(
+        (p) => p.active && isProtocolActiveOnDate(p, today),
+      )
+      const totalStock = m.medicine_stock_summary?.[0]?.total_quantity ?? 0
+      return hasActiveProtocol || totalStock > 0
+    })
+  },
+
+  /**
    * Stock entries de um medicamento (FIFO order).
    */
   async getByMedicine(medicineId, userId) {
@@ -128,6 +182,25 @@ export const stockService = {
         newest_entry_date: null,
       }
     )
+  },
+
+  /**
+   * Mapa medicineId → total_quantity de todos os meds do usuário (bulk).
+   * Usado pelo PurchaseMedicineSheet pra exibir saldo sem N queries.
+   * @returns {Promise<Record<string, number>>}
+   */
+  async getStockSummaryMap(userId) {
+    z.string().uuid().parse(userId)
+    const { data, error } = await nativeSupabaseClient
+      .from('medicine_stock_summary')
+      .select('medicine_id, total_quantity')
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return (data || []).reduce((map, row) => {
+      map[row.medicine_id] = row.total_quantity ?? 0
+      return map
+    }, {})
   },
 
   /**
@@ -182,16 +255,22 @@ export const stockService = {
    * Histórico de compras de um medicamento.
    */
   async getPurchasesByMedicine(medicineId, userId) {
+    // Embed do lote em `stock` (FK stock.purchase_id → purchases.id) pra expor o
+    // saldo restante de cada compra. `remaining` = soma das entries do lote
+    // (normalmente 1). Sem isso o PurchaseCard mostrava sempre "0 restantes".
     const { data, error } = await nativeSupabaseClient
       .from('purchases')
-      .select('*')
+      .select('*, stock(quantity)')
       .eq('medicine_id', medicineId)
       .eq('user_id', userId)
       .order('purchase_date', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return (data || []).map((p) => ({
+      ...p,
+      remaining: (p.stock || []).reduce((acc, s) => acc + (Number(s.quantity) || 0), 0),
+    }))
   },
 
   /**
@@ -242,8 +321,11 @@ export const stockService = {
   },
 
   /**
-   * Edita uma purchase existente. Sem RPC dedicada na web — update direto na
-   * tabela purchases. NÃO mexe em stock (saldo é decremento via consume_stock).
+   * Edita uma purchase existente — APENAS metadados (preço, datas, farmácia,
+   * lab, notas). NÃO altera `quantity_bought`: a quantidade está amarrada ao
+   * lote em `stock` (saldo + FIFO) e qualquer correção de saldo passa pelo
+   * fluxo dedicado "Acertar saldo" (PO-6). Editar quantidade aqui causaria
+   * desync silencioso (sem trigger no DB que propague).
    */
   async updatePurchase(id, input, userId) {
     const validation = validateStockCreate(input)
@@ -253,7 +335,6 @@ export const stockService = {
     const { data, error } = await nativeSupabaseClient
       .from('purchases')
       .update({
-        quantity: p.quantity,
         unit_price: p.unit_price ?? 0,
         purchase_date: p.purchase_date,
         expiration_date: p.expiration_date,

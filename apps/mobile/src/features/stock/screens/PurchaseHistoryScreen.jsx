@@ -9,13 +9,16 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
+  Pressable,
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
+import { ChevronLeft, Pill, PillBottle } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import EmptyState from '@shared/components/states/EmptyState'
 import PurchaseCard from '@stock/components/PurchaseCard'
 import { stockService } from '@stock/services/stockService'
+import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { computeAverageUnitPrice, formatBRL } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -34,6 +37,7 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 
   // — States (R-010) —
   const [purchases, setPurchases] = useState([])
+  const [medicine, setMedicine] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // — Memos (R-010) —
@@ -56,8 +60,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
     if (!medicineId || !userId) return
     setLoading(true)
     try {
-      const data = await stockService.getPurchasesByMedicine(medicineId, userId)
+      const [data, med] = await Promise.all([
+        stockService.getPurchasesByMedicine(medicineId, userId),
+        medicineService.getById(medicineId).catch(() => null),
+      ])
       setPurchases(data ?? [])
+      setMedicine(med ?? null)
     } catch {
       setPurchases([])
     } finally {
@@ -102,10 +110,26 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 
   const keyExtractor = useCallback((item) => item.id, [])
 
+  // — Render: barra superior com voltar (sempre visível, inclusive no loading) —
+  const topBar = (
+    <View style={styles.topBar}>
+      <Pressable
+        onPress={() => navigation.goBack()}
+        style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+      >
+        <ChevronLeft size={26} color={colors.text.primary} />
+      </Pressable>
+    </View>
+  )
+
   // — Loading —
   if (loading) {
     return (
       <ScreenContainer>
+        {topBar}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text style={styles.loadingText}>Carregando histórico...</Text>
@@ -116,6 +140,7 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 
   return (
     <ScreenContainer>
+      {topBar}
       <FlatList
         data={purchases}
         keyExtractor={keyExtractor}
@@ -126,12 +151,35 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
         ]}
         ListHeaderComponent={
           <>
-            {/* Título da tela */}
-            <View style={styles.pageHeader}>
-              <Text style={styles.pageTitle} numberOfLines={2}>
-                {medicineName ?? 'Medicamento'}
-              </Text>
-              <Text style={styles.pageSubtitle}>Histórico de compras</Text>
+            {/* Card de contexto do medicamento */}
+            <View style={styles.medicineCard}>
+              <View style={styles.medicineIcon}>
+                {medicine?.type === 'suplemento' ? (
+                  <PillBottle size={22} color={colors.supplement[500]} strokeWidth={2} />
+                ) : (
+                  <Pill size={22} color={colors.primary[500]} strokeWidth={2} />
+                )}
+              </View>
+              <View style={styles.medicineInfo}>
+                <View style={styles.medicineNameRow}>
+                  <Text style={styles.medicineName} numberOfLines={2}>
+                    {medicine?.name ?? medicineName ?? 'Medicamento'}
+                  </Text>
+                  {medicine?.dosage_per_pill ? (
+                    <View style={styles.dosePill}>
+                      <Text style={styles.dosePillText}>
+                        {medicine.dosage_per_pill}{medicine.dosage_unit || ''}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                {medicine?.active_ingredient ? (
+                  <Text style={styles.medicineSub} numberOfLines={1}>
+                    {medicine.active_ingredient}
+                  </Text>
+                ) : null}
+                <Text style={styles.pageSubtitle}>Histórico de compras</Text>
+              </View>
             </View>
 
             {/* Cards de resumo — visíveis apenas quando há dados */}
@@ -174,6 +222,23 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // Barra superior (voltar)
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    paddingTop: spacing[2],
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtnPressed: {
+    opacity: 0.6,
+  },
+
   // Loading
   loadingContainer: {
     flex: 1,
@@ -197,19 +262,63 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // Cabeçalho da página
-  pageHeader: {
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[4],
-    paddingBottom: spacing[2],
+  // Card de contexto do medicamento
+  medicineCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    marginHorizontal: spacing[5],
+    marginTop: spacing[4],
+    marginBottom: spacing[2],
+    padding: spacing[4],
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-
-  pageTitle: {
-    fontSize: 24,
+  medicineIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medicineInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  medicineNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    flexWrap: 'wrap',
+  },
+  medicineName: {
+    flexShrink: 1,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.text.primary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     fontFamily: typography.fontFamily?.bold ?? 'System',
+  },
+  dosePill: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  dosePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.neutral[700],
+  },
+  medicineSub: {
+    fontSize: 13,
+    color: colors.text.secondary,
   },
 
   pageSubtitle: {
