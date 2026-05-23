@@ -59,3 +59,25 @@ export function filterActiveStockItems(processed) {
     .filter(item => item.hasActiveProtocol)
     .sort((a, b) => a.daysRemaining - b.daysRemaining)
 }
+
+/**
+ * Split PO-9 (§0.7): separa itens com protocolo ativo (com previsão de consumo)
+ * dos itens só-estoque (saldo positivo sem treatment ativo — antes invisíveis).
+ *
+ * - active: hasActiveProtocol, ordenado por daysRemaining asc (mais crítico primeiro)
+ * - inactive: !hasActiveProtocol && totalQuantity > 0, ordenado por nome
+ *
+ * O service já filtra `hasActiveProtocol || totalQuantity > 0`, então itens sem
+ * protocolo e sem saldo nem chegam aqui.
+ */
+export function splitStockItems(processed) {
+  const active = processed
+    .filter(item => item.hasActiveProtocol)
+    .sort((a, b) => a.daysRemaining - b.daysRemaining)
+
+  const inactive = processed
+    .filter(item => !item.hasActiveProtocol && item.totalQuantity > 0)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+
+  return { active, inactive }
+}

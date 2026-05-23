@@ -3,15 +3,15 @@
   "sprint": "2026-W20",
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "goal": "Fase 2.5 fechada (PR #570) + RETRO Fase 2+2.5 + DEVFLOW C5 (3 APs + 2 R)",
+    "status": "coding",
+    "goal": "Fase 3 Sprint S3.1 Wave 1 — helpers @dosiq/core/utils/stock + stockService consolidado mobile",
     "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-05-16T13:35:00Z",
     "journal_entries_since_distillation": 3,
     "rules_count": 188,
-    "anti_patterns_count": 169,
+    "anti_patterns_count": 171,
     "decisions_count": 46,
     "contracts_count": 20,
     "distillation_due": false
@@ -21,6 +21,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-18T15:05:00Z"
+    "index_loaded_at": "2026-05-18T19:50:00Z"
   }
 }

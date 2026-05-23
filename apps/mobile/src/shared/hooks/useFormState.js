@@ -10,6 +10,9 @@ import { useCallback, useMemo, useState } from 'react'
 
 const EMPTY = Object.freeze({})
 
+// Sentinel para distinguir "sem override" de "override undefined" no handleBlur.
+const NO_OVERRIDE = Symbol('no-override')
+
 const deepEqual = (a, b) => {
   if (a === b) return true
   // Date precisa de comparação por valor (getTime) — Object.keys(Date) retorna []
@@ -58,10 +61,14 @@ export function useFormState(schema, { initialValues = EMPTY } = {}) {
     })
   }, [])
 
+  // valueOverride (opcional): valor coercido pra validar no lugar do raw em
+  // values[field]. Necessário p/ campos decimais PT-BR que guardam string até o
+  // submit (ex: "0,437") mas precisam validar como number no blur (AP-167).
   const handleBlur = useCallback(
-    (field) => {
+    (field, valueOverride = NO_OVERRIDE) => {
       setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }))
-      const msg = validateField(schema, field, values[field], values)
+      const value = valueOverride === NO_OVERRIDE ? values[field] : valueOverride
+      const msg = validateField(schema, field, value, { ...values, [field]: value })
       setErrors((prev) => {
         if (msg) return { ...prev, [field]: msg }
         if (!prev[field]) return prev

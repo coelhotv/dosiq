@@ -55,11 +55,6 @@ vi.mock('../../services/notificationDeduplicator.js', () => ({
   shouldSendGroupedNotification: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('../../utils/timezone.js', () => ({
-  getCurrentTimeInTimezone: vi.fn(() => '08:00'),
-  getCurrentDateInTimezone: vi.fn(() => '2026-04-29'),
-}));
-
 describe('Tasks Service - Wave 11 Refactor', () => {
   let mockDispatcher;
 
@@ -110,10 +105,6 @@ describe('Tasks Service - Wave 11 Refactor', () => {
     it('should generate storytelling based on performance improvement', async () => {
       // Mock user settings (23:00)
       setMockData([{ user_id: 'user1', display_name: 'Test User', digest_time: '23:00', timezone: 'America/Sao_Paulo' }]);
-
-      // Mock current time
-      const { getCurrentTimeInTimezone } = await import('../../utils/timezone.js');
-      getCurrentTimeInTimezone.mockReturnValue('23:00');
 
       // Mock protocols
       setMockData([

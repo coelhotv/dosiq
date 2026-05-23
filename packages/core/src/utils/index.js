@@ -81,6 +81,7 @@ export {
 // Date presentation PT-BR (Fase 2)
 export {
   formatDatePtBR,
+  formatDateShortPtBR,
   formatEndDate,
 } from './dateFormat.js'
 
@@ -89,3 +90,15 @@ export {
   TREATMENT_STATUS,
   resolveTreatmentStatus,
 } from './treatmentStatus.js'
+
+// Stock helpers (Fase 3 — paridade web↔mobile)
+// REUSA calculateDailyIntake + calculateDaysRemaining de adherenceLogic.js
+// (exportados acima) — não duplicar derivações de consumo/dias-restantes.
+export {
+  STOCK_STATUS,
+  STOCK_THRESHOLDS,
+  resolveStockStatus,
+  computeAverageUnitPrice,
+  computeExpiryDays,
+  formatBRL,
+} from './stock.js'

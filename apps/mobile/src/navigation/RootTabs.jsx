@@ -11,7 +11,7 @@ import { Calendar, Pill, Package, User } from 'lucide-react-native'
 import { ROUTES } from './routes'
 import TodayScreen from '../features/dashboard/screens/TodayScreen'
 import TreatmentsStack from './TreatmentsStack'
-import StockScreen from '../features/stock/screens/StockScreen'
+import StockStack from './StockStack'
 import ProfileStack from './ProfileStack'
 import { colors } from '../shared/styles/tokens'
 
@@ -82,8 +82,21 @@ export default function RootTabs() {
       />
       <Tab.Screen
         name={ROUTES.STOCK}
-        component={StockScreen}
+        component={StockStack}
         options={{ title: 'Estoque' }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
+            // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
+            const isFocused = navigation.isFocused()
+            const tabState = route.state
+            const isOnSubScreen = tabState && tabState.index > 0
+            if (isFocused && isOnSubScreen) {
+              e.preventDefault()
+              navigation.navigate(ROUTES.STOCK, { screen: ROUTES.STOCK_MAIN })
+            }
+          },
+        })}
       />
       <Tab.Screen
         name={ROUTES.PROFILE}

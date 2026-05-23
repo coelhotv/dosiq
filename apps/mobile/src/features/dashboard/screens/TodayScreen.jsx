@@ -159,10 +159,10 @@ function TodayScreenContent({
           {__DEV__ && (
             <TouchableOpacity
               style={styles.devBtn}
-              onPress={() => navigation?.navigate(ROUTES.MEDICINE_DEMO)}
+              onPress={() => navigation?.navigate(ROUTES.DEV_HUB)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Abrir Medicine Demo"
+              accessibilityLabel="Abrir Dev Hub"
             >
               <Text style={styles.devBtnText}>DEV</Text>
             </TouchableOpacity>

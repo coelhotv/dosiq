@@ -20,6 +20,7 @@ export function useTreatments() {
   // States (R-010: states first)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
   const [activeTab, setActiveTab] = useState('ativos')
@@ -79,6 +80,10 @@ export function useTreatments() {
       }
     } finally {
       setLoading(false)
+      // Marca que a 1ª resolução terminou (sucesso/cache/erro). Gate de UI usa
+      // isto pra evitar flash do empty state antes dos dados chegarem (groups
+      // é sempre array, então `!groups` nunca pegava o load inicial).
+      setHasLoaded(true)
     }
   }, [])
 
@@ -138,6 +143,7 @@ export function useTreatments() {
     // shape legado — compat com callsites existentes
     data: transformed.data,
     loading,
+    hasLoaded,
     error,
     stale,
     refresh: load,
@@ -150,7 +156,7 @@ export function useTreatments() {
     finalizados: transformed.finalizados ?? [],
     groups: transformed.groups ?? [],
     currentItems,
-  }), [transformed, loading, error, stale, load, activeTab, currentItems])
+  }), [transformed, loading, hasLoaded, error, stale, load, activeTab, currentItems])
 
   return result
 }

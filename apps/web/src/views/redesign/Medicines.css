@@ -1,0 +1,148 @@
+/* ============================================
+   MedicinesRedesign — Santuário Terapêutico
+   ============================================ */
+
+.sr-medicines {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Header */
+.sr-medicines__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.sr-medicines__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sr-medicines__title-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-secondary-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.sr-medicines__title {
+  font-family: var(--font-heading);
+  font-size: var(--text-headline-md, 1.75rem);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.sr-medicines__subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface-variant);
+  margin: 0.25rem 0 0;
+}
+
+/* Filter Chips */
+.sr-medicines__filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sr-filter-chip {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full, 999px);
+  border: 2px solid transparent;
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.sr-filter-chip:hover {
+  background: var(--color-surface-container);
+}
+
+.sr-filter-chip--active {
+  background: var(--color-primary);
+  color: var(--color-on-primary, #ffffff);
+  border-color: var(--color-primary);
+}
+
+/* Grid */
+.sr-medicines__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Feedback Banners */
+.sr-medicines__success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--color-success, #065f46);
+  font-size: var(--text-body-md);
+  margin-bottom: 1rem;
+  animation: sr-fade-in 0.3s ease;
+}
+
+.sr-medicines__error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(186, 26, 26, 0.06);
+  border-left: 4px solid var(--color-error);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--text-body-md);
+  margin-bottom: 1rem;
+}
+
+@keyframes sr-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sr-medicines {
+    padding: 1rem;
+  }
+
+  .sr-medicines__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sr-medicines__header .btn-primary {
+    width: 100%;
+  }
+
+  .sr-medicines__grid {
+    grid-template-columns: 1fr;
+  }
+}
