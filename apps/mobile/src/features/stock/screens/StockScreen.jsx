@@ -2,9 +2,9 @@
 // R-010: ordem hooks → States → Memos → Effects → Handlers
 // PO-2: FAB ubíquo "Registrar compra" via PurchaseMedicineSheet
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef } from 'react'
 import { SectionList, RefreshControl, StyleSheet, Text, View, Pressable } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { Plus } from 'lucide-react-native'
 import { useStock } from '@stock/hooks/useStock'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -36,6 +36,7 @@ export default function StockScreen() {
   // — States (R-010) —
   const [filter, setFilter] = useState('todos')
   const [sheetVisible, setSheetVisible] = useState(false)
+  const isFirstFocus = useRef(true)
 
   // — Memos (R-010) —
   const active = useMemo(() => data?.active ?? [], [data])
@@ -81,6 +82,19 @@ export default function StockScreen() {
     }
     return list
   }, [data, filter, active, inactive])
+
+  // — Effects (R-010) —
+  // Refresh ao re-focar (volta de PurchaseForm/Detail) pra refletir nova compra
+  // sem exigir pull-to-refresh. Pula o 1º foco — useStock já carrega no mount.
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false
+        return
+      }
+      refresh()
+    }, [refresh]),
+  )
 
   // — Handlers (R-010) —
   const handleOpenItem = useCallback(
