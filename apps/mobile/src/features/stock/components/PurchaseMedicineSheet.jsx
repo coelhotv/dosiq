@@ -121,7 +121,7 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
     if (!userId) return
     let cancelled = false
     stockService
-      .getStockSummaryMap(userId)
+      .getStockSummaryMap()
       .then((map) => { if (!cancelled) setStockMap(map) })
       .catch(() => { if (!cancelled) setStockMap({}) })
     return () => { cancelled = true }

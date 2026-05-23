@@ -10,7 +10,7 @@
 // Contratos:
 //   useStockMutation().adjustBalance(medicineId, newBalance, reason, notes)
 //     → Promise<{delta, before, after}>; já dá toast e lança em erro.
-//   stockService.getTotalQuantity(medicineId, userId) → number.
+//   stockService.getTotalQuantity(medicineId) → number (userId resolvido na factory G2).
 //   useAuth() → user?.id.
 //
 // R-010: States → Memos → Effects → Handlers

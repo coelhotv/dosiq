@@ -77,7 +77,7 @@ export function useStockMutation() {
       // Optional chaining no service call defende contra user null adicional.
       if (!user?.id) throw new Error('Usuário não autenticado')
       const result = await mutationCreate.mutate(() =>
-        stockService.createPurchase(input, user?.id),
+        stockService.createPurchase(input),
       )
       if (result && goBack) navigation.goBack()
       return result
@@ -89,7 +89,7 @@ export function useStockMutation() {
     async (id, input, { goBack = false } = {}) => {
       if (!user?.id) throw new Error('Usuário não autenticado')
       const result = await mutationUpdate.mutate(() =>
-        stockService.updatePurchase(id, input, user?.id),
+        stockService.updatePurchase(id, input),
       )
       if (result && goBack) navigation.goBack()
       return result
@@ -119,7 +119,6 @@ export function useStockMutation() {
           newBalance,
           reason,
           notes,
-          user?.id,
         )
         // multiRemove = 1 chamada à ponte nativa (vs N concorrentes) — atômico.
         // Log falha em __DEV__ pra diagnóstico (cache stale survives next refresh).

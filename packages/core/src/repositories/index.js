@@ -1,3 +1,5 @@
 export { createMedicineRepository } from './createMedicineRepository.js'
 export { createProtocolRepository } from './createProtocolRepository.js'
 export { createTreatmentPlanRepository } from './createTreatmentPlanRepository.js'
+export { createStockRepository } from './createStockRepository.js'
+export { createPurchaseRepository } from './createPurchaseRepository.js'
