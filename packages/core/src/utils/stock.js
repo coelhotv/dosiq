@@ -128,18 +128,21 @@ export function computeExpiryDays(expiry, today = null) {
 }
 
 /**
- * formatBRL — formata valor em BRL com locale pt-BR.
+ * formatBRL — formata valor em BRL (pt-BR) sem depender de Intl.NumberFormat.
  *
- * Canonico para todo o monorepo. `apps/web/.../costAnalysisService.formatBRL`
- * ainda existe (duplicado); sera substituido em G3 quando web adotar factory.
+ * Implementacao manual: o Hermes (engine RN/mobile) nao garante suporte
+ * completo a ICU, e Intl.NumberFormat pode renderizar moeda incorretamente em
+ * dispositivos. Formatacao manual garante "R$ 1.234,56" identico web↔mobile.
+ *
+ * Negativos: sinal antes do simbolo ("-R$ 50,00"), preservando o contrato.
  *
  * @param {number} value
  * @returns {string}
  */
 export function formatBRL(value) {
   const n = Number.isFinite(Number(value)) ? Number(value) : 0
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(n)
+  const sign = n < 0 ? '-' : ''
+  const [intPart, decPart] = Math.abs(n).toFixed(2).split('.')
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${sign}R$ ${groupedInt},${decPart}`
 }
