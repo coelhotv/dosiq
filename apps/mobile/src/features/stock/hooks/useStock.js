@@ -131,11 +131,15 @@ export function useStock() {
     }
   }, [state.data])
 
+  // refresh estável (useCallback) — arrow inline no useMemo recriava a função a
+  // cada setState, causando loop em consumidores com useFocusEffect([refresh]).
+  const refresh = useCallback(() => loadStock(true), [loadStock])
+
   const result = useMemo(() => ({
     ...state,
     data: refinedData,
-    refresh: () => loadStock(true)
-  }), [state, refinedData, loadStock])
+    refresh,
+  }), [state, refinedData, refresh])
 
   return result
 }
