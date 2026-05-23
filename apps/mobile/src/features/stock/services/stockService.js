@@ -321,8 +321,11 @@ export const stockService = {
   },
 
   /**
-   * Edita uma purchase existente. Sem RPC dedicada na web — update direto na
-   * tabela purchases. NÃO mexe em stock (saldo é decremento via consume_stock).
+   * Edita uma purchase existente — APENAS metadados (preço, datas, farmácia,
+   * lab, notas). NÃO altera `quantity_bought`: a quantidade está amarrada ao
+   * lote em `stock` (saldo + FIFO) e qualquer correção de saldo passa pelo
+   * fluxo dedicado "Acertar saldo" (PO-6). Editar quantidade aqui causaria
+   * desync silencioso (sem trigger no DB que propague).
    */
   async updatePurchase(id, input, userId) {
     const validation = validateStockCreate(input)
@@ -332,7 +335,6 @@ export const stockService = {
     const { data, error } = await nativeSupabaseClient
       .from('purchases')
       .update({
-        quantity_bought: p.quantity,
         unit_price: p.unit_price ?? 0,
         purchase_date: p.purchase_date,
         expiration_date: p.expiration_date,

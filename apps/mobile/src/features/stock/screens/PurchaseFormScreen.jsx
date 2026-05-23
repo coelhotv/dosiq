@@ -289,6 +289,8 @@ export default function PurchaseFormScreen() {
                   required
                   placeholder="0"
                   keyboardType="decimal-pad"
+                  disabled={isEdit}
+                  helperText={isEdit ? 'Corrija o saldo pelo "Acertar saldo"' : undefined}
                   value={
                     form.values.quantity != null ? String(form.values.quantity) : ''
                   }
