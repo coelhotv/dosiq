@@ -136,9 +136,12 @@ export default function PurchaseFormScreen() {
 
   // States — laboratório travado p/ medicamentos de marca (Novo/Similar)
   const [labLocked, setLabLocked] = useState(false)
+  const { handleChange } = form
 
   // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
   // laboratório é marca registrada (não muda por compra): preenche + trava.
+  // setState ocorre dentro do .then (microtask, não sync no corpo do effect),
+  // então não dispara react-hooks/set-state-in-effect.
   useEffect(() => {
     if (!medicineId) return
     let cancelled = false
@@ -147,14 +150,13 @@ export default function PurchaseFormScreen() {
       .then((med) => {
         if (cancelled || !med) return
         if (FIXED_LAB_CATEGORIES.includes(med.regulatory_category) && med.laboratory) {
-          form.handleChange('laboratory', med.laboratory)
+          handleChange('laboratory', med.laboratory)
           setLabLocked(true)
         }
       })
       .catch(() => {})
     return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medicineId])
+  }, [medicineId, handleChange])
 
   // Handlers
 

@@ -48,20 +48,11 @@ export default function StockDetailScreen({ navigation }) {
     if (!medicineId || !userId) return
     setLoading(true)
     try {
-      const summary = await stockService.getStockSummary(medicineId, userId)
-      if (summary && typeof summary.total_quantity === 'number') {
-        setTotalQuantity(summary.total_quantity)
-      } else {
-        const fallback = await stockService.getTotalQuantity(medicineId, userId)
-        setTotalQuantity(fallback ?? 0)
-      }
+      // getTotalQuantity já resolve view medicine_stock_summary + fallback soma stock.
+      const qty = await stockService.getTotalQuantity(medicineId, userId)
+      setTotalQuantity(qty ?? 0)
     } catch {
-      try {
-        const fallback = await stockService.getTotalQuantity(medicineId, userId)
-        setTotalQuantity(fallback ?? 0)
-      } catch {
-        setTotalQuantity(0)
-      }
+      setTotalQuantity(0)
     } finally {
       setLoading(false)
     }
