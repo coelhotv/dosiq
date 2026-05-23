@@ -42,6 +42,16 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
     ? colors.status.warning  // <90 dias — amarelo
     : colors.text.secondary  // >=90 dias — neutro
 
+  // Contagem de dias só ajuda para validade próxima (<=60d). Para datas longas,
+  // "vence em 680 dias" não é projetável — mostra a data formatada.
+  const expiryLabel = !purchase.expiration_date
+    ? null
+    : expiryDays === null || expiryDays < 0
+    ? 'Vencido'
+    : expiryDays <= 60
+    ? `Vence em ${expiryDays} ${expiryDays === 1 ? 'dia' : 'dias'}`
+    : `Vence em ${formatDateShortPtBR(purchase.expiration_date)}`
+
   const card = (
     <View
       style={[
@@ -104,12 +114,10 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
       )}
 
       {/* Validade (se expiration_date) */}
-      {purchase.expiration_date && (
+      {expiryLabel && (
         <View style={styles.expiryChip}>
           <Text style={[styles.expiryText, { color: expiryStatusColor }]}>
-            {expiryDays === null || expiryDays < 0
-              ? 'Vencido'
-              : `Vence em ${expiryDays} dias`}
+            {expiryLabel}
           </Text>
         </View>
       )}

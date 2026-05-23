@@ -18,6 +18,14 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
+// Mensagem contextual do empty state por filtro (evita "nenhum cadastrado"
+// quando na verdade há meds, mas nenhum bate o filtro aplicado).
+const FILTER_EMPTY_LABEL = {
+  critico: 'em estado crítico',
+  baixo: 'com estoque baixo',
+  sem_tratamento: 'sem tratamento ativo',
+}
+
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).
  */
@@ -162,9 +170,17 @@ export default function StockScreen() {
           </View>
         }
         ListEmptyComponent={
-          <EmptyState
-            message="Nenhum medicamento cadastrado ou estoque registrado."
-          />
+          filter === 'todos' ? (
+            <EmptyState
+              icon="💊"
+              message="Nenhum medicamento cadastrado ou estoque registrado."
+            />
+          ) : (
+            <EmptyState
+              icon="🔍"
+              message={`Nenhum medicamento ${FILTER_EMPTY_LABEL[filter]}.`}
+            />
+          )
         }
         ListFooterComponent={
           active.length > 0 ? (
