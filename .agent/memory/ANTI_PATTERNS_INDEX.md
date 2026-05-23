@@ -36,6 +36,7 @@
 - **[AP-140]** Duplicate Imports in ESM Node.js -> [`anti-patterns/infra_and_deploy/AP-140.md`](./anti-patterns/infra_and_deploy/AP-140.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[AP-171]** `Intl.NumberFormat` (moeda) não confiável no Hermes — renderiza errado em device sem erro; usar formatação manual (sinal antes do símbolo) -> [`anti-patterns/mobile_and_platform/AP-171.md`](./anti-patterns/mobile_and_platform/AP-171.md)
 - **[AP-A03]** When 2+ protocols exist for same medicine, logs bleed between them. Protocol A's... -> [`anti-patterns/mobile_and_platform/AP-A03.md`](./anti-patterns/mobile_and_platform/AP-A03.md)
 - **[AP-B01]** Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no... -> [`anti-patterns/mobile_and_platform/AP-B01.md`](./anti-patterns/mobile_and_platform/AP-B01.md)
 - **[AP-B03]** Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGen... -> [`anti-patterns/mobile_and_platform/AP-B03.md`](./anti-patterns/mobile_and_platform/AP-B03.md)
@@ -113,6 +114,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[AP-172]** Recalcular status de estoque manualmente (thresholds por dias) em vez de `resolveStockStatus` — saldo 0 sem consumo virava HIGH (deveria CRITICAL); diverge da listagem -> [`anti-patterns/react_and_ui/AP-172.md`](./anti-patterns/react_and_ui/AP-172.md)
 - **[AP-004]** `ReferenceError` — TDZ crash -> [`anti-patterns/react_and_ui/AP-004.md`](./anti-patterns/react_and_ui/AP-004.md)
 - **[AP-094]** ReferenceError: Cannot access handler before initialization — TDZ crash -> [`anti-patterns/react_and_ui/AP-094.md`](./anti-patterns/react_and_ui/AP-094.md)
 - **[AP-97]** Última definição sobrescreve design system canônico, causando valores legados/op... -> [`anti-patterns/react_and_ui/AP-97.md`](./anti-patterns/react_and_ui/AP-97.md)
