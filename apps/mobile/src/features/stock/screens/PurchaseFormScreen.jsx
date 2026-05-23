@@ -291,6 +291,7 @@ export default function PurchaseFormScreen() {
                   required
                   placeholder="0"
                   keyboardType="decimal-pad"
+                  maxLength={10}
                   disabled={isEdit}
                   helperText={isEdit ? 'Corrija o saldo pelo "Acertar saldo"' : undefined}
                   value={
@@ -307,6 +308,7 @@ export default function PurchaseFormScreen() {
                   label="Preço unitário"
                   placeholder="0,00"
                   keyboardType="decimal-pad"
+                  maxLength={12}
                   helperText="R$ — opcional"
                   value={
                     form.values.unit_price != null ? String(form.values.unit_price) : ''
