@@ -1,5 +1,11 @@
 # EXEC SPEC — Fase 3: CRUD Estoque (v2.1 — 2026-05-19)
 
+> **STATUS: ✅ CONCLUÍDA (2026-05-23, mergeada em `main`)**
+> S3.1 Waves 1-4 (PRs #574/#576/#578) · S3.2 pt1 KPIs+Ajuste+migrations (#579) · S3.2 pt2 G2+G3 factories (#580) · PR-mãe consolidada (#581).
+> Quality gates: G1 (Copy) ✅ · G2 (Extract — factories `createStock/PurchaseRepository`, parity 37/37) ✅ · G3 (Migrate — web+mobile adotam factory) ✅. `validate:agent` 830/830.
+> Migrations §0.8 (delta negativo) e §0.9 (`unit_price` NUMERIC(12,4)) aplicadas em produção (MCP) e validadas em runtime.
+> Próximo: Fase 4.
+
 > **Duração**: 2 sprints semanais
 > **Branch base**: `feat/crud-stock`
 > **Referência**: MASTER_PLAN_HIBRIDO_EVOLUCAO_CRUD.md §9 (Fase 3)
@@ -148,8 +154,10 @@ return (data || []).filter((m) => {
 ```
 
 **Deprecação**: `getStockData` legacy fica preservada até Wave 4 reescrever `useStock`. Após Wave 4 mergeada, marcar `getStockData` como `@deprecated` + remover em fix-pack pós-Fase 3.
+> ✅ **Resolvido**: `getStockData` marcado `@deprecated` (sem callers reais após Wave 4). Remoção agendada pra fix-pack pós-Fase 3.
 
 ### 0.8 Migration pendente pra Wave 5 — ajuste manual negativo
+> ✅ **Aplicada** (`docs/migrations/20260522_allow_negative_manual_adjustments.sql`) via MCP; validada em runtime (rollback transactions: delta negativo FIFO, guard saldo insuficiente, grants).
 
 `adjustToBalance` (modo único "Acertar saldo" — PO-6) precisa funcionar pra **delta negativo** (cenários: perda, doação, descarte, vencimento manual sem usar lote vencido). RPC atual `apply_manual_stock_adjustment` **falha explicitamente** quando `p_quantity_delta < 0` (archive §1.1 regra 6 — decisão conservadora de 2026-04-02).
 
@@ -178,6 +186,7 @@ return (data || []).filter((m) => {
 Archive spec original (`exec_spec_stock_refactor.md`) tem update correspondente em §21.2 (nova seção) marcando essa mudança como pós-entrega.
 
 ### 0.9 Migration pendente pra Wave 5 — precisão de `purchases.unit_price`
+> ✅ **Aplicada** (`docs/migrations/20260520_purchases_unit_price_precision.sql`) via MCP. Polish §192 (maxLength no input) implementado em #581 (`maxLength={12}` no `unit_price`).
 
 Regressão detectada via Supabase MCP (schema vivo, 2026-05-20): `purchases.unit_price` ficou `NUMERIC(10,2)` no refactor (`20260402`), enquanto `stock.unit_price` é `NUMERIC(12,4)`. Custos muito baixos (genéricos/fracionados, ex. `R$ 0,134`/comprimido) eram **arredondados silenciosamente pra 2 casas** no INSERT — Zod e form aceitavam, Postgres truncava sem erro.
 

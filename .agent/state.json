@@ -2,17 +2,17 @@
   "project": "dosiq",
   "sprint": "2026-W20",
   "session": {
-    "mode": "coding",
-    "status": "coding",
-    "goal": "Fase 3 Sprint S3.1 Wave 1 — helpers @dosiq/core/utils/stock + stockService consolidado mobile",
-    "goal_type": "feature"
+    "mode": "distillation",
+    "status": "distilled",
+    "goal": "Fase 3 — distill pós-fase (C5 + reconciliação D5)",
+    "goal_type": "chore"
   },
   "memory": {
-    "last_distillation": "2026-05-16T13:35:00Z",
-    "journal_entries_since_distillation": 3,
+    "last_distillation": "2026-05-23T18:20:00Z",
+    "journal_entries_since_distillation": 0,
     "rules_count": 188,
-    "anti_patterns_count": 171,
-    "decisions_count": 46,
+    "anti_patterns_count": 173,
+    "decisions_count": 47,
     "contracts_count": 20,
     "distillation_due": false
   },
