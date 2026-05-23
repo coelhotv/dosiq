@@ -9,15 +9,16 @@
 ## Timeline Visual
 
 ```
-Sem  1   2   3   4   5   6   7   8   9  10  11  12+
-     ├───────────┤  ├──────────────┤  ├────────────┤  ├───────────┤
-     Pré-Req       Fase 1            Fase 2           Fase 3
-     Foundation    Medicamentos      Protocolos       Estoque
-     3 sprints     3 sprints         3 sprints        2 sprints
-                   G1→G2→G3          G1→G2→G3         G1→G2→G3
+Sem 1-3  4-6   7-9  10-11  ~12-13   ~14-16
+    ├───┤ ├───┤ ├───┤ ├───┤  ├─────┤  ├──────┤
+    Pré   F1    F2   F2.5+F3  Fase 4   Fase 5
+    Req   Med   Trat Estoque  Perfil+  Analíticas
+                              Landing+ (Hist/Ader/
+                              Onboard  Consulta)
+    ✅    ✅    ✅   ✅       📋       📋
 ```
 
-**Total Fases 0-3**: ~11 sprints semanais
+**Fases 0 → 3 entregues** (~11 sprints + Fase 2.5). **Fases 4-5 com spec pronta** (~4-5 sprints). Fase 6 a planejar.
 
 ---
 
@@ -25,11 +26,15 @@ Sem  1   2   3   4   5   6   7   8   9  10  11  12+
 
 | Fase | Spec | Sprints | Status |
 |------|------|---------|--------|
-| **Pré-Req** | [EXEC_SPEC_PRE_REQUISITOS.md](EXEC_SPEC_PRE_REQUISITOS.md) | P.1 — P.3 | 📋 Draft |
-| **Fase 1** | [EXEC_SPEC_FASE1_MEDICAMENTOS.md](EXEC_SPEC_FASE1_MEDICAMENTOS.md) | M1.1 — M1.3 | 📋 Draft |
-| **Fase 2** | [EXEC_SPEC_FASE2_PROTOCOLOS.md](EXEC_SPEC_FASE2_PROTOCOLOS.md) | T2.1 — T2.3 | 📋 Draft |
-| **Fase 3** | [EXEC_SPEC_FASE3_ESTOQUE.md](EXEC_SPEC_FASE3_ESTOQUE.md) | S3.1 — S3.2 | 📋 Draft |
-| **Fases 4-6** | [EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md](EXEC_SPEC_HIBRIDO_FASE8_POS_MVP.md) | — | 📋 Existente |
+| **Pré-Req** | [EXEC_SPEC_PRE_REQUISITOS.md](EXEC_SPEC_PRE_REQUISITOS.md) | P.1 — P.3 | ✅ Entregue |
+| **Fase 1** | [EXEC_SPEC_FASE1_MEDICAMENTOS.md](EXEC_SPEC_FASE1_MEDICAMENTOS.md) | M1.1 — M1.3 | ✅ Entregue |
+| **Fase 2** | [EXEC_SPEC_FASE2_PROTOCOLOS.md](EXEC_SPEC_FASE2_PROTOCOLOS.md) | T2.1 — T2.3 | ✅ Entregue |
+| **Fase 2.5** | [EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md](EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md) | T2.5.1 | ✅ Entregue |
+| **Fase 3** | [EXEC_SPEC_FASE3_ESTOQUE.md](EXEC_SPEC_FASE3_ESTOQUE.md) | S3.1 — S3.2 | ✅ Entregue |
+| **Fase 4** | [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) | S4.1 — S4.2 | 📋 Spec pronta |
+| **Fase 5** | [EXEC_SPEC_FASE5_ANALITICAS.md](EXEC_SPEC_FASE5_ANALITICAS.md) | S5.1 — S5.3 | 📋 Spec pronta |
+| **Fase 6** | _(a criar — Emergência · Chatbot · PDF · Export LGPD — **fecha paridade**)_ | — | ⏸️ A planejar |
+| **Fase 7** | _(a criar — mobile-only: camera · HealthKit · widgets · geolocation · watch · chatbot on-device)_ | — | ⏸️ A planejar |
 
 ---
 
@@ -41,7 +46,9 @@ Sem  1   2   3   4   5   6   7   8   9  10  11  12+
 | Fase 1 | ~12 | ~3 | 1 (medicine) | ~4 |
 | Fase 2 | ~12 | ~5 | 2 (protocol + plan) | ~4 |
 | Fase 3 | ~10 | ~4 | 2 (stock + purchase) | ~4 |
-| **Total** | **~49** | **~14** | **5 factories** | **~18** |
+| Fase 4 | ~14 | ~3 | 1 (profile) | ~4 |
+| Fase 5 | ~16 | ~3 | 0-1 (adherence, condicional) | ~4 |
+| **Total** | **~79** | **~20** | **6-7 factories** | **~26** |
 
 ---
 

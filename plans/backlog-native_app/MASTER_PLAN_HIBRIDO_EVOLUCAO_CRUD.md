@@ -15,9 +15,10 @@
 | **Fase 2 — Tratamentos (Protocolos)** | ✅ Completa | #561 (PR-A T2.1) · #562 (T2.1 fan-out) · #563 (PR-A T2.2) · #564 (PR-B T2.2) · #565 (PR-C T2.2) · #566 (PR-A T2.3 — factory G2) · #567 (PR-B T2.3 — web G3) · #568 (fechamento mãe→main) | G1 ✅ G2 ✅ G3 ✅ | Lições críticas: `isProtocolActiveOnDate` strict vs `isProtocolInPeriod`, `statusBarTranslucent` em todos `Modal`s mobile (AP-163), padronização "unidade(s)" |
 | **Fase 2.5 — Status de Tratamentos** | ✅ Completa | #570 (Status Ativo/Pausado/Finalizado — web + mobile) · #571 (RETRO Fase 2+2.5 + C5) | G1 ✅ | Helper canônico `resolveTreatmentStatus` em `@dosiq/core`; categorização ativo/pausado/finalizado (flag `active` + `end_date < hoje`); web adopt no mesmo PR. Spec: `EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md` |
 | **Fase 3 — Estoque** | ✅ Completa | #574 · #576 · #578 · #579 (KPIs+Ajuste+migrations) · #580 (factory G2+G3) · #581 (PR-mãe→main) | G1 ✅ G2 ✅ G3 ✅ | `createStockRepository` + `createPurchaseRepository` em `@dosiq/core` (parity 37/37); web+mobile adotam factory; migrations §0.8 (delta negativo) + §0.9 (`unit_price` NUMERIC(12,4)) aplicadas via MCP. Lições: AP-171 (Intl.NumberFormat/Hermes), AP-172 (status estoque duplicado vs `resolveStockStatus`). `validate:agent` 830/830 |
-| **Fase 4 — Perfil completo** | ⏸️ Não iniciada | — | — | Spec não escrita |
-| **Fase 5 — Analíticas (Histórico, Aderência expandida, Ficha)** | ⏸️ Não iniciada | — | — | Spec não escrita |
-| **Fase 6 — Avançadas (Emergência, Chatbot, PDF, mobile-only)** | ⏸️ Não iniciada | — | — | Spec não escrita |
+| **Fase 4 — Perfil + Landing + Onboarding** | 📋 Spec pronta | — | — | Escopo **ampliado**: landing revisada + onboarding guiado (aha moment, reusa F1/F2) + perfil mini-CRUD (`createProfileRepository`, G1/G2/G3) + settings. Spec: [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) |
+| **Fase 5 — Analíticas (Histórico · Aderência · Modo Consulta)** | 📋 Spec pronta | — | — | Histórico de doses + aderência expandida (7/30/90d, G1/G2/G3) + Modo Consulta/Apresentação (**visualização** da ficha médica). PDF e export LGPD → Fase 6. Spec: [EXEC_SPEC_FASE5_ANALITICAS.md](EXEC_SPEC_FASE5_ANALITICAS.md) |
+| **Fase 6 — Avançadas (Emergência, Chatbot, PDF, Export LGPD)** | ⏸️ Não iniciada | — | — | **Fecha a paridade web↔app**. Inclui agora **geração de PDF médico** + **exportar dados (LGPD)** movidos da Fase 5. Spec não escrita |
+| **Fase 7 — Mobile-only (divergência além da paridade)** | ⏸️ Não iniciada | — | — | Features exclusivas do nativo (sem equivalente web): camera OCR, HealthKit/Health Connect, widgets, geolocation, watch, spike chatbot on-device. Começa **só após paridade completa** (F1-F6). Spec não escrita |
 
 ### Lições aprendidas até aqui (consolidado de RETRO + spec histories)
 
@@ -230,7 +231,9 @@ Supabase Storage/
 | Date/Time | Inputs com popup | Pickers nativos do SO |
 | Identidade visual | `design-tokens` compartilhados | Mesmos tokens + adaptações de contraste e paradigmas nativos |
 
-### Visão Mobile-First (Pós-Paridade)
+### Visão Mobile-First (Pós-Paridade) → Fase 7
+
+> Estas features compõem a **Fase 7** (mobile-only) — divergência exclusiva do nativo, iniciada só após a paridade completa (F1-F6).
 
 | Feature | Plataforma | Valor |
 |---------|-----------|-------|
@@ -314,7 +317,7 @@ function MedicineFormScreen({ route }) {
 > **Benefícios de on-device**: zero latência, funciona offline, privacidade total dos dados de saúde.
 > **Trade-offs**: tamanho do modelo no bundle (100-500 MB), qualidade vs. cloud models, compatibilidade de dispositivos.
 >
-> Recomendação: spike dedicado de 1 sprint após Fase 6, com benchmark de qualidade vs. Groq.
+> Recomendação: spike dedicado de 1 sprint na Fase 7 (mobile-only), com benchmark de qualidade vs. Groq.
 
 ---
 
@@ -387,24 +390,30 @@ function MedicineFormScreen({ route }) {
 
 ---
 
-### Fase 4 — Perfil Completo — ~1-2 semanas
+### Fase 4 — Perfil + Landing + Onboarding — ~2 semanas
+
+> **Escopo ampliado** (decisão PO 2026-05-23): além do Perfil já previsto, incorpora **landing revisada** + **onboarding guiado**. Spec completa: [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md).
 
 | Item | Detalhes |
 |------|---------|
-| Edição | Dados pessoais (nome, data nasc., etc.) |
-| Avatar | Upload/gerenciamento |
-| Configurações | Tema, notificações (expandir o que já existe) |
-| **Quality Gates** | **G1 → G2 → G3** |
+| Landing (não-autenticada) | Preview de valor (anel + próxima dose) + CTAs Criar conta / Já tenho conta |
+| Onboarding guiado (3 passos) | "Aha moment": criar conta → 1º medicamento (reusa F1) → 1º tratamento (reusa F2, com "Pular"). **Reusa serviços/primitivos F1/F2 — zero duplicação** |
+| Perfil (mini-CRUD) | Hub (card identidade ou empty state) + Editar V1 (nome, data nasc., cidade, estado, telefone; email readonly; avatar iniciais). **Avatar com foto = V2/backlog** |
+| Configurações | Densidade da interface (Padrão/Automático/Detalhado) + Segurança (alterar senha · excluir conta). Sem "Sair" (vive no Hub) e sem Admin/DLQ (web-only) |
+| **Quality Gates** | Perfil mini-CRUD: **G1 → G2 → G3** (`createProfileRepository`). Landing/Onboarding/Settings: UI/auth (G1-equivalente, sem extract/migrate) |
 
 ---
 
 ### Fase 5 — Features Analíticas — ~2-3 semanas
 
+> Spec completa: [EXEC_SPEC_FASE5_ANALITICAS.md](EXEC_SPEC_FASE5_ANALITICAS.md). Entry points = proposta C (Aderência no Dashboard; Ferramentas no Perfil).
+
 | Item | Detalhes |
 |------|---------|
-| Histórico de Doses | Navegação histórica diária (healthHistory) |
-| Aderência expandida | Expansão de períodos, visualizações temporais, trends |
-| Ficha Médica | Resumo do paciente (read-only com export básico) |
+| Histórico de Doses | Calendário compacto navegável (coluna clicável ≥60px) + KPIs + lista por dia + sheet Editar/Excluir registro |
+| Aderência expandida | Períodos 7/30/90d, anel hero, KPIs, line chart, heatmap, insights. Drill-down do anel do Dashboard. **G1/G2/G3** |
+| Modo Consulta / Apresentação | Ficha médica **read-only** p/ o médico: tabs (Meds · Aderência · Prescrições+Titulação · Estoque) + Modo Apresentação full-bleed + share nativo |
+| **Fora de escopo (→ Fase 6)** | Geração de PDF médico + exportar dados (LGPD). Fase 5 entrega só a **visualização** da ficha |
 
 ---
 
@@ -412,10 +421,30 @@ function MedicineFormScreen({ route }) {
 
 | Item | Detalhes |
 |------|---------|
-| Cartão de Emergência | CRUD + QR code nativo + compartilhamento |
-| Chatbot | Fase 1: Groq SDK com contexto do paciente |
-| PDF Nativo | Geração de relatórios (react-native-pdf ou equivalente) |
-| Mobile-only | Início dos spikes: camera, HealthKit, widgets |
+| Cartão de Emergência | CRUD + QR code nativo + compartilhamento (read-public via QR) |
+| Chatbot | Groq SDK com contexto do paciente (bottom sheet 90%) |
+| PDF Nativo | Geração de relatórios médicos (do Modo Consulta) — **movido da Fase 5** |
+| Exportar dados (LGPD) | Sub-tela Privacidade e dados + sheet export (JSON/CSV · período · 4 checkboxes) — **movido da Fase 5** |
+
+> **Fase 6 fecha a paridade web↔app.** Tudo daqui pra trás (F1-F6) tem equivalente na web. A divergência mobile-only foi isolada na **Fase 7**.
+
+---
+
+### Fase 7 — Mobile-Only (divergência além da paridade) — ~3-4 semanas (spikes)
+
+> Features **exclusivas do nativo** — sem equivalente web. Só inicia **após a paridade completa (F1-F6)**. Mocks completos não obrigatórios: 1 artboard placeholder + post-it por spike (acordo PO). Ver §6 "Visão Mobile-First".
+
+| Item | Plataforma | Valor |
+|------|-----------|-------|
+| 📸 Camera OCR | iOS/Android | Escanear caixas de medicamento / receitas |
+| ❤️ HealthKit / Health Connect | iOS/Android | Integração com dados de saúde do dispositivo |
+| 🚨 Critical Alerts | iOS | Notificações urgentes para doses esquecidas |
+| 📱 Widgets | iOS/Android | Próxima dose + streak na home screen |
+| 📍 Geolocation | iOS/Android | Lembrete ao passar perto da farmácia |
+| ⌚ WatchOS/WearOS | Wearables | Complicação para próxima dose |
+| 🤖 Chatbot on-device | iOS/Android | Spike: LiteRT/Gemma/Apple Intelligence (benchmark vs Groq) |
+
+> Módulos nativos isolados em `platform/` — arquitetar desde já, implementar nesta fase.
 
 ---
 
@@ -484,6 +513,7 @@ Semana  1  2  3   4  5  6   7  8   9 10  11  12 13 14  15 16 17  18 19 20 21
 +     createProtocolRepository.js      ← Fase 2 G2
 +     createStockRepository.js         ← Fase 3 G2
 +     createProfileRepository.js       ← Fase 4 G2
++     createAdherenceRepository.js     ← Fase 5 G2 (condicional — ver EXEC_SPEC_FASE5 A1)
       createUserSessionRepository.js   ← Existente (padrão de referência)
       createNotificationLogRepository.js ← Existente
     config/        → Config factories
@@ -509,7 +539,7 @@ Semana  1  2  3   4  5  6   7  8   9 10  11  12 13 14  15 16 17  18 19 20 21
 
 ---
 
-## Registro de Decisões (16/16 Aprovadas)
+## Registro de Decisões (18/18 Aprovadas)
 
 | # | Decisão | Status |
 |---|---------|--------|
@@ -529,6 +559,9 @@ Semana  1  2  3   4  5  6   7  8   9 10  11  12 13 14  15 16 17  18 19 20 21
 | D14 | Chatbot futuro: spike on-device (LiteRT/Gemma4/Apple Intelligence) | ✅ |
 | D15 | Form Kit: build in-house (state + Zod, zero libs externas) | ✅ |
 | D16 | Nunca mais de 1 domínio em transição simultânea | ✅ |
+| D17 | Fase 4 ampliada: landing revisada + onboarding guiado (aha moment, reusa F1/F2) além do perfil. Perfil = mini-CRUD com G1/G2/G3; landing/onboarding/settings = UI/auth sem extract | ✅ (PO 2026-05-23) |
+| D18 | Fase 5 entrega só **visualização** da ficha (Modo Consulta/Apresentação); geração de PDF médico **e** export de dados (LGPD) migram para a Fase 6 | ✅ (PO 2026-05-23) |
+| D19 | **Paridade web↔app encapsulada em F1-F6**; features mobile-only (camera, HealthKit, widgets, geolocation, watch, chatbot on-device) isoladas numa **Fase 7** separada, iniciada só após paridade completa | ✅ (PO 2026-05-23) |
 
 ---
 
