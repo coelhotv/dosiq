@@ -2,18 +2,18 @@
 
 > **Versão atual (v4)** — Status reconciliado pós-Fase 3 (23/05/2026)
 > **Autor**: Arquiteto-chefe (AI) + PO (humano)
-> **Status**: 🔄 Em execução — Pré-requisitos + Fase 1 + Fase 2 + Fase 3 entregues; Fase 2.5 em fila; Fase 4 próxima
+> **Status**: 🔄 Em execução — Pré-requisitos + Fase 1 + Fase 2 + Fase 2.5 + Fase 3 entregues; Fase 4 próxima
 
 ---
 
-## 🚦 Status de Execução (snapshot 2026-05-17)
+## 🚦 Status de Execução (snapshot 2026-05-23)
 
 | Fase | Status | PRs principais | Quality Gates | Observações |
 |------|--------|----------------|---------------|-------------|
 | **Pré-requisitos** (Form Kit, useMutation, infra ANVISA) | ✅ Completa | Sprint P1.x | — | Form Kit serviu de fundação para Fases 1 e 2 sem retrabalho |
 | **Fase 1 — Medicamentos** | ✅ Completa | #555-#559 (+ distill) | G1 ✅ G2 ✅ G3 ✅ | `createMedicineRepository` em `@dosiq/core/repositories/` (ADR-045); RETRO documentada em `RETRO_FASE1_CRUD_MEDICAMENTOS.md` |
-| **Fase 2 — Tratamentos (Protocolos)** | ✅ Completa | #561 (PR-A T2.1) · #562 (T2.1 fan-out) · #563 (PR-A T2.2) · #564 (PR-B T2.2) · #565 (PR-C T2.2) · #566 (PR-A T2.3 — factory G2) · PR-B T2.3 (web G3) · PR final mãe→main | G1 ✅ G2 ✅ G3 🟡 (em PR final do PR-B T2.3) | Lições críticas: `isProtocolActiveOnDate` strict vs `isProtocolInPeriod`, `statusBarTranslucent` em todos `Modal`s mobile (AP-163), padronização "unidade(s)" |
-| **Fase 2.5 — Status de Tratamentos** | 🆕 Planejada | A definir (sprint único `feat/treatments-status`) | G1 | Origem: gap detectado no smoke da Fase 2 — flag `active` + period `end_date < hoje` (categorização ativo/pausado/finalizado já presente na web). Spec: `EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md` |
+| **Fase 2 — Tratamentos (Protocolos)** | ✅ Completa | #561 (PR-A T2.1) · #562 (T2.1 fan-out) · #563 (PR-A T2.2) · #564 (PR-B T2.2) · #565 (PR-C T2.2) · #566 (PR-A T2.3 — factory G2) · #567 (PR-B T2.3 — web G3) · #568 (fechamento mãe→main) | G1 ✅ G2 ✅ G3 ✅ | Lições críticas: `isProtocolActiveOnDate` strict vs `isProtocolInPeriod`, `statusBarTranslucent` em todos `Modal`s mobile (AP-163), padronização "unidade(s)" |
+| **Fase 2.5 — Status de Tratamentos** | ✅ Completa | #570 (Status Ativo/Pausado/Finalizado — web + mobile) · #571 (RETRO Fase 2+2.5 + C5) | G1 ✅ | Helper canônico `resolveTreatmentStatus` em `@dosiq/core`; categorização ativo/pausado/finalizado (flag `active` + `end_date < hoje`); web adopt no mesmo PR. Spec: `EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md` |
 | **Fase 3 — Estoque** | ✅ Completa | #574 · #576 · #578 · #579 (KPIs+Ajuste+migrations) · #580 (factory G2+G3) · #581 (PR-mãe→main) | G1 ✅ G2 ✅ G3 ✅ | `createStockRepository` + `createPurchaseRepository` em `@dosiq/core` (parity 37/37); web+mobile adotam factory; migrations §0.8 (delta negativo) + §0.9 (`unit_price` NUMERIC(12,4)) aplicadas via MCP. Lições: AP-171 (Intl.NumberFormat/Hermes), AP-172 (status estoque duplicado vs `resolveStockStatus`). `validate:agent` 830/830 |
 | **Fase 4 — Perfil completo** | ⏸️ Não iniciada | — | — | Spec não escrita |
 | **Fase 5 — Analíticas (Histórico, Aderência expandida, Ficha)** | ⏸️ Não iniciada | — | — | Spec não escrita |
