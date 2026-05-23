@@ -102,6 +102,7 @@ export default function StockScreen() {
       navigation.navigate(ROUTES.STOCK_DETAIL, {
         medicineId: item.id,
         medicineName: item.name,
+        dailyConsumption: item.dailyConsumption,
       })
     },
     [navigation],

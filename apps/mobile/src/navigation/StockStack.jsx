@@ -11,6 +11,7 @@ import StockScreen from '../features/stock/screens/StockScreen'
 import StockDetailScreen from '../features/stock/screens/StockDetailScreen'
 import PurchaseFormScreen from '../features/stock/screens/PurchaseFormScreen'
 import PurchaseHistoryScreen from '../features/stock/screens/PurchaseHistoryScreen'
+import StockAdjustmentScreen from '../features/stock/screens/StockAdjustmentScreen'
 
 const Stack = createStackNavigator()
 
@@ -21,6 +22,7 @@ export default function StockStack() {
       <Stack.Screen name={ROUTES.STOCK_DETAIL} component={StockDetailScreen} />
       <Stack.Screen name={ROUTES.PURCHASE_FORM} component={PurchaseFormScreen} />
       <Stack.Screen name={ROUTES.PURCHASE_HISTORY} component={PurchaseHistoryScreen} />
+      <Stack.Screen name={ROUTES.STOCK_ADJUSTMENT} component={StockAdjustmentScreen} />
     </Stack.Navigator>
   )
 }
