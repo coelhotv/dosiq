@@ -30,24 +30,11 @@ import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
 import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
+import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import {
-  formatDoseUnit,
-  computeAverageUnitPrice,
-  resolveStockStatus,
-  STOCK_STATUS,
-} from '@dosiq/core'
+import { computeAverageUnitPrice } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
-
-// Label PT-BR + cor do chip por status (resolveStockStatus retorna lowercase).
-const STATUS_META = {
-  [STOCK_STATUS.CRITICO]: { label: 'CRÍTICO', color: colors.status.error, bg: '#fde8e8' },
-  [STOCK_STATUS.BAIXO]: { label: 'BAIXO', color: colors.supplement[700], bg: colors.supplement[50] },
-  [STOCK_STATUS.NORMAL]: { label: 'NORMAL', color: colors.primary[700], bg: colors.primary[50] },
-  [STOCK_STATUS.ALTO]: { label: 'ALTO', color: colors.status.success, bg: '#e6f6f3' },
-  [STOCK_STATUS.VENCIDO]: { label: 'VENCIDO', color: colors.status.error, bg: '#fde8e8' },
-}
 
 // Suplemento usa paridade visual laranja (igual web). Demais tipos = medicamento.
 const SUPPLEMENT_TYPES = new Set(['suplemento', 'supplement'])
@@ -82,10 +69,18 @@ export default function StockDetailScreen({ navigation }) {
     [saldo, dailyConsumption],
   )
 
-  const status = useMemo(
-    () => resolveStockStatus(saldo, dailyConsumption),
+  // Badge "saldo em dias" (mesmo da listagem — StockLevelBadge usa enum UPPERCASE
+  // + daysRemaining numérico; Infinity = sem consumo → "-- dias").
+  const badgeDays = useMemo(
+    () => (dailyConsumption > 0 ? saldo / dailyConsumption : Infinity),
     [saldo, dailyConsumption],
   )
+  const badgeStatus = useMemo(() => {
+    if (badgeDays < 7) return 'CRITICAL'
+    if (badgeDays < 14) return 'LOW'
+    if (badgeDays < 30) return 'NORMAL'
+    return 'HIGH'
+  }, [badgeDays])
 
   const isSupplement = useMemo(
     () => SUPPLEMENT_TYPES.has(medicine?.type),
@@ -167,7 +162,6 @@ export default function StockDetailScreen({ navigation }) {
     medicine?.dosage_per_pill != null
       ? `${medicine.dosage_per_pill}${medicine.dosage_unit ?? ''}`
       : null
-  const statusMeta = STATUS_META[status] ?? STATUS_META[STOCK_STATUS.NORMAL]
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]
   const HeroIcon = isSupplement ? PillBottle : Pill
@@ -225,26 +219,16 @@ export default function StockDetailScreen({ navigation }) {
                     </View>
                   ) : null}
                 </View>
-                {medicine?.laboratory ? (
+                {medicine?.active_ingredient ? (
                   <Text style={styles.heroLab} numberOfLines={1}>
-                    {medicine.laboratory}
+                    {medicine.active_ingredient}
                   </Text>
                 ) : null}
-              </View>
-            </View>
-
-            {/* Card saldo total */}
-            <View style={styles.balanceCard}>
-              <Text style={styles.balanceLabel}>Saldo total</Text>
-              <View style={styles.balanceRow}>
-                <Text style={styles.balanceValue}>{formatDoseUnit(saldo)}</Text>
-                <View style={[styles.statusChip, { backgroundColor: statusMeta.bg }]}>
-                  <Text style={[styles.statusChipText, { color: statusMeta.color }]}>
-                    {daysRemaining != null
-                      ? `${statusMeta.label} · ${daysRemaining} dias`
-                      : statusMeta.label}
-                  </Text>
-                </View>
+                {dailyConsumption > 0 ? (
+                  <View style={styles.heroBadge}>
+                    <StockLevelBadge status={badgeStatus} daysRemaining={badgeDays} />
+                  </View>
+                ) : null}
               </View>
             </View>
 
@@ -395,45 +379,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: colors.text.secondary,
   },
-  // Card saldo total
-  balanceCard: {
-    backgroundColor: colors.bg.card,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[5],
-    gap: spacing[3],
-    ...shadows.sm,
-  },
-  balanceLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing[3],
-    flexWrap: 'wrap',
-  },
-  balanceValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: -0.5,
-    fontFamily: typography.fontFamily.bold || 'System',
-  },
-  statusChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.full,
-  },
-  statusChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  heroBadge: {
+    marginTop: spacing[1],
   },
   // Seções
   section: {
