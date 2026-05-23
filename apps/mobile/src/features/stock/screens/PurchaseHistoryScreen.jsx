@@ -61,7 +61,7 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
     setLoading(true)
     try {
       const [data, med] = await Promise.all([
-        stockService.getPurchasesByMedicine(medicineId, userId),
+        stockService.getPurchasesByMedicine(medicineId),
         medicineService.getById(medicineId).catch(() => null),
       ])
       setPurchases(data ?? [])

@@ -22,7 +22,8 @@ export default [
     '**/scripts/**',
     '**/scratch/**',
     '**/__tests__/**',
-    '**/.agent/**'
+    '**/.agent/**',
+    '**/plans/**',
   ] },
   {
     files: ['**/*.{js,jsx}'],

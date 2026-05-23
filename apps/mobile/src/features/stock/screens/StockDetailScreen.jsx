@@ -98,8 +98,8 @@ export default function StockDetailScreen({ navigation }) {
     setLoading(true)
     try {
       const [qty, purchaseList, med] = await Promise.all([
-        stockService.getTotalQuantity(medicineId, userId),
-        stockService.getPurchasesByMedicine(medicineId, userId),
+        stockService.getTotalQuantity(medicineId),
+        stockService.getPurchasesByMedicine(medicineId),
         medicineService.getById(medicineId),
       ])
       setSaldo(qty ?? 0)

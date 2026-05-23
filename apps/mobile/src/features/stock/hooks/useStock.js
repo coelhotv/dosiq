@@ -20,10 +20,11 @@ async function _resolveUser() {
   return user
 }
 
-async function _fetchAndPersistStock(userId, setState, dataRef) {
+async function _fetchAndPersistStock(setState, dataRef) {
   // PO-9 §0.7: lista meds com protocolo ativo OU saldo positivo (corrige bug de
   // estoque órfão invisível). Split em active (com previsão) + inactive (só-estoque).
-  const rawData = await stockService.getMedicinesWithStockOrActiveProtocol(userId)
+  // userId é resolvido internamente pela factory (G2) — não passamos mais aqui.
+  const rawData = await stockService.getMedicinesWithStockOrActiveProtocol()
   const today = getTodayLocal()
   const { active, inactive } = splitStockItems(transformStockData(rawData))
   const newData = { active, inactive, localDay: today }
@@ -88,8 +89,9 @@ export function useStock() {
     if (isRefreshing) setState(prev => ({ ...prev, refreshing: true, error: null }))
     else setState(prev => ({ ...prev, loading: true, error: null }))
     try {
-      const user = await _resolveUser()
-      await _fetchAndPersistStock(user.id, setState, dataRef)
+      // Guard: garante sessão antes de buscar (lança "Sessão expirada" se deslogado).
+      await _resolveUser()
+      await _fetchAndPersistStock(setState, dataRef)
     } catch (err) {
       if (__DEV__) console.warn('[useStock] Fetch failed, checking cache:', err.message)
       try {
