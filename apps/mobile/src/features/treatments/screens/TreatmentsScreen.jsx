@@ -242,10 +242,10 @@ export default function TreatmentsScreen() {
                               pressed && styles.addToGroupPressed,
                             ]}
                             accessibilityRole="button"
-                            accessibilityLabel={`Adicionar tratamento ao grupo ${group.title}`}
+                            accessibilityLabel={`Adicionar novo tratamento ao grupo ${group.title}`}
                           >
                             <Plus size={16} color={colors.primary[700]} />
-                            <Text style={styles.addToGroupText}>Adicionar tratamento ao grupo</Text>
+                            <Text style={styles.addToGroupText}>Adicionar novo tratamento ao grupo</Text>
                           </Pressable>
                         </View>
                       )}

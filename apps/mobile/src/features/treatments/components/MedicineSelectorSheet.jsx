@@ -16,6 +16,7 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Search, X, Pill, PillBottle, Plus } from 'lucide-react-native'
@@ -153,7 +154,12 @@ export default function MedicineSelectorSheet({
       // e inputs do form atrás vazam por cima do overlay no Android 7/API 24).
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        // iOS: eleva o sheet acima do teclado (sem isso, ao digitar a busca o
+        // teclado cobre o input e os resultados filtrados). Android: adjustResize.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         {Platform.OS === 'android' ? (
           <View style={{ height: StatusBar.currentHeight ?? 0 }} />
         ) : null}
@@ -216,7 +222,7 @@ export default function MedicineSelectorSheet({
             <Text style={styles.footerBtnText}>Cadastrar novo medicamento</Text>
           </Pressable>
         </SafeAreaView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

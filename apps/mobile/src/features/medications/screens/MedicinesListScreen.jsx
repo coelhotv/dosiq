@@ -158,7 +158,7 @@ export default function MedicinesListScreen() {
             <Text style={styles.counterText}>
               {filtered.length} {filtered.length === 1 ? 'MEDICAMENTO' : 'MEDICAMENTOS'}
             </Text>
-            <Text style={styles.sortText}>Mais recentes ↓</Text>
+            {/* Ordenação ainda não implementada — placeholder oculto até haver sorting real */}
           </View>
 
           {isFilteredEmpty ? (

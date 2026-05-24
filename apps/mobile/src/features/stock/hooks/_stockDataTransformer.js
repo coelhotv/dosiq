@@ -1,4 +1,9 @@
-import { getTodayLocal, isProtocolActiveOnDate } from '@dosiq/core'
+// isProtocolInPeriod = predicado period-only (active flag + janela start/end).
+// NÃO usar isProtocolActiveOnDate (strict, frequency-aware) aqui: ele exige que
+// o tratamento "dispare HOJE", jogando semanal/dias_alternados/quando_necessario
+// pra "sem tratamento ativo" mesmo com a flag active ligada. Pro estoque, ter
+// tratamento ativo = estar no período + active, independente de disparar hoje.
+import { getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
 
 export function transformStockData(rawData) {
   const today = getTodayLocal()
@@ -6,7 +11,7 @@ export function transformStockData(rawData) {
   return rawData.map((item) => {
     const totalQuantity = item.medicine_stock_summary?.[0]?.total_quantity || 0
     const activeProtocols = (item.protocols || []).filter(p =>
-      p.active && isProtocolActiveOnDate(p, today)
+      p.active && isProtocolInPeriod(p, today)
     )
 
     const dailyConsumption = activeProtocols.reduce((acc, p) => {
