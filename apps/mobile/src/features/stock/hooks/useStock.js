@@ -115,7 +115,9 @@ export function useStock() {
 
     // Period-only (active flag + janela), não strict frequency-aware — senão
     // semanal/dias_alternados/quando_necessario caem em "sem tratamento ativo".
-    const isActiveToday = (item) => {
+    // Nome reflete período (não "dispara hoje"). Obsolescência na virada do dia
+    // já coberta por _setupMidnightAndAppState (R-175) que dispara loadStock.
+    const isInActivePeriod = (item) => {
       if (item.activeProtocols) {
         return item.activeProtocols.some(p => isProtocolInPeriod(p, today))
       }
@@ -123,9 +125,11 @@ export function useStock() {
     }
 
     const union = [...(state.data.active || []), ...(state.data.inactive || [])]
-    const refinedActive = union.filter(isActiveToday)
+    const refinedActive = union.filter(isInActivePeriod)
+    // totalQuantity > 0: seção inativa só lista saldo positivo (PO-9); item sem
+    // tratamento ativo E sem saldo não aparece. 0 = sem estoque, correto excluir.
     const refinedInactive = union.filter(
-      item => !isActiveToday(item) && (item.totalQuantity ?? 0) > 0,
+      item => !isInActivePeriod(item) && (item.totalQuantity ?? 0) > 0,
     )
 
     return {
