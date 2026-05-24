@@ -64,7 +64,7 @@
 - **[R-150]** Ao agregar dados por state (active/paused/finished), computar grupos para TODOS ... -> [`rules/mobile_and_platform/R-150.md`](./rules/mobile_and_platform/R-150.md)
 - **[R-155]** PriorityDoseCard recebe doses={urgentDoses} sem slice. Display limita a 3 intern... -> [`rules/mobile_and_platform/R-155.md`](./rules/mobile_and_platform/R-155.md)
 - **[R-157]** Auditar semanalmente divergências entre lógica do Telegram bot (server/bot/) e w... -> [`rules/mobile_and_platform/R-157.md`](./rules/mobile_and_platform/R-157.md)
-- **[R-161]** Expo start fails in iCloud paths (~/Library/Mobile Documents/) due to Watchman p... -> [`rules/mobile_and_platform/R-161.md`](./rules/mobile_and_platform/R-161.md)
+- **[R-161]** ~~Expo start fails in iCloud paths (Watchman)~~ **[RESOLVIDO 2026-05-24 — projeto fora do iCloud]** -> [`rules/mobile_and_platform/R-161.md`](./rules/mobile_and_platform/R-161.md)
 - **[R-162]** react-native-url-polyfill (todas as versões) crasha no Hermes/Expo Go SDK 53. Us... -> [`rules/mobile_and_platform/R-162.md`](./rules/mobile_and_platform/R-162.md)
 - **[R-163]** registerRootComponent detecta src/app/ ou transform.routerRoot=app e activa expo... -> [`rules/mobile_and_platform/R-163.md`](./rules/mobile_and_platform/R-163.md)
 - **[R-164]** Navigation.jsx deve chamar supabase.auth.getSession() no mount, mostrar spinner ... -> [`rules/mobile_and_platform/R-164.md`](./rules/mobile_and_platform/R-164.md)
@@ -93,7 +93,7 @@
 
 
 ## 🛡️ Process & Testing (`process_and_testing`)
-- **[R-234]** Smoke PO ANTES de abrir PR — push OK (EAS worktree precisa) mas HOLD `gh pr create` até PO validar smoke -> [`rules/process_and_testing/R-234.md`](./rules/process_and_testing/R-234.md)
+- **[R-234]** Smoke PO ANTES de abrir PR — push OK mas HOLD `gh pr create` até PO validar smoke (direto de ~/git/dosiq/apps/mobile desde 2026-05-24) -> [`rules/process_and_testing/R-234.md`](./rules/process_and_testing/R-234.md)
 - **[R-237]** Wave orchestration com dependency graph antes de spawn cavecrew — agrupa tasks paralelas em waves; reserva Opus pra integração -> [`rules/process_and_testing/R-237.md`](./rules/process_and_testing/R-237.md)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)
 - **[R-190]** Mandatory Devflow Bootstrap (Hard Stop) [HOT] -> [`rules/process_and_testing/R-190.md`](./rules/process_and_testing/R-190.md)
@@ -125,7 +125,7 @@
 - **[R-171]** Doses splitted (DoseListItem) MUST be ordered chronologically (00:00 -> 23:59) w... -> [`rules/process_and_testing/R-171.md`](./rules/process_and_testing/R-171.md)
 - **[R-172]** The 'Take/Register' action in mobile MUST be restricted to a +/- 2h window from ... -> [`rules/process_and_testing/R-172.md`](./rules/process_and_testing/R-172.md)
 - **[R-173]** When processing raw logs via Core logic, agents MUST ensure medicine and protoco... -> [`rules/process_and_testing/R-173.md`](./rules/process_and_testing/R-173.md)
-- **[R-177]** Agentes DEVEM usar primariamente o path ~/git-icloud/dosiq/ para esse pro... -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
+- **[R-177]** Agentes DEVEM usar primariamente o path ~/git/dosiq/ (movido pra fora do iCloud em 2026-05-24) -> [`rules/process_and_testing/R-177.md`](./rules/process_and_testing/R-177.md)
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
 - **[R-201]** Secure Token Generation: Use window.crypto.getRandomValues() for security tokens in the frontend. -> [`rules/process_and_testing/R-201.md`](./rules/process_and_testing/R-201.md)
 - **[R-218]** Sub-agentes DEVEM criar branch de feature, rodar gate, reportar resultado — jamais commitar na main ou abrir PR sem aprovação explícita do agente principal -> [`rules/process_and_testing/R-218.md`](./rules/process_and_testing/R-218.md)
