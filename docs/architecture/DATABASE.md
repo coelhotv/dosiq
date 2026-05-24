@@ -463,10 +463,10 @@ Backup histórico da tabela `gemini_reviews`, criado em **2026-02-22**.
 
 Ao alterar esse schema, revisar em conjunto:
 
-- [`src/schemas`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/schemas)
-- [`src/features`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/features)
-- [`src/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/services)
-- [`src/shared/services`](/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/src/shared/services)
+- [`src/schemas`](/Users/coelhotv/git/dosiq/src/schemas)
+- [`src/features`](/Users/coelhotv/git/dosiq/src/features)
+- [`src/services`](/Users/coelhotv/git/dosiq/src/services)
+- [`src/shared/services`](/Users/coelhotv/git/dosiq/src/shared/services)
 
 Regras DEVFLOW mais relevantes para mudanças de schema:
 
