@@ -23,6 +23,7 @@ import { selectionTap, lightTap } from '@shared/utils/haptics'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 const CREATE_NEW_VALUE = '__create_new__'
+const NO_PLAN_VALUE = '__no_plan__'
 
 // Paleta sugerida (5 cores) — preferir tokens, mas paleta inline é PT-spec
 // (não há "plan-color" no design tokens; cores escolhidas para boa diferenciação).
@@ -56,6 +57,9 @@ export default function PlanSelectField({
             emoji: EMOJI_CHOICES[0],
           },
         })
+      } else if (planId === NO_PLAN_VALUE) {
+        // Remover de qualquer plano (tratamento "solto")
+        onChange?.({ mode: 'select', planId: null, inline: null })
       } else {
         onChange?.({ mode: 'select', planId: planId || null, inline: null })
       }
@@ -82,6 +86,7 @@ export default function PlanSelectField({
   // Render — modo SELECT
   if (value.mode !== 'inline') {
     const options = [
+      { value: NO_PLAN_VALUE, label: 'Sem plano' },
       ...plans.map((p) => ({
         value: p.id,
         label: `${p.emoji ? `${p.emoji} ` : ''}${p.name}`,
@@ -93,11 +98,13 @@ export default function PlanSelectField({
       <FormSelect
         name="treatment_plan"
         label="Plano terapêutico"
-        value={value.planId}
+        // planId null = sem plano → reflete a opção "Sem plano" selecionada
+        // (em vez do placeholder), deixando explícito que o tratamento fica solto.
+        value={value.planId ?? NO_PLAN_VALUE}
         options={options}
         onChange={handleSelectChange}
         error={error}
-        placeholder={plans.length ? 'Selecione um plano' : 'Sem planos cadastrados'}
+        placeholder="Selecione um plano"
       />
     )
   }

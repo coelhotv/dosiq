@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -151,7 +152,12 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
       // screen atual, truncando em Android 7+ / API 24 — AP-165 / R-233).
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        // iOS: eleva o sheet acima do teclado (sem isso o sheet some atras do
+        // teclado, pior ainda com poucos resultados). Android: adjustResize do SO.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         {/* Spacer Android: empurra o sheet abaixo da status bar translúcida (R-233) */}
         {Platform.OS === 'android' ? (
           <View style={{ height: StatusBar.currentHeight ?? 0 }} />
@@ -255,7 +261,7 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
             />
           )}
         </SafeAreaView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

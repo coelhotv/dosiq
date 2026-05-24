@@ -62,6 +62,9 @@ export default function MedicineDetailScreen() {
   const navigation = useNavigation()
   const route = useRoute()
   const id = route.params?.id
+  // Vindo do detalhe de um tratamento: a exclusão é sempre bloqueada (medicamento
+  // tem dependência), então ocultamos o botão pra não exibir ação morta.
+  const hideDelete = route.params?.hideDelete === true
   const { data, loading, error, refresh } = useMedicine(id)
   const { preCheck, confirmDelete, isLoading: deleteLoading } = useMedicineDelete(data)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -310,20 +313,23 @@ export default function MedicineDetailScreen() {
             <Text style={styles.useMeta}>{stockSummary ?? 'Não rastreado'}</Text>
           </View>
 
-          {/* Botão Excluir medicamento */}
-          <Pressable
-            onPress={handleDeletePress}
-            style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && styles.deleteButtonPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Excluir medicamento"
-            disabled={!data || deleteLoading}
-          >
-            <Trash2 size={18} color={colors.status.error} />
-            <Text style={styles.deleteButtonText}>Excluir medicamento</Text>
-          </Pressable>
+          {/* Botão Excluir medicamento — oculto quando vindo de um tratamento
+              (exclusão bloqueada por dependência; ação morta) */}
+          {!hideDelete && (
+            <Pressable
+              onPress={handleDeletePress}
+              style={({ pressed }) => [
+                styles.deleteButton,
+                pressed && styles.deleteButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Excluir medicamento"
+              disabled={!data || deleteLoading}
+            >
+              <Trash2 size={18} color={colors.status.error} />
+              <Text style={styles.deleteButtonText}>Excluir medicamento</Text>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
 

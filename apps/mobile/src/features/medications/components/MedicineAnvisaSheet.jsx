@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Search, X, Pill, PillBottle } from 'lucide-react-native'
@@ -98,7 +99,12 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
       // por cima do overlay no Android 7/API 24).
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        // iOS: eleva o sheet acima do teclado (sem isso o teclado cobre o input
+        // de busca). Android: adjustResize do SO já reposiciona — sem behavior.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         {Platform.OS === 'android' ? (
           <View style={{ height: StatusBar.currentHeight ?? 0 }} />
         ) : null}
@@ -143,7 +149,7 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
             contentContainerStyle={styles.listContent}
           />
         </SafeAreaView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

@@ -113,7 +113,9 @@ export default function ProtocolDetailScreen() {
   const goToMedicine = useCallback(() => {
     if (!protocol?.medicine?.id) return
     selectionTap()
-    navigation.navigate(ROUTES.MEDICINE_DETAIL, { id: protocol.medicine.id })
+    // hideDelete: medicamento está dentro de um tratamento → exclusão sempre
+    // bloqueada (dependência). Ocultar o botão evita ação morta no detalhe.
+    navigation.navigate(ROUTES.MEDICINE_DETAIL, { id: protocol.medicine.id, hideDelete: true })
   }, [navigation, protocol])
 
   const onDelete = useCallback(() => {

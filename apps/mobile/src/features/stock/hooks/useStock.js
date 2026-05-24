@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, getNow, parseISO, addDays, isProtocolActiveOnDate } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, addDays, isProtocolInPeriod } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { stockService } from '../services/stockService'
 import { debugLog } from '@shared/utils/debugLog'
@@ -113,17 +113,23 @@ export function useStock() {
     if (!state.data?.active && !state.data?.inactive) return state.data
     const today = getTodayLocal()
 
-    const isActiveToday = (item) => {
+    // Period-only (active flag + janela), não strict frequency-aware — senão
+    // semanal/dias_alternados/quando_necessario caem em "sem tratamento ativo".
+    // Nome reflete período (não "dispara hoje"). Obsolescência na virada do dia
+    // já coberta por _setupMidnightAndAppState (R-175) que dispara loadStock.
+    const isInActivePeriod = (item) => {
       if (item.activeProtocols) {
-        return item.activeProtocols.some(p => isProtocolActiveOnDate(p, today))
+        return item.activeProtocols.some(p => isProtocolInPeriod(p, today))
       }
-      return (item.protocols || []).some(p => p.active && isProtocolActiveOnDate(p, today))
+      return (item.protocols || []).some(p => p.active && isProtocolInPeriod(p, today))
     }
 
     const union = [...(state.data.active || []), ...(state.data.inactive || [])]
-    const refinedActive = union.filter(isActiveToday)
+    const refinedActive = union.filter(isInActivePeriod)
+    // totalQuantity > 0: seção inativa só lista saldo positivo (PO-9); item sem
+    // tratamento ativo E sem saldo não aparece. 0 = sem estoque, correto excluir.
     const refinedInactive = union.filter(
-      item => !isActiveToday(item) && (item.totalQuantity ?? 0) > 0,
+      item => !isInActivePeriod(item) && (item.totalQuantity ?? 0) > 0,
     )
 
     return {
