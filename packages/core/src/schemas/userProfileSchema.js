@@ -45,6 +45,7 @@ export const BRAZILIAN_STATES = [
  * - birth_date: Data de nascimento (opcional, formato YYYY-MM-DD)
  * - city: Cidade (opcional, até 100 chars)
  * - state: Estado UF (opcional, sigla ou texto livre até 50 chars)
+ * - phone: Telefone (opcional, até 20 chars — aceita máscara/dígitos)
  *
  * Nota sobre .nullable().optional():
  * - .nullable() permite null explícito
@@ -76,11 +77,18 @@ const userProfileSchema = z.object({
     .nullable()
     .optional()
     .transform((val) => (val === '' ? null : val)),
+
+  phone: z
+    .string()
+    .max(20, 'Telefone não pode ter mais de 20 caracteres')
+    .trim()
+    .nullable()
+    .optional(),
 })
 
 /**
  * Validar dados de perfil do usuário
- * @param {Object} data - { display_name, birth_date, city, state }
+ * @param {Object} data - { display_name, birth_date, city, state, phone }
  * @returns {Object} { success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }
  */
 export function validateUserProfile(data) {
