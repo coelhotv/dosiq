@@ -82,7 +82,7 @@ Pacotes compartilhados não devem ler `process.env` diretamente. A leitura públ
 ### Passo 1 - entrar na pasta correta
 
 ```bash
-cd "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/dosiq/apps/mobile"
+cd "/Users/coelhotv/git/dosiq/apps/mobile"
 ```
 
 ### Passo 2 - instalar dependências do mobile
