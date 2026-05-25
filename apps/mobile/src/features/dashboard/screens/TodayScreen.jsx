@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import {
   ScrollView,
   View,
@@ -256,6 +257,14 @@ export default function TodayScreen({ route, navigation }) {
   const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
+
+  // Refresh ao focar: re-lê complexity_override alterado em Configurações
+  // (e captura doses/tratamentos novos). Paridade com TreatmentsScreen.
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh])
+  )
 
   // Pre-resolve optional chains do data para reduzir complexidade ciclomática
   const rawTimeline = data?.timeline

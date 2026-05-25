@@ -7,6 +7,10 @@
         "serve"
       ],
       "type": "stdio"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
     }
   }
 }

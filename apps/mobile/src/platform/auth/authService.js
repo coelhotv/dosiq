@@ -187,11 +187,44 @@ export async function updatePassword(newPassword, confirmPassword) {
 }
 
 /**
+ * Revalida a senha do usuário autenticado (re-autenticação para ações
+ * destrutivas, ex: excluir conta). Supabase não expõe "verificar senha" puro;
+ * usamos signInWithPassword com o email da sessão atual — senha errada retorna
+ * erro e nada muda; senha certa apenas renova a sessão do mesmo usuário.
+ * @param {string} password
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function verifyPassword(password) {
+  if (!password) {
+    return { success: false, error: 'Digite sua senha' }
+  }
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user?.email) {
+      return { success: false, error: 'Sessão expirada. Faça login novamente.' }
+    }
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password,
+    })
+    if (authError) {
+      // Mensagem genérica: não confirmar se o erro é senha vs outro motivo.
+      return { success: false, error: 'Senha incorreta' }
+    }
+    return { success: true, error: null }
+  } catch {
+    return { success: false, error: 'Erro ao verificar senha' }
+  }
+}
+
+/**
  * Faz logout do usuário
  */
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
+    // scope 'local': limpa sessão local na hora, dispara SIGNED_OUT sem rede
+    // (global pode pendurar no simulador iOS — ver logoutUser).
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
     if (error) {
       console.error('Erro ao fazer logout:', error.message)
       return { success: false }

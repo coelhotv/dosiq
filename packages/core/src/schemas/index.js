@@ -151,6 +151,7 @@ export {
 } from './reminderOptimizerSchema.js'
 
 export {
+  default as userProfileSchema,
   validateUserProfile,
   BRAZILIAN_STATES,
 } from './userProfileSchema.js'

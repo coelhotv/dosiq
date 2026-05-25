@@ -40,6 +40,7 @@
 
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[R-238]** Ação destrutiva irreversível (excluir conta) exige dupla barreira: confirmação textual ("EXCLUIR") + re-autenticação de senha (`verifyPassword` via `signInWithPassword`) -> [`rules/mobile_and_platform/R-238.md`](./rules/mobile_and_platform/R-238.md)
 - **[R-233]** Bottom sheet mobile (Modal RN) DEVE usar pattern unificado Android-safe: `statusBarTranslucent` + spacer `StatusBar.currentHeight` + `SafeAreaView edges=['bottom']` -> [`rules/mobile_and_platform/R-233.md`](./rules/mobile_and_platform/R-233.md)
 - **[R-024]** In the clinical PDF daily table, count completed vs expected dose events per day... -> [`rules/mobile_and_platform/R-024.md`](./rules/mobile_and_platform/R-024.md)
 - **[R-025]** If no display name, derive PDF patient label from email local-part before fallin... -> [`rules/mobile_and_platform/R-025.md`](./rules/mobile_and_platform/R-025.md)
