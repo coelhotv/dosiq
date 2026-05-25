@@ -1,0 +1,16 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.coelhotv.dosiq",
+      "sha256_cert_fingerprints": [
+        "2D:6D:C9:ED:37:78:DA:41:14:8C:55:4E:F9:82:CF:49:82:FD:96:C7:2D:E9:E1:DB:80:2F:A1:54:DC:FC:AB:C9",
+        "56:16:3D:A0:1B:AC:32:2E:23:80:80:53:25:07:A4:4E:5B:AF:3B:F1:E9:26:B2:AD:5D:DE:EF:45:ED:57:EA:64"
+      ]
+    }
+  }
+]
