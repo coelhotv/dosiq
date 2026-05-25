@@ -226,6 +226,8 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
             onPress={() => setLogoutSheetOpen(true)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Sair da Conta"
           >
             <Text style={styles.logoutText}>Sair da Conta</Text>
           </TouchableOpacity>
