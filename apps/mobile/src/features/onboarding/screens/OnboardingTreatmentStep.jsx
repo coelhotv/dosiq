@@ -70,7 +70,9 @@ export default function OnboardingTreatmentStep() {
         return
       }
       const normalized = str.replace(',', '.')
-      if (normalized === '.' || normalized.endsWith('.')) {
+      // Mantém string em intermediários: termina em "." OU é decimal com zero à
+      // direita ("1,50"/"1,0") — converter agora engoliria o zero digitado.
+      if (normalized === '.' || normalized.endsWith('.') || (normalized.includes('.') && normalized.endsWith('0'))) {
         form.handleChange(name, str)
         return
       }
