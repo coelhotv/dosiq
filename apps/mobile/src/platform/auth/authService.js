@@ -107,6 +107,12 @@ export async function signUpWithEmail(email, password, confirmPassword) {
     const { error: authError } = await supabase.auth.signUp({
       email: validation.data.email,
       password: validation.data.password,
+      options: {
+        // Deeplink first: o link de confirmação reabre o app já logado
+        // (handler em Navigation.jsx trata type=signup). Mesmo callback do
+        // recovery — já liberado no allow-list do Supabase.
+        emailRedirectTo: 'dosiq://auth/callback',
+      },
     })
 
     if (authError) {
