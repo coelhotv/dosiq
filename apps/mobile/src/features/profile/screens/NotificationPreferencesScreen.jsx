@@ -409,6 +409,9 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
   const [digestTime, setDigestTime] = useState('07:00')
   const [hasPermission, setHasPermission] = useState(false)
+  // Ref de permissão (R-010: declarado junto aos states, antes de effects/handlers).
+  // null = ainda não sabido; usado p/ agir só na transição negado→concedido.
+  const wasGrantedRef = useRef(null)
 
   // Carregar valores do banco ao montar
   useEffect(() => {
@@ -421,7 +424,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
       setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
       setDigestTime(settings.digest_time ?? '07:00')
-      setNotificationMode(settings.notification_mode)
+      setNotificationMode(settings.notification_mode ?? 'realtime')
 
       // Design A: canais independentes, sempre sincronizados (sem master global).
       setMobilePushEnabled(
@@ -458,11 +461,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
   }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, refresh])
 
-  // Guarda o último estado de permissão para agir só na TRANSIÇÃO negado→concedido.
-  // null = ainda não sabido (1º check não conta como transição — não atropela um
-  // OFF deliberado de quem já tinha permissão).
-  const wasGrantedRef = useRef(null)
-
   const checkPermission = useCallback(async () => {
     try {
       // Leitura PURA do status — NUNCA dispara o prompt do SO.
@@ -470,8 +468,9 @@ export default function NotificationPreferencesScreen({ navigation }) {
       setHasPermission(granted)
       // Transição real negado→concedido (ex.: voltou das Configs do SO autorizando):
       // registra o device E liga o canal — autorizar é intenção clara de receber push.
+      // userId explícito evita getUser() redundante (já temos user do useAuth).
       if (wasGrantedRef.current === false && granted) {
-        registerPushToken({ supabase }).catch(() => {})
+        registerPushToken({ supabase, userId: user?.id }).catch(() => {})
         setMobilePushEnabled(true)
         persist({ mobilePushEnabled: true })
       }
@@ -479,7 +478,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     } catch (err) {
       debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
     }
-  }, [persist])
+  }, [persist, user])
 
   // Re-checa permissão ao focar a tela (navegação)...
   useFocusEffect(
