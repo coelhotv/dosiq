@@ -1,17 +1,17 @@
 {
   "project": "dosiq",
-  "sprint": "2026-W20",
+  "sprint": "2026-W21",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "goal": "Fase 3 — distill pós-fase (C5 + reconciliação D5)",
-    "goal_type": "chore"
+    "mode": "coding",
+    "status": "completed",
+    "goal": "Fase 4 — Perfil (mini-CRUD G1/G2/G3) + Landing + Onboarding guiado",
+    "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-05-23T18:20:00Z",
-    "journal_entries_since_distillation": 0,
-    "rules_count": 188,
-    "anti_patterns_count": 173,
+    "journal_entries_since_distillation": 1,
+    "rules_count": 189,
+    "anti_patterns_count": 178,
     "decisions_count": 47,
     "contracts_count": 20,
     "distillation_due": false
@@ -21,6 +21,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-18T19:50:00Z"
+    "index_loaded_at": "2026-05-25T16:30:00Z"
   }
 }
