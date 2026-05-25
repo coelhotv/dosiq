@@ -75,14 +75,6 @@ export default function ProfileEditScreen() {
 
   const form = useFormState(userProfileSchema, { initialValues })
 
-  // Effects (R-010) — hidrata o form uma vez, quando o perfil async chega.
-  useEffect(() => {
-    if (!hydratedRef.current && profile) {
-      form.reset(initialValues)
-      hydratedRef.current = true
-    }
-  }, [profile, initialValues, form])
-
   // birth_date é string 'YYYY-MM-DD' no form; FormDatePicker opera com Date.
   const birthDateAsDate = useMemo(
     () => (form.values.birth_date ? parseLocalDate(form.values.birth_date) : null),
@@ -94,6 +86,14 @@ export default function ProfileEditScreen() {
     () => getInitials(form.values.display_name || profile?.display_name || email) || '?',
     [form.values.display_name, profile, email],
   )
+
+  // Effects (R-010) — hidrata o form uma vez, quando o perfil async chega.
+  useEffect(() => {
+    if (!hydratedRef.current && profile) {
+      form.reset(initialValues)
+      hydratedRef.current = true
+    }
+  }, [profile, initialValues, form])
 
   // Handlers
   const handleBirthDateChange = useCallback(
@@ -119,7 +119,7 @@ export default function ProfileEditScreen() {
     if (!form.validate()) return
     // Normaliza campos opcionais vazios → null (schema .transform já trata state).
     const payload = {
-      display_name: form.values.display_name.trim(),
+      display_name: form.values.display_name?.trim() ?? '',
       birth_date: form.values.birth_date || null,
       city: form.values.city?.trim() || null,
       state: form.values.state || null,
@@ -170,6 +170,7 @@ export default function ProfileEditScreen() {
           required
           placeholder="Como você quer ser chamado"
           autoCapitalize="words"
+          maxLength={200}
           {...formProps(form, 'display_name')}
         />
 
@@ -193,6 +194,7 @@ export default function ProfileEditScreen() {
               name="city"
               label="Cidade"
               placeholder="São Paulo"
+              maxLength={100}
               {...formProps(form, 'city')}
             />
           </View>
@@ -213,6 +215,7 @@ export default function ProfileEditScreen() {
             label="Telefone"
             placeholder="(11) 98213-0685"
             keyboardType="phone-pad"
+            maxLength={15}
             {...formProps(form, 'phone')}
             onChange={handlePhoneChange}
           />

@@ -168,6 +168,7 @@ export default function ChangePasswordScreen() {
             }}
             onBlur={() => {}}
             secureTextEntry={!showNew}
+            maxLength={72}
           />
           <Pressable
             style={styles.eyeToggle}

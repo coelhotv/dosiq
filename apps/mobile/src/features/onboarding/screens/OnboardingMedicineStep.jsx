@@ -43,6 +43,11 @@ export default function OnboardingMedicineStep() {
 
   const form = useFormState(medicineCreateSchema, { initialValues: DEFAULT_INITIAL })
 
+  // Memos (R-010)
+  // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
+  // pós-login do wizard).
+  const headerProps = useMemo(() => ({ step: 1, totalSteps: 3, onSkip: finish }), [finish])
+
   // Handlers
   // Auto-fill ao escolher uma sugestão ANVISA (mesmo mapeamento do cadastro F1).
   const handleAnvisaSelect = useCallback(
@@ -89,10 +94,6 @@ export default function OnboardingMedicineStep() {
       setSaving(false)
     }
   }, [form, show, setMedicine, navigation])
-
-  // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
-  // pós-login do wizard).
-  const headerProps = useMemo(() => ({ step: 1, totalSteps: 3, onSkip: finish }), [finish])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

@@ -197,6 +197,7 @@ export default function DeleteAccountScreen() {
                   autoCapitalize="characters"
                   autoCorrect={false}
                   editable={!deleting}
+                  maxLength={CONFIRM_WORD.length}
                   accessibilityLabel="Digite EXCLUIR para confirmar"
                 />
 
