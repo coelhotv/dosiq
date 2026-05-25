@@ -213,7 +213,7 @@ export default function ProfileEditScreen() {
           <FormInput
             name="phone"
             label="Telefone"
-            placeholder="(11) 98213-0685"
+            placeholder="(11) 99999-9999"
             keyboardType="phone-pad"
             maxLength={15}
             {...formProps(form, 'phone')}
