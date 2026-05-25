@@ -26,6 +26,8 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
+import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
+import { isOnboardingNeeded } from '../features/profile/services/profileService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
@@ -38,6 +40,8 @@ export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  // Gate de onboarding: null = verificando; true = wizard; false = app.
+  const [onboardingNeeded, setOnboardingNeeded] = useState(false)
 
   // Setup push notifications pós-login (H6.3)
   usePushNotifications({ supabase, session })
@@ -81,6 +85,22 @@ export default function Navigation() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Gate de primeiro acesso: ao ganhar sessão, decide wizard vs app. Os
+  // setState síncronos aqui são intencionais (estado de verificação do gate).
+  useEffect(() => {
+    let active = true
+    if (session?.user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOnboardingNeeded(null) // verificando → spinner
+      isOnboardingNeeded().then(({ data }) => {
+        if (active) setOnboardingNeeded(Boolean(data))
+      })
+    } else {
+      setOnboardingNeeded(false)
+    }
+    return () => { active = false }
+  }, [session?.user?.id])
 
   useEffect(() => {
     async function handleDeepLink({ url }) {
@@ -131,8 +151,9 @@ export default function Navigation() {
   }, [])
 
 
-  // Aguarda verificação inicial — evita flash de ecrã errado
-  if (session === undefined) {
+  // Aguarda verificação inicial — evita flash de ecrã errado.
+  // Também aguarda o gate de onboarding resolver quando há sessão.
+  if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#2563eb" />
@@ -140,11 +161,17 @@ export default function Navigation() {
     )
   }
 
+  // Um único NavigationContainer (ref compartilhada). O filho alterna entre o
+  // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a
+  // mesma ref disparavam "navigation hasn't been initialized" na troca.
   return (
     <NavigationContainer
       ref={navigationRef}
       onStateChange={handleNavigationStateChange}
     >
+      {session && !isPasswordRecovery && onboardingNeeded ? (
+        <OnboardingNavigator onComplete={() => setOnboardingNeeded(false)} />
+      ) : (
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
       >
@@ -184,6 +211,7 @@ export default function Navigation() {
           </>
         )}
       </Stack.Navigator>
+      )}
     </NavigationContainer>
   )
 }

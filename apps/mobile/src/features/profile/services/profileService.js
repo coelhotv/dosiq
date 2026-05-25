@@ -234,6 +234,35 @@ export async function getDeletionSummary() {
 }
 
 /**
+ * Verifica se o usuário deve passar pelo onboarding (1º acesso sem dados).
+ * @returns {Promise<{data: boolean, error: string|null}>}
+ */
+export async function isOnboardingNeeded() {
+  try {
+    const data = await profileRepo.isOnboardingNeeded()
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao checar onboarding:', err)
+    // Em erro, não bloquear o app com o wizard — assume não necessário.
+    return { data: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Marca o onboarding como concluído (após concluir ou pular o wizard).
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function completeOnboarding() {
+  try {
+    await profileRepo.completeOnboarding()
+    return { success: true, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao concluir onboarding:', err)
+    return { success: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
  * Excluir conta (RPC delete_user_account — bloqueia se tratamentos ativos).
  * @returns {Promise<{success: boolean, error: string|null}>}
  */

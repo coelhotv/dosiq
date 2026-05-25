@@ -40,6 +40,8 @@ export const ROUTES = {
 
   // Onboarding guiado (Fase 4 — S4.2)
   ONBOARDING: 'Onboarding',
+  ONBOARDING_MEDICINE: 'OnboardingMedicine',
+  ONBOARDING_TREATMENT: 'OnboardingTreatment',
 
   // Sub-rotas de Medicamentos (Fase 1)
   MEDICINES_LIST: 'MedicinesList',

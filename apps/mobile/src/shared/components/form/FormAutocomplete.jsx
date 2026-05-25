@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   Pressable,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native'
@@ -71,6 +71,7 @@ export default function FormAutocomplete({
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
   const debounceRef = useRef(null)
+  const inputRef = useRef(null)
 
   // Roda busca debounced quando value muda + foco está no campo
   useEffect(() => {
@@ -139,13 +140,18 @@ export default function FormAutocomplete({
     onSelect?.(item)
     setResults([])
     setFocused(false)
+    // Solta foco nativo — sem isto o input segue focado (keyboardShouldPersistTaps),
+    // o estado `focused` fica dessincronizado e a 2ª busca não dispara (effect aborta
+    // em `if (!focused)`). Blur garante que o próximo tap re-dispare onFocus.
+    inputRef.current?.blur()
   }
 
-  function renderItem({ item }) {
+  function renderRow(item, idx) {
     const label = getItemLabel(item)
     const subtitle = getItemSubtitle?.(item)
     return (
       <Pressable
+        key={`${getItemValue(item)}-${idx}`}
         style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
         onPress={() => handleSelect(item)}
         accessibilityRole="button"
@@ -178,6 +184,7 @@ export default function FormAutocomplete({
         <View style={[styles.inputContainer, { borderColor }]}>
           <Search size={18} color={colors.text.muted} strokeWidth={2} />
           <TextInput
+            ref={inputRef}
             style={styles.input}
             value={value}
             placeholder={placeholder}
@@ -188,6 +195,8 @@ export default function FormAutocomplete({
             onChangeText={handleChangeText}
             autoCorrect={false}
             autoCapitalize="words"
+            returnKeyType="done"
+            blurOnSubmit={false}
             accessibilityLabel={label}
             accessibilityHint={helperText || placeholder}
             accessibilityState={error ? { invalid: true } : undefined}
@@ -216,13 +225,18 @@ export default function FormAutocomplete({
               <Text style={styles.statusText}>Nenhum resultado</Text>
             </View>
           ) : (
-            <FlatList
-              data={results}
-              keyExtractor={(item, idx) => `${getItemValue(item)}-${idx}`}
-              renderItem={renderItem}
-              keyboardShouldPersistTaps="handled"
+            // ScrollView plano (não FlatList) — scroll interno próprio dentro do
+            // dropdown: a borda envolve o viewport (maxHeight) e dá pra ver todas
+            // as sugestões sem fechar o teclado. RN só barra VirtualizedList
+            // aninhada; ScrollView plano é permitido.
+            <ScrollView
               style={styles.list}
-            />
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+            >
+              {results.slice(0, maxResults).map(renderRow)}
+            </ScrollView>
           )}
         </View>
         )}
@@ -302,6 +316,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     borderRadius: borderRadius.md,
     maxHeight: 280,
+    overflow: 'hidden',
     zIndex: 10,
     elevation: 8,
     shadowColor: colors.neutral[900],
@@ -311,6 +326,8 @@ const styles = StyleSheet.create({
   },
   list: {
     flexGrow: 0,
+    // Viewport do dropdown: rola por dentro (a borda do overlay envolve isto).
+    maxHeight: 264,
   },
   item: {
     paddingVertical: spacing[3],

@@ -205,6 +205,39 @@ describe('createProfileRepository — parity', () => {
     })
   })
 
+  // ── isOnboardingNeeded ──
+  describe('isOnboardingNeeded', () => {
+    it('flag onboarding_completed=true → false (curto-circuito)', async () => {
+      client = makeClient({ data: { onboarding_completed: true }, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      expect(await repo.isOnboardingNeeded()).toBe(false)
+    })
+
+    it('sem flag + zero tratamentos → true', async () => {
+      client = makeClient({ data: { onboarding_completed: false }, count: 0, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      expect(await repo.isOnboardingNeeded()).toBe(true)
+    })
+
+    it('sem flag + usuário com tratamentos → false', async () => {
+      client = makeClient({ data: { onboarding_completed: false }, count: 5, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      expect(await repo.isOnboardingNeeded()).toBe(false)
+    })
+  })
+
+  // ── completeOnboarding ──
+  describe('completeOnboarding', () => {
+    it('upsert onboarding_completed=true onConflict user_id', async () => {
+      client = makeClient({ data: null, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      await repo.completeOnboarding()
+      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, onboarding_completed: true })
+      expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
+    })
+  })
+
   // ── deleteAccount ──
   describe('deleteAccount', () => {
     it('chama RPC delete_user_account', async () => {

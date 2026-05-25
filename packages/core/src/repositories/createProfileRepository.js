@@ -49,6 +49,8 @@ function emptyProfile() {
  *   updateProfile: (input: Object) => Promise<Object>,
  *   updateComplexity: (value: 'simple'|'complex'|null) => Promise<Object>,
  *   getDeletionSummary: () => Promise<{activeTreatments:number, medicines:number, doses:number, treatmentPlanNames:string[]}>,
+ *   isOnboardingNeeded: () => Promise<boolean>,
+ *   completeOnboarding: () => Promise<void>,
  *   deleteAccount: () => Promise<any>,
  * }}
  */
@@ -146,6 +148,38 @@ export function createProfileRepository({ client, getUserId }) {
         doses: dosesRes.count ?? 0,
         treatmentPlanNames: (plansRes.data ?? []).map((p) => p.name).filter(Boolean),
       }
+    },
+
+    async isOnboardingNeeded() {
+      // Gate de primeiro acesso (Fase 4 S4.2). Sem migration: a flag
+      // onboarding_completed manda; na ausência dela, contamos tratamentos —
+      // usuários existentes (com protocols) NÃO devem cair no onboarding.
+      const userId = await getUserId()
+      const { data, error } = await client
+        .from('user_settings')
+        .select('onboarding_completed')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (error) throw error
+      if (data?.onboarding_completed === true) return false
+
+      const { count, error: pErr } = await client
+        .from('protocols')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+      if (pErr) throw pErr
+      return (count ?? 0) === 0
+    },
+
+    async completeOnboarding() {
+      const userId = await getUserId()
+      const { error } = await client
+        .from('user_settings')
+        .upsert(
+          { user_id: userId, onboarding_completed: true, updated_at: getServerTimestamp() },
+          { onConflict: 'user_id' },
+        )
+      if (error) throw error
     },
 
     async deleteAccount() {
