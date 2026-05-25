@@ -24,16 +24,35 @@ const SCREEN_TO_ROUTE = {
 }
 
 // Navega para a tela correta a partir de um tap em push notification.
-// createNavigationContainerRef enfileira ações automaticamente — sem listener fallback necessário.
+// No cold start o NavigationContainer pode não ter montado ainda — navegar
+// antes dispara "navigation hasn't been initialized". Guard com isReady() +
+// retry curto até o container montar.
 function navigateFromPush(navigationData) {
   const screen = navigationData?.screen
   const params = navigationData?.params ?? {}
   const targetRoute = (screen && SCREEN_TO_ROUTE[screen]) ?? ROUTES.TODAY
+  const navParams = screen ? { screen, ...params } : params
 
-  // Incluir screen nos params para que TodayScreen identifique qual modal abrir
-  navigationRef.navigate(targetRoute, screen ? { screen, ...params } : params)
-
+  const go = () => {
+    navigationRef.navigate(targetRoute, navParams)
     debugLog('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
+  }
+
+  if (navigationRef.isReady?.()) {
+    go()
+    return
+  }
+  // Aguarda o container montar (cold start) — desiste após ~5s.
+  let waited = 0
+  const interval = setInterval(() => {
+    waited += 100
+    if (navigationRef.isReady?.()) {
+      clearInterval(interval)
+      go()
+    } else if (waited >= 5000) {
+      clearInterval(interval)
+    }
+  }, 100)
 }
 
 export function usePushNotifications({ supabase, session }) {

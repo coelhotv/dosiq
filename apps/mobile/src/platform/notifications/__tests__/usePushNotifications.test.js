@@ -17,6 +17,7 @@ import { ROUTES } from '../../../navigation/routes'
 jest.mock('../../../navigation/navigationRef', () => ({
   navigationRef: {
     navigate: jest.fn(),
+    isReady: jest.fn(() => true),
   },
 }))
 

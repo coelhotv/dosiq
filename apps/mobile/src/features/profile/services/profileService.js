@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { userSettingsNotificationSchema } from '@dosiq/core'
+import { userSettingsNotificationSchema, createProfileRepository } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -46,8 +46,11 @@ export async function getCurrentUser() {
  */
 export async function logoutUser() {
   try {
-    const { error } = await supabase.auth.signOut()
-    
+    // scope 'local': limpa a sessão local imediatamente e dispara SIGNED_OUT sem
+    // depender de chamada de rede (global revoga no servidor e pode pendurar/
+    // falhar silenciosamente no simulador iOS → tela não trocava).
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+
     if (error) {
       if (error.message?.includes('session missing') || error.__isAuthError) {
         return { success: true, error: null }
@@ -148,11 +151,127 @@ export async function generateTelegramToken() {
   try {
     // Opção A decidida conforme EXEC_SPEC_HIBRIDO_H5_SPRINT_PLAN.md
     const { data, error } = await supabase.rpc('generate_telegram_token')
-    
+
     if (error) throw error
     return { token: data, error: null }
   } catch (err) {
     if (__DEV__) console.error('Erro ao gerar token Telegram:', err)
     return { token: null, error: err.message }
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Perfil (mini-CRUD Fase 4) — adota createProfileRepository de @dosiq/core (G2)
+// ───────────────────────────────────────────────────────────────────────────
+
+async function getUserId() {
+  const { data, error } = await supabase.auth.getUser()
+  const user = data?.user
+  if (error || !user) throw new Error('Sessão expirada. Faça login novamente.')
+  return user.id
+}
+
+const profileRepo = createProfileRepository({ client: supabase, getUserId })
+
+/**
+ * Buscar dados de perfil (display_name, birth_date, city, state, phone,
+ * complexity_override). Default object se ainda não houver linha.
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export async function getProfile() {
+  try {
+    const data = await profileRepo.getProfile()
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao buscar perfil:', err)
+    return { data: null, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Atualizar dados de perfil (valida via userProfileSchema canônico).
+ * @param {Object} input - { display_name, birth_date?, city?, state?, phone? }
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export async function updateProfile(input) {
+  try {
+    const data = await profileRepo.updateProfile(input)
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao salvar perfil:', err)
+    return { data: null, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Atualizar densidade da interface (mapeada em complexity_override).
+ * @param {'simple'|'complex'|null} value
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export async function updateComplexity(value) {
+  try {
+    const data = await profileRepo.updateComplexity(value)
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao salvar densidade:', err)
+    return { data: null, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Resumo do que será apagado na exclusão de conta (+ bloqueio por tratamentos
+ * ativos). Usado pelo sheet de exclusão.
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export async function getDeletionSummary() {
+  try {
+    const data = await profileRepo.getDeletionSummary()
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao resumir exclusão:', err)
+    return { data: null, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Verifica se o usuário deve passar pelo onboarding (1º acesso sem dados).
+ * @returns {Promise<{data: boolean, error: string|null}>}
+ */
+export async function isOnboardingNeeded() {
+  try {
+    const data = await profileRepo.isOnboardingNeeded()
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao checar onboarding:', err)
+    // Em erro, não bloquear o app com o wizard — assume não necessário.
+    return { data: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Marca o onboarding como concluído (após concluir ou pular o wizard).
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function completeOnboarding() {
+  try {
+    await profileRepo.completeOnboarding()
+    return { success: true, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao concluir onboarding:', err)
+    return { success: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Excluir conta (RPC delete_user_account — bloqueia se tratamentos ativos).
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function deleteAccount() {
+  try {
+    await profileRepo.deleteAccount()
+    return { success: true, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao excluir conta:', err)
+    return { success: false, error: mapErrorToMessage(err) }
   }
 }

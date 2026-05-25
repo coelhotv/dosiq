@@ -102,3 +102,5 @@ export {
   computeExpiryDays,
   formatBRL,
 } from './stock.js'
+
+export { calculateAge, getInitials } from './profile.js'

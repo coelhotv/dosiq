@@ -45,6 +45,7 @@ export const BRAZILIAN_STATES = [
  * - birth_date: Data de nascimento (opcional, formato YYYY-MM-DD)
  * - city: Cidade (opcional, até 100 chars)
  * - state: Estado UF (opcional, sigla ou texto livre até 50 chars)
+ * - phone: Telefone (opcional, até 20 chars — aceita máscara/dígitos)
  *
  * Nota sobre .nullable().optional():
  * - .nullable() permite null explícito
@@ -58,11 +59,17 @@ const userProfileSchema = z.object({
     .max(200, 'Nome não pode ter mais de 200 caracteres')
     .trim(),
 
+  // Aceita string vazia ('') como "sem data" → null. Sem isso, o form de edição
+  // dispara erro de formato ao validar o estado vazio inicial (FormDatePicker
+  // emite '' antes de um pick e o blur valida o valor ainda não preenchido).
   birth_date: z
-    .string()
-    .date('Data de nascimento inválida (formato: YYYY-MM-DD)')
+    .union([
+      z.string().date('Data de nascimento inválida (formato: YYYY-MM-DD)'),
+      z.literal(''),
+    ])
     .nullable()
-    .optional(),
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
 
   city: z
     .string()
@@ -76,11 +83,18 @@ const userProfileSchema = z.object({
     .nullable()
     .optional()
     .transform((val) => (val === '' ? null : val)),
+
+  phone: z
+    .string()
+    .max(20, 'Telefone não pode ter mais de 20 caracteres')
+    .trim()
+    .nullable()
+    .optional(),
 })
 
 /**
  * Validar dados de perfil do usuário
- * @param {Object} data - { display_name, birth_date, city, state }
+ * @param {Object} data - { display_name, birth_date, city, state, phone }
  * @returns {Object} { success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }
  */
 export function validateUserProfile(data) {

@@ -2,11 +2,15 @@
  * useProfileState — Hook de lógica para a view de perfil.
  */
 import { useState, useEffect, useCallback, useMemo, startTransition } from 'react'
-import { supabase } from '@shared/utils/supabase'
-import { parseLocalDate, getNow, getSaoPauloTime } from '@utils/dateUtils'
+import { supabase, getUserId } from '@shared/utils/supabase'
+import { createProfileRepository } from '@dosiq/core'
+import { parseLocalDate, getSaoPauloTime } from '@utils/dateUtils'
 import { validateUserProfile } from '@schemas/userProfileSchema'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import QRCode from 'qrcode'
+
+// Repositório canônico de perfil (@dosiq/core) — fonte única web↔mobile.
+const profileRepo = createProfileRepository({ client: supabase, getUserId })
 
 // Helper to calculate age without blocking compiler optimization
 function calculateAge(birthDate) {
@@ -22,26 +26,25 @@ function calculateAge(birthDate) {
 }
 
 /**
- * Sincroniza display_name do metadata para user_settings se ausente.
+ * Sincroniza display_name do metadata para o perfil se ausente (via repo).
  */
 async function syncDisplayName(user, settings) {
   if (settings && !settings.display_name && user.user_metadata?.name) {
-    await supabase
-      .from('user_settings')
-      .update({ display_name: user.user_metadata.name, updated_at: getNow().toISOString() })
-      .eq('user_id', user.id)
-    return { ...settings, display_name: user.user_metadata.name }
+    const updated = await profileRepo.updateProfile({ ...settings, display_name: user.user_metadata.name })
+    return updated
   }
   return settings
 }
 
 /**
  * Carrega e sincroniza o cartão de emergência do usuário.
+ * source === 'local' indica que o cartão veio do localStorage (ainda não
+ * persistido no DB) — equivale ao antigo gate `!settings.emergency_card`.
  */
-async function loadAndSyncEmergencyCard(settings) {
+async function loadAndSyncEmergencyCard() {
   const cardResult = await emergencyCardService.load()
   const cardData = cardResult.success ? cardResult.data : null
-  if (cardData && cardResult.source === 'local' && settings && !settings.emergency_card) {
+  if (cardData && cardResult.source === 'local') {
     emergencyCardService.save(cardData)
   }
   return cardData
@@ -77,9 +80,9 @@ export function useProfileState() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { data: settingsData } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single()
-      const settings = await syncDisplayName(user, settingsData ?? {})
-      const cardData = await loadAndSyncEmergencyCard(settings)
+      const settingsData = await profileRepo.getProfile()
+      const settings = await syncDisplayName(user, settingsData)
+      const cardData = await loadAndSyncEmergencyCard()
 
       setUser(user)
       setSettings(settings)
@@ -133,8 +136,8 @@ export function useProfileState() {
     if (!validation.success) { setError(validation.errors[0]?.message); return; }
     setIsSaving(true); setError(null)
     try {
-      await supabase.from('user_settings').upsert({ user_id: user.id, ...validation.data, updated_at: getNow().toISOString() }, { onConflict: 'user_id' })
-      setSettings(prev => ({ ...prev, ...validation.data }))
+      const updated = await profileRepo.updateProfile(profileForm)
+      setSettings(prev => ({ ...prev, ...updated }))
       setIsEditingProfile(false); showFeedback('Perfil atualizado!')
     } catch (err) { setError('Erro ao salvar: ' + err.message) }
     finally { setIsSaving(false) }

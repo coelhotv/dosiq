@@ -36,6 +36,11 @@
 - **[AP-140]** Duplicate Imports in ESM Node.js -> [`anti-patterns/infra_and_deploy/AP-140.md`](./anti-patterns/infra_and_deploy/AP-140.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[AP-173]** `signOut()` escopo global (default) trava o logout (iOS sim / Workbox PWA) — usar `signOut({ scope: 'local' })` + cleanup local -> [`anti-patterns/mobile_and_platform/AP-173.md`](./anti-patterns/mobile_and_platform/AP-173.md)
+- **[AP-174]** Bottom sheet/Modal RN + teclado + tab bar (Android API 24) corta campos/botões; KAV não mede em Modal. Fluxo destrutivo com input → tela cheia -> [`anti-patterns/mobile_and_platform/AP-174.md`](./anti-patterns/mobile_and_platform/AP-174.md)
+- **[AP-175]** Autocomplete RN: `setFocused(false)` sem blur nativo (keyboardShouldPersistTaps) → 2ª busca morta (effect aborta em `!focused`). `inputRef.blur()` no select -> [`anti-patterns/mobile_and_platform/AP-175.md`](./anti-patterns/mobile_and_platform/AP-175.md)
+- **[AP-176]** Dois `NavigationContainer` com a mesma ref → "navigation hasn't been initialized". Container único + filho condicional -> [`anti-patterns/mobile_and_platform/AP-176.md`](./anti-patterns/mobile_and_platform/AP-176.md)
+- **[AP-177]** VirtualizedList (FlatList) aninhada em ScrollView mesma orientação → warning/perf. Overlays curtos: ScrollView plano + `.map()` -> [`anti-patterns/mobile_and_platform/AP-177.md`](./anti-patterns/mobile_and_platform/AP-177.md)
 - **[AP-171]** `Intl.NumberFormat` (moeda) não confiável no Hermes — renderiza errado em device sem erro; usar formatação manual (sinal antes do símbolo) -> [`anti-patterns/mobile_and_platform/AP-171.md`](./anti-patterns/mobile_and_platform/AP-171.md)
 - **[AP-A03]** When 2+ protocols exist for same medicine, logs bleed between them. Protocol A's... -> [`anti-patterns/mobile_and_platform/AP-A03.md`](./anti-patterns/mobile_and_platform/AP-A03.md)
 - **[AP-B01]** Vite 7 base64-encoda o conteúdo raw do JSX e emite `data:text/jsx;base64,...` no... -> [`anti-patterns/mobile_and_platform/AP-B01.md`](./anti-patterns/mobile_and_platform/AP-B01.md)
