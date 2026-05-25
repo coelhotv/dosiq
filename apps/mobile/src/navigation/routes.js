@@ -33,6 +33,7 @@ export const ROUTES = {
   PROFILE_EDIT: 'ProfileEdit',           // Fase 4 — Editar Perfil V1
   SETTINGS: 'Settings',                  // Fase 4 — Configurações (densidade + segurança)
   CHANGE_PASSWORD: 'ChangePassword',     // Fase 4 — Alterar senha
+  DELETE_ACCOUNT: 'DeleteAccount',       // Fase 4 — Excluir conta
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
   NOTIFICATION_INBOX: 'NotificationInbox',

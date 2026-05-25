@@ -146,6 +146,65 @@ describe('createProfileRepository — parity', () => {
     })
   })
 
+  // ── getDeletionSummary ──
+  describe('getDeletionSummary', () => {
+    // Client por-tabela: cada from(table) resolve seu próprio { count } / { data }.
+    function makeCountClient(perTable) {
+      return {
+        from: vi.fn((table) => {
+          const result = perTable[table]
+          return {
+            select: vi.fn(function () { return this }),
+            eq: vi.fn(function () { return this }),
+            or: vi.fn(function () { return this }),
+            then: (resolve) => resolve(result),
+          }
+        }),
+      }
+    }
+
+    it('agrega contagens + nomes de planos', async () => {
+      const client2 = makeCountClient({
+        protocols: { count: 6, error: null },
+        medicines: { count: 12, error: null },
+        medicine_logs: { count: 847, error: null },
+        treatment_plans: { data: [{ name: 'DAPT' }, { name: 'Pressão' }], error: null },
+      })
+      const repo = createProfileRepository({ client: client2, getUserId })
+      const out = await repo.getDeletionSummary()
+
+      expect(out).toEqual({
+        activeTreatments: 6,
+        medicines: 12,
+        doses: 847,
+        treatmentPlanNames: ['DAPT', 'Pressão'],
+      })
+    })
+
+    it('count null vira 0 e planos vazios viram []', async () => {
+      const client2 = makeCountClient({
+        protocols: { count: null, error: null },
+        medicines: { count: null, error: null },
+        medicine_logs: { count: null, error: null },
+        treatment_plans: { data: null, error: null },
+      })
+      const repo = createProfileRepository({ client: client2, getUserId })
+      const out = await repo.getDeletionSummary()
+      expect(out).toEqual({ activeTreatments: 0, medicines: 0, doses: 0, treatmentPlanNames: [] })
+    })
+
+    it('propaga erro de qualquer query', async () => {
+      const client2 = makeCountClient({
+        protocols: { count: 1, error: null },
+        medicines: { count: 0, error: new Error('rls denied') },
+        medicine_logs: { count: 0, error: null },
+        treatment_plans: { data: [], error: null },
+      })
+      const repo = createProfileRepository({ client: client2, getUserId })
+      await expect(repo.getDeletionSummary()).rejects.toThrow('rls denied')
+    })
+  })
+
   // ── deleteAccount ──
   describe('deleteAccount', () => {
     it('chama RPC delete_user_account', async () => {

@@ -4,6 +4,7 @@ import ProfileScreen from '../features/profile/screens/ProfileScreen'
 import ProfileEditScreen from '../features/profile/screens/ProfileEditScreen'
 import SettingsScreen from '../features/profile/screens/SettingsScreen'
 import ChangePasswordScreen from '../features/profile/screens/ChangePasswordScreen'
+import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen'
 import TelegramLinkScreen from '../features/profile/screens/TelegramLinkScreen'
 import NotificationPreferencesScreen from '../features/profile/screens/NotificationPreferencesScreen'
 import NotificationInboxScreen from '../features/notifications/screens/NotificationInboxScreen'
@@ -17,6 +18,7 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.PROFILE_EDIT} component={ProfileEditScreen} />
       <Stack.Screen name={ROUTES.SETTINGS} component={SettingsScreen} />
       <Stack.Screen name={ROUTES.CHANGE_PASSWORD} component={ChangePasswordScreen} />
+      <Stack.Screen name={ROUTES.DELETE_ACCOUNT} component={DeleteAccountScreen} />
       <Stack.Screen name={ROUTES.TELEGRAM_LINK} component={TelegramLinkScreen} />
       <Stack.Screen name={ROUTES.NOTIFICATION_PREFERENCES} component={NotificationPreferencesScreen} />
       <Stack.Screen name={ROUTES.NOTIFICATION_INBOX} component={NotificationInboxScreen} />

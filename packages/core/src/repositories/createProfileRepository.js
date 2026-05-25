@@ -15,7 +15,7 @@
 // - deleteAccount()           → RPC delete_user_account (bloqueia se tratamentos ativos)
 
 import { validateUserProfile } from '../schemas/userProfileSchema.js'
-import { getServerTimestamp } from '../utils/dateUtils.js'
+import { getServerTimestamp, getTodayLocal } from '../utils/dateUtils.js'
 
 // Colunas de perfil lidas/escritas (R-127: só o necessário).
 const PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, complexity_override'
@@ -48,6 +48,7 @@ function emptyProfile() {
  *   getProfile: () => Promise<Object>,
  *   updateProfile: (input: Object) => Promise<Object>,
  *   updateComplexity: (value: 'simple'|'complex'|null) => Promise<Object>,
+ *   getDeletionSummary: () => Promise<{activeTreatments:number, medicines:number, doses:number, treatmentPlanNames:string[]}>,
  *   deleteAccount: () => Promise<any>,
  * }}
  */
@@ -106,6 +107,45 @@ export function createProfileRepository({ client, getUserId }) {
 
       if (error) throw error
       return data
+    },
+
+    async getDeletionSummary() {
+      // Contagens para o sheet de exclusão (o que será apagado + bloqueio).
+      // activeTreatments espelha o critério do RPC: active=true e dentro do
+      // período (end_date nulo ou futuro).
+      const userId = await getUserId()
+      const today = getTodayLocal()
+
+      const [activeRes, medsRes, dosesRes, plansRes] = await Promise.all([
+        client
+          .from('protocols')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('active', true)
+          .or(`end_date.is.null,end_date.gte.${today}`),
+        client
+          .from('medicines')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId),
+        client
+          .from('medicine_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId),
+        client
+          .from('treatment_plans')
+          .select('name')
+          .eq('user_id', userId),
+      ])
+
+      const firstError = activeRes.error || medsRes.error || dosesRes.error || plansRes.error
+      if (firstError) throw firstError
+
+      return {
+        activeTreatments: activeRes.count ?? 0,
+        medicines: medsRes.count ?? 0,
+        doses: dosesRes.count ?? 0,
+        treatmentPlanNames: (plansRes.data ?? []).map((p) => p.name).filter(Boolean),
+      }
     },
 
     async deleteAccount() {

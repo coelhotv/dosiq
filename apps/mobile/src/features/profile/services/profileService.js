@@ -219,6 +219,21 @@ export async function updateComplexity(value) {
 }
 
 /**
+ * Resumo do que será apagado na exclusão de conta (+ bloqueio por tratamentos
+ * ativos). Usado pelo sheet de exclusão.
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export async function getDeletionSummary() {
+  try {
+    const data = await profileRepo.getDeletionSummary()
+    return { data, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao resumir exclusão:', err)
+    return { data: null, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
  * Excluir conta (RPC delete_user_account — bloqueia se tratamentos ativos).
  * @returns {Promise<{success: boolean, error: string|null}>}
  */

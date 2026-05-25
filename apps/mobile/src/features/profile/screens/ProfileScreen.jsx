@@ -1,6 +1,6 @@
-import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import React, { useState, useCallback } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { Bell, ChevronRight, Settings as SettingsIcon, UserCircle2, MapPin, Pencil } from 'lucide-react-native'
 import Constants from 'expo-constants'
 import * as WebBrowser from 'expo-web-browser'
@@ -8,6 +8,7 @@ import { useProfile } from '@profile/hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
+import LogoutSheet from '@profile/components/LogoutSheet'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
@@ -25,9 +26,19 @@ export default function ProfileScreen() {
   const { user, loading, error, refresh, hasProfile, displayName, initials, age, location } = useProfile()
 
   const { unreadCount, refreshBadge } = useUnreadBadgeCount(user?.id)
+  const [logoutSheetOpen, setLogoutSheetOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const goToEdit = () => navigation.navigate(ROUTES.PROFILE_EDIT)
   const goToSettings = () => navigation.navigate(ROUTES.SETTINGS)
+
+  // Refresca ao focar: reflete dados salvos em Editar Perfil (instância de
+  // useProfile do Hub é separada da do form — sem isso o Hub fica stale).
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh]),
+  )
 
   // Linha "49 anos · São Paulo, SP" — só os pedaços disponíveis.
   const identitySubtitle = [age != null ? `${age} anos` : null, location].filter(Boolean).join('  ·  ')
@@ -36,24 +47,16 @@ export default function ProfileScreen() {
     await WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
   }
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Sair da Conta',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            const { success, error: logoutErr } = await logoutUser()
-            if (!success && __DEV__) {
-              console.error('Erro ao fazer logout:', logoutErr)
-            }
-          }
-        }
-      ]
-    )
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true)
+    const { success, error: logoutErr } = await logoutUser()
+    // Em sucesso, o listener SIGNED_OUT (Navigation) reseta para a Landing e
+    // este componente desmonta — não precisa fechar o sheet manualmente.
+    if (!success) {
+      setLoggingOut(false)
+      setLogoutSheetOpen(false)
+      if (__DEV__) console.error('Erro ao fazer logout:', logoutErr)
+    }
   }
 
   if (loading) {
@@ -221,7 +224,7 @@ export default function ProfileScreen() {
         <View style={styles.logoutSection}>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={handleLogout}
+            onPress={() => setLogoutSheetOpen(true)}
             activeOpacity={0.7}
           >
             <Text style={styles.logoutText}>Sair da Conta</Text>
@@ -240,6 +243,13 @@ export default function ProfileScreen() {
           </View>
         )}
       </ScrollView>
+
+      <LogoutSheet
+        visible={logoutSheetOpen}
+        loading={loggingOut}
+        onCancel={() => setLogoutSheetOpen(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </ScreenContainer>
   )
 }

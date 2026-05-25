@@ -96,6 +96,10 @@ export default function SettingsScreen() {
     navigation.navigate(ROUTES.CHANGE_PASSWORD)
   }, [navigation])
 
+  const handleDeleteAccount = useCallback(() => {
+    navigation.navigate(ROUTES.DELETE_ACCOUNT)
+  }, [navigation])
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
@@ -200,9 +204,9 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
 
           {/* Excluir conta */}
-          {/* TODO(W3): abrir sheet excluir conta */}
           <Pressable
             style={styles.securityRow}
+            onPress={handleDeleteAccount}
             accessibilityRole="button"
             accessibilityLabel="Excluir minha conta"
           >

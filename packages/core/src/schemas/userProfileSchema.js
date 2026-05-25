@@ -59,11 +59,17 @@ const userProfileSchema = z.object({
     .max(200, 'Nome não pode ter mais de 200 caracteres')
     .trim(),
 
+  // Aceita string vazia ('') como "sem data" → null. Sem isso, o form de edição
+  // dispara erro de formato ao validar o estado vazio inicial (FormDatePicker
+  // emite '' antes de um pick e o blur valida o valor ainda não preenchido).
   birth_date: z
-    .string()
-    .date('Data de nascimento inválida (formato: YYYY-MM-DD)')
+    .union([
+      z.string().date('Data de nascimento inválida (formato: YYYY-MM-DD)'),
+      z.literal(''),
+    ])
     .nullable()
-    .optional(),
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
 
   city: z
     .string()
