@@ -1,20 +1,18 @@
-// Hook para setup de push notifications pós-login
-// Configura: permissão, token registration, notification handlers
-// Cleanup automático em logout (via dependencies)
-// N1.4: deeplink real via navigationRef (foreground/background tap + cold start)
+// Hook para setup de push notifications pós-login — REGISTER-ONLY.
+// NUNCA pede permissão aqui (isso é dos pontos de intenção — ver pushPermission.js).
+// Se a permissão já foi concedida, registra o token; senão, não faz nada.
+// Configura handlers + tap listener (deeplink real via navigationRef).
+// Cleanup automático em logout (via dependencies).
 
 import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { requestPushPermission } from './requestPushPermission'
-import { getExpoPushToken } from './getExpoPushToken'
-import { syncNotificationDevice } from './syncNotificationDevice'
+import { getPushPermissionStatus } from './pushPermission'
+import { registerPushToken, PUSH_TOKEN_KEY } from './registerPushToken'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
 import { navigationRef } from '../../navigation/navigationRef'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
-
-const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
 
 // Mapa de screen names do payload para rotas do navigator
 const SCREEN_TO_ROUTE = {
@@ -78,25 +76,8 @@ export function usePushNotifications({ supabase, session }) {
           }
         }
 
-        const { granted } = await requestPushPermission()
-
-        if (!granted) {
-          debugLog('[usePushNotifications] Permissão de push não concedida')
-          return
-        }
-
-        const token = await getExpoPushToken()
-        if (!isMounted) return
-
-        await syncNotificationDevice({
-          supabase,
-          userId: session.user.id,
-          token,
-        })
-
-        await AsyncStorage.setItem(PUSH_TOKEN_KEY, token)
-
-        // Configurar handlers (conforme spec Passo 5)
+        // Handlers + tap listener SEMPRE (independem de permissão; harmless se não
+        // houver notificações). Garantem que um tap roteie certo assim que houver.
         Notifications.setNotificationHandler({
           handleNotification: async () => ({
             shouldShowBanner: true,
@@ -105,8 +86,6 @@ export function usePushNotifications({ supabase, session }) {
             shouldSetBadge: false,
           }),
         })
-
-        // Handler de tap em notificação (foreground / background)
         notificationSubscription = Notifications.addNotificationResponseReceivedListener(
           (response) => {
             const navigationData = response.notification.request.content.data?.navigation
@@ -114,7 +93,15 @@ export function usePushNotifications({ supabase, session }) {
           }
         )
 
-        debugLog('[usePushNotifications] Push setup completo: token =', token.substring(0, 20) + '...')
+        // REGISTER-ONLY: registra o token só se a permissão JÁ foi concedida.
+        // NUNCA pedir aqui — o prompt é dos pontos de intenção (pushPermission.js).
+        const { granted } = await getPushPermissionStatus()
+        if (!granted) {
+          debugLog('[usePushNotifications] Sem permissão — register-only, nada a fazer')
+          return
+        }
+        if (!isMounted) return
+        await registerPushToken({ supabase, userId: session.user.id })
       } catch (error) {
         if (isMounted && __DEV__) {
           console.error('[usePushNotifications] Erro durante setup:', error.message)

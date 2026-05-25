@@ -25,6 +25,9 @@ jest.mock('expo-notifications', () => ({
   getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   setNotificationHandler: jest.fn(),
+  // Register-only: hook lê status (puro), não pede permissão. 'denied' mantém os
+  // testes focados em deeplink sem acionar registro de token.
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'denied', canAskAgain: false })),
 }))
 
 jest.mock('../requestPushPermission', () => ({
