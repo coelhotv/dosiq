@@ -5,7 +5,7 @@
 // parseLocalDate/formatLocalDate de @dosiq/core, nunca new Date('YYYY-MM-DD')).
 // Avatar = iniciais (foto = V2/backlog; tap mostra toast "em breve").
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { ScrollView, View, Text, Pressable, TouchableOpacity, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -56,6 +56,9 @@ export default function ProfileEditScreen() {
   const { profile, user } = useProfile()
   const { saveProfile, loading } = useProfileMutation()
   const { show } = useToast()
+  // useProfile carrega o perfil async; o form precisa re-hidratar quando os
+  // dados chegam (init capturou '' antes do fetch resolver — R-216/AP-N20).
+  const hydratedRef = useRef(false)
 
   // Memos — init null-safe a partir do perfil carregado (AP-N20: hidratar todos
   // os campos; campos ausentes → '' pro FormInput não receber null).
@@ -71,6 +74,14 @@ export default function ProfileEditScreen() {
   )
 
   const form = useFormState(userProfileSchema, { initialValues })
+
+  // Effects (R-010) — hidrata o form uma vez, quando o perfil async chega.
+  useEffect(() => {
+    if (!hydratedRef.current && profile) {
+      form.reset(initialValues)
+      hydratedRef.current = true
+    }
+  }, [profile, initialValues, form])
 
   // birth_date é string 'YYYY-MM-DD' no form; FormDatePicker opera com Date.
   const birthDateAsDate = useMemo(

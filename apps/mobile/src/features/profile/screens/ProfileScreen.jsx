@@ -147,22 +147,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>MINHA CONTA</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Email</Text>
-              <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
-                {user?.email || '...'}
-              </Text>
-            </View>
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.label}>Status</Text>
-              <Text style={[styles.value, { color: colors.status.success }]}>Ativo</Text>
-            </View>
-          </View>
-        </View>
-
+        {/* Ordem (PO feedback #6): AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>AVISOS & LEMBRETES</Text>
           <TouchableOpacity
@@ -214,6 +199,22 @@ export default function ProfileScreen() {
               </View>
               <ChevronRight size={18} color={colors.text.muted} strokeWidth={1.5} />
             </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>MINHA CONTA</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Email</Text>
+              <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
+                {user?.email || '...'}
+              </Text>
+            </View>
+            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.label}>Status</Text>
+              <Text style={[styles.value, { color: colors.status.success }]}>Ativo</Text>
+            </View>
           </View>
         </View>
 

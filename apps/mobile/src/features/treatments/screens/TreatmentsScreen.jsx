@@ -10,6 +10,7 @@ import TreatmentEmptyState from '@treatments/components/TreatmentEmptyState'
 import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
 import TreatmentTabBar from '@treatments/components/TreatmentTabBar'
 import { useTreatments } from '@treatments/hooks/useTreatments'
+import { useProfile } from '@profile/hooks/useProfile'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '@navigation/routes'
@@ -37,6 +38,10 @@ export default function TreatmentsScreen() {
     pausados,
     finalizados,
   } = useTreatments()
+  // complexity_override do perfil (Configurações → Densidade). Override manual
+  // tem prioridade sobre a heurística de contagem (paridade com TodayScreen).
+  const { profile, refresh: refreshProfile } = useProfile()
+  const complexityOverride = profile?.complexity_override
   const [expandedGroups, setExpandedGroups] = useState({})
 
   const goToMedicines = useCallback(() => {
@@ -65,8 +70,12 @@ export default function TreatmentsScreen() {
     if (!groups) return DEFAULT_COMPLEXITY
     const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
     const flat = groups.flatMap(g => g.protocols)
-    return { isComplex: total > 3, flatData: flat }
-  }, [groups])
+    // Override manual ('simple'|'complex') vence a heurística; null = automático.
+    const complex = complexityOverride
+      ? complexityOverride === 'complex'
+      : total > 3
+    return { isComplex: complex, flatData: flat }
+  }, [groups, complexityOverride])
 
   const totalAcrossTabs = (counts?.ativos ?? 0) + (counts?.pausados ?? 0) + (counts?.finalizados ?? 0)
   const isFullyEmpty = totalAcrossTabs === 0
@@ -76,7 +85,8 @@ export default function TreatmentsScreen() {
   useFocusEffect(
     useCallback(() => {
       refresh()
-    }, [refresh])
+      refreshProfile() // re-lê complexity_override alterado em Configurações
+    }, [refresh, refreshProfile])
   )
 
   const toggleGroup = useCallback((groupId) => {

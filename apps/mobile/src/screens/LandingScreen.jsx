@@ -46,11 +46,11 @@ export default function LandingScreen({ navigation }) {
           <View style={[styles.card, styles.adherenceCard]}>
             <View style={styles.adherenceContent}>
               <View style={styles.circularProgressContainer}>
-                <AdherenceRing score={91} size={56} strokeWidth={6} />
+                <AdherenceRing score={91} size={85} strokeWidth={8} />
               </View>
               <View style={styles.adherenceInfo}>
                 <Text style={styles.adherenceLabel}>Hoje</Text>
-                <Text style={styles.adherenceTitle}>Tudo em dia</Text>
+                <Text style={styles.adherenceTitle}>Adesão excelente!</Text>
               </View>
             </View>
           </View>
@@ -66,7 +66,7 @@ export default function LandingScreen({ navigation }) {
                 <Text style={styles.doseTimeText}>08:00</Text>
               </View>
               <Text style={styles.medicationName}>Atorvastatina</Text>
-              <Text style={styles.medicationDetails}>40 mg • 1 unidade</Text>
+              <Text style={styles.medicationDetails}>40mg • 1 Comprimido</Text>
             </View>
           </View>
         </View>
@@ -284,9 +284,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   headlineText: {
-    fontSize: 36,
-    lineHeight: 44,
-    fontWeight: 'bold',
+    // Match tipográfico do mock (dosiq-tokens display): peso forte, tracking
+    // negativo (-0.02em) e leading apertado (~1.15). Família = System (mock usa
+    // system-ui), o gap visual era só weight/letterSpacing/lineHeight.
+    fontSize: 34,
+    lineHeight: 39,
+    fontWeight: '800',
+    letterSpacing: -0.8,
     color: colors.text.primary,
   },
   highlightRow: {

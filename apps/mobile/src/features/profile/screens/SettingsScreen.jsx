@@ -218,9 +218,6 @@ export default function SettingsScreen() {
             <ChevronRight size={16} color={colors.text.muted} />
           </Pressable>
         </View>
-
-        {/* Footer */}
-        <Text style={styles.footer}>DOSIQ V0.4.0 · DESIGN SANTUÁRIO</Text>
       </ScrollView>
     </SafeAreaView>
   )
@@ -369,13 +366,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.error + '1A',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  footer: {
-    marginTop: spacing[8],
-    textAlign: 'center',
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.text.muted,
-    letterSpacing: 0.5,
   },
 })

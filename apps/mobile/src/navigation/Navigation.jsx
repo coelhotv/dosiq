@@ -11,7 +11,10 @@
 import { useEffect, useState } from 'react'
 import { View, ActivityIndicator, Linking } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+// ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
+// (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
+// SIGNED_OUT. RootTabs/ProfileStack já são JS; o root era o último outlier.
+import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from './routes'
 import { navigationRef } from './navigationRef'
 import SmokeScreen from '../screens/SmokeScreen'
@@ -29,7 +32,7 @@ import { usePushNotifications } from '../platform/notifications/usePushNotificat
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
 
-const Stack = createNativeStackNavigator()
+const Stack = createStackNavigator()
 
 export default function Navigation() {
   // undefined = a verificar; null = sem sessão; object = sessão activa

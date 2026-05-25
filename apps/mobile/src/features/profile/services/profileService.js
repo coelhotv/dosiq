@@ -46,8 +46,11 @@ export async function getCurrentUser() {
  */
 export async function logoutUser() {
   try {
-    const { error } = await supabase.auth.signOut()
-    
+    // scope 'local': limpa a sessão local imediatamente e dispara SIGNED_OUT sem
+    // depender de chamada de rede (global revoga no servidor e pode pendurar/
+    // falhar silenciosamente no simulador iOS → tela não trocava).
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+
     if (error) {
       if (error.message?.includes('session missing') || error.__isAuthError) {
         return { success: true, error: null }

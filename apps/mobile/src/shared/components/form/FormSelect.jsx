@@ -249,7 +249,10 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   listContent: {
-    paddingVertical: spacing[2],
+    paddingTop: spacing[2],
+    // paddingBottom maior garante que o último item (ex: 'TO' em 27 UFs) limpe a
+    // borda inferior do sheet / home indicator e seja alcançável no scroll.
+    paddingBottom: spacing[8],
   },
   optionRow: {
     height: 52,

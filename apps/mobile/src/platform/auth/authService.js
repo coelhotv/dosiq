@@ -191,7 +191,9 @@ export async function updatePassword(newPassword, confirmPassword) {
  */
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
+    // scope 'local': limpa sessão local na hora, dispara SIGNED_OUT sem rede
+    // (global pode pendurar no simulador iOS — ver logoutUser).
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
     if (error) {
       console.error('Erro ao fazer logout:', error.message)
       return { success: false }
