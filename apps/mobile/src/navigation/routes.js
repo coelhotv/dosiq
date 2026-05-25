@@ -30,9 +30,15 @@ export const ROUTES = {
 
   // Sub-rotas de Perfil
   PROFILE_MAIN: 'ProfileMain',
+  PROFILE_EDIT: 'ProfileEdit',           // Fase 4 — Editar Perfil V1
+  SETTINGS: 'Settings',                  // Fase 4 — Configurações (densidade + segurança)
+  CHANGE_PASSWORD: 'ChangePassword',     // Fase 4 — Alterar senha
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
   NOTIFICATION_INBOX: 'NotificationInbox',
+
+  // Onboarding guiado (Fase 4 — S4.2)
+  ONBOARDING: 'Onboarding',
 
   // Sub-rotas de Medicamentos (Fase 1)
   MEDICINES_LIST: 'MedicinesList',

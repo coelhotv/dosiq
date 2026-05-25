@@ -8,7 +8,7 @@ import {
   Image
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sun, UserPlus, LogIn } from 'lucide-react-native';
+import { Sun, UserPlus, LogIn, Bell, Package } from 'lucide-react-native';
 import { colors, spacing, typography, shadows } from '@shared/styles/tokens';
 import { ROUTES } from '@navigation/routes';
 import AdherenceRing from '@features/dashboard/components/AdherenceRing';
@@ -46,11 +46,11 @@ export default function LandingScreen({ navigation }) {
           <View style={[styles.card, styles.adherenceCard]}>
             <View style={styles.adherenceContent}>
               <View style={styles.circularProgressContainer}>
-                <AdherenceRing score={91} size={85} strokeWidth={8} />
+                <AdherenceRing score={91} size={56} strokeWidth={6} />
               </View>
               <View style={styles.adherenceInfo}>
                 <Text style={styles.adherenceLabel}>Hoje</Text>
-                <Text style={styles.adherenceTitle}>Adesão excelente!</Text>
+                <Text style={styles.adherenceTitle}>Tudo em dia</Text>
               </View>
             </View>
           </View>
@@ -66,35 +66,40 @@ export default function LandingScreen({ navigation }) {
                 <Text style={styles.doseTimeText}>08:00</Text>
               </View>
               <Text style={styles.medicationName}>Atorvastatina</Text>
-              <Text style={styles.medicationDetails}>40mg • 1 Comprimido</Text>
+              <Text style={styles.medicationDetails}>40 mg • 1 unidade</Text>
             </View>
           </View>
         </View>
 
         {/* 3. Headline Section */}
         <View style={styles.textSection}>
-          <View style={styles.headlineContainer}>
-            <Text style={styles.headlineText}>Sua saúde sob</Text>
-            <View style={styles.highlightRow}>
-              <View style={styles.highlightWrapper}>
-                <Text style={[styles.headlineText, styles.highlightText]}>controle</Text>
-              </View>
-              <Text style={styles.headlineText}>, sem</Text>
-            </View>
-            <Text style={styles.headlineText}>complicações.</Text>
-          </View>
-
-          <Text style={styles.descriptionText}>
-            Gratuito e portátil. O app que ajuda você a gerenciar seus remédios, estoque e adesão em um só lugar. <Text style={styles.boldText}>Dosiq</Text> — Inteligência em Doses.
+          <Text style={styles.headlineContainer}>
+            <Text style={styles.headlineText}>Nunca mais </Text>
+            <Text style={[styles.headlineText, styles.highlightText]}>esqueça</Text>
+            <Text style={styles.headlineText}> um remédio.</Text>
           </Text>
 
+          <Text style={styles.descriptionText}>
+            O Dosiq lembra você dos horários, controla o estoque e funciona offline. Gratuito, sem assinatura.
+          </Text>
         </View>
 
-        {/* 4. Benefits Bar */}
-        <View style={styles.benefitsBar}>
-          <BenefitColumn top="100%" bottom="SEGURO" />
-          <BenefitColumn top="Offline" bottom="ACESSO" />
-          <BenefitColumn top="Grátis" bottom="PARA SEMPRE" />
+        {/* 4. Feature Chips */}
+        <View style={styles.featureRow}>
+          <View style={[styles.card, styles.featureChip]}>
+            <View style={styles.featureIcon}>
+              <Bell size={22} color={colors.brand.primary} strokeWidth={1.75} />
+            </View>
+            <Text style={styles.featureTitle}>Lembretes</Text>
+            <Text style={styles.featureCaption}>push + WhatsApp em breve</Text>
+          </View>
+          <View style={[styles.card, styles.featureChip]}>
+            <View style={styles.featureIcon}>
+              <Package size={22} color={colors.brand.primary} strokeWidth={1.75} />
+            </View>
+            <Text style={styles.featureTitle}>Estoque</Text>
+            <Text style={styles.featureCaption}>avisa antes de acabar</Text>
+          </View>
         </View>
 
         {/* 5. Sponsored Space - Suppressed until ads/partnerships are active
@@ -142,15 +147,6 @@ export default function LandingScreen({ navigation }) {
         </Pressable>
       </View>
     </SafeAreaView>
-  );
-}
-
-function BenefitColumn({ top, bottom }) {
-  return (
-    <View style={styles.benefitColumn}>
-      <Text style={styles.benefitTop}>{top}</Text>
-      <Text style={styles.benefitBottom}>{bottom}</Text>
-    </View>
   );
 }
 
@@ -321,26 +317,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text.primary,
   },
-  benefitsBar: {
+  featureRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing[8],
+    gap: spacing[3],
+    paddingHorizontal: spacing[6],
     marginBottom: spacing[8],
   },
-  benefitColumn: {
-    alignItems: 'center',
+  featureChip: {
+    flex: 1,
+    alignItems: 'flex-start',
+    padding: spacing[4],
   },
-  benefitTop: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[3],
+  },
+  featureTitle: {
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.text.primary,
     marginBottom: 2,
   },
-  benefitBottom: {
-    fontSize: 10,
-    fontWeight: '700',
+  featureCaption: {
+    fontSize: 12,
     color: colors.text.muted,
-    letterSpacing: 0.5,
+    lineHeight: 16,
   },
   sponsorSection: {
     paddingHorizontal: spacing[6],
