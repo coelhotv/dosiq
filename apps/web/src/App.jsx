@@ -45,9 +45,15 @@ function AppInner() {
         localStorage.removeItem('@dosiq/recovery-flow')
         setIsPasswordRecovery(true)
         setSession(session?.user ?? null)
+
+        // Limpar o hash da URL para evitar re-gatilhos do fluxo de recuperação em reloads/signouts
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, null, window.location.pathname + window.location.search)
+        }
         return
       }
       if (event === 'SIGNED_OUT') {
+        setIsPasswordRecovery(false)
         // Verificar race condition (PWA + aba concorrente) antes de deslogar
         const { data: { session: latestSession } } = await supabase.auth.getSession()
         setSession(latestSession?.user ?? null)
