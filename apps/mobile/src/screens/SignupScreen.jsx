@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
+  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Mail, ShieldCheck, Info } from 'lucide-react-native'
@@ -125,6 +125,15 @@ export default function SignupScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.brandmark}>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.brandIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.brandText}>dosiq</Text>
+          </View>
+
           <Text style={styles.title}>Vamos criar sua conta</Text>
           <Text style={styles.subtitle}>
             Use um e-mail que você acessa fácil. A gente envia uma confirmação rapidinha.
@@ -444,5 +453,23 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  brandmark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[2],
+    alignSelf: 'center',
+  },
+  brandIcon: {
+    width: 28,
+    height: 28,
+  },
+  brandText: {
+    fontSize: 20,
+    fontFamily: typography.fontFamily.brand || 'System',
+    color: colors.text.brand || colors.brand.primary,
+    marginLeft: spacing[1],
+    fontWeight: '700',
   },
 })
