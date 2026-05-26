@@ -48,6 +48,7 @@
 - **[ADR-030]** Feature Flag USE_NOTIFICATION_DISPATCHER para Rollback -> [`decisions/mobile_and_platform/ADR-030.md`](./decisions/mobile_and_platform/ADR-030.md)
 - **[ADR-031]** Usar user_settings (public schema) em Jobs Serverless — não auth.users -> [`decisions/mobile_and_platform/ADR-031.md`](./decisions/mobile_and_platform/ADR-031.md)
 - **[ADR-036]** JS Stack for Legacy Android Compatibility -> [`decisions/mobile_and_platform/ADR-036.md`](./decisions/mobile_and_platform/ADR-036.md)
+- **[ADR-047]** Notificações inbox-first (Design A): lembretes são rows no DB independentes do push do SO; push é camada de ENTREGA opcional. Canais (push/web/telegram) desacoplados de master toggle — cada coluna `channel_*_enabled` persiste isolada. Estende ADR-034 -> [`decisions/mobile_and_platform/ADR-047.md`](./decisions/mobile_and_platform/ADR-047.md)
 - **[ADR-034]** PROPOSED — Política Wave N2 de notificações: quiet hours, modos, canais explícitos e UX nativa em quatro níveis -> [`decisions/mobile_and_platform/ADR-034.md`](./decisions/mobile_and_platform/ADR-034.md)
 - **[ADR-037]** Adiamento de content-tree + format adapters até 4º canal (YAGNI consciente) -> [`decisions/infra_and_deploy/ADR-037.md`](./decisions/infra_and_deploy/ADR-037.md)
 

@@ -90,6 +90,7 @@
 - **[R-222]** Notification Schema Hardening: Usar strict enums (z.enum) para IDs de ações e parâmetros para evitar injeção e falhas silenciosas -> [`rules/notifications/R-222.md`](./rules/notifications/R-222.md)
 - **[R-223]** Mobile Button Stacking: Preferir empilhamento vertical para botões de ação (Telegram/Mobile) para evitar overflow e melhorar hit-targets -> [`rules/notifications/R-223.md`](./rules/notifications/R-223.md)
 - **[R-227]** Kind Uniqueness por Relatório: cada tipo de relatório DEVE ter kind, schema Zod e builder únicos — nunca compartilhar kind entre relatórios com contexto diferente -> [`rules/notifications/R-227.md`](./rules/notifications/R-227.md)
+- **[R-239]** Permissão de push CONTEXTUAL: NUNCA pedir no 1º load. Setup global é register-only (handlers + token só se já concedido). Pedir só em pontos de intenção (ligar lembrete no onboarding / criar 1º tratamento / abrir Configs de notificações). Negado no SO → seguir fluxo sem nag -> [`rules/mobile_and_platform/R-239.md`](./rules/mobile_and_platform/R-239.md)
 
 
 
