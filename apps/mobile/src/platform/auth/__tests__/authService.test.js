@@ -107,7 +107,7 @@ describe('authService', () => {
       expect(supabase.auth.signUp).toHaveBeenCalledWith({
         email: 'novo@example.com',
         password: 'Senha123!',
-        options: { emailRedirectTo: 'dosiq://auth/callback' },
+        options: { emailRedirectTo: 'https://dosiq.app/auth/callback' },
       })
     })
 

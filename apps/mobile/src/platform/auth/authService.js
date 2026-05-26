@@ -108,10 +108,11 @@ export async function signUpWithEmail(email, password, confirmPassword) {
       email: validation.data.email,
       password: validation.data.password,
       options: {
-        // Deeplink first: o link de confirmação reabre o app já logado
-        // (handler em Navigation.jsx trata type=signup). Mesmo callback do
-        // recovery — já liberado no allow-list do Supabase.
-        emailRedirectTo: 'dosiq://auth/callback',
+        // Universal Link / App Link (UL-S2): https abre o app se instalado
+        // (associatedDomains iOS verificado; Android autoVerify após Play),
+        // senão cai no web /auth/callback que auto-completa via detectSessionInUrl.
+        // dosiq:// segue no allow-list como rede de segurança.
+        emailRedirectTo: 'https://dosiq.app/auth/callback',
       },
     })
 
