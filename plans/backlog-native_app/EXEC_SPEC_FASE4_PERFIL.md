@@ -1,8 +1,41 @@
 # EXEC SPEC — Fase 4: Perfil + Landing + Onboarding
 
-> **Versão**: v1 — 2026-05-23
+> **Versão**: v2 — 2026-05-25 · **✅ ENTREGUE** (PRs #583 + #584, merge em `main`)
 > **Duração estimada**: 2 sprints semanais
 > **Branch base (mãe)**: `feat/profile-onboarding` (a criar; sai de `main` após Fase 3)
+
+---
+
+## 📦 Status de Entrega (pós-merge — 2026-05-25)
+
+**Fase 4 concluída em 2 PRs.** Quality Gates do mini-CRUD de perfil: **G1 ✅ G2 ✅ G3 ✅**.
+
+| PR | Escopo entregue | Gates |
+|----|-----------------|-------|
+| **#583** `feat: Fase 4 — Perfil + Landing + Onboarding guiado` | Perfil mini-CRUD (Hub + Editar V1 + Settings + Alterar senha + sheets Logout/Excluir conta com re-auth) · `createProfileRepository` em `@dosiq/core` · **G3 web** (`useProfileState` adota factory, supabase inline removido) · Landing refinada · Onboarding wizard (2 passos efetivos + ilusão de sequência no signup) reusando serviços F1/F2 · autocomplete ANVISA mobile | G1/G2/G3 ✅ |
+| **#584** `feat(mobile): signup confirm + permissão de push contextual + Notificações inbox-first` | Copy caloroso da tela de confirmação de e-mail (persona dona Maria) + botão full-width · signup **deeplink-first** · **permissão de push contextual** · **Notificações inbox-first** Design A · fix decimal trailing-zero no campo de dose · remoção do canal Email placeholder | UI/auth ✅ |
+
+### Desvios e adições vs. plano original (todos por decisão PO em execução)
+
+| # | Adição não prevista no kickoff | Rationale | Memória |
+|---|--------------------------------|-----------|---------|
+| D1 | **Signup deeplink-first** — `signUpWithEmail` envia `options.emailRedirectTo: 'dosiq://auth/callback'`; o handler de deeplink em `Navigation.jsx` trata `type==='signup'` (além de `recovery`), faz `setSession` e cai logado no passo 2 do onboarding | Remove o atrito "volte ao app e faça login" — a dona Maria confirma o e-mail e o app reabre logado | — (Universal/App Links → spec backlog) |
+| D2 | **Permissão de push contextual** — nunca pedir no 1º load; setup global vira register-only; prompt só em pontos de intenção (ligar lembrete no onboarding · criar 1º tratamento · abrir Configs de notificações) | Pedir no boot (após deeplink abrir no passo 2) queimava a permissão antes do contexto. Alpha fechado → maximizar adesão consciente | **R-239** |
+| D3 | **Re-checagem de permissão ao voltar do SO** — `useFocusEffect` + `AppState 'change'→'active'`; transição negado→concedido registra token + liga canal; `wasGrantedRef=null` no mount evita falso-positivo | `useFocusEffect` não dispara em foreground do app (retorno das Configs do SO) | **AP-178** |
+| D4 | **Notificações inbox-first (Design A)** — lembretes são rows no DB independentes do push; canais (`channel_mobile_push/web/telegram`) desacoplados do master toggle (removido); UI "Lembretes sempre ligados" + canais opcionais; canal Email placeholder removido | Desliga a confusão "desliguei push = perdi lembretes". **Sem migração DB** (colunas de canal já independentes) | **ADR-047** |
+| D5 | **Fix decimal no campo de dose** — `handleDoseChange` coage string→number no onChange, preservando intermediários ("0,", "1,50") | String validada contra `z.number()` no blur disparava "Use apenas números" | AP-167 (existente) |
+| D6 | **Autocomplete ANVISA — blur no select** — `inputRef.current?.blur()` em `handleSelect` | 2ª busca morria por desync de foco no `FormAutocomplete` | **AP-175** |
+| D7 | **2 specs de backlog criadas** | Capturar contexto antes de perder | `EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md` · `EXEC_SPEC_SIGNUP_PREMIUM_ABRIR_EMAIL.md` |
+
+### Itens diferidos para backlog (confirmados pós-entrega)
+- **Universal Links (iOS) / App Links (Android)** + banner web "abrir no app" → `EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md`. `assetlinks.json` já live (Play verification) em `apps/web/public/.well-known/`.
+- **Signup premium "Abrir e-mail"** (cliente nativo / webmail por domínio BR) → `EXEC_SPEC_SIGNUP_PREMIUM_ABRIR_EMAIL.md` (§4 aguarda mapa de webmails BR do agente de pesquisa do PO).
+- **Perfil V2 — foto de avatar** (`avatar_url` + Storage) — inalterado, segue backlog.
+
+### Pendência de fechamento
+- `/devflow distill` pós-fase: **adiado** por decisão PO (journal entries longe do threshold 15; rodar quando acumular).
+
+---
 > **Pré-condição**: ✅ Fase 1 (Medicamentos) · ✅ Fase 2 + 2.5 (Tratamentos) · ✅ Fase 3 (Estoque) entregues
 > **Quality Gates**: Perfil (mini-CRUD) segue G1 → G2 → G3; Landing/Onboarding/Settings = UI/auth (G1-equivalente, sem extract/migrate)
 > **SQP vinculante**: v2.0 ([INDEX_EXEC_SPECS.md](INDEX_EXEC_SPECS.md))
@@ -240,15 +273,15 @@ R-060/R-065: agente nunca auto-merge; PO faz merge na main.
 ---
 
 ## Critérios para encerramento da Fase 4
-- [ ] G1/G2/G3 do mini-CRUD de perfil aprovados (humano)
-- [ ] Landing + Onboarding + Settings smoke OK (iOS + Android API 24)
-- [ ] Onboarding reusa serviços F1/F2 (zero duplicação) — verificado em review
-- [ ] `validate:agent` web 100% green pós-G3
-- [ ] Migrations aplicadas via MCP + validadas
-- [ ] PR-mãe mergeado em main
-- [ ] DEVFLOW C5: APs/Rs novos + journal; `createProfileRepository` registrado no MASTER §12
-- [ ] MASTER_PLAN + INDEX atualizados (cross-ref desta spec)
-- [ ] `/devflow distill` pós-fase
+- [x] G1/G2/G3 do mini-CRUD de perfil aprovados (humano)
+- [x] Landing + Onboarding + Settings smoke OK (iOS + Android API 24)
+- [x] Onboarding reusa serviços F1/F2 (zero duplicação) — verificado em review
+- [x] `validate:agent` web 100% green pós-G3
+- [x] Migrations aplicadas via MCP + validadas (`20260524_user_settings_phone_density.sql`)
+- [x] PR-mãe mergeado em main (#583 + #584)
+- [x] DEVFLOW C5: APs/Rs novos + journal; `createProfileRepository` registrado no MASTER
+- [x] MASTER_PLAN atualizado (cross-ref desta spec + status ✅)
+- [ ] `/devflow distill` pós-fase — **adiado por decisão PO** (acumular journal entries antes)
 
 ---
 
@@ -259,6 +292,7 @@ R-060/R-065: agente nunca auto-merge; PO faz merge na main.
 ---
 
 ## Changelog
+- **v2 — 2026-05-25**: **Fase ENTREGUE** (PRs #583 + #584, merge em main). Adicionada seção "Status de Entrega" com PRs, desvios/adições vs. plano (D1-D7: signup deeplink-first, push contextual R-239, AppState re-check AP-178, inbox-first Design A ADR-047, fix decimal dose, autocomplete blur AP-175, 2 specs de backlog) e itens diferidos. Critérios de encerramento marcados (distill adiado por decisão PO). MASTER_PLAN atualizado p/ v5.
 - **v1 — 2026-05-23**: Spec criada. Escopo ampliado vs MASTER original (que previa só Perfil): incorpora **Landing revisada** + **Onboarding guiado** (aha moment, reuso F1/F2) por decisão do PO. Mini-CRUD de perfil segue G1/G2/G3 (`createProfileRepository`); landing/onboarding/settings = UI/auth sem extract. Fundamentada no HANDOFF designer §2.4 + mocks `export/fase-4/`.
 
 ---

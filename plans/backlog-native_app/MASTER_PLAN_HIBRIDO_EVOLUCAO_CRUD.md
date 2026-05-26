@@ -1,12 +1,12 @@
 # Dosiq Native App — Plano Estratégico de Evolução CRUD
 
-> **Versão atual (v4)** — Status reconciliado pós-Fase 3 (23/05/2026)
+> **Versão atual (v5)** — Status reconciliado pós-Fase 4 (25/05/2026)
 > **Autor**: Arquiteto-chefe (AI) + PO (humano)
-> **Status**: 🔄 Em execução — Pré-requisitos + Fase 1 + Fase 2 + Fase 2.5 + Fase 3 entregues; Fase 4 próxima
+> **Status**: 🔄 Em execução — Pré-requisitos + Fase 1 + Fase 2 + Fase 2.5 + Fase 3 + Fase 4 entregues; Fase 5 próxima
 
 ---
 
-## 🚦 Status de Execução (snapshot 2026-05-23)
+## 🚦 Status de Execução (snapshot 2026-05-25)
 
 | Fase | Status | PRs principais | Quality Gates | Observações |
 |------|--------|----------------|---------------|-------------|
@@ -15,7 +15,7 @@
 | **Fase 2 — Tratamentos (Protocolos)** | ✅ Completa | #561 (PR-A T2.1) · #562 (T2.1 fan-out) · #563 (PR-A T2.2) · #564 (PR-B T2.2) · #565 (PR-C T2.2) · #566 (PR-A T2.3 — factory G2) · #567 (PR-B T2.3 — web G3) · #568 (fechamento mãe→main) | G1 ✅ G2 ✅ G3 ✅ | Lições críticas: `isProtocolActiveOnDate` strict vs `isProtocolInPeriod`, `statusBarTranslucent` em todos `Modal`s mobile (AP-163), padronização "unidade(s)" |
 | **Fase 2.5 — Status de Tratamentos** | ✅ Completa | #570 (Status Ativo/Pausado/Finalizado — web + mobile) · #571 (RETRO Fase 2+2.5 + C5) | G1 ✅ | Helper canônico `resolveTreatmentStatus` em `@dosiq/core`; categorização ativo/pausado/finalizado (flag `active` + `end_date < hoje`); web adopt no mesmo PR. Spec: `EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md` |
 | **Fase 3 — Estoque** | ✅ Completa | #574 · #576 · #578 · #579 (KPIs+Ajuste+migrations) · #580 (factory G2+G3) · #581 (PR-mãe→main) | G1 ✅ G2 ✅ G3 ✅ | `createStockRepository` + `createPurchaseRepository` em `@dosiq/core` (parity 37/37); web+mobile adotam factory; migrations §0.8 (delta negativo) + §0.9 (`unit_price` NUMERIC(12,4)) aplicadas via MCP. Lições: AP-171 (Intl.NumberFormat/Hermes), AP-172 (status estoque duplicado vs `resolveStockStatus`). `validate:agent` 830/830 |
-| **Fase 4 — Perfil + Landing + Onboarding** | 📋 Spec pronta | — | — | Escopo **ampliado**: landing revisada + onboarding guiado (aha moment, reusa F1/F2) + perfil mini-CRUD (`createProfileRepository`, G1/G2/G3) + settings. Spec: [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) |
+| **Fase 4 — Perfil + Landing + Onboarding** | ✅ Completa | #583 (perfil mini-CRUD + landing + onboarding guiado + G3 web) · #584 (signup confirm + push contextual + Notificações inbox-first) | G1 ✅ G2 ✅ G3 ✅ | `createProfileRepository` em `@dosiq/core` (web adota via `useProfileState`); migration `phone` + `ui_density` (`20260524_user_settings_phone_density.sql`) aplicada via MCP. **Extras pós-kickoff** (decisão PO em execução): signup **deeplink-first** (`emailRedirectTo: dosiq://auth/callback` reabre app logado no passo 2) · **permissão de push contextual** (R-239 — nunca no 1º load, intent-based) · **Notificações inbox-first** Design A (ADR-047 — canais desacoplados do master, sem migração DB). Lições: AP-173 (signOut scope:local), AP-174 (Modal+teclado Android24→tela cheia), AP-175 (autocomplete blur), AP-176 (NavigationContainer único), AP-177 (ScrollView vs VirtualizedList), AP-178 (useFocusEffect não dispara em foreground→AppState), R-238 (re-auth destrutiva), R-239, ADR-047, ADR-036 estendido. Spec: [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) |
 | **Fase 5 — Analíticas (Histórico · Aderência · Modo Consulta)** | 📋 Spec pronta | — | — | Histórico de doses + aderência expandida (7/30/90d, G1/G2/G3) + Modo Consulta/Apresentação (**visualização** da ficha médica). PDF e export LGPD → Fase 6. Spec: [EXEC_SPEC_FASE5_ANALITICAS.md](EXEC_SPEC_FASE5_ANALITICAS.md) |
 | **Fase 6 — Avançadas (Emergência, Chatbot, PDF, Export LGPD)** | ⏸️ Não iniciada | — | — | **Fecha a paridade web↔app**. Inclui agora **geração de PDF médico** + **exportar dados (LGPD)** movidos da Fase 5. Spec não escrita |
 | **Fase 7 — Mobile-only (divergência além da paridade)** | ⏸️ Não iniciada | — | — | Features exclusivas do nativo (sem equivalente web): camera OCR, HealthKit/Health Connect, widgets, geolocation, watch, spike chatbot on-device. Começa **só após paridade completa** (F1-F6). Spec não escrita |
@@ -27,6 +27,9 @@
 3. **Smoke PO ANTES de abrir PR** (pattern adotado pós-Fase 1) reduz churn de fixes com Gemini. Push pra EAS OK; HOLD em `gh pr create` até PO validar.
 4. **Modal Android < 8 precisa `statusBarTranslucent`** (AP-163) — bug recorrente; sweep aplicado em todos sheets Fase 1+2 (PR #566).
 5. **Spec viva** — atualizar `EXEC_SPEC_*` ao longo da execução (não só no kickoff) evita gaps de paridade voltarem como surpresa.
+6. **Permissão de push é UX, não setup** (Fase 4 / R-239) — pedir no 1º load queima a permissão com a persona dona Maria. Setup global vira **register-only**; o prompt só dispara em pontos de intenção (ligar lembrete / criar 1º tratamento / abrir Configs). `useFocusEffect` não cobre o retorno das Configs do SO — exige `AppState` listener (AP-178).
+7. **Inbox-first separa lembrete de entrega** (Fase 4 / ADR-047) — notificação é row no DB independente do push do SO; push é camada de entrega opcional. Desacoplar canais do master toggle eliminou a confusão "desliguei o push, perdi os lembretes" sem migração de schema.
+8. **Deeplink-first no signup** (Fase 4) — `emailRedirectTo: dosiq://auth/callback` faz o e-mail de confirmação reabrir o app já logado no passo do onboarding, removendo o atrito de "volte ao app e faça login". Universal/App Links ficam em spec de backlog dedicada.
 
 ---
 
@@ -390,9 +393,11 @@ function MedicineFormScreen({ route }) {
 
 ---
 
-### Fase 4 — Perfil + Landing + Onboarding — ~2 semanas
+### Fase 4 — Perfil + Landing + Onboarding — ~2 semanas — ✅ ENTREGUE (25/05/2026, PRs #583 + #584)
 
 > **Escopo ampliado** (decisão PO 2026-05-23): além do Perfil já previsto, incorpora **landing revisada** + **onboarding guiado**. Spec completa: [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md).
+>
+> **Extras entregues em execução** (não previstos no kickoff): signup **deeplink-first** (reabre app logado), **permissão de push contextual** (R-239, intent-based) e **Notificações inbox-first** Design A (ADR-047). Detalhe e rationale na seção "Status de Entrega" da spec.
 
 | Item | Detalhes |
 |------|---------|
