@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, startTransition } from 'react'
+import React, { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   Linking,
   Modal,
   FlatList,
+  AppState,
 } from 'react-native'
-import { Bell, Smartphone, Send, Globe, Mail, ChevronRight, Check } from 'lucide-react-native'
+import { Bell, Smartphone, Send, Globe, ChevronRight, Check, AlertTriangle } from 'lucide-react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { useProfile } from '@profile/hooks/useProfile'
-import { requestPushPermission } from '@platform/notifications/requestPushPermission'
-import { getExpoPushToken } from '@platform/notifications/getExpoPushToken'
-import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
+import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { registerPushToken } from '@platform/notifications/registerPushToken'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { updateNotificationSettings } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
@@ -32,8 +34,11 @@ const HOURS = Array.from({ length: 24 }, (_, i) => {
 
 // Constrói o payload de configurações de notificação para o banco
 function _buildNotificationSettingsPayload(patch, state) {
+  // Design A (inbox-first): sem master global. Cada canal persiste sozinho; os
+  // lembretes do inbox independem disto. notification_preference é derivado dos
+  // canais (legado — api/notify ainda usa como fallback): 'none' só se tudo off.
   const { mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
-          quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled } = state
+          quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime } = state
   const mobile = patch.mobilePushEnabled ?? mobilePushEnabled
   const telegram = isTelegramConnected
   const web = patch.webPushEnabled ?? webPushEnabled
@@ -42,20 +47,20 @@ function _buildNotificationSettingsPayload(patch, state) {
   const qStart = patch.quietHoursStart ?? quietHoursStart
   const qEnd = patch.quietHoursEnd ?? quietHoursEnd
   const dTime = patch.digestTime ?? digestTime
-  const global = patch.globalEnabled ?? globalEnabled
 
   return {
     notification_mode: mode,
-    quiet_hours_start: (global && qEnabled) ? qStart : null,
-    quiet_hours_end: (global && qEnabled) ? qEnd : null,
-    quiet_hours_enabled: global && qEnabled,
+    quiet_hours_start: qEnabled ? qStart : null,
+    quiet_hours_end: qEnabled ? qEnd : null,
+    quiet_hours_enabled: qEnabled,
     digest_time: dTime,
-    channel_mobile_push_enabled: global && mobile,
-    channel_web_push_enabled: global && web,
-    channel_telegram_enabled: global && telegram,
-    notification_preference: global
-      ? deriveLegacyPreference({ channel_mobile_push_enabled: mobile, channel_telegram_enabled: telegram })
-      : 'none',
+    channel_mobile_push_enabled: mobile,
+    channel_web_push_enabled: web,
+    channel_telegram_enabled: telegram,
+    notification_preference: deriveLegacyPreference({
+      channel_mobile_push_enabled: mobile,
+      channel_telegram_enabled: telegram,
+    }),
   }
 }
 
@@ -154,10 +159,12 @@ function TimePicker({ value, onChange, label }) {
   )
 }
 
-// Seção de canais: App Push + Telegram + Web + Email
+// Seção de canais de aviso (entrega): App Push + Telegram + Web + Email.
+// Inbox-first: NÃO gateados por master. O push reflete a PERMISSÃO real do SO —
+// se negada, mostra OFF + legenda "bloqueado" e o tap dispara o CTA p/ Configs.
 function NotificationChannelsSection({
-  globalEnabled,
   mobilePushEnabled,
+  hasPermission,
   webPushEnabled,
   isTelegramConnected,
   onMobilePushToggle,
@@ -165,20 +172,43 @@ function NotificationChannelsSection({
 }) {
   return (
     <View style={styles.card}>
-      <View style={styles.channelRow}>
-        <View style={styles.rowLeft}>
-          <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
-          <Text style={styles.rowLabel}>App (push)</Text>
+      {!hasPermission ? (
+        // Bloqueado no SO: linha em destaque âmbar, tocável → abre Configurações
+        // (via onMobilePushToggle → Alert/openSettings). Chip "Ativar" deixa a
+        // ação óbvia para a dona Maria.
+        <TouchableOpacity
+          style={[styles.channelRow, styles.channelRowBlocked]}
+          onPress={() => onMobilePushToggle(true)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Notificações no celular bloqueadas. Toque para ativar nas Configurações."
+        >
+          <View style={styles.rowLeft}>
+            <AlertTriangle size={20} color={colors.status.warning} strokeWidth={2} />
+            <View style={styles.flexShrink}>
+              <Text style={styles.rowLabel}>Celular</Text>
+              <Text style={styles.rowHintWarning}>Bloqueado — toque para ativar nas Configurações</Text>
+            </View>
+          </View>
+          <View style={styles.activateChip}>
+            <Text style={styles.activateChipText}>Ativar</Text>
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.channelRow}>
+          <View style={styles.rowLeft}>
+            <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
+            <Text style={styles.rowLabel}>Celular</Text>
+          </View>
+          <Switch
+            value={mobilePushEnabled}
+            onValueChange={onMobilePushToggle}
+            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
+            thumbColor={colors.bg.card}
+            accessibilityLabel="Ativar notificações no celular"
+          />
         </View>
-        <Switch
-          value={mobilePushEnabled && globalEnabled}
-          onValueChange={onMobilePushToggle}
-          disabled={!globalEnabled}
-          trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
-          thumbColor={colors.bg.card}
-          accessibilityLabel="Ativar notificações push do aplicativo"
-        />
-      </View>
+      )}
 
       <View style={styles.divider} />
 
@@ -213,24 +243,12 @@ function NotificationChannelsSection({
           </Text>
         </View>
       </View>
-
-      <View style={styles.divider} />
-
-      <View style={[styles.channelRow, styles.rowSoon]} pointerEvents="none">
-        <View style={styles.rowLeft}>
-          <Mail size={20} color={colors.text.muted} strokeWidth={2} />
-          <Text style={styles.rowLabel}>Email</Text>
-        </View>
-        <View style={[styles.badge, styles.badgeDisconnected]}>
-          <Text style={[styles.badgeText, styles.badgeTextDisconnected]}>EM BREVE</Text>
-        </View>
-      </View>
     </View>
   )
 }
 
 // Seção de modo de envio (radio buttons)
-function NotificationModeSection({ globalEnabled, notificationMode, onModeSelect }) {
+function NotificationModeSection({ notificationMode, onModeSelect }) {
   const MODES = [
     { value: 'realtime', label: 'Alertas unitários' },
     { value: 'digest_morning', label: 'Resumo diário' },
@@ -243,7 +261,6 @@ function NotificationModeSection({ globalEnabled, notificationMode, onModeSelect
           <TouchableOpacity
             style={styles.modeRow}
             onPress={() => onModeSelect(m.value)}
-            disabled={!globalEnabled}
             activeOpacity={0.7}
             accessibilityLabel={`Modo: ${m.label}`}
             accessibilityRole="radio"
@@ -252,7 +269,7 @@ function NotificationModeSection({ globalEnabled, notificationMode, onModeSelect
             <View style={[styles.radio, notificationMode === m.value && styles.radioActive]}>
               {notificationMode === m.value && <View style={styles.radioDot} />}
             </View>
-            <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
+            <Text style={styles.rowLabel}>
               {m.label}
             </Text>
           </TouchableOpacity>
@@ -265,13 +282,12 @@ function NotificationModeSection({ globalEnabled, notificationMode, onModeSelect
 
 // Render principal da tela de preferências (pós-carregamento)
 function NotificationPreferencesContent({
-  navigation, globalEnabled, mobilePushEnabled, webPushEnabled, isTelegramConnected,
+  navigation, mobilePushEnabled, hasPermission, webPushEnabled, isTelegramConnected,
   showChannelWarning, notificationMode, digestTime, quietHoursEnabled, quietHoursStart, quietHoursEnd,
-  handleGlobalToggle, handleMobilePushToggle, handleTelegramPress, handleModeSelect,
+  handleMobilePushToggle, handleTelegramPress, handleModeSelect,
   handleQuietHoursToggle, setDigestTime, setQuietHoursStart, setQuietHoursEnd, persist,
 }) {
-  const bellColor = globalEnabled ? colors.brand.primary : colors.text.muted
-  const showDigest = notificationMode === 'digest_morning' && globalEnabled
+  const showDigest = notificationMode === 'digest_morning'
 
   return (
     <ScreenContainer>
@@ -284,36 +300,35 @@ function NotificationPreferencesContent({
           <Text style={styles.subtitle}>Escolha onde e quando ser avisado.</Text>
         </View>
 
+        {/* Inbox-first: lembretes sempre existem no app; canais abaixo são extras. */}
         <View style={[styles.card, styles.globalRow]}>
           <View style={styles.rowLeft}>
-            <Bell size={20} color={bellColor} strokeWidth={2} />
-            <Text style={styles.rowLabel}>Notificações ativas</Text>
+            <Bell size={20} color={colors.brand.primary} strokeWidth={2} />
+            <View style={styles.flexShrink}>
+              <Text style={styles.rowLabel}>Lembretes sempre ligados</Text>
+              <Text style={styles.rowHint}>
+                Sempre no app. Escolha abaixo como também ser avisada.
+              </Text>
+            </View>
           </View>
-          <Switch
-            value={globalEnabled}
-            onValueChange={handleGlobalToggle}
-            trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
-            thumbColor={colors.bg.card}
-            accessibilityLabel="Ativar ou desativar todas as notificações"
-          />
         </View>
 
-        <Text style={styles.sectionLabel}>CANAIS</Text>
+        <Text style={styles.sectionLabel}>CANAIS DE AVISO</Text>
         <NotificationChannelsSection
-          globalEnabled={globalEnabled} mobilePushEnabled={mobilePushEnabled}
+          mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission}
           webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
           onMobilePushToggle={handleMobilePushToggle} onTelegramPress={handleTelegramPress}
         />
 
         {showChannelWarning && (
           <Text style={styles.channelWarning}>
-            Ative ao menos um canal para receber lembretes de dose.
+            Ative ao menos um canal para ser avisada fora do app.
           </Text>
         )}
 
         <Text style={styles.sectionLabel}>MODO DE ENVIO</Text>
         <NotificationModeSection
-          globalEnabled={globalEnabled} notificationMode={notificationMode} onModeSelect={handleModeSelect}
+          notificationMode={notificationMode} onModeSelect={handleModeSelect}
         />
 
         {showDigest && (
@@ -331,7 +346,7 @@ function NotificationPreferencesContent({
         )}
 
         <NotificationQuietHoursSection
-          globalEnabled={globalEnabled} quietHoursEnabled={quietHoursEnabled}
+          quietHoursEnabled={quietHoursEnabled}
           quietHoursStart={quietHoursStart} quietHoursEnd={quietHoursEnd}
           onToggle={handleQuietHoursToggle}
           onStartChange={(v) => { setQuietHoursStart(v); persist({ quietHoursStart: v }) }}
@@ -346,7 +361,6 @@ function NotificationPreferencesContent({
 
 // Seção de horas silenciosas
 function NotificationQuietHoursSection({
-  globalEnabled,
   quietHoursEnabled,
   quietHoursStart,
   quietHoursEnd,
@@ -358,20 +372,19 @@ function NotificationQuietHoursSection({
     <>
       <Text style={styles.sectionLabel}>NÃO ME INCOMODE</Text>
       <View style={[styles.card, styles.globalRow]}>
-        <Text style={[styles.rowLabel, !globalEnabled && { color: colors.text.muted }]}>
+        <Text style={styles.rowLabel}>
           Silenciar por período
         </Text>
         <Switch
-          value={quietHoursEnabled && globalEnabled}
+          value={quietHoursEnabled}
           onValueChange={onToggle}
-          disabled={!globalEnabled}
           trackColor={{ false: colors.neutral[200], true: colors.brand.primary }}
           thumbColor={colors.bg.card}
           accessibilityLabel="Ativar horas de silêncio"
         />
       </View>
 
-      {quietHoursEnabled && globalEnabled && (
+      {quietHoursEnabled && (
         <View style={[styles.card, styles.timeRow]}>
           <Text style={styles.rowLabel}>Das</Text>
           <TimePicker value={quietHoursStart} label="Início do silêncio" onChange={onStartChange} />
@@ -388,7 +401,6 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const { settings, refresh } = useProfile()
   const isTelegramConnected = !!settings?.telegram_chat_id
 
-  const [globalEnabled, setGlobalEnabled] = useState(true)
   const [mobilePushEnabled, setMobilePushEnabled] = useState(true)
   const [webPushEnabled, setWebPushEnabled] = useState(false)
   const [notificationMode, setNotificationMode] = useState('realtime')
@@ -397,6 +409,9 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
   const [digestTime, setDigestTime] = useState('07:00')
   const [hasPermission, setHasPermission] = useState(false)
+  // Ref de permissão (R-010: declarado junto aos states, antes de effects/handlers).
+  // null = ainda não sabido; usado p/ agir só na transição negado→concedido.
+  const wasGrantedRef = useRef(null)
 
   // Carregar valores do banco ao montar
   useEffect(() => {
@@ -409,46 +424,26 @@ export default function NotificationPreferencesScreen({ navigation }) {
       setQuietHoursStart(settings.quiet_hours_start ?? '22:00')
       setQuietHoursEnd(settings.quiet_hours_end ?? '07:00')
       setDigestTime(settings.digest_time ?? '07:00')
+      setNotificationMode(settings.notification_mode ?? 'realtime')
 
-      const isGlobal = pref !== 'none'
-      setGlobalEnabled(isGlobal)
-      setNotificationMode(settings.notification_mode)
-
-      // Apenas sincroniza canais individuais se o global estiver ON
-      if (isGlobal) {
-        setMobilePushEnabled(
-          settings.channel_mobile_push_enabled ??
-          (pref === 'mobile_push' || pref === 'both')
-        )
-        setWebPushEnabled(settings.channel_web_push_enabled ?? false)
-      }
+      // Design A: canais independentes, sempre sincronizados (sem master global).
+      setMobilePushEnabled(
+        settings.channel_mobile_push_enabled ??
+        (pref === 'mobile_push' || pref === 'both')
+      )
+      setWebPushEnabled(settings.channel_web_push_enabled ?? false)
     })
   }, [settings])
 
-  async function checkPermission() {
-    try {
-      const { granted } = await requestPushPermission()
-      setHasPermission(granted)
-    } catch (err) {
-      debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
-    }
-  }
-
-  useEffect(() => {
-    startTransition(() => {
-      checkPermission()
-    })
-  }, [])
-
-  const hasAnyChannel = mobilePushEnabled || isTelegramConnected || webPushEnabled
-  const showChannelWarning = globalEnabled && !hasAnyChannel
+  const hasAnyChannel = (mobilePushEnabled && hasPermission) || isTelegramConnected || webPushEnabled
+  const showChannelWarning = !hasAnyChannel
 
   // Salvar no banco (debounce manual: chama após cada alteração)
   const persist = useCallback(async (patch) => {
     if (!user?.id) return
     const state = {
       mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
-      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled,
+      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime,
     }
     try {
       const payload = _buildNotificationSettingsPayload(patch, state)
@@ -464,44 +459,65 @@ export default function NotificationPreferencesScreen({ navigation }) {
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
     }
   }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
-      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, globalEnabled, refresh])
+      quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, refresh])
+
+  const checkPermission = useCallback(async () => {
+    try {
+      // Leitura PURA do status — NUNCA dispara o prompt do SO.
+      const { granted } = await getPushPermissionStatus()
+      setHasPermission(granted)
+      // Transição real negado→concedido (ex.: voltou das Configs do SO autorizando):
+      // registra o device E liga o canal — autorizar é intenção clara de receber push.
+      // userId explícito evita getUser() redundante (já temos user do useAuth).
+      if (wasGrantedRef.current === false && granted) {
+        registerPushToken({ supabase, userId: user?.id }).catch(() => {})
+        setMobilePushEnabled(true)
+        persist({ mobilePushEnabled: true })
+      }
+      wasGrantedRef.current = granted
+    } catch (err) {
+      debugLog('NotificationPreferencesScreen', `Erro permissão: ${err.message}`)
+    }
+  }, [persist, user])
+
+  // Re-checa permissão ao focar a tela (navegação)...
+  useFocusEffect(
+    useCallback(() => {
+      startTransition(() => { checkPermission() })
+    }, [checkPermission])
+  )
+
+  // ...e ao voltar do background (ex.: retorno das Configurações do SO). Isto NÃO
+  // é foco de navegação — a tela nunca perdeu foco; só o app foi pro background.
+  // Sem este listener o toggle não atualizava ao reconceder a permissão no SO.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') checkPermission()
+    })
+    return () => sub.remove()
+  }, [checkPermission])
 
   async function handleMobilePushToggle(val) {
     if (val && !hasPermission) {
-      const { granted } = await requestPushPermission()
+      // Ponto de intenção: pede permissão e registra o token se concedido.
+      const { granted, blocked } = await enablePushAtIntent({ supabase })
       if (!granted) {
-        Alert.alert(
-          'Permissão necessária',
-          'Abrir Configurações para ativar notificações?',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Abrir Configurações', onPress: () => Linking.openSettings() },
-          ]
-        )
+        if (blocked) {
+          Alert.alert(
+            'Permissão necessária',
+            'Abrir Configurações para ativar notificações?',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Abrir Configurações', onPress: () => Linking.openSettings() },
+            ]
+          )
+        }
         return
       }
       setHasPermission(true)
-      try {
-        const token = await getExpoPushToken()
-        await syncNotificationDevice({ supabase: user?.supabase, userId: user.id, token })
-      } catch (syncErr) {
-        debugLog('NotificationPreferencesScreen', `Erro sync device: ${syncErr.message}`)
-      }
     }
     setMobilePushEnabled(val)
     persist({ mobilePushEnabled: val })
-  }
-
-  function handleGlobalToggle(val) {
-    setGlobalEnabled(val)
-    // Se está ativando e nada está ligado, ativa mobile_push como padrão
-    // para evitar que o estado volte a 'none' no DB e dê snap-back para off
-    if (val && !hasAnyChannel) {
-      setMobilePushEnabled(true)
-      persist({ globalEnabled: true, mobilePushEnabled: true })
-    } else {
-      persist({ globalEnabled: val })
-    }
   }
 
   function handleModeSelect(mode) {
@@ -521,12 +537,12 @@ export default function NotificationPreferencesScreen({ navigation }) {
   return (
     <NotificationPreferencesContent
       navigation={navigation}
-      globalEnabled={globalEnabled} mobilePushEnabled={mobilePushEnabled}
+      mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission}
       webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
       showChannelWarning={showChannelWarning} notificationMode={notificationMode}
       digestTime={digestTime} quietHoursEnabled={quietHoursEnabled}
       quietHoursStart={quietHoursStart} quietHoursEnd={quietHoursEnd}
-      handleGlobalToggle={handleGlobalToggle} handleMobilePushToggle={handleMobilePushToggle}
+      handleMobilePushToggle={handleMobilePushToggle}
       handleTelegramPress={handleTelegramPress} handleModeSelect={handleModeSelect}
       handleQuietHoursToggle={handleQuietHoursToggle}
       setDigestTime={setDigestTime} setQuietHoursStart={setQuietHoursStart}
@@ -629,6 +645,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.muted,
     marginTop: 2,
+  },
+  rowHintWarning: {
+    fontSize: 12,
+    color: colors.status.warning,
+    marginTop: 2,
+  },
+  flexShrink: {
+    flex: 1,
+  },
+  channelRowBlocked: {
+    // Banda âmbar preenchendo todo o row (full-width); conteúdo segue no padding
+    // padrão do channelRow, alinhado com Telegram/Web.
+    backgroundColor: colors.supplement[50],
+  },
+  activateChip: {
+    backgroundColor: colors.status.warning,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+  },
+  activateChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.bg.card,
   },
 
   // Badges

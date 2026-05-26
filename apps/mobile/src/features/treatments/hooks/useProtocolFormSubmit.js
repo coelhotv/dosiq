@@ -8,6 +8,8 @@
 
 import { useCallback, useState } from 'react'
 import { treatmentPlanService } from '../services/treatmentPlanService'
+import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 function coerceDose(form) {
   const raw = form.values.dosage_per_intake
@@ -73,6 +75,16 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
       const result = editId
         ? await mutation.update(editId, payload, { goBack: true })
         : await mutation.create(payload, { goBack: true })
+
+      // Ponto de intenção #2: ao criar tratamento manualmente, se NUNCA pedimos
+      // push (status undetermined), pede agora — é o momento em que lembretes de
+      // dose fazem sentido. Só na 1ª vez (undetermined); depois nunca mais (sem nag).
+      if (!editId && result) {
+        const { status } = await getPushPermissionStatus()
+        if (status === 'undetermined') {
+          await enablePushAtIntent({ supabase }).catch(() => {})
+        }
+      }
 
       if (!result) setSubmitting(false)
     } catch (err) {

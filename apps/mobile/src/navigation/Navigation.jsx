@@ -44,6 +44,8 @@ export default function Navigation() {
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
 
   // Setup push notifications pós-login (H6.3)
+  // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
+  // — onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
 
   // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
@@ -123,23 +125,27 @@ export default function Navigation() {
         }
       }
 
-      // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery
+      // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery|signup
       const hash = url.split('#')[1]
       if (!hash) return
       const sp = new URLSearchParams(hash)
       const tokenType = sp.get('type')
       const accessToken = sp.get('access_token')
       const refreshToken = sp.get('refresh_token')
-      if (tokenType === 'recovery' && accessToken && refreshToken) {
+      if (accessToken && refreshToken && (tokenType === 'recovery' || tokenType === 'signup')) {
         try {
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           })
-          if (error) debugLog('Navigation', 'setSession recovery falhou', error.message)
-          else setIsPasswordRecovery(true) // dispara SIGNED_IN, não PASSWORD_RECOVERY
+          if (error) {
+            debugLog('Navigation', `setSession ${tokenType} falhou`, error.message)
+          } else if (tokenType === 'recovery') {
+            setIsPasswordRecovery(true) // recovery → tela de redefinir senha
+          }
+          // signup: setSession dispara SIGNED_IN → app abre logado (gate de onboarding)
         } catch (e) {
-          debugLog('Navigation', 'Exceção em setSession recovery', e?.message)
+          debugLog('Navigation', `Exceção em setSession ${tokenType}`, e?.message)
         }
       }
     }

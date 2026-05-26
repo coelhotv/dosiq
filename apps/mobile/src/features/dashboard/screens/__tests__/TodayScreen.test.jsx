@@ -5,6 +5,13 @@ import { useTodayData } from '@dashboard/hooks/useTodayData';
 // Mock do hook de dados
 jest.mock('@dashboard/hooks/useTodayData');
 
+// Mock react-navigation — TodayScreen usa useFocusEffect (refresh on focus, Fase 4)
+// que exige um NavigationContainer; sem isto o render lança fora do container.
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: jest.fn() }),
+  useFocusEffect: () => {},
+}));
+
 // Mock do lucide-react-native
 jest.mock('lucide-react-native', () => ({
   Pill: 'Pill',
