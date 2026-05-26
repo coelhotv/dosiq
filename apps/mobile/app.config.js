@@ -58,6 +58,8 @@ module.exports = {
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ['remote-notification'],
       },
+      // UL-S1: Universal Links iOS
+      associatedDomains: ['applinks:dosiq.app'],
     },
     android: {
       package: current.androidPackage,
@@ -68,6 +70,15 @@ module.exports = {
         backgroundColor: '#F0FDFB',
       },
       edgeToEdgeEnabled: true,
+      // UL-S1: App Links Android
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [{ scheme: 'https', host: 'dosiq.app', pathPrefix: '/auth' }],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     plugins: [
       '@react-native-firebase/app',
