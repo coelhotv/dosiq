@@ -8,9 +8,9 @@
   align-items: center;
   gap: var(--space-2, 8px);
   padding: 10px var(--space-4, 16px);
-  background: var(--color-primary-container, #d9e4ff);
-  color: var(--color-on-primary-container, #001a41);
-  border-bottom: 1px solid var(--color-primary, #415f91);
+  background: var(--color-primary, #1f6b4f);
+  color: var(--color-on-primary, #ffffff);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   font-family: var(--font-body);
   font-size: var(--text-label-md, 13px);
   font-weight: var(--font-weight-medium, 500);
@@ -38,7 +38,10 @@
 
 .mobile-app-banner__icon {
   flex-shrink: 0;
-  color: var(--color-primary, #415f91);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm, 6px);
+  object-fit: contain;
 }
 
 .mobile-app-banner__text {
@@ -51,8 +54,8 @@
   flex-shrink: 0;
   padding: 4px 12px;
   border-radius: var(--radius-full, 9999px);
-  background: var(--color-primary, #415f91);
-  color: var(--color-on-primary, #ffffff);
+  background: #ffffff;
+  color: var(--color-primary, #1f6b4f);
   font-size: var(--text-label-sm, 12px);
   font-weight: var(--font-weight-semibold, 600);
   text-decoration: none;
@@ -62,8 +65,8 @@
 
 .mobile-app-banner__cta:hover,
 .mobile-app-banner__cta:focus-visible {
-  opacity: 0.88;
-  outline: 2px solid var(--color-primary, #415f91);
+  opacity: 0.9;
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 
@@ -77,14 +80,14 @@
   border: none;
   border-radius: var(--radius-full, 9999px);
   background: transparent;
-  color: var(--color-on-primary-container, #001a41);
+  color: var(--color-on-primary, #ffffff);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .mobile-app-banner__close:hover,
 .mobile-app-banner__close:focus-visible {
-  background: var(--color-primary-container-hover, rgba(65, 95, 145, 0.12));
-  outline: 2px solid var(--color-primary, #415f91);
+  background: rgba(255, 255, 255, 0.18);
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }

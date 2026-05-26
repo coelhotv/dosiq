@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Smartphone, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useIsMobileWeb } from '@shared/hooks/useIsMobileWeb'
 import './MobileAppBanner.css'
 
@@ -51,7 +51,14 @@ export default function MobileAppBanner() {
 
   return (
     <div className="mobile-app-banner" role="banner" aria-label="Recomendação de app nativo">
-      <Smartphone size={16} aria-hidden="true" className="mobile-app-banner__icon" />
+      <img
+        src="/app-icons/web/icon-192.png"
+        alt=""
+        aria-hidden="true"
+        className="mobile-app-banner__icon"
+        width={24}
+        height={24}
+      />
 
       <p className="mobile-app-banner__text">
         Use o Dosiq pelo app — mais rápido e com lembretes
