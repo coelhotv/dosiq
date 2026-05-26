@@ -118,13 +118,13 @@ function AppInner() {
 
           <OfflineBanner />
 
-          {isAuthenticated && (
+          {isAuthenticated && !isPasswordRecovery && (
             <Suspense fallback={null}>
               <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
           )}
 
-          {isAuthenticated && (
+          {isAuthenticated && !isPasswordRecovery && (
             <AppAuthOverlays
               isChatOpen={isChatOpen}
               setIsChatOpen={setIsChatOpen}
