@@ -1,6 +1,7 @@
 // betaSignupService.js — captura de e-mail para o closed testing do app Android.
-// Insert-only (a landing é pública; role anon só tem INSERT na tabela beta_signups).
-import { supabase } from '@shared/utils/supabase'
+// A escrita passa pelo endpoint serverless `api/beta-signup.js` (service_role +
+// rate-limit). A tabela beta_signups não tem grant para anon — nada de insert
+// direto do client.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -16,16 +17,21 @@ export async function signupForBeta(email, platform = 'android') {
     return { success: false, error: 'E-mail inválido' }
   }
 
-  const { error } = await supabase
-    .from('beta_signups')
-    .insert([{ email: normalized, platform }])
+  try {
+    const res = await fetch('/api/beta-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalized, platform }),
+    })
 
-  if (error) {
-    // 23505 = unique_violation → e-mail já cadastrado: tratamos como sucesso
-    // (idempotente do ponto de vista do usuário, sem revelar a lista).
-    if (error.code === '23505') return { success: true, error: null }
-    return { success: false, error: 'Não foi possível registrar agora. Tente mais tarde.' }
+    if (res.ok) return { success: true, error: null }
+
+    if (res.status === 429) {
+      return { success: false, error: 'Muitas tentativas. Tente novamente em instantes.' }
+    }
+    const body = await res.json().catch(() => ({}))
+    return { success: false, error: body.error || 'Não foi possível registrar agora. Tente mais tarde.' }
+  } catch {
+    return { success: false, error: 'Falha de conexão. Tente novamente.' }
   }
-
-  return { success: true, error: null }
 }
