@@ -25,3 +25,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS beta_signups_email_platform_uniq
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.beta_signups TO service_role;
 ALTER TABLE public.beta_signups ENABLE ROW LEVEL SECURITY;
 -- Nenhuma policy criada → anon/authenticated não conseguem ler nem escrever.
+
+-- Defesa-em-profundidade: até 30/10/2026 o projeto ainda concede grants
+-- automáticos (default privileges) a anon/authenticated em tabelas novas.
+-- Revogamos explicitamente para que SÓ service_role tenha acesso (não depender
+-- apenas da RLS sem policy).
+REVOKE ALL ON public.beta_signups FROM anon;
+REVOKE ALL ON public.beta_signups FROM authenticated;
