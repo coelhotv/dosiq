@@ -58,7 +58,7 @@ describe('LandingScreen', () => {
     const { getByText } = render(<LandingScreen navigation={mockNavigation} />);
     
     expect(getByText('dosiq')).toBeTruthy();
-    expect(getByText(/Sua saúde sob/)).toBeTruthy();
+    expect(getByText(/Nunca mais/)).toBeTruthy();
     expect(getByText('91%')).toBeTruthy();
     expect(getByText('40mg • 1 Comprimido')).toBeTruthy();
     expect(getByText('08:00')).toBeTruthy();

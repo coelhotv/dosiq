@@ -17,7 +17,8 @@ import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import { useToast } from '@shared/components/feedback/Toast'
 import { protocolService } from '@treatments/services/protocolService'
-import { requestPushPermission } from '@platform/notifications/requestPushPermission'
+import { enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -58,6 +59,29 @@ export default function OnboardingTreatmentStep() {
   // Handlers
   const setFrequency = useCallback((freq) => form.handleChange('frequency', freq), [form])
 
+  // Dose: converte para número já no onChange (paridade com ProtocolFormScreen).
+  // Sem isto a string "1" valida contra z.number() no blur → "Use apenas números".
+  // Intermediários ("0,", ".") ficam como string (converter agora apagaria a vírgula).
+  const handleDoseChange = useCallback(
+    (name, raw) => {
+      const str = String(raw ?? '')
+      if (str === '') {
+        form.handleChange(name, '')
+        return
+      }
+      const normalized = str.replace(',', '.')
+      // Mantém string em intermediários: termina em "." OU é decimal com zero à
+      // direita ("1,50"/"1,0") — converter agora engoliria o zero digitado.
+      if (normalized === '.' || normalized.endsWith('.') || (normalized.includes('.') && normalized.endsWith('0'))) {
+        form.handleChange(name, str)
+        return
+      }
+      const num = Number(normalized)
+      form.handleChange(name, Number.isFinite(num) ? num : str)
+    },
+    [form],
+  )
+
   const handleConcluir = useCallback(async () => {
     // Coerce dose string ("1" / "0,5") → number antes do validate (AP-167).
     const dose = Number(String(form.values.dosage_per_intake ?? '').replace(',', '.'))
@@ -72,7 +96,15 @@ export default function OnboardingTreatmentStep() {
         dosage_per_intake: dose,
         treatment_plan_id: null,
       })
-      if (remind) await requestPushPermission().catch(() => {})
+      // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete.
+      // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO →
+      // segue o fluxo; a dona Maria reativa depois em Configurações (sem nag aqui).
+      if (remind) {
+        const { granted } = await enablePushAtIntent({ supabase }).catch(() => ({ granted: false }))
+        if (!granted) {
+          show('Tudo bem! Você pode ligar os lembretes depois em Configurações.', { variant: 'info', duration: 6000 })
+        }
+      }
       await finish()
     } catch (err) {
       setSubmitting(false)
@@ -145,7 +177,7 @@ export default function OnboardingTreatmentStep() {
             keyboardType="decimal-pad"
             value={String(form.values.dosage_per_intake ?? '')}
             error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : undefined}
-            onChange={form.handleChange}
+            onChange={handleDoseChange}
             onBlur={form.handleBlur}
           />
 

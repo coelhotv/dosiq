@@ -43,16 +43,19 @@ export default function SignupScreen({ navigation }) {
           <View style={styles.successIconWrapper}>
             <Mail size={56} color={colors.brand.primary} />
           </View>
-          <Text style={styles.successTitle}>Verifique seu email</Text>
+          <Text style={styles.successTitle}>Só falta confirmar seu e-mail</Text>
           <Text style={styles.successDescription}>
-            Enviamos um link de confirmação para{'\n'}
+            Mandamos uma mensagem para{'\n'}
             <Text style={styles.successEmail}>{email}</Text>
           </Text>
-          <Text style={styles.successHint}>
-            Após confirmar seu email, faça login para continuar.
+          <Text style={styles.successBody}>
+            Abra o e-mail e toque no link para ativar sua conta. É rapidinho!
           </Text>
-          <Pressable style={styles.button} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
-            <Text style={styles.buttonText}>Ir para Login</Text>
+          <Text style={styles.successHint}>
+            Não chegou em alguns minutos? Veja na pasta de lixo eletrônico. Depois de confirmar, volte ao app e entre com o e-mail e a senha que você criou.
+          </Text>
+          <Pressable style={styles.successButton} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
+            <Text style={styles.buttonText}>Entre com sua conta</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -360,16 +363,32 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: spacing[3],
+    marginBottom: spacing[4],
   },
   successEmail: {
     fontWeight: '700',
     color: colors.text.primary,
   },
+  successBody: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: spacing[3],
+  },
   successHint: {
     fontSize: 14,
     color: colors.text.muted,
     textAlign: 'center',
-    marginBottom: spacing[6],
+    lineHeight: 20,
+    marginBottom: spacing[8],
+  },
+  successButton: {
+    alignSelf: 'stretch',
+    backgroundColor: colors.brand.primary,
+    height: 54,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })
