@@ -203,7 +203,7 @@ export function LandingApp() {
           <div className="lp-app-card">
             <div className="lp-app-card__body">
               <div className="lp-card__eyebrow">Android</div>
-              <h4>Em testes fechados</h4>
+              <h4>Em breve...</h4>
               {status === 'success' ? (
                 <p className="lp-app-success">
                   <CircleCheckIcon className="lp-text-green" size={18} />
