@@ -4,12 +4,12 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Universal Links / App Links + banner web (EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER)",
+    "goal": "Confirmacao hibrida de OTP de email e Universal Links",
     "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-05-23T18:20:00Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 190,
     "anti_patterns_count": 179,
     "decisions_count": 48,
@@ -21,6 +21,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-25T21:00:00Z"
+    "index_loaded_at": "2026-05-26T19:40:00Z"
   }
 }

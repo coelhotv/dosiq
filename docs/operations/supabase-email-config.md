@@ -1,6 +1,6 @@
-# Configuração de Emails Transacionais — Supabase + Dosiq
+# Configuração de E-mails Transacionais — Supabase + Dosiq
 
-Guia para configurar templates de email branded para confirmação de cadastro e recuperação de senha.
+Guia para configurar templates de e-mail branded para confirmação de cadastro e recuperação de senha.
 
 ---
 
@@ -23,6 +23,8 @@ Dosiq — Ativação de conta
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -32,17 +34,17 @@ Dosiq — Ativação de conta
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header com Gradiente Oficial do Santuário Terapêutico -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Bem-vindo ao Dosiq!</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Bem-vindo ao Dosiq!</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 24px;">Obrigado por se cadastrar. Escolha uma das opções abaixo para confirmar seu e-mail e ativar sua conta para começarmos:</p>
 
       <!-- CTA Principal (Link Direto) -->
@@ -53,7 +55,7 @@ Dosiq — Ativação de conta
       <!-- Caixa Híbrida de Código OTP -->
       <div style="background-color: #f2f4f5; padding: 16px; border-radius: 16px; text-align: center; margin: 24px 0;">
         <p style="margin: 0 0 8px; font-size: 13px; color: #3e4946;">Se o aplicativo solicitar um código de confirmação, utilize:</p>
-        <span style="font-family: 'Public Sans', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
+        <span style="font-family: 'Public Sans', 'Inter', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
       </div>
 
       <!-- Bloco de Alerta do Design System (card-alert-warning) -->
@@ -74,7 +76,7 @@ Dosiq — Ativação de conta
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -94,6 +96,8 @@ Dosiq — Instruções para redefinir sua senha
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -103,17 +107,17 @@ Dosiq — Instruções para redefinir sua senha
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Recuperação de Senha</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Recuperação de Senha</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 24px;">Recebemos uma solicitação para redefinir a senha associada à sua conta no Dosiq. Escolha uma das opções abaixo:</p>
 
       <!-- CTA Principal (Link Direto) -->
@@ -123,8 +127,8 @@ Dosiq — Instruções para redefinir sua senha
 
       <!-- Caixa Híbrida de Código OTP -->
       <div style="background-color: #f2f4f5; padding: 16px; border-radius: 16px; text-align: center; margin: 24px 0;">
-        <p style="margin: 0 0 8px; font-size: 13px; color: #3e4946;">Se o aplicativo solicitar um código de 6 dígitos, utilize:</p>
-        <span style="font-family: 'Public Sans', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
+        <p style="margin: 0 0 8px; font-size: 13px; color: #3e4946;">Se o aplicativo solicitar um código de confirmação, utilize:</p>
+        <span style="font-family: 'Public Sans', 'Inter', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
       </div>
 
       <!-- Bloco de Alerta do Design System (card-alert-warning) -->
@@ -145,7 +149,7 @@ Dosiq — Instruções para redefinir sua senha
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -167,6 +171,8 @@ Dosiq — Link de acesso rápido
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -176,17 +182,17 @@ Dosiq — Link de acesso rápido
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 12px; letter-spacing: -0.02em;">Seu Acesso Rápido</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 12px; letter-spacing: -0.02em;">Seu Acesso Rápido</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 24px;">Clique no botão ou insira o código abaixo para entrar na sua conta instantaneamente, sem precisar de senha.</p>
 
       <!-- CTA Principal (Link Direto) -->
@@ -197,7 +203,7 @@ Dosiq — Link de acesso rápido
       <!-- Caixa Híbrida de Código OTP -->
       <div style="background-color: #f2f4f5; padding: 16px; border-radius: 16px; text-align: center; margin: 24px 0;">
         <p style="margin: 0 0 8px; font-size: 13px; color: #3e4946;">Se o aplicativo solicitar um código de verificação, utilize:</p>
-        <span style="font-family: 'Public Sans', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
+        <span style="font-family: 'Public Sans', 'Inter', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
       </div>
 
       <!-- Bloco de Alerta do Design System (card-alert-warning) -->
@@ -218,7 +224,7 @@ Dosiq — Link de acesso rápido
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -240,6 +246,8 @@ Segurança Dosiq — Senha alterada
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -249,17 +257,17 @@ Segurança Dosiq — Senha alterada
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Senha Alterada com Sucesso</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Senha Alterada com Sucesso</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 16px;">Sua credencial de acesso ao Dosiq foi modificada recentemente. Se foi você quem realizou essa alteração, está tudo pronto e nenhuma ação adicional é necessária.</p>
 
       <!-- Bloco de Alerta Crítico do Design System (card-alert-critical) -->
@@ -272,7 +280,7 @@ Segurança Dosiq — Senha alterada
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -294,6 +302,8 @@ Segurança Dosiq — Confirmação de novo e-mail
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -303,17 +313,17 @@ Segurança Dosiq — Confirmação de novo e-mail
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Alteração de E-mail</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Alteração de E-mail</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 24px;">Recebemos uma solicitação para alterar o endereço de e-mail ({{ .Email }}) da sua conta no Dosiq para este novo endereço ({{ .NewEmail }}). Escolha uma das opções abaixo para confirmar:</p>
 
       <!-- CTA Principal (Link Direto) -->
@@ -324,7 +334,7 @@ Segurança Dosiq — Confirmação de novo e-mail
       <!-- Caixa Híbrida de Código OTP -->
       <div style="background-color: #f2f4f5; padding: 16px; border-radius: 16px; text-align: center; margin: 24px 0;">
         <p style="margin: 0 0 8px; font-size: 13px; color: #3e4946;">Se o aplicativo solicitar um código de confirmação, utilize:</p>
-        <span style="font-family: 'Public Sans', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
+        <span style="font-family: 'Public Sans', 'Inter', monospace, sans-serif; font-size: 32px; font-weight: 700; color: #006a5e; letter-spacing: 4px; display: inline-block; padding: 6px 16px; background: #ffffff; border-radius: 10px; border: 1px dashed #bdc9c5; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">{{ .Token }}</span>
       </div>
 
       <!-- Bloco de Alerta do Design System (card-alert-warning) -->
@@ -345,7 +355,7 @@ Segurança Dosiq — Confirmação de novo e-mail
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -367,6 +377,8 @@ Seu convite para a plataforma Dosiq chegou!
 
 **Body (HTML — somente conteúdo do body, sem `<html>`/`<head>`/`<style>`):**
 ```html
+<!-- Link de Fontes do Google (carregamento premium para clientes de e-mail modernos) -->
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Lexend:wght@400;500;700&family=Public+Sans:wght@600;700&display=swap" rel="stylesheet" type="text/css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Public+Sans:wght@600;700&family=Lexend:wght@400;500;700&display=swap');
   @media only screen and (max-width: 480px) {
@@ -376,17 +388,17 @@ Seu convite para a plataforma Dosiq chegou!
   }
 </style>
 
-<div class="email-container" style="font-family: 'Lexend', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
+<div class="email-container" style="font-family: 'Lexend', 'Montserrat', system-ui, -apple-system, sans-serif; background-color: #f8fafb; padding: 24px; margin: 0;">
   <div class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px -4px rgba(25, 28, 29, 0.04);">
 
     <!-- Header -->
     <div class="email-header" style="background: linear-gradient(135deg, #006a5e, #008577); padding: 36px 24px; text-align: center;">
-      <p style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
+      <p style="font-family: 'Comfortaa', 'Quicksand', system-ui, -apple-system, sans-serif; font-size: 36px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: -1.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);">dosiq</p>
     </div>
 
     <!-- Conteúdo -->
     <div style="padding: 32px 24px;">
-      <h2 style="font-family: 'Public Sans', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Você foi convidado!</h2>
+      <h2 style="font-family: 'Public Sans', 'Inter', system-ui, sans-serif; font-size: 24px; font-weight: 700; color: #006a5e; margin: 0 0 16px; letter-spacing: -0.02em;">Você foi convidado!</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #3e4946; margin: 0 0 24px;">Você recebeu um convite especial para fazer parte do Dosiq — a plataforma inteligente que simplifica, acompanha e cuida do seu tratamento de saúde de forma premium e 100% gratuita.</p>
 
       <!-- CTA Principal (Link Direto) -->
@@ -412,7 +424,7 @@ Seu convite para a plataforma Dosiq chegou!
 
     <!-- Footer -->
     <div style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
-      <strong style="color: #191c1d; font-family: 'Public Sans', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
+      <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
@@ -439,21 +451,21 @@ Os templates do Supabase aceitam variáveis dinâmicas que podem ser utilizadas 
 | Variável | Tipo | Descrição |
 |----------|------|-----------|
 | `{{ .ConfirmationURL }}` | String (URL) | Link completo contendo o token de confirmação/reset gerado pelo GoTrue. |
-| `{{ .Token }}` | String (6 dígitos) | O código OTP numérico que o usuário pode digitar diretamente no aplicativo. |
+| `{{ .Token }}` | String (8 dígitos) | O código OTP numérico de 8 dígitos que o usuário pode digitar diretamente no aplicativo (gerenciado em 8 dígitos nativamente pelo Supabase GoTrue para fluxos de e-mail). |
 | `{{ .Email }}` | String | O endereço de e-mail do destinatário. |
 
 ---
 
 ### 💡 Guia Prático: Transição de Links de Confirmação para OTP Numérico
 
-Utilizar o **OTP de 6 dígitos** resolve os problemas de links inválidos causados por antivírus de e-mail (*Link Harvesters*). A implementação é feita em duas partes:
+Utilizar o **OTP numérico de 8 dígitos** (ou 6 dependendo da configuração padrão de autenticação do Supabase) resolve os problemas de links inválidos causados por antivírus de e-mail (*Link Harvesters*). A implementação é feita em duas partes:
 
 #### A. Mudança no Template de E-mail
-Ao adotar o design híbrido (proposto neste guia), o e-mail já exibe a variável `{{ .Token }}` de forma proeminente. O usuário receberá tanto o link clássico quanto o código de 6 dígitos no corpo da mensagem.
+Ao adotar o design híbrido (proposto neste guia), o e-mail já exibe a variável `{{ .Token }}` de forma proeminente. O usuário receberá tanto o link clássico quanto o código de confirmação no corpo da mensagem.
 
 #### B. Mudança no Frontend do Dosiq (Validação no App)
 1. O fluxo de cadastro (`signUp`) permanece idêntico.
-2. Em vez de instruir o usuário a "abrir seu e-mail e clicar", o aplicativo exibe uma tela com um formulário de entrada para o código OTP de 6 dígitos.
+2. Em vez de instruir o usuário a "abrir seu e-mail e clicar", o aplicativo exibe uma tela com um formulário de entrada para o código OTP.
 3. Para uma experiência mobile premium, configure o input do código no React com o atributo:
    `autocomplete="one-time-code"` (isso faz com que o teclado do iOS/Android sugira o código direto da notificação do e-mail).
 4. Submeta o código e o e-mail do usuário usando o método `verifyOtp` do SDK do Supabase:
@@ -461,7 +473,7 @@ Ao adotar o design híbrido (proposto neste guia), o e-mail já exibe a variáve
 ```javascript
 const { data, session, error } = await supabase.auth.verifyOtp({
   email: userEmail,
-  token: otpCode,        // Os 6 dígitos fornecidos (ex: "482019")
+  token: otpCode,        // Os dígitos fornecidos (ex: "19971511")
   type: 'signup'         // Tipos válidos: 'signup', 'recovery', 'magiclink', 'email_change'
 });
 

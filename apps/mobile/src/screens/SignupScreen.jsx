@@ -42,8 +42,8 @@ export default function SignupScreen({ navigation }) {
 
   async function handleVerifyOtp() {
     const tokenClean = otpCode.trim()
-    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
-      setOtpError('O código deve conter 6 dígitos numéricos')
+    if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
+      setOtpError('O código deve conter 6 ou 8 dígitos numéricos')
       return
     }
     setVerifying(true)
@@ -76,16 +76,16 @@ export default function SignupScreen({ navigation }) {
           {/* Campo OTP Alternativo */}
           <View style={[styles.field, { width: '100%', marginTop: spacing[4], marginBottom: spacing[2] }]}>
             <Text style={[styles.label, { textAlign: 'center', marginBottom: spacing[1] }]}>
-              Ou digite o código de 6 dígitos recebido:
+              Ou digite o código de confirmação recebido:
             </Text>
             <TextInput
               style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System' }]}
-              placeholder="000000"
+              placeholder="Código"
               placeholderTextColor={colors.text.muted}
               value={otpCode}
               onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={8}
               textContentType="oneTimeCode"
               editable={!verifying}
             />

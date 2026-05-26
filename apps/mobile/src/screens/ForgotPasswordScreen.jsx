@@ -48,8 +48,8 @@ export default function ForgotPasswordScreen({ navigation }) {
 
   async function handleVerifyOtp() {
     const tokenClean = otpCode.trim()
-    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
-      setOtpError('O código deve conter 6 dígitos numéricos')
+    if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
+      setOtpError('O código deve conter 6 ou 8 dígitos numéricos')
       return
     }
     setVerifying(true)
@@ -85,22 +85,22 @@ export default function ForgotPasswordScreen({ navigation }) {
           />
           <Text style={styles.successTitle}>E-mail enviado!</Text>
           <Text style={styles.successDescription}>
-            Se este e-mail estiver cadastrado, enviamos um link para redefinir sua senha diretamente. Você também pode inserir o código de 6 dígitos recebido abaixo:
+            Se este e-mail estiver cadastrado, enviamos um link para redefinir sua senha diretamente. Você também pode inserir o código de confirmação recebido abaixo:
           </Text>
 
           {/* Campo de Inserção de OTP */}
           <View style={{ width: '100%', marginBottom: spacing[4], gap: 6 }}>
             <Text style={{ fontSize: 13, fontWeight: '500', color: colors.text.secondary, textAlign: 'center' }}>
-              Digite o código de 6 dígitos enviado:
+              Digite o código de confirmação enviado:
             </Text>
             <TextInput
               style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System', marginBottom: 0 }]}
-              placeholder="000000"
+              placeholder="Código"
               placeholderTextColor={colors.text.muted}
               value={otpCode}
               onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={8}
               textContentType="oneTimeCode"
               editable={!verifying}
             />

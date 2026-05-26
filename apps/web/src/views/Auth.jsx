@@ -28,8 +28,8 @@ function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
     setIsLoading(true)
     setError(null)
     const tokenClean = otpToken.trim()
-    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
-      setError('O código deve conter 6 dígitos numéricos.')
+    if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
+      setError('O código deve conter 6 ou 8 dígitos numéricos.')
       setIsLoading(false)
       return
     }
@@ -64,18 +64,18 @@ function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
         {emailSent ? (
           <form onSubmit={handleVerifyOtp} className="auth-form">
             <div className="auth-message" style={{ marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
-              Enviamos um link de confirmação para o seu e-mail. Você pode clicar nele para entrar automaticamente ou, se preferir, digitar o código de 6 dígitos abaixo:
+              Enviamos um link de confirmação para o seu e-mail. Você pode clicar nele para entrar automaticamente ou, se preferir, digitar o código de confirmação abaixo:
             </div>
             
             <div className="form-group">
-              <label htmlFor="forgot-otp">Código de Confirmação (6 dígitos)</label>
+              <label htmlFor="forgot-otp">Código de Confirmação</label>
               <input
                 id="forgot-otp"
                 type="text"
-                maxLength={6}
+                maxLength={8}
                 value={otpToken}
                 onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
-                placeholder="000000"
+                placeholder="Código"
                 required
                 disabled={isLoading}
                 className="auth-input"
@@ -149,7 +149,7 @@ export default function Auth({ onAuthSuccess, onClose }) {
       } else {
         await signUp(email, password)
         setIsVerifyingOtp(true)
-        setMessage('Conta criada! Enviamos um link e um código de confirmação de 6 dígitos para o seu e-mail.')
+        setMessage('Conta criada! Enviamos um link e um código de confirmação para o seu e-mail.')
       }
     } catch (err) {
       console.error(err)
@@ -172,8 +172,8 @@ export default function Auth({ onAuthSuccess, onClose }) {
     setIsLoading(true)
     setError(null)
     const tokenClean = otpToken.trim()
-    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
-      setError('O código deve conter 6 dígitos numéricos.')
+    if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
+      setError('O código deve conter 6 ou 8 dígitos numéricos.')
       setIsLoading(false)
       return
     }
@@ -213,7 +213,7 @@ export default function Auth({ onAuthSuccess, onClose }) {
               <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
             </div>
             <h1>Confirmar Conta</h1>
-            <p className="auth-subtitle">Digite o código de 6 dígitos enviado para seu e-mail</p>
+            <p className="auth-subtitle">Digite o código de confirmação enviado para seu e-mail</p>
           </div>
 
           <form onSubmit={handleVerifySignUpOtp} className="auth-form">
@@ -222,14 +222,14 @@ export default function Auth({ onAuthSuccess, onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="signup-otp">Código de Confirmação (6 dígitos)</label>
+              <label htmlFor="signup-otp">Código de Confirmação</label>
               <input
                 id="signup-otp"
                 type="text"
-                maxLength={6}
+                maxLength={8}
                 value={otpToken}
                 onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
-                placeholder="000000"
+                placeholder="Código"
                 required
                 disabled={isLoading}
                 className="auth-input"
