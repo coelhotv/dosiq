@@ -1135,6 +1135,10 @@
 .lp-app-badge-img--soon {
   height: 44px;
   width: auto;
+  /* filho direto do flex-column .lp-app-card → sem isto o align-self:stretch
+     default estica a largura e distorce o badge. */
+  align-self: flex-start;
+  object-fit: contain;
   display: block;
   border-radius: 8px;
   margin-bottom: 4px;
