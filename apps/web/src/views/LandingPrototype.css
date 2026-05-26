@@ -1066,3 +1066,142 @@
     font-weight: 900;
   }
 }
+
+/* LandingApp — promoção do app nativo (iOS App Store + captura beta Android) */
+.lp-app-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.lp-app-card {
+  border: 1px solid var(--lp-slate-100);
+  background: var(--lp-white);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+  /* Duas colunas: textos/form à esquerda, badge à direita (centralizado). */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+}
+
+.lp-app-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-app-card__cta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-app-card h4 {
+  margin: 4px 0 8px;
+  font-weight: 800;
+  color: var(--lp-slate-900);
+}
+
+.lp-app-card p {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--lp-slate-600);
+}
+
+.lp-app-card .lp-btn {
+  align-self: flex-start;
+  text-decoration: none;
+  /* .lp-btn--primary só define cor/raio; padding/fonte vêm dos modifiers de
+     tamanho (--header/--xl). Como aqui não usamos modifier, definimos aqui. */
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-app-card .lp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Badge de loja (imagem oficial) — iOS clicável. Centralizado pelo __cta. */
+.lp-app-badge {
+  display: inline-block;
+}
+
+.lp-app-badge img {
+  height: 44px;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Badge Android — closed testing, ainda sem listing público (não clicável).
+   Grayscale + opacidade indicam "ainda não disponível". */
+.lp-app-badge-img--soon {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+/* Mobile/tablet: empilha — textos em cima, badge desce e centraliza. */
+@media (max-width: 900px) {
+  .lp-app-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lp-app-card__cta {
+    justify-content: center;
+  }
+}
+
+.lp-app-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lp-app-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--lp-slate-100);
+  font-size: 0.9375rem;
+  color: var(--lp-slate-900);
+  background: var(--lp-white);
+}
+
+.lp-app-input:focus-visible {
+  outline: 2px solid var(--lp-green-600);
+  outline-offset: 1px;
+}
+
+.lp-app-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+  color: var(--lp-green-700);
+  font-weight: 600;
+}
+
+.lp-app-error {
+  margin: 8px 0 0 !important;
+  color: #b91c1c;
+  font-size: 0.8125rem !important;
+}
