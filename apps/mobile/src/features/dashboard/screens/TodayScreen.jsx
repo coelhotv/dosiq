@@ -181,7 +181,7 @@ function TodayScreenContent({
           protocols={protocols} isComplex={isComplex} timeline={timeline}
           shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
-          hasMedicines={Object.keys(medicines).length > 0} navigation={navigation}
+          hasMedicines={Object.keys(medicines || {}).length > 0} navigation={navigation}
         />
       </ScrollView>
       <DoseRegisterModal
