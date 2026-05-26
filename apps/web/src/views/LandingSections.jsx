@@ -1,6 +1,8 @@
 /**
  * LandingSections — Seções estáticas da Landing page.
  */
+import { useState } from 'react'
+import { signupForBeta } from '@shared/services/betaSignupService'
 import {
   ZapIcon,
   DatabaseIcon,
@@ -127,6 +129,119 @@ export function LandingPrivacidade() {
               Construímos uma ferramenta auditável e segura, garantindo que a tecnologia
               sirva ao paciente, e não o contrário.&quot;
             </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Link da App Store (iOS já publicado).
+const APP_STORE_URL = 'https://apps.apple.com/br/app/dosiq-intelig%C3%AAncia-em-doses/id6762740948'
+
+/**
+ * LandingApp — promove o app nativo.
+ * iOS: já na App Store (botão direto). Android: em testes fechados → captura
+ * de e-mail para entrar na lista do closed testing (12 testers / 2 semanas).
+ */
+export function LandingApp() {
+  // States
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [error, setError] = useState('')
+
+  // Handlers
+  async function handleAndroidSubmit(e) {
+    e.preventDefault()
+    if (status === 'loading') return
+    setStatus('loading')
+    setError('')
+    const { success, error: err } = await signupForBeta(email, 'android')
+    if (success) {
+      setStatus('success')
+      setEmail('')
+    } else {
+      setStatus('error')
+      setError(err || 'Não foi possível registrar agora.')
+    }
+  }
+
+  return (
+    <section id="app" className="lp-section lp-section--muted">
+      <div className="lp-shell">
+        <div className="lp-section__intro lp-section__intro--center">
+          <div className="lp-pill">
+            <SmartphoneIcon size={16} />
+            <span>Agora também no celular</span>
+          </div>
+          <h2>Leve o Dosiq no bolso.</h2>
+          <p>O app nativo traz lembretes na hora certa, mesmo offline.</p>
+        </div>
+
+        <div className="lp-app-grid">
+          {/* iOS — disponível */}
+          <div className="lp-app-card">
+            <div className="lp-app-card__body">
+              <div className="lp-card__eyebrow">iPhone (iOS)</div>
+              <h4>Disponível para iPhones</h4>
+              <p>Baixe agora e ative os lembretes em segundos.</p>
+            </div>
+            <div className="lp-app-card__cta">
+              <a
+                className="lp-app-badge"
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Baixar na App Store"
+              >
+                <img src="/download-ios.png" alt="Disponível na App Store" />
+              </a>
+            </div>
+          </div>
+
+          {/* Android — closed testing → captura de e-mail */}
+          <div className="lp-app-card">
+            <div className="lp-app-card__body">
+              <div className="lp-card__eyebrow">Android</div>
+              <h4>Em breve...</h4>
+              {status === 'success' ? (
+                <p className="lp-app-success">
+                  <CircleCheckIcon className="lp-text-green" size={18} />
+                  Pronto! Você entrou na lista. Avisamos quando liberar o acesso.
+                </p>
+              ) : (
+                <>
+                  <p>Deixe seu e-mail para entrar na lista de testadores e receber o convite.</p>
+                  <form className="lp-app-form" onSubmit={handleAndroidSubmit} noValidate>
+                    <input
+                      type="email"
+                      className="lp-app-input"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(ev) => setEmail(ev.target.value)}
+                      aria-label="Seu e-mail para o beta Android"
+                      maxLength={254}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="lp-btn lp-btn--primary"
+                      disabled={status === 'loading'}
+                    >
+                      {status === 'loading' ? 'Enviando…' : 'Quero testar'}
+                    </button>
+                  </form>
+                  {status === 'error' && <p className="lp-app-error">{error}</p>}
+                </>
+              )}
+            </div>
+            <div className="lp-app-card__cta">
+              <img
+                src="/download-android.png"
+                alt="Em breve no Google Play"
+                className="lp-app-badge-img lp-app-badge-img--soon"
+              />
+            </div>
           </div>
         </div>
       </div>

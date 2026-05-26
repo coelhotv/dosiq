@@ -39,6 +39,10 @@
       "destination": "/api/notify.js"
     },
     {
+      "source": "/api/beta-signup",
+      "destination": "/api/beta-signup.js"
+    },
+    {
       "source": "/api/dlq",
       "destination": "/api/dlq.js"
     },
