@@ -1158,8 +1158,8 @@
   filter: grayscale(1);
 }
 
-/* Mobile: empilha — textos em cima, badge desce e centraliza. */
-@media (max-width: 640px) {
+/* Mobile/tablet: empilha — textos em cima, badge desce e centraliza. */
+@media (max-width: 900px) {
   .lp-app-card {
     flex-direction: column;
     align-items: stretch;
