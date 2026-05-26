@@ -12,6 +12,7 @@ import { OnboardingProvider } from '@shared/components/onboarding'
 import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
+import MobileAppBanner from '@shared/components/MobileAppBanner'
 
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -72,6 +73,8 @@ function AppInner() {
         <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
 
         <div className="app-container">
+          <MobileAppBanner />
+
           {isAuthenticated && (
             <Suspense fallback={null}>
               <Sidebar currentView={currentView} setCurrentView={setCurrentView} onNewDose={() => setIsDoseModalOpen(true)} unreadCount={unreadCount} />

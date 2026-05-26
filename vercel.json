@@ -7,6 +7,12 @@
     "api/notify.js": { "maxDuration": 60 },
     "api/telegram.js": { "maxDuration": 10 }
   },
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    }
+  ],
   "rewrites": [
     {
       "source": "/politica-de-privacidade",
