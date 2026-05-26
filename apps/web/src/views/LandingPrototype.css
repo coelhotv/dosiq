@@ -1117,10 +1117,10 @@
   cursor: not-allowed;
 }
 
-/* Badge de loja (imagem oficial) — iOS clicável */
+/* Badge de loja (imagem oficial) — iOS clicável, alinhado à direita do card */
 .lp-app-badge {
   display: inline-block;
-  align-self: flex-start;
+  align-self: flex-end;
 }
 
 .lp-app-badge img {
@@ -1136,12 +1136,15 @@
   height: 44px;
   width: auto;
   /* filho direto do flex-column .lp-app-card → sem isto o align-self:stretch
-     default estica a largura e distorce o badge. */
-  align-self: flex-start;
+     default estica a largura e distorce o badge. flex-end = alinha à direita. */
+  align-self: flex-end;
   object-fit: contain;
   display: block;
   border-radius: 8px;
-  margin-bottom: 4px;
+  margin-top: auto;
+  /* grayscale + opacidade: indica "ainda não disponível" (closed testing). */
+  opacity: 0.5;
+  filter: grayscale(1);
 }
 
 .lp-app-form {

@@ -201,11 +201,6 @@ export function LandingApp() {
             <div className="lp-card__icon"><SmartphoneIcon className="lp-text-blue" size={24} /></div>
             <div className="lp-card__eyebrow">Android</div>
             <h4>Em testes fechados</h4>
-            <img
-              src="/download-android.png"
-              alt="Em breve no Google Play"
-              className="lp-app-badge-img lp-app-badge-img--soon"
-            />
             {status === 'success' ? (
               <p className="lp-app-success">
                 <CircleCheckIcon className="lp-text-green" size={18} />
@@ -236,6 +231,11 @@ export function LandingApp() {
                 {status === 'error' && <p className="lp-app-error">{error}</p>}
               </>
             )}
+            <img
+              src="/download-android.png"
+              alt="Em breve no Google Play"
+              className="lp-app-badge-img lp-app-badge-img--soon"
+            />
           </div>
         </div>
       </div>
