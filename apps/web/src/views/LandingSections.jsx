@@ -207,7 +207,7 @@ export function LandingApp() {
               </p>
             ) : (
               <>
-                <p>Deixe seu e-mail para entrar na lista de testers e receber o convite.</p>
+                <p>Deixe seu e-mail para entrar na lista de testadores e receber o convite.</p>
                 <form className="lp-app-form" onSubmit={handleAndroidSubmit} noValidate>
                   <input
                     type="email"

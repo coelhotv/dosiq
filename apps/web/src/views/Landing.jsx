@@ -62,7 +62,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                       <CircleCheckIcon size={16} />
                       <span>App nativo + PWA</span>
                     </div>
-                    <p>App na App Store (iOS) · Android em breve · PWA no Desktop</p>
+                    <p>App na App Store (iOS) · Android em breve · no Computador</p>
                   </div>
                 </div>
               </div>
