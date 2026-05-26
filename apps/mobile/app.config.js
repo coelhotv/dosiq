@@ -57,6 +57,10 @@ module.exports = {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ['remote-notification'],
+        // App é pt-BR nativo: declara a região/localização no binário p/ a App
+        // Store e o iOS tratarem como Português (Brasil), não inglês (default).
+        CFBundleDevelopmentRegion: 'pt-BR',
+        CFBundleLocalizations: ['pt-BR'],
       },
       // UL-S1: Universal Links iOS
       associatedDomains: ['applinks:dosiq.app'],
