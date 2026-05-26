@@ -128,7 +128,7 @@ function _buildHeaderData(user) {
 // Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
-  timeline, stockAlerts, protocols, stats,
+  timeline, stockAlerts, protocols, stats, medicines,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
@@ -181,6 +181,7 @@ function TodayScreenContent({
           protocols={protocols} isComplex={isComplex} timeline={timeline}
           shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
+          hasMedicines={Object.keys(medicines).length > 0} navigation={navigation}
         />
       </ScrollView>
       <DoseRegisterModal
@@ -207,12 +208,31 @@ function TodayScreenContent({
 }
 
 // Renderiza a agenda de doses (Simple ou Complex mode)
-function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister }) {
+function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister, hasMedicines, navigation }) {
   if (protocols.length === 0) {
+    // Empty state inteligente (tudo in-app — os CRUDs já vivem no nativo):
+    // - sem medicamento E sem tratamento → começa cadastrando o 1º medicamento;
+    // - já tem medicamento, falta tratamento → vai direto pro form de tratamento.
+    const empty = hasMedicines
+      ? {
+          message: 'Você ainda não tem tratamentos ativos.\nQue tal criar o primeiro?',
+          action: {
+            label: 'Adicionar tratamento',
+            onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
+          },
+        }
+      : {
+          message: 'Vamos começar?\nCadastre seu primeiro medicamento para o Dosiq te lembrar na hora certa.',
+          action: {
+            label: 'Cadastrar primeiro medicamento',
+            onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.MEDICINE_CREATE }),
+          },
+        }
     return (
       <EmptyState
         icon={<Pill size={48} color={colors.status.success} />}
-        message={'Sem tratamentos ativos.\nAdicione tratamentos na versão web.'}
+        message={empty.message}
+        action={empty.action}
       />
     )
   }
