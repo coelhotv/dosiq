@@ -31,7 +31,8 @@ export async function signupForBeta(email, platform = 'android') {
     }
     const body = await res.json().catch(() => ({}))
     return { success: false, error: body.error || 'Não foi possível registrar agora. Tente mais tarde.' }
-  } catch {
+  } catch (err) {
+    if (import.meta.env.DEV) console.error('Erro ao registrar no beta:', err)
     return { success: false, error: 'Falha de conexão. Tente novamente.' }
   }
 }

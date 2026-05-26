@@ -216,6 +216,7 @@ export function LandingApp() {
                     value={email}
                     onChange={(ev) => setEmail(ev.target.value)}
                     aria-label="Seu e-mail para o beta Android"
+                    maxLength={254}
                     required
                   />
                   <button
