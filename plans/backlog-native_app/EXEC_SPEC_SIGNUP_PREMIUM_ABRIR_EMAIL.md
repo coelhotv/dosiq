@@ -91,8 +91,17 @@ domínio = parteApós('@', email).toLowerCase()
 
 ## §4 — Mapa de webmails/apps por domínio (INPUT DO AGENTE DE PESQUISA) 🔬
 
-> **A preencher** com o levantamento dos provedores mais usados por brasileiros (o PO está
-> spawnando um agente de pesquisa em paralelo). Estrutura sugerida:
+
+| Provedores de e-mail | Principais endereços utilizados | URL de acesso ao webmail |
+|---|---|---|
+| Gmail (Google) | @gmail.com | https://mail.google.com ou https://gmail.com |
+| Microsoft (Outlook / Hotmail / Live / MSN) | @outlook.com, @hotmail.com, @live.com, @msn.com | https://outlook.live.com ou https://outlook.com |
+| Yahoo Mail | @yahoo.com, @yahoo.com.br | https://mail.yahoo.com |
+| UOL Mail | @uol.com.br | https://email.uol.com.br/login/ |
+| BOL (Brasil Online – UOL) | @bol.com.br | https://email.bol.uol.com.br/login |
+| Terra Mail | @terra.com.br | https://mail.terra.com.br |
+| IG Mail (iG) | @ig.com.br | https://email.ig.com.br ou https://www.ig.com.br |
+
 
 ```js
 // apps/mobile/src/platform/email/providerMap.js
