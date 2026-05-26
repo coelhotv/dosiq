@@ -4,12 +4,12 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "Fase 4 — Signup confirm + push contextual + Notificações inbox-first (PR #584)",
+    "goal": "Universal Links / App Links + banner web (EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER)",
     "goal_type": "feature"
   },
   "memory": {
     "last_distillation": "2026-05-23T18:20:00Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 190,
     "anti_patterns_count": 179,
     "decisions_count": 48,
