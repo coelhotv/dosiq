@@ -97,18 +97,43 @@ describe('authService', () => {
       expect(result.error).toBe('Email já cadastrado. Faça login.')
     })
 
-    it('retorna success em cadastro bem-sucedido', async () => {
-      supabase.auth.signUp.mockResolvedValue({
-        data: { user: { id: 'user-456', email: 'novo@example.com' } },
-        error: null,
-      })
-      const result = await signUpWithEmail('novo@example.com', 'Senha123!', 'Senha123!')
-      expect(result.success).toBe(true)
-      expect(supabase.auth.signUp).toHaveBeenCalledWith({
-        email: 'novo@example.com',
-        password: 'Senha123!',
-        options: { emailRedirectTo: 'https://dosiq.app/auth/callback' },
-      })
+    it('em produção usa emailRedirectTo https (Universal Link)', async () => {
+      const prevDev = global.__DEV__
+      global.__DEV__ = false
+      try {
+        supabase.auth.signUp.mockResolvedValue({
+          data: { user: { id: 'user-456', email: 'novo@example.com' } },
+          error: null,
+        })
+        const result = await signUpWithEmail('novo@example.com', 'Senha123!', 'Senha123!')
+        expect(result.success).toBe(true)
+        expect(supabase.auth.signUp).toHaveBeenCalledWith({
+          email: 'novo@example.com',
+          password: 'Senha123!',
+          options: { emailRedirectTo: 'https://dosiq.app/auth/callback' },
+        })
+      } finally {
+        global.__DEV__ = prevDev
+      }
+    })
+
+    it('em dev usa o scheme dosiq:// (abre build de dev direto)', async () => {
+      const prevDev = global.__DEV__
+      global.__DEV__ = true
+      try {
+        supabase.auth.signUp.mockResolvedValue({
+          data: { user: { id: 'user-789', email: 'dev@example.com' } },
+          error: null,
+        })
+        await signUpWithEmail('dev@example.com', 'Senha123!', 'Senha123!')
+        expect(supabase.auth.signUp).toHaveBeenCalledWith({
+          email: 'dev@example.com',
+          password: 'Senha123!',
+          options: { emailRedirectTo: 'dosiq://auth/callback' },
+        })
+      } finally {
+        global.__DEV__ = prevDev
+      }
     })
 
     it('trata erro de rede inesperado com fallback', async () => {

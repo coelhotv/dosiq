@@ -108,11 +108,14 @@ export async function signUpWithEmail(email, password, confirmPassword) {
       email: validation.data.email,
       password: validation.data.password,
       options: {
-        // Universal Link / App Link (UL-S2): https abre o app se instalado
-        // (associatedDomains iOS verificado; Android autoVerify após Play),
-        // senão cai no web /auth/callback que auto-completa via detectSessionInUrl.
-        // dosiq:// segue no allow-list como rede de segurança.
-        emailRedirectTo: 'https://dosiq.app/auth/callback',
+        // Universal Link / App Link (UL-S2): em produção, https abre o app se
+        // instalado (associatedDomains iOS; Android autoVerify), senão cai no web
+        // /auth/callback (detectSessionInUrl auto-completa). Em dev (__DEV__),
+        // mantém o scheme dosiq:// — abre o build de dev direto, sem mandar o
+        // usuário pro web/banco de produção. dosiq:// segue no allow-list.
+        emailRedirectTo: __DEV__
+          ? 'dosiq://auth/callback'
+          : 'https://dosiq.app/auth/callback',
       },
     })
 
