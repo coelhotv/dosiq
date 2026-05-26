@@ -181,61 +181,69 @@ export function LandingApp() {
         <div className="lp-app-grid">
           {/* iOS — disponível */}
           <div className="lp-app-card">
-            <div className="lp-card__icon"><DownloadIcon className="lp-text-green" size={24} /></div>
-            <div className="lp-card__eyebrow">iPhone (iOS)</div>
-            <h4>Disponível para iPhones</h4>
-            <p>Baixe agora e ative os lembretes em segundos.</p>
-            <a
-              className="lp-app-badge"
-              href={APP_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Baixar na App Store"
-            >
-              <img src="/download-ios.png" alt="Disponível na App Store" />
-            </a>
+            <div className="lp-app-card__body">
+              <div className="lp-card__icon"><DownloadIcon className="lp-text-green" size={24} /></div>
+              <div className="lp-card__eyebrow">iPhone (iOS)</div>
+              <h4>Disponível para iPhones</h4>
+              <p>Baixe agora e ative os lembretes em segundos.</p>
+            </div>
+            <div className="lp-app-card__cta">
+              <a
+                className="lp-app-badge"
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Baixar na App Store"
+              >
+                <img src="/download-ios.png" alt="Disponível na App Store" />
+              </a>
+            </div>
           </div>
 
           {/* Android — closed testing → captura de e-mail */}
           <div className="lp-app-card">
-            <div className="lp-card__icon"><SmartphoneIcon className="lp-text-blue" size={24} /></div>
-            <div className="lp-card__eyebrow">Android</div>
-            <h4>Em testes fechados</h4>
-            {status === 'success' ? (
-              <p className="lp-app-success">
-                <CircleCheckIcon className="lp-text-green" size={18} />
-                Pronto! Você entrou na lista. Avisamos quando liberar o acesso.
-              </p>
-            ) : (
-              <>
-                <p>Deixe seu e-mail para entrar na lista de testadores e receber o convite.</p>
-                <form className="lp-app-form" onSubmit={handleAndroidSubmit} noValidate>
-                  <input
-                    type="email"
-                    className="lp-app-input"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(ev) => setEmail(ev.target.value)}
-                    aria-label="Seu e-mail para o beta Android"
-                    maxLength={254}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="lp-btn lp-btn--primary"
-                    disabled={status === 'loading'}
-                  >
-                    {status === 'loading' ? 'Enviando…' : 'Quero testar'}
-                  </button>
-                </form>
-                {status === 'error' && <p className="lp-app-error">{error}</p>}
-              </>
-            )}
-            <img
-              src="/download-android.png"
-              alt="Em breve no Google Play"
-              className="lp-app-badge-img lp-app-badge-img--soon"
-            />
+            <div className="lp-app-card__body">
+              <div className="lp-card__icon"><SmartphoneIcon className="lp-text-blue" size={24} /></div>
+              <div className="lp-card__eyebrow">Android</div>
+              <h4>Em testes fechados</h4>
+              {status === 'success' ? (
+                <p className="lp-app-success">
+                  <CircleCheckIcon className="lp-text-green" size={18} />
+                  Pronto! Você entrou na lista. Avisamos quando liberar o acesso.
+                </p>
+              ) : (
+                <>
+                  <p>Deixe seu e-mail para entrar na lista de testadores e receber o convite.</p>
+                  <form className="lp-app-form" onSubmit={handleAndroidSubmit} noValidate>
+                    <input
+                      type="email"
+                      className="lp-app-input"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(ev) => setEmail(ev.target.value)}
+                      aria-label="Seu e-mail para o beta Android"
+                      maxLength={254}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="lp-btn lp-btn--primary"
+                      disabled={status === 'loading'}
+                    >
+                      {status === 'loading' ? 'Enviando…' : 'Quero testar'}
+                    </button>
+                  </form>
+                  {status === 'error' && <p className="lp-app-error">{error}</p>}
+                </>
+              )}
+            </div>
+            <div className="lp-app-card__cta">
+              <img
+                src="/download-android.png"
+                alt="Em breve no Google Play"
+                className="lp-app-badge-img lp-app-badge-img--soon"
+              />
+            </div>
           </div>
         </div>
       </div>

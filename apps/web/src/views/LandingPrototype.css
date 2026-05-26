@@ -1080,9 +1080,26 @@
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+  /* Duas colunas: textos/form à esquerda, badge à direita (centralizado). */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+}
+
+.lp-app-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.lp-app-card__cta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lp-app-card h4 {
@@ -1117,10 +1134,9 @@
   cursor: not-allowed;
 }
 
-/* Badge de loja (imagem oficial) — iOS clicável, alinhado à direita do card */
+/* Badge de loja (imagem oficial) — iOS clicável. Centralizado pelo __cta. */
 .lp-app-badge {
   display: inline-block;
-  align-self: flex-end;
 }
 
 .lp-app-badge img {
@@ -1131,20 +1147,26 @@
 }
 
 /* Badge Android — closed testing, ainda sem listing público (não clicável).
-   Cor cheia (logo oficial); o status "em breve" vem do título + form. */
+   Grayscale + opacidade indicam "ainda não disponível". */
 .lp-app-badge-img--soon {
   height: 44px;
   width: auto;
-  /* filho direto do flex-column .lp-app-card → sem isto o align-self:stretch
-     default estica a largura e distorce o badge. flex-end = alinha à direita. */
-  align-self: flex-end;
   object-fit: contain;
   display: block;
   border-radius: 8px;
-  margin-top: auto;
-  /* grayscale + opacidade: indica "ainda não disponível" (closed testing). */
   opacity: 0.5;
   filter: grayscale(1);
+}
+
+/* Mobile: empilha — textos em cima, badge desce e centraliza. */
+@media (max-width: 640px) {
+  .lp-app-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lp-app-card__cta {
+    justify-content: center;
+  }
 }
 
 .lp-app-form {
