@@ -183,15 +183,16 @@ export function LandingApp() {
           <div className="lp-app-card">
             <div className="lp-card__icon"><DownloadIcon className="lp-text-green" size={24} /></div>
             <div className="lp-card__eyebrow">iPhone (iOS)</div>
-            <h4>Disponível na App Store</h4>
+            <h4>Disponível para iPhones</h4>
             <p>Baixe agora e ative os lembretes em segundos.</p>
             <a
-              className="lp-btn lp-btn--primary"
+              className="lp-app-badge"
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Baixar na App Store"
             >
-              Baixar na App Store
+              <img src="/download-ios.png" alt="Disponível na App Store" />
             </a>
           </div>
 
@@ -200,6 +201,11 @@ export function LandingApp() {
             <div className="lp-card__icon"><SmartphoneIcon className="lp-text-blue" size={24} /></div>
             <div className="lp-card__eyebrow">Android</div>
             <h4>Em testes fechados</h4>
+            <img
+              src="/download-android.png"
+              alt="Em breve no Google Play"
+              className="lp-app-badge-img lp-app-badge-img--soon"
+            />
             {status === 'success' ? (
               <p className="lp-app-success">
                 <CircleCheckIcon className="lp-text-green" size={18} />

@@ -1102,6 +1102,42 @@
 .lp-app-card .lp-btn {
   align-self: flex-start;
   text-decoration: none;
+  /* .lp-btn--primary só define cor/raio; padding/fonte vêm dos modifiers de
+     tamanho (--header/--xl). Como aqui não usamos modifier, definimos aqui. */
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-app-card .lp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Badge de loja (imagem oficial) — iOS clicável */
+.lp-app-badge {
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.lp-app-badge img {
+  height: 44px;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Badge Android — closed testing, ainda sem listing público (não clicável).
+   Cor cheia (logo oficial); o status "em breve" vem do título + form. */
+.lp-app-badge-img--soon {
+  height: 44px;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+  margin-bottom: 4px;
 }
 
 .lp-app-form {
