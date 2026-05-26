@@ -182,7 +182,6 @@ export function LandingApp() {
           {/* iOS — disponível */}
           <div className="lp-app-card">
             <div className="lp-app-card__body">
-              <div className="lp-card__icon"><DownloadIcon className="lp-text-green" size={24} /></div>
               <div className="lp-card__eyebrow">iPhone (iOS)</div>
               <h4>Disponível para iPhones</h4>
               <p>Baixe agora e ative os lembretes em segundos.</p>
@@ -203,7 +202,6 @@ export function LandingApp() {
           {/* Android — closed testing → captura de e-mail */}
           <div className="lp-app-card">
             <div className="lp-app-card__body">
-              <div className="lp-card__icon"><SmartphoneIcon className="lp-text-blue" size={24} /></div>
               <div className="lp-card__eyebrow">Android</div>
               <h4>Em testes fechados</h4>
               {status === 'success' ? (
