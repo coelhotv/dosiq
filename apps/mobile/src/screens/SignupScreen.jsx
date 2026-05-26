@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Mail, ShieldCheck, Info } from 'lucide-react-native'
-import { signUpWithEmail } from '../platform/auth/authService'
+import { signUpWithEmail, verifyOtpWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
@@ -36,10 +36,30 @@ export default function SignupScreen({ navigation }) {
     setEmailSent(true)
   }
 
+  const [otpCode, setOtpCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [otpError, setOtpError] = useState(null)
+
+  async function handleVerifyOtp() {
+    const tokenClean = otpCode.trim()
+    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
+      setOtpError('O código deve conter 6 dígitos numéricos')
+      return
+    }
+    setVerifying(true)
+    setOtpError(null)
+    const { success, error: verifyError } = await verifyOtpWithEmail(email, tokenClean, 'signup')
+    setVerifying(false)
+    if (!success) {
+      setOtpError(verifyError)
+      return
+    }
+  }
+
   if (emailSent) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.successContainer}>
+        <ScrollView contentContainerStyle={styles.successContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.successIconWrapper}>
             <Mail size={56} color={colors.brand.primary} />
           </View>
@@ -48,16 +68,50 @@ export default function SignupScreen({ navigation }) {
             Mandamos uma mensagem para{'\n'}
             <Text style={styles.successEmail}>{email}</Text>
           </Text>
+          
           <Text style={styles.successBody}>
             Abra o e-mail e toque no link para ativar sua conta. É rapidinho!
           </Text>
-          <Text style={styles.successHint}>
-            Não chegou em alguns minutos? Veja na pasta de lixo eletrônico. Depois de confirmar, volte ao app e entre com o e-mail e a senha que você criou.
-          </Text>
-          <Pressable style={styles.successButton} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
-            <Text style={styles.buttonText}>Entre com sua conta</Text>
+
+          {/* Campo OTP Alternativo */}
+          <View style={[styles.field, { width: '100%', marginTop: spacing[4], marginBottom: spacing[2] }]}>
+            <Text style={[styles.label, { textAlign: 'center', marginBottom: spacing[1] }]}>
+              Ou digite o código de 6 dígitos recebido:
+            </Text>
+            <TextInput
+              style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System' }]}
+              placeholder="000000"
+              placeholderTextColor={colors.text.muted}
+              value={otpCode}
+              onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
+              keyboardType="number-pad"
+              maxLength={6}
+              textContentType="oneTimeCode"
+              editable={!verifying}
+            />
+            {otpError ? <Text style={[styles.error, { textAlign: 'center', marginTop: 4 }]}>{otpError}</Text> : null}
+          </View>
+
+          <Pressable 
+            style={[styles.successButton, { marginBottom: spacing[3] }, verifying && styles.buttonDisabled]} 
+            onPress={handleVerifyOtp}
+            disabled={verifying}
+          >
+            {verifying ? (
+              <ActivityIndicator color={colors.text.inverse} />
+            ) : (
+              <Text style={styles.buttonText}>Confirmar Código e Entrar</Text>
+            )}
           </Pressable>
-        </View>
+
+          <Text style={[styles.successHint, { marginBottom: spacing[6] }]}>
+            Não chegou em alguns minutos? Veja na pasta de spam. Se o link apresentar erro, a validação por código acima é o caminho mais seguro.
+          </Text>
+
+          <Pressable style={[styles.successButton, { backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.navigate(ROUTES.ROUTES || ROUTES.LOGIN)}>
+            <Text style={[styles.buttonText, { color: colors.text.primary }]}>Voltar ao Login</Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
     )
   }

@@ -12,10 +12,12 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Mail } from 'lucide-react-native'
-import { sendPasswordReset } from '../platform/auth/authService'
+import { sendPasswordReset, verifyOtpWithEmail } from '../platform/auth/authService'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
 export default function ForgotPasswordScreen({ navigation }) {
@@ -40,23 +42,87 @@ export default function ForgotPasswordScreen({ navigation }) {
     setEmailSent(true)
   }
 
+  const [otpCode, setOtpCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [otpError, setOtpError] = useState(null)
+
+  async function handleVerifyOtp() {
+    const tokenClean = otpCode.trim()
+    if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
+      setOtpError('O código deve conter 6 dígitos numéricos')
+      return
+    }
+    setVerifying(true)
+    setOtpError(null)
+
+    try {
+      // Salva a flag temporária de recuperação de senha no cache local
+      await AsyncStorage.setItem('@dosiq/recovery-flow', 'true')
+
+      const { success, error: verifyError } = await verifyOtpWithEmail(email, tokenClean, 'recovery')
+
+      if (!success) {
+        await AsyncStorage.removeItem('@dosiq/recovery-flow')
+        setOtpError(verifyError)
+        setVerifying(false)
+        return
+      }
+    } catch {
+      await AsyncStorage.removeItem('@dosiq/recovery-flow')
+      setOtpError('Erro inesperado ao validar código.')
+      setVerifying(false)
+    }
+  }
+
   if (emailSent) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.successContainer}>
+        <ScrollView contentContainerStyle={styles.successContainer} keyboardShouldPersistTaps="handled">
           <Mail
             size={80}
             color={colors.brand.primary}
             style={styles.successIcon}
           />
-          <Text style={styles.successTitle}>Email enviado!</Text>
+          <Text style={styles.successTitle}>E-mail enviado!</Text>
           <Text style={styles.successDescription}>
-            Se este email estiver cadastrado, você receberá um link para criar uma nova senha.
+            Se este e-mail estiver cadastrado, enviamos um link para redefinir sua senha diretamente. Você também pode inserir o código de 6 dígitos recebido abaixo:
           </Text>
-          <Pressable style={styles.button} onPress={() => navigation.goBack()}>
-            <Text style={styles.buttonText}>Voltar para Login</Text>
+
+          {/* Campo de Inserção de OTP */}
+          <View style={{ width: '100%', marginBottom: spacing[4], gap: 6 }}>
+            <Text style={{ fontSize: 13, fontWeight: '500', color: colors.text.secondary, textAlign: 'center' }}>
+              Digite o código de 6 dígitos enviado:
+            </Text>
+            <TextInput
+              style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System', marginBottom: 0 }]}
+              placeholder="000000"
+              placeholderTextColor={colors.text.muted}
+              value={otpCode}
+              onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
+              keyboardType="number-pad"
+              maxLength={6}
+              textContentType="oneTimeCode"
+              editable={!verifying}
+            />
+            {otpError ? <Text style={styles.error}>{otpError}</Text> : null}
+          </View>
+
+          <Pressable
+            style={[styles.button, { alignSelf: 'stretch', marginBottom: spacing[3] }, verifying && styles.buttonDisabled]}
+            onPress={handleVerifyOtp}
+            disabled={verifying}
+          >
+            {verifying ? (
+              <ActivityIndicator color={colors.text.inverse} />
+            ) : (
+              <Text style={styles.buttonText}>Confirmar Código e Continuar</Text>
+            )}
           </Pressable>
-        </View>
+
+          <Pressable style={[styles.button, { alignSelf: 'stretch', backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.goBack()}>
+            <Text style={[styles.buttonText, { color: colors.text.primary }]}>Voltar para Login</Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
     )
   }

@@ -40,7 +40,9 @@ function AppInner() {
       .catch(() => { setSession(null); setIsLoading(false) })
 
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      const isRecoveryFlow = localStorage.getItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
+        localStorage.removeItem('@dosiq/recovery-flow')
         setIsPasswordRecovery(true)
         setSession(session?.user ?? null)
         return

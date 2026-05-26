@@ -60,6 +60,7 @@ function translateAuthError(authError, context = 'login') {
     signup: 'Erro ao criar conta',
     reset: 'Erro ao atualizar senha',
     send_reset: 'Erro ao enviar email de recuperação',
+    verify_otp: 'Código inválido ou expirado',
   }
   return fallbacks[context] || authError.message || 'Erro inesperado'
 }
@@ -246,4 +247,30 @@ export async function signOut() {
   }
 }
 
-export default { signInWithEmail, signUpWithEmail, sendPasswordReset, updatePassword, signOut }
+/**
+ * Valida o código OTP numérico enviado por e-mail
+ */
+export async function verifyOtpWithEmail(email, token, type = 'signup') {
+  const tokenClean = token.trim()
+  if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
+    return { success: false, error: 'O código deve conter 6 dígitos numéricos' }
+  }
+
+  try {
+    const { data, error: authError } = await supabase.auth.verifyOtp({
+      email,
+      token: tokenClean,
+      type,
+    })
+
+    if (authError) {
+      return { success: false, error: translateAuthError(authError, 'verify_otp') }
+    }
+
+    return { success: true, data }
+  } catch {
+    return { success: false, error: 'Erro inesperado ao validar código' }
+  }
+}
+
+export default { signInWithEmail, signUpWithEmail, sendPasswordReset, updatePassword, verifyOtpWithEmail, signOut }
