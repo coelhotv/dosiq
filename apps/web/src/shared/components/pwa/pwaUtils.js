@@ -18,13 +18,20 @@ export function isStandalone() {
 }
 
 /**
- * Verifica se o navegador é o iOS Safari
- * @returns {boolean} Verdadeiro se estiver rodando no iOS Safari
+ * Verifica se o navegador é o iOS Safari REAL.
+ * Outros browsers no iOS usam WebKit e também trazem "Safari" no UA, mas NÃO
+ * suportam Smart App Banner nem as instruções de "Adicionar à Tela de Início"
+ * do Safari — então são excluídos: Chrome (CriOS), Firefox (FxiOS), Edge
+ * (EdgiOS), Opera (OPiOS), Firefox Focus (Focus), Mercury.
+ * (Brave iOS oculta o UA por privacidade e não é detectável de forma confiável.)
+ * @returns {boolean} Verdadeiro se estiver rodando no iOS Safari real
  */
 export function isIOSSafari() {
-  const userAgent = window.navigator.userAgent.toLowerCase()
+  if (typeof navigator === 'undefined') return false
+  const userAgent = navigator.userAgent.toLowerCase()
   const isIOS = /iphone|ipad|ipod/.test(userAgent)
-  const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent)
+  const isSafari = /safari/.test(userAgent)
+    && !/crios|fxios|edgios|opios|focus|mercury|chrome/.test(userAgent)
 
   return isIOS && isSafari
 }
