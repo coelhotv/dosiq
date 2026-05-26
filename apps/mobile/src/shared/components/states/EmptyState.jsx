@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { colors } from '../../styles/tokens'
 
 // `action` opcional: { label, onPress } → renderiza um botão primário (CTA).
-export default function EmptyState({ title, message = 'Nenhum dado encontrado', icon = '📭', action = null }) {
+export default function EmptyState({ title, message = 'Nenhum dado encontrado', icon = '💊', action = null }) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>{icon}</Text>
