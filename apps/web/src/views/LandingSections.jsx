@@ -23,10 +23,10 @@ export function LandingSolucoes() {
     <section id="solucoes" className="lp-section lp-section--muted">
       <div className="lp-shell">
         <div className="lp-section__intro lp-section__intro--center">
-          <h2>O fim do esquecimento</h2>
+          <h2>Seu tratamento sempre em dia</h2>
           <p>
-            Uma ferramenta profissional de saúde, simplificada para o uso diário. Sem
-            assinaturas, sem anúncios.
+            Uma ferramenta completa para organizar seus remédios, simplificada para o dia a dia.
+            Sem assinaturas e 100% gratuita.
           </p>
         </div>
 
@@ -35,21 +35,21 @@ export function LandingSolucoes() {
             <div className="lp-card__icon"><ZapIcon className="lp-text-green" size={24} /></div>
             <div className="lp-card__eyebrow">Sempre Grátis</div>
             <h3>100% Gratuito</h3>
-            <p>Funcionalidades essenciais ilimitadas. Sem travas, sem versões &apos;Pro&apos;. Nosso compromisso é com a sua saúde.</p>
+            <p>Lembretes e medicamentos ilimitados. Sem paywall para cuidar da sua saúde, sem trials ou cobranças escondidas.</p>
           </div>
 
           <div className="lp-card">
             <div className="lp-card__icon"><DatabaseIcon className="lp-text-blue" size={24} /></div>
             <div className="lp-card__eyebrow">Dados Oficiais</div>
             <h3>Base ANVISA</h3>
-            <p>Autocompletar com mais de 10.000 medicamentos registrados. Preenchimento automático de dosagens e apresentações.</p>
+            <p>Autocompletar integrado com a base ativa da ANVISA para cadastro rápido. Evite erros de digitação de forma simples.</p>
           </div>
 
           <div className="lp-card">
             <div className="lp-card__icon"><MessageCircleIcon className="lp-text-sky" size={24} /></div>
             <div className="lp-card__eyebrow">Flexível</div>
             <h3>Alertas Multicanal</h3>
-            <p>Receba notificações via PWA no celular ou através do nosso Bot exclusivo no Telegram. Você escolhe onde ser avisado.</p>
+            <p>Receba notificações push no celular ou lembretes no Telegram. E muito em breve com suporte direto ao WhatsApp.</p>
           </div>
         </div>
       </div>
@@ -63,8 +63,8 @@ export function LandingFuncionalidades() {
       <div className="lp-shell">
         <div className="lp-feature-head">
           <div className="lp-section__intro">
-            <h2>Pronto para o uso clínico.</h2>
-            <p>Ferramentas avançadas que ajudam você e seu médico a tomarem melhores decisões baseadas em dados reais.</p>
+            <h2>Clareza total sobre o seu tratamento.</h2>
+            <p>Mais autonomia para cuidar de você no dia a dia, e um histórico completo para levar à sua próxima consulta.</p>
           </div>
           <div className="lp-info-card">
             <p className="lp-info-card__title">Transparência Total</p>
@@ -76,11 +76,11 @@ export function LandingFuncionalidades() {
           <div className="lp-feature"><div className="lp-feature__icon"><PackageIcon size={20} /></div><h4>Controle de Estoque</h4><p>Alertas automáticos quando seus comprimidos estão acabando.</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><FileTextIcon size={20} /></div><h4>PDF para o Médico</h4><p>Gere relatórios profissionais com seu histórico de adesão em um clique.</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><ShieldCheckIcon size={20} /></div><h4>Cartão de Emergência</h4><p>Acesso offline aos seus medicamentos ativos para situações de urgência.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ActivityIcon size={20} /></div><h4>Escore de Adesão</h4><p>Acompanhe sua evolução com gráficos de tendências e streaks.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><SmartphoneIcon size={20} /></div><h4>PWA Instalável</h4><p>Instale na sua tela inicial sem precisar de lojas de aplicativos.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ClockIcon size={20} /></div><h4>Protocolos Flexíveis</h4><p>Diário, semanal, personalizado ou &apos;quando necessário&apos;.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><DownloadIcon size={20} /></div><h4>Portabilidade Total</h4><p>Exporte seus dados em CSV ou JSON a qualquer momento.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><LockIcon size={20} /></div><h4>Sem Rastreadores</h4><p>Não vendemos seus dados nem exibimos anúncios. Nosso foco é sua saúde.</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><ActivityIcon size={20} /></div><h4>Score de Adesão</h4><p>Acompanhe sua evolução com streaks e metas semanais de tomada.</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><SmartphoneIcon size={20} /></div><h4>Use em Qualquer Lugar</h4><p>Baixe o app nativo nas lojas ou acesse direto pelo navegador do seu computador.</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><ClockIcon size={20} /></div><h4>Protocolos Flexíveis</h4><p>Diário, semanal, personalizado ou desmame progressivo (titulação).</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><DownloadIcon size={20} /></div><h4>Portabilidade Total</h4><p>Exporte seus dados em CSV ou JSON a qualquer momento (lei LGPD).</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><LockIcon size={20} /></div><h4>Privacidade Total</h4><p>Seus dados são criptografados. Sem anúncios de terceiros ou venda de dados.</p></div>
         </div>
       </div>
     </section>

@@ -25,17 +25,15 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
           <div className="lp-hero__copy">
             <div className="lp-pill lp-pill--emerald">
               <ZapIcon size={16} />
-              <span>Gratuito para sempre • Sem Paywall</span>
+              <span>Gratuito para sempre • Sem Paywall em Saúde</span>
             </div>
 
             <h1>
-              Controle total da sua saúde, <span>no seu bolso.</span>
+              Nunca mais <span>esqueça</span> um remédio.
             </h1>
 
             <p>
-              Organize seus medicamentos com a base oficial da <b>ANVISA</b>, receba alertas
-              via <b>Telegram</b> e gere relatórios profissionais para seu médico. Tudo
-              privado, tudo gratuito.
+              O Dosiq lembra você de cada horário, prevê quando seu estoque vai acabar e funciona offline. Cadastre seus tratamentos com a base oficial da <b>ANVISA</b> e receba lembretes proativos. Tudo privado, gratuito e sem assinaturas.
             </p>
 
             <div className="lp-hero__cta">
@@ -59,12 +57,12 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
 
             <div className="lp-hero__proofs">
               <div className="lp-proof">
-                <DatabaseIcon className="lp-proof__icon lp-proof__icon--blue" />
-                <span>10.000+ Meds ANVISA</span>
+                <BellIcon className="lp-proof__icon lp-proof__icon--blue" size={18} />
+                <span>Lembretes Proativos</span>
               </div>
               <div className="lp-proof">
-                <LockIcon className="lp-proof__icon lp-proof__icon--green" />
-                <span>Código Aberto</span>
+                <PackageIcon className="lp-proof__icon lp-proof__icon--green" size={18} />
+                <span>Estoque Inteligente</span>
               </div>
             </div>
           </div>
@@ -77,7 +75,7 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
                     <div className="lp-avatar">M</div>
                     <div>
                       <p className="lp-caption">Adesão hoje</p>
-                      <p className="lp-app-header__score">92% • Streak: 12d</p>
+                      <p className="lp-app-header__score">91% • Excelente!</p>
                     </div>
                   </div>
                   <div className="lp-icon-circle">
