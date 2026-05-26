@@ -31,13 +31,15 @@ function readDismissed() {
  *   - O usuário dispensou o banner nos últimos 30 dias
  */
 export default function MobileAppBanner() {
-  const { isMobile, isStandalone } = useIsMobileWeb()
+  const { isMobile, isStandalone, isIOSSafari } = useIsMobileWeb()
 
   // States — inicializados com o valor persistido
   const [dismissed, setDismissed] = useState(readDismissed)
 
-  // Não renderizar fora das condições de exibição
-  if (!isMobile || isStandalone || dismissed) return null
+  // Não renderizar fora das condições de exibição.
+  // iOS Safari: suprimido — o Smart App Banner nativo (apple-itunes-app no
+  // index.html) já cobre o "abra no app" e evita banner duplicado.
+  if (!isMobile || isStandalone || isIOSSafari || dismissed) return null
 
   // Handlers
   function handleDismiss() {
