@@ -1,6 +1,6 @@
 import React from 'react'
 import LandingHero from './LandingHero'
-import { LandingSolucoes, LandingFuncionalidades, LandingPrivacidade } from './LandingSections'
+import { LandingSolucoes, LandingFuncionalidades, LandingPrivacidade, LandingApp } from './LandingSections'
 import { LogoMark, CircleCheckIcon } from './LandingIcons'
 import './LandingPrototype.css'
 
@@ -43,6 +43,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
 
           <LandingSolucoes />
           <LandingFuncionalidades />
+          <LandingApp />
           <LandingPrivacidade />
 
           <section className="lp-section">
@@ -59,9 +60,9 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <div className="lp-final-proof">
                     <div className="lp-final-proof__line">
                       <CircleCheckIcon size={16} />
-                      <span>PWA Compatível</span>
+                      <span>App nativo + PWA</span>
                     </div>
-                    <p>iOS, Android e Desktop</p>
+                    <p>App na App Store (iOS) · Android em breve · PWA no Desktop</p>
                   </div>
                 </div>
               </div>
