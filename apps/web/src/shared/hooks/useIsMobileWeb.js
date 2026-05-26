@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { isIOSSafari as detectIOSSafari } from '@shared/components/pwa/pwaUtils'
 
 /**
  * Detecta se o usuário está em um dispositivo móvel e se o app está rodando
@@ -35,16 +36,9 @@ export function useIsMobileWeb() {
     return window.matchMedia('(display-mode: standalone)').matches
   }, [])
 
-  const isIOSSafari = useMemo(() => {
-    // Guard SSR/testes
-    if (typeof navigator === 'undefined') return false
-    const ua = navigator.userAgent || ''
-    const isIOS = /iPhone|iPad|iPod/i.test(ua)
-    // Safari de verdade: tem "Safari" mas NÃO os marcadores de Chrome/Firefox/Edge
-    // no iOS (CriOS = Chrome iOS, FxiOS = Firefox iOS, EdgiOS = Edge iOS).
-    const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|mercury/i.test(ua)
-    return isIOS && isSafari
-  }, [])
+  // Fonte única de verdade — reusa pwaUtils.isIOSSafari (mesma detecção usada
+  // pelas instruções de PWA install), evitando lógica duplicada e divergente.
+  const isIOSSafari = useMemo(() => detectIOSSafari(), [])
 
   return { isMobile, isStandalone, isIOSSafari }
 }
