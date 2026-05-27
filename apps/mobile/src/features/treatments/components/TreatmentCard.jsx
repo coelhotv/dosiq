@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StatusBadge from '../../../shared/components/ui/StatusBadge'
 import { colors, spacing } from '../../../shared/styles/tokens'
-import { formatDatePtBR } from '@dosiq/core'
+import { formatDatePtBR, getProtocolDays } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -25,7 +25,7 @@ const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
  * }} props
  */
 export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo', endDate = null }) {
-  const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine, weekdays, days } = treatment
+  const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine } = treatment
 
   // Normalizar tabStatus; fallback defensivo para valores inválidos
   const resolvedStatus = VALID_TAB_STATUSES.includes(tabStatus) ? tabStatus : 'ativo'
@@ -54,7 +54,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
     }
     const label = map[freq] || freq
     if (freq === 'semanal' || freq === 'personalizado') {
-      const daysSource = weekdays || days || []
+      const daysSource = getProtocolDays(treatment)
       if (daysSource.length > 0) {
         const WEEKDAY_ABBREVIATIONS = {
           domingo: 'Dom',

@@ -8,6 +8,7 @@ import Modal from '@shared/components/ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
 
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { getProtocolDays } from '@utils/adherenceLogic'
 
 import './ProtocolCard.css'
 
@@ -130,7 +131,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
             {FREQUENCY_LABELS[protocol.frequency] || protocol.frequency}
             {(protocol.frequency === 'semanal' || protocol.frequency === 'personalizado') && (
               (() => {
-                const daysSource = protocol.weekdays || protocol.days || []
+                const daysSource = getProtocolDays(protocol)
                 return daysSource.length > 0 ? ` (${formatWeekdaysLabel(daysSource)})` : ''
               })()
             )}

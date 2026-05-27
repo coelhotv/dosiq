@@ -11,6 +11,23 @@ const WEEKDAY_INDEX_MAP = {
 };
 
 /**
+ * Obtém os dias ativos do protocolo de forma retrocompatível,
+ * tratando corretamente o fato de que arrays vazios '[]' em JS são truthy.
+ * @param {Object} protocol - O objeto do protocolo
+ * @returns {string[]} Array com os dias da semana ativos
+ */
+export function getProtocolDays(protocol) {
+  if (!protocol) return [];
+  if (Array.isArray(protocol.weekdays) && protocol.weekdays.length > 0) {
+    return protocol.weekdays;
+  }
+  if (Array.isArray(protocol.days) && protocol.days.length > 0) {
+    return protocol.days;
+  }
+  return [];
+}
+
+/**
  * Determina se um protocolo é ativo em um determinado dia da semana e data.
  * Puramente implementado no servidor para consistência de pushes, relatórios e bot.
  * 
@@ -31,7 +48,7 @@ export function isProtocolActiveOnWeekday(protocol, weekdayIndex, dateStr = getT
 
   // 2. Semanal
   if (['semanal', 'semanalmente', 'weekly'].includes(frequency)) {
-    const daysArray = protocol.weekdays || protocol.days;
+    const daysArray = getProtocolDays(protocol);
     if (!daysArray || !Array.isArray(daysArray)) return false;
     return daysArray.some(day => WEEKDAY_INDEX_MAP[day.toLowerCase()] === weekdayIndex);
   }

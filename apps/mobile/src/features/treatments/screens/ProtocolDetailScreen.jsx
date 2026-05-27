@@ -25,6 +25,7 @@ import {
   parseLocalDate,
   resolveTreatmentStatus,
   TREATMENT_STATUS,
+  getProtocolDays,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -268,7 +269,7 @@ export default function ProtocolDetailScreen() {
               <Text style={styles.detailLabel}>Dias da semana</Text>
               <View style={styles.weekdaysGrid}>
                 {VISUAL_ORDER.map(({ key, label }) => {
-                  const isSelected = (protocol.weekdays || protocol.days || []).includes(key)
+                  const isSelected = getProtocolDays(protocol).includes(key)
                   return (
                     <View
                       key={key}

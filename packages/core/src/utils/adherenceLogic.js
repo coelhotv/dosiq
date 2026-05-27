@@ -557,16 +557,34 @@ const WEEKLY_DAY_MAP = {
 }
 
 /**
+ * Obtém os dias ativos do protocolo de forma retrocompatível,
+ * tratando corretamente o fato de que arrays vazios '[]' em JS são truthy.
+ * @param {Object} protocol - O objeto do protocolo
+ * @returns {string[]} Array com os dias da semana ativos
+ */
+export function getProtocolDays(protocol) {
+  if (!protocol) return []
+  if (Array.isArray(protocol.weekdays) && protocol.weekdays.length > 0) {
+    return protocol.weekdays
+  }
+  if (Array.isArray(protocol.days) && protocol.days.length > 0) {
+    return protocol.days
+  }
+  return []
+}
+
+/**
  * Verifica se o protocolo semanal tem dose no dia da semana especificado.
  * @param {Object} protocol - Protocolo com propriedade days[]
  * @param {number} dayOfWeek - Dia da semana (0=Domingo, 6=Sábado)
  * @returns {boolean}
  */
 function _isWeeklyMatch(protocol, dayOfWeek) {
-  const daysArray = protocol.weekdays || protocol.days
+  const daysArray = getProtocolDays(protocol)
   if (!daysArray || !Array.isArray(daysArray)) return false
   return daysArray.some((day) => WEEKLY_DAY_MAP[day.toLowerCase()] === dayOfWeek)
 }
+
 
 /**
  * Verifica se protocolo "dia sim, dia não" tem dose na data alvo.

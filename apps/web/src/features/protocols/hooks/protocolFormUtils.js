@@ -1,4 +1,5 @@
 import { getTodayDateString } from '@schemas/protocolSchema'
+import { getProtocolDays } from '@utils/adherenceLogic'
 
 function _getMedicineId(protocol, initialValues, preselectedMedicine) {
   return protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || ''
@@ -73,7 +74,10 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
     active: _getActive(protocol, initialValues),
     start_date: _getStartDate(protocol, initialValues),
     end_date: _getEndDate(protocol, initialValues),
-    weekdays: protocol?.weekdays || protocol?.days || initialValues?.weekdays || [],
+    weekdays: (() => {
+      const days = getProtocolDays(protocol)
+      return days.length > 0 ? days : (initialValues?.weekdays || [])
+    })(),
   }
 }
 

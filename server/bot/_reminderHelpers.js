@@ -3,7 +3,7 @@ import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
 import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
-import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
+import { isProtocolActiveOnWeekday, getProtocolDays } from '../utils/protocolActiveHelper.js';
 // Formatting helpers removed — moved to Layer 2
 
 const logger = createLogger('ReminderHelpers');
@@ -304,9 +304,8 @@ async function _processUserStockAlert(userId, medicineId, stock, protocols, disp
     if (['diário', 'diariamente', 'daily'].includes(frequency)) {
       return sum + (intakesPerDay * dosage);
     } else if (['semanal', 'semanalmente', 'weekly'].includes(frequency)) {
-      const daysCount = Array.isArray(p.weekdays || p.days) && (p.weekdays || p.days).length > 0
-        ? (p.weekdays || p.days).length
-        : 1;
+      const daysSource = getProtocolDays(p);
+      const daysCount = daysSource.length > 0 ? daysSource.length : 1;
       return sum + ((intakesPerDay * dosage * daysCount) / 7);
     } else if (['dias_alternados', 'dia_sim_dia_nao', 'every_other_day', 'alternating'].includes(frequency)) {
       return sum + ((intakesPerDay * dosage) / 2);

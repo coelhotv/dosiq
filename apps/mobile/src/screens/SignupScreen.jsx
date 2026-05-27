@@ -108,7 +108,7 @@ export default function SignupScreen({ navigation }) {
             Não chegou em alguns minutos? Veja na pasta de spam. Se o link apresentar erro, a validação por código acima é o caminho mais seguro.
           </Text>
 
-          <Pressable style={[styles.successButton, { backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.navigate(ROUTES.ROUTES || ROUTES.LOGIN)}>
+          <Pressable style={[styles.successButton, { backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
             <Text style={[styles.buttonText, { color: colors.text.primary }]}>Voltar ao Login</Text>
           </Pressable>
         </ScrollView>

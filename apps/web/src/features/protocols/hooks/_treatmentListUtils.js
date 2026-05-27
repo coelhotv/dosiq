@@ -1,5 +1,5 @@
 import { getNow } from '@utils/dateUtils'
-import { resolveTreatmentStatus } from '@dosiq/core'
+import { resolveTreatmentStatus, getProtocolDays } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
 import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
 
@@ -148,7 +148,7 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
 
   let frequencyLabel = FREQUENCY_LABELS[protocol.frequency] || protocol.frequency
   if (protocol.frequency === 'semanal' || protocol.frequency === 'personalizado') {
-    const daysSource = protocol.weekdays || protocol.days || []
+    const daysSource = getProtocolDays(protocol)
     if (daysSource.length > 0) {
       frequencyLabel = `${frequencyLabel} (${formatWeekdaysLabel(daysSource)})`
     }

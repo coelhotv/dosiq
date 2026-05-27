@@ -8,7 +8,7 @@
  */
 
 import { parseLocalDate, formatLocalDate, isProtocolActiveOnDate, getSaoPauloTime, parseISO, getLastDayOfMonth } from '@utils/dateUtils'
-import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
+import { isDoseInToleranceWindow, getProtocolDays } from '@utils/adherenceLogic'
 
 /**
  * Status possíveis para um dia no calendário de doses.
@@ -58,7 +58,7 @@ const WEEK_DAY_MAP = {
  * @returns {boolean}
  */
 function _isWeeklyScheduleMatch(protocol, dayOfWeek) {
-  const daysArray = protocol.weekdays || protocol.days
+  const daysArray = getProtocolDays(protocol)
   if (!daysArray || !Array.isArray(daysArray)) return false
   return daysArray.some((day) => WEEK_DAY_MAP[day.toLowerCase()] === dayOfWeek)
 }
