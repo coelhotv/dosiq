@@ -34,11 +34,13 @@ const TOLERANCE_WINDOW_MINUTES = TOLERANCE_WINDOW_HOURS * 60
  */
 /**
  * Calcula a taxa de doses diárias de um protocolo conforme sua frequência
- * @param {string} frequency - Frequência do protocolo (daily, weekly, every_other_day, etc.)
- * @param {number} timesPerDay - Número de horários no time_schedule
+ * @param {Object} protocol - O objeto do protocolo
  * @returns {number} Taxa de doses por dia
  */
-function getDailyDoseRate(frequency, timesPerDay) {
+export function getDailyDoseRate(protocol) {
+  if (!protocol) return 0
+  const frequency = protocol.frequency || 'daily'
+  const timesPerDay = protocol.time_schedule?.length || 1
   switch (frequency.toLowerCase()) {
     case 'daily':
     case 'diariamente':
@@ -47,14 +49,17 @@ function getDailyDoseRate(frequency, timesPerDay) {
     case 'weekly':
     case 'semanal':
     case 'semanalmente':
-      return timesPerDay / 7
+    case 'personalizado': {
+      const days = getProtocolDays(protocol)
+      const numDays = days.length
+      return timesPerDay * (numDays > 0 ? numDays : 1) / 7
+    }
     case 'every_other_day':
     case 'dia_sim_dia_nao':
     case 'dia sim, dia não':
     case 'dias_alternados':
       return timesPerDay / 2
     case 'quando_necessário':
-    case 'personalizado':
       return 0
     default:
       return timesPerDay
@@ -99,9 +104,7 @@ export function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
-    const timesPerDay = protocol.time_schedule?.length || 1
-    const frequency = protocol.frequency || 'daily'
-    const dailyDoses = getDailyDoseRate(frequency, timesPerDay)
+    const dailyDoses = getDailyDoseRate(protocol)
     const effectiveDays = getEffectiveDays(protocol, periodStart, periodEnd)
     return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
@@ -557,15 +560,34 @@ const WEEKLY_DAY_MAP = {
 }
 
 /**
+ * Obtém os dias ativos do protocolo de forma retrocompatível,
+ * tratando corretamente o fato de que arrays vazios '[]' em JS são truthy.
+ * @param {Object} protocol - O objeto do protocolo
+ * @returns {string[]} Array com os dias da semana ativos
+ */
+export function getProtocolDays(protocol) {
+  if (!protocol) return []
+  if (Array.isArray(protocol.weekdays) && protocol.weekdays.length > 0) {
+    return protocol.weekdays
+  }
+  if (Array.isArray(protocol.days) && protocol.days.length > 0) {
+    return protocol.days
+  }
+  return []
+}
+
+/**
  * Verifica se o protocolo semanal tem dose no dia da semana especificado.
  * @param {Object} protocol - Protocolo com propriedade days[]
  * @param {number} dayOfWeek - Dia da semana (0=Domingo, 6=Sábado)
  * @returns {boolean}
  */
 function _isWeeklyMatch(protocol, dayOfWeek) {
-  if (!protocol.days || !Array.isArray(protocol.days)) return false
-  return protocol.days.some((day) => WEEKLY_DAY_MAP[day.toLowerCase()] === dayOfWeek)
+  const daysArray = getProtocolDays(protocol)
+  if (!daysArray || !Array.isArray(daysArray)) return false
+  return daysArray.some((day) => WEEKLY_DAY_MAP[day.toLowerCase()] === dayOfWeek)
 }
+
 
 /**
  * Verifica se protocolo "dia sim, dia não" tem dose na data alvo.

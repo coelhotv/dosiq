@@ -186,3 +186,63 @@
 
 /* Os demais estilos (form h3, form-group, form-row, form-actions, error-*,
    checkbox-label, required) são herdados de components.redesign.css via Sprint 11.2. */
+
+/* ============================================
+   WEEKDAYS SELECTOR (SANTUÁRIO TERAPÊUTICO)
+   ============================================ */
+.weekday-selector-pwa {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.weekday-btn {
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  max-width: 44px;
+  max-height: 44px;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid var(--color-outline-ghost, var(--border-color, #e2e8f0));
+  background: var(--color-surface-container-low, var(--bg-secondary, #ffffff));
+  color: var(--color-on-surface, var(--text-primary, #1e293b));
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast, 150ms) ease-out;
+  padding: 0;
+}
+
+.weekday-btn:hover {
+  background: var(--color-surface-container-high, #f1f5f9);
+  border-color: var(--color-primary-light, var(--color-primary, #10b981));
+}
+
+.weekday-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #10b981);
+  outline-offset: 2px;
+}
+
+.weekday-btn.selected {
+  background: var(--color-primary, #10b981) !important;
+  color: #ffffff !important;
+  border-color: var(--color-primary, #10b981) !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+@media (max-width: 380px) {
+  .weekday-selector-pwa {
+    gap: 0.25rem;
+  }
+  
+  .weekday-btn {
+    font-size: 0.75rem;
+  }
+}
+

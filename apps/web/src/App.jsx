@@ -40,12 +40,20 @@ function AppInner() {
       .catch(() => { setSession(null); setIsLoading(false) })
 
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      const isRecoveryFlow = localStorage.getItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
+        localStorage.removeItem('@dosiq/recovery-flow')
         setIsPasswordRecovery(true)
         setSession(session?.user ?? null)
+
+        // Limpar o hash da URL para evitar re-gatilhos do fluxo de recuperação em reloads/signouts
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, null, window.location.pathname + window.location.search)
+        }
         return
       }
       if (event === 'SIGNED_OUT') {
+        setIsPasswordRecovery(false)
         // Verificar race condition (PWA + aba concorrente) antes de deslogar
         const { data: { session: latestSession } } = await supabase.auth.getSession()
         setSession(latestSession?.user ?? null)
@@ -116,13 +124,13 @@ function AppInner() {
 
           <OfflineBanner />
 
-          {isAuthenticated && (
+          {isAuthenticated && !isPasswordRecovery && (
             <Suspense fallback={null}>
               <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
           )}
 
-          {isAuthenticated && (
+          {isAuthenticated && !isPasswordRecovery && (
             <AppAuthOverlays
               isChatOpen={isChatOpen}
               setIsChatOpen={setIsChatOpen}

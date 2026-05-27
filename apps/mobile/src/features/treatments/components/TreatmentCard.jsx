@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StatusBadge from '../../../shared/components/ui/StatusBadge'
 import { colors, spacing } from '../../../shared/styles/tokens'
-import { formatDatePtBR } from '@dosiq/core'
+import { formatDatePtBR, getProtocolDays } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -48,11 +48,32 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
     const map = {
       'diário': 'Todos os dias',
       'dias_alternados': 'Dias alternados',
-      'semanal': 'Uma vez por semana',
+      'semanal': 'Semanal',
       'quando_necessário': 'Quando necessário',
       'personalizado': 'Personalizado'
     }
-    return map[freq] || freq
+    const label = map[freq] || freq
+    if (freq === 'semanal' || freq === 'personalizado') {
+      const daysSource = getProtocolDays(treatment)
+      if (daysSource.length > 0) {
+        const WEEKDAY_ABBREVIATIONS = {
+          domingo: 'Dom',
+          segunda: 'Seg',
+          terça: 'Ter',
+          quarta: 'Qua',
+          quinta: 'Qui',
+          sexta: 'Sex',
+          sábado: 'Sáb',
+        }
+        const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+        const sorted = [...daysSource].sort(
+          (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
+        )
+        const daysText = sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
+        return `${label} (${daysText})`
+      }
+    }
+    return label
   }
 
   // Badge condicional de status (null se ativo)

@@ -48,6 +48,8 @@ export {
   calculateDosesByDate,
   evaluateDoseTimelineState,
   isProtocolActiveOnDate,
+  getProtocolDays,
+  getDailyDoseRate,
 } from './adherenceLogic.js'
 
 // Form utilities

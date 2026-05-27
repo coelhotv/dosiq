@@ -1,4 +1,5 @@
 import { getTodayDateString } from '@schemas/protocolSchema'
+import { getProtocolDays } from '@utils/adherenceLogic'
 
 function _getMedicineId(protocol, initialValues, preselectedMedicine) {
   return protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || ''
@@ -73,6 +74,10 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
     active: _getActive(protocol, initialValues),
     start_date: _getStartDate(protocol, initialValues),
     end_date: _getEndDate(protocol, initialValues),
+    weekdays: (() => {
+      const days = getProtocolDays(protocol)
+      return days.length > 0 ? days : (initialValues?.weekdays || [])
+    })(),
   }
 }
 
@@ -129,6 +134,12 @@ export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
   _validateDosagePerIntake(formData.dosage_per_intake, newErrors)
   _validateTargetDosage(formData.target_dosage, newErrors)
 
+  if (formData.frequency === 'semanal' || formData.frequency === 'personalizado') {
+    if (!formData.weekdays || !Array.isArray(formData.weekdays) || formData.weekdays.length === 0) {
+      newErrors.weekdays = 'Selecione pelo menos um dia da semana'
+    }
+  }
+
   setErrors(newErrors)
   _triggerShakeAnimation(newErrors, setShakeFields)
 
@@ -152,6 +163,7 @@ export const prepareDataToSave = (formData, enableTitration) => {
     active: formData.active,
     start_date: formData.start_date || null,
     end_date: formData.end_date || null,
+    weekdays: (formData.frequency === 'semanal' || formData.frequency === 'personalizado') ? formData.weekdays : [],
   }
 }
 

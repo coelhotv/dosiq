@@ -3,6 +3,7 @@ import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification } from '../services/notificationDeduplicator.js';
 import { getCurrentTimeInTimezone, getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getNow } from '../utils/dateUtils.js';
 import { getActiveProtocols } from '../services/protocolCache.js';
+import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 
 const logger = createLogger('AdherenceHelpers');
 const ADHERENCE_REPORT_TIME = '23:00';
@@ -50,12 +51,20 @@ async function _processUserAdherence(user, protocolsByUser, dispatcher, correlat
     const protocols = protocolsByUser[userId] || [];
     if (protocols.length === 0) return;
 
-    const expectedDoses = protocols.reduce((sum, p) => sum + (p.time_schedule?.length || 0), 0);
+    const timezone = user.timezone || 'America/Sao_Paulo';
+    const { weekday: todayWeekday } = getCurrentDatePartsInTimezone(timezone);
+    const yesterdayWeekday = (todayWeekday + 6) % 7;
+
+    const expectedDoses = protocols.reduce((sum, p) => {
+      if (!isProtocolActiveOnWeekday(p, todayWeekday, dateToday)) return sum;
+      return sum + (p.time_schedule?.length || 0);
+    }, 0);
     const takenDoses = todayLogs.length;
     const percentage = expectedDoses > 0 ? Math.min(100, Math.round((takenDoses / expectedDoses) * 100)) : 0;
     
     const expectedYesterday = protocols.reduce((sum, p) => {
       if (p.start_date && p.start_date > startOfYesterday) return sum;
+      if (!isProtocolActiveOnWeekday(p, yesterdayWeekday, startOfYesterday)) return sum;
       return sum + (p.time_schedule?.length || 0);
     }, 0);
     const percentageYesterday = expectedYesterday > 0 ? Math.min(100, Math.round((yesterdayLogs.length / expectedYesterday) * 100)) : 0;

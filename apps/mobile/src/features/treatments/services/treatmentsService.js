@@ -32,6 +32,7 @@ export async function getAllTreatments(userId) {
         active,
         start_date,
         end_date,
+        weekdays,
         treatment_plan:treatment_plan_id (
           id,
           name,

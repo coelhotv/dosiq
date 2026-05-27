@@ -292,6 +292,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text.primary,
     padding: 0,
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   errorText: {
     fontSize: 12,
