@@ -17,7 +17,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
       const { data, error } = await supabase
         .from('protocols')
         .select(`
-          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, frequency, weekdays, days, start_date,
+          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, frequency, weekdays, start_date,
           medicine:medicines(name, dosage_unit, dosage_per_pill),
           treatment_plan:treatment_plans(id, name)
         `)
@@ -368,7 +368,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
 
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('user_id, medicine_id, time_schedule, dosage_per_intake, frequency, weekdays, days')
+      .select('user_id, medicine_id, time_schedule, dosage_per_intake, frequency, weekdays')
       .eq('active', true)
       .in('user_id', userIds);
 
