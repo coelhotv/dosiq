@@ -23,6 +23,7 @@
     "validate:full": "node ../../scripts/run-tests-with-timeout.mjs 900 npx vitest run --config vitest.ci.config.js && npm run build"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "vite-plugin-pwa": "1.2.0",
     "web-push": "^3.6.7",
     "workbox-core": "7.4.0",
