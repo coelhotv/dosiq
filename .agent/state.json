@@ -4,12 +4,15 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "goal": "FAB de Registro Rápido e Modal de Lote na Tela Hoje",
-    "goal_type": "feature"
+    "goal": "Fase 1 PR-F1.1 — Timezone core (tz-aware dateUtils + user_settings.timezone)",
+    "goal_type": "refactor",
+    "linked_adrs": ["ADR-049", "ADR-048"],
+    "linked_contracts": ["CON-022", "CON-018", "CON-015"],
+    "spec": "plans/dose_instances_refactor/EXEC_SPECS_PHASE_1_2.md"
   },
   "memory": {
     "last_distillation": "2026-05-23T18:20:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 9,
     "rules_count": 191,
     "anti_patterns_count": 180,
     "decisions_count": 48,
