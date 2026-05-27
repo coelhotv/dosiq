@@ -29,7 +29,7 @@ import DoseRegisterModal from '@dose/components/DoseRegisterModal'
 import { lightTap } from '@shared/utils/haptics'
 import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
-import { colors, spacing, typography, borderRadius, shadows } from '../../../shared/styles/tokens'
+import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
 // Habilitar animações no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

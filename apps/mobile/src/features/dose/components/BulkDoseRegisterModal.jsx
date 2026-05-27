@@ -14,13 +14,14 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp } from 'lucide-react-native'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
 import { getNow, cloneDate } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
-import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 // Formata data e hora para exibição amigável
 function formatDateTime(d) {
@@ -147,33 +148,28 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
             )
           })}
           {flatList.length > 0 && (
-            (() => {
-              const isAvulsosCollapsed = !!collapsedPlans['avulsos']
-              return (
-                <View key="flat-avulsos" style={styles.planSection}>
-                  <Pressable
-                    style={styles.planHeader}
-                    onPress={() => togglePlanCollapse('avulsos')}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${isAvulsosCollapsed ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
-                  >
-                    <View style={styles.planHeaderLeft}>
-                      <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
-                      <Text style={styles.planTitle}>Outros / Avulsos</Text>
-                    </View>
-                    {isAvulsosCollapsed
-                      ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
-                      : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
-                    }
-                  </Pressable>
-                  {!isAvulsosCollapsed && (
-                    <View style={styles.planItems}>
-                      {flatList.map(renderItem)}
-                    </View>
-                  )}
+            <View key="flat-avulsos" style={styles.planSection}>
+              <Pressable
+                style={styles.planHeader}
+                onPress={() => togglePlanCollapse('avulsos')}
+                accessibilityRole="button"
+                accessibilityLabel={`${!!collapsedPlans['avulsos'] ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
+              >
+                <View style={styles.planHeaderLeft}>
+                  <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
+                  <Text style={styles.planTitle}>Outros / Avulsos</Text>
                 </View>
-              )
-            })()
+                {!!collapsedPlans['avulsos']
+                  ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+                  : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
+                }
+              </Pressable>
+              {!collapsedPlans['avulsos'] && (
+                <View style={styles.planItems}>
+                  {flatList.map(renderItem)}
+                </View>
+              )}
+            </View>
           )}
         </>
       ) : (
@@ -330,16 +326,19 @@ export default function BulkDoseRegisterModal({
 
     const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : getNow().toISOString()
 
-    const logsData = selectedIds.map(id => {
-      const item = expandedDoseItems.find(item => item.id === id)
-      const p = item.protocol
-      return {
-        protocol_id: p.id,
-        medicine_id: p.medicine?.id ?? p.medicine_id,
-        taken_at: finalTakenAt,
-        quantity_taken: p.dosage_per_intake ?? 1,
-      }
-    })
+    const logsData = selectedIds
+      .map(id => {
+        const item = expandedDoseItems.find(item => item.id === id)
+        if (!item) return null
+        const p = item.protocol
+        return {
+          protocol_id: p.id,
+          medicine_id: p.medicine?.id ?? p.medicine_id,
+          taken_at: finalTakenAt,
+          quantity_taken: p.dosage_per_intake ?? 1,
+        }
+      })
+      .filter(Boolean)
 
     const result = await registerDoseMany(logsData)
     setLoading(false)
@@ -495,8 +494,6 @@ export default function BulkDoseRegisterModal({
   )
 }
 
-// Wrapper para evitar crash de SafeAreaView
-import { SafeAreaView } from 'react-native-safe-area-context'
 
 const styles = StyleSheet.create({
   overlay: {

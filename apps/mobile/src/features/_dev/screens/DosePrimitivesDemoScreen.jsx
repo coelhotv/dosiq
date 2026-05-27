@@ -80,7 +80,7 @@ export default function DosePrimitivesDemoScreen({ navigation }) {
       ...prev,
       {
         id: String(Date.now()),
-        time: getNow().toLocaleTimeString('pt-BR'),
+        time: `${String(getNow().getHours()).padStart(2, '0')}:${String(getNow().getMinutes()).padStart(2, '0')}`,
         message: `Registradas ${successCount} doses com sucesso!`,
       },
     ])

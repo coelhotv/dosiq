@@ -9,6 +9,11 @@ jest.mock('../../../treatments/services/treatmentsService', () => ({
   getActiveTreatments: jest.fn(),
 }))
 
+jest.mock('@dosiq/core', () => ({
+  ...jest.requireActual('@dosiq/core'),
+  getTodayLocal: () => '2026-05-27',
+}))
+
 const MOCK_TREATMENTS = [
   {
     id: 't1',
