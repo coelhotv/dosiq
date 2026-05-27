@@ -34,6 +34,7 @@
 - **[AP-130]** SyntaxError: The requested module does not provide an export named 'X' (ESM) -> [`anti-patterns/infra_and_deploy/AP-130.md`](./anti-patterns/infra_and_deploy/AP-130.md)
 - **[AP-SL03]** Listeners específicos (com patterns/sessão) capturam algumas mensagens, outras c... -> [`anti-patterns/infra_and_deploy/AP-SL03.md`](./anti-patterns/infra_and_deploy/AP-SL03.md)
 - **[AP-140]** Duplicate Imports in ESM Node.js -> [`anti-patterns/infra_and_deploy/AP-140.md`](./anti-patterns/infra_and_deploy/AP-140.md)
+- **[AP-179]** Entitlement novo no `app.config.js` (ex.: `associatedDomains`) → `expo run:ios` local falha (erro 65) porque o provisioning profile cacheado é anterior à capability. Habilitar no App ID não retroage ao profile. Fix: `rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/` + regerar (Xcode toggle auto-signing). EAS registra via API Apple automaticamente -> [`anti-patterns/infra_and_deploy/AP-179.md`](./anti-patterns/infra_and_deploy/AP-179.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[AP-173]** `signOut()` escopo global (default) trava o logout (iOS sim / Workbox PWA) — usar `signOut({ scope: 'local' })` + cleanup local -> [`anti-patterns/mobile_and_platform/AP-173.md`](./anti-patterns/mobile_and_platform/AP-173.md)

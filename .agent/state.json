@@ -11,7 +11,7 @@
     "last_distillation": "2026-05-23T18:20:00Z",
     "journal_entries_since_distillation": 6,
     "rules_count": 191,
-    "anti_patterns_count": 179,
+    "anti_patterns_count": 180,
     "decisions_count": 48,
     "contracts_count": 20,
     "distillation_due": false
@@ -21,6 +21,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-05-26T19:40:00Z"
+    "index_loaded_at": "2026-05-27T00:00:00Z"
   }
 }
