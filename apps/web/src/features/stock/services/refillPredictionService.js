@@ -1,7 +1,6 @@
 // src/features/stock/services/refillPredictionService.js
 
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
-import { calculateExpectedDoses } from '@utils/adherenceLogic'
 
 /**
  * Calcula previsao de reposicao baseada em consumo REAL (logs de doses).
