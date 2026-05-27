@@ -84,14 +84,24 @@ export function useStock() {
   })
 
   const dataRef = useRef(null)
+  const lastFetchedRef = useRef(0)
 
-  const loadStock = useCallback(async (isRefreshing = false) => {
+  const loadStock = useCallback(async (isRefreshing = false, bypassThrottle = false) => {
+    const now = Date.now()
+    const isWithinThrottle = now - lastFetchedRef.current < 10000
+    if (!bypassThrottle && isWithinThrottle && dataRef.current) {
+      debugLog('useStock', 'Throttled focus/mount refresh: skip network fetch, using memory.')
+      setState(prev => ({ ...prev, loading: false, refreshing: false }))
+      return
+    }
+
     if (isRefreshing) setState(prev => ({ ...prev, refreshing: true, error: null }))
     else setState(prev => ({ ...prev, loading: true, error: null }))
     try {
       // Guard: garante sessão antes de buscar (lança "Sessão expirada" se deslogado).
       await _resolveUser()
       await _fetchAndPersistStock(setState, dataRef)
+      lastFetchedRef.current = Date.now()
     } catch (err) {
       if (__DEV__) console.warn('[useStock] Fetch failed, checking cache:', err.message)
       try {
@@ -141,7 +151,7 @@ export function useStock() {
 
   // refresh estável (useCallback) — arrow inline no useMemo recriava a função a
   // cada setState, causando loop em consumidores com useFocusEffect([refresh]).
-  const refresh = useCallback(() => loadStock(true), [loadStock])
+  const refresh = useCallback((bypassThrottle = true) => loadStock(true, bypassThrottle), [loadStock])
 
   const result = useMemo(() => ({
     ...state,

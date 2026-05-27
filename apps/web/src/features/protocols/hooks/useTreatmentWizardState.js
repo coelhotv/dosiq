@@ -66,7 +66,12 @@ export function useTreatmentWizardState({
   )
 
   const isMedicineValid = med.medicineMode === 'existing' ? !!med.selectedExistingMedicine : med.medicineData.name.length >= 2 && med.medicineData.dosage_per_pill > 0
-  const isProtocolValid = prot.protocolData.time_schedule.length > 0 && prot.protocolData.dosage_per_intake > 0 && prot.protocolData.dosage_per_intake <= 100
+  const isProtocolValid =
+    prot.protocolData.time_schedule.length > 0 &&
+    prot.protocolData.dosage_per_intake > 0 &&
+    prot.protocolData.dosage_per_intake <= 100 &&
+    (!['semanal', 'personalizado'].includes(prot.protocolData.frequency) ||
+      (Array.isArray(prot.protocolData.weekdays) && prot.protocolData.weekdays.length > 0))
 
   const resetWizard = useCallback(() => {
     nav.setStep(1)
@@ -86,6 +91,7 @@ export function useTreatmentWizardState({
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
       start_date: formatLocalDate(getNow()),
+      weekdays: [],
     })
     stock.setStockData({
       quantity: '',

@@ -38,6 +38,7 @@ async function resolveProtocol(step, skipStock, medicine, data, planId) {
       dosage_per_intake: Number(data.dosage_per_intake),
       start_date: data.start_date,
       treatment_plan_id: planId,
+      weekdays: data.weekdays || [],
     })
   }
   return null

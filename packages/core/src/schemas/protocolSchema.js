@@ -151,6 +151,12 @@ export const protocolSchema = z.object({
     .nullable()
     .optional()
     .describe('Data de término do protocolo (NULL se ativo)'),
+
+  weekdays: z
+    .array(z.enum(WEEKDAYS))
+    .max(7, 'Máximo de 7 dias da semana')
+    .optional()
+    .default([]),
 })
 
 /**
@@ -196,6 +202,19 @@ export const protocolCreateSchema = protocolSchema
     {
       message: 'Data de término deve ser maior ou igual à data de início',
       path: ['end_date'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Se a frequência for semanal ou personalizada, deve selecionar pelo menos um dia
+      if (data.frequency === 'semanal' || data.frequency === 'personalizado') {
+        return Array.isArray(data.weekdays) && data.weekdays.length > 0
+      }
+      return true
+    },
+    {
+      message: 'Selecione pelo menos um dia da semana para esta frequência',
+      path: ['weekdays'],
     }
   )
 

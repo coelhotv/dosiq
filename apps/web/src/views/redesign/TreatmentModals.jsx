@@ -7,7 +7,7 @@ import ProtocolForm from '@protocols/components/ProtocolForm'
 import MedicineForm from '@medications/components/MedicineForm'
 import TreatmentPlanForm from '@protocols/components/TreatmentPlanForm'
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
-import { medicineService, treatmentPlanService, protocolService } from '@shared/services'
+import { cachedMedicineService as medicineService, cachedTreatmentPlanService as treatmentPlanService, cachedProtocolService as protocolService } from '@shared/services'
 
 export default function TreatmentModals({
   state,

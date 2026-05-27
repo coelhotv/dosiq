@@ -81,6 +81,7 @@ export function useWizardProtocol() {
     time_schedule: ['08:00'],
     dosage_per_intake: 1,
     start_date: formatLocalDate(getNow()),
+    weekdays: [],
   })
 
   const updateProtocol = useCallback((field, value) => {

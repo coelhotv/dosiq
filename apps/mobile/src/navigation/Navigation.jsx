@@ -69,7 +69,9 @@ export default function Navigation() {
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      const isRecoveryFlow = await AsyncStorage.getItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
+        await AsyncStorage.removeItem('@dosiq/recovery-flow')
         setIsPasswordRecovery(true)
         setSession(s ?? null)
         return
