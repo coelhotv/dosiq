@@ -1,6 +1,18 @@
 import Button from '@shared/components/ui/Button'
 import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
 
+const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
+
+const VISUAL_ORDER = [
+  { key: 'domingo', label: 'D' },
+  { key: 'segunda', label: 'S' },
+  { key: 'terça', label: 'T' },
+  { key: 'quarta', label: 'Q' },
+  { key: 'quinta', label: 'Q' },
+  { key: 'sexta', label: 'S' },
+  { key: 'sábado', label: 'S' },
+]
+
 /** Renderiza o seletor de plano de tratamento (nenhum, existente ou novo). */
 function PlanSelector({ availablePlans, planMode, setPlanMode, selectedPlanId, setSelectedPlanId, newPlanName, setNewPlanName, newPlanEmoji, setNewPlanEmoji }) {
   return (
@@ -72,6 +84,16 @@ export default function TreatmentWizardStep2({
   handleComplete,
   isProtocolValid,
 }) {
+  const handleWeekdayToggle = (day) => {
+    const currentWeekdays = protocolData.weekdays || []
+    const isSelected = currentWeekdays.includes(day)
+    const next = isSelected
+      ? currentWeekdays.filter((d) => d !== day)
+      : [...currentWeekdays, day]
+
+    updateProtocol('weekdays', next)
+  }
+
   return (
     <div className="wizard__step">
       <h3 className="wizard__title">Como Tomar</h3>
@@ -90,6 +112,29 @@ export default function TreatmentWizardStep2({
           ))}
         </select>
       </label>
+
+      {REQUIRES_WEEKDAYS.has(protocolData.frequency) && (
+        <div className="wizard__label">
+          Dias da Semana *
+          <div className="weekday-selector-pwa">
+            {VISUAL_ORDER.map(({ key, label }) => {
+              const isSelected = (protocolData.weekdays || []).includes(key)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`weekday-btn ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleWeekdayToggle(key)}
+                  aria-pressed={isSelected}
+                  title={key.charAt(0).toUpperCase() + key.slice(1)}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="wizard__label">
         Horários

@@ -69,7 +69,9 @@ export default function Navigation() {
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      const isRecoveryFlow = await AsyncStorage.getItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
+        await AsyncStorage.removeItem('@dosiq/recovery-flow')
         setIsPasswordRecovery(true)
         setSession(s ?? null)
         return
@@ -112,12 +114,17 @@ export default function Navigation() {
       // AP-139: Object.fromEntries(URLSearchParams) quebra no Hermes — usar .get()
       const queryString = url.split('?')[1]?.split('#')[0]
       if (queryString) {
-        const code = new URLSearchParams(queryString).get('code')
+        const sp = new URLSearchParams(queryString)
+        const code = sp.get('code')
+        const type = sp.get('type')
         if (code) {
           try {
             const { error } = await supabase.auth.exchangeCodeForSession(code)
-            if (error) debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
-            else setIsPasswordRecovery(true) // dispara SIGNED_IN, não PASSWORD_RECOVERY
+            if (error) {
+              debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
+            } else if (type === 'recovery') {
+              setIsPasswordRecovery(true) // Apenas desvia para redefinir senha se o tipo for recovery
+            }
           } catch (e) {
             debugLog('Navigation', 'Exceção em exchangeCodeForSession', e?.message)
           }

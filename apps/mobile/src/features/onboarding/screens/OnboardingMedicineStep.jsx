@@ -3,7 +3,7 @@
 // (PO-8 — orquestra, não recria). Mock: mock-onboarding-passo2.
 
 import { useState, useCallback, useMemo } from 'react'
-import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { Info } from 'lucide-react-native'
@@ -104,6 +104,15 @@ export default function OnboardingMedicineStep() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.brandmark}>
+            <Image
+              source={require('../../../../assets/icon.png')}
+              style={styles.brandIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.brandText}>dosiq</Text>
+          </View>
+
           <Text style={styles.title}>Seu primeiro remédio</Text>
           <Text style={styles.subtitle}>
             Comece pelo remédio que você mais lembra. Pode mudar depois.
@@ -215,5 +224,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.primary[700],
     lineHeight: 18,
+  },
+  brandmark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[2],
+    alignSelf: 'center',
+  },
+  brandIcon: {
+    width: 28,
+    height: 28,
+  },
+  brandText: {
+    fontSize: 20,
+    fontFamily: typography.fontFamily.brand || 'System',
+    color: colors.text.brand || colors.brand.primary,
+    marginLeft: spacing[1],
+    fontWeight: '700',
   },
 })

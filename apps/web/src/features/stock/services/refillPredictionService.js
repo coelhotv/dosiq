@@ -1,7 +1,6 @@
 // src/features/stock/services/refillPredictionService.js
 
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
-import { calculateExpectedDoses } from '@utils/adherenceLogic'
 
 /**
  * Calcula previsao de reposicao baseada em consumo REAL (logs de doses).
@@ -42,16 +41,14 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
     isRealData = true
     confidence = daysWithData >= 21 ? 'high' : 'medium'
   } else {
-    // Fallback: consumo teorico baseado no protocolo
-    // Usa calculateExpectedDoses que considera frequencia corretamente (getDailyDoseRate)
+    // Fallback: consumo teórico baseado no dia de tomada ativo (pills/dia ativo)
     const activeProtocols = protocols.filter((p) => p.active === true)
-    const expectedDoses =
-      activeProtocols.length > 0
-        ? calculateExpectedDoses(activeProtocols, 1) // 1 dia, retorna numero de doses
-        : 0
-    // Multiplicar por dosage_per_intake para obter consumo em comprimidos (não apenas doses)
-    const dosagePerIntake = activeProtocols[0]?.dosage_per_intake || 1
-    dailyConsumption = expectedDoses * dosagePerIntake
+    const activeIntakePerDay = activeProtocols.reduce((sum, p) => {
+      const times = p.time_schedule?.length || 1
+      const dosage = p.dosage_per_intake || 1
+      return sum + times * dosage
+    }, 0)
+    dailyConsumption = activeIntakePerDay
     isRealData = false
     confidence = 'low'
   }

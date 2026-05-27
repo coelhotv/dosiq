@@ -124,4 +124,14 @@ export const updatePassword = async (newPassword) => {
   return data
 }
 
+export const verifyOtp = async (email, token, type = 'signup') => {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: token.trim(),
+    type,
+  })
+  if (error) throw error
+  return data
+}
+
 export const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001'

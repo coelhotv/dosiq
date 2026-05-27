@@ -2,7 +2,7 @@
  * useTreatmentsState — Hook de lógica para a view de tratamentos.
  */
 import { useState, useEffect } from 'react'
-import { medicineService, treatmentPlanService, protocolService } from '@shared/services'
+import { cachedMedicineService as medicineService, cachedTreatmentPlanService as treatmentPlanService, cachedProtocolService as protocolService } from '@shared/services'
 import { useTreatmentList } from '@protocols/hooks/useTreatmentList'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'

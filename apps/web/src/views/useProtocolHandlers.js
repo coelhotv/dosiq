@@ -2,7 +2,7 @@
  * useProtocolHandlers — Handlers de CRUD para a view Protocols.
  */
 import { useCallback } from 'react'
-import { protocolService, treatmentPlanService } from '@shared/services'
+import { cachedProtocolService as protocolService, cachedTreatmentPlanService as treatmentPlanService } from '@shared/services'
 
 /** Cria protocolo ou atualiza, exibindo feedback e navegando ao estoque se novo. */
 async function saveProtocol({ editingProtocol, protocolData, showSuccess, onNavigateToStock }) {
