@@ -34,11 +34,13 @@ const TOLERANCE_WINDOW_MINUTES = TOLERANCE_WINDOW_HOURS * 60
  */
 /**
  * Calcula a taxa de doses diárias de um protocolo conforme sua frequência
- * @param {string} frequency - Frequência do protocolo (daily, weekly, every_other_day, etc.)
- * @param {number} timesPerDay - Número de horários no time_schedule
+ * @param {Object} protocol - O objeto do protocolo
  * @returns {number} Taxa de doses por dia
  */
-function getDailyDoseRate(frequency, timesPerDay) {
+export function getDailyDoseRate(protocol) {
+  if (!protocol) return 0
+  const frequency = protocol.frequency || 'daily'
+  const timesPerDay = protocol.time_schedule?.length || 1
   switch (frequency.toLowerCase()) {
     case 'daily':
     case 'diariamente':
@@ -47,14 +49,17 @@ function getDailyDoseRate(frequency, timesPerDay) {
     case 'weekly':
     case 'semanal':
     case 'semanalmente':
-      return timesPerDay / 7
+    case 'personalizado': {
+      const days = getProtocolDays(protocol)
+      const numDays = days.length
+      return timesPerDay * (numDays > 0 ? numDays : 1) / 7
+    }
     case 'every_other_day':
     case 'dia_sim_dia_nao':
     case 'dia sim, dia não':
     case 'dias_alternados':
       return timesPerDay / 2
     case 'quando_necessário':
-    case 'personalizado':
       return 0
     default:
       return timesPerDay
@@ -99,9 +104,7 @@ export function calculateExpectedDoses(protocols, days, endDate = getNow()) {
   periodEnd.setHours(23, 59, 59, 999)
 
   return protocols.reduce((total, protocol) => {
-    const timesPerDay = protocol.time_schedule?.length || 1
-    const frequency = protocol.frequency || 'daily'
-    const dailyDoses = getDailyDoseRate(frequency, timesPerDay)
+    const dailyDoses = getDailyDoseRate(protocol)
     const effectiveDays = getEffectiveDays(protocol, periodStart, periodEnd)
     return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
@@ -348,9 +351,9 @@ export function calculateDailyIntake(medicineId, protocols) {
   return protocols
     .filter((p) => p.medicine_id === medicineId && p.active)
     .reduce((total, p) => {
-      const dosesPerDay = p.time_schedule?.length || 1
+      const dailyDoses = getDailyDoseRate(p)
       const dosage = p.dosage_per_intake || 1
-      return total + dosesPerDay * dosage
+      return total + dailyDoses * dosage
     }, 0)
 }
 
