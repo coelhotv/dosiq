@@ -14,6 +14,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from '@navigation/routes'
 import { completeOnboarding } from '@profile/services/profileService'
 import { OnboardingContext } from './OnboardingContext'
+import OnboardingWelcomeStep from './screens/OnboardingWelcomeStep'
 import OnboardingMedicineStep from './screens/OnboardingMedicineStep'
 import OnboardingTreatmentStep from './screens/OnboardingTreatmentStep'
 
@@ -22,6 +23,8 @@ const Stack = createStackNavigator()
 export default function OnboardingNavigator({ onComplete }) {
   // Medicamento criado no passo 1, consumido pelo passo 2.
   const [medicine, setMedicine] = useState(null)
+  // Tratamento em configuração no passo 3.
+  const [treatment, setTreatment] = useState(null)
 
   // Concluir OU pular: marca onboarding_completed e entrega o app. Mesmo se a
   // marcação falhar, não prende o usuário no wizard.
@@ -31,13 +34,14 @@ export default function OnboardingNavigator({ onComplete }) {
   }, [onComplete])
 
   const value = useMemo(
-    () => ({ medicine, setMedicine, finish }),
-    [medicine, finish],
+    () => ({ medicine, setMedicine, treatment, setTreatment, finish }),
+    [medicine, treatment, finish],
   )
 
   return (
     <OnboardingContext.Provider value={value}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name={ROUTES.ONBOARDING_WELCOME} component={OnboardingWelcomeStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE} component={OnboardingMedicineStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_TREATMENT} component={OnboardingTreatmentStep} />
       </Stack.Navigator>

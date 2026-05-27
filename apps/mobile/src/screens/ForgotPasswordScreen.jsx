@@ -25,6 +25,9 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [emailSent, setEmailSent] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [otpError, setOtpError] = useState(null)
 
   async function handleSendReset() {
     setLoading(true)
@@ -41,10 +44,6 @@ export default function ForgotPasswordScreen({ navigation }) {
 
     setEmailSent(true)
   }
-
-  const [otpCode, setOtpCode] = useState('')
-  const [verifying, setVerifying] = useState(false)
-  const [otpError, setOtpError] = useState(null)
 
   async function handleVerifyOtp() {
     const tokenClean = otpCode.trim()
