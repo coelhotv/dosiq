@@ -153,13 +153,13 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
                 style={styles.planHeader}
                 onPress={() => togglePlanCollapse('avulsos')}
                 accessibilityRole="button"
-                accessibilityLabel={`${!!collapsedPlans['avulsos'] ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
+                accessibilityLabel={`${collapsedPlans['avulsos'] ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
               >
                 <View style={styles.planHeaderLeft}>
                   <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
                   <Text style={styles.planTitle}>Outros / Avulsos</Text>
                 </View>
-                {!!collapsedPlans['avulsos']
+                {collapsedPlans['avulsos']
                   ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
                   : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
                 }
