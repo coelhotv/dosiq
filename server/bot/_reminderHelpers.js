@@ -1,8 +1,9 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal } from '../utils/dateUtils.js';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
+import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 // Formatting helpers removed — moved to Layer 2
 
 const logger = createLogger('ReminderHelpers');
@@ -16,7 +17,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
       const { data, error } = await supabase
         .from('protocols')
         .select(`
-          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id,
+          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, frequency, weekdays, days, start_date,
           medicine:medicines(name, dosage_unit, dosage_per_pill),
           treatment_plan:treatment_plans(id, name)
         `)
@@ -137,8 +138,12 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
         const protocols = protocolsByUser[userId] || [];
         if (protocols.length === 0) continue;
 
+        const timezone = user.timezone || 'America/Sao_Paulo';
+        const { weekday } = getCurrentDatePartsInTimezone(timezone);
+        const todayStr = getTodayLocal();
+
         const dosesNow = protocols
-          .filter(p => (p.time_schedule || []).includes(currentHHMM))
+          .filter(p => (p.time_schedule || []).includes(currentHHMM) && isProtocolActiveOnWeekday(p, weekday, todayStr))
           .map(p => ({
             protocolId: p.id,
             protocolName: p.name,
@@ -242,12 +247,16 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
       protocolsByUser[p.user_id].push(p);
     }
 
-    for (const { userId, displayName, digestTime } of eligibleEntries) {
+    for (const { userId, displayName, digestTime, timezone } of eligibleEntries) {
       try {
         const protocols = protocolsByUser[userId] || [];
+        const { weekday } = getCurrentDatePartsInTimezone(timezone);
+        const todayStr = getTodayLocal();
 
         const todaySchedule = [];
         protocols.forEach(p => {
+          if (!isProtocolActiveOnWeekday(p, weekday, todayStr)) return;
+
           (p.time_schedule || []).forEach(time => {
             todaySchedule.push({
               time,
@@ -289,7 +298,20 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 async function _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId) {
   const dailyConsumption = protocols.reduce((sum, p) => {
     const intakesPerDay = (p.time_schedule || []).length;
-    return sum + (intakesPerDay * (p.dosage_per_intake || 1));
+    const dosage = p.dosage_per_intake || 1;
+    const frequency = (p.frequency || 'diário').toLowerCase();
+
+    if (['diário', 'diariamente', 'daily'].includes(frequency)) {
+      return sum + (intakesPerDay * dosage);
+    } else if (['semanal', 'semanalmente', 'weekly'].includes(frequency)) {
+      const daysCount = Array.isArray(p.weekdays || p.days) && (p.weekdays || p.days).length > 0
+        ? (p.weekdays || p.days).length
+        : 1;
+      return sum + ((intakesPerDay * dosage * daysCount) / 7);
+    } else if (['dias_alternados', 'dia_sim_dia_nao', 'every_other_day', 'alternating'].includes(frequency)) {
+      return sum + ((intakesPerDay * dosage) / 2);
+    }
+    return sum; // personalizado, quando necessário, etc.
   }, 0);
 
   if (dailyConsumption <= 0) return;
@@ -347,7 +369,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
 
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('user_id, medicine_id, time_schedule, dosage_per_intake')
+      .select('user_id, medicine_id, time_schedule, dosage_per_intake, frequency, weekdays, days')
       .eq('active', true)
       .in('user_id', userIds);
 

@@ -25,7 +25,7 @@ const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
  * }} props
  */
 export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo', endDate = null }) {
-  const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine } = treatment
+  const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine, weekdays, days } = treatment
 
   // Normalizar tabStatus; fallback defensivo para valores inválidos
   const resolvedStatus = VALID_TAB_STATUSES.includes(tabStatus) ? tabStatus : 'ativo'
@@ -48,11 +48,32 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
     const map = {
       'diário': 'Todos os dias',
       'dias_alternados': 'Dias alternados',
-      'semanal': 'Uma vez por semana',
+      'semanal': 'Semanal',
       'quando_necessário': 'Quando necessário',
       'personalizado': 'Personalizado'
     }
-    return map[freq] || freq
+    const label = map[freq] || freq
+    if (freq === 'semanal' || freq === 'personalizado') {
+      const daysSource = weekdays || days || []
+      if (daysSource.length > 0) {
+        const WEEKDAY_ABBREVIATIONS = {
+          domingo: 'Dom',
+          segunda: 'Seg',
+          terça: 'Ter',
+          quarta: 'Qua',
+          quinta: 'Qui',
+          sexta: 'Sex',
+          sábado: 'Sáb',
+        }
+        const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+        const sorted = [...daysSource].sort(
+          (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
+        )
+        const daysText = sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
+        return `${label} (${daysText})`
+      }
+    }
+    return label
   }
 
   // Badge condicional de status (null se ativo)

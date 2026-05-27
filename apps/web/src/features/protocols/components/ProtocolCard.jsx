@@ -11,6 +11,26 @@ import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 
 import './ProtocolCard.css'
 
+const WEEKDAY_ABBREVIATIONS = {
+  domingo: 'Dom',
+  segunda: 'Seg',
+  terça: 'Ter',
+  quarta: 'Qua',
+  quinta: 'Qui',
+  sexta: 'Sex',
+  sábado: 'Sáb',
+}
+
+const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+
+function formatWeekdaysLabel(weekdays = []) {
+  if (!Array.isArray(weekdays) || weekdays.length === 0) return ''
+  const sorted = [...weekdays].sort(
+    (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
+  )
+  return sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
+}
+
 function _getProtocolFlags(protocol) {
   const titrationStatus = protocol?.titration_status?.toLowerCase()
   const hasTitration = titrationStatus && !['estável'].includes(titrationStatus)
@@ -108,6 +128,12 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           <span className="detail-label">📅 Frequência:</span>
           <span className="detail-value">
             {FREQUENCY_LABELS[protocol.frequency] || protocol.frequency}
+            {(protocol.frequency === 'semanal' || protocol.frequency === 'personalizado') && (
+              (() => {
+                const daysSource = protocol.weekdays || protocol.days || []
+                return daysSource.length > 0 ? ` (${formatWeekdaysLabel(daysSource)})` : ''
+              })()
+            )}
           </span>
         </div>
 

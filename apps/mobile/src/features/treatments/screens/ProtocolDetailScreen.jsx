@@ -41,10 +41,22 @@ import { ROUTES } from '@navigation/routes'
 const FREQUENCY_LABEL = {
   'diário': 'Todos os dias',
   'dias_alternados': 'Dias alternados',
-  'semanal': 'Uma vez por semana',
+  'semanal': 'Semanal',
   'quando_necessário': 'Quando necessário',
   'personalizado': 'Personalizado',
 }
+
+const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
+
+const VISUAL_ORDER = [
+  { key: 'domingo', label: 'D' },
+  { key: 'segunda', label: 'S' },
+  { key: 'terça', label: 'T' },
+  { key: 'quarta', label: 'Q' },
+  { key: 'quinta', label: 'Q' },
+  { key: 'sexta', label: 'S' },
+  { key: 'sábado', label: 'S' },
+]
 
 function daysInUse(startDate) {
   if (!startDate) return null
@@ -251,6 +263,34 @@ export default function ProtocolDetailScreen() {
         <SectionCard title="DOSAGEM & FREQUÊNCIA">
           <DetailRow label="Dose por tomada" value={formatDoseUnit(protocol.dosage_per_intake)} />
           <DetailRow label="Frequência" value={frequencyLabel} />
+          {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
+            <View style={styles.weekdaysBlock}>
+              <Text style={styles.detailLabel}>Dias da semana</Text>
+              <View style={styles.weekdaysGrid}>
+                {VISUAL_ORDER.map(({ key, label }) => {
+                  const isSelected = (protocol.weekdays || protocol.days || []).includes(key)
+                  return (
+                    <View
+                      key={key}
+                      style={[
+                        styles.weekdayDot,
+                        isSelected ? styles.weekdayDotSelected : styles.weekdayDotUnselected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.weekdayDotText,
+                          isSelected ? styles.weekdayDotTextSelected : styles.weekdayDotTextUnselected,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+            </View>
+          )}
           {protocol.time_schedule?.length > 0 ? (
             <View style={styles.scheduleBlock}>
               <Text style={styles.detailLabel}>Horários</Text>
@@ -587,5 +627,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.status.error,
+  },
+  weekdaysBlock: {
+    paddingVertical: spacing[2],
+    gap: spacing[2],
+  },
+  weekdaysGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing[1],
+    paddingHorizontal: spacing[1],
+  },
+  weekdayDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekdayDotSelected: {
+    backgroundColor: colors.primary[500],
+  },
+  weekdayDotUnselected: {
+    backgroundColor: colors.neutral[100],
+  },
+  weekdayDotText: {
+    fontSize: 12,
+  },
+  weekdayDotTextSelected: {
+    color: colors.text.inverse,
+    fontWeight: '700',
+  },
+  weekdayDotTextUnselected: {
+    color: colors.text.primary,
+    fontWeight: '600',
   },
 })

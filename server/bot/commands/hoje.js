@@ -8,6 +8,7 @@ import {
   getSaoPauloTime,
   addDays
 } from '../../utils/dateUtils.js';
+import { isProtocolActiveOnWeekday } from '../../utils/protocolActiveHelper.js';
 
 export async function handleHoje(bot, msg) {
   const chatId = msg.chat.id;
@@ -55,7 +56,12 @@ export async function handleHoje(bot, msg) {
 
     // Build schedule for today
     const schedule = [];
+    const todayDateSP = getSaoPauloTime();
+    const todayWeekdayIndex = todayDateSP.getDay();
+
     protocols.forEach(protocol => {
+      if (!isProtocolActiveOnWeekday(protocol, todayWeekdayIndex, todayStr)) return;
+
       const protocolLogs = todayLogs.filter(l => l.protocol_id === protocol.id);
       
       (protocol.time_schedule || []).forEach(time => {

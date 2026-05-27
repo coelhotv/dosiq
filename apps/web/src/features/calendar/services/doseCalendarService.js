@@ -58,8 +58,9 @@ const WEEK_DAY_MAP = {
  * @returns {boolean}
  */
 function _isWeeklyScheduleMatch(protocol, dayOfWeek) {
-  if (!protocol.days || !Array.isArray(protocol.days)) return false
-  return protocol.days.some((day) => WEEK_DAY_MAP[day.toLowerCase()] === dayOfWeek)
+  const daysArray = protocol.weekdays || protocol.days
+  if (!daysArray || !Array.isArray(daysArray)) return false
+  return daysArray.some((day) => WEEK_DAY_MAP[day.toLowerCase()] === dayOfWeek)
 }
 
 /**

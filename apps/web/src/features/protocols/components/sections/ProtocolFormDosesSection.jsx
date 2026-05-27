@@ -3,6 +3,18 @@ import Button from '@shared/components/ui/Button'
 import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
 import { getFieldDescribedBy } from '@utils/formUtils'
 
+const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
+
+const VISUAL_ORDER = [
+  { key: 'domingo', label: 'D' },
+  { key: 'segunda', label: 'S' },
+  { key: 'terça', label: 'T' },
+  { key: 'quarta', label: 'Q' },
+  { key: 'quinta', label: 'Q' },
+  { key: 'sexta', label: 'S' },
+  { key: 'sábado', label: 'S' },
+]
+
 export default function ProtocolFormDosesSection({
   formData,
   handleChange,
@@ -13,6 +25,21 @@ export default function ProtocolFormDosesSection({
   addTime,
   removeTime,
 }) {
+  const handleWeekdayToggle = (day) => {
+    const currentWeekdays = formData.weekdays || []
+    const isSelected = currentWeekdays.includes(day)
+    const next = isSelected
+      ? currentWeekdays.filter((d) => d !== day)
+      : [...currentWeekdays, day]
+
+    handleChange({
+      target: {
+        name: 'weekdays',
+        value: next,
+      },
+    })
+  }
+
   return (
     <>
       <div className="form-row">
@@ -72,6 +99,38 @@ export default function ProtocolFormDosesSection({
         </div>
       </div>
 
+      {REQUIRES_WEEKDAYS.has(formData.frequency) && (
+        <div className="form-group">
+          <label>
+            Dias da Semana <span className="required">*</span>
+          </label>
+          <ShakeEffect trigger={shakeFields.weekdays}>
+            <div className="weekday-selector-pwa">
+              {VISUAL_ORDER.map(({ key, label }) => {
+                const isSelected = (formData.weekdays || []).includes(key)
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`weekday-btn ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleWeekdayToggle(key)}
+                    aria-pressed={isSelected}
+                    title={key.charAt(0).toUpperCase() + key.slice(1)}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </ShakeEffect>
+          {errors.weekdays && (
+            <span id="weekdays-error" className="error-message">
+              {errors.weekdays}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="time_input">
           Horários <span className="required">*</span>
@@ -114,3 +173,4 @@ export default function ProtocolFormDosesSection({
     </>
   )
 }
+

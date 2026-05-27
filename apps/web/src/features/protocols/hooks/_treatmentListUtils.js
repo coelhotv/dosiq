@@ -13,6 +13,26 @@ export const FREQUENCY_LABELS = {
   quando_necessário: 'Quando necessário',
 }
 
+const WEEKDAY_ABBREVIATIONS = {
+  domingo: 'Dom',
+  segunda: 'Seg',
+  terça: 'Ter',
+  quarta: 'Qua',
+  quinta: 'Qui',
+  sexta: 'Sex',
+  sábado: 'Sáb',
+}
+
+const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+
+function formatWeekdaysLabel(weekdays = []) {
+  if (!Array.isArray(weekdays) || weekdays.length === 0) return ''
+  const sorted = [...weekdays].sort(
+    (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
+  )
+  return sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
+}
+
 /**
  * Derivar status de estoque (critical/low/normal/high) baseado em daysRemaining
  */
@@ -126,12 +146,20 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
   const medicineInfo = _computeMedicineInfo(protocol.medicine, protocol.dosage_per_intake)
   const times = Array.isArray(protocol.time_schedule) ? protocol.time_schedule : []
 
+  let frequencyLabel = FREQUENCY_LABELS[protocol.frequency] || protocol.frequency
+  if (protocol.frequency === 'semanal' || protocol.frequency === 'personalizado') {
+    const daysSource = protocol.weekdays || protocol.days || []
+    if (daysSource.length > 0) {
+      frequencyLabel = `${frequencyLabel} (${formatWeekdaysLabel(daysSource)})`
+    }
+  }
+
   return {
     id: protocol.id,
     medicineId: protocol.medicine_id,
     intakeLabel,
     frequency: protocol.frequency,
-    frequencyLabel: FREQUENCY_LABELS[protocol.frequency] || protocol.frequency,
+    frequencyLabel,
     timeSchedule: times,
     nextDoseTime,
     isRegisteredToday: false,
