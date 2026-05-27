@@ -163,7 +163,7 @@ function AppInner() {
           )}
 
           <InstallPrompt />
-          <SpeedInsights />
+{import.meta.env.PROD && <SpeedInsights />}
         </div>
       </DashboardProvider>
     </OnboardingProvider>
