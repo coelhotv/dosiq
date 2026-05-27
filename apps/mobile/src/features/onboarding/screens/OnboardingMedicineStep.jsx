@@ -2,7 +2,7 @@
 // REUSA o fluxo da Fase 1: medicineService.create + ANVISA sheet + Form Kit
 // (PO-8 — orquestra, não recria). Mock: mock-onboarding-passo2.
 
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -15,7 +15,6 @@ import FormSelect from '@shared/components/form/FormSelect'
 import FormAutocomplete from '@shared/components/form/FormAutocomplete'
 import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
-import { medicineService } from '@medications/services/medicineService'
 import { ROUTES } from '@navigation/routes'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
