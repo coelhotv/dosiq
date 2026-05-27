@@ -1,5 +1,4 @@
 import { parseLocalDate } from '@utils/dateUtils'
-import { getDailyDoseRate } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -31,7 +30,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
   protocols
     .filter((p) => p.active !== false)
     .forEach((p) => {
-      const daily = (p.dosage_per_intake || 0) * getDailyDoseRate(p)
+      const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
       dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
     })
 

@@ -351,9 +351,9 @@ export function calculateDailyIntake(medicineId, protocols) {
   return protocols
     .filter((p) => p.medicine_id === medicineId && p.active)
     .reduce((total, p) => {
-      const dailyDoses = getDailyDoseRate(p)
+      const dosesPerDay = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1
-      return total + dailyDoses * dosage
+      return total + dosesPerDay * dosage
     }, 0)
 }
 
