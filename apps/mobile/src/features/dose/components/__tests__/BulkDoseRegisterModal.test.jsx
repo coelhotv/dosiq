@@ -25,10 +25,21 @@ jest.mock('../../services/doseService', () => ({
   registerDoseMany: jest.fn(),
 }))
 
+jest.mock('@shared/components/feedback/Toast', () => ({
+  useToast: () => ({
+    show: jest.fn(),
+  }),
+}))
+
 // Lucide icons não são necessários para os testes funcionais
 jest.mock('lucide-react-native', () => ({
   CheckCircle: 'CheckCircle',
   Circle: 'Circle',
+  Calendar: 'Calendar',
+  Clock: 'Clock',
+  Folder: 'Folder',
+  ChevronRight: 'ChevronRight',
+  ChevronUp: 'ChevronUp',
 }))
 
 // Acesso às funções mock após hoisting
@@ -159,6 +170,42 @@ describe('BulkDoseRegisterModal', () => {
       expect(callArg).toHaveLength(3)
       expect(callArg.map(l => l.protocol_id)).not.toContain('p4')
       expect(onSuccess).toHaveBeenCalledWith({ successCount: 3 })
+    })
+  })
+
+  it('desmembra protocolo com múltiplos horários em itens separados e ordena cronologicamente', async () => {
+    const protocolsWithMultipleSchedules = [
+      { id: 'p1', name: 'Protocolo A', dosage_per_intake: 1, time_schedule: ['20:00', '08:00'], medicine: { id: 'm1', name: 'Remédio A' } },
+      { id: 'p2', name: 'Protocolo B', dosage_per_intake: 1, time_schedule: ['12:00'], medicine: { id: 'm2', name: 'Remédio B' } }
+    ]
+    usePlanProtocols.mockReturnValue({
+      protocols: protocolsWithMultipleSchedules,
+      loading: false,
+      error: null,
+    })
+
+    const { getByText, queryAllByText } = render(<BulkDoseRegisterModal {...DEFAULT_PROPS} />)
+
+    await waitFor(() => {
+      expect(queryAllByText('Remédio A')).toHaveLength(2)
+      expect(getByText('Remédio B')).toBeTruthy()
+      expect(getByText('Registrar 3 doses')).toBeTruthy()
+    })
+  })
+
+  it('renderiza cabeçalhos dos planos quando isComplex é true', async () => {
+    const { getAllByText } = render(<BulkDoseRegisterModal {...DEFAULT_PROPS} isComplex={true} />)
+
+    await waitFor(() => {
+      expect(getAllByText('Plano Cardio')).toHaveLength(2)
+    })
+  })
+
+  it('não renderiza cabeçalhos dos planos quando isComplex é false', async () => {
+    const { getAllByText } = render(<BulkDoseRegisterModal {...DEFAULT_PROPS} isComplex={false} />)
+
+    await waitFor(() => {
+      expect(getAllByText('Plano Cardio')).toHaveLength(1)
     })
   })
 })

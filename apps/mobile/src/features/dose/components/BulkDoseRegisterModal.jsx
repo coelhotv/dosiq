@@ -1,8 +1,8 @@
 // BulkDoseRegisterModal.jsx — modal para registro em batch de doses de um bloco semântico
-// Usado após tap em push notification grouped (plan ou misc) via deeplink N1.4
+// Usado após tap em push notification ou FAB da tela de hoje (modo 'active')
 // R-010: estados → effects → handlers
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Modal,
   View,
@@ -11,54 +11,170 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  TouchableOpacity,
 } from 'react-native'
-import { CheckCircle, Circle } from 'lucide-react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp } from 'lucide-react-native'
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
-import { getNow } from '@dosiq/core'
+import { getNow, cloneDate } from '@dosiq/core'
+import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
+// Formata data e hora para exibição amigável
+function formatDateTime(d) {
+  if (!d) return ''
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm} às ${hh}:${min}`
+}
+
 /**
- * @param {{
- *   visible: boolean,
- *   onClose: Function,
- *   onSuccess: Function,           — chamado com { successCount } após submit bem-sucedido
- *   mode: 'plan' | 'misc',
- *   planId?: string,
- *   protocolIds?: string[],
- *   scheduledTime: string,         — 'HH:MM'
- *   treatmentPlanName?: string,
- *   userId: string,
- * }} props
+ * Lista de protocolos para seleção em batch (Suporta layouts Simples e Complexo)
  */
-// Lista de protocolos para seleção em batch
-function BulkDoseProtocolList({ protocols, selected, loading, onToggle }) {
+function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex }) {
+  const [collapsedPlans, setCollapsedPlans] = useState({})
+
+  const togglePlanCollapse = (planId) => {
+    setCollapsedPlans(prev => ({
+      ...prev,
+      [planId]: !prev[planId]
+    }))
+  }
+
+  const { groupedPlans, flatList } = useMemo(() => {
+    if (!isComplex) {
+      return { groupedPlans: [], flatList: items }
+    }
+    const plans = {}
+    const others = []
+    items.forEach(item => {
+      const plan = item.plan
+      if (plan?.id) {
+        if (!plans[plan.id]) {
+          plans[plan.id] = { id: plan.id, name: plan.name, emoji: plan.emoji, color: plan.color, items: [] }
+        }
+        plans[plan.id].items.push(item)
+      } else {
+        others.push(item)
+      }
+    })
+    return { groupedPlans: Object.values(plans), flatList: others }
+  }, [items, isComplex])
+
+  const renderItem = (item) => {
+    const isChecked = !!selected[item.id]
+    const medicineName = item.protocol.medicine?.name ?? item.protocol.name ?? 'Medicamento'
+    const dose = `${item.protocol.dosage_per_intake ?? 1} cp`
+
+    return (
+      <Pressable
+        key={item.id}
+        style={styles.item}
+        onPress={() => onToggle(item.id)}
+        disabled={loading}
+      >
+        {isChecked
+          ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
+          : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
+        }
+        <View style={styles.itemText}>
+          <View style={styles.medicineNameRow}>
+            <Text style={[styles.medicineName, !isChecked && styles.unchecked]} numberOfLines={1}>
+              {medicineName}
+            </Text>
+            {item.protocol.medicine?.dosage_per_pill && (
+              <View style={styles.dosageBadge}>
+                <Text style={styles.dosageBadgeText}>
+                  {item.protocol.medicine.dosage_per_pill}{item.protocol.medicine.dosage_unit}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.itemRow}>
+            <Text style={styles.doseInfo}>{dose}</Text>
+            {item.scheduledTime ? (
+              <View style={styles.timeRow}>
+                <Clock size={12} color={colors.primary[700]} strokeWidth={2} />
+                <Text style={styles.timeInfo}>{item.scheduledTime}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Pressable>
+    )
+  }
+
   return (
     <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-      {protocols.map(p => {
-        const isChecked = !!selected[p.id]
-        const medicineName = p.medicine?.name ?? p.name ?? 'Medicamento'
-        const dose = `${p.dosage_per_intake ?? 1} cp`
-        return (
-          <Pressable
-            key={p.id}
-            style={styles.item}
-            onPress={() => onToggle(p.id)}
-            disabled={loading}
-          >
-            {isChecked
-              ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
-              : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
-            }
-            <View style={styles.itemText}>
-              <Text style={[styles.medicineName, !isChecked && styles.unchecked]}>
-                {medicineName}
-              </Text>
-              <Text style={styles.doseInfo}>{dose}</Text>
+      {isComplex ? (
+        <>
+          {groupedPlans.map(plan => {
+            const isCollapsed = !!collapsedPlans[plan.id]
+            return (
+              <View key={plan.id ?? plan.name} style={styles.planSection}>
+                <Pressable
+                  style={styles.planHeader}
+                  onPress={() => plan.id && togglePlanCollapse(plan.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isCollapsed ? 'Expandir' : 'Colapsar'} plano ${plan.name}`}
+                >
+                  <View style={styles.planHeaderLeft}>
+                    {plan.emoji ? (
+                      <Text style={styles.planEmoji}>{plan.emoji}</Text>
+                    ) : (
+                      <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
+                    )}
+                    <Text style={styles.planTitle} numberOfLines={1}>
+                      {plan.name}
+                    </Text>
+                  </View>
+                  {plan.id && (
+                    isCollapsed
+                      ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+                      : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
+                  )}
+                </Pressable>
+                {!isCollapsed && (
+                  <View style={styles.planItems}>
+                    {plan.items.map(renderItem)}
+                  </View>
+                )}
+              </View>
+            )
+          })}
+          {flatList.length > 0 && (
+            <View key="flat-avulsos" style={styles.planSection}>
+              <Pressable
+                style={styles.planHeader}
+                onPress={() => togglePlanCollapse('avulsos')}
+                accessibilityRole="button"
+                accessibilityLabel={`${collapsedPlans['avulsos'] ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
+              >
+                <View style={styles.planHeaderLeft}>
+                  <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
+                  <Text style={styles.planTitle}>Outros / Avulsos</Text>
+                </View>
+                {collapsedPlans['avulsos']
+                  ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+                  : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
+                }
+              </Pressable>
+              {!collapsedPlans['avulsos'] && (
+                <View style={styles.planItems}>
+                  {flatList.map(renderItem)}
+                </View>
+              )}
             </View>
-          </Pressable>
-        )
-      })}
+          )}
+        </>
+      ) : (
+        flatList.map(renderItem)
+      )}
     </ScrollView>
   )
 }
@@ -73,42 +189,129 @@ export default function BulkDoseRegisterModal({
   scheduledTime,
   treatmentPlanName,
   userId,
+  isComplex = false,
+  initialProtocols = null,
 }) {
+  const { show } = useToast()
+
   // States (R-010: ordem obrigatória)
   const [selected, setSelected] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   
+  // Seletor retroativo de data/hora
+  const [takenAtDate, setTakenAtDate] = useState(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [tempDate, setTempDate] = useState(null)
+  
   // Trackers para ajuste de estado no render
-  const [prevProtocols, setPrevProtocols] = useState([])
+  const [prevItems, setPrevItems] = useState([])
   const [prevVisible, setPrevVisible] = useState(false)
 
-  const { protocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
-    mode,
+  const { protocols: loadedProtocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
+    mode: initialProtocols ? 'active' : mode,
     planId,
-    protocolIds,
+    protocolIds: initialProtocols ? [] : protocolIds,
     scheduledTime,
-    userId,
+    userId: initialProtocols ? 'demo-user' : userId,
   })
 
+  const protocols = useMemo(() => {
+    return initialProtocols ?? loadedProtocols
+  }, [initialProtocols, loadedProtocols])
+
+  // 1. Desmembramento cronológico de múltiplos horários
+  const expandedDoseItems = useMemo(() => {
+    const items = []
+    protocols.forEach(p => {
+      const schedules = p.time_schedule && p.time_schedule.length > 0
+        ? p.time_schedule
+        : [null]
+        
+      schedules.forEach(time => {
+        items.push({
+          id: `${p.id}-${time ?? 'adhoc'}`,
+          protocol: p,
+          scheduledTime: time,
+          plan: p.treatment_plan,
+        })
+      })
+    })
+
+    // Ordenação cronológica crescente (timeline do dia)
+    items.sort((a, b) => {
+      if (!a.scheduledTime) return 1
+      if (!b.scheduledTime) return -1
+      return a.scheduledTime.localeCompare(b.scheduledTime)
+    })
+    
+    return items
+  }, [protocols])
+
   // Ajuste de Estado no Render (R-010 + React 19)
-  if (protocols !== prevProtocols || visible !== prevVisible) {
-    setPrevProtocols(protocols)
+  if (expandedDoseItems !== prevItems || visible !== prevVisible) {
+    setPrevItems(expandedDoseItems)
     setPrevVisible(visible)
 
     if (!visible) {
       setSelected({})
       setError(null)
       setLoading(false)
-    } else if (protocols.length > 0 && protocols !== prevProtocols) {
-      const initial = {}
-      protocols.forEach(p => { initial[p.id] = true })
-      setSelected(initial)
+      setTakenAtDate(null)
+      setShowDatePicker(false)
+      setTempDate(null)
+    } else {
+      if (!takenAtDate) {
+        setTakenAtDate(getNow())
+      }
+      const justOpened = visible && !prevVisible
+      const itemsChanged = expandedDoseItems !== prevItems
+      if (expandedDoseItems.length > 0 && (justOpened || itemsChanged)) {
+        const initial = {}
+        expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
+        setSelected(initial)
+      }
     }
   }
 
   function toggleProtocol(id) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function handleOpenRetroactivePicker() {
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: takenAtDate || getNow(),
+        mode: 'date',
+        onChange: (event, date) => {
+          if (event.type === 'set' && date) {
+            DateTimePickerAndroid.open({
+              value: takenAtDate || getNow(),
+              mode: 'time',
+              onChange: (timeEvent, timeDate) => {
+                if (timeEvent.type === 'set' && timeDate) {
+                  const combined = cloneDate(date)
+                  combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
+                  setTakenAtDate(combined)
+                }
+              }
+            })
+          }
+        }
+      })
+    } else {
+      setTempDate(takenAtDate || getNow())
+      setShowDatePicker(true)
+    }
+  }
+
+  function handleIOSConfirm() {
+    if (tempDate) setTakenAtDate(tempDate)
+    setShowDatePicker(false)
+  }
+
+  function handleIOSCancel() {
+    setShowDatePicker(false)
   }
 
   async function handleConfirm() {
@@ -121,29 +324,43 @@ export default function BulkDoseRegisterModal({
     setLoading(true)
     setError(null)
 
-    const logsData = selectedIds.map(id => {
-      const p = protocols.find(p => p.id === id)
-      return {
-        protocol_id: p.id,
-        medicine_id: p.medicine?.id ?? p.medicine_id,
-        taken_at: getNow().toISOString(),
-        quantity_taken: p.dosage_per_intake ?? 1,
-      }
-    })
+    const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : getNow().toISOString()
+
+    const logsData = selectedIds
+      .map(id => {
+        const item = expandedDoseItems.find(item => item.id === id)
+        if (!item) return null
+        const p = item.protocol
+        return {
+          protocol_id: p.id,
+          medicine_id: p.medicine?.id ?? p.medicine_id,
+          taken_at: finalTakenAt,
+          quantity_taken: p.dosage_per_intake ?? 1,
+        }
+      })
+      .filter(Boolean)
 
     const result = await registerDoseMany(logsData)
     setLoading(false)
 
     if (!result.success && result.results.length === 0) {
-      setError(result.error ?? 'Erro ao registrar doses.')
+      const errMsg = result.error ?? 'Erro ao registrar doses.'
+      setError(errMsg)
+      show(errMsg, { variant: 'error' })
       return
     }
 
     const successCount = result.results.filter(r => r.success).length
     if (successCount > 0) {
+      const msg = successCount === 1
+        ? 'Dose registrada com sucesso.'
+        : `${successCount} doses registradas com sucesso.`
+      show(msg, { variant: 'success' })
       onSuccess({ successCount })
     } else {
-      setError(result.error ?? 'Nenhuma dose foi registrada.')
+      const errMsg = result.error ?? 'Nenhuma dose foi registrada.'
+      setError(errMsg)
+      show(errMsg, { variant: 'error' })
     }
   }
 
@@ -155,6 +372,8 @@ export default function BulkDoseRegisterModal({
   const selectedCount = Object.values(selected).filter(Boolean).length
   const header = mode === 'plan'
     ? (treatmentPlanName ?? 'Plano de tratamento')
+    : mode === 'active'
+    ? 'Doses de hoje'
     : `Doses agora — ${scheduledTime}`
 
   return (
@@ -181,6 +400,22 @@ export default function BulkDoseRegisterModal({
             ) : null}
           </View>
 
+          {/* Seletor Retroativo de Data/Hora */}
+          <Pressable 
+            style={styles.retroRow} 
+            onPress={handleOpenRetroactivePicker}
+            accessibilityRole="button"
+            accessibilityLabel="Alterar horário de registro"
+          >
+            <View style={styles.retroTextCol}>
+              <Text style={styles.retroLabel}>Horário do Registro:</Text>
+              <Text style={styles.retroValue}>
+                {takenAtDate ? formatDateTime(takenAtDate) : 'Agora'}
+              </Text>
+            </View>
+            <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
+          </Pressable>
+
           {protocolsLoading ? (
             <View style={styles.centerState}>
               <ActivityIndicator color={colors.brand.primary} />
@@ -191,10 +426,11 @@ export default function BulkDoseRegisterModal({
             </View>
           ) : (
             <BulkDoseProtocolList
-              protocols={protocols}
+              items={expandedDoseItems}
               selected={selected}
               loading={loading}
               onToggle={toggleProtocol}
+              isComplex={isComplex}
             />
           )}
 
@@ -220,9 +456,44 @@ export default function BulkDoseRegisterModal({
           </View>
         </View>
       </View>
+
+      {/* Modal iOS DateTimePicker */}
+      {Platform.OS === 'ios' && showDatePicker && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="slide"
+          onRequestClose={handleIOSCancel}
+        >
+          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={handleIOSCancel} />
+          <View style={styles.pickerSheet}>
+            <SafeAreaView edges={['bottom']}>
+              <View style={styles.pickerHeader}>
+                <TouchableOpacity onPress={handleIOSCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.pickerCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerTitle}>Ajustar horário</Text>
+                <TouchableOpacity onPress={handleIOSConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.pickerConfirmText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                mode="datetime"
+                display="spinner"
+                value={tempDate || getNow()}
+                onChange={(_, date) => { if (date) setTempDate(date) }}
+                locale="pt-BR"
+                textColor={colors.text.primary}
+                themeVariant="light"
+              />
+            </SafeAreaView>
+          </View>
+        </Modal>
+      )}
     </Modal>
   )
 }
+
 
 const styles = StyleSheet.create({
   overlay: {
@@ -313,9 +584,29 @@ const styles = StyleSheet.create({
   unchecked: {
     color: colors.text.muted,
   },
+  medicineNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  dosageBadge: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  dosageBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.neutral[700],
+  },
   doseInfo: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.text.secondary,
+    fontWeight: '500',
   },
   errorText: {
     color: colors.status.error,
@@ -356,4 +647,119 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  
+  // Custom Styles para agrupamento e horários
+  planSection: {
+    marginBottom: spacing[4],
+  },
+  planHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginBottom: spacing[2],
+    backgroundColor: colors.primary[50],
+    borderRadius: borderRadius.sm,
+  },
+  planHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  planTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text.secondary,
+  },
+  planItems: {
+    gap: spacing[2],
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  timeInfo: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary[700],
+  },
+  planEmoji: {
+    fontSize: 14,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  retroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: colors.bg.screen,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+    marginVertical: spacing[2],
+  },
+  retroTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  retroLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+  retroValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary[700],
+  },
+
+  // DateTimePicker iOS Modal
+  pickerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bg.overlay,
+  },
+  pickerSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.bg.card,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
+    paddingBottom: spacing[4],
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[4],
+    paddingBottom: spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+  },
+  pickerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  pickerCancelText: {
+    fontSize: 15,
+    color: colors.text.muted,
+    fontWeight: '500',
+  },
+  pickerConfirmText: {
+    fontSize: 15,
+    color: colors.primary[700],
+    fontWeight: '600',
+  },
 })
+

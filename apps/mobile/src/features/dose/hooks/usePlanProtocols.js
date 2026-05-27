@@ -2,6 +2,7 @@
 // Reutiliza treatmentsService.getActiveTreatments e filtra por planId ou protocolIds[]
 
 import { useState, useEffect } from 'react'
+import { resolveTreatmentStatus, getTodayLocal } from '@dosiq/core'
 import { getActiveTreatments } from '../../treatments/services/treatmentsService'
 
 /**
@@ -26,7 +27,7 @@ function isInWindow(protocol, scheduledTime, windowMinutes = 120) {
  * Carrega os protocolos ativos correspondentes a um bloco de notificação,
  * filtrando pela janela de horário (±2h do scheduledTime) quando informado.
  *
- * @param {{ mode: 'plan'|'misc', planId?: string, protocolIds?: string[], scheduledTime?: string, userId: string }} params
+ * @param {{ mode: 'plan'|'misc'|'active', planId?: string, protocolIds?: string[], scheduledTime?: string, userId: string }} params
  * @returns {{ protocols: Object[], loading: boolean, error: string|null }}
  */
 export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, userId }) {
@@ -40,14 +41,15 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
   
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
-    if (userId && (mode === 'plan' ? !!planId : (protocolIds || []).length > 0)) {
+    const hasRequiredParams = mode === 'active' || (mode === 'plan' ? !!planId : (protocolIds || []).length > 0)
+    if (userId && userId !== 'demo-user' && hasRequiredParams) {
       setLoading(true)
       setError(null)
     }
   }
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || userId === 'demo-user') return
     if (mode === 'plan' && !planId) return
     if (mode === 'misc' && (!protocolIds || protocolIds.length === 0)) return
 
@@ -67,8 +69,13 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
               .filter(p => p.treatment_plan?.id === planId)
               .filter(p => isInWindow(p, scheduledTime))
           )
-        } else {
+        } else if (mode === 'misc') {
           setProtocols(all.filter(p => protocolIds.includes(p.id)))
+        } else if (mode === 'active') {
+          const todayStr = getTodayLocal()
+          setProtocols(
+            all.filter(p => resolveTreatmentStatus(p, todayStr) === 'ativo')
+          )
         }
       })
       .catch(err => {
@@ -84,3 +91,4 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
 
   return { protocols, loading, error }
 }
+
