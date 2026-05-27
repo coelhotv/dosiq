@@ -35,6 +35,19 @@ export default function DevHubScreen({ navigation }) {
             <Text style={styles.buttonText}>📦 PurchaseCard + PurchaseFormScreen + PurchaseHistoryScreen</Text>
           </TouchableOpacity>
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fase 5 — Registro de Doses (FAB)</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              navigation?.navigate(ROUTES.DOSE_PRIMITIVES_DEMO)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>💊 BulkDoseRegisterModal (Modo Simples e Complexo)</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   )

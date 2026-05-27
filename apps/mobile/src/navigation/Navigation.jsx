@@ -26,6 +26,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
+import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
 import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
 import { isOnboardingNeeded } from '../features/profile/services/profileService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
@@ -227,6 +228,10 @@ export default function Navigation() {
                 <Stack.Screen
                   name={ROUTES.STOCK_PRIMITIVES_DEMO}
                   component={StockPrimitivesDemoScreen}
+                />
+                <Stack.Screen
+                  name={ROUTES.DOSE_PRIMITIVES_DEMO}
+                  component={DosePrimitivesDemoScreen}
                 />
               </>
             )}
