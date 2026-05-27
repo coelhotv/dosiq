@@ -13,6 +13,7 @@ import { DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
 import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 import MobileAppBanner from '@shared/components/MobileAppBanner'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -162,6 +163,7 @@ function AppInner() {
           )}
 
           <InstallPrompt />
+          <SpeedInsights />
         </div>
       </DashboardProvider>
     </OnboardingProvider>
