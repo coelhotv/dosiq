@@ -61,4 +61,5 @@ export const ROUTES = {
   // Dev-only (apenas __DEV__)
   DEV_HUB: 'DevHub',
   STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
+  DOSE_PRIMITIVES_DEMO: 'DosePrimitivesDemo',
 }

@@ -26,6 +26,7 @@ jest.mock('../../../../shared/components/states/LoadingState', () => (props) => 
 jest.mock('../../../../shared/components/states/ErrorState', () => (props) => <mockView testID="error-state" {...props} />);
 jest.mock('../../../../shared/components/states/EmptyState', () => (props) => <mockView testID="empty-state" {...props} />);
 jest.mock('../../../dose/components/DoseRegisterModal', () => (props) => <mockView testID="dose-modal" {...props} />);
+jest.mock('@dose/components/BulkDoseRegisterModal', () => (props) => <mockView testID="bulk-dose-modal" {...props} />);
 jest.mock('../../components/AdherenceDayCard', () => (props) => <mockView testID="adherence-card" {...props} />);
 jest.mock('../../components/TimeBlockSeparator', () => (props) => <mockView testID="time-separator" {...props} />);
 jest.mock('../../components/DoseTimelineCard', () => (props) => <mockView testID="dose-card" {...props} />);

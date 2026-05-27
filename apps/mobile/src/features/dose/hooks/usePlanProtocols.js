@@ -42,14 +42,14 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
     const hasRequiredParams = mode === 'active' || (mode === 'plan' ? !!planId : (protocolIds || []).length > 0)
-    if (userId && hasRequiredParams) {
+    if (userId && userId !== 'demo-user' && hasRequiredParams) {
       setLoading(true)
       setError(null)
     }
   }
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || userId === 'demo-user') return
     if (mode === 'plan' && !planId) return
     if (mode === 'misc' && (!protocolIds || protocolIds.length === 0)) return
 
