@@ -68,7 +68,7 @@ export default function StockDetailScreen({ navigation }) {
     )
     return activeProtocols.reduce((acc, p) => {
       const intakesPerDay = p.time_schedule?.length ?? 0
-      return acc + Number(p.dosage_per_intake) * intakesPerDay
+      return acc + Number(p.dosage_per_intake ?? 0) * intakesPerDay
     }, 0)
   }, [medicine, route.params?.dailyConsumption, today])
 

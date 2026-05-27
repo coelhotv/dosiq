@@ -87,7 +87,7 @@ export default function StockScreen() {
   // sem exigir pull-to-refresh. Pula o 1º foco — useStock já carrega no mount.
   useFocusEffect(
     useCallback(() => {
-      refresh()
+      refresh(false)
     }, [refresh]),
   )
 
