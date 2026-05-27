@@ -14,7 +14,7 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native'
-import { CheckCircle, Circle, Calendar, Clock, Folder } from 'lucide-react-native'
+import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp } from 'lucide-react-native'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
@@ -36,6 +36,15 @@ function formatDateTime(d) {
  * Lista de protocolos para seleção em batch (Suporta layouts Simples e Complexo)
  */
 function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex }) {
+  const [collapsedPlans, setCollapsedPlans] = useState({})
+
+  const togglePlanCollapse = (planId) => {
+    setCollapsedPlans(prev => ({
+      ...prev,
+      [planId]: !prev[planId]
+    }))
+  }
+
   const { groupedPlans, flatList } = useMemo(() => {
     if (!isComplex) {
       return { groupedPlans: [], flatList: items }
@@ -46,7 +55,7 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
       const plan = item.plan
       if (plan?.id) {
         if (!plans[plan.id]) {
-          plans[plan.id] = { name: plan.name, emoji: plan.emoji, color: plan.color, items: [] }
+          plans[plan.id] = { id: plan.id, name: plan.name, emoji: plan.emoji, color: plan.color, items: [] }
         }
         plans[plan.id].items.push(item)
       } else {
@@ -103,34 +112,69 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
     <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
       {isComplex ? (
         <>
-          {groupedPlans.map(plan => (
-            <View key={plan.name} style={styles.planSection}>
-              <View style={styles.planHeader}>
-                {plan.emoji ? (
-                  <Text style={styles.planEmoji}>{plan.emoji}</Text>
-                ) : (
-                  <Folder size={14} color={plan.color} strokeWidth={2.5} />
+          {groupedPlans.map(plan => {
+            const isCollapsed = !!collapsedPlans[plan.id]
+            return (
+              <View key={plan.id ?? plan.name} style={styles.planSection}>
+                <Pressable
+                  style={styles.planHeader}
+                  onPress={() => plan.id && togglePlanCollapse(plan.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isCollapsed ? 'Expandir' : 'Colapsar'} plano ${plan.name}`}
+                >
+                  <View style={styles.planHeaderLeft}>
+                    {plan.emoji ? (
+                      <Text style={styles.planEmoji}>{plan.emoji}</Text>
+                    ) : (
+                      <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
+                    )}
+                    <Text style={styles.planTitle} numberOfLines={1}>
+                      {plan.name}
+                    </Text>
+                  </View>
+                  {plan.id && (
+                    isCollapsed
+                      ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+                      : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
+                  )}
+                </Pressable>
+                {!isCollapsed && (
+                  <View style={styles.planItems}>
+                    {plan.items.map(renderItem)}
+                  </View>
                 )}
-                <Text style={[styles.planTitle, { color: plan.color }]}>
-                  {plan.name}
-                </Text>
               </View>
-              <View style={styles.planItems}>
-                {plan.items.map(renderItem)}
-              </View>
-            </View>
-          ))}
-          {flatList.length > 0 ? (
-            <View key="flat-avulsos" style={styles.planSection}>
-              <View style={styles.planHeader}>
-                <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
-                <Text style={styles.planTitle}>Outros / Avulsos</Text>
-              </View>
-              <View style={styles.planItems}>
-                {flatList.map(renderItem)}
-              </View>
-            </View>
-          ) : null}
+            )
+          })}
+          {flatList.length > 0 && (
+            (() => {
+              const isAvulsosCollapsed = !!collapsedPlans['avulsos']
+              return (
+                <View key="flat-avulsos" style={styles.planSection}>
+                  <Pressable
+                    style={styles.planHeader}
+                    onPress={() => togglePlanCollapse('avulsos')}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${isAvulsosCollapsed ? 'Expandir' : 'Colapsar'} seção Outros / Avulsos`}
+                  >
+                    <View style={styles.planHeaderLeft}>
+                      <Folder size={14} color={colors.text.secondary} strokeWidth={2.5} />
+                      <Text style={styles.planTitle}>Outros / Avulsos</Text>
+                    </View>
+                    {isAvulsosCollapsed
+                      ? <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+                      : <ChevronUp size={16} color={colors.text.secondary} strokeWidth={2} />
+                    }
+                  </Pressable>
+                  {!isAvulsosCollapsed && (
+                    <View style={styles.planItems}>
+                      {flatList.map(renderItem)}
+                    </View>
+                  )}
+                </View>
+              )
+            })()
+          )}
         </>
       ) : (
         flatList.map(renderItem)
@@ -224,9 +268,11 @@ export default function BulkDoseRegisterModal({
       if (!takenAtDate) {
         setTakenAtDate(getNow())
       }
-      if (expandedDoseItems.length > 0 && expandedDoseItems !== prevItems) {
+      const justOpened = visible && !prevVisible
+      const itemsChanged = expandedDoseItems !== prevItems
+      if (expandedDoseItems.length > 0 && (justOpened || itemsChanged)) {
         const initial = {}
-        expandedDoseItems.forEach(item => { initial[item.id] = true })
+        expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
         setSelected(initial)
       }
     }
@@ -612,12 +658,18 @@ const styles = StyleSheet.create({
   planHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
     paddingVertical: 6,
     paddingHorizontal: 8,
     marginBottom: spacing[2],
     backgroundColor: colors.primary[50],
     borderRadius: borderRadius.sm,
+  },
+  planHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
   },
   planTitle: {
     fontSize: 13,

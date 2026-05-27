@@ -38,6 +38,8 @@ jest.mock('lucide-react-native', () => ({
   Calendar: 'Calendar',
   Clock: 'Clock',
   Folder: 'Folder',
+  ChevronRight: 'ChevronRight',
+  ChevronUp: 'ChevronUp',
 }))
 
 // Acesso às funções mock após hoisting

@@ -9,10 +9,11 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  TouchableOpacity
+  TouchableOpacity,
+  Pressable
 } from 'react-native'
 import { ROUTES } from '../../../navigation/routes'
-import { Pill } from 'lucide-react-native'
+import { Pill, Plus } from 'lucide-react-native'
 import { useTodayData } from '@dashboard/hooks/useTodayData'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -25,9 +26,10 @@ import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
 import HeroDoseCard from '@dashboard/components/HeroDoseCard'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
 import DoseRegisterModal from '@dose/components/DoseRegisterModal'
+import { lightTap } from '@shared/utils/haptics'
 import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
-import { colors, spacing, typography } from '@shared/styles/tokens'
+import { colors, spacing, typography, borderRadius, shadows } from '../../../shared/styles/tokens'
 
 // Habilitar animações no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -133,6 +135,7 @@ function TodayScreenContent({
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
   bulkModal, setBulkModal,
+  handleOpenBulkDose,
   navigation,
 }) {
   const priorityDoses = timeline
@@ -184,6 +187,16 @@ function TodayScreenContent({
           hasMedicines={Object.keys(medicines || {}).length > 0} navigation={navigation}
         />
       </ScrollView>
+      {protocols.length > 0 && (
+        <Pressable
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          onPress={handleOpenBulkDose}
+          accessibilityRole="button"
+          accessibilityLabel="Registrar doses em lote"
+        >
+          <Plus size={24} color="#FFF" strokeWidth={3} />
+        </Pressable>
+      )}
       <DoseRegisterModal
         visible={modalProtocol !== null}
         protocol={modalProtocol}
@@ -200,6 +213,7 @@ function TodayScreenContent({
         scheduledTime={bulkModal?.scheduledTime ?? ''}
         treatmentPlanName={bulkModal?.treatmentPlanName}
         userId={userId}
+        isComplex={isComplex}
         onClose={() => setBulkModal(null)}
         onSuccess={() => { setBulkModal(null); refresh() }}
       />
@@ -338,6 +352,14 @@ export default function TodayScreen({ route, navigation }) {
     }))
   }, [])
 
+  const handleOpenBulkDose = useCallback(() => {
+    lightTap()
+    setBulkModal({
+      mode: 'active',
+      scheduledTime: '',
+    })
+  }, [])
+
   if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
@@ -369,6 +391,7 @@ export default function TodayScreen({ route, navigation }) {
       medicineName={medicineName} handleOpenRegister={handleOpenRegister}
       handleRegisterSuccess={handleRegisterSuccess} handleCloseRegister={handleCloseRegister}
       bulkModal={bulkModal} setBulkModal={setBulkModal}
+      handleOpenBulkDose={handleOpenBulkDose}
       navigation={navigation}
     />
   )
@@ -446,5 +469,20 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     opacity: 0.7,
-  }
+  },
+  fab: {
+    position: 'absolute',
+    bottom: spacing[6],
+    right: spacing[5],
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.md,
+  },
+  fabPressed: {
+    opacity: 0.9,
+  },
 })

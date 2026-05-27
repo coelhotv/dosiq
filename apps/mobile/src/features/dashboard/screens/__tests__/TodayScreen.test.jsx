@@ -15,6 +15,7 @@ jest.mock('@react-navigation/native', () => ({
 // Mock do lucide-react-native
 jest.mock('lucide-react-native', () => ({
   Pill: 'Pill',
+  Plus: 'Plus',
 }));
 
 // Redefinir View localmente para uso nos mocks (hoisted)
