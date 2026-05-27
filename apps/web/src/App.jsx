@@ -40,9 +40,7 @@ function AppInner() {
       .catch(() => { setSession(null); setIsLoading(false) })
 
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
-      const isRecoveryFlow = localStorage.getItem('@dosiq/recovery-flow')
-      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
-        localStorage.removeItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordRecovery(true)
         setSession(session?.user ?? null)
 
@@ -52,6 +50,26 @@ function AppInner() {
         }
         return
       }
+
+      try {
+        const isRecoveryFlow = localStorage.getItem('@dosiq/recovery-flow')
+        if (isRecoveryFlow === 'true') {
+          localStorage.removeItem('@dosiq/recovery-flow')
+          setIsPasswordRecovery(true)
+          setSession(session?.user ?? null)
+
+          // Limpar o hash da URL para evitar re-gatilhos do fluxo de recuperação em reloads/signouts
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.pathname + window.location.search)
+          }
+          return
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Erro ao acessar localStorage no fluxo de recuperação:', error)
+        }
+      }
+
       if (event === 'SIGNED_OUT') {
         setIsPasswordRecovery(false)
         // Verificar race condition (PWA + aba concorrente) antes de deslogar

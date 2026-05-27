@@ -36,12 +36,11 @@ function formProps(form, name) {
 export default function OnboardingMedicineStep() {
   // States (R-010)
   const navigation = useNavigation()
-  const { setMedicine, finish } = useOnboarding()
+  const { medicine, setMedicine, finish } = useOnboarding()
   const { show } = useToast()
   const { search } = useMedicineDatabase()
-  const [saving, setSaving] = useState(false)
 
-  const form = useFormState(medicineCreateSchema, { initialValues: DEFAULT_INITIAL })
+  const form = useFormState(medicineCreateSchema, { initialValues: medicine || DEFAULT_INITIAL })
 
   // Memos (R-010)
   // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
@@ -78,21 +77,13 @@ export default function OnboardingMedicineStep() {
     [form],
   )
 
-  const handleContinue = useCallback(async () => {
+  const handleContinue = useCallback(() => {
     if (!form.validate()) {
       show('Verifique os campos destacados', { variant: 'error' })
       return
     }
-    setSaving(true)
-    try {
-      const created = await medicineService.create(form.values)
-      setMedicine({ id: created.id, name: created.name })
-      navigation.navigate(ROUTES.ONBOARDING_TREATMENT)
-    } catch (err) {
-      show(err?.message ?? 'Erro ao salvar remédio', { variant: 'error' })
-    } finally {
-      setSaving(false)
-    }
+    setMedicine(form.values)
+    navigation.navigate(ROUTES.ONBOARDING_TREATMENT)
   }, [form, show, setMedicine, navigation])
 
   return (
@@ -136,7 +127,7 @@ export default function OnboardingMedicineStep() {
           <View style={styles.anvisaHint}>
             <Info size={18} color={colors.primary[700]} strokeWidth={2} />
             <Text style={styles.anvisaHintText}>
-              Não sabe o nome certo? Digite o que está na caixa — a gente sugere o nome oficial.
+              Não sabe o nome certo? Digite o que está na caixa — a gente sugere o nome oficial pela base da Anvisa.
             </Text>
           </View>
 
@@ -166,7 +157,7 @@ export default function OnboardingMedicineStep() {
         <FormActions
           primaryLabel="Continuar"
           onPrimary={handleContinue}
-          primaryLoading={saving}
+          primaryLoading={false}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

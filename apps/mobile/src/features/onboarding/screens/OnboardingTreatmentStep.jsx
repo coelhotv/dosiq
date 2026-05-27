@@ -2,7 +2,7 @@
 // REUSA o fluxo da Fase 2: protocolService.create + WeekdaySelector +
 // TimeSchedulePicker + protocolCreateSchema (PO-8). Mock: mock-onboarding-passo3.
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   View, Text, ScrollView, Pressable, Switch, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native'
@@ -17,6 +17,7 @@ import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import { useToast } from '@shared/components/feedback/Toast'
 import { protocolService } from '@treatments/services/protocolService'
+import { medicineService } from '@medications/services/medicineService'
 import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useOnboarding } from '../OnboardingContext'
@@ -27,25 +28,50 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 const FREQ_DAILY = 'diário'
 const FREQ_WEEKLY = 'semanal'
 
+const FAKE_UUID = '00000000-0000-0000-0000-000000000000'
+
 export default function OnboardingTreatmentStep() {
   // States (R-010)
   const navigation = useNavigation()
-  const { medicine, finish } = useOnboarding()
+  const { medicine, treatment, setTreatment, finish } = useOnboarding()
   const { show } = useToast()
   const [remind, setRemind] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  const form = useFormState(protocolCreateSchema, {
-    initialValues: {
-      medicine_id: medicine?.id ?? '',
+  // Memos (R-010)
+  const initialValues = useMemo(() => {
+    if (treatment) {
+      // Se o nome do medicamento mudou no Passo 2, sincroniza o nome padrão do tratamento
+      const name =
+        treatment.name === 'Meu tratamento' || (medicine && treatment.name !== medicine.name)
+          ? (medicine?.name ?? 'Meu tratamento')
+          : treatment.name
+
+      return {
+        ...treatment,
+        medicine_id: medicine?.id ?? FAKE_UUID,
+        name,
+      }
+    }
+    return {
+      medicine_id: medicine?.id ?? FAKE_UUID,
       name: medicine?.name ?? 'Meu tratamento',
       dosage_per_intake: '1',
       frequency: FREQ_DAILY,
       weekdays: [],
       time_schedule: ['08:00'],
       start_date: getTodayLocal(),
-    },
+    }
+  }, [treatment, medicine])
+
+  const form = useFormState(protocolCreateSchema, {
+    initialValues,
   })
+
+  // Effects (R-010)
+  useEffect(() => {
+    setTreatment(form.values)
+  }, [form.values, setTreatment])
 
   // Memos
   const isWeekly = form.values.frequency === FREQ_WEEKLY
@@ -91,11 +117,21 @@ export default function OnboardingTreatmentStep() {
     }
     setSubmitting(true)
     try {
+      if (!medicine) {
+        throw new Error('Dados do medicamento não encontrados.')
+      }
+
+      // 1. Criar o medicamento e obter seu ID retornado
+      const createdMedicine = await medicineService.create(medicine)
+
+      // 2. Criar o tratamento amarrando ao ID do medicamento persistido
       await protocolService.create({
         ...form.values,
+        medicine_id: createdMedicine.id,
         dosage_per_intake: dose,
         treatment_plan_id: null,
       })
+
       // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete.
       // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO →
       // segue o fluxo; a dona Maria reativa depois em Configurações (sem nag aqui).
@@ -110,7 +146,7 @@ export default function OnboardingTreatmentStep() {
       setSubmitting(false)
       show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' })
     }
-  }, [form, remind, show, finish])
+  }, [form, medicine, remind, show, finish])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -121,9 +157,9 @@ export default function OnboardingTreatmentStep() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Quando você toma?</Text>
+          <Text style={styles.title}>E quando você toma?</Text>
           <Text style={styles.subtitle}>
-            Defina a frequência e os horários. A gente avisa na hora certa.
+            Defina a frequência, os horários e a quantidade. A gente te avisa na hora certa.
           </Text>
 
           {/* Frequência — segmented */}
@@ -188,7 +224,7 @@ export default function OnboardingTreatmentStep() {
             </View>
             <View style={styles.reminderText}>
               <Text style={styles.reminderTitle}>Me avise a hora de tomar</Text>
-              <Text style={styles.reminderSub}>Notificação no celular — o sistema vai pedir sua autorização.</Text>
+              <Text style={styles.reminderSub}>Notificação no celular — o sistema vai pedir a sua autorização, você precisa permitir.</Text>
             </View>
             <Switch
               value={remind}

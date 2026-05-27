@@ -252,8 +252,8 @@ export async function signOut() {
  */
 export async function verifyOtpWithEmail(email, token, type = 'signup') {
   const tokenClean = token.trim()
-  if (tokenClean.length !== 6 || isNaN(Number(tokenClean))) {
-    return { success: false, error: 'O código deve conter 6 dígitos numéricos' }
+  if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
+    return { success: false, error: 'O código deve conter 6 ou 8 dígitos numéricos' }
   }
 
   try {

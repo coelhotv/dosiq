@@ -69,20 +69,39 @@ export default function Navigation() {
 
     // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
-      const isRecoveryFlow = await AsyncStorage.getItem('@dosiq/recovery-flow')
-      if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
-        await AsyncStorage.removeItem('@dosiq/recovery-flow')
+      if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordRecovery(true)
         setSession(s ?? null)
         return
       }
+
+      try {
+        const isRecoveryFlow = await AsyncStorage.getItem('@dosiq/recovery-flow')
+        if (isRecoveryFlow === 'true') {
+          await AsyncStorage.removeItem('@dosiq/recovery-flow')
+          setIsPasswordRecovery(true)
+          setSession(s ?? null)
+          return
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Erro ao acessar AsyncStorage no fluxo de recuperação:', error)
+        }
+      }
+
       if (event === 'SIGNED_OUT') {
         debugLog('Navigation', 'User signed out, clearing caches...')
-        await AsyncStorage.multiRemove([
-          '@dosiq/today-snapshot',
-          '@dosiq/treatments-snapshot',
-          '@dosiq/stock-snapshot'
-        ])
+        try {
+          await AsyncStorage.multiRemove([
+            '@dosiq/today-snapshot',
+            '@dosiq/treatments-snapshot',
+            '@dosiq/stock-snapshot'
+          ])
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Erro ao limpar caches no logout:', error)
+          }
+        }
       }
       setSession(s ?? null)
     })
