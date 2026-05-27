@@ -32,7 +32,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, resolveStockStatus } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -49,7 +49,7 @@ const SUPPLEMENT_TYPES = new Set(['suplemento', 'supplement'])
  */
 export default function StockDetailScreen({ navigation }) {
   const route = useRoute()
-  const { medicineId, medicineName, dailyConsumption = 0 } = route.params ?? {}
+  const { medicineId, medicineName } = route.params ?? {}
   const { user } = useAuth()
 
   // — States (R-010) —
@@ -59,6 +59,19 @@ export default function StockDetailScreen({ navigation }) {
   const [loading, setLoading] = useState(true)
 
   // — Memos (R-010) —
+  const today = useMemo(() => getTodayLocal(), [])
+
+  const dailyConsumption = useMemo(() => {
+    if (!medicine?.protocols) return route.params?.dailyConsumption ?? 0
+    const activeProtocols = medicine.protocols.filter(
+      (p) => p.active && isProtocolInPeriod(p, today)
+    )
+    return activeProtocols.reduce((acc, p) => {
+      const intakesPerDay = p.time_schedule?.length ?? 0
+      return acc + Number(p.dosage_per_intake) * intakesPerDay
+    }, 0)
+  }, [medicine, route.params?.dailyConsumption, today])
+
   const avgUnitPrice = useMemo(
     () => computeAverageUnitPrice(purchases),
     [purchases],
