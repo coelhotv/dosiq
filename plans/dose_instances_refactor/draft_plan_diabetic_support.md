@@ -72,16 +72,14 @@ Diabetes move o Dosiq de "gerenciador de doses estáticas" para "registro de eve
 
 ---
 
-## 2. Modelagem de Dados (Supabase) — corrigida ao schema real
-
-> Nomes reais: `medicines` (não `medications`), `medicine_logs` (não `doses_log`), `stock` (lotes físicos por compra), `protocols` (regime). `regulatory_category` **já existe** (text, nullable).
+## 2. Modelagem de Dados (Supabase) 
 
 ### A. `medicines` (definição do medicamento)
 * **Forma de administração:** hoje `medicines.type` no DB = CHECK `('medicamento','suplemento')` (categoria), **não** forma farmacêutica. Não há flag clara de "injetável". **Decidir:** adicionar `form`/`is_injectable`, ou derivar de `dosage_unit='ui'`. (A camada Zod tem `MEDICINE_TYPES` com `injecao`, mas pode não estar persistida como coluna — **verificar no planning**.)
 * **`shelf_life_days` (int, nullable):** TTL após aberto (insulina ≈ 30). Fica na **definição** porque é propriedade do produto. **NÃO** reaproveitar `expiration_date` (validade da caixa, data fixa) — são conceitos distintos.
 
-### B. `stock` (lote físico — onde o draft original errou)
-* **`opened_at` (timestamptz, nullable):** vai **aqui**, não em `medicines`. Cada caneta/frasco é uma linha de `stock` com sua própria abertura. O TTL biológico é `opened_at + medicines.shelf_life_days`, calculado por lote.
+### B. `stock` (lote físico)
+* **`opened_at` (timestamptz, nullable):** Cada caneta/frasco é uma linha de `stock` com sua própria abertura. O TTL biológico é `opened_at + medicines.shelf_life_days`, calculado por lote.
 
 ### C. `dose_instances` / `medicine_logs` (dose planejada/aplicada)
 * **Sem colunas novas para o par planned/applied** — já coberto por `expected_dose` (instance) e `quantity_taken` (log). **FP-1.**
@@ -177,5 +175,3 @@ A timeline da Fase 4 (event-agnóstica, FP-3) recebe `biomarkers_log` como um ti
 1. **Terminar o refactor `dose_instances`** (Fases 2-4) — ele corrige bug ativo e constrói a fundação (FP-1..FP-4 já garantidos por ADR-050).
 2. **Abrir planning do épico de diabetes** com este draft como entrada, resolvendo as perguntas da §7.
 3. **Primeiro bloco técnico real = E1 (parede de unidades)** — é o gargalo que destrava E2-E4. Só então `biomarkers_log` e fast-logging.
-
-> O original sugeria "adicionar `biomarkers_log` + `applied_amount` agora para destravar o frontend". Corrigido: `applied_amount` já existe (`quantity_taken`), e atacar a UI antes da parede de unidades produziria telas que exibem insulina errada.
