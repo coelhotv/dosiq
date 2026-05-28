@@ -61,19 +61,21 @@ export function isProtocolActiveOnDate(protocol, date) {
 }
 
 /**
- * Retorna a data de hoje formatada como YYYY-MM-DD em timezone local
+ * Retorna a data de hoje formatada como YYYY-MM-DD no fuso informado.
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} Data de hoje no formato YYYY-MM-DD
  */
-export function getTodayLocal() {
-  return formatLocalDate(getSaoPauloTime())
+export function getTodayLocal(tz = 'America/Sao_Paulo') {
+  return formatLocalDate(getUserTime(new Date(), tz))
 }
 
 /**
- * Retorna a data de ontem formatada como YYYY-MM-DD em timezone local
+ * Retorna a data de ontem formatada como YYYY-MM-DD no fuso informado.
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} Data de ontem no formato YYYY-MM-DD
  */
-export function getYesterdayLocal() {
-  const yesterday = getSaoPauloTime()
+export function getYesterdayLocal(tz = 'America/Sao_Paulo') {
+  const yesterday = getUserTime(new Date(), tz)
   yesterday.setDate(yesterday.getDate() - 1)
   return formatLocalDate(yesterday)
 }
@@ -117,11 +119,12 @@ export function getPeriodFromTime(timeStr) {
 }
 
 /**
- * Retorna a data/hora atual como objeto Date
+ * Retorna a data/hora atual como objeto Date no fuso informado.
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {Date}
  */
-export function getNow() {
-  return getSaoPauloTime()
+export function getNow(tz = 'America/Sao_Paulo') {
+  return getUserTime(new Date(), tz)
 }
 
 /**
@@ -151,54 +154,47 @@ export function parseISO(isoString) {
 }
 
 /**
- * Retorna o ISO UTC correspondente ao início do dia (00:00:00) em São Paulo.
+ * Retorna o ISO UTC correspondente ao início do dia (00:00:00) no fuso informado.
  * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} ISO 8601 string (UTC)
  */
-export function getStartOfDayISO(dateStr) {
+export function getStartOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
   const d = new Date(dateStr + 'T00:00:00Z')
-  // Descobrir o offset de SP para esta data específica
-  const spHour = parseInt(
-    d.toLocaleString('en-CA', {
-      hour: 'numeric',
-      hour12: false,
-      timeZone: 'America/Sao_Paulo',
-    }),
-    10
-  )
+  // Descobrir o offset do fuso para esta data específica.
+  // Reusa getUserTime (Intl.DateTimeFormat + formatToParts) em vez de
+  // toLocaleString('en-CA', hour12:false), que pode retornar AM/PM em
+  // engines sem ICU completo (Hermes/RN, navegadores antigos) — AP-155/R-199.
+  const spHour = getUserTime(d, tz).getHours()
   const offset = spHour >= 12 ? spHour - 24 : spHour
   return new Date(d.getTime() - offset * 60 * 60 * 1000).toISOString()
 }
 
 /**
- * Retorna o ISO UTC correspondente ao fim do dia (23:59:59.999) em São Paulo.
+ * Retorna o ISO UTC correspondente ao fim do dia (23:59:59.999) no fuso informado.
  * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} ISO 8601 string (UTC)
  */
-export function getEndOfDayISO(dateStr) {
-  const start = new Date(getStartOfDayISO(dateStr))
+export function getEndOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
+  const start = new Date(getStartOfDayISO(dateStr, tz))
   return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
 }
 
 /**
- * Retorna um objeto Date "ajustado" para o fuso de São Paulo
+ * Retorna um objeto Date "ajustado" para o fuso informado (default São Paulo)
  * para facilitar extração de horas/minutos locais em ambientes UTC.
- * @param {Date} [date] - Data base (default: agora)
- * @returns {Date}
- */
-/**
- * Retorna um objeto Date "ajustado" para o fuso de São Paulo
- * para facilitar extração de horas/minutos locais em ambientes UTC.
- * 
+ *
  * O Date retornado terá os mesmos valores de getHours(), getMinutes(), etc.
- * que um relógio em São Paulo mostraria naquele momento.
- * 
+ * que um relógio no fuso informado mostraria naquele momento.
+ *
  * @param {Date} [date] - Data base (default: agora)
+ * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA (ex: 'America/New_York')
  * @returns {Date}
  */
-export function getSaoPauloTime(date = new Date()) {
+export function getUserTime(date = new Date(), tz = 'America/Sao_Paulo') {
   const formatter = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'America/Sao_Paulo',
+    timeZone: tz,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -207,23 +203,39 @@ export function getSaoPauloTime(date = new Date()) {
     second: '2-digit',
     hour12: false,
   })
-  
+
   const parts = formatter.formatToParts(date)
   const map = {}
   parts.forEach(p => { map[p.type] = p.value })
-  
-  // Construir string ISO simplificada para as partes de SP
+
+  // Construir string ISO simplificada para as partes do fuso
   // Ao criar o Date sem timezone, ele usa o timezone local da máquina (ex: UTC no CI)
-  // mas preserva os números SP, garantindo que getHours() retorne o valor esperado.
+  // mas preserva os números do fuso, garantindo que getHours() retorne o valor esperado.
   const isoStr = `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`
   const result = new Date(isoStr)
-  
+
   // Garantir preservação de milissegundos se disponíveis
   if (!isNaN(result.getTime())) {
     result.setMilliseconds(date.getMilliseconds())
   }
-  
+
   return result
+}
+
+/**
+ * Retorna um objeto Date "ajustado" para o fuso de São Paulo
+ * para facilitar extração de horas/minutos locais em ambientes UTC.
+ *
+ * Wrapper retrocompatível de getUserTime (default 'America/Sao_Paulo').
+ *
+ * O Date retornado terá os mesmos valores de getHours(), getMinutes(), etc.
+ * que um relógio em São Paulo mostraria naquele momento.
+ *
+ * @param {Date} [date] - Data base (default: agora)
+ * @returns {Date}
+ */
+export function getSaoPauloTime(date = new Date()) {
+  return getUserTime(date, 'America/Sao_Paulo')
 }
 
 /**
