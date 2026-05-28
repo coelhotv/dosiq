@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
+import { formatActiveIngredientHint } from '@dosiq/core'
 import './StockCardRedesign.css'
 
 const CTA_CONFIG = {
@@ -149,8 +150,11 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
       {isComplex && (
         <p className="stock-card-r__quantity">
-          {totalQuantity}{' '}
-          {{ liquido: 'ml', capsula: 'cáps.' }[medicine.medicine_type] ?? 'comprimidos'}
+          {formatActiveIngredientHint(
+            totalQuantity,
+            medicine.dosage_per_pill,
+            medicine.dosage_unit
+          ) || `${totalQuantity} un.`}
         </p>
       )}
 

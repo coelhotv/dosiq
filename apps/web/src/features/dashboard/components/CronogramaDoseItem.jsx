@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
 
+import { formatActiveIngredientHint } from '@dosiq/core'
+
 const LATE_WINDOW_MINUTES = DOSE_REGISTRATION_TOLERANCE_MS / 60_000
 
 function getMinutesDiff(scheduledTime, now) {
@@ -70,7 +72,11 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
           </div>
           <div className="cronograma-dose-card__intake-row">
             <span className="cronograma-dose-card__intake">
-              {dose.dosagePerIntake} comprimido{dose.dosagePerIntake !== 1 ? 's' : ''}
+              {formatActiveIngredientHint(
+                dose.dosagePerIntake,
+                dose.dosagePerPill,
+                dose.dosageUnit
+              ) || `${dose.dosagePerIntake} un.`}
             </span>
             {showStockBadge && (
               <span className={`cronograma-dose-card__stock-badge cronograma-dose-card__stock-badge--${stockStatus}`}>

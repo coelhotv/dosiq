@@ -153,7 +153,7 @@ export default function StockCard({
         </div>
       </div>
 
-      <StockIndicator quantity={totalQuantity} isLow={isLow} />
+      <StockIndicator quantity={totalQuantity} isLow={isLow} medicine={medicine} />
 
       {stockEntries.length > 0 && (
         <div className="stock-entries">

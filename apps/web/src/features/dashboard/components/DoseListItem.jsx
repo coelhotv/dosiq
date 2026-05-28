@@ -10,6 +10,7 @@
 
 import { motion } from 'framer-motion'
 import { parseISO } from '@utils/dateUtils'
+import { formatActiveIngredientHint } from '@dosiq/core'
 import './DoseListItem.css'
 
 /**
@@ -40,17 +41,6 @@ const formatMedicineName = (name, maxLength = 30) => {
 }
 
 /**
- * Retorna label de quantidade no plural correto
- * @param {number} quantity - Quantidade
- * @param {string} unit - Unidade (comprimido, cápsula, etc)
- * @returns {string} Label formatado
- */
-const getQuantityLabel = (quantity, unit = 'comprimido') => {
-  if (quantity === 1) return `1 ${unit}`
-  return `${quantity} ${unit}s`
-}
-
-/**
  * Componente DoseListItem
  *
  * @param {Object} props
@@ -74,13 +64,17 @@ export function DoseListItem({ log, isTaken, status, scheduledTime, onClick, ind
 
   const medicineName = formatMedicineName(log.medicine?.name)
   const protocolName = log.protocol?.name || 'Protocolo'
-  const unit = log.medicine?.type === 'cápsula' ? 'cápsula' : 'comprimido'
+  
   // Usar expectedQuantity para doses futuras (scheduled/missed), quantity_taken para doses tomadas
   const quantity =
     effectiveStatus === 'taken'
       ? log.quantity_taken || 1
       : log.expectedQuantity || log.quantity_taken || 1
-  const quantityLabel = getQuantityLabel(quantity, unit)
+  const quantityLabel = formatActiveIngredientHint(
+    quantity,
+    log.medicine?.dosage_per_pill,
+    log.medicine?.dosage_unit
+  ) || `${quantity} un.`
 
   // Horário real se tomada, ou previsto se perdida/agendada
   const displayTime =

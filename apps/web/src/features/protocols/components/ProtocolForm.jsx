@@ -162,6 +162,7 @@ export default function ProtocolForm({
         setTimeInput={setTimeInput}
         addTime={addTime}
         removeTime={removeTime}
+        medicine={medicines?.find((m) => m.id === formData.medicine_id) || null}
       />
 
       <ProtocolFormAdvancedSection

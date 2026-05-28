@@ -75,20 +75,41 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
     return ''
   }
   const qtyNum = Number(String(qty).replace(',', '.'))
-  const total = qtyNum * dosagePerPill
+  let total = qtyNum * dosagePerPill
+  let currentUnit = unit
+
+  // Conversão de unidade métrica para valores maiores ou iguais a 5.000
+  if (total >= 5000) {
+    if (unit === 'mcg') {
+      total = total / 1000
+      currentUnit = 'mg'
+    } else if (unit === 'mg') {
+      total = total / 1000
+      currentUnit = 'g'
+    } else if (unit === 'g') {
+      total = total / 1000
+      currentUnit = 'kg'
+    } else if (unit === 'ml') {
+      total = total / 1000
+      currentUnit = 'l'
+    }
+  }
+
   const displayTotal = formatNumberPtBR(total)
 
   const totalUnitLabels = {
     mg: 'mg',
     mcg: 'mcg',
     g: 'g',
+    kg: 'kg',
     ml: 'ml',
+    l: 'l',
     ui: 'UI',
     cp: total === 1 ? 'comprimido' : 'comprimidos',
     gotas: total === 1 ? 'gota' : 'gotas',
   }
 
-  const displayTotalUnit = totalUnitLabels[unit] || unit || ''
+  const displayTotalUnit = totalUnitLabels[currentUnit] || currentUnit || ''
 
   // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1,
   // a quantidade física já é a quantidade ativa (ex: "3 gotas"). Não precisa de concentração separada.
