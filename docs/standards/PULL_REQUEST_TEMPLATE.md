@@ -191,9 +191,11 @@
   Remova se o versionamento for gerenciado automaticamente.
 -->
 
-**Tipo:** [Major / Minor / Patch]
-**Versão anterior:** [x.x.x]
-**Versão sugerida:** [x.x.x]
+**Tipo:** [Major / Minor / Patch / No user impact]
+**Plataformas afetadas:** [Web/PWA / Mobile / Shared/Core / Backend/Infra]
+**Versão anterior:** [web x.y.z / mobile a.b.c]
+**Versão sugerida:** [web x.y.z / mobile a.b.c]
+**Changelog:** [CHANGELOG.md [Unreleased] atualizado / no-user-impact justificado]
 
 ---
 

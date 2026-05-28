@@ -40,6 +40,7 @@ You are an expert Senior Software Engineer. Your primary focus is STABILITY, ACC
 4. **Cache:** Use `useCachedQuery` e `cachedServices` para leitura; invalide após mutations.
 5. **Hooks:** Ordem obrigatória: States -> Memos -> Effects -> Handlers.
 6. **Imports:** Use **Path Aliases** (`@features`, `@shared`, `@utils`). Nunca caminhos relativos longos.
+7. **SQP:** Antes de qualquer alteração de código, siga `R-221` (Standard Quality Protocol). O SQP inclui classificação de impacto, bump de versão quando aplicável, entrada em `CHANGELOG.md` e logging no DEVFLOW C5. Não faça changelog ad hoc fora do SQP.
 
 ### Performance Mobile (M2+)
 - Todas as views devem ser lazy-loaded com `Suspense` + `ViewSkeleton`.
@@ -70,13 +71,15 @@ You are an expert Senior Software Engineer. Your primary focus is STABILITY, ACC
 
 Ao final de cada tarefa, execute o protocolo **DEVFLOW C5**:
 - Novo bug corrigido → `AP-NNN` em `.agent/memory/ANTI_PATTERNS_INDEX.md` + `anti-patterns/_domain_/`
-- Novo padrão descoberto → `R-NNN` em `.agent/memory/RULES_INDEX.md/` + `rules/_domain_/`
+- Novo padrão descoberto → `R-NNN` em `.agent/memory/RULES_INDEX.md` + `rules/_domain_/`
 - Entrega realizada → entrada em `.agent/memory/journal/YYYY-WWW.jsonl` (JSONL, append-only)
 - Atualizar `.agent/state.json` (incrementar `journal_entries_since_distillation`)
+- Registrar o resultado do SQP: plataformas afetadas, tipo de bump, novas versões, entrada de changelog e relevância para notas de loja
 - Se `journal_entries >= 10` → executar `/devflow distill`
 
 > ⚠️ `.memory/` está **aposentado** desde 2026-04-08. Não escreva nele.
 > Fontes canônicas: `.agent/memory/RULES_INDEX.md` + `.agent/memory/ANTI_PATTERNS_INDEX.md`
+> Processo canônico para entregas com código: `R-221` + `docs/standards/CHANGELOG_AND_RELEASES.md`.
 
 ---
 
@@ -118,4 +121,3 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes` for code review.
 3. Use `get_affected_flows` to understand impact.
 4. Use `query_graph` pattern="tests_for" to check coverage.
-
