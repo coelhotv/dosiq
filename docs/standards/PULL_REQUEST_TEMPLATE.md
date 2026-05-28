@@ -192,8 +192,10 @@
 -->
 
 **Tipo:** [Major / Minor / Patch]
+**Plataformas afetadas:** [Web/PWA / Mobile / Shared/Core / Backend/Infra]
 **Versão anterior:** [x.x.x]
 **Versão sugerida:** [x.x.x]
+**Changelog:** [CHANGELOG.md [Unreleased] atualizado / no-user-impact justificado]
 
 ---
 

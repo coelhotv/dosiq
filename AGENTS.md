@@ -16,6 +16,7 @@
 | 4 | **Zod Enums** | Portuguese only: `['diario', 'semanal']` | R-021 |
 | 5 | **Serverless Limit** | Vercel Hobby max 12 functions. Utilities in `api/_`-prefixed dirs | R-090 |
 | 6 | **Mobile Performance** | All views lazy-loaded + Suspense + ViewSkeleton | R-117 |
+| 7 | **SQP Release Logging** | Before code changes, follow R-221 SQP: classify impact, update versions/changelog, record C5 release log | R-221 |
 
 ---
 
@@ -45,7 +46,8 @@
 ```
 
 - Bootstrap: `/devflow` (sem args) — carrega `state.json` + `hot` + `warm` por contexto
-- Skill completa: `.agent/DEVFLOW.md` | Memória: `.agent/memory/` | Estado: `.agent/state.json`
+- Skill completa: `/devflow` | Memória: `.agent/memory/` | Estado: `.agent/state.json`
+- **SQP obrigatório:** antes de alterar código, carregar `R-221` e seguir `docs/standards/CHANGELOG_AND_RELEASES.md`
 - **Validação obrigatória:** `npm run validate:agent` (10min timeout, bail-fast)
 
 ---
@@ -116,6 +118,7 @@ ORCHESTRATOR → NEXT SPECIALIST:
 | Build works | `npm run build` |
 | No duplicates | `find src -name "*File*" -type f` |
 | Memory updated | DEVFLOW C5 → `.agent/memory/journal/YYYY-WWW.jsonl` |
+| SQP release log | R-221 → versão/changelog/log C5 ou `no-user-impact` justificado |
 
 ### Escalation
 

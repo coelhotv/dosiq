@@ -1,0 +1,89 @@
+# Changelog and Release Logging
+
+This document defines the Dosiq release logging process. Rules are written in English for agents. Changelog and store-note text must be written in Portuguese.
+
+## Canonical Version Sources
+
+| Platform | Source of truth | Notes |
+|----------|-----------------|-------|
+| Web/PWA | `apps/web/package.json` `version` | Build env `VITE_APP_VERSION` must reflect this version when used. |
+| Mobile | `apps/mobile/app.config.js` `APP_VERSION` | Android `versionCode` and iOS `buildNumber` are derived from `APP_VERSION` by R-182. |
+| Root monorepo | `package.json` `version` | Metadata only. Do not treat as product release version unless a future ADR changes this. |
+
+## SQP Release Checklist
+
+Every code-changing PR must follow R-221 SQP:
+
+1. Load DEVFLOW and R-221 before writing code.
+2. Identify affected platform(s): Web/PWA, Mobile, Shared/Core, Backend/Infra.
+3. Classify SemVer impact: `patch`, `minor`, `major`, or `no-user-impact`.
+4. Update affected version source(s) unless impact is `no-user-impact`.
+5. Add a Portuguese entry under `CHANGELOG.md` `[Unreleased]`.
+6. For mobile changes, ensure App Store / Play Store notes can be derived from the changelog entry.
+7. Fill PR version section from actual files.
+8. Record release impact in DEVFLOW C5 journal/events.
+
+## SemVer Classification
+
+| Impact | Use when |
+|--------|----------|
+| `patch` | Bug fix, safe technical correction, copy fix, internal behavior correction. |
+| `minor` | New user-facing feature, meaningful UX addition, additive API/data behavior, store-visible improvement. |
+| `major` | Breaking migration, incompatible user behavior, destructive data model transition, required migration. |
+| `no-user-impact` | Documentation, tests, tooling, or process-only work that does not change product behavior. |
+
+Shared/Core changes must bump every product platform that consumes the changed behavior.
+
+## CHANGELOG.md Template
+
+Use this structure under `[Unreleased]`:
+
+```markdown
+## [Unreleased]
+
+### Web/PWA
+- **Changed** (`minor`, PR #TBD): Descrição em português do impacto para usuários web.
+
+### Mobile
+- **Fixed** (`patch`, PR #TBD): Descrição em português do impacto para usuários mobile.
+
+### Shared/Core
+- **Changed** (`minor`, PR #TBD): Descrição em português da mudança compartilhada.
+
+### Backend/Infra
+- **Process** (`no-user-impact`, PR #TBD): Descrição em português da mudança interna/processual.
+```
+
+Allowed categories:
+- `Added`
+- `Changed`
+- `Fixed`
+- `Security`
+- `Deprecated`
+- `Removed`
+- `Process`
+
+## Store Notes Template
+
+Store notes are derived from mobile changelog entries:
+
+```markdown
+Novidades da versão X.Y.Z:
+- Texto curto e claro em português sobre melhoria visível.
+- Correção importante quando usuário final percebe impacto.
+- Evite detalhes internos sem impacto para usuário.
+```
+
+If a mobile release is internal-only, keep the changelog entry and mark it `no-user-impact` with a short Portuguese justification.
+
+## PR Version Section
+
+Fill `docs/standards/PULL_REQUEST_TEMPLATE.md` with actual values:
+
+```markdown
+**Tipo:** Patch / Minor / Major / No user impact
+**Plataformas afetadas:** Web/PWA / Mobile / Shared/Core / Backend/Infra
+**Versão anterior:** web x.y.z / mobile a.b.c
+**Versão sugerida:** web x.y.z / mobile a.b.c
+**Changelog:** `CHANGELOG.md` [Unreleased] atualizado
+```
