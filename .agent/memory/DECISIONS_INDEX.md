@@ -1,6 +1,8 @@
 # DEVFLOW Decisions Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[ADR-049]** Core tz-aware + `user_settings.timezone` como fonte de verdade (gating Fase 1; non-breaking via wrappers) [accepted] -> [`decisions/data_and_schema/ADR-049.md`](./decisions/data_and_schema/ADR-049.md)
+- **[ADR-048]** Modelo `dose_instances` — ocorrências materializadas (schedule-anchored); umbrella Fase 2, bloqueado por ADR-049 [proposed] -> [`decisions/data_and_schema/ADR-048.md`](./decisions/data_and_schema/ADR-048.md)
 - **[ADR-017]** Profile Hub: Centralized User Data Management -> [`decisions/data_and_schema/ADR-017.md`](./decisions/data_and_schema/ADR-017.md)
 - **[ADR-045]** Factory location para repositórios CRUD compartilhados — `@dosiq/core/repositories/` (ratifica R-231; descarta `shared-data/services/`) -> [`decisions/data_and_schema/ADR-045.md`](./decisions/data_and_schema/ADR-045.md)
 - **[ADR-046]** `formatDoseUnit(qty)` SEMPRE retorna `"unidade(s)"` independente do `dosage_unit`; apresentação fica no DosagePill do hero (evita bug semântico Apidra 2ml dose=1 → "1 ml") -> [`decisions/data_and_schema/ADR-046.md`](./decisions/data_and_schema/ADR-046.md)

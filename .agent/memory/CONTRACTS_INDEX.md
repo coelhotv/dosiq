@@ -1,6 +1,7 @@
 # DEVFLOW Contracts Index
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[CON-022]** `getUserTime` + dateUtils tz-aware API (param tz opcional default SP; non-breaking; ADR-049) -> [`contracts/infra_and_deploy/CON-022.md`](./contracts/infra_and_deploy/CON-022.md)
 - **[CON-001]** medicineService.getAll() -> [`contracts/infra_and_deploy/CON-001.md`](./contracts/infra_and_deploy/CON-001.md)
 - **[CON-002]** medicineService.create(medicine) -> [`contracts/infra_and_deploy/CON-002.md`](./contracts/infra_and_deploy/CON-002.md)
 - **[CON-003]** medicineService.update(id, updates) -> [`contracts/infra_and_deploy/CON-003.md`](./contracts/infra_and_deploy/CON-003.md)

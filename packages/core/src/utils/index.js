@@ -20,6 +20,7 @@ export {
   getServerTimestamp,
   parseISO,
   getSaoPauloTime,
+  getUserTime,
   getStartOfDayISO,
   getEndOfDayISO,
   addMonths,
