@@ -4,3 +4,4 @@ export { createTreatmentPlanRepository } from './createTreatmentPlanRepository.j
 export { createStockRepository } from './createStockRepository.js'
 export { createPurchaseRepository } from './createPurchaseRepository.js'
 export { createProfileRepository } from './createProfileRepository.js'
+export { createDoseInstanceRepository } from './createDoseInstanceRepository.js'
